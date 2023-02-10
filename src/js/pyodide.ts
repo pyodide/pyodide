@@ -81,21 +81,30 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   // TODO: Get python version from sys.version_info?
   saveStreamToFile(Module, stdlib, "/lib/python311.zip");
 
-  // 1) importlib is not available yet, so we can't use importlib.invalidate_caches here.
-  // 2) _imp._override_frozen_modules_for_tests is a private API, but it is the only way to
-  //    disable the frozen modules.
-  //    Why are we disabling the frozen modules? Because we freeze only minimal parts of
-  //    the `encodings` module that are needed for bootstrap, but it makes impossible to
-  //    use the full `encodings` module. So after the bootstrap, we disable the frozen
-  //    modules and use the full `encodings` module.
+  // After downloading the stdlib, we do the following:
+  // 1) We need to re-register the codecs because the frozen encodings module
+  //    only contains utf_8 encoding, which is required for bootstrap.
+  //    So we unregister the frozen encodings module and re-register the full
+  //    encodings module.
+  // 2) In order to make the zipfile visible to the import system, we need to
+  //    invalidate the caches. But importlib is not available yet, so we can't
+  //    use importlib.invalidate_caches here. Hence we iterate over the
+  //    sys.meta_path and call invalidate_caches manually.
+  // 3) Since frozen modules have precedence over the python files, we need to
+  //    disable the frozen modules, so that we can load encodings module from
+  //    the zipfile. _imp._override_frozen_modules_for_tests is a private API,
+  //    but it is the only way to disable the frozen modules.
   const code = `
-import sys, _imp
+import sys, _imp, encodings, codecs
+codecs.unregister(encodings.search_function)
 for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
 del sys.modules["encodings"]
 del sys.modules["encodings.utf_8"]
 del sys.modules["encodings.aliases"]
 _imp._override_frozen_modules_for_tests(-1)
-del sys, _imp
+del sys, _imp, encodings, codecs
+import encodings
+del encodings
 `;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
