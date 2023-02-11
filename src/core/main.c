@@ -29,6 +29,15 @@ initialize_python(int argc, char** argv)
 
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
+
+  // We import site manually after initializing the interpreter.
+  // Why? Because standard libraries that are not frozen are not available
+  // until we download them, which happens after the
+  // interpreter is initialized. However, importing site can have a side effect
+  // of running .pth files, which can do whatever they want, so
+  // we want to do it after we have initialized the interpreter.
+  config.import_site = 0;
+
   config.write_bytecode = false;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);

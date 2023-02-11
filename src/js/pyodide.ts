@@ -94,19 +94,22 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
   //    disable the frozen modules, so that we can load encodings module from
   //    the zipfile. _imp._override_frozen_modules_for_tests is a private API,
   //    but it is the only way to disable the frozen modules.
+  // 4) Import site module. Normally this is done during the bootstrap, but we
+  //    disabled it because importing site module can have a side effect of
+  //    running arbitrary code, which is not available at the time of bootstrap.
   const code = `
-import sys, _imp, encodings, codecs, site
+import sys, _imp, encodings, codecs, os
 codecs.unregister(encodings.search_function)
-sitedir = site.getsitepackages()[0]
-if sitedir not in sys.path: sys.path.append(sitedir)
 for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
+os.makedirs("{sys.prefix}{sys.platlibdir}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages", exist_ok=True)
 del sys.modules["encodings"]
 del sys.modules["encodings.utf_8"]
 del sys.modules["encodings.aliases"]
 _imp._override_frozen_modules_for_tests(-1)
-del sys, _imp, encodings, codecs
-import encodings
+del sys, _imp, encodings, codecs, os
+import encodings, site
 del encodings
+del site
 `;
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
