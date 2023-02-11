@@ -36,7 +36,7 @@ initialize_python(int argc, char** argv)
   // interpreter is initialized. However, importing site can have a side effect
   // of running .pth files, which can do whatever they want, so
   // we want to do it after we have initialized the interpreter.
-  config.import_site = 0;
+  config.site_import = 0;
 
   config.write_bytecode = false;
   status = Py_InitializeFromConfig(&config);
