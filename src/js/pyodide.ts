@@ -108,6 +108,7 @@ del sys.modules["encodings.aliases"]
 _imp._override_frozen_modules_for_tests(-1)
 del sys, _imp, encodings, codecs, os
 import encodings, site
+site.main()
 del encodings
 del site
 `;
