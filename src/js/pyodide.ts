@@ -101,7 +101,7 @@ function installStdlib(Module: any, stdlib: Uint8Array) {
 import sys, _imp, encodings, codecs, os
 codecs.unregister(encodings.search_function)
 for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
-os.makedirs("{sys.prefix}{sys.platlibdir}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages", exist_ok=True)
+os.makedirs(f"{sys.prefix}{sys.platlibdir}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages", exist_ok=True)
 del sys.modules["encodings"]
 del sys.modules["encodings.utf_8"]
 del sys.modules["encodings.aliases"]
