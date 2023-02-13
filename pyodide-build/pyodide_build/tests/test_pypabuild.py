@@ -36,6 +36,11 @@ def test_make_command_wrapper_symlinks(tmp_path):
     symlink_dir = tmp_path
     env = pypabuild.make_command_wrapper_symlinks(symlink_dir)
 
+    wrapper = symlink_dir / "pywasmcross.py"
+    assert wrapper.exists()
+    assert not wrapper.is_symlink()
+    assert wrapper.stat().st_mode & 0o755 == 0o755
+
     for _, path in env.items():
         symlink_path = symlink_dir / path
 
