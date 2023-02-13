@@ -367,6 +367,11 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
+        if pkgname not in all_recipes:
+            raise ValueError(
+                f"No metadata file found for the following package: {pkgname}"
+            )
+
         pkg = Package(packages_dir / pkgname, all_recipes[pkgname])
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
