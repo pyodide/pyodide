@@ -74,17 +74,6 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
         )
     )
-    # Some packages (numcodecs) don't declare cython as a build dependency and
-    # only recythonize if it is present. We need them to always recythonize so
-    # we always install cython. If the reqs included some cython version already
-    # then this won't do anything.
-    env.install(
-        [
-            "cython",
-            "pythran",
-            "setuptools<65.6.0",  # https://github.com/pypa/setuptools/issues/3693
-        ]
-    )
 
 
 def _build_in_isolated_env(
