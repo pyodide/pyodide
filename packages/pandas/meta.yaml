@@ -17,11 +17,9 @@ requirements:
   host:
     - numpy
   run:
-    - distutils
     - numpy
     - python-dateutil
     - pytz
-    - setuptools
 about:
   home: https://pandas.pydata.org
   PyPI: https://pypi.org/project/pandas
