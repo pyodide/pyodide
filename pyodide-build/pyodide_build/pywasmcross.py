@@ -422,16 +422,7 @@ def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     then return all public symbols. If not, return only the public symbols that
     begin with `PyInit`.
     """
-    # Get all arguments, including those from response files
-    all_args = []
-    for arg in line:
-        if arg.endswith(".rsp"):
-            all_args.extend(Path(arg).read_text().splitlines())
-        else:
-            all_args.append(arg)
-
-    objects = [arg for arg in all_args if arg.endswith((".a", ".o"))]
-
+    objects = [arg for arg in line if arg.endswith((".a", ".o")) or arg.startswith("@")]
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.
