@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, buildpkg, pywasmcross
+from .. import buildall, buildpkg, common, pywasmcross
 from ..common import get_num_cores, init_environment
 from ..logger import logger
 from ..out_of_tree.utils import initialize_pyodide_root
