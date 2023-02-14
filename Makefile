@@ -25,7 +25,7 @@ all: check \
 	echo -e "\nSUCCESS!"
 
 dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
+	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide webbrowser.py
 
 src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 # Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
