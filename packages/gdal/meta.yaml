@@ -90,11 +90,9 @@ build:
     # I wasn't able to find a way to prevent CMake from emitting duplicated libraries.
     # This is a hack which removes all duplicated appearances of static libs at the final link time.
 
-    export LINKLIBS=$(pwd)/CMakeFiles/GDAL.dir/link.txt
-    cat ${LINKLIBS} | grep -o '\S*' | grep "\.a$" | sort | uniq | tr "\n" " " > linked_static_libs.txt
-    cat ${LINKLIBS} | grep -o '\S*' | grep -v "\.a$" | tr "\n" " " > link_cmd.txt
-    cat link_cmd.txt > ${LINKLIBS}
-    cat linked_static_libs.txt >> ${LINKLIBS}
+    export LINKLIBS=$(pwd)/CMakeFiles/GDAL.dir/linkLibs.rsp
+    cat ${LINKLIBS} | grep -o '\S*' | grep '\.a"*$' | sort | uniq | tr "\n" " " > linkLibsUnique.rsp
+    cat linkLibsUnique.rsp > ${LINKLIBS}
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
