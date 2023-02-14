@@ -29,22 +29,14 @@ code {
   font-style: normal;
 }
 
-/* For some reason autodoc messes up the rendering of return value annotations:
-   it displays it as a bulleted list with the last bullet italicized.
-
-   We monkeypatch autodoc in conf.py to add some extra css classes so we can
-   locate the return value bullets.
-*/
-.returnvalue ul {
-  list-style-type: none;
-  margin-left: -15px; /* bullet takes up 15px */
-}
-
-/* Don't italicize last bullet. */
-.returnvalue li > p > em {
-  font-style: normal;
-}
-
 .js.attribute.type {
   font-weight: bold;
+}
+
+code.literal {
+  /* I don't like the badge py-data puts around code literals, it is too aggressive */
+  background-color: unset;
+  border: unset;
+  /* Shrink the horizontal padding a little */
+  padding: 0.1rem;
 }

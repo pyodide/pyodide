@@ -5,24 +5,14 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import (
-    check_emscripten_version,
-    exit_with_stdio,
-    get_make_flag,
-    get_pyodide_root,
-    in_xbuildenv,
-)
-
-
-def eprint(*args, **kwargs):
-    """Print to stderr"""
-    print(*args, **kwargs, file=sys.stderr)
+from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
+from ..logger import logger
 
 
 def check_result(result: subprocess.CompletedProcess[str], msg: str) -> None:
     """Abort if the process returns a nonzero error code"""
     if result.returncode != 0:
-        eprint(msg)
+        logger.error(msg)
         exit_with_stdio(result)
 
 
@@ -41,7 +31,7 @@ def check_host_python_version(session: Any) -> None:
         return
     pyodide_version_fmt = ".".join(pyodide_version)
     sys_version_fmt = ".".join(sys_version)
-    eprint(
+    logger.stderr(
         f"Expected host Python version to be {pyodide_version_fmt} but got version {sys_version_fmt}"
     )
     sys.exit(1)
@@ -114,6 +104,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         import sys
         os_name, sys_platform, multiarch, host_platform = {platform_data}
         os.name = os_name
+        orig_platform = sys.platform
         sys.platform = sys_platform
         sys.implementation._multiarch = multiarch
         os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
@@ -122,6 +113,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         import sysconfig
         sysconfig.get_config_vars()
         del os.environ["_PYTHON_SYSCONFIGDATA_NAME"]
+        sys.platform = orig_platform
         """
     )
 
@@ -203,12 +195,12 @@ def install_stdlib(venv_bin: Path) -> None:
             "-c",
             dedent(
                 f"""
-                from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
-                from pyodide_js import loadPackage;
+                from pyodide_js import loadPackage
                 from pyodide_js._api import repodata_packages
+                from pyodide_js._api import repodata_unvendored_stdlibs_and_test
                 shared_libs = [pkgname for (pkgname,pkg) in repodata_packages.object_entries() if getattr(pkg, "shared_library", False)]
 
-                to_load = [*UNVENDORED_STDLIBS_AND_TEST, *shared_libs, *{to_load!r}]
+                to_load = [*repodata_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
                 loadPackage(to_load);
                 """
             ),
@@ -221,14 +213,12 @@ def install_stdlib(venv_bin: Path) -> None:
 
 def create_pyodide_venv(dest: Path) -> None:
     """Create a Pyodide virtualenv and store it into dest"""
-    print("Creating Pyodide virtualenv at", str(dest))
+    logger.info(f"Creating Pyodide virtualenv at {dest}")
     from virtualenv import session_via_cli
 
     if dest.exists():
-        eprint(f"ERROR: dest directory '{dest}' already exists")
+        logger.error(f"ERROR: dest directory '{dest}' already exists")
         sys.exit(1)
-
-    check_emscripten_version()
 
     interp_path = pyodide_dist_dir() / "python"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])
@@ -239,14 +229,14 @@ def create_pyodide_venv(dest: Path) -> None:
         venv_root = Path(session.creator.dest).absolute()
         venv_bin = venv_root / "bin"
 
-        print("... Configuring virtualenv")
+        logger.info("... Configuring virtualenv")
         create_pip_conf(venv_root)
         create_pip_script(venv_bin)
         create_pyodide_script(venv_bin)
-        print("... Installing standard library")
+        logger.info("... Installing standard library")
         install_stdlib(venv_bin)
     except (Exception, KeyboardInterrupt, SystemExit):
         shutil.rmtree(session.creator.dest)
         raise
 
-    print("Successfully created Pyodide virtual environment!")
+    logger.success("Successfully created Pyodide virtual environment!")

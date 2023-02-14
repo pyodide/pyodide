@@ -5,16 +5,15 @@ Build all of the packages in a given directory.
 """
 
 import argparse
-import copy
 import dataclasses
 import hashlib
 import json
-import os
 import shutil
 import subprocess
 import sys
 from collections import defaultdict
 from collections.abc import Iterable
+from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
@@ -23,10 +22,17 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from . import common
+from rich.live import Live
+from rich.progress import BarColumn, Progress, TimeElapsedColumn
+from rich.spinner import Spinner
+from rich.table import Table
+
+from . import common, recipe
 from .buildpkg import needs_rebuild
 from .common import find_matching_wheels, find_missing_executables
 from .io import MetaConfig, _BuildSpecTypes
+from .logger import console_stdout, logger
+from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
@@ -69,7 +75,7 @@ class BasePackage:
     def needs_rebuild(self) -> bool:
         return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
 
-    def build(self, args: Any) -> None:
+    def build(self, build_args: BuildArgs) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -81,14 +87,10 @@ class BasePackage:
 
 @dataclasses.dataclass
 class Package(BasePackage):
-    def __init__(self, pkgdir: Path):
+    def __init__(self, pkgdir: Path, config: MetaConfig):
         self.pkgdir = pkgdir
+        self.meta = config.copy(deep=True)
 
-        pkgpath = pkgdir / "meta.yaml"
-        if not pkgpath.is_file():
-            raise ValueError(f"Directory {pkgdir} does not contain meta.yaml")
-
-        self.meta = MetaConfig.from_yaml(pkgpath)
         self.name = self.meta.package.name
         self.version = self.meta.package.version
         self.disabled = self.meta.package.disabled
@@ -124,7 +126,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, args: Any) -> None:
+    def build(self, build_args: BuildArgs) -> None:
 
         p = subprocess.run(
             [
@@ -133,11 +135,11 @@ class Package(BasePackage):
                 "pyodide_build",
                 "buildpkg",
                 str(self.pkgdir / "meta.yaml"),
-                f"--cflags={args.cflags}",
-                f"--cxxflags={args.cxxflags}",
-                f"--ldflags={args.ldflags}",
-                f"--target-install-dir={args.target_install_dir}",
-                f"--host-install-dir={args.host_install_dir}",
+                f"--cflags={build_args.cflags}",
+                f"--cxxflags={build_args.cxxflags}",
+                f"--ldflags={build_args.ldflags}",
+                f"--target-install-dir={build_args.target_install_dir}",
+                f"--host-install-dir={build_args.host_install_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -149,25 +151,99 @@ class Package(BasePackage):
             stderr=subprocess.DEVNULL,
         )
 
-        log_dir = Path(args.log_dir).resolve() if args.log_dir else None
-        if log_dir and (self.pkgdir / "build.log").exists():
-            log_dir.mkdir(exist_ok=True, parents=True)
-            shutil.copy(
-                self.pkgdir / "build.log",
-                log_dir / f"{self.name}.log",
-            )
-
         if p.returncode != 0:
-            print(f"Error building {self.name}. Printing build logs.")
-
-            with open(self.pkgdir / "build.log") as f:
-                shutil.copyfileobj(f, sys.stdout)
-
-            print("ERROR: cancelling buildall")
+            logger.error(f"Error building {self.name}. Printing build logs.")
+            logfile = self.pkgdir / "build.log"
+            if logfile.is_file():
+                logger.error(logfile.read_text(encoding="utf-8"))
+            else:
+                logger.error("ERROR: No build log found.")
+            logger.error("ERROR: cancelling buildall")
             raise BuildError(p.returncode)
 
 
-def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
+class PackageStatus:
+    def __init__(
+        self, *, name: str, idx: int, thread: int, total_packages: int
+    ) -> None:
+        self.pkg_name = name
+        self.prefix = f"[{idx}/{total_packages}] " f"(thread {thread})"
+        self.status = Spinner("dots", style="red", speed=0.2)
+        self.table = Table.grid(padding=1)
+        self.table.add_row(f"{self.prefix} building {self.pkg_name}", self.status)
+        self.finished = False
+
+    def finish(self, success: bool, elapsed_time: float) -> None:
+        time = datetime.utcfromtimestamp(elapsed_time)
+        if time.minute == 0:
+            minutes = ""
+        else:
+            minutes = f"{time.minute}m "
+        timestr = f"{minutes}{time.second}s"
+
+        status = "built" if success else "failed"
+        done_message = f"{self.prefix} {status} {self.pkg_name} in {timestr}"
+
+        self.finished = True
+
+        if success:
+            logger.success(done_message)
+        else:
+            logger.error(done_message)
+
+    def __rich__(self):
+        return self.table
+
+
+class ReplProgressFormatter:
+    def __init__(self, num_packages: int) -> None:
+        self.progress = Progress(
+            "[progress.description]{task.description}",
+            BarColumn(),
+            "{task.completed}/{task.total} [progress.percentage]{task.percentage:>3.0f}%",
+            "Time elapsed:",
+            TimeElapsedColumn(),
+        )
+        self.task = self.progress.add_task("Building packages...", total=num_packages)
+        self.packages: list[PackageStatus] = []
+        self.reset_grid()
+
+    def reset_grid(self):
+        """Empty out the rendered grids."""
+        self.top_grid = Table.grid()
+
+        for package in self.packages:
+            self.top_grid.add_row(package)
+
+        self.main_grid = Table.grid()
+        self.main_grid.add_row(self.top_grid)
+        self.main_grid.add_row(self.progress)
+
+    def add_package(
+        self, *, name: str, idx: int, thread: int, total_packages: int
+    ) -> PackageStatus:
+        status = PackageStatus(
+            name=name, idx=idx, thread=thread, total_packages=total_packages
+        )
+        self.packages.append(status)
+        self.reset_grid()
+        return status
+
+    def remove_package(self, pkg: PackageStatus) -> None:
+        self.packages.remove(pkg)
+        self.reset_grid()
+
+    def update_progress_bar(self):
+        """Step the progress bar by one (to show that a package finished)"""
+        self.progress.update(self.task, advance=1)
+
+    def __rich__(self):
+        return self.main_grid
+
+
+def _validate_package_map(pkg_map: dict[str, BasePackage]) -> bool:
+
+    # Check if dependencies are valid
     for pkg_name, pkg in pkg_map.items():
         for runtime_dep_name in pkg.run_dependencies:
             runtime_dep = pkg_map[runtime_dep_name]
@@ -176,11 +252,78 @@ def validate_dependencies(pkg_map: dict[str, BasePackage]) -> None:
                     f"{pkg_name} has an invalid dependency: {runtime_dep_name}. Static libraries must be a host dependency."
                 )
 
+    # Check executables required to build packages are available
+    missing_executables = defaultdict(list)
+    for name, pkg in pkg_map.items():
+        for exe in find_missing_executables(pkg.executables_required):
+            missing_executables[exe].append(name)
+
+    if missing_executables:
+        error_msg = "The following executables are missing in the host system:\n"
+        for executable, pkgs in missing_executables.items():
+            error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
+
+        raise RuntimeError(error_msg)
+
+    return True
+
+
+def _parse_package_query(query: list[str] | str | None) -> tuple[set[str], set[str]]:
+    """
+    Parse a package query string into a list of requested packages and a list of
+    disabled packages.
+
+    Parameters
+    ----------
+    query
+        A list of packages to build, this can be a comma separated string.
+
+    Returns
+    -------
+    A tuple of two lists, the first list contains requested packages, the second
+    list contains disabled packages.
+
+    Examples
+    --------
+    >>> _parse_package_query(None)
+    (set(), set())
+    >>> requested, disabled = _parse_package_query("a,b,c")
+    >>> requested == {'a', 'b', 'c'}, disabled == set()
+    (True, True)
+    >>> requested, disabled = _parse_package_query("a,b,!c")
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
+    >>> requested, disabled = _parse_package_query(["a", "b", "!c"])
+    >>> requested == {'a', 'b'}, disabled == {'c'}
+    (True, True)
+    """
+    if not query:
+        query = []
+
+    if isinstance(query, str):
+        query = [el.strip() for el in query.split(",")]
+
+    requested = set()
+    disabled = set()
+
+    for name in query:
+        if not name:  # empty string
+            continue
+
+        if name.startswith("!"):
+            disabled.add(name[1:])
+        else:
+            requested.add(name)
+
+    return requested, disabled
+
 
 def generate_dependency_graph(
-    packages_dir: Path, packages: set[str]
+    packages_dir: Path,
+    requested: set[str],
+    disabled: set[str] | None = None,
 ) -> dict[str, BasePackage]:
-    """This generates a dependency graph for listed packages.
+    """This generates a dependency graph for given packages.
 
     A node in the graph is a BasePackage object defined above, which maintains
     a list of dependencies and also dependents. That is, each node stores both
@@ -191,63 +334,57 @@ def generate_dependency_graph(
     BasePackage object. The function returns pkg_map, which contains all
     packages in the graph as its values.
 
-    Parameters:
-     - packages_dir: directory that contains packages
-     - packages: set of packages to build. If None, then all packages in
-       packages_dir are compiled.
+    Parameters
+    ----------
+    packages_dir
+        A directory that contains packages
+    requested
+        A set of packages to build
+    disabled
+        A set of packages to not build
 
-    Returns:
-     - pkg_map: dictionary mapping package names to BasePackage objects
+    Returns
+    -------
+    A dictionary mapping package names to BasePackage objects
     """
+
     pkg: BasePackage
     pkgname: str
     pkg_map: dict[str, BasePackage] = {}
 
-    if "*" in packages:
-        packages.discard("*")
-        packages.update(
-            str(x.name) for x in packages_dir.iterdir() if (x / "meta.yaml").is_file()
-        )
-
-    no_numpy_dependents = "no-numpy-dependents" in packages
-    if no_numpy_dependents:
-        packages.discard("no-numpy-dependents")
-
-    disabled_packages = set()
-    for pkgname in list(packages):
-        if pkgname.startswith("!"):
-            packages.discard(pkgname)
-            disabled_packages.add(pkgname[1:])
-
-    # Record which packages were requested. We need this information because
-    # some packages are reachable from the initial set but are only reachable
-    # via a disabled dependency.
-    # Example: scikit-learn needs joblib & scipy, scipy needs numpy but numpy disabled.
-    # We don't want to build joblib.
-    requested = set(packages)
+    if not disabled:
+        disabled = set()
 
     # Create dependency graph.
     # On first pass add all dependencies regardless of whether
     # disabled since it might happen because of a transitive dependency
     graph = {}
+    all_recipes = recipe.load_all_recipes(packages_dir)
+    no_numpy_dependents = "no-numpy-dependents" in requested
+    requested.discard("no-numpy-dependents")
+    packages = requested.copy()
+
     while packages:
         pkgname = packages.pop()
 
-        pkg = Package(packages_dir / pkgname)
+        if pkgname not in all_recipes:
+            raise ValueError(
+                f"No metadata file found for the following package: {pkgname}"
+            )
+
+        pkg = Package(packages_dir / pkgname, all_recipes[pkgname])
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
         for dep in pkg.dependencies:
             if pkg_map.get(dep) is None:
                 packages.add(dep)
 
-    validate_dependencies(pkg_map)
-
     # Traverse in build order (dependencies first then dependents)
     # Mark a package as disabled if they've either been explicitly disabled
     # or if any of its transitive dependencies were marked disabled.
     for pkgname in TopologicalSorter(graph).static_order():
         pkg = pkg_map[pkgname]
-        if pkgname in disabled_packages:
+        if pkgname in disabled:
             pkg.disabled = True
             continue
         if no_numpy_dependents and "numpy" in pkg.dependencies:
@@ -262,34 +399,25 @@ def generate_dependency_graph(
     # dependencies).
     # Locate the subset of packages that are transitive dependencies of packages
     # that are requested and not disabled.
+    requested_with_deps = requested.copy()
     for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
         pkg = pkg_map[pkgname]
         if pkg.disabled:
-            requested.discard(pkgname)
+            requested_with_deps.discard(pkgname)
             continue
 
-        if pkgname not in requested:
+        if pkgname not in requested_with_deps:
             continue
 
-        requested.update(pkg.dependencies)
+        requested_with_deps.update(pkg.dependencies)
         for dep in pkg.host_dependencies:
             pkg_map[dep].host_dependents.add(pkg.name)
 
-    # Check executables required to build packages
-    missing_executables = defaultdict(list)
-    for name in requested:
-        pkg = pkg_map[name]
-        for exe in find_missing_executables(pkg.executables_required):
-            missing_executables[exe].append(name)
+    pkg_map = {name: pkg_map[name] for name in requested_with_deps}
 
-    if missing_executables:
-        error_msg = "The following executables are missing in the host system:\n"
-        for executable, pkgs in missing_executables.items():
-            error_msg += f"- {executable} (required by: {', '.join(pkgs)})\n"
+    _validate_package_map(pkg_map)
 
-        raise RuntimeError(error_msg)
-
-    return {name: pkg_map[name] for name in requested}
+    return pkg_map
 
 
 def job_priority(pkg: BasePackage) -> int:
@@ -297,23 +425,6 @@ def job_priority(pkg: BasePackage) -> int:
         return 0
     else:
         return 1
-
-
-def print_with_progress_line(str: str, progress_line: str | None) -> None:
-    if not sys.stdout.isatty():
-        print(str)
-        return
-    twidth = os.get_terminal_size()[0]
-    print(" " * twidth, end="\r")
-    print(str)
-    if progress_line:
-        print(progress_line, end="\r")
-
-
-def get_progress_line(package_set: dict[str, None]) -> str | None:
-    if not package_set:
-        return None
-    return "In progress: " + ", ".join(package_set.keys())
 
 
 def format_name_list(l: list[str]) -> str:
@@ -364,9 +475,14 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     return needs_build
 
 
-def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) -> None:
+def build_from_graph(
+    pkg_map: dict[str, BasePackage],
+    build_args: BuildArgs,
+    n_jobs: int = 1,
+    force_rebuild: bool = False,
+) -> None:
     """
-    This builds packages in pkg_map in parallel, building at most args.n_jobs
+    This builds packages in pkg_map in parallel, building at most n_jobs
     packages at once.
 
     We have a priority queue of packages we are ready to build (build_queue),
@@ -374,7 +490,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     priority is based on the number of dependents --- we prefer to build
     packages with more dependents first.
 
-    To build packages in parallel, we use a thread pool of args.n_jobs many
+    To build packages in parallel, we use a thread pool of n_jobs many
     threads listening to build_queue. When the thread is free, it takes an
     item off build_queue and builds it. Once the package is built, it sends the
     package to the built_queue. The main thread listens to the built_queue and
@@ -386,7 +502,7 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     # dependents, because the ordering ought not to change after insertion.
     build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
-    if args.force_rebuild:
+    if force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
     else:
@@ -401,15 +517,19 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
         pkg_map[pkg_name].unbuilt_host_dependencies.difference_update(already_built)
 
     if already_built:
-        print(
-            f"The following packages are already built: {format_name_list(sorted(already_built))}\n"
+        logger.info(
+            "The following packages are already built: "
+            f"[bold]{format_name_list(sorted(already_built))}[/bold]"
         )
     if not needs_build:
-        print("All packages already built. Quitting.")
+        logger.success("All packages already built. Quitting.")
         return
-    print(f"Building the following packages: {format_name_list(sorted(needs_build))}")
 
-    t0 = perf_counter()
+    logger.info(
+        "Building the following packages: "
+        f"[bold]{format_name_list(sorted(needs_build))}[/bold]"
+    )
+
     for pkg_name in needs_build:
         pkg = pkg_map[pkg_name]
         if len(pkg.unbuilt_host_dependencies) == 0:
@@ -418,66 +538,65 @@ def build_from_graph(pkg_map: dict[str, BasePackage], args: argparse.Namespace) 
     built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
-    # Using dict keys for insertion order preservation
-    package_set: dict[str, None] = {}
+    progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
         nonlocal queue_idx
         while True:
             pkg = build_queue.get()[1]
+
             with thread_lock:
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
-            package_set[pkg.name] = None
-            msg = f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) building {pkg.name}"
-            print_with_progress_line(msg, get_progress_line(package_set))
+
+            pkg_status = progress_formatter.add_package(
+                name=pkg.name,
+                idx=pkg._queue_idx,
+                thread=n,
+                total_packages=len(needs_build),
+            )
             t0 = perf_counter()
+
             success = True
             try:
-                pkg.build(args)
+                pkg.build(build_args)
             except Exception as e:
                 built_queue.put(e)
                 success = False
                 return
             finally:
-                del package_set[pkg.name]
-                status = "built" if success else "failed"
-                msg = (
-                    f"[{pkg._queue_idx}/{len(needs_build)}] (thread {n}) "
-                    f"{status} {pkg.name} in {perf_counter() - t0:.2f} s"
-                )
-                print_with_progress_line(msg, get_progress_line(package_set))
+                pkg_status.finish(success, perf_counter() - t0)
+                progress_formatter.remove_package(pkg_status)
+
             built_queue.put(pkg)
             # Release the GIL so new packages get queued
             sleep(0.01)
 
-    for n in range(0, args.n_jobs):
+    for n in range(0, n_jobs):
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    while num_built < len(pkg_map):
-        match built_queue.get():
-            case BuildError() as err:
-                raise SystemExit(err.returncode)
-            case Exception() as err:
-                raise err
-            case a_package:
-                # MyPy should understand that this is a BasePackage
-                assert not isinstance(a_package, Exception)
-                pkg = a_package
+    with Live(progress_formatter, console=console_stdout):
+        while num_built < len(pkg_map):
+            match built_queue.get():
+                case BuildError() as err:
+                    raise SystemExit(err.returncode)
+                case Exception() as err:
+                    raise err
+                case a_package:
+                    # MyPy should understand that this is a BasePackage
+                    assert not isinstance(a_package, Exception)
+                    pkg = a_package
 
-        num_built += 1
+            num_built += 1
 
-        for _dependent in pkg.host_dependents:
-            dependent = pkg_map[_dependent]
-            dependent.unbuilt_host_dependencies.remove(pkg.name)
-            if len(dependent.unbuilt_host_dependencies) == 0:
-                build_queue.put((job_priority(dependent), dependent))
+            progress_formatter.update_progress_bar()
 
-    print(
-        "\n===================================================\n"
-        f"built all packages in {perf_counter() - t0:.2f} s"
-    )
+            for _dependent in pkg.host_dependents:
+                dependent = pkg_map[_dependent]
+                dependent.unbuilt_host_dependencies.remove(pkg.name)
+                if len(dependent.unbuilt_host_dependencies) == 0:
+                    build_queue.put((job_priority(dependent), dependent))
 
 
 def _generate_package_hash(full_path: Path) -> str:
@@ -503,6 +622,8 @@ def generate_packagedata(
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
+            "package_type": pkg.package_type,
+            "imports": [],
         }
 
         pkg_type = pkg.package_type
@@ -514,9 +635,11 @@ def generate_packagedata(
             )
 
         pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
-        pkg_entry["imports"] = (
-            pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
-        )
+
+        if pkg.package_type not in ("static_library", "shared_library"):
+            pkg_entry["imports"] = (
+                pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
+            )
 
         packages[name.lower()] = pkg_entry
 
@@ -579,12 +702,19 @@ def copy_packages_to_dist_dir(
 
 
 def build_packages(
-    packages_dir: Path, args: argparse.Namespace
+    packages_dir: Path,
+    targets: str,
+    build_args: BuildArgs,
+    n_jobs: int = 1,
+    force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
-    packages = common._parse_package_subset(args.only)
-    pkg_map = generate_dependency_graph(packages_dir, packages)
+    requested, disabled = _parse_package_query(targets)
+    requested_packages = recipe.load_recipes(packages_dir, requested)
+    pkg_map = generate_dependency_graph(
+        packages_dir, set(requested_packages.keys()), disabled
+    )
 
-    build_from_graph(pkg_map, args)
+    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -595,6 +725,28 @@ def build_packages(
         pkg.unvendored_tests = pkg.tests_path()
 
     return pkg_map
+
+
+def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
+    """
+    Copy build logs of packages to the log directory.
+    Parameters
+    ----------
+    pkg_map
+        A dictionary mapping package names to package objects.
+    log_dir
+        The directory to copy the logs to.
+    """
+
+    log_dir.mkdir(exist_ok=True, parents=True)
+    logger.info(f"Copying build logs to {log_dir}")
+
+    for pkg in pkg_map.values():
+        log_file = pkg.pkgdir / "build.log"
+        if log_file.exists():
+            shutil.copy(log_file, log_dir / f"{pkg.name}.log")
+        else:
+            logger.warning(f"Warning: {pkg.name} has no build log")
 
 
 def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
@@ -612,10 +764,15 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
     """
 
     output_dir.mkdir(exist_ok=True, parents=True)
-    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
-    package_data = generate_repodata(output_dir, pkg_map)
 
-    with open(output_dir / "repodata.json", "w") as fd:
+    logger.info(f"Copying built packages to {output_dir}")
+    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+
+    repodata_path = output_dir / "repodata.json"
+    logger.info(f"Writing repodata.json to {repodata_path}")
+
+    package_data = generate_repodata(output_dir, pkg_map)
+    with repodata_path.open("w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 
@@ -708,19 +865,19 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     return parser
 
 
-def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
-    args = copy.deepcopy(args)
+def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
+    args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
+        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
+        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")
+        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")
+        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")
+        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
 
     return args
 
@@ -728,8 +885,33 @@ def set_default_args(args: argparse.Namespace) -> argparse.Namespace:
 def main(args: argparse.Namespace) -> None:
     packages_dir = Path(args.dir[0]).resolve()
     outputdir = Path(args.output[0]).resolve()
-    args = set_default_args(args)
-    pkg_map = build_packages(packages_dir, args)
+    targets = args.only
+    n_jobs = args.n_jobs
+    log_dir = Path(args.log_dir) if args.log_dir else None
+    force_rebuild = args.force_rebuild
+
+    build_args = BuildArgs(
+        pkgname="",
+        cflags=args.cflags,
+        cxxflags=args.cxxflags,
+        ldflags=args.ldflags,
+        target_install_dir=args.target_install_dir,
+        host_install_dir=args.host_install_dir,
+    )
+
+    build_args = set_default_build_args(build_args)
+
+    pkg_map = build_packages(
+        packages_dir,
+        targets,
+        build_args=build_args,
+        n_jobs=n_jobs,
+        force_rebuild=force_rebuild,
+    )
+
+    if log_dir:
+        copy_logs(pkg_map, log_dir)
+
     install_packages(pkg_map, outputdir)
 
 

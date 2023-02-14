@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-PYTHON_CFLAGS=$(CFLAGS_BASE)
+PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
@@ -22,6 +22,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		sed -i '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ \
@@ -59,7 +60,6 @@ $(BUILD)/.patched: $(TARBALL)
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
 
-
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
 	git clone $(LIBFFIREPO) --depth 1 --branch $(LIBFFI_TAG) $(FFIBUILD)
@@ -76,10 +76,9 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
-	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure \
+		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
@@ -92,15 +91,15 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
+			  --with-build-python=$$(which python3.11) \
 	)
 
 
-$(BUILD)/Modules/Setup.local : Setup.local
+$(BUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
-	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
 		cd $(BUILD); \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \

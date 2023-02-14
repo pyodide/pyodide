@@ -1,4 +1,4 @@
-import typer  # type: ignore[import]
+import typer
 
 from ..common import get_make_environment_vars
 from ..out_of_tree.utils import initialize_pyodide_root
@@ -19,7 +19,7 @@ def callback() -> None:
 
 
 def _get_configs() -> dict[str, str]:
-    initialize_pyodide_root()
+    initialize_pyodide_root(quiet=True)
 
     configs: dict[str, str] = get_make_environment_vars()
 

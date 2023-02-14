@@ -3,64 +3,16 @@ import zipfile
 import pytest
 
 from pyodide_build.common import (
-    ALWAYS_PACKAGES,
-    CORE_PACKAGES,
-    CORE_SCIPY_PACKAGES,
-    _parse_package_subset,
+    environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
     get_make_environment_vars,
     get_make_flag,
+    get_num_cores,
     parse_top_level_import_name,
     platform,
     search_pyodide_root,
 )
-
-
-def test_parse_package_subset():
-    assert (
-        _parse_package_subset("numpy,pandas")
-        == {
-            "numpy",
-            "pandas",
-        }
-        | ALWAYS_PACKAGES
-    )
-
-    # duplicates are removed
-    assert (
-        _parse_package_subset("numpy,numpy")
-        == {
-            "numpy",
-        }
-        | ALWAYS_PACKAGES
-    )
-
-    # no empty package name included, spaces are handled
-    assert (
-        _parse_package_subset("x,  a, b, c   ,,, d,,")
-        == {
-            "x",
-            "a",
-            "b",
-            "c",
-            "d",
-        }
-        | ALWAYS_PACKAGES
-    )
-
-    assert _parse_package_subset("core") == CORE_PACKAGES | ALWAYS_PACKAGES
-    # by default core packages are built
-    assert _parse_package_subset(None) == _parse_package_subset("core")
-
-    assert (
-        _parse_package_subset("min-scipy-stack")
-        == CORE_SCIPY_PACKAGES | CORE_PACKAGES | ALWAYS_PACKAGES
-    )
-    # reserved key words can be combined with other packages
-    assert _parse_package_subset("core, unknown") == _parse_package_subset("core") | {
-        "unknown"
-    }
 
 
 def test_get_make_flag():
@@ -217,3 +169,36 @@ def test_find_missing_executables(monkeypatch):
     with monkeypatch.context() as m:
         m.setattr(shutil, "which", lambda exe: "/bin")
         assert [] == find_missing_executables(pkgs)
+
+
+def test_environment_var_substitution(monkeypatch):
+    monkeypatch.setenv("PYODIDE_BASE", "pyodide_build_dir")
+    monkeypatch.setenv("BOB", "Robert Mc Roberts")
+    monkeypatch.setenv("FRED", "Frederick F. Freddertson Esq.")
+    monkeypatch.setenv("JIM", "James Ignatius Morrison:Jimmy")
+    args = environment_substitute_args(
+        {
+            "ldflags": '"-l$(PYODIDE_BASE)"',
+            "cxxflags": "$(BOB)",
+            "cflags": "$(FRED)",
+        }
+    )
+    assert (
+        args["cflags"] == "Frederick F. Freddertson Esq."
+        and args["cxxflags"] == "Robert Mc Roberts"
+        and args["ldflags"] == '"-lpyodide_build_dir"'
+    )
+
+
+def test_get_num_cores(monkeypatch):
+    import os
+
+    with monkeypatch.context() as m:
+        m.setattr(os, "cpu_count", lambda: 2)
+
+        assert get_num_cores() == 2
+
+    with monkeypatch.context() as m:
+        m.setattr(os, "cpu_count", lambda: None)
+
+        assert get_num_cores() == 1

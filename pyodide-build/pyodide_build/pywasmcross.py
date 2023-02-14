@@ -51,110 +51,28 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
+import dataclasses
 import shutil
 import subprocess
-from collections import namedtuple
-from collections.abc import Iterable, Iterator, MutableMapping
-from contextlib import contextmanager
-from tempfile import TemporaryDirectory
-from typing import Any, Literal, NoReturn
-
-from pyodide_build import common
-from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output, scipy_fixes
-
-ReplayArgs = namedtuple(
-    "ReplayArgs",
-    [
-        "pkgname",
-        "cflags",
-        "cxxflags",
-        "ldflags",
-        "target_install_dir",
-        "builddir",
-        "pythoninclude",
-        "exports",
-    ],
-)
+from collections.abc import Iterable, Iterator
+from typing import Literal, NoReturn
 
 
-def make_command_wrapper_symlinks(
-    symlink_dir: Path, env: MutableMapping[str, str]
-) -> None:
+@dataclasses.dataclass(eq=False, order=False, kw_only=True)
+class BuildArgs:
     """
-    Makes sure all the symlinks that make this script look like a compiler
-    exist.
+    Common arguments for building a package.
     """
-    exec_path = Path(__file__).resolve()
-    for symlink in SYMLINKS:
-        symlink_path = symlink_dir / symlink
-        if os.path.lexists(symlink_path) and not symlink_path.exists():
-            # remove broken symlink so it can be re-created
-            symlink_path.unlink()
-        try:
-            pywasmcross_exe = shutil.which("_pywasmcross")
-            if pywasmcross_exe:
-                symlink_path.symlink_to(pywasmcross_exe)
-            else:
-                symlink_path.symlink_to(exec_path)
-        except FileExistsError:
-            pass
-        if symlink == "c++":
-            var = "CXX"
-        else:
-            var = symlink.upper()
-        env[var] = symlink
 
-
-# Also defined in pyodide_build.io (though avoiding to import dependent modules here)
-_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
-
-
-@contextmanager
-def get_build_env(
-    env: dict[str, str],
-    *,
-    pkgname: str,
-    cflags: str,
-    cxxflags: str,
-    ldflags: str,
-    target_install_dir: str,
-    exports: _BuildSpecExports | list[_BuildSpecExports],
-) -> Iterator[dict[str, str]]:
-    kwargs = dict(
-        pkgname=pkgname,
-        cflags=cflags,
-        cxxflags=cxxflags,
-        ldflags=ldflags,
-        target_install_dir=target_install_dir,
-    )
-
-    args = environment_substitute_args(kwargs, env)
-    args["builddir"] = str(Path(".").absolute())
-    args["exports"] = exports
-
-    with TemporaryDirectory() as symlink_dir_str:
-        symlink_dir = Path(symlink_dir_str)
-        env = dict(env)
-        make_command_wrapper_symlinks(symlink_dir, env)
-
-        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
-        args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
-        args["orig__name__"] = __name__
-        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
-        args["PATH"] = env["PATH"]
-
-        pywasmcross_env = json.dumps(args)
-        # Store into environment variable and to disk. In most cases we will
-        # load from the environment variable but if some other tool filters
-        # environment variables we will load from disk instead.
-        env["PYWASMCROSS_ARGS"] = pywasmcross_env
-        (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
-
-        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
-        env["_PYTHON_HOST_PLATFORM"] = common.platform()
-        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-        env["PYTHONPATH"] = str(sysconfig_dir)
-        yield env
+    pkgname: str = ""
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
+    target_install_dir: str = ""  # The path to the target Python installation
+    host_install_dir: str = ""  # Directory for installing built host packages.
+    builddir: str = ""  # The path to run pypa/build
+    pythoninclude: str = ""
+    exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -179,6 +97,9 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gcc', 'test.c']
     """
+
+    from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output
+
     new_args = ["gcc"]
     found_source = False
     for arg in args[1:]:
@@ -320,6 +241,7 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
                 "--version-script=",
                 "-R/",  # wasm-ld does not accept -R (runtime libraries)
                 "-R.",  # wasm-ld does not accept -R (runtime libraries)
+                "--exclude-libs=",
             )
         ):
             continue
@@ -366,6 +288,8 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         # gcc flag that clang does not support
         "-Bsymbolic-functions",
         '-fno-second-underscore',
+        '-fstack-protector',  # doesn't work?
+        '-fno-strict-overflow',  # warning: argument unused during compilation
     ]:
         return None
     # fmt: on
@@ -543,7 +467,7 @@ def get_export_flags(
 
 
 def handle_command_generate_args(
-    line: list[str], args: ReplayArgs, is_link_command: bool
+    line: list[str], build_args: BuildArgs, is_link_command: bool
 ) -> list[str]:
     """
     A helper command for `handle_command` that generates the new arguments for
@@ -557,7 +481,7 @@ def handle_command_generate_args(
     line The original compilation command as a list e.g., ["gcc", "-c",
         "input.c", "-o", "output.c"]
 
-    args The arguments that pywasmcross was invoked with
+    build_args The arguments that pywasmcross was invoked with
 
     is_link_command Is this a linker invocation?
 
@@ -595,12 +519,20 @@ def handle_command_generate_args(
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
     elif cmd == "cmake":
-        # If it is a build/install command, we don't do anything.
-        if "--build" in line or "--install" in line:
+        # If it is a build/install command, or running a script, we don't do anything.
+        if "--build" in line or "--install" in line or "-P" in line:
             return line
 
         flags = get_cmake_compiler_flags()
-        line[:1] = ["emcmake", "cmake", *flags]
+        line[:1] = [
+            "emcmake",
+            "cmake",
+            *flags,
+            # Since we create a temporary directory and install compiler symlinks every time,
+            # CMakeCache.txt will contain invalid paths to the compiler when re-running,
+            # so we need to tell CMake to ignore the existing cache and build from scratch.
+            "--fresh",
+        ]
         return line
     elif cmd == "ranlib":
         line[0] = "emranlib"
@@ -625,15 +557,17 @@ def handle_command_generate_args(
     )
 
     if is_link_command:
-        new_args.extend(args.ldflags.split())
-        new_args.extend(get_export_flags(line, args.exports))
+        new_args.extend(build_args.ldflags.split())
+        new_args.extend(get_export_flags(line, build_args.exports))
 
     if "-c" in line:
         if new_args[0] == "emcc":
-            new_args.extend(args.cflags.split())
+            new_args.extend(build_args.cflags.split())
         elif new_args[0] == "em++":
-            new_args.extend(args.cflags.split() + args.cxxflags.split())
-        new_args.extend(["-I", args.pythoninclude])
+            new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
+
+        if build_args.pythoninclude:
+            new_args.extend(["-I", build_args.pythoninclude])
 
     optflags_valid = [f"-O{tok}" for tok in "01234sz"]
     optflag = None
@@ -669,7 +603,7 @@ def handle_command_generate_args(
         if arg.startswith("-l"):
             result = replay_genargs_handle_dashl(arg, used_libs)
         elif arg.startswith("-I"):
-            result = replay_genargs_handle_dashI(arg, args.target_install_dir)
+            result = replay_genargs_handle_dashI(arg, build_args.target_install_dir)
         elif arg.startswith("-Wl"):
             result = replay_genargs_handle_linker_opts(arg)
         else:
@@ -683,7 +617,7 @@ def handle_command_generate_args(
 
 def handle_command(
     line: list[str],
-    args: ReplayArgs,
+    build_args: BuildArgs,
 ) -> NoReturn:
     """Handle a compilation command. Exit with an appropriate exit code when done.
 
@@ -691,9 +625,8 @@ def handle_command(
     ----------
     line : iterable
        an iterable with the compilation arguments
-    args : {object, namedtuple}
-       an container with additional compilation options, in particular
-       containing ``args.cflags``, ``args.cxxflags``, and ``args.ldflags``
+    build_args : BuildArgs
+       a container with additional compilation options
     """
     # some libraries have different names on wasm e.g. png16 = png
     is_link_cmd = get_library_output(line) is not None
@@ -706,9 +639,11 @@ def handle_command(
             sys.exit(0)
         line = tmp
 
-    new_args = handle_command_generate_args(line, args, is_link_cmd)
+    new_args = handle_command_generate_args(line, build_args, is_link_cmd)
 
-    if args.pkgname == "scipy":
+    if build_args.pkgname == "scipy":
+        from pyodide_build._f2c_fixes import scipy_fixes
+
         scipy_fixes(new_args)
 
     returncode = subprocess.run(new_args).returncode
@@ -716,26 +651,12 @@ def handle_command(
     sys.exit(returncode)
 
 
-def environment_substitute_args(
-    args: dict[str, str], env: dict[str, str] | None = None
-) -> dict[str, Any]:
-    if env is None:
-        env = dict(os.environ)
-    subbed_args = {}
-    for arg, value in args.items():
-        if isinstance(value, str):
-            for e_name, e_value in env.items():
-                value = value.replace(f"$({e_name})", e_value)
-        subbed_args[arg] = value
-    return subbed_args
-
-
 def compiler_main():
-    replay_args = ReplayArgs(**PYWASMCROSS_ARGS)
+    build_args = BuildArgs(**PYWASMCROSS_ARGS)
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename
-    sys.exit(handle_command(args, replay_args))
+    sys.exit(handle_command(args, build_args))
 
 
 if IS_COMPILER_INVOCATION:

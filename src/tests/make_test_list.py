@@ -3,21 +3,15 @@ Generate a list of test modules in the CPython distribution.
 """
 
 import os
+from pathlib import Path
+from sys import version
+from typing import Any
 
 import ruamel.yaml
 
 yaml = ruamel.yaml.YAML()
-
-from pathlib import Path
-from sys import version_info
-from typing import Any
-
 PYODIDE_ROOT = Path(__file__).parents[2]
-LIB_DIR = (
-    PYODIDE_ROOT / "cpython/installs"
-    f"/python-{version_info.major}.{version_info.minor}.{version_info.micro}"
-    f"/lib/python{version_info.major}.{version_info.minor}"
-)
+LIB_DIR = PYODIDE_ROOT / "cpython/build" f"/Python-{version.split(' ')[0]}" f"/Lib/"
 
 PYTHON_TESTS_YAML = Path(__file__).parent / "python_tests.yaml"
 
@@ -37,13 +31,13 @@ def collect_tests(base_dir: Path) -> set[str]:
     # collection.
     tests = set()
 
-    for root, _dirs, files in os.walk(base_dir):
+    for root, _, files in os.walk(base_dir):
         root = str(Path(root).relative_to(base_dir))
 
-        if str(root) == ".":
+        if root == ".":
             root = ""
         else:
-            root = ".".join(str(root).split("/")) + "."
+            root = ".".join(root.split("/")) + "."
 
         for filename in files:
             p = Path(filename)
@@ -53,7 +47,7 @@ def collect_tests(base_dir: Path) -> set[str]:
     return tests
 
 
-def get_test_name(test: Any) -> str:
+def get_test_name(test: str | dict[str, Any]) -> str:
     if isinstance(test, dict):
         name = next(iter(test.keys()))
     else:
@@ -62,12 +56,14 @@ def get_test_name(test: Any) -> str:
 
 
 def update_tests(doc_group, tests):
-    for idx, test in enumerate(list(doc_group)):
+    for idx, test in reversed(list(enumerate(doc_group))):
         if get_test_name(test) not in tests:
+            print("removing", test)
             del doc_group[idx]
 
     for idx, test in enumerate(sorted(tests)):
         if idx == len(doc_group) or get_test_name(doc_group[idx]) != test:
+            print("adding", test)
             doc_group.insert(idx, test)
 
 

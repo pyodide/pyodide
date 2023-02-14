@@ -382,10 +382,10 @@ def test_call_pyproxy_set_global(selenium):
     selenium.run_js(
         """
         self.setGlobal = function(x){
-            if(pyodide.isPyProxy(self.myGlobal)){
+            if(self.myGlobal instanceof pyodide.ffi.PyProxy){
                 self.myGlobal.destroy();
             }
-            if(pyodide.isPyProxy(x)){
+            if(x instanceof pyodide.ffi.PyProxy){
                 x = x.copy();
             }
             self.myGlobal = x;
@@ -404,10 +404,10 @@ def test_call_pyproxy_set_global(selenium):
         """
         self.setGlobal = async function(x){
             await sleep(5);
-            if(pyodide.isPyProxy(self.myGlobal)){
+            if(self.myGlobal instanceof pyodide.ffi.PyProxy){
                 self.myGlobal.destroy();
             }
-            if(pyodide.isPyProxy(x)){
+            if(x instanceof pyodide.ffi.PyProxy){
                 x = x.copy();
             }
             self.myGlobal = x;
@@ -1179,6 +1179,18 @@ def test_memory_leaks(selenium):
         `);
         """
     )
+
+
+@run_in_pyodide
+def test_raise_js_error(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    e = run_js("new Error('hi')")
+    with pytest.raises(JsException):
+        raise e
 
 
 @run_in_pyodide

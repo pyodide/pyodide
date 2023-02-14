@@ -1,6 +1,8 @@
 package:
   name: distutils
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - distutils
 build:

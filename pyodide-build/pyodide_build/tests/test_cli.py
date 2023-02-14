@@ -1,12 +1,17 @@
+# flake8: noqa
+
+import os
 import shutil
 from pathlib import Path
 
 import pytest
-import typer  # type: ignore[import]
+import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build_recipes, config, skeleton
+from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+
+from .fixture import temp_python_lib
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -57,20 +62,19 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_recipe(selenium, tmp_path, monkeypatch, request):
+def test_build_recipe(selenium, tmp_path):
     # TODO: Run this test without building Pyodide
 
     output_dir = tmp_path / "dist"
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     pkgs = {
+        "pkg_test_tag_always": {},
         "pkg_test_graph1": {"pkg_test_graph2"},
         "pkg_test_graph3": {},
     }
 
     pkgs_to_build = pkgs.keys() | {p for v in pkgs.values() for p in v}
-
-    monkeypatch.setattr(common, "ALWAYS_PACKAGES", {})
 
     for build_dir in recipe_dir.rglob("build"):
         shutil.rmtree(build_dir)
@@ -97,6 +101,150 @@ def test_build_recipe(selenium, tmp_path, monkeypatch, request):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == len(pkgs_to_build)
+
+
+def test_build_recipe_no_deps(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkgs_to_build = ["pkg_test_graph1", "pkg_test_graph3"]
+    result = runner.invoke(
+        app,
+        [
+            *pkgs_to_build,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+
+    for pkg in pkgs_to_build:
+        assert f"Succeeded building package {pkg}" in result.stdout
+
+    for pkg in pkgs_to_build:
+        dist_dir = recipe_dir / pkg / "dist"
+        assert len(list(dist_dir.glob("*.whl"))) == 1
+
+
+def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkg = "pkg_test_graph1"
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Creating virtualenv isolated environment" not in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+            "--force-rebuild",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Creating virtualenv isolated environment" in result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+
+def test_build_recipe_no_deps_continue(selenium, tmp_path):
+    # TODO: Run this test without building Pyodide
+
+    recipe_dir = Path(__file__).parent / "_test_recipes"
+
+    for build_dir in recipe_dir.rglob("build"):
+        shutil.rmtree(build_dir)
+
+    app = typer.Typer()
+    app.command()(build_recipes.recipe)
+
+    pkg = "pkg_test_graph1"
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert f"Succeeded building package {pkg}" in result.stdout
+
+    for wheels in (recipe_dir / pkg / "build").rglob("*.whl"):
+        wheels.unlink()
+
+    pyproject_toml = next((recipe_dir / pkg / "build").rglob("pyproject.toml"))
+
+    # Modify some metadata and check it is applied when rebuilt with --continue flag
+    version = "99.99.99"
+    with open(pyproject_toml, encoding="utf-8") as f:
+        pyproject_data = f.read()
+
+    pyproject_data = pyproject_data.replace(
+        'version = "1.0.0"', f'version = "{version}"'
+    )
+
+    with open(pyproject_toml, "w", encoding="utf-8") as f:
+        f.write(pyproject_data)
+
+    result = runner.invoke(
+        app,
+        [
+            pkg,
+            "--recipe-dir",
+            recipe_dir,
+            "--no-deps",
+            "--continue",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert f"Succeeded building package {pkg}" in result.stdout
+    assert f"{pkg}-{version}-py3-none-any.whl" in result.stdout
 
 
 def test_config_list():
@@ -127,3 +275,56 @@ def test_config_get(cfg_name, env_var):
     )
 
     assert result.stdout.strip() == common.get_make_flag(env_var)
+
+
+def test_create_zipfile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.py" in zf.namelist()
+        assert "module2.py" in zf.namelist()
+
+
+def test_create_zipfile_compile(temp_python_lib, tmp_path):
+    from zipfile import ZipFile
+
+    output = tmp_path / "python.zip"
+
+    app = typer.Typer()
+    app.command()(create_zipfile.main)
+
+    result = runner.invoke(
+        app,
+        [
+            str(temp_python_lib),
+            "--output",
+            str(output),
+            "--pycompile",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Zip file created" in result.stdout
+    assert output.exists()
+
+    with ZipFile(output) as zf:
+        assert "module1.pyc" in zf.namelist()
+        assert "module2.pyc" in zf.namelist()

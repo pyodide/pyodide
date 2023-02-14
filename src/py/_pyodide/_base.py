@@ -15,14 +15,13 @@ from types import CodeType
 from typing import Any, Literal
 
 
-def should_quiet(source: str) -> bool:
+def should_quiet(source: str, /) -> bool:
     """
     Should we suppress output?
 
     Returns
     -------
-
-    ``True`` if the last nonwhitespace character of ``code`` is a semicolon.
+        ``True`` if the last nonwhitespace character of ``source`` is a semicolon.
 
     Examples
     --------
@@ -170,8 +169,8 @@ class CodeRunner:
 
     It is primarily intended for REPLs and other sophisticated consumers that
     may wish to add their own AST transformations, separately signal to the user
-    when parsing is complete, etc. The simpler :any:`eval_code` and
-    :any:`eval_code_async` apis should be preferred when their flexibility
+    when parsing is complete, etc. The simpler :py:func:`eval_code` and
+    :py:func:`eval_code_async` apis should be preferred when their flexibility
     suffices.
 
     Parameters
@@ -182,14 +181,13 @@ class CodeRunner:
 
     return_mode :
 
-        Specifies what should be returned, must be one of ``'last_expr'``,
-        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
-        raised. ``'last_expr'`` by default.
+        Specifies what should be returned. The options are:
 
-        * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last
-          assignment.
-        * ``'none'`` -- always return ``None``.
+        :'last_expr': return the last expression
+        :'last_expr_or_assign': return the last expression or the last
+                                assignment.
+
+        :'none': always return ``None``.
 
     quiet_trailing_semicolon :
 
@@ -213,24 +211,20 @@ class CodeRunner:
 
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
-
-
-    Attributes:
-
-        ast (ast.Module):
-
-            The ast from parsing ``source``. If you wish to do an ast transform,
-            modify this variable before calling :any:`CodeRunner.compile`.
-
-        code (CodeType):
-
-            Once you call :any:`CodeRunner.compile` the compiled code will
-            be available in the code field. You can modify this variable
-            before calling :any:`CodeRunner.run` to do a code transform.
     """
 
     ast: ast.Module
+    """
+    The ast from parsing ``source``. If you wish to do an ast transform,
+    modify this variable before calling :py:meth:`CodeRunner.compile`.
+    """
+
     code: CodeType | None
+    """
+    Once you call :py:meth:`CodeRunner.compile` the compiled code will
+    be available in the code field. You can modify this variable
+    before calling :py:meth:`CodeRunner.run` to do a code transform.
+    """
 
     def __init__(
         self,
@@ -279,7 +273,7 @@ class CodeRunner:
         """Executes ``self.code``.
 
         Can only be used after calling compile. The code may not use top level
-        await, use :any:`CodeRunner.run_async` for code that uses top level
+        await, use :py:meth:`CodeRunner.run_async` for code that uses top level
         await.
 
         Parameters
@@ -287,12 +281,12 @@ class CodeRunner:
         globals :
 
             The global scope in which to execute code. This is used as the ``globals``
-            parameter for :any:`exec`. If ``globals`` is absent, a new empty dictionary is used.
+            parameter for :py:func:`exec`. If ``globals`` is absent, a new empty dictionary is used.
 
         locals :
 
             The local scope in which to execute code. This is used as the ``locals``
-            parameter for :any:`exec`. If ``locals`` is absent, the value of ``globals`` is
+            parameter for :py:func:`exec`. If ``locals`` is absent, the value of ``globals`` is
             used.
 
         Returns
@@ -327,7 +321,7 @@ class CodeRunner:
     ) -> Any:
         """Runs ``self.code`` which may use top level await.
 
-        Can only be used after calling :any:`CodeRunner.compile`. If
+        Can only be used after calling :py:meth:`CodeRunner.compile`. If
         ``self.code`` uses top level await, automatically awaits the resulting
         coroutine.
 
@@ -336,12 +330,12 @@ class CodeRunner:
         globals :
 
             The global scope in which to execute code. This is used as the ``globals``
-            parameter for :any:`exec`. If ``globals`` is absent, a new empty dictionary is used.
+            parameter for :py:func:`exec`. If ``globals`` is absent, a new empty dictionary is used.
 
         locals :
 
             The local scope in which to execute code. This is used as the
-            ``locals`` parameter for :any:`exec`. If ``locals`` is absent, the
+            ``locals`` parameter for :py:func:`exec`. If ``locals`` is absent, the
             value of ``globals`` is used.
 
         Returns
@@ -386,25 +380,24 @@ def eval_code(
     globals :
 
         The global scope in which to execute code. This is used as the
-        ``globals`` parameter for :any:`exec`. If ``globals`` is absent, a new
+        ``globals`` parameter for :py:func:`exec`. If ``globals`` is absent, a new
         empty dictionary is used.
 
     locals :
 
         The local scope in which to execute code. This is used as the ``locals``
-        parameter for :any:`exec`. If ``locals`` is absent, the value of
+        parameter for :py:func:`exec`. If ``locals`` is absent, the value of
         ``globals`` is used.
 
     return_mode :
 
-        Specifies what should be returned, must be one of ``'last_expr'``,
-        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
-        raised. ``'last_expr'`` by default.
+        Specifies what should be returned. The options are:
 
-        * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last
-          assignment.
-        * ``'none'`` -- always return ``None``.
+        :'last_expr': return the last expression
+        :'last_expr_or_assign': return the last expression or the last
+                                assignment.
+
+        :'none': always return ``None``.
 
     quiet_trailing_semicolon :
 
@@ -425,11 +418,10 @@ def eval_code(
 
     Returns
     -------
-
-    If the last nonwhitespace character of ``source`` is a semicolon, return
-    ``None``. If the last statement is an expression, return the result of the
-    expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
-    parameters to modify this default behavior.
+        If the last nonwhitespace character of ``source`` is a semicolon, return
+        ``None``. If the last statement is an expression, return the result of the
+        expression. Use the ``return_mode`` and ``quiet_trailing_semicolon``
+        parameters to modify this default behavior.
 
     Examples
     --------
@@ -481,7 +473,7 @@ async def eval_code_async(
 ) -> Any:
     """Runs a code string asynchronously.
 
-    Uses :any:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT` to compile the code.
+    Uses :py:data:`ast.PyCF_ALLOW_TOP_LEVEL_AWAIT` to compile the code.
 
     Parameters
     ----------
@@ -492,25 +484,24 @@ async def eval_code_async(
     globals :
 
         The global scope in which to execute code. This is used as the
-        ``globals`` parameter for :any:`exec`. If ``globals`` is absent, a new
+        ``globals`` parameter for :py:func:`exec`. If ``globals`` is absent, a new
         empty dictionary is used.
 
     locals :
 
         The local scope in which to execute code. This is used as the ``locals``
-        parameter for :any:`exec`. If ``locals`` is absent, the value of
+        parameter for :py:func:`exec`. If ``locals`` is absent, the value of
         ``globals`` is used.
 
     return_mode :
 
-        Specifies what should be returned, must be one of ``'last_expr'``,
-        ``'last_expr_or_assign'`` or ``'none'``. On other values an exception is
-        raised. ``'last_expr'`` by default.
+        Specifies what should be returned. The options are:
 
-        * ``'last_expr'`` -- return the last expression
-        * ``'last_expr_or_assign'`` -- return the last expression or the last
-          assignment.
-        * ``'none'`` -- always return ``None``.
+        :'last_expr': return the last expression
+        :'last_expr_or_assign': return the last expression or the last
+                                assignment.
+
+        :'none': always return ``None``.
 
     quiet_trailing_semicolon :
 

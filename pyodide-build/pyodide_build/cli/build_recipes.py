@@ -1,14 +1,12 @@
-import argparse
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
-from .. import buildall
+from .. import buildall, buildpkg, pywasmcross
+from ..common import get_num_cores, init_environment
+from ..logger import logger
 
-app = typer.Typer()
 
-
-@app.command()  # type: ignore[misc]
 def recipe(
     packages: list[str] = typer.Argument(
         ..., help="Packages to build, or * for all packages in recipe directory"
@@ -17,6 +15,9 @@ def recipe(
         None,
         help="The directory containing the recipe of packages. "
         "If not specified, the default is `./packages`",
+    ),
+    no_deps: bool = typer.Option(
+        False, help="If true, do not build dependencies of the specified packages. "
     ),
     install: bool = typer.Option(
         False,
@@ -50,30 +51,62 @@ def recipe(
         False,
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
     ),
-    n_jobs: int = typer.Option(4, help="Number of packages to build in parallel"),
-    ctx: typer.Context = typer.Context,
+    continue_: bool = typer.Option(
+        False,
+        "--continue",
+        help="Continue a build from the middle. For debugging. Implies '--force-rebuild'",
+    ),
+    n_jobs: int = typer.Option(
+        None,
+        help="Number of packages to build in parallel  (default: # of cores in the system)",
+    ),
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
     root = Path.cwd()
-    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
-    install_dir_ = root / "dist" if not install_dir else Path(install_dir)
+    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
+    install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
+    log_dir_ = None if not log_dir else Path(log_dir).resolve()
+    n_jobs = n_jobs or get_num_cores()
 
-    # Note: to make minimal changes to the existing pyodide-build entrypoint,
-    #       keep arguments of buildall unghanged.
-    # TODO: refactor this when we remove pyodide-build entrypoint.
-    args = argparse.Namespace(**ctx.params)
-    args.dir = args.recipe_dir
+    if not recipe_dir_.is_dir():
+        raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")
 
-    if len(args.packages) == 1 and "," in args.packages[0]:
-        # Handle packages passed with old comma separated syntax.
-        # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
-        args.only = args.packages[0].replace(" ", "")
+    init_environment()
+
+    build_args = pywasmcross.BuildArgs(
+        cflags=cflags,
+        cxxflags=cxxflags,
+        ldflags=ldflags,
+        target_install_dir=target_install_dir,
+        host_install_dir=host_install_dir,
+    )
+    build_args = buildall.set_default_build_args(build_args)
+
+    if no_deps:
+        if install or log_dir_:
+            logger.warning(
+                "WARNING: when --no-deps is set, --install and --log-dir parameters are ignored",
+            )
+
+        # TODO: use multiprocessing?
+        for package in packages:
+            package_path = recipe_dir_ / package
+            buildpkg.build_package(package_path, build_args, force_rebuild, continue_)
+
     else:
-        args.only = ",".join(args.packages)
+        if len(packages) == 1 and "," in packages[0]:
+            # Handle packages passed with old comma separated syntax.
+            # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
+            targets = packages[0].replace(" ", "")
+        else:
+            targets = ",".join(packages)
 
-    args = buildall.set_default_args(args)
+        pkg_map = buildall.build_packages(
+            recipe_dir_, targets, build_args, n_jobs, force_rebuild
+        )
 
-    pkg_map = buildall.build_packages(recipe_dir_, args)
+        if log_dir_:
+            buildall.copy_logs(pkg_map, log_dir_)
 
-    if install:
-        buildall.install_packages(pkg_map, install_dir_)
+        if install:
+            buildall.install_packages(pkg_map, install_dir_)

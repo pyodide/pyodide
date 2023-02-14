@@ -33,6 +33,7 @@
 
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
   that runs entirely in the browser, using Pyodide.
+- [Flet](https://flet.dev) is a UI framework for your Pyodide apps based on Flutter.
 
 ## Other projects
 
@@ -41,3 +42,4 @@
   It uses Pyodide to execute Python code.
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
+- [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.

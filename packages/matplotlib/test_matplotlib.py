@@ -546,7 +546,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         bars = ax.bar(theta, radii, width=width, bottom=0.0)
 
         # Use custom colors and opacity
-        for r, bar in zip(radii, bars):
+        for r, bar in zip(radii, bars, strict=True):
             bar.set_facecolor(plt.cm.viridis(r / 10.0))
             bar.set_alpha(0.5)
 
