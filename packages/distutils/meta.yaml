@@ -8,8 +8,6 @@ package:
 build:
   type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONLIB
 
     tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -

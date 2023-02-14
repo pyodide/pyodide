@@ -8,8 +8,6 @@ package:
 build:
   type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONBUILD
 
     cp Lib/_pydecimal.py $DISTDIR
