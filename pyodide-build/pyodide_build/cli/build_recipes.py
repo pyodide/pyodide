@@ -2,21 +2,10 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, buildpkg, common, pywasmcross
-from ..common import init_environment
+from .. import buildall, buildpkg, pywasmcross
+from ..common import get_num_cores, init_environment
 from ..logger import logger
 from ..out_of_tree.utils import initialize_pyodide_root
-
-
-def _get_num_cores() -> int:
-    import multiprocessing
-
-    try:
-        cpu_count = multiprocessing.cpu_count()
-    except Exception:
-        cpu_count = 1
-
-    return cpu_count
 
 
 def recipe(
@@ -83,7 +72,7 @@ def recipe(
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
     log_dir_ = None if not log_dir else Path(log_dir).resolve()
-    n_jobs = n_jobs or _get_num_cores()
+    n_jobs = n_jobs or get_num_cores()
 
     if not recipe_dir_.is_dir():
         raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")

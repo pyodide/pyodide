@@ -74,17 +74,6 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
         )
     )
-    # Some packages (numcodecs) don't declare cython as a build dependency and
-    # only recythonize if it is present. We need them to always recythonize so
-    # we always install cython. If the reqs included some cython version already
-    # then this won't do anything.
-    env.install(
-        [
-            "cython",
-            "pythran",
-            "setuptools<65.6.0",  # https://github.com/pypa/setuptools/issues/3693
-        ]
-    )
 
 
 def _build_in_isolated_env(
@@ -155,37 +144,19 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
     -------
     The dictionary of compiler environment variables that points to the symlinks.
     """
+
+    pywasmcross_exe = symlink_dir / "pywasmcross.py"
+    shutil.copy2(pywasmcross.__file__, pywasmcross_exe)
+    pywasmcross_exe.chmod(0o755)
+
     env = {}
     for symlink in pywasmcross.SYMLINKS:
         symlink_path = symlink_dir / symlink
         if os.path.lexists(symlink_path) and not symlink_path.exists():
             # remove broken symlink so it can be re-created
             symlink_path.unlink()
-        try:
-            pywasmcross_exe = shutil.which("_pywasmcross")
-            pywasmcross_exe_pyenv = None
 
-            # pyenv creates a shim that eventually calls the real executable,
-            # but it doesn't work well when a shim has a incorrect filename, which is our case.
-            # Therefore, we need to find a real executable path...
-            if "PYENV_ROOT" in os.environ and shutil.which("pyenv"):
-                import subprocess
-
-                try:
-                    pywasmcross_exe_pyenv = subprocess.check_output(
-                        ["pyenv", "which", "_pywasmcross"], text=True
-                    ).strip()
-                except subprocess.CalledProcessError:
-                    pass
-
-            if pywasmcross_exe_pyenv:
-                symlink_path.symlink_to(pywasmcross_exe_pyenv)
-            elif pywasmcross_exe:
-                symlink_path.symlink_to(pywasmcross_exe)
-            else:
-                symlink_path.symlink_to(pywasmcross.__file__)
-        except FileExistsError:
-            pass
+        symlink_path.symlink_to(pywasmcross_exe)
         if symlink == "c++":
             var = "CXX"
         else:

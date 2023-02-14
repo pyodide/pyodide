@@ -161,6 +161,18 @@ Loaded distutils
 Python says that 1+1= 2
 ```
 
+If you wish to suppress the blob constructor warnings which appear in node <18,
+the following code works in node >= v14.18 (do this before
+calling `loadPyodide`):
+
+```js
+globalThis.Blob = require("node:buffer").Blob;
+```
+
+However, in versions of node < v16.17, this will print an `ExperimentalWarning`.
+If you also don't want the `ExperimentalWarning`, you can use
+[cross-blob](https://www.npmjs.com/package/cross-blob) to polyfill `Blob`.
+
 ```{eval-rst}
 .. toctree::
    :hidden:

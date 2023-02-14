@@ -258,18 +258,21 @@ Module.handle_js_error = function (e: any) {
  *
  * In order to reduce the risk of large memory leaks, the :py:exc:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
- * the actual Python exception that caused this error as :py:data:`sys.last_value`.
+ * the actual Python exception that caused this error as
+ * :py:data:`sys.last_value`.
  *
- * See :ref:`type translations of errors <type-translations-errors>` for more information.
+ * See :ref:`type translations of errors <type-translations-errors>` for more
+ * information.
  *
  * .. admonition:: Avoid leaking stack Frames
  *    :class: warning
  *
- *    If you make a :js:class:`PyProxy` of :py:data:`sys.last_value`, you should be
- *    especially careful to :js:meth:`PyProxy.destroy` it when you are
- *    done. You may leak a large amount of memory including the local
- *    variables of all the stack frames in the traceback if you don't. The
- *    easiest way is to only handle the exception in Python.
+ *    If you make a :js:class:`~pyodide.ffi.PyProxy` of
+ *    :py:data:`sys.last_value`, you should be especially careful to
+ *    :js:meth:`~pyodide.ffi.PyProxy.destroy` it when you are done. You may leak a large
+ *    amount of memory including the local variables of all the stack frames in
+ *    the traceback if you don't. The easiest way is to only handle the
+ *    exception in Python.
  *
  * @hideconstructor
  */
