@@ -1,5 +1,7 @@
 /** @private */
 
+import { ConfigType } from "./pyodide";
+
 type FSNode = any;
 type FSStream = any;
 
@@ -28,6 +30,7 @@ export interface FS {
   chmod: (path: string, mode: number) => void;
   utime: (path: string, atime: number, mtime: number) => void;
   rmdir: (path: string) => void;
+  mount: (type: any, opts: any, mountpoint: string) => any;
 }
 
 export interface Module {
@@ -63,24 +66,39 @@ export function createModule(): any {
 }
 
 /**
- * Make the home directory inside the virtual file system,
- * then change the working directory to it.
- *
- * @param path
+ * Create default directories inside the virtual file system.
+ * This function is intended to be called before the Pyodide is loaded.
  * @private
  */
-export function setHomeDirectory(Module: Module, path: string) {
+export function createDefaultDirectories(Module: Module, config: ConfigType) {
   Module.preRun.push(function () {
+    // System directories. Since Python tries to initialize module search paths
+    // by checking the existence of these directories, we need to create them
+    // before bootstrapping Python.
+    Module.FS.mkdirTree("/lib");
+    Module.FS.mkdirTree("/usr/lib");
+
+    // Set up the home directory,
+    // also change the working directory to it.
     const fallbackPath = "/";
     try {
-      Module.FS.mkdirTree(path);
+      Module.FS.mkdirTree(config.homedir);
     } catch (e) {
-      console.error(`Error occurred while making a home directory '${path}':`);
+      console.error(
+        `Error occurred while making a home directory '${config.homedir}':`,
+      );
       console.error(e);
       console.error(`Using '${fallbackPath}' for a home directory instead`);
-      path = fallbackPath;
+      config.homedir = fallbackPath;
     }
-    Module.ENV.HOME = path;
-    Module.FS.chdir(path);
+    Module.ENV.HOME = config.homedir;
+    Module.FS.chdir(config.homedir);
+
+    Module.preRun.push(() => {
+      for (const mount of config._node_mounts) {
+        Module.FS.mkdirTree(mount);
+        Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
+      }
+    });
   });
 }

@@ -8,7 +8,7 @@ asynchronously in a web worker.
 ## Setup
 
 Setup your project to serve `webworker.js`. You should also serve
-`pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
+`pyodide.js`, and all its associated `.asm.js`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files.
 The simplest way to serve the required files is to use a CDN,
@@ -103,7 +103,7 @@ shown below:
 // webworker.js
 
 // Setup your project to serve `py-worker.js`. You should also serve
-// `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
+// `pyodide.js`, and all its associated `.asm.js`, `.json`,
 // and `.wasm` files as well:
 importScripts("{{PYODIDE_CDN_URL}}pyodide.js");
 

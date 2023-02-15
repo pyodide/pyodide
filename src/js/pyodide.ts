@@ -10,7 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, setHomeDirectory } from "./module";
+import { createModule, createDefaultDirectories } from "./module";
 import { initializeNativeFS } from "./nativefs";
 import { version } from "./version";
 
@@ -361,18 +361,11 @@ export async function loadPyodide(
   const Module = createModule();
   Module.print = config.stdout;
   Module.printErr = config.stderr;
-  Module.preRun.push(() => {
-    for (const mount of config._node_mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
-    }
-  });
-
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
-  setHomeDirectory(Module, config.homedir);
+  createDefaultDirectories(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
