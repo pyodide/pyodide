@@ -92,7 +92,7 @@ function setHomeDirectory(Module: Module, path: string) {
 
 /**
  * Mount local directories to the virtual file system. Only for Node.js.
- * @param Module The Emscripten Module.
+ * @param module The Emscripten Module.
  * @param mounts The list of paths to mount.
  */
 function mountLocalDirectories(Module: Module, mounts: string[]) {
@@ -111,5 +111,5 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
 export function initializeFileSystem(Module: Module, config: ConfigType) {
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
-  initializeNativeFS(Module);
+  Module.preRun.push(() => initializeNativeFS(Module));
 }
