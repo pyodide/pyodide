@@ -76,7 +76,6 @@ export function createDefaultDirectories(Module: Module, config: ConfigType) {
     // by checking the existence of these directories, we need to create them
     // before bootstrapping Python.
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree("/usr/lib");
 
     // Set up the home directory,
     // also change the working directory to it.
