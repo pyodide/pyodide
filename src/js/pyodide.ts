@@ -65,6 +65,33 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   });
 }
 
+/**
+ * This function is called right after the Python interpreter is initialized,
+ * but before any Python code is run. It sets up some unfinished parts of the
+ * Python environment.
+ * @private
+ */
+function postInitializePython(Module: any) {
+  const code = `
+import sys, _imp, encodings, codecs
+codecs.unregister(encodings.search_function)
+del sys.modules["encodings"]
+del sys.modules["encodings.utf_8"]
+del sys.modules["encodings.aliases"]
+_imp._override_frozen_modules_for_tests(-1)
+del sys, _imp, encodings, codecs
+import encodings
+del encodings
+`;
+  let [errcode, captured_stderr] = Module.API.rawRun(code);
+  if (errcode) {
+    Module.API.fatal_loading_error(
+      "Failed to install standard library.\n",
+      captured_stderr,
+    );
+  }
+}
+
 function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
   let stream = Module.FS.open(fileName, "w");
@@ -359,6 +386,8 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
+
+  postInitializePython(Module);
 
   initializeNativeFS(Module);
 
