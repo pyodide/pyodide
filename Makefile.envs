@@ -127,11 +127,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lproxyfs.js \
 	-lworkerfs.js \
 	-lwebsocket.js \
-	-leventloop.js \
-	\
-	--use-preload-plugins \
-	--preload-file src/py/lib@/lib/python$(PYMAJOR).$(PYMINOR)/\
-	--exclude-file "*__pycache__*" \
+	-leventloop.js
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
