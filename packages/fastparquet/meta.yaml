@@ -1,6 +1,6 @@
 package:
   name: fastparquet
-  version: 2023.1.0
+  version: 2023.2.0
   top-level:
     - fastparquet
 requirements:
@@ -10,8 +10,8 @@ requirements:
     - pandas
     - fsspec
 source:
-  url: https://files.pythonhosted.org/packages/a4/6a/dcb4ae7d42d508ff88266c24a82762167d46885cdf4ccdf522b8de5c9b99/fastparquet-2023.1.0.tar.gz
-  sha256: 92252538823da2bf958d2f2edd14e3864ae296d28f5be24e07eb685b4b08bed2
+  url: https://files.pythonhosted.org/packages/7e/5d/c58795e5550231ce84b39fec783e3f4836082f0162e2436227832716ee02/fastparquet-2023.2.0.tar.gz
+  sha256: 7611447ce3ff5696539f7e43289da2491ea41f7cb92d4dbada374012b62c51c3
 about:
   home: https://github.com/dask/fastparquet/
   PyPI: https://pypi.org/project/fastparquet
