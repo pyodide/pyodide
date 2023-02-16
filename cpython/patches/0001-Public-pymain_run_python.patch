@@ -1,0 +1,25 @@
+From 8dc93243eb0cdf27a81e9baf156df621cc8e2eb9 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 17 Jul 2022 14:40:39 +0100
+Subject: [PATCH 1/8] Public pymain_run_python
+
+---
+ Modules/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Modules/main.c b/Modules/main.c
+index 6904e3f76e..07bea58080 100644
+--- a/Modules/main.c
++++ b/Modules/main.c
+@@ -537,7 +537,7 @@ pymain_repl(PyConfig *config, int *exitcode)
+ }
+ 
+ 
+-static void
++void
+ pymain_run_python(int *exitcode)
+ {
+     PyObject *main_importer_path = NULL;
+-- 
+2.25.1
+

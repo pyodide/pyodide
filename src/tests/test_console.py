@@ -81,6 +81,7 @@ def test_completion():
         [
             "print.__ge__(",
             "print.__getattribute__(",
+            "print.__getstate__()",
             "print.__gt__(",
         ],
         8,
@@ -392,8 +393,8 @@ def test_console_html(selenium):
             >>> 1+
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
-                  ^
-            SyntaxError: invalid syntax]
+                 ^
+            SyntaxError: incomplete input]
             """
         ).strip()
     )
@@ -435,6 +436,7 @@ def test_console_html(selenium):
             [[;;;terminal-error]Traceback (most recent call last):
               File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
+                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """
@@ -445,6 +447,10 @@ def test_console_html(selenium):
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
     assert long_output[2] == "<long output truncated>"
+
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)

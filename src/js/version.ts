@@ -2,7 +2,8 @@
  *
  * The Pyodide version.
  *
- * The version here follows PEP440 which is different from the one in package.json,
- * as we want to compare this with the version of Pyodide Python package without conversion.
+ * The version here is a Python version, following :pep:`440`. This is different
+ * from the version in ``package.json`` which follows the node package manager
+ * version convention.
  */
 export const version: string = "0.22.0";

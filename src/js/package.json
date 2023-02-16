@@ -69,6 +69,7 @@
     "pyodide.js.map",
     "pyodide.mjs.map",
     "pyodide.d.ts",
+    "ffi.d.ts",
     "repodata.json",
     "console.html"
   ],
@@ -135,5 +136,6 @@
     "base-64": "^1.0.0",
     "node-fetch": "^2.6.1",
     "ws": "^8.5.0"
-  }
+  },
+  "types": "./pyodide.d.ts"
 }

@@ -10,9 +10,13 @@ matplotlib.use("module://matplotlib_pyodide.html5_canvas_backend")
 import datetime  # noqa: E402
 
 from matplotlib import pyplot as plt  # noqa: E402
-from matplotlib.dates import DateFormatter  # noqa: E402
-from matplotlib.dates import RRuleLocator  # noqa: E402
-from matplotlib.dates import YEARLY, drange, rrulewrapper  # noqa: E402
+from matplotlib.dates import (  # noqa: E402
+    YEARLY,
+    DateFormatter,  # noqa: E402
+    RRuleLocator,  # noqa: E402
+    drange,
+    rrulewrapper,
+)
 
 
 def canvas_text_rotated():

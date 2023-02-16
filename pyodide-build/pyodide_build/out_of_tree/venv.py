@@ -5,13 +5,7 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import (
-    check_emscripten_version,
-    exit_with_stdio,
-    get_make_flag,
-    get_pyodide_root,
-    in_xbuildenv,
-)
+from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
 from ..logger import logger
 
 
@@ -110,6 +104,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         import sys
         os_name, sys_platform, multiarch, host_platform = {platform_data}
         os.name = os_name
+        orig_platform = sys.platform
         sys.platform = sys_platform
         sys.implementation._multiarch = multiarch
         os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
@@ -118,6 +113,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         import sysconfig
         sysconfig.get_config_vars()
         del os.environ["_PYTHON_SYSCONFIGDATA_NAME"]
+        sys.platform = orig_platform
         """
     )
 
@@ -199,12 +195,12 @@ def install_stdlib(venv_bin: Path) -> None:
             "-c",
             dedent(
                 f"""
-                from _pyodide._importhook import UNVENDORED_STDLIBS_AND_TEST;
-                from pyodide_js import loadPackage;
+                from pyodide_js import loadPackage
                 from pyodide_js._api import repodata_packages
+                from pyodide_js._api import repodata_unvendored_stdlibs_and_test
                 shared_libs = [pkgname for (pkgname,pkg) in repodata_packages.object_entries() if getattr(pkg, "shared_library", False)]
 
-                to_load = [*UNVENDORED_STDLIBS_AND_TEST, *shared_libs, *{to_load!r}]
+                to_load = [*repodata_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
                 loadPackage(to_load);
                 """
             ),
@@ -223,8 +219,6 @@ def create_pyodide_venv(dest: Path) -> None:
     if dest.exists():
         logger.error(f"ERROR: dest directory '{dest}' already exists")
         sys.exit(1)
-
-    check_emscripten_version()
 
     interp_path = pyodide_dist_dir() / "python"
     session = session_via_cli(["--no-wheel", "-p", str(interp_path), str(dest)])

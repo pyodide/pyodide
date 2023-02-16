@@ -1,6 +1,9 @@
 package:
   name: regex
   version: 2022.10.31
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - regex
 source:

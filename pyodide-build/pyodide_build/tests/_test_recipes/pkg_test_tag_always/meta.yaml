@@ -1,0 +1,9 @@
+package:
+  name: pkg_test_tag_always
+  version: 1.0.0
+  tag:
+    - always
+    - test_tag
+
+source:
+  path: src
