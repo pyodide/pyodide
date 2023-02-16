@@ -8,7 +8,7 @@ from asyncio import Future
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from ._core import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
@@ -18,8 +18,10 @@ S = TypeVar("S")
 
 
 class PyodideFuture(Future[T]):
-    """A future with extra then, catch, and finally_ methods based on the
-    Javascript promise API.
+    """A future with extra ``then``, ``catch``, and ``finally_`` methods based
+    on the Javascript promise API. ``Webloop.create_future`` returns these so in
+    practice all futures encountered in Pyodide should be an instance of
+    ``PyodideFuture``.
     """
 
     @overload
@@ -81,8 +83,8 @@ class PyodideFuture(Future[T]):
 
         Returns
         -------
-        A new future to be resolved when the original future is done and the
-        appropriate callback is also done.
+            A new future to be resolved when the original future is done and the
+            appropriate callback is also done.
         """
         result: PyodideFuture[S] = PyodideFuture()
 
@@ -135,9 +137,13 @@ class PyodideFuture(Future[T]):
     def catch(
         self, onrejected: Callable[[BaseException], object]
     ) -> "PyodideFuture[Any]":
+        """Equivalent to ``then(None, onrejected)``"""
         return self.then(None, onrejected)
 
     def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+        """When the future is either resolved or rejected, call onfinally with
+        no arguments.
+        """
         result: PyodideFuture[T] = PyodideFuture()
 
         async def callback(fut: Future[T]) -> None:
@@ -172,15 +178,13 @@ class WebLoop(asyncio.AbstractEventLoop):
     loop would because we only have one thread so blocking would stall the
     browser event loop and prevent anything from ever happening.
 
-    We defer all work to the browser event loop using the `setTimeout
-    <https://developer.mozilla.org/en-US/docs/Web/API/setTimeout>`_ function. To
-    ensure that this event loop doesn't stall out UI and other browser handling,
-    we want to make sure that each task is scheduled on the browser event loop
-    as a task not as a microtask. ``setTimeout(callback, 0)`` enqueues the
-    callback as a task so it works well for our purposes.
+    We defer all work to the browser event loop using the :js:func:`setTimeout`
+    function. To ensure that this event loop doesn't stall out UI and other
+    browser handling, we want to make sure that each task is scheduled on the
+    browser event loop as a task not as a microtask. ``setTimeout(callback, 0)``
+    enqueues the callback as a task so it works well for our purposes.
 
-    See `Event Loop Methods
-    <https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop>`_.
+    See the Python :external:doc:`library/asyncio-eventloop` documentation.
     """
 
     def __init__(self):
@@ -558,7 +562,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
-    A simple event loop policy for managing :any:`WebLoop`-based event loops.
+    A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """
 
     def __init__(self):
@@ -581,7 +585,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 
 def _initialize_event_loop():
-    from ._core import IN_BROWSER
+    from .ffi import IN_BROWSER
 
     if not IN_BROWSER:
         return
@@ -595,4 +599,4 @@ def _initialize_event_loop():
     policy.get_event_loop()
 
 
-__all__ = ["WebLoop", "WebLoopPolicy"]
+__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture"]

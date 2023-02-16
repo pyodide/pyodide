@@ -1,5 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.10.2-slim-buster
+FROM python:3.11.1-slim-buster
 
 # Requirements for building packages
 RUN apt-get update \
@@ -9,7 +9,7 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential prelink autoconf libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq \
+        ninja-build jq xxd \
   && rm -rf /var/lib/apt/lists/*
 
 # Normally, it is a bad idea to install rustup and cargo in
@@ -17,6 +17,15 @@ RUN apt-get update \
 # but this docker image is only for building packages, so I hope it is ok.
 RUN wget -q -O - https://sh.rustup.rs | \
     RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
+
+# install autoconf 2.71, required by upstream libffi
+RUN wget https://mirrors.sarata.com/gnu/autoconf/autoconf-2.71.tar.xz \
+    && tar -xf autoconf-2.71.tar.xz \
+    && cd autoconf-2.71 \
+    && ./configure \
+    && make install \
+    && cp /usr/local/bin/autoconf /usr/bin/autoconf \
+    && rm -rf autoconf-2.71
 
 ADD requirements.txt docs/requirements-doc.txt /
 ADD pyodide-build /pyodide-build

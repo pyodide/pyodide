@@ -1,8 +1,11 @@
 package:
   name: lzma
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - lzma
+    - _lzma
 build:
   type: cpython_module
   script: |

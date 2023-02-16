@@ -1,3 +1,4 @@
+import re
 from collections import OrderedDict
 from typing import Any
 
@@ -12,19 +13,21 @@ from sphinx.domains.javascript import JavaScriptDomain, JSCallable
 from sphinx.ext.autosummary import autosummary_table, extract_summary
 from sphinx.util import rst
 from sphinx.util.docutils import switch_source_input
-from sphinx_js.ir import Class, Function, Interface
+from sphinx_js.ir import Class, Function, Interface, Pathname
 from sphinx_js.parsers import PathVisitor, path_and_formal_params
 from sphinx_js.renderers import (
     AutoAttributeRenderer,
     AutoClassRenderer,
     AutoFunctionRenderer,
+    JsRenderer,
 )
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
+from sphinx_js.typedoc import make_path_segments
 
 _orig_convert_node = TsAnalyzer._convert_node
-_orig_type_name = TsAnalyzer._type_name
-
 _orig_constructor_and_members = TsAnalyzer._constructor_and_members
+_orig_top_level_properties = TsAnalyzer._top_level_properties
+_orig_convert_all_nodes = TsAnalyzer._convert_all_nodes
 
 
 def _constructor_and_members(self, cls):
@@ -36,6 +39,70 @@ def _constructor_and_members(self, cls):
 
 
 TsAnalyzer._constructor_and_members = _constructor_and_members
+
+commentdict = {}
+
+FFI_FIELDS: set[str] = set()
+
+
+def _convert_all_nodes(self, root):
+    for node in root.get("children", []):
+        if node["name"] == "ffi":
+            FFI_FIELDS.update(x["name"] for x in node["children"])
+            FFI_FIELDS.remove("ffi")
+            break
+    return _orig_convert_all_nodes(self, root)
+
+
+TsAnalyzer._convert_all_nodes = _convert_all_nodes
+
+
+def _top_level_properties(self, node):
+    if "comment" not in node:
+        sig = {}
+        if "getSignature" in node:
+            sig = node["getSignature"][0]
+        elif "signatures" in node:
+            sig = node["signatures"][0]
+        node["comment"] = sig.get("comment", {})
+    path = str(Pathname(make_path_segments(node, self._base_dir)))
+    commentdict[path] = node.get("comment") or {}
+    result = _orig_top_level_properties(self, node)
+    return result
+
+
+def get_tag(doclet, tag):
+    tags = commentdict[str(doclet.path)].get("tags", [])
+    for t in tags:
+        if t["tag"] == tag:
+            return True, t["text"]
+    return False, None
+
+
+def has_tag(doclet, tag):
+    return get_tag(doclet, tag)[0]
+
+
+TsAnalyzer._top_level_properties = _top_level_properties
+
+orig_JsRenderer_rst_ = JsRenderer.rst
+
+
+def JsRenderer_rst(self, partial_path, obj, use_short_name=False):
+    match get_tag(obj, "deprecated"):
+        case (True, text):
+            # This is definitely not unreachable...
+            if not text.strip():  # type: ignore[unreachable]
+                obj.deprecated = True
+            else:
+                obj.deprecated = text
+    if has_tag(obj, "hidetype"):
+        obj.type = ""
+    return orig_JsRenderer_rst_(self, partial_path, obj, use_short_name)
+
+
+for cls in [AutoAttributeRenderer, AutoFunctionRenderer, AutoClassRenderer]:
+    cls.rst = JsRenderer_rst
 
 
 def destructure_param(param: dict[str, Any]) -> list[dict[str, Any]]:
@@ -119,7 +186,10 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
     node["extendedTypes"] = [t for t in node.get("extendedTypes", []) if "id" in t]
     # See docstring for destructure_param
     fix_up_inline_object_signature(self, node)
-    return _orig_convert_node(self, node)
+    converted, more_todo = _orig_convert_node(self, node)
+    if converted:
+        converted.is_private = node.get("flags", {}).get("isPrivate", False)
+    return converted, more_todo
 
 
 TsAnalyzer._convert_node = _convert_node
@@ -136,11 +206,23 @@ def _containing_deppath(self, node):
     from pathlib import Path
 
     filename = node["sources"][0]["fileName"].replace(".gen", "")
-    deppath = list(Path(self._base_dir).glob("**/" + filename))[0]
-    return relpath(deppath, self._base_dir)
+    deppath = next(Path(self._base_dir).glob("**/" + filename), None)
+    if deppath:
+        return relpath(deppath, self._base_dir)
+    return ""
 
 
 TsAnalyzer._containing_deppath = _containing_deppath
+
+
+def _add_type_role(self, name):
+    from sphinx_pyodide.mdn_xrefs import JSDATA
+
+    if name in JSDATA:
+        return f":js:data:`{name}`"
+    if name in FFI_FIELDS:
+        return f":js:class:`~pyodide.ffi.{name}`"
+    return f":js:class:`{name}`"
 
 
 def object_literal_type_name(self, decl):
@@ -165,17 +247,21 @@ def object_literal_type_name(self, decl):
         keyname = key["name"]
         keytype = self._type_name(key["type"])
         valuetype = self._type_name(index_sig["type"])
-        children.append(f"[{keyname}: {keytype}]: {valuetype}")
+        children.append(rf"\ **[{keyname}:** {keytype}\ **]:** {valuetype}")
     if "children" in decl:
         for child in decl["children"]:
             maybe_optional = ""
             if child["flags"].get("isOptional"):
                 maybe_optional = "?"
+            if child["kindString"] == "Method":
+                child_type_name = self.function_type_name(child)
+            else:
+                child_type_name = self._type_name(child["type"])
             children.append(
-                child["name"] + maybe_optional + ": " + self._type_name(child["type"])
+                r"\ **" + child["name"] + maybe_optional + ":** " + child_type_name
             )
 
-    return "{" + ", ".join(children) + "}"
+    return r"\ **{**\ " + r"\ **,** ".join(children) + r"\ **}**\ "
 
 
 def function_type_name(self, decl):
@@ -186,12 +272,12 @@ def function_type_name(self, decl):
         decl_sig = decl
     assert decl_sig
     params = [
-        f'{ty["name"]}: {self._type_name(ty["type"])}'
+        rf'\ **{ty["name"]}:** {self._type_name(ty["type"])}'
         for ty in decl_sig.get("parameters", [])
     ]
-    params_str = ", ".join(params)
+    params_str = r"\ **,** ".join(params)
     ret_str = self._type_name(decl_sig["type"])
-    return f"({params_str}) => {ret_str}"
+    return rf"\ **(**\ {params_str}\ **) =>** {ret_str}"
 
 
 def reflection_type_name(self, type):
@@ -213,36 +299,111 @@ def reflection_type_name(self, type):
     """
     decl = type["declaration"]
     if decl["kindString"] == "Type literal" and "signatures" not in decl:
-        return object_literal_type_name(self, decl)
-    return function_type_name(self, decl)
+        return self.object_literal_type_name(decl)
+    return self.function_type_name(decl)
 
 
-def _type_name(self, type):
-    """Monkey patch for sphinx-js type_name
-
-    Rendering various types is left as TODO by _type_name. Fill these in.
-    """
-    res = _orig_type_name(self, type)
-    if "TODO" not in res:
-        # _orig_type_name handled it, leave it alone.
-        return res
+def _type_name_root(self, type):
     type_of_type = type.get("type")
-    if type_of_type == "predicate":
-        return f"boolean (typeguard for {self._type_name(type['targetType'])})"
+
+    if type_of_type == "reference" and type.get("id"):
+        node = self._index[type["id"]]
+        name = node["name"]
+        if node.get("flags", {}).get("isPrivate") and "type" in node:
+            return self._type_name(node["type"])
+        return self._add_type_role(name)
+    if type_of_type == "unknown":
+        if re.match(r"-?\d*(\.\d+)?", type["name"]):  # It's a number.
+            # TypeDoc apparently sticks numeric constants' values into
+            # the type name. String constants? Nope. Function ones? Nope.
+            return "number"
+        return self._add_type_role(type["name"])
+    if type_of_type in ["intrinsic", "reference"]:
+        return self._add_type_role(type["name"])
+    if type_of_type == "stringLiteral":
+        return '"' + type["value"] + '"'
+    if type_of_type == "array":
+        return self._type_name(type["elementType"]) + r"\ **[]**"
+    if type_of_type == "tuple" and type.get("elements"):
+        types = [self._type_name(t) for t in type["elements"]]
+        return r"\ **[**\ " + r"\ **,** ".join(types) + r"\ **]** "
+    if type_of_type == "union":
+        return r" **|** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "intersection":
+        return " **&** ".join(self._type_name(t) for t in type["types"])
+    if type_of_type == "typeOperator":
+        return type["operator"] + " " + self._type_name(type["target"])
+        # e.g. "keyof T"
+    if type_of_type == "typeParameter":
+        name = type["name"]
+        constraint = type.get("constraint")
+        if constraint is not None:
+            name += " extends " + self._type_name(constraint)
+            # e.g. K += extends + keyof T
+        return name
     if type_of_type == "reflection":
-        return reflection_type_name(self, type)
+        return self.reflection_type_name(type)
     if type_of_type == "named-tuple-member":
         name = type["name"]
         type = self._type_name(type["element"])
-        return f"{name}: {type}"
+        return rf"\ **{name}:** {type}"
+    if type_of_type == "predicate":
+        return (
+            f":js:data:`boolean` (typeguard for {self._type_name(type['targetType'])})"
+        )
     if type_of_type == "literal" and type["value"] is None:
-        return "null"
-    raise NotImplementedError(
-        f"Cannot render type name for type_of_type={type_of_type}"
-    )
+        return ":js:data:`null`"
+    if type_of_type == "query":
+        return f"``typeof {type['queryType']['name']}``"
+    return "<TODO: other type>"
 
 
-TsAnalyzer._type_name = _type_name
+def _type_name(self, type):
+    """Return a string description of a type.
+
+    :arg type: A TypeDoc-emitted type node
+
+    """
+    name = self._type_name_root(type)
+
+    type_args = type.get("typeArguments")
+    if type_args:
+        arg_names = ", ".join(self._type_name(arg) for arg in type_args)
+        name += rf"\ **<**\ {arg_names}\ **>** "
+    return name
+
+
+for obj in [
+    _add_type_role,
+    object_literal_type_name,
+    reflection_type_name,
+    _type_name_root,
+    _type_name,
+    function_type_name,
+]:
+    setattr(TsAnalyzer, obj.__name__, obj)
+
+
+def _param_type_formatter(param):
+    """Generate types for function parameters specified in field."""
+    if not param.type:
+        return None
+    heads = ["type", param.name]
+    tail = param.type
+    return heads, tail
+
+
+def _return_formatter(return_):
+    """Derive heads and tail from ``@returns`` blocks."""
+    tail = ("%s -- " % return_.type) if return_.type else ""
+    tail += return_.description
+    return ["returns"], tail
+
+
+import sphinx_js.renderers
+
+for obj in [_param_type_formatter, _return_formatter]:  # type:ignore[assignment]
+    setattr(sphinx_js.renderers, obj.__name__, obj)
 
 
 class JSFuncMaybeAsync(JSCallable):
@@ -320,6 +481,35 @@ class PyodideAnalyzer:
         """
         return PathVisitor().visit(path_and_formal_params["path"].parse(name))
 
+    def set_doclet_is_private(self, key, doclet):
+        if getattr(doclet, "is_private", False):
+            return
+        doclet.is_private = False
+
+        key = [x for x in key if "/" not in x]
+        filename = key[0]
+        toplevelname = key[1]
+        if key[-1].startswith("$"):
+            doclet.is_private = True
+            return
+        if key[-1] == "constructor":
+            # For whatever reason, sphinx-js does not properly record
+            # whether constructors are private or not. For now, all
+            # constructors are private so leave them all off. TODO: handle
+            # this via a @private decorator in the documentation comment.
+            doclet.is_private = True
+            return
+
+        if filename in ["module.", "compat."]:
+            doclet.is_private = True
+            return
+
+        if filename == "pyproxy.gen." and toplevelname.endswith("Methods"):
+            # Don't document methods classes. We moved them to the
+            # corresponding PyProxy subclass.
+            doclet.is_private = True
+            return
+
     def create_js_doclets(self):
         """Search through the doclets generated by JsDoc and categorize them by
         summary section. Skip docs labeled as "@private".
@@ -329,69 +519,82 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
-        modules = ["globalThis", "pyodide", "PyProxy"]
+        modules = ["globalThis", "pyodide", "pyodide.ffi"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
+        pyproxy_subclasses = []
+        pyproxy_methods: dict[str, list[Any]] = {}
+
         for (key, doclet) in self.doclets.items():
-            if getattr(doclet, "is_private", False):
+            self.set_doclet_is_private(key, doclet)
+
+        for (key, doclet) in self.doclets.items():
+            if doclet.is_private:
                 continue
 
-            # Remove the part of the key corresponding to the file
-            key = [x for x in key if "/" not in x]
             filename = key[0]
             toplevelname = key[1]
-            if key[-1].startswith("$"):
-                doclet.is_private = True
-                continue
-            if key[-1] == "constructor":
-                # For whatever reason, sphinx-js does not properly record
-                # whether constructors are private or not. For now, all
-                # constructors are private so leave them all off. TODO: handle
-                # this via a @private decorator in the documentation comment.
-                continue
             doclet.name = doclet.name.rpartition(".")[2]
-            if filename == "module." or filename == "compat.":
-                continue
+            if doclet.name.startswith("["):
+                # a symbol.
+                # \u2024 looks like a period but is not a period.
+                # This isn't ideal, but otherwise the coloring is weird.
+                doclet.name = "[Symbol\u2024" + doclet.name[1:]
+
             if filename == "pyodide.":
-                # Might be named globalThis.something or exports.something.
-                # Trim off the prefix.
                 items["globalThis"].append(doclet)
                 continue
-            pyproxy_class_endings = ("Methods", "Class")
+
+            if filename == "pyproxy.gen." and toplevelname.endswith("Methods#"):
+                l = pyproxy_methods.setdefault(toplevelname.removesuffix("#"), [])
+                l.append(doclet)
+                continue
+
             if toplevelname.endswith("#"):
-                # This is a class method.
-                if filename == "pyproxy.gen." and toplevelname[:-1].endswith(
-                    pyproxy_class_endings
-                ):
-                    # Merge all of the PyProxy methods into one API
-                    items["PyProxy"].append(doclet)
-                # If it's not part of a PyProxy class, the method will be
+                # This is a class method. If it's not part of a PyProxyXMethods
+                # class (which we already dealt with), the method will be
                 # documented as part of the class.
                 continue
-            if filename == "pyproxy.gen." and toplevelname.endswith(
-                pyproxy_class_endings
-            ):
-                continue
-            if filename.startswith("PyProxy"):
-                # Skip all PyProxy classes, they are documented as one merged
-                # API.
-                continue
-            items["pyodide"].append(doclet)
+
+            if filename == "pyproxy.gen." and isinstance(doclet, Class):
+                pyproxy_subclasses.append(doclet)
+
+            if doclet.name in FFI_FIELDS and not has_tag(doclet, "alias"):
+                items["pyodide.ffi"].append(doclet)
+            else:
+                items["pyodide"].append(doclet)
+
+        for cls in pyproxy_subclasses:
+            methods_supers = [
+                x for x in cls.supers if x.segments[-1] in pyproxy_methods
+            ]
+            cls.supers = [
+                x for x in cls.supers if x.segments[-1] not in pyproxy_methods
+            ]
+            for x in cls.supers:
+                x.segments = [x.segments[-1]]
+            for x in methods_supers:
+                cls.members.extend(pyproxy_methods[x.segments[-1]])
 
         from operator import attrgetter
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
-                obj.async_ = False
-                if isinstance(obj, Class):
+                _, kind = get_tag(obj, "doc_kind")
+                if kind:
+                    obj.kind = kind
+                elif isinstance(obj, Class):
                     obj.kind = "class"
                 elif isinstance(obj, Function):
                     obj.kind = "function"
-                    obj.async_ = obj.returns and obj.returns[0].type.startswith(
-                        "Promise<"
-                    )
                 else:
                     obj.kind = "attribute"
+
+                obj.async_ = False
+                if isinstance(obj, Function):
+                    obj.async_ = obj.returns and obj.returns[0].type.startswith(
+                        ":js:class:`Promise`"
+                    )
                 self.js_docs[key][obj.kind].append(obj)
 
 
@@ -409,16 +612,15 @@ def get_jsdoc_content_directive(app):
         def get_rst(self, obj):
             """Grab the appropriate renderer and render us to rst."""
             if isinstance(obj, Function):
-                renderer = AutoFunctionRenderer
+                cls = AutoFunctionRenderer
             elif isinstance(obj, Class):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             elif isinstance(obj, Interface):
-                renderer = AutoClassRenderer
+                cls = AutoClassRenderer
             else:
-                renderer = AutoAttributeRenderer
-            rst = renderer(
-                self, app, arguments=["dummy"], options={"members": ["*"]}
-            ).rst([obj.name], obj, use_short_name=False)
+                cls = AutoAttributeRenderer
+            renderer = cls(self, app, arguments=["dummy"], options={"members": ["*"]})
+            rst = renderer.rst([obj.name], obj, use_short_name=False)
             if obj.async_:
                 rst = self.add_async_option_to_rst(rst)
             return rst
@@ -448,7 +650,8 @@ def get_jsdoc_content_directive(app):
             module = self.arguments[0]
             values = app._sphinxjs_analyzer.js_docs[module]
             rst = []
-            rst.append([f".. js:module:: {module}"])
+            if module != "PyProxy":
+                rst.append([f".. js:module:: {module}"])
             for group in values.values():
                 rst.append(self.get_rst_for_group(group))
             joined_rst = "\n\n".join(["\n\n".join(r) for r in rst])
@@ -603,7 +806,7 @@ def get_jsdoc_summary_directive(app):
         prefixes = get_import_prefixes_from_env(self.env)
         items = orig_get_items(self, names)
         new_items = []
-        for (name, item) in zip(names, items):
+        for (name, item) in zip(names, items, strict=True):
             name = name.removeprefix("~")
             _, obj, *_ = self.import_by_name(name, prefixes=prefixes)
             prefix = "**async** " if iscoroutinefunction(obj) else ""

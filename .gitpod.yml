@@ -9,9 +9,8 @@ github:
     addLabel: false
 tasks:
   - name: Setup the environment
-    command: |
-      PYTHON_VERSION=3.10.2
+    init: |
+      PYTHON_VERSION=3.11.1
       pyenv install $PYTHON_VERSION
       pyenv global $PYTHON_VERSION
       python -m pip install -r requirements.txt
-      ./run_docker

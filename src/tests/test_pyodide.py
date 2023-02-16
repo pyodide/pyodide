@@ -55,6 +55,10 @@ def test_find_imports():
     assert res == []
 
 
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
+
+
 def test_pyimport(selenium):
     selenium.run_js(
         """
@@ -433,7 +437,10 @@ def test_check_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import test;
-                test();
+                try:
+                    test();
+                finally:
+                    del test
             `);
         } catch(e){
             err = e;
@@ -837,6 +844,29 @@ def test_fatal_error(selenium_standalone):
         assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_exit_error(selenium_standalone):
+    x = selenium_standalone.run_js(
+        """
+        try {
+            pyodide.runPython(`
+                import os
+                def f():
+                    g()
+                def g():
+                    h()
+                def h():
+                    os._exit(0)
+                f()
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    assert x == "Exit: Program terminated with exit(0)"
 
 
 def test_reentrant_error(selenium):
@@ -1289,11 +1319,10 @@ def test_fullstdlib(selenium_standalone_noload):
         await pyodide.loadPackage("micropip");
 
         pyodide.runPython(`
-            import _pyodide
+            import pyodide_js
             import micropip
             loaded_packages = micropip.list()
-            print(loaded_packages)
-            assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
         `);
         """
     )
@@ -1337,7 +1366,7 @@ def test_pickle_jsexception(selenium):
 
 
 def test_raises_jsexception(selenium):
-    from pytest_pyodide.pyodide import JsException
+    from pyodide.ffi import JsException
 
     @run_in_pyodide
     def raise_jsexception(selenium):
@@ -1366,6 +1395,74 @@ def test_deprecations(selenium_standalone):
     assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
     assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
     assert selenium.logs.count("!!! No new packages to load") == 3
+    selenium.run_js(
+        """
+        let a = pyodide.PyBuffer;
+        let b = pyodide.PyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        let a = pyodide.PyProxyBuffer;
+        let b = pyodide.PyProxyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => !pyodide.isPyProxy({}));
+        """
+    )
+    selenium.run_js(
+        """
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsHas());
+        assert(() => pyodide.globals.supportsHas());
+        """
+    )
+    for name in [
+        "isPyProxy",
+        "isAwaitable",
+        "isBuffer",
+        "isCallable",
+        "isIterable",
+        "isIterator",
+        "supportsGet",
+        "supportsSet",
+        "supportsHas",
+    ]:
+        assert (
+            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
+            == 1
+        )
 
 
 @run_in_pyodide(packages=["pytest"])
@@ -1423,6 +1520,14 @@ def test_module_not_found_hook(selenium_standalone):
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("pytest.there_is_no_such_module")
+
+    # liblzma and openssl are libraries not python packages, so it should just fail.
+    for pkg in ["liblzma", "openssl"]:
+        with pytest.raises(ModuleNotFoundError, match="No module named"):
+            importlib.import_module(pkg)
+
+    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+        importlib.import_module("_hashlib")
 
 
 def test_args(selenium_standalone_noload):

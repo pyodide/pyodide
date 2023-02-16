@@ -189,12 +189,8 @@ def test_await_error(selenium):
             throw new Error("This is an error message!");
         }
         self.async_js_raises = async_js_raises;
-        function js_raises(){
-            throw new Error("This is an error message!");
-        }
-        self.js_raises = js_raises;
         pyodide.runPython(`
-            from js import async_js_raises, js_raises
+            from js import async_js_raises
             async def test():
                 c = await async_js_raises()
                 return c
@@ -208,7 +204,10 @@ def test_await_error(selenium):
         # Wait for event loop to go around for chome
         selenium.run(
             """
-            r2 = c.send(r1.result())
+            try:
+                r2 = c.send(r1.result())
+            finally:
+                del async_js_raises
             """
         )
 

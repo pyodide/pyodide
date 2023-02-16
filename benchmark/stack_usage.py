@@ -39,10 +39,16 @@ def test_stack_usage(selenium, print_info):
             return depth;
         };
         let py_limit = pyodide.runPython("import sys; sys.getrecursionlimit()");
+        self.jsrecurse = function(f, g) {
+            return (n) => (n > 0) ? f(n-1) : g();
+        }
         let py_usage = pyodide.runPython(`
-            from js import measure_available_js_stack_depth
+            from js import measure_available_js_stack_depth, jsrecurse
+            from pyodide.ffi import create_proxy
+            recurse_proxy = None
             def recurse(n):
-                return measure_available_js_stack_depth() if n==0 else recurse(n-1)
+                return jsrecurse(recurse_proxy, measure_available_js_stack_depth)(n)
+            recurse_proxy = create_proxy(recurse)
             (recurse(0)-recurse(100))/100
         `);
         let js_depth = measure_available_js_stack_depth();
