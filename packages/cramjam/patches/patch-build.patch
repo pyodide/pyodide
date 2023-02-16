@@ -1,0 +1,79 @@
+diff --git a/./' b/./'
+new file mode 100644
+index 00000000..e69de29b
+diff --git a/./backend.py b/./backend.py
+new file mode 100644
+index 00000000..02be4d87
+--- /dev/null
++++ b/./backend.py
+@@ -0,0 +1,50 @@
++import subprocess
++import os
++import shutil
++import sys
++def build_wheel(wheel_directory, config_settings=None, metadata_directory=None):
++  ENV_OVERRIDES={
++     "AR":"emar",
++     "CC":"emcc",
++     "PLAT":None,
++     "PLATFORM_TRIPLET":None
++  }
++#  subprocess.run('PS1=inbuild\\> bash --norc ',shell=True)
++#  return  
++  command=[sys.executable,"-m","maturin","build","--release","--target=wasm32-unknown-emscripten"]
++  new_env=os.environ.copy()
++  for k,v in ENV_OVERRIDES.items():
++    if v is None:
++        if k in new_env:
++          del new_env[k]
++    else:
++       new_env[k]=v
++    
++  result=subprocess.run(command,capture_output=True,text=True,env=new_env)
++  if result.returncode != 0:
++        sys.stderr.write(
++            f"Error: command {command} returned non-zero exit status {result.returncode}\n"
++        )
++        sys.stderr.write(str(result))
++        sys.stderr.write(result.stdout)
++        sys.exit(1)  
++  output=result.stdout
++  out_path = output.strip().splitlines()[-1]
++  out_path=out_path[out_path.find("/"):]
++  filename = os.path.basename(out_path)
++  shutil.copy2(out_path, os.path.join(wheel_directory, filename))
++  return filename
++
++def build_sdist(
++    sdist_directory, config_settings= None
++):
++  command=[sys.executable,"-m","maturin","sdist"]
++  print(command,sdist_directory)
++  result=subprocess.run(command,capture_output=True,text=True)
++  output=result.stdout
++  out_path = output.strip().splitlines()[-1]
++  out_path=out_path[out_path.find("/"):]
++  filename = os.path.basename(out_path)
++  shutil.copy2(out_path, os.path.join(sdist_directory, filename))
++  return filename
++
+diff --git a/./lib.rmeta b/./lib.rmeta
+new file mode 100644
+index 00000000..a0a837b6
+Binary files /dev/null and b/./lib.rmeta differ
+diff --git a/../../build/cramjam-2.6.2/pyproject.toml b/./pyproject.toml
+index bb317951..17fa5eb0 100644
+--- a/../../build/cramjam-2.6.2/pyproject.toml
++++ b/./pyproject.toml
+@@ -9,5 +9,9 @@ documentation = "https://docs.rs/cramjam/latest/cramjam"
+ repository = "https://github.com/milesgranger/pyrus-cramjam"
+ 
+ [build-system]
+-requires = ["maturin>=0.13,<0.14"]
+-build-backend = "maturin"
++requires = ["maturin>=0.14,<0.15"]
++backend-path=["."]
++build-backend = "backend"
++
++[tool.maturin]
++profile="release" 
