@@ -12,7 +12,6 @@ source:
 build:
   type: shared_library
   script: |
-    mkdir -p dist
     autoreconf --install
     # build magic.mgc natively
     ./configure
@@ -24,4 +23,4 @@ build:
     cd src
     emmake make -j ${PYODIDE_JOBS:-3} libmagic.la \
       LDFLAGS="-Xcompiler '${SIDE_MODULE_LDFLAGS}'"
-    cp .libs/libmagic.so.1.0.0 ../dist/libmagic.so
+    cp .libs/libmagic.so.1.0.0 ${DISTDIR}/libmagic.so
