@@ -1,11 +1,12 @@
 import argparse
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
-from .common import exit_with_stdio, get_make_flag, get_pyodide_root
+from .common import exit_with_stdio, get_make_flag
 from .create_pypa_index import create_pypa_index
 from .logger import logger
 
@@ -48,12 +49,13 @@ def download_xbuildenv(
 
 def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     logger.info("Installing xbuild environment")
+
     xbuildenv_path = xbuildenv_path / "xbuildenv"
-    pyodide_root = get_pyodide_root()
     xbuildenv_root = xbuildenv_path / "pyodide-root"
-    host_site_packages = xbuildenv_root / Path(
-        get_make_flag("HOSTSITEPACKAGES")
-    ).relative_to(pyodide_root)
+
+    os.environ["PYODIDE_ROOT"] = str(xbuildenv_root)
+
+    host_site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
