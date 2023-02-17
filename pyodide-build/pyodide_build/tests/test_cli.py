@@ -354,5 +354,5 @@ def test_xbuildenv_install(tmp_path):
     assert result.exit_code == 0, result.stdout
     assert "Downloading xbuild environment" in result.stdout, result.stdout
     assert "Installing xbuild environment" in result.stdout, result.stdout
-    assert (envpath / "pyodide-root").is_dir()
-    assert (envpath / "site-packages-extras").is_dir()
+    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
