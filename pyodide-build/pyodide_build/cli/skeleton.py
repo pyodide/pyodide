@@ -5,7 +5,7 @@ from pathlib import Path
 
 import typer
 
-from .. import mkpkg
+from .. import common, mkpkg
 
 app = typer.Typer()
 
@@ -48,8 +48,21 @@ def new_recipe_pypi(
     """
     Create a new package from PyPI.
     """
-    root = Path.cwd()
-    recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir)
+
+    if not recipe_dir:
+        cwd = Path.cwd()
+
+        try:
+            root = common.search_pyodide_root(cwd)
+        except FileNotFoundError:
+            root = cwd
+
+        if common.in_xbuildenv():
+            root = cwd
+
+        recipe_dir_ = root / "packages"
+    else:
+        recipe_dir_ = Path(recipe_dir)
 
     if update or update_patched:
         mkpkg.update_package(
