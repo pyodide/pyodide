@@ -20,19 +20,27 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "Note: this is a private endpoint that should not be used outside of the Pyodide Makefile."
     )
     parser.add_argument("--download", action="store_true", help="Download xbuild env")
+    parser.add_argument("--url", help="URL to download xbuild env from", default=None)
     parser.add_argument("xbuildenv", type=str, nargs=1)
     return parser
 
 
-def download_xbuildenv(version: str, xbuildenv_path: Path) -> None:
+def download_xbuildenv(
+    version: str, xbuildenv_path: Path, *, url: str | None = None
+) -> None:
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
 
     logger.info("Downloading xbuild environment")
     rmtree(xbuildenv_path, ignore_errors=True)
+
+    xbuildenv_url = (
+        url
+        or f"https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
+    )
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
-            f"https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2",
+            xbuildenv_url,
             f.name,
         )
         unpack_archive(f.name, xbuildenv_path)
@@ -79,11 +87,14 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
 
 
-def main(args: argparse.Namespace) -> None:
+def install(path: Path, *, download: bool = False, url: str | None = None) -> None:
     from . import __version__
 
-    xbuildenv_path = Path(args.xbuildenv[0])
     version = __version__
-    if args.download:
-        download_xbuildenv(version, xbuildenv_path)
-    install_xbuildenv(version, xbuildenv_path)
+    if download:
+        download_xbuildenv(version, path, url=url)
+    install_xbuildenv(version, path)
+
+
+def main(args: argparse.Namespace) -> None:
+    install(Path(args.xbuildenv[0]), download=args.download, url=args.url)
