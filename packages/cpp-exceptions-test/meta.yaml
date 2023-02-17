@@ -12,6 +12,5 @@ build:
   script: |
     em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions
     em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions
-    mkdir dist
-    em++ throw.o ${SIDE_MODULE_LDFLAGS} -o dist/cpp-exceptions-test-throw.so -fexceptions
-    em++ catch.o ${SIDE_MODULE_LDFLAGS} -o dist/cpp-exceptions-test-catch.so -fexceptions
+    em++ throw.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-throw.so -fexceptions
+    em++ catch.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-catch.so -fexceptions
