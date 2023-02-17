@@ -9,7 +9,14 @@ import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+from pyodide_build.cli import (
+    build,
+    build_recipes,
+    config,
+    create_zipfile,
+    skeleton,
+    xbuildenv,
+)
 
 from .fixture import temp_python_lib
 
@@ -328,3 +335,24 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.pyc" in zf.namelist()
         assert "module2.pyc" in zf.namelist()
+
+
+def test_xbuildenv_install(tmp_path):
+    envpath = Path(tmp_path) / ".xbuildenv"
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "install",
+            "--path",
+            str(envpath),
+            "--download",
+            "--url",
+            "https://github.com/pyodide/pyodide/releases/download/0.22.1/xbuildenv-0.22.1.tar.bz2",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Downloading xbuild environment" in result.stdout, result.stdout
+    assert "Installing xbuild environment" in result.stdout, result.stdout
+    assert (envpath / "pyodide-root").is_dir()
+    assert (envpath / "site-packages-extras").is_dir()
