@@ -108,6 +108,8 @@ myst:
   CPU cores in the system and uses them for parallel builds.
   {pr}`3559`
 
+- {{ Enhancement }} `pyodide build-recipes` now works out-of-tree.
+
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
 
