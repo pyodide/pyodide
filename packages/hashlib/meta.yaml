@@ -8,8 +8,6 @@ package:
 build:
   type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONBUILD
 
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \

@@ -10,8 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, setHomeDirectory } from "./module";
-import { initializeNativeFS } from "./nativefs";
+import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -335,18 +334,11 @@ export async function loadPyodide(
   const Module = createModule();
   Module.print = config.stdout;
   Module.printErr = config.stderr;
-  Module.preRun.push(() => {
-    for (const mount of config._node_mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
-    }
-  });
-
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
-  setHomeDirectory(Module, config.homedir);
+  initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -388,8 +380,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   };
 
   postInitializePython(Module);
-
-  initializeNativeFS(Module);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
