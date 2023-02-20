@@ -215,7 +215,6 @@ def get_build_env(
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
-
         env["PYTHONPATH"] = str(sysconfig_dir)
         yield env
 
