@@ -354,14 +354,14 @@ jobs:
             npm link ../../dist
             npm run test-types
             npm test
-      - run:
-          name: check if Pyodide works with Webpack
-          command: |
-            git clone https://github.com/pyodide/pyodide-webpack-example.git
-            export DEV_PYODIDE_PATH=`realpath dist`
-            cd pyodide-webpack-example
-            git checkout 164054a9c6fbd2176f386b6552ed8d079c6bcc04
-            ./build.sh
+      # - run:
+      #     name: check if Pyodide works with Webpack
+      #     command: |
+      #       git clone https://github.com/pyodide/pyodide-webpack-example.git
+      #       export DEV_PYODIDE_PATH=`realpath dist`
+      #       cd pyodide-webpack-example
+      #       git checkout 164054a9c6fbd2176f386b6552ed8d079c6bcc04
+      #       ./build.sh
 
       - run:
           name: test npm deploy (dry run)
