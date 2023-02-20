@@ -53,4 +53,4 @@ build:
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
 
-    source $PYODIDE_ROOT/packages/opencv-python/cmake/build_args.sh
+    source $PKGDIR/cmake/build_args.sh
