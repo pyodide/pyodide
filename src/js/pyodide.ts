@@ -10,8 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, createDefaultDirectories } from "./module";
-import { initializeNativeFS } from "./nativefs";
+import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -365,7 +364,7 @@ export async function loadPyodide(
   const API: any = { config };
   Module.API = API;
 
-  createDefaultDirectories(Module, config);
+  initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -405,8 +404,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
-
-  initializeNativeFS(Module);
 
   const python_stdlib_promise_zip = await python_stdlib_promise;
   installStdlib(Module, python_stdlib_promise_zip);

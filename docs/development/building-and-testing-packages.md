@@ -100,7 +100,7 @@ pyodide venv .venv-pyodide
 Activate it just like a normal virtual environment:
 
 ```sh
-source .venv-pyodide/bin/python
+source .venv-pyodide/bin/activate
 ```
 
 As a warning, things are pretty weird inside of the Pyodide virtual environment

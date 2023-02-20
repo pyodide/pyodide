@@ -1,6 +1,7 @@
 /** @private */
 
 import { ConfigType } from "./pyodide";
+import { initializeNativeFS } from "./nativefs";
 
 type FSNode = any;
 type FSStream = any;
@@ -66,38 +67,49 @@ export function createModule(): any {
 }
 
 /**
- * Create default directories inside the virtual file system.
- * This function is intended to be called before the Pyodide is loaded.
+ * Make the home directory inside the virtual file system,
+ * then change the working directory to it.
+ *
+ * @param Module The Emscripten Module.
+ * @param path The path to the home directory.
  * @private
  */
-export function createDefaultDirectories(Module: Module, config: ConfigType) {
+function setHomeDirectory(Module: Module, path: string) {
   Module.preRun.push(function () {
-    // System directories. Since Python tries to initialize module search paths
-    // by checking the existence of these directories, we need to create them
-    // before bootstrapping Python.
-    Module.FS.mkdirTree("/lib");
-
-    // Set up the home directory,
-    // also change the working directory to it.
     const fallbackPath = "/";
     try {
-      Module.FS.mkdirTree(config.homedir);
+      Module.FS.mkdirTree(path);
     } catch (e) {
-      console.error(
-        `Error occurred while making a home directory '${config.homedir}':`,
-      );
+      console.error(`Error occurred while making a home directory '${path}':`);
       console.error(e);
       console.error(`Using '${fallbackPath}' for a home directory instead`);
-      config.homedir = fallbackPath;
+      path = fallbackPath;
     }
-    Module.ENV.HOME = config.homedir;
-    Module.FS.chdir(config.homedir);
-
-    Module.preRun.push(() => {
-      for (const mount of config._node_mounts) {
-        Module.FS.mkdirTree(mount);
-        Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
-      }
-    });
+    Module.ENV.HOME = path;
+    Module.FS.chdir(path);
   });
+}
+
+/**
+ * Mount local directories to the virtual file system. Only for Node.js.
+ * @param module The Emscripten Module.
+ * @param mounts The list of paths to mount.
+ */
+function mountLocalDirectories(Module: Module, mounts: string[]) {
+  Module.preRun.push(() => {
+    for (const mount of mounts) {
+      Module.FS.mkdirTree(mount);
+      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
+    }
+  });
+}
+
+/**
+ * Initialize the virtual file system, before loading Python interpreter.
+ * @private
+ */
+export function initializeFileSystem(Module: Module, config: ConfigType) {
+  setHomeDirectory(Module, config.homedir);
+  mountLocalDirectories(Module, config._node_mounts);
+  Module.preRun.push(() => initializeNativeFS(Module));
 }
