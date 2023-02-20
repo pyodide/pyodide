@@ -74,9 +74,12 @@ function saveStreamToFile(Module: any, stream: Uint8Array, fileName: string) {
 }
 
 /**
+ * This function is called right after the Python interpreter is initialized,
+ * but before any Python code is run. It sets up some unfinished parts of the
+ * Python environment.
  * @private
  */
-function installStdlib(Module: any, stdlib: Uint8Array) {
+function postInitializePython(Module: any, stdlib: Uint8Array) {
   // TODO: Get python version from sys.version_info?
   saveStreamToFile(Module, stdlib, "/lib/python311.zip");
 
@@ -406,7 +409,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   };
 
   const python_stdlib_promise_zip = await python_stdlib_promise;
-  installStdlib(Module, python_stdlib_promise_zip);
+  postInitializePython(Module, python_stdlib_promise_zip);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
