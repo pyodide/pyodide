@@ -2,7 +2,14 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
+import {
+  loadScript,
+  initNodeModules,
+  pathSep,
+  resolvePath,
+  getPreloadedPackage,
+  instantiateWasm,
+} from "./compat";
 
 import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
@@ -276,6 +283,8 @@ export async function loadPyodide(
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
   Module.locateFile = (path: string) => config.indexURL + path;
+  Module.getPreloadedPackage = getPreloadedPackage;
+  Module.instantiateWasm = instantiateWasm;
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
