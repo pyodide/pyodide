@@ -37,6 +37,7 @@ module = [
   "tomllib",
   "tomli",
   "typer",
+  "loky",
 ]
 ignore_missing_imports = true
 
