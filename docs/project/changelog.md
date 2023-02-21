@@ -106,7 +106,7 @@ myst:
 
 - {{ Enhancement }} `pyodide build-recipes` now autodetects the number of
   CPU cores in the system and uses them for parallel builds.
-  {pr}`3559`
+  {pr}`3559` {pr}`3598`
 
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
