@@ -90,6 +90,25 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
 
 
 def install(path: Path, *, download: bool = False, url: str | None = None) -> None:
+    """
+    Install cross-build environment.
+
+    Parameters
+    ----------
+    path
+        A path to the cross-build environment.
+    download
+        Whether to download the cross-build environment before installing it.
+    url
+        URL to download the cross-build environment from. This is only used
+        if `download` is True. The URL should point to a tarball containing
+        the cross-build environment. If not specified, the corresponding
+        release on GitHub is used.
+
+        Warning: if you are downloading from a version that is not the same
+        as the current version of pyodide-build, make sure that the cross-build
+        environment is compatible with the current version of Pyodide.
+    """
     from . import __version__
 
     version = __version__
