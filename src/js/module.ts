@@ -109,6 +109,9 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @private
  */
 export function initializeFileSystem(Module: Module, config: ConfigType) {
+  Module.preRun.push(() => {
+    Module.FS.mkdirTree("/lib");
+  });
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
