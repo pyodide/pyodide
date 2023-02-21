@@ -78,8 +78,8 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
     cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
-    if (xbuildenv_root / "repodata.json").exists():
-        repodata_bytes = (xbuildenv_root / "repodata.json").read_bytes()
+    if (repodata_json := xbuildenv_root / "dist" / "repodata.json").exists():
+        repodata_bytes = repodata_json.read_bytes()
     else:
         repodata_url = cdn_base + "repodata.json"
         with urlopen(repodata_url) as response:
