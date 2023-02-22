@@ -77,13 +77,16 @@ myst:
   regular spaces in pyodide REPL.
   {pr}`3558`
 
-- {{ Breaking }} Python standard libraries are now vendored in a zipfile in
-  `/lib/python3.11.zip`.
+- {{ Breaking }} Python standard libraries are now vendored in a zipfile:
+  `/lib/python{version}.zip`. If you need to access the standard library files,
+  you need to unpack the zip file. For example:
+  `import shutil; shutil.unpack_archive('/lib/python311.zip', '/lib/python3.11', 'zip)`
   {pr}`3584`
 
 - {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
   `pyodide.asm.data` is removed. This change normally shouldn't affect,
   but if you were using this file in a bundler, you will need to remove it.
+  {pr}`3584`
 
 ### Build System
 
