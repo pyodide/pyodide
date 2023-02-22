@@ -105,10 +105,28 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
 }
 
 /**
+ * Create site-packages directory.
+ * This directory might not exist, and in that case,
+ * it is not added to sys.path by default. So we need to
+ * create it explicitly.
+ * @param Module The Emscripten Module.
+ */
+function createSitePackageDirectory(Module: Module) {
+  Module.preRun.push(() => {
+    // @ts-ignore
+    const pymajor = Module._py_version_major();
+    // @ts-ignore
+    const pyminor = Module._py_version_minor();
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
+  });
+}
+
+/**
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
 export function initializeFileSystem(Module: Module, config: ConfigType) {
+  createSitePackageDirectory(Module);
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
