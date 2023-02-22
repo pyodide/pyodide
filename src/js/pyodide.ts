@@ -356,9 +356,7 @@ export async function loadPyodide(
   const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL + "pyodide_py.tar",
   );
-  const python_stdlib_promise = loadBinaryFile(
-    config.indexURL + "python_stdlib.zip",
-  );
+  const stdlib_promise = loadBinaryFile(config.indexURL + "pyodide_stdlib.zip");
 
   const Module = createModule();
   Module.print = config.stdout;
@@ -408,8 +406,8 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const python_stdlib_promise_zip = await python_stdlib_promise;
-  postInitializePython(Module, python_stdlib_promise_zip);
+  const stdlib_promise_zip = await stdlib_promise;
+  postInitializePython(Module, stdlib_promise_zip);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
