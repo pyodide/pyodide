@@ -1,7 +1,7 @@
 From c735d545343c3ab002c62596b2fb2cfa4488b0af Mon Sep 17 00:00:00 2001
 From: Victor Stinner <vstinner@python.org>
 Date: Tue, 21 Jun 2022 10:27:59 +0200
-Subject: [PATCH 6/8] gh-93839: Move Lib/unttest/test/ to Lib/test/test_unittest/
+Subject: [PATCH 6/9] gh-93839: Move Lib/unttest/test/ to Lib/test/test_unittest/
  (#94043)
 
 * Move Lib/unittest/test/ to Lib/test/test_unittest/
