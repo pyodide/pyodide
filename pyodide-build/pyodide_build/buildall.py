@@ -549,7 +549,7 @@ def build_from_graph(
     progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
-        nonlocal queue_idx
+        nonlocal queue_idx, building_rust_pkg
         while True:
             _, pkg = build_queue.get()
 
