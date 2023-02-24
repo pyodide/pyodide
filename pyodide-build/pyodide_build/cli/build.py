@@ -67,37 +67,40 @@ def url(
     backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
-    with requests.get(package_url, stream=True) as response:
-        parsed_url = urlparse(response.url)
-        filename = os.path.basename(parsed_url.path)
-        name_base, ext = os.path.splitext(filename)
-        if ext == ".gz" and name_base.rfind(".") != -1:
-            ext = name_base[name_base.rfind(".") :] + ext
-        if ext.lower() == ".whl":
-            # just copy wheel into dist and return
-            out_path = Path(f"dist/{filename}").resolve()
-            with open(out_path, "b") as f:
-                for chunk in response.iter_content(chunk_size=1048576):
-                    f.write(chunk)
-            return out_path
-        else:
-            tf = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
+
+    response = requests.get(package_url, stream=True)
+    parsed_url = urlparse(response.url)
+    filename = os.path.basename(parsed_url.path)
+    name_base, ext = os.path.splitext(filename)
+
+    if ext == ".gz" and name_base.rfind(".") != -1:
+        ext = name_base[name_base.rfind(".") :] + ext
+
+    if ext.lower() == ".whl":
+        # just copy wheel into dist and return
+        out_path = Path(f"dist/{filename}").resolve()
+        with open(out_path, "rb") as f:
             for chunk in response.iter_content(chunk_size=1048576):
-                tf.write(chunk)
-            tf.close()
-            with tempfile.TemporaryDirectory() as tmpdir:
-                temppath = Path(tmpdir)
-                shutil.unpack_archive(tf.name, tmpdir)
-                folder_list = list(temppath.iterdir())
-                if len(folder_list) == 1 and folder_list[0].is_dir():
-                    # unzipped into subfolder
-                    os.chdir(folder_list[0])
-                else:
-                    # unzipped here
-                    os.chdir(temppath)
-                wheel_path = build.run(exports, backend_flags, outdir=curdir / "dist")
-            os.unlink(tf.name)
-            return wheel_path
+                f.write(chunk)
+        return out_path
+    else:
+        tf = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
+        for chunk in response.iter_content(chunk_size=1048576):
+            tf.write(chunk)
+        tf.close()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temppath = Path(tmpdir)
+            shutil.unpack_archive(tf.name, tmpdir)
+            folder_list = list(temppath.iterdir())
+            if len(folder_list) == 1 and folder_list[0].is_dir():
+                # unzipped into subfolder
+                os.chdir(folder_list[0])
+            else:
+                # unzipped here
+                os.chdir(temppath)
+            wheel_path = build.run(exports, backend_flags, outdir=curdir / "dist")
+        os.unlink(tf.name)
+        return wheel_path
 
 
 def source(
