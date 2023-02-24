@@ -3,7 +3,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import cast, Optional
+from typing import Optional, cast
 from urllib.parse import urlparse
 
 import requests
