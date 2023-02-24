@@ -559,6 +559,8 @@ def build_from_graph(
                     # See: https://github.com/pyodide/pyodide/issues/3565
                     if building_rust_pkg:
                         build_queue.put((job_priority(pkg), pkg))
+
+                        # Release the GIL so new packages get queued
                         sleep(0.01)
                         continue
 
