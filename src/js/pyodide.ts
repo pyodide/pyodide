@@ -356,7 +356,7 @@ export async function loadPyodide(
   const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL + "pyodide_py.tar",
   );
-  const stdlib_promise = loadBinaryFile(config.indexURL + "pyodide_stdlib.zip");
+  const stdlib_promise = loadBinaryFile(config.indexURL + "python_stdlib.zip");
 
   const Module = createModule();
   Module.print = config.stdout;

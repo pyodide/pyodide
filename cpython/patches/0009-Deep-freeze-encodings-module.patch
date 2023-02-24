@@ -22,6 +22,5 @@ index dd208c7847..4a35f04e9e 100644
          'io',
          ]),
      ('stdlib - startup, with site', [
--- 
+--
 2.37.3
-
