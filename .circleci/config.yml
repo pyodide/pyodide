@@ -78,7 +78,7 @@ jobs:
             du dist/ -abh --max-depth 1  | sort -k 2
 
             pip install brotli
-            ./tools/check_compressed_size.py dist/pyodide.asm.* dist/pyodide_stdlib*
+            ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - save_cache:
           paths:
@@ -100,7 +100,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar} dist/{package,repodata}.json dist/pyodide_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar} dist/{package,repodata}.json dist/python_stdlib.zip
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -154,7 +154,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar,_stdlib.zip} dist/{package,repodata}.json
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar} dist/{package,repodata}.json dist/python_stdlib.zip
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -446,7 +446,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar,_stdlib.zip} pyodide/{package,repodata}.json
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm,_py.tar} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \

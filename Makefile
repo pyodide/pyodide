@@ -17,7 +17,7 @@ all: check \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
-	dist/pyodide_stdlib.zip \
+	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
@@ -180,7 +180,7 @@ pyodide_build: ./pyodide-build/pyodide_build/**
 	which pyodide-build >/dev/null
 	which pyodide >/dev/null
 
-dist/pyodide_stdlib.zip: pyodide_build $(CPYTHONLIB)
+dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
 	pyodide create-zipfile $(CPYTHONLIB) --output $@
 
 dist/test.html: src/templates/test.html
