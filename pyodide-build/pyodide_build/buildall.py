@@ -555,6 +555,8 @@ def build_from_graph(
 
             with thread_lock:
                 if is_rust_package(pkg):
+                    # Don't build multiple rust packages at the same time
+                    # See: https://github.com/pyodide/pyodide/issues/3565
                     if building_rust_pkg:
                         build_queue.put((job_priority(pkg), pkg))
                         sleep(0.01)
