@@ -293,4 +293,4 @@ def test_zipimport_check_non_stdlib(selenium):
 
     shutil.unpack_archive(zipfile, tmpdir, "zip")
     for f in tmpdir.glob("*"):
-        assert f.name.removesuffix(".py") not in stdlib_names | extra_files, f.name
+        assert f.name.removesuffix(".py") in stdlib_names, f.name
