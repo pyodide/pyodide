@@ -3,7 +3,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import cast, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -68,7 +68,7 @@ def url(
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
     with requests.get(package_url, stream=True) as response:
-        assert isinstance(response, requests.Response)  # placate mypy
+        response = cast(requests.Response, response)  # placate mypy
         parsed_url = urlparse(response.url)
         filename = os.path.basename(parsed_url.path)
         name_base, ext = os.path.splitext(filename)
