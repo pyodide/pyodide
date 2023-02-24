@@ -68,7 +68,7 @@ def url(
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
     with requests.get(package_url, stream=True) as response:
-        response = cast(requests.Response, response)  # placate mypy
+        response = cast(requests.Response, response)  # pragma: no cover
         parsed_url = urlparse(response.url)
         filename = os.path.basename(parsed_url.path)
         name_base, ext = os.path.splitext(filename)
