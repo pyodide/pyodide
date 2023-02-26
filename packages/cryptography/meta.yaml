@@ -18,8 +18,10 @@ build:
 
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
-    cd src
-    cargo update -p pyo3>0.18.1 --aggressive
+    cd src/rust
+    sed -i s/0.15.2/0.18.1/g cargo.toml
+    cargo update -p pyo3 --aggressive
+    cd ../..
   cflags: |
     -Wno-implicit-function-declaration
     $(OPENSSL_INCLUDE_PATH)
