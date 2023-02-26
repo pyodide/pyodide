@@ -18,6 +18,8 @@ build:
 
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
+    cd src
+    cargo update -p pyo3>0.18.1 --aggressive
   cflags: |
     -Wno-implicit-function-declaration
     $(OPENSSL_INCLUDE_PATH)
