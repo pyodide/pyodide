@@ -405,7 +405,6 @@ def set_build_environment(env: dict[str, str]) -> None:
     env["CMAKE_TOOLCHAIN_FILE"] = str(
         tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
     )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
 
 def get_num_cores() -> int:
