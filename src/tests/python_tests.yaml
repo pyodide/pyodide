@@ -525,9 +525,7 @@
 - test_module
 - test_modulefinder
 - test_msilib
-- test_multibytecodec:
-    skip:
-      - test_subinterp # frozen encodings
+- test_multibytecodec
 - test_multiprocessing_fork
 - test_multiprocessing_forkserver
 - test_multiprocessing_main_handling
