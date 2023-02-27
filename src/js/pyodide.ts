@@ -10,7 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, initializeFileSystem } from "./module";
+import { createModule, initializeFileSystem, saveStreamToFile } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -62,65 +62,6 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
       return Reflect.get(target, symbol);
     },
   });
-}
-
-/**
- * @private
- */
-function saveStreamToFile(Module: any, stream: Uint8Array, fileName: string) {
-  const f = Module.FS.open(fileName, "w");
-  Module.FS.write(f, stream, 0, stream.byteLength, undefined, true);
-  Module.FS.close(f);
-}
-
-/**
- * This function is called right after the Python interpreter is initialized,
- * but before any Python code is run. It sets up some unfinished parts of the
- * Python environment.
- * @private
- */
-function postInitializePython(Module: any, stdlib: Uint8Array) {
-  // TODO: Get python version from sys.version_info?
-  saveStreamToFile(Module, stdlib, "/lib/python311.zip");
-
-  // After downloading the stdlib, we do the following:
-  // 1) We need to re-register the codecs because the frozen encodings module
-  //    only contains utf_8 encoding, which is required for bootstrap.
-  //    So we unregister the frozen encodings module and re-register the full
-  //    encodings module.
-  // 2) In order to make the zipfile visible to the import system, we need to
-  //    invalidate the caches. But importlib is not available yet, so we can't
-  //    use importlib.invalidate_caches here. Hence we iterate over the
-  //    sys.meta_path and call invalidate_caches manually.
-  // 3) Since frozen modules have precedence over the python files, we need to
-  //    disable the frozen modules, so that we can load encodings module from
-  //    the zipfile. _imp._override_frozen_modules_for_tests is a private API,
-  //    but it is the only way to disable the frozen modules.
-  // 4) Import site module. Normally this is done during the bootstrap, but we
-  //    disabled it because importing site module can have a side effect of
-  //    running arbitrary code, which is not available at the time of bootstrap.
-  const code = `
-import sys, _imp, encodings, codecs, os
-codecs.unregister(encodings.search_function)
-for f in sys.meta_path: f.invalidate_caches() if hasattr(f, "invalidate_caches") else None
-os.makedirs(f"{sys.prefix}{sys.platlibdir}/python{sys.version_info.major}.{sys.version_info.minor}/site-packages", exist_ok=True)
-del sys.modules["encodings"]
-del sys.modules["encodings.utf_8"]
-del sys.modules["encodings.aliases"]
-_imp._override_frozen_modules_for_tests(-1)
-del sys, _imp, encodings, codecs, os
-import encodings, site
-site.main()
-del encodings
-del site
-`;
-  let [errcode, captured_stderr] = Module.API.rawRun(code);
-  if (errcode) {
-    Module.API.fatal_loading_error(
-      "Failed to install standard library.\n",
-      captured_stderr,
-    );
-  }
 }
 
 /**
@@ -356,7 +297,6 @@ export async function loadPyodide(
   const pyodide_py_tar_promise = loadBinaryFile(
     config.indexURL + "pyodide_py.tar",
   );
-  const stdlib_promise = loadBinaryFile(config.indexURL + "python_stdlib.zip");
 
   const Module = createModule();
   Module.print = config.stdout;
@@ -405,9 +345,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
-
-  const stdlib_promise_zip = await stdlib_promise;
-  postInitializePython(Module, stdlib_promise_zip);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);
