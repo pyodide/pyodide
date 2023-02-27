@@ -10,8 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, setHomeDirectory } from "./module";
-import { initializeNativeFS } from "./nativefs";
+import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -63,6 +62,33 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
       return Reflect.get(target, symbol);
     },
   });
+}
+
+/**
+ * This function is called right after the Python interpreter is initialized,
+ * but before any Python code is run. It sets up some unfinished parts of the
+ * Python environment.
+ * @private
+ */
+function postInitializePython(Module: any) {
+  const code = `
+import sys, _imp, encodings, codecs
+codecs.unregister(encodings.search_function)
+del sys.modules["encodings"]
+del sys.modules["encodings.utf_8"]
+del sys.modules["encodings.aliases"]
+_imp._override_frozen_modules_for_tests(-1)
+del sys, _imp, encodings, codecs
+import encodings
+del encodings
+`;
+  let [errcode, captured_stderr] = Module.API.rawRun(code);
+  if (errcode) {
+    Module.API.fatal_loading_error(
+      "Failed to install standard library.\n",
+      captured_stderr,
+    );
+  }
 }
 
 function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
@@ -308,18 +334,11 @@ export async function loadPyodide(
   const Module = createModule();
   Module.print = config.stdout;
   Module.printErr = config.stderr;
-  Module.preRun.push(() => {
-    for (const mount of config._node_mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
-    }
-  });
-
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
-  setHomeDirectory(Module, config.homedir);
+  initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -360,7 +379,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  initializeNativeFS(Module);
+  postInitializePython(Module);
 
   const pyodide_py_tar = await pyodide_py_tar_promise;
   unpackPyodidePy(Module, pyodide_py_tar);

@@ -159,9 +159,8 @@ The difference between `static_library` and `shared_library` is that
 `static_library` is statically linked into the other packages,
 so it is required only in the build time, while `shared_library` is
 dynamically linked, so it is required in the runtime. When building
-a shared library, you should copy the built libraries into the subfolder
-of the source folder called `dist`. Files or folders in this folder will
-be packaged to make the Pyodide package.
+a shared library, you should copy the built libraries into the `$DISTDIR`.
+Files or folders in this folder will be packaged to make the Pyodide package.
 
 See the [zlib
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml)
@@ -182,6 +181,9 @@ There are special environment variables defined:
 - `$PKGDIR`: The directory in which the `meta.yaml` file resides.
 - `$PKG_VESRION`: The version of the package
 - `$PKG_BUILD_DIR`: The directory where the tarball was extracted.
+- `$DISTDIR`: The directory where the built wheel or library should be placed.
+  If you are building a shared library, you should copy the built libraries into this
+  directory.
 
 (These keys are not in the Conda spec).
 
