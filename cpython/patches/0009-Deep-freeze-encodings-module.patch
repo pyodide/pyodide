@@ -1,0 +1,26 @@
+From 59ddc97c88aab955598330371adf46edb63faa2d Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Fri, 3 Feb 2023 05:06:20 +0000
+Subject: [PATCH 9/9] Deep-freeze encodings module
+
+---
+ Tools/scripts/freeze_modules.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/Tools/scripts/freeze_modules.py b/Tools/scripts/freeze_modules.py
+index dd208c7847..4a35f04e9e 100644
+--- a/Tools/scripts/freeze_modules.py
++++ b/Tools/scripts/freeze_modules.py
+@@ -52,7 +52,9 @@
+         # For now we do not freeze the encodings, due # to the noise all
+         # those extra modules add to the text printed during the build.
+         # (See https://github.com/python/cpython/pull/28398#pullrequestreview-756856469.)
+-        #'<encodings.*>',
++        '<encodings>',
++        'encodings.aliases',
++        'encodings.utf_8',
+         'io',
+         ]),
+     ('stdlib - startup, with site', [
+--
+2.37.3
