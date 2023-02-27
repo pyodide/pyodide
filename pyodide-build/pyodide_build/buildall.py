@@ -555,13 +555,16 @@ def build_from_graph(
 
             with thread_lock:
                 if is_rust_package(pkg):
-                    # Don't build multiple rust packages at the same time
+                    # Don't build multiple rust packages at the same time.
                     # See: https://github.com/pyodide/pyodide/issues/3565
+                    # Note that if there are only rust packages left in the queue,
+                    # this will keep push and pop package until the current rust package
+                    # is built. This is not ideal but presumably the overhead is negligible.
                     if building_rust_pkg:
                         build_queue.put((job_priority(pkg), pkg))
 
                         # Release the GIL so new packages get queued
-                        sleep(0.01)
+                        sleep(0.1)
                         continue
 
                     building_rust_pkg = True
