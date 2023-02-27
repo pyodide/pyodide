@@ -558,7 +558,7 @@ def build_from_graph(
                     # Don't build multiple rust packages at the same time.
                     # See: https://github.com/pyodide/pyodide/issues/3565
                     # Note that if there are only rust packages left in the queue,
-                    # this will keep push and pop package until the current rust package
+                    # this will keep pushing and popping packages until the current rust package
                     # is built. This is not ideal but presumably the overhead is negligible.
                     if building_rust_pkg:
                         build_queue.put((job_priority(pkg), pkg))
