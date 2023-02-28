@@ -8,11 +8,12 @@ COMPRESSIONS = ("SNAPPY", "GZIP", "LZ4", "BROTLI", "ZSTD")
 @pytest.mark.parametrize("compression", COMPRESSIONS)
 @run_in_pyodide(packages=["fastparquet", "packaging"])
 def test_simple_table(selenium, compression):
-    import fastparquet  # type: ignore
-    import pandas as pd  # type: ignore
-    import numpy as np  # type: ignore
-    from tempfile import TemporaryDirectory
     from pathlib import Path
+    from tempfile import TemporaryDirectory
+
+    import fastparquet  # type: ignore
+    import numpy as np  # type: ignore
+    import pandas as pd  # type: ignore
 
     df = pd.DataFrame(np.random.randn(131072, 4), columns=list("ABCD"))
     with TemporaryDirectory() as td:
