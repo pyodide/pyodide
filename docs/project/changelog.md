@@ -122,6 +122,9 @@ myst:
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
 
+- {{ Fix }} Fix occasional build failure when building rust packages.
+  {pr}`3607`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting
