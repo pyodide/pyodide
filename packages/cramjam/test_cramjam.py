@@ -10,7 +10,7 @@ VARIANTS = ("snappy", "brotli", "bzip2", "lz4", "gzip", "deflate", "zstd")
 def test_variants_simple(selenium, variant_str, is_bytearray):
     import random
 
-    uncompressed:any = [random.getrandbits(8) for x in range(1048576)]
+    uncompressed: any = [random.getrandbits(8) for x in range(1048576)]
     variant = getattr(cramjam, variant_str)
 
     if is_bytearray:
