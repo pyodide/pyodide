@@ -389,3 +389,5 @@ but other than that there may be no other issues if you are lucky.
 As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224),
 by default certain wasm-related `RUSTFLAGS` are set during `build.script`
 and can be removed with `export RUSTFLAGS=""`.
+
+If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
