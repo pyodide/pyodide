@@ -1,5 +1,6 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
+from typing import Any
 
 VARIANTS = ("snappy", "brotli", "bzip2", "lz4", "gzip", "deflate", "zstd")
 
@@ -9,8 +10,8 @@ VARIANTS = ("snappy", "brotli", "bzip2", "lz4", "gzip", "deflate", "zstd")
 @run_in_pyodide(packages=["cramjam"])
 def test_variants_simple(selenium, variant_str, is_bytearray):
     import random
-
-    uncompressed: any = [random.getrandbits(8) for x in range(1048576)]
+    import cramjam # type: ignore
+    uncompressed: Any = [random.getrandbits(8) for x in range(1048576)]
     variant = getattr(cramjam, variant_str)
 
     if is_bytearray:
