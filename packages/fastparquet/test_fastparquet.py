@@ -9,9 +9,9 @@ COMPRESSIONS = ("SNAPPY", "GZIP", "LZ4", "BROTLI", "ZSTD")
 def test_simple_table(selenium, compression):
     from tempfile import NamedTemporaryFile
 
-    import fastparquet
+    import fastparquet # type: ignore
     import numpy as np
-    import pandas as pd
+    import pandas as pd # type: ignore
 
     df = pd.DataFrame(np.random.randn(131072, 8), columns=list("ABCDEFGH"))
     with NamedTemporaryFile(suffix=".parquet") as tf:
