@@ -11,9 +11,9 @@ def test_simple_table(selenium, compression):
     from pathlib import Path
     from tempfile import TemporaryDirectory
 
-    import fastparquet  # type: ignore
-    import numpy as np  # type: ignore
-    import pandas as pd  # type: ignore
+    import fastparquet  # type: ignore[import]
+    import numpy as np  # type: ignore[import]
+    import pandas as pd  # type: ignore[import]
 
     df = pd.DataFrame(np.random.randn(131072, 4), columns=list("ABCD"))
     with TemporaryDirectory() as td:
