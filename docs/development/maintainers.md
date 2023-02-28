@@ -116,8 +116,8 @@ For example: `v3.11.1` -> `v3.11.2`
 1. Download the **Gzipped source tarball** at https://www.python.org/downloads/release/python-3112 into `downloads/`
 2. `shasum -a 256 downloads/Python-3.11.2.tgz > cpython/checksums`
 3. `git grep --name-only "3.11.1" ` # All these files will need to be updated.
-4. After updating then Python version in `Dockerfile`, create a new Docker image.
+4. After updating the Python version in `Dockerfile`, create a new Docker image.
 5. Upload the new Docker image to https://hub.docker.com/r/pyodide/pyodide-env
 6. Modify the image name in `.circleci/config.yml` to match the name Docker Hub.
 7. Rebase any patches which do not apply cleanly.
-8. Create a pull request and fix any failing tests. This may be complicated for major releases.
+8. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
