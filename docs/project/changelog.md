@@ -21,8 +21,8 @@ myst:
   from both `JsProxy` and `Exception`.
   {pr}`3455`
 
-- {{ Update }} Pyodide now runs Python 3.11.1.
-  {pr}`3252`
+- {{ Update }} Pyodide now runs Python 3.11.2.
+  {pr}`3252`, {pr}`3614`
 
 - {{ Update }} We now build libpyodide.a so the Pyodide foreign function
   interface can be experimentally linked into other Emscripten builds of Python.
