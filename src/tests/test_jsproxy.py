@@ -2197,3 +2197,44 @@ async def test_agen_lifetimes(selenium):
     del res
     assert v == ["{1}", "{2}", "{3}", "{4}"]
     assert sys.getrefcount(v) == 2
+
+
+@run_in_pyodide
+def test_python_reserved_keywords(selenium):
+    import pytest
+    from pyodide.code import run_js
+
+    o = run_js(
+        """({
+            async: 1,
+            await: 2,
+            False: 3,
+            nonlocal: 4,
+            yield: 5,
+            try: 6,
+            assert: 7,
+            match: 222,
+        })
+        """
+    )
+    assert o.match == 222
+    with pytest.raises(AttributeError):
+        o.match_
+    assert eval("o.match") == 222
+    keys = ["async", "await", "False", "nonlocal", "yield", "try", "assert"]
+    for k in keys:
+        with pytest.raises(SyntaxError):
+            eval(f"o.{k}")
+
+    assert o.async_ == 1
+    assert o.await_ == 2
+    assert o.False_ == 3
+    assert o.nonlocal_ == 4
+    assert o.yield_ == 5
+    assert o.try_ == 6
+    assert o.assert_ == 7
+    assert set(dir(o)) >= set(keys) | {k + "_" for k in keys} | {"match"}
+    o.async_ = 2
+    assert run_js("(o) => o.async")(o) == 2
+    del o.async_
+    assert run_js("(o) => o.async")(o) == None

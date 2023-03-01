@@ -908,16 +908,43 @@ EM_JS_REF(JsRef, JsObject_New, (), {
 });
 // clang-format on
 
+EM_JS(bool, isReservedWord, (int word), {
+  if (!Module.pythonReservedWords) {
+    Module.pythonReservedWords = new Set([
+      "False",  "await", "else",     "import", "pass",   "None",    "break",
+      "except", "in",    "raise",    "True",   "class",  "finally", "is",
+      "return", "and",   "continue", "for",    "lambda", "try",     "as",
+      "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
+      "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
+    ])
+  }
+  return Module.pythonReservedWords.has(word);
+});
+
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   let result = jsobj[jskey];
   // clang-format off
-  if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
+  if (result !== undefined || jskey in jsobj) {
+    return Hiwire.new_value(result);
+  }
+  if(!jskey.endsWith("_")) {
     return ERROR_REF;
   }
-  return Hiwire.new_value(result);
+
+  jskey = jskey.slice(0, -1);
+  if(!isReservedWord(jskey)) {
+    return ERROR_REF;
+  }
+
+  result = jsobj[jskey];
+  // clang-format off
+  if (result !== undefined || jskey in jsobj) {
+    return Hiwire.new_value(result);
+  }
+  return ERROR_REF;
+  // clang-format on
 });
 
 // clang-format off
@@ -928,6 +955,12 @@ EM_JS_NUM(errcode,
   let jsobj = Hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
   let jsval = Hiwire.get_value(idval);
+  if(!(jskey in jsobj) && jskey.endsWith("_")) {
+    let reservedWord = jskey.slice(0, -1);
+    if((reservedWord in jsobj) && isReservedWord(reservedWord)) {
+      jskey = reservedWord;
+    }
+  }
   jsobj[jskey] = jsval;
 });
 // clang-format on
@@ -935,6 +968,12 @@ EM_JS_NUM(errcode,
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
   let jskey = UTF8ToString(ptrkey);
+  if (!(jskey in jsobj) && jskey.endsWith("_")) {
+    let reservedWord = jskey.slice(0, -1);
+    if ((reservedWord in jsobj) && isReservedWord(reservedWord)) {
+      jskey = reservedWord;
+    }
+  }
   delete jsobj[jskey];
 });
 
@@ -943,12 +982,14 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   let result = [];
   do {
     // clang-format off
-    result.push(... Object.getOwnPropertyNames(jsobj).filter(
+    const names = Object.getOwnPropertyNames(jsobj);
+    result.push(...names.filter(
       s => {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
     ));
+    result.push(...names.filter(isReservedWord).map(n => n + "_"));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);
