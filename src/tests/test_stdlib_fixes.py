@@ -241,6 +241,14 @@ def test_encodings_deepfrozen(selenium):
 
 @run_in_pyodide
 def test_zipimport_traceback(selenium):
+    """
+    Test that traceback of modules loaded from zip file are shown as intended.
+
+    For .py files, the traceback should show the path to the .py file in the
+    zip file, e.g. "/lib/python311.zip/path/to/module.py".
+
+    For .pyc files (TODO), the traceback only shows filename, e.g. "module.py". 
+    """
     import json.decoder
     import pathlib
     import sys

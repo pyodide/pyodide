@@ -84,7 +84,7 @@ myst:
   {pr}`3584`
 
 - {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
-  `pyodide.asm.data` is removed. This change normally shouldn't affect,
+  `pyodide.asm.data` is removed. This change normally shouldn't affect users,
   but if you were using this file in a bundler, you will need to remove it.
   {pr}`3584`
 
