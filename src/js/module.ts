@@ -78,19 +78,6 @@ export function createModule(): any {
 }
 
 /**
- * @private
- */
-export function saveStreamToFile(
-  Module: Module,
-  stream: Uint8Array,
-  fileName: string,
-) {
-  const f = Module.FS.open(fileName, "w");
-  Module.FS.write(f, stream, 0, stream.byteLength);
-  Module.FS.close(f);
-}
-
-/**
  * Make the home directory inside the virtual file system,
  * then change the working directory to it.
  *
@@ -155,7 +142,7 @@ function installStdlib(Module: Module, stdlibURL: string) {
 
     stdlibPromise
       .then((stdlib: Uint8Array) => {
-        saveStreamToFile(Module, stdlib, "/lib/python311.zip");
+        Module.FS.writeFile("/lib/python311.zip", stdlib);
       })
       .catch((e) => {
         console.error("Error occurred while installing the standard library:");
