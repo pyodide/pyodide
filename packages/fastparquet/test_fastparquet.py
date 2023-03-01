@@ -6,7 +6,7 @@ COMPRESSIONS = ("SNAPPY", "GZIP", "LZ4", "BROTLI", "ZSTD")
 
 # just check that we can read and write random data
 @pytest.mark.parametrize("compression", COMPRESSIONS)
-@run_in_pyodide(packages=["fastparquet", "packaging"])
+@run_in_pyodide(packages=["fastparquet"])
 def test_simple_table(selenium, compression):
     from pathlib import Path
     from tempfile import TemporaryDirectory
