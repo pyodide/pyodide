@@ -10,6 +10,7 @@ VARIANTS = ("snappy", "brotli", "bzip2", "lz4", "gzip", "deflate", "zstd")
 @run_in_pyodide(packages=["cramjam"])
 def test_variants_simple(selenium, variant_str):
     import random
+
     import cramjam
 
     uncompressed: Any = [random.getrandbits(8) for x in range(1048576)]
