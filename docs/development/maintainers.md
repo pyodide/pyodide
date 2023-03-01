@@ -119,7 +119,9 @@ For example: `v3.11.1` -> `v3.11.2`
 4. After updating the Python version in `Dockerfile`, create a new Docker image.
    - A maintainer must click `Run workflow` on https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml
 5. That workflow will build and upload a new Docker image to https://hub.docker.com/r/pyodide/pyodide-env/tags
-6. Modify the image name in `.circleci/config.yml` to match the name Docker Hub.
+6. Modify the image name in `.circleci/config.yml` to match the image tag on Docker Hub.
    - `image: pyodide/pyodide-env:20230301-chrome109-firefox109-py311`
-7. Rebase any patches which do not apply cleanly.
-8. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
+7. Modify the `PYODIDE_IMAGE_TAG` in `run_docker` to match the image tag on Docker Hub.
+   - `PYODIDE_IMAGE_TAG="20230301-chrome109-firefox109-py311"`
+8. Rebase any patches which do not apply cleanly.
+9. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
