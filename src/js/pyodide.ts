@@ -10,7 +10,7 @@ import {
   resolvePath,
 } from "./compat";
 
-import { createModule, initializeFileSystem, saveStreamToFile } from "./module";
+import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
