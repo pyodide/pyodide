@@ -69,7 +69,7 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
  */
 function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
-  Module.writeFile(fileName, pyodide_py_tar);
+  Module.FS.writeFile(fileName, pyodide_py_tar);
 
   const code = `
 from sys import version_info
