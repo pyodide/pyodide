@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 from ._py_compile import _compile
 
-# This files are removed from the stdlib by default
+# These files are removed from the stdlib by default
 REMOVED_FILES = (
     # package management
     "ensurepip/",
@@ -22,10 +22,9 @@ REMOVED_FILES = (
     "tkinter/",
     "turtle.py",
     "turtledemo",
-    "webbrowser.py",
 )
 
-# This files are unvendored from the stdlib by default
+# These files are unvendored from the stdlib by default
 UNVENDORED_FILES = (
     "test/",
     "distutils/",
@@ -35,6 +34,9 @@ UNVENDORED_FILES = (
     "_pydecimal.py",
     "pydoc_data",
 )
+
+# We have JS implementations of these modules
+JS_STUB_FILES = ("webbrowser.py",)
 
 
 def default_filterfunc(
@@ -53,6 +55,12 @@ def default_filterfunc(
         filtered_files = {
             (root / f).resolve() for f in REMOVED_FILES + UNVENDORED_FILES
         }
+
+        # We have JS implementations of these modules, so we don't need to
+        # include the Python ones. Checking the name of the root directory
+        # is a bit of a hack, but it works...
+        if root.name.startswith("python3"):
+            filtered_files.update({root / f for f in JS_STUB_FILES})
 
         path = Path(path).resolve()
 
@@ -76,7 +84,7 @@ def default_filterfunc(
 
 
 def create_zipfile(
-    libdir: Path | str,
+    libdirs: list[Path],
     output: Path | str = "python",
     pycompile: bool = False,
     filterfunc: Callable[[str, list[str]], set[str]] | None = None,
@@ -96,8 +104,8 @@ def create_zipfile(
 
     Parameters
     ----------
-    libdir
-        Path to the directory containing the Python standard library.
+    libdirs
+        List of paths to the directory containing the Python standard library or extra packages.
 
     output
         Path to the output zip file. Defaults to python.zip.
@@ -116,16 +124,19 @@ def create_zipfile(
         A BytesIO object containing the zip file.
     """
 
-    libdir = Path(libdir)
     output = Path(output)
     output = output.with_name(output.name.rstrip(".zip"))
 
-    if filterfunc is None:
-        filterfunc = default_filterfunc(libdir)
-
     with TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
-        shutil.copytree(libdir, temp_dir, ignore=filterfunc, dirs_exist_ok=True)
+
+        for libdir in libdirs:
+            libdir = Path(libdir)
+
+            if filterfunc is None:
+                _filterfunc = default_filterfunc(libdir)
+
+            shutil.copytree(libdir, temp_dir, ignore=_filterfunc, dirs_exist_ok=True)
 
         archive: Path | str = shutil.make_archive(str(output), "zip", temp_dir)
         archive = Path(archive)
