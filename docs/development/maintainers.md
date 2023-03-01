@@ -120,6 +120,6 @@ For example: `v3.11.1` -> `v3.11.2`
    - A maintainer must click `Run workflow` on https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml
 5. That workflow will build and upload a new Docker image to https://hub.docker.com/r/pyodide/pyodide-env/tags
 6. Modify the image name in `.circleci/config.yml` to match the name Docker Hub.
-   - `image: pyodide/pyodide-env:20230301-chromelatest-firefoxlatest`
+   - `image: pyodide/pyodide-env:20230301-chrome109-firefox109-py311`
 7. Rebase any patches which do not apply cleanly.
 8. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
