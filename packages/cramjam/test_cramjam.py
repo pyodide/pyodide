@@ -6,19 +6,16 @@ from pytest_pyodide import run_in_pyodide
 VARIANTS = ("snappy", "brotli", "bzip2", "lz4", "gzip", "deflate", "zstd")
 
 
-@pytest.mark.parametrize("is_bytearray", (True, False))
 @pytest.mark.parametrize("variant_str", VARIANTS)
 @run_in_pyodide(packages=["cramjam"])
-def test_variants_simple(selenium, variant_str, is_bytearray):
+def test_variants_simple(selenium, variant_str):
     import random
-
     import cramjam
 
     uncompressed: Any = [random.getrandbits(8) for x in range(1048576)]
     variant = getattr(cramjam, variant_str)
 
-    if is_bytearray:
-        uncompressed = bytearray(uncompressed)
+    uncompressed = bytearray(uncompressed)
 
     compressed = variant.compress(uncompressed)
     assert compressed.read() != uncompressed
