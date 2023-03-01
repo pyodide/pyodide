@@ -69,12 +69,12 @@ API.runPythonInternal = function (code: string): any {
  */
 export function runPython(
   code: string,
-  options: { globals?: PyProxy } = {},
+  options: { globals?: PyProxy; locals?: PyProxy } = {},
 ): any {
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return API.pyodide_code.eval_code(code, options.globals);
+  return API.pyodide_code.eval_code(code, options.globals, options.locals);
 }
 API.runPython = runPython;
 
@@ -187,12 +187,16 @@ export async function loadPackagesFromImports(
  */
 export async function runPythonAsync(
   code: string,
-  options: { globals?: PyProxy } = {},
+  options: { globals?: PyProxy; locals?: PyProxy } = {},
 ): Promise<any> {
   if (!options.globals) {
     options.globals = API.globals;
   }
-  return await API.pyodide_code.eval_code_async(code, options.globals);
+  return await API.pyodide_code.eval_code_async(
+    code,
+    options.globals,
+    options.locals,
+  );
 }
 API.runPythonAsync = runPythonAsync;
 
