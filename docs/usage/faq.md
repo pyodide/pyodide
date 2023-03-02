@@ -366,10 +366,10 @@ To make your own version of {js:func}`~pyodide.runPython` you could do:
 ```pyodide
 const my_eval_code = pyodide.runPython(`
   from pyodide.code import eval_code
-  def my_eval_code(code, ns):
+  def my_eval_code(code, globals=None, locals=None):
     extra_info = None
-    result = eval_code(code, ns)
-    return ns["extra_info"], result
+    result = eval_code(code, globals, locals)
+    return globals["extra_info"], result
   my_eval_code
 `)
 

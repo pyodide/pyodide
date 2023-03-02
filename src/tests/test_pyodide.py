@@ -288,8 +288,8 @@ def test_monkeypatch_eval_code(selenium):
             import pyodide
             old_eval_code = pyodide.code.eval_code
             x = 3
-            def eval_code(code, ns):
-                return [ns["x"], old_eval_code(code, ns)]
+            def eval_code(code, globals=None, locals=None):
+                return [globals["x"], old_eval_code(code, globals, locals)]
             pyodide.code.eval_code = eval_code
             """
         )
