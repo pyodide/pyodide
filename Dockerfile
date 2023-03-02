@@ -1,5 +1,5 @@
 FROM node:14.16.1-buster-slim AS node-image
-FROM python:3.11.1-slim-buster
+FROM python:3.11.2-slim-buster
 
 # Requirements for building packages
 RUN apt-get update \
@@ -40,7 +40,7 @@ RUN pip3 --no-cache-dir install -r requirements.txt \
 ARG CHROME_VERSION="latest"
 ARG FIREFOX_VERSION="latest"
 # Note: geckodriver version needs to be updated manually
-ARG GECKODRIVER_VERSION="0.30.0"
+ARG GECKODRIVER_VERSION="0.32.2"
 
 #============================================
 # Firefox & gekcodriver

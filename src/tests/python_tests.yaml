@@ -53,7 +53,9 @@
     xfail: slow, sometimes times out
 - test_array
 - test_asdl_parser
-- test_ast
+- test_ast:
+    skip:
+      - test_stdlib_validates # incompatible with zipimport
 - test_asyncgen:
     xfail: async
 - test_asynchat:
@@ -119,7 +121,25 @@
 - test_augassign
 - test_base64
 - test_baseexception
-- test_bdb
+- test_bdb:
+    skip:
+      # incompatible with zipimport
+      - test_bp_after_last_statement
+      - test_bp_condition
+      - test_bp_exception_on_condition_evaluation
+      - test_bp_ignore_count
+      - test_clear_two_bp_on_same_line
+      - test_disabled_temporary_bp
+      - test_ignore_count_on_disabled_bp
+      - test_temporary_bp
+      - test_next_command_in_generator_for_loop
+      - test_next_command_in_generator_with_subiterator
+      - test_next_until_return_in_generator
+      - test_return_command_in_generator_with_subiterator
+      - test_step_at_return_with_no_trace_in_caller
+      - test_runeval_step
+      - test_next_over_import
+      - test_skip
 - test_bigaddrspace
 - test_bigmem
 - test_binascii
@@ -167,7 +187,9 @@
 - test_codecmaps_jp
 - test_codecmaps_kr
 - test_codecmaps_tw
-- test_codecs
+- test_codecs:
+    skip:
+      - test_write # frozen encodings.utf_8
 - test_codeop
 - test_collections
 - test_colorsys
@@ -297,7 +319,10 @@
 - test_format
 - test_fractions
 - test_frame
-- test_frozen
+- test_frozen:
+    skip:
+      # frozen modules are disabled in runtime
+      - test_unfrozen_submodule_in_frozen_package
 - test_fstring
 - test_ftplib:
     xfail: socket
@@ -362,7 +387,12 @@
 - test_imaplib:
     xfail: socket
 - test_imghdr
-- test_imp
+- test_imp:
+    skip:
+      # incompatible with zipimport
+      - test_multiple_calls_to_get_data
+      - test_issue1267
+      - test_load_from_source
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
@@ -386,7 +416,10 @@
 - test_importlib.source.test_path_hook
 - test_importlib.source.test_source_encoding
 - test_importlib.test_abc
-- test_importlib.test_api
+- test_importlib.test_api:
+    skip:
+      # incompatible with zipimport
+      - test_reload_missing_loader
 - test_importlib.test_compatibilty_files
 - test_importlib.test_contents
 - test_importlib.test_files
@@ -453,7 +486,12 @@
     xfail: segfault-outofmemory ("Array buffer allocation failed")
 - test_lib2to3:
     xfail: nonsense
-- test_linecache
+- test_linecache:
+    skip:
+      # incompatible with zipimport
+      - test_clearcache
+      - test_getline
+      - test_memoryerror
 - test_list
 - test_listcomps
 - test_lltrace
@@ -608,6 +646,17 @@
 - test_runpy:
     skip:
       - test_pymain_run* # fork
+      # incompatible with zipimport
+      - test_run_module
+      - test_run_module_alter_sys
+      - test_run_module_in_namespace_package
+      - test_run_name
+      - test_run_namespace_package
+      - test_run_namespace_package_in_namespace_package
+      - test_run_package
+      - test_run_package_alter_sys
+      - test_run_package_in_namespace_package
+
 - test_sax
 - test_sched:
     skip:
