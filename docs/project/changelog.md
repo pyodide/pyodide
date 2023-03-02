@@ -140,6 +140,10 @@ myst:
   building dependencies of the package. This replaces `pyodide-build buildpkg`.
   {pr}`3520`
 
+### Packages
+
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+
 ## Version 0.22.1
 
 _January 25, 2023_
