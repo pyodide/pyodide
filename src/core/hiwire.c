@@ -935,7 +935,7 @@ EM_JS(bool, isReservedWord, (int word), {
 
 EM_JS(int, normalizeReservedWords, (int action, int word), {
   // clang-format off
-  const noTrailing_ = word.replace(/ _ * $ /, "");
+  const noTrailing_ = word.replace(/_*$/, "");
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
