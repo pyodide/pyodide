@@ -208,6 +208,20 @@ obj_map = obj.as_object_map()
 assert obj_map["$c"] == 11
 ```
 
+Another special case comes from the fact that Python reserved words cannot be
+used as attributes. For instance, {js:func}`Array.from` and
+{js:meth}`Promise.finally` cannot be directly accessed because they are Python
+`SyntaxError`s. Instead we access these attributes with `Array.from_` and
+`Promise.finally_`. Similarly, to access from Python, `o.from_` you have to use
+`o.from__` with two underscores (since a single underscore is used for
+`o.from`). This is reflected in the `dir` of a `JsProxy`:
+
+```py
+from pyodide.code import run_js
+o = run_js("({finally: 1, return: 2, from: 3, from_: 4})")
+assert set(dir(o)) == {"finally_", "return_", "from_", "from__"}
+```
+
 (type-translations-pyproxy)=
 
 ### Proxying from Python into JavaScript
