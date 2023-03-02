@@ -237,3 +237,68 @@ def test_encodings_deepfrozen(selenium):
     for enc in all_encodings:
         codecs.getencoder(enc)
         codecs.getdecoder(enc)
+
+
+@run_in_pyodide
+def test_zipimport_traceback(selenium):
+    """
+    Test that traceback of modules loaded from zip file are shown as intended.
+
+    For .py files, the traceback should show the path to the .py file in the
+    zip file, e.g. "/lib/python311.zip/path/to/module.py".
+
+    For .pyc files (TODO), the traceback only shows filename, e.g. "module.py".
+    """
+    import json.decoder
+    import pathlib
+    import sys
+    import traceback
+
+    zipfile = f"python{sys.version_info[0]}{sys.version_info[1]}.zip"
+
+    try:
+        pathlib.Path("not/exists").write_text("hello")
+    except Exception:
+        _, _, exc_traceback = sys.exc_info()
+        tb = traceback.extract_tb(exc_traceback)
+
+        assert zipfile in tb[-1].filename.split("/")
+        assert tb[-1].filename == pathlib.__file__
+
+    try:
+        json.decoder.JSONDecoder().decode(1)  # type: ignore[arg-type]
+    except Exception:
+        _, _, exc_traceback = sys.exc_info()
+        tb = traceback.extract_tb(exc_traceback)
+
+        assert zipfile in tb[-1].filename.split("/")
+        assert tb[-1].filename == json.decoder.__file__
+
+
+@run_in_pyodide
+def test_zipimport_check_non_stdlib(selenium):
+    """
+    Check if unwanted modules are included in the zip file.
+    """
+    import pathlib
+    import shutil
+    import sys
+    import tempfile
+
+    extra_files = {
+        "LICENSE.txt",
+        "__phello__",
+        "__hello__",
+        "_sysconfigdata__emscripten_wasm32-emscripten",
+        "site-packages",
+        "lib-dynload",
+    }
+
+    stdlib_names = sys.stdlib_module_names | extra_files
+
+    zipfile = pathlib.Path(shutil.__file__).parent
+    tmpdir = pathlib.Path(tempfile.mkdtemp())
+
+    shutil.unpack_archive(zipfile, tmpdir, "zip")
+    for f in tmpdir.glob("*"):
+        assert f.name.removesuffix(".py") in stdlib_names, f.name
