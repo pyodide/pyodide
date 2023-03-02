@@ -933,15 +933,24 @@ EM_JS(bool, isReservedWord, (int word), {
   return Module.pythonReservedWords.has(word);
 })
 
+/**
+ * action: a javascript string, one of get, set, or delete. For error reporting.
+ * word: a javascript string, the property being accessed
+ */
 EM_JS(int, normalizeReservedWords, (int action, int word), {
   // clang-format off
+  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  //    it unchanged.
   const noTrailing_ = word.replace(/_*$/, "");
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
+  // 2. If there is at lease one trailing underscore, return the word with a
+  //    single underscore removed.
   if (noTrailing_ !== word) {
     return word.slice(0, -1);
   }
+  // 3. If the word is exactly a reserved word, this is an error.
   let action_ptr = stringToNewUTF8(action);
   let word_ptr = stringToNewUTF8(word);
   _setReservedError(action_ptr, word_ptr);
@@ -960,17 +969,17 @@ EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   return ERROR_REF;
 });
 
-// clang-format: off
+// clang-format off
 EM_JS_NUM(errcode,
-          JsObject_SetString,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
-          {
-            let jsobj = Hiwire.get_value(idobj);
-            let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
-            let jsval = Hiwire.get_value(idval);
-            jsobj[jskey] = jsval;
-          });
-// clang-format: on
+JsObject_SetString,
+(JsRef idobj, const char* ptrkey, JsRef idval),
+{
+  let jsobj = Hiwire.get_value(idobj);
+  let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
+  let jsval = Hiwire.get_value(idval);
+  jsobj[jskey] = jsval;
+});
+// clang-format on
 
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
@@ -989,7 +998,10 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
-    ).map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
+    )
+    // If the word is a reserved word followed by 0 or more underscores, add an
+    // extra underscore to reverse the transformation applied by normalizeReservedWords.
+    .map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);
