@@ -43,6 +43,7 @@ export interface FS {
   close: (stream: FSStream) => void;
 }
 
+// The Emscripten Module object
 export interface Module {
   noImageDecoding: boolean;
   noAudioDecoding: boolean;
@@ -57,6 +58,12 @@ export interface Module {
   FS: FS;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
+}
+
+// Emscripte Module object + extra attributes for Pyodide
+export interface PyodideModule extends Module {
+  _py_version_major: () => number;
+  _py_version_minor: () => number;
 }
 
 /**
@@ -129,20 +136,23 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @param Module The Emscripten Module.
  * @param stdlibPromise A promise that resolves to the standard library.
  */
-function installStdlib(Module: Module, stdlibURL: string) {
+function installStdlib(Module: PyodideModule, stdlibURL: string) {
   // TODO(ryanking13): Get python version from Python.h
 
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
 
+  const pymajor = Module._py_version_major();
+  const pyminor = Module._py_version_minor();
+
   Module.preRun.push(() => {
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree("/lib/python3.11/site-packages");
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
 
     Module.addRunDependency("install-stdlib");
 
     stdlibPromise
       .then((stdlib: Uint8Array) => {
-        Module.FS.writeFile("/lib/python311.zip", stdlib);
+        Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
       })
       .catch((e) => {
         console.error("Error occurred while installing the standard library:");
@@ -158,7 +168,10 @@ function installStdlib(Module: Module, stdlibURL: string) {
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
-export function initializeFileSystem(Module: Module, config: ConfigType) {
+export function initializeFileSystem(
+  Module: PyodideModule,
+  config: ConfigType,
+) {
   installStdlib(Module, config.indexURL + "python_stdlib.zip");
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
