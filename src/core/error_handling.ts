@@ -307,7 +307,6 @@ API.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers.",

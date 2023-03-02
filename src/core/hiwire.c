@@ -908,6 +908,18 @@ EM_JS_REF(JsRef, JsObject_New, (), {
 });
 // clang-format on
 
+void
+setReservedError(char* action, char* word)
+{
+  PyErr_Format(PyExc_AttributeError,
+               "The string '%s' is a Python reserved word. To %s an attribute "
+               "on a JS object called '%s' use '%s_'.",
+               word,
+               action,
+               word,
+               word);
+}
+
 EM_JS(bool, isReservedWord, (int word), {
   if (!Module.pythonReservedWords) {
     Module.pythonReservedWords = new Set([
@@ -919,61 +931,50 @@ EM_JS(bool, isReservedWord, (int word), {
     ])
   }
   return Module.pythonReservedWords.has(word);
+})
+
+EM_JS(int, normalizeReservedWords, (int action, int word), {
+  // clang-format: off
+  const noTrailing_ = word.replace(/ _ * $ /, "");
+  if (!isReservedWord(noTrailing_)) {
+    return word;
+  }
+  if (noTrailing_ != = word) {
+    return word.slice(0, -1);
+  }
+  let action_ptr = stringToNewUTF8(action);
+  let word_ptr = stringToNewUTF8(word);
+  _setReservedError(action_ptr, word_ptr);
+  _free(action_ptr);
+  _free(word_ptr);
+  throw new Module._PropagatePythonError();
+  // clang-format: on
 });
 
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let result = jsobj[jskey];
-  // clang-format off
-  if (result !== undefined || jskey in jsobj) {
-    return Hiwire.new_value(result);
-  }
-  if(!jskey.endsWith("_")) {
-    return ERROR_REF;
-  }
-
-  jskey = jskey.slice(0, -1);
-  if(!isReservedWord(jskey)) {
-    return ERROR_REF;
-  }
-
-  result = jsobj[jskey];
-  // clang-format off
-  if (result !== undefined || jskey in jsobj) {
-    return Hiwire.new_value(result);
+  let jskey = normalizeReservedWords("get", UTF8ToString(ptrkey));
+  if (jskey in jsobj) {
+    return Hiwire.new_value(jsobj[jskey]);
   }
   return ERROR_REF;
-  // clang-format on
 });
 
-// clang-format off
+// clang-format: off
 EM_JS_NUM(errcode,
           JsObject_SetString,
           (JsRef idobj, const char* ptrkey, JsRef idval),
-{
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let jsval = Hiwire.get_value(idval);
-  if(!(jskey in jsobj) && jskey.endsWith("_")) {
-    let reservedWord = jskey.slice(0, -1);
-    if((reservedWord in jsobj) && isReservedWord(reservedWord)) {
-      jskey = reservedWord;
-    }
-  }
-  jsobj[jskey] = jsval;
-});
-// clang-format on
+          {
+            let jsobj = Hiwire.get_value(idobj);
+            let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
+            let jsval = Hiwire.get_value(idval);
+            jsobj[jskey] = jsval;
+          });
+// clang-format: on
 
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  if (!(jskey in jsobj) && jskey.endsWith("_")) {
-    let reservedWord = jskey.slice(0, -1);
-    if ((reservedWord in jsobj) && isReservedWord(reservedWord)) {
-      jskey = reservedWord;
-    }
-  }
+  let jskey = normalizeReservedWords("delete", UTF8ToString(ptrkey));
   delete jsobj[jskey];
 });
 
@@ -983,16 +984,12 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   do {
     // clang-format off
     const names = Object.getOwnPropertyNames(jsobj);
-    const normalNames = [];
-    const reservedNames = [];
-    names.forEach(e => (isReservedWord(e) ? reservedNames : normalNames).push(e));
-    result.push(...normalNames.filter(
+    result.push(...names.filter(
       s => {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
-    ));
-    result.push(...reservedNames.map(n => n + "_"));
+    ).map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);

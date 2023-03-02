@@ -2233,9 +2233,27 @@ def test_python_reserved_keywords(selenium):
     assert o.yield_ == 5
     assert o.try_ == 6
     assert o.assert_ == 7
-    assert set(dir(o)) >= {k + "_" for k in keys} | {"match"}
+    expected_set = {k + "_" for k in keys} | {"match"}
+    actual_set = set(dir(o)) & expected_set
+    assert actual_set == expected_set
     assert set(dir(o)) & set(keys) == set()
     o.async_ = 2
     assert run_js("(o) => o.async")(o) == 2
     del o.async_
     assert run_js("(o) => o.async")(o) == None
+
+    o = run_js("({async: 1, async_: 2, async__: 3})")
+    expected_set = {"async_", "async__", "async___"}
+    actual_set = set(dir(o)) & expected_set
+    assert actual_set == expected_set
+    assert o.async_ == 1
+    assert o.async__ == 2
+    assert o.async___ == 3
+    assert getattr(o, "async_") == 1
+    assert getattr(o, "async__") == 2
+    with pytest.raises(AttributeError, match="async"):
+        getattr(o, "async")
+    with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
+        setattr(o, "async", 2)
+    with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
+        delattr(o, "async")
