@@ -200,7 +200,7 @@ def test_eval_code_locals():
     # See https://github.com/pyodide/pyodide/issues/3578
     with pytest.raises(NameError):
         eval_code("print(self)")
-    
+
     res = eval_code(
         """
         var = "Hello"
@@ -210,6 +210,7 @@ def test_eval_code_locals():
         """
     )
     assert res == "Hello"
+
 
 def test_unpack_archive(selenium_standalone):
     selenium = selenium_standalone
