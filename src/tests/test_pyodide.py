@@ -570,6 +570,26 @@ def test_run_python_js_error(selenium):
     )
 
 
+def test_run_python_locals(selenium):
+    selenium.run_js(
+        """
+        let dict = pyodide.globals.get("dict");
+        let locals = dict([["x", 7]]);
+        let globals = dict([["x", 5], ["y", 29]]);
+        dict.destroy();
+        let result = pyodide.runPython("z = 13; x + y", {locals, globals});
+        assert(() => locals.get("z") === 13);
+        assert(() => locals.has("x"));
+        let result2 = pyodide.runPython("del x; x + y", {locals, globals});
+        assert(() => !locals.has("x"));
+        assert(() => result === 7 + 29);
+        assert(() => result2 === 5 + 29);
+        locals.destroy();
+        globals.destroy();
+        """
+    )
+
+
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
