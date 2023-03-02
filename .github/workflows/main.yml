@@ -50,7 +50,7 @@ jobs:
           mkdir -p test-results
           pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - name: Test Summary
-        uses: test-summary/action@v1
+        uses: test-summary/action@v2
         with:
           paths: "test-results/*.xml"
         if: always()
@@ -230,7 +230,7 @@ jobs:
             --junitxml=test-results/packages_test.xml
 
       - name: Test Summary
-        uses: test-summary/action@v1
+        uses: test-summary/action@v2
         with:
           paths: "test-results/*.xml"
         if: always()
