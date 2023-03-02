@@ -52,6 +52,8 @@ BUILD_VARS: set[str] = {
     "CARGO_BUILD_TARGET",
     "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "RUSTFLAGS",
+    "PYO3_CROSS_LIB_DIR",
+    "PYO3_CROSS_INCLUDE_DIR",
     "PYODIDE_EMSCRIPTEN_VERSION",
     "PLATFORM_TRIPLET",
     "SYSCONFIGDATA_DIR",
@@ -406,3 +408,13 @@ def set_build_environment(env: dict[str, str]) -> None:
         tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
     )
     env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+
+
+def get_num_cores() -> int:
+    """
+    Return the number of CPUs the current process can use.
+    If the number of CPUs cannot be determined, return 1.
+    """
+    import loky
+
+    return loky.cpu_count()
