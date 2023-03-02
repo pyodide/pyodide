@@ -934,12 +934,12 @@ EM_JS(bool, isReservedWord, (int word), {
 })
 
 EM_JS(int, normalizeReservedWords, (int action, int word), {
-  // clang-format: off
+  // clang-format off
   const noTrailing_ = word.replace(/ _ * $ /, "");
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
-  if (noTrailing_ != = word) {
+  if (noTrailing_ !== word) {
     return word.slice(0, -1);
   }
   let action_ptr = stringToNewUTF8(action);
@@ -948,7 +948,7 @@ EM_JS(int, normalizeReservedWords, (int action, int word), {
   _free(action_ptr);
   _free(word_ptr);
   throw new Module._PropagatePythonError();
-  // clang-format: on
+  // clang-format on
 });
 
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
