@@ -18,7 +18,7 @@ LIBFFI_TAG=2022-06-23
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -36,7 +36,6 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
 
@@ -102,6 +101,7 @@ $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.lo
 	cp Setup.local $(BUILD)/Modules/
 	( \
 		cd $(BUILD); \
+		make regen-frozen; \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(BUILD)/$(LIB)
