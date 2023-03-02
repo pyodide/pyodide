@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
+  argument.
+  {pr}`3618`
+
 - {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
   thrown as Python exceptions. Previously Pyodide automatically wrapped them in
   a `JsException` but that is no longer needed -- now `JsException` inherits
