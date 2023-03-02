@@ -127,5 +127,6 @@ For example: `v3.11.1` -> `v3.11.2`
 9. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
 
 Once the process is complete, check the Python versions on both of these URLs:
-* https://pyodide.org/en/latest/console.html
-* https://pyodide.org/en/stable/console.html
+
+- https://pyodide.org/en/latest/console.html
+- https://pyodide.org/en/stable/console.html
