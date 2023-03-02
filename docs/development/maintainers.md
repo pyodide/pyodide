@@ -125,8 +125,3 @@ For example: `v3.11.1` -> `v3.11.2`
    - `PYODIDE_IMAGE_TAG="20230301-chrome109-firefox109-py311"`
 8. Rebase any patches which do not apply cleanly.
 9. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
-
-Once the process is complete, check the Python versions on both of these URLs:
-
-- https://pyodide.org/en/latest/console.html
-- https://pyodide.org/en/stable/console.html
