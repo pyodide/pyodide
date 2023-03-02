@@ -19,7 +19,7 @@ from pyodide_build.cli import (
     xbuildenv,
 )
 
-from .fixture import temp_python_lib, temp_xbuildenv
+from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
