@@ -144,11 +144,7 @@ finally:
   return success;
 }
 
-EM_JS(void, fail_test, (), {
-  API.fail_test = true;
-  console.trace();
-  console.warn("fail_test!");
-})
+EM_JS(void, fail_test, (), { API.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
