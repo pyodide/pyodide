@@ -17,6 +17,7 @@ all: check \
 	dist/console.html \
 	dist/repodata.json \
 	dist/pyodide_py.tar \
+	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
@@ -175,6 +176,14 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
+pyodide_build: ./pyodide-build/pyodide_build/**
+	$(HOSTPYTHON) -m pip install -e ./pyodide-build
+	which pyodide-build >/dev/null
+	which pyodide >/dev/null
+
+dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
+	pyodide create-zipfile $(CPYTHONLIB) --output $@
+
 dist/test.html: src/templates/test.html
 	cp $< $@
 
@@ -234,7 +243,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/repodata.json: FORCE
+dist/repodata.json: FORCE pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."

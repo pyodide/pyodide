@@ -75,6 +75,16 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
         )
     )
 
+    pinned_reqs = {
+        # Remove this when mypy releases a new version
+        # https://github.com/python/mypy/pull/14788
+        "types-setuptools": "types-setuptools<67.4.0.2"
+    }
+
+    for pkg, req in pinned_reqs.items():
+        if pkg in reqs:
+            env.install([req])
+
 
 def _build_in_isolated_env(
     build_env: Mapping[str, str],
@@ -161,7 +171,7 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             var = "CXX"
         else:
             var = symlink.upper()
-        env[var] = symlink
+        env[var] = str(symlink_path)
 
     return env
 

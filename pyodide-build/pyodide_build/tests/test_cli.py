@@ -5,13 +5,21 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide import spawn_web_server
 import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+from pyodide_build.cli import (
+    build,
+    build_recipes,
+    config,
+    create_zipfile,
+    skeleton,
+    xbuildenv,
+)
 
-from .fixture import temp_python_lib
+from .fixture import temp_python_lib, temp_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -328,3 +336,30 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.pyc" in zf.namelist()
         assert "module2.pyc" in zf.namelist()
+
+
+def test_xbuildenv_install(tmp_path, temp_xbuildenv):
+    envpath = Path(tmp_path) / ".xbuildenv"
+
+    xbuildenv_url_base, xbuildenv_filename = temp_xbuildenv
+
+    with spawn_web_server(xbuildenv_url_base) as (hostname, port, _):
+        xbuildenv_url = f"http://{hostname}:{port}/{xbuildenv_filename}"
+        result = runner.invoke(
+            xbuildenv.app,
+            [
+                "install",
+                "--path",
+                str(envpath),
+                "--download",
+                "--url",
+                xbuildenv_url,
+            ],
+        )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Downloading xbuild environment" in result.stdout, result.stdout
+    assert "Installing xbuild environment" in result.stdout, result.stdout
+    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
+    assert (envpath / "xbuildenv" / "requirements.txt").exists()

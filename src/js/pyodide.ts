@@ -64,18 +64,12 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   });
 }
 
+/**
+ * @private
+ */
 function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
   const fileName = "/pyodide_py.tar";
-  let stream = Module.FS.open(fileName, "w");
-  Module.FS.write(
-    stream,
-    pyodide_py_tar,
-    0,
-    pyodide_py_tar.byteLength,
-    undefined,
-    true,
-  );
-  Module.FS.close(stream);
+  Module.FS.writeFile(fileName, pyodide_py_tar);
 
   const code = `
 from sys import version_info
@@ -90,7 +84,7 @@ del importlib
   let [errcode, captured_stderr] = Module.API.rawRun(code);
   if (errcode) {
     Module.API.fatal_loading_error(
-      "Failed to unpack standard library.\n",
+      "Failed to unpack pyodide_py.\n",
       captured_stderr,
     );
   }

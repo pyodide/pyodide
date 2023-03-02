@@ -557,7 +557,7 @@ def find_imports(source: str) -> list[str]:
 
     Examples
     --------
-    >>> from pyodide import find_imports
+    >>> from pyodide.code import find_imports
     >>> source = "import numpy as np; import scipy.stats"
     >>> find_imports(source)
     ['numpy', 'scipy']
