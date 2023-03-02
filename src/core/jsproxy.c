@@ -133,6 +133,11 @@ struct ExceptionFields
   char suppress_context;
 };
 
+struct ObjectMapFields
+{
+  bool hereditary;
+};
+
 // clang-format off
 
 // dict and js fields always needs to be in the same place.
@@ -150,6 +155,7 @@ typedef struct
     struct BufferFields bf;
     struct MethodFields mf;
     struct ExceptionFields ef;
+    struct ObjectMapFields omf;
   } tf;
   JsRef js;
 } JsProxy;
@@ -194,6 +200,8 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
 #define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->tf.bf.byteLength)
 #define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->tf.bf.itemsize)
 #define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->tf.bf.check_assignments)
+
+#define JsObjMap_HEREDITARY(x) (((JsProxy*)x)->tf.omf.hereditary)
 
 int
 JsProxy_getflags(PyObject* self)
@@ -489,7 +497,7 @@ handle_next_result_js,
 });
 
 PySendResult
-handle_next_result(JsRef next_res, PyObject** result){
+handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
   JsRef idresult = NULL;
@@ -509,7 +517,10 @@ handle_next_result(JsRef next_res, PyObject** result){
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
-  *result = js2python(idresult);
+  *result = js2python_immutable(idresult);
+  if (!*result) {
+    *result = JsProxy_create_objmap(idresult, obj_map_hereditary);
+  }
   FAIL_IF_NULL(*result);
   if(pyproxy_Check(idresult)) {
     destroy_proxy(idresult,
@@ -542,7 +553,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
-  ret = handle_next_result(next_res, result);
+  ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
   if (proxies) {
     destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
@@ -775,7 +786,7 @@ JsGenerator_throw_inner(PyObject* self,
   throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_NULL(throw_res);
   console_error_obj(throw_res);
-  PySendResult ret = handle_next_result(throw_res, &result);
+  PySendResult ret = handle_next_result(throw_res, &result, false);
   if (ret == PYGEN_RETURN) {
     if (result == Py_None) {
       PyErr_SetNone(PyExc_StopIteration);
@@ -2517,22 +2528,34 @@ static PyMethodDef JsProxy_finally_MethodDef = {
   METH_O,
 };
 
-// Forward declaration
 static PyObject*
-create_proxy_of_type(int type_flags, JsRef object, JsRef this);
-
-static PyObject*
-JsProxy_as_object_map(PyObject* self, PyObject* Py_UNUSED(ignored))
+JsProxy_as_object_map(PyObject* self,
+                      PyObject* const* args,
+                      Py_ssize_t nargs,
+                      PyObject* kwnames)
 {
+  static const char* const _keywords[] = { "hereditary", 0 };
+  static struct _PyArg_Parser _parser = { "|$p:as_object_map", _keywords, 0 };
+  bool hereditary = false;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &hereditary)) {
+    return NULL;
+  }
+
   int type_flags = IS_OBJECT_MAP;
-  return create_proxy_of_type(
+  PyObject* proxy = JsProxy_create_with_type(
     type_flags, JsProxy_REF(self), JsMethod_THIS(self));
+  FAIL_IF_NULL(proxy);
+  JsObjMap_HEREDITARY(proxy) = hereditary;
+
+finally:
+  return proxy;
 }
 
 static PyMethodDef JsProxy_as_object_map_MethodDef = {
   "as_object_map",
   (PyCFunction)JsProxy_as_object_map,
-  METH_NOARGS,
+  METH_FASTCALL | METH_KEYWORDS
 };
 
 EM_JS_REF(JsRef, JsObjMap_GetIter_js, (JsRef idobj), {
@@ -2598,7 +2621,10 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
     }
     FAIL();
   }
-  pyresult = js2python(idresult);
+  pyresult = js2python_immutable(idresult);
+  if (pyresult == NULL) {
+    pyresult = JsProxy_create_objmap(idresult, JsObjMap_HEREDITARY(self));
+  }
 
 finally:
   hiwire_CLEAR(idkey);
@@ -3960,7 +3986,7 @@ finally:
     type_flags |= flag;                                                        \
   }
 
-EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
+EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   let type_flags = 0;
   // clang-format off
@@ -4008,8 +4034,8 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
 ////////////////////////////////////////////////////////////
 // Public functions
 
-static PyObject*
-create_proxy_of_type(int type_flags, JsRef object, JsRef this)
+PyObject*
+JsProxy_create_with_type(int type_flags, JsRef object, JsRef this)
 {
   bool success = false;
   PyTypeObject* type = NULL;
@@ -4028,7 +4054,7 @@ create_proxy_of_type(int type_flags, JsRef object, JsRef this)
   }
   if (type_flags & IS_ERROR) {
     PyObject* arg =
-      create_proxy_of_type(type_flags & (~IS_ERROR), object, this);
+      JsProxy_create_with_type(type_flags & (~IS_ERROR), object, this);
     FAIL_IF_NULL(arg);
     PyObject* args = PyTuple_Pack(1, arg);
     Py_CLEAR(arg);
@@ -4045,6 +4071,16 @@ finally:
   return result;
 }
 
+PyObject*
+JsProxy_create_objmap(JsRef object, bool objmap)
+{
+  int typeflags = JsProxy_compute_typeflags(object);
+  if (typeflags == 0 && objmap) {
+    typeflags |= IS_OBJECT_MAP;
+  }
+  return JsProxy_create_with_type(typeflags, object, NULL);
+}
+
 /**
  * Create a JsProxy. In case it's a method, bind "this" to the argument. (In
  * most cases "this" will be NULL, `JsProxy_create` specializes to this case.)
@@ -4059,15 +4095,15 @@ JsProxy_create_with_this(JsRef object, JsRef this)
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
   } else {
-    type_flags = compute_typeflags(object);
+    type_flags = JsProxy_compute_typeflags(object);
     if (type_flags == -1) {
       fail_test();
       PyErr_SetString(internal_error,
-                      "Internal error occurred in compute_typeflags");
+                      "Internal error occurred in JsProxy_compute_typeflags");
       return NULL;
     }
   }
-  return create_proxy_of_type(type_flags, object, this);
+  return JsProxy_create_with_type(type_flags, object, this);
 }
 
 PyObject*

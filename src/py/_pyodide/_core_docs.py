@@ -136,7 +136,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         "The JavaScript API ``Object.values(object)``"
         raise NotImplementedError
 
-    def as_object_map(self) -> "JsMutableMap[str, Any]":
+    def as_object_map(self, *, hereditary: bool = False) -> "JsMutableMap[str, Any]":
         """Returns a new JsProxy that treats the object as a map.
 
         The methods :py:func:`~operator.__getitem__`,
@@ -145,8 +145,39 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         or similar.
 
         Note that ``len(x.as_object_map())`` evaluates in O(n) time (it iterates
-        over the object and counts how many :js:func:`~Reflect.ownKeys` it has). If you need to
-        compute the length in O(1) time, use a real :js:class:`Map` instead.
+        over the object and counts how many :js:func:`~Reflect.ownKeys` it has).
+        If you need to compute the length in O(1) time, use a real
+        :js:class:`Map` instead.
+
+        Parameters
+        ----------
+        hereditary:
+            If ``True``, any "plain old objects" stored as values in the object
+            will be wrapped in `as_object_map` themselves.
+
+        Examples
+        --------
+
+        .. code-block:: python
+
+            from pyodide.code import run_js
+
+            o = run_js("({x : {y: 2}})")
+            # You have to access the properties of o as attributes
+            assert o.x.y == 2
+            with pytest.raises(TypeError):
+                o["x"] # is not subscriptable
+
+            # as_object_map allows us to access the property with getitem
+            assert o.as_object_map()["x"].y == 2
+
+            with pytest.raises(TypeError):
+                # The inner object is not subscriptable because hereditary is False.
+                o.as_object_map()["x"]["y"]
+
+            # When hereditary is True, the inner object is also subscriptable
+            assert o.as_object_map(hereditary=True)["x"]["y"] == 2
+
         """
         raise NotImplementedError
 
@@ -441,7 +472,7 @@ class JsArray(JsProxy, Generic[T]):
     def __len__(self) -> int:
         return 0
 
-    def extend(self, other: Iterable[T]) -> None:
+    def extend(self, other: Iterable[T], /) -> None:
         """Extend array by appending elements from the iterable."""
 
     def __reversed__(self) -> Iterator[T]:
