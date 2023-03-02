@@ -2233,7 +2233,8 @@ def test_python_reserved_keywords(selenium):
     assert o.yield_ == 5
     assert o.try_ == 6
     assert o.assert_ == 7
-    assert set(dir(o)) >= set(keys) | {k + "_" for k in keys} | {"match"}
+    assert set(dir(o)) >= {k + "_" for k in keys} | {"match"}
+    assert set(dir(o)) & set(keys) == set()
     o.async_ = 2
     assert run_js("(o) => o.async")(o) == 2
     del o.async_

@@ -983,13 +983,16 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   do {
     // clang-format off
     const names = Object.getOwnPropertyNames(jsobj);
-    result.push(...names.filter(
+    const normalNames = [];
+    const reservedNames = [];
+    names.forEach(e => (isReservedWord(e) ? reservedNames : normalNames).push(e));
+    result.push(...normalNames.filter(
       s => {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
     ));
-    result.push(...names.filter(isReservedWord).map(n => n + "_"));
+    result.push(...reservedNames.map(n => n + "_"));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);
