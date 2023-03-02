@@ -51,6 +51,29 @@ def default_filterfunc(
     - unvendored from the standard library (e.g. `sqlite3`)
     """
 
+    def _should_skip(path: Path) -> bool:
+        """Skip common files that are not needed in the zip file."""
+        name = path.name
+
+        if path.is_dir() and name in ("__pycache__", "dist"):
+            return True
+
+        if path.is_dir() and name.endswith((".egg-info", ".dist-info")):
+            return True
+
+        if path.is_file() and name in (
+            "LICENSE",
+            "LICENSE.txt",
+            "setup.py",
+            ".gitignore",
+        ):
+            return True
+
+        if path.is_file() and name.endswith(("pyi", "toml", "cfg", "md", "rst")):
+            return True
+
+        return False
+
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
         filtered_files = {
             (root / f).resolve() for f in REMOVED_FILES + UNVENDORED_FILES
@@ -64,7 +87,7 @@ def default_filterfunc(
 
         path = Path(path).resolve()
 
-        if path.name == "__pycache__":
+        if _should_skip(path):
             return set(names)
 
         _names = []
@@ -72,7 +95,7 @@ def default_filterfunc(
 
             fullpath = path / name
 
-            if fullpath.name == "__pycache__" or fullpath in filtered_files:
+            if _should_skip(fullpath) or fullpath in filtered_files:
                 if verbose:
                     print(f"Skipping {fullpath}")
 
