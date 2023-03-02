@@ -88,6 +88,11 @@ myst:
   but if you were using this file in a bundler, you will need to remove it.
   {pr}`3584`
 
+- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
+  shouldn't affect users, but if you were using this file in a bundler,
+  you will need to remove it.
+  {pr}`3621`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
