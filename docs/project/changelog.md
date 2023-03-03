@@ -15,14 +15,18 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
+  `None` it now uses `locals=globals` as the documentation says.
+  {pr}`3580`
+
 - {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
   thrown as Python exceptions. Previously Pyodide automatically wrapped them in
   a `JsException` but that is no longer needed -- now `JsException` inherits
   from both `JsProxy` and `Exception`.
   {pr}`3455`
 
-- {{ Update }} Pyodide now runs Python 3.11.1.
-  {pr}`3252`
+- {{ Update }} Pyodide now runs Python 3.11.2.
+  {pr}`3252`, {pr}`3614`
 
 - {{ Update }} We now build libpyodide.a so the Pyodide foreign function
   interface can be experimentally linked into other Emscripten builds of Python.
@@ -77,6 +81,17 @@ myst:
   regular spaces in pyodide REPL.
   {pr}`3558`
 
+- {{ Breaking }} Python standard libraries are now vendored in a zipfile:
+  `/lib/python{version}.zip`. If you need to access the standard library files,
+  you need to unpack the zip file. For example:
+  `import shutil; shutil.unpack_archive('/lib/python311.zip', '/lib/python3.11', 'zip)`
+  {pr}`3584`
+
+- {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
+  `pyodide.asm.data` is removed. This change normally shouldn't affect users,
+  but if you were using this file in a bundler, you will need to remove it.
+  {pr}`3584`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -111,6 +126,9 @@ myst:
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
 
+- {{ Fix }} Fix occasional build failure when building rust packages.
+  {pr}`3607`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting
@@ -125,6 +143,10 @@ myst:
 - `pyodide build-recipes` now accepts `--no-deps` parameter, which skips
   building dependencies of the package. This replaces `pyodide-build buildpkg`.
   {pr}`3520`
+
+### Packages
+
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
 
 ## Version 0.22.1
 
