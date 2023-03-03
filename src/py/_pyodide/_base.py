@@ -298,6 +298,10 @@ class CodeRunner:
             ``quiet_trailing_semicolon`` parameters to modify this default
             behavior.
         """
+        if globals is None:
+            globals = {}
+        if locals is None:
+            locals = globals
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
@@ -347,6 +351,10 @@ class CodeRunner:
             ``quiet_trailing_semicolon`` parameters to modify this default
             behavior.
         """
+        if globals is None:
+            globals = {}
+        if locals is None:
+            locals = globals
         if not self._compiled:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
