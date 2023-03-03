@@ -130,8 +130,6 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @param stdlibPromise A promise that resolves to the standard library.
  */
 function installStdlib(Module: Module, stdlibURL: string) {
-  // TODO(ryanking13): Get python version from Python.h
-
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
 
   Module.preRun.push(() => {
