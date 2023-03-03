@@ -15,6 +15,15 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Python does not allow reserved words to be used as attributes.
+  For instance, `Array.from` is a `SyntaxError`. (JavaScript has a more robust
+  parser which can handle this.) To handle this, if an attribute to a `JsProxy`
+  consists of a Python reserved word followed by one or more underscores, we remove
+  a single underscore from the end of the attribute. For instance, `Array.from_`
+  would access `from` on the underlying JavaScript object, whereas `o.from__`
+  accesses the `from_` attribute.
+  {pr}`3617`
+
 - {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
   argument.
   {pr}`3618`
