@@ -36,8 +36,8 @@ myst:
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.31
-  {pr}`3471`, {pr}`3517`
+- {{ Enhancement }} Updated Emscripten to version 3.1.32
+  {pr}`3471`, {pr}`3517`, {pr}`3599`
 
 - {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
   `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
