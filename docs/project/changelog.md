@@ -161,6 +161,8 @@ myst:
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
 
+- Upgraded packages: galpy {pr}`3630`.
+
 ## Version 0.22.1
 
 _January 25, 2023_
