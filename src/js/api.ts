@@ -211,14 +211,19 @@ export class PyodideAPI {
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    *        Defaults to :js:attr:`pyodide.globals`.
+   * @param options.locals An optional Python dictionary to use as the locals.
+   *        Defaults to the same as ``globals``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    */
-  static runPython(code: string, options: { globals?: PyProxy } = {}): any {
+  static runPython(
+    code: string,
+    options: { globals?: PyProxy; locals?: PyProxy } = {},
+  ): any {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return API.pyodide_code.eval_code(code, options.globals);
+    return API.pyodide_code.eval_code(code, options.globals, options.locals);
   }
 
   /**
@@ -252,17 +257,23 @@ export class PyodideAPI {
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    * Defaults to :js:attr:`pyodide.globals`.
+   * @param options.locals An optional Python dictionary to use as the locals.
+   *        Defaults to the same as ``globals``.
    * @returns The result of the Python code translated to JavaScript.
    * @async
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy } = {},
+    options: { globals?: PyProxy; locals?: PyProxy } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return await API.pyodide_code.eval_code_async(code, options.globals);
+    return await API.pyodide_code.eval_code_async(
+      code,
+      options.globals,
+      options.locals,
+    );
   }
 
   /**

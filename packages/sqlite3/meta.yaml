@@ -9,8 +9,6 @@ package:
 build:
   type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONBUILD
 
     export FILES=(
