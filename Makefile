@@ -85,7 +85,8 @@ dist/libpyodide.a: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/core/pyodide_pre.o
+	src/core/pyodide_pre.o \
+	src/core/pyversion.o
 	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
