@@ -13,3 +13,9 @@ py_version_minor()
 {
   return PY_MAJOR_VERSION;
 }
+
+EMSCRIPTEN_KEEPALIVE int
+py_version_micro()
+{
+  return PY_MICRO_VERSION;
+}
