@@ -171,7 +171,7 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             var = "CXX"
         else:
             var = symlink.upper()
-        env[var] = symlink
+        env[var] = str(symlink_path)
 
     return env
 
