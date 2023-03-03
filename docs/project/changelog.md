@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
+  argument.
+  {pr}`3618`
+
 - {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
   `None` it now uses `locals=globals` as the documentation says.
   {pr}`3580`
