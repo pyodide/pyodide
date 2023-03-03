@@ -67,8 +67,10 @@ $(INSTALL)/lib/libffi.a :
 		&& git init \
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& ./testsuite/emscripten/build.sh \
+		&& make install \
 	)
-	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && ./testsuite/emscripten/build.sh && make install
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
