@@ -1767,9 +1767,10 @@ def test_python_error(selenium):
 def test_python_version(selenium):
     selenium.run_js(
         """
-        const sys = pyodide.pyimport("sys");
-        assert sys.version_info.major == pyodide._module._py_version_major();
-        assert sys.version_info.minor == pyodide._module._py_version_minor();
-        assert sys.version_info.micro == pyodide._module._py_version_micro();
+        sys = pyodide.pyimport("sys");
+        assert(() => sys.version_info.major === pyodide._module._py_version_major());
+        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
+        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        sys.destroy();
         """
     )
