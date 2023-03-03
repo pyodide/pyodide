@@ -19,6 +19,10 @@ myst:
   argument.
   {pr}`3618`
 
+- {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
+  `None` it now uses `locals=globals` as the documentation says.
+  {pr}`3580`
+
 - {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
   thrown as Python exceptions. Previously Pyodide automatically wrapped them in
   a `JsException` but that is no longer needed -- now `JsException` inherits
