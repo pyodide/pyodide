@@ -11,7 +11,7 @@ py_version_major()
 EMSCRIPTEN_KEEPALIVE int
 py_version_minor()
 {
-  return PY_MAJOR_VERSION;
+  return PY_MINOR_VERSION;
 }
 
 EMSCRIPTEN_KEEPALIVE int
