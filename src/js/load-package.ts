@@ -362,7 +362,7 @@ const cbDeprecationWarnOnce = makeWarnOnce(
 /**
  * Load packages from the Pyodide distribution or Python wheels by URL.
  *
- * This installs the package in the virtual filesystem. The package
+ * This installs packages in the virtual filesystem. Packages
  * needs to be imported from Python before it can be used.
  *
  * This function can only install packages included in the Pyodide distribution,
