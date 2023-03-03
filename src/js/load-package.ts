@@ -360,7 +360,7 @@ const cbDeprecationWarnOnce = makeWarnOnce(
 );
 
 /**
- * Load packages from the Pyodide distribution or by URL.
+ * Load packages from the Pyodide distribution or Python wheels by URL.
  *
  * This installs the package in the virtual filesystem. The package
  * needs to be imported from Python before it can be used.
@@ -370,19 +370,18 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  * more limited in terms of functionality as compared to :mod:`micropip`,
  * however it has less overhead and can be faster.
  *
- * When installing binary wheels by URLs it is user's reponsability to check
+ * When installing binary wheels by URLs it is user's responsibility to check
  * that the installed binary wheel is compatible in terms of Python and
  * Emscripten versions. Compatibility is not checked during installation time
- * (unlike with micropip). If a wheels for the wrong Python/Emscripten version
+ * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
  * is installed it would fail at import time.
  *
  *
  * @param names Either a single package name or URL or a list of them. URLs can
  * be absolute or relative. The URLs must correspond to Python wheels:
- * - either pure Python wheels, with a file name ending with `none-any.whl`
- * - Emscripten/WASM 32 wheels, with a file name ending with
- *   `cp<pyversion>_emscripten_<em_version>_wasm32.whl`, where the Python and
- *   emscripten versions need to be compatible with the present Pyodide build.
+ * either pure Python wheels, with a file name ending with `none-any.whl`
+ * or Emscripten/WASM 32 wheels, with a file name ending with
+ * `cp<pyversion>_emscripten_<em_version>_wasm32.whl`.
  * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
  * which case the list will be converted to JavaScript and the
  * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
