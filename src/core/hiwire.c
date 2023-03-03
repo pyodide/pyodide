@@ -945,7 +945,7 @@ EM_JS(int, normalizeReservedWords, (int action, int word), {
   if (!isReservedWord(noTrailing_)) {
     return word;
   }
-  // 2. If there is at lease one trailing underscore, return the word with a
+  // 2. If there is at least one trailing underscore, return the word with a
   //    single underscore removed.
   if (noTrailing_ !== word) {
     return word.slice(0, -1);
