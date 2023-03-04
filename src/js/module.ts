@@ -2,6 +2,7 @@
 
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
+import { loadBinaryFile } from "./compat";
 
 type FSNode = any;
 type FSStream = any;
@@ -32,6 +33,14 @@ export interface FS {
   utime: (path: string, atime: number, mtime: number) => void;
   rmdir: (path: string) => void;
   mount: (type: any, opts: any, mountpoint: string) => any;
+  write: (
+    stream: FSStream,
+    buffer: any,
+    offset: number,
+    length: number,
+    position?: number,
+  ) => number;
+  close: (stream: FSStream) => void;
 }
 
 export interface Module {
@@ -46,6 +55,8 @@ export interface Module {
   PATH: any;
   TTY: any;
   FS: FS;
+  addRunDependency: (id: string) => void;
+  removeRunDependency: (id: string) => void;
 }
 
 /**
@@ -105,10 +116,53 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
 }
 
 /**
+ * Install the Python standard library to the virtual file system.
+ *
+ * Previously, this was handled by Emscripten's file packager (pyodide.asm.data).
+ * However, using the file packager means that we have only one version
+ * of the standard library available. We want to be able to use different
+ * versions of the standard library, for example:
+ *
+ * - Use compiled(.pyc) or uncompiled(.py) standard library.
+ * - Remove unused modules or add additional modules using bundlers like pyodide-pack.
+ *
+ * @param Module The Emscripten Module.
+ * @param stdlibPromise A promise that resolves to the standard library.
+ */
+function installStdlib(Module: Module, stdlibURL: string) {
+  const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
+
+  Module.preRun.push(() => {
+    /* @ts-ignore */
+    const pymajor = Module._py_version_major();
+    /* @ts-ignore */
+    const pyminor = Module._py_version_minor();
+
+    Module.FS.mkdirTree("/lib");
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
+
+    Module.addRunDependency("install-stdlib");
+
+    stdlibPromise
+      .then((stdlib: Uint8Array) => {
+        Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
+      })
+      .catch((e) => {
+        console.error("Error occurred while installing the standard library:");
+        console.error(e);
+      })
+      .finally(() => {
+        Module.removeRunDependency("install-stdlib");
+      });
+  });
+}
+
+/**
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
 export function initializeFileSystem(Module: Module, config: ConfigType) {
+  installStdlib(Module, config.indexURL + "python_stdlib.zip");
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
