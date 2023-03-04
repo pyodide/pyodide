@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 from ._py_compile import _compile
 
-# These files are removed from the stdlib by default
+# These files are removed from the stdlib
 REMOVED_FILES = (
     # package management
     "ensurepip/",
@@ -24,7 +24,7 @@ REMOVED_FILES = (
     "turtledemo",
 )
 
-# These files are unvendored from the stdlib by default
+# These files are unvendored from the stdlib and can be loaded with `loadPackage`
 UNVENDORED_FILES = (
     "test/",
     "distutils/",
