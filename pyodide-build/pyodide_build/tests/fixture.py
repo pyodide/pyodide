@@ -27,6 +27,20 @@ def temp_python_lib(tmp_path_factory):
     yield libdir
 
 
+@pytest.fixture(scope="module")
+def temp_python_lib2(tmp_path_factory):
+    libdir = tmp_path_factory.mktemp("python")
+
+    path = Path(libdir)
+
+    (path / "module3.py").touch()
+    (path / "module4.py").touch()
+
+    (path / "bye_pyodide.py").write_text("def bye(): return 'bye'")
+
+    yield libdir
+
+
 def mock_repodata_json() -> dict[str, Any]:
     # TODO: use pydantic
 
