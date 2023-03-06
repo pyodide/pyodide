@@ -2,38 +2,51 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.fixture(scope="function")
+def selenium_sdl(selenium_standalone):
+    selenium_standalone.run_js(
+        """
+        var sdl2Canvas = document.createElement("canvas");
+        document.body.appendChild(sdl2Canvas);
+        pyodide.SDL.setCanvas(sdl2Canvas);
+        """
+    )
+    yield selenium_standalone
+
+
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide(packages=["pyxel"])
-def test_basic(selenium):
-
-    import pyodide.code
-
-    pyodide.code.run_js(
-        """
-        var sdl2Canvas = document.createElement("canvas");
-        sdl2Canvas.id = "canvas";
-        sdl2Canvas.tabindex = -1;
-
-        document.body.appendChild(sdl2Canvas);
-        pyodide._module.canvas = document.querySelector("canvas#canvas");
-        """
-    )
+def test_show(selenium_sdl):
 
     import pyxel
 
-    class App:
-        def __init__(self):
-            pyxel.init(160, 120, title="Hello Pyxel")
-            pyxel.run(self.update, self.draw)
+    pyxel.init(120, 120)
+    pyxel.cls(1)
+    pyxel.circb(60, 60, 40, 7)
+    pyxel.show()
 
-        def update(self):
-            if pyxel.btnp(pyxel.KEY_Q):
-                pyxel.quit()
 
-        def draw(self):
-            pyxel.cls(0)
-            pyxel.text(55, 41, "Hello, Pyxel!", pyxel.frame_count % 16)
-            pyxel.blt(61, 66, 0, 0, 0, 38, 16)
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide(packages=["pyxel"])
+def test_run(selenium_sdl):
 
-    App()
+    import time
+
+    import pyxel
+
+    pyxel.init(160, 120)
+
+    st = time.time()
+
+    def update():
+        cur = time.time()
+        if cur - st > 3:
+            pyxel.quit()
+
+    def draw():
+        pyxel.cls(0)
+        pyxel.rect(10, 10, 20, 20, 11)
+
+    pyxel.run(update, draw)
