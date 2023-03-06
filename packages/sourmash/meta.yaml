@@ -5,11 +5,15 @@ package:
     - sourmash 
 requirements:
   run:
+    - screed
     - cffi
+    - deprecation
+    - cachetools
     - numpy
     - matplotlib
     - scipy
     - sqlite3
+    - bitstring
 source:
 #  url: https://pypi.io/packages/source/s/sourmash/sourmash-4.7.0.tar.gz
 #  sha256: 4135ac82059da24a30f3b9554ecd0107dbf68eac2828f39fa275038554b76311
