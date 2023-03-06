@@ -1,0 +1,26 @@
+package:
+  name: sourmash
+  version: 4.7.0
+  top-level:
+    - sourmash 
+requirements:
+  run:
+    - cffi
+    - numpy
+    - matplotlib
+    - scipy
+    - sqlite3
+source:
+#  url: https://pypi.io/packages/source/s/sourmash/sourmash-4.7.0.tar.gz
+#  sha256: 4135ac82059da24a30f3b9554ecd0107dbf68eac2828f39fa275038554b76311
+  url: https://codeload.github.com/sourmash-bio/sourmash/tar.gz/fecfc97c3ec0be1dcfe43c73a12297f1295b5199
+  sha256: d09c60b8b815f418dbc98d3b0c64d5e8527f6d17b2dbe03e476f947ee02b7d65
+build:
+  script: |
+    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
+    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
+about:
+  home: https://github.com/sourmash-bio/sourmash
+  PyPI: https://pypi.org/project/sourmash
+  summary: Compute and compare MinHash signatures for DNA data sets.
+  license: BSD-3-Clause
