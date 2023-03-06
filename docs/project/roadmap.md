@@ -33,19 +33,6 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Better support and documentation for loading user Python code
-
-Currently, most of our documentation suggests using `pyodide.runPython` to run
-code. This makes code difficult to maintain, because it won't work with `mypy`,
-`black`, or other code analysis tools, doesn't get good syntax highlighting in
-editors, etc. It also may lead to passing "arguments" to code via string
-formatting, missing out on the type conversion utilities.
-
-Our goal is to develop and document a better workflow for users to develop
-Python code for use in Pyodide.
-
-See issue {issue}`1940`.
-
 ## Improvements to package loading system
 
 Currently, Pyodide has two ways of loading packages:

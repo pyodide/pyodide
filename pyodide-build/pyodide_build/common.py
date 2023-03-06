@@ -52,6 +52,8 @@ BUILD_VARS: set[str] = {
     "CARGO_BUILD_TARGET",
     "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "RUSTFLAGS",
+    "PYO3_CROSS_LIB_DIR",
+    "PYO3_CROSS_INCLUDE_DIR",
     "PYODIDE_EMSCRIPTEN_VERSION",
     "PLATFORM_TRIPLET",
     "SYSCONFIGDATA_DIR",
@@ -410,13 +412,9 @@ def set_build_environment(env: dict[str, str]) -> None:
 
 def get_num_cores() -> int:
     """
-    Get the number of cores available on the system.
-    If the number of cores cannot be determined, return 1.
+    Return the number of CPUs the current process can use.
+    If the number of CPUs cannot be determined, return 1.
     """
-    import os
+    import loky
 
-    cpu_count = os.cpu_count()
-    if cpu_count is not None:
-        return cpu_count
-    else:
-        return 1
+    return loky.cpu_count()

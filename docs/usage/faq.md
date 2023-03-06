@@ -366,10 +366,10 @@ To make your own version of {js:func}`~pyodide.runPython` you could do:
 ```pyodide
 const my_eval_code = pyodide.runPython(`
   from pyodide.code import eval_code
-  def my_eval_code(code, ns):
+  def my_eval_code(code, globals=None, locals=None):
     extra_info = None
-    result = eval_code(code, ns)
-    return ns["extra_info"], result
+    result = eval_code(code, globals, locals)
+    return globals["extra_info"], result
   my_eval_code
 `)
 
@@ -423,3 +423,48 @@ So in order to persist changes, you have to call
 [`pyodide.FS.syncfs()`](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.syncfs).
 See [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#persistent-data)
 for more details.
+
+## How can I access JavaScript objects/attributes in Python if their names are Python keywords?
+
+Some JavaScript objects may have names or attributes which are also [Python Keywords](https://docs.python.org/3/reference/lexical_analysis.html#keywords), making them difficult to interact with when importing them into Python. For example, all three of the following uses of `runPython` will throw a SyntaxError:
+
+```pyodide
+//The built-in method Array.from() overlaps with Python's "from"
+pyodide.runPython(`from js import Array; print(Array.from([1,2,3]))`);
+
+//"global" is a valid attribute name in JS, but a reserved keyword in Python
+people = {global: "lots and lots"};
+pyodide.runPython(`from js import people; print(people.global)`);
+
+//"lambda" is a valid object name in JS, but a reserved keyword in Python
+lambda = (x) => {return x + 1};
+pyodide.runPython(`from js import lambda; print(lambda(1))`);
+```
+
+For JS objects with attributes that are Python reserved keywords, {py:func}`getattr` and {py:func}`setattr` can be used to access the attribute by name:
+
+```pyodide
+pyodide.runPython(`
+    from js import Array
+    fromFunc = getattr(Array, 'from')
+    print(fromFunc([1,2,3]))
+    `);
+
+people = {global: "lots and lots"};
+pyodide.runPython(`
+    from js import people
+    setattr(people, 'global', 'even more')
+    print(getattr(people, 'global'))
+    `);
+```
+
+For objects whose names are keywords, one can similarly use {py:func}`getattr` on the `js` module itself:
+
+```pyodide
+lambda = (x) => {return x + 1};
+pyodide.runPython(`
+    import js
+    js_lambda = getattr(js, 'lambda')
+    print(js_lambda(1))
+    `);
+```

@@ -37,6 +37,8 @@ module = [
   "tomllib",
   "tomli",
   "typer",
+  "pytest_pyodide",
+  "loky",
 ]
 ignore_missing_imports = true
 
@@ -81,5 +83,25 @@ known-third-party = [
 
 [tool.ruff.flake8-bugbear]
 extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
+[tool.pytest.ini_options]
+norecursedirs = [
+    "build",
+    "cpython",
+    "emsdk",
+    ".artifacts",
+]
+addopts = '''
+--doctest-modules
+--ignore="packages/matplotlib/src"
+--ignore-glob="**/dist/"
+--tb=short
+--dist-dir=dist'''
+testpaths = [
+    "src",
+    "pyodide-build",
+    "packages",
+]
+asyncio_mode = "strict"
 
 [tool.pyodide]

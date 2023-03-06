@@ -10,22 +10,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
+  get_python_version:
     runs-on: ubuntu-latest
+    outputs:
+      PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
-        with:
-          python-version: 3.11.1
-      - uses: pre-commit/action@v2.0.3
+      - uses: actions/checkout@v3
+      - name: Read the Python version from Makefile.envs
+        id: get_python_version
+        run: |
+          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
 
   test-docs:
     runs-on: ubuntu-latest
+    needs: get_python_version
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v3
+      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.11.1
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
@@ -36,20 +40,20 @@ jobs:
           mkdir -p test-results
           pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
       - name: Test Summary
-        uses: test-summary/action@v1
+        uses: test-summary/action@v2
         with:
           paths: "test-results/*.xml"
         if: always()
 
   test-python:
     runs-on: ubuntu-latest
+    needs: get_python_version
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v3
+      - uses: actions/checkout@v3
+      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.11.1
-
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
@@ -78,10 +82,10 @@ jobs:
       CCACHE_DIR: /tmp/ccache
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache ccache output
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             /tmp/ccache
@@ -141,10 +145,10 @@ jobs:
           ls -lh dist/
 
           pip install brotli
-          ./tools/check_compressed_size.py dist/pyodide.asm.*
+          ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: core-build
           path: ./dist/
@@ -163,10 +167,10 @@ jobs:
         browser: [chrome]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download build artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: core-build
           path: ./dist/
@@ -216,7 +220,7 @@ jobs:
             --junitxml=test-results/packages_test.xml
 
       - name: Test Summary
-        uses: test-summary/action@v1
+        uses: test-summary/action@v2
         with:
           paths: "test-results/*.xml"
         if: always()

@@ -427,6 +427,13 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
+def is_rust_package(pkg: BasePackage) -> bool:
+    """
+    Check if a package requires rust toolchain to build.
+    """
+    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
+
+
 def format_name_list(l: list[str]) -> str:
     """
     >>> format_name_list(["regex"])
@@ -538,14 +545,30 @@ def build_from_graph(
     built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
+    building_rust_pkg = False
     progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
-        nonlocal queue_idx
+        nonlocal queue_idx, building_rust_pkg
         while True:
-            pkg = build_queue.get()[1]
+            _, pkg = build_queue.get()
 
             with thread_lock:
+                if is_rust_package(pkg):
+                    # Don't build multiple rust packages at the same time.
+                    # See: https://github.com/pyodide/pyodide/issues/3565
+                    # Note that if there are only rust packages left in the queue,
+                    # this will keep pushing and popping packages until the current rust package
+                    # is built. This is not ideal but presumably the overhead is negligible.
+                    if building_rust_pkg:
+                        build_queue.put((job_priority(pkg), pkg))
+
+                        # Release the GIL so new packages get queued
+                        sleep(0.1)
+                        continue
+
+                    building_rust_pkg = True
+
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
 
@@ -569,6 +592,11 @@ def build_from_graph(
                 progress_formatter.remove_package(pkg_status)
 
             built_queue.put(pkg)
+
+            with thread_lock:
+                if is_rust_package(pkg):
+                    building_rust_pkg = False
+
             # Release the GIL so new packages get queued
             sleep(0.01)
 

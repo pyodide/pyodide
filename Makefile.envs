@@ -1,5 +1,5 @@
-export PYVERSION ?= 3.11.1
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.31
+export PYVERSION ?= 3.11.2
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.32
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -127,14 +127,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lproxyfs.js \
 	-lworkerfs.js \
 	-lwebsocket.js \
-	-leventloop.js \
-	\
-	--use-preload-plugins \
-	--preload-file $(CPYTHONLIB)@/lib/python$(PYMAJOR).$(PYMINOR) \
-	--exclude-file "*__pycache__*" \
-	--exclude-file "*/test/*" \
-	--exclude-file "*/tests/*" \
-	--exclude-file "*/distutils/*"
+	-leventloop.js
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
@@ -157,13 +150,13 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
 export RUST_TOOLCHAIN=nightly-2022-06-26
-
+export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
+export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 
 # idealy we could automatically include all SIDE_MODULE_LDFLAGS here
 export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no
-
 .output_vars:
 	set
