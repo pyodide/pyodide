@@ -554,6 +554,11 @@ class PyodideAnalyzer:
                 # This is a class method. If it's not part of a PyProxyXMethods
                 # class (which we already dealt with), the method will be
                 # documented as part of the class.
+                #
+                # This doesn't filter static methods! Currently this actually
+                # ends up working out on our favor. If we did want to filter
+                # them, we could probably test for:
+                # isinstance(doclet, Function) and doclet.is_static.
                 continue
 
             if filename == "pyproxy.gen." and isinstance(doclet, Class):
