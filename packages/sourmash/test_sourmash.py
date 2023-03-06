@@ -18,4 +18,4 @@ def test_simple_save_load(selenium):
             sourmash.save_signatures([ss], fp=fp)
 
         loaded = sourmash.load_one_signature(str(name))
-        assert loaded.equals(ss)
+        assert loaded == ss

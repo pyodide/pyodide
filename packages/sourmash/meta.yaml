@@ -18,7 +18,7 @@ source:
   #  url: https://pypi.io/packages/source/s/sourmash/sourmash-4.7.0.tar.gz
   #  sha256: 4135ac82059da24a30f3b9554ecd0107dbf68eac2828f39fa275038554b76311
   url: https://codeload.github.com/sourmash-bio/sourmash/tar.gz/fecfc97c3ec0be1dcfe43c73a12297f1295b5199
-  sha256: d09c60b8b815f418dbc98d3b0c64d5e8527f6d17b2dbe03e476f947ee02b7d65
+  sha256: 0dff73ca2252877108756cc1e53ef5981312a9006be93dfd88cbd7aaaf35f6ae
 build:
   script: |
     rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
