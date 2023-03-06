@@ -535,7 +535,7 @@ def test_python2js_track_proxies(selenium):
         }
         function check(l){
             for(let x of l){
-                if(pyodide.isPyProxy(x)){
+                if(x instanceof pyodide.ffi.PyProxy){
                     assert(() => x.$$.ptr === 0);
                 } else {
                     check(x);
@@ -557,7 +557,7 @@ def test_wrong_way_track_proxies(selenium):
         """
         function checkDestroyed(l){
             for(let e of l){
-                if(pyodide.isPyProxy(e)){
+                if(e instanceof pyodide.ffi.PyProxy){
                     console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
                     assert(() => e.$$.ptr === 0);
                 } else {
@@ -1101,7 +1101,7 @@ def test_tojs4(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()
@@ -1119,7 +1119,7 @@ def test_tojs5(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()

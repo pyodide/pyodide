@@ -2931,9 +2931,8 @@ JsMethod_Vectorcall(PyObject* self,
   idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
   FAIL_IF_NULL(idresult);
   // various cases where we want to extend the lifetime of the arguments:
-  // 1. if the return value is a promise we extend arguments lifetime until
-  // promise
-  //    resolves.
+  // 1. if the return value is a promise we extend arguments lifetime until the
+  //    promise resolves.
   // 2. If the return value is a sync or async generator we extend the lifetime
   //    of the arguments until the generator returns.
   bool is_promise = hiwire_is_promise(idresult);
@@ -2974,6 +2973,7 @@ finally:
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
     if (idresult != NULL && pyproxy_Check(idresult)) {
+      // TODO: don't destroy proxies with roundtrip = true?
       JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);

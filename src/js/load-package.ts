@@ -12,7 +12,8 @@ import {
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy, isPyProxy } from "./pyproxy.gen";
+import { PyProxy } from "./pyproxy.gen";
+import { makeWarnOnce } from "./util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -38,14 +39,26 @@ async function initializePackageIndex(lockFileURL: string) {
   }
   API.repodata_info = repodata.info;
   API.repodata_packages = repodata.packages;
+  API.repodata_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.repodata_packages)) {
-    for (let import_name of API.repodata_packages[name].imports) {
+    const pkg = API.repodata_packages[name];
+
+    for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
+
+    if (pkg.package_type === "cpython_module") {
+      API.repodata_unvendored_stdlibs_and_test.push(name);
+    }
   }
+
+  API.repodata_unvendored_stdlibs =
+    API.repodata_unvendored_stdlibs_and_test.filter(
+      (lib: string) => lib !== "test",
+    );
 }
 
 API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
@@ -340,18 +353,38 @@ async function downloadAndInstall(
 
 const acquirePackageLock = createLock();
 
-let loadPackagePositionalCallbackDeprecationWarned = false;
+const cbDeprecationWarnOnce = makeWarnOnce(
+  "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
+    "is deprecated and will be removed in v0.24. Instead use:\n" +
+    "   { messageCallback : callbackFunc }",
+);
+
 /**
- * Load a package or a list of packages over the network. This installs the
- * package in the virtual filesystem. The package needs to be imported from
- * Python before it can be used.
+ * Load packages from the Pyodide distribution or Python wheels by URL.
  *
- * @param names Either a single package name or
- * URL or a list of them. URLs can be absolute or relative. The URLs must have
- * file name ``<package-name>.js`` and there must be a file called
- * ``<package-name>.data`` in the same directory. The argument can be a
- * ``PyProxy`` of a list, in which case the list will be converted to JavaScript
- * and the ``PyProxy`` will be destroyed.
+ * This installs packages in the virtual filesystem. Packages
+ * needs to be imported from Python before it can be used.
+ *
+ * This function can only install packages included in the Pyodide distribution,
+ * or Python wheels by URL, without dependency resolution. It is significantly
+ * more limited in terms of functionality as compared to :mod:`micropip`,
+ * however it has less overhead and can be faster.
+ *
+ * When installing binary wheels by URLs it is user's responsibility to check
+ * that the installed binary wheel is compatible in terms of Python and
+ * Emscripten versions. Compatibility is not checked during installation time
+ * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
+ * is installed it would fail at import time.
+ *
+ *
+ * @param names Either a single package name or URL or a list of them. URLs can
+ * be absolute or relative. The URLs must correspond to Python wheels:
+ * either pure Python wheels, with a file name ending with `none-any.whl`
+ * or Emscripten/WASM 32 wheels, with a file name ending with
+ * `cp<pyversion>_emscripten_<em_version>_wasm32.whl`.
+ * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
+ * which case the list will be converted to JavaScript and the
+ * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
  * @param options
  * @param options.messageCallback A callback, called with progress messages
  *    (optional)
@@ -374,14 +407,7 @@ export async function loadPackage(
   errorCallbackDeprecated?: (message: string) => void,
 ) {
   if (typeof options === "function") {
-    if (!loadPackagePositionalCallbackDeprecationWarned) {
-      console.warn(
-        "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
-          "is deprecated and will be removed in v0.24. Instead use:\n" +
-          "   { messageCallback : callbackFunc }",
-      );
-      loadPackagePositionalCallbackDeprecationWarned = true;
-    }
+    cbDeprecationWarnOnce();
     options = {
       messageCallback: options,
       errorCallback: errorCallbackDeprecated,
@@ -390,7 +416,7 @@ export async function loadPackage(
 
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
-  if (isPyProxy(names)) {
+  if (names instanceof PyProxy) {
     names = names.toJs();
   }
   if (!Array.isArray(names)) {

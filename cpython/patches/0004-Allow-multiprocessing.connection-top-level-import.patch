@@ -1,7 +1,7 @@
 From becbcc43e3e09a9c065ea7856a2d3069061fd570 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Dec 2022 09:09:14 -0800
-Subject: [PATCH 4/8] Allow multiprocessing.connection top level import
+Subject: [PATCH 4/9] Allow multiprocessing.connection top level import
 
 ---
  Lib/multiprocessing/connection.py | 5 ++++-

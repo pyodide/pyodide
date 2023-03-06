@@ -9,7 +9,9 @@
     "composite": true,
     "strict": true,
     "noUnusedLocals": true,
-    "types": ["node"]
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "lib": ["ES2018", "DOM"]
   },
   "include": ["*.ts"],
   "exclude": ["test/**/*"]

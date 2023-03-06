@@ -197,6 +197,20 @@ def test_eval_code_locals():
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
 
+    # See https://github.com/pyodide/pyodide/issues/3578
+    with pytest.raises(NameError):
+        eval_code("print(self)")
+
+    res = eval_code(
+        """
+        var = "Hello"
+        def test():
+            return var
+        test()
+        """
+    )
+    assert res == "Hello"
+
 
 def test_unpack_archive(selenium_standalone):
     selenium = selenium_standalone
@@ -288,8 +302,8 @@ def test_monkeypatch_eval_code(selenium):
             import pyodide
             old_eval_code = pyodide.code.eval_code
             x = 3
-            def eval_code(code, ns):
-                return [ns["x"], old_eval_code(code, ns)]
+            def eval_code(code, globals=None, locals=None):
+                return [globals["x"], old_eval_code(code, globals, locals)]
             pyodide.code.eval_code = eval_code
             """
         )
@@ -566,6 +580,26 @@ def test_run_python_js_error(selenium):
             with raises(JsException, "blah!"):
                 throwError()
         `);
+        """
+    )
+
+
+def test_run_python_locals(selenium):
+    selenium.run_js(
+        """
+        let dict = pyodide.globals.get("dict");
+        let locals = dict([["x", 7]]);
+        let globals = dict([["x", 5], ["y", 29]]);
+        dict.destroy();
+        let result = pyodide.runPython("z = 13; x + y", {locals, globals});
+        assert(() => locals.get("z") === 13);
+        assert(() => locals.has("x"));
+        let result2 = pyodide.runPython("del x; x + y", {locals, globals});
+        assert(() => !locals.has("x"));
+        assert(() => result === 7 + 29);
+        assert(() => result2 === 5 + 29);
+        locals.destroy();
+        globals.destroy();
         """
     )
 
@@ -1296,6 +1330,26 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+@run_in_pyodide
+def test_default_sys_path(selenium):
+    import sys
+    from sys import version_info
+
+    major = version_info[0]
+    minor = version_info[1]
+    prefix = sys.prefix
+    platlibdir = sys.platlibdir
+    paths = [
+        f"{prefix}{platlibdir}/python{major}{minor}.zip",
+        f"{prefix}{platlibdir}/python{major}.{minor}",
+        f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
+        f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
+    ]
+
+    for path in paths:
+        assert path in sys.path
+
+
 def test_sys_path0(selenium):
     selenium.run_js(
         """
@@ -1319,11 +1373,10 @@ def test_fullstdlib(selenium_standalone_noload):
         await pyodide.loadPackage("micropip");
 
         pyodide.runPython(`
-            import _pyodide
+            import pyodide_js
             import micropip
             loaded_packages = micropip.list()
-            print(loaded_packages)
-            assert all((lib in micropip.list()) for lib in _pyodide._importhook.UNVENDORED_STDLIBS)
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
         `);
         """
     )
@@ -1396,6 +1449,74 @@ def test_deprecations(selenium_standalone):
     assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
     assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
     assert selenium.logs.count("!!! No new packages to load") == 3
+    selenium.run_js(
+        """
+        let a = pyodide.PyBuffer;
+        let b = pyodide.PyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        let a = pyodide.PyProxyBuffer;
+        let b = pyodide.PyProxyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => !pyodide.isPyProxy({}));
+        """
+    )
+    selenium.run_js(
+        """
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsHas());
+        assert(() => pyodide.globals.supportsHas());
+        """
+    )
+    for name in [
+        "isPyProxy",
+        "isAwaitable",
+        "isBuffer",
+        "isCallable",
+        "isIterable",
+        "isIterator",
+        "supportsGet",
+        "supportsSet",
+        "supportsHas",
+    ]:
+        assert (
+            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
+            == 1
+        )
 
 
 @run_in_pyodide(packages=["pytest"])
@@ -1661,3 +1782,15 @@ def test_python_error(selenium):
     )
     assert msg.endswith("TypeError: oops\n")
     assert ty == "TypeError"
+
+
+def test_python_version(selenium):
+    selenium.run_js(
+        """
+        sys = pyodide.pyimport("sys");
+        assert(() => sys.version_info.major === pyodide._module._py_version_major());
+        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
+        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        sys.destroy();
+        """
+    )

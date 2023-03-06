@@ -8,6 +8,7 @@ from pyodide_build.common import (
     find_missing_executables,
     get_make_environment_vars,
     get_make_flag,
+    get_num_cores,
     parse_top_level_import_name,
     platform,
     search_pyodide_root,
@@ -187,3 +188,13 @@ def test_environment_var_substitution(monkeypatch):
         and args["cxxflags"] == "Robert Mc Roberts"
         and args["ldflags"] == '"-lpyodide_build_dir"'
     )
+
+
+@pytest.mark.parametrize("num_cpus", [1, 2, 3])
+def test_get_num_cores(monkeypatch, num_cpus):
+    import loky
+
+    with monkeypatch.context() as m:
+        m.setattr(loky, "cpu_count", lambda: num_cpus)
+
+        assert get_num_cores() == num_cpus

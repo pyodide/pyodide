@@ -423,7 +423,7 @@ def test_console_html(selenium):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
-    result = re.sub(r"/lib/python3.\d+", "/lib/pythonxxx", result)
+    result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
 
     answer = dedent(
         """
@@ -447,6 +447,10 @@ def test_console_html(selenium):
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
     assert long_output[2] == "<long output truncated>"
+
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
