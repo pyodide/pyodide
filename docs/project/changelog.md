@@ -28,8 +28,8 @@ myst:
 
 ### Packages
 
-- New packages: sourmash {pr}`3635, screed {pr}`3635, bitstring {pr}`3635,
-  deprecation {pr}`3635, cachetools {pr}`3635.
+- New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
+  deprecation {pr}`3635`, cachetools {pr}`3635`.
 
 ## Version 0.23.0
 
