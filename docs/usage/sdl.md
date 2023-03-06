@@ -18,17 +18,7 @@ how to use SDL-based packages in Pyodide.
 
 SDL-based packages require a canvas to draw on.
 Emscripten uses the `canvas` attribute of the `Module` object to
-determine the canvas to draw on. This is not set by default in Pyodide,
-so you need to set it manually.
-
-```js
-const pyodide = loadPyodide();
-
-let sdl2Canvas = document.createElement("canvas");
-sdl2Canvas.id = "canvas";
-sdl2Canvas.tabindex = -1;
-pyodide._module.canvas = sdl2Canvas;
-```
+determine the canvas to draw on.
 
 ## Handling events
 
