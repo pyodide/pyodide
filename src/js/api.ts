@@ -3,6 +3,7 @@ declare var Hiwire: any;
 declare var API: any;
 import "./module";
 import { ffi } from "./ffi";
+import { SDL, registerSDL } from "./sdl";
 
 import { loadPackage, loadedPackages } from "./load-package";
 import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
@@ -120,6 +121,13 @@ export class PyodideAPI {
    * ``dirname``, ``normalize``, and ``splitPath``.
    */
   static PATH = {} as any;
+
+  /**
+   * This provides operations to use SDL-based packages.
+   *
+   * See :ref:`using-sdl` for more information.
+   */
+  static SDL: SDL | undefined = undefined;
 
   /**
    * A map from posix error names to error codes.
@@ -622,6 +630,7 @@ API.makePublicAPI = function () {
   pyodideAPI.FS = Module.FS;
   pyodideAPI.PATH = Module.PATH;
   pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  pyodideAPI.SDL = registerSDL(Module);
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   return pyodideAPI;
