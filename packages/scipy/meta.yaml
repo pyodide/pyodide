@@ -29,7 +29,7 @@ source:
     - patches/0006-gemm_-no-const.patch
     - patches/0007-make-int-return-values.patch
     - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0009-sasum-returns-double-not-float.patch
+    # - patches/0009-sasum-returns-double-not-float.patch
     - patches/0010-skip-fortran-fails-to-link.patch
     - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
     - patches/0012-Remove-meson-requirements.patch
