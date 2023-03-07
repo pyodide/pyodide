@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `as_object_map` now accepts a keyword argument `hereditary`.
+  If set to `True` and indexing the object returns a plain-old-object, then the
+  return value will be automatically mapped in `as_object_map` as well.
+  {pr}`3638`
+
 - {{ Enhancement }} Python does not allow reserved words to be used as attributes.
   For instance, `Array.from` is a `SyntaxError`. (JavaScript has a more robust
   parser which can handle this.) To handle this, if an attribute to a `JsProxy`
