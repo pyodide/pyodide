@@ -43,7 +43,7 @@ extensions = [
 ]
 
 
-myst_enable_extensions = ["substitution"]
+myst_enable_extensions = ["substitution", "attrs_inline"]
 
 js_language = "typescript"
 jsdoc_config_path = "../src/js/tsconfig.json"
