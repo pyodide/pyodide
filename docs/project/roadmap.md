@@ -12,7 +12,6 @@ information like tutorials. We also want to add more information to the FAQ and
 improve the organization. It would also be good to find some way to include
 interactive code pens in the documentation.
 
-
 ## Reducing download sizes and initialization times
 
 At present a first load of Pyodide requires a 6.4 MB download, and the
