@@ -53,8 +53,6 @@
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
-    "./pyodide.asm.data": "./pyodide.asm.data",
-    "./pyodide_py.tar": "./pyodide_py.tar",
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
     "./package.json": "./package.json",
@@ -63,8 +61,7 @@
   "files": [
     "pyodide.asm.js",
     "pyodide.asm.wasm",
-    "pyodide.asm.data",
-    "pyodide_py.tar",
+    "python_stdlib.zip",
     "pyodide.mjs",
     "pyodide.js.map",
     "pyodide.mjs.map",

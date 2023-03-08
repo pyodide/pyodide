@@ -43,6 +43,10 @@ Instead, it is better to load individual modules as needed using
   `pyodide.loadPackage('pydoc_data')` or `micropip.install('pydoc_data')`
   to enable them.
 
+- webbrowser: The original webbrowser module is not available. Instead,
+  Pyodide includes some method stubs based on browser APIs:
+  `webbrowser.open()`, `webbrowser.open_new()`, `webbrowser.open_new_tab()`.
+
 ### Removed modules
 
 The following modules are removed from the standard library to reduce download size and

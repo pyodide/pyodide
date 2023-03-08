@@ -423,7 +423,7 @@ def test_console_html(selenium):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
-    result = re.sub(r"/lib/python3.\d+", "/lib/pythonxxx", result)
+    result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
 
     answer = dedent(
         """

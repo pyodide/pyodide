@@ -2,7 +2,7 @@
 
 from pyodide_build.pyzip import create_zipfile, default_filterfunc
 
-from .fixture import temp_python_lib
+from .fixture import temp_python_lib, temp_python_lib2
 
 
 def test_defaultfilterfunc(temp_python_lib):
@@ -19,7 +19,7 @@ def test_create_zip(temp_python_lib, tmp_path):
 
     output = tmp_path / "python.zip"
 
-    create_zipfile(temp_python_lib, output, pycompile=False, filterfunc=None)
+    create_zipfile([temp_python_lib], output, pycompile=False, filterfunc=None)
 
     assert output.exists()
 
@@ -33,7 +33,7 @@ def test_create_zip_compile(temp_python_lib, tmp_path):
 
     output = tmp_path / "python.zip"
 
-    create_zipfile(temp_python_lib, output, pycompile=True, filterfunc=None)
+    create_zipfile([temp_python_lib], output, pycompile=True, filterfunc=None)
 
     assert output.exists()
 
@@ -42,10 +42,12 @@ def test_create_zip_compile(temp_python_lib, tmp_path):
         assert "module2.pyc" in zf.namelist()
 
 
-def test_import_from_zip(temp_python_lib, tmp_path, monkeypatch):
+def test_import_from_zip(temp_python_lib, temp_python_lib2, tmp_path, monkeypatch):
     output = tmp_path / "python.zip"
 
-    create_zipfile(temp_python_lib, output, pycompile=False, filterfunc=None)
+    create_zipfile(
+        [temp_python_lib, temp_python_lib2], output, pycompile=False, filterfunc=None
+    )
 
     assert output.exists()
 
@@ -57,3 +59,8 @@ def test_import_from_zip(temp_python_lib, tmp_path, monkeypatch):
 
     assert hello_pyodide.__file__.startswith(str(output))
     assert hello_pyodide.hello() == "hello"
+
+    import bye_pyodide  # type: ignore[import]
+
+    assert bye_pyodide.__file__.startswith(str(output))
+    assert bye_pyodide.bye() == "bye"

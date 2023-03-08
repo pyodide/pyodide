@@ -210,6 +210,8 @@ def unpack_buffer(
     else:
         extract_path = Path(".")
     filename = filename.rpartition("/")[-1]
+
+    extract_path.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)

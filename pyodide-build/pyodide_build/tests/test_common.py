@@ -190,15 +190,11 @@ def test_environment_var_substitution(monkeypatch):
     )
 
 
-def test_get_num_cores(monkeypatch):
-    import os
+@pytest.mark.parametrize("num_cpus", [1, 2, 3])
+def test_get_num_cores(monkeypatch, num_cpus):
+    import loky
 
     with monkeypatch.context() as m:
-        m.setattr(os, "cpu_count", lambda: 2)
+        m.setattr(loky, "cpu_count", lambda: num_cpus)
 
-        assert get_num_cores() == 2
-
-    with monkeypatch.context() as m:
-        m.setattr(os, "cpu_count", lambda: None)
-
-        assert get_num_cores() == 1
+        assert get_num_cores() == num_cpus
