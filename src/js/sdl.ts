@@ -5,28 +5,34 @@ import { Module } from "./module";
  * This interface contains the helper functions for SDL.
  */
 export interface SDL {
-  setCanvas(canvas: HTMLElement): void;
-  unsetCanvas(): void;
-  getCanvas(): HTMLElement | undefined;
+  setCanvas2D(canvas: HTMLCanvasElement): void;
+  getCanvas2D(): HTMLCanvasElement | undefined;
+  setCanvas3D(canvas: HTMLCanvasElement): void;
+  getCanvas3D(): HTMLCanvasElement | undefined;
 }
 
 /** @private */
 export function registerSDL(Module: Module): SDL {
-  function setCanvas(canvas: HTMLElement) {
+  function setCanvas2D(canvas: HTMLCanvasElement) {
     Module.canvas = canvas;
   }
 
-  function unsetCanvas() {
-    Module.canvas = undefined;
+  function setCanvas3D(canvas: HTMLCanvasElement) {
+    Module.canvas = canvas;
   }
 
-  function getCanvas(): HTMLElement | undefined {
+  function getCanvas2D(): HTMLCanvasElement | undefined {
+    return Module.canvas;
+  }
+
+  function getCanvas3D(): HTMLCanvasElement | undefined {
     return Module.canvas;
   }
 
   return {
-    setCanvas,
-    unsetCanvas,
-    getCanvas,
+    setCanvas2D,
+    setCanvas3D,
+    getCanvas2D,
+    getCanvas3D,
   };
 }

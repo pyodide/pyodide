@@ -57,7 +57,7 @@ export interface Module {
   TTY: any;
   FS: FS;
   SDL: SDL;
-  canvas?: HTMLElement;
+  canvas?: HTMLCanvasElement;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
 }
