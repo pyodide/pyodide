@@ -72,7 +72,7 @@ Python is used during the build it is recommended to use a [virtual
 environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
 or a conda environment.
 
-`````{tab-set}
+````{tab-set}
 
 ```{tab-item} Linux
 
@@ -84,45 +84,55 @@ To build on Linux, you need:
 
 ```
 
-````{tab-item} Linux with conda
+```{tab-item} Linux with conda
 
-In this setup we would install both Python and the necessary build requirements in a conda environment.
+In this setup you would install both Python and the necessary build requirements
+in a conda environment.
 
 You would need a working native compiler toolchain, enough to build
   [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux), for example,
 - `apt install build-essential` on Debian based systems.
+- Conda which can be installed from [MiniForge](https://github.com/conda-forge/miniforge)
 
 Then run,
 
-- `conda create  -c conda-forge -n pyodide-env python=3.11`
+- `conda create -c conda-forge -n pyodide-env python=3.11`
 - `conda activate conda-forge`
-- `conda install nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
+- `conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
 
 ```
 ```{tab-item} MacOS with conda
 
-ddsds
+In this setup you would install both Python and the necessary build
+requirements in a conda environment.
+
+You would need,
+- System libraries in the root directory:
+  `xcode-select --install`
+- Conda which can be installed using [Miniforge](https://github.com/conda-forge/miniforge) (both for Intel and M1 CPU)
+
+Then run,
+
+- `conda create -c conda-forge -n pyodide-env python=3.11`
+- `conda activate conda-forge`
+- `conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
 
 ```
 
 ```{tab-item} MacOS with Homebrew
 
-To build on MacOS, you need:
+To build on MacOS with Homebrew, you need:
 
-- A working native compiler toolchain, enough to build
-  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#macos-and-os-x).
+- System command line tools
+  `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
-- System libraries in the root directory (
-  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
-  should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for and other essential Unix utilities (`brew install coreutils`).
-- cmake (`brew install cmake`)
-- autoconf, automaker & libtool (`brew install autoconf automaker libtool`)
-- It is also recommended installing the GNU patch (`brew install gpatch`), and
-  GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
+- `brew install coreutils cmake autoconf automaker libtool`
+- It is also recommended installing the GNU patch and
+  GNU sed (`brew install gpatch gnu-sed`)
+  and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
 ```
-`````
+````
 
 ```{note}
 If you encounter issues with the requirements, it is useful to check the exact
