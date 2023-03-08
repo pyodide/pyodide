@@ -414,6 +414,14 @@ Module.callPyObjectKwargs = function (
     );
     Py_EXIT();
   } catch (e) {
+    // Emscripten throws "unwind" to stop current code and return to the main event loop.
+    // This is expected behavior and should not be treated as a fatal error.
+    // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
+    //      2) https://github.com/kitao/pyxel/issues/418
+    if (e && e === "unwind") {
+      return;
+    }
+
     API.fatal_error(e);
   } finally {
     Hiwire.decref(idargs);

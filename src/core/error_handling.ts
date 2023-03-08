@@ -79,14 +79,6 @@ API.fatal_error = function (e: any) {
     return;
   }
 
-  // Emscripten throws "unwind" to stop current code and return to the main event loop.
-  // This is expected behavior and we just propagate it up so emscripten can handle it.
-  // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
-  //      2) https://github.com/kitao/pyxel/issues/418
-  if (e && e === "unwind") {
-    throw e;
-  }
-
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
