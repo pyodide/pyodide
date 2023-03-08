@@ -14,6 +14,6 @@ pydantic
 # Packages that we want to document as part of the Pyodide CLI
 ./pyodide-build/
 # Version should be consistent with packages/micropip/meta.yaml
-micropip==0.2.0
+micropip==0.2.2
 jinja2>=3.0
 ruamel.yaml

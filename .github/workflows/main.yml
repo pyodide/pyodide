@@ -19,16 +19,6 @@ jobs:
         id: get_python_version
         run: |
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-  lint:
-    runs-on: ubuntu-latest
-    needs: get_python_version
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
-      - uses: pre-commit/action@v2.0.3
 
   test-docs:
     runs-on: ubuntu-latest

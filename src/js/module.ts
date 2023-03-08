@@ -130,19 +130,22 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @param stdlibPromise A promise that resolves to the standard library.
  */
 function installStdlib(Module: Module, stdlibURL: string) {
-  // TODO(ryanking13): Get python version from Python.h
-
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
 
   Module.preRun.push(() => {
+    /* @ts-ignore */
+    const pymajor = Module._py_version_major();
+    /* @ts-ignore */
+    const pyminor = Module._py_version_minor();
+
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree("/lib/python3.11/site-packages");
+    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
 
     Module.addRunDependency("install-stdlib");
 
     stdlibPromise
       .then((stdlib: Uint8Array) => {
-        Module.FS.writeFile("/lib/python311.zip", stdlib);
+        Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
       })
       .catch((e) => {
         console.error("Error occurred while installing the standard library:");

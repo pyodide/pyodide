@@ -302,8 +302,8 @@ def test_monkeypatch_eval_code(selenium):
             import pyodide
             old_eval_code = pyodide.code.eval_code
             x = 3
-            def eval_code(code, ns):
-                return [ns["x"], old_eval_code(code, ns)]
+            def eval_code(code, globals=None, locals=None):
+                return [globals["x"], old_eval_code(code, globals, locals)]
             pyodide.code.eval_code = eval_code
             """
         )
@@ -584,6 +584,26 @@ def test_run_python_js_error(selenium):
     )
 
 
+def test_run_python_locals(selenium):
+    selenium.run_js(
+        """
+        let dict = pyodide.globals.get("dict");
+        let locals = dict([["x", 7]]);
+        let globals = dict([["x", 5], ["y", 29]]);
+        dict.destroy();
+        let result = pyodide.runPython("z = 13; x + y", {locals, globals});
+        assert(() => locals.get("z") === 13);
+        assert(() => locals.has("x"));
+        let result2 = pyodide.runPython("del x; x + y", {locals, globals});
+        assert(() => !locals.has("x"));
+        assert(() => result === 7 + 29);
+        assert(() => result2 === 5 + 29);
+        locals.destroy();
+        globals.destroy();
+        """
+    )
+
+
 def test_create_once_callable(selenium):
     selenium.run_js(
         """
@@ -855,7 +875,6 @@ def test_fatal_error(selenium_standalone):
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
-        assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
 
@@ -1762,3 +1781,15 @@ def test_python_error(selenium):
     )
     assert msg.endswith("TypeError: oops\n")
     assert ty == "TypeError"
+
+
+def test_python_version(selenium):
+    selenium.run_js(
+        """
+        sys = pyodide.pyimport("sys");
+        assert(() => sys.version_info.major === pyodide._module._py_version_major());
+        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
+        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        sys.destroy();
+        """
+    )

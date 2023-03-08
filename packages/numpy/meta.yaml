@@ -1,18 +1,13 @@
 package:
   name: numpy
-  version: 1.23.5
+  version: 1.24.2
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/42/38/775b43da55fa7473015eddc9a819571517d9a271a9f8134f68fb9be2f212/numpy-1.23.5.tar.gz
-  sha256: 1b1766d6f397c18153d40015ddfc79ddb715cabadc04d2d228d4e5a8bc4ded1a
-
-  patches:
-    - patches/0001-ENH-Add-support-for-platforms-with-missing-fenv-flag.patch
-    - patches/0002-ENH-Fix-pointer-size-determination-for-cross-build.patch
-    - patches/0003-BUG-Fix-datetime_to_timedelta_resolve_descriptors-signature.patch
+  url: https://files.pythonhosted.org/packages/e4/a9/6704bb5e1d1d778d3a6ee1278a8d8134f0db160e09d52863a24edb58eab5/numpy-1.24.2.tar.gz
+  sha256: 003a9f530e880cb2cd177cba1af7220b9aa42def9c4afc2a2fc3ee6be7eb2b22
 
 build:
   backend-flags: --disable-optimization

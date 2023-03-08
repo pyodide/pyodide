@@ -15,6 +15,19 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Python does not allow reserved words to be used as attributes.
+  For instance, `Array.from` is a `SyntaxError`. (JavaScript has a more robust
+  parser which can handle this.) To handle this, if an attribute to a `JsProxy`
+  consists of a Python reserved word followed by one or more underscores, we remove
+  a single underscore from the end of the attribute. For instance, `Array.from_`
+  would access `from` on the underlying JavaScript object, whereas `o.from__`
+  accesses the `from_` attribute.
+  {pr}`3617`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
+  argument.
+  {pr}`3618`
+
 - {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
   `None` it now uses `locals=globals` as the documentation says.
   {pr}`3580`
@@ -32,8 +45,8 @@ myst:
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.31
-  {pr}`3471`, {pr}`3517`
+- {{ Enhancement }} Updated Emscripten to version 3.1.32
+  {pr}`3471`, {pr}`3517`, {pr}`3599`
 
 - {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
   `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
@@ -92,6 +105,11 @@ myst:
   but if you were using this file in a bundler, you will need to remove it.
   {pr}`3584`
 
+- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
+  shouldn't affect users, but if you were using this file in a bundler,
+  you will need to remove it.
+  {pr}`3621`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -147,6 +165,8 @@ myst:
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+
+- Upgraded packages: galpy (1.8.2) {pr}`3630`.
 
 ## Version 0.22.1
 
