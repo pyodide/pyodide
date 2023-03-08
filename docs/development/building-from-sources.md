@@ -9,19 +9,24 @@ version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building Pyodide is easiest using the Pyodide Docker image. This approach works
-with any native operating system as long as Docker is installed. You can also
-build on your native Linux OS if the correct build prerequisites are installed.
-Building on MacOS is possible, but there are known issues as of version 0.18
-that you will need to work around. It is not possible to build on Windows, but
-you can use [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
-to create a Linux build environment.
+Pyodide can be built from sources on different platforms,
+
+- on **Linux** it is easiest using the Pyodide Docker image. This approach
+  works with any native operating system as long as Docker is installed. You
+  can also build on your native Linux OS if the correct build prerequisites
+  are installed.
+- on **MacOS** it is recommended to install dependencies via conda-forge or
+  using Homebrew, particularly with the M1 ARM CPU. Building with Docker is
+  possible but very slow.
+- It is not possible to build on **Windows**, but you can use [Windows Subsystem
+  for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to
+  create a Linux build environment.
 
 ## Build instructions
 
 ### Using Docker
 
-We provide a Debian-based Docker image
+We provide a Debian-based x86_64 Docker image
 ([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
 Docker Hub with the dependencies already installed to make it easier to build
 Pyodide.
@@ -62,11 +67,12 @@ Make sure the prerequisites for
 build a custom, patched version of emsdk, so there is no need to build it
 yourself prior.
 
-You need Python 3.10.2 to run the build scripts. To make sure that the correct
+You need Python 3.11.2 to run the build scripts. To make sure that the correct
 Python is used during the build it is recommended to use a [virtual
-environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
+environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
+or a conda environment.
 
-````{tab-set}
+`````{tab-set}
 
 ```{tab-item} Linux
 
@@ -78,7 +84,28 @@ To build on Linux, you need:
 
 ```
 
-```{tab-item} MacOS
+````{tab-item} Linux with conda
+
+In this setup we would install both Python and the necessary build requirements in a conda environment.
+
+You would need a working native compiler toolchain, enough to build
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux), for example,
+- `apt install build-essential` on Debian based systems.
+
+Then run,
+
+- `conda create  -c conda-forge -n pyodide-env python=3.11`
+- `conda activate conda-forge`
+- `conda install nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
+
+```
+```{tab-item} MacOS with conda
+
+ddsds
+
+```
+
+```{tab-item} MacOS with Homebrew
 
 To build on MacOS, you need:
 
@@ -95,7 +122,7 @@ To build on MacOS, you need:
   GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
 ```
-````
+`````
 
 ```{note}
 If you encounter issues with the requirements, it is useful to check the exact
