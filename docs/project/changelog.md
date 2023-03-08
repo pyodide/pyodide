@@ -105,6 +105,11 @@ myst:
   but if you were using this file in a bundler, you will need to remove it.
   {pr}`3584`
 
+- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
+  shouldn't affect users, but if you were using this file in a bundler,
+  you will need to remove it.
+  {pr}`3621`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -160,6 +165,8 @@ myst:
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+
+- Upgraded packages: galpy (1.8.2) {pr}`3630`.
 
 ## Version 0.22.1
 

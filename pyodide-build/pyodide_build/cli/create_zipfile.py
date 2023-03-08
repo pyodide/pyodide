@@ -6,8 +6,9 @@ from ..pyzip import create_zipfile
 
 
 def main(
-    libdir: Path = typer.Argument(
-        ..., help="Path to the directory containing the Python standard library."
+    libdir: list[Path] = typer.Argument(
+        ...,
+        help="List of paths to the directory containing the Python standard library or extra packages.",
     ),
     pycompile: bool = typer.Option(
         False, help="Whether to compile the .py files into .pyc."

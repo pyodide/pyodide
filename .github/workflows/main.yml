@@ -2,7 +2,6 @@ name: main
 
 on:
   push:
-    branches: [main]
   pull_request:
 
 concurrency:
@@ -20,16 +19,6 @@ jobs:
         id: get_python_version
         run: |
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-  lint:
-    runs-on: ubuntu-latest
-    needs: get_python_version
-    steps:
-      - uses: actions/checkout@v3
-      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
-      - uses: pre-commit/action@v2.0.3
 
   test-docs:
     runs-on: ubuntu-latest
@@ -84,7 +73,11 @@ jobs:
           fail_ci_if_error: false
 
   build-core:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -99,7 +92,7 @@ jobs:
         with:
           path: |
             /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
+          key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
@@ -113,11 +106,22 @@ jobs:
           python --version
           which python
 
-      - name: Install dependencies
+      - name: Install dependencies (ubuntu)
         shell: bash -l {0}
+        if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
           sudo apt install -y build-essential git xxd
-          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
+
+      - name: Install dependencies (macos)
+        shell: bash -l {0}
+        if: ${{ contains(runner.os, 'macos') }}
+        run: |
+          brew install coreutils
+
+      - name: Install dependencies (common)
+        shell: bash -l {0}
+        run: |
+          conda install -y nodejs ccache f2c pkg-config swig make pkg-config texinfo autoconf automake libtool patch sed
           pip install -r requirements.txt
 
       - name: Build emsdk
@@ -160,12 +164,12 @@ jobs:
       - name: Store artifacts build
         uses: actions/upload-artifact@v3
         with:
-          name: core-build
+          name: core-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
 
   test-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     env:
       DISPLAY: :99
 
@@ -173,6 +177,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         runner: [playwright]
         browser: [chrome]
 
@@ -182,7 +187,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v3
         with:
-          name: core-build
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v2

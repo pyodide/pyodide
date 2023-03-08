@@ -292,6 +292,8 @@ def test_zipimport_check_non_stdlib(selenium):
         "_sysconfigdata__emscripten_wasm32-emscripten",
         "site-packages",
         "lib-dynload",
+        "pyodide",
+        "_pyodide",
     }
 
     stdlib_names = sys.stdlib_module_names | extra_files

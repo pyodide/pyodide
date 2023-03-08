@@ -2,13 +2,7 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import {
-  loadScript,
-  loadBinaryFile,
-  initNodeModules,
-  pathSep,
-  resolvePath,
-} from "./compat";
+import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
 
 import { createModule, initializeFileSystem } from "./module";
 import { version } from "./version";
@@ -62,33 +56,6 @@ function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
       return Reflect.get(target, symbol);
     },
   });
-}
-
-/**
- * @private
- */
-function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
-  const fileName = "/pyodide_py.tar";
-  Module.FS.writeFile(fileName, pyodide_py_tar);
-
-  const code = `
-from sys import version_info
-pyversion = f"python{version_info.major}.{version_info.minor}"
-import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
-del shutil
-import importlib
-importlib.invalidate_caches()
-del importlib
-`;
-  let [errcode, captured_stderr] = Module.API.rawRun(code);
-  if (errcode) {
-    Module.API.fatal_loading_error(
-      "Failed to unpack pyodide_py.\n",
-      captured_stderr,
-    );
-  }
-  Module.FS.unlink(fileName);
 }
 
 /**
@@ -294,9 +261,6 @@ export async function loadPyodide(
     _node_mounts: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL + "pyodide_py.tar",
-  );
 
   const Module = createModule();
   Module.print = config.stdout;
@@ -346,8 +310,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const pyodide_py_tar = await pyodide_py_tar_promise;
-  unpackPyodidePy(Module, pyodide_py_tar);
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     Module.API.fatal_loading_error(
