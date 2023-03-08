@@ -3,7 +3,6 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile } from "./compat";
-import { SDL } from "./sdl";
 
 type FSNode = any;
 type FSStream = any;
@@ -56,7 +55,6 @@ export interface Module {
   PATH: any;
   TTY: any;
   FS: FS;
-  SDL: SDL;
   canvas?: HTMLCanvasElement;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;

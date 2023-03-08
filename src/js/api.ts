@@ -3,7 +3,7 @@ declare var Hiwire: any;
 declare var API: any;
 import "./module";
 import { ffi } from "./ffi";
-import { SDL, registerSDL } from "./sdl";
+import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
 import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
@@ -123,11 +123,12 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * This provides operations to use SDL-based packages.
+   * This provides APIs to set a canvas for rendering graphics.
    *
-   * See :ref:`using-sdl` for more information.
+   * For example, you need to set a canvas if you want to use the
+   * SDL library. See :ref:`using-sdl` for more information.
    */
-  static SDL: SDL | undefined = undefined;
+  static canvas: CanvasInterface = {} as any;
 
   /**
    * A map from posix error names to error codes.
@@ -630,7 +631,7 @@ API.makePublicAPI = function () {
   pyodideAPI.FS = Module.FS;
   pyodideAPI.PATH = Module.PATH;
   pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
-  pyodideAPI.SDL = registerSDL(Module);
+  pyodideAPI.canvas = canvas;
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   return pyodideAPI;
