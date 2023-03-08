@@ -22,6 +22,12 @@ export interface CanvasInterface {
  * are the same.
  */
 export const setCanvas2D = (canvas: HTMLCanvasElement) => {
+  if (canvas.id !== "canvas") {
+    console.warn(
+      "If you are using canvas element for SDL library, it should have id 'canvas' to work properly.",
+    );
+  }
+
   Module.canvas = canvas;
 };
 /**
@@ -39,7 +45,7 @@ export const getCanvas2D = (): HTMLCanvasElement | undefined => {
  * are the same.
  */
 export const setCanvas3D = (canvas: HTMLCanvasElement) => {
-  Module.canvas = canvas;
+  setCanvas2D(canvas);
 };
 /**
  *
@@ -48,7 +54,7 @@ export const setCanvas3D = (canvas: HTMLCanvasElement) => {
  * are the same.
  */
 export const getCanvas3D = (): HTMLCanvasElement | undefined => {
-  return Module.canvas;
+  return getCanvas2D();
 };
 
 /**

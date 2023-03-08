@@ -2,16 +2,17 @@ import pytest
 
 
 @pytest.mark.xfail_browsers(node="No document object")
-def test_canvas_object_2D(selenium):
+def test_canvas2D(selenium):
     selenium.run_js(
         """
         const canvas = document.createElement('canvas');
-        pyodide.SDL.setCanvas2D(canvas);
+        canvas.id = "canvas";
+        pyodide.canvas.setCanvas2D(canvas);
 
         assert(() => pyodide._module.canvas === canvas);
         assert(() => pyodide.SDL.getCanvas2D() === canvas);
 
-        pyodide.SDL.unregisterCanvas();
+        pyodide.canvas.unregisterCanvas();
 
         assert(() => pyodide._module.canvas === undefined)
         assert(() => pyodide.SDL.getCanvas2D() === undefined);
@@ -20,16 +21,17 @@ def test_canvas_object_2D(selenium):
 
 
 @pytest.mark.xfail_browsers(node="No document object")
-def test_sdl_object_3D(selenium):
+def test_canvas3D(selenium):
     selenium.run_js(
         """
         const canvas = document.createElement('canvas');
-        pyodide.SDL.setCanvas3D(canvas);
+        canvas.id = "canvas";
+        pyodide.canvas.setCanvas3D(canvas);
 
         assert(() => pyodide._module.canvas === canvas);
         assert(() => pyodide.SDL.getCanvas3D() === canvas);
 
-        pyodide.SDL.unregisterCanvas();
+        pyodide.canvas.unregisterCanvas();
 
         assert(() => pyodide._module.canvas === undefined)
         assert(() => pyodide.SDL.getCanvas3D() === undefined);

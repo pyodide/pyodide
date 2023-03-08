@@ -16,11 +16,13 @@ This document explains how to use SDL-based packages in Pyodide.
 Before using SDL-based packages, you need to set the canvas to draw on.
 
 The `canvas` object must be a
-[HTMLCanvasElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement) object.
+[HTMLCanvasElement](https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement) object,
+with the `id` attribute set to `"canvas"`.
 For example, you can set a canvas like this:
 
 ```js
 let sdl2Canvas = document.createElement("canvas");
+sdl2Canvas.id = "canvas";
 pyodide.canvas.setCanvas2D(sdl2Canvas);
 ```
 
