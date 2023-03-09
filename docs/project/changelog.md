@@ -145,7 +145,7 @@ myst:
   {pr}`3562`
 
 - {{ Enhancement }} Added `.rsp` file handling in pywasmcross `calculate_exports`
-  {pr}`????`
+  {pr}`3645`
 
 - {{ Fix }} Fix occasional build failure when building rust packages.
   {pr}`3607`
