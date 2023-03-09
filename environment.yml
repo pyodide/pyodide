@@ -15,5 +15,5 @@ dependencies:
   - autoconf
   - automake
   - libtool
-  - patch  # only needed on MacOS
-  - sed  # only needed on MacOS
+  - patch # only needed on MacOS
+  - sed # only needed on MacOS
