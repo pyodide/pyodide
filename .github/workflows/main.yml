@@ -97,7 +97,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: "3.11"
+          environment-file: environment.yml
           channels: conda-forge
 
       - name: Check Python versions
@@ -118,10 +118,9 @@ jobs:
         run: |
           brew install coreutils
 
-      - name: Install dependencies (common)
+      - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
-          conda install -y nodejs ccache f2c pkg-config swig make pkg-config texinfo autoconf automake libtool patch sed
           pip install -r requirements.txt
 
       - name: Build emsdk

@@ -86,36 +86,30 @@ To build on Linux, you need:
 
 ```{tab-item} Linux with conda
 
-In this setup you would install both Python and the necessary build requirements
-in a conda environment.
 
 You would need a working native compiler toolchain, enough to build
   [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux), for example,
 - `apt install build-essential` on Debian based systems.
 - Conda which can be installed from [MiniForge](https://github.com/conda-forge/miniforge)
 
-Then run,
+Then install the required Python version and other build dependencies in a separate conda environment,
 
-    conda create -c conda-forge -n pyodide-env python=3.11`
-    conda activate conda-forge`
-    conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
+    conda env create -f environment.yml
+    conda activate conda-forge
 
 ```
 ```{tab-item} MacOS with conda
-
-In this setup you would install both Python and the necessary build
-requirements in a conda environment.
 
 You would need,
 - System libraries in the root directory:
   `xcode-select --install`
 - Conda which can be installed using [Miniforge](https://github.com/conda-forge/miniforge) (both for Intel and M1 CPU)
 
-Then run,
 
-- `conda create -c conda-forge -n pyodide-env python=3.11`
-- `conda activate conda-forge`
-- `conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
+Then install the required Python version and other build dependencies in a separate conda environment,
+
+    conda env create -f environment.yml
+    conda activate conda-forge
 
 ```
 
