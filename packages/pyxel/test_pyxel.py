@@ -9,7 +9,7 @@ def selenium_sdl(selenium_standalone):
         sdl2Canvas.id = "canvas";
 
         document.body.appendChild(sdl2Canvas);
-        pyodide.SDL.setCanvas2D(sdl2Canvas);
+        pyodide.canvas.setCanvas2D(sdl2Canvas);
         """
     )
     selenium_standalone.load_package("pyxel")

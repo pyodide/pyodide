@@ -10,12 +10,12 @@ def test_canvas2D(selenium):
         pyodide.canvas.setCanvas2D(canvas);
 
         assert(() => pyodide._module.canvas === canvas);
-        assert(() => pyodide.SDL.getCanvas2D() === canvas);
+        assert(() => pyodide.canvas.getCanvas2D() === canvas);
 
         pyodide.canvas.unregisterCanvas();
 
         assert(() => pyodide._module.canvas === undefined)
-        assert(() => pyodide.SDL.getCanvas2D() === undefined);
+        assert(() => pyodide.canvas.getCanvas2D() === undefined);
     """
     )
 
