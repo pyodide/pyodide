@@ -96,9 +96,9 @@ You would need a working native compiler toolchain, enough to build
 
 Then run,
 
-- `conda create -c conda-forge -n pyodide-env python=3.11`
-- `conda activate conda-forge`
-- `conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
+    conda create -c conda-forge -n pyodide-env python=3.11`
+    conda activate conda-forge`
+    conda install -c conda-forge nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool`
 
 ```
 ```{tab-item} MacOS with conda
