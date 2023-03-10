@@ -491,6 +491,19 @@ index 2de1226ef..362e18210 100644
  static double *A;  /* used in _compare_ only */
  static int _compare_(const void *a, const void *b)
  {
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+index 5afc93b5d..1a2c4ca36 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -3,6 +3,14 @@
+ 
+ #include <stdlib.h>
+ 
++#include "f2c.h"
++
+ /*
+  * Support routines
+  */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
 index 5faab1dfb..7380eb6cc 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgsrfs.c
