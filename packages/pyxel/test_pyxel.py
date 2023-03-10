@@ -3,6 +3,10 @@ import pytest
 
 @pytest.fixture(scope="function")
 def selenium_sdl(selenium_standalone):
+
+    if selenium_standalone.browser == "node":
+        pytest.skip("No document object")
+
     selenium_standalone.run_js(
         """
         var sdl2Canvas = document.createElement("canvas");
@@ -18,9 +22,7 @@ def selenium_sdl(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@pytest.mark.xfail_browsers(node="no document")
 def test_show(selenium_sdl):
-
     selenium_sdl.run(
         """
         import pyxel
@@ -35,9 +37,7 @@ def test_show(selenium_sdl):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@pytest.mark.xfail_browsers(node="no document")
 def test_run(selenium_sdl):
-
     selenium_sdl.run(
         """
         import time

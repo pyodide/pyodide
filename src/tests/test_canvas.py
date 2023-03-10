@@ -24,6 +24,6 @@ def test_canvas3D(selenium):
         pyodide.canvas.setCanvas3D(canvas);
 
         assert(() => pyodide._module.canvas === canvas);
-        assert(() => pyodide.SDL.getCanvas3D() === canvas);
+        assert(() => pyodide.canvas.getCanvas3D() === canvas);
     """
     )
