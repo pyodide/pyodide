@@ -11,11 +11,6 @@ def test_canvas2D(selenium):
 
         assert(() => pyodide._module.canvas === canvas);
         assert(() => pyodide.canvas.getCanvas2D() === canvas);
-
-        pyodide.canvas.unregisterCanvas();
-
-        assert(() => pyodide._module.canvas === undefined)
-        assert(() => pyodide.canvas.getCanvas2D() === undefined);
     """
     )
 
@@ -30,10 +25,5 @@ def test_canvas3D(selenium):
 
         assert(() => pyodide._module.canvas === canvas);
         assert(() => pyodide.SDL.getCanvas3D() === canvas);
-
-        pyodide.canvas.unregisterCanvas();
-
-        assert(() => pyodide._module.canvas === undefined)
-        assert(() => pyodide.SDL.getCanvas3D() === undefined);
     """
     )

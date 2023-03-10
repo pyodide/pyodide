@@ -18,6 +18,7 @@ def selenium_sdl(selenium_standalone):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@pytest.mark.xfail_browsers(node="no document")
 def test_show(selenium_sdl):
 
     selenium_sdl.run(
@@ -34,6 +35,7 @@ def test_show(selenium_sdl):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@pytest.mark.xfail_browsers(node="no document")
 def test_run(selenium_sdl):
 
     selenium_sdl.run(
