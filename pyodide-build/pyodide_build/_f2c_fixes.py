@@ -228,7 +228,10 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
-    lines = [line.replace("extern doublereal s", "extern float s") for line in lines]
+    if f2c_output.name != "GMRESREVCOM.c":
+        lines = [
+            line.replace("extern doublereal s", "extern float s") for line in lines
+        ]
 
     # Substitute back the dummy fixed array sizes. We also have to remove the
     # "static" storage specifier since variable sized arrays can't have static
