@@ -80,9 +80,14 @@ def test_generate_repodata(tmp_path):
         "file_name": "pkg_1.whl",
         "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
         "imports": ["pkg_1"],
+        "package_type": "package",
         "install_dir": "site",
         "sha256": hashes["pkg_1"],
     }
+
+    assert (
+        package_data["packages"]["libtest_shared"]["package_type"] == "shared_library"
+    )
 
     sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
     assert not sharedlib_imports, (
@@ -148,3 +153,28 @@ def test_requirements_executable(monkeypatch):
         m.setattr(shutil, "which", lambda exe: "/bin")
 
         buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
+
+
+@pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
+def test_is_rust_package(exe):
+
+    pkg = buildall.BasePackage(
+        pkgdir=Path(""),
+        name="test",
+        version="1.0.0",
+        disabled=False,
+        meta=None,  # type: ignore[arg-type]
+        package_type="package",
+        run_dependencies=[],
+        host_dependencies=[],
+        host_dependents=set(),
+        dependencies=set(),
+        unbuilt_host_dependencies=set(),
+        executables_required=[exe],
+    )
+
+    assert buildall.is_rust_package(pkg)
+
+    pkg.executables_required = []
+
+    assert not buildall.is_rust_package(pkg)

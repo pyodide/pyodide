@@ -1,7 +1,7 @@
 From d82e0bfe8b98a122ca443b356d81998c804b686e Mon Sep 17 00:00:00 2001
 From: Victor Stinner <vstinner@python.org>
 Date: Tue, 21 Jun 2022 10:24:33 +0200
-Subject: [PATCH 5/8] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
+Subject: [PATCH 5/9] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
  (#94041)
 
 * Move Lib/ctypes/test/ to Lib/test/test_ctypes/

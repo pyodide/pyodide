@@ -349,6 +349,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     selenium.run_js(
         """
         self.a = pyodide.runPython("bytes(range(256))");
+        assert(() => a instanceof pyodide.ffi.PyBuffer);
         """
     )
     try:
@@ -357,6 +358,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         [check, result] = selenium.run_js(
             f"""
             let buf = a.getBuffer({ty!r});
+            assert(() => buf instanceof pyodide.ffi.PyBufferView);
             let check = (buf.data.constructor.name === {array_ty!r});
             let result = Array.from(buf.data);
             if(typeof result[0] === "bigint"){{
@@ -402,7 +404,7 @@ def test_pyproxy_mixins(selenium):
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()])
         `);
         let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
@@ -418,6 +420,9 @@ def test_pyproxy_mixins(selenium):
             ]){
                 impls[name] = key in x;
             }
+            for(let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
+                impls[name] = x instanceof pyodide.ffi[name];
+            }
             result[name] = impls;
             x.destroy();
         }
@@ -426,23 +431,33 @@ def test_pyproxy_mixins(selenium):
     )
     assert result == dict(
         noimpls=dict(
-            then=False, catch=False, finally_=False, iterable=False, iterator=False
-        ),
+            then=False,
+            catch=False,
+            finally_=False,
+            iterable=False,
+            iterator=False,
+        )
+        | dict(PyAwaitable=False, PyIterable=False, PyIterator=False),
         awaitable=dict(
             then=True, catch=True, finally_=True, iterable=False, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=False, PyIterator=False),
         iterable=dict(
             then=False, catch=False, finally_=False, iterable=True, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=False, PyIterable=True, PyIterator=False),
         iterator=dict(
             then=False, catch=False, finally_=False, iterable=True, iterator=True
-        ),
+        )
+        | dict(PyAwaitable=False, PyIterable=True, PyIterator=True),
         awaititerable=dict(
             then=True, catch=True, finally_=True, iterable=True, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=True, PyIterator=False),
         awaititerator=dict(
             then=True, catch=True, finally_=True, iterable=True, iterator=True
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=True, PyIterator=True),
     )
 
 
@@ -455,6 +470,11 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("caller" in d));
         assert(() => !("name" in d));
         assert(() => "length" in d);
+        assert(() => d instanceof pyodide.ffi.PyDict);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithLength);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithHas);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithGet);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithSet);
 
         assert(() => "prototype" in d.__getitem__);
         assert(() => d.__getitem__.prototype === undefined);
@@ -546,6 +566,7 @@ def test_pyproxy_mixins5(selenium):
         `);
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
+        assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
         t.length = 10;
         assert(() => t.$length === 10);
         let t__len__ = t.__len__;
@@ -566,6 +587,10 @@ def test_pyproxy_mixins6(selenium):
         assert(() => l.get.type === undefined);
         assert(() => l.get(1) === 6);
         assert(() => l.length === 3);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
         l.set(0, 80);
         pyodide.runPython(`
             assert l[0] == 80
@@ -747,6 +772,11 @@ def test_errors(selenium):
             Temp()
         `);
         assertThrows(() => t.x, "PythonError", "");
+        try {
+            t.x;
+        } catch(e){
+            assert(() => e instanceof pyodide.ffi.PythonError);
+        }
         assertThrows(() => t.x = 2, "PythonError", "");
         assertThrows(() => delete t.x, "PythonError", "");
         assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
@@ -1046,6 +1076,7 @@ async def test_async_iter(selenium):
     p = run_js(
         """
         async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
             let r = [];
             for await (let a of g) {
                 r.push(a);
@@ -1070,6 +1101,10 @@ def test_gen(selenium):
     p = run_js(
         """
         (g) => {
+            assert(() => g instanceof pyodide.ffi.PyGenerator);
+            assert(() => g instanceof pyodide.ffi.PyIterable);
+            assert(() => g instanceof pyodide.ffi.PyIterator);
+            assert(() => !(g instanceof pyodide.ffi.PyAsyncGenerator));
             let r = [];
             r.push(g.next());
             r.push(g.next(3));
@@ -1232,6 +1267,10 @@ async def test_async_gen(selenium):
     p = run_js(
         """
         async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncGenerator);
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterator);
+            assert(() => !(g instanceof pyodide.ffi.PyGenerator));
             let r = [];
             r.push(await g.next());
             r.push(await g.next(3));
@@ -1418,3 +1457,13 @@ def test_roundtrip_no_destroy(selenium):
     """
     )(p)
     assert not isalive(p)
+
+
+@run_in_pyodide
+async def test_multiple_interpreters(selenium):
+    from js import loadPyodide  # type:ignore[attr-defined]
+
+    py2 = await loadPyodide()
+    d1 = {"a": 2}
+    d2 = py2.runPython(str(d1))
+    assert d2.toJs().to_py() == d1

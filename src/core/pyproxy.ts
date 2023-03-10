@@ -19,6 +19,12 @@ declare var Hiwire: any;
 declare var API: any;
 declare var HEAPU32: Uint32Array;
 
+declare function stackSave(): number;
+declare function stackRestore(ptr: number): void;
+declare function stackAlloc(size: number): number;
+
+import { warnOnce } from "./util";
+
 // pyodide-skip
 
 // Just for this file, we implement a special "skip" pragma. These lines are
@@ -55,13 +61,8 @@ declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
 
-/**
- * Is the argument a :any:`PyProxy`?
- * @param jsobj Object to test.
- * @returns Is ``jsobj`` a :any:`PyProxy`?
- */
-export function isPyProxy(jsobj: any): jsobj is PyProxy {
-  return !!jsobj && jsobj.$$ !== undefined && jsobj.$$.type === "PyProxy";
+function isPyProxy(jsobj: any): jsobj is PyProxy {
+  return jsobj instanceof PyProxy;
 }
 API.isPyProxy = isPyProxy;
 
@@ -127,7 +128,7 @@ type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
    * the Python function or not. We keep it false by default. To make a PyProxy
-   * where the `this` argument is included, call the `captureThis` method.
+   * where the ``this`` argument is included, call the :js:meth:`captureThis` method.
    */
   captureThis: boolean;
   /**
@@ -135,7 +136,7 @@ type PyProxyProps = {
    */
   isBound: boolean;
   /**
-   * the `this` value that has been bound to the PyProxy
+   * the ``this`` value that has been bound to the PyProxy
    */
   boundThis?: any;
   /**
@@ -153,7 +154,7 @@ type PyProxyProps = {
  * allows the copy of the PyProxy to share its attribute cache with the original
  * version. In all other cases, pyproxy_new should be called with one argument.
  *
- * In the case that the Python object is callable, PyProxyClass inherits from
+ * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
  * certain properties inherited from Function, but we do our best to remove as
  * many as possible.
@@ -272,19 +273,19 @@ let pyproxyClassMap = new Map();
  */
 Module.getPyProxyClass = function (flags: number) {
   const FLAG_TYPE_PAIRS: [number, any][] = [
-    [HAS_LENGTH, PyProxyLengthMethods],
-    [HAS_GET, PyProxyGetItemMethods],
-    [HAS_SET, PyProxySetItemMethods],
-    [HAS_CONTAINS, PyProxyContainsMethods],
-    [IS_ITERABLE, PyProxyIterableMethods],
-    [IS_ITERATOR, PyProxyIteratorMethods],
-    [IS_GENERATOR, PyProxyGeneratorMethods],
-    [IS_ASYNC_ITERABLE, PyProxyAsyncIterableMethods],
-    [IS_ASYNC_ITERATOR, PyProxyAsyncIteratorMethods],
-    [IS_ASYNC_GENERATOR, PyProxyAsyncGeneratorMethods],
-    [IS_AWAITABLE, PyProxyAwaitableMethods],
-    [IS_BUFFER, PyProxyBufferMethods],
-    [IS_CALLABLE, PyProxyCallableMethods],
+    [HAS_LENGTH, PyLengthMethods],
+    [HAS_GET, PyGetItemMethods],
+    [HAS_SET, PySetItemMethods],
+    [HAS_CONTAINS, PyContainsMethods],
+    [IS_ITERABLE, PyIterableMethods],
+    [IS_ITERATOR, PyIteratorMethods],
+    [IS_GENERATOR, PyGeneratorMethods],
+    [IS_ASYNC_ITERABLE, PyAsyncIterableMethods],
+    [IS_ASYNC_ITERATOR, PyAsyncIteratorMethods],
+    [IS_ASYNC_GENERATOR, PyAsyncGeneratorMethods],
+    [IS_AWAITABLE, PyAwaitableMethods],
+    [IS_BUFFER, PyBufferMethods],
+    [IS_CALLABLE, PyCallableMethods],
   ];
   let result = pyproxyClassMap.get(flags);
   if (result) {
@@ -301,14 +302,14 @@ Module.getPyProxyClass = function (flags: number) {
   }
   // Use base constructor (just throws an error if construction is attempted).
   descriptors.constructor = Object.getOwnPropertyDescriptor(
-    PyProxyClass.prototype,
+    PyProxy.prototype,
     "constructor",
   );
   Object.assign(
     descriptors,
     Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
-  let new_proto = Object.create(PyProxyClass.prototype, descriptors);
+  let new_proto = Object.create(PyProxy.prototype, descriptors);
   function NewPyProxyClass() {}
   NewPyProxyClass.prototype = new_proto;
   pyproxyClassMap.set(flags, NewPyProxyClass);
@@ -433,19 +434,28 @@ Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
-export type PyProxy = PyProxyClass & { [x: string]: any };
-
 const DESTROY_MSG_POSITIONAL_ARG_DEPRECATED =
   "Using a positional argument for the message argument for 'destroy' is deprecated and will be removed in v0.23";
 let DESTROY_MSG_POSITIONAL_ARG_WARNED = false;
 
-export class PyProxyClass {
+export interface PyProxy {
+  [x: string]: any;
+}
+
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` is an object that allows idiomatic use of a Python object from
+ * JavaScript. See :ref:`type-translations-pyproxy`.
+ */
+export class PyProxy {
+  /** @private */
   $$: {
     ptr: number;
     cache: PyProxyCache;
     destroyed_msg?: string;
   };
+  /** @private */
   $$props: PyProxyProps;
+  /** @private */
   $$flags: number;
 
   /**
@@ -456,9 +466,7 @@ export class PyProxyClass {
     throw new TypeError("PyProxy is not a constructor");
   }
 
-  /**
-   * @private
-   */
+  /** @private */
   get [Symbol.toStringTag]() {
     return "PyProxy";
   }
@@ -497,11 +505,11 @@ export class PyProxyClass {
     return Hiwire.pop_value(jsref_repr);
   }
   /**
-   * Destroy the ``PyProxy``. This will release the memory. Any further attempt
+   * Destroy the :js:class:`~pyodide.ffi.PyProxy`. This will release the memory. Any further attempt
    * to use the object will raise an error.
    *
    * In a browser supporting :js:data:`FinalizationRegistry`, Pyodide will
-   * automatically destroy the ``PyProxy`` when it is garbage collected, however
+   * automatically destroy the :js:class:`~pyodide.ffi.PyProxy` when it is garbage collected, however
    * there is no guarantee that the finalizer will be run in a timely manner so
    * it is better to destroy the proxy explicitly.
    *
@@ -523,8 +531,8 @@ export class PyProxyClass {
     Module.pyproxy_destroy(this, m, d);
   }
   /**
-   * Make a new PyProxy pointing to the same Python object.
-   * Useful if the PyProxy is destroyed somewhere else.
+   * Make a new :js:class:`~pyodide.ffi.PyProxy` pointing to the same Python object.
+   * Useful if the :js:class:`~pyodide.ffi.PyProxy` is destroyed somewhere else.
    */
   copy(): PyProxy {
     let ptrobj = _getPtr(this);
@@ -535,7 +543,7 @@ export class PyProxyClass {
     });
   }
   /**
-   * Converts the ``PyProxy`` into a JavaScript object as best as possible. By
+   * Converts the :js:class:`~pyodide.ffi.PyProxy` into a JavaScript object as best as possible. By
    * default does a deep conversion, if a shallow conversion is desired, you can
    * use ``proxy.toJs({depth : 1})``. See :ref:`Explicit Conversion of PyProxy
    * <type-translations-pyproxy-to-js>` for more info.
@@ -552,16 +560,18 @@ export class PyProxyClass {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
     /**
-     * If provided, ``toJs`` will store all PyProxies created in this list. This
-     * allows you to easily destroy all the PyProxies by iterating the list
-     * without having to recurse over the generated structure. The most common
-     * use case is to create a new empty list, pass the list as `pyproxies`, and
-     * then later iterate over `pyproxies` to destroy all of created proxies.
+     * If provided, :js:meth:`toJs` will store all PyProxies created in this
+     * list. This allows you to easily destroy all the PyProxies by iterating
+     * the list without having to recurse over the generated structure. The most
+     * common use case is to create a new empty list, pass the list as
+     * ``pyproxies``, and then later iterate over ``pyproxies`` to destroy all of
+     * created proxies.
      */
     pyproxies?: PyProxy[];
     /**
-     * If false, ``toJs`` will throw a :py:exc:`~pyodide.ffi.ConversionError` rather than
-     * producing a ``PyProxy``.
+     * If false, :js:meth:`toJs` will throw a
+     * :py:exc:`~pyodide.ffi.ConversionError` rather than producing a
+     * :js:class:`~pyodide.ffi.PyProxy`.
      */
     create_pyproxies?: boolean;
     /**
@@ -624,80 +634,117 @@ export class PyProxyClass {
     return Hiwire.pop_value(idresult);
   }
   /**
-   * Check whether the :any:`PyProxy.length` getter is available on this PyProxy. A
-   * Typescript type guard.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithLength`` instead.
    */
+  @warnOnce(
+    "supportsLength() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithLength` instead.",
+  )
   supportsLength(): this is PyProxyWithLength {
     return !!(this.$$flags & HAS_LENGTH);
   }
   /**
-   * Check whether the :any:`PyProxy.get` method is available on this PyProxy. A
-   * Typescript type guard.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithGet`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithGet`` instead.
    */
+  @warnOnce(
+    "supportsGet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithGet` instead.",
+  )
   supportsGet(): this is PyProxyWithGet {
     return !!(this.$$flags & HAS_GET);
   }
   /**
-   * Check whether the :any:`PyProxy.set` method is available on this PyProxy. A
-   * Typescript type guard.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithSet`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithSet`` instead.
    */
+  @warnOnce(
+    "supportsSet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithSet` instead.",
+  )
   supportsSet(): this is PyProxyWithSet {
     return !!(this.$$flags & HAS_SET);
   }
   /**
-   * Check whether the :any:`PyProxy.has` method is available on this PyProxy. A
-   * Typescript type guard.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithHas`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithHas`` instead.
    */
+  @warnOnce(
+    "supportsHas() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithHas` instead.",
+  )
   supportsHas(): this is PyProxyWithHas {
     return !!(this.$$flags & HAS_CONTAINS);
   }
   /**
-   * Check whether the PyProxy is :term:`iterable`. A Typescript type guard for
-   * :any:`PyProxy.[iterator]`.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
+   * :js:class:`~pyodide.ffi.PyIterable`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyIterable`` instead.
    */
-  isIterable(): this is PyProxyIterable {
+  @warnOnce(
+    "isIterable() is deprecated. Use `instanceof pyodide.ffi.PyIterable` instead.",
+  )
+  isIterable(): this is PyIterable {
     return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
-   * Check whether the PyProxy is :term:`iterable`. A Typescript type guard for
-   * :any:`PyProxy.next`.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
+   * :js:class:`~pyodide.ffi.PyIterator`
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyIterator`` instead.
    */
-  isIterator(): this is PyProxyIterator {
+  @warnOnce(
+    "isIterator() is deprecated. Use `instanceof pyodide.ffi.PyIterator` instead.",
+  )
+  isIterator(): this is PyIterator {
     return !!(this.$$flags & IS_ITERATOR);
   }
   /**
-   * Check whether the PyProxy is :ref:`awaitable <asyncio-awaitables>`. A Typescript type guard, if this
-   * function returns true Typescript considers the PyProxy to be a ``Promise``.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
+   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyAwaitable <pyodide.ffi.PyAwaitable>` instead.
    */
-  isAwaitable(): this is PyProxyAwaitable {
+  @warnOnce(
+    "isAwaitable() is deprecated. Use `instanceof pyodide.ffi.PyAwaitable` instead.",
+  )
+  isAwaitable(): this is PyAwaitable {
     return !!(this.$$flags & IS_AWAITABLE);
   }
   /**
-   * Check whether the PyProxy implements the :external:doc:`c-api/buffer`. A Typescript type guard for
-   * :any:`PyProxy.getBuffer`.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
+   * @deprecated Use ``obj instanceof pyodide.ffi.PyBuffer`` instead.
    */
-  isBuffer(): this is PyProxyBuffer {
+  @warnOnce(
+    "isBuffer() is deprecated. Use `instanceof pyodide.ffi.PyBuffer` instead.",
+  )
+  isBuffer(): this is PyBuffer {
     return !!(this.$$flags & IS_BUFFER);
   }
   /**
-   * Check whether the PyProxy is :std:term:`callable`. A Typescript type guard,
-   * if this returns true then Typescript considers the Proxy to be callable of
-   * signature ``(args... : any[]) => PyProxy | number | bigint | string |
-   * boolean | undefined``.
+   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
+   * @deprecated ``obj instanceof pyodide.ffi.PyCallable`` instead.
    */
-  isCallable(): this is PyProxyCallable {
+  @warnOnce(
+    "isCallable() is deprecated. Use `instanceof pyodide.ffi.PyCallable` instead.",
+  )
+  isCallable(): this is PyCallable {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
 
-export type PyProxyWithLength = PyProxy & PyProxyLengthMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`
+ * method.
+ */
+export class PyProxyWithLength extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_LENGTH);
+  }
+}
+
+export interface PyProxyWithLength extends PyLengthMethods {}
+
 // Controlled by HAS_LENGTH, appears for any object with __len__ or sq_length
 // or mp_length methods
-export class PyProxyLengthMethods {
+export class PyLengthMethods {
   /**
    * The length of the object.
-   *
-   * Present only if the proxied Python object has a :meth:`~object.__len__` method.
    */
   get length(): number {
     let ptrobj = _getPtr(this);
@@ -716,15 +763,24 @@ export class PyProxyLengthMethods {
   }
 }
 
-export type PyProxyWithGet = PyProxy & PyProxyGetItemMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a
+ * :meth:`~object.__getitem__` method.
+ */
+export class PyProxyWithGet extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_GET);
+  }
+}
+
+export interface PyProxyWithGet extends PyGetItemMethods {}
 
 // Controlled by HAS_GET, appears for any class with __getitem__,
 // mp_subscript, or sq_item methods
-export class PyProxyGetItemMethods {
+export class PyGetItemMethods {
   /**
    * This translates to the Python code ``obj[key]``.
-   *
-   * Present only if the proxied Python object has a :meth:`~object.__getitem__` method.
    *
    * @param key The key to look up.
    * @returns The corresponding value.
@@ -753,14 +809,23 @@ export class PyProxyGetItemMethods {
   }
 }
 
-export type PyProxyWithSet = PyProxy & PyProxySetItemMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a
+ * :meth:`~object.__setitem__` or :meth:`~object.__delitem__` method.
+ */
+export class PyProxyWithSet extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_SET);
+  }
+}
+
+export interface PyProxyWithSet extends PySetItemMethods {}
 // Controlled by HAS_SET, appears for any class with __setitem__, __delitem__,
 // mp_ass_subscript,  or sq_ass_item.
-export class PyProxySetItemMethods {
+export class PySetItemMethods {
   /**
    * This translates to the Python code ``obj[key] = value``.
-   *
-   * Present only if the proxied Python object has a :meth:`~object.__setitem__` method.
    *
    * @param key The key to set.
    * @param value The value to set it to.
@@ -787,8 +852,6 @@ export class PyProxySetItemMethods {
   /**
    * This translates to the Python code ``del obj[key]``.
    *
-   * Present only if the proxied Python object has a :meth:`~object.__delitem__` method.
-   *
    * @param key The key to delete.
    */
   delete(key: any) {
@@ -810,15 +873,24 @@ export class PyProxySetItemMethods {
   }
 }
 
-export type PyProxyWithHas = PyProxy & PyProxyContainsMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a
+ * :meth:`~object.__contains__` method.
+ */
+export class PyProxyWithHas extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_CONTAINS);
+  }
+}
+
+export interface PyProxyWithHas extends PyContainsMethods {}
 
 // Controlled by HAS_CONTAINS flag, appears for any class with __contains__ or
 // sq_contains
-export class PyProxyContainsMethods {
+export class PyContainsMethods {
   /**
    * This translates to the Python code ``key in obj``.
-   *
-   * Present only if the proxied Python object has a :meth:`~object.__contains__` method.
    *
    * @param key The key to check for.
    * @returns Is ``key`` present?
@@ -881,20 +953,31 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
   }
 }
 
-export type PyProxyIterable = PyProxy & PyProxyIterableMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :std:term:`iterable`
+ * (i.e., it has an :meth:`~object.__iter__` method).
+ */
+export class PyIterable extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & (IS_ITERABLE | IS_ITERATOR));
+  }
+}
+
+export interface PyIterable extends PyIterableMethods {}
+
+/** @deprecated Use :js:class:`pyodide.ffi.PyIterable` instead. */
+export type PyProxyIterable = PyIterable;
 
 // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
 // This avoids allocating a PyProxy wrapper for the temporary iterator.
-export class PyProxyIterableMethods {
+export class PyIterableMethods {
   /**
    * This translates to the Python code ``iter(obj)``. Return an iterator
    * associated to the proxy. See the documentation for
-   * :js:data:`Symbol.iterator`
-   *
-   * Present only if the proxied Python object is :std:term:`iterable` (i.e.,
-   * has an :meth:`~object.__iter__` method).
+   * :js:data:`Symbol.iterator`.
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
@@ -974,15 +1057,28 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
   }
 }
 
-export class PyProxyAsyncIterableMethods {
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :std:term:`asynchronous
+ * iterable` (i.e., has an :meth:`~object.__aiter__` method).
+ */
+export class PyAsyncIterable extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return (
+      API.isPyProxy(obj) &&
+      !!(obj.$$flags & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
+    );
+  }
+}
+
+export interface PyAsyncIterable extends PyAsyncIterableMethods {}
+
+export class PyAsyncIterableMethods {
   /**
    * This translates to the Python code ``aiter(obj)``. Return an async iterator
    * associated to the proxy. See the documentation for :js:data:`Symbol.asyncIterator`.
    *
-   * Present only if the proxied Python object is :std:term:`asynchronous iterable`
-   * (i.e., has an :meth:`~object.__aiter__` method).
-   *
-   * This will be used implicitly by ``for(let x of proxy){}``.
+   * This will be used implicitly by ``for(await let x of proxy){}``.
    */
   [Symbol.asyncIterator](): AsyncIterator<any, any, any> {
     let ptrobj = _getPtr(this);
@@ -1005,11 +1101,25 @@ export class PyProxyAsyncIterableMethods {
   }
 }
 
-export type PyProxyIterator = PyProxy & PyProxyIteratorMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is an :term:`iterator`
+ * (i.e., has a :meth:`~generator.send` or :meth:`~iterator.__next__` method).
+ */
+export class PyIterator extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ITERATOR);
+  }
+}
+
+export interface PyIterator extends PyIteratorMethods {}
+
+/** @deprecated Use :js:class:`pyodide.ffi.PyIterator` instead. */
+export type PyProxyIterator = PyIterator;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
-export class PyProxyIteratorMethods {
+export class PyIteratorMethods {
   /** @private */
   [Symbol.iterator]() {
     return this;
@@ -1021,14 +1131,11 @@ export class PyProxyIteratorMethods {
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
-   * Present only if the proxied Python object is an :term:`iterator` (i.e.,
-   * has a :meth:`~generator.send` or :meth:`~iterator.__next__` method).
-   *
    * @param any The value to send to the generator. The value will be assigned
    * as a result of a yield expression.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``next`` returns ``{done : false, value :
-   * some_value}``. When the generator raises a :any:`StopIteration`
+   * some_value}``. When the generator raises a :py:exc:`StopIteration`
    * exception, ``next`` returns ``{done : true, value : result_value}``.
    */
   next(arg: any = undefined): IteratorResult<any, any> {
@@ -1037,8 +1144,8 @@ export class PyProxyIteratorMethods {
     let idarg = Hiwire.new_value(arg);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
@@ -1049,7 +1156,7 @@ export class PyProxyIteratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1059,7 +1166,20 @@ export class PyProxyIteratorMethods {
   }
 }
 
-export class PyProxyGeneratorMethods {
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is a :std:term:`generator`
+ * (i.e., it is an instance of :py:class:`~collections.abc.Generator`).
+ */
+export class PyGenerator extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_GENERATOR);
+  }
+}
+
+export interface PyGenerator extends PyGeneratorMethods {}
+
+export class PyGeneratorMethods {
   /**
    * Throws an exception into the Generator.
    *
@@ -1077,8 +1197,8 @@ export class PyProxyGeneratorMethods {
     let idarg = Hiwire.new_value(exc);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
@@ -1089,7 +1209,7 @@ export class PyProxyGeneratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1099,15 +1219,13 @@ export class PyProxyGeneratorMethods {
   }
 
   /**
-   * Throws a :any:`GeneratorExit` into the generator and if the
-   * :any:`GeneratorExit` is not caught returns the argument value ``{done:
-   * true, value: v}``. If the generator catches the :any:`GeneratorExit` and
+   * Throws a :py:exc:`GeneratorExit` into the generator and if the
+   * :py:exc:`GeneratorExit` is not caught returns the argument value ``{done:
+   * true, value: v}``. If the generator catches the :py:exc:`GeneratorExit` and
    * returns or yields another value the next value of the generator this is
    * returned in the normal way. If it throws some error other than
-   * :any:`GeneratorExit` or :any:`StopIteration`, that error is propagated. See
+   * :py:exc:`GeneratorExit` or :py:exc:`StopIteration`, that error is propagated. See
    * the documentation for :js:meth:`Generator.return`.
-   *
-   * Present only if the proxied Python object is a :std:term:`generator`.
    *
    * @param any The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
@@ -1122,8 +1240,8 @@ export class PyProxyGeneratorMethods {
     let idarg = Hiwire.new_value(v);
     let status;
     let done;
-    let stackTop = Module.stackSave();
-    let res_ptr = Module.stackAlloc(4);
+    let stackTop = stackSave();
+    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
       status = Module.__pyproxyGen_return(_getPtr(this), idarg, res_ptr);
@@ -1134,7 +1252,7 @@ export class PyProxyGeneratorMethods {
       Hiwire.decref(idarg);
     }
     let idresult = DEREF_U32(res_ptr, 0);
-    Module.stackRestore(stackTop);
+    stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
       Module._pythonexc2js();
     }
@@ -1144,8 +1262,34 @@ export class PyProxyGeneratorMethods {
   }
 }
 
-export class PyProxyAsyncIteratorMethods {
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is an
+ * :std:term:`asynchronous iterator`
+ */
+export class PyAsyncIterator extends PyProxy {
   /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_ITERATOR);
+  }
+}
+
+export interface PyAsyncIterator extends PyAsyncIteratorMethods {}
+
+export class PyAsyncIteratorMethods {
+  /**
+   * This translates to the Python code ``anext(obj)``. Returns the next value
+   * of the asynchronous iterator. The argument will be sent to the Python
+   * iterator (if it's a generator for instance).
+   *
+   * This will be used implicitly by ``for(let x of proxy){}``.
+   *
+   * @param any The value to send to a generator. The value will be assigned as
+   * a result of a yield expression.
+   * @returns An Object with two properties: ``done`` and ``value``. When the
+   * iterator yields ``some_value``, ``next`` returns ``{done : false, value :
+   * some_value}``. When the giterator is done, ``next`` returns
+   * ``{done : true }``.
+   */
   async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
     let idarg = Hiwire.new_value(arg);
     let idresult;
@@ -1181,7 +1325,21 @@ export class PyProxyAsyncIteratorMethods {
   }
 }
 
-export class PyProxyAsyncGeneratorMethods {
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is an
+ * :std:term:`asynchronous generator` (i.e., it is an instance of
+ * :py:class:`~collections.abc.AsyncGenerator`)
+ */
+export class PyAsyncGenerator extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_GENERATOR);
+  }
+}
+
+export interface PyAsyncGenerator extends PyAsyncGeneratorMethods {}
+
+export class PyAsyncGeneratorMethods {
   /**
    * Throws an exception into the Generator.
    *
@@ -1230,21 +1388,18 @@ export class PyProxyAsyncGeneratorMethods {
   }
 
   /**
-   * Throws a :any:`GeneratorExit` into the generator and if the
-   * :any:`GeneratorExit` is not caught returns the argument value ``{done:
-   * true, value: v}``. If the generator catches the :any:`GeneratorExit` and
+   * Throws a :py:exc:`GeneratorExit` into the generator and if the
+   * :py:exc:`GeneratorExit` is not caught returns the argument value ``{done:
+   * true, value: v}``. If the generator catches the :py:exc:`GeneratorExit` and
    * returns or yields another value the next value of the generator this is
    * returned in the normal way. If it throws some error other than
-   * :any:`GeneratorExit` or :any:`StopAsyncIteration`, that error is
+   * :py:exc:`GeneratorExit` or :py:exc:`StopAsyncIteration`, that error is
    * propagated. See the documentation for :js:meth:`AsyncGenerator.throw`
-   *
-   * Present only if the proxied Python object is an :std:term:`asynchronous
-   * generator`.
    *
    * @param any The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value
-   * : some_value}``. When the generator raises a :any:`StopAsyncIteration`
+   * : some_value}``. When the generator raises a :py:exc:`StopAsyncIteration`
    * exception, ``return`` returns ``{done : true, value : result_value}``.
    */
   async return(v: any): Promise<IteratorResult<any, any>> {
@@ -1283,7 +1438,7 @@ export class PyProxyAsyncGeneratorMethods {
 // to deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
-function python_hasattr(jsobj: PyProxyClass, jskey: any) {
+function python_hasattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let result;
@@ -1305,7 +1460,7 @@ function python_hasattr(jsobj: PyProxyClass, jskey: any) {
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
-function python_getattr(jsobj: PyProxyClass, jskey: any) {
+function python_getattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let idresult;
@@ -1327,7 +1482,7 @@ function python_getattr(jsobj: PyProxyClass, jskey: any) {
   return idresult;
 }
 
-function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
+function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let idval = Hiwire.new_value(jsval);
@@ -1347,7 +1502,7 @@ function python_setattr(jsobj: PyProxyClass, jskey: any, jsval: any) {
   }
 }
 
-function python_delattr(jsobj: PyProxyClass, jskey: any) {
+function python_delattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let errcode;
@@ -1372,7 +1527,7 @@ let PyProxyHandlers = {
   isExtensible() {
     return true;
   },
-  has(jsobj: PyProxyClass, jskey: any) {
+  has(jsobj: PyProxy, jskey: any) {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     let objHasKey = Reflect.has(jsobj, jskey);
@@ -1388,7 +1543,7 @@ let PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj: PyProxyClass, jskey: any) {
+  get(jsobj: PyProxy, jskey: any) {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -1408,7 +1563,7 @@ let PyProxyHandlers = {
       return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj: PyProxyClass, jskey: any, jsval: any) {
+  set(jsobj: PyProxy, jskey: any, jsval: any) {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
@@ -1423,7 +1578,7 @@ let PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj: PyProxyClass, jskey: any): boolean {
+  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot delete read only field '${jskey}'`);
@@ -1439,7 +1594,7 @@ let PyProxyHandlers = {
     // Otherwise JavaScript will throw a TypeError.
     return !descr || !!descr.configurable;
   },
-  ownKeys(jsobj: PyProxyClass) {
+  ownKeys(jsobj: PyProxy) {
     let ptrobj = _getPtr(jsobj);
     let idresult;
     try {
@@ -1456,18 +1611,31 @@ let PyProxyHandlers = {
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
-  apply(jsobj: PyProxyClass & Function, jsthis: any, jsargs: any) {
+  apply(jsobj: PyProxy & Function, jsthis: any, jsargs: any) {
     return jsobj.apply(jsthis, jsargs);
   },
 };
 
-export type PyProxyAwaitable = PyProxy & Promise<any>;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :ref:`awaitable
+ * <asyncio-awaitables>` (i.e., has an :meth:`~object.__await__` method).
+ */
+export class PyAwaitable extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_AWAITABLE);
+  }
+}
+
+export interface PyAwaitable extends Promise<any> {}
+/** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
+export type PyProxyAwaitable = PyAwaitable;
 
 /**
  * The Promise / JavaScript awaitable API.
  * @private
  */
-export class PyProxyAwaitableMethods {
+export class PyAwaitableMethods {
   $$: any;
   /**
    * This wraps __pyproxy_ensure_future and makes a function that converts a
@@ -1519,9 +1687,6 @@ export class PyProxyAwaitableMethods {
    *
    * See the documentation for :js:meth:`Promise.then`.
    *
-   * Present only if the proxied Python object is :ref:`awaitable <asyncio-awaitables>`
-   * (i.e., has an :meth:`~object.__await__` method).
-   *
    * @param onFulfilled A handler called with the result as an argument if the
    * awaitable succeeds.
    * @param onRejected A handler called with the error as an argument if the
@@ -1541,9 +1706,6 @@ export class PyProxyAwaitableMethods {
    *
    * See the documentation for :js:meth:`Promise.catch`.
    *
-   * Present only if the proxied Python object is :ref:`awaitable <asyncio-awaitables>`
-   * (i.e., has an :meth:`~object.__await__` method)
-   *
    * @param onRejected A handler called with the error as an argument if the
    * awaitable fails.
    * @returns The resulting Promise.
@@ -1558,10 +1720,6 @@ export class PyProxyAwaitableMethods {
    *
    * See the documentation for :js:meth:`Promise.finally`.
    *
-   * Present only if the proxied Python object is :ref:`awaitable <asyncio-awaitables>`
-   * (i.e., has an :meth:`~object.__await__` method).
-   *
-   *
    * @param onFinally A handler that is called with zero arguments when the
    * awaitable resolves.
    * @returns A Promise that resolves or rejects with the same result as the
@@ -1573,22 +1731,36 @@ export class PyProxyAwaitableMethods {
   }
 }
 
-export type PyProxyCallable = PyProxy &
-  PyProxyCallableMethods &
-  ((...args: any[]) => any);
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is
+ * :std:term:`callable` (i.e., has an :py:meth:`~operator.__call__` method).
+ */
+export class PyCallable extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyCallable {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_CALLABLE);
+  }
+}
 
-export class PyProxyCallableMethods {
+/**
+ * @deprecated Use :js:class:`pyodide.ffi.PyCallable` instead.
+ */
+export type PyProxyCallable = PyCallable;
+
+export interface PyCallable extends PyCallableMethods {
+  (...args: any[]): any;
+}
+
+export class PyCallableMethods {
   /**
    * The ``apply()`` method calls the specified function with a given this
    * value, and arguments provided as an array (or an array-like object). Like
    * :js:meth:`Function.apply`.
    *
-   * Present only if the proxied Python object is :std:term:`callable` (i.e., has a
-   * :meth:`~object.__call__` method).
-   *
    * @param thisArg The ``this`` argument. Has no effect unless the
-   * :any:`PyProxy` has :any:`captureThis` set. If :any:`captureThis` is set, it
-   * will be passed as the first argument to the Python function.
+   * :js:class:`~pyodide.ffi.PyCallable` has :js:meth:`captureThis` set. If
+   * :js:meth:`captureThis` is set, it will be passed as the first argument to
+   * the Python function.
    * @param jsargs The array of arguments
    * @returns The result from the function call.
    */
@@ -1605,12 +1777,10 @@ export class PyProxyCallableMethods {
    * Calls the function with a given this value and arguments provided
    * individually. See :js:meth:`Function.call`.
    *
-   * Present only if the proxied Python object is :term:`callable` (i.e., has a
-   * :meth:`~object.__call__` method).
-   *
    * @param thisArg The ``this`` argument. Has no effect unless the
-   * :any:`PyProxy` has :any:`captureThis` set. If :any:`captureThis` is set, it
-   * will be passed as the first argument to the Python function.
+   * :js:class:`~pyodide.ffi.PyCallable` has :js:meth:`captureThis` set. If
+   * :js:meth:`captureThis` is set, it will be passed as the first argument to
+   * the Python function.
    * @param jsargs The arguments
    * @returns The result from the function call.
    */
@@ -1620,8 +1790,7 @@ export class PyProxyCallableMethods {
   }
   /**
    * Call the function with key word arguments. The last argument must be an
-   * object with the keyword arguments. Present only if the proxied Python
-   * object is :term:`callable` (i.e., has a :meth:`~object.__call__` method).
+   * object with the keyword arguments.
    */
   callKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
@@ -1645,14 +1814,11 @@ export class PyProxyCallableMethods {
    * arguments preceding any provided when the new function is called. See
    * :js:meth:`Function.bind`.
    *
-   * If the `PyProxy` does not have :any:`captureThis` set, the ``this``
-   * parameter will be discarded. If it does have :any:`captureThis` set,
-   * ``thisArg`` will be set to the first argument of the Python function. The
-   * returned proxy and the original proxy have the same lifetime so destroying
-   * either destroys both.
-   *
-   * Present only if the proxied Python object is :term:`callable` (i.e., has a
-   * :meth:`~object.__call__` method)
+   * If the :js:class:`~pyodide.ffi.PyCallable` does not have
+   * :js:meth:`captureThis` set, the ``this`` parameter will be discarded. If it
+   * does have :js:meth:`captureThis` set, ``thisArg`` will be set to the first
+   * argument of the Python function. The returned proxy and the original proxy
+   * have the same lifetime so destroying either destroys both.
    *
    * @param thisArg The value to be passed as the ``this`` parameter to the
    * target function ``func`` when the bound function is called.
@@ -1683,8 +1849,8 @@ export class PyProxyCallableMethods {
   }
 
   /**
-   * Returns a ``PyProxy`` that passes ``this`` as the first argument to the
-   * Python function. The returned ``PyProxy`` has the internal ``captureThis``
+   * Returns a :js:class:`~pyodide.ffi.PyProxy` that passes ``this`` as the first argument to the
+   * Python function. The returned :js:class:`~pyodide.ffi.PyProxy` has the internal ``captureThis``
    * property set.
    *
    * It can then be used as a method on a JavaScript object. The returned proxy
@@ -1693,22 +1859,22 @@ export class PyProxyCallableMethods {
    *
    * For example:
    *
-   * .. code-block:: js
+   * .. code-block:: pyodide
    *
    *    let obj = { a : 7 };
    *    pyodide.runPython(`
    *      def f(self):
    *        return self.a
    *    `);
-   *    // Without captureThis, it doesn't work to use ``f`` as a method for `obj`:
+   *    // Without captureThis, it doesn't work to use f as a method for obj:
    *    obj.f = pyodide.globals.get("f");
    *    obj.f(); // raises "TypeError: f() missing 1 required positional argument: 'self'"
    *    // With captureThis, it works fine:
    *    obj.f = pyodide.globals.get("f").captureThis();
    *    obj.f(); // returns 7
    *
-   * @returns The resulting ``PyProxy``. It has the same lifetime as the
-   * original ``PyProxy`` but passes ``this`` to the wrapped function.
+   * @returns The resulting :js:class:`~pyodide.ffi.PyProxy`. It has the same lifetime as the
+   * original :js:class:`~pyodide.ffi.PyProxy` but passes ``this`` to the wrapped function.
    *
    */
   captureThis(): PyProxy {
@@ -1724,7 +1890,7 @@ export class PyProxyCallableMethods {
   }
 }
 // @ts-ignore
-PyProxyCallableMethods.prototype.prototype = Function.prototype;
+PyCallableMethods.prototype.prototype = Function.prototype;
 
 // @ts-ignore
 let type_to_array_map: Map<string, any> = new Map([
@@ -1746,37 +1912,48 @@ let type_to_array_map: Map<string, any> = new Map([
   ["dataview", DataView],
 ]);
 
-export type PyProxyBuffer = PyProxy & PyProxyBufferMethods;
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object supports the
+ * Python :external:doc:`c-api/buffer`.
+ *
+ * Examples of buffers include {py:class}`bytes` objects and numpy
+ * {external+numpy:ref}`arrays`.
+ */
+export class PyBuffer extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyBuffer {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_BUFFER);
+  }
+}
 
-export class PyProxyBufferMethods {
+export interface PyBuffer extends PyBufferMethods {}
+
+export class PyBufferMethods {
   /**
    * Get a view of the buffer data which is usable from JavaScript. No copy is
    * ever performed.
    *
-   * Present only if the proxied Python object supports the Python
-   * :external:doc:`c-api/buffer`.
-   *
    * We do not support suboffsets, if the buffer requires suboffsets we will
    * throw an error. JavaScript nd array libraries can't handle suboffsets
-   * anyways. In this case, you should use the :any:`toJs` api or copy the
-   * buffer to one that doesn't use suboffets (using e.g.,
+   * anyways. In this case, you should use the :js:meth:`~PyProxy.toJs` api or
+   * copy the buffer to one that doesn't use suboffsets (using e.g.,
    * :py:func:`numpy.ascontiguousarray`).
    *
    * If the buffer stores big endian data or half floats, this function will
    * fail without an explicit type argument. For big endian data you can use
-   * ``toJs``. :js:class:`DataView` has support for big endian data, so you
-   * might want to pass ``'dataview'`` as the type argument in that case.
+   * :js:meth:`~PyProxy.toJs`. :js:class:`DataView` has support for big endian
+   * data, so you might want to pass ``'dataview'`` as the type argument in that
+   * case.
    *
-   * @param type The type of the :js:attr:`~pyodide.PyBuffer.data` field in the
-   * output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``, ``"i16"``,
-   * ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``, ``"i64"``,
-   * ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument is
-   * optional, if absent ``getBuffer`` will try to determine the appropriate
-   * output type based on the buffer format string (see
-   * :std:ref:`struct-format-strings`).
-   * @returns :js:class:`~pyodide.PyBuffer`
+   * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
+   * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
+   * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
+   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument
+   * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
+   * to determine the appropriate output type based on the buffer format string
+   * (see :std:ref:`struct-format-strings`).
    */
-  getBuffer(type?: string): PyBuffer {
+  getBuffer(type?: string): PyBufferView {
     let ArrayType: any = undefined;
     if (type) {
       ArrayType = type_to_array_map.get(type);
@@ -1784,8 +1961,8 @@ export class PyProxyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let orig_stack_ptr = Module.stackSave();
-    let buffer_struct_ptr = Module.stackAlloc(
+    let orig_stack_ptr = stackSave();
+    let buffer_struct_ptr = stackAlloc(
       DEREF_U32(Module._buffer_struct_size, 0),
     );
     let this_ptr = _getPtr(this);
@@ -1817,7 +1994,7 @@ export class PyProxyBufferMethods {
     let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
     let format = Module.UTF8ToString(format_ptr);
-    Module.stackRestore(orig_stack_ptr);
+    stackRestore(orig_stack_ptr);
 
     let success = false;
     try {
@@ -1864,7 +2041,7 @@ export class PyProxyBufferMethods {
 
       success = true;
       let result = Object.create(
-        PyBuffer.prototype,
+        PyBufferView.prototype,
         Object.getOwnPropertyDescriptors({
           offset,
           readonly,
@@ -1908,12 +2085,32 @@ export type TypedArray =
   | Uint8ClampedArray
   | Float32Array
   | Float64Array;
-export type PyProxyDict = PyProxyWithGet & PyProxyWithSet & PyProxyWithHas;
 
 /**
- * A class to allow access to a Python data buffers from JavaScript. These are
- * produced by :js:func:`PyProxy.getBuffer` and cannot be constructed directly.
- * When you are done, release it with the :js:func:`~PyBuffer.release` method.
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is a :py:class:`dict`.
+ */
+export class PyDict extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    // TODO: allow MutableMappings?
+    return API.isPyProxy(obj) && obj.type === "dict";
+  }
+}
+
+export interface PyDict
+  extends PyProxyWithGet,
+    PyProxyWithSet,
+    PyProxyWithHas,
+    PyProxyWithLength,
+    PyIterable {}
+
+/** @deprecated Use :js:class:`pyodide.ffi.PyDict` instead. */
+export type PyProxyDict = PyDict;
+
+/**
+ * A class to allow access to Python data buffers from JavaScript. These are
+ * produced by :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` and cannot be constructed directly.
+ * When you are done, release it with the :js:func:`~PyBufferView.release` method.
  * See the Python :external:doc:`c-api/buffer` documentation for more
  * information.
  *
@@ -1962,7 +2159,7 @@ export type PyProxyDict = PyProxyWithGet & PyProxyWithSet & PyProxyWithHas;
  *            buffer.data.byteLength
  *        );
  */
-export class PyBuffer {
+export class PyBufferView {
   /**
    * The offset of the first entry of the array. For instance if our array
    * is 3d, then you will find ``array[0,0,0]`` at
@@ -1971,7 +2168,7 @@ export class PyBuffer {
   offset: number;
 
   /**
-   * If the data is readonly, you should not modify it. There is no way for us
+   * If the data is read only, you should not modify it. There is no way for us
    * to enforce this, but it may cause very weird behavior. See
    * :py:attr:`memoryview.readonly`.
    */
@@ -1984,7 +2181,7 @@ export class PyBuffer {
   format: string;
 
   /**
-   * How large is each entry (in bytes)? See :any:`memoryview.itemsize`.
+   * How large is each entry in bytes? See :py:attr:`memoryview.itemsize`.
    */
   itemsize: number;
 
@@ -1997,7 +2194,7 @@ export class PyBuffer {
 
   /**
    * The total number of bytes the buffer takes up. This is equal to
-   * ``buff.data.byteLength``. See :py:attr:`memoryview.nbytes`.
+   * :js:attr:`buff.data.byteLength <TypedArray.byteLength>`. See :py:attr:`memoryview.nbytes`.
    */
   nbytes: number;
 
@@ -2019,52 +2216,48 @@ export class PyBuffer {
    * The actual data. A typed array of an appropriate size backed by a segment
    * of the WASM memory.
    *
-   * The ``type`` argument of :any:`PyProxy.getBuffer` determines which sort of
-   * :js:class:`TypedArray` or :js:class:`DataView` to return. By default
-   * :any:`PyProxy.getBuffer` will look at the format string to determine the
-   * most appropriate option. Most often the result is a :js:class:`Uint8Array`.
+   * The ``type`` argument of :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` determines
+   * which sort of :js:class:`TypedArray` or :js:class:`DataView` to return. By
+   * default :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will look at the format string
+   * to determine the most appropriate option. Most often the result is a
+   * :js:class:`Uint8Array`.
    *
    * .. admonition:: Contiguity
    *    :class: warning
    *
-   *    If the buffer is not contiguous, the ``data`` TypedArray will contain
-   *    data that is not part of the buffer. Modifying this data leads to
-   *    undefined behavior.
+   *    If the buffer is not contiguous, the :js:attr:`~PyBufferView.readonly`
+   *    TypedArray will contain data that is not part of the buffer. Modifying
+   *    this data leads to undefined behavior.
    *
-   * .. admonition:: Readonly buffers
+   * .. admonition:: Read only buffers
    *    :class: warning
    *
-   *    If ``buffer.readonly`` is ``true``, you should not modify the buffer.
-   *    Modifying a readonly buffer leads to undefined behavior.
+   *    If :js:attr:`buffer.readonly <PyBufferView.readonly>` is ``true``, you
+   *    should not modify the buffer. Modifying a read only buffer leads to
+   *    undefined behavior.
    *
    */
   data: TypedArray;
 
   /**
-   * Is it C contiguous? See :any:`memoryview.c_contiguous`.
+   * Is it C contiguous? See :py:attr:`memoryview.c_contiguous`.
    */
   c_contiguous: boolean;
 
   /**
-   * Is it Fortran contiguous? See :any:`memoryview.f_contiguous`.
+   * Is it Fortran contiguous? See :py:attr:`memoryview.f_contiguous`.
    */
   f_contiguous: boolean;
 
-  /**
-   * @private
-   */
+  /** @private */
   _released: boolean;
 
-  /**
-   * @private
-   */
+  /** @private */
   _view_ptr: number;
 
-  /**
-   * @private
-   */
+  /** @private */
   constructor() {
-    throw new TypeError("PyBuffer is not a constructor");
+    throw new TypeError("PyBufferView is not a constructor");
   }
 
   /**

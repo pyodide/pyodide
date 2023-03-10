@@ -30,13 +30,13 @@ will require a server to be running for this example.
 Setup your project to serve the service worker script `sw.js`, and a
 `XMLHttpRequest` polyfill - one such polyfill that works in service workers is
 [xhr-shim](https://www.npmjs.com/package/xhr-shim). You should also serve
-`pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
+`pyodide.js`, and all its associated `.asm.js`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files. The simplest way to serve the
 required files is to use a CDN, such as `https://cdn.jsdelivr.net/pyodide`.
 
 Update the `sw.js` sample so that it has a valid URL for `pyodide.js`, and sets
-{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting
+{js:func}`indexURL <globalThis.loadPyodide>` to the location of the supporting
 files.
 
 You'll also need to serve `data.json`, a JSON file containing a simple object -

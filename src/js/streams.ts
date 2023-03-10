@@ -14,12 +14,13 @@ type GetCharType = () => null | number;
 
 // The type of the function we expect the user to give us. make_get_char takes
 // one of these and turns it into a GetCharType function for us.
-type InFuncType = () =>
+/** @private */
+export type InFuncType = () =>
   | null
   | undefined
   | string
   | ArrayBuffer
-  | ArrayBufferView
+  | Uint8Array
   | number;
 
 // To define the output behavior of a tty we need to define put_char and fsync.
@@ -191,7 +192,7 @@ function setStdinError() {
  * The stdin handler is called with zero arguments whenever stdin is read and
  * the current input buffer is exhausted. It should return one of:
  *
- * - ``null`` or ``undefined``: these are interpreted as end of file.
+ * - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of file.
  * - a number
  * - a string
  * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
@@ -210,10 +211,10 @@ function setStdinError() {
  * @param options.stdin The stdin handler.
  * @param options.error If this is set to ``true``, attempts to read from stdin
  * will always set an IO error.
- * @param options.isatty Should ``isatty(stdin)`` be ``true`` or ``false``
- * (default ``false``).
- * @param options.autoEOF Insert an EOF automatically after each string
- * or buffer? (default ``true``).
+ * @param options.isatty Should :py:func:`isatty(stdin) <os.isatty>` be ``true``
+ * or ``false`` (default ``false``).
+ * @param options.autoEOF Insert an EOF automatically after each string or
+ * buffer? (default ``true``).
  */
 export function setStdin(
   options: {
@@ -272,8 +273,9 @@ function setDefaultStdout() {
  * not.
  * @param options.raw A raw handler is called with the handler is called with a
  * `number` for each byte of the output to stdout.
- * @param options.isatty Should ``isatty(stdout)`` return ``true`` or ``false``.
- * Can only be set to ``true`` if a raw handler is provided (default ``false``).
+ * @param options.isatty Should :py:func:`isatty(stdout) <os.isatty>` return
+ * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
+ * provided (default ``false``).
  */
 export function setStdout(
   options: {
@@ -333,8 +335,9 @@ function setDefaultStderr() {
  * buffered so it is impossible to make a tty with it).
  * @param options.raw A raw handler is called with the handler is called with a
  * `number` for each byte of the output to stderr.
- * @param options.isatty Should ``isatty(stderr)`` return ``true`` or ``false``.
- * Can only be set to ``true`` if a raw handler is provided (default ``false``).
+ * @param options.isatty Should :py:func:`isatty(stderr) <os.isatty>` return
+ * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
+ * provided (default ``false``).
  */
 export function setStderr(
   options: {

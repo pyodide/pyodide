@@ -33,36 +33,6 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Better support and documentation for loading user Python code
-
-Currently, most of our documentation suggests using `pyodide.runPython` to run
-code. This makes code difficult to maintain, because it won't work with `mypy`,
-`black`, or other code analysis tools, doesn't get good syntax highlighting in
-editors, etc. It also may lead to passing "arguments" to code via string
-formatting, missing out on the type conversion utilities.
-
-Our goal is to develop and document a better workflow for users to develop
-Python code for use in Pyodide.
-
-See issue {issue}`1940`.
-
-## Improvements to package loading system
-
-Currently, Pyodide has two ways of loading packages:
-
-- {any}`pyodide.loadPackage` for packages built with Pyodide and
-- {any}`micropip.install` for pure Python packages from PyPI.
-
-The relationship between these tools is currently confusing.
-
-Our goal is to have three ways to load packages: one with no dependency
-resolution at all, one with static dependency resolution which is done ahead of
-time, and one for dynamic dependency resolution. Ideally most applications can
-use static dependency resolution and repls can use dynamic dependency
-resolution.
-
-See issues {issue}`2045` and {issue}`1100`.
-
 ## Find a better way to compile Fortran
 
 Currently, we use f2c to cross compile Fortran to C. This does not work very

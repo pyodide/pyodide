@@ -754,21 +754,31 @@ def _build_package_inner(
     import subprocess
     import sys
 
-    tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
-    # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
-    # of any child processes we spawn)
-    os.dup2(tee.stdin.fileno(), sys.stdout.fileno())  # type: ignore[union-attr]
-    os.dup2(tee.stdin.fileno(), sys.stderr.fileno())  # type: ignore[union-attr]
+    try:
+        stdout_fileno = sys.stdout.fileno()
+        stderr_fileno = sys.stderr.fileno()
+
+        tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
+
+        # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+        # of any child processes we spawn)
+        os.dup2(tee.stdin.fileno(), stdout_fileno)  # type: ignore[union-attr]
+        os.dup2(tee.stdin.fileno(), stderr_fileno)  # type: ignore[union-attr]
+    except OSError:
+        # This normally happens when testing
+        logger.warning("stdout/stderr does not have a fileno, not logging to file")
 
     with chdir(pkg_root), get_bash_runner() as bash_runner:
         bash_runner.env["PKGDIR"] = str(pkg_root)
         bash_runner.env["PKG_VERSION"] = version
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
+        bash_runner.env["DISTDIR"] = str(src_dist_dir)
         if not continue_:
             clear_only = package_type == "cpython_module"
             prepare_source(build_dir, srcpath, source_metadata, clear_only=clear_only)
             patch(pkg_root, srcpath, source_metadata)
 
+        src_dist_dir.mkdir(exist_ok=True, parents=True)
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
         if package_type == "static_library":

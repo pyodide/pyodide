@@ -130,7 +130,8 @@
           term.pause();
           // multiline should be split (useful when pasting)
           for (const c of command.split("\n")) {
-            let fut = pyconsole.push(c);
+            const escaped = c.replaceAll(/\u00a0/g, " ");
+            let fut = pyconsole.push(escaped);
             term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
             switch (fut.syntax_check) {
               case "syntax-error":

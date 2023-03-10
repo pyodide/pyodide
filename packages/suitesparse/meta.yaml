@@ -26,7 +26,6 @@ build:
       BLAS="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
       LAPACK="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
       INSTALL=${WASM_LIBRARY_DIR}
-    mkdir -p dist
 
     cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
        ${WASM_LIBRARY_DIR}/lib/libamd.so \
@@ -36,4 +35,4 @@ build:
        ${WASM_LIBRARY_DIR}/lib/libmetis.so \
        ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
        ${WASM_LIBRARY_DIR}/lib/libspqr.so \
-       dist/
+       ${DISTDIR}

@@ -16,16 +16,13 @@ all: check \
 	dist/python \
 	dist/console.html \
 	dist/repodata.json \
-	dist/pyodide_py.tar \
+	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
 	dist/webworker.js \
 	dist/webworker_dev.js \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
-
-dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide
 
 src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 # Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
@@ -84,7 +81,8 @@ dist/libpyodide.a: \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
-	src/core/pyodide_pre.o
+	src/core/pyodide_pre.o \
+	src/core/pyversion.o
 	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
@@ -135,9 +133,13 @@ dist/package.json : src/js/package.json
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
-	npx dts-bundle-generator src/js/pyodide.ts --export-referenced-types false
-	mv src/js/pyodide.d.ts dist
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
+	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
+	mv src/js/{pyodide,ffi}.d.ts dist
+	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
+	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
+
+
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
@@ -169,6 +171,14 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
 		sed 's/^#pragma clang.*//g' \
 		>> $@
+
+pyodide_build: ./pyodide-build/pyodide_build/**
+	$(HOSTPYTHON) -m pip install -e ./pyodide-build
+	which pyodide-build >/dev/null
+	which pyodide >/dev/null
+
+dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
+	pyodide create-zipfile $(CPYTHONLIB) src/py --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
@@ -229,7 +239,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/repodata.json: FORCE
+dist/repodata.json: FORCE pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."

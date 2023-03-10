@@ -1,7 +1,7 @@
 From 4c71c808cc65ed6003b1e29d583c71586ebb36e1 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Wed, 25 Jan 2023 15:54:16 +0900
-Subject: [PATCH 8/8] Move test directories
+Subject: [PATCH 8/9] Move test directories
 
 ---
  Makefile.pre.in | 6 +++---

@@ -908,25 +908,74 @@ EM_JS_REF(JsRef, JsObject_New, (), {
 });
 // clang-format on
 
+void
+setReservedError(char* action, char* word)
+{
+  PyErr_Format(PyExc_AttributeError,
+               "The string '%s' is a Python reserved word. To %s an attribute "
+               "on a JS object called '%s' use '%s_'.",
+               word,
+               action,
+               word,
+               word);
+}
+
+EM_JS(bool, isReservedWord, (int word), {
+  if (!Module.pythonReservedWords) {
+    Module.pythonReservedWords = new Set([
+      "False",  "await", "else",     "import", "pass",   "None",    "break",
+      "except", "in",    "raise",    "True",   "class",  "finally", "is",
+      "return", "and",   "continue", "for",    "lambda", "try",     "as",
+      "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
+      "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
+    ])
+  }
+  return Module.pythonReservedWords.has(word);
+})
+
+/**
+ * action: a javascript string, one of get, set, or delete. For error reporting.
+ * word: a javascript string, the property being accessed
+ */
+EM_JS(int, normalizeReservedWords, (int action, int word), {
+  // clang-format off
+  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  //    it unchanged.
+  const noTrailing_ = word.replace(/_*$/, "");
+  if (!isReservedWord(noTrailing_)) {
+    return word;
+  }
+  // 2. If there is at least one trailing underscore, return the word with a
+  //    single underscore removed.
+  if (noTrailing_ !== word) {
+    return word.slice(0, -1);
+  }
+  // 3. If the word is exactly a reserved word, this is an error.
+  let action_ptr = stringToNewUTF8(action);
+  let word_ptr = stringToNewUTF8(word);
+  _setReservedError(action_ptr, word_ptr);
+  _free(action_ptr);
+  _free(word_ptr);
+  throw new Module._PropagatePythonError();
+  // clang-format on
+});
+
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let result = jsobj[jskey];
-  // clang-format off
-  if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
+  let jskey = normalizeReservedWords("get", UTF8ToString(ptrkey));
+  if (jskey in jsobj) {
+    return Hiwire.new_value(jsobj[jskey]);
   }
-  return Hiwire.new_value(result);
+  return ERROR_REF;
 });
 
 // clang-format off
 EM_JS_NUM(errcode,
-          JsObject_SetString,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
+JsObject_SetString,
+(JsRef idobj, const char* ptrkey, JsRef idval),
 {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
+  let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
   let jsval = Hiwire.get_value(idval);
   jsobj[jskey] = jsval;
 });
@@ -934,7 +983,7 @@ EM_JS_NUM(errcode,
 
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
+  let jskey = normalizeReservedWords("delete", UTF8ToString(ptrkey));
   delete jsobj[jskey];
 });
 
@@ -943,12 +992,16 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   let result = [];
   do {
     // clang-format off
-    result.push(... Object.getOwnPropertyNames(jsobj).filter(
+    const names = Object.getOwnPropertyNames(jsobj);
+    result.push(...names.filter(
       s => {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
-    ));
+    )
+    // If the word is a reserved word followed by 0 or more underscores, add an
+    // extra underscore to reverse the transformation applied by normalizeReservedWords.
+    .map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);

@@ -367,6 +367,11 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
+        if pkgname not in all_recipes:
+            raise ValueError(
+                f"No metadata file found for the following package: {pkgname}"
+            )
+
         pkg = Package(packages_dir / pkgname, all_recipes[pkgname])
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
@@ -420,6 +425,13 @@ def job_priority(pkg: BasePackage) -> int:
         return 0
     else:
         return 1
+
+
+def is_rust_package(pkg: BasePackage) -> bool:
+    """
+    Check if a package requires rust toolchain to build.
+    """
+    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
 
 
 def format_name_list(l: list[str]) -> str:
@@ -533,14 +545,30 @@ def build_from_graph(
     built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
+    building_rust_pkg = False
     progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
-        nonlocal queue_idx
+        nonlocal queue_idx, building_rust_pkg
         while True:
-            pkg = build_queue.get()[1]
+            _, pkg = build_queue.get()
 
             with thread_lock:
+                if is_rust_package(pkg):
+                    # Don't build multiple rust packages at the same time.
+                    # See: https://github.com/pyodide/pyodide/issues/3565
+                    # Note that if there are only rust packages left in the queue,
+                    # this will keep pushing and popping packages until the current rust package
+                    # is built. This is not ideal but presumably the overhead is negligible.
+                    if building_rust_pkg:
+                        build_queue.put((job_priority(pkg), pkg))
+
+                        # Release the GIL so new packages get queued
+                        sleep(0.1)
+                        continue
+
+                    building_rust_pkg = True
+
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
 
@@ -564,6 +592,11 @@ def build_from_graph(
                 progress_formatter.remove_package(pkg_status)
 
             built_queue.put(pkg)
+
+            with thread_lock:
+                if is_rust_package(pkg):
+                    building_rust_pkg = False
+
             # Release the GIL so new packages get queued
             sleep(0.01)
 
@@ -617,6 +650,7 @@ def generate_packagedata(
             "file_name": pkg.file_name,
             "install_dir": pkg.install_dir,
             "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
+            "package_type": pkg.package_type,
             "imports": [],
         }
 
