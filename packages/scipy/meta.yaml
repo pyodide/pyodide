@@ -42,6 +42,7 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
     -Wno-return-type
     -DUNDERSCORE_G77
+    -Wno-parentheses
   cxxflags: -fexceptions
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
