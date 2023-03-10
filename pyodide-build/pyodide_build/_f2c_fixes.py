@@ -230,8 +230,7 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         ]
     if f2c_output.name == "_blas_subroutine_wrappers.c":
         lines = [
-            line.replace("extern doublereal sasum_", "extern float sasum_")
-            for line in lines
+            line.replace("extern doublereal s", "extern float s") for line in lines
         ]
 
     # Substitute back the dummy fixed array sizes. We also have to remove the
