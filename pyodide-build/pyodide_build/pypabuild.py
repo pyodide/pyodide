@@ -135,6 +135,14 @@ def _build_in_isolated_env(
 
 
 def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
+    """Parse backend flags
+
+    Examples
+    --------
+    >>> parse_backend_flags("--a=2")
+    {'--a': '2'}
+    """
+
     config_settings: dict[str, str | list[str]] = {}
     for arg in backend_flags.split():
         setting, _, value = arg.partition("=")
@@ -247,6 +255,7 @@ def build(
     builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
     config_settings = parse_backend_flags(backend_flags)
+
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(

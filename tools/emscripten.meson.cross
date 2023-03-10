@@ -2,7 +2,7 @@
 c = 'emcc'
 cpp = 'em++'
 ar = 'emar'
-fortran='gfortran'
+fortran = '/usr/bin/gfortran'
 
 cmake = ['emmake', 'cmake']
 sdl2-config = ['emconfigure', 'sdl2-config']

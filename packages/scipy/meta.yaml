@@ -44,6 +44,11 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
+  # TODO: implement the configuration as a backend-flag, but currently the argument parser
+  #       is unable to handle those
+  #backend-flags: |
+  #  --config-settings "cross-file=$(PYODIDE_ROOT)/tools/emscripten.meson.cross"
+
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
