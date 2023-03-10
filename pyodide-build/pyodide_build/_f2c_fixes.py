@@ -228,7 +228,9 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
-    if f2c_output.name != "GMRESREVCOM.c":
+    if "linalg" in f2c_output_path and all(
+        x not in f2c_output_path for x in ["_eigen", "_isolve", "_propack"]
+    ):
         lines = [
             line.replace("extern doublereal s", "extern float s") for line in lines
         ]
