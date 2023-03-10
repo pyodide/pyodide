@@ -32,7 +32,6 @@ source:
     - patches/0009-sasum-returns-double-not-float.patch
     - patches/0010-skip-fortran-fails-to-link.patch
     - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
-    - patches/0012-Remove-meson-requirements.patch
     - patches/0013-Fix-fitpack.patch
 
 build:
