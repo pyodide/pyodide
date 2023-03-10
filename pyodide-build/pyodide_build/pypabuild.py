@@ -34,7 +34,6 @@ AVOIDED_REQUIREMENTS = [
     # We don't want to install cmake Python package inside the isolated env as it will shadow
     # the pywasmcross cmake wrapper.
     "cmake",
-
     # Meson for now needs to be installed manually
     "meson",
 ]
@@ -74,8 +73,8 @@ def remove_avoided_requirements(
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     if os.environ.get("PYODIDE_BUILD_PACKAGE") == "scipy":
         env.install(
-                 [
-                "git+https://github.com/hoodmane/meson-python.git@ff68f2a8ed8d30a21fca17e9377ebd34b56c1d16",
+            [
+                "git+https://github.com/rth/meson-python.git@pyodide2",
                 "meson",
             ]
         )
