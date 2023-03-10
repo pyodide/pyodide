@@ -1,0 +1,21 @@
+[binaries]
+c = 'emcc'
+cpp = 'em++'
+ar = 'emar'
+fortran='gfortran'
+
+cmake = ['emmake', 'cmake']
+sdl2-config = ['emconfigure', 'sdl2-config']
+
+#exe_wrapper = 'node'
+
+[properties]
+# Emscripten always needs an exe wrapper. Again,
+# maybe Meson could just know this.
+needs_exe_wrapper = true
+
+[host_machine]
+system = 'wasm'
+cpu_family = 'wasm'
+cpu = 'wasm'
+endian = 'little'
