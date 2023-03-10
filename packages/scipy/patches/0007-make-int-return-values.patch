@@ -1,4 +1,4 @@
-From e8ccb52c8e39f7cae2f0b57a7083156d7b3578e7 Mon Sep 17 00:00:00 2001
+From bc6bf93d76f10371775e8419028ceee444521136 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
 Subject: [PATCH 7/7] make int return values
@@ -26,6 +26,7 @@ to be consistent.
  scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
  scipy/odr/__odrpack.c                         |  2 +-
  scipy/optimize/_lsq/setup.py                  |  2 +-
+ .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +-
  .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
  .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  3 +
  .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 +-
@@ -34,7 +35,7 @@ to be consistent.
  scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
  .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 ++---
  .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++----
- 13 files changed, 102 insertions(+), 76 deletions(-)
+ 14 files changed, 106 insertions(+), 80 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -287,6 +288,27 @@ index 7ce589c0c..6412886e0 100644
 +                         sources=['givens_elimination.c'],include_dirs=['../../linalg'])
      return config
  
+ 
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index 09b8a937d..5b725c825 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -23,12 +23,12 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
+-extern void cswap_(int *, complex [], int *, complex [], int *);
+-extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
+-extern void ccopy_(int *, complex [], int *, complex [], int *);
++extern int cswap_(int *, complex [], int *, complex [], int *);
++extern int caxpy_(int *, complex *, complex [], int *, complex [], int *);
++extern int ccopy_(int *, complex [], int *, complex [], int *);
+ extern float scasum_(int *, complex *, int *);
+ extern float scnrm2_(int *, complex *, int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ extern double dnrm2_(int *, double [], int *);
+ extern int icamax_(int *, complex [], int *);
  
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 index 6dc0460c1..994224c35 100644
