@@ -35,6 +35,7 @@ source:
     - patches/0012-Remove-meson-requirements.patch
     - patches/0013-Fix-fitpack.patch
     - patches/0014-Build-only-selected-packages.patch
+    - patches/0001-When-forward-declaring-print_soln-give-it-the-correc.patch
 
 build:
   cflags: |
