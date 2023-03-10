@@ -1,7 +1,7 @@
-From 5643097cd0f9cb0e0b9cd7e9d636a3ca04a09deb Mon Sep 17 00:00:00 2001
+From 75902d80a0a31c31697b514acf826e1e9b382607 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 2 Apr 2022 14:20:25 -0700
-Subject: [PATCH 02/13] loadDynamicLibrary flapack
+Subject: [PATCH 2/7] loadDynamicLibrary flapack
 
 We are using CLAPACK for our LAPACK, but CLAPACK only supports
 LAPACK v3.2 since starting in v3.3 LAPACK started adding fortran
@@ -52,5 +52,5 @@ index d4427d044..05ba6aacd 100644
  # Author: Pearu Peterson, March 2002
  #
 -- 
-2.25.1
+2.34.1
 
