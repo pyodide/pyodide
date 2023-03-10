@@ -228,6 +228,11 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
+
+    # Due to a bug in f2c some methods that should return a real end up
+    # returning a double real. Most methods that start with an s are supposed to
+    # return a real... but maybe not all?? Or maybe the others are affected also
+    # by this bug.
     if "linalg" in f2c_output_path and all(
         x not in f2c_output_path for x in ["_eigen", "_isolve", "_propack"]
     ):
