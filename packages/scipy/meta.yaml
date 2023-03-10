@@ -87,9 +87,12 @@ build:
 
     sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/special/lapack_defs.h
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
-    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+
+    sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
