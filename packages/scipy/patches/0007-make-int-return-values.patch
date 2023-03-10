@@ -599,24 +599,6 @@ index 42bab985d..936db381d 100644
  extern void    ifill (int *, int, int);
  extern void    snode_profile (int, int *);
  extern void    super_stats (int, int *);
-diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
-index 02b63df30..71209b3b7 100644
---- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
-+++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/zgsrfs.c
-@@ -171,13 +171,6 @@ zgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
-     int      isave[3];
- 
-     extern int zlacon2_(int *, doublecomplex *, doublecomplex *, double *, int *, int []);
--#ifdef _CRAY
--    extern int CCOPY(int *, doublecomplex *, int *, doublecomplex *, int *);
--    extern int CSAXPY(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
--#else
--    extern int zcopy_(int *, doublecomplex *, int *, doublecomplex *, int *);
--    extern int zaxpy_(int *, doublecomplex *, doublecomplex *, int *, doublecomplex *, int *);
--#endif
- 
-     Astore = A->Store;
-     Aval   = Astore->nzval;
 diff --git a/scipy/sparse/linalg/_dsolve/_superlu_utils.c b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
 index 49b928a43..082268771 100644
 --- a/scipy/sparse/linalg/_dsolve/_superlu_utils.c
