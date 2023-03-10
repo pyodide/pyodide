@@ -96,6 +96,7 @@ build:
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
     sed -i 's/PUBLIC void/PUBLIC int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
     sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/*.{c,h}
     sed -i 's/void \(.\)print/int \1/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
