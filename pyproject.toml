@@ -58,7 +58,7 @@ select = [
   "UP",    # pyupgrade
 ]
 ignore = ["E402", "E731", "E741"]
-line-length = 264
+line-length = 219
 target-version = "py311"
 
 [tool.ruff.per-file-ignores]
