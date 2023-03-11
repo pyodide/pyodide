@@ -44,15 +44,18 @@ ignore_missing_imports = true
 
 [tool.ruff]
 select = [
-  "E",     # pycodestyles
-  "W",     # pycodestyles
-  "F",     # pyflakes
   "B0",    # bugbear (all B0* checks enabled by default)
   "B904",  # bugbear (Within an except clause, raise exceptions with raise ... from err)
   "B905",  # bugbear (zip() without an explicit strict= parameter set.)
-  "UP",    # pyupgrade
+  "C9",    # mccabe complexity
+  "E",     # pycodestyles
+  "W",     # pycodestyles
+  "F",     # pyflakes
   "I",     # isort
   "PGH",   # pygrep-hooks
+  "PLC",   # pylint conventions
+  "PLE",   # pylint errors
+  "UP",    # pyupgrade
 ]
 ignore = ["E402", "E731", "E741"]
 line-length = 264
@@ -69,6 +72,9 @@ target-version = "py311"
   "PGH001",  # No builtin `eval()` allowed
 ]
 
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = ["typer.Argument", "typer.Option"]
+
 [tool.ruff.isort]
 known-first-party = [
   "pyodide",
@@ -82,15 +88,15 @@ known-third-party = [
   "build",
 ]
 
-[tool.ruff.flake8-bugbear]
-extend-immutable-calls = ["typer.Argument", "typer.Option"]
+[tool.ruff.mccabe]
+max-complexity = 31
 
 [tool.pytest.ini_options]
 norecursedirs = [
+    ".artifacts",
     "build",
     "cpython",
     "emsdk",
-    ".artifacts",
 ]
 addopts = '''
 --doctest-modules
