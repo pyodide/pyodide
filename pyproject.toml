@@ -55,7 +55,6 @@ select = [
   "PGH",    # pygrep-hooks
   "PLC",    # pylint conventions
   "PLE",    # pylint errors
-  "PLR091", # pylint refactorings
   "UP",     # pyupgrade
 ]
 ignore = ["E402", "E501", "E731", "E741"]
