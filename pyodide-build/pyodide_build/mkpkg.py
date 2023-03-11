@@ -217,7 +217,6 @@ def update_package(
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ) -> None:
-
     yaml = YAML()
 
     meta_path = root / package / "meta.yaml"

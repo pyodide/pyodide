@@ -127,7 +127,6 @@ class Package(BasePackage):
         return None
 
     def build(self, build_args: BuildArgs) -> None:
-
         p = subprocess.run(
             [
                 sys.executable,
@@ -242,7 +241,6 @@ class ReplProgressFormatter:
 
 
 def _validate_package_map(pkg_map: dict[str, BasePackage]) -> bool:
-
     # Check if dependencies are valid
     for pkg_name, pkg in pkg_map.items():
         for runtime_dep_name in pkg.run_dependencies:

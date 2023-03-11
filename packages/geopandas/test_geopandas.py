@@ -13,7 +13,6 @@ def test_runtest(selenium):
     test_path = Path(geopandas.__file__).parent / "tests"
 
     def runtest(test_filter, ignore_filters):
-
         ignore_filter = []
         for ignore in ignore_filters:
             ignore_filter.append("--ignore-glob")

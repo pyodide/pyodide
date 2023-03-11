@@ -32,7 +32,6 @@ def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
 
 
 def test_find_imports():
-
     res = find_imports(
         """
         import numpy as np

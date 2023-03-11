@@ -38,7 +38,6 @@ def test_blosc(selenium_standalone):
             assert_array_almost_equal(arr, res, decimal=precision)
 
     def check_encode_decode(arr, codec, precision=None):
-
         # N.B., watch out here with blosc compressor, if the itemsize of
         # the source buffer is different then the results of encoding
         # (i.e., compression) may be different. Hence we *do not* require that
