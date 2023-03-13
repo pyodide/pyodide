@@ -2250,8 +2250,8 @@ def test_python_reserved_keywords(selenium):
     assert o.async_ == 1
     assert o.async__ == 2
     assert o.async___ == 3
-    assert o.async_ == 1
-    assert o.async__ == 2
+    assert getattr(o, "async_") == 1  # noqa: B009
+    assert getattr(o, "async__") == 2  # noqa: B009
     with pytest.raises(AttributeError, match="async"):
         getattr(o, "async")
     with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
