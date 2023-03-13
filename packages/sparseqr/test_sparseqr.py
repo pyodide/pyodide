@@ -19,7 +19,6 @@ def test_scipy_linalg(selenium):
     # print( abs( Q*R - M*sparseqr.permutation_vector_to_matrix(E) ).sum() )  # should be approximately zero
 
     for ib in range(n_test):
-
         b = numpy.zeros(10)
         b[ib] = 1
 
