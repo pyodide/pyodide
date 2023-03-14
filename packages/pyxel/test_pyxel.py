@@ -3,7 +3,6 @@ import pytest
 
 @pytest.fixture(scope="function")
 def selenium_sdl(selenium_standalone):
-
     if selenium_standalone.browser == "node":
         pytest.skip("No document object")
 
