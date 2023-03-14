@@ -13,12 +13,11 @@ source:
 requirements:
   host:
     - numpy
-  run:
     - distutils
+  run:
     - packaging
     - numpy
     - scipy
-    - matplotlib
     - networkx
     - Pillow
     - imageio
