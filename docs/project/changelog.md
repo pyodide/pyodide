@@ -166,7 +166,7 @@ myst:
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
 
-- Upgraded packages: galpy (1.8.2) {pr}`3630`.
+- Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
 ## Version 0.22.1
 
