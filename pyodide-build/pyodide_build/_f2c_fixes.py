@@ -279,8 +279,7 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         # straightforward
         regrouped_lines = regroup_lines(lines)
         lines = [
-            re.sub(
-                r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line)
+            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line)
             for line in regrouped_lines
         ]
 
