@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["sourmash"])
 def test_simple_save_load(selenium):
     from pathlib import Path
