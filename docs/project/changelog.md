@@ -170,7 +170,7 @@ myst:
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
 
-- Upgraded packages: galpy (1.8.2) {pr}`3630`.
+- Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
 ## Version 0.22.1
 
@@ -306,7 +306,7 @@ _January 3, 2023_
   `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+- {{ Enhancement }} It is now possible to use asynchronous JavaScript iterables,
   iterators and generators from Python. This includes support for `aiter` for
   async interables, `anext` and `asend` for async iterators, and `athrow` and
   `aclose` for async generators.
@@ -336,8 +336,8 @@ _January 3, 2023_
   error would have `e.type === "StopIteration"`)
   {pr}`3289`
 
-- {{ Enhancement }} It is now possible to use aynchronous Python generators from
-  JavaScript.
+- {{ Enhancement }} It is now possible to use asynchronous Python generators
+  from JavaScript.
   {pr}`3290`
 
 - {{ Enhancement }} PyProxies of synchronous and asynchronous Python generators

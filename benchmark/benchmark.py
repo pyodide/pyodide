@@ -164,7 +164,6 @@ def parse_args(benchmarks):
 
 
 def main():
-
     BENCHMARKS = {
         "pystone": get_pystone_benchmarks,
         "numpy": get_numpy_benchmarks,
@@ -187,7 +186,6 @@ def main():
     ]
 
     with spawn_web_server(args.dist_dir) as (hostname, port, log_path):
-
         # selenium initialization time
         result = {"native": float("NaN")}
         for browser_name, cls in browser_cls:
