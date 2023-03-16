@@ -92,7 +92,6 @@ def default_filterfunc(
 
         _names = []
         for name in names:
-
             fullpath = path / name
 
             if _should_skip(fullpath) or fullpath in filtered_files:

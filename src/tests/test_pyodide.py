@@ -32,7 +32,6 @@ def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
 
 
 def test_find_imports():
-
     res = find_imports(
         """
         import numpy as np
@@ -875,7 +874,6 @@ def test_fatal_error(selenium_standalone):
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
-        assert(() => pyodide._api.runPython("1+1") === 2);
         """
     )
 

@@ -33,23 +33,6 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Improvements to package loading system
-
-Currently, Pyodide has two ways of loading packages:
-
-- {js:func}`pyodide.loadPackage` for packages built with Pyodide and
-- {py:func}`micropip.install` for pure Python packages from PyPI.
-
-The relationship between these tools is currently confusing.
-
-Our goal is to have three ways to load packages: one with no dependency
-resolution at all, one with static dependency resolution which is done ahead of
-time, and one for dynamic dependency resolution. Ideally most applications can
-use static dependency resolution and repls can use dynamic dependency
-resolution.
-
-See issues {issue}`2045` and {issue}`1100`.
-
 ## Find a better way to compile Fortran
 
 Currently, we use f2c to cross compile Fortran to C. This does not work very
