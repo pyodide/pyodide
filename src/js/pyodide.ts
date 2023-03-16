@@ -4,7 +4,7 @@
 import ErrorStackParser from "error-stack-parser";
 import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
 
-import { createModule, initializeFileSystem } from "./module";
+import { createModule, initializeFileSystem, Module } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -167,12 +167,17 @@ export type ConfigType = {
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
+  hooks?: PyodideHook[];
   stdin?: () => string;
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+};
+
+export type PyodideHook = {
+  beforeFileSystemInitialized?: (module: Module) => void;
 };
 
 /**
@@ -212,6 +217,10 @@ export async function loadPyodide(
      * Default: ``false``
      */
     fullStdLib?: boolean;
+    /**
+     * Hooks to run at various stages of Pyodide initialization.
+     */
+    hooks?: PyodideHook[];
     /**
      * Override the standard input callback. Should ask the user for one line of
      * input.
@@ -259,6 +268,7 @@ export async function loadPyodide(
     lockFileURL: indexURL! + "repodata.json",
     args: [],
     _node_mounts: [],
+    hooks: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
 
