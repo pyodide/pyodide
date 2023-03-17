@@ -148,6 +148,9 @@ def main(
         [],
         help="Skip building or resolving a single dependency. Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
+    compression_level: int = typer.Option(
+        6, help="Compression level to use for the created zip file"
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
