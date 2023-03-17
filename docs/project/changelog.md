@@ -144,6 +144,10 @@ myst:
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
 
+- {{ Enhancement }} Response files are now correctly handled when
+  calculating exported symbols.
+  {pr}`3645`
+
 - {{ Fix }} Fix occasional build failure when building rust packages.
   {pr}`3607`
 
