@@ -12,7 +12,7 @@ def make_parser() -> argparse.ArgumentParser:
     This is an internal CLI.
     """
 
-    main_parser = argparse.ArgumentParser(prog="pyodide-internal")
+    main_parser = argparse.ArgumentParser(prog="pyodide-build")
     main_parser.description = (
         "An internal command line interface (CLI) for pyodide_build\n"
         "Users should instead use the main `pyodide` CLI."
