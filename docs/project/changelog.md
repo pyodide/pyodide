@@ -110,6 +110,12 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
+  browsers that support the Brotli compression (most modern ones) this should
+  result in a size reduction of 20-30%. Also most many `pyodide` CLI
+  sub-commands now support `--compression-level` as an optional parameter.
+  {pr}`3655`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
