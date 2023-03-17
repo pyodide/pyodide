@@ -110,6 +110,9 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Breaking }} Removed deprecated internal CLI `python -m pyodide_build
+buildall` and `mkpkg` {pr}`3668`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
