@@ -165,7 +165,12 @@ def create_zipfile(
 
             shutil.copytree(libdir, temp_dir, ignore=_filterfunc, dirs_exist_ok=True)
 
-        make_zip_archive(archive, temp_dir, compression_level=compression_level)
+        make_zip_archive(
+            archive,
+            temp_dir,
+            compression_level=compression_level,
+            relative_parent=False,
+        )
 
     if pycompile:
         _compile(

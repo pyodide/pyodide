@@ -422,9 +422,25 @@ def get_num_cores() -> int:
 
 
 def make_zip_archive(
-    archive_path: Path, input_dir: Path, compression_level: int = 6
+    archive_path: Path,
+    input_dir: Path,
+    compression_level: int = 6,
+    relative_parent: bool = True,
 ) -> None:
-    """Create a zip archive out of a input folder"""
+    """Create a zip archive out of a input folder
+
+    Parameters
+    ----------
+    archive_path
+       Path to the zip file that will be created
+    input_dir
+       input dir to compress
+    compression_level
+       compression level of the resulting zip file.
+    relative_parent
+       if True, files inside the zip will have a path relative to input_dir.parent
+       otherwise, paths will be relative to `input_dir` directly
+    """
     if compression_level > 0:
         compression = zipfile.ZIP_DEFLATED
     else:
@@ -434,7 +450,11 @@ def make_zip_archive(
         archive_path, "w", compression=compression, compresslevel=compression_level
     ) as zf:
         for file in input_dir.rglob("*"):
-            zf.write(file, file.relative_to(input_dir.parent))
+            if relative_parent:
+                base_dir = input_dir.parent
+            else:
+                base_dir = input_dir
+            zf.write(file, file.relative_to(base_dir))
 
 
 def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
