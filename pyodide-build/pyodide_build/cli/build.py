@@ -224,6 +224,7 @@ def main(
                 exports,
                 ctx.args,
                 output_lockfile=output_lockfile,
+                compression_level=compression_level,
             )
         except BaseException as e:
             import traceback

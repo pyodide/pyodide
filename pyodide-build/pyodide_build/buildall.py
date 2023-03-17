@@ -29,7 +29,7 @@ from rich.table import Table
 
 from . import common, recipe
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels, find_missing_executables
+from .common import find_matching_wheels, find_missing_executables, repack_zip_archive
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 from .pywasmcross import BuildArgs
@@ -714,13 +714,18 @@ def generate_repodata(
 
 
 def copy_packages_to_dist_dir(
-    packages: Iterable[BasePackage], output_dir: Path
+    packages: Iterable[BasePackage], output_dir: Path, compression_level: int = 6
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
             continue
 
-        shutil.copy(pkg.dist_artifact_path(), output_dir)
+        dist_artifact_path = pkg.dist_artifact_path()
+
+        shutil.copy(dist_artifact_path, output_dir)
+        repack_zip_archive(
+            output_dir / dist_artifact_path.name, compression_level=compression_level
+        )
 
         test_path = pkg.tests_path()
         if test_path:
@@ -775,7 +780,9 @@ def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
             logger.warning(f"Warning: {pkg.name} has no build log")
 
 
-def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
+def install_packages(
+    pkg_map: dict[str, BasePackage], output_dir: Path, compression_level: int = 6
+) -> None:
     """
     Install packages into the output directory.
     - copies build artifacts (wheel, zip, ...) to the output directory
@@ -792,7 +799,9 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
     output_dir.mkdir(exist_ok=True, parents=True)
 
     logger.info(f"Copying built packages to {output_dir}")
-    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+    copy_packages_to_dist_dir(
+        pkg_map.values(), output_dir, compression_level=compression_level
+    )
 
     repodata_path = output_dir / "repodata.json"
     logger.info(f"Writing repodata.json to {repodata_path}")
@@ -904,6 +913,8 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+    if args.compression_level is None:
+        args.compression_level = int(common.get_make_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args
 
@@ -938,7 +949,7 @@ def main(args: argparse.Namespace) -> None:
     if log_dir:
         copy_logs(pkg_map, log_dir)
 
-    install_packages(pkg_map, outputdir)
+    install_packages(pkg_map, outputdir, compression_level=args.compression_level)
 
 
 if __name__ == "__main__":

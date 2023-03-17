@@ -470,9 +470,11 @@ jobs:
           name: Deploy to pyodide-cdn2.iodide.io
           command: |
             # Note: the following compression is the compression of files on S3
-            # to reduce storage size and outbound AWS traffic. This has no impact
-            # on actual compression of zip files and wheels once the files are
-            # served to users via CDN.
+            # to reduce storage size and outbound AWS traffic. The HTTP
+            # requests for these files made to S3 will result in a response
+            # with gzip compression. However because JsDelivr CDN proxies and caches these
+            # requests, this has no impact on the compression of zip files and
+            # wheels once the files are served to users via CDN.
             find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
             aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
