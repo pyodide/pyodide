@@ -446,7 +446,7 @@ def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
 
     with TemporaryDirectory() as temp_dir:
         input_path = Path(temp_dir) / archive_path.name
-        archive_path.rename(input_path)
+        shutil.move(archive_path, input_path)
         with zipfile.ZipFile(input_path) as fh_zip_in, zipfile.ZipFile(
             archive_path, "w", compression=compression, compresslevel=compression_level
         ) as fh_zip_out:
