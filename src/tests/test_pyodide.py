@@ -1798,18 +1798,20 @@ def test_python_version(selenium):
 @pytest.mark.skip_pyproxy_check
 def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
     selenium = selenium_standalone_noload
-    assert (
+    stdlib_target_path = ROOT_PATH / "dist/python_stdlib2.zip"
+    shutil.copy(ROOT_PATH / "dist/python_stdlib.zip", stdlib_target_path)
+
+    try:
         selenium.run_js(
             """
-        let pyodide = await loadPyodide({
-            fullStdLib: false,
-        });
-        self.pyodide = pyodide;
-        globalThis.pyodide = pyodide;
-        // Check that we can import stdlib library modules
-        let math = pyodide.pyimport('math');
-        math.pow(2, 3)
-        """
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                stdLibURL: "./python_stdlib2.zip",
+            });
+            // Check that we can import stdlib library modules
+            let math = pyodide.pyimport('math');
+            assert(() => math.pow(2, 3) === 8)
+            """
         )
-        == 8
-    )
+    finally:
+        stdlib_target_path.unlink()
