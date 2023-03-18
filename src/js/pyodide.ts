@@ -213,6 +213,11 @@ export async function loadPyodide(
      */
     fullStdLib?: boolean;
     /**
+     * The URL from which Pyodide will load standard library ``python_stdlib.zip``
+     * Default: ```${indexURL}/python_stdlib.zip```
+     */
+    stdLibURL?: string;
+    /**
      * Override the standard input callback. Should ask the user for one line of
      * input.
      */

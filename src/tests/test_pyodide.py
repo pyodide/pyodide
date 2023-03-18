@@ -1793,3 +1793,24 @@ def test_python_version(selenium):
         sys.destroy();
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
+    selenium = selenium_standalone_noload
+    assert (
+        selenium.run_js(
+            """
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        // Check that we can import stdlib library modules
+        let math = pyodide.pyimport('math');
+        math.pow(2, 3)
+        """
+        )
+        == 8
+    )
