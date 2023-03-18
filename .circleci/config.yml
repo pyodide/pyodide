@@ -16,7 +16,7 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
 
 orbs:
-  macos: circleci/macos@2.2.0
+  macos: circleci/macos@2.3.4
 
 jobs:
   build-core:
