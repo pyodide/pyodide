@@ -154,7 +154,6 @@ You can install it by calling:
 
 
 def get_module_not_found_error(import_name):
-
     package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(import_name, "")
 
     if not package_name and import_name not in STDLIBS:

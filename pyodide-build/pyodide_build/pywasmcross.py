@@ -415,14 +415,27 @@ def calculate_object_exports_nm(objects: list[str]) -> list[str]:
     return result.stdout.splitlines()
 
 
+def filter_objects(line: list[str]) -> list[str]:
+    """
+    Collect up all the object files and archive files being linked.
+    """
+    return [
+        arg
+        for arg in line
+        if arg.endswith((".a", ".o"))
+        or arg.startswith(
+            "@"
+        )  # response file (https://gcc.gnu.org/wiki/Response_Files)
+    ]
+
+
 def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     """
-    Collect up all the object files and archive files being linked and list out
-    symbols in them that are marked as public. If ``export_all`` is ``True``,
-    then return all public symbols. If not, return only the public symbols that
-    begin with `PyInit`.
+    List out symbols from object files and archive files that are marked as public.
+    If ``export_all`` is ``True``, then return all public symbols.
+    If not, return only the public symbols that begin with `PyInit`.
     """
-    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
+    objects = filter_objects(line)
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.

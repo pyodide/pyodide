@@ -73,7 +73,7 @@ def maybe_skip_test(item, delayed=False):
 
     # Common package import test. Skip it if the package is not built.
     if skip_msg is None and is_common_test and item.name.startswith("test_import"):
-        if not pytest.pyodide_runtimes:  # type: ignore[truthy-bool]
+        if not pytest.pyodide_runtimes:
             skip_msg = "Not running browser tests"
 
         else:
@@ -157,7 +157,6 @@ def pytest_terminal_summary(terminalreporter):
             continue
 
         for test in tr.stats[status]:
-
             if test.when != "call":  # discard results from setup/teardown
                 continue
 

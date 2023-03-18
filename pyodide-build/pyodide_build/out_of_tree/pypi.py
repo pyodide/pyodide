@@ -225,7 +225,6 @@ def get_metadata_for_wheel(url):
 
 
 class PyPIProvider(APBase):
-
     BUILD_FLAGS: list[str] = []
     BUILD_SKIP: list[str] = []
     BUILD_EXPORTS: str = ""
