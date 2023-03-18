@@ -112,7 +112,7 @@ myst:
 
 - {{ Enhancement }} Added `stdLibURL` parameter to `loadPyodide` allowing to customize
   the URL from which the Python standard library is loaded.
-  {pr}`3668`
+  {pr}`3670`
 
 ### Build System
 
