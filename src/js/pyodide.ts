@@ -167,6 +167,7 @@ export type ConfigType = {
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
+  stdLibURL?: string;
   stdin?: () => string;
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;

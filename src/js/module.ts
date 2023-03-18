@@ -163,8 +163,8 @@ function installStdlib(Module: Module, stdlibURL: string) {
  */
 export function initializeFileSystem(Module: Module, config: ConfigType) {
   let stdLibURL;
-  if ("stdlibURL" in config) {
-    stdLibURL = config.stdlibURL;
+  if (config.stdLibURL != undefined) {
+    stdLibURL = config.stdLibURL;
   } else {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
