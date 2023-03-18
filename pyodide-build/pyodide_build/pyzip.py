@@ -169,7 +169,6 @@ def create_zipfile(
             archive,
             temp_dir,
             compression_level=compression_level,
-            relative_parent=False,
         )
 
     if pycompile:

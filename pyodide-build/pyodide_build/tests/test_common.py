@@ -210,16 +210,17 @@ def test_make_zip_archive(tmp_path, compression_level, expected_compression_type
     input_dir = tmp_path / "a"
     input_dir.mkdir()
     (input_dir / "b.txt").write_text(".")
-    (input_dir / "c").write_bytes(b"")
+    (input_dir / "c").mkdir()
+    (input_dir / "c/d").write_bytes(b"")
 
     output_dir = tmp_path / "output.zip"
 
     make_zip_archive(output_dir, input_dir, compression_level=compression_level)
 
     with zipfile.ZipFile(output_dir) as fh:
-        assert fh.namelist() == ["a/b.txt", "a/c"]
-        assert fh.read("a/b.txt") == b"."
-        assert fh.getinfo("a/b.txt").compress_type == expected_compression_type
+        assert fh.namelist() == ["b.txt", "c/", "c/d"]
+        assert fh.read("b.txt") == b"."
+        assert fh.getinfo("b.txt").compress_type == expected_compression_type
 
 
 @pytest.mark.parametrize(
