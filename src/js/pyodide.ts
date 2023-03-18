@@ -214,7 +214,7 @@ export async function loadPyodide(
      */
     fullStdLib?: boolean;
     /**
-     * The URL from which Pyodide will load standard library ``python_stdlib.zip``
+     * The URL from which to load the standard library ``python_stdlib.zip`` file.
      * Default: ```${indexURL}/python_stdlib.zip```
      */
     stdLibURL?: string;
