@@ -1,0 +1,48 @@
+From fb68a1cf6e2acb37cb91027747997279bcd034af Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 20 Mar 2023 18:34:22 +0000
+Subject: [PATCH] Allow EM_JS to be used in side modules
+
+---
+ emscripten.py | 18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/emscripten.py b/emscripten.py
+index 19459d9c2..77cab35fd 100644
+--- a/emscripten.py
++++ b/emscripten.py
+@@ -297,6 +297,22 @@ def create_named_globals(metadata):
+   return '\n'.join(named_globals)
+ 
+ 
++def side_module_emjs(metadata, out_wasm):
++  em_js_funcs = create_em_js(metadata)
++  lib = ", ".join(metadata.emJsFuncs.keys())
++  lib = "{%s}\n" % lib
++  outcode = "globalThis.__tmpMergeLibsFunction = function(Module) {\n"
++  outcode += '\n'.join(em_js_funcs) + '\n\n'
++  outcode += "Module.mergeLibSymbols(\n"
++  outcode += lib
++  outcode += ");\n"
++  outcode += "}\n"
++  from pathlib import Path
++  Path(out_wasm).with_suffix(".so.js").write_text(outcode)
++  logger.debug('emscript: skipping remaining js glue generation')
++  return
++
++
+ def emscript(in_wasm, out_wasm, outfile_js, memfile):
+   # Overview:
+   #   * Run wasm-emscripten-finalize to extract metadata and modify the binary
+@@ -344,7 +360,7 @@ def emscript(in_wasm, out_wasm, outfile_js, memfile):
+ 
+   if settings.SIDE_MODULE:
+     if metadata.emJsFuncs:
+-      exit_with_error('EM_JS is not supported in side modules')
++      side_module_emjs(emJsFuncs, out_wasm)
+     logger.debug('emscript: skipping remaining js glue generation')
+     return
+ 
+-- 
+2.34.1
+

@@ -147,7 +147,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsArray[str] | None:
+) -> JsArray[JsArray[str]] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
@@ -295,7 +295,9 @@ def set_wheel_installer(
         (dist_info / "PYODIDE_SOURCE").write_text(source)
 
 
-def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
+def get_dynlibs(
+    archive: IO[bytes], suffix: str, target_dir: Path
+) -> tuple[list[str], list[str]]:
     """List out the paths to .so files in a zip or tar archive.
 
     Parameters
@@ -321,11 +323,17 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     else:
         raise ValueError(f"Unexpected suffix {suffix}")
 
-    return [
-        str((target_dir / path).resolve())
-        for path in dynlib_paths_iter
-        if should_load_dynlib(path)
-    ]
+    dynlibs = []
+    jslibs = []
+
+    for path in dynlib_paths_iter:
+        if should_load_dynlib(path):
+            dynlibs.append(str((target_dir / path).resolve()))
+        p = Path(path)
+        if p.suffixes and p.suffixes[-2:] == [".so", ".js"]:
+            jslibs.append(str((target_dir / path).resolve()))
+
+    return (dynlibs, jslibs)
 
 
 def get_dist_source(dist: Distribution) -> str:

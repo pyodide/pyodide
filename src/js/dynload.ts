@@ -7,6 +7,7 @@ declare var DEBUG: boolean;
 import { createLock } from "./lock";
 import { memoize } from "./util";
 import { PackageData } from "./load-package";
+import { loadScript } from "./compat";
 
 type ReadFileType = (path: string) => Uint8Array;
 
@@ -157,7 +158,7 @@ export async function loadDynlib(
  */
 export async function loadDynlibsFromPackage(
   pkg: PackageData,
-  dynlibPaths: string[],
+  libPaths: [string[], string[]],
 ) {
   // assume that shared libraries of a package are located in <package-name>.libs directory,
   // following the convention of auditwheel.
@@ -167,6 +168,15 @@ export async function loadDynlibsFromPackage(
 
   // This prevents from reading large libraries multiple times.
   const readFileMemoized: ReadFileType = memoize(Module.FS.readFile);
+  const [dynlibPaths, jslibPaths] = libPaths;
+  for (let jslib of jslibPaths) {
+    let libstr = Module.FS.readFile(jslib, { encoding: "utf8" });
+    libstr = "data:text/javascript," + libstr;
+    await loadScript(libstr);
+    let gt = globalThis as any;
+    gt.__tmpMergeLibsFunction(Module);
+    delete gt.__tmpMergeLibsFunction;
+  }
 
   const forceGlobal: boolean = !!pkg.shared_library;
 
