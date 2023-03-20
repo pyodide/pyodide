@@ -110,6 +110,10 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
+  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
+  replaced by `pyodide skeleton pypi` {pr}`3668`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command

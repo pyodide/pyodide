@@ -4,7 +4,6 @@
 Build all of the packages in a given directory.
 """
 
-import argparse
 import dataclasses
 import hashlib
 import json
@@ -803,94 +802,6 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
         fd.write("\n")
 
 
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Build all the packages in a given directory\n\n"
-        "Unless the --only option is provided\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the pyodide Makefile."
-    )
-    parser.add_argument(
-        "dir",
-        type=str,
-        nargs=1,
-        default="packages",
-        help="Input directory containing a tree of package definitions",
-    )
-    parser.add_argument(
-        "output",
-        type=str,
-        nargs=1,
-        default="dist",
-        help="Output directory in which to put all built packages",
-    )
-    parser.add_argument(
-        "--cflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
-    )
-    parser.add_argument(
-        "--cxxflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
-    )
-    parser.add_argument(
-        "--ldflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
-    )
-    parser.add_argument(
-        "--target-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help="The path to the target Python installation. Default: TARGETINSTALLDIR",
-    )
-    parser.add_argument(
-        "--host-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Directory for installing built host packages. Default: HOSTINSTALLDIR"),
-    )
-    parser.add_argument(
-        "--log-dir",
-        type=str,
-        dest="log_dir",
-        nargs="?",
-        default=None,
-        help=("Directory to place log files"),
-    )
-    parser.add_argument(
-        "--only",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Only build the specified packages, provided as a comma-separated list"),
-    )
-    parser.add_argument(
-        "--force-rebuild",
-        action="store_true",
-        help=(
-            "Force rebuild of all packages regardless of whether they appear to have been updated"
-        ),
-    )
-    parser.add_argument(
-        "--n-jobs",
-        type=int,
-        nargs="?",
-        default=4,
-        help="Number of packages to build in parallel",
-    )
-    return parser
-
-
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
@@ -906,42 +817,3 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
 
     return args
-
-
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    targets = args.only
-    n_jobs = args.n_jobs
-    log_dir = Path(args.log_dir) if args.log_dir else None
-    force_rebuild = args.force_rebuild
-
-    build_args = BuildArgs(
-        pkgname="",
-        cflags=args.cflags,
-        cxxflags=args.cxxflags,
-        ldflags=args.ldflags,
-        target_install_dir=args.target_install_dir,
-        host_install_dir=args.host_install_dir,
-    )
-
-    build_args = set_default_build_args(build_args)
-
-    pkg_map = build_packages(
-        packages_dir,
-        targets,
-        build_args=build_args,
-        n_jobs=n_jobs,
-        force_rebuild=force_rebuild,
-    )
-
-    if log_dir:
-        copy_logs(pkg_map, log_dir)
-
-    install_packages(pkg_map, outputdir)
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)
