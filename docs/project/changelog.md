@@ -116,6 +116,10 @@ myst:
   sub-commands now support `--compression-level` as an optional parameter.
   {pr}`3655`
 
+- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
+  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
+  replaced by `pyodide skeleton pypi` {pr}`3668`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -174,7 +178,7 @@ myst:
 
 ### Packages
 
-- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`, mypy {pr}`3504`.
 
 - Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
