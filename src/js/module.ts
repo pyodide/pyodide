@@ -57,6 +57,7 @@ export interface Module {
   FS: FS;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
+  fileSystemInitialized: boolean;
 }
 
 /**
@@ -130,6 +131,10 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @param stdlibPromise A promise that resolves to the standard library.
  */
 function installStdlib(Module: Module, stdlibURL: string) {
+  if (Module.fileSystemInitialized === true) {
+    return;
+  }
+
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
 
   Module.preRun.push(() => {
@@ -153,6 +158,7 @@ function installStdlib(Module: Module, stdlibURL: string) {
       })
       .finally(() => {
         Module.removeRunDependency("install-stdlib");
+        Module.fileSystemInitialized = true;
       });
   });
 }
@@ -162,6 +168,12 @@ function installStdlib(Module: Module, stdlibURL: string) {
  * @private
  */
 export function initializeFileSystem(Module: Module, config: ConfigType) {
+  config.hooks!.forEach((hook) => {
+    if (typeof hook.beforeFileSystemInitialized === "function") {
+      hook.beforeFileSystemInitialized(Module);
+    }
+  });
+
   installStdlib(Module, config.indexURL + "python_stdlib.zip");
   setHomeDirectory(Module, config.homedir);
   mountLocalDirectories(Module, config._node_mounts);
