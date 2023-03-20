@@ -168,7 +168,7 @@ myst:
 
 ### Packages
 
-- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`, mypy {pr}`3504`.
 
 - Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
