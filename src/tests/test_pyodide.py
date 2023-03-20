@@ -1809,8 +1809,8 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
                 stdLibURL: "./python_stdlib2.zip",
             });
             // Check that we can import stdlib library modules
-            let math = pyodide.pyimport('math');
-            assert(() => math.pow(2, 3) === 8)
+            let math = pyodide.pyimport('statistics');
+            assert(() => math.median([2, 3, 1]) === 2)
             """
         )
     finally:
