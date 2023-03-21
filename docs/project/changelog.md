@@ -120,7 +120,6 @@ myst:
   sub-commands now support `--compression-level` as an optional parameter.
   {pr}`3655`
 
-
 - {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
   replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
   replaced by `pyodide skeleton pypi` {pr}`3668`
