@@ -204,7 +204,7 @@ def download_or_build_wheel(
         wheel_path = target_directory / wheel_file.name
     elif parsed_url.path.endswith(".whl"):
         wheel_path = target_directory / Path(parsed_url.path).name
-        with open(target_directory / Path(parsed_url.path).name, "wb") as f:
+        with open(wheel_path, "wb") as f:
             f.write(requests.get(url).content)
 
     repack_zip_archive(wheel_path, compression_level=compression_level)
