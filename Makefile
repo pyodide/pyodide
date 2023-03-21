@@ -178,7 +178,7 @@ pyodide_build: ./pyodide-build/pyodide_build/**
 	which pyodide >/dev/null
 
 dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
-	pyodide create-zipfile $(CPYTHONLIB) src/py --output $@
+	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
