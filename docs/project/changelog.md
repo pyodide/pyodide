@@ -110,6 +110,10 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Enhancement }} Added `stdLibURL` parameter to `loadPyodide` allowing to customize
+  the URL from which the Python standard library is loaded.
+  {pr}`3670`
+
 - {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
   browsers that support the Brotli compression (most modern ones) this should
   result in a size reduction of 20-30%. Also most many `pyodide` CLI
