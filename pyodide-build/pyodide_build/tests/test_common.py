@@ -9,8 +9,10 @@ from pyodide_build.common import (
     get_make_environment_vars,
     get_make_flag,
     get_num_cores,
+    make_zip_archive,
     parse_top_level_import_name,
     platform,
+    repack_zip_archive,
     search_pyodide_root,
 )
 
@@ -198,3 +200,49 @@ def test_get_num_cores(monkeypatch, num_cpus):
         m.setattr(loky, "cpu_count", lambda: num_cpus)
 
         assert get_num_cores() == num_cpus
+
+
+@pytest.mark.parametrize(
+    "compression_level, expected_compression_type",
+    [(6, zipfile.ZIP_DEFLATED), (0, zipfile.ZIP_STORED)],
+)
+def test_make_zip_archive(tmp_path, compression_level, expected_compression_type):
+    input_dir = tmp_path / "a"
+    input_dir.mkdir()
+    (input_dir / "b.txt").write_text(".")
+    (input_dir / "c").mkdir()
+    (input_dir / "c/d").write_bytes(b"")
+
+    output_dir = tmp_path / "output.zip"
+
+    make_zip_archive(output_dir, input_dir, compression_level=compression_level)
+
+    with zipfile.ZipFile(output_dir) as fh:
+        assert fh.namelist() == ["b.txt", "c/", "c/d"]
+        assert fh.read("b.txt") == b"."
+        assert fh.getinfo("b.txt").compress_type == expected_compression_type
+
+
+@pytest.mark.parametrize(
+    "compression_level, expected_compression_type, expected_size",
+    [(6, zipfile.ZIP_DEFLATED, 220), (0, zipfile.ZIP_STORED, 1207)],
+)
+def test_repack_zip_archive(
+    tmp_path, compression_level, expected_compression_type, expected_size
+):
+    input_path = tmp_path / "archive.zip"
+
+    data = "a" * 1000
+
+    with zipfile.ZipFile(
+        input_path, "w", compression=zipfile.ZIP_BZIP2, compresslevel=3
+    ) as fh:
+        fh.writestr("a/b.txt", data)
+        fh.writestr("a/b/c.txt", "d")
+
+    repack_zip_archive(input_path, compression_level=compression_level)
+
+    with zipfile.ZipFile(input_path) as fh:
+        assert fh.namelist() == ["a/b.txt", "a/b/c.txt"]
+        assert fh.getinfo("a/b.txt").compress_type == expected_compression_type
+    assert input_path.stat().st_size == expected_size

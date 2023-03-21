@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from ._py_compile import _compile
+from .common import make_zip_archive
 
 # These files are removed from the stdlib
 REMOVED_FILES = (
@@ -110,6 +111,7 @@ def create_zipfile(
     output: Path | str = "python",
     pycompile: bool = False,
     filterfunc: Callable[[str, list[str]], set[str]] | None = None,
+    compression_level: int = 6,
 ) -> None:
     """
     Bundle Python standard libraries into a zip file.
@@ -140,14 +142,17 @@ def create_zipfile(
         This function will be passed to {ref}`shutil.copytree` 's ignore argument.
         By default, Pyodide's default filter function is used.
 
+    compression_level
+        Level of zip compression to apply. 0 means no compression. If a strictly
+        positive integer is provided, ZIP_DEFLATED option is used.
+
     Returns
     -------
     BytesIO
         A BytesIO object containing the zip file.
     """
 
-    output = Path(output)
-    output = output.with_name(output.name.rstrip(".zip"))
+    archive = Path(output)
 
     with TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -160,8 +165,17 @@ def create_zipfile(
 
             shutil.copytree(libdir, temp_dir, ignore=_filterfunc, dirs_exist_ok=True)
 
-        archive: Path | str = shutil.make_archive(str(output), "zip", temp_dir)
-        archive = Path(archive)
+        make_zip_archive(
+            archive,
+            temp_dir,
+            compression_level=compression_level,
+        )
 
     if pycompile:
-        _compile(archive, archive, verbose=False, keep=False)
+        _compile(
+            archive,
+            archive,
+            verbose=False,
+            keep=False,
+            compression_level=compression_level,
+        )

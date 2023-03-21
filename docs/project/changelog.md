@@ -110,6 +110,12 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
+  browsers that support the Brotli compression (most modern ones) this should
+  result in a size reduction of 20-30%. Also most many `pyodide` CLI
+  sub-commands now support `--compression-level` as an optional parameter.
+  {pr}`3655`
+
 - {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
   replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
   replaced by `pyodide skeleton pypi` {pr}`3668`

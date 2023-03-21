@@ -31,6 +31,7 @@ from .common import (
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
+    make_zip_archive,
     set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
@@ -789,7 +790,7 @@ def _build_package_inner(
             # and create a zip archive of the .so files
             shutil.rmtree(dist_dir, ignore_errors=True)
             dist_dir.mkdir(parents=True)
-            shutil.make_archive(str(dist_dir / src_dir_name), "zip", src_dist_dir)
+            make_zip_archive(dist_dir / f"{src_dir_name}.zip", src_dist_dir)
         else:  # wheel
             if not finished_wheel:
                 compile(

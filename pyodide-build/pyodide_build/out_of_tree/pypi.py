@@ -27,7 +27,7 @@ from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
 from .. import common
-from ..common import chdir
+from ..common import chdir, repack_zip_archive
 from ..logger import logger
 from . import build
 
@@ -194,14 +194,20 @@ def get_project_from_pypi(package_name, extras):
         yield Candidate(i.name, i.version, url=i.link.url, extras=extras)
 
 
-def download_or_build_wheel(url: str, target_directory: Path) -> None:
+def download_or_build_wheel(
+    url: str, target_directory: Path, compression_level: int = 6
+) -> None:
     parsed_url = urlparse(url)
     if parsed_url.path.endswith("gz"):
         wheel_file = get_built_wheel(url)
         shutil.copy(wheel_file, target_directory)
+        wheel_path = target_directory / wheel_file.name
     elif parsed_url.path.endswith(".whl"):
-        with open(target_directory / Path(parsed_url.path).name, "wb") as f:
+        wheel_path = target_directory / Path(parsed_url.path).name
+        with open(wheel_path, "wb") as f:
             f.write(requests.get(url).content)
+
+    repack_zip_archive(wheel_path, compression_level=compression_level)
 
 
 def get_metadata_for_wheel(url):
@@ -323,6 +329,7 @@ def _resolve_and_build(
     build_dependencies: bool,
     extras: list[str],
     output_lockfile: str | None,
+    compression_level: int = 6,
 ) -> None:
     requirements = []
 
@@ -394,6 +401,7 @@ def build_dependencies_for_wheel(
     exports: str,
     build_flags: list[str],
     output_lockfile: str | None,
+    compression_level: int = 6,
 ) -> None:
     """Extract dependencies from this wheel and build pypi dependencies
     for each one in ./dist/
@@ -423,6 +431,7 @@ def build_dependencies_for_wheel(
         build_dependencies=True,
         extras=extras,
         output_lockfile=output_lockfile,
+        compression_level=compression_level,
     )
     # add the current wheel to the package-versions.txt
     if output_lockfile is not None and len(output_lockfile) > 0:
