@@ -14,7 +14,7 @@ __version__ = "0.22.0"
 
 __all__ = ["__version__", "console", "code", "ffi", "http", "webloop"]
 
-
+from . import _state  # noqa: F401
 from .webloop import _initialize_event_loop
 
 _initialize_event_loop()
