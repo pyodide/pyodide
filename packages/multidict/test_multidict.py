@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages="multidict")
+@run_in_pyodide(packages=["multidict"])
 def test_multidict(selenium_standalone):
     from multidict import MultiDict
 
