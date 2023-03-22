@@ -87,7 +87,11 @@ def _py_compile_wheel_name(wheel_name: str) -> str:
 
 
 def _compile(
-    input_path: Path, output_path: Path, keep: bool = True, verbose: bool = True
+    input_path: Path,
+    output_path: Path,
+    keep: bool = True,
+    verbose: bool = True,
+    compression_level: int = 6,
 ) -> None:
     """Compile all .py files in the zip archive to .pyc files.
 
@@ -97,11 +101,19 @@ def _compile(
         Path to the input archive.
     output_path
         Path to the output archive.
+    compression_level
+        Level of zip compression to apply. 0 means no compression. If a strictly
+        positive integer is provided, ZIP_DEFLATED option is used.
     """
     output_name = output_path.name
 
     with set_log_level(logger, verbose):
         logger.debug(f"Running py-compile on {input_path} to {output_path}")
+
+        if compression_level > 0:
+            compression = zipfile.ZIP_DEFLATED
+        else:
+            compression = zipfile.ZIP_STORED
 
         with zipfile.ZipFile(
             input_path
@@ -109,7 +121,10 @@ def _compile(
             temp_dir = Path(temp_dir_str)
             output_path_tmp = temp_dir / output_name
             with zipfile.ZipFile(
-                output_path_tmp, mode="w", compression=zipfile.ZIP_DEFLATED
+                output_path_tmp,
+                mode="w",
+                compression=compression,
+                compresslevel=compression_level,
             ) as fh_zip_out:
                 for name in fh_zip_in.namelist():
                     if name.endswith(".pyc"):
@@ -153,6 +168,7 @@ def _py_compile_wheel(
     wheel_path: Path,
     keep: bool = True,
     verbose: bool = True,
+    compression_level: int = 6,
 ) -> Path:
     """Compile .py files to .pyc in a wheel
 
@@ -168,6 +184,9 @@ def _py_compile_wheel(
         path)
     verbose
         print logging information
+    compression_level
+        Level of zip compression to apply. 0 means no compression. If a strictly
+        positive integer is provided, ZIP_DEFLATED option is used.
 
     Returns
     -------

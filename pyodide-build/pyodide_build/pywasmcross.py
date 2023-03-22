@@ -73,6 +73,7 @@ class BuildArgs:
     builddir: str = ""  # The path to run pypa/build
     pythoninclude: str = ""
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
+    compression_level: int = 6
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
