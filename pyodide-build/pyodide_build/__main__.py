@@ -2,28 +2,31 @@
 import argparse
 import sys
 
-from . import buildall, buildpkg, create_xbuildenv, install_xbuildenv, mkpkg, serve
+from . import buildpkg, create_xbuildenv, install_xbuildenv, serve
 from .common import init_environment
 
 
 def make_parser() -> argparse.ArgumentParser:
-    """Create an argument parser with argparse"""
+    """Create an argument parser with argparse
 
-    main_parser = argparse.ArgumentParser(prog="pyodide")
-    main_parser.description = "A command line interface (CLI) for pyodide_build"
+    This is an internal CLI.
+    """
+
+    main_parser = argparse.ArgumentParser(prog="pyodide-build")
+    main_parser.description = (
+        "An internal command line interface (CLI) for pyodide_build\n"
+        "Users should instead use the main `pyodide` CLI."
+    )
     subparsers = main_parser.add_subparsers(help="action")
 
     for command_name, module in (
         ("buildpkg", buildpkg),
-        ("buildall", buildall),
         ("serve", serve),
-        ("mkpkg", mkpkg),
         ("create_xbuildenv", create_xbuildenv),
         ("install_xbuildenv", install_xbuildenv),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",
-            "buildall",
             "pywasmcross",
         ]:
             # Likely building documentation, skip private API

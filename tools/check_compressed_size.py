@@ -45,7 +45,6 @@ def check_size(file: str | Path) -> None:
 
 
 def main():
-
     files = sys.argv[1:]
     if not files:
         print(f"Usage: {sys.argv[0]} <file> ...")

@@ -110,6 +110,20 @@ myst:
   you will need to remove it.
   {pr}`3621`
 
+- {{ Enhancement }} Added `stdLibURL` parameter to `loadPyodide` allowing to customize
+  the URL from which the Python standard library is loaded.
+  {pr}`3670`
+
+- {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
+  browsers that support the Brotli compression (most modern ones) this should
+  result in a size reduction of 20-30%. Also most many `pyodide` CLI
+  sub-commands now support `--compression-level` as an optional parameter.
+  {pr}`3655`
+
+- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
+  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
+  replaced by `pyodide skeleton pypi` {pr}`3668`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -146,6 +160,10 @@ myst:
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
 
+- {{ Enhancement }} Response files are now correctly handled when
+  calculating exported symbols.
+  {pr}`3645`
+
 - {{ Fix }} Fix occasional build failure when building rust packages.
   {pr}`3607`
 
@@ -166,9 +184,9 @@ myst:
 
 ### Packages
 
-- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`.
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`, mypy {pr}`3504`.
 
-- Upgraded packages: galpy (1.8.2) {pr}`3630`.
+- Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
 ## Version 0.22.1
 
@@ -304,7 +322,7 @@ _January 3, 2023_
   `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+- {{ Enhancement }} It is now possible to use asynchronous JavaScript iterables,
   iterators and generators from Python. This includes support for `aiter` for
   async interables, `anext` and `asend` for async iterators, and `athrow` and
   `aclose` for async generators.
@@ -334,8 +352,8 @@ _January 3, 2023_
   error would have `e.type === "StopIteration"`)
   {pr}`3289`
 
-- {{ Enhancement }} It is now possible to use aynchronous Python generators from
-  JavaScript.
+- {{ Enhancement }} It is now possible to use asynchronous Python generators
+  from JavaScript.
   {pr}`3290`
 
 - {{ Enhancement }} PyProxies of synchronous and asynchronous Python generators

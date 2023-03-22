@@ -5,6 +5,7 @@ import pytest
 from pyodide_build.pywasmcross import (
     BuildArgs,
     calculate_exports,
+    filter_objects,
     get_cmake_compiler_flags,
     get_library_output,
     handle_command_generate_args,
@@ -184,6 +185,33 @@ def test_conda_unsupported_args(build_args):
     assert generate_args("gcc -c test.o -Wl,--sysroot=/ -o test.so", args) == (
         "emcc -c test.o -o test.so"
     )
+
+
+@pytest.mark.parametrize(
+    "line, expected",
+    [
+        ([], []),
+        (
+            [
+                "obj1.o",
+                "obj2.o",
+                "slib1.so",
+                "slib2.so",
+                "lib1.a",
+                "lib2.a",
+                "-o",
+                "test.so",
+            ],
+            ["obj1.o", "obj2.o", "lib1.a", "lib2.a"],
+        ),
+        (
+            ["@dir/link.txt", "obj1.o", "obj2.o", "test.so"],
+            ["@dir/link.txt", "obj1.o", "obj2.o"],
+        ),
+    ],
+)
+def test_filter_objects(line, expected):
+    assert filter_objects(line) == expected
 
 
 @pytest.mark.xfail(reason="FIXME: emcc is not available during test")

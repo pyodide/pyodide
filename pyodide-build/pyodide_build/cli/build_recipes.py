@@ -61,6 +61,10 @@ def recipe(
         None,
         help="Number of packages to build in parallel  (default: # of cores in the system)",
     ),
+    compression_level: int = typer.Option(
+        6,
+        help="Level of zip compression to apply when installing. 0 means no compression.",
+    ),
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
     initialize_pyodide_root()
@@ -115,4 +119,6 @@ def recipe(
             buildall.copy_logs(pkg_map, log_dir_)
 
         if install:
-            buildall.install_packages(pkg_map, install_dir_)
+            buildall.install_packages(
+                pkg_map, install_dir_, compression_level=compression_level
+            )

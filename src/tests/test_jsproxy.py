@@ -2202,6 +2202,7 @@ async def test_agen_lifetimes(selenium):
 @run_in_pyodide
 def test_python_reserved_keywords(selenium):
     import pytest
+
     from pyodide.code import run_js
 
     o = run_js(
@@ -2240,7 +2241,7 @@ def test_python_reserved_keywords(selenium):
     o.async_ = 2
     assert run_js("(o) => o.async")(o) == 2
     del o.async_
-    assert run_js("(o) => o.async")(o) == None
+    assert run_js("(o) => o.async")(o) is None
 
     o = run_js("({async: 1, async_: 2, async__: 3})")
     expected_set = {"async_", "async__", "async___"}
@@ -2249,8 +2250,8 @@ def test_python_reserved_keywords(selenium):
     assert o.async_ == 1
     assert o.async__ == 2
     assert o.async___ == 3
-    assert getattr(o, "async_") == 1
-    assert getattr(o, "async__") == 2
+    assert getattr(o, "async_") == 1  # noqa: B009
+    assert getattr(o, "async__") == 2  # noqa: B009
     with pytest.raises(AttributeError, match="async"):
         getattr(o, "async")
     with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):

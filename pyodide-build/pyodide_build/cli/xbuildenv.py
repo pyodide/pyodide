@@ -23,7 +23,7 @@ def _install(
     """
     Install xbuildenv.
 
-    The isntalled environment is the same as the one that would result from
+    The installed environment is the same as the one that would result from
     `PYODIDE_PACKAGES='scipy' make` except that it is much faster.
     The goal is to enable out-of-tree builds for binary packages that depend
     on numpy or scipy.

@@ -384,7 +384,6 @@ async def test_inprogress(selenium):
         system_exit_code = exit_code
 
     try:
-
         loop._no_in_progress_handler = _no_in_progress_handler
         loop._keyboard_interrupt_handler = _keyboard_interrupt_handler
         loop._system_exit_handler = _system_exit_handler

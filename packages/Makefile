@@ -11,11 +11,12 @@ all:
 	--install \
 	--install-dir=../dist \
 	--n-jobs $${PYODIDE_JOBS:-4} \
-	--log-dir=./build-logs
+	--log-dir=./build-logs \
+	--compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)"
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
-		PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build mkpkg "$${pkg}" --update; \
+		PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide skeleton pypi "$${pkg}" --update; \
 	done
 
 clean:
