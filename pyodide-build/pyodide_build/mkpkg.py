@@ -49,6 +49,7 @@ class MetadataDict(TypedDict):
 class MkpkgSkipped(Exception):
     pass
 
+
 class MkpkgFailedException(Exception):
     pass
 

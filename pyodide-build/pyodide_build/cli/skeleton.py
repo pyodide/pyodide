@@ -1,10 +1,10 @@
 # Create or update a package recipe skeleton,
 # inspired from `conda skeleton` command.
 
+import sys
 from pathlib import Path
 
 import typer
-import sys
 
 from .. import common, mkpkg
 from ..logger import logger
@@ -70,7 +70,7 @@ def new_recipe_pypi(
             sys.exit(1)
         except mkpkg.MkpkgSkipped as e:
             logger.warn(f"{name} update skipped: {e}")
-        except Exception as e:
+        except Exception:
             print(name)
             raise
     else:
