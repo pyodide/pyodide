@@ -159,7 +159,7 @@
                   }),
                 );
               }
-              if (pyodide.ffi.isPyProxy(value)) {
+              if (value instanceof pyodide.ffi.PyProxy) {
                 value.destroy();
               }
             } catch (e) {
