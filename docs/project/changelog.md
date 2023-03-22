@@ -15,21 +15,38 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Python does not allow reserved words to be used as attributes.
+  For instance, `Array.from` is a `SyntaxError`. (JavaScript has a more robust
+  parser which can handle this.) To handle this, if an attribute to a `JsProxy`
+  consists of a Python reserved word followed by one or more underscores, we remove
+  a single underscore from the end of the attribute. For instance, `Array.from_`
+  would access `from` on the underlying JavaScript object, whereas `o.from__`
+  accesses the `from_` attribute.
+  {pr}`3617`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
+  argument.
+  {pr}`3618`
+
+- {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
+  `None` it now uses `locals=globals` as the documentation says.
+  {pr}`3580`
+
 - {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
   thrown as Python exceptions. Previously Pyodide automatically wrapped them in
   a `JsException` but that is no longer needed -- now `JsException` inherits
   from both `JsProxy` and `Exception`.
   {pr}`3455`
 
-- {{ Update }} Pyodide now runs Python 3.11.1.
-  {pr}`3252`
+- {{ Update }} Pyodide now runs Python 3.11.2.
+  {pr}`3252`, {pr}`3614`
 
 - {{ Update }} We now build libpyodide.a so the Pyodide foreign function
   interface can be experimentally linked into other Emscripten builds of Python.
   {pr}`3335`
 
-- {{ Enhancement }} Updated Emscripten to version 3.1.31
-  {pr}`3471`, {pr}`3517`
+- {{ Enhancement }} Updated Emscripten to version 3.1.32
+  {pr}`3471`, {pr}`3517`, {pr}`3599`
 
 - {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
   `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
@@ -73,6 +90,30 @@ myst:
   into another no longer causes a fatal error.
   {pr}`3545`
 
+- {{ Fix }} Non-breaking space characters are now automatically converted to
+  regular spaces in pyodide REPL.
+  {pr}`3558`
+
+- {{ Breaking }} Python standard libraries are now vendored in a zipfile:
+  `/lib/python{version}.zip`. If you need to access the standard library files,
+  you need to unpack the zip file. For example:
+  `import shutil; shutil.unpack_archive('/lib/python311.zip', '/lib/python3.11', 'zip)`
+  {pr}`3584`
+
+- {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
+  `pyodide.asm.data` is removed. This change normally shouldn't affect users,
+  but if you were using this file in a bundler, you will need to remove it.
+  {pr}`3584`
+
+- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
+  shouldn't affect users, but if you were using this file in a bundler,
+  you will need to remove it.
+  {pr}`3621`
+
+- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
+  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
+  replaced by `pyodide skeleton pypi` {pr}`3668`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -100,6 +141,20 @@ myst:
   `PYODIDE_PACKAGES="tag:core" make`.
   {pr}`3444`
 
+- {{ Enhancement }} `pyodide build-recipes` now autodetects the number of
+  CPU cores in the system and uses them for parallel builds.
+  {pr}`3559` {pr}`3598`
+
+- {{ Fix }} Fixed pip install error when installing cross build environment.
+  {pr}`3562`
+
+- {{ Enhancement }} Response files are now correctly handled when
+  calculating exported symbols.
+  {pr}`3645`
+
+- {{ Fix }} Fix occasional build failure when building rust packages.
+  {pr}`3607`
+
 ### Pyodide CLI
 
 - Added `pyodide py-compile` CLI command that py compiles a wheel, converting
@@ -114,6 +169,12 @@ myst:
 - `pyodide build-recipes` now accepts `--no-deps` parameter, which skips
   building dependencies of the package. This replaces `pyodide-build buildpkg`.
   {pr}`3520`
+
+### Packages
+
+- New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`, mypy {pr}`3504`.
+
+- Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
 
 ## Version 0.22.1
 
@@ -249,7 +310,7 @@ _January 3, 2023_
   `JsGenerator`s.
   {pr}`3294`
 
-- {{ Enhancement }} It is now possible to use aynchronous JavaScript iterables,
+- {{ Enhancement }} It is now possible to use asynchronous JavaScript iterables,
   iterators and generators from Python. This includes support for `aiter` for
   async interables, `anext` and `asend` for async iterators, and `athrow` and
   `aclose` for async generators.
@@ -279,8 +340,8 @@ _January 3, 2023_
   error would have `e.type === "StopIteration"`)
   {pr}`3289`
 
-- {{ Enhancement }} It is now possible to use aynchronous Python generators from
-  JavaScript.
+- {{ Enhancement }} It is now possible to use asynchronous Python generators
+  from JavaScript.
   {pr}`3290`
 
 - {{ Enhancement }} PyProxies of synchronous and asynchronous Python generators

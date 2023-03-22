@@ -17,18 +17,18 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.241"
+    rev: "v0.0.254"
     hooks:
       - id: ruff
         args: [--fix]
 
   - repo: https://github.com/psf/black
-    rev: "22.12.0"
+    rev: "23.1.0"
     hooks:
       - id: black
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v0.991"
+    rev: "v1.1.1"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -55,18 +55,18 @@ repos:
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v15.0.6"
+    rev: "v15.0.7"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.4"
+    rev: "v3.0.0-alpha.6"
     hooks:
       - id: prettier
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: "v1.9.0"
+    rev: "v1.10.0"
     hooks:
       - id: python-use-type-annotations
         exclude: docs/sphinx_pyodide/tests/test_directives\.py
@@ -81,13 +81,13 @@ repos:
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.2"
+    rev: "v2.2.4"
     hooks:
       - id: codespell
         args:
           [
-            "-L",
-            "te,slowy,aray,ba,nd,classs,crate,feld,lits,inflight,falsy,asend",
+            "--ignore-words-list",
+            "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te",
           ]
         exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
 

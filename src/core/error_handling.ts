@@ -113,8 +113,11 @@ API.fatal_error = function (e: any) {
     }
     let reason = isexit ? "exited" : "fatally failed";
     let msg = `Pyodide already ${reason} and can no longer be used.`;
-    for (let key of Object.keys(API.public_api)) {
-      if (key.startsWith("_") || key === "version") {
+    for (let key of Reflect.ownKeys(API.public_api)) {
+      if (
+        (typeof key === "string" && key.startsWith("_")) ||
+        key === "version"
+      ) {
         continue;
       }
       Object.defineProperty(API.public_api, key, {
@@ -307,7 +310,6 @@ API.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers.",

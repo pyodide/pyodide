@@ -4,7 +4,6 @@
 Build all of the packages in a given directory.
 """
 
-import argparse
 import dataclasses
 import hashlib
 import json
@@ -127,7 +126,6 @@ class Package(BasePackage):
         return None
 
     def build(self, build_args: BuildArgs) -> None:
-
         p = subprocess.run(
             [
                 sys.executable,
@@ -242,7 +240,6 @@ class ReplProgressFormatter:
 
 
 def _validate_package_map(pkg_map: dict[str, BasePackage]) -> bool:
-
     # Check if dependencies are valid
     for pkg_name, pkg in pkg_map.items():
         for runtime_dep_name in pkg.run_dependencies:
@@ -367,6 +364,11 @@ def generate_dependency_graph(
     while packages:
         pkgname = packages.pop()
 
+        if pkgname not in all_recipes:
+            raise ValueError(
+                f"No metadata file found for the following package: {pkgname}"
+            )
+
         pkg = Package(packages_dir / pkgname, all_recipes[pkgname])
         pkg_map[pkgname] = pkg
         graph[pkgname] = pkg.dependencies
@@ -420,6 +422,13 @@ def job_priority(pkg: BasePackage) -> int:
         return 0
     else:
         return 1
+
+
+def is_rust_package(pkg: BasePackage) -> bool:
+    """
+    Check if a package requires rust toolchain to build.
+    """
+    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
 
 
 def format_name_list(l: list[str]) -> str:
@@ -533,14 +542,30 @@ def build_from_graph(
     built_queue: Queue[BasePackage | Exception] = Queue()
     thread_lock = Lock()
     queue_idx = 1
+    building_rust_pkg = False
     progress_formatter = ReplProgressFormatter(len(needs_build))
 
     def builder(n: int) -> None:
-        nonlocal queue_idx
+        nonlocal queue_idx, building_rust_pkg
         while True:
-            pkg = build_queue.get()[1]
+            _, pkg = build_queue.get()
 
             with thread_lock:
+                if is_rust_package(pkg):
+                    # Don't build multiple rust packages at the same time.
+                    # See: https://github.com/pyodide/pyodide/issues/3565
+                    # Note that if there are only rust packages left in the queue,
+                    # this will keep pushing and popping packages until the current rust package
+                    # is built. This is not ideal but presumably the overhead is negligible.
+                    if building_rust_pkg:
+                        build_queue.put((job_priority(pkg), pkg))
+
+                        # Release the GIL so new packages get queued
+                        sleep(0.1)
+                        continue
+
+                    building_rust_pkg = True
+
                 pkg._queue_idx = queue_idx
                 queue_idx += 1
 
@@ -564,6 +589,11 @@ def build_from_graph(
                 progress_formatter.remove_package(pkg_status)
 
             built_queue.put(pkg)
+
+            with thread_lock:
+                if is_rust_package(pkg):
+                    building_rust_pkg = False
+
             # Release the GIL so new packages get queued
             sleep(0.01)
 
@@ -772,94 +802,6 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
         fd.write("\n")
 
 
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Build all the packages in a given directory\n\n"
-        "Unless the --only option is provided\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the pyodide Makefile."
-    )
-    parser.add_argument(
-        "dir",
-        type=str,
-        nargs=1,
-        default="packages",
-        help="Input directory containing a tree of package definitions",
-    )
-    parser.add_argument(
-        "output",
-        type=str,
-        nargs=1,
-        default="dist",
-        help="Output directory in which to put all built packages",
-    )
-    parser.add_argument(
-        "--cflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
-    )
-    parser.add_argument(
-        "--cxxflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
-    )
-    parser.add_argument(
-        "--ldflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
-    )
-    parser.add_argument(
-        "--target-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help="The path to the target Python installation. Default: TARGETINSTALLDIR",
-    )
-    parser.add_argument(
-        "--host-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Directory for installing built host packages. Default: HOSTINSTALLDIR"),
-    )
-    parser.add_argument(
-        "--log-dir",
-        type=str,
-        dest="log_dir",
-        nargs="?",
-        default=None,
-        help=("Directory to place log files"),
-    )
-    parser.add_argument(
-        "--only",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Only build the specified packages, provided as a comma-separated list"),
-    )
-    parser.add_argument(
-        "--force-rebuild",
-        action="store_true",
-        help=(
-            "Force rebuild of all packages regardless of whether they appear to have been updated"
-        ),
-    )
-    parser.add_argument(
-        "--n-jobs",
-        type=int,
-        nargs="?",
-        default=4,
-        help="Number of packages to build in parallel",
-    )
-    return parser
-
-
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
@@ -875,42 +817,3 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
 
     return args
-
-
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    targets = args.only
-    n_jobs = args.n_jobs
-    log_dir = Path(args.log_dir) if args.log_dir else None
-    force_rebuild = args.force_rebuild
-
-    build_args = BuildArgs(
-        pkgname="",
-        cflags=args.cflags,
-        cxxflags=args.cxxflags,
-        ldflags=args.ldflags,
-        target_install_dir=args.target_install_dir,
-        host_install_dir=args.host_install_dir,
-    )
-
-    build_args = set_default_build_args(build_args)
-
-    pkg_map = build_packages(
-        packages_dir,
-        targets,
-        build_args=build_args,
-        n_jobs=n_jobs,
-        force_rebuild=force_rebuild,
-    )
-
-    if log_dir:
-        copy_logs(pkg_map, log_dir)
-
-    install_packages(pkg_map, outputdir)
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)

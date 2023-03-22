@@ -208,6 +208,20 @@ obj_map = obj.as_object_map()
 assert obj_map["$c"] == 11
 ```
 
+Another special case comes from the fact that Python reserved words cannot be
+used as attributes. For instance, {js:func}`Array.from` and
+{js:meth}`Promise.finally` cannot be directly accessed because they are Python
+`SyntaxError`s. Instead we access these attributes with `Array.from_` and
+`Promise.finally_`. Similarly, to access from Python, `o.from_` you have to use
+`o.from__` with two underscores (since a single underscore is used for
+`o.from`). This is reflected in the `dir` of a `JsProxy`:
+
+```py
+from pyodide.code import run_js
+o = run_js("({finally: 1, return: 2, from: 3, from_: 4})")
+assert set(dir(o)) == {"finally_", "return_", "from_", "from__"}
+```
+
 (type-translations-pyproxy)=
 
 ### Proxying from Python into JavaScript
@@ -722,4 +736,28 @@ pyodide.runPython(`
     my_js_namespace.y = 7
 `);
 console.log(my_js_namespace.y); // 7
+```
+
+If the JavaScript object's name is a reserved Python keyword, the {py:func}`setattr` function can be used to access the object by name within the js module::
+
+```pyodide
+lambda = (x) => {return x + 1};
+//'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
+pyodide.runPython(`
+    import js
+    js_lambda = getattr(js, 'lambda')
+    print(js_lambda(1))
+    `);
+```
+
+If a JavaScript object has a property that is a reserved Python keyword, the {py:func}`setattr` and {py:func}`getattr` function can be used to access that property by name:
+
+```pyodide
+people = {global: "lots and lots"};
+//Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
+pyodide.runPython(`
+    from js import people
+    setattr(people, 'global', 'even more')
+    print(getattr(people, 'global'))
+    `);
 ```

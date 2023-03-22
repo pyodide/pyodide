@@ -5,13 +5,21 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide import spawn_web_server
 import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
 from pyodide_build import common
-from pyodide_build.cli import build, build_recipes, config, create_zipfile, skeleton
+from pyodide_build.cli import (
+    build,
+    build_recipes,
+    config,
+    create_zipfile,
+    skeleton,
+    xbuildenv,
+)
 
-from .fixture import temp_python_lib
+from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -248,7 +256,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
 
 
 def test_config_list():
-
     result = runner.invoke(
         config.app,
         [
@@ -265,7 +272,6 @@ def test_config_list():
 
 @pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
 def test_config_get(cfg_name, env_var):
-
     result = runner.invoke(
         config.app,
         [
@@ -277,7 +283,7 @@ def test_config_get(cfg_name, env_var):
     assert result.stdout.strip() == common.get_make_flag(env_var)
 
 
-def test_create_zipfile(temp_python_lib, tmp_path):
+def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
     from zipfile import ZipFile
 
     output = tmp_path / "python.zip"
@@ -289,6 +295,7 @@ def test_create_zipfile(temp_python_lib, tmp_path):
         app,
         [
             str(temp_python_lib),
+            str(temp_python_lib2),
             "--output",
             str(output),
         ],
@@ -301,9 +308,11 @@ def test_create_zipfile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.py" in zf.namelist()
         assert "module2.py" in zf.namelist()
+        assert "module3.py" in zf.namelist()
+        assert "module4.py" in zf.namelist()
 
 
-def test_create_zipfile_compile(temp_python_lib, tmp_path):
+def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
     from zipfile import ZipFile
 
     output = tmp_path / "python.zip"
@@ -315,6 +324,7 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
         app,
         [
             str(temp_python_lib),
+            str(temp_python_lib2),
             "--output",
             str(output),
             "--pycompile",
@@ -328,3 +338,32 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.pyc" in zf.namelist()
         assert "module2.pyc" in zf.namelist()
+        assert "module3.pyc" in zf.namelist()
+        assert "module4.pyc" in zf.namelist()
+
+
+def test_xbuildenv_install(tmp_path, temp_xbuildenv):
+    envpath = Path(tmp_path) / ".xbuildenv"
+
+    xbuildenv_url_base, xbuildenv_filename = temp_xbuildenv
+
+    with spawn_web_server(xbuildenv_url_base) as (hostname, port, _):
+        xbuildenv_url = f"http://{hostname}:{port}/{xbuildenv_filename}"
+        result = runner.invoke(
+            xbuildenv.app,
+            [
+                "install",
+                "--path",
+                str(envpath),
+                "--download",
+                "--url",
+                xbuildenv_url,
+            ],
+        )
+
+    assert result.exit_code == 0, result.stdout
+    assert "Downloading xbuild environment" in result.stdout, result.stdout
+    assert "Installing xbuild environment" in result.stdout, result.stdout
+    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
+    assert (envpath / "xbuildenv" / "requirements.txt").exists()

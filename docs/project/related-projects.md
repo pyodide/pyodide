@@ -33,6 +33,7 @@
 
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
   that runs entirely in the browser, using Pyodide.
+- [Flet](https://flet.dev) is a UI framework for your Pyodide apps based on Flutter.
 
 ## Other projects
 
