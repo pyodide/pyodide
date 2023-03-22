@@ -4,8 +4,10 @@
 from pathlib import Path
 
 import typer
+import sys
 
 from .. import common, mkpkg
+from ..logger import logger
 
 app = typer.Typer()
 
@@ -55,12 +57,21 @@ def new_recipe_pypi(
     recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
 
     if update or update_patched:
-        mkpkg.update_package(
-            recipe_dir_,
-            name,
-            version,
-            source_fmt=source_format,  # type: ignore[arg-type]
-            update_patched=update_patched,
-        )
+        try:
+            mkpkg.update_package(
+                recipe_dir_,
+                name,
+                version,
+                source_fmt=source_format,  # type: ignore[arg-type]
+                update_patched=update_patched,
+            )
+        except mkpkg.MkpkgFailedException as e:
+            logger.error(f"{name} update failed: {e}")
+            sys.exit(1)
+        except mkpkg.MkpkgSkipped as e:
+            logger.warn(f"{name} update skipped: {e}")
+        except Exception as e:
+            print(name)
+            raise
     else:
         mkpkg.make_package(recipe_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]
