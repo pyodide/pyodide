@@ -49,7 +49,9 @@ def new_recipe_pypi(
     Create a new package from PyPI.
     """
 
-    if not recipe_dir:
+    if recipe_dir:
+        recipe_dir_ = Path(recipe_dir)
+    else:
         cwd = Path.cwd()
 
         try:
@@ -61,8 +63,6 @@ def new_recipe_pypi(
             root = cwd
 
         recipe_dir_ = root / "packages"
-    else:
-        recipe_dir_ = Path(recipe_dir)
 
     if update or update_patched:
         mkpkg.update_package(
