@@ -1,9 +1,9 @@
 package:
   name: pillow_heif
-  version: 0.8.0
+  version: 0.10.0
 source:
-  url: https://files.pythonhosted.org/packages/65/88/ca9aa1adb641c792f277a610f2adf4a6792bc2783177cb95bedcc687fac0/pillow_heif-0.8.0.tar.gz
-  sha256: 0b50f4dc159127df06b0960136e06384ed4eba34d9eafbc200ebc973e403c90c
+  url: https://files.pythonhosted.org/packages/93/2e/44a2c6bfe894989c0eff7aa27545e9c6fea906025c661d71bcbdf9ead194/pillow_heif-0.10.0.tar.gz
+  sha256: 958dcb6fd80a4da1ba8e6e32a3f4f04f171f934f9e40a909d0d6672c388f16c1
   patches:
     - patches/0001-Remove-include-path-check.patch
 requirements:

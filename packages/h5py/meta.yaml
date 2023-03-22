@@ -1,11 +1,11 @@
 package:
   name: h5py
-  version: 3.7.0
+  version: 3.8.0
   top-level:
     - h5py
 source:
-  url: https://files.pythonhosted.org/packages/c5/40/7cf58e6230f0e76699f011c6d293dd47755997709a303a4e644823f3a753/h5py-3.7.0.tar.gz
-  sha256: 3fcf37884383c5da64846ab510190720027dca0768def34dd8dcb659dbe5cbf3
+  url: https://files.pythonhosted.org/packages/69/f4/3172bb63d3c57e24aec42bb93fcf1da4102752701ab5ad10b3ded00d0c5b/h5py-3.8.0.tar.gz
+  sha256: 6fead82f0c4000cf38d53f9c030780d81bfa0220218aee13b90b7701c937d95f
   patches:
     - patches/0001-Fix-incompatible-pointer-type.patch
     - patches/configure.patch
