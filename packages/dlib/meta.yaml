@@ -14,8 +14,10 @@ build:
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
 requirements:
+  run:
+    - numpy
   host:
-    - libdlib
+    - ffmpeg
 about:
   home: https://dlib.net/
   PyPI: https://pypi.org/project/dlib
