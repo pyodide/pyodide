@@ -70,7 +70,7 @@ try {
     if (hasDEBUG) {
       content = content.replace(
         "//# sourceMappingURL",
-        `const DEBUG=${DEBUG};\n//# sourceMappingURL`
+        `const DEBUG=${DEBUG};\n//# sourceMappingURL`,
       );
     }
 
@@ -78,7 +78,7 @@ try {
     if (isUMD) {
       content = content.replace(
         "//# sourceMappingURL",
-        `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`
+        `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
       );
     }
 
