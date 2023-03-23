@@ -8,11 +8,12 @@ source:
   url: https://files.pythonhosted.org/packages/ec/e3/4fed0fb511a88a46365c2da493b73081a5e1a21960bdb18089b27cbc768b/dlib-19.24.1.tar.gz
   sha256: e8d3ca047d525eeb36cc47bce45ed0562dab40b0b8f5fa171600dde2fec509c0
 build:
-  cflags: |
-    -I$(PYTHONINCLUDE)
-    -I$(WASM_LIBRARY_DIR)/include
-  ldflags: |
-    -L$(WASM_LIBRARY_DIR)/lib
+  type: shared_library
+  script: |
+    mkdir -p build;
+    cd build \
+        && emcmake cmake ..
+    emmake make -j ${PYODIDE_JOBS:-3} install
 requirements:
   run:
     - numpy
