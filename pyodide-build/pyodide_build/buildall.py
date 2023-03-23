@@ -695,16 +695,14 @@ def generate_repodata(
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
 
-    import sys
-
-    sys.path.append(str(common.get_pyodide_root() / "src/py"))
-    from pyodide import __version__
+    from . import __version__
 
     # Build package.json data.
     [platform, _, arch] = common.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
+        # This assumes that pyodide-build version == pyodide version.
         "version": __version__,
         "python": sys.version.partition(" ")[0],
     }
