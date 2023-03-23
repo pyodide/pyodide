@@ -8,18 +8,16 @@ source:
   url: https://files.pythonhosted.org/packages/ec/e3/4fed0fb511a88a46365c2da493b73081a5e1a21960bdb18089b27cbc768b/dlib-19.24.1.tar.gz
   sha256: e8d3ca047d525eeb36cc47bce45ed0562dab40b0b8f5fa171600dde2fec509c0
 build:
-  script: |
-    mkdir build
-    cd build
-    cmake ..
-    make
-    make install
-    cd ..
-    python3 setup.py install
+  cflags: |
+    -I$(PYTHONINCLUDE)
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
 requirements:
   run:
     - numpy
   host:
+    - CLAPACK
     - ffmpeg
 about:
   home: https://dlib.net/
