@@ -128,7 +128,7 @@ export class PyodideAPI {
    * For example, you need to set a canvas if you want to use the
    * SDL library. See :ref:`using-sdl` for more information.
    */
-  static canvas: CanvasInterface = {} as any;
+  static canvas: CanvasInterface = canvas;
 
   /**
    * A map from posix error names to error codes.
@@ -631,7 +631,6 @@ API.makePublicAPI = function () {
   pyodideAPI.FS = Module.FS;
   pyodideAPI.PATH = Module.PATH;
   pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
-  pyodideAPI.canvas = canvas;
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   return pyodideAPI;
