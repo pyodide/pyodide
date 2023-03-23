@@ -9,10 +9,10 @@ source:
   sha256: e8d3ca047d525eeb36cc47bce45ed0562dab40b0b8f5fa171600dde2fec509c0
 build:
   script: |
-    mkdir build 
-    cd build 
+    mkdir build
+    cd build
     cmake ..
-    make 
+    make
     make install
     cd ..
     python3 setup.py install
