@@ -13,6 +13,10 @@ myst:
 
 # Change Log
 
+### Packages
+
+- New packages:
+
 ## Unreleased
 
 - {{ Enhancement }} `as_object_map` now accepts a keyword argument `hereditary`.
@@ -188,6 +192,14 @@ myst:
   {pr}`3520`
 
 ### Packages
+
+## Version 0.22.2
+
+- New packages: dlib {pr}`3690`
+
+_March 23, 2023_
+
+- {{ Enhancement }} `dlib` added to pyodide
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
   mypy {pr}`3504`, multidict {pr}`3581`
