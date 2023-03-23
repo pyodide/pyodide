@@ -1733,6 +1733,7 @@ def test_object_map_mapping_methods(selenium):
 @run_in_pyodide
 def test_as_object_map_heritable(selenium):
     import pytest
+
     from pyodide.code import run_js
 
     o = run_js("({1:{2: 9, 3: 77}, 3:{6: 5, 12: 3, 2: 9}})")
