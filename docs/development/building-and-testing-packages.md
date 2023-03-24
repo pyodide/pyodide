@@ -155,8 +155,8 @@ runs-on: ubuntu-20.04
      with:
        python-version: 3.10.2
   - run: |
-    pip install pyodide-build>=0.22.0
-    echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
+      pip install pyodide-build>=0.22.0
+      echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
   - uses: mymindstorm/setup-emsdk@v11
      with:
        version: ${{ env.EMSCRIPTEN_VERSION }}
