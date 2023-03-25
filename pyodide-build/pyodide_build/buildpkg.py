@@ -123,7 +123,10 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     set_build_environment(env)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
-        b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+        # Working in-tree, add emscripten toolchain into PATH and set ccache
+        if Path(PYODIDE_ROOT, "pyodide_env.sh").exists():
+            b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+
         yield b
 
 
