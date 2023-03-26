@@ -129,6 +129,11 @@ myst:
   replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
   replaced by `pyodide skeleton pypi` {pr}`3668`
 
+- {{ Enhancement }} Allow changing the build type used in the REPL by passing the
+  `build` argument to the REPL URL. For instance,
+  `https://pyodide.org/en/latest/console.html?build=debug` will load debug dev build.
+  {pr}`3671`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
