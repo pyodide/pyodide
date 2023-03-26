@@ -464,8 +464,7 @@ jobs:
     # similar as possible to the steps in deploy-dev!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -474,8 +473,11 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make npm
-            python3 -m pip install -e "pyodide_build[deploy]"
+            python3 -m pip install -e "./pyodide-build[deploy]"
+
+            wget https://github.com/tcnksm/ghr/releases/download/v0.16.0/ghr_v0.16.0_linux_amd64.tar.gz
+            tar xzf ghr_v0.16.0_linux_amd64.tar.gz
+            mv ghr_v0.16.0_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
           name: Deploy Github Releases
@@ -487,7 +489,7 @@ jobs:
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
+            /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
               -delete "${CIRCLE_TAG}" \
               dist
@@ -523,8 +525,7 @@ jobs:
     # similar as possible to the steps in deploy-release!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -533,8 +534,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make
-            python3 -m pip install -e "pyodide_build[deploy]"
+            python3 -m pip install -e "./pyodide-build[deploy]"
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
