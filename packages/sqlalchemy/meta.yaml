@@ -9,6 +9,7 @@ source:
 requirements:
   run:
     - sqlite3
+    - typing-extensions
 about:
   home: https://www.sqlalchemy.org
   PyPI: https://pypi.org/project/sqlalchemy
