@@ -71,6 +71,9 @@ target-version = "py311"
 "src/tests/test_typeconversions.py" = [
   "PGH001",  # No builtin `eval()` allowed
 ]
+"tools/*" = [
+  "B008",  # Do not perform function call `typer.Optional` in argument defaults
+]
 
 [tool.ruff.flake8-bugbear]
 extend-immutable-calls = ["typer.Argument", "typer.Option"]
