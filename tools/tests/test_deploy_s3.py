@@ -93,7 +93,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
 
 @mock_s3
 def test_deploy_to_s3_mime_type(tmp_path, capsys):
-    for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a"]:
+    for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a", "mjs.map", "mjs"]:
         (tmp_path / f"a.{ext}").write_text("a")
 
     bucket_name = "mybucket"
@@ -124,6 +124,8 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
 
     # The rest we set based on the file extension
     assert get_header("a.js") == "text/javascript"
+    assert get_header("a.mjs") == "text/javascript"
     assert get_header("a.ts") == "text/x.typescript"
     assert get_header("a.json") == "application/json"
     assert get_header("a.ttf") == "font/ttf"
+    assert get_header("a.mjs.map") == "binary/octet-stream"

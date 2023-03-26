@@ -44,7 +44,7 @@ def deploy_to_s3_main(
         False, help="Remove existing files under the remote prefix"
     ),
 ):
-    """Deploy of local folder with Pyodide packages to AWS S3"""
+    """Deploy a dist folder with Pyodide packages to AWS S3"""
     s3_client = boto3.client("s3")
 
     typer.echo(f"Deploying {local_folder} to s3://{bucket}/{remote_prefix}")
@@ -91,6 +91,8 @@ def deploy_to_s3_main(
                 content_type = "text/x.typescript"
             else:
                 content_type = mimetypes.guess_type(file_path)[0]
+                if content_type is None:
+                    content_type = "binary/octet-stream"
 
             extra_args = {
                 "CacheControl": cache_control,
