@@ -6,21 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/0a/4c/54091d8b456c006dc0797c31cf7d7bbc1bf9929f79022ff3b480ee4d7764/pyerfa-2.0.0.2.tar.gz
   sha256: 05370b7f0b4ca5a0caa845a1b6047259ba14d5608d1a18cd180049fff8c74b12
-  patches:
-    # Patch fixes error:
-    #
-    # erfa/ufunc.c:9916:54: error: incompatible function pointer types
-    # initializing 'PyUFuncGenericFunction' ... with an expression of type ...
-    #
-    # It has been upstreamed: https://github.com/liberfa/pyerfa/pull/89
-    # Make sure to remove python3.10 erfa_generator.py below when we remove the
-    # patch.
-    - patches/0001-Fix-compilation-with-Wincompatible-function-pointer-.patch
-build:
-  script: |
-    # regenerate erfa/ufunc.c from our patched erfa/ufunc.c.templ.
-    python3 -m pip install jinja2
-    python3 erfa_generator.py
 requirements:
   host:
     - numpy
