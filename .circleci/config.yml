@@ -475,7 +475,7 @@ jobs:
           name: Install requirements
           command: |
             apk add --no-cache --update python3 make npm
-            python3 -m pip install awscli
+            python3 -m pip install -e "pyodide_build[deploy]"
 
       - run:
           name: Deploy Github Releases
@@ -500,31 +500,23 @@ jobs:
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make dist/console.html
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            # Note: the following compression is the compression of files on S3
-            # to reduce storage size and outbound AWS traffic. The HTTP
-            # requests for these files made to S3 will result in a response
-            # with gzip compression. However because JsDelivr CDN proxies and caches these
-            # requests, this has no impact on the compression of zip files and
-            # wheels once the files are served to users via CDN.
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
+            python3 tools/deploy_s3.py dist/ "v${CIRCLE_TAG}/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*.zip' --exclude "*.whl" --exclude "*.tar" --cache-control 'max-age=30758400, public' --content-encoding 'gzip'  # 1 year cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=30758400, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year cache
+            python3 tools/deploy_s3.py dist-debug/ "v${CIRCLE_TAG}/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: update 301 redirect for the /latest/* route.
+          name: Deploy the pyc version to S3
           command: |
-            aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
+            python3 tools/deploy_s3.py dist-pyc/ "v${CIRCLE_TAG}/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
 
   deploy-dev:
     # To reduce chance of deployment issues, try to keep the steps here as
@@ -542,27 +534,27 @@ jobs:
           name: Install requirements
           command: |
             apk add --no-cache --update python3 make
-            python3 -m pip install awscli
+            python3 -m pip install -e "pyodide_build[deploy]"
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist/ "dev/full/" --cache-control 'max-age=3600, public' --rm-remote-prefix
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/debug/"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist-debug/ "dev/debug/" --cache-control 'max-age=3600, public' --rm-remote-prefix
+      - run:
+          name: Deploy pyc version to S3
+          command: |
+            python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --cache-control 'max-age=3600, public' --rm-remote-prefix
 
 workflows:
   version: 2
@@ -849,6 +841,7 @@ workflows:
             - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
+            - build-test-pyc-packages
           filters:
             branches:
               ignore: /.*/
@@ -861,6 +854,7 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - build-test-pyc-packages
           filters:
             branches:
               only: main

@@ -1,5 +1,6 @@
 import gzip
 import io
+import mimetypes
 import shutil
 from pathlib import Path
 
@@ -21,8 +22,16 @@ def check_s3_object_exists(s3_client, bucket: str, object_name: str):
         raise
 
 
+def _rm_s3_prefix(bucket: str, prefix: str):
+    """Remove all objects under a given prefix"""
+    s3 = boto3.resource("s3")
+    bucket = s3.Bucket(bucket)
+    for obj in bucket.objects.filter(Prefix=prefix):
+        obj.delete()
+
+
 @app.command()
-def deploy_to_s3(
+def deploy_to_s3_main(
     local_folder: Path = typer.Argument(..., help="Path to the local folder"),
     remote_prefix: Path = typer.Argument(..., help="Remote prefix"),
     bucket: str = typer.Option(..., help="bucket name"),
@@ -31,6 +40,9 @@ def deploy_to_s3(
     ),
     pretend: bool = typer.Option(False, help="Don't actually upload anything"),
     overwrite: bool = typer.Option(False, help="Overwrite existing files"),
+    rm_remote_prefix: bool = typer.Option(
+        False, help="Remove existing files under the remote prefix"
+    ),
 ):
     """Deploy of local folder with Pyodide packages to AWS S3"""
     s3_client = boto3.client("s3")
@@ -40,6 +52,9 @@ def deploy_to_s3(
     typer.echo(f" - {cache_control=}")
     typer.echo(f" - {pretend=}")
     typer.echo(" - content-encoding: gzip")
+
+    if rm_remote_prefix:
+        _rm_s3_prefix(bucket, str(remote_prefix).lstrip("/"))
 
     for file_path in local_folder.glob("**/*"):
         if not file_path.is_file():
@@ -66,12 +81,22 @@ def deploy_to_s3(
 
             fh_compressed.seek(0)
 
-            extra_args = {"CacheControl": cache_control, "ContentEncoding": "gzip"}
-
             content_type = None
-            if file_path.suffix in (".zip", ".whl", ".tar"):
+            if file_path.suffix in (".zip", ".whl", ".tar", ".a"):
                 content_type = "application/wasm"
-                extra_args["ContentType"] = content_type
+            elif file_path.suffix == ".ts":
+                # This will not be correctly detected by mimetypes.
+                # However, JsDelivr will currently not serve .ts file in the
+                # custom CDN configuration, so it does not really matter.
+                content_type = "text/x.typescript"
+            else:
+                content_type = mimetypes.guess_type(file_path)[0]
+
+            extra_args = {
+                "CacheControl": cache_control,
+                "ContentEncoding": "gzip",
+                "ContentType": content_type,
+            }
 
             if not pretend:
                 s3_client.upload_fileobj(
@@ -80,9 +105,9 @@ def deploy_to_s3(
                     Key=str(remote_path).lstrip("/"),
                     ExtraArgs=extra_args,
                 )
-            msg = f"Uploaded {file_path} to s3://{bucket}/{remote_path}"
-            if content_type is not None:
-                msg += f" with {content_type=}"
+            msg = (
+                f"Uploaded {file_path} to s3://{bucket}/{remote_path} ({content_type=})"
+            )
             if pretend:
                 msg = "Would have " + msg
 
