@@ -1,6 +1,6 @@
 package:
   name: matplotlib
-  version: 3.6.3
+  version: 3.5.2
   tag:
     - min-scipy-stack
   top-level:
@@ -8,8 +8,8 @@ package:
     - mpl_toolkits
     - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/23/6d/2917ed23b17a8c4d1d59974a574cae0a365c392ba8820c8824b03a02f376/matplotlib-3.6.3.tar.gz
-  sha256: 1f4d69707b1677560cd952544ee4962f68ff07952fb9069ff8c12b56353cb8c9
+  url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
+  sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
 
   patches:
     - patches/disable_macosx_backend.patch
