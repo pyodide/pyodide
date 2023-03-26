@@ -134,6 +134,12 @@ myst:
   the paths and checksums it contains will also be updated
   {pr}`3700`
 
+- {{ Enhancement }} A py-compiled build which has smaller and faster to load
+  packages is now deployed under
+  `https://cdn.jsdelivr.net/pyodide/v0.23.0/pyc/` (also for for following
+  versions). The exceptions obtained with this builds will not include code
+  snippets however. {pr}`3701`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
