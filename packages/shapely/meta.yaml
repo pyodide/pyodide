@@ -6,8 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/10/a7/de139da3ce303101c357a9ba801328cba85cf6ace157da31a4007bca85e4/shapely-2.0.1.tar.gz
   sha256: 66a6b1a3e72ece97fc85536a281476f9b7794de2e646ca8a4517e2e3c1446893
-  patches:
-    - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
 build:
   vendor-sharedlib: true
   script: |
