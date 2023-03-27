@@ -129,6 +129,15 @@ myst:
   replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
   replaced by `pyodide skeleton pypi` {pr}`3668`
 
+- {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
+  directly. This has been deprecated since v0.21.0. Now all functions are only available
+  under submodules.
+  {pr}`3677`
+
+- {{ Breaking }} Removed support for passing the "message" argument to `PyProxy.destroy`
+  in a positional argument. This has been deprecated since v0.22.0.
+  {pr}`3677`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
