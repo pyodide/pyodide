@@ -199,9 +199,10 @@ myst:
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
-  mypy {pr}`3504`, multidict {pr}`3581`
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
 
 - Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
+  See all package versions in this release in {ref}`packages-in-pyodide`.
 
 ## Version 0.22.1
 
