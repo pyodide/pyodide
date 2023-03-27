@@ -1,9 +1,9 @@
 package:
   name: fiona
-  version: 1.9.2
+  version: 1.8.22
 source:
-  url: https://files.pythonhosted.org/packages/f1/57/61443cf8b58022cb117c26d8a25c8a1435b24de9dac5d7f848b94a2c584a/Fiona-1.9.2.tar.gz
-  sha256: f9263c5f97206bf2eb2c010d52e8ffc54e96886b0e698badde25ff109b32952a
+  url: https://files.pythonhosted.org/packages/b9/d7/48025179fbbb2e1bab698131246878df36fa9aa5bee0ba1c062cd8f2ef44/Fiona-1.8.22.tar.gz
+  sha256: a82a99ce9b3e7825740157c45c9fb2259d4e92f0a886aaac25f0db40ffe1eea3
 test:
   imports:
     - fiona
