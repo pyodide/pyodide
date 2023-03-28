@@ -200,7 +200,7 @@ def _py_compile_archive(
         (e.g. if it's a zip with no .py files)
     """
     if input_path.suffix not in [".whl", ".zip"]:
-        raise ValueError(f"Error: only .whl files are supported, got {input_path.name}")
+        raise ValueError(f"Error: only .whl or .zip files are supported, got {input_path.name}")
 
     if not input_path.exists():
         raise FileNotFoundError(f"{input_path} does not exist!")
