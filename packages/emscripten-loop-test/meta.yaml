@@ -1,0 +1,10 @@
+package:
+  name: emscripten-loop-test
+  version: "0.1"
+  tag:
+    - core
+    - pyodide.test
+  top-level:
+    - emscripten_loop_test
+source:
+  path: emscripten-loop-test
