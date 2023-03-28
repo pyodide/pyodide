@@ -64,7 +64,7 @@ code.literal {
 .badge:empty {
   display: none;
 }
-.btn .badge {
+.badge {
   position: relative;
   top: -1px;
 }
