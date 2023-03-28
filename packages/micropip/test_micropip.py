@@ -52,7 +52,7 @@ def test_install_simple(selenium_standalone_micropip):
             return await pyodide.runPythonAsync(`
                 import os
                 import micropip
-                from pyodide import to_js
+                from pyodide.ffi import to_js
                 # Package 'pyodide-micropip-test' has dependency on 'snowballstemmer'
                 # It is used to test markers support
                 await micropip.install('pyodide-micropip-test')

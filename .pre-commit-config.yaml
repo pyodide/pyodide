@@ -89,7 +89,7 @@ repos:
             "--ignore-words-list",
             "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te",
           ]
-        exclude: ^benchmark/benchmarks/pystone_benchmarks/pystone\.py$
+        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
 
 ci:
   autoupdate_schedule: "quarterly"

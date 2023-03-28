@@ -1518,28 +1518,6 @@ def test_deprecations(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_moved_deprecation_warnings(selenium_standalone):
-    import pytest
-
-    import pyodide
-    from pyodide import DEPRECATED_LIST, code, ffi, http  # noqa: F401
-
-    for func, mod in DEPRECATED_LIST.items():
-        getattr(getattr(pyodide, mod), func)
-
-    for func, mod in DEPRECATED_LIST.items():
-        with pytest.warns(FutureWarning, match=mod):
-            getattr(pyodide, func)
-
-    import warnings
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        for func in DEPRECATED_LIST.keys():
-            getattr(pyodide, func)
-
-
-@run_in_pyodide(packages=["pytest"])
 def test_module_not_found_hook(selenium_standalone):
     import importlib
 

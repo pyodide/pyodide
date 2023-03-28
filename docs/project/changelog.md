@@ -140,6 +140,15 @@ myst:
   versions). The exceptions obtained with this builds will not include code
   snippets however. {pr}`3701`
 
+- {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
+  directly. This has been deprecated since v0.21.0. Now all functions are only available
+  under submodules.
+  {pr}`3677`
+
+- {{ Breaking }} Removed support for passing the "message" argument to `PyProxy.destroy`
+  in a positional argument. This has been deprecated since v0.22.0.
+  {pr}`3677`
+
 ### Build System
 
 - {{ Enhancement}} Add `--build-dependencies` to pyodide build command
@@ -201,9 +210,10 @@ myst:
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
-  mypy {pr}`3504`, multidict {pr}`3581`
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
 
 - Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
+  See all package versions in this release in {ref}`packages-in-pyodide`.
 
 ## Version 0.22.1
 
