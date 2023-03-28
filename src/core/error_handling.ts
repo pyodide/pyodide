@@ -152,7 +152,14 @@ API.maybe_fatal_error = function (e: any) {
   // This might cause problems in the future, so we need to find a way to fix it.
   // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
   //      2) https://github.com/kitao/pyxel/issues/418
-  if (typeof e === "string" && e == "unwind") {
+  if (e && e == "unwind") {
+    if (!Module._is_thread_state_saved()) {
+      console.warn(
+        "No thread state saved. Make sure to save the thread state before calling a function " +
+          "that uses emscripten_set_main_loop().",
+      );
+    }
+
     return;
   }
 
