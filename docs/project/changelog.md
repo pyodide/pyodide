@@ -219,6 +219,13 @@ myst:
 - Upgraded packages: see the list of packages versions in this release in
   {ref}`packages-in-pyodide`.
 
+### List of Contributors
+
+Alexey Ignatiev, Andrea Giammarchi, Arpit, Christian Clauss, Deepak Cherian,
+Eli Lamb, Feodor Fitsner, Gyeongjae Choi, Hood Chatham, Jeff Glass, Jo Bovy,
+Joe Marshall, josephrocca, Loïc Estève, martinRenou, messense, Nicholas
+Bollweg, Roman Yurchak, TheOnlyWayUp, Victor Blomqvist, Ye Joo Park
+
 ## Version 0.22.1
 
 _January 25, 2023_
