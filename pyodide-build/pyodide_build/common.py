@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import hashlib
 import os
 import re
 import shutil
@@ -464,3 +465,27 @@ def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
         ) as fh_zip_out:
             for name in fh_zip_in.namelist():
                 fh_zip_out.writestr(name, fh_zip_in.read(name))
+
+
+def _get_sha256_checksum(archive: Path) -> str:
+    """Compute the sha256 checksum of a file
+
+    Parameters
+    ----------
+    archive
+        the path to the archive we wish to checksum
+
+    Returns
+    -------
+    checksum
+         sha256 checksum of the archive
+    """
+    CHUNK_SIZE = 1 << 16
+    h = hashlib.sha256()
+    with open(archive, "rb") as fd:
+        while True:
+            chunk = fd.read(CHUNK_SIZE)
+            h.update(chunk)
+            if len(chunk) < CHUNK_SIZE:
+                break
+    return h.hexdigest()
