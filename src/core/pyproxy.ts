@@ -1265,6 +1265,10 @@ export class PyAsyncIterator extends PyProxy {
 export interface PyAsyncIterator extends PyAsyncIteratorMethods {}
 
 export class PyAsyncIteratorMethods {
+  /** @private */
+  [Symbol.asyncIterator]() {
+    return this;
+  }
   /**
    * This translates to the Python code ``anext(obj)``. Returns the next value
    * of the asynchronous iterator. The argument will be sent to the Python
