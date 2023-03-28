@@ -494,7 +494,7 @@ def test_pyproxy_mixins3(selenium):
         """
         let [Test, t] = pyodide.runPython(`
             class Test: pass
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.prototype === undefined);
@@ -536,7 +536,7 @@ def test_pyproxy_mixins4(selenium):
                 prototype="prototype"
                 name="me"
                 length=7
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.$prototype === "prototype");
@@ -561,7 +561,7 @@ def test_pyproxy_mixins5(selenium):
             class Test:
                 def __len__(self):
                     return 9
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => !("length" in Test));
@@ -880,7 +880,7 @@ def test_pyproxy_call(selenium):
     selenium.run_js(
         """
         pyodide.runPython(`
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             def f(x=2, y=3):
                 return to_js([x, y])
         `);

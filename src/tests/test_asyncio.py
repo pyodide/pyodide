@@ -13,7 +13,7 @@ def test_await_jsproxy(selenium):
             global resolve
             resolve = res
         from js import Promise
-        from pyodide import create_once_callable
+        from pyodide.ffi import create_once_callable
         p = Promise.new(create_once_callable(prom))
         async def temp():
             x = await p
@@ -43,7 +43,7 @@ def test_then_jsproxy(selenium):
             reject = rej
 
         from js import Promise
-        from pyodide import create_once_callable
+        from pyodide.ffi import create_once_callable
         result = None
         err = None
         finally_occurred = False
@@ -245,9 +245,9 @@ def test_eval_code_await_jsproxy(selenium):
             global resolve
             resolve = res
         from js import Promise
-        from pyodide import create_once_callable
+        from pyodide.ffi import create_once_callable
         p = Promise.new(create_once_callable(prom))
-        from pyodide import eval_code_async
+        from pyodide.code import eval_code_async
         c = eval_code_async(
             '''
             x = await p
@@ -273,7 +273,7 @@ def test_eval_code_await_fetch(selenium):
     selenium.run(
         """
         from js import fetch
-        from pyodide import eval_code_async
+        from pyodide.code import eval_code_async
         c = eval_code_async(
             '''
             response = await fetch("console.html")
@@ -310,7 +310,7 @@ def test_eval_code_await_error(selenium):
         self.async_js_raises = async_js_raises;
         pyodide.runPython(`
             from js import async_js_raises
-            from pyodide import eval_code_async
+            from pyodide.code import eval_code_async
             c = eval_code_async(
                 '''
                 await async_js_raises()

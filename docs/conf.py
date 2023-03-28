@@ -103,6 +103,8 @@ html_logo = "_static/img/pyodide-logo.png"
 # theme-specific options
 html_theme_options: dict[str, Any] = {
     "announcement": "",
+    "repository_url": "https://github.com/pyodide/pyodide",
+    "use_repository_button": True,
 }
 
 # paths that contain custom static files (such as style sheets)

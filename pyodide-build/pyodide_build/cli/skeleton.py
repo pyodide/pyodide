@@ -1,11 +1,13 @@
 # Create or update a package recipe skeleton,
 # inspired from `conda skeleton` command.
 
+import sys
 from pathlib import Path
 
 import typer
 
 from .. import common, mkpkg
+from ..logger import logger
 
 app = typer.Typer()
 
@@ -65,12 +67,21 @@ def new_recipe_pypi(
         recipe_dir_ = root / "packages"
 
     if update or update_patched:
-        mkpkg.update_package(
-            recipe_dir_,
-            name,
-            version,
-            source_fmt=source_format,  # type: ignore[arg-type]
-            update_patched=update_patched,
-        )
+        try:
+            mkpkg.update_package(
+                recipe_dir_,
+                name,
+                version,
+                source_fmt=source_format,  # type: ignore[arg-type]
+                update_patched=update_patched,
+            )
+        except mkpkg.MkpkgFailedException as e:
+            logger.error(f"{name} update failed: {e}")
+            sys.exit(1)
+        except mkpkg.MkpkgSkipped as e:
+            logger.warn(f"{name} update skipped: {e}")
+        except Exception:
+            print(name)
+            raise
     else:
         mkpkg.make_package(recipe_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]

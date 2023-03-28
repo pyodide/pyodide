@@ -235,6 +235,43 @@ jobs:
           paths:
             - ./xbuildenv
 
+  build-test-pyc-packages:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -r requirements.txt
+            pip install -e ./pyodide-build
+            npm install -g node-fetch@2
+
+      - run:
+          name: Py-compile packages
+          command: |
+            pyodide py-compile --compression-level 0 dist/
+
+      - run:
+          name: Test import of py-compiled packages
+          command: |
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --durations 50 \
+              --benchmark-json=benchmark-time.json \
+              "packages/_tests/test_packages_common.py::test_import" -k "node"
+
+            mv dist/ dist-pyc/
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./dist-pyc
+
   test-main:
     parameters:
       test-params:
@@ -793,6 +830,13 @@ workflows:
               only: /.*/
 
       - build-pyodide-debug:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - build-test-pyc-packages:
           requires:
             - build-packages
           filters:
