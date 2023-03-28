@@ -129,7 +129,6 @@ myst:
   replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
   replaced by `pyodide skeleton pypi` {pr}`3668`
 
-
 - {{ Enhancement }} `pyodide py-compile` can now py-compile zip archives, and
   folders with wheels / zip archives. If the input folder contains the `repodata.json`
   the paths and checksums it contains will also be updated
