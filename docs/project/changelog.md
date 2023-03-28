@@ -123,6 +123,21 @@ myst:
 
 ### Python / JavaScript Foreign Function Interface
 
+- {{ Fix }} PyProxies of Async iterators are now async iterable JavaScript
+  objects. The code:
+
+  ```javascript
+  for await (let x of async_iterator_pyproxy) {
+    // ...
+  }
+  ```
+
+  would previously fail with `TypeError: async_iterator_pyproxy is not async
+iterable`. (Python async _iterables_ that were not also iterators were already
+  async iterable, the problem was only with Python objects that are both async
+  _iterable_ and an async iterator.)
+  {pr}`3708`
+
 - {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
   directly. This has been deprecated since v0.21.0. Now all functions are only available
   under submodules.
