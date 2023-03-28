@@ -5,6 +5,10 @@ import "./module";
 import { ffi } from "./ffi";
 
 import { loadPackage, loadedPackages } from "./load-package";
+import {
+  is_running_infinite_loop,
+  cancel_infinite_loop,
+} from "./infinite-loop";
 import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
@@ -132,6 +136,10 @@ export class PyodideAPI {
    * from JavaScript.
    */
   static pyodide_py = {} as PyProxy; // actually defined in loadPyodide (see pyodide.js)
+
+  static is_running_infinite_loop = is_running_infinite_loop;
+
+  static cancel_infinite_loop = cancel_infinite_loop;
 
   /**
    * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install

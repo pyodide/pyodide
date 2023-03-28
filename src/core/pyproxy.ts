@@ -414,7 +414,8 @@ Module.callPyObjectKwargs = function (
     );
     Py_EXIT();
   } catch (e) {
-    API.fatal_error(e);
+    API.maybe_fatal_error(e);
+    return;
   } finally {
     Hiwire.decref(idargs);
     Hiwire.decref(idkwnames);
