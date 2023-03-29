@@ -227,6 +227,11 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   regular spaces in pyodide REPL.
   {pr}`3558`
 
+- {{ Enhancement }} Allow changing the build type used in the REPL by passing the
+  `build` argument to the REPL URL. For instance,
+  `https://pyodide.org/en/latest/console.html?build=debug` will load debug dev build.
+  {pr}`3671`
+
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
