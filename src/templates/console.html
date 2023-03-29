@@ -72,6 +72,25 @@
       }
 
       async function main() {
+        let indexURL = "{{ PYODIDE_BASE_URL }}";
+        const urlParams = new URLSearchParams(window.location.search);
+        const buildParam = urlParams.get("build");
+        if (buildParam) {
+          if (["full", "debug", "pyc"].includes(buildParam)) {
+            indexURL = indexURL.replace(
+              "/full/",
+              "/" + urlParams.get("build") + "/",
+            );
+          } else {
+            console.warn(
+              'Invalid URL parameter: build="' +
+                buildParam +
+                '". Using default "full".',
+            );
+          }
+        }
+        const { loadPyodide } = await import(indexURL + "pyodide.mjs");
+
         let term;
         globalThis.pyodide = await loadPyodide({
           stdin: () => {
@@ -234,22 +253,7 @@
           $(".cmd-cursor").addClass("noblink");
         }
       }
-      // Dynamically update the indexURL to use with Pyodide
-      var script = document.createElement("script");
-      script.addEventListener("load", function () {
-        window.console_ready = main();
-      });
-
-      let indexURL = "{{ PYODIDE_BASE_URL }}";
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.has("build")) {
-        indexURL = indexURL.replace(
-          "/full/",
-          "/" + urlParams.get("build") + "/",
-        );
-      }
-      script.src = indexURL + "pyodide.js";
-      document.head.appendChild(script);
+      window.console_ready = main();
     </script>
   </body>
 </html>
