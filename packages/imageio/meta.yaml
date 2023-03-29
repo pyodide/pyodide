@@ -1,11 +1,11 @@
 package:
   name: imageio
-  version: 2.26.1
+  version: 2.27.0
   top-level:
     - imageio
 source:
-  sha256: df56ade8a9b43476ce020be0202b09a3a4cc0c7a079f8fe5ee4b87105eff4237
-  url: https://files.pythonhosted.org/packages/86/c2/d822a7f53a3ac91868419baac685c21812124ae882888e722fe01b529e09/imageio-2.26.1-py3-none-any.whl
+  sha256: 24c6ad7d000e64eacc2861c402b6fb128f370cb0a6623cf796d83bca0d0d14d3
+  url: https://files.pythonhosted.org/packages/ad/5b/fa636ec082247ffc250c2a16bb262f3405654cbb098a70996d99d59677eb/imageio-2.27.0-py3-none-any.whl
 requirements:
   run:
     - numpy
