@@ -13,7 +13,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.23.0
+
+_March 30, 2023_
 
 ### General
 
