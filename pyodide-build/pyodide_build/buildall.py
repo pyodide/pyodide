@@ -4,7 +4,6 @@
 Build all of the packages in a given directory.
 """
 
-import argparse
 import dataclasses
 import hashlib
 import json
@@ -29,7 +28,7 @@ from rich.table import Table
 
 from . import common, recipe
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels, find_missing_executables
+from .common import find_matching_wheels, find_missing_executables, repack_zip_archive
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 from .pywasmcross import BuildArgs
@@ -696,16 +695,14 @@ def generate_repodata(
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
 
-    import sys
-
-    sys.path.append(str(common.get_pyodide_root() / "src/py"))
-    from pyodide import __version__
+    from . import __version__
 
     # Build package.json data.
     [platform, _, arch] = common.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
+        # This assumes that pyodide-build version == pyodide version.
         "version": __version__,
         "python": sys.version.partition(" ")[0],
     }
@@ -714,13 +711,18 @@ def generate_repodata(
 
 
 def copy_packages_to_dist_dir(
-    packages: Iterable[BasePackage], output_dir: Path
+    packages: Iterable[BasePackage], output_dir: Path, compression_level: int = 6
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
             continue
 
-        shutil.copy(pkg.dist_artifact_path(), output_dir)
+        dist_artifact_path = pkg.dist_artifact_path()
+
+        shutil.copy(dist_artifact_path, output_dir)
+        repack_zip_archive(
+            output_dir / dist_artifact_path.name, compression_level=compression_level
+        )
 
         test_path = pkg.tests_path()
         if test_path:
@@ -775,7 +777,9 @@ def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
             logger.warning(f"Warning: {pkg.name} has no build log")
 
 
-def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
+def install_packages(
+    pkg_map: dict[str, BasePackage], output_dir: Path, compression_level: int = 6
+) -> None:
     """
     Install packages into the output directory.
     - copies build artifacts (wheel, zip, ...) to the output directory
@@ -792,7 +796,9 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
     output_dir.mkdir(exist_ok=True, parents=True)
 
     logger.info(f"Copying built packages to {output_dir}")
-    copy_packages_to_dist_dir(pkg_map.values(), output_dir)
+    copy_packages_to_dist_dir(
+        pkg_map.values(), output_dir, compression_level=compression_level
+    )
 
     repodata_path = output_dir / "repodata.json"
     logger.info(f"Writing repodata.json to {repodata_path}")
@@ -801,94 +807,6 @@ def install_packages(pkg_map: dict[str, BasePackage], output_dir: Path) -> None:
     with repodata_path.open("w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Build all the packages in a given directory\n\n"
-        "Unless the --only option is provided\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the pyodide Makefile."
-    )
-    parser.add_argument(
-        "dir",
-        type=str,
-        nargs=1,
-        default="packages",
-        help="Input directory containing a tree of package definitions",
-    )
-    parser.add_argument(
-        "output",
-        type=str,
-        nargs=1,
-        default="dist",
-        help="Output directory in which to put all built packages",
-    )
-    parser.add_argument(
-        "--cflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS",
-    )
-    parser.add_argument(
-        "--cxxflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Extra C++ specific compiling flags. " "Default: SIDE_MODULE_CXXFLAGS"),
-    )
-    parser.add_argument(
-        "--ldflags",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS",
-    )
-    parser.add_argument(
-        "--target-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help="The path to the target Python installation. Default: TARGETINSTALLDIR",
-    )
-    parser.add_argument(
-        "--host-install-dir",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Directory for installing built host packages. Default: HOSTINSTALLDIR"),
-    )
-    parser.add_argument(
-        "--log-dir",
-        type=str,
-        dest="log_dir",
-        nargs="?",
-        default=None,
-        help=("Directory to place log files"),
-    )
-    parser.add_argument(
-        "--only",
-        type=str,
-        nargs="?",
-        default=None,
-        help=("Only build the specified packages, provided as a comma-separated list"),
-    )
-    parser.add_argument(
-        "--force-rebuild",
-        action="store_true",
-        help=(
-            "Force rebuild of all packages regardless of whether they appear to have been updated"
-        ),
-    )
-    parser.add_argument(
-        "--n-jobs",
-        type=int,
-        nargs="?",
-        default=4,
-        help="Number of packages to build in parallel",
-    )
-    return parser
 
 
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
@@ -904,44 +822,7 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
         args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+    if args.compression_level is None:
+        args.compression_level = int(common.get_make_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args
-
-
-def main(args: argparse.Namespace) -> None:
-    packages_dir = Path(args.dir[0]).resolve()
-    outputdir = Path(args.output[0]).resolve()
-    targets = args.only
-    n_jobs = args.n_jobs
-    log_dir = Path(args.log_dir) if args.log_dir else None
-    force_rebuild = args.force_rebuild
-
-    build_args = BuildArgs(
-        pkgname="",
-        cflags=args.cflags,
-        cxxflags=args.cxxflags,
-        ldflags=args.ldflags,
-        target_install_dir=args.target_install_dir,
-        host_install_dir=args.host_install_dir,
-    )
-
-    build_args = set_default_build_args(build_args)
-
-    pkg_map = build_packages(
-        packages_dir,
-        targets,
-        build_args=build_args,
-        n_jobs=n_jobs,
-        force_rebuild=force_rebuild,
-    )
-
-    if log_dir:
-        copy_logs(pkg_map, log_dir)
-
-    install_packages(pkg_map, outputdir)
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)

@@ -442,10 +442,6 @@ Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
-const DESTROY_MSG_POSITIONAL_ARG_DEPRECATED =
-  "Using a positional argument for the message argument for 'destroy' is deprecated and will be removed in v0.23";
-let DESTROY_MSG_POSITIONAL_ARG_WARNED = false;
-
 export interface PyProxy {
   [x: string]: any;
 }
@@ -527,13 +523,6 @@ export class PyProxy {
    *
    */
   destroy(options: { message?: string; destroyRoundtrip?: boolean } = {}) {
-    if (typeof options === "string") {
-      if (!DESTROY_MSG_POSITIONAL_ARG_WARNED) {
-        DESTROY_MSG_POSITIONAL_ARG_WARNED = true;
-        console.warn(DESTROY_MSG_POSITIONAL_ARG_DEPRECATED);
-      }
-      options = { message: options };
-    }
     options = Object.assign({ message: "", destroyRoundtrip: true }, options);
     const { message: m, destroyRoundtrip: d } = options;
     Module.pyproxy_destroy(this, m, d);
@@ -1284,6 +1273,10 @@ export class PyAsyncIterator extends PyProxy {
 export interface PyAsyncIterator extends PyAsyncIteratorMethods {}
 
 export class PyAsyncIteratorMethods {
+  /** @private */
+  [Symbol.asyncIterator]() {
+    return this;
+  }
   /**
    * This translates to the Python code ``anext(obj)``. Returns the next value
    * of the asynchronous iterator. The argument will be sent to the Python

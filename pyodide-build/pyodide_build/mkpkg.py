@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
-import argparse
 import contextlib
 import json
-import os
 import shutil
 import subprocess
 import tempfile
@@ -46,6 +44,10 @@ class MetadataDict(TypedDict):
     releases: dict[str, list[dict[str, Any]]]
     urls: list[URLDict]
     vulnerabilities: list[Any]
+
+
+class MkpkgSkipped(Exception):
+    pass
 
 
 class MkpkgFailedException(Exception):
@@ -226,12 +228,13 @@ def update_package(
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
-    if "url" not in yaml_content["source"]:
-        raise MkpkgFailedException(f"Skipping: {package} is a local package!")
-
     build_info = yaml_content.get("build", {})
-    if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        raise MkpkgFailedException(f"Skipping: {package} is a library!")
+    ty = build_info.get("type", None)
+    if ty in ["static_library", "shared_library", "cpython_module"]:
+        raise MkpkgSkipped(f"{package} is a {ty.replace('_', ' ')}!")
+
+    if "url" not in yaml_content["source"]:
+        raise MkpkgSkipped(f"{package} is a local package!")
 
     if yaml_content["source"]["url"].endswith("whl"):
         old_fmt = "wheel"
@@ -284,86 +287,3 @@ def update_package(
     run_prettier(meta_path)
 
     logger.success(f"Updated {package} from {local_ver} to {pypi_ver}.")
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = """
-Make a new pyodide package. Creates a simple template that will work
-for most pure Python packages, but will have to be edited for more
-complex things.""".strip()
-    parser.add_argument("package", type=str, nargs=1, help="The package name on PyPI")
-    parser.add_argument("--update", action="store_true", help="Update existing package")
-    parser.add_argument(
-        "--update-if-not-patched",
-        action="store_true",
-        help="Update existing package if it has no patches",
-    )
-    parser.add_argument(
-        "--source-format",
-        help="Which source format is preferred. Options are wheel or sdist. "
-        "If none is provided, then either a wheel or an sdist will be used. "
-        "When updating a package, the type will be kept the same if possible.",
-    )
-    parser.add_argument(
-        "--version",
-        type=str,
-        default=None,
-        help="Package version string, "
-        "e.g. v1.2.1 (defaults to latest stable release)",
-    )
-    parser.add_argument(
-        "--recipe-dir",
-        type=str,
-        default="packages",
-        help="Directory to create the recipe in (defaults to PYODIDE_ROOT/packages)",
-    )
-    return parser
-
-
-def main(args: argparse.Namespace) -> None:
-    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
-    if PYODIDE_ROOT is None:
-        raise ValueError("PYODIDE_ROOT is not set")
-
-    if os.path.isabs(args.recipe_dir):
-        recipe_dir = Path(args.recipe_dir)
-    else:
-        recipe_dir = (Path(PYODIDE_ROOT) / args.recipe_dir).resolve()
-
-    try:
-        package = args.package[0]
-        if args.update:
-            update_package(
-                recipe_dir,
-                package,
-                args.version,
-                update_patched=True,
-                source_fmt=args.source_format,
-            )
-            return
-        if args.update_if_not_patched:
-            update_package(
-                recipe_dir,
-                package,
-                args.version,
-                update_patched=False,
-                source_fmt=args.source_format,
-            )
-            return
-        make_package(recipe_dir, package, args.version, source_fmt=args.source_format)
-    except MkpkgFailedException as e:
-        # This produces two types of error messages:
-        #
-        # When the request to get the pypi json fails, it produces a message like:
-        # "Failed to load metadata for libxslt from https://pypi.org/pypi/libxslt/json: HTTP Error 404: Not Found"
-        #
-        # If there is no sdist it prints an error message like:
-        # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
-        logger.error(e.args[0])
-        exit(1)
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)

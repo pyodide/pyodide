@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import hashlib
 import os
 import re
 import shutil
@@ -11,6 +12,7 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
 
 if sys.version_info < (3, 11, 0):
@@ -418,3 +420,72 @@ def get_num_cores() -> int:
     import loky
 
     return loky.cpu_count()
+
+
+def make_zip_archive(
+    archive_path: Path,
+    input_dir: Path,
+    compression_level: int = 6,
+) -> None:
+    """Create a zip archive out of a input folder
+
+    Parameters
+    ----------
+    archive_path
+       Path to the zip file that will be created
+    input_dir
+       input dir to compress
+    compression_level
+       compression level of the resulting zip file.
+    """
+    if compression_level > 0:
+        compression = zipfile.ZIP_DEFLATED
+    else:
+        compression = zipfile.ZIP_STORED
+
+    with zipfile.ZipFile(
+        archive_path, "w", compression=compression, compresslevel=compression_level
+    ) as zf:
+        for file in input_dir.rglob("*"):
+            zf.write(file, file.relative_to(input_dir))
+
+
+def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
+    """Repack zip archive with a different compression level"""
+    if compression_level > 0:
+        compression = zipfile.ZIP_DEFLATED
+    else:
+        compression = zipfile.ZIP_STORED
+
+    with TemporaryDirectory() as temp_dir:
+        input_path = Path(temp_dir) / archive_path.name
+        shutil.move(archive_path, input_path)
+        with zipfile.ZipFile(input_path) as fh_zip_in, zipfile.ZipFile(
+            archive_path, "w", compression=compression, compresslevel=compression_level
+        ) as fh_zip_out:
+            for name in fh_zip_in.namelist():
+                fh_zip_out.writestr(name, fh_zip_in.read(name))
+
+
+def _get_sha256_checksum(archive: Path) -> str:
+    """Compute the sha256 checksum of a file
+
+    Parameters
+    ----------
+    archive
+        the path to the archive we wish to checksum
+
+    Returns
+    -------
+    checksum
+         sha256 checksum of the archive
+    """
+    CHUNK_SIZE = 1 << 16
+    h = hashlib.sha256()
+    with open(archive, "rb") as fd:
+        while True:
+            chunk = fd.read(CHUNK_SIZE)
+            h.update(chunk)
+            if len(chunk) < CHUNK_SIZE:
+                break
+    return h.hexdigest()

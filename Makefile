@@ -125,7 +125,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	npx rollup -c src/js/rollup.config.mjs
+	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -179,7 +179,7 @@ pyodide_build: ./pyodide-build/pyodide_build/**
 	which pyodide >/dev/null
 
 dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
-	pyodide create-zipfile $(CPYTHONLIB) src/py --output $@
+	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@

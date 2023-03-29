@@ -35,6 +35,11 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
 
+# The compression level used for zip files and wheels. When distributing via a
+# CDN it's more efficient to keep this value to 0, and let the CDN perform the
+# Brotli compression.
+export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
+
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
 export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/

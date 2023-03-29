@@ -12,9 +12,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
-Handler.extensions_map[".wasm"] = "application/wasm"
-
-
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.description = "Start a server with the supplied dist-dir and port."
     parser.add_argument(

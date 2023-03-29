@@ -268,6 +268,21 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
                 """
             )
 
+    # In numpy 1.24 f2py changed its treatment of character argument. In
+    # particular it does not generate a ftnlen parameter for each
+    # character parameter but f2c still generates it. The following code
+    # removes unneeded ftnlen parameters from the f2ced signature. The
+    # problematic subroutines and parameters are the ones with a type character
+    # in scipy/sparse/linalg/_eigen/arpack/arpack.pyf.src
+    if "eupd.c" in str(f2c_output):
+        # put signature on a single line to make replacement more
+        # straightforward
+        regrouped_lines = regroup_lines(lines)
+        lines = [
+            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line)
+            for line in regrouped_lines
+        ]
+
     with open(f2c_output, "w") as f:
         f.writelines(lines)
 

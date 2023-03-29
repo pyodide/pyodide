@@ -14,11 +14,9 @@ requirements:
   host:
     - numpy
   run:
-    - distutils
     - packaging
     - numpy
     - scipy
-    - matplotlib
     - networkx
     - Pillow
     - imageio
