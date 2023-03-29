@@ -1,11 +1,11 @@
 package:
   name: bitarray
-  version: 2.6.0
+  version: 2.7.3
   top-level:
     - bitarray
 source:
-  url: https://files.pythonhosted.org/packages/80/b8/e81dda81f027e559728f6ee9bea7ec5e1fbf77120afbee4c440d3902d0a8/bitarray-2.6.0.tar.gz
-  sha256: 56d3f16dd807b1c56732a244ce071c135ee973d3edc9929418c1b24c5439a0fd
+  url: https://files.pythonhosted.org/packages/82/30/68a3ee41e6abbb521a3418fb25a7755127a1d6bf4604028bb404f833b2fc/bitarray-2.7.3.tar.gz
+  sha256: f71256a32609b036adad932e1228b66a6b4e2cae6be397e588ddc0babd9a78b9
 about:
   home: https://github.com/ilanschnell/bitarray
   PyPI: https://pypi.org/project/bitarray

@@ -1,6 +1,6 @@
 package:
   name: opencv-python
-  version: 4.6.0.66
+  version: 4.7.0.72
   top-level:
     - cv2
 about:
@@ -9,8 +9,8 @@ about:
   summary: Wrapper package for OpenCV python bindings.
   license: MIT
 source:
-  url: https://files.pythonhosted.org/packages/7a/1c/e57fe138615c29b8d1442009057dd420c58d4773cb16112e914c9e7b47d8/opencv-python-4.6.0.66.tar.gz
-  sha256: c5bfae41ad4031e66bb10ec4a0a2ffd3e514d092652781e8b1ac98d1b59f1158
+  url: https://files.pythonhosted.org/packages/40/93/655af887bafece2a655998f53b9bd21ad94b0627d81d44aef35c79f40de6/opencv-python-4.7.0.72.tar.gz
+  sha256: 3424794a711f33284581f3c1e4b071cfc827d02b99d6fd9a35391f517c453306
   extras:
     - [cmake/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
     - [

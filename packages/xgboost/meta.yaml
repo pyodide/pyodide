@@ -26,3 +26,4 @@ about:
   PyPI: https://pypi.org/project/xgboost
   summary: XGBoost Python Package
   license: Apache-2.0
+# Note: this package cannot be updated until we add support for building with meson
