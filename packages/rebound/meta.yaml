@@ -22,3 +22,4 @@ about:
   PyPI: https://pypi.org/project/rebound
   summary: An open-source multi-purpose N-body code
   license: GPL
+# Note: this package needs to be manually upgraded to the next version
