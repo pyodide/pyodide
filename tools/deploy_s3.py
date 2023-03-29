@@ -22,6 +22,33 @@ def check_s3_object_exists(s3_client, bucket: str, object_name: str):
         raise
 
 
+def _validate_remote_prefix_to_remove(remote_prefix: Path) -> None:
+    """Check remote prefix to remove
+
+    Examples
+    --------
+    >>> _validate_remote_prefix_to_remove(Path("dev/full/"))
+    >>> _validate_remote_prefix_to_remove(Path("dev/abc2/"))
+    >>> _validate_remote_prefix_to_remove(Path("/"))
+    Traceback (most recent call last):
+    ValueError: Remote prefix to remove should be at least 2 levels deep. For example, 'dev/full/'
+    >>> _validate_remote_prefix_to_remove(Path("v0.17.0/full/"))
+    Traceback (most recent call last):
+    ValueError: Remote prefix to remove should start with 'dev' (without leading '/'). For example, 'dev/full/'
+    """
+    prefix_parts = remote_prefix.parts
+    if len(prefix_parts) < 2:
+        raise ValueError(
+            "Remote prefix to remove should be at least 2 levels deep. "
+            "For example, 'dev/full/'"
+        )
+    if prefix_parts[0] != "dev":
+        raise ValueError(
+            "Remote prefix to remove should start with 'dev' (without leading '/'). "
+            "For example, 'dev/full/'"
+        )
+
+
 def _rm_s3_prefix(bucket: str, prefix: str):
     """Remove all objects under a given prefix"""
     s3 = boto3.resource("s3")
@@ -54,7 +81,9 @@ def deploy_to_s3_main(
     typer.echo(" - content-encoding: gzip")
 
     if rm_remote_prefix:
-        _rm_s3_prefix(bucket, str(remote_prefix).lstrip("/"))
+        _validate_remote_prefix_to_remove(remote_prefix)
+        if not pretend:
+            _rm_s3_prefix(bucket, str(remote_prefix).lstrip("/"))
 
     for file_path in local_folder.glob("**/*"):
         if not file_path.is_file():
