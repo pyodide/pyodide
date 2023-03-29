@@ -62,11 +62,11 @@ def test_load_largish_file(selenium_standalone, request, httpserver):
 
     selenium.run(
         f"""
-        import pyodide
+        import pyodide.http
         import matplotlib.pyplot as plt
         import pandas as pd
 
-        df = pd.read_json(pyodide.open_url('{request_url}'))
+        df = pd.read_json(pyodide.http.open_url('{request_url}'))
         assert df.shape == ({n_rows}, 8)
         """
     )

@@ -32,6 +32,7 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.package_loader.sub_resource_hash;
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
+    pyodide.pyimport("pyodide.http").destroy();
 """
 
 

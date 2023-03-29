@@ -46,6 +46,10 @@ class MetadataDict(TypedDict):
     vulnerabilities: list[Any]
 
 
+class MkpkgSkipped(Exception):
+    pass
+
+
 class MkpkgFailedException(Exception):
     pass
 
@@ -224,12 +228,13 @@ def update_package(
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
-    if "url" not in yaml_content["source"]:
-        raise MkpkgFailedException(f"Skipping: {package} is a local package!")
-
     build_info = yaml_content.get("build", {})
-    if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        raise MkpkgFailedException(f"Skipping: {package} is a library!")
+    ty = build_info.get("type", None)
+    if ty in ["static_library", "shared_library", "cpython_module"]:
+        raise MkpkgSkipped(f"{package} is a {ty.replace('_', ' ')}!")
+
+    if "url" not in yaml_content["source"]:
+        raise MkpkgSkipped(f"{package} is a local package!")
 
     if yaml_content["source"]["url"].endswith("whl"):
         old_fmt = "wheel"
