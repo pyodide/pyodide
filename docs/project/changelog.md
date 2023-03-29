@@ -248,6 +248,8 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
   {pr}`3709`
 
+- Added experimental [support for SDL based packages](using-sdl) {pr}`3508`
+
 - Upgraded packages: see the list of packages versions in this release in
   {ref}`packages-in-pyodide`.
 
