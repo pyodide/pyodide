@@ -139,6 +139,12 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   _iterable_ and an async iterator.)
   {pr}`3708`
 
+- {{ Enhancement }} A py-compiled build which has smaller and faster-to-load
+  packages is now deployed under
+  `https://cdn.jsdelivr.net/pyodide/v0.23.0/pyc/` (also for future
+  versions). The exceptions obtained with this builds will not include code
+  snippets however. {pr}`3701`
+
 - {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
   directly. This has been deprecated since v0.21.0. Now all functions are only available
   under submodules.

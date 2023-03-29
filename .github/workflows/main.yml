@@ -57,7 +57,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          cd pyodide-build && python3 -m pip install -e ".[test]" && cd ..
+          cd pyodide-build && python3 -m pip install -e ".[test,deploy]" && cd ..
           python3 -m pip install pytest-cov hypothesis pytz
       - name: Run tests
         shell: bash -l {0}
@@ -67,7 +67,7 @@ jobs:
               --verbose \
               --runtime=host \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/ packages/_tests
+              src pyodide-build packages/micropip/ packages/_tests tools/
       - uses: codecov/codecov-action@v3
         with:
           fail_ci_if_error: false
