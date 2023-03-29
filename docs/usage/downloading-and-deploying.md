@@ -13,6 +13,11 @@ Pyodide is available from the JsDelivr CDN
 | Latest release      | `{{PYODIDE_CDN_URL}}`                        | Recommended, cached by the browser                                                       | [link](https://pyodide.org/en/stable/console.html) |
 | Dev (`main` branch) | `https://cdn.jsdelivr.net/pyodide/dev/full/` | Re-deployed for each commit on main, no browser caching, should only be used for testing | [link](https://pyodide.org/en/latest/console.html) |
 
+For a given version, several build variants are also available,
+
+- `<version>/full/`: the default full build
+- `<version>/debug/`: build with unminified `pyodide.asm.js` useful for debugging
+
 ### GitHub releases
 
 You can also download Pyodide packages from [GitHub

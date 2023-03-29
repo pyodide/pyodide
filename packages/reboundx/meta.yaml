@@ -23,3 +23,4 @@ about:
   PyPI: https://pypi.org/project/reboundx
   summary: A library for including additional forces in REBOUND
   license: GPL
+# Note: this package needs to be manually upgraded to the next version
