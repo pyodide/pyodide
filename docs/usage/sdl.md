@@ -6,6 +6,8 @@
 :class: warning
 
 SDL support in Pyodide is experimental.
+Pyodide relies on undocumented behavior of Emscripten and SDL,
+so it may break or change in the future.
 ```
 
 Pyodide provides a way to use SDL-based packages in the browser,
@@ -27,3 +29,10 @@ pyodide.canvas.setCanvas2D(sdl2Canvas);
 ```
 
 See also: {ref}`js-api-pyodide-canvas`
+
+## Known issues
+
+There is a known issue that the Python call stacks are not being unwound
+after calling `emscripten_set_main_loop()`.
+
+see: https://github.com/pyodide/pyodide/issues/3697
