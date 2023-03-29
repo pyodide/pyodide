@@ -26,3 +26,4 @@ about:
   PyPI: https://pypi.org/project/pillow_heif
   summary: Python 3.6+ interface to libheif library
   license: LGPLv2.1
+# Note: this package needs to be manually upgraded to the next version
