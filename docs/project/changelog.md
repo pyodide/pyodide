@@ -17,7 +17,8 @@ myst:
 
 ### General
 
-- {{ Update }} Pyodide now runs Python 3.11.2.
+- {{ Update }} Pyodide now runs Python 3.11.2 which officially supports
+  WebAssembly as a [PEP11 Tier 3](https://peps.python.org/pep-0011/#tier-3) platform.
   {pr}`3252`, {pr}`3614`
 
 - {{ Update }} We now build libpyodide.a so the Pyodide foreign function
@@ -211,7 +212,7 @@ iterable`. (Python async _iterables_ that were not also iterators were already
 
 - {{ Feature }} Added `pyodide py-compile` CLI command that py compiles a wheel or a zip
   file, converting .py files to .pyc files. It can also be applied to a folder
-  with wheels / zip files. IF the If the input folder contains the
+  with wheels / zip files. If the input folder contains the
   `repodata.json` the paths and checksums it contains will also be updated
   {pr}`3253` {pr}`3700`
 
@@ -230,6 +231,10 @@ iterable`. (Python async _iterables_ that were not also iterators were already
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
   mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
+
+- Upgraded to micropip 0.3.0 (see
+  [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
+  {pr}`3709`
 
 - Upgraded packages: see the list of packages versions in this release in
   {ref}`packages-in-pyodide`.
