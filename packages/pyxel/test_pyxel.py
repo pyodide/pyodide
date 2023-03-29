@@ -12,6 +12,8 @@ def selenium_sdl(selenium_standalone):
         sdl2Canvas.id = "canvas";
 
         document.body.appendChild(sdl2Canvas);
+        // Temporary workaround for pyodide#3697
+        pyodide._api._skip_unwind_fatal_error = true;
         pyodide.canvas.setCanvas2D(sdl2Canvas);
         """
     )
