@@ -237,7 +237,6 @@ iterable`. (Python async _iterables_ that were not also iterators were already
 
 ### List of Contributors
 
-
 Alexey Ignatiev, Andrea Giammarchi, Arpit, Christian Clauss, Deepak Cherian,
 Eli Lamb, Feodor Fitsner, Gyeongjae Choi, Hood Chatham, Jeff Glass, Jo Bovy,
 Joe Marshall, josephrocca, Loïc Estève, martinRenou, messense, Nicholas
