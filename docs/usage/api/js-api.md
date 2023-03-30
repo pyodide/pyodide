@@ -35,3 +35,15 @@ import type { PyProxy } from "pyodide/ffi";
 
 .. js-doc-content:: pyodide.ffi
 ```
+
+(js-api-pyodide-canvas)=
+
+## pyodide.canvas
+
+This provides APIs to set a canvas for rendering graphics.
+
+```{eval-rst}
+.. js-doc-summary:: pyodide.canvas
+
+.. js-doc-content:: pyodide.canvas
+```

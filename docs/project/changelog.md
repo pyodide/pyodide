@@ -243,11 +243,15 @@ iterable`. (Python async _iterables_ that were not also iterators were already
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
-  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
+  pyxel {pr}`3508`.
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`,
+  cbor-diag {pr}`3581`.
 
 - Upgraded to micropip 0.3.0 (see
   [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
   {pr}`3709`
+
+- Added experimental [support for SDL based packages](using-sdl) {pr}`3508`
 
 - Upgraded packages: see the list of packages versions in this release in
   {ref}`packages-in-pyodide`.
