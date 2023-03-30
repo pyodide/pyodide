@@ -55,6 +55,7 @@ export interface Module {
   PATH: any;
   TTY: any;
   FS: FS;
+  canvas?: HTMLCanvasElement;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
 }
