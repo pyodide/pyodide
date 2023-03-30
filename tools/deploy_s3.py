@@ -105,8 +105,8 @@ def deploy_to_s3_main(
             # compression received by the end user (since the CDN re-compresses
             # files).
             fh_compressed = io.BytesIO()
-            with gzip.GzipFile(fileobj=fh_compressed, mode="w"):
-                shutil.copyfileobj(fh_in, fh_compressed)
+            with gzip.GzipFile(fileobj=fh_compressed, mode="wb") as gzip_file:
+                shutil.copyfileobj(fh_in, gzip_file)
 
             fh_compressed.seek(0)
 
