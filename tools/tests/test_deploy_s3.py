@@ -1,4 +1,7 @@
+import gzip
+import io
 import re
+import shutil
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -93,6 +96,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
 
 @mock_s3
 def test_deploy_to_s3_mime_type(tmp_path, capsys):
+    """Test that we set the correct MIME type for each file extension"""
     for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a", "mjs.map", "mjs"]:
         (tmp_path / f"a.{ext}").write_text("a")
 
@@ -129,3 +133,10 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
     assert get_header("a.json") == "application/json"
     assert get_header("a.ttf") == "font/ttf"
     assert get_header("a.mjs.map") == "binary/octet-stream"
+
+    # Test that we can read the data back
+    res = s3_client.get_object(Bucket=bucket_name, Key="a.js")
+    stream = io.BytesIO()
+    with gzip.GzipFile(fileobj=res["Body"], mode="r") as fh:
+        shutil.copyfileobj(fh, stream)
+    assert stream.getvalue() == b"a"
