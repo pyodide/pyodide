@@ -242,7 +242,8 @@ iterable`. (Python async _iterables_ that were not also iterators were already
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
   pyxel {pr}`3508`.
-  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`,
+  cbor-diag {pr}`3581`.
 
 - Upgraded to micropip 0.3.0 (see
   [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
