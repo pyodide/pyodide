@@ -216,11 +216,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
 }
 
 function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
-  if (!isPyodideFrame(frame)) {
-    return false;
-  }
-  const funcName = frame.functionName;
-  return funcName === "PythonError" || funcName === "new_error";
+  return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
 Module.handle_js_error = function (e: any) {
@@ -260,7 +256,7 @@ Module.handle_js_error = function (e: any) {
     // In this case we have no stack frames so we can quit
     return;
   }
-  if (isErrorStart(stack[0])) {
+  if (isErrorStart(stack[0]) || isErrorStart(stack[1])) {
     while (isPyodideFrame(stack[0])) {
       stack.shift();
     }
