@@ -1,9 +1,9 @@
 package:
   name: lightgbm
-  version: 3.3.3
+  version: 3.3.5
 source:
-  url: https://files.pythonhosted.org/packages/35/46/3c4ba33302ed23e741b1c7a9c0f50520dae5f71b20c899932e770dc974cb/lightgbm-3.3.3.tar.gz
-  sha256: 857e559ae84a22963ce2b62168292969d21add30bc9246a84d4e7eedae67966d
+  url: https://files.pythonhosted.org/packages/98/1f/fc5c183012f5fdd23e65d54ee09312d8b4dc9e4e39c227236f61942ef293/lightgbm-3.3.5.tar.gz
+  sha256: 10b8fbdcf851e4f68a1f02f38d99bdc44c7c7fb9b1a62dcf924a0d29ff73395c
 build:
   backend-flags: --build-option=--nomp
 requirements:

@@ -415,7 +415,12 @@ Module.callPyObjectKwargs = function (
     );
     Py_EXIT();
   } catch (e) {
-    API.fatal_error(e);
+    if (API._skip_unwind_fatal_error) {
+      API.maybe_fatal_error(e);
+    } else {
+      API.fatal_error(e);
+    }
+    return;
   } finally {
     Hiwire.decref(idargs);
     Hiwire.decref(idkwnames);
@@ -1266,6 +1271,10 @@ export class PyAsyncIterator extends PyProxy {
 export interface PyAsyncIterator extends PyAsyncIteratorMethods {}
 
 export class PyAsyncIteratorMethods {
+  /** @private */
+  [Symbol.asyncIterator]() {
+    return this;
+  }
   /**
    * This translates to the Python code ``anext(obj)``. Returns the next value
    * of the asynchronous iterator. The argument will be sent to the Python

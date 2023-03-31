@@ -132,7 +132,13 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lproxyfs.js \
 	-lworkerfs.js \
 	-lwebsocket.js \
-	-leventloop.js
+	-leventloop.js \
+	\
+	-lGL \
+	-legl.js \
+	-lwebgl.js \
+	-lhtml5_webgl.js \
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

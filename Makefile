@@ -89,6 +89,7 @@ dist/libpyodide.a: \
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
+	libgl \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -124,7 +125,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
+	npx rollup -c src/js/rollup.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -205,6 +206,12 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
+
+.PHONY: libgl
+libgl:
+	# TODO(ryanking13): Link this to a side module not to the main module.
+	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 
 .PHONY: lint
 lint:

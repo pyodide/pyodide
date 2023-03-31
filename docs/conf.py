@@ -230,15 +230,15 @@ def write_console_html(app):
         Path("../dist/console.html").read_text().splitlines(keepends=True)
     )
     for idx, line in enumerate(list(console_html_lines)):
-        if 'pyodide.js">' in line:
-            # insert the analytics script after the `pyodide.js` script
+        if "</style>" in line:
+            # insert the analytics script after the end of the inline CSS block
             console_html_lines.insert(
                 idx,
                 '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
-        raise ValueError("Could not find pyodide.js in the <head> section")
+        raise ValueError("Could not find a CSS block in the <head> section")
     output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 

@@ -13,11 +13,14 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.23.0
+
+_March 30, 2023_
 
 ### General
 
-- {{ Update }} Pyodide now runs Python 3.11.2.
+- {{ Update }} Pyodide now runs Python 3.11.2 which officially supports
+  WebAssembly as a [PEP11 Tier 3](https://peps.python.org/pep-0011/#tier-3) platform.
   {pr}`3252`, {pr}`3614`
 
 - {{ Update }} We now build libpyodide.a so the Pyodide foreign function
@@ -123,6 +126,27 @@ myst:
 
 ### Python / JavaScript Foreign Function Interface
 
+- {{ Fix }} PyProxies of Async iterators are now async iterable JavaScript
+  objects. The code:
+
+  ```javascript
+  for await (let x of async_iterator_pyproxy) {
+    // ...
+  }
+  ```
+
+  would previously fail with `TypeError: async_iterator_pyproxy is not async
+iterable`. (Python async _iterables_ that were not also iterators were already
+  async iterable, the problem was only with Python objects that are both async
+  _iterable_ and an async iterator.)
+  {pr}`3708`
+
+- {{ Enhancement }} A py-compiled build which has smaller and faster-to-load
+  packages is now deployed under
+  `https://cdn.jsdelivr.net/pyodide/v0.23.0/pyc/` (also for future
+  versions). The exceptions obtained with this builds will not include code
+  snippets however. {pr}`3701`
+
 - {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
   directly. This has been deprecated since v0.21.0. Now all functions are only available
   under submodules.
@@ -196,7 +220,7 @@ myst:
 
 - {{ Feature }} Added `pyodide py-compile` CLI command that py compiles a wheel or a zip
   file, converting .py files to .pyc files. It can also be applied to a folder
-  with wheels / zip files. IF the If the input folder contains the
+  with wheels / zip files. If the input folder contains the
   `repodata.json` the paths and checksums it contains will also be updated
   {pr}`3253` {pr}`3700`
 
@@ -211,10 +235,23 @@ myst:
   regular spaces in pyodide REPL.
   {pr}`3558`
 
+- {{ Enhancement }} Allow changing the build type used in the REPL by passing the
+  `build` argument to the REPL URL. For instance,
+  `https://pyodide.org/en/latest/console.html?build=debug` will load debug dev build.
+  {pr}`3671`
+
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
-  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`.
+  pyxel {pr}`3508`.
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`,
+  cbor-diag {pr}`3581`.
+
+- Upgraded to micropip 0.3.0 (see
+  [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
+  {pr}`3709`
+
+- Added experimental [support for SDL based packages](using-sdl) {pr}`3508`
 
 - Upgraded packages: see the list of packages versions in this release in
   {ref}`packages-in-pyodide`.
