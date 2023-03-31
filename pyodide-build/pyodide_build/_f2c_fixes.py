@@ -233,9 +233,14 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     # returning a double real. Most methods that start with an s are supposed to
     # return a real... but maybe not all?? Or maybe the others are affected also
     # by this bug.
-    if "linalg" in f2c_output_path and all(
-        x not in f2c_output_path for x in ["_isolve", "_propack"]
-    ):
+    # pattern = "|".join(["sasum_", "scasum_", "scnrm2_", "sdot_", "sdsdot_", "snrm2_",
+    #                     "clanhs_", "slamch_", "slapy2_", "psnrm2_"])
+    # if "linalg" in f2c_output_path:
+    #     lines = [
+    #         re.sub(f"extern doublereal ({pattern})", r"extern float \1", line)
+    #         for line in lines
+    #     ]
+    if "scipy/sparse/linalg" in f2c_output_path:
         lines = [
             line.replace("extern doublereal s", "extern float s").replace(
                 "extern doublereal clanhs_", "extern float clanhs_"
