@@ -242,9 +242,8 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     #     ]
     if "scipy/sparse/linalg" in f2c_output_path:
         lines = [
-            line.replace("extern doublereal s", "extern float s").replace(
-                "extern doublereal clanhs_", "extern float clanhs_"
-            )
+            # conflict with c_abs macro defined in openblas
+            line.replace("c_abs(", "sparse_linalg_c_abs(")
             for line in lines
         ]
 
