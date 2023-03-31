@@ -43,6 +43,7 @@ const config = ({ input, output, format, name: globalName }) => ({
     "vm",
     "ws",
   ],
+  define: { DEBUG: DEBUG.toString() },
   minify: !DEBUG,
   keepNames: true,
   sourcemap: true,
@@ -59,32 +60,19 @@ for (const output of outputs) {
 try {
   await Promise.all(builds);
   for (const { input, name, output } of outputs) {
-    const outfile = dest(output);
-
-    let content = readFileSync(outfile).toString();
-
-    const isUMD = input.endsWith(".umd");
-    const hasDEBUG = /\bDEBUG\b/.test(content);
-
-    // append the DEBUG flag if used in the output
-    if (hasDEBUG) {
-      content = content.replace(
-        "//# sourceMappingURL",
-        `const DEBUG=${DEBUG};\n//# sourceMappingURL`,
-      );
+    if (!input.endsWith(".umd")) {
+      continue;
     }
+    const outfile = dest(output);
+    let content = readFileSync(outfile, { encoding: "utf-8" });
 
     // simplify the umd dance for CommonJS by trying to set info on `exports`
-    if (isUMD) {
-      content = content.replace(
-        "//# sourceMappingURL",
-        `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
-      );
-    }
+    content = content.replace(
+      "//# sourceMappingURL",
+      `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
+    );
 
-    if (hasDEBUG || isUMD) {
-      writeFileSync(outfile, content);
-    }
+    writeFileSync(outfile, content);
   }
 } catch ({ message }) {
   console.error(message);
