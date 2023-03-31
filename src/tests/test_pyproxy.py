@@ -799,6 +799,58 @@ def test_errors(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
+def test_nogil(selenium):
+    selenium.run_js(
+        r"""
+        let t = pyodide.runPython(`
+            def te(self, *args, **kwargs):
+                raise Exception(repr(args))
+            class Temp:
+                __getattr__ = te
+                __setattr__ = te
+                __delattr__ = te
+                __dir__ = te
+                __call__ = te
+                __getitem__ = te
+                __setitem__ = te
+                __delitem__ = te
+                __iter__ = te
+                __len__ = te
+                __contains__ = te
+                __await__ = te
+                __repr__ = te
+            Temp()
+        `);
+        // release GIL
+        const tstate = pyodide._module._PyEval_SaveThread()
+
+        assertThrows(() => t.x, "NoGilError", "");
+        try {
+            t.x;
+        } catch(e){
+            assert(() => e instanceof pyodide._api.NoGilError);
+        }
+        assertThrows(() => t.x = 2, "NoGilError", "");
+        assertThrows(() => delete t.x, "NoGilError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
+        assertThrows(() => t(), "NoGilError", "");
+        assertThrows(() => t.get(1), "NoGilError", "");
+        assertThrows(() => t.set(1, 2), "NoGilError", "");
+        assertThrows(() => t.delete(1), "NoGilError", "");
+        assertThrows(() => t.has(1), "NoGilError", "");
+        assertThrows(() => t.length, "NoGilError", "");
+        assertThrows(() => t.toString(), "NoGilError", "");
+        assertThrows(() => Array.from(t), "NoGilError", "");
+        await assertThrowsAsync(async () => await t, "NoGilError", "");
+        assertThrows(() => t.destroy(), "NoGilError", "");
+
+        // acquire GIL
+        pyodide._module._PyEval_RestoreThread(tstate)
+        """
+    )
+
+
+@pytest.mark.skip_pyproxy_check
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(
