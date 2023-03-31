@@ -256,7 +256,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
 
 
 def test_config_list():
-
     result = runner.invoke(
         config.app,
         [
@@ -273,7 +272,6 @@ def test_config_list():
 
 @pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
 def test_config_get(cfg_name, env_var):
-
     result = runner.invoke(
         config.app,
         [

@@ -1,6 +1,6 @@
 package:
   name: biopython
-  version: "1.80"
+  version: "1.81"
   top-level:
     - Bio
     - BioSQL
@@ -8,8 +8,8 @@ requirements:
   run:
     - numpy
 source:
-  sha256: 52805e9af88767e450e2df8113b5bc59e964e2e8a7bb803a83570bdbb51c0e43
-  url: https://files.pythonhosted.org/packages/cb/8d/7cd217252797f7088847d667101b490df5644f0ff5202441e444b2b620ba/biopython-1.80.tar.gz
+  sha256: 2cf38112b6d8415ad39d6a611988cd11fb5f33eb09346666a87263beba9614e0
+  url: https://files.pythonhosted.org/packages/ad/a4/237edd5f5e5b68d9543c79bcd695ef881e6317fbd0eae1b1e53e694f9d54/biopython-1.81.tar.gz
 about:
   home: https://biopython.org/
   PyPI: https://pypi.org/project/biopython

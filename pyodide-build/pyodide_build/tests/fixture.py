@@ -78,7 +78,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 
 .output_vars:
 	set
-"""
+"""  # noqa: W191
     )
     (pyodide_root / "dist").mkdir()
     (pyodide_root / "dist" / "repodata.json").write_text(

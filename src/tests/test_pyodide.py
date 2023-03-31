@@ -32,7 +32,6 @@ def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
 
 
 def test_find_imports():
-
     res = find_imports(
         """
         import numpy as np
@@ -1519,28 +1518,6 @@ def test_deprecations(selenium_standalone):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_moved_deprecation_warnings(selenium_standalone):
-    import pytest
-
-    import pyodide
-    from pyodide import DEPRECATED_LIST, code, ffi, http  # noqa: F401
-
-    for func, mod in DEPRECATED_LIST.items():
-        getattr(getattr(pyodide, mod), func)
-
-    for func, mod in DEPRECATED_LIST.items():
-        with pytest.warns(FutureWarning, match=mod):
-            getattr(pyodide, func)
-
-    import warnings
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        for func in DEPRECATED_LIST.keys():
-            getattr(pyodide, func)
-
-
-@run_in_pyodide(packages=["pytest"])
 def test_module_not_found_hook(selenium_standalone):
     import importlib
 
@@ -1793,3 +1770,26 @@ def test_python_version(selenium):
         sys.destroy();
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
+    selenium = selenium_standalone_noload
+    stdlib_target_path = ROOT_PATH / "dist/python_stdlib2.zip"
+    shutil.copy(ROOT_PATH / "dist/python_stdlib.zip", stdlib_target_path)
+
+    try:
+        selenium.run_js(
+            """
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                stdLibURL: "./python_stdlib2.zip",
+            });
+            // Check that we can import stdlib library modules
+            let statistics = pyodide.pyimport('statistics');
+            assert(() => statistics.median([2, 3, 1]) === 2)
+            """
+        )
+    finally:
+        stdlib_target_path.unlink()

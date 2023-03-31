@@ -63,6 +63,7 @@ def test_scipy_pytest(selenium):
     runtest("odr", "explicit")
     runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
+    runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
 
 
 @pytest.mark.driver_timeout(40)

@@ -1731,6 +1731,31 @@ def test_object_map_mapping_methods(selenium):
 
 
 @run_in_pyodide
+def test_as_object_map_heritable(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    o = run_js("({1:{2: 9, 3: 77}, 3:{6: 5, 12: 3, 2: 9}})")
+    mh = o.as_object_map(hereditary=True)
+    mn = o.as_object_map(hereditary=False)
+    assert mh["1"]["3"] == 77
+
+    with pytest.raises(TypeError):
+        mn["1"]["3"]
+
+    for x in mh.values():
+        assert x["2"] == 9
+
+    for x in mn.values():
+        with pytest.raises(TypeError):
+            x["2"]
+
+    n = mh.pop("1")
+    assert n["3"] == 77
+
+
+@run_in_pyodide
 def test_jsproxy_subtypes(selenium):
     import pytest
 
@@ -2202,6 +2227,7 @@ async def test_agen_lifetimes(selenium):
 @run_in_pyodide
 def test_python_reserved_keywords(selenium):
     import pytest
+
     from pyodide.code import run_js
 
     o = run_js(
@@ -2240,7 +2266,7 @@ def test_python_reserved_keywords(selenium):
     o.async_ = 2
     assert run_js("(o) => o.async")(o) == 2
     del o.async_
-    assert run_js("(o) => o.async")(o) == None
+    assert run_js("(o) => o.async")(o) is None
 
     o = run_js("({async: 1, async_: 2, async__: 3})")
     expected_set = {"async_", "async__", "async___"}
@@ -2249,8 +2275,8 @@ def test_python_reserved_keywords(selenium):
     assert o.async_ == 1
     assert o.async__ == 2
     assert o.async___ == 3
-    assert getattr(o, "async_") == 1
-    assert getattr(o, "async__") == 2
+    assert getattr(o, "async_") == 1  # noqa: B009
+    assert getattr(o, "async__") == 2  # noqa: B009
     with pytest.raises(AttributeError, match="async"):
         getattr(o, "async")
     with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):

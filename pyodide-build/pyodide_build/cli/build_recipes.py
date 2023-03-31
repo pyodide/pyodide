@@ -2,9 +2,10 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, buildpkg, pywasmcross
+from .. import buildall, buildpkg, common, pywasmcross
 from ..common import get_num_cores, init_environment
 from ..logger import logger
+from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def recipe(
@@ -60,8 +61,17 @@ def recipe(
         None,
         help="Number of packages to build in parallel  (default: # of cores in the system)",
     ),
+    compression_level: int = typer.Option(
+        6,
+        help="Level of zip compression to apply when installing. 0 means no compression.",
+    ),
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
+    initialize_pyodide_root()
+
+    if common.in_xbuildenv():
+        common.check_emscripten_version()
+
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
@@ -109,4 +119,6 @@ def recipe(
             buildall.copy_logs(pkg_map, log_dir_)
 
         if install:
-            buildall.install_packages(pkg_map, install_dir_)
+            buildall.install_packages(
+                pkg_map, install_dir_, compression_level=compression_level
+            )
