@@ -7,7 +7,6 @@ Builds a Pyodide package.
 import argparse
 import cgi
 import fnmatch
-import hashlib
 import json
 import os
 import shutil
@@ -27,6 +26,7 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
+    _get_sha256_checksum,
     chdir,
     exit_with_stdio,
     find_matching_wheels,
@@ -145,16 +145,11 @@ def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     if source_metadata.sha256 is None:
         return
     checksum = source_metadata.sha256
-    CHUNK_SIZE = 1 << 16
-    h = hashlib.sha256()
-    with open(archive, "rb") as fd:
-        while True:
-            chunk = fd.read(CHUNK_SIZE)
-            h.update(chunk)
-            if len(chunk) < CHUNK_SIZE:
-                break
-    if h.hexdigest() != checksum:
-        raise ValueError(f"Invalid sha256 checksum: {h.hexdigest()}")
+    real_checksum = _get_sha256_checksum(archive)
+    if real_checksum != checksum:
+        raise ValueError(
+            f"Invalid sha256 checksum: {real_checksum} != {checksum} (expected)"
+        )
 
 
 def trim_archive_extension(tarballname: str) -> str:

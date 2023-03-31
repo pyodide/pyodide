@@ -1,14 +1,14 @@
 package:
   name: beautifulsoup4
-  version: 4.11.1
+  version: 4.12.0
   top-level:
     - bs4
 requirements:
   run:
     - soupsieve
 source:
-  sha256: 58d5c3d29f5a36ffeb94f02f0d786cd53014cf9b3b3951d42e0080d8a9498d30
-  url: https://files.pythonhosted.org/packages/9c/d8/909c4089dbe4ade9f9705f143c9f13f065049a9d5e7d34c828aefdd0a97c/beautifulsoup4-4.11.1-py3-none-any.whl
+  sha256: 2130a5ad7f513200fae61a17abb5e338ca980fa28c439c0571014bc0217e9591
+  url: https://files.pythonhosted.org/packages/ee/a7/06b189a2e280e351adcef25df532af3c59442123187e228b960ab3238687/beautifulsoup4-4.12.0-py3-none-any.whl
 about:
   home: https://www.crummy.com/software/BeautifulSoup/bs4/
   PyPI: https://pypi.org/project/beautifulsoup4

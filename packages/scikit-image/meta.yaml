@@ -27,3 +27,4 @@ about:
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
   license: Modified BSD
+# Note: this package cannot be updated until we add support for building with meson

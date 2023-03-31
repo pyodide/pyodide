@@ -13,12 +13,148 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.23.0
+
+_March 30, 2023_
+
+### General
+
+- {{ Update }} Pyodide now runs Python 3.11.2 which officially supports
+  WebAssembly as a [PEP11 Tier 3](https://peps.python.org/pep-0011/#tier-3) platform.
+  {pr}`3252`, {pr}`3614`
+
+- {{ Update }} We now build libpyodide.a so the Pyodide foreign function
+  interface can be experimentally linked into other Emscripten builds of Python.
+  {pr}`3335`
+
+- {{ Enhancement }} Updated Emscripten to version 3.1.32
+  {pr}`3471`, {pr}`3517`, {pr}`3599`
+
+### JavaScript API
+
+- {{ Breaking }} Type exports of `PyProxy` subtypes have been moved from
+  `pyodide` to `pyodide/ffi` and many of them have changed names. The original
+  exports are still available but they are deprecated.
+  {pr}`3523`
+
+- {{ Breaking }} The methods for checking `PyProxy` capabilities (e.g.,
+  `supportsHas`, `isCallable`) are now deprecated. Use e.g.,
+  `instanceof pyodide.ffi.PyCallable` instead.
+  {pr}`3523`
+
+- {{ Enhancement }} Added subclasses of `PyProxy` for each mixin. These can be
+  used to check whether a `PyProxy` supports a given set of methods with
+  `instanceof` e.g., `x instanceof pyodide.ffi.PyDict`.
+  {pr}`3523`
+
+- {{ Enhancement }} Added `stdLibURL` parameter to `loadPyodide` allowing to customize
+  the URL from which the Python standard library is loaded.
+  {pr}`3670`
+
+- {{ Enhancement }} Checking whether an object is an instance of a `PyProxy` now
+  only recognizes a `PyProxy` generated from the same Python interpreter. This
+  means that creating multiple interpreters and importing a `PyProxy` from one
+  into another no longer causes a fatal error.
+  {pr}`3545`
 
 - {{ Enhancement }} `as_object_map` now accepts a keyword argument `hereditary`.
   If set to `True` and indexing the object returns a plain-old-object, then the
   return value will be automatically mapped in `as_object_map` as well.
   {pr}`3638`
+
+- {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
+  thrown as Python exceptions. Previously Pyodide automatically wrapped them in
+  a `JsException` but that is no longer needed -- now `JsException` inherits
+  from both `JsProxy` and `Exception`.
+  {pr}`3455`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
+  argument.
+  {pr}`3618`
+
+- {{ Fix }} Calling `loadPyodide` repeatedly in Node no longer results in
+  `MaxListenersExceededWarning`. Also, calling `loadPyodide` in Node v14 no
+  longer changes unhandled rejections in promises.
+  {pr}`3542`
+
+- {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
+  `None` it now uses `locals=globals` as the documentation says.
+  {pr}`3580`
+
+### Python standard library
+
+- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard
+  library. Now these modules need to be loaded with `pyodide.loadPackage` or
+  `micropip.install`, or auto-loaded via imports in `pyodide.runPythonAsync`
+  {pr}`3525`
+
+- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
+  `test/ctypes` and `test/unittest` respectively. This change is adapted from
+  [CPython 3.12](https://github.com/python/cpython/issues/93839).
+  {pr}`3507`
+
+### Deployment
+
+- {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
+  `pyodide.asm.data` is removed, in favor of `python_stdlib.zip`. This change
+  normally shouldn't affect users, but if you were using this file in a
+  bundler, you will need to remove it. {pr}`3584`
+
+- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
+  shouldn't affect users, but if you were using this file in a bundler,
+  you will need to remove it.
+  {pr}`3621`
+
+- {{ Breaking }} Python standard libraries are now vendored in a zipfile:
+  `/lib/python{version}.zip` in the in-browser MEMFS file system. If you need
+  to access the standard library source code, you need to unpack the zip file.
+  For example:
+  `import shutil; shutil.unpack_archive('/lib/python311.zip', '/lib/python3.11', 'zip)`
+  {pr}`3584`
+
+- {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
+  browsers that support the Brotli compression (most modern ones) this should
+  result in a size reduction of 20-30%. Also most many `pyodide` CLI
+  sub-commands now support `--compression-level` as an optional parameter.
+  {pr}`3655`
+
+- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
+  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
+  are using these libraries in a package that are built out-of-tree, you will
+  need to link them to the package manually.
+  {pr}`3505`
+
+### Python / JavaScript Foreign Function Interface
+
+- {{ Fix }} PyProxies of Async iterators are now async iterable JavaScript
+  objects. The code:
+
+  ```javascript
+  for await (let x of async_iterator_pyproxy) {
+    // ...
+  }
+  ```
+
+  would previously fail with `TypeError: async_iterator_pyproxy is not async
+iterable`. (Python async _iterables_ that were not also iterators were already
+  async iterable, the problem was only with Python objects that are both async
+  _iterable_ and an async iterator.)
+  {pr}`3708`
+
+- {{ Enhancement }} A py-compiled build which has smaller and faster-to-load
+  packages is now deployed under
+  `https://cdn.jsdelivr.net/pyodide/v0.23.0/pyc/` (also for future
+  versions). The exceptions obtained with this builds will not include code
+  snippets however. {pr}`3701`
+
+- {{ Breaking }} Removed support for calling functions from the root of `pyodide` package
+  directly. This has been deprecated since v0.21.0. Now all functions are only available
+  under submodules.
+  {pr}`3677`
+
+- {{ Breaking }} Removed support for passing the "message" argument to `PyProxy.destroy`
+  in a positional argument. This has been deprecated since v0.22.0.
+  {pr}`3677`
 
 - {{ Enhancement }} Python does not allow reserved words to be used as attributes.
   For instance, `Array.from` is a `SyntaxError`. (JavaScript has a more robust
@@ -29,117 +165,20 @@ myst:
   accesses the `from_` attribute.
   {pr}`3617`
 
-- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `locals`
-  argument.
-  {pr}`3618`
-
-- {{ Fix }} If the `locals` argument to `eval_code` or `eval_code_async` is
-  `None` it now uses `locals=globals` as the documentation says.
-  {pr}`3580`
-
-- {{ Enhancement }} A `JsProxy` of a JavaScript error object can be directly
-  thrown as Python exceptions. Previously Pyodide automatically wrapped them in
-  a `JsException` but that is no longer needed -- now `JsException` inherits
-  from both `JsProxy` and `Exception`.
-  {pr}`3455`
-
-- {{ Update }} Pyodide now runs Python 3.11.2.
-  {pr}`3252`, {pr}`3614`
-
-- {{ Update }} We now build libpyodide.a so the Pyodide foreign function
-  interface can be experimentally linked into other Emscripten builds of Python.
-  {pr}`3335`
-
-- {{ Enhancement }} Updated Emscripten to version 3.1.32
-  {pr}`3471`, {pr}`3517`, {pr}`3599`
-
-- {{ Breaking }} Following libraries are now not linked to the Pyodide main module:
-  `libgl`, `libal`, `libhtml5`. This normally shouldn't affect users, but if you
-  are using these libraries in a package that are built out-of-tree, you will
-  need to link them to the package manually.
-  {pr}`3505`
-
-- {{ Breaking }} Test files of stdlib `ctypes` and `unittest` are now moved to
-  `test/ctypes` and `test/unittest` respectively. This change is adapted from
-  [CPython 3.12](https://github.com/python/cpython/issues/93839).
-  {pr}`3507`
-
-- {{ Breaking }} Unvendored `_pydecimal` and `pydoc_data` from the standard
-  library. Now these modules need to be loaded with `pyodide.loadPackage` or
-  `micropip.install`
-  {pr}`3525`
-
-- {{ Enhancement }} Added subclasses of `PyProxy` for each mixin. These can be
-  used to check whether a `PyProxy` supports a given set of methods with
-  `instanceof` e.g., `x instanceof pyodide.ffi.PyDict`.
-  {pr}`3523`
-
-- {{ Breaking }} The methods for checking `PyProxy` capabilities (e.g.,
-  `supportsHas`, `isCallable`) are now deprecated. Use e.g.,
-  `instanceof pyodide.ffi.PyCallable` instead.
-  {pr}`3523`
-
-- {{ Breaking }} Type exports of `PyProxy` subtypes have been moved from
-  `pyodide` to `pyodide/ffi` and many of them have changed names. The original
-  exports are still available but they are deprecated.
-  {pr}`3523`
-
-- {{ Fix }} Calling `loadPyodide` repeatedly in Node no longer results in
-  `MaxListenersExceededWarning`. Also, calling `loadPyodide` in Node v14 no
-  longer changes unhandled rejections in promises.
-  {pr}`3542`
-
-- {{ Enhancement }} Checking whether an object is an instance of a `PyProxy` now
-  only recognizes a `PyProxy` generated from the same Python interpreter. This
-  means that creating multiple interpreters and importing a `PyProxy` from one
-  into another no longer causes a fatal error.
-  {pr}`3545`
-
-- {{ Fix }} Non-breaking space characters are now automatically converted to
-  regular spaces in pyodide REPL.
-  {pr}`3558`
-
-- {{ Breaking }} Python standard libraries are now vendored in a zipfile:
-  `/lib/python{version}.zip`. If you need to access the standard library files,
-  you need to unpack the zip file. For example:
-  `import shutil; shutil.unpack_archive('/lib/python311.zip', '/lib/python3.11', 'zip)`
-  {pr}`3584`
-
-- {{ Breaking }} Pyodide no longer uses Emscripten preload plugin, hence
-  `pyodide.asm.data` is removed. This change normally shouldn't affect users,
-  but if you were using this file in a bundler, you will need to remove it.
-  {pr}`3584`
-
-- {{ Breaking }} `pyodide_py.tar` file is removed. This change normally
-  shouldn't affect users, but if you were using this file in a bundler,
-  you will need to remove it.
-  {pr}`3621`
-
-- {{ Enhancement }} Added `stdLibURL` parameter to `loadPyodide` allowing to customize
-  the URL from which the Python standard library is loaded.
-  {pr}`3670`
-
-- {{ Fix }} Improves the compression of wheel files with the JsDelivr CDN. For
-  browsers that support the Brotli compression (most modern ones) this should
-  result in a size reduction of 20-30%. Also most many `pyodide` CLI
-  sub-commands now support `--compression-level` as an optional parameter.
-  {pr}`3655`
-
-- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide_build buildall` which is
-  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
-  replaced by `pyodide skeleton pypi` {pr}`3668`
-
 ### Build System
 
-- {{ Enhancement}} Add `--build-dependencies` to pyodide build command
+- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
+  you must prefix `tag:` to the meta-package name. For example, to build the
+  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
+  `PYODIDE_PACKAGES="tag:core" make`.
+  {pr}`3444`
+
+- {{ Enhancement}} Add `--build-dependencies` to `pyodide build` command
   to fetch and build dependencies of a package being built.
   Also adds `--skip-dependency` to ignore selected dependencies.
   {pr}`3310`
 
-- {{ Enhancement }} Improved logging in `pyodide-build` with rich.
-  {pr}`3442`
-
-- {{ Enhancement}} Added `pyodide-build` support for building a list of packages
+- {{ Enhancement}} Added `pyodide build` support for building a list of packages
   from a requirements.txt file with `pyodide build -r <requirements.txt>`. Also
   can output a list of chosen dependencies in the same format when building a
   package and dependencies using the `--output-lockfile <lockfile.txt>`
@@ -150,17 +189,9 @@ myst:
   packages.
   {pr}`3444`
 
-- {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
-  you must prefix `tag:` to the meta-package name. For example, to build the
-  `core` meta-package, you must run `pyodide build-recipes tag:core`, or
-  `PYODIDE_PACKAGES="tag:core" make`.
-  {pr}`3444`
-
 - {{ Enhancement }} `pyodide build-recipes` now autodetects the number of
   CPU cores in the system and uses them for parallel builds.
   {pr}`3559` {pr}`3598`
-
-- {{ Enhancement }} `pyodide build-recipes` now works out-of-tree.
 
 - {{ Fix }} Fixed pip install error when installing cross build environment.
   {pr}`3562`
@@ -172,27 +203,65 @@ myst:
 - {{ Fix }} Fix occasional build failure when building rust packages.
   {pr}`3607`
 
+- {{ Enhancement }} Improved logging in `pyodide-build` with rich.
+  {pr}`3442`
+
+- {{ Enhancement }} `pyodide build-recipes` now accepts `--no-deps` parameter, which skips
+  building dependencies of the package. This replaces `pyodide-build buildpkg`.
+  {pr}`3520`
+
+- {{ Enhancement }} `pyodide build-recipes` now works out-of-tree.
+
 ### Pyodide CLI
 
-- Added `pyodide py-compile` CLI command that py compiles a wheel, converting
-  .py files to .pyc files
-  {pr}`3253`
+- {{ Breaking }} Removed deprecated CLI entrypoints `pyodide-build buildall` which is
+  replaced by `pyodide build-recipes`, and `pyodide-build mkpkg` which is
+  replaced by `pyodide skeleton pypi` {pr}`3668`.
 
-- Added `pyodide create-zipfile` CLI command that creates a zip file of a
+- {{ Feature }} Added `pyodide py-compile` CLI command that py compiles a wheel or a zip
+  file, converting .py files to .pyc files. It can also be applied to a folder
+  with wheels / zip files. If the input folder contains the
+  `repodata.json` the paths and checksums it contains will also be updated
+  {pr}`3253` {pr}`3700`
+
+- {{ Feature }} Added `pyodide create-zipfile` CLI command that creates a zip file of a
   directory. This command is hidden by default since it is not intended for use
   by end users.
   {pr}`3411` {pr}`3463`
 
-- `pyodide build-recipes` now accepts `--no-deps` parameter, which skips
-  building dependencies of the package. This replaces `pyodide-build buildpkg`.
-  {pr}`3520`
+### REPL
+
+- {{ Fix }} Non-breaking space characters are now automatically converted to
+  regular spaces in pyodide REPL.
+  {pr}`3558`
+
+- {{ Enhancement }} Allow changing the build type used in the REPL by passing the
+  `build` argument to the REPL URL. For instance,
+  `https://pyodide.org/en/latest/console.html?build=debug` will load debug dev build.
+  {pr}`3671`
 
 ### Packages
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
-  mypy {pr}`3504`, multidict {pr}`3581`
+  pyxel {pr}`3508`.
+  mypy {pr}`3504`, multidict {pr}`3581`, yarl {pr}`3702`, idna {pr}`3702`,
+  cbor-diag {pr}`3581`.
 
-- Upgraded packages: galpy (1.8.2) {pr}`3630`, scikit-learn (1.2.2) {pr}`3654`
+- Upgraded to micropip 0.3.0 (see
+  [changelog](https://github.com/pyodide/micropip/blob/main/CHANGELOG.md)
+  {pr}`3709`
+
+- Added experimental [support for SDL based packages](using-sdl) {pr}`3508`
+
+- Upgraded packages: see the list of packages versions in this release in
+  {ref}`packages-in-pyodide`.
+
+### List of Contributors
+
+Alexey Ignatiev, Andrea Giammarchi, Arpit, Christian Clauss, Deepak Cherian,
+Eli Lamb, Feodor Fitsner, Gyeongjae Choi, Hood Chatham, Jeff Glass, Jo Bovy,
+Joe Marshall, josephrocca, Loïc Estève, martinRenou, messense, Nicholas
+Bollweg, Roman Yurchak, TheOnlyWayUp, Victor Blomqvist, Ye Joo Park
 
 ## Version 0.22.1
 

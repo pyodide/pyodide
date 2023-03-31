@@ -31,3 +31,4 @@ about:
   PyPI: https://pypi.org/project/shapely
   summary: Geometric objects, predicates, and operations
   license: BSD
+# Note: this package may need to be manually upgraded to the next version
