@@ -1,13 +1,12 @@
 package:
   name: openblas
-  version: de4d5646eb1ac6a0e663a4c9bc797dad8226aedb
+  version: 0.3.22
 
 source:
   # sha256: 148a959b61ffa4d77e810ceb3114765501d70c982cbb302a00954b81bc918e46
   # url: https://github.com/xianyi/OpenBLAS/archive/de4d5646eb1ac6a0e663a4c9bc797dad8226aedb.zip
-  sha256: 148a959b61ffa4d77e810ceb3114765501d70c982cbb302a00954b81bc918e46
-  url: https://github.com/xianyi/OpenBLAS/archive/de4d5646eb1ac6a0e663a4c9bc797dad8226aedb.zip
-
+  sha256: 7fa9685926ba4f27cfe513adbf9af64d6b6b63f9dcabb37baefad6a65ff347a7
+  url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.22/OpenBLAS-0.3.22.tar.gz
   patches:
     - patches/0001-Add-Wno-implicit-function-declaration-flag.patch
 
