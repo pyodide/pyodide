@@ -13,6 +13,13 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Deployment
+
+- {{ Fix }} Export `python_stdlib.zip` in `package.json`.
+  {pr}`3723`
+
 ## Version 0.23.0
 
 _March 30, 2023_
