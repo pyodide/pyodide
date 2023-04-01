@@ -47,6 +47,7 @@
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
+    "./python_stdlib.zip": "./python_stdlib.zip",
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
     "./package.json": "./package.json",
