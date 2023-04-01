@@ -78,6 +78,7 @@ API.fatal_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     return;
   }
+
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
@@ -113,8 +114,11 @@ API.fatal_error = function (e: any) {
     }
     let reason = isexit ? "exited" : "fatally failed";
     let msg = `Pyodide already ${reason} and can no longer be used.`;
-    for (let key of Object.keys(API.public_api)) {
-      if (key.startsWith("_") || key === "version") {
+    for (let key of Reflect.ownKeys(API.public_api)) {
+      if (
+        (typeof key === "string" && key.startsWith("_")) ||
+        key === "version"
+      ) {
         continue;
       }
       Object.defineProperty(API.public_api, key, {
@@ -133,6 +137,27 @@ API.fatal_error = function (e: any) {
     console.error(err2);
   }
   throw e;
+};
+
+/**
+ * Signal a fatal error if the exception is not an expected exception.
+ *
+ * @argument e {any} The cause of the fatal error.
+ * @private
+ */
+API.maybe_fatal_error = function (e: any) {
+  // Emscripten throws "unwind" to stop current code and return to the main event loop.
+  // This is expected behavior and should not be treated as a fatal error.
+  // However, after the "unwind" exception is caught, the call stack is not unwound
+  // properly and there are dead frames remaining on the stack.
+  // This might cause problems in the future, so we need to find a way to fix it.
+  // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
+  //      2) https://github.com/kitao/pyxel/issues/418
+  if (e && e == "unwind") {
+    return;
+  }
+
+  return API.fatal_error(e);
 };
 
 let stderr_chars: number[] = [];
@@ -307,7 +332,6 @@ API.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers.",

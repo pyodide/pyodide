@@ -3,7 +3,7 @@ import re
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Optional, cast
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -68,7 +68,6 @@ def url(
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
     with requests.get(package_url, stream=True) as response:
-        response = cast(requests.Response, response)  # pragma: no cover
         parsed_url = urlparse(response.url)
         filename = os.path.basename(parsed_url.path)
         name_base, ext = os.path.splitext(filename)
@@ -149,6 +148,9 @@ def main(
         [],
         help="Skip building or resolving a single dependency. Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
+    compression_level: int = typer.Option(
+        6, help="Compression level to use for the created zip file"
+    ),
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
@@ -222,6 +224,7 @@ def main(
                 exports,
                 ctx.args,
                 output_lockfile=output_lockfile,
+                compression_level=compression_level,
             )
         except BaseException as e:
             import traceback

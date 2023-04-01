@@ -194,9 +194,9 @@ def fake_pypi_server():
         server_evt.wait()
         # now ret_values[0] should be server
         server = ret_values[0]
-        addr = f"http://{server.server_address[0]}:{server.server_address[1]}/simple"
+        addr = f"http://{server.server_address[0]}:{server.server_address[1]}/simple"  # type: ignore[str-bytes-safe]
 
-        yield (addr, f"{server.server_address[0]}:{server.server_address[1]}")
+        yield (addr, f"{server.server_address[0]}:{server.server_address[1]}")  # type: ignore[str-bytes-safe]
         # cleanup
         server.shutdown()
 

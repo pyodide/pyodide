@@ -19,7 +19,7 @@ from pyodide_build.cli import (
     xbuildenv,
 )
 
-from .fixture import temp_python_lib, temp_xbuildenv
+from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -256,7 +256,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
 
 
 def test_config_list():
-
     result = runner.invoke(
         config.app,
         [
@@ -273,7 +272,6 @@ def test_config_list():
 
 @pytest.mark.parametrize("cfg_name,env_var", config.PYODIDE_CONFIGS.items())
 def test_config_get(cfg_name, env_var):
-
     result = runner.invoke(
         config.app,
         [
@@ -285,7 +283,7 @@ def test_config_get(cfg_name, env_var):
     assert result.stdout.strip() == common.get_make_flag(env_var)
 
 
-def test_create_zipfile(temp_python_lib, tmp_path):
+def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
     from zipfile import ZipFile
 
     output = tmp_path / "python.zip"
@@ -297,6 +295,7 @@ def test_create_zipfile(temp_python_lib, tmp_path):
         app,
         [
             str(temp_python_lib),
+            str(temp_python_lib2),
             "--output",
             str(output),
         ],
@@ -309,9 +308,11 @@ def test_create_zipfile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.py" in zf.namelist()
         assert "module2.py" in zf.namelist()
+        assert "module3.py" in zf.namelist()
+        assert "module4.py" in zf.namelist()
 
 
-def test_create_zipfile_compile(temp_python_lib, tmp_path):
+def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
     from zipfile import ZipFile
 
     output = tmp_path / "python.zip"
@@ -323,6 +324,7 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
         app,
         [
             str(temp_python_lib),
+            str(temp_python_lib2),
             "--output",
             str(output),
             "--pycompile",
@@ -336,6 +338,8 @@ def test_create_zipfile_compile(temp_python_lib, tmp_path):
     with ZipFile(output) as zf:
         assert "module1.pyc" in zf.namelist()
         assert "module2.pyc" in zf.namelist()
+        assert "module3.pyc" in zf.namelist()
+        assert "module4.pyc" in zf.namelist()
 
 
 def test_xbuildenv_install(tmp_path, temp_xbuildenv):

@@ -1,11 +1,13 @@
 # Create or update a package recipe skeleton,
 # inspired from `conda skeleton` command.
 
+import sys
 from pathlib import Path
 
 import typer
 
 from .. import common, mkpkg
+from ..logger import logger
 
 app = typer.Typer()
 
@@ -39,28 +41,47 @@ def new_recipe_pypi(
         help="Which source format is preferred. Options are wheel or sdist. "
         "If not specified, then either a wheel or an sdist will be used. ",
     ),
-    root: str = typer.Option(
-        None, help="The root directory of the Pyodide.", envvar="PYODIDE_ROOT"
-    ),
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages."
-        "If not specified, the default is `packages` in the root directory.",
+        "If not specified, the default is `<cwd>/packages`.",
     ),
 ) -> None:
     """
     Create a new package from PyPI.
     """
-    pyodide_root = common.search_pyodide_root(Path.cwd()) if not root else Path(root)
-    recipe_dir_ = pyodide_root / "packages" if not recipe_dir else Path(recipe_dir)
+
+    if recipe_dir:
+        recipe_dir_ = Path(recipe_dir)
+    else:
+        cwd = Path.cwd()
+
+        try:
+            root = common.search_pyodide_root(cwd)
+        except FileNotFoundError:
+            root = cwd
+
+        if common.in_xbuildenv():
+            root = cwd
+
+        recipe_dir_ = root / "packages"
 
     if update or update_patched:
-        mkpkg.update_package(
-            recipe_dir_,
-            name,
-            version,
-            source_fmt=source_format,  # type: ignore[arg-type]
-            update_patched=update_patched,
-        )
+        try:
+            mkpkg.update_package(
+                recipe_dir_,
+                name,
+                version,
+                source_fmt=source_format,  # type: ignore[arg-type]
+                update_patched=update_patched,
+            )
+        except mkpkg.MkpkgFailedException as e:
+            logger.error(f"{name} update failed: {e}")
+            sys.exit(1)
+        except mkpkg.MkpkgSkipped as e:
+            logger.warn(f"{name} update skipped: {e}")
+        except Exception:
+            print(name)
+            raise
     else:
         mkpkg.make_package(recipe_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]

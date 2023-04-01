@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.11.2
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.31
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.32
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -34,6 +34,11 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
+
+# The compression level used for zip files and wheels. When distributing via a
+# CDN it's more efficient to keep this value to 0, and let the CDN perform the
+# Brotli compression.
+export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
@@ -127,7 +132,13 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lproxyfs.js \
 	-lworkerfs.js \
 	-lwebsocket.js \
-	-leventloop.js
+	-leventloop.js \
+	\
+	-lGL \
+	-legl.js \
+	-lwebgl.js \
+	-lhtml5_webgl.js \
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)

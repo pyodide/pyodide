@@ -16,7 +16,6 @@ all: check \
 	dist/python \
 	dist/console.html \
 	dist/repodata.json \
-	dist/pyodide_py.tar \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
@@ -24,9 +23,6 @@ all: check \
 	dist/webworker_dev.js \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
-
-dist/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cf ../../dist/pyodide_py.tar pyodide _pyodide webbrowser.py
 
 src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 # Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
@@ -93,6 +89,7 @@ dist/libpyodide.a: \
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
+	libgl \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -182,7 +179,7 @@ pyodide_build: ./pyodide-build/pyodide_build/**
 	which pyodide >/dev/null
 
 dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
-	pyodide create-zipfile $(CPYTHONLIB) --output $@
+	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
@@ -209,6 +206,12 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
+
+.PHONY: libgl
+libgl:
+	# TODO(ryanking13): Link this to a side module not to the main module.
+	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 
 .PHONY: lint
 lint:

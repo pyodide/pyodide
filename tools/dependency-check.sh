@@ -40,8 +40,32 @@ check_cmake() {
   check_binary_present "cmake"
 }
 
+check_sed() {
+  check_binary_present "sed"
+  gnu_sed_found=$(sed --help | grep -q gnu.org)
+
+  if [ "${gnu_sed_found}" ]; then
+    echo >&2 "Pyodide requires GNU sed."
+    echo >&2 "If you are on macOS you can install it with 'brew install gnu-sed' and then add it to your PATH."
+    exit 1
+  fi
+}
+
+check_patch() {
+  check_binary_present "patch"
+  gnu_patch_found=$(patch --help | grep -q gnu.org)
+
+  if [ "${gnu_patch_found}" ]; then
+    echo >&2 "Pyodide requires GNU patch."
+    echo >&2 "If you are on macOS you can install it with 'brew install gpatch' and then add it to your PATH."
+    exit 1
+  fi
+}
+
 check_python_version
 check_pkgconfig
 check_cmake
+check_sed
+check_patch
 #check_python_headers
 check_shasum
