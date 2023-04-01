@@ -12,7 +12,7 @@ else:
     import tomllib
 
 from . import install_xbuildenv
-from .common import exit_with_stdio, get_hostsitepackages
+from .common import exit_with_stdio
 from .logger import logger
 
 BUILD_VARS: set[str] = {
@@ -128,7 +128,7 @@ def get_build_environment_vars() -> dict[str, str]:
     )
     env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
-    hostsitepackages = get_hostsitepackages()
+    hostsitepackages = env["HOSTSITEPACKAGES"]
     pythonpath = [
         hostsitepackages,
     ]
