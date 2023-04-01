@@ -3,10 +3,10 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from .build_env import get_pyodide_root
 from .common import (
     exit_with_stdio,
     get_make_flag,
-    get_pyodide_root,
     get_unisolated_packages,
 )
 from .logger import logger

@@ -5,7 +5,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import textwrap
 import zipfile
 from collections import deque
@@ -15,52 +14,12 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
 
-if sys.version_info < (3, 11, 0):
-    import tomli as tomllib
-else:
-    import tomllib
-
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
+from .build_env import get_build_environment_vars, get_pyodide_root
 from .logger import logger
 from .recipe import load_all_recipes
-
-BUILD_VARS: set[str] = {
-    "PATH",
-    "PYTHONPATH",
-    "PYODIDE_ROOT",
-    "PYTHONINCLUDE",
-    "NUMPY_LIB",
-    "PYODIDE_PACKAGE_ABI",
-    "HOME",
-    "HOSTINSTALLDIR",
-    "TARGETINSTALLDIR",
-    "SYSCONFIG_NAME",
-    "HOSTSITEPACKAGES",
-    "PYVERSION",
-    "PYMAJOR",
-    "PYMINOR",
-    "PYMICRO",
-    "CPYTHONBUILD",
-    "CPYTHONLIB",
-    "SIDE_MODULE_CFLAGS",
-    "SIDE_MODULE_CXXFLAGS",
-    "SIDE_MODULE_LDFLAGS",
-    "STDLIB_MODULE_CFLAGS",
-    "UNISOLATED_PACKAGES",
-    "WASM_LIBRARY_DIR",
-    "WASM_PKG_CONFIG_PATH",
-    "CARGO_BUILD_TARGET",
-    "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
-    "RUSTFLAGS",
-    "PYO3_CROSS_LIB_DIR",
-    "PYO3_CROSS_INCLUDE_DIR",
-    "PYODIDE_EMSCRIPTEN_VERSION",
-    "PLATFORM_TRIPLET",
-    "SYSCONFIGDATA_DIR",
-    "RUST_TOOLCHAIN",
-}
 
 
 def emscripten_version() -> str:
@@ -196,7 +155,7 @@ def get_make_flag(name: str) -> str:
         SIDE_MODULE_CFLAGS
         SIDE_MODULE_CXXFLAGS
     """
-    return get_make_environment_vars()[name]
+    return get_build_environment_vars()[name]
 
 
 def get_pyversion() -> str:
@@ -207,33 +166,6 @@ def get_pyversion() -> str:
 
 def get_hostsitepackages() -> str:
     return get_make_flag("HOSTSITEPACKAGES")
-
-
-@functools.cache
-def get_make_environment_vars() -> dict[str, str]:
-    """Load environment variables from Makefile.envs
-
-    This allows us to set all build vars in one place"""
-
-    PYODIDE_ROOT = get_pyodide_root()
-    environment = {}
-    result = subprocess.run(
-        ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
-        capture_output=True,
-        text=True,
-    )
-    for line in result.stdout.splitlines():
-        equalPos = line.find("=")
-        if equalPos != -1:
-            varname = line[0:equalPos]
-
-            if varname not in BUILD_VARS:
-                continue
-
-            value = line[equalPos + 1 :]
-            value = value.strip("'").strip()
-            environment[varname] = value
-    return environment
 
 
 def environment_substitute_args(
@@ -263,68 +195,6 @@ def environment_substitute_args(
                 value = value.replace(f"$({e_name})", e_value)
         subbed_args[arg] = value
     return subbed_args
-
-
-def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
-    """
-    Recursively search for the root of the Pyodide repository,
-    by looking for the pyproject.toml file in the parent directories
-    which contains [tool.pyodide] section.
-    """
-
-    # We want to include "curdir" in parent_dirs, so add a garbage suffix
-    parent_dirs = (Path(curdir) / "garbage").parents[:max_depth]
-
-    for base in parent_dirs:
-        pyproject_file = base / "pyproject.toml"
-
-        if not pyproject_file.is_file():
-            continue
-
-        try:
-            with pyproject_file.open("rb") as f:
-                configs = tomllib.load(f)
-        except tomllib.TOMLDecodeError as e:
-            raise ValueError(f"Could not parse {pyproject_file}.") from e
-
-        if "tool" in configs and "pyodide" in configs["tool"]:
-            return base
-
-    raise FileNotFoundError(
-        "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
-    )
-
-
-def init_environment() -> None:
-    if os.environ.get("__LOADED_PYODIDE_ENV"):
-        return
-    os.environ["__LOADED_PYODIDE_ENV"] = "1"
-    # If we are building docs, we don't need to know the PYODIDE_ROOT
-    if "sphinx" in sys.modules:
-        os.environ["PYODIDE_ROOT"] = ""
-
-    if "PYODIDE_ROOT" in os.environ:
-        os.environ["PYODIDE_ROOT"] = str(Path(os.environ["PYODIDE_ROOT"]).resolve())
-    else:
-        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
-
-    os.environ.update(get_make_environment_vars())
-    try:
-        hostsitepackages = get_hostsitepackages()
-        pythonpath = [
-            hostsitepackages,
-        ]
-        os.environ["PYTHONPATH"] = ":".join(pythonpath)
-    except KeyError:
-        pass
-    os.environ["BASH_ENV"] = ""
-    get_unisolated_packages()
-
-
-@functools.cache
-def get_pyodide_root() -> Path:
-    init_environment()
-    return Path(os.environ["PYODIDE_ROOT"])
 
 
 @functools.cache
@@ -371,11 +241,6 @@ def exit_with_stdio(result: subprocess.CompletedProcess[str]) -> NoReturn:
     raise SystemExit(result.returncode)
 
 
-def in_xbuildenv() -> bool:
-    pyodide_root = get_pyodide_root()
-    return pyodide_root.name == "pyodide-root"
-
-
 def find_missing_executables(executables: list[str]) -> list[str]:
     return list(filter(lambda exe: shutil.which(exe) is None, executables))
 
@@ -388,28 +253,6 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(orig_dir)
-
-
-def set_build_environment(env: dict[str, str]) -> None:
-    """Assign build environment variables to env.
-
-    Sets common environment between in tree and out of tree package builds.
-    """
-    env.update({key: os.environ[key] for key in BUILD_VARS})
-    env["PYODIDE"] = "1"
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
-
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
-    if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
-
-    tools_dir = Path(__file__).parent / "tools"
-
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
 
 def get_num_cores() -> int:

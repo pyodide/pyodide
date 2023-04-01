@@ -25,6 +25,7 @@ from typing import Any, TextIO, cast
 from urllib import request
 
 from . import common, pypabuild
+from .build_env import get_build_environment_vars, get_pyodide_root
 from .common import (
     _get_sha256_checksum,
     chdir,
@@ -32,7 +33,6 @@ from .common import (
     find_matching_wheels,
     find_missing_executables,
     make_zip_archive,
-    set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -118,9 +118,8 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
-    PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env: dict[str, str] = {}
-    set_build_environment(env)
+    PYODIDE_ROOT = get_pyodide_root()
+    env = get_build_environment_vars()
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         # Working in-tree, add emscripten toolchain into PATH and set ccache

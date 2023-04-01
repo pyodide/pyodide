@@ -10,13 +10,13 @@ import requests
 import typer
 
 from .. import common
+from ..build_env import init_environment
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
     build_wheels_from_pypi_requirements,
     fetch_pypi_package,
 )
-from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def pypi(
@@ -28,8 +28,6 @@ def pypi(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Fetch a wheel from pypi, or build from source if none available."""
-    initialize_pyodide_root()
-    common.check_emscripten_version()
     backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
@@ -62,8 +60,6 @@ def url(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Fetch a wheel or build sdist from url."""
-    initialize_pyodide_root()
-    common.check_emscripten_version()
     backend_flags = ctx.args
     curdir = Path.cwd()
     (curdir / "dist").mkdir(exist_ok=True)
@@ -109,12 +105,10 @@ def source(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
-    initialize_pyodide_root()
     orig_dir = Path.cwd()
     if source_location != ".":
         # build in this folder
         os.chdir(source_location)
-    common.check_emscripten_version()
     backend_flags = ctx.args
     built_wheel = build.run(exports, backend_flags, outdir=orig_dir / "dist")
     os.chdir(orig_dir)
@@ -154,6 +148,10 @@ def main(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
+
+    init_environment()
+    common.check_emscripten_version()
+
     extras: list[str] = []
 
     if len(requirements_txt) > 0:

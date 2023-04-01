@@ -5,7 +5,8 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
+from ..build_env import get_pyodide_root, in_xbuildenv
+from ..common import exit_with_stdio, get_make_flag
 from ..logger import logger
 
 

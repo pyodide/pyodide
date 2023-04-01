@@ -32,7 +32,13 @@ def download_xbuildenv(
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
 
-    logger.info("Downloading xbuild environment")
+    if "dev" in version and url is None:
+        raise RuntimeError(
+            "To use out of tree builds with development version of pyodide-build, "
+            "you need to install the Pyodide build environment manually. "
+            "See 'pyodide xbuildenv install --help' for more information."
+        )
+
     rmtree(xbuildenv_path, ignore_errors=True)
 
     xbuildenv_url = (
@@ -89,7 +95,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
 
 
-def install(path: Path, *, download: bool = False, url: str | None = None) -> None:
+def install(path: Path, *, download: bool = True, url: str | None = None) -> None:
     """
     Install cross-build environment.
 
@@ -112,8 +118,16 @@ def install(path: Path, *, download: bool = False, url: str | None = None) -> No
     from . import __version__
 
     version = __version__
+
     if download:
+        logger.info("Downloading xbuild environment")
         download_xbuildenv(version, path, url=url)
+    else:
+        logger.info("Using existing xbuild environment")
+        if not path.exists():
+            logger.error("xbuild environment not exists")
+            raise FileNotFoundError(path)
+
     install_xbuildenv(version, path)
 
 
