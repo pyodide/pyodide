@@ -68,7 +68,7 @@ $(INSTALL)/lib/libffi.a :
 		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
 		&& git checkout FETCH_HEAD \
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
-		&& ./testsuite/emscripten/build.sh \
+		&& ./testsuite/emscripten/build.sh --wasm-bigint \
 		&& make install \
 	)
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
