@@ -21,11 +21,14 @@ build:
     sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
     sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
     sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+    sed -ri 's/((extern)?.+) (void|VOID) ([a-z0-9]+_)/\1\2 int \4/g' lapack-netlib/SRC/*.c lapack-netlib/SRC/DEPRECATED/*.c
 
+    # BUILD_TESTING=OFF is a cmake thing not sure how to use it. This would avoid noisy signature mismatch
     make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
     cp libopenblas.so dist/
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
     # TODO not sure which .h are needed, copying all of them for now
+    # TODO I don't think relapack is needed but maybe it has a .h I need which is why I added it???
     cp *.h relapack/src/*.h ${WASM_LIBRARY_DIR}/include
     cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib

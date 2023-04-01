@@ -104,15 +104,17 @@ def fix_string_args(line: str) -> str:
     Also, replace all single character strings in (the first line of) "call"
     statements with their ascci codes.
     """
-    line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
+    # TODO do not change anything because I don't know how to add the f2py equivalent
+    # line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
     if (
         not re.search("call", line, re.I)
         and "SIGNST" not in line
         and "TRANST" not in line
     ):
         return line
-    if re.search("xerbla", line, re.I):
-        return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
+    # TODO do not change anything for now
+    # if re.search("xerbla", line, re.I):
+    #     return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
     else:
         return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
 
@@ -497,6 +499,7 @@ def scipy_fix_cfile(path: str) -> None:
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
 
     if path.endswith("_fblasmodule.c"):
+        # TODO probably need to remove this after move to f2c -R ...
         text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
 
     source_path.write_text(text)
