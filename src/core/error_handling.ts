@@ -84,6 +84,9 @@ API.fatal_error = function (e: any) {
     console.error(e);
     return;
   }
+  if (e instanceof NoGilError) {
+    throw e;
+  }
   if (typeof e === "number") {
     // Hopefully a C++ exception?
     e = convertCppException(e);
@@ -342,7 +345,15 @@ function setName(errClass: any) {
 
 class FatalPyodideError extends Error {}
 class Exit extends Error {}
-[_PropagatePythonError, FatalPyodideError, Exit, PythonError].forEach(setName);
+class NoGilError extends Error {}
+[
+  _PropagatePythonError,
+  FatalPyodideError,
+  Exit,
+  PythonError,
+  NoGilError,
+].forEach(setName);
+API.NoGilError = NoGilError;
 
 Module._PropagatePythonError = _PropagatePythonError;
 
