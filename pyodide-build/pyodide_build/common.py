@@ -17,7 +17,6 @@ from typing import Any, NoReturn
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
-from .build_env import get_build_environment_vars, get_pyodide_root
 from .logger import logger
 from .recipe import load_all_recipes
 
@@ -155,6 +154,8 @@ def get_make_flag(name: str) -> str:
         SIDE_MODULE_CFLAGS
         SIDE_MODULE_CXXFLAGS
     """
+    from .build_env import get_build_environment_vars  # avoid circular import
+
     return get_build_environment_vars()[name]
 
 
@@ -200,6 +201,8 @@ def environment_substitute_args(
 @functools.cache
 def get_unisolated_packages() -> list[str]:
     import json
+
+    from .build_env import get_pyodide_root  # avoid circular import
 
     if "UNISOLATED_PACKAGES" in os.environ:
         return json.loads(os.environ["UNISOLATED_PACKAGES"])
