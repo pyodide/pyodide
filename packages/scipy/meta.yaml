@@ -111,8 +111,10 @@ build:
 
 
     # Missing declaration from cython_lapack_signatures.txt
-    echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
-     >>  scipy/linalg/cython_lapack_signatures.txt
+    # TODO Commenting it out for now otherwise ilaenv_ exported by openblas
+    # does not have the same signature as the imports wanted by scipy
+    # echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
+    # >>  scipy/linalg/cython_lapack_signatures.txt
 
     # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
 
