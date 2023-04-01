@@ -10,7 +10,6 @@ from typing import Any
 
 from packaging.tags import Tag
 from packaging.utils import parse_wheel_filename
-
 from pyodide_build.common import _get_sha256_checksum
 
 from .logger import logger, set_log_level
@@ -212,7 +211,13 @@ def _py_compile_archive(
         return None
     path_out = input_path.parent / name_out
 
-    _compile(input_path, path_out, keep=keep, verbose=verbose)
+    _compile(
+        input_path,
+        path_out,
+        keep=keep,
+        verbose=verbose,
+        compression_level=compression_level,
+    )
 
     return path_out
 

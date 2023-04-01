@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 from pytest_pyodide import spawn_web_server
+import zipfile
 import typer
 from typer.testing import CliRunner  # type: ignore[import]
 
@@ -17,6 +18,7 @@ from pyodide_build.cli import (
     create_zipfile,
     skeleton,
     xbuildenv,
+    py_compile,
 )
 
 from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
@@ -367,3 +369,25 @@ def test_xbuildenv_install(tmp_path, temp_xbuildenv):
     assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
     assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
     assert (envpath / "xbuildenv" / "requirements.txt").exists()
+
+
+@pytest.mark.parametrize("target", ["dir", "file"])
+@pytest.mark.parametrize("compression_level", [0, 6])
+def test_py_compile(tmp_path, target, compression_level):
+    wheel_path = tmp_path / "python.zip"
+    with zipfile.ZipFile(wheel_path, "w", compresslevel=3) as zf:
+        zf.writestr("a1.py", "def f():\n    pass")
+
+    if target == "dir":
+        target_path = tmp_path
+    elif target == "file":
+        target_path = wheel_path
+
+    py_compile.main(
+        path=target_path, silent=False, keep=False, compression_level=compression_level
+    )
+    with zipfile.ZipFile(tmp_path / "python.zip", "r") as fh:
+        if compression_level > 0:
+            assert fh.filelist[0].compress_type == zipfile.ZIP_DEFLATED
+        else:
+            assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
