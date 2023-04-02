@@ -1,6 +1,6 @@
 package:
   name: rebound
-  version: 3.19.8
+  version: 3.24.2
   top-level:
     - rebound
 build:
@@ -12,8 +12,8 @@ build:
     cp $WHEELDIR/librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
 
 source:
-  url: https://files.pythonhosted.org/packages/b9/e4/aae78477fc9462ccdf2017ae1fa38c7048cdac0c2af60cff57f69c019cc9/rebound-3.19.8.tar.gz
-  sha256: 827c4f83785f129cbcaba46fd57f62d3a98af231d0ec8e5af3aa9302c424ffa6
+  url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz
+  sha256: a3c5d4c6a10b9c1538e1051edcd6341ef3d13142b698ee9c4a1f112d9684d803
 requirements:
   run:
     - numpy
@@ -22,4 +22,3 @@ about:
   PyPI: https://pypi.org/project/rebound
   summary: An open-source multi-purpose N-body code
   license: GPL
-# Note: this package needs to be manually upgraded to the next version
