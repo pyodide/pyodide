@@ -510,7 +510,7 @@ def scipy_fix_cfile(path: str) -> None:
         # code path will work (but at least it will compile) since it needs
         # "ALNORM = algorithm AS66", which I don't think we have with the f2c
         # route
-        text = text.replace("extern real alnorm_", "extern doublereal alnorm_" )
+        text = text.replace("extern real alnorm_", "extern doublereal alnorm_")
 
     source_path.write_text(text)
 

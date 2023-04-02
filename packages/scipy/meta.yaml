@@ -35,6 +35,7 @@ source:
     - patches/0012-Remove-meson-requirements.patch
     - patches/0013-Fix-fitpack.patch
     # Uncomment to only build a few scipy sub-packages
+    # TODO I should use a sed replacement easier to manage
     # - patches/0014-Build-only-selected-packages.patch
     - patches/0001-When-forward-declaring-print_soln-give-it-the-correc.patch
 
@@ -117,13 +118,20 @@ build:
     # echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
     # >>  scipy/linalg/cython_lapack_signatures.txt
 
+
     # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
+
+    # Avoid Boost error "Sorry, but this platform does not have sufficient long
+    # double support for the special functions to be reliably implemented"
+    # Maybe this means result are garbage but at least it will compile ... no
+    # idea why I need to do this when switching to OpenBLAS ... maybe the type
+    # has changed somewhere and I get a boost template instantiation that I was
+    # not getting before???
+
+    sed -i 's/#if (defined(__NetBSD__) || defined(__EMSCRIPTEN__)/#if (defined(__NetBSD__)/' scipy/_lib/boost/boost/math/tools/config.hpp
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
-
-    # Uncomment to only build a few scipy sub-packages
-    # rm -rf scipy/{cluster,fftpack,fft,datasets,integrate,io,odr,ndimage,misc,interpolate,optimize,signal,spatial,stats}
 
   cross-build-env: true
   cross-build-files:
