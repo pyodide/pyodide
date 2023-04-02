@@ -34,7 +34,8 @@ source:
     - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
     - patches/0012-Remove-meson-requirements.patch
     - patches/0013-Fix-fitpack.patch
-    - patches/0014-Build-only-selected-packages.patch
+    # Uncomment to only build a few scipy sub-packages
+    # - patches/0014-Build-only-selected-packages.patch
     - patches/0001-When-forward-declaring-print_soln-give-it-the-correc.patch
 
 build:
@@ -121,8 +122,8 @@ build:
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
-    # Trying to cut down build time
-    rm -rf scipy/{cluster,fftpack,fft,datasets,integrate,io,odr,ndimage,misc,interpolate,optimize,signal,spatial,stats}
+    # Uncomment to only build a few scipy sub-packages
+    # rm -rf scipy/{cluster,fftpack,fft,datasets,integrate,io,odr,ndimage,misc,interpolate,optimize,signal,spatial,stats}
 
   cross-build-env: true
   cross-build-files:
