@@ -231,6 +231,7 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             for line in lines
         ]
 
+    # TODO remove after move to f2c -R?
     # Due to a bug in f2c some methods that should return a real end up
     # returning a double real. Most methods that start with an s are supposed to
     # return a real... but maybe not all?? Or maybe the others are affected also
@@ -499,8 +500,17 @@ def scipy_fix_cfile(path: str) -> None:
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
 
     if path.endswith("_fblasmodule.c"):
-        # TODO probably need to remove this after move to f2c -R ...
+        # TODO maybe need to remove this after move to f2c -R ...
         text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
+
+    if path.endswith("stats/statlib/spearman.c"):
+        # in scipy/stats/statlib/swilk.f ALNORM is called with a double, and in
+        # scipy/stats/statlib/spearman.f with a real this generates
+        # inconsistent signature. Let's use double in both, I don't think this
+        # code path will work (but at least it will compile) since it needs
+        # "ALNORM = algorithm AS66", which I don't think we have with the f2c
+        # route
+        text = text.replace("extern real alnorm_", "extern doublereal alnorm_" )
 
     source_path.write_text(text)
 
