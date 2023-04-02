@@ -123,6 +123,14 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                         ]
                     )
                     filepath = filepath.with_suffix(".f")
+                # Failed attempt as using RIMME f2clapack.sh
+                # f2clapack_path = os.path.join(
+                #     os.environ["PYODIDE_ROOT"], "f2clapack.sh")
+
+                # output_filename = filepath.with_suffix(".c")
+                # with filepath.open() as stdin, output_filename.open("w") as stdout:
+                #     subprocess.check_call(
+                #         [f2clapack_path], stdin=stdin, stdout=stdout, cwd=filepath.parent)
                 subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
