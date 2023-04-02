@@ -10,9 +10,9 @@ source:
 
 requirements:
   run:
-    - CLAPACK
+    - openblas
   host:
-    - CLAPACK
+    - openblas
 
 build:
   type: shared_library
@@ -23,8 +23,8 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
       LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
-      BLAS="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
-      LAPACK="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
+      BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       INSTALL=${WASM_LIBRARY_DIR}
 
     cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
