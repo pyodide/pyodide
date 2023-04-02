@@ -23,7 +23,7 @@ to be consistent.
 ---
  scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
  scipy/integrate/_odepackmodule.c              |  8 +-
- scipy/linalg/fblas_l1.pyf.src                 | 78 +++++++++++++------
+ scipy/linalg/fblas_l1.pyf.src                 | 73 ++++++++++++++-----
  scipy/odr/__odrpack.c                         |  2 +-
  scipy/optimize/_lsq/setup.py                  |  2 +-
  .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +-
@@ -35,7 +35,7 @@ to be consistent.
  scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
  .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 ++---
  .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++----
- 14 files changed, 106 insertions(+), 80 deletions(-)
+ 14 files changed, 103 insertions(+), 78 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -106,10 +106,10 @@ index 2b2189f0b..17f3f9348 100644
  {
      /*
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
-index 89e50a990..0476e6a26 100644
+index 89e50a990..090be8deb 100644
 --- a/scipy/linalg/fblas_l1.pyf.src
 +++ b/scipy/linalg/fblas_l1.pyf.src
-@@ -279,14 +279,16 @@ end subroutine <prefix>axpy
+@@ -279,10 +279,12 @@ end subroutine <prefix>axpy
  function sdot(n,x,offx,incx,y,offy,incy) result (xy)
    ! Computes a vector-vector dot product.
  
@@ -125,11 +125,6 @@ index 89e50a990..0476e6a26 100644
  
    real dimension(*), intent(in) :: x
    real dimension(*), intent(in) :: y
--  real sdot,xy
-+  double precision sdot,xy
-   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
-   integer optional, intent(in),check(incy>0||incy<0) :: incy = 1
-   integer optional, intent(in),depend(x) :: offx=0
 @@ -304,8 +306,12 @@ end function sdot
  function ddot(n,x,offx,incx,y,offy,incy) result (xy)
    ! Computes a vector-vector dot product.
@@ -181,13 +176,9 @@ index 89e50a990..0476e6a26 100644
  
    <ftype2c> dimension(*),intent(in) :: x
    <ftype2c> dimension(*),intent(in) :: y
-@@ -379,10 +393,15 @@ end function <prefix2c>dotc
+@@ -381,8 +395,12 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
  
- function <prefix3>nrm2(n,x,offx,incx) result(n2)
- 
--  <ftypereal3> <prefix3>nrm2, n2
-+  <ftypereal3> n2
-+  double precision <prefix3>nrm2
+   <ftypereal3> <prefix3>nrm2, n2
  
 -  callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
 -  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
@@ -200,7 +191,7 @@ index 89e50a990..0476e6a26 100644
  
    <ftype3> dimension(*),intent(in) :: x
  
-@@ -399,10 +418,14 @@ end function <prefix3>nrm2
+@@ -399,10 +417,14 @@ end function <prefix3>nrm2
  
  function <prefix4>nrm2(n,x,offx,incx) result(n2)
  
@@ -218,7 +209,7 @@ index 89e50a990..0476e6a26 100644
  
    <ftype4> dimension(*),intent(in) :: x
  
-@@ -417,14 +440,20 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
+@@ -417,14 +439,20 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
  end function <prefix4>nrm2
  
  

@@ -499,10 +499,6 @@ def scipy_fix_cfile(path: str) -> None:
         text = text.replace(",size_t", "")
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
 
-    if path.endswith("_fblasmodule.c"):
-        # TODO maybe need to remove this after move to f2c -R ...
-        text = text.replace(" float (*f2py_func)", " double (*f2py_func)")
-
     if path.endswith("stats/statlib/spearman.c"):
         # in scipy/stats/statlib/swilk.f ALNORM is called with a double, and in
         # scipy/stats/statlib/spearman.f with a real this generates
