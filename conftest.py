@@ -9,6 +9,7 @@ import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
+TEMPLATES_PATH = ROOT_PATH / "src" / "templates"
 
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
