@@ -21,21 +21,21 @@ emscripten is very strict about void vs int returns and function signatures, so
 we change everything to return int from subroutines, and signatures are altered
 to be consistent.
 ---
- scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 ----
- scipy/integrate/_odepackmodule.c              |  8 +-
- scipy/linalg/fblas_l1.pyf.src                 | 73 ++++++++++++++-----
+ scipy/_build_utils/src/wrap_dummy_g77_abi.f   | 16 -----
+ scipy/integrate/_odepackmodule.c              |  8 +--
+ scipy/linalg/fblas_l1.pyf.src                 | 62 ++++++++++++++-----
  scipy/odr/__odrpack.c                         |  2 +-
  scipy/optimize/_lsq/setup.py                  |  2 +-
- .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +-
+ .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +--
  .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
  .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  3 +
- .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 +-
+ .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 ++-
  .../linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h |  5 +-
  .../linalg/_dsolve/SuperLU/SRC/slu_scomplex.h |  5 +-
  scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
- .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 ++---
- .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++----
- 14 files changed, 103 insertions(+), 78 deletions(-)
+ .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 ++++----
+ 14 files changed, 96 insertions(+), 74 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -106,7 +106,7 @@ index 2b2189f0b..17f3f9348 100644
  {
      /*
 diff --git a/scipy/linalg/fblas_l1.pyf.src b/scipy/linalg/fblas_l1.pyf.src
-index 89e50a990..090be8deb 100644
+index 89e50a990..97095bdb2 100644
 --- a/scipy/linalg/fblas_l1.pyf.src
 +++ b/scipy/linalg/fblas_l1.pyf.src
 @@ -279,10 +279,12 @@ end subroutine <prefix>axpy
@@ -191,30 +191,23 @@ index 89e50a990..090be8deb 100644
  
    <ftype3> dimension(*),intent(in) :: x
  
-@@ -399,10 +417,14 @@ end function <prefix3>nrm2
- 
+@@ -400,9 +418,12 @@ end function <prefix3>nrm2
  function <prefix4>nrm2(n,x,offx,incx) result(n2)
  
--  <ftypereal4> <prefix4>nrm2, n2
+   <ftypereal4> <prefix4>nrm2, n2
 +  callstatement <prefix4>nrm2_return_value=(*f2py_func)(&n,x+offx,&incx)
 +  callprotoargument int*,<ctype4>*,int*
  
 -  callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
 -  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
-+  double precision <prefix4>nrm2
-+  <ftypereal4> n2
 +  fortranname F_FUNC(<prefix4>nrm2,<S,D>NRM2)
 +  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
 +  intent(c) <prefix4>nrm2
  
    <ftype4> dimension(*),intent(in) :: x
  
-@@ -417,14 +439,20 @@ function <prefix4>nrm2(n,x,offx,incx) result(n2)
- end function <prefix4>nrm2
- 
- 
--function <prefix3>asum(n,x,offx,incx) result (s)
-+function <prefix3>asum(n,x,offx,incx) result (d)
+@@ -420,8 +441,12 @@ end function <prefix4>nrm2
+ function <prefix3>asum(n,x,offx,incx) result (s)
    ! Computes the sum of magnitudes of the vector elements
  
 -  callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
@@ -222,24 +215,14 @@ index 89e50a990..090be8deb 100644
 +  callstatement <prefix3>asum_return_value=(*f2py_func)(&n,x+offx,&incx)
 +  callprotoargument int*,<ctype3>*,int*
 + 
-+  double precision <prefix3>asum
 +  fortranname F_FUNC(<prefix3>asum,<S,SC>ASUM)
 +  ! This following line is to avoid Fortran wrappers - fix for CLAPACK
 +  intent(c) <prefix3>asum
  
    <ftype3> dimension(*), intent(in) :: x
--  <ftypereal3> <prefix3>asum,s
-+  <ftypereal3> s
-+  double precision <prefix3>asum
-   integer optional, intent(in), check(incx>0||incx<0) :: incx = 1
-   integer optional, intent(in), depend(x) :: offx=0
-   check(offx>=0 && offx<len(x)) :: offx
-@@ -434,11 +463,16 @@ function <prefix3>asum(n,x,offx,incx) result (s)
- end function <prefix3>asum
- 
- 
--function <prefix4>asum(n,x,offx,incx) result (s)
-+function <prefix4>asum(n,x,offx,incx) result (d)
+   <ftypereal3> <prefix3>asum,s
+@@ -437,8 +462,13 @@ end function <prefix3>asum
+ function <prefix4>asum(n,x,offx,incx) result (s)
    ! Computes the sum of magnitudes of the vector elements
  
 -  callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
