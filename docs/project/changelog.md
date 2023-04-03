@@ -26,6 +26,11 @@ myst:
   a single file.
   {pr}`3727`
 
+### Build System / Package Loading
+
+- {{ Update }} Upgraded `pandas` to version `2.0.0`.
+  {pr}`3734`
+
 ## Version 0.23.0
 
 _March 30, 2023_
