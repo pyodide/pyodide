@@ -2,9 +2,11 @@ from pathlib import Path
 
 import typer
 
+from ..create_xbuildenv import create
 from ..install_xbuildenv import install
+from ..logger import logger
 
-app = typer.Typer(hidden=True)
+app = typer.Typer(hidden=True, no_args_is_help=True)
 
 
 @app.callback()
@@ -30,3 +32,24 @@ def _install(
     Note: this is a private endpoint that should not be used outside of the Pyodide Makefile.
     """
     install(path, download=download, url=url)
+    logger.info(f"xbuildenv installed at {path.resolve()}")
+
+
+@app.command("create")  # type: ignore[misc]
+def _create(
+    path: Path = typer.Argument(
+        ".pyodide-xbuildenv", help="path to xbuildenv directory"
+    ),
+    root: Path = typer.Option(
+        None, help="path to pyodide root directory, if not given, will be inferred"
+    ),
+) -> None:
+    """
+    Create xbuildenv.
+
+    The create environment is then used to cross-compile packages out-of-tree.
+    Note: this is a private endpoint that should not be used outside of the Pyodide Makefile.
+    """
+
+    create(path, pyodide_root=root)
+    logger.info(f"xbuildenv created at {path.resolve()}")

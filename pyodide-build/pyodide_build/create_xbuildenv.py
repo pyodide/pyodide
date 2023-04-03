@@ -1,4 +1,3 @@
-import argparse
 import shutil
 import subprocess
 from pathlib import Path
@@ -13,17 +12,7 @@ from .logger import logger
 from .recipe import load_all_recipes
 
 
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Create xbuild env.\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the Pyodide Makefile."
-    )
-    return parser
-
-
-def copy_xbuild_files(xbuildenv_path: Path) -> None:
-    PYODIDE_ROOT = get_pyodide_root()
+def _copy_xbuild_files(pyodide_root: Path, xbuildenv_path: Path) -> None:
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     # Store package cross-build-files into site_packages_extras in the same tree
     # structure as they would appear in the real package.
@@ -31,7 +20,7 @@ def copy_xbuild_files(xbuildenv_path: Path) -> None:
     # pip install -t $HOSTSITEPACKAGES -r requirements.txt
     # cp site-packages-extras $HOSTSITEPACKAGES
     site_packages_extras = xbuildenv_path / "site-packages-extras"
-    recipes = load_all_recipes(PYODIDE_ROOT / "packages")
+    recipes = load_all_recipes(pyodide_root / "packages")
     for recipe in recipes.values():
         xbuild_files = recipe.build.cross_build_files
         for path in xbuild_files:
@@ -44,13 +33,10 @@ def get_relative_path(pyodide_root: Path, flag: str) -> Path:
     return Path(get_make_flag(flag)).relative_to(pyodide_root)
 
 
-def copy_wasm_libs(xbuildenv_path: Path) -> None:
-    pyodide_root = get_pyodide_root()
+def _copy_wasm_libs(pyodide_root: Path, xbuildenv_root: Path) -> None:
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
-    xbuildenv_root = xbuildenv_path / "pyodide-root"
-    xbuildenv_path.mkdir(exist_ok=True)
     to_copy: list[Path] = [
         pythoninclude,
         sysconfig_dir,
@@ -86,14 +72,19 @@ def copy_wasm_libs(xbuildenv_path: Path) -> None:
             shutil.copy(pyodide_root / path, xbuildenv_root / path)
 
 
-def main(args: argparse.Namespace) -> None:
-    pyodide_root = get_pyodide_root()
-    xbuildenv_path = pyodide_root / "xbuildenv"
-    xbuildenv_root = xbuildenv_path / "pyodide-root"
-    shutil.rmtree(xbuildenv_path, ignore_errors=True)
+def create(path: str | Path, pyodide_root: Path | None = None) -> None:
+    if pyodide_root is None:
+        pyodide_root = get_pyodide_root()
 
-    copy_xbuild_files(xbuildenv_path)
-    copy_wasm_libs(xbuildenv_path)
+    xbuildenv_path = Path(path)
+    xbuildenv_root = xbuildenv_path / "pyodide-root"
+
+    shutil.rmtree(xbuildenv_path, ignore_errors=True)
+    xbuildenv_path.mkdir(parents=True, exist_ok=True)
+    xbuildenv_root.mkdir()
+
+    _copy_xbuild_files(pyodide_root, xbuildenv_path)
+    _copy_wasm_libs(pyodide_root, xbuildenv_root)
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(
