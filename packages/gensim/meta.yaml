@@ -12,6 +12,14 @@ requirements:
     - scipy
     - six
     - smart_open
+build:
+  script: |
+    sed -ri 's/(cdef dsdot_ptr.+)fblas\.sdot/\1fblas.ddot/' gensim/models/word2vec_inner.pyx
+    cd gensim/models
+    cython word2vec_inner.pyx
+    cd $OLDPWD
+    pip install .
+
 about:
   home: http://radimrehurek.com/gensim
   PyPI: https://pypi.org/project/gensim
