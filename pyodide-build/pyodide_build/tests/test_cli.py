@@ -342,6 +342,37 @@ def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
         assert "module4.pyc" in zf.namelist()
 
 
+def test_xbuildenv_create(tmp_path):
+    from conftest import package_is_built
+
+    if package_is_built("scipy"):
+        envpath = Path(tmp_path) / ".xbuildenv"
+        result = runner.invoke(
+            xbuildenv.app,
+            [
+                "create",
+                str(envpath),
+            ],
+        )
+        assert result.exit_code == 0, result.stdout
+        assert f"xbuildenv created at {envpath}" in result.stdout
+        assert (envpath / "xbuildenv").exists()
+        assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+        assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
+        assert (envpath / "xbuildenv" / "requirements.txt").exists()
+
+    else:
+        # creating xbuildenv without building scipy will raise error
+        with pytest.raises(FileNotFoundError):
+            result = runner.invoke(
+                xbuildenv.app,
+                [
+                    "create",
+                    str(tmp_path / ".xbuildenv"),
+                ],
+            )
+
+
 def test_xbuildenv_install(tmp_path, temp_xbuildenv):
     envpath = Path(tmp_path) / ".xbuildenv"
 

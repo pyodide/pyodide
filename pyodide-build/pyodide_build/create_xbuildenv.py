@@ -24,9 +24,14 @@ def _copy_xbuild_files(pyodide_root: Path, xbuildenv_path: Path) -> None:
     for recipe in recipes.values():
         xbuild_files = recipe.build.cross_build_files
         for path in xbuild_files:
+            source = site_packages / path
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy(site_packages / path, target)
+
+            if not source.exists():
+                raise FileNotFoundError(f"Cross-build file '{path}' not found")
+
+            shutil.copy(source, target)
 
 
 def get_relative_path(pyodide_root: Path, flag: str) -> Path:
@@ -76,7 +81,7 @@ def create(path: str | Path, pyodide_root: Path | None = None) -> None:
     if pyodide_root is None:
         pyodide_root = get_pyodide_root()
 
-    xbuildenv_path = Path(path)
+    xbuildenv_path = Path(path) / "xbuildenv"
     xbuildenv_root = xbuildenv_path / "pyodide-root"
 
     shutil.rmtree(xbuildenv_path, ignore_errors=True)
