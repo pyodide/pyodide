@@ -22,7 +22,7 @@ myst:
 
 ### CLI
 
-- {{ Fix }} Fix `pyodide py-compress` not to ignore the `--compression-level` option when applied on
+- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level` option when applied on
   a single file.
   {pr}`3727`
 
