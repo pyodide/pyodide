@@ -11,8 +11,6 @@ if sys.version_info < (3, 11, 0):
 else:
     import tomllib
 
-from . import install_xbuildenv
-from .common import exit_with_stdio
 from .logger import logger
 
 BUILD_VARS: set[str] = {
@@ -136,6 +134,17 @@ def get_build_environment_vars() -> dict[str, str]:
     return env
 
 
+def get_build_flag(name: str) -> str:
+    """
+    Get a value of a build flag.
+    """
+    build_vars = get_build_environment_vars()
+    if name not in build_vars:
+        raise ValueError(f"Unknown build flag: {name}")
+
+    return build_vars[name]
+
+
 def _set_pyodide_root(*, quiet: bool = False) -> None:
     """
     Initialize Pyodide build environment, namely set PYODIDE_ROOT environment variable.
@@ -148,8 +157,9 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
     ----------
     quiet
         If True, do not print any messages
-
     """
+
+    from . import install_xbuildenv  # avoid circular import
 
     # If we are building docs, we don't need to know the PYODIDE_ROOT
     if "sphinx" in sys.modules:
@@ -160,8 +170,8 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
     if "PYODIDE_ROOT" in os.environ:
         return
 
-    # 2) Check if we are doing an in-tree build.
-    #    If so, set PYODIDE_ROOT to the root of the Pyodide repository
+    # 2) If we are doing an in-tree build,
+    #    set PYODIDE_ROOT to the root of the Pyodide repository
     try:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
         return
@@ -193,6 +203,8 @@ def _get_make_environment_vars() -> dict[str, str]:
 
     This is not a public API, use get_build_environment_vars instead.
     """
+
+    from .common import exit_with_stdio  # avoid circular import
 
     PYODIDE_ROOT = get_pyodide_root()
     environment = {}

@@ -17,12 +17,13 @@ from typing import Any, NoReturn
 from packaging.tags import Tag, compatible_tags, cpython_tags
 from packaging.utils import parse_wheel_filename
 
+from .build_env import get_build_flag, get_pyodide_root
 from .logger import logger
 from .recipe import load_all_recipes
 
 
 def emscripten_version() -> str:
-    return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    return get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
 
 
 def get_emscripten_version_info() -> str:
@@ -55,7 +56,7 @@ def check_emscripten_version() -> None:
 
 
 def platform() -> str:
-    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    emscripten_version = get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
     return f"emscripten_{version}_wasm32"
 
@@ -66,8 +67,8 @@ def pyodide_tags() -> Iterator[Tag]:
 
     The sequence is ordered in decreasing specificity.
     """
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
+    PYMAJOR = get_build_flag("PYMAJOR")
+    PYMINOR = get_build_flag("PYMINOR")
     PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
@@ -146,27 +147,19 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-def get_make_flag(name: str) -> str:
-    """Get flags from makefile.envs.
-
-    For building packages we currently use:
-        SIDE_MODULE_LDFLAGS
-        SIDE_MODULE_CFLAGS
-        SIDE_MODULE_CXXFLAGS
-    """
-    from .build_env import get_build_environment_vars  # avoid circular import
-
-    return get_build_environment_vars()[name]
-
-
 def get_pyversion() -> str:
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
+    PYMAJOR = get_build_flag("PYMAJOR")
+    PYMINOR = get_build_flag("PYMINOR")
     return f"python{PYMAJOR}.{PYMINOR}"
 
 
 def get_hostsitepackages() -> str:
-    return get_make_flag("HOSTSITEPACKAGES")
+    return get_build_flag("HOSTSITEPACKAGES")
+
+
+def get_make_flag(name: str) -> str:
+    # TODO: remove this function. Keeping it for now to reduce the diff.
+    return get_build_flag(name)
 
 
 def environment_substitute_args(
@@ -200,12 +193,6 @@ def environment_substitute_args(
 
 @functools.cache
 def get_unisolated_packages() -> list[str]:
-    import json
-
-    from .build_env import get_pyodide_root  # avoid circular import
-
-    if "UNISOLATED_PACKAGES" in os.environ:
-        return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
     unisolated_file = PYODIDE_ROOT / "unisolated.txt"
     if unisolated_file.exists():
@@ -218,7 +205,7 @@ def get_unisolated_packages() -> list[str]:
         for name, config in recipes.items():
             if config.build.cross_build_env:
                 unisolated_packages.append(name)
-    os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
+
     return unisolated_packages
 
 
