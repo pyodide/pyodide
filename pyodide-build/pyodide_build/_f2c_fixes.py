@@ -243,12 +243,6 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     #         re.sub(f"extern doublereal ({pattern})", r"extern float \1", line)
     #         for line in lines
     #     ]
-    if "scipy/sparse/linalg" in f2c_output_path:
-        lines = [
-            # conflict with c_abs macro defined in openblas
-            line.replace("c_abs(", "sparse_linalg_c_abs(")
-            for line in lines
-        ]
 
     # Substitute back the dummy fixed array sizes. We also have to remove the
     # "static" storage specifier since variable sized arrays can't have static

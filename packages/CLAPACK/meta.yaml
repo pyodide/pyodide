@@ -32,9 +32,6 @@ build:
     sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
-    # Remove symbols already defined in OpenBLAS
-    sed -ri 's/[cz]_abs.o //' F2CLIBS/libf2c/Makefile
-
     emmake make -j ${PYODIDE_JOBS:-3} f2clib
     # emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/clapack_all.so
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}

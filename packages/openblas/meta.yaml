@@ -29,6 +29,12 @@ build:
     # so revert sed change above for those ...
     sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c lapack-netlib/SRC/DEPRECATED/*.c
 
+    # c_abs and z_abs are already defined in libf2c. This is more convenient to
+    # have them defined in f2c I think, since scipy f2ced files will have
+    # the same return type (e.g. double and the OpenBLAS implementation return float)
+    sed -ri 's/(COMMONOBJS.+=.+)c_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
+    sed -ri 's/(COMMONOBJS.+=.+)z_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
+
     # BUILD_TESTING=OFF is a cmake thing not sure how to use it. Maybe this would avoid noisy signature mismatch?
     make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
