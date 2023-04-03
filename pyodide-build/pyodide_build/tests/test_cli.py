@@ -363,14 +363,15 @@ def test_xbuildenv_create(tmp_path):
 
     else:
         # creating xbuildenv without building scipy will raise error
-        with pytest.raises(FileNotFoundError):
-            result = runner.invoke(
-                xbuildenv.app,
-                [
-                    "create",
-                    str(tmp_path / ".xbuildenv"),
-                ],
-            )
+        result = runner.invoke(
+            xbuildenv.app,
+            [
+                "create",
+                str(tmp_path / ".xbuildenv"),
+            ],
+        )
+        assert result.exit_code != 0, result.stdout
+        assert isinstance(result.exception, FileNotFoundError), result.exception
 
 
 def test_xbuildenv_install(tmp_path, temp_xbuildenv):
