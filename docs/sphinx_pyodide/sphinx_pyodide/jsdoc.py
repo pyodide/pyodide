@@ -519,7 +519,7 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
-        modules = ["globalThis", "pyodide", "pyodide.ffi"]
+        modules = ["globalThis", "pyodide", "pyodide.ffi", "pyodide.canvas"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
         pyproxy_subclasses = []
@@ -559,6 +559,10 @@ class PyodideAnalyzer:
                 # ends up working out on our favor. If we did want to filter
                 # them, we could probably test for:
                 # isinstance(doclet, Function) and doclet.is_static.
+                continue
+
+            if filename == "canvas.":
+                items["pyodide.canvas"].append(doclet)
                 continue
 
             if filename == "pyproxy.gen." and isinstance(doclet, Class):

@@ -218,7 +218,7 @@ def test_make_zip_archive(tmp_path, compression_level, expected_compression_type
     make_zip_archive(output_dir, input_dir, compression_level=compression_level)
 
     with zipfile.ZipFile(output_dir) as fh:
-        assert fh.namelist() == ["b.txt", "c/", "c/d"]
+        assert set(fh.namelist()) == {"b.txt", "c/", "c/d"}
         assert fh.read("b.txt") == b"."
         assert fh.getinfo("b.txt").compress_type == expected_compression_type
 

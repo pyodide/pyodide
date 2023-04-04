@@ -78,10 +78,14 @@ API.fatal_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     return;
   }
+
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
+  }
+  if (e instanceof NoGilError) {
+    throw e;
   }
   if (typeof e === "number") {
     // Hopefully a C++ exception?
@@ -159,7 +163,6 @@ API.maybe_fatal_error = function (e: any) {
           "that uses emscripten_set_main_loop().",
       );
     }
-
     return;
   }
 
@@ -222,11 +225,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
 }
 
 function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
-  if (!isPyodideFrame(frame)) {
-    return false;
-  }
-  const funcName = frame.functionName;
-  return funcName === "PythonError" || funcName === "new_error";
+  return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
 Module.handle_js_error = function (e: any) {
@@ -266,7 +265,7 @@ Module.handle_js_error = function (e: any) {
     // In this case we have no stack frames so we can quit
     return;
   }
-  if (isErrorStart(stack[0])) {
+  if (isErrorStart(stack[0]) || isErrorStart(stack[1])) {
     while (isPyodideFrame(stack[0])) {
       stack.shift();
     }
@@ -352,7 +351,15 @@ function setName(errClass: any) {
 
 class FatalPyodideError extends Error {}
 class Exit extends Error {}
-[_PropagatePythonError, FatalPyodideError, Exit, PythonError].forEach(setName);
+class NoGilError extends Error {}
+[
+  _PropagatePythonError,
+  FatalPyodideError,
+  Exit,
+  PythonError,
+  NoGilError,
+].forEach(setName);
+API.NoGilError = NoGilError;
 
 Module._PropagatePythonError = _PropagatePythonError;
 

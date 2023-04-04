@@ -1,3 +1,4 @@
+import json
 import sys
 import textwrap
 import traceback
@@ -7,9 +8,12 @@ from importlib.util import MAGIC_NUMBER
 from pathlib import Path
 
 import pytest
-from packaging.utils import InvalidWheelFilename
 
-from pyodide_build._py_compile import _py_compile_wheel
+from pyodide_build._py_compile import (
+    _get_py_compiled_archive_name,
+    _py_compile_archive,
+    _py_compile_archive_dir,
+)
 
 
 def _create_tmp_wheel(
@@ -32,7 +36,7 @@ def _create_tmp_wheel(
     return wheel_path
 
 
-def test_py_compile_wheel(tmp_path):
+def test_py_compile_archive(tmp_path):
     wheel_data = {
         "a.so": "abc",
         "b.txt": "123",
@@ -44,7 +48,8 @@ def test_py_compile_wheel(tmp_path):
         "packagea", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
     )
     assert input_wheel_path.name == "packagea-0.1.0-py3-none-any.whl"
-    output_wheel_path = _py_compile_wheel(input_wheel_path)
+    output_wheel_path = _py_compile_archive(input_wheel_path)
+    assert output_wheel_path is not None
     assert (
         output_wheel_path.name
         == f"packagea-0.1.0-cp3{sys.version_info[1]}-none-any.whl"
@@ -68,6 +73,38 @@ def test_py_compile_wheel(tmp_path):
                 assert val.startswith(MAGIC_NUMBER)
 
 
+@pytest.mark.parametrize("keep", [True, False])
+def test_py_compile_zip(tmp_path, keep):
+    archive_path = tmp_path / "test1.zip"
+    with zipfile.ZipFile(archive_path, mode="w") as fh_zip:
+        fh_zip.writestr("packageA/c/a.py", "1+1")
+        fh_zip.writestr("packageA/d.c", "x = 1")
+    out_path = _py_compile_archive(archive_path, keep=keep)
+    assert out_path == archive_path
+
+    if keep:
+        expected = {"test1.zip", "test1.zip.old"}
+    else:
+        expected = {"test1.zip"}
+
+    assert set(el.name for el in tmp_path.glob("*")) == expected
+
+    with zipfile.ZipFile(archive_path) as fh_zip:
+        assert fh_zip.namelist() == ["packageA/c/a.pyc", "packageA/d.c"]
+
+
+def test_py_compile_zip_no_py(tmp_path):
+    archive_path = tmp_path / "test1.zip"
+    with zipfile.ZipFile(archive_path, mode="w") as fh_zip:
+        fh_zip.writestr("packageA/d.c", "x = 1")
+    out_path = _py_compile_archive(archive_path)
+    assert out_path is None
+
+    # File is not modified
+    with zipfile.ZipFile(archive_path) as fh_zip:
+        assert fh_zip.namelist() == ["packageA/d.c"]
+
+
 def test_py_compile_exceptions(tmp_path):
     wheel_data = {
         "a.py": "x = 1",
@@ -84,7 +121,8 @@ def test_py_compile_exceptions(tmp_path):
     input_wheel_path = _create_tmp_wheel(
         "packagea", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
     )
-    output_wheel_path = _py_compile_wheel(input_wheel_path)
+    output_wheel_path = _py_compile_archive(input_wheel_path)
+    assert output_wheel_path is not None
     with zipfile.ZipFile(output_wheel_path) as fh_zip:
         (tmp_path / "_py_compile_test_a.pyc").write_bytes(fh_zip.read("a.pyc"))
         (tmp_path / "_py_compile_test_b.pyc").write_bytes(fh_zip.read("b.pyc"))
@@ -112,5 +150,99 @@ def test_py_compile_exceptions(tmp_path):
 def test_py_compile_not_wheel(tmp_path):
     input_path = tmp_path / "some_file.whl"
     input_path.write_bytes(b"")
-    with pytest.raises(InvalidWheelFilename):
-        _py_compile_wheel(input_path)
+    assert _py_compile_archive(input_path) is None
+
+
+def test_get_py_compiled_archive_name(tmp_path):
+    with zipfile.ZipFile(tmp_path / "test1.zip", mode="w") as fh_zip:
+        fh_zip.writestr("packageA/c/a.py", "1+1")
+        fh_zip.writestr("packageA/d.c", "x = 1")
+
+    # Zip file contains .py files, so it should be py-compiled keeping the same name
+    assert _get_py_compiled_archive_name(tmp_path / "test1.zip") == ("test1.zip")
+
+    with zipfile.ZipFile(tmp_path / "test2.zip", mode="w") as fh_zip:
+        fh_zip.writestr("packageA/a", "1+1")
+
+    # No .py files in the zip file, it should not be py-compiled
+    assert _get_py_compiled_archive_name(tmp_path / "test2.zip") is None
+
+    # Other file formats than .zip and .whl should not be py-compiled
+    (tmp_path / "test3.tar.gz").write_bytes(b"")
+
+    assert _get_py_compiled_archive_name(tmp_path / "test3.tar.gz") is None
+
+
+@pytest.mark.parametrize("with_repodata", [True, False])
+def test_py_compile_archive_dir(tmp_path, with_repodata):
+    archive_path = tmp_path / "test1.zip"
+    with zipfile.ZipFile(archive_path, mode="w") as fh_zip:
+        fh_zip.writestr("packageA/c/a.py", "1+1")
+        fh_zip.writestr("packageA/d.c", "x = 1")
+
+    wheel_data = {
+        "a.so": "abc",
+        "b.txt": "123",
+        "METADATA": "a",
+        "packageB/a.py": "1+1",
+    }
+
+    input_wheel_path = _create_tmp_wheel(
+        "packageB", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
+    )
+
+    repodata_path = tmp_path / "repodata.json"
+    repodata = {
+        "info": {"arch": "wasm32"},
+        "packages": {
+            "packageA": {"version": "1.0", "file_name": archive_path.name},
+            "packageB": {"version": "1.0", "file_name": input_wheel_path.name},
+            "packageC": {
+                "version": "1.0",
+                "file_name": "some-path.tar",
+                "checksum": "123",
+            },
+        },
+    }
+
+    expected_in = {"test1.zip", "packageB-0.1.0-py3-none-any.whl"}
+    expected_out = {"test1.zip", "packageb-0.1.0-cp311-none-any.whl"}
+    if with_repodata:
+        with open(repodata_path, "w") as fh:
+            json.dump(repodata, fh)
+        expected_in.add("repodata.json")
+        expected_out.add("repodata.json")
+
+    assert set(el.name for el in tmp_path.glob("*")) == expected_in
+
+    mapping = _py_compile_archive_dir(tmp_path, keep=False)
+
+    assert mapping == {
+        "packageB-0.1.0-py3-none-any.whl": "packageb-0.1.0-cp311-none-any.whl",
+        "test1.zip": "test1.zip",
+    }
+
+    assert set(el.name for el in tmp_path.glob("*")) == expected_out
+
+    if not with_repodata:
+        return
+
+    with open(repodata_path) as fh:
+        repodata_new = json.load(fh)
+
+    assert repodata_new["info"] == repodata["info"]
+    assert repodata_new["packages"]["packageA"]["file_name"] == "test1.zip"
+    # sha256 is not reproducible, since it depends on the timestamp
+    assert len(repodata_new["packages"]["packageA"]["sha256"]) == 64
+
+    assert (
+        repodata_new["packages"]["packageB"]["file_name"]
+        == "packageb-0.1.0-cp311-none-any.whl"
+    )
+    assert len(repodata_new["packages"]["packageA"]["sha256"]) == 64
+
+    assert repodata_new["packages"]["packageC"] == {
+        "version": "1.0",
+        "file_name": "some-path.tar",
+        "checksum": "123",
+    }

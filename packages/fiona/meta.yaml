@@ -37,3 +37,4 @@ about:
   PyPI: https://pypi.org/project/fiona
   summary: Fiona reads and writes spatial data files
   license: BSD
+# Note: this package needs to be manually upgraded to the next version

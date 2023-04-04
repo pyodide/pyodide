@@ -235,6 +235,43 @@ jobs:
           paths:
             - ./xbuildenv
 
+  build-test-pyc-packages:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -r requirements.txt
+            pip install -e ./pyodide-build
+            npm install -g node-fetch@2
+
+      - run:
+          name: Py-compile packages
+          command: |
+            pyodide py-compile --compression-level 0 dist/
+
+      - run:
+          name: Test import of py-compiled packages
+          command: |
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --durations 50 \
+              --benchmark-json=benchmark-time.json \
+              "packages/_tests/test_packages_common.py::test_import" -k "node"
+
+            mv dist/ dist-pyc/
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./dist-pyc
+
   test-main:
     parameters:
       test-params:
@@ -427,8 +464,7 @@ jobs:
     # similar as possible to the steps in deploy-dev!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -437,8 +473,11 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make npm
-            python3 -m pip install awscli
+            python3 -m pip install -e "./pyodide-build[deploy]"
+
+            wget https://github.com/tcnksm/ghr/releases/download/v0.16.0/ghr_v0.16.0_linux_amd64.tar.gz
+            tar xzf ghr_v0.16.0_linux_amd64.tar.gz
+            mv ghr_v0.16.0_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
           name: Deploy Github Releases
@@ -450,7 +489,7 @@ jobs:
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
+            /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
               -delete "${CIRCLE_TAG}" \
               dist
@@ -463,39 +502,30 @@ jobs:
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make dist/console.html
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            # Note: the following compression is the compression of files on S3
-            # to reduce storage size and outbound AWS traffic. The HTTP
-            # requests for these files made to S3 will result in a response
-            # with gzip compression. However because JsDelivr CDN proxies and caches these
-            # requests, this has no impact on the compression of zip files and
-            # wheels once the files are served to users via CDN.
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
+            python3 tools/deploy_s3.py dist/ "v${CIRCLE_TAG}/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*.zip' --exclude "*.whl" --exclude "*.tar" --cache-control 'max-age=30758400, public' --content-encoding 'gzip'  # 1 year cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=30758400, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year cache
+            python3 tools/deploy_s3.py dist-debug/ "v${CIRCLE_TAG}/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: update 301 redirect for the /latest/* route.
+          name: Deploy the pyc version to S3
           command: |
-            aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
+            python3 tools/deploy_s3.py dist-pyc/ "v${CIRCLE_TAG}/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
 
   deploy-dev:
     # To reduce chance of deployment issues, try to keep the steps here as
     # similar as possible to the steps in deploy-release!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -504,28 +534,27 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make
-            python3 -m pip install awscli
+            python3 -m pip install -e "./pyodide-build[deploy]"
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist/ "dev/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/debug/"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.zip' --exclude '*.whl' --exclude "*.tar" --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.zip' --include "*.whl" --include "*.tar" --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist-debug/ "dev/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+      - run:
+          name: Deploy pyc version to S3
+          command: |
+            python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
 
 workflows:
   version: 2
@@ -799,12 +828,20 @@ workflows:
             tags:
               only: /.*/
 
+      - build-test-pyc-packages:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - deploy-release:
           requires:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
+            - build-test-pyc-packages
           filters:
             branches:
               ignore: /.*/
@@ -817,6 +854,7 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - build-test-pyc-packages
           filters:
             branches:
               only: main

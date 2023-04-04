@@ -12,8 +12,8 @@ URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_TAG=2022-06-23
+LIBFFIREPO=https://github.com/libffi/libffi
+LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -61,8 +61,16 @@ $(BUILD)/.patched: $(TARBALL)
 
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
-	git clone $(LIBFFIREPO) --depth 1 --branch $(LIBFFI_TAG) $(FFIBUILD)
-	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && ./build.sh && make install
+	mkdir $(FFIBUILD)
+	(\
+		cd $(FFIBUILD) \
+		&& git init \
+		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
+		&& git checkout FETCH_HEAD \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& make install \
+	)
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/

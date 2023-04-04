@@ -90,6 +90,7 @@ dist/libpyodide.a: \
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
+	libgl \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
@@ -206,6 +207,12 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 .PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
+
+.PHONY: libgl
+libgl:
+	# TODO(ryanking13): Link this to a side module not to the main module.
+	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 
 .PHONY: lint
 lint:

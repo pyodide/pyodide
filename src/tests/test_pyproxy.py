@@ -799,6 +799,58 @@ def test_errors(selenium):
 
 
 @pytest.mark.skip_pyproxy_check
+def test_nogil(selenium):
+    selenium.run_js(
+        r"""
+        let t = pyodide.runPython(`
+            def te(self, *args, **kwargs):
+                raise Exception(repr(args))
+            class Temp:
+                __getattr__ = te
+                __setattr__ = te
+                __delattr__ = te
+                __dir__ = te
+                __call__ = te
+                __getitem__ = te
+                __setitem__ = te
+                __delitem__ = te
+                __iter__ = te
+                __len__ = te
+                __contains__ = te
+                __await__ = te
+                __repr__ = te
+            Temp()
+        `);
+        // release GIL
+        const tstate = pyodide._module._PyEval_SaveThread()
+
+        assertThrows(() => t.x, "NoGilError", "");
+        try {
+            t.x;
+        } catch(e){
+            assert(() => e instanceof pyodide._api.NoGilError);
+        }
+        assertThrows(() => t.x = 2, "NoGilError", "");
+        assertThrows(() => delete t.x, "NoGilError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
+        assertThrows(() => t(), "NoGilError", "");
+        assertThrows(() => t.get(1), "NoGilError", "");
+        assertThrows(() => t.set(1, 2), "NoGilError", "");
+        assertThrows(() => t.delete(1), "NoGilError", "");
+        assertThrows(() => t.has(1), "NoGilError", "");
+        assertThrows(() => t.length, "NoGilError", "");
+        assertThrows(() => t.toString(), "NoGilError", "");
+        assertThrows(() => Array.from(t), "NoGilError", "");
+        await assertThrowsAsync(async () => await t, "NoGilError", "");
+        assertThrows(() => t.destroy(), "NoGilError", "");
+
+        // acquire GIL
+        pyodide._module._PyEval_RestoreThread(tstate)
+        """
+    )
+
+
+@pytest.mark.skip_pyproxy_check
 def test_fatal_error(selenium_standalone):
     """Inject fatal errors in all the reasonable entrypoints"""
     selenium_standalone.run_js(
@@ -1063,13 +1115,48 @@ def test_pyproxy_this2(selenium):
 
 
 @run_in_pyodide
-async def test_async_iter(selenium):
+async def test_async_iter1(selenium):
     from pyodide.code import run_js
 
     class Gen:
         async def __aiter__(self):
             yield 1
             yield 2
+
+    g = Gen()
+
+    p = run_js(
+        """
+        async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
+            let r = [];
+            for await (let a of g) {
+                r.push(a);
+            }
+            return r;
+        }
+    """
+    )(g)
+
+    assert (await p).to_py() == [1, 2]
+
+
+@run_in_pyodide
+async def test_async_iter2(selenium):
+    from pyodide.code import run_js
+
+    class Gen:
+        def __init__(self):
+            self.i = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            self.i += 1
+            if self.i > 2:
+                raise StopAsyncIteration
+            return self.i
 
     g = Gen()
 
@@ -1256,7 +1343,7 @@ def test_gen_throw(selenium):
 
 
 @run_in_pyodide
-async def test_async_gen(selenium):
+async def test_async_gen1(selenium):
     from pyodide.code import run_js
 
     async def g():
@@ -1287,6 +1374,28 @@ async def test_async_gen(selenium):
         {"done": False, "value": 6},
         {"done": True, "value": None},
     ]
+
+
+@run_in_pyodide
+async def test_async_gen2(selenium):
+    from pyodide.code import run_js
+
+    async def g():
+        for n in range(3):
+            yield n
+
+    p = run_js(
+        """
+        async (g) => {
+            let result = [];
+            for await (let x of g){
+                result.push(x);
+            }
+            return result;
+        }
+    """
+    )(g())
+    assert (await p).to_py() == [0, 1, 2]
 
 
 @run_in_pyodide

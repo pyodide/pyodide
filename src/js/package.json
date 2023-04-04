@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.22.0",
+  "version": "0.24.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -47,6 +47,7 @@
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
+    "./python_stdlib.zip": "./python_stdlib.zip",
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
     "./package.json": "./package.json",

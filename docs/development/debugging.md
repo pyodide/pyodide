@@ -224,7 +224,7 @@ what is going on at an instruction-level. This limitation means that it is
 generally easier to work directly with instructions. One work around is to load
 a copy of Pyodide with the source maps next to one without the source maps. This
 situation is rapidly improving both on Emscripten's side and on the browser
-side. To build Pyodide with DWARF, you should set `DBGFLAGS="-g3 -gseparate-dwarf`.
+side. To build Pyodide with DWARF, you should set `DBGFLAGS="-g3 -gseparate-dwarf"`.
 
 If you are building in the docker image, you will get error 404s when the
 browser tries to look up the source maps because the path `/src/cpython/...`
