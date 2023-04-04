@@ -348,6 +348,7 @@ def test_xbuildenv_create(tmp_path):
     from conftest import package_is_built
 
     if package_is_built("scipy"):
+        # TODO: run this test in CI
         envpath = Path(tmp_path) / ".xbuildenv"
         result = runner.invoke(
             xbuildenv.app,
