@@ -348,23 +348,23 @@ def test_xbuildenv_create(selenium, tmp_path):
     # selenium fixture is added to ensure that Pyodide is built... it's a hack
     from conftest import package_is_built
 
-    if package_is_built("scipy"):
-        envpath = Path(tmp_path) / ".xbuildenv"
-        result = runner.invoke(
-            xbuildenv.app,
-            [
-                "create",
-                str(envpath),
-            ],
-        )
-        assert result.exit_code == 0, result.stdout
-        assert f"xbuildenv created at {envpath}" in result.stdout
-        assert (envpath / "xbuildenv").exists()
-        assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
-        assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
-        assert (envpath / "xbuildenv" / "requirements.txt").exists()
+    envpath = Path(tmp_path) / ".xbuildenv"
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "create",
+            str(envpath),
+            "--skip-missing-cross-file",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+    assert f"xbuildenv created at {envpath}" in result.stdout
+    assert (envpath / "xbuildenv").exists()
+    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
+    assert (envpath / "xbuildenv" / "requirements.txt").exists()
 
-    else:
+    if not package_is_built("scipy"):
         # creating xbuildenv without building scipy will raise error
         result = runner.invoke(
             xbuildenv.app,

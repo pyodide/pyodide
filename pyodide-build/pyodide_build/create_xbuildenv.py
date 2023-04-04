@@ -12,7 +12,9 @@ from .logger import logger
 from .recipe import load_all_recipes
 
 
-def _copy_xbuild_files(pyodide_root: Path, xbuildenv_path: Path) -> None:
+def _copy_xbuild_files(
+    pyodide_root: Path, xbuildenv_path: Path, skip_missing_cross_file: bool = False
+) -> None:
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     # Store package cross-build-files into site_packages_extras in the same tree
     # structure as they would appear in the real package.
@@ -29,16 +31,19 @@ def _copy_xbuild_files(pyodide_root: Path, xbuildenv_path: Path) -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
 
             if not source.exists():
+                if skip_missing_cross_file:
+                    logger.warning(f"Cross-build file '{path}' not found")
+                    continue
+
                 raise FileNotFoundError(f"Cross-build file '{path}' not found")
 
             shutil.copy(source, target)
 
 
-def get_relative_path(pyodide_root: Path, flag: str) -> Path:
-    return Path(get_make_flag(flag)).relative_to(pyodide_root)
-
-
 def _copy_wasm_libs(pyodide_root: Path, xbuildenv_root: Path) -> None:
+    def get_relative_path(pyodide_root: Path, flag: str) -> Path:
+        return Path(get_make_flag(flag)).relative_to(pyodide_root)
+
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
@@ -77,7 +82,12 @@ def _copy_wasm_libs(pyodide_root: Path, xbuildenv_root: Path) -> None:
             shutil.copy(pyodide_root / path, xbuildenv_root / path)
 
 
-def create(path: str | Path, pyodide_root: Path | None = None) -> None:
+def create(
+    path: str | Path,
+    pyodide_root: Path | None = None,
+    *,
+    skip_missing_cross_file: bool = False,
+) -> None:
     if pyodide_root is None:
         pyodide_root = get_pyodide_root()
 
@@ -88,7 +98,7 @@ def create(path: str | Path, pyodide_root: Path | None = None) -> None:
     xbuildenv_path.mkdir(parents=True, exist_ok=True)
     xbuildenv_root.mkdir()
 
-    _copy_xbuild_files(pyodide_root, xbuildenv_path)
+    _copy_xbuild_files(pyodide_root, xbuildenv_path, skip_missing_cross_file)
     _copy_wasm_libs(pyodide_root, xbuildenv_root)
 
     (xbuildenv_root / "package.json").write_text("{}")
