@@ -344,11 +344,11 @@ def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
         assert "module4.pyc" in zf.namelist()
 
 
-def test_xbuildenv_create(tmp_path):
+def test_xbuildenv_create(selenium, tmp_path):
+    # selenium fixture is added to ensure that Pyodide is built... it's a hack
     from conftest import package_is_built
 
     if package_is_built("scipy"):
-        # TODO: run this test in CI
         envpath = Path(tmp_path) / ".xbuildenv"
         result = runner.invoke(
             xbuildenv.app,
