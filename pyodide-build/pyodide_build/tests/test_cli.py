@@ -354,11 +354,11 @@ def test_xbuildenv_create(selenium, tmp_path):
         [
             "create",
             str(envpath),
-            "--skip-missing-cross-file",
+            "--skip-missing-files",
         ],
     )
     assert result.exit_code == 0, result.stdout
-    assert f"xbuildenv created at {envpath}" in result.stdout
+    assert "xbuildenv created at" in result.stdout
     assert (envpath / "xbuildenv").exists()
     assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
     assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()

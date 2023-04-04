@@ -13,7 +13,7 @@ from .recipe import load_all_recipes
 
 
 def _copy_xbuild_files(
-    pyodide_root: Path, xbuildenv_path: Path, skip_missing_cross_file: bool = False
+    pyodide_root: Path, xbuildenv_path: Path, skip_missing_files: bool = False
 ) -> None:
     site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
     # Store package cross-build-files into site_packages_extras in the same tree
@@ -31,7 +31,7 @@ def _copy_xbuild_files(
             target.parent.mkdir(parents=True, exist_ok=True)
 
             if not source.exists():
-                if skip_missing_cross_file:
+                if skip_missing_files:
                     logger.warning(f"Cross-build file '{path}' not found")
                     continue
 
@@ -40,7 +40,9 @@ def _copy_xbuild_files(
             shutil.copy(source, target)
 
 
-def _copy_wasm_libs(pyodide_root: Path, xbuildenv_root: Path) -> None:
+def _copy_wasm_libs(
+    pyodide_root: Path, xbuildenv_root: Path, skip_missing_files: bool = False
+) -> None:
     def get_relative_path(pyodide_root: Path, flag: str) -> Path:
         return Path(get_make_flag(flag)).relative_to(pyodide_root)
 
@@ -73,6 +75,13 @@ def _copy_wasm_libs(pyodide_root: Path, xbuildenv_root: Path) -> None:
         )
 
     for path in to_copy:
+        if not (pyodide_root / path).exists():
+            if skip_missing_files:
+                logger.warning(f"Cross-build file '{path}' not found")
+                continue
+
+            raise FileNotFoundError(f"Cross-build file '{path}' not found")
+
         if (pyodide_root / path).is_dir():
             shutil.copytree(
                 pyodide_root / path, xbuildenv_root / path, dirs_exist_ok=True
@@ -86,7 +95,7 @@ def create(
     path: str | Path,
     pyodide_root: Path | None = None,
     *,
-    skip_missing_cross_file: bool = False,
+    skip_missing_files: bool = False,
 ) -> None:
     if pyodide_root is None:
         pyodide_root = get_pyodide_root()
@@ -98,8 +107,8 @@ def create(
     xbuildenv_path.mkdir(parents=True, exist_ok=True)
     xbuildenv_root.mkdir()
 
-    _copy_xbuild_files(pyodide_root, xbuildenv_path, skip_missing_cross_file)
-    _copy_wasm_libs(pyodide_root, xbuildenv_root)
+    _copy_xbuild_files(pyodide_root, xbuildenv_path, skip_missing_files)
+    _copy_wasm_libs(pyodide_root, xbuildenv_root, skip_missing_files)
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(

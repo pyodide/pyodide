@@ -43,7 +43,7 @@ def _create(
     root: Path = typer.Option(
         None, help="path to pyodide root directory, if not given, will be inferred"
     ),
-    skip_missing_cross_file: bool = typer.Option(
+    skip_missing_files: bool = typer.Option(
         False,
         help="skip if cross build files are missing instead of raising an error. This is useful for testing.",
     ),
@@ -55,5 +55,5 @@ def _create(
     Note: this is a private endpoint that should not be used outside of the Pyodide Makefile.
     """
 
-    create(path, pyodide_root=root, skip_missing_cross_file=skip_missing_cross_file)
+    create(path, pyodide_root=root, skip_missing_files=skip_missing_files)
     logger.info(f"xbuildenv created at {path.resolve()}")
