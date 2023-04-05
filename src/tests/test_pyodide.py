@@ -1793,3 +1793,16 @@ def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
         )
     finally:
         stdlib_target_path.unlink()
+
+
+def test_pickle_internal_error(selenium):
+    @run_in_pyodide
+    def helper(selenium):
+        from pyodide.ffi import InternalError
+
+        raise InternalError("oops!")
+
+    from pyodide.ffi import InternalError
+
+    with pytest.raises(InternalError):
+        helper(selenium)
