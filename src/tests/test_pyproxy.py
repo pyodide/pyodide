@@ -753,6 +753,7 @@ def test_errors(selenium):
     selenium.run_js(
         r"""
         let t = pyodide.runPython(`
+            from pyodide.ffi import to_js
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
             class Temp:
