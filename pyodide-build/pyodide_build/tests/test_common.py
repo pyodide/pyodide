@@ -6,29 +6,13 @@ from pyodide_build.common import (
     environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
-    get_make_environment_vars,
     get_make_flag,
     get_num_cores,
     make_zip_archive,
     parse_top_level_import_name,
     platform,
     repack_zip_archive,
-    search_pyodide_root,
 )
-
-
-def test_get_make_flag():
-    assert len(get_make_flag("SIDE_MODULE_LDFLAGS")) > 0
-    assert len(get_make_flag("SIDE_MODULE_CFLAGS")) > 0
-    # n.b. right now CXXFLAGS is empty so don't check length here, just check it returns
-    get_make_flag("SIDE_MODULE_CXXFLAGS")
-
-
-def test_get_make_environment_vars():
-    vars = get_make_environment_vars()
-    assert "SIDE_MODULE_LDFLAGS" in vars
-    assert "SIDE_MODULE_CFLAGS" in vars
-    assert "SIDE_MODULE_CXXFLAGS" in vars
 
 
 def test_wheel_paths():
@@ -66,18 +50,6 @@ def test_wheel_paths():
         "py2.py3-none-any",
         f"{current_version}-none-any",
     ]
-
-
-def test_search_pyodide_root(tmp_path):
-    pyproject_file = tmp_path / "pyproject.toml"
-    pyproject_file.write_text("[tool.pyodide]")
-    assert search_pyodide_root(tmp_path) == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir") == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
-
-    pyproject_file.unlink()
-    with pytest.raises(FileNotFoundError):
-        search_pyodide_root(tmp_path)
 
 
 def test_check_emscripten_version(monkeypatch):
