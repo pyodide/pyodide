@@ -133,6 +133,16 @@ build:
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
+    # Investigate determinant of complex matrices always 0
+    # Need to modify scipy/linalg/_generate_pyx.py instead since
+    # cython_lapack.pyx is generated from _generate_pyx.py ...
+    sed -ri 's/(.+return slamch.+)/\1\ncimport numpy as cnp\nimport numpy as np\n\ndef test_mine():\n    result = _test_dlamch(b"e")\n    print("dlamch", result)\n    cdef int n = 2\n    cdef int ipv\n    cdef int info\n    arr = np.array([[1, 2], [3, 4j]])\n    cdef cnp.complex128_t [:] arr_view = arr.ravel()\n    print("input", arr)\n    zgetrf(\&n, \&n, \&arr_view[0], \&n, \&ipv, \&info)\n    result = np.asarray(<cnp.complex128_t[:n, :n]> \&arr_view[0])\n    print("result", result)\n    print("ipv", ipv)\n    print("info", info)\n/' scipy/linalg/_generate_pyx.py
+
+    cat >> scipy/linalg/tests/test_cython_lapack.py <<EOF
+
+    def test_mine():
+        cython_lapack.test_mine()
+    EOF
   cross-build-env: true
   cross-build-files:
     - scipy/linalg/cython_lapack.pxd
