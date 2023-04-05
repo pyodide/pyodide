@@ -769,6 +769,7 @@ def test_errors(selenium):
                 __contains__ = te
                 __await__ = te
                 __repr__ = te
+            to_js(Temp())
             Temp()
         `);
         assertThrows(() => t.x, "PythonError", "");
