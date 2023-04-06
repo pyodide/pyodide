@@ -96,25 +96,15 @@ def fix_f2c_input(f2c_input_path: str) -> None:
 
 def fix_string_args(line: str) -> str:
     """
-    The two functions ilaenv and xerbla have real string args, f2c generates
-    inaccurate signatures for them. Instead of manually fixing the signatures
-    (xerbla happens a lot) we inject wrappers called `xerblaf2py` and
-    `ilaenvf2py` that have the signatures f2c expects and call these instead.
-
-    Also, replace all single character strings in (the first line of) "call"
+    Replace all single character strings in (the first line of) "call"
     statements with their ascci codes.
     """
-    # TODO do not change anything because I don't know how to add the f2py equivalent
-    # line = re.sub("ilaenv", "ilaenvf2py", line, flags=re.I)
     if (
         not re.search("call", line, re.I)
         and "SIGNST" not in line
         and "TRANST" not in line
     ):
         return line
-    # TODO do not change anything for now
-    # if re.search("xerbla", line, re.I):
-    #     return re.sub("xerbla", "xerblaf2py", line, flags=re.I)
     else:
         return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
 
