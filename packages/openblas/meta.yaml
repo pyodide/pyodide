@@ -19,10 +19,12 @@ build:
     sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
     sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
     sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
-    sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c lapack-netlib/SRC/DEPRECATED/*.c
+    sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
+        lapack-netlib/SRC/DEPRECATED/*.c
     # TODO For some function I do need void (i.e. f2c generates void returns)
     # so revert sed change above for those ...
-    sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c lapack-netlib/SRC/DEPRECATED/*.c
+    sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
+        lapack-netlib/SRC/DEPRECATED/*.c
 
     # TODO Fix signature by patch instead? Remove from cython signature?
     sed -ri 's/, integer srname_array_len//g' lapack-netlib/SRC/xerbla_array.c
@@ -37,15 +39,15 @@ build:
     sed -ri 's/(COMMONOBJS.+=.+)c_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
     sed -ri 's/(COMMONOBJS.+=.+)z_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
 
-    make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
+    make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 \
+        USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
     # Add libf2c symbols to libopenblas.so
-    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a ${SIDE_MODULE_LDFLAGS} -o libopenblas.so
+    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a ${SIDE_MODULE_LDFLAGS} \
+        -o libopenblas.so
 
-    cp libopenblas.so dist/
-    mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
-    # TODO not sure which .h are needed, copying all of them for now
-    cp *.h ${WASM_LIBRARY_DIR}/include
+    cp libopenblas.so dist
+    mkdir -p ${WASM_LIBRARY_DIR}/lib
     cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib
 
 requirements:
