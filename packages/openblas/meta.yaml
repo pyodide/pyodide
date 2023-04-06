@@ -6,7 +6,7 @@ source:
   sha256: 5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
   url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
   patches:
-    - patches/0001-Add-Wno-implicit-function-declaration-flag.patch
+    - patches/0001-Add-Wno-return-type-flag.patch
 
 build:
   type: shared_library

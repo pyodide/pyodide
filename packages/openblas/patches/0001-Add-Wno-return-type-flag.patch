@@ -1,7 +1,7 @@
 From 09fd1aa0aa6a98e1cebaa6e34fca1e424dab8f48 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
 Date: Fri, 9 Dec 2022 16:40:13 +0100
-Subject: [PATCH] Add -Wno-implicit-function-declaration flag
+Subject: [PATCH] Add -Wno-return-type flag
 
 ---
  Makefile.rule | 2 +-
@@ -16,7 +16,7 @@ index 5f787a9c..6890046a 100644
  # The default -O2 is enough.
  # Flags for POWER8 are defined in Makefile.power. Don't modify COMMON_OPT
 -# COMMON_OPT = -O2
-+COMMON_OPT = -O2 -Wno-implicit-function-declaration -Wno-return-type
++COMMON_OPT = -O2 -Wno-return-type
  
  # gfortran option for LAPACK to improve thread-safety
  # It is enabled by default in Makefile.system for gfortran
