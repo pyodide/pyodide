@@ -33,7 +33,6 @@ build:
     sed -i 's/^	ld /^	$(LD)/' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} f2clib
-    # emcc blas_WA.a lapack_WA.a F2CLIBS/libf2c.a ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/clapack_all.so
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
     cp INCLUDE/f2c.h ${WASM_LIBRARY_DIR}/include
     cp F2CLIBS/libf2c.a ${WASM_LIBRARY_DIR}/lib
