@@ -58,25 +58,6 @@ build:
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
-    # TODO do I need the additional functions from LAPACK? It seems like
-    # obj-wasmdump libopenblas.so show some of these functions but not 100%
-    # sure
-
-    # We get linker errors because the following 36 functions are missing
-    # Copying them from a more recent LAPACK seems to work fine.
-    # wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
-    # tar xzf v3.10.0.tar.gz
-    # cd lapack-3.10.0/SRC
-
-    # cat \
-    #   cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f cuncsd.f \
-    #   dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f dorcsd.f \
-    #   sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
-    #   zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
-    # >>  ../../scipy/linalg/lapack_extras.f
-    # cd ../..
-    # sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
-    # sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
@@ -108,23 +89,12 @@ build:
     sed -i 's/, size_t)/)/g' scipy/spatial/qhull_misc.h
     sed -i 's/,1)/)/g' scipy/spatial/qhull_misc.h
 
-
-    # Missing declaration from cython_lapack_signatures.txt
-    # TODO Commenting it out for now otherwise ilaenv_ exported by openblas
-    # does not have the same signature as the imports wanted by scipy
-    # echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
-    # >>  scipy/linalg/cython_lapack_signatures.txt
-
-
-    # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
-
     # Avoid Boost error "Sorry, but this platform does not have sufficient long
     # double support for the special functions to be reliably implemented"
     # Maybe this means result are garbage but at least it will compile ... no
     # idea why I need to do this when switching to OpenBLAS ... maybe the type
     # has changed somewhere and I get a boost template instantiation that I was
     # not getting before???
-
     sed -i 's/#if (defined(__NetBSD__) || defined(__EMSCRIPTEN__)/#if (defined(__NetBSD__)/' scipy/_lib/boost/boost/math/tools/config.hpp
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
