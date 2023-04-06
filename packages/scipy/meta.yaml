@@ -97,9 +97,6 @@ build:
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
-    # Uncomment to only build a few scipy sub-packages and iterate quicker
-    # perl -pi -e "s@(config.add_subpackage\(')(?\!linalg|sparse|_lib|_build_utils)@# \1\2@" scipy/setup.py
-
   cross-build-env: true
   cross-build-files:
     - scipy/linalg/cython_lapack.pxd

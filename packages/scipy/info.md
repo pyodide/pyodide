@@ -62,3 +62,19 @@ int str_len = 14;
 int some_lapack_func(int *some_string, int *some_string_length, fortranlen some_string_length_again);
 some_lapack_func("a string here", &str_len, 14);
 ```
+
+When changing `packages/scipy/meta.yaml`, rebuilding scipy takes time, it can
+be convenient to only build a few sub-packages to reduce iteration time. You
+can add something like this to `packages/scipy/meta.yaml`:
+
+```bash
+TO_KEEP='linalg|sparse|_lib|_build_utils'
+# Update scipy/setup.py
+perl -pi -e "s@(config.add_subpackage\(')(?!$TO_KEEP)@# \1\2@" scipy/setup.py
+# delete unwanted folders to avoid unneeded cythonization
+folders_to_delete=$(find scipy -mindepth 1 -maxdepth 1 -type d | grep -vP "$TO_KEEP")
+rm -rf $folders_to_delete
+```
+
+Building only `scipy.(linalg|sparse|_lib|_build_utils)` takes ~4 minutes on my
+machine compared to ~10-15 minutes for a full scipy build.
