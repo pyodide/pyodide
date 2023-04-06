@@ -348,7 +348,7 @@ as a starting point.
 
 After packaging a C library, it can be added as a dependency of a Python package
 like a normal dependency. See `lxml` and `libxml` for an example (and also
-`scipy` and `CLAPACK`).
+`scipy` and `OpenBLAS`).
 
 _Remark:_ Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags` of

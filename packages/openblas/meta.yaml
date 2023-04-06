@@ -28,8 +28,12 @@ build:
     sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c lapack-netlib/SRC/DEPRECATED/*.c
 
     # c_abs and z_abs are already defined in libf2c. This is more convenient to
-    # have them defined in f2c I think, since scipy f2ced files will have
-    # the same return type (e.g. double and the OpenBLAS implementation return float)
+    # have them defined in f2c I think, since scipy f2ced files will have the
+    # same return type (e.g. double and the OpenBLAS implementation return
+    # float)
+    # TODO actually xerba and xerbla_array are already removed in libf2c patch
+    # so we should try to be consistent. If we keep the symbols in OpenBLAS we
+    # probably need to adapt the signatures in scipy I think
     sed -ri 's/(COMMONOBJS.+=.+)c_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
     sed -ri 's/(COMMONOBJS.+=.+)z_abs.\$\(SUFFIX\)(.+)/\1\2/g' driver/others/Makefile
 
@@ -47,4 +51,4 @@ build:
 
 requirements:
   host:
-    - CLAPACK
+    - libf2c
