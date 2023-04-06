@@ -68,6 +68,7 @@ be convenient to only build a few sub-packages to reduce iteration time. You
 can add something like this to `packages/scipy/meta.yaml`:
 
 ```bash
+# Define which sub-packages to keep
 TO_KEEP='linalg|sparse|_lib|_build_utils'
 # Update scipy/setup.py
 perl -pi -e "s@(config.add_subpackage\(')(?!$TO_KEEP)@# \1\2@" scipy/setup.py
