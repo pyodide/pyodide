@@ -417,16 +417,17 @@ def compile(
     )
     backend_flags = build_metadata.backend_flags
 
-    with chdir(srcpath), build_env_ctx as build_env:
+    with build_env_ctx as build_env:
         if build_metadata.cross_script is not None:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
-                runner.run(build_metadata.cross_script)
+                runner.run(build_metadata.cross_script, cwd=srcpath)
                 build_env = runner.env
 
         from .pypabuild import build
 
+        outpath = srcpath / "dist"
         try:
-            build(build_env, backend_flags)
+            build(srcpath, outpath, build_env, backend_flags)
         except BaseException:
             build_log_path = Path("build.log")
             if build_log_path.exists():

@@ -27,7 +27,7 @@ from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
 from .. import common
-from ..common import chdir, repack_zip_archive
+from ..common import repack_zip_archive
 from ..logger import logger
 from . import build
 
@@ -79,36 +79,38 @@ def _get_built_wheel_internal(url):
 
     cache_entry: dict[str, Any] = {}
     build_dir = tempfile.TemporaryDirectory()
+    build_path = Path(build_dir.name)
+
     cache_entry["build_dir"] = build_dir
-    with chdir(Path(build_dir.name)):
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
-            data = requests.get(url).content
-            f.write(data)
-            f.close()
-            shutil.unpack_archive(f.name, build_dir.name)
-            os.unlink(f.name)
-            files = list(Path(build_dir.name).iterdir())
-            if len(files) == 1 and files[0].is_dir():
-                os.chdir(Path(build_dir.name, files[0]))
-            else:
-                os.chdir(build_dir.name)
-        logger.info(f"Building wheel for {gz_name}...")
-        with tempfile.NamedTemporaryFile(mode="w+") as f:
-            try:
-                with (
-                    stream_redirected(to=f, stream=sys.stdout),
-                    stream_redirected(to=f, stream=sys.stderr),
-                ):
-                    wheel_path = build.run(
-                        PyPIProvider.BUILD_EXPORTS,
-                        PyPIProvider.BUILD_FLAGS,
-                        outdir=Path(build_dir.name) / "dist",
-                    )
-            except BaseException as e:
-                logger.error(" Failed\n Error is:")
-                f.seek(0)
-                logger.stderr(f.read())
-                raise e
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
+        data = requests.get(url).content
+        f.write(data)
+        f.close()
+        shutil.unpack_archive(f.name, build_path)
+        os.unlink(f.name)
+        files = list(build_path.iterdir())
+        if len(files) == 1 and files[0].is_dir():
+            source_path = build_path / files[0]
+        else:
+            source_path = build_path
+    logger.info(f"Building wheel for {gz_name}...")
+    with (
+        tempfile.NamedTemporaryFile(mode="w+") as logfile,
+        stream_redirected(to=logfile, stream=sys.stdout),
+        stream_redirected(to=logfile, stream=sys.stderr),
+    ):
+        try:
+            wheel_path = build.run(
+                source_path,
+                build_path / "dist",
+                PyPIProvider.BUILD_EXPORTS,
+                PyPIProvider.BUILD_FLAGS,
+            )
+        except BaseException as e:
+            logger.error(" Failed\n Error is:")
+            logfile.seek(0)
+            logger.stderr(logfile.read())
+            raise e
 
     logger.success("Success")
 
