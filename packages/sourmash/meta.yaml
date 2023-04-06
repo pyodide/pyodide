@@ -1,6 +1,6 @@
 package:
   name: sourmash
-  version: 4.7.0
+  version: 4.8.0
   top-level:
     - sourmash
 requirements:
@@ -15,10 +15,8 @@ requirements:
     - sqlite3
     - bitstring
 source:
-  #  url: https://pypi.io/packages/source/s/sourmash/sourmash-4.7.0.tar.gz
-  #  sha256: 4135ac82059da24a30f3b9554ecd0107dbf68eac2828f39fa275038554b76311
-  url: https://codeload.github.com/sourmash-bio/sourmash/tar.gz/fecfc97c3ec0be1dcfe43c73a12297f1295b5199
-  sha256: 0dff73ca2252877108756cc1e53ef5981312a9006be93dfd88cbd7aaaf35f6ae
+  url: https://pypi.io/packages/source/s/sourmash/sourmash-4.8.0.tar.gz
+  sha256: 778d5d182f9e625ae560a5b3a2fdf6bd4fd3b876c84593da8c8c07d11ce2c697
 build:
   script: |
     rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
