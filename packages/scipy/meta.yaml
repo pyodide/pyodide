@@ -87,14 +87,6 @@ build:
     sed -i 's/, size_t)/)/g' scipy/spatial/qhull_misc.h
     sed -i 's/,1)/)/g' scipy/spatial/qhull_misc.h
 
-    # Avoid Boost error "Sorry, but this platform does not have sufficient long
-    # double support for the special functions to be reliably implemented"
-    # Maybe this means result are garbage but at least it will compile ... no
-    # idea why I need to do this when switching to OpenBLAS ... maybe the type
-    # has changed somewhere and I get a boost template instantiation that I was
-    # not getting before???
-    sed -i 's/#if (defined(__NetBSD__) || defined(__EMSCRIPTEN__)/#if (defined(__NetBSD__)/' scipy/_lib/boost/boost/math/tools/config.hpp
-
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
