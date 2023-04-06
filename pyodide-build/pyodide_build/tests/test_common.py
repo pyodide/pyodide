@@ -253,6 +253,7 @@ def test_set_build_environment(monkeypatch):
     import os
 
     monkeypatch.delenv("PKG_CONFIG_PATH", raising=False)
+    monkeypatch.delenv("WASM_PKG_CONFIG_PATH", raising=False)
     monkeypatch.setenv("RANDOM_ENV", 1234)
     e: dict[str, str] = {}
     set_build_environment(e)
