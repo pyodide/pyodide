@@ -231,19 +231,6 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             for line in lines
         ]
 
-    # TODO remove after move to f2c -R?
-    # Due to a bug in f2c some methods that should return a real end up
-    # returning a double real. Most methods that start with an s are supposed to
-    # return a real... but maybe not all?? Or maybe the others are affected also
-    # by this bug.
-    # pattern = "|".join(["sasum_", "scasum_", "scnrm2_", "sdot_", "sdsdot_", "snrm2_",
-    #                     "clanhs_", "slamch_", "slapy2_", "psnrm2_"])
-    # if "linalg" in f2c_output_path:
-    #     lines = [
-    #         re.sub(f"extern doublereal ({pattern})", r"extern float \1", line)
-    #         for line in lines
-    #     ]
-
     # Substitute back the dummy fixed array sizes. We also have to remove the
     # "static" storage specifier since variable sized arrays can't have static
     # storage.
