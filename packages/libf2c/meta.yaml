@@ -1,3 +1,9 @@
+# We still download the full CLAPACK but we are only using the libf2c part of CLAPACK.
+# libf2c part is needed for the f2ced Fortran files in scipy for example to
+# define things like pow_dd, i_len, etc...
+#
+# Note f2clib package only creates f2clib.a, and f2clib.a symbols are added to
+# libopenblas.so in the OpenBLAS meta.yaml.
 package:
   name: libf2c
   version: CLAPACK-3.2.1
