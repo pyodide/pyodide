@@ -31,6 +31,8 @@ source:
     - patches/0008-Change-qh_eachvoronoi_all-FILE-type.patch
     - patches/0009-Remove-meson-requirements.patch
     - patches/0010-Fix-fitpack.patch
+    # TODO remove the next patch when we upgrade to scipy 1.11, since it has
+    # been fixed upstream in https://github.com/scipy/scipy/pull/18124
     - patches/0011-When-forward-declaring-print_soln-give-it-the-correc.patch
     - patches/0012-Enable-long-double-support-in-Boost-library-for-emsc.patch
 
