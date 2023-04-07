@@ -142,9 +142,9 @@ the function pointer we are calling is in a different spot. I know of no way to
 determine the bad function pointer when compiling with `-g3`.
 
 Sometimes (particularly with Scipy/OpenBLAS/libf2c) the issue will be a
-mismatch between `(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32
-i32) (result i32)` and `(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32
-i32 i32 i32) (result i32)`
+mismatch between
+`(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)` and
+`(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)`
 
 (14 vs 15 parameters) which might be a little hard to discern. I copy the
 signature into the Javascript console and run `"i32 ... i32".split(" ").length`
