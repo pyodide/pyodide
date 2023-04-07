@@ -275,6 +275,10 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             for line in regrouped_lines
         ]
 
+    # Fix signature of c_abs to match the OpenBLAS one
+    if "REVCOM.c" in str(f2c_output):
+        lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
+
     with open(f2c_output, "w") as f:
         f.writelines(lines)
 
