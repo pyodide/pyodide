@@ -377,7 +377,7 @@ async def test_pyodide_task(selenium):
 
     f, d = do_the_thing()
     f.set_result(7)
-    await sleep(0.01)
+    await sleep(0.1)
     assert d == dict(
         did_onresolve=7,
         did_onreject=None,
@@ -392,7 +392,7 @@ async def test_pyodide_task(selenium):
         did_onreject=None,
         did_onfinally=False,
     )
-    await sleep(0.01)
+    await sleep(0.1)
     assert d == dict(
         did_onresolve=None,
         did_onreject=e,
