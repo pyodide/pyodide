@@ -32,6 +32,8 @@ module = [
   "PIL.*",
   "pyodide_js",
   "pytest_pyodide",
+  "pytest_pyodide.runner",
+  "pytest_pyodide.utils",
   "ruamel.yaml",
   "termcolor",
   "test",
