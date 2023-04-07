@@ -3,6 +3,10 @@ From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
 Date: Fri, 9 Dec 2022 16:40:13 +0100
 Subject: [PATCH] Add -Wno-return-type flag
 
+This is needed because we are changing many signatures to return int instead of
+void with some regex expressions but we are not modifying the returned value
+ which would potentially be a lot more tricky.
+
 ---
  Makefile.rule | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
