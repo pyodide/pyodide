@@ -4,7 +4,7 @@ import inspect
 import sys
 import time
 import traceback
-from asyncio import Future
+from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
@@ -165,6 +165,10 @@ class PyodideFuture(Future[T]):
 
         self.add_done_callback(wrapper)
         return result
+
+
+class PyodideTask(Task[T], PyodideFuture[T]):
+    pass
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -400,7 +404,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = asyncio.tasks.Task(coro, loop=self, name=name)
+            task = PyodideTask(coro, loop=self, name=name)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
