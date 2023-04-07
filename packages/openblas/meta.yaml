@@ -7,6 +7,7 @@ source:
   url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
+    - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
 
 build:
   type: shared_library
@@ -21,13 +22,11 @@ build:
     sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
     sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
         lapack-netlib/SRC/DEPRECATED/*.c
-    # TODO For some function I do need void (i.e. f2c generates void returns)
-    # so revert sed change above for those ...
+    # For some functions (mostly handling complex I think) f2c actually
+    # generate a function that returns void so I need to revert the void to int
+    # change the previous line does.
     sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
         lapack-netlib/SRC/DEPRECATED/*.c
-
-    # TODO Fix signature by patch instead? Remove from cython signature?
-    sed -ri 's/, integer srname_array_len//g' lapack-netlib/SRC/xerbla_array.c
 
     # c_abs and z_abs are already defined in libf2c. This is more convenient to
     # have them defined in f2c I think, since scipy f2ced files will have the
