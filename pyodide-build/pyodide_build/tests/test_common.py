@@ -14,6 +14,7 @@ from pyodide_build.common import (
     platform,
     repack_zip_archive,
     search_pyodide_root,
+    set_build_environment,
 )
 
 
@@ -246,3 +247,31 @@ def test_repack_zip_archive(
         assert fh.namelist() == ["a/b.txt", "a/b/c.txt"]
         assert fh.getinfo("a/b.txt").compress_type == expected_compression_type
     assert input_path.stat().st_size == expected_size
+
+
+def test_set_build_environment(monkeypatch):
+    import os
+
+    monkeypatch.delenv("PKG_CONFIG_PATH", raising=False)
+    monkeypatch.delenv("WASM_PKG_CONFIG_PATH", raising=False)
+    monkeypatch.setenv("RANDOM_ENV", 1234)
+    e: dict[str, str] = {}
+    set_build_environment(e)
+    assert e.get("HOME") == os.environ.get("HOME")
+    assert e.get("PATH") == os.environ.get("PATH")
+    assert e["PYODIDE"] == "1"
+    assert "RANDOM_ENV" not in e
+    assert e["PKG_CONFIG_PATH"] == ""
+
+    e = {}
+    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
+    set_build_environment(e)
+    assert e["PKG_CONFIG_PATH"] == "/x/y/z:/c/d/e"
+
+    monkeypatch.delenv("HOME")
+    monkeypatch.setenv("WASM_PKG_CONFIG_PATH", "/a/b/c")
+    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
+    e = {}
+    set_build_environment(e)
+    assert "HOME" not in e
+    assert e["PKG_CONFIG_PATH"] == "/a/b/c:/x/y/z:/c/d/e"
