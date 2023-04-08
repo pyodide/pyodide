@@ -85,6 +85,12 @@ console_error_obj(JsRef obj);
 #define LOG_EM_JS_ERROR(__funcname__, err)
 #endif
 
+#ifdef DEBUG_F
+#define IF_DEBUG(arg) arg
+#else
+#define IF_DEBUG(arg)
+#endif
+
 // Need an extra layer to expand LOG_EM_JS_ERROR.
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
