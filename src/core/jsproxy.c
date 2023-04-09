@@ -3982,8 +3982,12 @@ finally:
 }
 
 #define SET_FLAG_IF(flag, cond)                                                \
-  if (cond) {                                                                  \
-    type_flags |= flag;                                                        \
+  try {                                                                        \
+    if (cond) {                                                                \
+      type_flags |= flag;                                                      \
+    }                                                                          \
+  } catch (e) {                                                                \
+    IF_DEBUG(console.warn(`Error raised in SET_FLAG_IF(#flag, #cond)`));       \
   }
 
 EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
