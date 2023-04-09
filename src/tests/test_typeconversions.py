@@ -429,10 +429,9 @@ def test_hyp_tojs_no_crash(selenium, obj):
         del __main__.x
 
 
-@pytest.mark.xfail("Fixed on main branch, broken on 0.23.x")
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=any_strategy.filter(no_hypothesis))
+@given(obj=any_strategy)
 @example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
 @settings(
     std_hypothesis_settings,
