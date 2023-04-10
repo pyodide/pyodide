@@ -100,6 +100,8 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
 
     return dedent(
         f"""\
+        # Make executables installed run inside Pyodide virtualenv
+        sys.executable = sys.executable.removesuffix("-host")
         import os
         import sys
         os_name, sys_platform, multiarch, host_platform = {platform_data}
