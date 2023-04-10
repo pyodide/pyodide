@@ -4006,10 +4006,10 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   // we'll run into trouble. I think that for this to happen, someone would have
   // to pass in some weird and maliciously constructed object. Anyways for
   // maximum safety, we double check that only one of these is set.
-  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
-  SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then")
-  SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator)
-  SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator)
+  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function");
+  SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then");
+  SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator);
+  SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
   SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
   SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
   SET_FLAG_IF(HAS_LENGTH,
