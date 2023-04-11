@@ -23,7 +23,7 @@ source:
     - [make.inc, make.inc]
 
 build:
-  type: shared_library
+  type: static_library
   script: |
     # The archive's contents have default permission 0750. If we use docker
     # to build, then we will not own the contents in the host, which means
