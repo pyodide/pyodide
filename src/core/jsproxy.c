@@ -3988,7 +3988,7 @@ finally:
 
 // hasMethod won't ever raise an error (it's surrounded in try+catch)
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
-  SET_FLAG_IF_HAS_METHOD(flag, hasMethod(obj, meth))
+  SET_FLAG_IF(flag, hasMethod(obj, meth))
 
 EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
