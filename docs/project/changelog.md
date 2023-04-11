@@ -26,6 +26,11 @@ myst:
   a single file.
   {pr}`3727`
 
+### Build System
+
+- {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
+  {pr}`3751`
+
 ### Packages
 
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
