@@ -63,7 +63,11 @@ declare function Py_EXIT(): void;
 // end-pyodide-skip
 
 function isPyProxy(jsobj: any): jsobj is PyProxy {
-  return jsobj instanceof PyProxy;
+  try {
+    return jsobj instanceof PyProxy;
+  } catch (e) {
+    return false;
+  }
 }
 API.isPyProxy = isPyProxy;
 
