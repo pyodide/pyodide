@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
+  present also on `Task`s as well as `Future`s.
+  {pr}`3748`
+
 ### Deployment
 
 - {{ Fix }} Export `python_stdlib.zip` in `package.json`.
