@@ -3986,7 +3986,6 @@ finally:
     type_flags |= flag;                                                        \
   }
 
-// hasMethod won't ever raise an error (it's surrounded in try+catch)
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
@@ -3998,8 +3997,20 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
     return 0;
   }
 
-  let typeTag = getTypeTag(obj);
+  // test_jsproxy.test_revoked_proxy stress tests this code.
+  // Every single operation on a revoked proxy raises an error!
 
+  const typeTag = getTypeTag(obj);
+
+  function safeBool(cb) {
+    try {
+      return cb();
+    } catch(e) {
+      return false;
+    }
+  }
+  const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
+  const isArray = safeBool(() => Array.isArray(obj));
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
@@ -4019,14 +4030,14 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
   SET_FLAG_IF(IS_BUFFER,
-              (ArrayBuffer.isView(obj) || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
+              (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
-  SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
+  SET_FLAG_IF(IS_ARRAY, isArray);
   SET_FLAG_IF(IS_NODE_LIST,
               typeTag === "[object HTMLCollection]" ||
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
-              ArrayBuffer.isView(obj) && typeTag !== '[object DataView]');
+              isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
   SET_FLAG_IF(IS_ERROR, (hasProperty(obj, "name") && hasProperty(obj, "message") && hasProperty(obj, "stack")) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));

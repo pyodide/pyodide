@@ -23,12 +23,14 @@ API.getTypeTag = getTypeTag;
  * prop: a string or symbol
  */
 function hasProperty(obj, prop) {
-  while (obj) {
-    if (Object.getOwnPropertyDescriptor(obj, prop)) {
-      return true;
+  try {
+    while (obj) {
+      if (Object.getOwnPropertyDescriptor(obj, prop)) {
+        return true;
+      }
+      obj = Object.getPrototypeOf(obj);
     }
-    obj = Object.getPrototypeOf(obj);
-  }
+  } catch (e) {}
   return false;
 }
 
