@@ -27,33 +27,6 @@ repos:
     hooks:
       - id: black
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.1.1"
-    hooks:
-      - id: mypy
-        files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
-        exclude: (setup.py|src/tests|conftest.py|packages/.*/test)
-        args: []
-        additional_dependencies: &mypy-deps
-          - packaging
-          - types-docutils
-          - types-pyyaml
-          - types-setuptools
-          - types-requests
-          - numpy
-          - build
-          - pytest
-          - pydantic
-          - unearth
-          - resolvelib
-          - rich
-      - id: mypy
-        name: mypy-tests
-        args: [--ignore-missing-imports]
-        files: ^(packages/|docs|/conftest.py|src/tests)
-        exclude: (^packages/.*/setup.py|/src)
-        additional_dependencies: *mypy-deps
-
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: "v15.0.7"
     hooks:
@@ -90,6 +63,33 @@ repos:
             "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te",
           ]
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: "v1.1.1"
+    hooks:
+      - id: mypy
+        files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
+        exclude: (setup.py|src/tests|conftest.py|packages/.*/test)
+        args: []
+        additional_dependencies: &mypy-deps
+          - packaging
+          - types-docutils
+          - types-pyyaml
+          - types-setuptools
+          - types-requests
+          - numpy
+          - build
+          - pytest
+          - pydantic
+          - unearth
+          - resolvelib
+          - rich
+      - id: mypy
+        name: mypy-tests
+        args: [--ignore-missing-imports]
+        files: ^(packages/|docs|/conftest.py|src/tests)
+        exclude: (^packages/.*/setup.py|/src)
+        additional_dependencies: *mypy-deps
 
 ci:
   autoupdate_schedule: "quarterly"
