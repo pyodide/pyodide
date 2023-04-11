@@ -3998,7 +3998,6 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
     return 0;
   }
 
-  const constructorName = obj.constructor ? obj.constructor.name : "";
   let typeTag = getTypeTag(obj);
 
 
@@ -4020,14 +4019,14 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
   SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
   SET_FLAG_IF(IS_BUFFER,
-              (ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer")) && !(type_flags & IS_CALLABLE));
+              (ArrayBuffer.isView(obj) || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
   SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
   SET_FLAG_IF(IS_NODE_LIST,
               typeTag === "[object HTMLCollection]" ||
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
-              ArrayBuffer.isView(obj) && constructorName !== "DataView");
+              ArrayBuffer.isView(obj) && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
   SET_FLAG_IF(IS_ERROR, (hasProperty(obj, "name") && hasProperty(obj, "message") && hasProperty(obj, "stack")) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));

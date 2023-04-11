@@ -2283,3 +2283,29 @@ def test_python_reserved_keywords(selenium):
         setattr(o, "async", 2)
     with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
         delattr(o, "async")
+
+
+@run_in_pyodide
+def test_malicious_getters(selenium):
+    """Test that we survive being passed a wide variety of horrific objects"""
+    from pyodide.code import run_js
+
+    getters = [
+        "[Symbol.toStringTag]",
+        "constructor",
+        "then",
+        "[Symbol.iterator]",
+        "[Symbol.asyncIterator]",
+        "next",
+        "size",
+        "length",
+        "get",
+        "set",
+        "has",
+        "includes",
+        "name",
+        "message",
+        "stack",
+    ]
+    for name in getters:
+        run_js("""({get %s() {throw new Error("oops")}})""" % name)

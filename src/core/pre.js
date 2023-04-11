@@ -4,7 +4,13 @@ const Tests = {};
 API.tests = Tests;
 API.version = "0.24.0.dev0";
 Module.hiwire = Hiwire;
-const getTypeTag = (x) => Object.prototype.toString.call(x);
+function getTypeTag(x) {
+  try {
+    return Object.prototype.toString.call(x);
+  } catch (e) {
+    return "";
+  }
+}
 API.getTypeTag = getTypeTag;
 
 /**
