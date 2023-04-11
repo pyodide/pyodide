@@ -1,0 +1,16 @@
+package:
+  name: deprecation
+  version: 2.1.0
+  top-level:
+    - deprecation
+requirements:
+  run:
+    - packaging
+source:
+  url: https://files.pythonhosted.org/packages/02/c3/253a89ee03fc9b9682f1541728eb66db7db22148cd94f89ab22528cd1e1b/deprecation-2.1.0-py2.py3-none-any.whl
+  sha256: a10811591210e1fb0e768a8c25517cabeabcba6f0bf96564f8ff45189f90b14a
+about:
+  home: http://deprecation.readthedocs.io/
+  PyPI: https://pypi.org/project/deprecation
+  summary: A library to handle automated deprecations
+  license: Apache 2

@@ -4,7 +4,7 @@ import inspect
 import sys
 import time
 import traceback
-from asyncio import Future
+from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
@@ -18,10 +18,11 @@ S = TypeVar("S")
 
 
 class PyodideFuture(Future[T]):
-    """A future with extra ``then``, ``catch``, and ``finally_`` methods based
-    on the Javascript promise API. ``Webloop.create_future`` returns these so in
-    practice all futures encountered in Pyodide should be an instance of
-    ``PyodideFuture``.
+    """A :py:class:`~asyncio.Future` with extra :js:meth:`~Promise.then`,
+    :js:meth:`~Promise.catch`, and :js:meth:`finally_() <Promise.finally>` methods
+    based on the Javascript promise API. :py:meth:`~asyncio.loop.create_future`
+    returns these so in practice all futures encountered in Pyodide should be an
+    instance of :py:class:`~pyodide.webloop.PyodideFuture`.
     """
 
     @overload
@@ -141,7 +142,7 @@ class PyodideFuture(Future[T]):
         return self.then(None, onrejected)
 
     def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
-        """When the future is either resolved or rejected, call onfinally with
+        """When the future is either resolved or rejected, call ``onfinally`` with
         no arguments.
         """
         result: PyodideFuture[T] = PyodideFuture()
@@ -165,6 +166,16 @@ class PyodideFuture(Future[T]):
 
         self.add_done_callback(wrapper)
         return result
+
+
+class PyodideTask(Task[T], PyodideFuture[T]):
+    """Inherits from both :py:class:`~asyncio.Task` and
+    :py:class:`~pyodide.webloop.PyodideFuture`
+
+    Instantiation is discouraged unless you are writing your own event loop.
+    """
+
+    pass
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -400,7 +411,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = asyncio.tasks.Task(coro, loop=self, name=name)
+            task = PyodideTask(coro, loop=self, name=name)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -599,4 +610,4 @@ def _initialize_event_loop():
     policy.get_event_loop()
 
 
-__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture"]
+__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]

@@ -356,6 +356,51 @@ async def test_pyodide_future2(selenium):
 
 
 @run_in_pyodide
+async def test_pyodide_task(selenium):
+    from asyncio import Future, ensure_future, sleep
+
+    async def taskify(fut):
+        return await fut
+
+    def do_the_thing():
+        d = dict(
+            did_onresolve=None,
+            did_onreject=None,
+            did_onfinally=False,
+        )
+        f: Future[int] = Future()
+        t = ensure_future(taskify(f))
+        t.then(
+            lambda v: d.update(did_onresolve=v), lambda e: d.update(did_onreject=e)
+        ).finally_(lambda: d.update(did_onfinally=True))
+        return f, d
+
+    f, d = do_the_thing()
+    f.set_result(7)
+    await sleep(0.1)
+    assert d == dict(
+        did_onresolve=7,
+        did_onreject=None,
+        did_onfinally=True,
+    )
+
+    f, d = do_the_thing()
+    e = Exception("Oops!")
+    f.set_exception(e)
+    assert d == dict(
+        did_onresolve=None,
+        did_onreject=None,
+        did_onfinally=False,
+    )
+    await sleep(0.1)
+    assert d == dict(
+        did_onresolve=None,
+        did_onreject=e,
+        did_onfinally=True,
+    )
+
+
+@run_in_pyodide
 async def test_inprogress(selenium):
     import asyncio
 

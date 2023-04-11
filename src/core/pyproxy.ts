@@ -19,6 +19,7 @@ declare var Hiwire: any;
 declare var API: any;
 declare var HEAPU32: Uint32Array;
 
+declare function _check_gil(): void;
 declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;

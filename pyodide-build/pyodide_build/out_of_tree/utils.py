@@ -34,6 +34,6 @@ def initialize_pyodide_root(*, quiet: bool = False) -> None:
         return
     except FileNotFoundError:
         pass
-    env = Path(".pyodide-xbuildenv")
+    env = Path(".pyodide-xbuildenv").resolve()
     os.environ["PYODIDE_ROOT"] = str(env / "xbuildenv/pyodide-root")
     ensure_env_installed(env, quiet=quiet)

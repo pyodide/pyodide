@@ -29,6 +29,7 @@ from .recipe import load_all_recipes
 BUILD_VARS: set[str] = {
     "PATH",
     "PYTHONPATH",
+    "PYODIDE_JOBS",
     "PYODIDE_ROOT",
     "PYTHONINCLUDE",
     "NUMPY_LIB",
@@ -222,6 +223,11 @@ def get_make_environment_vars() -> dict[str, str]:
         capture_output=True,
         text=True,
     )
+
+    if result.returncode != 0:
+        logger.error("ERROR: Failed to load environment variables from Makefile.envs")
+        exit_with_stdio(result)
+
     for line in result.stdout.splitlines():
         equalPos = line.find("=")
         if equalPos != -1:
@@ -395,14 +401,15 @@ def set_build_environment(env: dict[str, str]) -> None:
 
     Sets common environment between in tree and out of tree package builds.
     """
-    env.update({key: os.environ[key] for key in BUILD_VARS})
+    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
     env["PYODIDE"] = "1"
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
 
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    pkg_config_parts = []
+    if "WASM_PKG_CONFIG_PATH" in os.environ:
+        pkg_config_parts.append(env["WASM_PKG_CONFIG_PATH"])
     if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+        pkg_config_parts.append(os.environ["PKG_CONFIG_PATH"])
+    env["PKG_CONFIG_PATH"] = ":".join(pkg_config_parts)
 
     tools_dir = Path(__file__).parent / "tools"
 
