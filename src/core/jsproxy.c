@@ -3982,13 +3982,12 @@ finally:
 }
 
 #define SET_FLAG_IF(flag, cond)                                                \
-  try {                                                                        \
-    if (cond) {                                                                \
-      type_flags |= flag;                                                      \
-    }                                                                          \
-  } catch (e) {                                                                \
-    IF_DEBUG(console.warn(`Error raised in SET_FLAG_IF(#flag, #cond)`));       \
+  if (cond) {                                                                  \
+    type_flags |= flag;                                                        \
   }
+
+#define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
+  SET_FLAG_IF(flag, hasMethod(obj, meth))
 
 EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
@@ -3998,38 +3997,50 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
     return 0;
   }
 
-  const constructorName = obj.constructor ? obj.constructor.name : "";
-  let typeTag = getTypeTag(obj);
+  // test_jsproxy.test_revoked_proxy stress tests this code.
+  // Every single operation on a revoked proxy raises an error!
+
+  const typeTag = getTypeTag(obj);
+
+  function safeBool(cb) {
+    try {
+      return cb();
+    } catch(e) {
+      return false;
+    }
+  }
+  const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
+  const isArray = safeBool(() => Array.isArray(obj));
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
   // to pass in some weird and maliciously constructed object. Anyways for
   // maximum safety, we double check that only one of these is set.
-  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
-  SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
-  SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
-  SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
-  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] === 'function' || typeof obj[Symbol.asyncIterator] !== 'function') );
-  SET_FLAG_IF(IS_ASYNC_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] !== 'function' || typeof obj[Symbol.asyncIterator] === 'function') );
+  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function");
+  SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then");
+  SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator);
+  SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
+  SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
+  SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
   SET_FLAG_IF(HAS_LENGTH,
-    (typeof obj.size === "number") ||
-    (typeof obj.length === "number" && typeof obj !== "function"));
-  SET_FLAG_IF(HAS_GET, typeof obj.get === "function");
-  SET_FLAG_IF(HAS_SET, typeof obj.set === "function");
-  SET_FLAG_IF(HAS_HAS, typeof obj.has === "function");
-  SET_FLAG_IF(HAS_INCLUDES, typeof obj.includes === "function");
+    (hasProperty(obj, "size")) ||
+    (hasProperty(obj, "length") && typeof obj !== "function"));
+  SET_FLAG_IF_HAS_METHOD(HAS_GET, "get");
+  SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
+  SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
+  SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
   SET_FLAG_IF(IS_BUFFER,
-              (ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer")) && !(type_flags & IS_CALLABLE));
+              (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
-  SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
+  SET_FLAG_IF(IS_ARRAY, isArray);
   SET_FLAG_IF(IS_NODE_LIST,
               typeTag === "[object HTMLCollection]" ||
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
-              ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
+              isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
-  SET_FLAG_IF(IS_ERROR, (typeof obj.stack === "string" && typeof obj.message === "string") && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+  SET_FLAG_IF(IS_ERROR, (hasProperty(obj, "name") && hasProperty(obj, "message") && hasProperty(obj, "stack")) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
   // clang-format on
   return type_flags;
 });

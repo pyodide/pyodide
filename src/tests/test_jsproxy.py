@@ -2286,3 +2286,16 @@ def test_python_reserved_keywords(selenium):
     delattr(o, "async")
     assert not hasattr(o, "async_")
     assert not hasattr(o, "async")
+
+
+@run_in_pyodide
+def test_revoked_proxy(selenium):
+    """I think this is just about the worst thing that it is possible to
+    make.
+
+    A good stress test for our systems...
+    """
+    from pyodide.code import run_js
+
+    x = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
+    run_js("((x) => x)")(x)

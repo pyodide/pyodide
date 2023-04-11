@@ -628,7 +628,7 @@ EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
 
 EM_JS_BOOL(bool, hiwire_is_async_generator, (JsRef idobj), {
   // clang-format off
-  return Object.prototype.toString.call(Hiwire.get_value(idobj)) === "[object AsyncGenerator]";
+  return getTypeTag(Hiwire.get_value(idobj)) === "[object AsyncGenerator]";
   // clang-format on
 });
 
