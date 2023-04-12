@@ -22,6 +22,9 @@ myst:
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
 
+- {{ Enhancement }} `pyodide build` now accepts an `--output-directory` argument.
+  {pr}`3746`
+
 ### Deployment
 
 - {{ Fix }} Export `python_stdlib.zip` in `package.json`.
