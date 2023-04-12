@@ -30,6 +30,10 @@ myst:
   a single file.
   {pr}`3727`
 
+- {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
+  version 0.23.0 because of missing `python_stdlib.zip`.
+  {pr}`3760`
+
 ### Build System
 
 - {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
