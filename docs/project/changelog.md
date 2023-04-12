@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
+  Pyodide not in the host Python.
+  {pr}`3752`
+
 ### Deployment
 
 - {{ Fix }} Export `python_stdlib.zip` in `package.json`.
@@ -25,8 +29,8 @@ myst:
 - {{ Enhancement }} `pyodide build` now accepts an `--output-directory` argument.
   {pr}`3746`
 
-- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level` option when applied on
-  a single file.
+- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level`
+  option when applied on a single file.
   {pr}`3727`
 
 - {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
