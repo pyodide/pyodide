@@ -19,6 +19,13 @@ myst:
   Pyodide not in the host Python.
   {pr}`3752`
 
+- {{ Update }} Pyodide now runs Python 3.11.3.
+  {pr}`3741`
+
+- {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
+  present also on `Task`s as well as `Future`s.
+  {pr}`3748`
+
 ### Deployment
 
 - {{ Fix }} Export `python_stdlib.zip` in `package.json`.
@@ -29,10 +36,22 @@ myst:
 - {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level`
   option when applied on a single file. {pr}`3727`
 
+- {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
+  version 0.23.0 because of missing `python_stdlib.zip`.
+  {pr}`3760`
+
+### Build System
+
+- {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
+  {pr}`3751`
+
 ### Packages
 
+- OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
+  {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`.
+- Upgraded libmpfr to 4.2.0 {pr}`3756`.
 
 ## Version 0.23.0
 

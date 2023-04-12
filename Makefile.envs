@@ -1,4 +1,4 @@
-export PYVERSION ?= 3.11.2
+export PYVERSION ?= 3.11.3
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.32
 
 export PLATFORM_TRIPLET=wasm32-emscripten
@@ -93,7 +93,6 @@ export LDFLAGS_BASE=\
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
 	-s MODULARIZE=1 \
-	-std=c++14 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \

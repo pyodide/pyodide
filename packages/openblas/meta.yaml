@@ -1,0 +1,44 @@
+package:
+  name: openblas
+  version: 0.3.23
+
+source:
+  sha256: 5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
+  url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
+  patches:
+    - patches/0001-Add-Wno-return-type-flag.patch
+    - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+
+build:
+  type: shared_library
+  script: |
+    # seems like .zip does not maintain executable flags, need to reset these
+    chmod u+x c_check
+    chmod u+x f_check
+    chmod u+x exports/gensymbol
+    # Replace void returns by int returns
+    sed -ri 's/void(\s+)BLASFUNC/int\1BLASFUNC/g' common_interface.h
+    sed -ri 's/void(\s+)cblas_/int\1cblas_/g' cblas.h ctest/*.c
+    sed -ri 's/void(\s+)(C?NAME)/int\1\2/g' interface/*.c
+    sed -ri 's/((extern)?.+) void ([a-z0-9]+_)/\1\2 int \3/g' lapack-netlib/SRC/*.c \
+        lapack-netlib/SRC/DEPRECATED/*.c
+    # For some functions (mostly handling complex I think) f2c actually
+    # generate a function that returns void so I need to revert the void to int
+    # change the previous line does.
+    sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
+        lapack-netlib/SRC/DEPRECATED/*.c
+
+    make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 \
+        USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
+    mkdir -p dist
+    # Add libf2c symbols to libopenblas.so
+    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a ${SIDE_MODULE_LDFLAGS} \
+        -o libopenblas.so
+
+    cp libopenblas.so dist
+    mkdir -p ${WASM_LIBRARY_DIR}/lib
+    cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib
+
+requirements:
+  host:
+    - libf2c
