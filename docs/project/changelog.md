@@ -22,6 +22,9 @@ myst:
 
 ### CLI
 
+- {{ Enhancement }} `pyodide build` now accepts an `--output-directory` argument.
+  {pr}`3746`
+
 - {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level` option when applied on
   a single file.
   {pr}`3727`
