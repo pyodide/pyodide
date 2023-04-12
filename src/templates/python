@@ -57,7 +57,7 @@ const fs = require("fs");
  * names it is possible this could break. The most surprising one here is tmp, I
  * am not sure why but if we link tmp then the process silently fails.
  */
-function nativeDirsToLink() {
+function rootDirsToMount() {
     const skipDirs = ["dev", "lib", "proc", "tmp"];
     return fs
         .readdirSync("/")
@@ -65,14 +65,18 @@ function nativeDirsToLink() {
         .map((dir) => "/" + dir);
 }
 
+function dirsToMount() {
+    extra_mounts = process.env["_PYODIDE_EXTRA_MOUNTS"] || "";
+    return rootDirsToMount().concat(extra_mounts.split(":").filter(s => s))
+}
+
 async function main() {
     let args = process.argv.slice(2);
-    const _node_mounts = nativeDirsToLink();
     try {
         py = await loadPyodide({
             args,
             fullStdLib: false,
-            _node_mounts,
+            _node_mounts: dirsToMount(),
             homedir: process.cwd(),
             // Strip out messages written to stderr while loading
             // After Pyodide is loaded we will replace stdstreams with setupStreams.

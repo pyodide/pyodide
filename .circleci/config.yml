@@ -220,12 +220,12 @@ jobs:
           name: create xbuild environment
           command: |
             pip install -e ./pyodide-build
-            python -m pyodide_build create_xbuildenv
+            pyodide xbuildenv create .
 
       - run:
           name: Zip xbuild environment
           command: |
-            tar cjf xbuildenv.tar.gz  xbuildenv/
+            tar cjf xbuildenv.tar.gz ./xbuildenv/
 
       - store_artifacts:
           path: /root/repo/xbuildenv.tar.gz

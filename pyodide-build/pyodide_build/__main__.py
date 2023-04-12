@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-from . import buildpkg, create_xbuildenv, install_xbuildenv, serve
+from . import buildpkg, serve
 from .common import init_environment
 
 
@@ -22,12 +22,9 @@ def make_parser() -> argparse.ArgumentParser:
     for command_name, module in (
         ("buildpkg", buildpkg),
         ("serve", serve),
-        ("create_xbuildenv", create_xbuildenv),
-        ("install_xbuildenv", install_xbuildenv),
     ):
         if "sphinx" in sys.modules and command_name in [
             "buildpkg",
-            "pywasmcross",
         ]:
             # Likely building documentation, skip private API
             continue

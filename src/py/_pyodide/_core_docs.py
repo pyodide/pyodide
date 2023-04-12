@@ -1275,6 +1275,7 @@ del _save_name
 
 __all__ = [
     "ConversionError",
+    "InternalError",
     "JsArray",
     "JsAsyncGenerator",
     "JsAsyncIterable",
