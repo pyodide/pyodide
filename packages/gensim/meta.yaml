@@ -6,12 +6,21 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/9a/3c/dd4351a2ef3a8fb19e26d6ccb928823fea53375de9d28b221f8cf0e53c8e/gensim-4.3.1.tar.gz
   sha256: 8b5f11c0e6a5308086b48e8f6841223a4fa1a37d513684612b7ee854b533015f
+  patches:
+    - patches/0001-Avoid-signature-mismatch-in-sdot-detection.patch
+
 requirements:
   run:
     - numpy
     - scipy
     - six
     - smart_open
+build:
+  script: |
+    # gensim apparently builds from .c files so need to cythonize the .pyx after
+    # patching
+    cython gensim/models/word2vec_inner.pyx
+
 about:
   home: http://radimrehurek.com/gensim
   PyPI: https://pypi.org/project/gensim

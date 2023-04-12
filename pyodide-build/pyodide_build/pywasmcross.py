@@ -123,7 +123,15 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                         ]
                     )
                     filepath = filepath.with_suffix(".f")
-                subprocess.check_call(["f2c", filepath.name], cwd=filepath.parent)
+                # -R flag is important, it means that Fortran functions that
+                # return real e.g. sdot will be transformed into C functions
+                # that return float. For historic reasons, by default f2c
+                # transform them into functions that return a double. Using -R
+                # allows to match what OpenBLAS has done when they f2ced their
+                # Fortran files, see
+                # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
+                # for more details
+                subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True

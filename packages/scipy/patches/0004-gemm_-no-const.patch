@@ -1,7 +1,7 @@
-From a64ba2bc0b4e8ee505de52d08c5d597ed040ba0c Mon Sep 17 00:00:00 2001
+From 4e75c3153b266ae63d42a032cbc558d143bee3c9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 18 Dec 2021 11:41:15 -0800
-Subject: [PATCH 06/13] gemm_ no const
+Subject: [PATCH 04/11] gemm_ no const
 
 cgemm, dgemm, sgemm, and zgemm are declared with `const` in slu_cdefs.h, but
 other places don't have the cosnt causing compile errors.
@@ -82,5 +82,5 @@ index abb7d937e..6c572ff2b 100644
                    doublecomplex*, int*);
  extern int ztrsm_(char*, char*, char*, char*, int*, int*,
 -- 
-2.25.1
+2.34.1
 
