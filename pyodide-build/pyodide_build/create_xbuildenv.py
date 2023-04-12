@@ -56,6 +56,7 @@ def _copy_wasm_libs(
         wasm_lib_dir / "cmake",
         Path("dist/repodata.json"),
         Path("dist/python"),
+        Path("dist/python_stdlib.zip"),
     ]
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")
