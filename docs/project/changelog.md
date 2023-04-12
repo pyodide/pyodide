@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Update }} Pyodide now runs Python 3.11.3.
+  {pr}`3741`
+
 - {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
