@@ -282,7 +282,7 @@ def test_config_get(cfg_name, env_var):
         ],
     )
 
-    assert result.stdout.strip() == common.get_make_flag(env_var)
+    assert result.stdout.strip() == common.get_build_flag(env_var)
 
 
 def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
