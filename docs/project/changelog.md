@@ -15,6 +15,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
+  Pyodide not in the host Python.
+  {pr}`3752`
+
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
@@ -32,9 +36,8 @@ myst:
 
 ### CLI
 
-- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level` option when applied on
-  a single file.
-  {pr}`3727`
+- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level`
+  option when applied on a single file. {pr}`3727`
 
 - {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
   version 0.23.0 because of missing `python_stdlib.zip`.
