@@ -5,9 +5,8 @@ from typing import Any
 from .. import common, pypabuild
 
 
-def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
-    if outdir is None:
-        outdir = Path("./dist")
+def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
+    outdir = outdir.resolve()
     cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
     cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")
@@ -28,5 +27,5 @@ def run(exports: Any, args: list[str], outdir: Path | None = None) -> Path:
     )
 
     with build_env_ctx as env:
-        built_wheel = pypabuild.build(env, " ".join(args), outdir=str(outdir))
+        built_wheel = pypabuild.build(srcdir, outdir, env, " ".join(args))
     return Path(built_wheel)
