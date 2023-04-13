@@ -543,6 +543,20 @@ jobs:
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
+
+      - run:
+          # Unlike the release version, we upload the dev version to S3 not to GitHub.
+          name: Deploy release files to S3
+          command: |
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+
+            python3 tools/deploy_s3.py dist/ "dev/xbuildenv/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+
       - run:
           name: Deploy to S3
           command: |
@@ -854,6 +868,7 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - create-xbuild-env
             - build-test-pyc-packages
           filters:
             branches:
