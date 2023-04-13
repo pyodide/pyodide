@@ -1,7 +1,7 @@
-From 03121dd29a0973ef05f9921ddf2c99cf14f3299a Mon Sep 17 00:00:00 2001
+From 6b2e65c86858f3534058b2200f12c6d7b840bf7f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 6 Apr 2022 21:21:53 -0700
-Subject: [PATCH 05/13] fix fotran files minpack
+Subject: [PATCH 03/11] fix fotran files minpack
 
 ---
  scipy/optimize/minpack/chkder.f | 3 +--
@@ -283,5 +283,5 @@ index 61a7928bb..05282b556 100644
        double precision alpha
        double precision r(ldr,n),w(n),b(n),cos(n),sin(n)
 -- 
-2.25.1
+2.34.1
 

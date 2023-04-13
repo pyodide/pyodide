@@ -1,7 +1,7 @@
 From 78ff0cec961d9eb4e94193995fe151e1ecdae9df Mon Sep 17 00:00:00 2001
 From: Roman Yurchak <rth.yurchak@gmail.com>
 Date: Fri, 18 Mar 2022 20:01:39 -0700
-Subject: [PATCH 5/7] remove redundant symbols
+Subject: [PATCH 3/5] remove redundant symbols
 
 Remove a few symbols from LAPACK that are redundantly defined with BLAS or are
 ported in scipy. It wouldn't be an issue if we were linking dynamically, but

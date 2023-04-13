@@ -10,7 +10,7 @@ github:
 tasks:
   - name: Setup the environment
     init: |
-      PYTHON_VERSION=3.11.2
+      PYTHON_VERSION=3.11.3
       pyenv install $PYTHON_VERSION
       pyenv global $PYTHON_VERSION
       python -m pip install -r requirements.txt

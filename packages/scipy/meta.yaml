@@ -22,18 +22,19 @@ source:
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
-    - patches/0002-loadDynamicLibrary-flapack.patch
-    - patches/0003-Add-lapack_extras-to-linalg-setup.py.patch
-    - patches/0004-int-to-string.patch
-    - patches/0005-fix-fotran-files-minpack.patch
-    - patches/0006-gemm_-no-const.patch
-    - patches/0007-make-int-return-values.patch
-    - patches/0008-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0009-sasum-returns-double-not-float.patch
-    - patches/0010-skip-fortran-fails-to-link.patch
-    - patches/0011-Change-qh_eachvoronoi_all-FILE-type.patch
-    - patches/0012-Remove-meson-requirements.patch
-    - patches/0013-Fix-fitpack.patch
+    - patches/0002-int-to-string.patch
+    - patches/0003-fix-fotran-files-minpack.patch
+    - patches/0004-gemm_-no-const.patch
+    - patches/0005-make-int-return-values.patch
+    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0007-skip-fortran-fails-to-link.patch
+    - patches/0008-Change-qh_eachvoronoi_all-FILE-type.patch
+    - patches/0009-Remove-meson-requirements.patch
+    - patches/0010-Fix-fitpack.patch
+    # TODO remove the next patch when we upgrade to scipy 1.11, since it has
+    # been fixed upstream in https://github.com/scipy/scipy/pull/18124
+    - patches/0011-When-forward-declaring-print_soln-give-it-the-correc.patch
+    - patches/0012-Enable-long-double-support-in-Boost-library-for-emsc.patch
 
 build:
   cflags: |
@@ -53,24 +54,9 @@ build:
   script: |
     set -x
     export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
-    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/clapack_all.so"
-    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include"
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
-    # We get linker errors because the following 36 functions are missing
-    # Copying them from a more recent LAPACK seems to work fine.
-    wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
-    tar xzf v3.10.0.tar.gz
-    cd lapack-3.10.0/SRC
-
-    cat \
-      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f cuncsd.f \
-      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f dorcsd.f \
-      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f sorcsd.f \
-      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f zuncsd.f \
-    >>  ../../scipy/linalg/lapack_extras.f
-    cd ../..
-    sed -i 's/CHARACTER/INTEGER/g' scipy/linalg/lapack_extras.f
-    sed -i 's/RECURSIVE//g' scipy/linalg/lapack_extras.f
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
@@ -86,6 +72,13 @@ build:
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
 
+    sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/PUBLIC void/PUBLIC int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/*.{c,h}
+    sed -i 's/void \(.\)print/int \1/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/TYPE_GENERIC_FUNC(\(.*\), void)/TYPE_GENERIC_FUNC(\1, int)/g' scipy/sparse/linalg/_dsolve/_superluobject.h
+
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
     sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
@@ -95,15 +88,9 @@ build:
     sed -i 's/, size_t)/)/g' scipy/spatial/qhull_misc.h
     sed -i 's/,1)/)/g' scipy/spatial/qhull_misc.h
 
-
-    # Missing declaration from cython_lapack_signatures.txt
-    echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
-      >>  scipy/linalg/cython_lapack_signatures.txt
-
-    # sed -i 's/^void/int/g' scipy/linalg/cython_lapack_signatures.txt
-
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
+
   cross-build-env: true
   cross-build-files:
     - scipy/linalg/cython_lapack.pxd
@@ -112,11 +99,11 @@ build:
 requirements:
   host:
     - numpy
-    - CLAPACK
+    - openblas
     - boost-cpp
   run:
     - numpy
-    - CLAPACK
+    - openblas
   executable:
     - gfortran
     - f2c

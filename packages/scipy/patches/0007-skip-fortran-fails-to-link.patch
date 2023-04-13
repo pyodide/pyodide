@@ -1,7 +1,7 @@
-From a9ade2b407968c0beea9a023189426f1d6e793ff Mon Sep 17 00:00:00 2001
+From 6f15df83c5945c9b2e65241bb38af8b71f57da52 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 15:08:18 -0800
-Subject: [PATCH 10/13] skip fortran fails to link
+Subject: [PATCH 07/11] skip fortran fails to link
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
@@ -42,5 +42,5 @@ index 0b936ceed..bf0c16d6c 100644
      config.add_subpackage('matlab')
      config.add_subpackage('arff')
 -- 
-2.25.1
+2.34.1
 
