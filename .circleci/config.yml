@@ -420,6 +420,7 @@ jobs:
             set -x
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
+            source pyodide_env.sh
             cd ~
             mkdir test
             cd test
