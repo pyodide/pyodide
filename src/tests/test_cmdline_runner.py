@@ -111,7 +111,8 @@ def test_dash_m(selenium):
     assert result.stdout.strip() == f"Emscripten-{emscripten_version()}-wasm32-32bit"
 
 
-def test_dash_m_pip(monkeypatch, tmp_path):
+@only_node
+def test_dash_m_pip(selenium, monkeypatch, tmp_path):
     import os
 
     monkeypatch.setenv("PATH", str(tmp_path), prepend=":")
