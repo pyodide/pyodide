@@ -545,19 +545,6 @@ jobs:
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
 
       - run:
-          # Unlike the release version, we upload the dev version to S3 not to GitHub.
-          name: Deploy release files to S3
-          command: |
-            mkdir -p /tmp/ghr/dist
-            cp -r dist /tmp/ghr/pyodide
-            cp -r xbuildenv /tmp/ghr/xbuildenv
-            cd /tmp/ghr
-            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
-            tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
-
-            python3 tools/deploy_s3.py dist/ "dev/xbuildenv/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
-
-      - run:
           name: Deploy to S3
           command: |
             python3 tools/deploy_s3.py dist/ "dev/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
@@ -569,6 +556,19 @@ jobs:
           name: Deploy pyc version to S3
           command: |
             python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+
+      - run:
+          # Unlike the release version, we upload the dev version to S3 not to GitHub.
+          name: Deploy release files to S3
+          command: |
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+
+            python3 tools/deploy_s3.py dist/ "dev/xbuildenv/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
 
 workflows:
   version: 2
