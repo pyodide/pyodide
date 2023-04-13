@@ -34,6 +34,9 @@ myst:
   version 0.23.0 because of missing `python_stdlib.zip`.
   {pr}`3760`
 
+- {{ Fix }} `python -m pip` works correctly in the Pyodide venv now.
+  {pr}`3761`
+
 ### Build System
 
 - {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
