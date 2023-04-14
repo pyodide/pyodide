@@ -112,6 +112,25 @@ def test_dash_m(selenium):
 
 
 @only_node
+def test_dash_m_pip(selenium, monkeypatch, tmp_path):
+    import os
+
+    monkeypatch.setenv("PATH", str(tmp_path), prepend=":")
+    pip_path = tmp_path / "pip"
+    pip_path.write_text("echo 'pip got' $@")
+    os.chmod(pip_path, 0o777)
+
+    result = subprocess.run(
+        [script_path, "-m", "pip", "install", "pytest"],
+        capture_output=True,
+        encoding="utf8",
+    )
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.strip() == "pip got install pytest"
+
+
+@only_node
 def test_invalid_cmdline_option(selenium):
     result = subprocess.run([script_path, "-c"], capture_output=True, encoding="utf8")
     assert result.returncode != 0
