@@ -30,7 +30,6 @@ myst:
   deprecation {pr}`3635`, cachetools {pr}`3635`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 
-
 ## Version 0.23.1
 
 ### Deployment
@@ -62,7 +61,6 @@ myst:
 
 - {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
   {pr}`3751`
-
 
 ## Version 0.23.0
 
