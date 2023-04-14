@@ -105,10 +105,14 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         # when pip installs an executable it uses sys.executable to create the
         # shebang for the installed executable. The shebang for pip points to
         # python-host but we want the shebang of the executable that we install
-        # to point to Pyodide python. So remove the "-host" suffix from
-        # sys.executable.
+        # to point to Pyodide python. We monkeypatch distlib.scripts.get_executable
+        # to return the value with the host suffix removed.
         """
-        sys.executable = sys.executable.removesuffix("-host")
+        from pip._vendor.distlib import scripts
+        def get_executable():
+            return sys.executable.removesuffix("-host")
+
+        scripts.get_executable = get_executable
         """
         f"""
         os_name, sys_platform, multiarch, host_platform = {platform_data}
