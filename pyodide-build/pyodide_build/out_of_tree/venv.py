@@ -110,7 +110,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         """
         from pip._vendor.distlib import scripts
         def get_executable():
-            return sys.executable.remove_suffix("-host")
+            return sys.executable.removesuffix("-host")
 
         scripts.get_executable = get_executable
         """
