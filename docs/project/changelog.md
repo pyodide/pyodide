@@ -13,11 +13,7 @@ myst:
 
 # Change Log
 
-## Unreleased
-
-- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
-  Pyodide not in the host Python.
-  {pr}`3752`
+## Version 0.23.1
 
 ### Deployment
 
@@ -39,6 +35,10 @@ myst:
 
 - {{ Fix }} `python -m pip` works correctly in the Pyodide venv now.
   {pr}`3761`
+
+- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
+  Pyodide not in the host Python.
+  {pr}`3752`
 
 ### Build System
 
