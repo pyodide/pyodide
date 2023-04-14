@@ -212,7 +212,13 @@ def _py_compile_archive(
         return None
     path_out = input_path.parent / name_out
 
-    _compile(input_path, path_out, keep=keep, verbose=verbose)
+    _compile(
+        input_path,
+        path_out,
+        keep=keep,
+        verbose=verbose,
+        compression_level=compression_level,
+    )
 
     return path_out
 

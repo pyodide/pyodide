@@ -112,6 +112,25 @@ def test_dash_m(selenium):
 
 
 @only_node
+def test_dash_m_pip(selenium, monkeypatch, tmp_path):
+    import os
+
+    monkeypatch.setenv("PATH", str(tmp_path), prepend=":")
+    pip_path = tmp_path / "pip"
+    pip_path.write_text("echo 'pip got' $@")
+    os.chmod(pip_path, 0o777)
+
+    result = subprocess.run(
+        [script_path, "-m", "pip", "install", "pytest"],
+        capture_output=True,
+        encoding="utf8",
+    )
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.strip() == "pip got install pytest"
+
+
+@only_node
 def test_invalid_cmdline_option(selenium):
     result = subprocess.run([script_path, "-c"], capture_output=True, encoding="utf8")
     assert result.returncode != 0
@@ -336,6 +355,17 @@ def test_pip_install_impure(selenium, venv):
             """
         ).strip()
     )
+
+
+@only_node
+def test_pip_install_executable(selenium, venv):
+    """impure python package from pypi"""
+    result = install_pkg(venv, "pytest")
+    assert result.returncode == 0
+    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    pytest_script = (venv / "bin/pytest").read_text()
+    shebang = pytest_script.splitlines()[0]
+    assert shebang == "#!" + str((venv / "bin" / python).absolute())
 
 
 @only_node

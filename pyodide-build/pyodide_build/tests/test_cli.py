@@ -6,9 +6,10 @@ from pathlib import Path
 
 import pytest
 from pytest_pyodide import spawn_web_server
+import zipfile
 import typer
 from typer.testing import CliRunner  # type: ignore[import]
-
+from typing import Any
 from pyodide_build import common
 from pyodide_build.cli import (
     build,
@@ -17,6 +18,7 @@ from pyodide_build.cli import (
     create_zipfile,
     skeleton,
     xbuildenv,
+    py_compile,
 )
 
 from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
@@ -367,3 +369,54 @@ def test_xbuildenv_install(tmp_path, temp_xbuildenv):
     assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
     assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
     assert (envpath / "xbuildenv" / "requirements.txt").exists()
+
+
+@pytest.mark.parametrize("target", ["dir", "file"])
+@pytest.mark.parametrize("compression_level", [0, 6])
+def test_py_compile(tmp_path, target, compression_level):
+    wheel_path = tmp_path / "python.zip"
+    with zipfile.ZipFile(wheel_path, "w", compresslevel=3) as zf:
+        zf.writestr("a1.py", "def f():\n    pass")
+
+    if target == "dir":
+        target_path = tmp_path
+    elif target == "file":
+        target_path = wheel_path
+
+    py_compile.main(
+        path=target_path, silent=False, keep=False, compression_level=compression_level
+    )
+    with zipfile.ZipFile(tmp_path / "python.zip", "r") as fh:
+        if compression_level > 0:
+            assert fh.filelist[0].compress_type == zipfile.ZIP_DEFLATED
+        else:
+            assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
+
+
+def test_build1(tmp_path, monkeypatch):
+    from pyodide_build import pypabuild
+
+    def mocked_build(srcdir: Path, outdir: Path, env: Any, backend_flags: Any) -> str:
+        results["srcdir"] = srcdir
+        results["outdir"] = outdir
+        results["backend_flags"] = backend_flags
+        return str(outdir / "a.whl")
+
+    monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(pypabuild, "build", mocked_build)
+
+    results: dict[str, Any] = {}
+    srcdir = tmp_path / "in"
+    outdir = tmp_path / "out"
+    srcdir.mkdir()
+    app = typer.Typer()
+    app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
+    result = runner.invoke(
+        app, [str(srcdir), "--output-directory", str(outdir), "x", "y", "z"]
+    )
+    print(result)
+    print(result.stdout)
+    assert result.exit_code == 0
+    assert results["srcdir"] == srcdir
+    assert results["outdir"] == outdir
+    assert results["backend_flags"] == "x y z"
