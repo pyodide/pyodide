@@ -109,8 +109,8 @@ def pyodide_tags() -> Iterator[Tag]:
 
     The sequence is ordered in decreasing specificity.
     """
-    PYMAJOR = get_build_flag("PYMAJOR")
-    PYMINOR = get_build_flag("PYMINOR")
+    PYMAJOR = get_pyversion_major()
+    PYMINOR = get_pyversion_minor()
     PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
@@ -200,10 +200,20 @@ def get_build_flag(name: str) -> str:
     return build_vars[name]
 
 
+def get_pyversion_major() -> str:
+    return get_build_flag("PYMAJOR")
+
+
+def get_pyversion_minor() -> str:
+    return get_build_flag("PYMINOR")
+
+
+def get_pyversion_major_minor() -> str:
+    return f"{get_pyversion_major()}.{get_pyversion_minor()}"
+
+
 def get_pyversion() -> str:
-    PYMAJOR = get_build_flag("PYMAJOR")
-    PYMINOR = get_build_flag("PYMINOR")
-    return f"python{PYMAJOR}.{PYMINOR}"
+    return f"python{get_pyversion_major_minor()}"
 
 
 def get_hostsitepackages() -> str:
