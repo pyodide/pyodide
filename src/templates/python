@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ":" /* << "EOF"
 This file is a bash/node polyglot. This is needed for a few reasons:
 
@@ -21,6 +21,11 @@ inside the virtualenv the proper shell code is executed.
 EOF
 # bash
 set -e
+if [[ $1 == "-m" ]] && [[ $2 == "pip" ]]; then
+    # redirect python -m pip to execute in host environment
+    shift 1
+    exec $@
+fi
 
 which node > /dev/null  || { \
     >&2 echo "No node executable found on the path" && exit 1; \
