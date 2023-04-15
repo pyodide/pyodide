@@ -44,7 +44,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
         overwrite=False,
         rm_remote_prefix=False,
         access_key_env="AWS_ACCESS_KEY_ID",
-        aws_secret_access_key="AWS_SECRET_ACCESS_KEY",
+        secret_access_key="AWS_SECRET_ACCESS_KEY",
     )
 
     def get_object_list():
@@ -64,7 +64,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
             overwrite=False,
             rm_remote_prefix=False,
             access_key_env="AWS_ACCESS_KEY_ID",
-            aws_secret_access_key="AWS_SECRET_ACCESS_KEY",
+            secret_access_key="AWS_SECRET_ACCESS_KEY",
         )
     msg = "Cannot upload .* because it already exists"
     captured = capsys.readouterr()
@@ -81,7 +81,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
         overwrite=True,
         rm_remote_prefix=False,
         access_key_env="AWS_ACCESS_KEY_ID",
-        aws_secret_access_key="AWS_SECRET_ACCESS_KEY",
+        secret_access_key="AWS_SECRET_ACCESS_KEY",
     )
     assert get_object_list() == {"dev/full/a.whl", "dev/full/b.tar", "dev/full/c.zip"}
 
@@ -97,7 +97,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
         overwrite=False,
         rm_remote_prefix=True,
         access_key_env="AWS_ACCESS_KEY_ID",
-        aws_secret_access_key="AWS_SECRET_ACCESS_KEY",
+        secret_access_key="AWS_SECRET_ACCESS_KEY",
     )
     assert get_object_list() == {"dev/full/c.zip", "dev/full/a.whl"}
 
@@ -121,7 +121,7 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
         overwrite=False,
         rm_remote_prefix=False,
         access_key_env="AWS_ACCESS_KEY_ID",
-        aws_secret_access_key="AWS_SECRET_ACCESS_KEY",
+        secret_access_key="AWS_SECRET_ACCESS_KEY",
     )
 
     def get_header(key, field="content-type"):
