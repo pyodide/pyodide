@@ -15,41 +15,12 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
-  Pyodide not in the host Python.
-  {pr}`3752`
-
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
 - {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
-
-- {{ Enhancement }} `pyodide build` now accepts an `--output-directory` argument.
-  {pr}`3746`
-
-### Deployment
-
-- {{ Fix }} Export `python_stdlib.zip` in `package.json`.
-  {pr}`3723`
-
-### CLI
-
-- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level`
-  option when applied on a single file. {pr}`3727`
-
-- {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
-  version 0.23.0 because of missing `python_stdlib.zip`.
-  {pr}`3760`
-
-- {{ Fix }} `python -m pip` works correctly in the Pyodide venv now.
-  {pr}`3761`
-
-### Build System
-
-- {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
-  {pr}`3751`
 
 ### Packages
 
@@ -58,6 +29,38 @@ myst:
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
+
+## Version 0.23.1
+
+### Deployment
+
+- {{ Fix }} Export `python_stdlib.zip` in `package.json`.
+  {pr}`3723`
+
+### CLI
+
+- {{ Enhancement }} `pyodide build` now accepts an `--output-directory` argument.
+  {pr}`3746`
+
+- {{ Fix }} Fix `pyodide py-compile` not to ignore the `--compression-level`
+  option when applied on a single file.
+  {pr}`3727`
+
+- {{ Fix }} Fix an issue where the `pyodide venv` command did not work correctly in pyodide-build
+  version 0.23.0 because of missing `python_stdlib.zip`.
+  {pr}`3760`
+
+- {{ Fix }} `python -m pip` works correctly in the Pyodide venv now.
+  {pr}`3761`
+
+- {{ Fix }} Executables installed in a Pyodide virtual environment now run in
+  Pyodide not in the host Python.
+  {pr}`3752`
+
+### Build System
+
+- {{ Fix }} Fix `PYODIDE_ROOT` to point the correct directory when running out-of-tree build.
+  {pr}`3751`
 
 ## Version 0.23.0
 
