@@ -545,6 +545,7 @@ jobs:
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
+
       - run:
           name: Deploy to S3
           command: |
@@ -557,6 +558,20 @@ jobs:
           name: Deploy pyc version to S3
           command: |
             python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+
+      - run:
+          # Unlike the release version, we upload the dev version to S3 not to GitHub.
+          name: Deploy release files to S3
+          command: |
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+
+            python3 tools/deploy_s3.py dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \
+              --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
   version: 2
@@ -856,6 +871,7 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - create-xbuild-env
             - build-test-pyc-packages
           filters:
             branches:

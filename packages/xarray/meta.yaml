@@ -5,8 +5,8 @@ package:
   top-level:
     - xarray
 source:
-  url: https://files.pythonhosted.org/packages/68/77/2b19262874210e44c22f98f4cb42bacc314564fecc4218dfff96657f169c/xarray-2023.3.0-py3-none-any.whl
-  sha256: 64b2a25338cff4f632a5d2ba66ffb875e9ce3ced68cefb5bb5736195bd28cff0
+  url: https://files.pythonhosted.org/packages/76/eb/61bdb6379ee643b13f184580f80eb2114892fd82fee716b79ab837da98f0/xarray-2023.4.0-py3-none-any.whl
+  sha256: 23a404106c434215f370f642aae481339dfb91efc107533c8e9ca5f1ed8ed0f1
 requirements:
   run:
     - numpy
