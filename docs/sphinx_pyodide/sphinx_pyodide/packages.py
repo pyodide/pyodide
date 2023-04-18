@@ -56,7 +56,7 @@ def get_packages_summary_directive(app):
             version = yaml_data.package.version
             tag = yaml_data.package.tag
             is_package = yaml_data.build.package_type == "package"
-            disabled = yaml_data.build.disabled
+            disabled = yaml_data.package.disabled
 
             return name, version, is_package, tag, disabled
 
