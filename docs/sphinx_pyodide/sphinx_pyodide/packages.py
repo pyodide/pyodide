@@ -27,14 +27,16 @@ def get_packages_summary_directive(app):
             packages = {}
             for package in packages_list:
                 try:
-                    name, version, is_package, tag, disabled = self.parse_package_info(package)
+                    name, version, is_package, tag, disabled = self.parse_package_info(
+                        package
+                    )
                 except Exception:
                     print(f"Warning: failed to parse package config for {package}")
 
                 # skip libraries (e.g. libxml, libyaml, ...) and test only packages
                 if not is_package or PYODIDE_TESTONLY in tag or disabled:
                     continue
-                
+
                 packages[name] = {
                     "name": name,
                     "version": version,
