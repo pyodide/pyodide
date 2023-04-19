@@ -216,7 +216,6 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   accesses the `from_` attribute.
   {pr}`3617`
 
-
 ### Build System
 
 - {{ Breaking }} When building meta-packages (`core` and `min-scipy-stack`),
