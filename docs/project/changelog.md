@@ -15,8 +15,6 @@ myst:
 
 ## Unreleased
 
-
-
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
@@ -217,7 +215,6 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   would access `from` on the underlying JavaScript object, whereas `o.from__`
   accesses the `from_` attribute.
   {pr}`3617`
-
 
 ### Build System
 
