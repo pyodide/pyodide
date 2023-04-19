@@ -29,6 +29,7 @@ initialize_python(int argc, char** argv)
 
   status = PyConfig_SetBytesString(&config, &config.home, "/");
   FAIL_IF_STATUS_EXCEPTION(status);
+
   config.write_bytecode = false;
   status = Py_InitializeFromConfig(&config);
   FAIL_IF_STATUS_EXCEPTION(status);

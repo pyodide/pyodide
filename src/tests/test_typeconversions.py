@@ -411,6 +411,21 @@ def test_hyp_tojs_no_crash(selenium, obj):
         del __main__.x
 
 
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@given(obj=any_strategy)
+@example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
+@settings(
+    std_hypothesis_settings,
+    max_examples=25,
+)
+@run_in_pyodide
+def test_hypothesis(selenium_standalone, obj):
+    from pyodide.ffi import to_js
+
+    to_js(obj)
+
+
 @pytest.mark.parametrize(
     "py,js",
     [
@@ -535,7 +550,7 @@ def test_python2js_track_proxies(selenium):
         }
         function check(l){
             for(let x of l){
-                if(pyodide.isPyProxy(x)){
+                if(x instanceof pyodide.ffi.PyProxy){
                     assert(() => x.$$.ptr === 0);
                 } else {
                     check(x);
@@ -543,7 +558,7 @@ def test_python2js_track_proxies(selenium):
             }
         }
         check(result);
-        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ffi.ConversionError");
         x.destroy();
         """
     )
@@ -557,7 +572,7 @@ def test_wrong_way_track_proxies(selenium):
         """
         function checkDestroyed(l){
             for(let e of l){
-                if(pyodide.isPyProxy(e)){
+                if(e instanceof pyodide.ffi.PyProxy){
                     console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
                     assert(() => e.$$.ptr === 0);
                 } else {
@@ -1101,7 +1116,7 @@ def test_tojs4(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()
@@ -1119,7 +1134,7 @@ def test_tojs5(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()
@@ -1270,7 +1285,7 @@ def test_to_py3(selenium):
         new Temp();
         """
     )
-    assert repr(type(a.to_py())) == "<class 'pyodide.JsProxy'>"
+    assert repr(type(a.to_py())) == "<class 'pyodide.ffi.JsProxy'>"
 
 
 @pytest.mark.parametrize(

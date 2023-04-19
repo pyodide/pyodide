@@ -1,13 +1,14 @@
 package:
   name: lzma
   version: 1.0.0 # Nonsense
+  tag:
+    - always
   top-level:
     - lzma
+    - _lzma
 build:
   type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONBUILD
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o Modules/_lzmamodule.o \
       $(pkg-config --cflags --dont-define-prefix liblzma)

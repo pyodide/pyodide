@@ -2,8 +2,10 @@
 
 # Dealing with the file system
 
-Pyodide includes a file system provided by Emscripten.
-In JavaScript, the Pyodide file system can be accessed through {any}`pyodide.FS` which re-exports the [Emscripten File System API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api)
+Pyodide includes a file system provided by Emscripten. In JavaScript, the
+Pyodide file system can be accessed through {js:attr}`pyodide.FS` which re-exports
+the [Emscripten File System
+API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api)
 
 **Example: Reading from the file system**
 
@@ -60,22 +62,21 @@ pyodide.runPython("import os; print(os.listdir('/mnt'))");
 
 (nativefs-api)=
 
-# (Experimental) Using native file system in the browser
+# (Experimental) Using the native file system in the browser
 
-You can access native file system from the browser using the
+You can access the native file system from the browser using the
 [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API).
 
 ```{admonition} This is experimental
 :class: warning
 
-File System Access API is only supported in Chromium based browsers: Chrome and Edge (as of 2022/08/18).
+The File System Access API is only supported in Chromium based browsers: Chrome and Edge (as of 2022/08/18).
 ```
 
 ## Mounting a directory
 
-Pyodide provides an API {any}`pyodide.mountNativeFS` which mounts
-[`FileSystemDirectoryHandle`](https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle)
-into Pyodide Python file system.
+Pyodide provides an API {js:func}`pyodide.mountNativeFS` which mounts a
+{js:class}`FileSystemDirectoryHandle` into the Pyodide Python file system.
 
 ```js
 const dirHandle = await showDirectoryPicker();

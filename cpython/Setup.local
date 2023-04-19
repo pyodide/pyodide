@@ -6,59 +6,21 @@
 
 *static*
 
-array arraymodule.c	# array objects
-audioop audioop.c	# Operations on audio samples
-math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
-cmath cmathmodule.c # complex math functions
-_contextvars _contextvarsmodule.c
-_struct _struct.c	# binary structure packing/unpacking
-_random _randommodule.c	# Random number generator
-_bisect _bisectmodule.c	# Bisection algorithms
-_datetime _datetimemodule.c
-_heapq _heapqmodule.c
-_json _json.c
-_csv _csv.c
-
-CTYPES_FLAGS=-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1
+CTYPES_FLAGS=-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1 -I ../libffi/include
 _ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/cfield.c _ctypes/stgdict.c $(CTYPES_FLAGS)
 
-unicodedata unicodedata.c
-_pickle _pickle.c
-
-_socket socketmodule.c
-select selectmodule.c
 _posixsubprocess _posixsubprocess.c
-binascii binascii.c
 
+_bz2 _bz2module.c -lbz2
 zlib zlibmodule.c
 
-pyexpat expat/xmlparse.c expat/xmlrole.c expat/xmltok.c pyexpat.c -I$(srcdir)/Modules/expat -DHAVE_EXPAT_CONFIG_H -DUSE_PYEXPAT_CAPI -DXML_POOR_ENTROPY
 
-_sha1 sha1module.c
-_sha256 sha256module.c
-_sha512 sha512module.c
-_sha3 _sha3/sha3module.c
-_md5 md5module.c
-_blake2 _blake2/blake2module.c _blake2/blake2b_impl.c _blake2/blake2s_impl.c
-
-_crypt _cryptmodule.c
-_bz2 _bz2module.c -lbz2
-
-_queue _queuemodule.c
-
-#future_builtins future_builtins.c
-
-_multibytecodec cjkcodecs/multibytecodec.c
-
-_codecs_cn cjkcodecs/_codecs_cn.c
-_codecs_hk cjkcodecs/_codecs_hk.c
-_codecs_iso2022 cjkcodecs/_codecs_iso2022.c
-_codecs_jp cjkcodecs/_codecs_jp.c
-_codecs_kr cjkcodecs/_codecs_kr.c
-_codecs_tw cjkcodecs/_codecs_tw.c
-
-_lsprof _lsprof.c rotatingtree.c
-
-_decimal _decimal/_decimal.c _decimal/libmpdec/basearith.c _decimal/libmpdec/constants.c _decimal/libmpdec/context.c _decimal/libmpdec/convolute.c _decimal/libmpdec/crt.c _decimal/libmpdec/difradix2.c _decimal/libmpdec/fnt.c _decimal/libmpdec/fourstep.c _decimal/libmpdec/io.c _decimal/libmpdec/mpalloc.c _decimal/libmpdec/mpdecimal.c _decimal/libmpdec/numbertheory.c _decimal/libmpdec/sixstep.c _decimal/libmpdec/transpose.c -I$(srcdir)/Modules/_decimal/libmpdec
-mmap mmapmodule.c
 _xxsubinterpreters _xxsubinterpretersmodule.c
+
+*disabled*
+pwd
+_sqlite3
+_ssl
+_lzma
+_hashlib
+_uuid

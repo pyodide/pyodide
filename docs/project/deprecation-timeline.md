@@ -10,10 +10,18 @@ state, this list is subject to change and some features can be removed without
 deprecation warnings. More details about each item can often be found in the
 {ref}`changelog`.
 
+## 0.25.0
+
+- Typescript type imports for `PyProxy` subtypes from `pyodide` will be removed.
+
+- The methods `PyProxy.supportsHas`, `PyProxy.isCallable`, etc will be removed.
+
 ## 0.24.0
 
 - The `messageCallback` and `errorCallback` argument to `loadPackage` and
   `loadPackagesFromImports` will be passed as a named argument only.
+
+- `Py2JsResult` will be removed.
 
 ## 0.23.0
 
@@ -34,7 +42,7 @@ deprecation warnings. More details about each item can often be found in the
 - The skip-host key will be removed from the meta.yaml format. If needed,
   install a host copy of the package with pip instead.
 - `pyodide-interrupts` module will be removed. If you were using this for some
-  reason, use {any}`setInterruptBuffer <pyodide.setInterruptBuffer>` instead.
+  reason, use {js:func}`~pyodide.setInterruptBuffer` instead.
 
 ## 0.19.0
 
@@ -43,7 +51,7 @@ deprecation warnings. More details about each item can often be found in the
   behavior, you can
 
   - call `os.chdir("/")` in Python to change working directory or
-  - call {any}`loadPyodide <globalThis.loadPyodide>` with the `homedir="/"`
+  - call {js:func}`~globalThis.loadPyodide` with the `homedir="/"`
     argument
 
 - When a JavaScript function is called from Python, PyProxy arguments and return

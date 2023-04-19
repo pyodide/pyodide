@@ -6,7 +6,6 @@ import numpy as np
 
 
 def multiple_sum(array):
-
     rows = array.shape[0]
     cols = array.shape[1]
 

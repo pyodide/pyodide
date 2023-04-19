@@ -1,7 +1,9 @@
 package:
   name: fpcast-test
   version: "0.1"
-  _tag: pyodide.test
+  tag:
+    - core
+    - pyodide.test
   top-level:
     - fpcast_test
 source:

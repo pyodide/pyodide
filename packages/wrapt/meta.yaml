@@ -1,11 +1,11 @@
 package:
   name: wrapt
-  version: 1.14.1
+  version: 1.15.0
   top-level:
     - wrapt
 source:
-  url: https://files.pythonhosted.org/packages/11/eb/e06e77394d6cf09977d92bff310cb0392930c08a338f99af6066a5a98f92/wrapt-1.14.1.tar.gz
-  sha256: 380a85cf89e0e69b7cfbe2ea9f765f004ff419f34194018a6827ac0e3edfed4d
+  url: https://files.pythonhosted.org/packages/f8/7d/73e4e3cdb2c780e13f9d87dc10488d7566d8fd77f8d68f0e416bfbd144c7/wrapt-1.15.0.tar.gz
+  sha256: d06730c6aed78cee4126234cf2d071e01b44b915e725a6cb439a879ec9754a3a
 about:
   home: https://github.com/GrahamDumpleton/wrapt
   PyPI: https://pypi.org/project/wrapt

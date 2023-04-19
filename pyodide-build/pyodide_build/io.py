@@ -9,7 +9,7 @@ class _PackageSpec(BaseModel):
     name: str
     version: str
     top_level: list[str] = Field([], alias="top-level")
-    tag: str = Field("", alias="_tag")
+    tag: list[str] = Field([])
     disabled: bool = Field(False, alias="_disabled")
 
     class Config:

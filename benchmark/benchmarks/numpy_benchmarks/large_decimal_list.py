@@ -3,4 +3,4 @@
 
 
 def large_decimal_list(A, B):
-    return [a * b for a, b in zip(A, B)]
+    return [a * b for a, b in zip(A, B, strict=True)]

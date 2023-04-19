@@ -20,7 +20,6 @@ solvers = [
 @pytest.mark.parametrize("name", solvers)
 @run_in_pyodide(packages=["python-sat"])
 def test_solvers(selenium, name):
-
     from pysat.formula import CNF
     from pysat.solvers import Solver
 

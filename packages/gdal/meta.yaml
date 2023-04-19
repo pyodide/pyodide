@@ -22,9 +22,6 @@ build:
     export EMSCRIPTEN_BIN=$EMSCRIPTEN_SYSROOT/bin
     export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
 
-    mkdir -p dist
-    export DISTDIR=$(pwd)/dist
-
     embuilder build zlib --pic
     embuilder build libjpeg --pic
     embuilder build libpng --pic
@@ -100,3 +97,5 @@ build:
     emmake make install
 
     cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}
+
+# Note: this package needs to be manually upgraded to the next version

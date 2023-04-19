@@ -104,7 +104,7 @@ PYODIDE_PACKAGES="numpy,matplotlib" make benchmark
 
 We lint with `pre-commit`.
 
-Python is linted with `flake8`, `black` and `mypy`.
+Python is linted with `ruff`, `black` and `mypy`.
 JavaScript, markdown, yaml, and html are linted with `prettier`.
 C is linted with `clang-format`.
 

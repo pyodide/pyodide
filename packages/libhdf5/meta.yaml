@@ -15,9 +15,6 @@ requirements:
 build:
   type: shared_library
   script: |
-    mkdir -p dist
-    export DISTDIR=$(pwd)/dist
-
     mkdir -p build;
 
     cd build \

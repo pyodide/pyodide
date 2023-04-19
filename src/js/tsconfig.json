@@ -3,13 +3,15 @@
   "compilerOptions": {
     "outDir": "../../dist",
     "esModuleInterop": true,
-    "target": "ES2017",
+    "target": "ES2018",
     "module": "ES2020",
     "moduleResolution": "node",
     "composite": true,
     "strict": true,
     "noUnusedLocals": true,
-    "types": ["node"]
+    "types": ["node"],
+    "experimentalDecorators": true,
+    "lib": ["ES2018", "DOM"]
   },
   "include": ["*.ts"],
   "exclude": ["test/**/*"]

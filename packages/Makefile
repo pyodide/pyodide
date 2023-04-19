@@ -3,7 +3,7 @@
 export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
-all: pyodide-build
+all:
 	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide build-recipes \
 	"$(PYODIDE_PACKAGES)" \
@@ -11,14 +11,12 @@ all: pyodide-build
 	--install \
 	--install-dir=../dist \
 	--n-jobs $${PYODIDE_JOBS:-4} \
-	--log-dir=./build-logs
-
-pyodide-build: ../pyodide-build/pyodide_build/**
-	$(HOSTPYTHON) -m pip install -e ../pyodide-build
+	--log-dir=./build-logs \
+	--compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)"
 
 update-all:
 	for pkg in $$(find . -maxdepth 1 ! -name ".*" -type d -exec basename {} \; | tail -n +2); do \
-		PYODIDE_ROOT=$(PYODIDE_ROOT) python -m pyodide_build mkpkg "$${pkg}" --update; \
+		PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide skeleton pypi "$${pkg}" --update-patched; \
 	done
 
 clean:

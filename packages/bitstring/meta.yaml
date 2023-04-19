@@ -1,0 +1,13 @@
+package:
+  name: bitstring
+  version: 4.0.1
+  top-level:
+    - bitstring
+source:
+  url: https://files.pythonhosted.org/packages/1b/07/951d7bc9804fcec26e8cdbf1d352018a21c16194d42e3f38cb7f5564ca4b/bitstring-4.0.1-py3-none-any.whl
+  sha256: 4a27cdefd95eb535c4b79e0afcdb5532ba1dba0aaed98a31ad98f46b1e0d5bd9
+about:
+  home: ""
+  PyPI: https://pypi.org/project/bitstring
+  summary: Simple construction, analysis and modification of binary data.
+  license: ""

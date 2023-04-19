@@ -1,0 +1,30 @@
+From 01990867ee7a641078505efba367a413a97f7802 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Fri, 18 Mar 2022 19:59:25 -0700
+Subject: [PATCH 1/5] fix arith.h
+
+arith.h is a file generated at build time by compiling and running a C program.
+Since we use emscripten to build throughout, the C program becomes a wasm file
+and we call it differently.
+---
+ F2CLIBS/libf2c/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/F2CLIBS/libf2c/Makefile b/F2CLIBS/libf2c/Makefile
+index 0a3ed0d..a473ed8 100644
+--- a/F2CLIBS/libf2c/Makefile
++++ b/F2CLIBS/libf2c/Makefile
+@@ -173,8 +173,8 @@ xwsne.o:	fmt.h
+ arith.h: arithchk.c
+ 	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm ||\
+ 	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm
+-	./a.out >arith.h
+-	rm -f a.out arithchk.o
++	node a.out.js >arith.h
++	rm -f a.out.js a.out.wasm
+ 
+ check:
+ 	xsum Notice README abort_.c arithchk.c backspac.c c_abs.c c_cos.c \
+-- 
+2.25.1
+

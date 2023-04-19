@@ -50,11 +50,6 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "docs/conf.py",
-        build_version_pattern('pyodide_version = "{python_version}"'),
-        prerelease=True,
-    ),
-    Target(
         ROOT / "docs/project/about.md",
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,

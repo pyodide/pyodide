@@ -22,7 +22,6 @@ def test_compat(selenium):
 def test_basic_classification(selenium):
     @run_in_pyodide(packages=["xgboost"])
     def run(selenium, data_train):
-
         with open("dermatology.data", "wb") as f:
             f.write(data_train)
 

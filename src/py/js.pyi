@@ -1,10 +1,9 @@
-from asyncio import Future
-from typing import Any, Callable, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from _pyodide._core_docs import _JsProxyMetaClass
 from pyodide.ffi import (
     JsArray,
-    JsBuffer,
     JsDomElement,
     JsFetchResponse,
     JsProxy,
@@ -45,7 +44,7 @@ class XMLHttpRequest(_JsObject):
     response: str
 
     @staticmethod
-    def new() -> "XMLHttpRequest": ...
+    def new() -> XMLHttpRequest: ...
     def open(self, method: str, url: str, sync: bool) -> None: ...
     def send(self, body: JsProxy | None = None) -> None: ...
 

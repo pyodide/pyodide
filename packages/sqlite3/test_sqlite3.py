@@ -3,19 +3,16 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["test", "sqlite3"], pytest_assert_rewrites=False)
 def test_sqlite3(selenium):
-    from test import libregrtest  # type:ignore[attr-defined]
+    import test.test_sqlite3
+    import unittest
 
-    name = "test_sqlite"
-    ignore_tests = [
-        "*MultiprocessTests*",
-        "*ThreadTests*",
-    ]
+    suite = unittest.TestSuite(
+        [unittest.TestLoader().loadTestsFromModule(test.test_sqlite3)]
+    )
 
-    try:
-        libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
-    except SystemExit as e:
-        if e.code != 0:
-            raise RuntimeError(f"Failed with code: {e.code}") from None
+    runner = unittest.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    assert result.wasSuccessful()
 
 
 @run_in_pyodide(packages=["sqlite3"])

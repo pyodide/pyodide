@@ -83,6 +83,7 @@ If you want to build the package, you will need to build Python which you can do
 as follows:
 
 ```bash
+make -C emsdk
 make -C cpython
 ```
 
@@ -285,7 +286,7 @@ build. We automate the following steps:
     - Install the build dependencies requested in the package `build-requires`.
       (We ignore all version constraints on the unisolated packages, but version
       constraints on other packages are respected.
-    - Run the PEP 517 build backend associated to the project to generate a wheel.
+    - Run the {pep}`517` build backend associated to the project to generate a wheel.
 - Unpack the wheel with `python -m wheel unpack`.
 - Run the `build/post` script in the unpacked wheel directory if it's present.
 - Unvendor unit tests included in the installation folder to a separate zip file
@@ -293,16 +294,16 @@ build. We automate the following steps:
 - Repack the wheel with `python -m wheel pack`
 
 Lastly, a `repodata.json` file is created containing the dependency tree of all
-packages, so {any}`pyodide.loadPackage` can load a package's dependencies
+packages, so {js:func}`pyodide.loadPackage` can load a package's dependencies
 automatically.
 
 ### Partial Rebuilds
 
-By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
+By default, each time you run `pyodide build-recipes`, it will delete the entire
 source directory and replace it with a fresh copy from the download url. This is
 to ensure build repeatability. For debugging purposes, this is likely to be
 undesirable. If you want to try out a modified source tree, you can pass the
-flag `--continue` and `buildpkg` will try to build from the existing source
+flag `--continue` and `build-recipes` will try to build from the existing source
 tree. This can cause various issues, but if it works it is much more convenient.
 
 Using the `--continue` flag, you can modify the sources in tree to fix the
@@ -347,7 +348,7 @@ as a starting point.
 
 After packaging a C library, it can be added as a dependency of a Python package
 like a normal dependency. See `lxml` and `libxml` for an example (and also
-`scipy` and `CLAPACK`).
+`scipy` and `OpenBLAS`).
 
 _Remark:_ Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags` of
@@ -379,33 +380,14 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 
 We currently build `cryptography` which is a Rust extension built with PyO3 and
 `setuptools-rust`. It should be reasonably easy to build other Rust extensions.
-Currently it is necessary to run `source $CARGO_HOME/env` in the build script [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
+If you want to build a package with Rust extension, you will need Rust >= 1.41,
+and you need to set the rustup toolchain to `nightly`, and the target to
+`wasm32-unknown-emscripten` in the build script
+[as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
 
-As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224), by default certain wasm-related `RUSTFLAGS` are set during `build.script` and can be removed with `export RUSTFLAGS=""`.
+As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224),
+by default certain wasm-related `RUSTFLAGS` are set during `build.script`
+and can be removed with `export RUSTFLAGS=""`.
 
-#### Setting up Rust in the docker container
-
-This part is for developers who use the docker image and wish to compile Python packages containing Rust code.
-If you clone the Pyodide repo from Github the docker container will not have `rust` installed. For this you'd need to install `rust` using the preferred method described [here](https://www.rust-lang.org/tools/install).
-
-```
-apt update
-apt install curl
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-After install, you'll need to switch to the nighly build, as a certain flag `-Z` -which is used to compile `cryptography`- is only available in the nighly builds.
-
-```
-"$HOME/.cargo/env"
-rustup default nightly
-```
-
-Finally, you'd need to add the `wasm32-unknown-emscripten` target.
-
-```
-rustup target add wasm32-unknown-emscripten
-```
-
-After these steps you'll be able to compile `cryptography` and other PyO3 based projects.
+If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
