@@ -56,14 +56,10 @@ else()
   set(CMAKE_LIBRARY_ARCHITECTURE "wasm32-emscripten/pic")
 endif()
 
-
-# Disable the usage of response file so objects are exposed to the commandline.
-# Our export calculation logic in pywasmcross needs to read object files.
-# TODO: support export calculation from the response file
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_LIBRARIES 0)
 set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_LIBRARIES 0)
-set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 0)
-set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 0)
+set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS 1)
+set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS 1)
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_INCLUDES 1)
 set(CMAKE_CXX_USE_RESPONSE_FILE_FOR_INCLUDES 1)
 

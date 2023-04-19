@@ -23,8 +23,7 @@ build:
     make -j ${PYODIDE_JOBS:-3} libcrypto.a
     make -j ${PYODIDE_JOBS:-3} libssl.a
     emar -d libcrypto.a liblegacy-lib-bn_asm.o liblegacy-lib-des_enc.o liblegacy-lib-fcrypt_b.o
-    mkdir dist
     emcc ${SIDE_MODULE_LDFLAGS} libcrypto.a -o libcrypto.so
     emcc ${SIDE_MODULE_LDFLAGS} libssl.a -o libssl.so
     make install_sw
-    cp libcrypto.so libssl.so dist
+    cp libcrypto.so libssl.so ${DISTDIR}

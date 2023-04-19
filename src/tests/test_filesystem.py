@@ -111,7 +111,6 @@ def test_idbfs_persist_code(selenium_standalone):
     node="Not available", firefox="Not available", safari="Not available"
 )
 def test_nativefs_dir(request, selenium_standalone):
-
     # Note: Using *real* native file system requires
     # user interaction so it is not available in headless mode.
     # So in this test we use OPFS (Origin Private File System)

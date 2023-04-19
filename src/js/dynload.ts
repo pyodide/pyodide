@@ -5,7 +5,7 @@ declare var API: any;
 declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
-import { memoize } from "./memoize";
+import { memoize } from "./util";
 import { PackageData } from "./load-package";
 
 type ReadFileType = (path: string) => Uint8Array;

@@ -11,8 +11,20 @@
 #include "pyproxy.h"
 #include "python2js.h"
 
-#define Py_ENTER()
+#define Py_ENTER() _check_gil()
 #define Py_EXIT()
+
+EM_JS(void, throw_no_gil, (), {
+  throw new API.NoGilError("Attempted to use PyProxy when Python GIL not held");
+});
+
+void
+check_gil()
+{
+  if (!PyGILState_Check()) {
+    throw_no_gil();
+  }
+}
 
 PyObject* Generator;
 PyObject* AsyncGenerator;

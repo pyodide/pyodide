@@ -12,8 +12,8 @@ def test_open_url(selenium, httpserver):
     assert (
         selenium.run(
             f"""
-            import pyodide
-            pyodide.open_url('{request_url}').read()
+            from pyodide.http import open_url
+            open_url('{request_url}').read()
             """
         )
         == "HELLO"

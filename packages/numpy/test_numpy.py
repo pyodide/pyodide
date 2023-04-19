@@ -27,7 +27,7 @@ def test_numpy(selenium):
 def test_typed_arrays(selenium):
     selenium.load_package("numpy")
     selenium.run("import numpy")
-    for (jstype, npytype) in (
+    for jstype, npytype in (
         ("Int8Array", "int8"),
         ("Uint8Array", "uint8"),
         ("Uint8ClampedArray", "uint8"),
@@ -65,7 +65,6 @@ def test_typed_arrays(selenium):
     ),
 )
 def test_python2js_numpy_dtype(selenium, order, dtype):
-
     selenium.load_package("numpy")
     selenium.run("import numpy as np")
 
@@ -145,7 +144,6 @@ def test_py2js_buffer_clear_error_flag(selenium):
     ),
 )
 def test_python2js_numpy_scalar(selenium, dtype):
-
     selenium.load_package("numpy")
     selenium.run("import numpy as np")
     selenium.run(

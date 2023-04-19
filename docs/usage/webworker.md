@@ -8,7 +8,7 @@ asynchronously in a web worker.
 ## Setup
 
 Setup your project to serve `webworker.js`. You should also serve
-`pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`, and `.wasm`
+`pyodide.js`, and all its associated `.asm.js`, `.json`, and `.wasm`
 files as well, though this is not strictly required if `pyodide.js` is pointing
 to a site serving current versions of these files.
 The simplest way to serve the required files is to use a CDN,
@@ -16,7 +16,7 @@ such as `https://cdn.jsdelivr.net/pyodide`. This is the solution
 presented here.
 
 Update the `webworker.js` sample so that it has as valid URL for `pyodide.js`, and sets
-{any}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
+{js:func}`indexURL <globalThis.loadPyodide>` to the location of the supporting files.
 
 In your application code create a web worker `new Worker(...)`,
 and attach listeners to it using its `.onerror` and `.onmessage`
@@ -96,14 +96,14 @@ two things:
 
 These are the required tasks it should fulfill, but it can do other things. For
 example, to always load packages `numpy` and `pytz`, you would insert the line
-{any}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
+{js:func}`await pyodide.loadPackage(['numpy', 'pytz']); <pyodide.loadPackage>` as
 shown below:
 
 ```js
 // webworker.js
 
 // Setup your project to serve `py-worker.js`. You should also serve
-// `pyodide.js`, and all its associated `.asm.js`, `.data`, `.json`,
+// `pyodide.js`, and all its associated `.asm.js`, `.json`,
 // and `.wasm` files as well:
 importScripts("{{PYODIDE_CDN_URL}}pyodide.js");
 

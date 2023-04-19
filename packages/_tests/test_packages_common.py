@@ -79,47 +79,36 @@ def test_import(
 
     selenium_standalone.run("import glob, os, site")
 
-    baseline_pyc = selenium_standalone.run(
-        """
-        len(list(glob.glob(
-            site.getsitepackages()[0] + '/**/*.pyc',
-            recursive=True)
-        ))
-        """
-    )
+    def _get_file_count(expr):
+        return selenium_standalone.run(
+            f"""
+            len(list(glob.glob(
+                site.getsitepackages()[0] + '{expr}',
+                recursive=True)
+            ))
+            """
+        )
+
+    import_names = meta.test.imports
+    if not import_names:
+        import_names = meta.package.top_level
+
+    if not import_names:
+        # Nothing to test
+        return
 
     def _import_pkg():
-        import_names = meta.test.imports
-        if not import_names:
-            import_names = meta.package.top_level
-
         for import_name in import_names:
             selenium_standalone.run_async("import %s" % import_name)
 
     benchmark(_import_pkg)
 
-    # Make sure that even after importing, there are no additional .pyc
-    # files
-    assert (
-        selenium_standalone.run(
-            """
-            len(list(glob.glob(
-                site.getsitepackages()[0] + '/**/*.pyc',
-                recursive=True)
-            ))
-            """
-        )
-        == baseline_pyc
-    )
+    # Make sure that after importing, either .py or .pyc are present but not
+    # both
+    pyc_count = sum(_get_file_count(f"/{key}/**/*.pyc") for key in import_names)
+    py_count = sum(_get_file_count(f"/{key}/**/*.py") for key in import_names)
+
+    assert not ((py_count > 0) and (pyc_count > 0))
+
     # Make sure no exe files were loaded!
-    assert (
-        selenium_standalone.run(
-            """
-            len(list(glob.glob(
-                site.getsitepackages()[0] + '/**/*.exe',
-                recursive=True)
-            ))
-            """
-        )
-        == 0
-    )
+    assert _get_file_count("/**/*.exe") == 0

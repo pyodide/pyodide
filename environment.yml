@@ -1,0 +1,19 @@
+name: pyodide-env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - nodejs
+  - ccache
+  - f2c
+  - pkg-config
+  - swig
+  - make
+  - cmake
+  - pkg-config
+  - texinfo
+  - autoconf
+  - automake
+  - libtool
+  - patch # only needed on MacOS
+  - sed # only needed on MacOS

@@ -15,10 +15,6 @@ requirements:
     - libxslt
     - zlib
     - libiconv
-  run:
-    - beautifulsoup4
-    - cssselect
-    - html5lib
 test:
   imports:
     - lxml

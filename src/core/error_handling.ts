@@ -8,6 +8,10 @@ function ensureCaughtObjectIsError(e: any): Error {
   if (typeof e === "string") {
     // Sometimes emscripten throws a raw string...
     e = new Error(e);
+  } else if (e && typeof e === "object" && e.name === "ExitStatus") {
+    let status = e.status;
+    e = new Exit(e.message);
+    e.status = status;
   } else if (
     typeof e !== "object" ||
     e === null ||
@@ -74,10 +78,14 @@ API.fatal_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     return;
   }
+
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
+  }
+  if (e instanceof NoGilError) {
+    throw e;
   }
   if (typeof e === "number") {
     // Hopefully a C++ exception?
@@ -88,31 +96,39 @@ API.fatal_error = function (e: any) {
   // Mark e so we know not to handle it later in EM_JS wrappers
   e.pyodide_fatal_error = true;
   fatal_error_occurred = true;
-  console.error(
-    "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
-  );
-  console.error("The cause of the fatal error was:");
-  if (API.inTestHoist) {
-    // Test hoist won't print the error object in a useful way so convert it to
-    // string.
-    console.error(e.toString());
-    console.error(e.stack);
-  } else {
-    console.error(e);
+  const isexit = e instanceof Exit;
+  if (!isexit) {
+    console.error(
+      "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
+    );
+    console.error("The cause of the fatal error was:");
+    if (API.inTestHoist) {
+      // Test hoist won't print the error object in a useful way so convert it to
+      // string.
+      console.error(e.toString());
+      console.error(e.stack);
+    } else {
+      console.error(e);
+    }
   }
   try {
-    Module._dump_traceback();
-    for (let key of Object.keys(API.public_api)) {
-      if (key.startsWith("_") || key === "version") {
+    if (!isexit) {
+      Module._dump_traceback();
+    }
+    let reason = isexit ? "exited" : "fatally failed";
+    let msg = `Pyodide already ${reason} and can no longer be used.`;
+    for (let key of Reflect.ownKeys(API.public_api)) {
+      if (
+        (typeof key === "string" && key.startsWith("_")) ||
+        key === "version"
+      ) {
         continue;
       }
       Object.defineProperty(API.public_api, key, {
         enumerable: true,
         configurable: true,
         get: () => {
-          throw new Error(
-            "Pyodide already fatally failed and can no longer be used.",
-          );
+          throw new Error(msg);
         },
       });
     }
@@ -126,10 +142,26 @@ API.fatal_error = function (e: any) {
   throw e;
 };
 
-class FatalPyodideError extends Error {}
-Object.defineProperty(FatalPyodideError.prototype, "name", {
-  value: FatalPyodideError.name,
-});
+/**
+ * Signal a fatal error if the exception is not an expected exception.
+ *
+ * @argument e {any} The cause of the fatal error.
+ * @private
+ */
+API.maybe_fatal_error = function (e: any) {
+  // Emscripten throws "unwind" to stop current code and return to the main event loop.
+  // This is expected behavior and should not be treated as a fatal error.
+  // However, after the "unwind" exception is caught, the call stack is not unwound
+  // properly and there are dead frames remaining on the stack.
+  // This might cause problems in the future, so we need to find a way to fix it.
+  // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
+  //      2) https://github.com/kitao/pyxel/issues/418
+  if (e && e == "unwind") {
+    return;
+  }
+
+  return API.fatal_error(e);
+};
 
 let stderr_chars: number[] = [];
 API.capture_stderr = function () {
@@ -187,11 +219,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
 }
 
 function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
-  if (!isPyodideFrame(frame)) {
-    return false;
-  }
-  const funcName = frame.functionName;
-  return funcName === "PythonError" || funcName === "new_error";
+  return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
 Module.handle_js_error = function (e: any) {
@@ -231,7 +259,7 @@ Module.handle_js_error = function (e: any) {
     // In this case we have no stack frames so we can quit
     return;
   }
-  if (isErrorStart(stack[0])) {
+  if (isErrorStart(stack[0]) || isErrorStart(stack[1])) {
     while (isPyodideFrame(stack[0])) {
       stack.shift();
     }
@@ -252,20 +280,23 @@ Module.handle_js_error = function (e: any) {
 /**
  * A JavaScript error caused by a Python exception.
  *
- * In order to reduce the risk of large memory leaks, the :any:`PythonError`
+ * In order to reduce the risk of large memory leaks, the :py:exc:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
- * the actual Python exception that caused this error as :any:`sys.last_value`.
+ * the actual Python exception that caused this error as
+ * :py:data:`sys.last_value`.
  *
- * See :ref:`type-translations-errors` for more information.
+ * See :ref:`type translations of errors <type-translations-errors>` for more
+ * information.
  *
  * .. admonition:: Avoid leaking stack Frames
  *    :class: warning
  *
- *    If you make a :any:`PyProxy` of :any:`sys.last_value`, you should be
- *    especially careful to :any:`destroy() <PyProxy.destroy>` it when you are
- *    done. You may leak a large amount of memory including the local
- *    variables of all the stack frames in the traceback if you don't. The
- *    easiest way is to only handle the exception in Python.
+ *    If you make a :js:class:`~pyodide.ffi.PyProxy` of
+ *    :py:data:`sys.last_value`, you should be especially careful to
+ *    :js:meth:`~pyodide.ffi.PyProxy.destroy` it when you are done. You may leak a large
+ *    amount of memory including the local variables of all the stack frames in
+ *    the traceback if you don't. The easiest way is to only handle the
+ *    exception in Python.
  *
  * @hideconstructor
  */
@@ -279,7 +310,8 @@ export class PythonError extends Error {
    */
   __error_address: number;
   /**
-   * The Python type, e.g, :any:`RuntimeError` or :any:`KeyError`.
+   * The name of the Python error class, e.g, :py:exc:`RuntimeError` or
+   * :py:exc:`KeyError`.
    */
   type: string;
   constructor(type: string, message: string, error_address: number) {
@@ -291,9 +323,6 @@ export class PythonError extends Error {
     this.__error_address = error_address;
   }
 }
-Object.defineProperty(PythonError.prototype, "name", {
-  value: PythonError.name,
-});
 API.PythonError = PythonError;
 // A special marker. If we call a CPython API from an EM_JS function and the
 // CPython API sets an error, we might want to return an error status back to
@@ -302,14 +331,65 @@ API.PythonError = PythonError;
 // appropriate error value (either NULL or -1).
 class _PropagatePythonError extends Error {
   constructor() {
-    API.fail_test = true;
     super(
       "If you are seeing this message, an internal Pyodide error has " +
         "occurred. Please report it to the Pyodide maintainers.",
     );
   }
 }
-Object.defineProperty(_PropagatePythonError.prototype, "name", {
-  value: _PropagatePythonError.name,
-});
+function setName(errClass: any) {
+  Object.defineProperty(errClass.prototype, "name", {
+    value: errClass.name,
+  });
+}
+
+class FatalPyodideError extends Error {}
+class Exit extends Error {}
+class NoGilError extends Error {}
+[
+  _PropagatePythonError,
+  FatalPyodideError,
+  Exit,
+  PythonError,
+  NoGilError,
+].forEach(setName);
+API.NoGilError = NoGilError;
+
 Module._PropagatePythonError = _PropagatePythonError;
+
+// Stolen from:
+// https://github.com/sindresorhus/serialize-error/blob/main/error-constructors.js
+API.errorConstructors = new Map(
+  [
+    // Native ES errors https://262.ecma-international.org/12.0/#sec-well-known-intrinsic-objects
+    EvalError,
+    RangeError,
+    ReferenceError,
+    SyntaxError,
+    TypeError,
+    URIError,
+
+    // Built-in errors
+    globalThis.DOMException,
+
+    // Node-specific errors
+    // https://nodejs.org/api/errors.html
+    // @ts-ignore
+    globalThis.AssertionError,
+    // @ts-ignore
+    globalThis.SystemError,
+  ]
+    .filter((x) => x)
+    .map((x) => [x.constructor.name, x]),
+);
+
+API.deserializeError = function (name: string, message: string, stack: string) {
+  const cons = API.errorConstructors.get(name) || Error;
+  const err = new cons(message);
+  if (!API.errorConstructors.has(name)) {
+    err.name = name;
+  }
+  err.message = message;
+  err.stack = stack;
+  return err;
+};

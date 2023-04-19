@@ -20,7 +20,7 @@ try:
 except ImportError:
     loadedPackages = None
 
-from ._core import IN_BROWSER, JsArray, JsBuffer, to_js
+from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -127,7 +127,7 @@ if IN_BROWSER:
 
 
 def get_format(format: str) -> str:
-    for (fmt, extensions, _) in shutil.get_unpack_formats():
+    for fmt, extensions, _ in shutil.get_unpack_formats():
         if format == fmt:
             return fmt
         if format in extensions:
@@ -210,6 +210,8 @@ def unpack_buffer(
     else:
         extract_path = Path(".")
     filename = filename.rpartition("/")[-1]
+
+    extract_path.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
