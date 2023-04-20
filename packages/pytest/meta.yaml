@@ -1,19 +1,28 @@
 package:
   name: pytest
-  version: 6.2.4
+  version: 7.2.2
+  tag:
+    - core
+    - min-scipy-stack
+  top-level:
+    - _pytest
+    - pytest
 source:
-  url: https://files.pythonhosted.org/packages/5b/98/92bbda5f83ed995ef8953349ef30c77c934abcc251c42ab3d7787a40c49c/pytest-6.2.4.tar.gz
-  sha256: 50bcad0a0b9c5a72c8e4e7c9855a3ad496ca6a881a3641b4260605450772c54b
+  url: https://files.pythonhosted.org/packages/b2/68/5321b5793bd506961bd40bdbdd0674e7de4fb873ee7cab33dd27283ad513/pytest-7.2.2-py3-none-any.whl
+  sha256: 130328f552dcfac0b1cec75c12e3f005619dc5f874f0a06e8ff7263f0ee6225e
 requirements:
   run:
-  - atomicwrites
-  - attrs
-  - more-itertools
-  - pluggy
-  - py
-  - setuptools
-  - six
-  - iniconfig
-test:
-  imports:
-  - pytest
+    - atomicwrites
+    - attrs
+    - more-itertools
+    - pluggy
+    - py
+    - setuptools
+    - six
+    - iniconfig
+    - exceptiongroup
+about:
+  home: https://docs.pytest.org/en/latest/
+  PyPI: https://pypi.org/project/pytest
+  summary: "pytest: simple powerful testing with Python"
+  license: MIT

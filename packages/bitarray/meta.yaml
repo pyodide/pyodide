@@ -1,0 +1,13 @@
+package:
+  name: bitarray
+  version: 2.7.3
+  top-level:
+    - bitarray
+source:
+  url: https://files.pythonhosted.org/packages/82/30/68a3ee41e6abbb521a3418fb25a7755127a1d6bf4604028bb404f833b2fc/bitarray-2.7.3.tar.gz
+  sha256: f71256a32609b036adad932e1228b66a6b4e2cae6be397e588ddc0babd9a78b9
+about:
+  home: https://github.com/ilanschnell/bitarray
+  PyPI: https://pypi.org/project/bitarray
+  summary: efficient arrays of booleans -- C extension
+  license: PSF

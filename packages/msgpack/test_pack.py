@@ -1,9 +1,9 @@
-from pyodide_build.testing import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(standalone=True, packages=["msgpack"])
-def test_pack():
-    from msgpack import packb, unpackb, Unpacker, Packer, pack
+@run_in_pyodide(packages=["msgpack"])
+def test_pack(selenium_standalone):
+    from msgpack import Packer, Unpacker, pack, packb, unpackb  # noqa: F401
 
     def check(data, use_list=False):
         re = unpackb(packb(data), use_list=use_list, strict_map_key=False)

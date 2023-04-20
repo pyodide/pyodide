@@ -3,9 +3,10 @@ import os
 import re
 from pathlib import Path
 from subprocess import check_call
-from setuptools import setup, Extension
-from setuptools.command.build_py import build_py
+
 from numpy import get_include
+from setuptools import Extension, setup
+from setuptools.command.build_py import build_py
 
 
 def create_pkg_directory():

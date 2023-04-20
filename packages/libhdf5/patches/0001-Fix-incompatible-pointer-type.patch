@@ -1,0 +1,39 @@
+From 873077a5b132c4294f0ea6af2eb29d61352c6688 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Fri, 2 Sep 2022 07:54:44 +0000
+Subject: [PATCH 1/1] Fix incompatible pointer type
+
+---
+ h5py/_errors.pxd | 2 +-
+ h5py/_errors.pyx | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/h5py/_errors.pxd b/h5py/_errors.pxd
+index 13b299e2..e7791a6b 100644
+--- a/h5py/_errors.pxd
++++ b/h5py/_errors.pxd
+@@ -412,7 +412,7 @@ cdef extern from "hdf5.h":
+ 
+     herr_t    H5Eprint(hid_t estack_id, void *stream)
+ 
+-    ctypedef herr_t (*H5E_walk_t)(int n, H5E_error_t *err_desc, void* client_data)
++    ctypedef herr_t (*H5E_walk_t)(unsigned int n, const H5E_error_t *err_desc, void* client_data)
+     herr_t    H5Ewalk(hid_t estack_id, H5E_direction_t direction, H5E_walk_t func, void* client_data)
+ 
+ # --- Functions for managing the HDF5 error callback mechanism ---
+diff --git a/h5py/_errors.pyx b/h5py/_errors.pyx
+index 612052fb..ca7b1c48 100644
+--- a/h5py/_errors.pyx
++++ b/h5py/_errors.pyx
+@@ -94,7 +94,7 @@ cdef struct err_data_t:
+     H5E_error_t err
+     int n
+ 
+-cdef herr_t walk_cb(int n, H5E_error_t *desc, void *e) nogil:
++cdef herr_t walk_cb(unsigned int n, const H5E_error_t *desc, void *e) nogil:
+ 
+     cdef err_data_t *ee = <err_data_t*>e
+ 
+-- 
+2.37.0
+

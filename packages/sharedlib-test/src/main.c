@@ -1,3 +1,7 @@
-int do_the_thing(int a, int b){
-    return a + b + a*b;
+#include "include/sharedlibtest.h"
+
+int
+do_the_thing(int a, int b)
+{
+  return dep_do_the_thing(a, b) + b + a * b;
 }

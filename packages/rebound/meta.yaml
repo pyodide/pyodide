@@ -1,0 +1,24 @@
+package:
+  name: rebound
+  version: 3.24.2
+  top-level:
+    - rebound
+build:
+  exports: requested
+  post: |
+    mkdir -p $WASM_LIBRARY_DIR/include/rebound/
+    mkdir -p $WASM_LIBRARY_DIR/lib/
+    cp $WHEELDIR/rebound/*.h $WASM_LIBRARY_DIR/include/rebound/
+    cp $WHEELDIR/librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
+
+source:
+  url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz
+  sha256: a3c5d4c6a10b9c1538e1051edcd6341ef3d13142b698ee9c4a1f112d9684d803
+requirements:
+  run:
+    - numpy
+about:
+  home: https://github.com/hannorein/rebound/
+  PyPI: https://pypi.org/project/rebound
+  summary: An open-source multi-purpose N-body code
+  license: GPL

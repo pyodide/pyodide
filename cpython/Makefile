@@ -3,39 +3,26 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-PYTHON_CFLAGS=$(CFLAGS_BASE)
+PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
-BUILD=$(ROOT)/build/Python-$(PYVERSION)
-INSTALL=$(ROOT)/installs/python-$(PYVERSION)
+BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
+INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
-SYSCONFIG_NAME=_sysconfigdata__emscripten_
-
-ZLIBVERSION = 1.2.11
-ZLIBTARBALL=$(ROOT)/downloads/zlib-$(ZLIBVERSION).tar.gz
-ZLIBBUILD=$(ROOT)/build/zlib-$(ZLIBVERSION)
-ZLIBURL=https://zlib.net/zlib-1.2.11.tar.gz
-
-SQLITETARBALL=$(ROOT)/downloads/sqlite-autoconf-3270200.tar.gz
-SQLITEBUILD=$(ROOT)/build/sqlite-autoconf-3270200
-SQLITEURL=https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
-
-BZIP2TARBALL=$(ROOT)/downloads/bzip2-1.0.2.tar.gz
-BZIP2BUILD=$(ROOT)/build/bzip2-1.0.2
-BZIP2URL=https://sourceware.org/pub/bzip2/bzip2-1.0.2.tar.gz
 
 FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_COMMIT=d6666df2a2820e0548a66166021ddae04a11a2db
+LIBFFIREPO=https://github.com/libffi/libffi
+LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		sed -i '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ \
@@ -43,10 +30,14 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
 	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
-	mv `cat pybuilddir.txt`/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	rmdir `cat pybuilddir.txt`
+
+	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
+	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	mkdir -p $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
+	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
-	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 
 
 clean:
@@ -60,23 +51,7 @@ clean-all: clean
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(URL)
-	md5sum --quiet --check checksums || (rm $@; false)
-
-
-$(ZLIBTARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(ZLIBURL)
-
-
-$(SQLITETARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(SQLITEURL)
-
-
-$(BZIP2TARBALL):
-	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(BZIP2URL)
-
+	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
 
 
 $(BUILD)/.patched: $(TARBALL)
@@ -84,48 +59,23 @@ $(BUILD)/.patched: $(TARBALL)
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
 
-
-$(ZLIBBUILD)/.configured: $(ZLIBTARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(ROOT)/downloads/zlib-1.2.11.tar.gz
-	cd $(ZLIBBUILD); emconfigure ./configure
-	touch $@
-
-
-$(INSTALL)/lib/libsqlite3.a: $(SQLITETARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(SQLITETARBALL)
-	# sqlite fails to detect that popen is not available. We have to set it
-	# as a CPPFLAG
-	( \
-		cd $(SQLITEBUILD); \
-		emconfigure ./configure CFLAGS="$(PYTHON_CFLAGS)" CPPFLAGS="-DSQLITE_OMIT_POPEN"; \
-		emmake make -j $${PYODIDE_JOBS:-3}; \
-	)
-	mkdir -p $(INSTALL)/lib/
-	cp $(SQLITEBUILD)/.libs/libsqlite3.a $(INSTALL)/lib/libsqlite3.a
-
-
-$(INSTALL)/lib/libbz2.a: $(BZIP2TARBALL)
-	[ -d $(ROOT)/build ] || (mkdir $(ROOT)/build)
-	tar -C $(ROOT)/build/ -xf $(BZIP2TARBALL)
-	( \
-		cd $(BZIP2BUILD); \
-		emmake make -j $${PYODIDE_JOBS:-3} CC=emcc CFLAGS="$(PYTHON_CFLAGS) -D_FILE_OFFSET_BITS=64" AR=emar RANLIB=emranlib libbz2.a; \
-	)
-	mkdir -p $(INSTALL)/lib
-	cp $(BZIP2BUILD)/libbz2.a $(INSTALL)/lib/libbz2.a
-
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
-	git clone $(LIBFFIREPO) $(FFIBUILD) --shallow-exclude upstream-base
-	source $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh
-	cd $(FFIBUILD) && git checkout $(LIBFFI_COMMIT) && ./build.sh && make install
+	mkdir $(FFIBUILD)
+	(\
+		cd $(FFIBUILD) \
+		&& git init \
+		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
+		&& git checkout FETCH_HEAD \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& make install \
+	)
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/libsqlite3.a $(INSTALL)/lib/libbz2.a
+$(BUILD)/Makefile: $(BUILD)/.patched
 	# --enable-big-digits=30 :
 	#   Python integers have "digits" of size 15 by default on systems with 32
 	#   bit pointers and size 30 on systems with 16 bit pointers. Python uses
@@ -133,13 +83,13 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
-	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure \
+		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
-			  CPPFLAGS="-I$(SQLITEBUILD) -I$(BZIP2BUILD) -I$(ZLIBBUILD)" \
+			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
+			  PLATFORM_TRIPLET="$(PLATFORM_TRIPLET)" \
 			  --without-pymalloc \
 			  --disable-shared \
 			  --disable-ipv6 \
@@ -148,17 +98,18 @@ $(BUILD)/Makefile: $(BUILD)/.patched $(ZLIBBUILD)/.configured $(INSTALL)/lib/lib
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
+			  --with-build-python=$$(which python3.11) \
 	)
 
 
-$(BUILD)/Modules/Setup.local : Setup.local
+$(BUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
-	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
 		cd $(BUILD); \
+		make regen-frozen; \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(BUILD)/$(LIB)

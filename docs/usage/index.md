@@ -1,25 +1,22 @@
 # Using Pyodide
 
-Pyodide may be used in any context where you want to run Python inside a web
-browser or a backend JavaScript environment.
+Pyodide may be used in a web browser or a backend JavaScript environment.
 
 ## Web browsers
 
-To use Pyodide on a web page you need to load `pyodide.js` and initialize
-Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL for packages:
+To use Pyodide in a web page you need to load `pyodide.js` and initialize
+Pyodide with {js:func}`~globalThis.loadPyodide`.
 
 ```html-pyodide
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-      <script src="https://cdn.jsdelivr.net/pyodide/dev/full/pyodide.js"></script>
+      <script src="{{PYODIDE_CDN_URL}}pyodide.js"></script>
   </head>
   <body>
     <script type="text/javascript">
       async function main(){
-        let pyodide = await loadPyodide({
-          indexURL : "https://cdn.jsdelivr.net/pyodide/dev/full/"
-        });
+        let pyodide = await loadPyodide();
         console.log(pyodide.runPython("1 + 2"));
       }
       main();
@@ -28,7 +25,7 @@ Pyodide with {any}`loadPyodide <globalThis.loadPyodide>` specifying an index URL
 </html>
 ```
 
-See the {ref}`quickstart` for a walk through tutorial as well as
+See the {ref}`quickstart` for a walk-through tutorial as well as
 {ref}`loading_packages` and {ref}`type-translations` for a more in depth
 discussion about existing capabilities.
 
@@ -39,7 +36,7 @@ application.
 ```{note}
 To avoid confusion, note that:
  - `cdn.jsdelivr.net/pyodide/` distributes Python packages built with Pyodide as well as `pyodide.js`
- - `cdn.jsdelivr.net/npm/pyodide@0.18.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
+ - `cdn.jsdelivr.net/npm/pyodide@0.19.0/` is a mirror of the Pyodide NPM package, which includes none of the WASM files
 ```
 
 ### Supported browsers
@@ -53,6 +50,10 @@ Pyodide works in any modern web browser with WebAssembly support.
 | Firefox | 70.0                      | 22 October 2019 |
 | Chrome  | 71.0                      | 4 December 2018 |
 
+Chrome 89 and 90 have bugs in the webassembly compiler which makes using Pyodide
+with them unstable. Known problems occur in numpy and have been observed
+occasionally in other packages. See {issue}`1384`.
+
 ```{note}
 Latest browser versions generally provide more reliable WebAssembly support
 and will run Pyodide faster, so their use is recommended.
@@ -63,8 +64,8 @@ Pyodide,
 
 | Browser | Minimal supported version | Release date      |
 | ------- | ------------------------- | ----------------- |
-| Safari  | 13.1                      | 19 September 2019 |
-| Edge    | 80                        | 26 Feb 2020       |
+| Safari  | 14.0                      | 15 September 2020 |
+| Edge    | 80                        | 26 February 2020  |
 
 Other browsers with WebAssembly support might also work however they are not
 officially supported.
@@ -76,43 +77,101 @@ non-responsive for long-running computations.
 
 To avoid this situation, one solution is to run {ref}`Pyodide in a WebWorker <using_from_webworker>`.
 
+It's also possible to run {ref}`Pyodide in a Service Worker <using_from_service_worker>`.
+
+If you're not sure whether you need web workers or service workers, here's an [overview and comparison of the two](https://web.dev/workers-overview/).
+
 ## Node.js
 
-As of version 0.18.0 Pyodide can experimentally run in Node.js.
-
-Install the [Pyodide npm package](https://www.npmjs.com/package/pyodide),
-
-```
-npm install pyodide
+```{note}
+The following instructions have been tested with Node.js 18.5.0. To use
+Pyodide with older versions of Node, you might need to use  additional command line
+arguments, see below.
 ```
 
-Download and extract Pyodide packages from [GitHub
-releases](https://github.com/pyodide/pyodide/releases)
-(**pyodide-build-\*.tar.bz2** file). The version of the release needs to match
-exactly the version of this package.
+It is now possible to install the
+[Pyodide npm package](https://www.npmjs.com/package/pyodide) in Node.js. To
+follow these instructions you need at least Pyodide 0.21.0.
+You can explicitly ask npm to use
+the alpha version:
 
-Then you can load Pyodide in Node.js as follows,
+```
+$ npm install "pyodide@>=0.21.0-alpha.2"
+```
+
+Once installed, you can run the following simple script:
 
 ```js
-let pyodide_pkg = await import("pyodide/pyodide.js");
+// hello_python.js
+const { loadPyodide } = require("pyodide");
 
-let pyodide = await pyodide_pkg.loadPyodide({
-  indexURL: "<pyodide artifacts folder>",
+async function hello_python() {
+  let pyodide = await loadPyodide();
+  return pyodide.runPythonAsync("1+1");
+}
+
+hello_python().then((result) => {
+  console.log("Python says that 1+1 =", result);
 });
-
-await pyodide.runPythonAsync("1+1");
 ```
 
-```{note}
-To start Node.js REPL with support for top level await, use `node --experimental-repl-await`.
+```
+$ node hello_python.js
+Loading distutils
+Loaded distutils
+Python says that 1+1= 2
 ```
 
-```{warning}
-Download of packages from PyPI is currently not cached when run in
-Node.js. Packages will be re-downloaded each time `micropip.install` is run.
+Or you can use the REPL. To start the Node.js REPL with support for top level
+await, use `node --experimental-repl-await`:
 
-For this same reason, installing Pyodide packages from the CDN is explicitly not supported for now.
 ```
+$ node --experimental-repl-await
+Welcome to Node.js v18.5.0.
+Type ".help" for more information.
+> const { loadPyodide } = require("pyodide");
+undefined
+> let pyodide = await loadPyodide();
+Loading distutils
+Loaded distutils
+undefined
+> await pyodide.runPythonAsync("1+1");
+2
+```
+
+### Node.js versions <0.17
+
+- `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
+  need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
+
+- `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
+  when starting Node. Note that this flag is not documented by `node --help`
+  and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
+  error:
+
+```
+$ node -v
+v14.20.0
+
+$ node --experimental-wasm-bigint hello_python.js
+warning: no blob constructor, cannot create blobs with mimetypes
+warning: no BlobBuilder
+Loading distutils
+Loaded distutils
+Python says that 1+1= 2
+```
+
+If you wish to suppress the blob constructor warnings which appear in node <18,
+the following code works in node >= v14.18 (do this before
+calling `loadPyodide`):
+
+```js
+globalThis.Blob = require("node:buffer").Blob;
+```
+
+However, in versions of node < v16.17, this will print an `ExperimentalWarning`.
+If you also don't want the `ExperimentalWarning`, you can use
+[cross-blob](https://www.npmjs.com/package/cross-blob) to polyfill `Blob`.
 
 ```{eval-rst}
 .. toctree::
@@ -120,4 +179,6 @@ For this same reason, installing Pyodide packages from the CDN is explicitly not
 
    webworker.md
    loading-custom-python-code.md
+   file-system.md
+   service-worker.md
 ```

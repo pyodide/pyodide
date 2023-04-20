@@ -1,15 +1,16 @@
 package:
   name: jedi
-  version: 0.18.0
-
+  version: 0.18.2
+  top-level:
+    - jedi
 source:
-  sha256: 92550a404bad8afed881a137ec9a461fed49eca661414be45059329614ed0707
-  url: https://files.pythonhosted.org/packages/ac/11/5c542bf206efbae974294a61febc61e09d74cb5d90d8488793909db92537/jedi-0.18.0.tar.gz
-
+  sha256: 203c1fd9d969ab8f2119ec0a3342e0b49910045abe6af0a3ae83a5764d54639e
+  url: https://files.pythonhosted.org/packages/6d/60/4acda63286ef6023515eb914543ba36496b8929cb7af49ecce63afde09c6/jedi-0.18.2-py2.py3-none-any.whl
 requirements:
   run:
     - parso
-
-test:
-  imports:
-  - jedi
+about:
+  home: https://github.com/davidhalter/jedi
+  PyPI: https://pypi.org/project/jedi
+  summary: An autocompletion tool for Python that can be used for text editors.
+  license: MIT

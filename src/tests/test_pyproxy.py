@@ -1,6 +1,8 @@
 # See also test_typeconversions, and test_python.
-import pytest
 import time
+
+import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 def test_pyproxy_class(selenium):
@@ -30,42 +32,37 @@ def test_pyproxy_class(selenium):
         f.destroy();
         """
     )
-    assert (
-        set(
-            [
-                "__class__",
-                "__delattr__",
-                "__dict__",
-                "__dir__",
-                "__doc__",
-                "__eq__",
-                "__format__",
-                "__ge__",
-                "__getattribute__",
-                "__gt__",
-                "__hash__",
-                "__init__",
-                "__init_subclass__",
-                "__le__",
-                "__lt__",
-                "__module__",
-                "__ne__",
-                "__new__",
-                "__reduce__",
-                "__reduce_ex__",
-                "__repr__",
-                "__setattr__",
-                "__sizeof__",
-                "__str__",
-                "__subclasshook__",
-                "__weakref__",
-                "bar",
-                "baz",
-                "get_value",
-            ]
-        ).difference(selenium.run_js("return f_props"))
-        == set()
-    )
+    assert {
+        "__class__",
+        "__delattr__",
+        "__dict__",
+        "__dir__",
+        "__doc__",
+        "__eq__",
+        "__format__",
+        "__ge__",
+        "__getattribute__",
+        "__gt__",
+        "__hash__",
+        "__init__",
+        "__init_subclass__",
+        "__le__",
+        "__lt__",
+        "__module__",
+        "__ne__",
+        "__new__",
+        "__reduce__",
+        "__reduce_ex__",
+        "__repr__",
+        "__setattr__",
+        "__sizeof__",
+        "__str__",
+        "__subclasshook__",
+        "__weakref__",
+        "bar",
+        "baz",
+        "get_value",
+    }.difference(selenium.run_js("return f_props")) == set()
 
 
 def test_del_builtin(selenium):
@@ -205,7 +202,7 @@ def test_pyproxy_iter(selenium):
         """
     )
     assert ty == "ChainMap"
-    assert set(l) == set(["a", "b"])
+    assert set(l) == {"a", "b"}
 
     [result, result2] = selenium.run_js(
         """
@@ -352,6 +349,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
     selenium.run_js(
         """
         self.a = pyodide.runPython("bytes(range(256))");
+        assert(() => a instanceof pyodide.ffi.PyBuffer);
         """
     )
     try:
@@ -360,6 +358,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         [check, result] = selenium.run_js(
             f"""
             let buf = a.getBuffer({ty!r});
+            assert(() => buf instanceof pyodide.ffi.PyBufferView);
             let check = (buf.data.constructor.name === {array_ty!r});
             let result = Array.from(buf.data);
             if(typeof result[0] === "bigint"){{
@@ -373,10 +372,10 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         if fmt.lower() == "q":
             assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
         elif fmt == "f" or fmt == "d":
-            from math import isclose
+            from math import isclose, isnan
 
-            for a, b in zip(result, list(mv.cast(fmt))):
-                if a and b:
+            for a, b in zip(result, list(mv.cast(fmt)), strict=False):
+                if a and b and not (isnan(a) or isnan(b)):
                     assert isclose(a, b)
         else:
             assert result == list(mv.cast(fmt))
@@ -405,7 +404,7 @@ def test_pyproxy_mixins(selenium):
             class AwaitIter(Await, Iter): pass
 
             class AwaitNext(Await, Next): pass
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()])
         `);
         let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
@@ -421,6 +420,9 @@ def test_pyproxy_mixins(selenium):
             ]){
                 impls[name] = key in x;
             }
+            for(let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
+                impls[name] = x instanceof pyodide.ffi[name];
+            }
             result[name] = impls;
             x.destroy();
         }
@@ -429,23 +431,33 @@ def test_pyproxy_mixins(selenium):
     )
     assert result == dict(
         noimpls=dict(
-            then=False, catch=False, finally_=False, iterable=False, iterator=False
-        ),
+            then=False,
+            catch=False,
+            finally_=False,
+            iterable=False,
+            iterator=False,
+        )
+        | dict(PyAwaitable=False, PyIterable=False, PyIterator=False),
         awaitable=dict(
             then=True, catch=True, finally_=True, iterable=False, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=False, PyIterator=False),
         iterable=dict(
             then=False, catch=False, finally_=False, iterable=True, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=False, PyIterable=True, PyIterator=False),
         iterator=dict(
             then=False, catch=False, finally_=False, iterable=True, iterator=True
-        ),
+        )
+        | dict(PyAwaitable=False, PyIterable=True, PyIterator=True),
         awaititerable=dict(
             then=True, catch=True, finally_=True, iterable=True, iterator=False
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=True, PyIterator=False),
         awaititerator=dict(
             then=True, catch=True, finally_=True, iterable=True, iterator=True
-        ),
+        )
+        | dict(PyAwaitable=True, PyIterable=True, PyIterator=True),
     )
 
 
@@ -458,6 +470,11 @@ def test_pyproxy_mixins2(selenium):
         assert(() => !("caller" in d));
         assert(() => !("name" in d));
         assert(() => "length" in d);
+        assert(() => d instanceof pyodide.ffi.PyDict);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithLength);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithHas);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithGet);
+        assert(() => d instanceof pyodide.ffi.PyProxyWithSet);
 
         assert(() => "prototype" in d.__getitem__);
         assert(() => d.__getitem__.prototype === undefined);
@@ -477,7 +494,7 @@ def test_pyproxy_mixins3(selenium):
         """
         let [Test, t] = pyodide.runPython(`
             class Test: pass
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.prototype === undefined);
@@ -519,7 +536,7 @@ def test_pyproxy_mixins4(selenium):
                 prototype="prototype"
                 name="me"
                 length=7
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.$prototype === "prototype");
@@ -544,11 +561,12 @@ def test_pyproxy_mixins5(selenium):
             class Test:
                 def __len__(self):
                     return 9
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => !("length" in Test));
         assert(() => t.length === 9);
+        assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
         t.length = 10;
         assert(() => t.$length === 10);
         let t__len__ = t.__len__;
@@ -569,6 +587,10 @@ def test_pyproxy_mixins6(selenium):
         assert(() => l.get.type === undefined);
         assert(() => l.get(1) === 6);
         assert(() => l.length === 3);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
         l.set(0, 80);
         pyodide.runPython(`
             assert l[0] == 80
@@ -729,7 +751,59 @@ def test_pyproxy_implicit_copy(selenium):
 @pytest.mark.skip_pyproxy_check
 def test_errors(selenium):
     selenium.run_js(
+        r"""
+        let t = pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def te(self, *args, **kwargs):
+                raise Exception(repr(args))
+            class Temp:
+                __getattr__ = te
+                __setattr__ = te
+                __delattr__ = te
+                __dir__ = te
+                __call__ = te
+                __getitem__ = te
+                __setitem__ = te
+                __delitem__ = te
+                __iter__ = te
+                __len__ = te
+                __contains__ = te
+                __await__ = te
+                __repr__ = te
+            to_js(Temp())
+            Temp()
+        `);
+        assertThrows(() => t.x, "PythonError", "");
+        try {
+            t.x;
+        } catch(e){
+            assert(() => e instanceof pyodide.ffi.PythonError);
+        }
+        assertThrows(() => t.x = 2, "PythonError", "");
+        assertThrows(() => delete t.x, "PythonError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+        assertThrows(() => t(), "PythonError", "");
+        assertThrows(() => t.get(1), "PythonError", "");
+        assertThrows(() => t.set(1, 2), "PythonError", "");
+        assertThrows(() => t.delete(1), "PythonError", "");
+        assertThrows(() => t.has(1), "PythonError", "");
+        assertThrows(() => t.length, "PythonError", "");
+        assertThrows(() => t.toString(), "PythonError", "");
+        assertThrows(() => Array.from(t), "PythonError", "");
+        await assertThrowsAsync(async () => await t, "PythonError", "");
+        t.destroy();
+        assertThrows(() => t.type, "Error",
+            "Object has already been destroyed\n" +
+            'The object was of type "Temp" and an error was raised when trying to generate its repr'
+        );
         """
+    )
+
+
+@pytest.mark.skip_pyproxy_check
+def test_nogil(selenium):
+    selenium.run_js(
+        r"""
         let t = pyodide.runPython(`
             def te(self, *args, **kwargs):
                 raise Exception(repr(args))
@@ -749,19 +823,31 @@ def test_errors(selenium):
                 __repr__ = te
             Temp()
         `);
-        assertThrows(() => t.x, "PythonError", "");
-        assertThrows(() => t.x = 2, "PythonError", "");
-        assertThrows(() => delete t.x, "PythonError", "");
-        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
-        assertThrows(() => t(), "PythonError", "");
-        assertThrows(() => t.get(1), "PythonError", "");
-        assertThrows(() => t.set(1, 2), "PythonError", "");
-        assertThrows(() => t.delete(1), "PythonError", "");
-        assertThrows(() => t.has(1), "PythonError", "");
-        assertThrows(() => t.length, "PythonError", "");
-        assertThrowsAsync(async () => await t, "PythonError", "");
-        assertThrows(() => t.toString(), "PythonError", "");
-        assertThrows(() => Array.from(t), "PythonError", "");
+        // release GIL
+        const tstate = pyodide._module._PyEval_SaveThread()
+
+        assertThrows(() => t.x, "NoGilError", "");
+        try {
+            t.x;
+        } catch(e){
+            assert(() => e instanceof pyodide._api.NoGilError);
+        }
+        assertThrows(() => t.x = 2, "NoGilError", "");
+        assertThrows(() => delete t.x, "NoGilError", "");
+        assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
+        assertThrows(() => t(), "NoGilError", "");
+        assertThrows(() => t.get(1), "NoGilError", "");
+        assertThrows(() => t.set(1, 2), "NoGilError", "");
+        assertThrows(() => t.delete(1), "NoGilError", "");
+        assertThrows(() => t.has(1), "NoGilError", "");
+        assertThrows(() => t.length, "NoGilError", "");
+        assertThrows(() => t.toString(), "NoGilError", "");
+        assertThrows(() => Array.from(t), "NoGilError", "");
+        await assertThrowsAsync(async () => await t, "NoGilError", "");
+        assertThrows(() => t.destroy(), "NoGilError", "");
+
+        // acquire GIL
+        pyodide._module._PyEval_RestoreThread(tstate)
         """
     )
 
@@ -772,8 +858,8 @@ def test_fatal_error(selenium_standalone):
     selenium_standalone.run_js(
         """
         let fatal_error = false;
-        let old_fatal_error = pyodide._module.fatal_error;
-        pyodide._module.fatal_error = (e) => {
+        let old_fatal_error = pyodide._api.fatal_error;
+        pyodide._api.fatal_error = (e) => {
             fatal_error = true;
             throw e;
         }
@@ -786,7 +872,7 @@ def test_fatal_error(selenium_standalone):
                     // pass
                 } finally {
                     if(!fatal_error){
-                        throw new Error(`No fatal error occured: ${func.toString().slice(6)}`);
+                        throw new Error(`No fatal error occurred: ${func.toString().slice(6)}`);
                     }
                 }
             }
@@ -825,6 +911,10 @@ def test_fatal_error(selenium_standalone):
             expect_fatal(() => t.toString());
             expect_fatal(() => Array.from(t));
             t.destroy();
+            /*
+            // FIXME: Test `memory access out of bounds` error.
+            //        Testing this causes trouble on Chrome 97.0.4692.99 / ChromeDriver 97.0.4692.71.
+            //        (See: https://github.com/pyodide/pyodide/pull/2152)
             a = pyodide.runPython(`
                 from array import array
                 array("I", [1,2,3,4])
@@ -832,8 +922,9 @@ def test_fatal_error(selenium_standalone):
             b = a.getBuffer();
             b._view_ptr = 1e10;
             expect_fatal(() => b.release());
+            */
         } finally {
-            pyodide._module.fatal_error = old_fatal_error;
+            pyodide._api.fatal_error = old_fatal_error;
         }
         """
     )
@@ -843,7 +934,7 @@ def test_pyproxy_call(selenium):
     selenium.run_js(
         """
         pyodide.runPython(`
-            from pyodide import to_js
+            from pyodide.ffi import to_js
             def f(x=2, y=3):
                 return to_js([x, y])
         `);
@@ -907,3 +998,583 @@ def test_pyproxy_borrow(selenium):
         Tcopy.destroy();
         """
     )
+
+
+def test_coroutine_scheduling(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            async def f():
+                global x
+                print('hi!')
+                x += 1
+            f
+        `);
+        setTimeout(f, 100);
+        await sleep(200);
+        assert(() => pyodide.globals.get('x') === 1);
+        f.destroy();
+        """
+    )
+
+
+def test_pyproxy_apply(selenium):
+    # Try to match behavior of real .apply
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+        `);
+        let fpy = pyodide.globals.get("f");
+        let fjs = function(...args){ return args; };
+        let examples = [
+            undefined,
+            null,
+            {},
+            {0:1, 1:7, 2: -3},
+            { *[Symbol.iterator](){yield 3; yield 5; yield 7;} },
+            {0:1, 1:7, 2: -3, length: 2},
+            [1,7,9,5],
+            function(a,b,c){},
+        ];
+        for(let input of examples){
+            assert(() => JSON.stringify(fpy.apply(undefined, input)) === JSON.stringify(fjs.apply(undefined, input)));
+        }
+
+        for(let error_input of [1, "abc", 1n, Symbol.iterator, true]) {
+            assertThrows(() => fjs.apply(undefined, error_input), "TypeError", "");
+            assertThrows(() => fpy.apply(undefined, error_input), "TypeError", "");
+        }
+
+        fpy.destroy();
+        """
+    )
+
+
+def test_pyproxy_this1(selenium):
+    selenium.run_js(
+        """
+        let f = pyodide.runPython(`
+            x = 0
+            def f(self, x):
+                return getattr(self, x)
+            f
+        `);
+
+        let x = {};
+        x.f = f.captureThis();
+        x.a = 7;
+        assert(() => x.f("a") === 7 );
+        f.destroy();
+        """
+    )
+
+
+def test_pyproxy_this2(selenium):
+    selenium.run_js(
+        """
+        let g = pyodide.runPython(`
+            x = 0
+            from pyodide.ffi import to_js
+            def f(*args):
+                return to_js(args)
+            f
+        `);
+
+        let f = g.captureThis();
+        let fjs = function(...args){return [this, ...args];};
+
+        let f1 = f.bind(1);
+        let fjs1 = fjs.bind(1);
+        assert(() => JSON.stringify(f1(2, 3, 4)) === JSON.stringify(fjs1(2, 3, 4)));
+
+        let f2 = f1.bind(2);
+        let fjs2 = fjs1.bind(2);
+        assert(() => JSON.stringify(f2(2, 3, 4)) === JSON.stringify(fjs2(2, 3, 4)));
+        let f3 = f.bind(2);
+        let fjs3 = fjs.bind(2);
+        assert(() => JSON.stringify(f3(2, 3, 4)) === JSON.stringify(fjs3(2, 3, 4)));
+
+        let gjs = function(...args){return [...args];};
+
+        let g1 = g.bind(1, 2, 3, 4);
+        let gjs1 = gjs.bind(1, 2, 3, 4);
+
+        let g2 = g1.bind(5, 6, 7, 8);
+        let gjs2 = gjs1.bind(5, 6, 7, 8);
+
+        let g3 = g2.captureThis();
+
+        assert(() => JSON.stringify(g1(-1, -2, -3, -4)) === JSON.stringify(gjs1(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g2(-1, -2, -3, -4)) === JSON.stringify(gjs2(-1, -2, -3, -4)));
+        assert(() => JSON.stringify(g3(-1, -2, -3, -4)) === JSON.stringify([1, 2, 3, 4, 6, 7, 8, -1, -2, -3, -4]));
+        g.destroy();
+        """
+    )
+
+
+@run_in_pyodide
+async def test_async_iter1(selenium):
+    from pyodide.code import run_js
+
+    class Gen:
+        async def __aiter__(self):
+            yield 1
+            yield 2
+
+    g = Gen()
+
+    p = run_js(
+        """
+        async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
+            let r = [];
+            for await (let a of g) {
+                r.push(a);
+            }
+            return r;
+        }
+    """
+    )(g)
+
+    assert (await p).to_py() == [1, 2]
+
+
+@run_in_pyodide
+async def test_async_iter2(selenium):
+    from pyodide.code import run_js
+
+    class Gen:
+        def __init__(self):
+            self.i = 0
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            self.i += 1
+            if self.i > 2:
+                raise StopAsyncIteration
+            return self.i
+
+    g = Gen()
+
+    p = run_js(
+        """
+        async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
+            let r = [];
+            for await (let a of g) {
+                r.push(a);
+            }
+            return r;
+        }
+    """
+    )(g)
+
+    assert (await p).to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_gen(selenium):
+    from pyodide.code import run_js
+
+    def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        (g) => {
+            assert(() => g instanceof pyodide.ffi.PyGenerator);
+            assert(() => g instanceof pyodide.ffi.PyIterable);
+            assert(() => g instanceof pyodide.ffi.PyIterator);
+            assert(() => !(g instanceof pyodide.ffi.PyAsyncGenerator));
+            let r = [];
+            r.push(g.next());
+            r.push(g.next(3));
+            r.push(g.next(4));
+            r.push(g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert p.to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]
+
+
+@run_in_pyodide
+def test_gen_return(selenium):
+    from pyodide.code import run_js
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g1())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 5}]
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3  # noqa: B901
+            return 5  # noqa: B012, B901
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.return(5));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
+
+
+@run_in_pyodide
+def test_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        (g) => {
+            g.next();
+            g.throw(new TypeError('hi'));
+        }
+    """
+    )
+    with pytest.raises(JsException, match="hi"):
+        p(g1())
+
+    def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3
+            return 5  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            r.push(g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": 5},
+    ]
+
+    def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return 3  # noqa: B901, B012
+
+    p = run_js(
+        """
+        (g) => {
+            let r = [];
+            r.push(g.next());
+            r.push(g.throw(new TypeError('hi')));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 3}]
+
+
+@run_in_pyodide
+async def test_async_gen1(selenium):
+    from pyodide.code import run_js
+
+    async def g():
+        n = 0
+        for _ in range(3):
+            n = yield n + 2
+
+    p = run_js(
+        """
+        async (g) => {
+            assert(() => g instanceof pyodide.ffi.PyAsyncGenerator);
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterable);
+            assert(() => g instanceof pyodide.ffi.PyAsyncIterator);
+            assert(() => !(g instanceof pyodide.ffi.PyGenerator));
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.next(3));
+            r.push(await g.next(4));
+            r.push(await g.next(5));
+            return r;
+        }
+    """
+    )(g())
+
+    assert (await p).to_py() == [
+        {"done": False, "value": 2},
+        {"done": False, "value": 5},
+        {"done": False, "value": 6},
+        {"done": True, "value": None},
+    ]
+
+
+@run_in_pyodide
+async def test_async_gen2(selenium):
+    from pyodide.code import run_js
+
+    async def g():
+        for n in range(3):
+            yield n
+
+    p = run_js(
+        """
+        async (g) => {
+            let result = [];
+            for await (let x of g){
+                result.push(x);
+            }
+            return result;
+        }
+    """
+    )(g())
+    assert (await p).to_py() == [0, 1, 2]
+
+
+@run_in_pyodide
+async def test_async_gen_return(selenium):
+    from pyodide.code import run_js
+
+    async def g1():
+        yield 1
+        yield 2
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            return r;
+        }
+    """
+    )(g1())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": 5}]
+
+    async def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3  # noqa: B901
+            return  # noqa: B012, B901
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            r.push(await g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": None},
+    ]
+
+    async def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.return(5));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": None}]
+
+
+@run_in_pyodide
+async def test_async_gen_throw(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    async def g1():
+        yield 1
+        yield 2
+
+    p = run_js(
+        """
+        async (g) => {
+            await g.next();
+            await g.throw(new TypeError('hi'));
+        }
+    """
+    )
+    with pytest.raises(JsException, match="hi"):
+        await p(g1())
+
+    async def g2():
+        try:
+            yield 1
+            yield 2
+        finally:
+            yield 3
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.throw(new TypeError('hi')));
+            r.push(await g.next());
+            return r;
+        }
+    """
+    )(g2())
+    assert p.to_py() == [
+        {"done": False, "value": 1},
+        {"done": False, "value": 3},
+        {"done": True, "value": None},
+    ]
+
+    async def g3():
+        try:
+            yield 1
+            yield 2
+        finally:
+            return  # noqa: B901, B012
+
+    p = await run_js(
+        """
+        async (g) => {
+            let r = [];
+            r.push(await g.next());
+            r.push(await g.throw(new TypeError('hi')));
+            return r;
+        }
+    """
+    )(g3())
+    assert p.to_py() == [{"done": False, "value": 1}, {"done": True, "value": None}]
+
+
+@run_in_pyodide
+def test_roundtrip_no_destroy(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    def isalive(p):
+        return getattr(p, "$$").ptr != 0
+
+    p = create_proxy({1: 2})
+    run_js("(x) => x")(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : false});
+    }
+    """
+    )(p)
+    assert isalive(p)
+    run_js(
+        """
+    (p) => {
+        p.destroy({destroyRoundtrip : true});
+    }
+    """
+    )(p)
+    assert not isalive(p)
+    p = create_proxy({1: 2})
+    run_js(
+        """
+    (p) => {
+        p.destroy();
+    }
+    """
+    )(p)
+    assert not isalive(p)
+
+
+@run_in_pyodide
+async def test_multiple_interpreters(selenium):
+    from js import loadPyodide  # type:ignore[attr-defined]
+
+    py2 = await loadPyodide()
+    d1 = {"a": 2}
+    d2 = py2.runPython(str(d1))
+    assert d2.toJs().to_py() == d1

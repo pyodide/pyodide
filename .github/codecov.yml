@@ -1,0 +1,6 @@
+comment: false
+codecov:
+  branch: main
+  require_ci_to_pass: false
+  notify:
+    wait_for_ci: false

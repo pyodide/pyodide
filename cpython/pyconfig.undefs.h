@@ -21,6 +21,7 @@
 #undef HAVE_PWRITEV
 #undef HAVE_PIPE2
 #undef HAVE_NICE
+#undef HAVE_EVENTFD
 
 /* Syscalls that resulted in a segfault */
 #undef HAVE_UTIMENSAT
@@ -29,6 +30,9 @@
 
 /* Unsupported functionality */
 #undef HAVE_PTHREAD_H
+#undef HAVE_MEMFD_CREATE
 
 #define CONFIG_32
 #define ANSI
+
+#undef HAVE_MEMFD_CREATE

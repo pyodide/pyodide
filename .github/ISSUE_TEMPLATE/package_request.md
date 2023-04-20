@@ -1,9 +1,9 @@
 ---
 name: Package request
 about: Request a new Python package or a version update
-title: ''
+title: ""
 labels: new package request
-assignees: ''
+assignees: ""
 ---
 
 <!-- Important Note: You can install pure python package wheels through micropip.install(...) -->

@@ -9,55 +9,109 @@ CXX=em++
 
 
 all: check \
-	build/pyodide.asm.js \
-	build/pyodide.js \
-	build/console.html \
-	build/distutils.data \
-	build/packages.json \
-	build/pyodide_py.tar \
-	build/test.data \
-	build/test.html \
-	build/webworker.js \
-	build/webworker_dev.js
+	dist/pyodide.asm.js \
+	dist/pyodide.js \
+	dist/pyodide.d.ts \
+	dist/package.json \
+	dist/python \
+	dist/console.html \
+	dist/repodata.json \
+	dist/python_stdlib.zip \
+	dist/test.html \
+	dist/module_test.html \
+	dist/webworker.js \
+	dist/webworker_dev.js \
+	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-$(CPYTHONLIB)/tzdata :
-	pip install tzdata --target=$(CPYTHONLIB)
+src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
+# Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
+# when linked, Emscripten will include it. We use the same pathway that EM_JS
+# uses, but EM_JS is itself unsuitable. Why? Because the C preprocessor /
+# compiler modified strings and there is no "raw" strings feature. In
+# particular, it seems to choke on regex in the JavaScript code. Our bundle
+# includes vendored npm packages which we have no control over, so it is not
+# simple to rewrite the code to restrict it to syntax that is legal inside of
+# EM_JS.
+#
+# To get around this problem, we use an array initializer instead of a string
+# initializer. We write a string file and then convert it to a .c file with xxd
+# as suggested here:
+# https://unix.stackexchange.com/questions/176111/how-to-dump-a-binary-file-as-a-c-c-string-literal
+# We use `xxd -i -` which converts the input to a comma separated list of
+# hexadecimal pairs which can go into an array initializer.
+#
+# EM_JS works by injecting a string variable into a special section called em_js
+# called __em_js__<function_name>. The contents of this variable are of the form
+# "argspec<::>body". The argspec is used to generate the JavaScript function
+# declaration:
+# https://github.com/emscripten-core/emscripten/blob/085fe968d43c7d3674376f29667d6e5f42b24966/emscripten.py?plain=1#L603
+#
+# The body has to start with a function block, but it is possible to inject
+# extra stuff after the block ends. We make a 0-argument function called
+# pyodide_js_init. Immediately after that we inject pre.js and then a call to
+# the init function.
+	# First the data file
+	rm -f tmp.dat
+	echo '()<::>{' >> tmp.dat             # zero argument argspec and start body
+	cat src/js/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
+	echo '}' >> tmp.dat                   # Close function body
+	cat src/core/pre.js >> tmp.dat        # Execute pre.js too
+	echo "pyodide_js_init();" >> tmp.dat  # Then execute the function.
 
-build/pyodide_py.tar: $(wildcard src/py/pyodide/*.py)  $(wildcard src/py/_pyodide/*.py)
-	cd src/py && tar --exclude '*__pycache__*' -cvf ../../build/pyodide_py.tar pyodide _pyodide
+	# Now generate the C file. Define a string __em_js__pyodide_js_init with
+	# contents from tmp.dat
+	rm -f src/core/pyodide_pre.gen.c
+	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
+	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
+	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
+	# Add a null byte to terminate the string
+	echo ', 0};' >> src/core/pyodide_pre.gen.c
 
-build/pyodide.asm.js: \
+	rm tmp.dat
+	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+
+dist/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/numpy_patch.o \
 	src/core/hiwire.o \
+	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
-	src/core/keyboard_interrupt.o \
-	src/core/main.o  \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/python2js.o \
+	src/core/pyodide_pre.o \
+	src/core/pyversion.o
+	emar rcs dist/libpyodide.a $(filter %.o,$^)
+
+
+dist/pyodide.asm.js: \
+	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
-	$(CPYTHONLIB)/tzdata \
-	$(CPYTHONLIB)
+	libgl \
+	$(CPYTHONLIB) \
+	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
-	[ -d build ] || mkdir build
-	$(CXX) -o build/pyodide.asm.js $(filter %.o,$^) \
-		$(MAIN_MODULE_LDFLAGS)
+	[ -d dist ] || mkdir dist
+	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
+
+	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
+		cd dist && npx prettier -w pyodide.asm.js ; \
+	fi
+
    # Strip out C++ symbols which all start __Z.
    # There are 4821 of these and they have VERY VERY long names.
    # To show some stats on the symbols you can use the following:
-   # cat build/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
-	sed -i -E 's/var __Z[^;]*;//g' build/pyodide.asm.js
-	sed -i '1i\
-		"use strict";\
-		let setImmediate = globalThis.setImmediate;\
-		let clearImmediate = globalThis.clearImmediate;\
-		let baseName, fpcGOT, dyncallGOT, fpVal, dcVal;\
-	' build/pyodide.asm.js
-	echo "globalThis._createPyodideModule = _createPyodideModule;" >> build/pyodide.asm.js
+   # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
+	sed -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
+	sed -i '1i "use strict";' dist/pyodide.asm.js
+	# Remove last 6 lines of pyodide.asm.js, see issue #2282
+	# Hopefully we will remove this after emscripten fixes it, upstream issue
+	# emscripten-core/emscripten#16518
+	# Sed nonsense from https://stackoverflow.com/a/13383331
+	sed -i -n -e :a -e '1,6!{P;N;D;};N;ba' dist/pyodide.asm.js
+	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 	date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -70,11 +124,31 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-build/pyodide.js: src/js/*.js src/js/pyproxy.gen.js node_modules/.installed
-	npx typescript --project src/js
-	npx rollup -c src/js/rollup.config.js
+dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
+	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
-src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
+dist/package.json : src/js/package.json
+	cp $< $@
+
+.PHONY: npm-link
+npm-link: dist/package.json
+	cd src/test-js && npm ci && npm link ../../dist
+
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
+	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
+	mv src/js/{pyodide,ffi}.d.ts dist
+	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
+	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
+
+
+
+src/js/error_handling.gen.ts : src/core/error_handling.ts
+	cp $< $@
+
+%.wasm.gen.js: %.wat
+	node tools/assemble_wat.js $@
+
+src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
@@ -82,77 +156,74 @@ src/js/pyproxy.gen.js : src/core/pyproxy.* src/core/*.h
 	#      definition files, rollup will strip them out)
 	# -P : Don't put in macro debug info
 	# -imacros pyproxy.c : include all of the macros definitions from pyproxy.c
+	#
+	# First we use sed to delete the segments of the file between
+	# "// pyodide-skip" and "// end-pyodide-skip". This allows us to give
+	# typescript type declarations for the macros which we need for intellisense
+	# and documentation generation. The result of processing the type
+	# declarations with the macro processor is a type error, so we snip them
+	# out.
 	rm -f $@
-	echo "// This file is generated by applying the C preprocessor to core/pyproxy.js" >> $@
+	echo "// This file is generated by applying the C preprocessor to core/pyproxy.ts" >> $@
 	echo "// It uses the macros defined in core/pyproxy.c" >> $@
 	echo "// Do not edit it directly!" >> $@
-	cat src/core/pyproxy.js | $(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - >> $@
+	cat src/core/pyproxy.ts | \
+		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
+		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
+		sed 's/^#pragma clang.*//g' \
+		>> $@
 
-build/test.html: src/templates/test.html
+pyodide_build: ./pyodide-build/pyodide_build/**
+	$(HOSTPYTHON) -m pip install -e ./pyodide-build
+	which pyodide-build >/dev/null
+	which pyodide >/dev/null
+
+dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
+	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+
+dist/test.html: src/templates/test.html
 	cp $< $@
 
+dist/module_test.html: src/templates/module_test.html
+	cp $< $@
 
-.PHONY: build/console.html
-build/console.html: src/templates/console.html
+dist/python: src/templates/python
+	cp $< $@
+
+.PHONY: dist/console.html
+dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-.PHONY: docs/_build/html/console.html
-docs/_build/html/console.html: src/templates/console.html
-	mkdir -p docs/_build/html
+.PHONY: dist/webworker.js
+dist/webworker.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-.PHONY: build/webworker.js
-build/webworker.js: src/templates/webworker.js
+.PHONY: dist/module_webworker_dev.js
+dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-
-.PHONY: build/webworker_dev.js
-build/webworker_dev.js: src/templates/webworker.js
+.PHONY: dist/webworker_dev.js
+dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-	sed -i -e 's#{{ PYODIDE_BASE_URL }}#./#g' $@
 
+.PHONY: libgl
+libgl:
+	# TODO(ryanking13): Link this to a side module not to the main module.
+	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 
-update_base_url: \
-	build/console.html \
-	build/webworker.js
-
-
-
-lint: node_modules/.installed
-	# check for unused imports, the rest is done by black
-	flake8 --select=F401 src tools pyodide-build benchmark conftest.py docs packages/matplotlib/src/
-	find src -type f -regex '.*\.\(c\|h\)' \
-		| xargs clang-format-6.0 -output-replacements-xml \
-		| (! grep '<replacement ')
-	npx prettier --check src
-	black --check .
-	mypy --ignore-missing-imports    \
-		pyodide-build/pyodide_build/ \
-		src/ 					     \
-		packages/*/test* 			 \
-		conftest.py 				 \
-		docs
-#mypy gets upset about there being both : src / py / setup.py and
-#packages / micropip / src / setup.py.There is no easy way to fix this right now
-#see python / mypy #10428. This will also cause trouble with pre - commit if you
-#modify both setup.py files in the same commit.
-	mypy --ignore-missing-imports    \
-		packages/micropip/src/
-
-
+.PHONY: lint
+lint:
+	pre-commit run -a --show-diff-on-failure
 
 benchmark: all
-	$(HOSTPYTHON) benchmark/benchmark.py $(HOSTPYTHON) build/benchmarks.json
-	$(HOSTPYTHON) benchmark/plot_benchmark.py build/benchmarks.json build/benchmarks.png
+	$(HOSTPYTHON) benchmark/benchmark.py all --output dist/benchmarks.json
+	$(HOSTPYTHON) benchmark/plot_benchmark.py dist/benchmarks.json dist/benchmarks.png
 
 
 clean:
-	rm -fr build/*
+	rm -fr dist/*
 	rm -fr src/*/*.o
 	rm -fr node_modules
 	make -C packages clean
@@ -161,38 +232,21 @@ clean:
 clean-python: clean
 	make -C cpython clean
 
-clean-all:
+clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/python2js_buffer.js)
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
-# Stdlib modules that we repackage as standalone packages
-
-# TODO: also include test directories included in other stdlib modules
-build/test.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/test.data --js-output=build/test.js \
-		--preload $(CPYTHONLIB)/test@/lib/python$(PYMAJOR).$(PYMINOR)/test
-	npx terser build/test.js -o build/test.js
-
-
-build/distutils.data: $(CPYTHONLIB) node_modules/.installed
-	./tools/file_packager.sh build/distutils.data --js-output=build/distutils.js \
-		--preload $(CPYTHONLIB)/distutils@/lib/python$(PYMAJOR).$(PYMINOR)/distutils \
-		--exclude tests
-	npx terser build/distutils.js -o build/distutils.js
-
-
-$(CPYTHONLIB): emsdk/emsdk/.complete $(PYODIDE_EMCC) $(PYODIDE_CXX)
+$(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
 	date +"[%F %T] done building cpython..."
 
 
-build/packages.json: FORCE
+dist/repodata.json: FORCE pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
@@ -203,6 +257,12 @@ emsdk/emsdk/.complete:
 	make -C emsdk
 	date +"[%F %T] done building emsdk."
 
+
+rust:
+	echo -e '\033[0;31m[WARNING] The target `make rust` is only for development and we do not guarantee that it will work or be maintained.\033[0m'
+	wget -q -O - https://sh.rustup.rs | sh -s -- -y
+	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
+	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
 
 FORCE:
 

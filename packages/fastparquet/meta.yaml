@@ -1,0 +1,20 @@
+package:
+  name: fastparquet
+  version: 2023.2.0
+  top-level:
+    - fastparquet
+requirements:
+  run:
+    - cramjam
+    - numpy
+    - pandas
+    - fsspec
+    - packaging
+source:
+  url: https://files.pythonhosted.org/packages/7e/5d/c58795e5550231ce84b39fec783e3f4836082f0162e2436227832716ee02/fastparquet-2023.2.0.tar.gz
+  sha256: 7611447ce3ff5696539f7e43289da2491ea41f7cb92d4dbada374012b62c51c3
+about:
+  home: https://github.com/dask/fastparquet/
+  PyPI: https://pypi.org/project/fastparquet
+  summary: Python support for Parquet file format
+  license: Apache License 2.0

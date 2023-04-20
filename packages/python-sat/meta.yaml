@@ -1,19 +1,22 @@
 package:
   name: python-sat
-  version: 0.1.7.dev15
-
+  version: 0.1.7.dev26
+  top-level:
+    - pysat
 source:
-  sha256: 1b2735121952541a7ce4b4cb7a7c4bc95076220ec35ece58b88cf2a8e9694c78
-  url: https://github.com/pysathq/pysat/releases/download/0.1.7.dev15/python-sat-0.1.7.dev15.tar.gz
+  sha256: 49679925000a9d6a7718848efa9152db7838026a2b4946f09b1996e587811e40
+  url: https://files.pythonhosted.org/packages/57/b9/a731ed0ec63c8ca13b76c3d65ad0e6b075bac7a8abdacc0b23b98393d703/python-sat-0.1.7.dev26.tar.gz
 
   patches:
     - patches/force_malloc.patch
     - patches/proper_build.patch
 
-test:
-  imports:
-    - pysat
-
 requirements:
   run:
     - six
+
+about:
+  home: https://github.com/pysathq/pysat
+  PyPI: https://pypi.org/project/python-sat
+  summary: A Python library for prototyping with SAT oracles
+  license: MIT

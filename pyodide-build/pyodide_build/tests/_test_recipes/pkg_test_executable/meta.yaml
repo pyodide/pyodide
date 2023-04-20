@@ -1,0 +1,8 @@
+package:
+  name: pkg_test_executable
+  version: "1.0.0"
+requirements:
+  executable:
+    - echo
+source:
+  path: src

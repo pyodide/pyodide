@@ -1,0 +1,16 @@
+package:
+  name: cpp-exceptions-test
+  version: "0.1"
+  tag:
+    - core
+    - pyodide.test
+
+source:
+  path: src
+build:
+  type: shared_library
+  script: |
+    em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions
+    em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions
+    em++ throw.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-throw.so -fexceptions
+    em++ catch.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-catch.so -fexceptions

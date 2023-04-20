@@ -5,6 +5,13 @@ see developed in Pyodide. The fact that an item is listed here is in no way a
 promise that it will happen, as resources are limited. Rather, it is an
 indication that help is welcomed on this topic.
 
+## Improve documentation
+
+Our API documentation is fairly detailed, but they need more introductory
+information like tutorials. We also want to add more information to the FAQ and
+improve the organization. It would also be good to find some way to include
+interactive code pens in the documentation.
+
 ## Reducing download sizes and initialization times
 
 At present a first load of Pyodide requires a 6.4 MB download, and the
@@ -22,7 +29,7 @@ See issue {issue}`646`.
 Across [benchmarks](https://github.com/pyodide/pyodide/tree/main/benchmark)
 Pyodide is currently around 3x to 5x slower than native Python.
 
-At the same type, C code compiled to WebAssembly typically runs between near
+At the same time, C code compiled to WebAssembly typically runs between near
 native speed and 2x to 2.5x times slower (Jangda et al. 2019
 [PDF](https://www.usenix.org/system/files/atc19-jangda.pdf)). It is therefore
 very likely that the performance of Python code in Pyodide can be improved with
@@ -33,28 +40,21 @@ performance BLAS library such as BLIS.
 
 See issue {issue}`1120`.
 
-## Simplification of the package loading system
+## Find a better way to compile Fortran
 
-Currently, Pyodide has two ways of loading packages:
+Currently, we use f2c to cross compile Fortran to C. This does not work very
+well because f2c only fully supports Fortran 77 code. LAPACK has used more
+modern Fortran features since 2008 and Scipy has adopted more recent Fortran as
+well. f2c still successfully generates code for all but 6 functions in Scipy +
+LAPACK, but much of the generated code is slightly wrong and requires extensive
+patching. There are still a large number of fatal errors due to call signature
+incompatibilities.
 
-- `loadPackage` for packages built with Pyodide and
-- `micropip.install` for pure Python packages from PyPI.
+If we could use an LLVM-based Fortran compiler as a part of the Emscripten
+toolchain, most of these problems would be solved. There are several promising
+projects heading in that direction including flang and lfortran.
 
-The relationship between these tools is confusing and could be simplified.
-Furthermore, the dependency resolution logic and packaging / build system could
-be improved.
-
-See issues {issue}`1470` and {issue}`1100`.
-
-## Update SciPy to a more recent version
-
-SciPy is a cornerstone of scientific computing in Python. It's a challenging
-package to build for WebAssembly because it is large, includes Fortran code, and
-requires BLAS and LAPACK libraries. Currently, Pyodide includes scipy 0.17.1 from 2016.
-Updating it is a blocker for using more recent versions of packages such
-as scikit-learn, scikit-image, statsmodels, and MNE.
-
-See issue {issue}`549`.
+See {issue}`scipy/scipy#15290`.
 
 ## Better project sustainability
 
@@ -77,15 +77,14 @@ See issue {issue}`1504`.
 ## Synchronous IO
 
 The majority of existing I/O APIs are synchronous. Unless we can support
-synchronous IO, much of the existing Python ecosystem cannot be ported. Luckily
-{user}`joemarshall` has a solution for this involving rewinding the Python
-stack. He has [a prototype implementation
-here](https://github.com/joemarshall/unthrow). We would like to bring this into
-Pyodide as a core feature.
+synchronous IO, much of the existing Python ecosystem cannot be ported. There
+are several different approaches to this, we would like to support at least one
+method.
 
 See issue {issue}`1503`.
 
 (http-client-limit)=
+
 ## Write http.client in terms of Web APIs
 
 Python packages make an extensive use of packages such as `requests` to

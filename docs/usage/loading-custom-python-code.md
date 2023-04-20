@@ -1,21 +1,21 @@
-
 (loading-custom-python-code)=
+
 # Loading custom Python code
 
-Pyodide provides a simple API {any}`pyodide.runPython` to run Python code.
+Pyodide provides a simple API {js:func}`pyodide.runPython` to run Python code.
 However, when your Python code grow bigger, putting hundreds of lines inside `runPython` is not scalable.
 
 For larger projects, the best way to run Python code with Pyodide is:
 
 1. create a Python package
 1. load your Python package into the Pyodide (Emscripten) virtual file system
-1. import the package with ``let mypkg = pyodide.pyimport("mypkgname")``
-1. call into your package with ``mypkg.some_api(some_args)``.
+1. import the package with `let mypkg = pyodide.pyimport("mypkgname")`
+1. call into your package with `mypkg.some_api(some_args)`.
 
 ## Using wheels
 
 The best way of serving custom Python code is making it a package in the wheel (.whl) format.
-If the package is built as a `wheel` file, you can use {any}`micropip.install` to
+If the package is built as a `wheel` file, you can use {py:func}`micropip.install` to
 install the package. See {ref}`loading_packages` for more information.
 
 ```{admonition} Packages with C extensions
@@ -58,7 +58,7 @@ pkg.do_something();
 ```{admonition} What is pyfetch?
 :class: info
 
-Pyodide provides {any}`pyodide.http.pyfetch`,
+Pyodide provides {py:func}`~pyodide.http.pyfetch`,
 which is a convenient wrapper of JavaScript `fetch`.
 See {ref}`load-external-files-in-pyodide` for more information.
 ```
@@ -76,11 +76,11 @@ pyodide.pyimport("your_package");
 :class: warning
 
 Since a wheel package is actually a zip archive,
-you can use {any}`pyodide.unpackArchive()`
-to unpack a wheel package, instead of using {any}`micropip.install`.
+you can use {js:func}`pyodide.unpackArchive`
+to unpack a wheel package, instead of using {py:func}`micropip.install`.
 
-However, {any}`micropip` does dependency resolution when installing packages,
-while {any}`pyodide.unpackArchive()` simply unpacks the archive.
+However, {mod}`micropip` does dependency resolution when installing packages,
+while {js:func}`pyodide.unpackArchive` simply unpacks the archive.
 So you must be aware of that each dependencies of a package need to be installed manually
 before unpacking a wheel.
 

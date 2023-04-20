@@ -1,0 +1,42 @@
+From 4ec1b506b424dd9e81fd7127f5712522800a5596 Mon Sep 17 00:00:00 2001
+From: Yizhi Liu <liuyizhi@apache.org>
+Date: Mon, 17 Oct 2022 15:16:45 -0700
+Subject: [PATCH 3/3] Fix type mismatch for CSR conversion in c_api
+
+TODO: Remove this patch when XGBoost version is updated.
+(Upstream PR: https://github.com/dmlc/xgboost/pull/8369)
+
+---
+ xgboost/core.py | 2 +-
+ xgboost/data.py | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/xgboost/core.py b/xgboost/core.py
+index 36548d8..0246779 100644
+--- a/xgboost/core.py
++++ b/xgboost/core.py
+@@ -2119,7 +2119,7 @@ class Booster:
+                     _array_interface(csr.indptr),
+                     _array_interface(csr.indices),
+                     _array_interface(csr.data),
+-                    ctypes.c_size_t(csr.shape[1]),
++                    c_bst_ulong(csr.shape[1]),
+                     from_pystr_to_cstr(json.dumps(args)),
+                     p_handle,
+                     ctypes.byref(shape),
+diff --git a/xgboost/data.py b/xgboost/data.py
+index 119b354..b958436 100644
+--- a/xgboost/data.py
++++ b/xgboost/data.py
+@@ -88,7 +88,7 @@ def _from_scipy_csr(
+             _array_interface(data.indptr),
+             _array_interface(data.indices),
+             _array_interface(data.data),
+-            ctypes.c_size_t(data.shape[1]),
++            c_bst_ulong(data.shape[1]),
+             config,
+             ctypes.byref(handle),
+         )
+-- 
+2.35.1
+

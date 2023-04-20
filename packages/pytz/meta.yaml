@@ -1,9 +1,16 @@
 package:
   name: pytz
-  version: '2021.1'
+  version: "2023.3"
+  tag:
+    - core
+    - min-scipy-stack
+  top-level:
+    - pytz
 source:
-  sha256: 83a4a90894bf38e243cf052c8b58f381bfe9a7a483f6a9cab140bc7f702ac4da
-  url: https://files.pythonhosted.org/packages/b0/61/eddc6eb2c682ea6fd97a7e1018a6294be80dba08fa28e7a3570148b4612d/pytz-2021.1.tar.gz
-test:
-  imports:
-  - pytz
+  sha256: a151b3abb88eda1d4e34a9814df37de2a80e301e68ba0fd856fb9b46bfbbbffb
+  url: https://files.pythonhosted.org/packages/7f/99/ad6bd37e748257dd70d6f85d916cafe79c0b0f5e2e95b11f7fbc82bf3110/pytz-2023.3-py2.py3-none-any.whl
+about:
+  home: http://pythonhosted.org/pytz
+  PyPI: https://pypi.org/project/pytz
+  summary: World timezone definitions, modern and historical
+  license: MIT

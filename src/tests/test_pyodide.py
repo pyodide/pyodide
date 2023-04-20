@@ -1,11 +1,37 @@
-import pytest
+import re
+import shutil
+import subprocess
+from collections.abc import Sequence
+from pathlib import Path
 from textwrap import dedent
-from pyodide_build.testing import run_in_pyodide
-from pyodide import find_imports, eval_code, CodeRunner, should_quiet  # noqa: E402
+from typing import Any
+
+import pytest
+from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.fixture import selenium_standalone_noload_common
+from pytest_pyodide.server import spawn_web_server
+
+from conftest import DIST_PATH, ROOT_PATH
+from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
+from pyodide_build.common import get_pyodide_root
+
+
+def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
+        ]:
+            continue
+        res.append(msg)
+    return res
 
 
 def test_find_imports():
-
     res = find_imports(
         """
         import numpy as np
@@ -26,6 +52,10 @@ def test_find_imports():
         """
     )
     assert res == []
+
+
+def test_ffi_import_star():
+    exec("from pyodide.ffi import *", {})
 
 
 def test_pyimport(selenium):
@@ -54,19 +84,20 @@ def test_code_runner():
     # Ast transform
     import ast
 
-    l = cr.ast.body[0].value.left
-    cr.ast.body[0].value.left = ast.BinOp(
+    l = cr.ast.body[0].value.left  # type: ignore[attr-defined]
+    cr.ast.body[0].value.left = ast.BinOp(  # type: ignore[attr-defined]
         left=l, op=ast.Mult(), right=ast.Constant(value=2)
     )
     assert cr.compile().run({"x": 3}) == 13
 
     # Code transform
+    assert cr.code
     cr.code = cr.code.replace(co_consts=(0, 3, 5, None))
     assert cr.run({"x": 4}) == 17
 
 
 def test_code_runner_mode():
-    from codeop import PyCF_DONT_IMPLY_DEDENT
+    from codeop import PyCF_DONT_IMPLY_DEDENT  # type: ignore[attr-defined]
 
     assert CodeRunner("1+1\n1+1", mode="exec").compile().run() == 2
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -76,14 +107,14 @@ def test_code_runner_mode():
         match="multiple statements found while compiling a single statement",
     ):
         CodeRunner("1+1\n1+1", mode="single").compile().run()
-    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+    with pytest.raises(SyntaxError, match="invalid syntax"):
         CodeRunner(
             "def f():\n  1", mode="single", flags=PyCF_DONT_IMPLY_DEDENT
         ).compile().run()
 
 
 def test_eval_code():
-    ns = {}
+    ns: dict[str, Any] = {}
     assert (
         eval_code(
             """
@@ -147,12 +178,12 @@ def test_eval_code():
 
 
 def test_eval_code_locals():
-    globals = {}
+    globals: dict[str, Any] = {}
     eval_code("x=2", globals, {})
     with pytest.raises(NameError):
         eval_code("x", globals, {})
 
-    locals = {}
+    locals: dict[str, Any] = {}
     eval_code("import sys; sys.getrecursionlimit()", globals, locals)
     with pytest.raises(NameError):
         eval_code("sys.getrecursionlimit()", globals, {})
@@ -165,9 +196,40 @@ def test_eval_code_locals():
         eval_code("invalidate_caches()", globals, globals)
     eval_code("invalidate_caches()", globals, locals)
 
+    # See https://github.com/pyodide/pyodide/issues/3578
+    with pytest.raises(NameError):
+        eval_code("print(self)")
+
+    res = eval_code(
+        """
+        var = "Hello"
+        def test():
+            return var
+        test()
+        """
+    )
+    assert res == "Hello"
+
+
+def test_unpack_archive(selenium_standalone):
+    selenium = selenium_standalone
+    js_error = selenium.run_js(
+        """
+        var error = "";
+        try {
+            pyodide.unpackArchive([1, 2, 3], "zip", "abc");
+        } catch (te) {
+            error = te.toString();
+        }
+        return error
+        """
+    )
+    expected_err_msg = "TypeError: Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view"
+    assert js_error == expected_err_msg
+
 
 @run_in_pyodide
-def test_dup_pipe():
+def test_dup_pipe(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/14640
     import os
 
@@ -186,14 +248,14 @@ def test_dup_pipe():
 
 
 @run_in_pyodide
-def test_dup_temp_file():
+def test_dup_temp_file(selenium):
     # See https://github.com/emscripten-core/emscripten/issues/15012
     import os
     from tempfile import TemporaryFile
 
     tf = TemporaryFile(buffering=0)
     fd1 = os.dup(tf.fileno())
-    fd2 = os.dup2(tf.fileno(), 50)
+    os.dup2(tf.fileno(), 50)
     s = b"hello there!"
     tf.write(s)
     tf2 = open(fd1, "w+")
@@ -207,7 +269,7 @@ def test_dup_temp_file():
 
 
 @run_in_pyodide
-def test_dup_stdout():
+def test_dup_stdout(selenium):
     # Test redirecting stdout using low level os.dup operations.
     # This sort of redirection is used in pytest.
     import os
@@ -237,11 +299,11 @@ def test_monkeypatch_eval_code(selenium):
         selenium.run(
             """
             import pyodide
-            old_eval_code = pyodide.eval_code
+            old_eval_code = pyodide.code.eval_code
             x = 3
-            def eval_code(code, ns):
-                return [ns["x"], old_eval_code(code, ns)]
-            pyodide.eval_code = eval_code
+            def eval_code(code, globals=None, locals=None):
+                return [globals["x"], old_eval_code(code, globals, locals)]
+            pyodide.code.eval_code = eval_code
             """
         )
         assert selenium.run("x = 99; 5") == [3, 5]
@@ -249,7 +311,7 @@ def test_monkeypatch_eval_code(selenium):
     finally:
         selenium.run(
             """
-            pyodide.eval_code = old_eval_code
+            pyodide.code.eval_code = old_eval_code
             """
         )
 
@@ -286,7 +348,7 @@ def test_hiwire_is_promise(selenium):
 
     if not selenium.browser == "node":
         assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise(document.all) === false;"
+            "return pyodide._module.hiwire.isPromise(document.all) === false;"
         )
 
     assert selenium.run_js(
@@ -339,7 +401,7 @@ def test_run_python_async_toplevel_await(selenium):
         """
         await pyodide.runPythonAsync(`
             from js import fetch
-            resp = await fetch("packages.json")
+            resp = await fetch("repodata.json")
             json = (await resp.json()).to_py()["packages"]
             assert "micropip" in json
         `);
@@ -388,7 +450,10 @@ def test_check_interrupt(selenium):
         try {
             pyodide.runPython(`
                 from js import test;
-                test();
+                try:
+                    test();
+                finally:
+                    del test
             `);
         } catch(e){
             err = e;
@@ -509,11 +574,31 @@ def test_run_python_js_error(selenium):
         pyodide.runPython(`
             from js import throwError
             from unittest import TestCase
-            from pyodide import JsException
+            from pyodide.ffi import JsException
             raises = TestCase().assertRaisesRegex
             with raises(JsException, "blah!"):
                 throwError()
         `);
+        """
+    )
+
+
+def test_run_python_locals(selenium):
+    selenium.run_js(
+        """
+        let dict = pyodide.globals.get("dict");
+        let locals = dict([["x", 7]]);
+        let globals = dict([["x", 5], ["y", 29]]);
+        dict.destroy();
+        let result = pyodide.runPython("z = 13; x + y", {locals, globals});
+        assert(() => locals.get("z") === 13);
+        assert(() => locals.has("x"));
+        let result2 = pyodide.runPython("del x; x + y", {locals, globals});
+        assert(() => !locals.has("x"));
+        assert(() => result === 7 + 29);
+        assert(() => result2 === 5 + 29);
+        locals.destroy();
+        globals.destroy();
         """
     )
 
@@ -525,7 +610,7 @@ def test_create_once_callable(selenium):
             return f(7);
         }
         pyodide.runPython(`
-            from pyodide import create_once_callable, JsException
+            from pyodide.ffi import create_once_callable, JsException
             from js import call7;
             from unittest import TestCase
             raises = TestCase().assertRaisesRegex
@@ -555,76 +640,108 @@ def test_create_once_callable(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_proxy(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    [testAddListener, testCallListener, testRemoveListener] = run_js(
         """
-        self.testAddListener = function(f){
+        function testAddListener(f){
             self.listener = f;
         }
-        self.testCallListener = function(f){
+        function testCallListener(f){
             return self.listener();
         }
-        self.testRemoveListener = function(f){
+        function testRemoveListener(f){
             return self.listener === f;
         }
-        pyodide.runPython(`
-            from pyodide import create_proxy
-            from js import testAddListener, testCallListener, testRemoveListener;
-            class Test:
-                def __call__(self):
-                    return 7
-
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
-
-            f = Test()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_proxy(f)
-            assert sys.getrefcount(f) == 3
-            assert proxy() == 7
-            testAddListener(proxy)
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testCallListener() == 7
-            assert sys.getrefcount(f) == 3
-            assert testRemoveListener(proxy)
-            assert sys.getrefcount(f) == 3
-            proxy.destroy()
-            assert sys.getrefcount(f) == 2
-            destroyed = False
-            del f
-            assert destroyed == True
-        `);
+        [testAddListener, testCallListener, testRemoveListener]
         """
     )
 
+    destroyed = False
 
+    class Test:
+        def __call__(self):
+            return 7
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Test()
+    import sys
+
+    assert sys.getrefcount(f) == 2
+    proxy = create_proxy(f)
+    assert sys.getrefcount(f) == 3
+    assert proxy() == 7  # type:ignore[operator]
+    testAddListener(proxy)
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testCallListener() == 7
+    assert sys.getrefcount(f) == 3
+    assert testRemoveListener(proxy)
+    assert sys.getrefcount(f) == 3
+    proxy.destroy()
+    assert sys.getrefcount(f) == 2
+    destroyed = False
+    del f
+    assert destroyed
+
+
+@run_in_pyodide
+def test_create_proxy_capture_this(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    o = run_js("({})")
+
+    def f(self):
+        assert self == o
+
+    o.f = create_proxy(f, capture_this=True)
+    run_js("(o) => { o.f(); o.f.destroy(); }")(o)
+
+
+@run_in_pyodide
+def test_create_proxy_roundtrip(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsDoubleProxy, create_proxy
+
+    f = {}  # type: ignore[var-annotated]
+    o = run_js("({})")
+    o.f = create_proxy(f, roundtrip=True)
+    assert isinstance(o.f, JsDoubleProxy)
+    assert o.f.unwrap() is f
+    o.f.destroy()
+    o.f = create_proxy(f, roundtrip=False)
+    assert o.f is f  # type: ignore[comparison-overlap]
+    run_js("(o) => { o.f.destroy(); }")(o)
+
+
+@run_in_pyodide
 def test_return_destroyed_value(selenium):
-    selenium.run_js(
-        """
-        self.f = function(x){ return x };
-        pyodide.runPython(`
-            from pyodide import create_proxy, JsException
-            from js import f
-            p = create_proxy([])
-            p.destroy()
-            try:
-                f(p)
-            except JsException as e:
-                assert str(e) == "Error: Object has already been destroyed"
-        `);
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_proxy
+
+    f = run_js("(function(x){ return x; })")
+    p = create_proxy([])
+    p.destroy()
+    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
+        f(p)
 
 
 def test_docstrings_a():
-    from _pyodide.docstring import get_cmeth_docstring, dedent_docstring
-    from pyodide import JsProxy
+    from _pyodide._core_docs import _instantiate_token
+    from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
+    from pyodide.ffi import JsPromise
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
     assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
         jsproxy.then.__doc__
@@ -632,19 +749,20 @@ def test_docstrings_a():
 
 
 def test_docstrings_b(selenium):
-    from pyodide import create_once_callable, JsProxy
+    from _pyodide._core_docs import _instantiate_token
     from _pyodide.docstring import dedent_docstring
+    from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsProxy()
+    jsproxy = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj)"
+    sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
         from js import a
-        from pyodide import create_once_callable as b
+        from pyodide.ffi import create_once_callable as b
         [
             a.then.__doc__, a.then.__text_signature__,
             b.__doc__, b.__text_signature__
@@ -665,11 +783,11 @@ def test_restore_state(selenium):
         pyodide.registerJsModule("a", {somefield : 82});
         pyodide.registerJsModule("b", { otherfield : 3 });
         pyodide.runPython("x = 7; from a import somefield");
-        let state = pyodide._module.saveState();
+        let state = pyodide._api.saveState();
 
         pyodide.registerJsModule("c", { thirdfield : 9 });
         pyodide.runPython("y = 77; from b import otherfield; import c;");
-        pyodide._module.restoreState(state);
+        pyodide._api.restoreState(state);
         state.destroy();
         """
     )
@@ -695,6 +813,7 @@ def test_restore_state(selenium):
     )
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
     assert selenium_standalone.run_js(
@@ -725,15 +844,19 @@ def test_fatal_error(selenium_standalone):
         x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
         x = re.sub(" +at .*\n", "", x)
         x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = re.sub(".*@debugger.*\n", "", x)
+        x = re.sub(".*@chrome.*\n", "", x)
+        x = re.sub("line [0-9]*", "line xxx", x)
         x = x.replace("\n\n", "\n")
         return x
 
+    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
-        strip_stack_trace(selenium_standalone.logs)
+        err_msg
         == dedent(
             strip_stack_trace(
                 """
-                Python initialization complete
                 Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
                 The cause of the fatal error was:
                 Stack (most recent call first):
@@ -741,8 +864,8 @@ def test_fatal_error(selenium_standalone):
                   File "<exec>", line 6 in g
                   File "<exec>", line 4 in f
                   File "<exec>", line 9 in <module>
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 242 in run
-                  File "/lib/pythonxxx/site-packages/pyodide/_base.py", line 344 in eval_code
+                  File "/lib/pythonxxx/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/pyodide/_base.py", line 344 in eval_code
                 """
             )
         ).strip()
@@ -751,9 +874,31 @@ def test_fatal_error(selenium_standalone):
         """
         assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
         assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
-        assert(() => pyodide._module.runPython("1+1") === 2);
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_exit_error(selenium_standalone):
+    x = selenium_standalone.run_js(
+        """
+        try {
+            pyodide.runPython(`
+                import os
+                def f():
+                    g()
+                def g():
+                    h()
+                def h():
+                    os._exit(0)
+                f()
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    assert x == "Exit: Program terminated with exit(0)"
 
 
 def test_reentrant_error(selenium):
@@ -782,6 +927,82 @@ def test_reentrant_error(selenium):
     assert caught
 
 
+@pytest.mark.xfail_browsers(safari="TODO: traceback is not exactly the same on Safari")
+def test_js_stackframes(selenium):
+    res = selenium.run_js(
+        """
+        self.b = function b(){
+            pyodide.pyimport("???");
+        }
+        self.d1 = function d1(){
+            pyodide.runPython("c2()");
+        }
+        self.d2 = function d2(){
+            d1();
+        }
+        self.d3 = function d3(){
+            d2();
+        }
+        self.d4 = function d4(){
+            d3();
+        }
+        pyodide.runPython(`
+            def c1():
+                from js import b
+                b()
+            def c2():
+                c1()
+            def e():
+                from js import d4
+                from pyodide.ffi import to_js
+                from traceback import extract_tb
+                try:
+                    d4()
+                except Exception as ex:
+                    return to_js([[x.filename, x.name] for x in extract_tb(ex.__traceback__)])
+        `);
+        let e = pyodide.globals.get("e");
+        let res = e();
+        e.destroy();
+        return res;
+        """
+    )
+
+    def normalize_tb(t):
+        res = []
+        for [file, name] in t:
+            if file.endswith((".js", ".html")):
+                file = file.rpartition("/")[-1]
+            if file.endswith(".py"):
+                file = "/".join(file.split("/")[-2:])
+            if (
+                re.fullmatch(r"\:[0-9]*", file)
+                or file == "evalmachine.<anonymous>"
+                or file == "debugger eval code"
+            ):
+                file = "test.html"
+            res.append([file, name])
+        return res
+
+    frames = [
+        ["<exec>", "e"],
+        ["test.html", "d4"],
+        ["test.html", "d3"],
+        ["test.html", "d2"],
+        ["test.html", "d1"],
+        ["pyodide.asm.js", "runPython"],
+        ["_pyodide/_base.py", "eval_code"],
+        ["_pyodide/_base.py", "run"],
+        ["<exec>", "<module>"],
+        ["<exec>", "c2"],
+        ["<exec>", "c1"],
+        ["test.html", "b"],
+        ["pyodide.asm.js", "pyimport"],
+        ["importlib/__init__.py", "import_module"],
+    ]
+    assert normalize_tb(res[: len(frames)]) == frames
+
+
 def test_reentrant_fatal(selenium_standalone):
     selenium = selenium_standalone
     assert selenium.run_js(
@@ -805,6 +1026,74 @@ def test_reentrant_fatal(selenium_standalone):
         return success;
         """
     )
+
+
+def test_weird_throws(selenium):
+    """Throw strange Javascript garbage and make sure we survive."""
+    selenium.run_js(
+        '''
+        self.funcs = {
+            null(){ throw null; },
+            undefined(){ throw undefined; },
+            obj(){ throw {}; },
+            obj_null_proto(){ throw Object.create(null); },
+            string(){ throw "abc"; },
+            func(){ throw self.funcs.func; },
+            number(){ throw 12; },
+            bigint(){ throw 12n; },
+        };
+        pyodide.runPython(`
+            from js import funcs
+            from unittest import TestCase
+            from pyodide.ffi import JsException
+            raises = TestCase().assertRaisesRegex
+            msgs = {
+                "null" : ['type object .* tag .object Null.', '"""null"""',  'fails'],
+                "undefined" : ['type undefined .* tag .object Undefined.', '"""undefined"""',  'fails'],
+                "obj" : ['type object .* tag .object Object.', '""".object Object."""',  '""".object Object."""'],
+                "obj_null_proto" : ['type object .* tag .object Object.', 'fails',  'fails'],
+                "string" : ["Error: abc"],
+                "func" : ['type function .* tag .object Function.', 'throw self.funcs.func',  'throw self.funcs.func'],
+                "number" : ['type number .* tag .object Number.'],
+                "bigint" : ['type bigint .* tag .object BigInt.'],
+            }
+            for name, f in funcs.object_entries():
+                msg = '.*\\\\n.*'.join(msgs.get(name, ["xx"]))
+                with raises(JsException, msg):
+                    f()
+        `);
+        '''
+    )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
+def test_weird_fatals(selenium_standalone, to_throw):
+    expected_message = {
+        "Object.create(null);": "Error: A value of type object with tag [object Object] was thrown as an error!",
+        "'Some message'": "Error: Some message",
+        "null": "Error: A value of type object with tag [object Null] was thrown as an error!",
+    }[to_throw]
+    msg = selenium_standalone.run_js(
+        f"""
+        self.f = function(){{ throw {to_throw} }};
+        """
+        """
+        try {
+            pyodide.runPython(`
+                from _pyodide_core import raw_call
+                from js import f
+                raw_call(f)
+            `);
+        } catch(e){
+            return e.toString();
+        }
+        """
+    )
+    print("msg", msg[: len(expected_message)])
+    print("expected_message", expected_message)
+    assert msg[: len(expected_message)] == expected_message
 
 
 def test_restore_error(selenium):
@@ -835,7 +1124,7 @@ def test_restore_error(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_custom_stdin_stdout(selenium_standalone_noload):
+def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
     selenium = selenium_standalone_noload
     strings = [
         "hello world",
@@ -872,7 +1161,6 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
             stderrStrings.push(s);
         }
         let pyodide = await loadPyodide({
-            indexURL : './',
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -883,17 +1171,16 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         globalThis.pyodide = pyodide;
         """
     )
-    outstrings = sum([s.removesuffix("\n").split("\n") for s in strings], [])
+    outstrings: list[str] = sum((s.removesuffix("\n").split("\n") for s in strings), [])
     print(outstrings)
     assert (
         selenium.run_js(
+            f"""
+            return pyodide.runPython(`
+                [input() for x in range({len(outstrings)})]
+                # ... test more stuff
+            `).toJs();
             """
-        return pyodide.runPython(`
-            [input() for x in range(%s)]
-            # ... test more stuff
-        `).toJs();
-        """
-            % len(outstrings)
         )
         == outstrings
     )
@@ -908,8 +1195,102 @@ def test_custom_stdin_stdout(selenium_standalone_noload):
         return [self.stdoutStrings, self.stderrStrings];
         """
     )
-    assert stdoutstrings == ["Python initialization complete", "something to stdout"]
+    assert stdoutstrings[-2:] == [
+        "something to stdout",
+    ]
+    stderrstrings = _strip_assertions_stderr(stderrstrings)
     assert stderrstrings == ["something to stderr"]
+    IN_NODE = runtime == "node"
+    selenium.run_js(
+        f"""
+        pyodide.runPython(`
+            import sys
+            assert not sys.stdin.isatty()
+            assert not sys.stdout.isatty()
+            assert not sys.stderr.isatty()
+        `);
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.isatty() is {IN_NODE}
+            assert sys.stdout.isatty() is {IN_NODE}
+            assert sys.stderr.isatty() is {IN_NODE}
+        `);
+        """
+    )
+
+
+def test_custom_stdin_stdout2(selenium):
+    result = selenium.run_js(
+        """
+        function stdin(){
+            return "hello there!\\nThis is a several\\nline\\nstring";
+        }
+        pyodide.setStdin({stdin});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "h"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: false});
+        pyodide.runPython(`
+            import sys
+            assert sys.stdin.read(1) == "e"
+        `);
+        pyodide.setStdout();
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert not sys.stdin.isatty()
+        `);
+        pyodide.setStdin({stdin, isatty: true});
+        pyodide.runPython(`
+            assert sys.stdin.read(1) == "l"
+            assert sys.stdin.isatty()
+        `);
+
+        let stdout_codes = [];
+        function rawstdout(code) {
+            stdout_codes.push(code);
+        }
+        pyodide.setStdout({raw: rawstdout});
+        pyodide.runPython(`
+            print("hello")
+            assert sys.stdin.read(1) == "o"
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: false});
+        pyodide.runPython(`
+            print("2hello again")
+            assert sys.stdin.read(1) == " "
+            assert not sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.setStdout({raw: rawstdout, isatty: true});
+        pyodide.runPython(`
+            print("3hello")
+            assert sys.stdin.read(1) == "t"
+            assert sys.stdout.isatty()
+            assert sys.stdin.isatty()
+        `);
+        pyodide.runPython(`
+            print("partial line", end="")
+        `);
+        let result1 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.runPython(`
+            sys.stdout.flush()
+        `);
+        let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
+        pyodide.setStdin();
+        pyodide.setStdout();
+        pyodide.setStderr();
+        return [result1, result2];
+        """
+    )
+    assert result[0] == "hello\n2hello again\n3hello\n"
+    assert result[1] == "hello\n2hello again\n3hello\npartial line"
 
 
 def test_home_directory(selenium_standalone_noload):
@@ -918,7 +1299,6 @@ def test_home_directory(selenium_standalone_noload):
     selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            indexURL : './',
             homedir : "%s",
         });
         return pyodide.runPython(`
@@ -928,6 +1308,44 @@ def test_home_directory(selenium_standalone_noload):
         """
         % (home, home)
     )
+
+
+def test_version_variable(selenium):
+    js_version = selenium.run_js(
+        """
+        return pyodide.version
+        """
+    )
+
+    core_version = selenium.run_js(
+        """
+        return pyodide._api.version
+        """
+    )
+
+    from pyodide import __version__ as py_version
+
+    assert js_version == py_version == core_version
+
+
+@run_in_pyodide
+def test_default_sys_path(selenium):
+    import sys
+    from sys import version_info
+
+    major = version_info[0]
+    minor = version_info[1]
+    prefix = sys.prefix
+    platlibdir = sys.platlibdir
+    paths = [
+        f"{prefix}{platlibdir}/python{major}{minor}.zip",
+        f"{prefix}{platlibdir}/python{major}.{minor}",
+        f"{prefix}{platlibdir}/python{major}.{minor}/lib-dynload",
+        f"{prefix}{platlibdir}/python{major}.{minor}/site-packages",
+    ]
+
+    for path in paths:
+        assert path in sys.path
 
 
 def test_sys_path0(selenium):
@@ -940,3 +1358,451 @@ def test_sys_path0(selenium):
         `)
         """
     )
+
+
+def test_fullstdlib(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: true,
+        });
+
+        await pyodide.loadPackage("micropip");
+
+        pyodide.runPython(`
+            import pyodide_js
+            import micropip
+            loaded_packages = micropip.list()
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
+        `);
+        """
+    )
+
+
+def test_loadPyodide_relative_index_url(selenium_standalone_noload):
+    """Check that loading Pyodide with a relative URL works"""
+    selenium_standalone_noload.run_js(
+        """
+        self.pyodide = await loadPyodide({ indexURL: "./" });
+        """
+    )
+
+
+@run_in_pyodide
+def test_run_js(selenium):
+    from unittest import TestCase
+
+    from pyodide.code import run_js
+
+    raises = TestCase().assertRaises
+
+    with raises(TypeError, msg="argument should have type 'string' not type 'int'"):
+        run_js(3)  # type: ignore[arg-type]
+
+    assert run_js("(x)=> x+1")(7) == 8
+    assert run_js("[1,2,3]")[2] == 3
+    run_js("globalThis.x = 77")
+    from js import x  # type: ignore[attr-defined]
+
+    assert x == 77
+
+
+@run_in_pyodide
+def test_pickle_jsexception(selenium):
+    import pickle
+
+    from pyodide.code import run_js
+
+    pickle.dumps(run_js("new Error('hi');"))
+
+
+def test_raises_jsexception(selenium):
+    from pyodide.ffi import JsException
+
+    @run_in_pyodide
+    def raise_jsexception(selenium):
+        from pyodide.code import run_js
+
+        run_js("throw new Error('hi');")
+
+    with pytest.raises(JsException, match="Error: hi"):
+        raise_jsexception(selenium)
+
+
+@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
+def test_deprecations(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.run_js(
+        """
+        p = [];
+        let cb = (x) => console.log('!!! ' + x);
+        await pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackage("micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
+        pyodide.loadPackagesFromImports("import micropip", cb);
+        """
+    )
+    dep_msg = "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to {} is deprecated and will be removed in v0.24."
+    assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
+    assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
+    assert selenium.logs.count("!!! No new packages to load") == 3
+    selenium.run_js(
+        """
+        let a = pyodide.PyBuffer;
+        let b = pyodide.PyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        let a = pyodide.PyProxyBuffer;
+        let b = pyodide.PyProxyBuffer;
+        assert(() => a === b);
+        """
+    )
+    assert (
+        selenium.logs.count(
+            "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead."
+        )
+        == 1
+    )
+    selenium.run_js(
+        """
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => pyodide.isPyProxy(pyodide.globals));
+        assert(() => !pyodide.isPyProxy({}));
+        """
+    )
+    selenium.run_js(
+        """
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isAwaitable());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isBuffer());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => !pyodide.globals.isCallable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => pyodide.globals.isIterable());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => !pyodide.globals.isIterator());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsGet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsSet());
+        assert(() => pyodide.globals.supportsHas());
+        assert(() => pyodide.globals.supportsHas());
+        """
+    )
+    for name in [
+        "isPyProxy",
+        "isAwaitable",
+        "isBuffer",
+        "isCallable",
+        "isIterable",
+        "isIterator",
+        "supportsGet",
+        "supportsSet",
+        "supportsHas",
+    ]:
+        assert (
+            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
+            == 1
+        )
+
+
+@run_in_pyodide(packages=["pytest"])
+def test_module_not_found_hook(selenium_standalone):
+    import importlib
+
+    import pytest
+
+    unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
+    removed_stdlibs = ["pwd", "turtle", "tkinter"]
+    repodata_packages = ["micropip", "packaging", "regex"]
+
+    for lib in unvendored_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="unvendored from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    for lib in removed_stdlibs:
+        with pytest.raises(
+            ModuleNotFoundError, match="removed from the Python standard library"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("urllib.there_is_no_such_module")
+
+    for lib in repodata_packages:
+        with pytest.raises(
+            ModuleNotFoundError, match="included in the Pyodide distribution"
+        ):
+            importlib.import_module(lib)
+
+    with pytest.raises(ModuleNotFoundError, match="No module named"):
+        importlib.import_module("pytest.there_is_no_such_module")
+
+    # liblzma and openssl are libraries not python packages, so it should just fail.
+    for pkg in ["liblzma", "openssl"]:
+        with pytest.raises(ModuleNotFoundError, match="No module named"):
+            importlib.import_module(pkg)
+
+    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+        importlib.import_module("_hashlib")
+
+
+def test_args(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    assert (
+        selenium.run_js(
+            """
+            self.stdoutStrings = [];
+            self.stderrStrings = [];
+            function stdout(s){
+                stdoutStrings.push(s);
+            }
+            function stderr(s){
+                stderrStrings.push(s);
+            }
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                jsglobals : self,
+                stdout,
+                stderr,
+                args: ['-c', 'print([x*x+1 for x in range(10)])']
+            });
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            pyodide._module._run_main();
+            return stdoutStrings.pop()
+            """
+        )
+        == repr([x * x + 1 for x in range(10)])
+    )
+
+
+def test_args_OO(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            args: ['-OO']
+        });
+        pyodide.runPython(`import sys; sys.__doc__`)
+        """
+    )
+
+    assert not doc
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_relative_index_url(selenium, tmp_path):
+    tmp_dir = Path(tmp_path)
+    version_result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8"
+    )
+    extra_node_args = []
+    if version_result.stdout.startswith("v14"):
+        extra_node_args.append("--experimental-wasm-bigint")
+
+    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
+
+    result = subprocess.run(
+        [
+            "node",
+            *extra_node_args,
+            "-e",
+            rf"""
+            const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
+            async function main(){{
+                py = await loadPyodide({{indexURL: "./dist"}});
+                console.log("\n");
+                console.log(py._module.API.config.indexURL);
+            }}
+            main();
+            """,
+        ],
+        cwd=ROOT_PATH,
+        capture_output=True,
+        encoding="utf8",
+    )
+    import textwrap
+
+    def print_result(result):
+        if result.stdout:
+            print("  stdout:")
+            print(textwrap.indent(result.stdout, "    "))
+        if result.stderr:
+            print("  stderr:")
+            print(textwrap.indent(result.stderr, "    "))
+
+    if result.returncode:
+        print_result(result)
+        result.check_returncode()
+
+    try:
+        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+    finally:
+        print_result(result)
+
+
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+def test_index_url_calculation_source_map(selenium):
+    import os
+
+    node_options = ["--enable-source-maps"]
+
+    result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    if result.stdout.startswith("v14"):
+        node_options.append("--experimental-wasm-bigint")
+
+    DIST_DIR = str(Path.cwd() / "dist")
+
+    env = os.environ.copy()
+    env["DIST_DIR"] = DIST_DIR
+    result = subprocess.run(
+        [
+            "node",
+            *node_options,
+            "-e",
+            """
+            const { loadPyodide } = require(`${process.env.DIST_DIR}/pyodide`);
+            async function main() {
+                const py = await loadPyodide();
+                console.log("indexURL:", py._module.API.config.indexURL);
+            }
+            main();
+            """,
+        ],
+        env=env,
+        capture_output=True,
+        encoding="utf8",
+    )
+
+    assert f"indexURL: {DIST_DIR}" in result.stdout
+
+
+@pytest.mark.xfail_browsers(
+    node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
+)
+def test_csp(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    target_path = DIST_PATH / "test_csp.html"
+    try:
+        shutil.copy(get_pyodide_root() / "src/templates/test_csp.html", target_path)
+        selenium.goto(f"{selenium.base_url}/test_csp.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+    finally:
+        target_path.unlink()
+
+
+def test_static_import(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    # the xfail_browsers mark won't work without using a selenium fixture
+    # so we manually xfail the node test
+    if runtime == "node":
+        pytest.xfail("static import test is browser-only")
+
+    # copy dist to tmp_path to perform file changes safely
+    shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
+
+    # define the directory to hide the statically imported pyodide.asm.js in
+    hiding_dir = "hide_pyodide_asm_for_test"
+
+    # create the directory and move pyodide.asm.js to the directory
+    # so that dynamic import won't find it
+    (tmp_path / hiding_dir).mkdir()
+    shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
+
+    # make sure the test html references the new directory when importing pyodide.asm.js
+    test_html = (ROOT_PATH / "src/templates/module_static_import_test.html").read_text()
+    test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
+    (tmp_path / "module_static_import_test.html").write_text(test_html)
+
+    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
+        request, runtime, web_server, playwright_browsers
+    ) as selenium:
+        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+        selenium.javascript_setup()
+        selenium.load_pyodide()
+        selenium.run_js(
+            """
+            pyodide.runPython(`
+                print('Static import works')
+            `);
+            """
+        )
+
+
+def test_python_error(selenium):
+    [msg, ty] = selenium.run_js(
+        """
+        try {
+            pyodide.runPython("raise TypeError('oops')");
+        } catch(e) {
+            return [e.message, e.type];
+        }
+        """
+    )
+    assert msg.endswith("TypeError: oops\n")
+    assert ty == "TypeError"
+
+
+def test_python_version(selenium):
+    selenium.run_js(
+        """
+        sys = pyodide.pyimport("sys");
+        assert(() => sys.version_info.major === pyodide._module._py_version_major());
+        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
+        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        sys.destroy();
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
+    selenium = selenium_standalone_noload
+    stdlib_target_path = ROOT_PATH / "dist/python_stdlib2.zip"
+    shutil.copy(ROOT_PATH / "dist/python_stdlib.zip", stdlib_target_path)
+
+    try:
+        selenium.run_js(
+            """
+            let pyodide = await loadPyodide({
+                fullStdLib: false,
+                stdLibURL: "./python_stdlib2.zip",
+            });
+            // Check that we can import stdlib library modules
+            let statistics = pyodide.pyimport('statistics');
+            assert(() => statistics.median([2, 3, 1]) === 2)
+            """
+        )
+    finally:
+        stdlib_target_path.unlink()
+
+
+def test_pickle_internal_error(selenium):
+    @run_in_pyodide
+    def helper(selenium):
+        from pyodide.ffi import InternalError
+
+        raise InternalError("oops!")
+
+    from pyodide.ffi import InternalError
+
+    with pytest.raises(InternalError):
+        helper(selenium)

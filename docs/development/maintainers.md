@@ -8,28 +8,38 @@ For branch organization we use a variation of the [GitHub
 Flow](https://guides.github.com/introduction/flow/) with
 the latest release branch named `stable` (due to ReadTheDocs constraints).
 
-(making-major-release)=
+(release-instructions)=
 
-### Making a major release
+### Release Instructions
 
-1. Make a new PR and for all occurrences of
-   `https://cdn.jsdelivr.net/pyodide/dev/full/` in `./docs/` replace `dev` with
-   the release version `vX.Y.Z` (note the presence of the leading `v`). This
-   also applies to `docs/conf.py`
-2. Set the version in `src/py/pyodide/__init__.py` in `src/js/package.json`, in
-   `src/py/setup.cfg` and in `pyodide-build/setup.cfg`.
-3. Make sure the change log is up-to-date.
+1. From the root directory of the repository run
+
+   ```bash
+   ./tools/bump_version.py --new-version <new_version>
+   # ./tools/bump_version.py --new_version <new_version> --dry-run
+   ```
+
+   and check that the diff is correct with `git diff`. Try using `ripgrep` to
+   make sure there are no extra old versions lying around e.g., `rg -F "0.18"`,
+   `rg -F dev0`, `rg -F dev.0`.
+
+2. Make sure the change log is up-to-date. (Skip for alpha releases.)
+
    - Indicate the release date in the change log.
    - Generate the list of contributors for the release at the end of the
      changelog entry with,
      ```bash
-     git shortlog -s LAST_TAG.. | cut -f2- | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
+     git shortlog -s LAST_TAG.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
      ```
      where `LAST_TAG` is the tag for the last release.
-     Merge the PR.
-4. Assuming the upstream `stable` branch exists, rename it to a release branch
-   for the previous major version. For instance if last release was, `0.20.0`,
-   the corresponding release branch would be `0.20.X`,
+
+3. Make a PR with the updates from steps 1 and 2. Merge the PR.
+
+4. (Major release only.) Assuming the upstream `stable` branch exists,
+   rename it to a release branch for the previous major version. For instance if
+   last release was, `0.20.0`, the corresponding release branch would be
+   `0.20.X`,
+
    ```bash
    git fetch upstream
    git checkout stable
@@ -37,51 +47,33 @@ the latest release branch named `stable` (due to ReadTheDocs constraints).
    git push upstream 0.20.X
    git branch -D stable    # delete locally
    ```
+
 5. Create a tag `X.Y.Z` (without leading `v`) and push
    it to upstream,
+
    ```bash
    git tag X.Y.Z
    git push upstream X.Y.Z
    ```
-   Create a new `stable` branch from this tag,
+
+   Wait for the CI to pass and create the release on GitHub.
+
+6. (Major release only). Create a new `stable` branch from this tag,
+
    ```bash
    git checkout -b stable
    git push upstream stable --force
    ```
-   Wait for the CI to pass and create the release on GitHub.
-6. Release the `pyodide-build` package and `pyodide` package:
-   ```bash
-   pip install twine build
-   cd pyodide-build/
-   python -m build .
-   ls dist/   # check the produced files
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-   And to release the `pyodide` package:
-   ```bash
-   cd src/py/
-   python -m build .
-   twine check dist/*X.Y.Z*
-   twine upload dist/*X.Y.Z*
-   ```
-7. Release the Pyodide JavaScript package:
 
-   ```bash
-   cd src/js
-   npm publish # Note: use "--tag next" for prereleases
-   npm dist-tag add pyodide@a.b.c next # Label this release as also the latest unstable release
+7. Revert the release commit. If making a major release, increment the version
+   to the next development version specified by Semantic Versioning.
+
+   ```sh
+   # If you just released 0.22.0, then set the next version to 0.23.0
+   ./tools/bump_version.py --new-version 0.23.0.dev0
    ```
 
-8. Build the pre-built Docker image locally and push,
-   ```bash
-   docker build -t pyodide/pyodide:X.Y.Z -f Dockerfile-prebuilt --build-arg VERSION=BB .
-   docker push
-   ```
-   where `BB` is the last version of the `pyodide-env` Docker image (you can
-   find it at the top of `.circleci/config.yml`).
-9. Revert Step 1. and increment the version in `src/py/pyodide/__init__.py` to
-   the next version specified by Semantic Versioning.
+8. Update these instructions with any relevant changes.
 
 ### Making a minor release
 
@@ -105,23 +97,46 @@ This can be done with either,
   ```
   and indicate which commits to take from `main` in the UI.
 
-Then follow steps 2, 3, and 6 from {ref}`making-major-release`.
+Then follow the relevant steps from {ref}`release-instructions`.
 
 ### Making an alpha release
 
-Follow steps 2, 6, 7, and 9 from {ref}`making-major-release`. Name the first
-alpha release `x.x.xa1` and in subsequent alphas increment the final number. For
-the npm package the alpha should have version in the format `x.x.x-alpha.1`. For
-the node package make sure to use `npm publish --tag next` to avoid setting the
-alpha version as the stable release.
-
-If you accidentally publish the alpha release over the stable `latest` tag, you
-can fix it with: `npm dist-tag add pyodide@a.b.c latest` where `a.b.c` should be
-the lastest stable version. Then use
-`npm dist-tag add pyodide@a.b.c-alpha.d next` to set the `next` tag to point to the
-just-published alpha release.
+Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
+final number. Follow the relevant steps from {ref}`release-instructions`.
 
 ### Fixing documentation for a released version
 
 Cherry pick the corresponding documentation commits to the `stable` branch. Use
 `[skip ci]` in the commit message.
+
+### Upgrading pyodide to a new version of CPython
+
+Prerequisites -- The desired version of CPython must be available at:
+
+1. The `specific release` section of https://www.python.org/downloads
+2. https://hub.docker.com/_/python
+3. https://github.com/actions/python-versions/releases
+
+For example: `v3.11.1` -> `v3.11.2`
+
+A project maintainer must create a up-to-date Docker image:
+
+1. In upstream (not a fork) change the Python version at the top of `Dockerfile` to the new version.
+2. Click `Run workflow` on https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml
+   - This will build and upload a new Docker image to https://hub.docker.com/r/pyodide/pyodide-env/tags
+3. Re-tag that image with the correct browser and Python versions: `20230301-chrome109-firefox109-py311`
+4. Open a new issue for a interested contributor to execute the following tasks...
+
+Any contributor can complete the Python upgrade:
+
+1. Ensure that the new Docker image has been tagged at https://hub.docker.com/r/pyodide/pyodide-env/tags
+2. Download the **Gzipped source tarball** at https://www.python.org/downloads/release/python-3112 into `downloads/`
+3. `shasum -a 256 downloads/Python-3.11.2.tgz > cpython/checksums`
+   - Ensure the path in `cpython/checksums` starts with `downloads/Python-`
+4. `git grep --name-only "3.11.1" ` # All of these files will need to be updated.
+5. In `.circleci/config.yml` modify the image name to match the image tag on Docker Hub.
+   - `image: pyodide/pyodide-env:20230301-chrome109-firefox109-py311`
+6. In `run_docker` modify the `PYODIDE_IMAGE_TAG` to match the image tag on Docker Hub.
+   - `PYODIDE_IMAGE_TAG="20230301-chrome109-firefox109-py311"`
+7. Rebase any patches which do not apply cleanly.
+8. Create a pull request and fix any failing tests. This may be complicated for non-micro releases of CPython.

@@ -1,50 +1,98 @@
-from collections import namedtuple
-from time import sleep
-
+import hashlib
+import zipfile
 from pathlib import Path
+from typing import Any
 
-from pyodide_build import buildall
 import pytest
 
-PACKAGES_DIR = (Path(__file__).parents[3] / "packages").resolve()
+from pyodide_build import buildall
+from pyodide_build.pywasmcross import BuildArgs
+
+RECIPE_DIR = Path(__file__).parent / "_test_recipes"
 
 
 def test_generate_dependency_graph():
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"beautifulsoup4"})
-
-    assert set(pkg_map.keys()) == {
-        "soupsieve",
-        "beautifulsoup4",
-    }
-    assert pkg_map["soupsieve"].dependencies == []
-    assert pkg_map["soupsieve"].dependents == {"beautifulsoup4"}
-    assert pkg_map["beautifulsoup4"].dependencies == ["soupsieve"]
-    assert pkg_map["beautifulsoup4"].dependents == set()
+    # beautifulsoup4 has a circular dependency on soupsieve
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"beautifulsoup4"})
+    assert pkg_map["beautifulsoup4"].run_dependencies == ["soupsieve"]
+    assert pkg_map["beautifulsoup4"].host_dependencies == []
+    assert pkg_map["beautifulsoup4"].host_dependents == set()
 
 
-def test_generate_packages_json():
+@pytest.mark.parametrize(
+    "requested, disabled, out",
+    [
+        ({"scipy"}, set(), {"scipy", "numpy", "CLAPACK"}),
+        ({"scipy"}, {"numpy"}, set()),
+        ({"scipy", "CLAPACK"}, {"numpy"}, {"CLAPACK"}),
+        ({"scikit-learn"}, {"numpy"}, set()),
+        ({"scikit-learn", "scipy"}, {"joblib"}, {"scipy", "numpy", "CLAPACK"}),
+        ({"scikit-learn", "no-numpy-dependents"}, set(), set()),
+        ({"scikit-learn", "numpy", "no-numpy-dependents"}, set(), {"numpy"}),
+    ],
+)
+def test_generate_dependency_graph2(requested, disabled, out):
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, requested, disabled)
+    assert set(pkg_map.keys()) == out
+
+
+def test_generate_dependency_graph_disabled():
     pkg_map = buildall.generate_dependency_graph(
-        PACKAGES_DIR, {"beautifulsoup4", "micropip"}
+        RECIPE_DIR, {"pkg_test_disabled_child"}
+    )
+    assert set(pkg_map.keys()) == set()
+
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_disabled"})
+    assert set(pkg_map.keys()) == set()
+
+
+def test_generate_repodata(tmp_path):
+    pkg_map = buildall.generate_dependency_graph(
+        RECIPE_DIR, {"pkg_1", "pkg_2", "libtest", "libtest_shared"}
+    )
+    hashes = {}
+    for pkg in pkg_map.values():
+        pkg.file_name = pkg.file_name or pkg.name + ".whl"
+        # Write dummy package file for SHA-256 hash verification
+        with zipfile.ZipFile(tmp_path / pkg.file_name, "w") as whlzip:
+            whlzip.writestr(pkg.file_name, data=pkg.file_name)
+
+        with open(tmp_path / pkg.file_name, "rb") as f:
+            hashes[pkg.name] = hashlib.sha256(f.read()).hexdigest()
+
+    package_data = buildall.generate_repodata(tmp_path, pkg_map)
+    assert set(package_data.keys()) == {"info", "packages"}
+    assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
+    assert package_data["info"]["arch"] == "wasm32"
+    assert package_data["info"]["platform"].startswith("emscripten")
+
+    assert set(package_data["packages"]) == {
+        "pkg_1",
+        "pkg_1_1",
+        "pkg_2",
+        "pkg_3",
+        "pkg_3_1",
+        "libtest_shared",
+    }
+    assert package_data["packages"]["pkg_1"] == {
+        "name": "pkg_1",
+        "version": "1.0.0",
+        "file_name": "pkg_1.whl",
+        "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
+        "imports": ["pkg_1"],
+        "package_type": "package",
+        "install_dir": "site",
+        "sha256": hashes["pkg_1"],
+    }
+
+    assert (
+        package_data["packages"]["libtest_shared"]["package_type"] == "shared_library"
     )
 
-    package_data = buildall.generate_packages_json(pkg_map)
-    assert set(package_data.keys()) == {"info", "packages"}
-    assert package_data["info"] == {"arch": "wasm32", "platform": "Emscripten-1.0"}
-    assert set(package_data["packages"]) == {
-        "test",
-        "distutils",
-        "pyparsing",
-        "packaging",
-        "soupsieve",
-        "beautifulsoup4",
-        "micropip",
-    }
-    assert package_data["packages"]["micropip"] == {
-        "name": "micropip",
-        "version": "0.1",
-        "depends": ["pyparsing", "packaging", "distutils"],
-        "imports": ["micropip"],
-    }
+    sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
+    assert not sharedlib_imports, (
+        "shared libraries should not have any imports, but got " f"{sharedlib_imports}"
+    )
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -52,60 +100,26 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, args: Any) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml", "micropip"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
-    Args = namedtuple("args", ["n_jobs", "force_rebuild"])
-    buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
-    )
+    buildall.build_from_graph(pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True)
 
     assert set(build_list) == {
-        "packaging",
-        "pyparsing",
-        "soupsieve",
-        "beautifulsoup4",
-        "micropip",
-        "webencodings",
-        "html5lib",
-        "cssselect",
-        "lxml",
-        "libxslt",
-        "libxml",
-        "zlib",
-        "libiconv",
-        "six",
+        "pkg_1",
+        "pkg_1_1",
+        "pkg_2",
+        "pkg_3",
+        "pkg_3_1",
+        "libtest_shared",
     }
-    assert build_list.index("pyparsing") < build_list.index("packaging")
-    assert build_list.index("packaging") < build_list.index("micropip")
-    assert build_list.index("soupsieve") < build_list.index("beautifulsoup4")
-
-
-@pytest.mark.parametrize("n_jobs", [1, 4])
-def test_build_all_dependencies(n_jobs, monkeypatch):
-    """Try building all the dependency graph, without the actual build operations"""
-
-    class MockPackage(buildall.Package):
-        n_builds = 0
-
-        def build(self, outputdir: Path, args) -> None:
-            sleep(0.005)
-            self.n_builds += 1
-            # check that each build is only run once
-            assert self.n_builds == 1
-
-    monkeypatch.setattr(buildall, "Package", MockPackage)
-
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, packages={"*"})
-
-    Args = namedtuple("args", ["n_jobs", "force_rebuild"])
-    buildall.build_from_graph(
-        pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=False)
-    )
+    assert build_list.index("pkg_1_1") < build_list.index("pkg_1")
+    assert build_list.index("pkg_3") < build_list.index("pkg_1")
+    assert build_list.index("pkg_3_1") < build_list.index("pkg_3")
 
 
 @pytest.mark.parametrize("n_jobs", [1, 4])
@@ -113,15 +127,53 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, outputdir: Path, args) -> None:
+        def build(self, args: Any) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
-    pkg_map = buildall.generate_dependency_graph(PACKAGES_DIR, {"lxml"})
+    pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1"})
 
     with pytest.raises(ValueError, match="Failed build"):
-        Args = namedtuple("args", ["n_jobs", "force_rebuild"])
         buildall.build_from_graph(
-            pkg_map, Path("."), Args(n_jobs=n_jobs, force_rebuild=True)
+            pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True
         )
+
+
+def test_requirements_executable(monkeypatch):
+    import shutil
+
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: None)
+
+        with pytest.raises(RuntimeError, match="missing in the host system"):
+            buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
+
+    with monkeypatch.context() as m:
+        m.setattr(shutil, "which", lambda exe: "/bin")
+
+        buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
+
+
+@pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
+def test_is_rust_package(exe):
+    pkg = buildall.BasePackage(
+        pkgdir=Path(""),
+        name="test",
+        version="1.0.0",
+        disabled=False,
+        meta=None,  # type: ignore[arg-type]
+        package_type="package",
+        run_dependencies=[],
+        host_dependencies=[],
+        host_dependents=set(),
+        dependencies=set(),
+        unbuilt_host_dependencies=set(),
+        executables_required=[exe],
+    )
+
+    assert buildall.is_rust_package(pkg)
+
+    pkg.executables_required = []
+
+    assert not buildall.is_rust_package(pkg)

@@ -1,6 +1,10 @@
 package:
   name: scipy
-  version: 1.7.3 # when updating version make sure to update pip install scipy==1.7.3 below too.
+  version: 1.9.3
+  tag:
+    - min-scipy-stack
+  top-level:
+    - scipy
 
 # See extra explanation in info.md
 #
@@ -13,98 +17,96 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/61/67/1a654b96309c991762ee9bc39c363fc618076b155fe52d295211cf2536c7/scipy-1.7.3.tar.gz
-  sha256: ab5875facfdef77e0a47d5fd39ea178b58e60e454a4c85aa1e52fcb80db7babf
+  url: https://files.pythonhosted.org/packages/0a/2e/44795c6398e24e45fa0bb61c3e98de1cfea567b1b51efd3751e2f7ff9720/scipy-1.9.3.tar.gz
+  sha256: fbc5c05c85c1a02be77b1ff591087c83bc44579c6d2bd9fb798bb64ea5e1a027
 
   patches:
-    - patches/add-lapack_extras-to-flapack.patch
-    - patches/convert-xerrwv-message-arg-from-int-to-str.patch
-    - patches/disable-blas-detection.patch
-    - patches/fix-fortran-files-minpack.patch
-    - patches/gemm_-no-const.patch
-    - patches/make-int-return-values.patch
-    - patches/remove-cuncsd-dorcsd-sorcsd-zuncsd.patch
-    - patches/remove-mvnun-not-fortran-77-compliant.patch
-    - patches/sasum-returns-double-not-float.patch
-    - patches/skip-fortran-fails-to-link.patch
-    - patches/rename-_page_trend_test.patch
+    - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
+    - patches/0002-int-to-string.patch
+    - patches/0003-fix-fotran-files-minpack.patch
+    - patches/0004-gemm_-no-const.patch
+    - patches/0005-make-int-return-values.patch
+    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
+    - patches/0007-skip-fortran-fails-to-link.patch
+    - patches/0008-Change-qh_eachvoronoi_all-FILE-type.patch
+    - patches/0009-Remove-meson-requirements.patch
+    - patches/0010-Fix-fitpack.patch
+    # TODO remove the next patch when we upgrade to scipy 1.11, since it has
+    # been fixed upstream in https://github.com/scipy/scipy/pull/18124
+    - patches/0011-When-forward-declaring-print_soln-give-it-the-correc.patch
+    - patches/0012-Enable-long-double-support-in-Boost-library-for-emsc.patch
 
 build:
-  # set linker and C flags to error on anything to do with function declarations being wrong.
-  # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
-  # will fail. Better to fail at compile or link time.
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/numpy/config
-    -I$(PYODIDE_ROOT)/packages/CLAPACK/build/CLAPACK-3.2.1/INCLUDE
-    -I$(PYODIDE_ROOT)/packages/.artifacts/include/
-    -I$(PYODIDE_ROOT)/packages/.artifacts/pythran/
-    -DUNDERSCORE_G77
-    -Werror=implicit-function-declaration
-    -Werror=mismatched-parameter-types
-    -Werror=mismatched-return-types
+    -I$(WASM_LIBRARY_DIR)/include
     -Wno-return-type
+    -DUNDERSCORE_G77
+  cxxflags: -fexceptions
   ldflags: |
-    -L$(NUMPY_LIB)
-    -L$(NUMPY_LIB_BASE)/random/lib
-    -Wl,--fatal-warnings
+    -L$(NUMPY_LIB)/core/lib/
+    -L$(NUMPY_LIB)/random/lib/
+    -fexceptions
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
   # Scipy has a bunch of custom logic implemented in
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
-    pip install scipy==1.7.3 pybind11[global] pythran
-    pip install --upgrade pybind11[global] pythran -t $PYODIDE_ROOT/packages/.artifacts/
-    # We get linker errors because the following 36 functions are missing
-    # Copying them from a more recent LAPACK seems to work fine.
-    wget https://github.com/Reference-LAPACK/lapack/archive/refs/tags/v3.10.0.tar.gz
-    tar xzf v3.10.0.tar.gz
-    cd lapack-3.10.0/SRC
-    cat \
-      cgemqrt.f cgeqrfp.f cgeqrt.f clahqr.f csyconv.f csyconvf.f csyconvf_rook.f ctpmqrt.f ctpqrt.f \
-      dgemqrt.f dgeqrfp.f dgeqrt.f dlahqr.f dsyconv.f dsyconvf.f dsyconvf_rook.f dtpmqrt.f dtpqrt.f \
-      sgemqrt.f sgeqrfp.f sgeqrt.f slahqr.f ssyconv.f ssyconvf.f ssyconvf_rook.f stpmqrt.f stpqrt.f \
-      zgemqrt.f zgeqrfp.f zgeqrt.f zlahqr.f zsyconv.f zsyconvf.f zsyconvf_rook.f ztpmqrt.f ztpqrt.f \
-    >>  ../../scipy/linalg/lapack_extras.f
-    cd ../..
-    # The additional four functions cuncsd, dorcsd, sorcsd, and zuncsd are also
-    # missing but they use features of Fortran that aren't Fortran 77 compatible
-    # so f2c can't handle them. We stub them with C definitions that do nothing.
-    # These stubs come from f2cpatches/wrap_dummy_g77_abi.patch
+    set -x
+    export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
+    export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
+    export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
+
+    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
 
     # Change many functions that return void into functions that return int
-    find scipy -name "*.c*" | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
-    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
-    sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
-    sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+    find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
 
-    # Missing declaration from cython_lapack_signatures.txt
-    echo "void ilaenv(int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int *n4)" \
-      >>  scipy/linalg/cython_lapack_signatures.txt
+    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/odr/__odrpack.c
+    sed -i 's/^void/int/g' scipy/odr/odrpack.h
+    sed -i 's/^void/int/g' scipy/odr/__odrpack.c
+
+    sed -i 's/void BLAS_FUNC/int BLAS_FUNC/g' scipy/special/lapack_defs.h
+    # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
+    sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
+    sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+    sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
+
+    sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/PUBLIC void/PUBLIC int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/^void/int/g' scipy/sparse/linalg/_dsolve/*.{c,h}
+    sed -i 's/void \(.\)print/int \1/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
+    sed -i 's/TYPE_GENERIC_FUNC(\(.*\), void)/TYPE_GENERIC_FUNC(\1, int)/g' scipy/sparse/linalg/_dsolve/_superluobject.h
+
+    sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
+    sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
+    sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
+    sed -i 's/, 1)/)/g' scipy/optimize/_trlib/trlib_private.h
+
+    sed -i 's/^void/int/g' scipy/spatial/qhull_misc.h
+    sed -i 's/, size_t)/)/g' scipy/spatial/qhull_misc.h
+    sed -i 's/,1)/)/g' scipy/spatial/qhull_misc.h
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
-    echo "" > scipy/sparse/linalg/dsolve/SuperLU/SRC/input_error.c
-    echo 'import sys' >> scipy/__init__.py
-    echo 'if "pyodide_js" in sys.modules:'  >> scipy/__init__.py
-    echo '   from pyodide_js._module import loadDynamicLibrary' >> scipy/__init__.py
-    echo '   loadDynamicLibrary("/lib/python3.9/site-packages/scipy/linalg/_flapack.so")' >> scipy/__init__.py
+    echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
-  prereplay: |
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
-    sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_blas_subroutines.h
-    find -name '*.c' | xargs sed -i 's/extern void F_WRAPPEDFUNC/extern int F_WRAPPEDFUNC/g'
-    find -name '*.c' | xargs sed -i 's/void (\*f2py_func)/int (*f2py_func)/g'
-    find -name '*.c' | xargs sed -i 's/static void cb_/static int cb_/g'
-    find -name '*.c' | xargs sed -i 's/typedef void(\*cb_/typedef int(*cb_/g'
-    sed -i 's/,size_t//' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
-    sed -i 's/,slen([a-z]*))/)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_flapackmodule.c
-    sed -i 's/ float (\*f2py_func)/ double (\*f2py_func)/g' build/src.linux-x86_64-3.9/build/src.linux-x86_64-3.9/scipy/linalg/_fblasmodule.c
+  cross-build-env: true
+  cross-build-files:
+    - scipy/linalg/cython_lapack.pxd
+    - scipy/linalg/cython_blas.pxd
 
 requirements:
+  host:
+    - numpy
+    - openblas
+    - boost-cpp
   run:
     - numpy
-    - CLAPACK
+    - openblas
+  executable:
+    - gfortran
+    - f2c
 
 test:
   imports:
@@ -145,3 +147,8 @@ test:
     - scipy.stats.distributions
     - scipy.stats.mstats
     - scipy.stats.qmc
+about:
+  home: https://www.scipy.org
+  PyPI: https://pypi.org/project/scipy
+  summary: "SciPy: Scientific Library for Python"
+  license: BSD

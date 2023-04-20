@@ -1,0 +1,31 @@
+From d88133066f9f6312145c1186116fdb6446d3f7a5 Mon Sep 17 00:00:00 2001
+From: Michael Droettboom <mdboom@gmail.com>
+Date: Fri, 18 Mar 2022 20:00:51 -0700
+Subject: [PATCH 2/5] fix f2clibs build
+
+emscripten produces LLVM bitcode here, not genuine object files, so it doesn't
+make sense to strip symbols.
+
+(It would also fail because emcc uses the file extension to determine what kind
+of object to output, and .xxx is not a recognized extension; this is the error
+message you would receive if you try to run the commands)
+---
+ F2CLIBS/libf2c/Makefile | 2 --
+ 1 file changed, 2 deletions(-)
+
+diff --git a/F2CLIBS/libf2c/Makefile b/F2CLIBS/libf2c/Makefile
+index a473ed8..e51d826 100644
+--- a/F2CLIBS/libf2c/Makefile
++++ b/F2CLIBS/libf2c/Makefile
+@@ -19,8 +19,6 @@ include ../../make.inc
+ # compile, then strip unnecessary symbols
+ .c.o:
+ 	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
+-	ld -r -x -o $*.xxx $*.o
+-	mv $*.xxx $*.o
+ ## Under Solaris (and other systems that do not understand ld -x),
+ ## omit -x in the ld line above.
+ ## If your system does not have the ld command, comment out
+-- 
+2.25.1
+

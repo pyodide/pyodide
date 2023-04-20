@@ -1,9 +1,9 @@
 ---
 name: Documentation improvement
 about: Improve or fix the documentation
-title: ''
+title: ""
 labels: documentation
-assignees: ''
+assignees: ""
 ---
 
 ## 📚 Documentation

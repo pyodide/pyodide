@@ -1,0 +1,41 @@
+package:
+  name: galpy
+  version: 1.8.3
+  top-level:
+    - galpy
+source:
+  url: https://files.pythonhosted.org/packages/60/a6/13823c49ccc8514912157362e486f33abd7f2eae70534d15639452cdd32c/galpy-1.8.3.tar.gz
+  sha256: 27f164e76a89c7b9a4fb06ce7950f879765a13bb2b6257f19ee182cde8cfbb91
+build:
+  script:
+    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
+    export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix gsl)
+  cflags: |
+    $(LIBGSL_INCLUDE_PATH)
+  ldflags: |
+    $(LIBGSL_LIBRARY_PATH)
+  exports: requested
+requirements:
+  run:
+    - numpy
+    - scipy
+    - matplotlib
+    - astropy
+    - future
+    - setuptools
+  host:
+    - libgsl
+    - numpy
+    - scipy
+test:
+  imports:
+    - galpy
+    - galpy.potential
+    - galpy.orbit
+    - galpy.actionAngle
+    - galpy.df
+about:
+  home: http://github.com/jobovy/galpy
+  PyPI: https://pypi.org/project/galpy
+  summary: Galactic Dynamics in python
+  license: New BSD

@@ -12,7 +12,7 @@ typedef int errcode;
 #define unlikely(x) __builtin_expect((x), 0)
 
 int
-error_handling_init();
+error_handling_init(PyObject* core_module);
 
 extern PyObject* internal_error;
 
@@ -85,6 +85,12 @@ console_error_obj(JsRef obj);
 #define LOG_EM_JS_ERROR(__funcname__, err)
 #endif
 
+#ifdef DEBUG_F
+#define IF_DEBUG(arg) arg
+#else
+#define IF_DEBUG(arg)
+#endif
+
 // Need an extra layer to expand LOG_EM_JS_ERROR.
 #define EM_JS_DEFER(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
@@ -96,7 +102,6 @@ console_error_obj(JsRef obj);
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
   EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
-    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -111,7 +116,6 @@ console_error_obj(JsRef obj);
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
   EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
-    "use strict";                                                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -121,6 +125,18 @@ console_error_obj(JsRef obj);
     }                                                                          \
     return 0;  /* some of these were void */                                   \
   })
+
+// If there is a Js error, catch it and return false.
+#define EM_JS_BOOL(ret, func_name, args, body...)                              \
+  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
+    try    /* intentionally no braces, body already has them */                \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
+        return false;                                                          \
+    }                                                                          \
+  })
+
 // clang-format on
 
 /**

@@ -1,15 +1,12 @@
-from pyodide_build.testing import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(
     packages=["nlopt"],
-    xfail_browsers={
-        "chrome": "nlopt set_min_objective triggers a fatal runtime error in chrome 89 see #1493",
-    },
 )
-def test_nlopt():
-    import numpy as np
+def test_nlopt(selenium):
     import nlopt
+    import numpy as np
 
     # objective function
     def f(x, grad):
@@ -19,9 +16,9 @@ def test_nlopt():
             67.8306620138889
             - 13.5689721666667 * x0
             - 3.83269458333333 * x1
-            + 0.720841066666667 * x0 ** 2
+            + 0.720841066666667 * x0**2
             + 0.3427605 * x0 * x1
-            + 0.0640322916666664 * x1 ** 2
+            + 0.0640322916666664 * x1**2
         )
 
         grad[0] = 1.44168213333333 * x0 + 0.3427605 * x1 - 13.5689721666667
@@ -37,9 +34,9 @@ def test_nlopt():
             -3.72589930555515
             + 128.965158333333 * x0
             + 0.341479166666643 * x1
-            - 0.19642666666667 * x0 ** 2
+            - 0.19642666666667 * x0**2
             + 2.78692500000002 * x0 * x1
-            - 0.0000104166666686543 * x1 ** 2
+            - 0.0000104166666686543 * x1**2
             - 468.897287036862
         )
 

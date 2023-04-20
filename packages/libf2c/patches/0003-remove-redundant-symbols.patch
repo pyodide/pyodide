@@ -1,0 +1,34 @@
+From 78ff0cec961d9eb4e94193995fe151e1ecdae9df Mon Sep 17 00:00:00 2001
+From: Roman Yurchak <rth.yurchak@gmail.com>
+Date: Fri, 18 Mar 2022 20:01:39 -0700
+Subject: [PATCH 3/5] remove redundant symbols
+
+Remove a few symbols from LAPACK that are redundantly defined with BLAS or are
+ported in scipy. It wouldn't be an issue if we were linking dynamically, but
+because of static linking otherwise we get errors at link time about symbols
+defined twice.
+
+ - Roman Yurchak (https://github.com/pyodide/pyodide/pull/238)
+---
+ SRC/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/SRC/Makefile b/SRC/Makefile
+index 5f1eb22..32e669b 100644
+--- a/SRC/Makefile
++++ b/SRC/Makefile
+@@ -48,9 +48,9 @@ include ../make.inc
+ #
+ #######################################################################
+ 
+-ALLAUX = maxloc.o ilaenv.o ieeeck.o lsamen.o xerbla.o xerbla_array.o iparmq.o	\
++ALLAUX = maxloc.o ilaenv.o ieeeck.o lsamen.o iparmq.o	\
+     ilaprec.o ilatrans.o ilauplo.o iladiag.o chla_transtype.o \
+-    ../INSTALL/ilaver.o ../INSTALL/lsame.o
++    ../INSTALL/ilaver.o
+ 
+ ALLXAUX =
+ 
+-- 
+2.25.1
+

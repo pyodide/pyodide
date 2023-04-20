@@ -6,13 +6,21 @@
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include <emscripten.h>
+#include <stdio.h>
 
 static PyObject* tbmod = NULL;
 
+_Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(format_exception);
-_Py_IDENTIFIER(last_type);
-_Py_IDENTIFIER(last_value);
-_Py_IDENTIFIER(last_traceback);
+
+void
+_Py_DumpTraceback(int fd, PyThreadState* tstate);
+
+EMSCRIPTEN_KEEPALIVE void
+dump_traceback()
+{
+  _Py_DumpTraceback(fileno(stdout), PyGILState_GetThisThreadState());
+}
 
 EM_JS(void, console_error, (char* msg), {
   let jsmsg = UTF8ToString(msg);
@@ -22,7 +30,7 @@ EM_JS(void, console_error, (char* msg), {
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
 EM_JS(void, console_error_obj, (JsRef obj), {
-  console.error(Module.hiwire.get_value(obj));
+  console.error(Hiwire.get_value(obj));
 });
 
 /**
@@ -45,10 +53,16 @@ set_error(PyObject* err)
  * msg - the Python traceback + error message
  * err - The error object
  */
-EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
-  return Module.hiwire.new_value(
-    new Module.PythonError(UTF8ToString(msg), err));
+// clang-format off
+EM_JS_REF(
+JsRef,
+new_error,
+(const char* type, const char* msg, PyObject* err),
+{
+  return Hiwire.new_value(
+    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
 });
+// clang-format on
 
 /**
  * Fetch the exception, normalize it, and ensure that traceback is not NULL.
@@ -84,9 +98,9 @@ fetch_and_normalize_exception(PyObject** type,
 static void
 store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
 {
-  _PySys_SetObjectId(&PyId_last_type, type);
-  _PySys_SetObjectId(&PyId_last_value, value);
-  _PySys_SetObjectId(&PyId_last_traceback, traceback);
+  PySys_SetObject("last_type", type);
+  PySys_SetObject("last_value", value);
+  PySys_SetObject("last_traceback", traceback);
 }
 
 /**
@@ -110,11 +124,11 @@ restore_sys_last_exception(void* value)
 {
   bool success = false;
   FAIL_IF_NULL(value);
-  PyObject* last_type = _PySys_GetObjectId(&PyId_last_type);
+  PyObject* last_type = PySys_GetObject("last_type");
   FAIL_IF_NULL(last_type);
-  PyObject* last_value = _PySys_GetObjectId(&PyId_last_value);
+  PyObject* last_value = PySys_GetObject("last_value");
   FAIL_IF_NULL(last_value);
-  PyObject* last_traceback = _PySys_GetObjectId(&PyId_last_traceback);
+  PyObject* last_traceback = PySys_GetObject("last_traceback");
   FAIL_IF_NULL(last_traceback);
   if (value != last_value) {
     return 0;
@@ -130,7 +144,7 @@ finally:
   return success;
 }
 
-EM_JS(void, fail_test, (), { Module.fail_test = true; })
+EM_JS(void, fail_test, (), { API.fail_test = true; })
 
 /**
  * Calls traceback.format_exception(type, value, traceback) and joins the
@@ -178,16 +192,21 @@ wrap_exception()
   PyObject* type = NULL;
   PyObject* value = NULL;
   PyObject* traceback = NULL;
+  PyObject* typestr = NULL;
   PyObject* pystr = NULL;
   JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
+  typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
+  FAIL_IF_NULL(typestr);
+  const char* typestr_utf8 = PyUnicode_AsUTF8(typestr);
+  FAIL_IF_NULL(typestr_utf8);
   pystr = format_exception_traceback(type, value, traceback);
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  jserror = new_error(pystr_utf8, value);
+  jserror = new_error(typestr_utf8, pystr_utf8, value);
   FAIL_IF_NULL(jserror);
 
   success = true;
@@ -201,7 +220,8 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
-    jserror = new_error("Error occurred while formatting traceback", 0);
+    jserror = new_error(
+      "PyodideInternalError", "Error occurred while formatting traceback", 0);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);
@@ -210,16 +230,18 @@ finally:
   return jserror;
 }
 
+#ifdef DEBUG_F
 EM_JS(void, log_python_error, (JsRef jserror), {
   // If a js error occurs in here, it's a weird edge case. This will probably
   // never happen, but for maximum paranoia let's double check.
   try {
-    let msg = Module.hiwire.get_value(jserror).message;
+    let msg = Hiwire.get_value(jserror).message;
     console.warn("Python exception:\n" + msg + "\n");
   } catch (e) {
-    Module.fatal_error(e);
+    API.fatal_error(e);
   }
 });
+#endif
 
 /**
  * Convert the current Python error to a javascript error and throw it.
@@ -228,77 +250,12 @@ void _Py_NO_RETURN
 pythonexc2js()
 {
   JsRef jserror = wrap_exception();
+#ifdef DEBUG_F
   log_python_error(jserror);
+#endif
   // hiwire_throw_error steals jserror
   hiwire_throw_error(jserror);
 }
-
-char* error__js_funcname_string = "<javascript frames>";
-char* error__js_filename_string = "???.js";
-
-EM_JS_NUM(errcode, error_handling_init_js, (), {
-  Module.handle_js_error = function(e)
-  {
-    if (e.pyodide_fatal_error) {
-      throw e;
-    }
-    if (e instanceof Module._PropagatePythonError) {
-      // Python error indicator is already set in this case. If this branch is
-      // not taken, Python error indicator should be unset, and we have to set
-      // it. In this case we don't want to tamper with the traceback.
-      return;
-    }
-    let restored_error = false;
-    if (e instanceof Module.PythonError) {
-      // Try to restore the original Python exception.
-      restored_error = _restore_sys_last_exception(e.__error_address);
-    }
-    if (!restored_error) {
-      // Wrap the JavaScript error
-      let eidx = Module.hiwire.new_value(e);
-      let err = _JsProxy_create(eidx);
-      _set_error(err);
-      _Py_DecRef(err);
-      Module.hiwire.decref(eidx);
-    }
-    // Add a marker to the traceback to indicate that we passed through "native"
-    // frames.
-    // TODO? Use stacktracejs to add more detailed info here.
-    __PyTraceback_Add(HEAPU32[_error__js_funcname_string / 4],
-                      HEAPU32[_error__js_filename_string / 4],
-                      -1);
-  };
-  class PythonError extends Error
-  {
-    constructor(message, error_address)
-    {
-      super(message);
-      this.name = this.constructor.name;
-      // The address of the error we are wrapping. We may later compare this
-      // against sys.last_value.
-      // WARNING: we don't own a reference to this pointer, dereferencing it
-      // may be a use-after-free error!
-      this.__error_address = error_address;
-    }
-  };
-  Module.PythonError = PythonError;
-  // A special marker. If we call a CPython API from an EM_JS function and the
-  // CPython API sets an error, we might want to return an error status back to
-  // C keeping the current Python error flag. This signals to the EM_JS wrappers
-  // that the Python error flag is set and to leave it alone and return the
-  // appropriate error value (either NULL or -1).
-  class _PropagatePythonError extends Error
-  {
-    constructor()
-    {
-      Module.fail_test = true;
-      super("If you are seeing this message, an internal Pyodide error has " +
-            "occurred. Please report it to the Pyodide maintainers.");
-    }
-  };
-  Module._PropagatePythonError = _PropagatePythonError;
-  return 0;
-})
 
 PyObject*
 trigger_fatal_error(PyObject* mod, PyObject* _args)
@@ -307,12 +264,24 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
   Py_UNREACHABLE();
 }
 
+/**
+ * This is for testing fatal errors in test_pyodide
+ */
+PyObject*
+raw_call(PyObject* mod, PyObject* jsproxy)
+{
+  JsRef func = JsProxy_AsJs(jsproxy);
+  EM_ASM(Hiwire.get_value($0)(), func);
+  Py_RETURN_NONE;
+}
+
 static PyMethodDef methods[] = {
   {
     "trigger_fatal_error",
     trigger_fatal_error,
     METH_NOARGS,
   },
+  { "raw_call", raw_call, METH_O },
   { NULL } /* Sentinel */
 };
 
@@ -323,21 +292,17 @@ int
 error_handling_init(PyObject* core_module)
 {
   bool success = false;
-  internal_error = PyErr_NewException("pyodide.InternalError", NULL, NULL);
+  PyObject* _pyodide_core_docs = NULL;
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
+
+  internal_error = PyObject_GetAttrString(_pyodide_core_docs, "InternalError");
   FAIL_IF_NULL(internal_error);
-
-  conversion_error = PyErr_NewExceptionWithDoc(
-    "pyodide.ConversionError",
-    PyDoc_STR("Raised when conversion between Javascript and Python fails."),
-    NULL,
-    NULL);
+  conversion_error =
+    PyObject_GetAttrString(_pyodide_core_docs, "ConversionError");
   FAIL_IF_NULL(conversion_error);
-  // ConversionError is public
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
-  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
-  FAIL_IF_MINUS_ONE(error_handling_init_js());
+  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   tbmod = PyImport_ImportModule("traceback");
   FAIL_IF_NULL(tbmod);

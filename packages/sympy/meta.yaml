@@ -1,13 +1,18 @@
 package:
   name: sympy
-  version: '1.8'
+  version: 1.11.1
+  top-level:
+    - isympy
+    - sympy
 requirements:
   run:
-  - distutils
-  - mpmath
+    - distutils
+    - mpmath
 source:
-  sha256: 1ca588a9f6ce6a323c5592f9635159c2093572826668a1022c75c75bdf0297cb
-  url: https://files.pythonhosted.org/packages/88/b1/e4e620f45949a4cc7c935a0c711f6aac24e875810b68c37148c7402d838f/sympy-1.8.tar.gz
-test:
-  imports:
-  - sympy
+  sha256: 938f984ee2b1e8eae8a07b884c8b7a1146010040fccddc6539c54f401c8f6fcf
+  url: https://files.pythonhosted.org/packages/2d/49/a2d03101e2d28ad528968144831d506344418ef1cc04839acdbe185889c2/sympy-1.11.1-py3-none-any.whl
+about:
+  home: https://sympy.org
+  PyPI: https://pypi.org/project/sympy
+  summary: Computer algebra system (CAS) in Python
+  license: BSD

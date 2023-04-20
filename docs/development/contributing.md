@@ -8,17 +8,56 @@ for diving into it.
 
 ## Development Workflow
 
-See {ref}`building_from_sources` and {ref}`testing` documentation.
+To contribute code, see the following steps,
 
-For code-style the use of [pre-commit](https://pre-commit.com/) is also recommended,
+1. Fork the Pyodide repository [https://github.com/pyodide/pyodide](https://github.com/pyodide/pyodide) on Github.
+2. If you are on Linux, you can skip this step. On Windows and MacOS you have a
+   choice. The first option is to manually install Docker:
 
-```
-pip install pre-commit
-pre-commit install
-```
+   - on MacOS follow [these instructions](https://docs.docker.com/desktop/mac/install/)
+   - on Windows, [install WSL
+     2](https://docs.microsoft.com/en-us/windows/wsl/install), then Docker.
+     Note that Windows filesystem access from WSL2 is very slow and should
+     be avoided when building Pyodide.
 
-This will run a set of linters at each commit. Currently, it runs yaml syntax
-validation and is removing trailing whitespaces.
+   The second option is to use a service that provides a Linux
+   development environment, such as
+
+   - [Github Codespaces](https://github.com/features/codespaces)
+   - [gitpod.io](https://gitpod.io)
+   - or a remote Linux VM with SSH connection.
+
+3. Clone your fork of Pyodide
+   ```
+   git clone https://github.com/<your-username>/pyodide.git
+   ```
+   and add the upstream remote,
+   ```
+   git remote add upstream https://github.com/pyodide/pyodide.git
+   ```
+4. While the build will happen inside Docker you still need a development
+   environment with Python 3.10 and ideally Node.js. These can be installed
+   for instance with,
+   ```
+   conda create -c conda-forge -n pyodide-env python=3.10.2 nodejs
+   conda activate pyodide-env
+   ```
+   or via your system package manager.
+5. Install requirements (it's recommended to use a virtualenv or a conda env),
+   ```
+   pip install -r requirements.txt
+   ```
+6. Enable [pre-commit](https://pre-commit.com/) for code style,
+
+   ```
+   pre-commit install
+   ```
+
+   This will run a set of linters for each commit.
+
+7. Follow {ref}`building_from_sources` instructions.
+
+8. See {ref}`testing` documentation.
 
 ## Code of Conduct
 

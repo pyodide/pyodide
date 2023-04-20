@@ -1,31 +1,42 @@
-import pathlib
-import sys
-import json
 import gzip
+import inspect
+import json
+import sys
+from pathlib import Path
 
-from docutils.utils import new_document
 from docutils.frontend import OptionParser
-from sphinx_js.jsdoc import Analyzer as JsAnalyzer
+from docutils.utils import new_document
+
+if not hasattr(inspect, "getargspec"):
+    inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+
+
 from sphinx_js.suffix_tree import SuffixTree
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
-test_directory = pathlib.Path(__file__).resolve().parent
+test_directory = Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
+src_dir = test_directory.parents[2] / "src"
 
-# jsdoc_dump.json.gz is the source file for the test docs.
-# It can be updated as follows:
-# jsdoc -c ./docs/jsdoc_conf.json -X ./src/js/ ./src/core/ | gzip > docs/sphinx_pyodide/tests/jsdoc_dump.json.gz
-with gzip.open(test_directory / "jsdoc_dump.json.gz") as fh:
+
+# tsdoc_dump.json.gz is the source file for the test docs. It can be updated as follows:
+#
+# cp src/core/pyproxy.ts src/js/pyproxy.gen.ts
+# typedoc src/js/*.ts --tsconfig src/js/tsconfig.json --json docs/sphinx_pyodide/tests/tsdoc_dump.json
+# gzip docs/sphinx_pyodide/tests/tsdoc_dump.json
+# rm src/js/pyproxy.gen.ts
+with gzip.open(test_directory / "tsdoc_dump.json.gz") as fh:
     jsdoc_json = json.load(fh)
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
 
 from sphinx_pyodide.jsdoc import (
     PyodideAnalyzer,
+    flatten_suffix_tree,
     get_jsdoc_content_directive,
     get_jsdoc_summary_directive,
-    flatten_suffix_tree,
 )
 
-inner_analyzer = JsAnalyzer(jsdoc_json, "/home/hood/pyodide/src")
+inner_analyzer = TsAnalyzer(jsdoc_json, str(src_dir))
 settings = OptionParser().get_default_values()
 settings.update(settings_json, OptionParser())
 
@@ -46,7 +57,6 @@ def test_flatten_suffix_tree():
     }
     t.add_many(d.items())
     r = flatten_suffix_tree(t._tree)
-    r = {k: v.value for (k, v) in r.items()}
     assert d == r
 
 
@@ -63,25 +73,35 @@ def test_pyodide_analyzer():
     function_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["function"]}
     attribute_names = {x.name for x in pyodide_analyzer.js_docs["pyodide"]["attribute"]}
     assert function_names == {
-        "runPython",
-        "unregisterJsModule",
-        "loadPackage",
-        "runPythonAsync",
-        "loadPackagesFromImports",
-        "registerJsModule",
-        "isPyProxy",
-        "toPy",
-        "setInterruptBuffer",
-        "setStandardStreams",
         "checkInterrupt",
+        "isPyProxy",
+        "loadPackage",
+        "loadPackagesFromImports",
+        "mountNativeFS",
+        "pyimport",
         "registerComlink",
+        "registerJsModule",
+        "runPython",
+        "runPythonAsync",
+        "setDefaultStdout",
+        "setInterruptBuffer",
+        "setStderr",
+        "setStdin",
+        "setStdout",
+        "toPy",
+        "unpackArchive",
+        "unregisterJsModule",
     }
+
     assert attribute_names == {
+        "ERRNO_CODES",
         "FS",
-        "loadedPackages",
-        "globals",
+        "PATH",
         "version",
+        "globals",
+        "loadedPackages",
         "pyodide_py",
+        "version",
     }
 
 
@@ -122,8 +142,8 @@ def test_content():
 
     rp = results["runPython"]
     assert rp["directive"] == "function"
-    assert rp["sig"] == "code, globals)"
-    assert "Runs a string of Python code from JavaScript." in rp["body"]
+    assert rp["sig"] == "code, options)"
+    assert "Runs a string of Python code from JavaScript" in rp["body"]
 
 
 JsDocSummary = get_jsdoc_summary_directive(dummy_app)
@@ -155,9 +175,9 @@ def test_summary():
     attributes = {t[1]: t for t in attributes}
     functions = {t[1]: t for t in functions}
     assert globals["loadPyodide"] == (
-        "*async* ",
+        "**async** ",
         "loadPyodide",
-        "(config, )",
+        "(options)",
         "Load the main Pyodide wasm module and initialize it.",
         "globalThis.loadPyodide",
     )
@@ -185,7 +205,150 @@ def test_summary():
     )
 
     assert functions["loadPackagesFromImports"][:-2] == (
-        "*async* ",
+        "**async** ",
         "loadPackagesFromImports",
-        "(code, messageCallback, errorCallback)",
+        "(code, options)",
+    )
+
+
+def test_type_name():
+    tn = inner_analyzer._type_name
+    assert tn({"name": "void", "type": "intrinsic"}) == ":js:data:`void`"
+    assert tn({"value": None, "type": "literal"}) == ":js:data:`null`"
+    assert (
+        tn(
+            {
+                "name": "Promise",
+                "type": "reference",
+                "typeArguments": [{"name": "string", "type": "intrinsic"}],
+            }
+        ).strip()
+        == r":js:class:`Promise`\ **<**\ :js:data:`string`\ **>**"
+    )
+
+    assert (
+        tn(
+            {
+                "asserts": False,
+                "name": "jsobj",
+                "targetType": {"name": "PyProxy", "type": "reference"},
+                "type": "predicate",
+            }
+        ).strip()
+        == ":js:data:`boolean` (typeguard for :js:class:`PyProxy`)"
+    )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "kindString": "Method",
+                    "name": "messageCallback",
+                    "signatures": [
+                        {
+                            "kindString": "Call signature",
+                            "name": "messageCallback",
+                            "parameters": [
+                                {
+                                    "flags": {},
+                                    "kindString": "Parameter",
+                                    "name": "message",
+                                    "type": {"name": "string", "type": "intrinsic"},
+                                }
+                            ],
+                            "type": {"name": "void", "type": "intrinsic"},
+                        }
+                    ],
+                },
+                "type": "reflection",
+            }
+        ).strip()
+        == r"\ **(**\ \ **message:** :js:data:`string`\ **) =>** :js:data:`void`"
+    )
+
+    assert (
+        tn(
+            {
+                "name": "Iterable",
+                "type": "reference",
+                "typeArguments": [
+                    {
+                        "elements": [
+                            {
+                                "element": {"name": "string", "type": "intrinsic"},
+                                "isOptional": False,
+                                "name": "key",
+                                "type": "named-tuple-member",
+                            },
+                            {
+                                "element": {"name": "any", "type": "intrinsic"},
+                                "isOptional": False,
+                                "name": "value",
+                                "type": "named-tuple-member",
+                            },
+                        ],
+                        "type": "tuple",
+                    }
+                ],
+            }
+        ).strip()
+        == r":js:data:`Iterable`\ **<**\ \ **[**\ \ **key:** :js:data:`string`\ **,** \ **value:** :js:data:`any`\ **]** \ **>**"
+    )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "flags": {},
+                    "indexSignature": {
+                        "flags": {},
+                        "kindString": "Index signature",
+                        "parameters": [
+                            {
+                                "flags": {},
+                                "name": "key",
+                                "type": {"name": "string", "type": "intrinsic"},
+                            }
+                        ],
+                        "type": {"name": "string", "type": "intrinsic"},
+                    },
+                    "kindString": "Type literal",
+                },
+                "type": "reflection",
+            }
+        ).strip()
+        == r"""\ **{**\ \ **[key:** :js:data:`string`\ **]:** :js:data:`string`\ **}**\ """.strip()
+    )
+
+    assert (
+        tn(
+            {
+                "declaration": {
+                    "children": [
+                        {
+                            "flags": {},
+                            "kindString": "Property",
+                            "name": "cache",
+                            "type": {"name": "PyProxyCache", "type": "reference"},
+                        },
+                        {
+                            "flags": {"isOptional": True},
+                            "kindString": "Property",
+                            "name": "destroyed_msg",
+                            "type": {"name": "string", "type": "intrinsic"},
+                        },
+                        {
+                            "flags": {},
+                            "kindString": "Property",
+                            "name": "ptr",
+                            "type": {"name": "number", "type": "intrinsic"},
+                        },
+                    ],
+                    "flags": {},
+                    "kindString": "Type literal",
+                },
+                "type": "reflection",
+            }
+        ).strip()
+        == r"""\ **{**\ \ **cache:** :js:class:`PyProxyCache`\ **,** \ **destroyed_msg?:** :js:data:`string`\ **,** \ **ptr:** :js:data:`number`\ **}**\ """.strip()
     )

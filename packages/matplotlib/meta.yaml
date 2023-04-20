@@ -1,57 +1,61 @@
 package:
   name: matplotlib
-  version: 3.3.3
-
+  version: 3.5.2
+  tag:
+    - min-scipy-stack
+  top-level:
+    - pylab
+    - mpl_toolkits
+    - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/7b/b3/7c48f648bf83f39d4385e0169d1b68218b838e185047f7f613b1cfc57947/matplotlib-3.3.3.tar.gz
-  sha256: b1b60c6476c4cfe9e5cf8ab0d3127476fd3d5f05de0f343a452badaad0e4bdec
+  url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
+  sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
 
   patches:
     - patches/disable_macosx_backend.patch
-    - patches/fix-freetype.patch
     - patches/hardcoded-font-cache.patch
     - patches/fix-threading.patch
 
   extras:
-    -
-      - src/browser_backend.py
-      - lib/matplotlib/backends/browser_backend.py
-    -
-      - src/wasm_backend.py
-      - lib/matplotlib/backends/wasm_backend.py
-    -
-      - src/html5_canvas_backend.py
-      - lib/matplotlib/backends/html5_canvas_backend.py
-    -
-      - src/setup.cfg
-      - ./setup.cfg
+    - - src/setup.cfg
+      - ./mplsetup.cfg
 
 build:
-  cflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
-  ldflags: -s USE_FREETYPE=1 -s USE_LIBPNG=1 -s USE_ZLIB=1
-  replace-libs:
-    - png16=png
+  # RELOCATABLE flag is required because if affects how emscripten build ports.
+  cflags: |
+    -s RELOCATABLE=1
+    -s USE_FREETYPE=1
+    -s USE_LIBPNG=1
+    -s USE_ZLIB=1
+    -fno-lto
+  script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
-    wget -O $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf http://antiyawn.com/uploads/Humor-Sans-1.0.ttf
-    rm -rf $SITEPACKAGES/matplotlib/backends/qt_editor
-    rm -rf $SITEPACKAGES/matplotlib/backends/web_backend
-    rm -rf $SITEPACKAGES/sphinxext
-    cp $PKGDIR/src/fontlist.json $SITEPACKAGES/matplotlib
-    mkdir -p $PKGDIR/../../build/fonts
-    cp $SITEPACKAGES/matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../build/fonts/
+    cd build/matplotlib-$PKG_VERSION/dist/matplotlib-$PKG_VERSION/
+    rm -rf matplotlib/backends/qt_editor
+    rm -rf matplotlib/backends/web_backend
+    rm -rf sphinxext
+    cp $PKGDIR/src/fontlist.json matplotlib
+    cp $PKGDIR/src/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
+    mkdir -p $PKGDIR/../../dist/fonts
+    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../dist/fonts/
 
 requirements:
+  host:
+    - numpy
   run:
-    - distutils
     - cycler
+    - fonttools
     - kiwisolver
     - numpy
-    - pillow
+    - packaging
+    - Pillow
     - pyparsing
     - python-dateutil
     - pytz
+    - matplotlib-pyodide
 
-test:
-  imports:
-    - matplotlib
-    - mpl_toolkits
+about:
+  home: https://matplotlib.org
+  PyPI: https://pypi.org/project/matplotlib
+  summary: Python plotting package
+  license: PSF

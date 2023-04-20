@@ -1,7 +1,8 @@
 *.a
 *.o
 *.pyc
-src/js/pyproxy.gen.js
+*.gen.*
+src/js/*.out.*
 
 *.egg-info/
 
@@ -14,17 +15,25 @@ __pycache__
 .mypy_cache/
 .pytest_cache/
 .vscode
+.venv*
 
 build
 ccache
 cpython/downloads
 cpython/installs
 cpython/build.log
+dist/
 docs/_build/
 emsdk/emsdk
 geckodriver.log
 node_modules
 packages/.artifacts
+packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
+pyodide-build/**/build.log
+xbuildenv/
+pytest-pyodide
+tools/symlinks
+xbuildenv/

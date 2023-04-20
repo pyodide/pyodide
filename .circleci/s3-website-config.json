@@ -1,18 +1,8 @@
 {
-    "Bucket": "pyodide-cdn2.iodide.io",
-    "WebsiteConfiguration": {
-        "IndexDocument": {
-            "Suffix": "index.html"
-        },
-        "RoutingRules": [
-            {
-                "Condition": {
-                    "KeyPrefixEquals": "latest/"
-                },
-                "Redirect": {
-                    "ReplaceKeyPrefixWith": "v0.14.3/"
-                }
-            }
-        ]
+  "Bucket": "pyodide-cdn2.iodide.io",
+  "WebsiteConfiguration": {
+    "IndexDocument": {
+      "Suffix": "index.html"
     }
+  }
 }

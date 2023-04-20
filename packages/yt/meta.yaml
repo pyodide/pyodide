@@ -1,26 +1,38 @@
 package:
   name: yt
-  version: 3.6.1
-
+  version: 4.1.4
+  top-level:
+    - yt
 source:
-  url: https://files.pythonhosted.org/packages/1e/ce/e75e41f077e330f25d912eda4a1ba124e6b5f896f457ec5ca4e8c89b97c2/yt-3.6.1.tar.gz
-  sha256: be454f9d05dcbe0623328b4df43a1bfd1f0925e516be97399710452931a19bb0
+  url: https://files.pythonhosted.org/packages/4e/4a/c21cf26bd7f51ec7b2d4445bb60fd667c2fe28faa76cb996e7dca2e42deb/yt-4.1.4.tar.gz
+  sha256: c50a4c8ddf32088c57957d364cddb769d284b025bbe26bba85cc598078e8ad78
 
   patches:
     - patches/skip-openmp.patch
 
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - matplotlib
     - sympy
     - setuptools
+    - packaging
+    - unyt
+    - cmyt
+    - colorspacious
+    - tqdm
+    - tomli
+    - tomli-w
 
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
   unvendor-tests: false
 
-test:
-  imports:
-    - yt
+about:
+  home: https://github.com/yt-project/yt
+  PyPI: https://pypi.org/project/yt
+  summary: An analysis and visualization toolkit for volumetric data
+  license: BSD 3-Clause

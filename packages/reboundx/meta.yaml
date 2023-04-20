@@ -1,0 +1,25 @@
+package:
+  name: reboundx
+  version: 3.10.0
+  top-level:
+    - reboundx
+build:
+  exports: requested
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include/rebound/
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib/
+source:
+  url: https://files.pythonhosted.org/packages/78/c1/83a10b80cf7c3cff3d31830a9a5355efd8c7ffb05b3d991a767f2dd4eb60/reboundx-3.10.0.tar.gz
+  sha256: bd76a74ac01221644b7ef555a88bb04ab14f9cca76346c6e139f25e077e7fccc
+requirements:
+  run:
+    - rebound
+    - numpy
+  host:
+    - rebound
+about:
+  home: https://github.com/dtamayo/reboundx
+  PyPI: https://pypi.org/project/reboundx
+  summary: A library for including additional forces in REBOUND
+  license: GPL

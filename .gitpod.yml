@@ -1,0 +1,16 @@
+github:
+  prebuilds:
+    master: true
+    pullRequests: true
+    pullRequestsFromForks: true
+    addCheck: false
+    addComment: false
+    addBadge: false
+    addLabel: false
+tasks:
+  - name: Setup the environment
+    init: |
+      PYTHON_VERSION=3.11.3
+      pyenv install $PYTHON_VERSION
+      pyenv global $PYTHON_VERSION
+      python -m pip install -r requirements.txt

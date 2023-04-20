@@ -1,18 +1,18 @@
 package:
   name: joblib
-  version: "0.11"
+  version: 1.2.0
+  top-level:
+    - joblib
 
 requirements:
   run:
-  - distutils
+    - distutils
 
 source:
-  url: https://pypi.io/packages/source/j/joblib/joblib-0.11.tar.gz
-  sha256: 7b8fd56df36d9731a83729395ccb85a3b401f62a96255deb1a77220c00ed4085
-
-  patches:
-    - patches/use-setuptools.patch
-
-test:
-  imports:
-    - joblib
+  url: https://files.pythonhosted.org/packages/45/dd/a5435a6902d6315241c48a5343e6e6675b007e05d3738ed97a7a47864e53/joblib-1.2.0.tar.gz
+  sha256: e1cee4a79e4af22881164f218d4311f60074197fb707e082e803b61f6d137018
+about:
+  home: https://joblib.readthedocs.io
+  PyPI: https://pypi.org/project/joblib
+  summary: Lightweight pipelining with Python functions
+  license: BSD

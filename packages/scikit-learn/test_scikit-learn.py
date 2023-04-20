@@ -1,11 +1,12 @@
 import pytest
-from conftest import selenium_context_manager
+from pytest_pyodide.fixture import selenium_context_manager
 
 
 @pytest.mark.driver_timeout(40)
+@pytest.mark.xfail_browsers(
+    chrome="Times out in chrome", firefox="Times out in firefox"
+)
 def test_scikit_learn(selenium_module_scope):
-    if selenium_module_scope.browser == "chrome":
-        pytest.xfail("Times out in chrome")
     with selenium_context_manager(selenium_module_scope) as selenium:
         selenium.load_package("scikit-learn")
         assert (
@@ -30,9 +31,10 @@ def test_scikit_learn(selenium_module_scope):
 
 
 @pytest.mark.driver_timeout(40)
+@pytest.mark.xfail_browsers(
+    chrome="Times out in chrome", firefox="Times out in firefox"
+)
 def test_logistic_regression(selenium_module_scope):
-    if selenium_module_scope.browser == "chrome":
-        pytest.xfail("Times out in chrome")
     with selenium_context_manager(selenium_module_scope) as selenium:
         selenium.load_package("scikit-learn")
         selenium.run(

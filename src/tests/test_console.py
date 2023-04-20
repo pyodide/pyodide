@@ -1,23 +1,18 @@
 import asyncio
-import pytest
 import sys
 import time
 
-from pyodide_build.testing import run_in_pyodide
-from conftest import selenium_common
+import pytest
+from pytest_pyodide import run_in_pyodide
 
-from pyodide import CodeRunner  # noqa: E402
-from _pyodide.console import (
-    Console,
-    _Compile,
-    _CommandCompiler,
-)  # noqa: E402
-from _pyodide import console
+from pyodide import console
+from pyodide.code import CodeRunner  # noqa: E402
+from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="unexpected EOF while parsing"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -27,15 +22,15 @@ def test_command_compiler():
     )
     assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
 
-    c = _CommandCompiler()
-    assert c("def test():\n   1", "<input>", "single") is None
-    assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
-    with pytest.raises(SyntaxError, match="invalid syntax"):
-        c("1<>2", "<input>", "single")
+    c2 = _CommandCompiler()
+    assert c2("def test():\n   1", "<input>", "single") is None
+    assert isinstance(c2("def test():\n   1\n", "<input>", "single"), CodeRunner)
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
+        c2("1<>2", "<input>", "single")
     assert isinstance(
-        c("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
+        c2("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
     )
-    assert isinstance(c("1<>2", "<input>", "single"), CodeRunner)
+    assert isinstance(c2("1<>2", "<input>", "single"), CodeRunner)
 
 
 def test_write_stream():
@@ -55,7 +50,7 @@ def test_write_stream():
 
 def test_repr():
     sep = "..."
-    for string in ("x" * 10 ** 5, "x" * (10 ** 5 + 1)):
+    for string in ("x" * 10**5, "x" * (10**5 + 1)):
         for limit in (9, 10, 100, 101):
             assert len(
                 console.repr_shorten(string, limit=limit, separator=sep)
@@ -64,18 +59,20 @@ def test_repr():
 
 def test_completion():
     shell = Console({"a_variable": 7})
-    shell.complete("a") == (
+    assert shell.complete("a") == (
         [
             "and ",
             "as ",
             "assert ",
             "async ",
             "await ",
+            "a_variable",
             "abs(",
             "all(",
             "any(",
             "ascii(",
-            "a_variable",
+            "aiter(",
+            "anext(",
         ],
         0,
     )
@@ -84,6 +81,7 @@ def test_completion():
         [
             "print.__ge__(",
             "print.__getattribute__(",
+            "print.__getstate__()",
             "print.__gt__(",
         ],
         8,
@@ -103,13 +101,13 @@ def test_interactive_console():
         return await res
 
     async def test():
-        assert await get_result("x = 5") == None
+        assert await get_result("x = 5") is None
         assert await get_result("x") == 5
         assert await get_result("x ** 2") == 25
 
         assert_incomplete("def f(x):")
         assert_incomplete("    return x*x + 1")
-        assert await get_result("") == None
+        assert await get_result("") is None
         assert await get_result("[f(x) for x in range(5)]") == [1, 2, 5, 10, 17]
 
         assert_incomplete("def factorial(n):")
@@ -117,36 +115,46 @@ def test_interactive_console():
         assert_incomplete("        return 1")
         assert_incomplete("    else:")
         assert_incomplete("        return n * factorial(n - 1)")
-        assert await get_result("") == None
+        assert await get_result("") is None
         assert await get_result("factorial(10)") == 3628800
 
-        assert await get_result("import pytz") == None
+        assert await get_result("import pytz") is None
         assert await get_result("pytz.utc.zone") == "UTC"
 
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
-        assert (
-            fut.formatted_error
-            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
-        )
+
+        import re
+
+        err = fut.formatted_error or ""
+        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        assert [e.strip() for e in err.split("\n")] == [
+            'File "<console>", line 1',
+            "1+",
+            "^",
+            "SyntaxError: <errormsg>",
+        ]
 
         fut = shell.push("raise Exception('hi')")
         try:
             await fut
-        except:
+        except Exception:
             assert (
                 fut.formatted_error
                 == 'Traceback (most recent call last):\n  File "<console>", line 1, in <module>\nException: hi\n'
             )
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 def test_top_level_await():
     from asyncio import Queue, sleep
 
-    q = Queue()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    q: Queue[int] = Queue()
     shell = Console(locals())
     fut = shell.push("await q.get()")
 
@@ -156,7 +164,7 @@ def test_top_level_await():
         await q.put(5)
         assert await fut == 5
 
-    asyncio.get_event_loop().run_until_complete(test())
+    loop.run_until_complete(test())
 
 
 @pytest.fixture
@@ -205,16 +213,16 @@ def test_persistent_redirection(safe_sys_redirections):
         return await res
 
     async def test():
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foo\nfoobar\n"
 
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foo\nfoobar\nfoobar\n"
 
         assert await get_result("1+1") == 2
         assert my_stdout == "foo\nfoobar\nfoobar\n"
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
     my_stderr = ""
 
@@ -233,14 +241,14 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     my_stdout = ""
     my_stderr = ""
 
-    def stdin_callback():
-        pass
+    def stdin_callback(n: int) -> str:
+        return ""
 
-    def stdout_callback(string):
+    def stdout_callback(string: str) -> None:
         nonlocal my_stdout
         my_stdout += string
 
-    def stderr_callback(string):
+    def stderr_callback(string: str) -> None:
         nonlocal my_stderr
         my_stderr += string
 
@@ -260,17 +268,17 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     assert my_stdout == ""
 
     async def test():
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foobar\n"
 
         print("bar")
         assert my_stdout == "foobar\n"
 
-        assert await get_result("print('foobar')") == None
+        assert await get_result("print('foobar')") is None
         assert my_stdout == "foobar\nfoobar\n"
 
-        assert await get_result("import sys") == None
-        assert await get_result("print('foobar', file=sys.stderr)") == None
+        assert await get_result("import sys") is None
+        assert await get_result("print('foobar', file=sys.stderr)") is None
         assert my_stderr == "foobar\n"
 
         assert await get_result("1+1") == 2
@@ -279,12 +287,12 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert await get_result("sys.stdout.isatty()")
         assert await get_result("sys.stderr.isatty()")
 
-    asyncio.get_event_loop().run_until_complete(test())
+    asyncio.run(test())
 
 
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
-async def test_console_imports():
+async def test_console_imports(selenium):
     from pyodide.console import PyodideConsole
 
     shell = PyodideConsole()
@@ -294,25 +302,16 @@ async def test_console_imports():
         assert res.syntax_check == "complete"
         return await res
 
-    assert await get_result("import pytz") == None
+    assert await get_result("import pytz") is None
     assert await get_result("pytz.utc.zone") == "UTC"
 
 
-@pytest.fixture(params=["firefox", "chrome"], scope="function")
-def console_html_fixture(request, web_server_main):
-    with selenium_common(request, web_server_main, False) as selenium:
-        selenium.driver.get(
-            f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-        )
-        selenium.javascript_setup()
-        try:
-            yield selenium
-        finally:
-            print(selenium.logs)
-
-
-def test_console_html(console_html_fixture):
-    selenium = console_html_fixture
+@pytest.mark.xfail_browsers(node="Not available in node")
+def test_console_html(selenium):
+    selenium.goto(
+        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+    )
+    selenium.javascript_setup()
     selenium.run_js(
         """
         await window.console_ready;
@@ -334,7 +333,7 @@ def test_console_html(console_html_fixture):
 
     def get_result():
         return selenium.run_js(
-            f"""
+            """
             await term.ready;
             return term.get_output().trim();
             """
@@ -352,7 +351,7 @@ def test_console_html(console_html_fixture):
     assert exec_and_get_result("1+1") == ">>> 1+1\n2"
     assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
     assert exec_and_get_result("1+ 1") == ">>> 1+ 1\n2"
-    assert exec_and_get_result("[1,2,3]") == ">>> &#91;1,2,3&#93;\n[1, 2, 3]"
+    assert exec_and_get_result("[1,2,3]") == ">>> [1,2,3]\n[1, 2, 3]"
     assert (
         exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}")
         == ">>> {'a' : 1, 'b' : 2, 'c' : 3}\n{'a': 1, 'b': 2, 'c': 3}"
@@ -362,11 +361,15 @@ def test_console_html(console_html_fixture):
     )
     assert (
         exec_and_get_result("[x*x+1 for x in range(5)]")
-        == ">>> &#91;x*x+1 for x in range(5)&#93;\n[1, 2, 5, 10, 17]"
+        == ">>> [x*x+1 for x in range(5)]\n[1, 2, 5, 10, 17]"
     )
     assert (
         exec_and_get_result("{x+1:x*x+1 for x in range(5)}")
         == ">>> {x+1:x*x+1 for x in range(5)}\n{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}"
+    )
+    assert (
+        exec_and_get_result("print('\x1b[31mHello World\x1b[0m')")
+        == ">>> print('[[;#A00;]Hello World]')\n[[;#A00;]Hello World]"
     )
 
     term_exec(
@@ -390,8 +393,8 @@ def test_console_html(console_html_fixture):
             >>> 1+
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
-                  ^
-            SyntaxError: invalid syntax]
+                 ^
+            SyntaxError: incomplete input]
             """
         ).strip()
     )
@@ -408,20 +411,22 @@ def test_console_html(console_html_fixture):
         ).strip()
     )
 
-    assert (
-        exec_and_get_result(
-            dedent(
-                """
+    result = exec_and_get_result(
+        dedent(
+            """
             class Test:
                 def __repr__(self):
                     raise TypeError("hi")
 
             Test()
             """
-            ).strip()
-        )
-        == dedent(
-            """
+        ).strip()
+    )
+    result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
+    result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
+
+    answer = dedent(
+        """
             >>> class Test:
             ...     def __repr__(self):
             ...         raise TypeError(\"hi\")
@@ -429,17 +434,23 @@ def test_console_html(console_html_fixture):
 
             >>> Test()
             [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/python3.9/site-packages/_pyodide/console.py\", line 486, in repr_shorten
+              File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
+                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """
-        ).strip()
-    )
+    ).strip()
+
+    assert result == answer
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
-    assert long_output[2] == "[[;orange;]<long output truncated>]"
+    assert long_output[2] == "<long output truncated>"
+
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)

@@ -1,0 +1,8 @@
+package:
+  name: distutils
+  version: "0.1"
+source:
+  path: src
+test:
+  imports:
+    - distutils

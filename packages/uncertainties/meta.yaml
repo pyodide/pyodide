@@ -1,12 +1,18 @@
 package:
   name: uncertainties
-  version: 3.1.5
+  version: 3.1.7
+  top-level:
+    - uncertainties
 source:
-  sha256: 9122c1e7e074196883b4a7a946e8482807b2f89675cb5e3798b87e0608ede903
-  url: https://files.pythonhosted.org/packages/e4/65/a79d4b42179a4591993933c59e70a11b7c9d2061d0fe9babeceedcf2686a/uncertainties-3.1.5.tar.gz
+  sha256: 80111e0839f239c5b233cb4772017b483a0b7a1573a581b92ab7746a35e6faab
+  url: https://files.pythonhosted.org/packages/9d/22/34b918373b9626a50117abd31c0185b96ad1242e46096d6b0a2ef6dd4303/uncertainties-3.1.7.tar.gz
 requirements:
   run:
-  - future
-test:
-  imports:
-  - uncertainties
+    - future
+about:
+  home: http://uncertainties-python-package.readthedocs.io/
+  PyPI: https://pypi.org/project/uncertainties
+  summary:
+    Transparent calculations with uncertainties on the quantities involved
+    (aka error propagation); fast calculation of derivatives
+  license: Revised BSD License

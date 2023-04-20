@@ -1,0 +1,15 @@
+package:
+  name: pycryptodome
+  version: "3.17"
+  top-level:
+    - Crypto
+source:
+  url: https://files.pythonhosted.org/packages/b8/2e/cf9cfd1ae6429381d3d9c14c8df79d91ae163929972f245a76058ea9d37d/pycryptodome-3.17.tar.gz
+  sha256: bce2e2d8e82fcf972005652371a3e8731956a0c1fbb719cc897943b3695ad91b
+build:
+  exports: requested
+about:
+  home: https://www.pycryptodome.org
+  PyPI: https://pypi.org/project/pycryptodome
+  summary: Cryptographic library for Python
+  license: BSD, Public Domain

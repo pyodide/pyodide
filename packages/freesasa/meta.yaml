@@ -1,9 +1,14 @@
 package:
   name: freesasa
-  version: 2.1.0
+  version: 2.2.0.post3
+  _disabled: true
+  top-level:
+    - freesasa
 source:
-  sha256: dca2a71f5a315aff3ad8ee96130d0e17003265d82241378ffc0dcb0f98bf2203
-  url: https://files.pythonhosted.org/packages/a8/af/66991b63b705cd1e1c77fdaec157747275ba5c27b5c9dff7a2e35a43477a/freesasa-2.1.0.tar.gz
-test:
-  imports:
-  - freesasa
+  sha256: db7e5c8a1deae051198d5c7e1a54f2d001b22a945b524d81cb26cacb7d6bb54f
+  url: https://files.pythonhosted.org/packages/1e/99/6b7d3684738a16ab6d799ede9d81165e0bad8ae7ce2616896640ca82301f/freesasa-2.2.0.post3.tar.gz
+about:
+  home: http://freesasa.github.io/
+  PyPI: https://pypi.org/project/freesasa
+  summary: Calculate solvent accessible surface areas of proteins
+  license: MIT

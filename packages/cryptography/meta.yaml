@@ -1,0 +1,50 @@
+package:
+  name: cryptography
+  version: 39.0.2
+  top-level:
+    - cryptography
+source:
+  url: https://files.pythonhosted.org/packages/fa/f3/f4b8c175ea9a1de650b0085858059050b7953a93d66c97ed89b93b232996/cryptography-39.0.2.tar.gz
+  sha256: bc5b871e977c8ee5a1bbc42fa8d19bcc08baf0c51cbf1586b0e87a2694dde42f
+  patches:
+    - patches/0001-Use-patched-instant.patch
+build:
+  script: |
+    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
+    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
+
+    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
+    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
+
+    # TODO: remove this when instant makes a release
+    git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
+  cflags: |
+    -Wno-implicit-function-declaration
+    $(OPENSSL_INCLUDE_PATH)
+  ldflags: |
+    $(OPENSSL_LIBRARY_PATH)
+    -Wl,--no-entry
+requirements:
+  run:
+    - openssl
+    - six
+    - cffi
+  host:
+    - openssl
+    - cffi
+  executable:
+    - rustup
+test:
+  imports:
+    - cryptography
+    - cryptography.fernet
+    - cryptography.hazmat
+    - cryptography.utils
+    - cryptography.x509
+about:
+  home: https://github.com/pyca/cryptography
+  PyPI: https://pypi.org/project/cryptography
+  summary:
+    cryptography is a package which provides cryptographic recipes and primitives
+    to Python developers.
+  license: BSD-3-Clause OR Apache-2.0

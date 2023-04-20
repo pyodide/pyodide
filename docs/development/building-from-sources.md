@@ -9,33 +9,38 @@ version of the documentation at
 [pyodide.org/en/latest/](https://pyodide.org/en/latest/development/building-from-sources.html)
 ```
 
-Building on any operating system is easiest using the Pyodide Docker image. This approach works
-with any native operating system as long as Docker is installed. You can also build on your
-native Linux OS if the correct build prerequisites are installed. Building on MacOS is
-possible, but there are known issues as of version 0.18 that you will need to work around.
-It is not possible to build on Windows, but you can use
-[WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to create a
-Linux build environment.
+Pyodide can be built from sources on different platforms,
+
+- on **Linux** it is easiest using the Pyodide Docker image. This approach
+  works with any native operating system as long as Docker is installed. You
+  can also build on your native Linux OS if the correct build prerequisites
+  are installed.
+- on **MacOS** it is recommended to install dependencies via conda-forge or
+  using Homebrew, particularly with the M1 ARM CPU. Building with Docker is
+  possible but very slow.
+- It is not possible to build on **Windows**, but you can use [Windows Subsystem
+  for Linux](https://docs.microsoft.com/en-us/windows/wsl/install-win10) to
+  create a Linux build environment.
 
 ## Build instructions
 
 ### Using Docker
 
-We provide a Debian-based Docker image
+We provide a Debian-based x86_64 Docker image
 ([`pyodide/pyodide-env`](https://hub.docker.com/r/pyodide/pyodide-env)) on
 Docker Hub with the dependencies already installed to make it easier to build
-Pyodide. On top of that we provide
-a pre-built image
-([`pyodide/pyodide`](https://hub.docker.com/r/pyodide/pyodide)) which can be
-used for fast custom and partial builds. Note that building from the non
-pre-built Docker image is _very_ slow on Mac, building on the host machine
-is preferred if at all possible.
+Pyodide.
+
+```{note}
+These Docker images are also available from the Github packages at
+[`github.com/orgs/pyodide/packages`](https://github.com/orgs/pyodide/packages).
+```
 
 1. Install Docker
 
-1. From a git checkout of Pyodide, run `./run_docker` or `./run_docker --pre-built`
+2. From a git checkout of Pyodide, run `./run_docker`
 
-1. Run `make` to build.
+3. Run `make` to build.
 
 ```{note}
 You can control the resources allocated to the build by setting the env
@@ -62,46 +67,66 @@ Make sure the prerequisites for
 build a custom, patched version of emsdk, so there is no need to build it
 yourself prior.
 
-You would need Python 3.9.5 to run the build scripts. To make sure that the
-correct Python is used during build it is recommended to use a [Python virtual
-environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment),
+You need Python 3.11.2 to run the build scripts. To make sure that the correct
+Python is used during the build it is recommended to use a [virtual
+environment](https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment)
+or a conda environment.
 
-```{tabbed} Linux
+````{tab-set}
 
-Additional build prerequisites are:
+```{tab-item} Linux
+
+To build on Linux, you need:
 
 - A working native compiler toolchain, enough to build
-  [CPython](https://devguide.python.org/setup/#linux).
-- CMake
-- FreeType 2 development libraries to compile Matplotlib.
-- gfortran (GNU Fortran 95 compiler)
-- [f2c](http://www.netlib.org/f2c/)
-- [ccache](https://ccache.samba.org) (optional) _highly_ recommended for much faster rebuilds.
-- (optional) SWIG to compile NLopt
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux).
+- CMake (required to install Emscripten)
 
 ```
 
-```{tabbed} MacOS
+```{tab-item} Linux with conda
 
-To build on MacOS, you need:
 
+You would need a working native compiler toolchain, enough to build
+  [CPython](https://devguide.python.org/getting-started/setup-building/index.html#linux), for example,
+- `apt install build-essential` on Debian based systems.
+- Conda which can be installed from [MiniForge](https://github.com/conda-forge/miniforge)
+
+Then install the required Python version and other build dependencies in a separate conda environment,
+
+    conda env create -f environment.yml
+    conda activate conda-forge
+
+```
+```{tab-item} MacOS with conda
+
+You would need,
+- System libraries in the root directory:
+  `xcode-select --install`
+- Conda which can be installed using [Miniforge](https://github.com/conda-forge/miniforge) (both for Intel and M1 CPU)
+
+
+Then install the required Python version and other build dependencies in a separate conda environment,
+
+    conda env create -f environment.yml
+    conda activate conda-forge
+
+```
+
+```{tab-item} MacOS with Homebrew
+
+To build on MacOS with Homebrew, you need:
+
+- System command line tools
+  `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
-- System libraries in the root directory (
-  `sudo installer -pkg /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg -target /`
-  should do it, see https://github.com/pyenv/pyenv/issues/1219#issuecomment-428305417)
-- coreutils for md5sum and other essential Unix utilities (`brew install coreutils`).
-- cmake (`brew install cmake`)
-- pkg-config (`brew install pkg-config`)
-- openssl (`brew install openssl`)
-- gfortran (`brew cask install gfortran`)
-- f2c: Install wget (`brew install wget`), and then run the buildf2c script from
-  the root directory (`sudo ./tools/buildf2c`)
-- It is also recommended installing the GNU patch (`brew install gpatch`), and
-  GNU sed (`brew install gnu-sed`) and [re-defining them temporarily as `patch` and
+- `brew install coreutils cmake autoconf automaker libtool`
+- It is also recommended installing the GNU patch and
+  GNU sed (`brew install gpatch gnu-sed`)
+  and [re-defining them temporarily as `patch` and
   `sed`](https://formulae.brew.sh/formula/gnu-sed).
-- (optional) SWIG to compile NLopt (`brew install swig`)
-
 ```
+````
 
 ```{note}
 If you encounter issues with the requirements, it is useful to check the exact
@@ -134,18 +159,19 @@ Dependencies of the listed packages will be built automatically as well. The
 package names must match the folder names in `packages/` exactly; in particular
 they are case-sensitive.
 
-If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessairy to run
+If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessary to run
 the core test suite is installed, including "micropip", "pyparsing", "pytz",
 "packaging", "Jinja2", "regex". This is equivalent to setting
-`PYODIDE_PACKAGES='core'`
+`PYODIDE_PACKAGES='tag:core'`
 meta-package. Other supported meta-packages are,
 
-- "min-scipy-stack": includes the "core" meta-package as well as some
+- "tag:min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the scientific python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
-  "pytest". This option is non exaustive and is mainly intended to make build
+  "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
 - "\*" builds all packages
+- You can exclude a package by prefixing it with "!".
 
 micropip and distutils are always automatically included.
 
@@ -158,7 +184,7 @@ The following environment variables additionally impact the build:
 - `PYODIDE_BASE_URL`: Base URL where Pyodide packages are deployed. It must end
   with a trailing `/`. Default: `./` to load Pyodide packages from the same
   base URL path as where `pyodide.js` is located. Example:
-  `https://cdn.jsdelivr.net/pyodide/v0.18.0/full/`
+  `{{PYODIDE_CDN_URL}}`
 - `EXTRA_CFLAGS` : Add extra compilation flags.
 - `EXTRA_LDFLAGS` : Add extra linker flags.
 

@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_joblib_numpy_pickle(selenium, request):
     selenium.load_package(["numpy", "joblib"])
     selenium.run(

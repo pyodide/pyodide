@@ -1,7 +1,8 @@
 <!-- Bootstrap HTML for running the unit tests. -->
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
+    <title>pyodide</title>
     <script type="text/javascript">
       window.logs = [];
       console.log = function (message) {
@@ -14,6 +15,9 @@
         window.logs.push(message);
       };
       console.error = function (message) {
+        window.logs.push(message);
+      };
+      console.debug = function (message) {
         window.logs.push(message);
       };
     </script>

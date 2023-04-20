@@ -2,13 +2,82 @@ name: main
 
 on:
   push:
-    branches: [main]
   pull_request:
-    branches: [main]
+
+concurrency:
+  group: main-${{ github.head_ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-core:
+  get_python_version:
     runs-on: ubuntu-latest
+    outputs:
+      PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Read the Python version from Makefile.envs
+        id: get_python_version
+        run: |
+          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
+
+  test-docs:
+    runs-on: ubuntu-latest
+    needs: get_python_version
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt -r docs/requirements-doc.txt
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          mkdir -p test-results
+          pytest docs/sphinx_pyodide/tests --junitxml=test-results/junit.xml
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/*.xml"
+        if: always()
+
+  test-python:
+    runs-on: ubuntu-latest
+    needs: get_python_version
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          mkdir test-results
+          cd pyodide-build && python3 -m pip install -e ".[test,deploy]" && cd ..
+          python3 -m pip install pytest-cov hypothesis pytz
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          PYODIDE_ROOT=. pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --runtime=host \
+              --cov=pyodide_build --cov=pyodide \
+              src pyodide-build packages/micropip/ packages/_tests tools/
+      - uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: false
+
+  build-core:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -16,19 +85,19 @@ jobs:
       CCACHE_DIR: /tmp/ccache
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Cache ccache output
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-v20211025-
+          key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: 3.9.5
+          environment-file: environment.yml
           channels: conda-forge
 
       - name: Check Python versions
@@ -37,11 +106,21 @@ jobs:
           python --version
           which python
 
-      - name: Install dependencies
+      - name: Install dependencies (ubuntu)
+        shell: bash -l {0}
+        if: ${{ contains(runner.os, 'ubuntu') }}
+        run: |
+          sudo apt install -y build-essential git xxd
+
+      - name: Install dependencies (macos)
+        shell: bash -l {0}
+        if: ${{ contains(runner.os, 'macos') }}
+        run: |
+          brew install coreutils
+
+      - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
-          sudo apt install -y build-essential git
-          conda install -y nodejs ccache f2c pkg-config swig make patch pkg-config texinfo autoconf automake libtool
           pip install -r requirements.txt
 
       - name: Build emsdk
@@ -71,63 +150,91 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES="core,numpy" make
+          PYODIDE_PACKAGES="tag:core,numpy" make
           ccache -s
 
       - name: check-size
-        run: ls -lh build/
+        run: |
+          ls -lh dist/
+
+          pip install brotli
+          ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
-          name: core-build
-          path: ./build/
+          name: core-build-${{ runner.os }}
+          path: ./dist/
           retention-days: 60
 
   test-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     env:
       DISPLAY: :99
 
-    needs: build-core
+    needs: [build-core]
     strategy:
+      fail-fast: false
       matrix:
-        selenium_runner: [firefox]
+        os: [ubuntu-latest, macos-latest]
+        runner: [playwright]
+        browser: [chrome]
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Download build artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
-          name: core-build
-          path: ./build/
+          name: core-build-${{ runner.os }}
+          path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: 3.9.5
+          python-version: "3.11"
           channels: conda-forge
 
       - name: install test requirements
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
+          pip install -e ./pyodide-build
+          python -m playwright install
 
       - name: run core tests
         env:
-          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
-          tools/pytest_wrapper.py src packages/micropip/ -v -k "${SELENIUM_RUNNER}"
+          ls -lh dist/
+          tools/pytest_wrapper.py src packages/micropip/ \
+            -v \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/core_test.xml
 
       - name: run package tests
         env:
-          SELENIUM_RUNNER: ${{ matrix.selenium_runner }}
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
         shell: bash -l {0}
         run: |
           ls -lh
-          ls -lh build/
-          tools/pytest_wrapper.py packages/test* packages/*/test* -v -k "numpy and not joblib and ${SELENIUM_RUNNER}"
+          ls -lh dist/
+          tools/pytest_wrapper.py packages/*/test* \
+            -v \
+            -k "numpy and not joblib" \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/packages_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/*.xml"
+        if: always()

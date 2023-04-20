@@ -1,0 +1,57 @@
+From 30ba08deaa551b0920530f6b2edac59f2dd9e28e Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Fri, 2 Sep 2022 07:54:44 +0000
+Subject: [PATCH] Fix incompatible pointer type
+
+---
+ h5py/_errors.pxd | 2 +-
+ h5py/_errors.pyx | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/h5py/_errors.pxd b/h5py/_errors.pxd
+index 13b299e2..e7791a6b 100644
+--- a/h5py/_errors.pxd
++++ b/h5py/_errors.pxd
+@@ -412,7 +412,7 @@ cdef extern from "hdf5.h":
+ 
+     herr_t    H5Eprint(hid_t estack_id, void *stream)
+ 
+-    ctypedef herr_t (*H5E_walk_t)(int n, H5E_error_t *err_desc, void* client_data)
++    ctypedef herr_t (*H5E_walk_t)(unsigned int n, const H5E_error_t *err_desc, void* client_data)
+     herr_t    H5Ewalk(hid_t estack_id, H5E_direction_t direction, H5E_walk_t func, void* client_data)
+ 
+ # --- Functions for managing the HDF5 error callback mechanism ---
+diff --git a/h5py/_errors.pyx b/h5py/_errors.pyx
+index 612052fb..dabbc632 100644
+--- a/h5py/_errors.pyx
++++ b/h5py/_errors.pyx
+@@ -94,7 +94,7 @@ cdef struct err_data_t:
+     H5E_error_t err
+     int n
+ 
+-cdef herr_t walk_cb(int n, H5E_error_t *desc, void *e) nogil:
++cdef herr_t walk_cb(unsigned int n, const H5E_error_t *desc, void *e) nogil:
+ 
+     cdef err_data_t *ee = <err_data_t*>e
+ 
+@@ -120,7 +120,7 @@ cdef int set_exception() except -1:
+ 
+     err.n = -1
+ 
+-    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_UPWARD, walk_cb, &err) < 0:
++    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_UPWARD, &walk_cb, &err) < 0:
+         raise RuntimeError("Failed to walk error stack")
+ 
+     if err.n < 0:   # No HDF5 exception information found
+@@ -137,7 +137,7 @@ cdef int set_exception() except -1:
+ 
+     err.n = -1
+ 
+-    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_DOWNWARD, walk_cb, &err) < 0:
++    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_DOWNWARD, &walk_cb, &err) < 0:
+         raise RuntimeError("Failed to walk error stack")
+ 
+     desc_bottom = err.err.desc
+-- 
+2.37.2
+

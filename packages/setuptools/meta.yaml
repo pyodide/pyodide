@@ -1,14 +1,21 @@
 package:
   name: setuptools
-  version: 57.1.0
+  version: 67.6.1
+  top-level:
+    - _distutils_hack
+    - pkg_resources
+    - setuptools
 source:
-  url: https://files.pythonhosted.org/packages/cf/79/1a19c2f792da00cbead7b6caa176afdddf517522cb9163ce39576025b050/setuptools-57.1.0.tar.gz
-  sha256: cfca9c97e7eebbc8abe18d5e5e962a08dcad55bb63afddd82d681de4d22a597b
+  url: https://files.pythonhosted.org/packages/0b/fc/8781442def77b0aa22f63f266d4dadd486ebc0c5371d6290caf4320da4b7/setuptools-67.6.1-py3-none-any.whl
+  sha256: e728ca814a823bf7bf60162daf9db95b93d532948c4c0bea762ce62f60189078
+build:
+  post: |
+    find build/setuptools-*/dist -name '*.exe' -delete
 requirements:
   run:
-  - distutils
-  - pyparsing
-test:
-  imports:
-  - setuptools
-  - pkg_resources
+    - distutils
+    - pyparsing
+about:
+  home: https://github.com/pypa/setuptools
+  PyPI: https://pypi.org/project/setuptools
+  summary: Easily download, build, install, upgrade, and uninstall Python packages

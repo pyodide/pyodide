@@ -1,7 +1,8 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import json
 import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 plt.rcdefaults()
 fig, ax = plt.subplots(constrained_layout=True, figsize=(8, 8))
