@@ -568,7 +568,8 @@ jobs:
             tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
 
-            python3 tools/deploy_s3.py dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \
+            cd -
+            python3 tools/deploy_s3.py /tmp/ghr/dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \
               --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
