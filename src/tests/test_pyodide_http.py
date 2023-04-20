@@ -68,8 +68,8 @@ def test_pyfetch_headers(selenium, httpserver):
         content_type="text/plain",
         headers={
             "Access-Control-Allow-Origin": "*",
-            "X-Header1": "1",
-            "X-Header2": "2",
+            "Cache-Control": "max-age=300",
+            "Content-Type": "text/plain",
         },
     )
     request_url = httpserver.url_for("/data")
@@ -79,8 +79,8 @@ def test_pyfetch_headers(selenium, httpserver):
         import pyodide.http
         response = await pyodide.http.pyfetch('{request_url}')
         headers = response.headers
-        assert headers["x-header1"] == "1"
-        assert headers["x-header2"] == "2"
+        assert headers["cache-control"] == "max-age=300"
+        assert headers["content-type"] == "text/plain"
         """
     )
 
