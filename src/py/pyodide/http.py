@@ -13,7 +13,7 @@ if IN_BROWSER:
     except ImportError:
         pass
     try:
-        from js import Object, XMLHttpRequest
+        from js import XMLHttpRequest
     except ImportError:
         pass
 
@@ -72,7 +72,7 @@ class FetchResponse:
         return self.js_response.bodyUsed
 
     @property
-    def headers(self) -> dict:
+    def headers(self) -> dict[str, str]:
         """Response headers as dictionary."""
         return Object.fromEntries(self.js_response.headers.entries()).to_py()
 
