@@ -66,7 +66,11 @@ def test_pyfetch_headers(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",
-        headers={"Access-Control-Allow-Origin": "*", "X-Header1": "1", "X-Header2": "2"},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "X-Header1": "1",
+            "X-Header2": "2",
+        },
     )
     request_url = httpserver.url_for("/data")
 
@@ -79,7 +83,8 @@ def test_pyfetch_headers(selenium, httpserver):
         assert headers["x-header2"] = "2"
         """
     )
-    
+
+
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
