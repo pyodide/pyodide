@@ -1,7 +1,6 @@
 package:
   name: sparseqr
   version: "1.2"
-  _disabled: true
   top-level:
     - sparseqr
 
