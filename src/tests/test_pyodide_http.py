@@ -78,9 +78,9 @@ def test_pyfetch_headers(selenium, httpserver):
         f"""
         import pyodide.http
         response = await pyodide.http.pyfetch('{request_url}')
-        headers= response.headers
-        assert headers["x-header1"] = "1"
-        assert headers["x-header2"] = "2"
+        headers = response.headers
+        assert headers["x-header1"] == "1"
+        assert headers["x-header2"] == "2"
         """
     )
 
