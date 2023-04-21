@@ -1,10 +1,14 @@
 def test_bokeh(selenium):
+    """
+    Check whether any errors occur when drawing a basic plot.
+    Intended to function as a regression test.
+    """
     selenium.load_package("bokeh")
     selenium.run(
         """
         from bokeh.plotting import figure
         fig = figure()
         fig.line(range(3), [1, 4, 6])
-        fig
+        del fig  # clean up the proxied variable
         """
     )
