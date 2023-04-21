@@ -8,6 +8,7 @@ requirements:
     - distutils
     - numpy
     - Jinja2
+    - pandas
     - Pillow
     - python-dateutil
     - six
