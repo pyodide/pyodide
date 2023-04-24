@@ -1,7 +1,7 @@
 from pytest_pyodide.decorator import run_in_pyodide
 
 
-@run_in_pyodide(packages=["bokeh"])
+@run_in_pyodide(packages=["xyzservices"])
 def test_xyzservices(selenium):
     """
     Check whether any errors occur by testing basic functionality.
