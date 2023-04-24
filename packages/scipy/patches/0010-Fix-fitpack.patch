@@ -88,8 +88,8 @@ index f038b931b..776b06b9e 100644
 --- a/scipy/interpolate/fitpack/splint.f
 +++ b/scipy/interpolate/fitpack/splint.f
 @@ -1,6 +1,5 @@
--      recursive function splint(t,n,c,k,a,b,wrk) result(splint_res)
-+      real*8 function splint(t,n,c,k,a,b,wrk)
+-      recursive function splint(t,n,c,nc,k,a,b,wrk) result(splint_res)
++      real*8 function splint(t,n,c,nc,k,a,b,wrk)
        implicit none
 -      real*8 :: splint_res
  c  function splint calculates the integral of a spline function s(x)
