@@ -1,3 +1,6 @@
+from pytest_pyodide.decorator import run_in_pyodide
+
+@run_in_pyodide(packages=["bokeh"])
 def test_bokeh(selenium):
     """
     Check whether any errors occur when drawing a basic plot.
