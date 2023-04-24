@@ -10,5 +10,6 @@ def test_xyzservices(selenium):
     or API changes.
     """
     import xyzservices.providers
+
     # assert the module produces something for this
     assert xyzservices.providers.CartoDB.Positron.url

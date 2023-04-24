@@ -8,6 +8,7 @@ def test_bokeh(selenium):
     Intended to function as a regression test.
     """
     from bokeh.plotting import figure
+
     fig = figure()
     fig.line(range(3), [1, 4, 6])
     del fig  # clean up the proxied variable
