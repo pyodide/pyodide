@@ -572,7 +572,7 @@ JsProxy_IterNext(PyObject* self)
     // The Python docs for tp_iternext say "When the iterator is exhausted, it
     // must return NULL; a StopIteration exception may or may not be set."
     // So if the result is None, we can just leave error flag unset.
-    if (result != Py_None) {
+    if (!Py_IsNone(result)) {
       _PyGen_SetStopIterationValue(result);
     }
     Py_CLEAR(result);
@@ -585,7 +585,7 @@ JsGenerator_send(PyObject* self, PyObject* arg)
 {
   PyObject* result;
   if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
-    if (result == Py_None) {
+    if (Py_IsNone(result)) {
       PyErr_SetNone(PyExc_StopIteration);
     } else {
       _PyGen_SetStopIterationValue(result);
@@ -703,7 +703,7 @@ JsException_init(PyBaseExceptionObject* self, PyObject* args, PyObject* kwds)
 JsRef
 process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
 {
-  if (tb == Py_None) {
+  if (Py_IsNone(tb)) {
     tb = NULL;
   } else if (tb != NULL && !PyTraceBack_Check(tb)) {
     PyErr_SetString(PyExc_TypeError,
@@ -722,7 +722,7 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
     }
   } else if (PyExceptionInstance_Check(typ)) {
     /* Raising an instance.  The value should be a dummy. */
-    if (val && val != Py_None) {
+    if (val && !Py_IsNone(val)) {
       PyErr_SetString(PyExc_TypeError,
                       "instance exception may not have a separate value");
       goto failed_throw;
@@ -788,7 +788,7 @@ JsGenerator_throw_inner(PyObject* self,
   console_error_obj(throw_res);
   PySendResult ret = handle_next_result(throw_res, &result, false);
   if (ret == PYGEN_RETURN) {
-    if (result == Py_None) {
+    if (Py_IsNone(result)) {
       PyErr_SetNone(PyExc_StopIteration);
     } else {
       _PyGen_SetStopIterationValue(result);
@@ -1274,7 +1274,7 @@ JsArray_subscript(PyObject* o, PyObject* item)
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
-               item->ob_type->tp_name);
+               Py_TYPE(item)->tp_name);
 success:
 finally:
   hiwire_CLEAR(jsresult);
@@ -1385,7 +1385,7 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
   } else {
     PyErr_Format(PyExc_TypeError,
                  "list indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return -1;
   }
 
@@ -2417,10 +2417,10 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  if (onfulfilled == Py_None) {
+  if (Py_IsNone(onfulfilled)) {
     Py_CLEAR(onfulfilled);
   }
-  if (onrejected == Py_None) {
+  if (Py_IsNone(onrejected)) {
     Py_CLEAR(onrejected);
   }
   promise_id = hiwire_resolve_promise(self->js);
@@ -3073,7 +3073,7 @@ JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
   JsRef jsobj = NULL;
   PyObject* result = NULL;
 
-  if (obj == Py_None || obj == NULL) {
+  if (Py_IsNone(obj) || obj == NULL) {
     Py_INCREF(self);
     return self;
   }

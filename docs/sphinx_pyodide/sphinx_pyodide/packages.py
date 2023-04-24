@@ -12,7 +12,6 @@ sys.path.append(str(base_dir / "pyodide-build"))
 from pyodide_build.io import MetaConfig
 
 PYODIDE_TESTONLY = "pyodide.test"
-PYODIDE_STDLIB = "pyodide.stdlib"
 
 
 def get_packages_summary_directive(app):
@@ -28,16 +27,15 @@ def get_packages_summary_directive(app):
             packages = {}
             for package in packages_list:
                 try:
-                    name, version, is_package, tag = self.parse_package_info(package)
+                    name, version, is_package, tag, disabled = self.parse_package_info(
+                        package
+                    )
                 except Exception:
                     print(f"Warning: failed to parse package config for {package}")
 
                 # skip libraries (e.g. libxml, libyaml, ...) and test only packages
-                if not is_package or PYODIDE_TESTONLY in tag:
+                if not is_package or PYODIDE_TESTONLY in tag or disabled:
                     continue
-
-                if PYODIDE_STDLIB in tag:
-                    version = "Pyodide standard library"
 
                 packages[name] = {
                     "name": name,
@@ -53,15 +51,16 @@ def get_packages_summary_directive(app):
 
         def parse_package_info(
             self, config: pathlib.Path
-        ) -> tuple[str, str, bool, list[str]]:
+        ) -> tuple[str, str, bool, list[str], bool]:
             yaml_data = MetaConfig.from_yaml(config)
 
             name = yaml_data.package.name
             version = yaml_data.package.version
             tag = yaml_data.package.tag
             is_package = yaml_data.build.package_type == "package"
+            disabled = yaml_data.package.disabled
 
-            return name, version, is_package, tag
+            return name, version, is_package, tag, disabled
 
         def get_package_metadata_list(
             self, directory: pathlib.Path

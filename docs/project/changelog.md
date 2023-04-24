@@ -22,6 +22,9 @@ myst:
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
 
+- {{ Enhancement }} Added `headers` property to `pyoidide.http.FetchResponse`.
+  {pr}`2078`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
