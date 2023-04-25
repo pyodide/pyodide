@@ -1,7 +1,7 @@
 From 572a3e20ba040b4f29bbef97a9db6658c10077d3 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Fri, 18 Mar 2022 20:02:42 -0700
-Subject: [PATCH 6/7] correct return types
+Subject: [PATCH 4/5] correct return types
 
 Make return types to fortran subroutines consistently be int. Some functions are defined within clapack as variously
 void and int return. Normal C compilers don't care, but emscripten is strict about return values.

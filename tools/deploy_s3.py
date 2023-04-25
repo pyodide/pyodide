@@ -1,6 +1,7 @@
 import gzip
 import io
 import mimetypes
+import os
 import shutil
 from pathlib import Path
 
@@ -70,9 +71,19 @@ def deploy_to_s3_main(
     rm_remote_prefix: bool = typer.Option(
         False, help="Remove existing files under the remote prefix"
     ),
+    access_key_env: str = typer.Option(
+        "AWS_ACCESS_KEY_ID", help="Environment variable name for AWS access key"
+    ),
+    secret_key_env: str = typer.Option(
+        "AWS_SECRET_ACCESS_KEY", help="Environment variable name for AWS secret key"
+    ),
 ):
     """Deploy a dist folder with Pyodide packages to AWS S3"""
-    s3_client = boto3.client("s3")
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=os.environ[access_key_env],
+        aws_secret_access_key=os.environ[secret_key_env],
+    )
 
     typer.echo(f"Deploying {local_folder} to s3://{bucket}/{remote_prefix}")
     typer.echo("Options: ")

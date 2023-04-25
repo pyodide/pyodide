@@ -9,4 +9,4 @@ cpython
 .vscode
 .pytest_cache
 .clang-format
-packages/CLAPACK/make.inc
+packages/libf2c/make.inc

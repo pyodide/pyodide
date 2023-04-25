@@ -9,7 +9,7 @@ from pytest_pyodide import spawn_web_server
 import zipfile
 import typer
 from typer.testing import CliRunner  # type: ignore[import]
-
+from typing import Any
 from pyodide_build import common
 from pyodide_build.cli import (
     build,
@@ -344,6 +344,39 @@ def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
         assert "module4.pyc" in zf.namelist()
 
 
+def test_xbuildenv_create(selenium, tmp_path):
+    # selenium fixture is added to ensure that Pyodide is built... it's a hack
+    from conftest import package_is_built
+
+    envpath = Path(tmp_path) / ".xbuildenv"
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "create",
+            str(envpath),
+            "--skip-missing-files",
+        ],
+    )
+    assert result.exit_code == 0, result.stdout
+    assert "xbuildenv created at" in result.stdout
+    assert (envpath / "xbuildenv").exists()
+    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
+    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
+    assert (envpath / "xbuildenv" / "requirements.txt").exists()
+
+    if not package_is_built("scipy"):
+        # creating xbuildenv without building scipy will raise error
+        result = runner.invoke(
+            xbuildenv.app,
+            [
+                "create",
+                str(tmp_path / ".xbuildenv"),
+            ],
+        )
+        assert result.exit_code != 0, result.stdout
+        assert isinstance(result.exception, FileNotFoundError), result.exception
+
+
 def test_xbuildenv_install(tmp_path, temp_xbuildenv):
     envpath = Path(tmp_path) / ".xbuildenv"
 
@@ -391,3 +424,32 @@ def test_py_compile(tmp_path, target, compression_level):
             assert fh.filelist[0].compress_type == zipfile.ZIP_DEFLATED
         else:
             assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
+
+
+def test_build1(tmp_path, monkeypatch):
+    from pyodide_build import pypabuild
+
+    def mocked_build(srcdir: Path, outdir: Path, env: Any, backend_flags: Any) -> str:
+        results["srcdir"] = srcdir
+        results["outdir"] = outdir
+        results["backend_flags"] = backend_flags
+        return str(outdir / "a.whl")
+
+    monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(pypabuild, "build", mocked_build)
+
+    results: dict[str, Any] = {}
+    srcdir = tmp_path / "in"
+    outdir = tmp_path / "out"
+    srcdir.mkdir()
+    app = typer.Typer()
+    app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
+    result = runner.invoke(
+        app, [str(srcdir), "--output-directory", str(outdir), "x", "y", "z"]
+    )
+    print(result)
+    print(result.stdout)
+    assert result.exit_code == 0
+    assert results["srcdir"] == srcdir
+    assert results["outdir"] == outdir
+    assert results["backend_flags"] == "x y z"

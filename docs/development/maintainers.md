@@ -111,17 +111,32 @@ Cherry pick the corresponding documentation commits to the `stable` branch. Use
 
 ### Upgrading pyodide to a new version of CPython
 
+Prerequisites -- The desired version of CPython must be available at:
+
+1. The `specific release` section of https://www.python.org/downloads
+2. https://hub.docker.com/_/python
+3. https://github.com/actions/python-versions/releases
+
 For example: `v3.11.1` -> `v3.11.2`
 
-1. Download the **Gzipped source tarball** at https://www.python.org/downloads/release/python-3112 into `downloads/`
-2. `shasum -a 256 downloads/Python-3.11.2.tgz > cpython/checksums`
-3. `git grep --name-only "3.11.1" ` # All these files will need to be updated.
-4. After updating the Python version in `Dockerfile`, create a new Docker image.
-   - A maintainer must click `Run workflow` on https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml
-5. That workflow will build and upload a new Docker image to https://hub.docker.com/r/pyodide/pyodide-env/tags
-6. Modify the image name in `.circleci/config.yml` to match the image tag on Docker Hub.
+A project maintainer must create a up-to-date Docker image:
+
+1. In upstream (not a fork) change the Python version at the top of `Dockerfile` to the new version.
+2. Click `Run workflow` on https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml
+   - This will build and upload a new Docker image to https://hub.docker.com/r/pyodide/pyodide-env/tags
+3. Re-tag that image with the correct browser and Python versions: `20230301-chrome109-firefox109-py311`
+4. Open a new issue for a interested contributor to execute the following tasks...
+
+Any contributor can complete the Python upgrade:
+
+1. Ensure that the new Docker image has been tagged at https://hub.docker.com/r/pyodide/pyodide-env/tags
+2. Download the **Gzipped source tarball** at https://www.python.org/downloads/release/python-3112 into `downloads/`
+3. `shasum -a 256 downloads/Python-3.11.2.tgz > cpython/checksums`
+   - Ensure the path in `cpython/checksums` starts with `downloads/Python-`
+4. `git grep --name-only "3.11.1" ` # All of these files will need to be updated.
+5. In `.circleci/config.yml` modify the image name to match the image tag on Docker Hub.
    - `image: pyodide/pyodide-env:20230301-chrome109-firefox109-py311`
-7. Modify the `PYODIDE_IMAGE_TAG` in `run_docker` to match the image tag on Docker Hub.
+6. In `run_docker` modify the `PYODIDE_IMAGE_TAG` to match the image tag on Docker Hub.
    - `PYODIDE_IMAGE_TAG="20230301-chrome109-firefox109-py311"`
-8. Rebase any patches which do not apply cleanly.
-9. Create a pull request and fix any failing tests. This may be complicated for major releases of CPython.
+7. Rebase any patches which do not apply cleanly.
+8. Create a pull request and fix any failing tests. This may be complicated for non-micro releases of CPython.

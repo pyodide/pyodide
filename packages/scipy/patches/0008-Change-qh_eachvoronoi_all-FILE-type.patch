@@ -1,7 +1,7 @@
-From 0e75392a82b3b1ddc965895468e6c30ab973f6e9 Mon Sep 17 00:00:00 2001
+From 84d2f13dc36539f940785b11bd1a011a4f596bf6 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 29 Aug 2022 16:45:21 -0700
-Subject: [PATCH 11/13] Change qh_eachvoronoi_all FILE type
+Subject: [PATCH 08/11] Change qh_eachvoronoi_all FILE type
 
 ---
  scipy/spatial/_qhull.pyx | 7 ++++---
@@ -47,5 +47,5 @@ index 8c9135adc..5726cc704 100644
      cdef _Qhull qh = <_Qhull>ptr
      cdef int point_1, point_2, ix
 -- 
-2.25.1
+2.34.1
 

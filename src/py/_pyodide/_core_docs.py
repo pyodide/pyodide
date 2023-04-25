@@ -851,6 +851,7 @@ class JsFetchResponse(JsProxy):
     statusText: str
     type: str
     url: str
+    headers: Any
 
     def clone(self) -> "JsFetchResponse":
         raise NotImplementedError
@@ -1275,6 +1276,7 @@ del _save_name
 
 __all__ = [
     "ConversionError",
+    "InternalError",
     "JsArray",
     "JsAsyncGenerator",
     "JsAsyncIterable",

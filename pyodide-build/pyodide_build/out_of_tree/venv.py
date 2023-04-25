@@ -97,11 +97,24 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
     check_result(result, "ERROR: failed to invoke Pyodide")
     platform_data = result.stdout
     sysconfigdata_dir = Path(get_make_flag("TARGETINSTALLDIR")) / "sysconfigdata"
-
     return dedent(
-        f"""\
+        """\
         import os
         import sys
+        """
+        # when pip installs an executable it uses sys.executable to create the
+        # shebang for the installed executable. The shebang for pip points to
+        # python-host but we want the shebang of the executable that we install
+        # to point to Pyodide python. We monkeypatch distlib.scripts.get_executable
+        # to return the value with the host suffix removed.
+        """
+        from pip._vendor.distlib import scripts
+        def get_executable():
+            return sys.executable.removesuffix("-host")
+
+        scripts.get_executable = get_executable
+        """
+        f"""
         os_name, sys_platform, multiarch, host_platform = {platform_data}
         os.name = os_name
         orig_platform = sys.platform
@@ -125,6 +138,8 @@ def create_pip_script(venv_bin):
     # pyodide venv.
     host_python_path = venv_bin / f"python{get_pyversion()}-host"
     host_python_path.symlink_to(sys.executable)
+    # in case someone needs a Python-version-agnostic way to refer to python-host
+    (venv_bin / "python-host").symlink_to(sys.executable)
 
     (venv_bin / "pip").write_text(
         # Other than the shebang and the monkey patch, this is exactly what
