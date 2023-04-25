@@ -1,7 +1,7 @@
 From e9a7bd91516677716e33b16326ddea643be5aed5 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
 Date: Thu, 6 Apr 2023 12:22:45 +0200
-Subject: [PATCH 12/12] Enable long double support in Boost library for emscripten
+Subject: [PATCH 11/11] Enable long double support in Boost library for emscripten
 
 ---
  scipy/_lib/boost/boost/math/tools/config.hpp | 2 +-
