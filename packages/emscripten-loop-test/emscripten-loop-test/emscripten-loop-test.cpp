@@ -10,24 +10,33 @@ inner_loop(void)
 {
   if (counter < 100) {
     counter += 1;
+  } else {
+    emscripten_cancel_main_loop();
   }
 }
 
 static PyObject*
-main_loop(void)
+main_loop(PyObject* self, PyObject* args)
 {
-  emscripten_set_main_loop(inner_loop, 0, 1);
+  int fps;
+  int simulate_infinite_loop;
+
+  if (!PyArg_ParseTuple(args, "ii", &fps, &simulate_infinite_loop)) {
+    return NULL;
+  }
+
+  emscripten_set_main_loop(inner_loop, fps, simulate_infinite_loop);
   Py_RETURN_NONE;
 }
 
 static PyObject*
-get_counter(void)
+get_counter(PyObject* self, PyObject* args)
 {
   return PyLong_FromLong(counter);
 }
 
 static PyMethodDef Methods[] = {
-  { "main_loop", (PyCFunction)main_loop, METH_NOARGS },
+  { "main_loop", (PyCFunction)main_loop, METH_VARARGS },
   { "get_counter", (PyCFunction)get_counter, METH_NOARGS },
   { NULL, NULL, 0, NULL } /* Sentinel */
 };

@@ -153,9 +153,6 @@ API.maybe_fatal_error = function (e: any) {
   // This is expected behavior and should not be treated as a fatal error.
   // However, after the "unwind" exception is caught, the call stack is not unwound
   // properly and there are dead frames remaining on the stack.
-  // This might cause problems in the future, so we need to find a way to fix it.
-  // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
-  //      2) https://github.com/kitao/pyxel/issues/418
   if (e && e == "unwind") {
     if (!Module._is_thread_state_saved()) {
       console.warn(
