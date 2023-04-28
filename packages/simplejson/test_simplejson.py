@@ -10,5 +10,5 @@ def test_simplejson(selenium):
     expected = '{"a": 0, "b": 0, "c": 0}'
     assert dumped == expected
 
-    # test whether C extensions have been built succesfully
+    # test whether C extensions have been built successfully
     import simplejson._speedups
