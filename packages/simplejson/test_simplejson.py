@@ -11,4 +11,4 @@ def test_simplejson(selenium):
     assert dumped == expected
 
     # test whether C extensions have been built succesfully
-    assert simplejson._import_c_make_encoder() is not None
+    import simplejson._speedups
