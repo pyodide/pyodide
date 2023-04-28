@@ -1,7 +1,7 @@
 From bb4e0d92ee2ba91ac5defd36ca5781433de25688 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 10 Mar 2023 14:47:00 +0000
-Subject: [PATCH 11/11] When forward declaring print_soln, give it the correct
+Subject: [PATCH 10/11] When forward declaring print_soln, give it the correct
  signature
 
 ---

@@ -8,11 +8,13 @@ requirements:
     - distutils
     - numpy
     - Jinja2
+    - pandas
     - Pillow
     - python-dateutil
     - six
     - typing-extensions
     - pyyaml
+    - xyzservices
 source:
   sha256: 9d38ed3b130e1e043447694934c02deb1ae4adfeda1136b8b8eaed9cb26de11c
   url: https://files.pythonhosted.org/packages/c6/84/3c0c2cb7b4953c4a7b43078ce9c4e7359e01f1ee95c4b1646c3035ceeb89/bokeh-3.1.0-py3-none-any.whl

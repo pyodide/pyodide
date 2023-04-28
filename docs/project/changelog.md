@@ -22,7 +22,7 @@ myst:
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
 
-- {{ Enhancement }} Added `headers` property to `pyoidide.http.FetchResponse`.
+- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
 ### Packages
@@ -30,8 +30,9 @@ myst:
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
-  deprecation {pr}`3635`, cachetools {pr}`3635`.
+  deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
+- Upgraded scipy to 1.10.1 {pr}`3794`
 
 ## Version 0.23.1
 

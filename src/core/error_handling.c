@@ -76,8 +76,8 @@ fetch_and_normalize_exception(PyObject** type,
 {
   PyErr_Fetch(type, value, traceback);
   PyErr_NormalizeException(type, value, traceback);
-  if (*type == NULL || *type == Py_None || *value == NULL ||
-      *value == Py_None) {
+  if (*type == NULL || Py_IsNone(*type) || *value == NULL ||
+      Py_IsNone(*value)) {
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     Py_CLEAR(*traceback);

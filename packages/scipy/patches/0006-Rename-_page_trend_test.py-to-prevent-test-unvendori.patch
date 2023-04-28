@@ -19,11 +19,12 @@ index 70a527849..8ce1ae379 100644
 @@ -480,7 +480,7 @@ from ._resampling import bootstrap, monte_carlo_test, permutation_test
  from ._entropy import *
  from ._hypotests import *
- from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+ from ._rvs_sampling import rvs_ratio_uniforms
 -from ._page_trend_test import page_trend_test
 +from ._page_trend_test_ import page_trend_test
  from ._mannwhitneyu import mannwhitneyu
- from ._fit import fit
+ from ._fit import fit, goodness_of_fit
+ from ._covariance import Covariance
  
 diff --git a/scipy/stats/_page_trend_test.py b/scipy/stats/_page_trend_test_.py
 similarity index 100%
@@ -35,8 +36,8 @@ index dfac9e073..3c5cc673f 100644
 +++ b/scipy/stats/meson.build
 @@ -192,7 +192,7 @@ py3.install_sources([
      '_mstats_basic.py',
-     '_mstats_extras.py',
      '_multivariate.py',
+     '_odds_ratio.py',
 -    '_page_trend_test.py',
 +    '_page_trend_test_.py',
      '_qmc.py',

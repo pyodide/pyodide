@@ -361,11 +361,11 @@ finally:
 static inline JsRef
 _python2js_immutable(PyObject* x)
 {
-  if (x == Py_None) {
+  if (Py_IsNone(x)) {
     return Js_undefined;
-  } else if (x == Py_True) {
+  } else if (Py_IsTrue(x)) {
     return Js_true;
-  } else if (x == Py_False) {
+  } else if (Py_IsFalse(x)) {
     return Js_false;
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
@@ -790,7 +790,7 @@ to_js(PyObject* self,
     return NULL;
   }
 
-  if (obj == Py_None || PyBool_Check(obj) || PyLong_Check(obj) ||
+  if (Py_IsNone(obj) || PyBool_Check(obj) || PyLong_Check(obj) ||
       PyFloat_Check(obj) || PyUnicode_Check(obj) || JsProxy_Check(obj)) {
     // No point in converting these and it'd be useless to proxy them since
     // they'd just get converted back by `js2python` at the end
