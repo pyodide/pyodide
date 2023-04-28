@@ -145,11 +145,11 @@ Any contributor can complete the Python upgrade:
    historical Python upgrades:
    | version | pr |
    |---|---|
-   | 3.11 | https://github.com/pyodide/pyodide/pull/3252 |
-   | 3.10 | https://github.com/pyodide/pyodide/pull/2225 |
-   | 3.9 | https://github.com/pyodide/pyodide/pull/1637 |
-   | 3.8 | https://github.com/pyodide/pyodide/pull/712 |
-   | 3.7 | https://github.com/pyodide/pyodide/pull/77 |
+   | 3.11 | {pr}`3252` |
+   | 3.10 |{pr}`2225` |
+   | 3.9 | {pr}`1637` |
+   | 3.8 | {pr}`712` |
+   | 3.7 | {pr}`77` |
 9. Apply upgrade_pythoncapi.py to the C extension in `src/code`.
    https://github.com/python/pythoncapi-compat/blob/main/upgrade_pythoncapi.py
    Remove the `#include pythoncapi_compat.h` headers (it injects backwards
