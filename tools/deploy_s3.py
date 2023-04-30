@@ -112,7 +112,7 @@ def deploy_to_s3_main(
 
         with open(file_path, "rb") as fh_in:
             compressed = file_path.suffix in (".gz", ".bz2")
-            
+
             if compressed:
                 # If the file is already compressed, we don't need to
                 # re-compress it.
