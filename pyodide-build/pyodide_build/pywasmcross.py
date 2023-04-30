@@ -557,8 +557,7 @@ def handle_command_generate_args(
         return line
 
     # set linker and C flags to error on anything to do with function declarations being wrong.
-    # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
-    # will fail. Better to fail at compile or link time.
+    # Better to fail at compile or link time.
     if is_link_command:
         new_args.append("-Wl,--fatal-warnings")
     new_args.extend(
