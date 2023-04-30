@@ -1,10 +1,10 @@
 {
-    "tasks": {
-        "run": "deno task cache && deno task run:smoke-test",
-        "cache": "deno task cache:clear && deno task cache:init && deno task cache:localpyodide",
-        "cache:clear": "rm -rf node_modules",
-        "cache:init": "deno cache --node-modules-dir smoke-test.ts",
-        "cache:localpyodide": "sh -c \"cp -r ../../dist/. ./node_modules/pyodide/\"",
-        "run:smoke-test": "deno run --node-modules-dir --allow-read=. smoke-test.ts"
-    }
+  "tasks": {
+    "run": "deno task cache && deno task run:smoke-test",
+    "cache": "deno task cache:clear && deno task cache:init && deno task cache:localpyodide",
+    "cache:clear": "rm -rf node_modules",
+    "cache:init": "deno cache --node-modules-dir smoke-test.ts",
+    "cache:localpyodide": "sh -c \"cp -r ../../dist/. ./node_modules/pyodide/\"",
+    "run:smoke-test": "deno run --node-modules-dir --allow-read=. smoke-test.ts"
+  }
 }
