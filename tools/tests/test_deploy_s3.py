@@ -105,7 +105,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
 @mock_s3
 def test_deploy_to_s3_mime_type(tmp_path, capsys):
     """Test that we set the correct MIME type for each file extension"""
-    for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a", "mjs.map", "mjs"]:
+    for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a", "mjs.map", "mjs", "tar.gz", "tar.bz2"]:
         (tmp_path / f"a.{ext}").write_text("a")
 
     bucket_name = "mybucket"
@@ -129,6 +129,8 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
         return res["ResponseMetadata"]["HTTPHeaders"][field]
 
     assert get_header("a.js", "content-encoding") == "gzip"
+    assert get_header("a.tar.gz", "content-encoding") == "identity"
+    assert get_header("a.tar.bz2", "content-encoding") == "identity"
 
     # These  MIME types we set explicitly for better CDN compression
     assert get_header("a.whl") == "application/wasm"
@@ -150,3 +152,7 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
     with gzip.GzipFile(fileobj=res["Body"], mode="r") as fh:
         shutil.copyfileobj(fh, stream)
     assert stream.getvalue() == b"a"
+
+    res = s3_client.get_object(Bucket=bucket_name, Key="a.tar.bz2")
+    data = res["Body"].read()  # Should not raise an exception
+    assert data == b"a"
