@@ -126,11 +126,11 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
 
     def get_header(key, field="content-type"):
         res = s3_client.get_object(Bucket=bucket_name, Key=key)
-        return res["ResponseMetadata"]["HTTPHeaders"][field]
+        return res["ResponseMetadata"]["HTTPHeaders"].get(field)
 
     assert get_header("a.js", "content-encoding") == "gzip"
-    assert get_header("a.tar.gz", "content-encoding") == "identity"
-    assert get_header("a.tar.bz2", "content-encoding") == "identity"
+    assert get_header("a.tar.gz", "content-encoding") is None
+    assert get_header("a.tar.bz2", "content-encoding") is None
 
     # These  MIME types we set explicitly for better CDN compression
     assert get_header("a.whl") == "application/wasm"

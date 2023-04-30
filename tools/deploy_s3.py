@@ -145,8 +145,10 @@ def deploy_to_s3_main(
             extra_args = {
                 "CacheControl": cache_control,
                 "ContentType": content_type,
-                "ContentEncoding": "identity" if compressed else "gzip"
             }
+
+            if not compressed:
+                extra_args["ContentEncoding"] = "gzip"
 
             if not pretend:
                 s3_client.upload_fileobj(
