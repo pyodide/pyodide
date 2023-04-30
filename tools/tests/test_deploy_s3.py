@@ -105,7 +105,20 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
 @mock_s3
 def test_deploy_to_s3_mime_type(tmp_path, capsys):
     """Test that we set the correct MIME type for each file extension"""
-    for ext in ["whl", "tar", "zip", "js", "ts", "json", "ttf", "a", "mjs.map", "mjs", "tar.gz", "tar.bz2"]:
+    for ext in [
+        "whl",
+        "tar",
+        "zip",
+        "js",
+        "ts",
+        "json",
+        "ttf",
+        "a",
+        "mjs.map",
+        "mjs",
+        "tar.gz",
+        "tar.bz2",
+    ]:
         (tmp_path / f"a.{ext}").write_text("a")
 
     bucket_name = "mybucket"
