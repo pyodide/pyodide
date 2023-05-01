@@ -172,7 +172,7 @@ class PyodideFuture(Future[T]):
 
         p = create_proxy(self)
         try:
-            return p.syncify() # type:ignore[attr-defined]
+            return p.syncify()  # type:ignore[attr-defined]
         finally:
             p.destroy()
 
