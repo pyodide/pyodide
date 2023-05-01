@@ -2,6 +2,13 @@
 
 #include "internal/pycore_frame.h"
 
+// This is taken from
+// https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/greenlet_greenlet.hpp
+//
+// When updating the major Python version it will be necessary to look at that
+// file.
+
+
 typedef struct
 {
   _PyCFrame* cframe;
