@@ -165,6 +165,7 @@ export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
+	-C link-arg=-fwasm-exceptions \
 	-Z link-native-libraries=no
 .output_vars:
 	set
