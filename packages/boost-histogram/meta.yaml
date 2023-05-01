@@ -10,8 +10,8 @@ requirements:
   run:
     - numpy # runtime only
 build:
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
+  cxxflags: -fwasm-exceptions
+  ldflags: -fwasm-exceptions
 about:
   home: https://github.com/scikit-hep/boost-histogram
   PyPI: https://pypi.org/project/boost-histogram

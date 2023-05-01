@@ -40,11 +40,11 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
     -Wno-return-type
     -DUNDERSCORE_G77
-  cxxflags: -fexceptions
+  cxxflags: -fwasm-exceptions
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
-    -fexceptions
+    -fwasm-exceptions
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
