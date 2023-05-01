@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Changed the name of the `--output-directory` argument to
+  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
+  still accepted for backwards compatibility.
+  {pr}`3811`
+
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
