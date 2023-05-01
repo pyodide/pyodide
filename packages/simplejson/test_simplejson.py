@@ -1,8 +1,7 @@
-# type: ignore
 from pytest_pyodide.decorator import run_in_pyodide
 
 
-@run_in_pyodide(packages=["simplejson"])
+@run_in_pyodide(packages=["simplejson"])  # type: ignore
 def test_simplejson(selenium):
     from decimal import Decimal
 
