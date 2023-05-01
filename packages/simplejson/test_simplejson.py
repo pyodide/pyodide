@@ -1,7 +1,8 @@
+# mypy: ignore-errors
 from pytest_pyodide.decorator import run_in_pyodide
 
 
-@run_in_pyodide(packages=["simplejson"])  # type: ignore
+@run_in_pyodide(packages=["simplejson"])
 def test_simplejson(selenium):
     from decimal import Decimal
 
