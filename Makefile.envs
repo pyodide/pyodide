@@ -108,6 +108,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-sEXPORTED_RUNTIME_METHODS='stackAlloc,stackRestore,stackSave' \
 	-s DEMANGLE_SUPPORT=1 \
+	-fwasm-exceptions \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
