@@ -145,6 +145,32 @@ Try `python -h' for more information.
     )
 
 
+@only_node
+def test_extra_mounts(selenium, tmp_path, monkeypatch):
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+
+    tmp_path_a = dir_a / "script.py"
+    tmp_path_b = dir_b / "script.py"
+    tmp_path_a.write_text("print('hello 1')")
+    tmp_path_b.write_text("print('hello 2')")
+    monkeypatch.setenv("_PYODIDE_EXTRA_MOUNTS", f"{dir_a}:{dir_b}")
+    result = subprocess.run(
+        [script_path, tmp_path_a], capture_output=True, encoding="utf8"
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello 1\n"
+    assert result.stderr == ""
+    result = subprocess.run(
+        [script_path, tmp_path_b], capture_output=True, encoding="utf8"
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello 2\n"
+    assert result.stderr == ""
+
+
 @contextmanager
 def venv_ctxmgr(path):
     check_emscripten()
