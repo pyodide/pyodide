@@ -1,24 +1,18 @@
 async function main() {
     const loadPyodide = require("../dist/pyodide.js").loadPyodide;
-    py = await loadPyodide({});
+    py = await loadPyodide();
     function sleep(ms) {
-        return new Promise((res) => setTimeout(res, ms));
+        return [new Promise((res) => setTimeout(res, ms))];
     }
     globalThis.sleep = sleep;
 
-    globalThis.s = sleep(1000);
-    // py.runPython(`
-    //   from js import s
-    //   s.syncify()
-    // `)
-
     async function test1() {
         await py.pyodide_py.code.eval_code.callSyncifying(`
-        from js import s
+        from js import sleep
         print("a")
         from pyodide_js._module import validSuspender
         print("validSuspender.value:", validSuspender.value)
-        s.syncify()
+        sleep(1000)[0].syncify()
         print("b")
       `);
     }
@@ -39,6 +33,7 @@ async function main() {
         await f.callSyncifying();
         py.setInterruptBuffer(undefined);
     }
+    // await test2();
 
     async function test3() {
         py.runPython(`
@@ -51,19 +46,22 @@ async function main() {
         print(pytest.__version__)
       `);
     }
-    // await test2();
 
-    //   def f():
-    //     from pyodide_js import loadPackage
-    //     from js import sleep
-    //     # loadPackage.syncify("micropip")
-    //     sleep.syncify(1000)
-    //     print(66)
-    //     sleep.syncify(1000)
-    //     print(66)
-    //     # import pytest
-    //     print(77)
-    //   f
-    // `);
+    globalThis.loadPackage = function(pkg){
+      return [py.loadPackage(pkg)];
+    }
+
+    async function test4() {
+        f = py.runPython(`
+          def f():
+            from js import loadPackage
+            loadPackage("micropip")[0].syncify()
+            import micropip
+            print(micropip)
+          f
+        `);
+        f.callSyncifying();
+    }
+    test4();
 }
 main();

@@ -254,8 +254,8 @@ jobs:
           path: ./dist/
       - uses: actions/setup-node@v3
         with:
-          node-version: 19
+          node-version: 20
       - name: Run
         shell: bash -l {0}
         run: |
-          node --experimental-wasm-stack-switching --experimental-wasm-type-reflection tools/syncify-test.js
+          node --experimental-wasm-stack-switching tools/syncify-test.js
