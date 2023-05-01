@@ -157,16 +157,18 @@ def test_extra_mounts(selenium, tmp_path, monkeypatch):
     tmp_path_a.write_text("print('hello 1')")
     tmp_path_b.write_text("print('hello 2')")
     monkeypatch.setenv("_PYODIDE_EXTRA_MOUNTS", f"{dir_a}:{dir_b}")
-    result = subprocess.run([script_path, tmp_path_a], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        [script_path, tmp_path_a], capture_output=True, encoding="utf8"
+    )
     assert result.returncode == 0
-    assert result.stdout == 'hello 1\n'
-    assert result.stderr == ''
-    result = subprocess.run([script_path, tmp_path_b], capture_output=True, encoding="utf8")
+    assert result.stdout == "hello 1\n"
+    assert result.stderr == ""
+    result = subprocess.run(
+        [script_path, tmp_path_b], capture_output=True, encoding="utf8"
+    )
     assert result.returncode == 0
-    assert result.stdout == 'hello 2\n'
-    assert result.stderr == ''
-
-    
+    assert result.stdout == "hello 2\n"
+    assert result.stderr == ""
 
 
 @contextmanager
