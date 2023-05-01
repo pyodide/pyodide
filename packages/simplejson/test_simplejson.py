@@ -1,3 +1,4 @@
+# type: ignore
 from pytest_pyodide.decorator import run_in_pyodide
 
 
