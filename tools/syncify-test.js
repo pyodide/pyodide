@@ -2,7 +2,7 @@ async function main() {
     const loadPyodide = require("../dist/pyodide.js").loadPyodide;
     py = await loadPyodide();
     function sleep(ms) {
-        return [new Promise((res) => setTimeout(res, ms))];
+        return new Promise((res) => setTimeout(res, ms));
     }
     globalThis.sleep = sleep;
 
@@ -12,7 +12,7 @@ async function main() {
         print("a")
         from pyodide_js._module import validSuspender
         print("validSuspender.value:", validSuspender.value)
-        sleep(1000)[0].syncify()
+        sleep(1000).syncify()
         print("b")
       `);
     }
@@ -47,15 +47,11 @@ async function main() {
       `);
     }
 
-    globalThis.loadPackage = function(pkg){
-      return [py.loadPackage(pkg)];
-    }
-
     async function test4() {
         f = py.runPython(`
           def f():
-            from js import loadPackage
-            loadPackage("micropip")[0].syncify()
+            from pyodide_js import loadPackage
+            loadPackage("micropip").syncify()
             import micropip
             print(micropip)
           f
