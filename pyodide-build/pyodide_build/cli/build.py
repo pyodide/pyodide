@@ -114,6 +114,8 @@ def main(
     ),
     output_directory: str = typer.Option(
         "./dist",
+        "--outdir",
+        "-o",
         help="which directory should the output be placed into?",
     ),
     requirements_txt: str = typer.Option(
