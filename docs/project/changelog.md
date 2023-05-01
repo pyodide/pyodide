@@ -13,6 +13,13 @@ myst:
 
 # Change Log
 
+## Version 0.23.2
+
+- {{ Enhancement }} Changed the name of the `--output-directory` argument to
+  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
+  still accepted for backwards compatibility.
+  {pr}`3811`
+
 ## Version 0.23.1
 
 ### Deployment
