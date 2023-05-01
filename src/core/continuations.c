@@ -8,7 +8,6 @@
 // When updating the major Python version it will be necessary to look at that
 // file.
 
-
 typedef struct
 {
   _PyCFrame* cframe;
