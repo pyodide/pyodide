@@ -9,7 +9,7 @@ source:
   sha256: 917223b37538959aca3b790d2d73aa6e626b688e02dcda272aec24c2f498abed
 
 build:
-  library: true
+  type: static_library
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \

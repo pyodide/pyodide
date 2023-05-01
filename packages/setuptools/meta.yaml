@@ -1,13 +1,13 @@
 package:
   name: setuptools
-  version: 62.6.0
+  version: 67.6.1
   top-level:
     - _distutils_hack
     - pkg_resources
     - setuptools
 source:
-  url: https://files.pythonhosted.org/packages/e9/86/b2ede1d87122a6d4da86d84cc35d0e48b4aa2476e4281d06101c772c1961/setuptools-62.6.0-py3-none-any.whl
-  sha256: c1848f654aea2e3526d17fc3ce6aeaa5e7e24e66e645b5be2171f3f6b4e5a178
+  url: https://files.pythonhosted.org/packages/0b/fc/8781442def77b0aa22f63f266d4dadd486ebc0c5371d6290caf4320da4b7/setuptools-67.6.1-py3-none-any.whl
+  sha256: e728ca814a823bf7bf60162daf9db95b93d532948c4c0bea762ce62f60189078
 build:
   post: |
     find build/setuptools-*/dist -name '*.exe' -delete

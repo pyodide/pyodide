@@ -1,10 +1,6 @@
 import pytest
 
 
-def test_init(selenium_standalone):
-    assert "Python initialization complete" in selenium_standalone.logs.splitlines()
-
-
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
 def test_webbrowser(selenium):
     # Selenium

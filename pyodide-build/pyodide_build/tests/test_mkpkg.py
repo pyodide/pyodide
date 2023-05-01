@@ -21,7 +21,8 @@ def test_mkpkg(tmpdir, capsys, source_fmt):
     meta_path = base_dir / "idna" / "meta.yaml"
     assert meta_path.exists()
     captured = capsys.readouterr()
-    assert f"Output written to {meta_path}" in captured.out
+    assert "Output written to" in captured.out
+    assert str(meta_path) in captured.out
 
     db = MetaConfig.from_yaml(meta_path)
 

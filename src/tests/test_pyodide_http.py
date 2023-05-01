@@ -12,8 +12,8 @@ def test_open_url(selenium, httpserver):
     assert (
         selenium.run(
             f"""
-            import pyodide
-            pyodide.open_url('{request_url}').read()
+            from pyodide.http import open_url
+            open_url('{request_url}').read()
             """
         )
         == "HELLO"
@@ -59,6 +59,30 @@ async def test_pyfetch_unpack_archive(selenium):
         "src",
         "tests",
     ]
+
+
+@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
+def test_pyfetch_headers(selenium, httpserver):
+    httpserver.expect_request("/data").respond_with_data(
+        b"HELLO",
+        content_type="text/plain",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "max-age=300",
+            "Content-Type": "text/plain",
+        },
+    )
+    request_url = httpserver.url_for("/data")
+
+    selenium.run_async(
+        f"""
+        import pyodide.http
+        response = await pyodide.http.pyfetch('{request_url}')
+        headers = response.headers
+        assert headers["cache-control"] == "max-age=300"
+        assert headers["content-type"] == "text/plain"
+        """
+    )
 
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")

@@ -6,7 +6,7 @@ def test_distutils(selenium):
     import sys
     import unittest
     import unittest.mock
-    from test import libregrtest
+    from test import libregrtest  # type:ignore[attr-defined]
 
     name = "test_distutils"
 

@@ -5,10 +5,11 @@
   pre-commit
   # testing
   build==0.7.0
+  sphinx-click
   hypothesis
   pytest
   pytest-asyncio
   pytest-cov
   pytest-httpserver
   pytest-benchmark
-  pytest-pyodide==0.23.1
+  pytest-pyodide==0.23.2

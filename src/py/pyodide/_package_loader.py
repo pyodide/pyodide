@@ -20,18 +20,24 @@ try:
 except ImportError:
     loadedPackages = None
 
-from ._core import IN_BROWSER, JsProxy, to_js
+from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
     # not in a virtualenv
     STD_LIB = Path(sysconfig.get_path("stdlib"))
-    TARGETS = {"site": SITE_PACKAGES, "lib": STD_LIB, "dynlib": Path("/usr/lib")}
+    DSO_DIR = Path("/usr/lib")
 else:
     # in a virtualenv
-    # Better not put stuff into /usr/lib or /lib/python3.10! For now let's stick
-    # everyone into SITE_PACKAGES in this case
-    TARGETS = {"site": SITE_PACKAGES, "lib": SITE_PACKAGES, "dynlib": SITE_PACKAGES}
+    # Better not put stuff into /usr/lib or /lib/python3.10! Stick the stdlib
+    # into SITE_PACKAGES and dsos up two directories.
+    #
+    # e.g., SITE_PACKAGES = .venv/lib/python3.10/site_packages
+    # and   DSO_DIR       = .venv/lib/
+    STD_LIB = SITE_PACKAGES
+    DSO_DIR = SITE_PACKAGES.parents[1]
+TARGETS = {"site": SITE_PACKAGES, "stdlib": STD_LIB, "dynlib": DSO_DIR}
+
 
 ZIP_TYPES = {".whl", ".zip"}
 TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
@@ -121,7 +127,7 @@ if IN_BROWSER:
 
 
 def get_format(format: str) -> str:
-    for (fmt, extensions, _) in shutil.get_unpack_formats():
+    for fmt, extensions, _ in shutil.get_unpack_formats():
         if format == fmt:
             return fmt
         if format in extensions:
@@ -132,7 +138,7 @@ def get_format(format: str) -> str:
 
 
 def unpack_buffer(
-    buffer: JsProxy,
+    buffer: JsBuffer,
     *,
     filename: str = "",
     format: str | None = None,
@@ -141,7 +147,7 @@ def unpack_buffer(
     calculate_dynlibs: bool = False,
     installer: str | None = None,
     source: str | None = None,
-) -> JsProxy | None:
+) -> JsArray[str] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
 
@@ -204,6 +210,8 @@ def unpack_buffer(
     else:
         extract_path = Path(".")
     filename = filename.rpartition("/")[-1]
+
+    extract_path.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)

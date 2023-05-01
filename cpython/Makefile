@@ -3,7 +3,7 @@ include ../Makefile.envs
 
 ROOT=$(abspath .)
 
-PYTHON_CFLAGS=$(CFLAGS_BASE)
+PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
@@ -12,16 +12,17 @@ URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/hoodmane/libffi-emscripten
-LIBFFI_TAG=2022-06-23
+LIBFFIREPO=https://github.com/libffi/libffi
+LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
 
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
+		sed -i '/MODOBJS=/s/$$/ $$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) /' Makefile; \
 		touch $(BUILD)/$(LIB) ; \
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ \
@@ -35,7 +36,6 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) remove_modules.txt
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-	cd $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/ && rm -rf `cat $(ROOT)/remove_modules.txt`
 	rm -rf $(PYBUILDDIR)
 	rm pybuilddir.txt
 
@@ -59,11 +59,18 @@ $(BUILD)/.patched: $(TARBALL)
 	cat patches/*.patch | (cd $(BUILD) ; patch -p1)
 	touch $@
 
-
 $(INSTALL)/lib/libffi.a :
 	rm -rf $(FFIBUILD)
-	git clone $(LIBFFIREPO) --depth 1 --branch $(LIBFFI_TAG) $(FFIBUILD)
-	. $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh && cd $(FFIBUILD) && ./build.sh && make install
+	mkdir $(FFIBUILD)
+	(\
+		cd $(FFIBUILD) \
+		&& git init \
+		&& git fetch --depth 1 $(LIBFFIREPO) $(LIBFFI_COMMIT) \
+		&& git checkout FETCH_HEAD \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& ./testsuite/emscripten/build.sh --wasm-bigint \
+		&& make install \
+	)
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
@@ -76,10 +83,9 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 	#   30 on systems with 16 bit pointers. WASM has 32 bit pointers so Python
 	#   will default to the size 15 digits but WASM has native 64 bit arithmetic
 	#   so it is more efficient to use 30 bit digits.
-	cp config.site $(BUILD)/
 	( \
 		cd $(BUILD); \
-		CONFIG_SITE=./config.site READELF=true emconfigure \
+		CONFIG_SITE=./Tools/wasm/config.site-wasm32-emscripten READELF=true emconfigure \
 		  ./configure \
 			  CFLAGS="${PYTHON_CFLAGS}" \
 			  CPPFLAGS="-sUSE_BZIP2=1 -sUSE_ZLIB=1" \
@@ -92,17 +98,18 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
+			  --with-build-python=$$(which python3.11) \
 	)
 
 
-$(BUILD)/Modules/Setup.local : Setup.local
+$(BUILD)/Modules/Setup.local: Setup.local
 	cp Setup.local $(BUILD)/Modules/
 
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
-	cat pyconfig.undefs.h >> $(BUILD)/pyconfig.h
 	( \
 		cd $(BUILD); \
+		make regen-frozen; \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
 	)
 	touch $(BUILD)/$(LIB)

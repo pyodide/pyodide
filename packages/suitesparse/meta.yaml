@@ -10,12 +10,12 @@ source:
 
 requirements:
   run:
-    - CLAPACK
+    - openblas
   host:
-    - CLAPACK
+    - openblas
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     # Fix return type to avoid linker error
     grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
@@ -23,10 +23,9 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
       LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
-      BLAS="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
-      LAPACK="${WASM_LIBRARY_DIR}/lib/clapack_all.so" \
+      BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       INSTALL=${WASM_LIBRARY_DIR}
-    mkdir -p dist
 
     cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
        ${WASM_LIBRARY_DIR}/lib/libamd.so \
@@ -36,4 +35,4 @@ build:
        ${WASM_LIBRARY_DIR}/lib/libmetis.so \
        ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
        ${WASM_LIBRARY_DIR}/lib/libspqr.so \
-       dist/
+       ${DISTDIR}

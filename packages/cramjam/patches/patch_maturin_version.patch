@@ -1,0 +1,11 @@
+diff --git a/pyproject.toml b/pyproject.toml
+index bb317951..f67c19ec 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -9,5 +9,5 @@ documentation = "https://docs.rs/cramjam/latest/cramjam"
+ repository = "https://github.com/milesgranger/pyrus-cramjam"
+ 
+ [build-system]
+-requires = ["maturin>=0.13,<0.14"]
++requires = ["maturin>=0.14.14,<0.15"]
+ build-backend = "maturin"

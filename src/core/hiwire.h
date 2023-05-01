@@ -125,33 +125,6 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS4 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs4(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS2 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs2(const char* ptr, int len);
-
-/**
- * Create a new JavaScript string, given a pointer to a buffer
- * containing UCS1 and a length. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ucs1(const char* ptr, int len);
-
-/**
  * Create a new JavaScript string, given a pointer to a null-terminated buffer
  * containing UTF8. The string data itself is copied.
  *
@@ -159,16 +132,6 @@ hiwire_string_ucs1(const char* ptr, int len);
  */
 JsRef
 hiwire_string_utf8(const char* ptr);
-
-/**
- * Create a new JavaScript string, given a pointer to a null-terminated buffer
- * containing ascii (well, technically latin-1). The string data itself is
- * copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_ascii(const char* ptr);
 
 /**
  * Create a new JavaScript boolean value.
@@ -277,6 +240,9 @@ JsRef
 hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
 
 JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
+
+JsRef
 hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
@@ -312,16 +278,16 @@ bool
 hiwire_get_bool(JsRef idobj);
 
 /**
- * Check whether the object is a PyProxy.
- */
-bool
-hiwire_is_pyproxy(JsRef idobj);
-
-/**
  * Check if the object is a function.
  */
 bool
 hiwire_is_function(JsRef idobj);
+
+bool
+hiwire_is_generator(JsRef idobj);
+
+bool
+hiwire_is_async_generator(JsRef idobj);
 
 /**
  * Check if the object is a comlink proxy.
@@ -410,44 +376,10 @@ bool
 hiwire_greater_than_equal(JsRef ida, JsRef idb);
 
 /**
- * Check if `typeof obj.next === "function"`
- */
-bool
-hiwire_is_iterator(JsRef idobj);
-
-/**
- * Calls the `next` function on an iterator.
- *
- * Returns -1 if an error occurs. Otherwise, `next` should return an object with
- * `value` and `done` fields. We store `value` into the argument `result` and
- * return `done`.
- */
-int
-hiwire_next(JsRef idobj, JsRef* result);
-
-/**
- * Check if `typeof obj[Symbol.iterator] === "function"`
- */
-bool
-hiwire_is_iterable(JsRef idobj);
-
-/**
- * Returns the iterator associated with the given object, if any.
- */
-JsRef
-hiwire_get_iterator(JsRef idobj);
-
-/**
  * Returns the reversed iterator associated with an array.
  */
 JsRef
 hiwire_reversed_iterator(JsRef idobj);
-
-/**
- * Returns 1 if the value is a typedarray.
- */
-bool
-hiwire_is_typedarray(JsRef idobj);
 
 /**
  * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into

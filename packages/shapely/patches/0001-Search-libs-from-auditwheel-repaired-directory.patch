@@ -1,0 +1,24 @@
+From ef26b081545557b49d832b17966d195a5037abc8 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Mon, 26 Sep 2022 05:01:14 +0000
+Subject: [PATCH 1/1] Search libs from auditwheel repaired directory
+
+---
+ shapely/geos.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/shapely/geos.py b/shapely/geos.py
+index 88c5f53..fef5cbd 100644
+--- a/shapely/geos.py
++++ b/shapely/geos.py
+@@ -62,7 +62,7 @@ def exists_conda_env():
+     """Does this module exist in a conda environment?"""
+     return os.path.exists(os.path.join(sys.prefix, 'conda-meta'))
+
+-if sys.platform.startswith('linux'):
++if sys.platform.startswith(('linux', 'emscripten')):
+     # Test to see if we have a wheel repaired by auditwheel which contains its
+     # own libgeos_c. Note: auditwheel 3.1 changed the location of libs.
+     geos_whl_so = glob.glob(
+-- 
+2.37.3

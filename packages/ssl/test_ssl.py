@@ -6,7 +6,7 @@ def test_ssl(selenium):
     import platform
     import unittest
     import unittest.mock
-    from test import libregrtest
+    from test import libregrtest  # type:ignore[attr-defined]
 
     platform.platform(aliased=True)
     name = "test_ssl"

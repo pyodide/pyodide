@@ -12,7 +12,7 @@ from pyodide.console import Console, _CommandCompiler, _Compile  # noqa: E402
 
 def test_command_compiler():
     c = _Compile()
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c("def test():\n   1", "<input>", "single")
     assert isinstance(c("def test():\n   1\n", "<input>", "single"), CodeRunner)
     with pytest.raises(SyntaxError, match="invalid syntax"):
@@ -25,7 +25,7 @@ def test_command_compiler():
     c2 = _CommandCompiler()
     assert c2("def test():\n   1", "<input>", "single") is None
     assert isinstance(c2("def test():\n   1\n", "<input>", "single"), CodeRunner)
-    with pytest.raises(SyntaxError, match="invalid syntax"):
+    with pytest.raises(SyntaxError, match="(invalid syntax|incomplete input)"):
         c2("1<>2", "<input>", "single")
     assert isinstance(
         c2("from __future__ import barry_as_FLUFL", "<input>", "single"), CodeRunner
@@ -81,6 +81,7 @@ def test_completion():
         [
             "print.__ge__(",
             "print.__getattribute__(",
+            "print.__getstate__()",
             "print.__gt__(",
         ],
         8,
@@ -123,10 +124,17 @@ def test_interactive_console():
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
-        assert (
-            fut.formatted_error
-            == '  File "<console>", line 1\n    1+\n      ^\nSyntaxError: invalid syntax\n'
-        )
+
+        import re
+
+        err = fut.formatted_error or ""
+        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        assert [e.strip() for e in err.split("\n")] == [
+            'File "<console>", line 1',
+            "1+",
+            "^",
+            "SyntaxError: <errormsg>",
+        ]
 
         fut = shell.push("raise Exception('hi')")
         try:
@@ -385,8 +393,8 @@ def test_console_html(selenium):
             >>> 1+
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
-                  ^
-            SyntaxError: invalid syntax]
+                 ^
+            SyntaxError: incomplete input]
             """
         ).strip()
     )
@@ -415,7 +423,7 @@ def test_console_html(selenium):
         ).strip()
     )
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
-    result = re.sub(r"/lib/python3.\d+", "/lib/pythonxxx", result)
+    result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
 
     answer = dedent(
         """
@@ -428,6 +436,7 @@ def test_console_html(selenium):
             [[;;;terminal-error]Traceback (most recent call last):
               File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
+                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """
@@ -438,6 +447,10 @@ def test_console_html(selenium):
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 4
     assert long_output[2] == "<long output truncated>"
+
+    # nbsp characters should be replaced with spaces, and not cause a syntax error
+    nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
+    assert "SyntaxError" not in exec_and_get_result(nbsp)
 
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)

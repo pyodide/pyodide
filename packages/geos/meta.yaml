@@ -7,7 +7,7 @@ source:
   sha256: 3c141b07d61958a758345d5f54e3c735834b2f4303edb9f67fb26914f0d44770
 
 build:
-  sharedlibrary: true
+  type: shared_library
   script: |
     LDFLAGS="${SIDE_MODULE_LDFLAGS}" emcmake cmake \
       -DDISABLE_GEOS_INLINE=ON \

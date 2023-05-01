@@ -272,6 +272,15 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
   }
 
+  Module.iterObject = function * (object)
+  {
+    for (let k in object) {
+      if (Object.prototype.hasOwnProperty.call(object, k)) {
+        yield k;
+      }
+    }
+  };
+
   if (globalThis.BigInt) {
     Module.BigInt = BigInt;
   } else {
@@ -321,36 +330,8 @@ EM_JS_REF(JsRef, hiwire_double, (double val), {
   return Hiwire.new_value(val);
 });
 
-EM_JS_REF(JsRef, hiwire_string_ucs4, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCodePoint(DEREF_U32(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs2, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U16(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
-EM_JS_REF(JsRef, hiwire_string_ucs1, (const char* ptr, int len), {
-  let jsstr = "";
-  for (let i = 0; i < len; ++i) {
-    jsstr += String.fromCharCode(DEREF_U8(ptr, i));
-  }
-  return Hiwire.new_value(jsstr);
-});
-
 EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
   return Hiwire.new_value(UTF8ToString(ptr));
-});
-
-EM_JS_REF(JsRef, hiwire_string_ascii, (const char* ptr), {
-  return Hiwire.new_value(AsciiToString(ptr));
 });
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
@@ -444,10 +425,17 @@ EM_JS_REF(JsRef, hiwire_CallMethod, (JsRef idobj, JsRef name, JsRef idargs), {
   return Hiwire.new_value(jsobj[jsname](... jsargs));
 });
 
+EM_JS_REF(JsRef, hiwire_CallMethod_NoArgs, (JsRef idobj, JsRef name), {
+  let jsobj = Hiwire.get_value(idobj);
+  let jsname = Hiwire.get_value(name);
+  return Hiwire.new_value(jsobj[jsname]());
+});
+
 // clang-format off
-EM_JS_REF(JsRef,
-          hiwire_CallMethod_OneArg,
-          (JsRef idobj, JsRef name, JsRef idarg),
+EM_JS_REF(
+JsRef,
+hiwire_CallMethod_OneArg,
+(JsRef idobj, JsRef name, JsRef idarg),
 {
   let jsobj = Hiwire.get_value(idobj);
   let jsname = Hiwire.get_value(name);
@@ -486,6 +474,16 @@ hiwire_CallMethodId_va(JsRef idobj, Js_Identifier* name, ...)
   JsRef idresult = hiwire_CallMethodId(idobj, name, idargs);
   hiwire_decref(idargs);
   return idresult;
+}
+
+JsRef
+hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name)
+{
+  JsRef name_ref = JsString_FromId(name);
+  if (name_ref == NULL) {
+    return NULL;
+  }
+  return hiwire_CallMethod_NoArgs(obj, name_ref);
 }
 
 JsRef
@@ -598,7 +596,7 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   }
   // We want to return false on container types with size 0.
   if (val.size === 0) {
-    if(/HTML[A-Za-z]*Element/.test(Object.prototype.toString.call(val))){
+    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
       // HTMLSelectElement and HTMLInputElement can have size 0 but we still
       // want to return true.
       return true;
@@ -616,13 +614,21 @@ EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
   // clang-format on
 });
 
-EM_JS_BOOL(bool, hiwire_is_pyproxy, (JsRef idobj), {
-  return API.isPyProxy(Hiwire.get_value(idobj));
-});
-
 EM_JS_BOOL(bool, hiwire_is_function, (JsRef idobj), {
   // clang-format off
   return typeof Hiwire.get_value(idobj) === 'function';
+  // clang-format on
+});
+
+EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
+  // clang-format off
+  return getTypeTag(Hiwire.get_value(idobj)) === "[object Generator]";
+  // clang-format on
+});
+
+EM_JS_BOOL(bool, hiwire_is_async_generator, (JsRef idobj), {
+  // clang-format off
+  return getTypeTag(Hiwire.get_value(idobj)) === "[object AsyncGenerator]";
   // clang-format on
 });
 
@@ -681,35 +687,6 @@ MAKE_OPERATOR(not_equal, !==);
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
 
-EM_JS_BOOL(bool, hiwire_is_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return typeof jsobj.next === 'function';
-  // clang-format on
-});
-
-EM_JS_NUM(int, hiwire_next, (JsRef idobj, JsRef* result_ptr), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  let { done, value } = jsobj.next();
-  // clang-format on
-  let result_id = Hiwire.new_value(value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return done;
-});
-
-EM_JS_BOOL(bool, hiwire_is_iterable, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return typeof jsobj[Symbol.iterator] === 'function';
-  // clang-format on
-});
-
-EM_JS_REF(JsRef, hiwire_get_iterator, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(jsobj[Symbol.iterator]());
-})
-
 EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
   if (!Module._reversedIterator) {
     Module._reversedIterator = class ReversedIterator
@@ -739,13 +716,6 @@ EM_JS_REF(JsRef, hiwire_reversed_iterator, (JsRef idarray), {
 
   return Hiwire.new_value(new Module._reversedIterator(array));
 })
-
-EM_JS_BOOL(bool, hiwire_is_typedarray, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  // clang-format off
-  return ArrayBuffer.isView(jsobj) || (jsobj.constructor && jsobj.constructor.name === "ArrayBuffer");
-  // clang-format on
-});
 
 EM_JS_NUM(errcode, hiwire_assign_to_ptr, (JsRef idobj, void* ptr), {
   let jsobj = Hiwire.get_value(idobj);
@@ -814,7 +784,7 @@ EM_JS_BOOL(bool, JsArray_Check, (JsRef idobj), {
   if (Array.isArray(obj)) {
     return true;
   }
-  let typeTag = Object.prototype.toString.call(obj);
+  let typeTag = getTypeTag(obj);
   // We want to treat some standard array-like objects as Array.
   // clang-format off
   if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
@@ -938,25 +908,74 @@ EM_JS_REF(JsRef, JsObject_New, (), {
 });
 // clang-format on
 
+void
+setReservedError(char* action, char* word)
+{
+  PyErr_Format(PyExc_AttributeError,
+               "The string '%s' is a Python reserved word. To %s an attribute "
+               "on a JS object called '%s' use '%s_'.",
+               word,
+               action,
+               word,
+               word);
+}
+
+EM_JS(bool, isReservedWord, (int word), {
+  if (!Module.pythonReservedWords) {
+    Module.pythonReservedWords = new Set([
+      "False",  "await", "else",     "import", "pass",   "None",    "break",
+      "except", "in",    "raise",    "True",   "class",  "finally", "is",
+      "return", "and",   "continue", "for",    "lambda", "try",     "as",
+      "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
+      "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
+    ])
+  }
+  return Module.pythonReservedWords.has(word);
+})
+
+/**
+ * action: a javascript string, one of get, set, or delete. For error reporting.
+ * word: a javascript string, the property being accessed
+ */
+EM_JS(int, normalizeReservedWords, (int action, int word), {
+  // clang-format off
+  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  //    it unchanged.
+  const noTrailing_ = word.replace(/_*$/, "");
+  if (!isReservedWord(noTrailing_)) {
+    return word;
+  }
+  // 2. If there is at least one trailing underscore, return the word with a
+  //    single underscore removed.
+  if (noTrailing_ !== word) {
+    return word.slice(0, -1);
+  }
+  // 3. If the word is exactly a reserved word, this is an error.
+  let action_ptr = stringToNewUTF8(action);
+  let word_ptr = stringToNewUTF8(word);
+  _setReservedError(action_ptr, word_ptr);
+  _free(action_ptr);
+  _free(word_ptr);
+  throw new Module._PropagatePythonError();
+  // clang-format on
+});
+
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
-  let result = jsobj[jskey];
-  // clang-format off
-  if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
+  let jskey = normalizeReservedWords("get", UTF8ToString(ptrkey));
+  if (jskey in jsobj) {
+    return Hiwire.new_value(jsobj[jskey]);
   }
-  return Hiwire.new_value(result);
+  return ERROR_REF;
 });
 
 // clang-format off
 EM_JS_NUM(errcode,
-          JsObject_SetString,
-          (JsRef idobj, const char* ptrkey, JsRef idval),
+JsObject_SetString,
+(JsRef idobj, const char* ptrkey, JsRef idval),
 {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
+  let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
   let jsval = Hiwire.get_value(idval);
   jsobj[jskey] = jsval;
 });
@@ -964,7 +983,7 @@ EM_JS_NUM(errcode,
 
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = UTF8ToString(ptrkey);
+  let jskey = normalizeReservedWords("delete", UTF8ToString(ptrkey));
   delete jsobj[jskey];
 });
 
@@ -973,12 +992,16 @@ EM_JS_REF(JsRef, JsObject_Dir, (JsRef idobj), {
   let result = [];
   do {
     // clang-format off
-    result.push(... Object.getOwnPropertyNames(jsobj).filter(
+    const names = Object.getOwnPropertyNames(jsobj);
+    result.push(...names.filter(
       s => {
         let c = s.charCodeAt(0);
         return c < 48 || c > 57; /* Filter out integer array indices */
       }
-    ));
+    )
+    // If the word is a reserved word followed by 0 or more underscores, add an
+    // extra underscore to reverse the transformation applied by normalizeReservedWords.
+    .map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
     // clang-format on
   } while (jsobj = Object.getPrototypeOf(jsobj));
   return Hiwire.new_value(result);

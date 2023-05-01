@@ -4,26 +4,64 @@ import inspect
 import sys
 import time
 import traceback
-from asyncio import Future
-from collections.abc import Callable
-from typing import Any
+from asyncio import Future, Task
+from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar, overload
 
-from ._core import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout
 
+T = TypeVar("T")
+S = TypeVar("S")
 
-class PyodideFuture(Future[Any]):
-    """A future with extra then, catch, and finally_ methods based on the
-    Javascript promise API.
+
+class PyodideFuture(Future[T]):
+    """A :py:class:`~asyncio.Future` with extra :js:meth:`~Promise.then`,
+    :js:meth:`~Promise.catch`, and :js:meth:`finally_() <Promise.finally>` methods
+    based on the Javascript promise API. :py:meth:`~asyncio.loop.create_future`
+    returns these so in practice all futures encountered in Pyodide should be an
+    instance of :py:class:`~pyodide.webloop.PyodideFuture`.
     """
+
+    @overload
+    def then(
+        self,
+        onfulfilled: None,
+        onrejected: Callable[[BaseException], Awaitable[S]],
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: None,
+        onrejected: Callable[[BaseException], S],
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], Awaitable[S]],
+        onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], S],
+        onrejected: Callable[[BaseException], S] | None = None,
+    ) -> "PyodideFuture[S]":
+        ...
 
     def then(
         self,
-        onfulfilled: Callable[[Any], Any] | None,
-        onrejected: Callable[[Exception], Any] | None = None,
-    ) -> "PyodideFuture":
+        onfulfilled: Callable[[T], S | Awaitable[S]] | None,
+        onrejected: Callable[[BaseException], S | Awaitable[S]] | None = None,
+    ) -> "PyodideFuture[S]":
         """When the Future is done, either execute onfulfilled with the result
         or execute onrejected with the exception.
 
@@ -46,13 +84,13 @@ class PyodideFuture(Future[Any]):
 
         Returns
         -------
-        A new future to be resolved when the original future is done and the
-        appropriate callback is also done.
+            A new future to be resolved when the original future is done and the
+            appropriate callback is also done.
         """
-        result = PyodideFuture()
+        result: PyodideFuture[S] = PyodideFuture()
 
-        onfulfilled_: Callable[[Any], Any]
-        onrejected_: Callable[[Any], Any]
+        onfulfilled_: Callable[[T], S | Awaitable[S]]
+        onrejected_: Callable[[BaseException], S | Awaitable[S]]
         if onfulfilled:
             onfulfilled_ = onfulfilled
         else:
@@ -67,35 +105,49 @@ class PyodideFuture(Future[Any]):
             def onrejected_(x):
                 raise x
 
-        async def callback(fut: Future[Any]) -> Any:
-            if fut.exception():
-                val = fut.exception()
-                fun = onrejected_
-            else:
-                fun = onfulfilled_
-                val = fut.result()
+        async def callback(fut: Future[T]) -> None:
+            e = fut.exception()
             try:
-                r = fun(val)
+                if e:
+                    r = onrejected_(e)
+                else:
+                    r = onfulfilled_(fut.result())
                 while inspect.isawaitable(r):
                     r = await r
             except Exception as result_exception:
                 result.set_exception(result_exception)
                 return
-            result.set_result(r)
+            result.set_result(r)  # type:ignore[arg-type]
 
-        def wrapper(fut: Future[Any]) -> None:
+        def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
 
         self.add_done_callback(wrapper)
         return result
 
-    def catch(self, onrejected: Callable[[Exception], Any] | None) -> "PyodideFuture":
+    @overload
+    def catch(
+        self, onrejected: Callable[[BaseException], Awaitable[S]]
+    ) -> "PyodideFuture[S]":
+        ...
+
+    @overload
+    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]":
+        ...
+
+    def catch(
+        self, onrejected: Callable[[BaseException], object]
+    ) -> "PyodideFuture[Any]":
+        """Equivalent to ``then(None, onrejected)``"""
         return self.then(None, onrejected)
 
-    def finally_(self, onfinally: Callable[[], Any]) -> "PyodideFuture":
-        result = PyodideFuture()
+    def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+        """When the future is either resolved or rejected, call ``onfinally`` with
+        no arguments.
+        """
+        result: PyodideFuture[T] = PyodideFuture()
 
-        async def callback(fut: Future[Any]) -> None:
+        async def callback(fut: Future[T]) -> None:
             exc = fut.exception()
             try:
                 r = onfinally()
@@ -109,7 +161,7 @@ class PyodideFuture(Future[Any]):
             else:
                 result.set_result(fut.result())
 
-        def wrapper(fut: Future[Any]) -> None:
+        def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
 
         self.add_done_callback(wrapper)
@@ -125,23 +177,34 @@ class PyodideFuture(Future[Any]):
             p.destroy()
 
 
+class PyodideTask(Task[T], PyodideFuture[T]):
+    """Inherits from both :py:class:`~asyncio.Task` and
+    :py:class:`~pyodide.webloop.PyodideFuture`
+
+    Instantiation is discouraged unless you are writing your own event loop.
+    """
+
+    pass
+
+
 class WebLoop(asyncio.AbstractEventLoop):
     """A custom event loop for use in Pyodide.
 
-    Schedules tasks on the browser event loop. Does no lifecycle management and runs
-    forever.
+    Schedules tasks on the browser event loop. Does no lifecycle management and
+    runs forever.
 
-    ``run_forever`` and ``run_until_complete`` cannot block like a normal event loop would
-    because we only have one thread so blocking would stall the browser event loop
-    and prevent anything from ever happening.
+    :py:meth:`~asyncio.loop.run_forever` and
+    :py:meth:`~asyncio.loop.run_until_complete` cannot block like a normal event
+    loop would because we only have one thread so blocking would stall the
+    browser event loop and prevent anything from ever happening.
 
-    We defer all work to the browser event loop using the setTimeout function.
-    To ensure that this event loop doesn't stall out UI and other browser handling,
-    we want to make sure that each task is scheduled on the browser event loop as a
-    task not as a microtask. ``setTimeout(callback, 0)`` enqueues the callback as a
-    task so it works well for our purposes.
+    We defer all work to the browser event loop using the :js:func:`setTimeout`
+    function. To ensure that this event loop doesn't stall out UI and other
+    browser handling, we want to make sure that each task is scheduled on the
+    browser event loop as a task not as a microtask. ``setTimeout(callback, 0)``
+    enqueues the callback as a task so it works well for our purposes.
 
-    See `Event Loop Methods <https://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop>`_.
+    See the Python :external:doc:`library/asyncio-eventloop` documentation.
     """
 
     def __init__(self):
@@ -328,7 +391,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def create_future(self) -> asyncio.Future[Any]:
         self._in_progress += 1
-        fut = PyodideFuture(loop=self)
+        fut: PyodideFuture[Any] = PyodideFuture(loop=self)
         fut.add_done_callback(self._decrement_in_progress)
         """Create a Future object attached to the loop."""
         return fut
@@ -357,7 +420,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = asyncio.tasks.Task(coro, loop=self, name=name)
+            task = PyodideTask(coro, loop=self, name=name)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -519,7 +582,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
 class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """
-    A simple event loop policy for managing WebLoop based event loops.
+    A simple event loop policy for managing :py:class:`WebLoop`-based event loops.
     """
 
     def __init__(self):
@@ -542,7 +605,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
 
 
 def _initialize_event_loop():
-    from ._core import IN_BROWSER
+    from .ffi import IN_BROWSER
 
     if not IN_BROWSER:
         return
@@ -556,4 +619,4 @@ def _initialize_event_loop():
     policy.get_event_loop()
 
 
-__all__ = ["WebLoop", "WebLoopPolicy"]
+__all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]

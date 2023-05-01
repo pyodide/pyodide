@@ -1,12 +1,12 @@
 package:
   name: attrs
-  version: 21.4.0
+  version: 22.2.0
   top-level:
     - attr
     - attrs
 source:
-  sha256: 2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4
-  url: https://files.pythonhosted.org/packages/be/be/7abce643bfdf8ca01c48afa2ddf8308c2308b0c3b239a44e57d020afa0ef/attrs-21.4.0-py2.py3-none-any.whl
+  sha256: 29e95c7f6778868dbd49170f98f8818f78f3dc5e0e37c0b1f474e3561b240836
+  url: https://files.pythonhosted.org/packages/fb/6e/6f83bf616d2becdf333a1640f1d463fef3150e2e926b7010cb0f81c95e88/attrs-22.2.0-py3-none-any.whl
 requirements:
   run:
     - six

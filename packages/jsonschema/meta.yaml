@@ -1,11 +1,11 @@
 package:
   name: jsonschema
-  version: 4.6.0
+  version: 4.17.3
   top-level:
     - jsonschema
 source:
-  url: https://files.pythonhosted.org/packages/aa/13/0063ea808b6a1bee57e0780d83bf0c57f0ed25a1b5ed3685524359c485fd/jsonschema-4.6.0-py3-none-any.whl
-  sha256: 1c92d2db1900b668201f1797887d66453ab1fbfea51df8e4b46236689c427baf
+  url: https://files.pythonhosted.org/packages/c1/97/c698bd9350f307daad79dd740806e1a59becd693bd11443a0f531e3229b3/jsonschema-4.17.3-py3-none-any.whl
+  sha256: a870ad254da1a8ca84b6a2905cac29d265f805acc57af304784962a2aa6508f6
 requirements:
   run:
     - attrs

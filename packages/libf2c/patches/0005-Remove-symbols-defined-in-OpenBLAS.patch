@@ -1,0 +1,27 @@
+From eaf5c5db6e956036869255cb51831e720474d01d Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
+Date: Fri, 7 Apr 2023 15:20:18 +0200
+Subject: [PATCH 5/5] Remove symbols defined in OpenBLAS
+
+---
+ F2CLIBS/libf2c/Makefile | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/F2CLIBS/libf2c/Makefile b/F2CLIBS/libf2c/Makefile
+index 57eff0d..136050f 100644
+--- a/F2CLIBS/libf2c/Makefile
++++ b/F2CLIBS/libf2c/Makefile
+@@ -31,8 +31,8 @@ MISC =	f77vers.o i77vers.o main.o s_rnge.o abort_.o exit_.o getarg_.o iargc_.o\
+ 	getenv_.o signal_.o s_stop.o s_paus.o system_.o cabs.o ctype.o\
+ 	derf_.o derfc_.o erf_.o erfc_.o sig_die.o uninit.o
+ POW =	pow_ci.o pow_dd.o pow_di.o pow_hh.o pow_ii.o pow_ri.o pow_zi.o pow_zz.o
+-CX =	c_abs.o c_cos.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o
+-DCX =	z_abs.o z_cos.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o
++CX =	c_cos.o c_div.o c_exp.o c_log.o c_sin.o c_sqrt.o
++DCX =	z_cos.o z_div.o z_exp.o z_log.o z_sin.o z_sqrt.o
+ REAL =	r_abs.o r_acos.o r_asin.o r_atan.o r_atn2.o r_cnjg.o r_cos.o\
+ 	r_cosh.o r_dim.o r_exp.o r_imag.o r_int.o\
+ 	r_lg10.o r_log.o r_mod.o r_nint.o r_sign.o\
+-- 
+2.34.1
+

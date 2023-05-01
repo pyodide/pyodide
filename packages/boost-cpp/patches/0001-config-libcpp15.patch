@@ -1,0 +1,30 @@
+From de5ce13c939ef8fd581470eb712fd659475a9155 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Fri, 11 Nov 2022 11:50:42 +0900
+Subject: [PATCH 1/1] 0005-config-libcpp15
+
+---
+ include/boost/config/stdlib/libcpp.hpp | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/boost/config/stdlib/libcpp.hpp b/boost/config/stdlib/libcpp.hpp
+index bc8536ea..0e9f2445 100644
+--- a/boost/config/stdlib/libcpp.hpp
++++ b/boost/config/stdlib/libcpp.hpp
+@@ -168,4 +168,13 @@
+ #  define BOOST_NO_CXX14_HDR_SHARED_MUTEX
+ #endif
+ 
++#if _LIBCPP_VERSION >= 15000
++//
++// Unary function is now deprecated in C++11 and later:
++//
++#if __cplusplus >= 201103L
++#define BOOST_NO_CXX98_FUNCTION_BASE
++#endif
++#endif
++
+ //  --- end ---
+-- 
+2.29.2.windows.2
+

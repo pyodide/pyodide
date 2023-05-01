@@ -24,10 +24,6 @@ def test_wheel_and_host_deps():
 def test_source_fields():
     """Test consistency of source meta.yaml fields"""
 
-    msg = "Source section should have a 'url' or 'path' key"
-    with pytest.raises(ValidationError, match=msg):
-        _SourceSpec()
-
     msg = "Source section should not have both a 'url' and a 'path' key"
     with pytest.raises(ValidationError, match=msg):
         _SourceSpec(url="a", path="b")
@@ -47,10 +43,6 @@ def test_source_fields():
 
 def test_build_fields():
     """Test consistency of source meta.yaml fields"""
-    msg = "build/library and build/sharedlibrary cannot both be true"
+    msg = "If building a static_library, 'build/post' key is not allowed."
     with pytest.raises(ValidationError, match=msg):
-        _BuildSpec(library=True, sharedlibrary=True)
-
-    msg = "If building a library, 'build/post' key is not allowed."
-    with pytest.raises(ValidationError, match=msg):
-        _BuildSpec(library=True, post="a")
+        _BuildSpec(type="static_library", post="a")

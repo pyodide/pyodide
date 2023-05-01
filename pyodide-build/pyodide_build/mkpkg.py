@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 
-import argparse
 import contextlib
 import json
-import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import urllib.error
 import urllib.request
 import warnings
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Literal, NoReturn, TypedDict
+from typing import Any, Literal, TypedDict
 from urllib import request
 
+from packaging.version import Version
 from ruamel.yaml import YAML
 
 from .common import parse_top_level_import_name
+from .logger import logger
 
 
 class URLDict(TypedDict):
@@ -45,6 +44,10 @@ class MetadataDict(TypedDict):
     releases: dict[str, list[dict[str, Any]]]
     urls: list[URLDict]
     vulnerabilities: list[Any]
+
+
+class MkpkgSkipped(Exception):
+    pass
 
 
 class MkpkgFailedException(Exception):
@@ -148,7 +151,7 @@ def make_package(
     Creates a template that will work for most pure Python packages,
     but will have to be edited for more complex things.
     """
-    print(f"Creating meta.yaml package for {package}")
+    logger.info(f"Creating meta.yaml package for {package}")
 
     yaml = YAML()
 
@@ -206,33 +209,7 @@ def make_package(
     except FileNotFoundError:
         warnings.warn("'npx' executable missing, output has not been prettified.")
 
-    success(f"Output written to {meta_path}")
-
-
-# TODO: use rich for coloring outputs
-class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKCYAN = "\033[96m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-
-
-def abort(msg: str) -> NoReturn:
-    print(bcolors.FAIL + msg + bcolors.ENDC)
-    sys.exit(1)
-
-
-def warn(msg: str) -> None:
-    warnings.warn(bcolors.WARNING + msg + bcolors.ENDC)
-
-
-def success(msg: str) -> None:
-    print(bcolors.OKBLUE + msg + bcolors.ENDC)
+    logger.success(f"Output written to {meta_path}")
 
 
 def update_package(
@@ -242,21 +219,22 @@ def update_package(
     update_patched: bool = True,
     source_fmt: Literal["wheel", "sdist"] | None = None,
 ) -> None:
-
     yaml = YAML()
 
     meta_path = root / package / "meta.yaml"
     if not meta_path.exists():
-        abort(f"{meta_path} does not exist")
+        logger.error(f"{meta_path} does not exist")
+        exit(1)
 
     yaml_content = yaml.load(meta_path.read_bytes())
 
-    if "url" not in yaml_content["source"]:
-        raise MkpkgFailedException(f"Skipping: {package} is a local package!")
-
     build_info = yaml_content.get("build", {})
-    if build_info.get("library", False) or build_info.get("sharedlibrary", False):
-        raise MkpkgFailedException(f"Skipping: {package} is a library!")
+    ty = build_info.get("type", None)
+    if ty in ["static_library", "shared_library", "cpython_module"]:
+        raise MkpkgSkipped(f"{package} is a {ty.replace('_', ' ')}!")
+
+    if "url" not in yaml_content["source"]:
+        raise MkpkgSkipped(f"{package} is a local package!")
 
     if yaml_content["source"]["url"].endswith("whl"):
         old_fmt = "wheel"
@@ -264,20 +242,22 @@ def update_package(
         old_fmt = "sdist"
 
     pypi_metadata = _get_metadata(package, version)
-    pypi_ver = pypi_metadata["info"]["version"]
-    local_ver = yaml_content["package"]["version"]
+    pypi_ver = Version(pypi_metadata["info"]["version"])
+    local_ver = Version(yaml_content["package"]["version"])
     already_up_to_date = pypi_ver <= local_ver and (
         source_fmt is None or source_fmt == old_fmt
     )
     if already_up_to_date:
-        print(f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}")
+        logger.success(
+            f"{package} already up to date. Local: {local_ver} PyPI: {pypi_ver}"
+        )
         return
 
-    print(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
+    logger.info(f"{package} is out of date: {local_ver} <= {pypi_ver}.")
 
     if yaml_content["source"].get("patches"):
         if update_patched:
-            warn(
+            logger.warning(
                 f"Pyodide applies patches to {package}. Update the "
                 "patches (if needed) to avoid build failing."
             )
@@ -306,86 +286,4 @@ def update_package(
     yaml.dump(yaml_content, meta_path)
     run_prettier(meta_path)
 
-    success(f"Updated {package} from {local_ver} to {pypi_ver}.")
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = """
-Make a new pyodide package. Creates a simple template that will work
-for most pure Python packages, but will have to be edited for more
-complex things.""".strip()
-    parser.add_argument("package", type=str, nargs=1, help="The package name on PyPI")
-    parser.add_argument("--update", action="store_true", help="Update existing package")
-    parser.add_argument(
-        "--update-if-not-patched",
-        action="store_true",
-        help="Update existing package if it has no patches",
-    )
-    parser.add_argument(
-        "--source-format",
-        help="Which source format is preferred. Options are wheel or sdist. "
-        "If none is provided, then either a wheel or an sdist will be used. "
-        "When updating a package, the type will be kept the same if possible.",
-    )
-    parser.add_argument(
-        "--version",
-        type=str,
-        default=None,
-        help="Package version string, "
-        "e.g. v1.2.1 (defaults to latest stable release)",
-    )
-    parser.add_argument(
-        "--recipe-dir",
-        type=str,
-        default="packages",
-        help="Directory to create the recipe in (defaults to PYODIDE_ROOT/packages)",
-    )
-    return parser
-
-
-def main(args: argparse.Namespace) -> None:
-    PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT")
-    if PYODIDE_ROOT is None:
-        raise ValueError("PYODIDE_ROOT is not set")
-
-    if os.path.isabs(args.recipe_dir):
-        recipe_dir = Path(args.recipe_dir)
-    else:
-        recipe_dir = (Path(PYODIDE_ROOT) / args.recipe_dir).resolve()
-
-    try:
-        package = args.package[0]
-        if args.update:
-            update_package(
-                recipe_dir,
-                package,
-                args.version,
-                update_patched=True,
-                source_fmt=args.source_format,
-            )
-            return
-        if args.update_if_not_patched:
-            update_package(
-                recipe_dir,
-                package,
-                args.version,
-                update_patched=False,
-                source_fmt=args.source_format,
-            )
-            return
-        make_package(recipe_dir, package, args.version, source_fmt=args.source_format)
-    except MkpkgFailedException as e:
-        # This produces two types of error messages:
-        #
-        # When the request to get the pypi json fails, it produces a message like:
-        # "Failed to load metadata for libxslt from https://pypi.org/pypi/libxslt/json: HTTP Error 404: Not Found"
-        #
-        # If there is no sdist it prints an error message like:
-        # "No sdist URL found for package swiglpk (https://pypi.org/project/swiglpk/)"
-        abort(e.args[0])
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)
+    logger.success(f"Updated {package} from {local_ver} to {pypi_ver}.")

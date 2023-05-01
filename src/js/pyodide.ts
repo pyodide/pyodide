@@ -2,36 +2,29 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import {
-  loadScript,
-  loadBinaryFile,
-  initNodeModules,
-  pathSep,
-  resolvePath,
-} from "./compat";
+import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
 
-import { createModule, setStandardStreams, setHomeDirectory } from "./module";
-import { initializeNativeFS } from "./nativefs";
-import version from "./version";
+import { createModule, initializeFileSystem } from "./module";
+import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyProxyDict } from "./pyproxy.gen";
+import type { PyProxy, PyDict } from "./pyproxy.gen";
 export type { PyodideInterface };
 
 export type {
   PyProxy,
   PyProxyWithLength,
-  PyProxyDict,
   PyProxyWithGet,
   PyProxyWithSet,
   PyProxyWithHas,
+  PyProxyDict,
   PyProxyIterable,
   PyProxyIterator,
   PyProxyAwaitable,
-  PyProxyBuffer,
   PyProxyCallable,
   TypedArray,
-  PyBuffer,
+  PyBuffer as PyProxyBuffer,
+  PyBufferView as PyBuffer,
 } from "./pyproxy.gen";
 
 export type Py2JsResult = any;
@@ -45,10 +38,7 @@ export { version };
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(
-  globals_dict: PyProxyDict,
-  builtins_dict: PyProxyDict,
-) {
+function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
       if (symbol === "get") {
@@ -68,41 +58,6 @@ function wrapPythonGlobals(
   });
 }
 
-function unpackPyodidePy(Module: any, pyodide_py_tar: Uint8Array) {
-  const fileName = "/pyodide_py.tar";
-  let stream = Module.FS.open(fileName, "w");
-  Module.FS.write(
-    stream,
-    pyodide_py_tar,
-    0,
-    pyodide_py_tar.byteLength,
-    undefined,
-    true,
-  );
-  Module.FS.close(stream);
-  const code_ptr = Module.stringToNewUTF8(`
-from sys import version_info
-pyversion = f"python{version_info.major}.{version_info.minor}"
-import shutil
-shutil.unpack_archive("/pyodide_py.tar", f"/lib/{pyversion}/")
-del shutil
-import importlib
-importlib.invalidate_caches()
-del importlib
-    `);
-  Module.API.capture_stderr();
-  let errcode = Module._PyRun_SimpleString(code_ptr);
-  const captured_stderr = Module.API.restore_stderr().trim();
-  if (errcode) {
-    Module.API.fatal_loading_error(
-      "Failed to unpack standard library.\n",
-      captured_stderr,
-    );
-  }
-  Module._free(code_ptr);
-  Module.FS.unlink(fileName);
-}
-
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -120,14 +75,15 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   API.sys = import_module("sys");
   API.sys.path.insert(0, config.homedir);
+  API.os = import_module("os");
 
   // Set up globals
   let globals = API.runPythonInternal(
     "import __main__; __main__.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   let builtins = API.runPythonInternal(
     "import builtins; builtins.__dict__",
-  ) as PyProxyDict;
+  ) as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
@@ -147,8 +103,14 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
 
-  API.site = import_module("site");
-  API.sitepackages = API.site.getsitepackages().toJs()[0];
+  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
+  API.dsodir = API.package_loader.DSO_DIR.__str__();
+  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
+
+  API.os.environ.__setitem__(
+    "LD_LIBRARY_PATH",
+    API.defaultLdLibraryPath.join(":"),
+  );
 
   // copy some last constants onto public API.
   pyodide.pyodide_py = API.pyodide_py;
@@ -205,6 +167,7 @@ export type ConfigType = {
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
+  stdLibURL?: string;
   stdin?: () => string;
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
@@ -216,12 +179,6 @@ export type ConfigType = {
 /**
  * Load the main Pyodide wasm module and initialize it.
  *
- * Only one copy of Pyodide can be loaded in a given JavaScript global scope
- * because Pyodide uses global variables to load packages. If an attempt is made
- * to load a second copy of Pyodide, :any:`loadPyodide` will throw an error.
- * (This can be fixed once `Firefox adopts support for ES6 modules in webworkers
- * <https://bugzilla.mozilla.org/show_bug.cgi?id=1247687>`_.)
- *
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
@@ -230,46 +187,68 @@ export async function loadPyodide(
   options: {
     /**
      * The URL from which Pyodide will load the main Pyodide runtime and
-     * packages. Defaults to the url that pyodide is loaded from with the file
-     * name (pyodide.js or pyodide.mjs) removed. It is recommended that you
-     * leave this undefined, providing an incorrect value can cause broken
-     * behavior.
+     * packages. It is recommended that you leave this unchanged, providing an
+     * incorrect value can cause broken behavior.
+     *
+     * Default: The url that Pyodide is loaded from with the file name
+     * (``pyodide.js`` or ``pyodide.mjs``) removed.
      */
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide "repodata.json" lock
-     * file. Defaults to ``${indexURL}/repodata.json``. You can produce custom
-     * lock files with :any:`micropip.freeze`
+     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
+     * file. You can produce custom lock files with :py:func:`micropip.freeze`.
+     * Default: ```${indexURL}/repodata.json```
      */
     lockFileURL?: string;
 
     /**
-     * The home directory which Pyodide will use inside virtual file system. Default: "/home/pyodide"
+     * The home directory which Pyodide will use inside virtual file system.
+     * Default: ``"/home/pyodide"``
      */
     homedir?: string;
-
-    /** Load the full Python standard library.
-     * Setting this to false excludes unvendored modules from the standard library.
-     * Default: false
+    /**
+     * Load the full Python standard library. Setting this to false excludes
+     * unvendored modules from the standard library.
+     * Default: ``false``
      */
     fullStdLib?: boolean;
     /**
-     * Override the standard input callback. Should ask the user for one line of input.
+     * The URL from which to load the standard library ``python_stdlib.zip``
+     * file. This URL includes the most of the Python stadard library. Some
+     * stdlib modules were unvendored, and can be loaded separately
+     * with ``fullStdLib=true`` option or by their package name.
+     * Default: ```${indexURL}/python_stdlib.zip```
+     */
+    stdLibURL?: string;
+    /**
+     * Override the standard input callback. Should ask the user for one line of
+     * input.
      */
     stdin?: () => string;
     /**
      * Override the standard output callback.
-     * Default: undefined
      */
     stdout?: (msg: string) => void;
     /**
      * Override the standard error output callback.
-     * Default: undefined
      */
     stderr?: (msg: string) => void;
+    /**
+     * The object that Pyodide will use for the ``js`` module.
+     * Default: ``globalThis``
+     */
     jsglobals?: object;
+    /**
+     * Command line arguments to pass to Python on startup. See `Python command
+     * line interface options
+     * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
+     * more details. Default: ``[]``
+     */
     args?: string[];
+    /**
+     * @ignore
+     */
     _node_mounts?: string[];
   } = {},
 ): Promise<PyodideInterface> {
@@ -291,24 +270,15 @@ export async function loadPyodide(
     _node_mounts: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  const pyodide_py_tar_promise = loadBinaryFile(
-    config.indexURL + "pyodide_py.tar",
-  );
 
   const Module = createModule();
-  Module.preRun.push(() => {
-    for (const mount of config._node_mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.NODEFS, { root: mount }, mount);
-    }
-  });
-
+  Module.print = config.stdout;
+  Module.printErr = config.stderr;
   Module.arguments = config.args;
   const API: any = { config };
   Module.API = API;
 
-  setStandardStreams(Module, config.stdin, config.stdout, config.stderr);
-  setHomeDirectory(Module, config.homedir);
+  initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
 
@@ -344,21 +314,22 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
 `,
     );
   }
-
-  initializeNativeFS(Module);
-
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const pyodide_py_tar = await pyodide_py_tar_promise;
-  unpackPyodidePy(Module, pyodide_py_tar);
-  Module._pyodide_init();
+  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+  if (err) {
+    Module.API.fatal_loading_error(
+      "Failed to import _pyodide_core\n",
+      captured_stderr,
+    );
+  }
 
   const pyodide = finalizeBootstrap(API, config);
 
-  // API.runPython works starting here.
+  // runPython works starting here.
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
     // loaded. But in other cases it's harmless.
@@ -367,16 +338,18 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   await API.packageIndexReady;
 
   let importhook = API._pyodide._importhook;
-  importhook.register_unvendored_stdlib_finder();
-  importhook.register_repodata_packages_finder(API.repodata_packages);
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.repodata_unvendored_stdlibs_and_test,
+  );
 
   if (API.repodata_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API._pyodide._importhook.UNVENDORED_STDLIBS);
+    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
   }
-  pyodide.runPython("print('Python initialization complete')");
+  API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }

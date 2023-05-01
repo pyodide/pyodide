@@ -1,14 +1,15 @@
 package:
   name: sqlalchemy
-  version: 1.4.37
+  version: 2.0.7
   top-level:
     - sqlalchemy
 source:
-  url: https://files.pythonhosted.org/packages/8c/6b/dd25a730940556f4a0130968f29040e4aa6478285a33ac041d1b0817d398/SQLAlchemy-1.4.37.tar.gz
-  sha256: 3688f92c62db6c5df268e2264891078f17ecb91e3141b400f2e28d0f75796dea
+  url: https://files.pythonhosted.org/packages/93/06/7574aac5d3f81f367cfd3ff0a9f8bcd1086a3a4f6d5948616cebf93db242/SQLAlchemy-2.0.7.tar.gz
+  sha256: a4c1e1582492c66dfacc9eab52738f3e64d9a2a380e412668f75aa06e540f649
 requirements:
   run:
     - sqlite3
+    - typing-extensions
 about:
   home: https://www.sqlalchemy.org
   PyPI: https://pypi.org/project/sqlalchemy

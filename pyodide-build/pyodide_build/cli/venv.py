@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import typer  # type: ignore[import]
+import typer
 
 from ..out_of_tree import venv
 from ..out_of_tree.utils import initialize_pyodide_root

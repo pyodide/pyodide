@@ -5,7 +5,7 @@ Pyodide may be used in a web browser or a backend JavaScript environment.
 ## Web browsers
 
 To use Pyodide in a web page you need to load `pyodide.js` and initialize
-Pyodide with {any}`loadPyodide <globalThis.loadPyodide>`.
+Pyodide with {js:func}`~globalThis.loadPyodide`.
 
 ```html-pyodide
 <!doctype html>
@@ -119,7 +119,6 @@ hello_python().then((result) => {
 $ node hello_python.js
 Loading distutils
 Loaded distutils
-Python initialization complete
 Python says that 1+1= 2
 ```
 
@@ -135,7 +134,6 @@ undefined
 > let pyodide = await loadPyodide();
 Loading distutils
 Loaded distutils
-Python initialization complete
 undefined
 > await pyodide.runPythonAsync("1+1");
 2
@@ -160,9 +158,20 @@ warning: no blob constructor, cannot create blobs with mimetypes
 warning: no BlobBuilder
 Loading distutils
 Loaded distutils
-Python initialization complete
 Python says that 1+1= 2
 ```
+
+If you wish to suppress the blob constructor warnings which appear in node <18,
+the following code works in node >= v14.18 (do this before
+calling `loadPyodide`):
+
+```js
+globalThis.Blob = require("node:buffer").Blob;
+```
+
+However, in versions of node < v16.17, this will print an `ExperimentalWarning`.
+If you also don't want the `ExperimentalWarning`, you can use
+[cross-blob](https://www.npmjs.com/package/cross-blob) to polyfill `Blob`.
 
 ```{eval-rst}
 .. toctree::

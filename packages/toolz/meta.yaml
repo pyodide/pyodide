@@ -1,12 +1,12 @@
 package:
   name: toolz
-  version: 0.11.2
+  version: 0.12.0
   top-level:
     - tlz
     - toolz
 source:
-  sha256: a5700ce83414c64514d82d60bcda8aabfde092d1c1a8663f9200c07fdcc6da8f
-  url: https://files.pythonhosted.org/packages/b5/f1/3df506b493736e3ee11fc1a3c2de8014a55f025d830a71bb499acc049a2c/toolz-0.11.2-py3-none-any.whl
+  sha256: 2059bd4148deb1884bb0eb770a3cde70e7f954cfbbdc2285f1f2de01fd21eb6f
+  url: https://files.pythonhosted.org/packages/7f/5c/922a3508f5bda2892be3df86c74f9cf1e01217c2b1f8a0ac4841d903e3e9/toolz-0.12.0-py3-none-any.whl
 about:
   home: https://github.com/pytoolz/toolz/
   PyPI: https://pypi.org/project/toolz

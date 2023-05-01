@@ -1,11 +1,12 @@
 package:
   name: xarray
-  version: 2022.3.0
+  version: 2023.4.1
+
   top-level:
     - xarray
 source:
-  url: https://files.pythonhosted.org/packages/4e/6e/2d2430e021fcce47771dcb168599b3d71f26f63a89bd3ff78f56759f1701/xarray-2022.3.0-py3-none-any.whl
-  sha256: 560f36eaabe7a989d5583d37ec753dd737357aa6a6453e55c80bb4f92291a69e
+  url: https://files.pythonhosted.org/packages/2d/66/b3cae67f287f6d51685abe961c9bea85e8ba0a4acbb7c2c516d0b3ce0848/xarray-2023.4.1-py3-none-any.whl
+  sha256: 1c5b8d21e8a2416789e5458efeb635a2a7cf660b6d24af84aaf817224b9cabca
 requirements:
   run:
     - numpy

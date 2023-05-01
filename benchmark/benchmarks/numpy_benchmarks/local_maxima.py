@@ -26,7 +26,8 @@ def local_maxima(data, mode=wrap):
         myval = data[pos]
         for offset in np.ndindex(wsize):
             neighbor_idx = tuple(
-                mode(p, o - w // 2, w) for (p, o, w) in zip(pos, offset, wsize)
+                mode(p, o - w // 2, w)
+                for (p, o, w) in zip(pos, offset, wsize, strict=True)
             )
             result[pos] &= data[neighbor_idx] <= myval
     return result

@@ -27,7 +27,7 @@ Try Pyodide
 -----------
 
 Try Pyodide in a
-`REPL <https://pyodide.org/en/stable/console.html>`_ directly in
+`REPL <./console.html>`_ directly in
 your browser (no installation needed).
 
 
@@ -47,6 +47,7 @@ Using Pyodide
    usage/type-conversions.md
    usage/wasm-constraints.md
    usage/keyboard-interrupts.md
+   usage/streams.md
    usage/api-reference.md
    usage/faq.md
 

@@ -6,6 +6,8 @@ from importlib.util import spec_from_loader
 from types import ModuleType
 from typing import Any
 
+from ._core_docs import JsProxy
+
 
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
@@ -17,7 +19,6 @@ class JsFinder(MetaPathFinder):
         path: Sequence[bytes | str] | None,
         target: ModuleType | None = None,
     ) -> ModuleSpec | None:
-        assert JsProxy is not None
         [parent, _, child] = fullname.rpartition(".")
         if parent:
             parent_module = sys.modules[parent]
@@ -48,15 +49,15 @@ class JsFinder(MetaPathFinder):
         can then be imported from Python using the standard Python import
         system. If another module by the same name has already been imported,
         this won't have much effect unless you also delete the imported module
-        from ``sys.modules``. This is called by the JavaScript API
-        :any:`pyodide.registerJsModule`.
+        from :py:data:`sys.modules`. This is called by the JavaScript API
+        :js:func:`pyodide.registerJsModule`.
 
         Parameters
         ----------
-        name : str
+        name :
             Name of js module
 
-        jsproxy : JsProxy
+        jsproxy :
             JavaScript object backing the module
         """
         assert JsProxy is not None
@@ -73,17 +74,17 @@ class JsFinder(MetaPathFinder):
     def unregister_js_module(self, name: str) -> None:
         """
         Unregisters a JavaScript module with given name that has been previously
-        registered with :any:`pyodide.registerJsModule` or
-        :any:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
+        registered with :js:func:`pyodide.registerJsModule` or
+        :py:func:`pyodide.ffi.register_js_module`. If a JavaScript module with that name
         does not already exist, will raise an error. If the module has already
         been imported, this won't have much effect unless you also delete the
-        imported module from ``sys.modules``. This is called by the JavaScript
-        API :any:`pyodide.unregisterJsModule`.
+        imported module from :py:data:`sys.modules`. This is called by the JavaScript
+        API :js:func:`pyodide.unregisterJsModule`.
 
         Parameters
         ----------
-        name : str
-            Name of js module
+        name :
+            Name of the module to unregister
         """
         try:
             del self.jsproxies[name]
@@ -108,7 +109,6 @@ class JsLoader(Loader):
         return True
 
 
-JsProxy: type | None = None
 jsfinder: JsFinder = JsFinder()
 register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
@@ -126,11 +126,6 @@ def register_js_finder() -> None:
 
     This needs to be a function to allow the late import from ``_pyodide_core``.
     """
-    import _pyodide_core
-
-    global JsProxy
-    JsProxy = _pyodide_core.JsProxy
-
     for importer in sys.meta_path:
         if isinstance(importer, JsFinder):
             raise RuntimeError("JsFinder already registered")
@@ -138,112 +133,61 @@ def register_js_finder() -> None:
     sys.meta_path.append(jsfinder)
 
 
-UNVENDORED_STDLIBS = ["distutils", "ssl", "lzma", "sqlite3", "_hashlib"]
-UNVENDORED_STDLIBS_AND_TEST = UNVENDORED_STDLIBS + ["test"]
+STDLIBS = sys.stdlib_module_names | {"test"}
+UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
 
 
-class UnvendoredStdlibFinder(MetaPathFinder):
-    """
-    A MetaPathFinder that handles unvendored and removed stdlib modules.
+from importlib import _bootstrap  # type: ignore[attr-defined]
 
-    This class simply raises an error if a stdlib module is unvendored or removed.
-    This needs to be added to the end of sys.meta_path, so if a unvendored stdlib
-    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
-    """
+orig_get_module_not_found_error: Any = None
+REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME: dict[str, str] = {}
 
-    def __init__(self) -> None:
-        # `test`` is not a stdlib module, but we unvendors in anyway.
-        self.stdlibs = sys.stdlib_module_names | {"test"}
-        self.unvendored_stdlibs = set(UNVENDORED_STDLIBS_AND_TEST)
-        assert not (
-            self.unvendored_stdlibs - self.stdlibs
-        ), "unvendored stdlibs not in stdlibs"
+SEE_PACKAGE_LOADING = (
+    "\nSee https://pyodide.org/en/stable/usage/loading-packages.html for more details."
+)
 
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[bytes | str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        [parent, _, _] = fullname.partition(".")
-
-        if not parent or parent in sys.modules or parent not in self.stdlibs:
-            return None
-
-        if parent in self.unvendored_stdlibs:
-            raise ModuleNotFoundError(
-                f"The module '{parent}' is unvendored from the Python standard library in the Pyodide distribution, "
-                f'you can install it by calling: await micropip.install("{parent}"). '
-                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
-            )
-        else:
-            raise ModuleNotFoundError(
-                f"The module '{parent}' is removed from the Python standard library in the Pyodide distribution "
-                "due to browser limitations. "
-                "See https://pyodide.org/en/stable/usage/wasm-constraints.html for more details."
-            )
+YOU_CAN_INSTALL_IT_BY = """
+You can install it by calling:
+  await micropip.install("{package_name}") in Python, or
+  await pyodide.loadPackage("{package_name}") in JavaScript\
+"""
 
 
-def register_unvendored_stdlib_finder() -> None:
+def get_module_not_found_error(import_name):
+    package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(import_name, "")
+
+    if not package_name and import_name not in STDLIBS:
+        return orig_get_module_not_found_error(import_name)
+
+    if package_name in UNVENDORED_STDLIBS_AND_TEST:
+        msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
+        msg += YOU_CAN_INSTALL_IT_BY
+    elif import_name in STDLIBS:
+        msg = (
+            "The module '{import_name}' is removed from the Python standard library in the"
+            " Pyodide distribution due to browser limitations."
+        )
+    else:
+        msg = "The module '{package_name}' is included in the Pyodide distribution, but it is not installed."
+        msg += YOU_CAN_INSTALL_IT_BY
+
+    msg += SEE_PACKAGE_LOADING
+    return ModuleNotFoundError(
+        msg.format(import_name=import_name, package_name=package_name)
+    )
+
+
+def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     """
     A function that adds UnvendoredStdlibFinder to the end of sys.meta_path.
 
     Note that this finder must be placed in the end of meta_paths
     in order to prevent any unexpected side effects.
     """
-
-    for importer in sys.meta_path:
-        if isinstance(importer, UnvendoredStdlibFinder):
-            raise RuntimeError("UnvendoredStdlibFinder already registered")
-
-    sys.meta_path.append(UnvendoredStdlibFinder())
-
-
-class RepodataPackagesFinder(MetaPathFinder):
-    """
-    A MetaPathFinder that handles packages in repodata.json.
-
-    This class simply raises an error if a package is in repodata.json but not loaded yet.
-    This needs to be added to the end of sys.meta_path, so if a package
-    is already loaded via pyodide.loadPackage, it can be handled by the existing finder.
-    """
-
-    def __init__(self, packages: dict[str, Any]) -> None:
-        self.repodata_packages = packages
-
-    def find_spec(
-        self,
-        fullname: str,
-        path: Sequence[bytes | str] | None,
-        target: ModuleType | None = None,
-    ) -> ModuleSpec | None:
-        [parent, _, _] = fullname.partition(".")
-
-        if not parent or parent in sys.modules or parent not in self.repodata_packages:
-            return None
-
-        if parent in self.repodata_packages:
-            raise ModuleNotFoundError(
-                f"The module '{parent}' is included in the Pyodide distribution, "
-                f"but it is not installed. "
-                f'You can install it by calling: await micropip.install("{parent}") in Python or '
-                f'await pyodide.loadPackage("{parent}") in JavaScript. '
-                "See https://pyodide.org/en/stable/usage/loading-packages.html for more details."
-            )
-
-        return None
-
-
-def register_repodata_packages_finder(packages: Any) -> None:
-    """
-    A function that adds RepodataPackagesFinder to the end of sys.meta_path.
-
-    Note that this finder must be placed in the end of meta_paths
-    in order to prevent any unexpected side effects.
-    """
-
-    for importer in sys.meta_path:
-        if isinstance(importer, RepodataPackagesFinder):
-            raise RuntimeError("RepodataPackagesFinder already registered")
-
-    sys.meta_path.append(RepodataPackagesFinder(packages.to_py()))
+    global orig_get_module_not_found_error
+    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
+    global UNVENDORED_STDLIBS_AND_TEST
+    REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
+    UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())
+    orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
+    _bootstrap._get_module_not_found_error = get_module_not_found_error

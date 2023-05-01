@@ -10,10 +10,8 @@
 
 static PyObject* tbmod = NULL;
 
+_Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(format_exception);
-_Py_IDENTIFIER(last_type);
-_Py_IDENTIFIER(last_value);
-_Py_IDENTIFIER(last_traceback);
 
 void
 _Py_DumpTraceback(int fd, PyThreadState* tstate);
@@ -55,9 +53,16 @@ set_error(PyObject* err)
  * msg - the Python traceback + error message
  * err - The error object
  */
-EM_JS_REF(JsRef, new_error, (const char* msg, PyObject* err), {
-  return Hiwire.new_value(new API.PythonError(UTF8ToString(msg), err));
+// clang-format off
+EM_JS_REF(
+JsRef,
+new_error,
+(const char* type, const char* msg, PyObject* err),
+{
+  return Hiwire.new_value(
+    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
 });
+// clang-format on
 
 /**
  * Fetch the exception, normalize it, and ensure that traceback is not NULL.
@@ -71,8 +76,8 @@ fetch_and_normalize_exception(PyObject** type,
 {
   PyErr_Fetch(type, value, traceback);
   PyErr_NormalizeException(type, value, traceback);
-  if (*type == NULL || *type == Py_None || *value == NULL ||
-      *value == Py_None) {
+  if (*type == NULL || Py_IsNone(*type) || *value == NULL ||
+      Py_IsNone(*value)) {
     Py_CLEAR(*type);
     Py_CLEAR(*value);
     Py_CLEAR(*traceback);
@@ -93,9 +98,9 @@ fetch_and_normalize_exception(PyObject** type,
 static void
 store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
 {
-  _PySys_SetObjectId(&PyId_last_type, type);
-  _PySys_SetObjectId(&PyId_last_value, value);
-  _PySys_SetObjectId(&PyId_last_traceback, traceback);
+  PySys_SetObject("last_type", type);
+  PySys_SetObject("last_value", value);
+  PySys_SetObject("last_traceback", traceback);
 }
 
 /**
@@ -119,11 +124,11 @@ restore_sys_last_exception(void* value)
 {
   bool success = false;
   FAIL_IF_NULL(value);
-  PyObject* last_type = _PySys_GetObjectId(&PyId_last_type);
+  PyObject* last_type = PySys_GetObject("last_type");
   FAIL_IF_NULL(last_type);
-  PyObject* last_value = _PySys_GetObjectId(&PyId_last_value);
+  PyObject* last_value = PySys_GetObject("last_value");
   FAIL_IF_NULL(last_value);
-  PyObject* last_traceback = _PySys_GetObjectId(&PyId_last_traceback);
+  PyObject* last_traceback = PySys_GetObject("last_traceback");
   FAIL_IF_NULL(last_traceback);
   if (value != last_value) {
     return 0;
@@ -187,16 +192,21 @@ wrap_exception()
   PyObject* type = NULL;
   PyObject* value = NULL;
   PyObject* traceback = NULL;
+  PyObject* typestr = NULL;
   PyObject* pystr = NULL;
   JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
+  typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
+  FAIL_IF_NULL(typestr);
+  const char* typestr_utf8 = PyUnicode_AsUTF8(typestr);
+  FAIL_IF_NULL(typestr_utf8);
   pystr = format_exception_traceback(type, value, traceback);
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  jserror = new_error(pystr_utf8, value);
+  jserror = new_error(typestr_utf8, pystr_utf8, value);
   FAIL_IF_NULL(jserror);
 
   success = true;
@@ -210,7 +220,8 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
-    jserror = new_error("Error occurred while formatting traceback", 0);
+    jserror = new_error(
+      "PyodideInternalError", "Error occurred while formatting traceback", 0);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);
@@ -281,18 +292,16 @@ int
 error_handling_init(PyObject* core_module)
 {
   bool success = false;
-  internal_error = PyErr_NewException("pyodide.InternalError", NULL, NULL);
-  FAIL_IF_NULL(internal_error);
+  PyObject* _pyodide_core_docs = NULL;
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
 
-  conversion_error = PyErr_NewExceptionWithDoc(
-    "pyodide.ConversionError",
-    PyDoc_STR("Raised when conversion between Javascript and Python fails."),
-    NULL,
-    NULL);
+  internal_error = PyObject_GetAttrString(_pyodide_core_docs, "InternalError");
+  FAIL_IF_NULL(internal_error);
+  conversion_error =
+    PyObject_GetAttrString(_pyodide_core_docs, "ConversionError");
   FAIL_IF_NULL(conversion_error);
-  // ConversionError is public
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttrString(core_module, "ConversionError", conversion_error));
+
   FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   tbmod = PyImport_ImportModule("traceback");

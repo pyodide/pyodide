@@ -14,11 +14,11 @@ requirements:
   run:
     - numpy
     - pkgconfig
-    - libhdf5
   host:
     - libhdf5
 
 build:
+  vendor-sharedlib: true
   script: |
     export HDF5_MPI=OFF
     export H5PY_SETUP_REQUIRES="0"

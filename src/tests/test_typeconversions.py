@@ -143,9 +143,8 @@ def test_number_conversions(selenium_module_scope, n):
 
     from pyodide.code import run_js
 
-    run_js("(s) => self.x_js = eval(s)")(json.dumps(n))
+    x_js = run_js("(s) => self.x_js = eval(s)")(json.dumps(n))
     run_js("(x_py) => Number(x_py) === x_js")(n)
-    from js import x_js
 
     if type(x_js) is float:
         assert x_js == float(n)
@@ -300,7 +299,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
         from pyodide.code import run_js
 
         x_py = json.loads(s)
-        run_js(
+        x_js = run_js(
             f"""
             self.x_js = eval('{s}n'); // JSON.parse apparently doesn't work
             """
@@ -311,7 +310,6 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
             """
         )(x_py)
         assert x1 == x2
-        from js import x_js
 
         check = run_js(
             """
@@ -343,7 +341,7 @@ def test_hyp_py2js2py(selenium, obj):
 
     try:
         run_js('self.obj2 = pyodide.globals.get("obj"); 0;')
-        from js import obj2
+        from js import obj2  # type:ignore[attr-defined]
 
         assert obj2 == obj
         run_js(
@@ -411,6 +409,21 @@ def test_hyp_tojs_no_crash(selenium, obj):
         )
     finally:
         del __main__.x
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@given(obj=any_strategy)
+@example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
+@settings(
+    std_hypothesis_settings,
+    max_examples=25,
+)
+@run_in_pyodide
+def test_hypothesis(selenium_standalone, obj):
+    from pyodide.ffi import to_js
+
+    to_js(obj)
 
 
 @pytest.mark.parametrize(
@@ -537,7 +550,7 @@ def test_python2js_track_proxies(selenium):
         }
         function check(l){
             for(let x of l){
-                if(pyodide.isPyProxy(x)){
+                if(x instanceof pyodide.ffi.PyProxy){
                     assert(() => x.$$.ptr === 0);
                 } else {
                     check(x);
@@ -545,7 +558,7 @@ def test_python2js_track_proxies(selenium):
             }
         }
         check(result);
-        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ConversionError");
+        assertThrows(() => x.toJs({create_pyproxies : false}), "PythonError", "pyodide.ffi.ConversionError");
         x.destroy();
         """
     )
@@ -559,7 +572,7 @@ def test_wrong_way_track_proxies(selenium):
         """
         function checkDestroyed(l){
             for(let e of l){
-                if(pyodide.isPyProxy(e)){
+                if(e instanceof pyodide.ffi.PyProxy){
                     console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
                     assert(() => e.$$.ptr === 0);
                 } else {
@@ -587,7 +600,7 @@ def test_wrong_way_track_proxies(selenium):
     destroy_proxies(proxylist)
     checkDestroyed(r)
     with raises(TypeError):
-        to_js(x, pyproxies=[])
+        to_js(x, pyproxies=[])  # type:ignore[call-overload]
     with raises(TypeError):
         to_js(x, pyproxies=Object.new())
     with raises(ConversionError):
@@ -1103,7 +1116,7 @@ def test_tojs4(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()
@@ -1121,7 +1134,7 @@ def test_tojs5(selenium):
                 assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
                 x = x[1];
             }
-            assert(() => pyodide.isPyProxy(x), `i: ${i}, j: ${i}`);
+            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
             x.destroy();
         }
         a.destroy()
@@ -1272,7 +1285,7 @@ def test_to_py3(selenium):
         new Temp();
         """
     )
-    assert repr(type(a.to_py())) == "<class 'pyodide.JsProxy'>"
+    assert repr(type(a.to_py())) == "<class 'pyodide.ffi.JsProxy'>"
 
 
 @pytest.mark.parametrize(
@@ -1525,17 +1538,6 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
 
-@run_in_pyodide
-def test_object_with_null_constructor(selenium):
-    from unittest import TestCase
-
-    from pyodide.code import run_js
-
-    o = run_js("Object.create(null)")
-    with TestCase().assertRaises(TypeError):
-        repr(o)
-
-
 def test_dict_converter_cache(selenium):
     selenium.run_js(
         """
@@ -1610,10 +1612,10 @@ def test_negative_length(selenium, n):
 @run_in_pyodide
 def test_array_slices(selenium, l, slice):
     expected = l[slice]
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     result = jsl[slice]
     assert result.to_py() == expected
 
@@ -1630,10 +1632,10 @@ def test_array_slices(selenium, l, slice):
 @example(l=list(range(10)), slice=slice(12, -1, -2))
 @run_in_pyodide
 def test_array_slice_del(selenium, l, slice):
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     del l[slice]
     del jsl[slice]
     assert jsl.to_py() == l
@@ -1666,11 +1668,11 @@ def list_slice_and_value(draw):
 @example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
 @run_in_pyodide
 def test_array_slice_assign_1(selenium, lsv):
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     [l, s, v] = lsv
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     l[s] = v
     jsl[s] = v
     assert jsl.to_py() == l
@@ -1680,14 +1682,14 @@ def test_array_slice_assign_1(selenium, lsv):
 def test_array_slice_assign_2(selenium):
     import pytest
 
-    from pyodide.ffi import JsProxy, to_js
+    from pyodide.ffi import JsArray, to_js
 
     l = list(range(10))
     with pytest.raises(ValueError) as exc_info_1a:
         l[0:4:2] = [1, 2, 3, 4]
 
     jsl = to_js(l)
-    assert isinstance(jsl, JsProxy)
+    assert isinstance(jsl, JsArray)
     with pytest.raises(ValueError) as exc_info_1b:
         jsl[0:4:2] = [1, 2, 3, 4]
 

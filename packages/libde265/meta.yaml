@@ -7,7 +7,7 @@ source:
   sha256: 24c791dd334fa521762320ff54f0febfd3c09fc978880a8c5fbc40a88f21d905
 
 build:
-  library: true
+  type: static_library
   script: |
     # Build options are adapted from https://github.com/strukturag/libheif/blob/v1.12.0/build-emscripten.sh
     emconfigure ./configure \

@@ -1,17 +1,13 @@
 package:
   name: distutils
   version: 1.0.0 # Nonsense
-  _cpython_dynlib: true
+  tag:
+    - always
   top-level:
     - distutils
-source:
-  path: empty
 build:
-  # Actually, this is not a shared library, but we want to load this dynamically anyway.
-  sharedlibrary: true
+  type: cpython_module
   script: |
-    mkdir dist
-    export DISTDIR=$(pwd)/dist
     cd $CPYTHONLIB
 
     tar --exclude=__pycache__ -cf - distutils | tar -C $DISTDIR -xf -

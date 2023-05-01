@@ -45,4 +45,6 @@ def get_cmeth_docstring(func):
         param._annotation = _empty  # type: ignore[attr-defined]
     sig._return_annotation = _empty  # type: ignore[attr-defined]
 
-    return func.__name__ + str(sig) + "\n--\n\n" + dedent_docstring(func.__doc__)
+    docstring = dedent_docstring(func.__doc__) if func.__doc__ is not None else ""
+
+    return func.__name__ + str(sig) + "\n--\n\n" + docstring
