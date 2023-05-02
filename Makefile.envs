@@ -167,6 +167,7 @@ export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-C link-arg=-fwasm-exceptions \
+	-C link-arg=-sDISABLE_EXCEPTION_CATCHING=1 \
 	-Z link-native-libraries=no
 .output_vars:
 	set
