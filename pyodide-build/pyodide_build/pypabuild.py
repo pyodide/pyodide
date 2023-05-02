@@ -78,7 +78,9 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
     pinned_reqs = {
         # Remove this when mypy releases a new version
         # https://github.com/python/mypy/pull/14788
-        "types-setuptools": "types-setuptools<67.4.0.2"
+        "types-setuptools": "types-setuptools<67.4.0.2",
+        # https://github.com/pyodide/pyodide/issues/3816
+        "pythran>=0.12.0,<0.13.0": "gast!=0.5.4",
     }
 
     for pkg, req in pinned_reqs.items():
