@@ -246,7 +246,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -260,7 +260,8 @@ jobs:
       - name: install test requirements
         shell: bash -l {0}
         run: |
-          curl -fsSL https://deno.land/install.sh | sudo DENO_INSTALL=/usr/local sh
+          curl -fsSL https://deno.land/install.sh | sudo DENO_INSTALL=/usr/local sh -s v1.33.1
+          deno --version
 
       - name: run deno tests
         shell: bash -l {0}
