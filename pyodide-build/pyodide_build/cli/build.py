@@ -1,5 +1,6 @@
 import re
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import Optional
@@ -113,9 +114,12 @@ def main(
         help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
     ),
     output_directory: str = typer.Option(
-        "./dist",
+        "",
+        "--outdir",
+        "-o",
         help="which directory should the output be placed into?",
     ),
+    output_directory_compat: str = typer.Option("", "--output-directory", hidden=True),
     requirements_txt: str = typer.Option(
         "",
         "--requirements",
@@ -143,6 +147,16 @@ def main(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
+    if output_directory_compat:
+        print(
+            "--output-directory is deprecated, use --outdir or -o instead",
+            file=sys.stderr,
+        )
+    if output_directory_compat and output_directory:
+        print("Cannot provide both --outdir and --output-directory", file=sys.stderr)
+        sys.exit(1)
+    output_directory = output_directory_compat or output_directory or "./dist"
+
     outpath = Path(output_directory).resolve()
     outpath.mkdir(exist_ok=True)
     extras: list[str] = []
