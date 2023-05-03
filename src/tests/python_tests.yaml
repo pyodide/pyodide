@@ -891,7 +891,7 @@
 - test_xml_dom_minicompat
 - test_xml_etree:
     skip:
-        - "test_recursive_repr"
+      - "test_recursive_repr"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
