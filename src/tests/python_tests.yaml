@@ -890,7 +890,8 @@
 - test_xdrlib
 - test_xml_dom_minicompat
 - test_xml_etree:
-    xfail-chrome: "RangeError: Maximum call stack size exceeded"
+    skip:
+        - "test_recursive_repr"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
