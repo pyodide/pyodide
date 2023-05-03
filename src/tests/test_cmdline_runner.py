@@ -273,7 +273,11 @@ def install_pkg(venv, pkgname):
 def check_installed_packages(venv, pkgs):
     python = f"python{sys.version_info.major}.{sys.version_info.minor}"
     site_packages = venv / "lib" / python / "site-packages"
-    not_found = [pkg for pkg in pkgs if not next(site_packages.glob(pkg + "*" + ".dist-info"), None)]
+    not_found = [
+        pkg
+        for pkg in pkgs
+        if not next(site_packages.glob(pkg + "*" + ".dist-info"), None)
+    ]
     assert not_found == []
 
 
@@ -353,7 +357,9 @@ def test_pip_install_from_pypi_deps(selenium, venv):
     """pure Python package with dependencies from pypi"""
     result = install_pkg(venv, "requests==2.28.1")
     assert result.returncode == 0
-    check_installed_packages(venv, ["certifi", "charset_normalizer", "idna", "requests", "urllib3"])
+    check_installed_packages(
+        venv, ["certifi", "charset_normalizer", "idna", "requests", "urllib3"]
+    )
 
 
 @only_node
