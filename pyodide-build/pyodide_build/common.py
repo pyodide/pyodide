@@ -98,9 +98,7 @@ def check_emscripten_version() -> None:
 
 
 def platform() -> str:
-    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
-    version = emscripten_version.replace(".", "_")
-    return f"emscripten_{version}_wasm32"
+    return f"pyodide"
 
 
 def pyodide_tags() -> Iterator[Tag]:
