@@ -15,11 +15,6 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Changed the name of the `--output-directory` argument to
-  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
-  still accepted for backwards compatibility.
-  {pr}`3811`
-
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
@@ -40,7 +35,18 @@ myst:
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
+## Version 0.23.2
+
+_May 2, 2023_
+
+- {{ Enhancement }} Changed the name of the `--output-directory` argument to
+  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
+  still accepted for backwards compatibility.
+  {pr}`3811`
+
 ## Version 0.23.1
+
+_April 13, 2023_
 
 ### Deployment
 
