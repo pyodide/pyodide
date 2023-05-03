@@ -265,4 +265,4 @@ jobs:
 
       - name: run deno tests
         shell: bash -l {0}
-        run: cd src/test-deno && deno task run
+        run: cd src/test-deno && deno task test

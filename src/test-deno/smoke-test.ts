@@ -1,4 +1,4 @@
-import pyodideModule from "npm:pyodide/pyodide.js";
+import pyodideModule from "npm:pyodide@0.23.1/pyodide.js";
 const { loadPyodide } = pyodideModule;
 
 console.time("[load pyodide]");

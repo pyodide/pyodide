@@ -3,7 +3,7 @@
   "remote": {},
   "npm": {
     "specifiers": {
-      "pyodide": "pyodide@0.23.1"
+      "pyodide@0.23.1": "pyodide@0.23.1"
     },
     "packages": {
       "base-64@1.0.0": {
