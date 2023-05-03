@@ -401,7 +401,7 @@ def test_run_python_async_toplevel_await(selenium):
         """
         await pyodide.runPythonAsync(`
             from js import fetch
-            resp = await fetch("repodata.json")
+            resp = await fetch("pyodide-lock.json")
             json = (await resp.json()).to_py()["packages"]
             assert "micropip" in json
         `);

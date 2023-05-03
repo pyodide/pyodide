@@ -196,9 +196,9 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
+     * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
      * file. You can produce custom lock files with :py:func:`micropip.freeze`.
-     * Default: ```${indexURL}/repodata.json```
+     * Default: ```${indexURL}/pyodide-lock.json```
      */
     lockFileURL?: string;
 
@@ -265,7 +265,7 @@ export async function loadPyodide(
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     homedir: "/home/pyodide",
-    lockFileURL: indexURL! + "repodata.json",
+    lockFileURL: indexURL! + "pyodide-lock.json",
     args: [],
     _node_mounts: [],
   };

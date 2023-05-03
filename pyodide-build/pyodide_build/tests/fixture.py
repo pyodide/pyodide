@@ -81,7 +81,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 """  # noqa: W191
     )
     (pyodide_root / "dist").mkdir()
-    (pyodide_root / "dist" / "repodata.json").write_text(
+    (pyodide_root / "dist" / "pyodide-lock.json").write_text(
         json.dumps(mock_repodata_json())
     )
 

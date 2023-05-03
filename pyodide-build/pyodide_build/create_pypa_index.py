@@ -24,7 +24,7 @@ def create_pypa_index(
     ----------
     packages:
         A dictionary of packages that we want to index. This should be the
-        "packages" field from repodata.json.
+        "packages" field from pyodide-lock.json.
 
     target_dir:
         Where to put the  index. It will be placed in a subfolder of

@@ -17,28 +17,28 @@ import { makeWarnOnce } from "./util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
- * loadPyodide so that fetching repodata.json can occur in parallel with other
+ * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
  * operations.
  * @param lockFileURL
  * @private
  */
 async function initializePackageIndex(lockFileURL: string) {
-  let repodata;
+  let lockfile;
   if (IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    repodata = JSON.parse(package_string);
+    lockfile = JSON.parse(package_string);
   } else {
     let response = await fetch(lockFileURL);
-    repodata = await response.json();
+    lockfile = await response.json();
   }
-  if (!repodata.packages) {
+  if (!lockfile.packages) {
     throw new Error(
-      "Loaded repodata.json does not contain the expected key 'packages'.",
+      "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
-  API.repodata_info = repodata.info;
-  API.repodata_packages = repodata.packages;
+  API.repodata_info = lockfile.info;
+  API.repodata_packages = lockfile.packages;
   API.repodata_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
@@ -97,7 +97,7 @@ type PackageLoadMetadata = {
   installPromise?: Promise<void>;
 };
 
-// Package data inside repodata.json
+// Package data inside pyodide-lock.json
 export type PackageData = {
   file_name: string;
   shared_library: boolean;
@@ -210,7 +210,7 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to indexURL from `repodata.json`, otherwise use the URL specified by
+ * relative to indexURL from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the

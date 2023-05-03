@@ -261,7 +261,7 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
 def _update_repodata(
     input_dir: Path, repodata: dict[str, Any], name_mapping: dict[str, str]
 ) -> dict[str, Any]:
-    """Update repodata.json with the new names of the py-compiled wheels.
+    """Update pyodide-lock.json with the new names of the py-compiled wheels.
 
     Also update the checksums of the updated wheels
     """
@@ -321,7 +321,7 @@ def _py_compile_archive_dir(
             )
             name_mapping[file_path.name] = output_name
 
-    repodata_path = input_dir / "repodata.json"
+    repodata_path = input_dir / "pyodide-lock.json"
     if name_mapping and repodata_path.exists():
         if verbose:
             print(f"Updating {repodata_path.name}")

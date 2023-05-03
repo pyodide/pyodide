@@ -191,7 +191,7 @@ def test_py_compile_archive_dir(tmp_path, with_repodata):
         "packageB", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
     )
 
-    repodata_path = tmp_path / "repodata.json"
+    repodata_path = tmp_path / "pyodide-lock.json"
     repodata = {
         "info": {"arch": "wasm32"},
         "packages": {
@@ -210,8 +210,8 @@ def test_py_compile_archive_dir(tmp_path, with_repodata):
     if with_repodata:
         with open(repodata_path, "w") as fh:
             json.dump(repodata, fh)
-        expected_in.add("repodata.json")
-        expected_out.add("repodata.json")
+        expected_in.add("pyodide-lock.json")
+        expected_out.add("pyodide-lock.json")
 
     assert set(el.name for el in tmp_path.glob("*")) == expected_in
 

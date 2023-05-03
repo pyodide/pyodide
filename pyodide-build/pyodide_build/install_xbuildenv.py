@@ -62,15 +62,15 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
     cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
-    if (repodata_json := xbuildenv_root / "dist" / "repodata.json").exists():
-        repodata_bytes = repodata_json.read_bytes()
+    if (lockfile := xbuildenv_root / "dist" / "pyodide-lock.json").exists():
+        lockfile_bytes = lockfile.read_bytes()
     else:
-        repodata_url = cdn_base + "repodata.json"
-        with urlopen(repodata_url) as response:
-            repodata_bytes = response.read()
-    repodata = json.loads(repodata_bytes)
-    version = repodata["info"]["version"]
-    create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
+        lockfile_url = cdn_base + "pyodide-lock.json"
+        with urlopen(lockfile_url) as response:
+            lockfile_bytes = response.read()
+    lockfile = json.loads(lockfile_bytes)
+    version = lockfile["info"]["version"]
+    create_pypa_index(lockfile["packages"], xbuildenv_root, cdn_base)
 
 
 def install(path: Path, *, download: bool = False, url: str | None = None) -> None:

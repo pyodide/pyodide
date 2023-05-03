@@ -17,7 +17,7 @@ def main(
 ) -> None:
     """Compile .py files to .pyc in a wheel, a zip file, or a folder with wheels or zip files.
 
-    If the provided folder contains the `repodata.json` file, it will be
+    If the provided folder contains the `pyodide-lock.json` file, it will be
     rewritten with the updated wheel / zip file paths and sha256 checksums.
     """
     if not path.exists():

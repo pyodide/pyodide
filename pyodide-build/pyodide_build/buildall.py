@@ -783,7 +783,7 @@ def install_packages(
     """
     Install packages into the output directory.
     - copies build artifacts (wheel, zip, ...) to the output directory
-    - create repodata.json
+    - create pyodide_lock.json
 
 
     pkg_map
@@ -800,8 +800,8 @@ def install_packages(
         pkg_map.values(), output_dir, compression_level=compression_level
     )
 
-    repodata_path = output_dir / "repodata.json"
-    logger.info(f"Writing repodata.json to {repodata_path}")
+    repodata_path = output_dir / "pyodide-lock.json"
+    logger.info(f"Writing pyodide-lock.json to {repodata_path}")
 
     package_data = generate_repodata(output_dir, pkg_map)
     with repodata_path.open("w") as fd:
