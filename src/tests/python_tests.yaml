@@ -825,7 +825,8 @@
 - test_typechecks
 - test_types
 - test_typing:
-    segfault-chrome: stack overflow
+    skip:
+      - "*recursion*"
 - test_ucn
 - test_unary
 - test_unicode
