@@ -696,12 +696,12 @@ def generate_repodata(
     """Generate the package.json file"""
 
     from . import __version__
+    version = common.emscripten_version().replace(".", "_")
 
     # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
     info = {
-        "arch": arch,
-        "platform": platform,
+        "arch": "wasm32",
+        "platform": f"emscripten_{version}",
         # This assumes that pyodide-build version == pyodide version.
         "version": __version__,
         "python": sys.version.partition(" ")[0],
