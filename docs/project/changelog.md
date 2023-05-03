@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Changed the name of the `--output-directory` argument to
+  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
+  still accepted for backwards compatibility.
+  {pr}`3811`
+
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
@@ -30,7 +35,8 @@ myst:
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
-  deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`.
+  deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
+  simplejson {pr}`3801`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
