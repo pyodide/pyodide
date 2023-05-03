@@ -308,7 +308,9 @@
 - test_filecmp
 - test_fileinput
 - test_fileio:
-    segfault-chrome: stack overflow
+    skip:
+      # stack overflow in v8
+      - "*Recursive*"
 - test_fileutils
 - test_finalization
 - test_float
