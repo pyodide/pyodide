@@ -426,13 +426,7 @@ def compile(
         from .pypabuild import build
 
         outpath = srcpath / "dist"
-        try:
-            build(srcpath, outpath, build_env, backend_flags)
-        except BaseException:
-            build_log_path = Path("build.log")
-            if build_log_path.exists():
-                build_log_path.unlink()
-            raise
+        build(srcpath, outpath, build_env, backend_flags)
 
 
 def replace_so_abi_tags(wheel_dir: Path) -> None:

@@ -189,7 +189,7 @@ def create_pyodide_script(venv_bin: Path) -> None:
         dedent(
             f"""
             #!/bin/sh
-            PATH='{PATH}' PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
+            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
             """
         )
     )

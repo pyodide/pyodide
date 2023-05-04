@@ -444,9 +444,7 @@ def test_build1(tmp_path, monkeypatch):
     srcdir.mkdir()
     app = typer.Typer()
     app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
-    result = runner.invoke(
-        app, [str(srcdir), "--output-directory", str(outdir), "x", "y", "z"]
-    )
+    result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir), "x", "y", "z"])
     print(result)
     print(result.stdout)
     assert result.exit_code == 0
