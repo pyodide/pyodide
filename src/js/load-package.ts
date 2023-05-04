@@ -37,26 +37,30 @@ async function initializePackageIndex(lockFileURL: string) {
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
+  API.lockfile_info = lockfile.info;
+  API.lockfile_packages = lockfile.packages;
+  API.lockfile_unvendored_stdlibs_and_test = [];
+
+  // micropip compatibility
   API.repodata_info = lockfile.info;
   API.repodata_packages = lockfile.packages;
-  API.repodata_unvendored_stdlibs_and_test = [];
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
-  for (let name of Object.keys(API.repodata_packages)) {
-    const pkg = API.repodata_packages[name];
+  for (let name of Object.keys(API.lockfile_packages)) {
+    const pkg = API.lockfile_packages[name];
 
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
 
     if (pkg.package_type === "cpython_module") {
-      API.repodata_unvendored_stdlibs_and_test.push(name);
+      API.lockfile_unvendored_stdlibs_and_test.push(name);
     }
   }
 
-  API.repodata_unvendored_stdlibs =
-    API.repodata_unvendored_stdlibs_and_test.filter(
+  API.lockfile_unvendored_stdlibs =
+    API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
 }
@@ -140,7 +144,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info: PackageData = API.repodata_packages[name];
+  const pkg_info: PackageData = API.lockfile_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -227,13 +231,13 @@ async function downloadPackage(
 ): Promise<Uint8Array> {
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
-    if (!(name in API.repodata_packages)) {
+    if (!(name in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = API.repodata_packages[name].file_name;
+    file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, API.config.indexURL);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.repodata_packages[name].sha256,
+      API.lockfile_packages[name].sha256,
     );
   } else {
     uri = channel;
@@ -274,7 +278,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg: PackageData = API.repodata_packages[name];
+  let pkg: PackageData = API.lockfile_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",

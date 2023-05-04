@@ -340,15 +340,15 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   let importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
     API._import_name_to_package_name,
-    API.repodata_unvendored_stdlibs_and_test,
+    API.lockfile_unvendored_stdlibs_and_test,
   );
 
-  if (API.repodata_info.version !== version) {
+  if (API.lockfile_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
+    await pyodide.loadPackage(API.lockfile_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;

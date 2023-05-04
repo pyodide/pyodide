@@ -690,7 +690,7 @@ def generate_packagedata(
     return packages
 
 
-def generate_repodata(
+def generate_lockfile(
     output_dir: Path, pkg_map: dict[str, BasePackage]
 ) -> dict[str, dict[str, Any]]:
     """Generate the package.json file"""
@@ -800,11 +800,11 @@ def install_packages(
         pkg_map.values(), output_dir, compression_level=compression_level
     )
 
-    repodata_path = output_dir / "pyodide-lock.json"
-    logger.info(f"Writing pyodide-lock.json to {repodata_path}")
+    lockfile_path = output_dir / "pyodide-lock.json"
+    logger.info(f"Writing pyodide-lock.json to {lockfile_path}")
 
-    package_data = generate_repodata(output_dir, pkg_map)
-    with repodata_path.open("w") as fd:
+    package_data = generate_lockfile(output_dir, pkg_map)
+    with lockfile_path.open("w") as fd:
         json.dump(package_data, fd)
         fd.write("\n")
 

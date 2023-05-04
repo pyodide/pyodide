@@ -41,7 +41,7 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_repodata_json() -> dict[str, Any]:
+def mock_pyodide_lock() -> dict[str, Any]:
     # TODO: use pydantic
 
     return {
@@ -82,7 +82,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
     )
     (pyodide_root / "dist").mkdir()
     (pyodide_root / "dist" / "pyodide-lock.json").write_text(
-        json.dumps(mock_repodata_json())
+        json.dumps(mock_pyodide_lock())
     )
 
     with chdir(base):
