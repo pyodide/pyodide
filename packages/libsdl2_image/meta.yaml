@@ -1,0 +1,24 @@
+# Note: Emscripten has its own SDL2-image port,
+#       but it is quite old (2.0.0) so it is not
+#       compatible with some packages like pygame.
+package:
+  name: libsdl2_image
+  version: 2.6.2
+
+source:
+  url: https://github.com/libsdl-org/SDL_image/releases/download/release-2.6.2/SDL2_image-2.6.2.tar.gz
+  sha256: 48355fb4d8d00bac639cd1c4f4a7661c4afef2c212af60b340e06b7059814777
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-shared \
+        --disable-sdltest \
+        --disable-jpg-shared \
+        --disable-png-shared \
+        --disable-dependency-tracking \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install

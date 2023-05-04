@@ -1,0 +1,61 @@
+package:
+  name: pygame-ce
+  version: 2.1.4
+  top-level:
+    - pygame
+source:
+  url: https://files.pythonhosted.org/packages/22/93/9e7640f46c46702641bfecd9ce0cbfb7d7366d7b638b77630006d273a45a/pygame-ce-2.1.4.tar.gz
+  sha256: 17244d4ef049e053bbd14e801f1a4c2ec0a65c069a3cf6793b66c622e15077bc
+build:
+  script: |
+    embuilder build sdl2 sdl2_ttf sdl2_mixer --pic
+    export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
+  cflags: |
+    -sRELOCATABLE=1
+    -DSDL_NO_COMPAT
+    -DBUILD_STATIC
+    -ferror-limit=1
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sUSE_SDL_TTF=2
+    -sUSE_FREETYPE=1
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -I$(WASM_LIBRARY_DIR)/include/SDL2
+  ldflags: |
+    -sRELOCATABLE=1
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sUSE_SDL_TTF=2
+    -sUSE_FREETYPE=1
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -L$(WASM_LIBRARY_DIR)/lib
+    -lSDL2
+  post: |
+    cd ${PKG_BUILD_DIR}
+    # Remove docs to reduce the size of a wheel
+    # (Perhaps also remove typeshed and examples?)
+    rm -rf dist/pygame_ce-${PKG_VERSION}/pygame/docs
+    # WASM version of pygame uses a single module 'pygame_static',
+    # and pygame_static calls PyInit_* functions from other modules.
+    # This is okay when all these modules are bundled in a single module: libpython.
+    # But since we don't do that, we need to make load these modules globally, so that
+    # pygame_static can see the symbols.
+    STATIC_OBJ=$(find . -name static.o)
+    echo $STATIC_OBJ
+    emcc \
+      -shared \
+      ${SIDE_MODULE_LDFLAGS} \
+      -fPIC \
+      -lSDL2 \
+      ${STATIC_OBJ} dist/pygame_ce-${PKG_VERSION}/pygame/*.so dist/pygame_ce-${PKG_VERSION}/pygame/_sdl2/*.so \
+      -o dist/pygame_ce-${PKG_VERSION}/pygame_static.so
+requirements:
+  host:
+    - libsdl2_image
+about:
+  home: https://www.pygame.org
+  PyPI: https://pypi.org/project/pygame
+  summary: Python Game Development
+  license: LGPL
