@@ -5,12 +5,12 @@ package:
     - mypyc
     - mypy
 source:
-  url: https://files.pythonhosted.org/packages/62/54/be80f8d01f5cf72f774a77f9f750527a6fa733f09f78b1da30e8fa3914e6/mypy-1.1.1.tar.gz
-  sha256: ae9ceae0f5b9059f33dbc62dea087e942c0ccab4b7a003719cb70f9b8abfa32f
-build:
-  script: |
-    export MYPY_USE_MYPYC=1
-    export MYPYC_OPT_LEVEL=3
+  url: https://github.com/ryanking13/pyodide-recipes-mirror/releases/download/20230503/mypy-1.1.1-cp311-cp311-emscripten_3_1_32_wasm32.whl
+  sha256: f6103543a6612116b6fcbde63fd6de07e79f3d1c16e3bbd5585d77585bf23a9d
+# build:
+#   script: |
+#     export MYPY_USE_MYPYC=1
+#     export MYPYC_OPT_LEVEL=3
 about:
   home: http://www.mypy-lang.org/
   PyPI: https://pypi.org/project/mypy
