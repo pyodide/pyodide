@@ -98,7 +98,7 @@ def check_emscripten_version() -> None:
 
 
 def platform() -> str:
-    return f"pyodide"
+    return "pyodide"
 
 
 def pyodide_tags() -> Iterator[Tag]:

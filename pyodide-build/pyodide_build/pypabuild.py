@@ -227,7 +227,8 @@ def get_build_env(
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = get_build_flag("SYSCONFIG_NAME")
-        env["PYTHONPATH"] = str(sysconfig_dir)
+        pythonpath = [sysconfig_dir, Path(__file__).parent / "stdlib_overrides"]
+        env["PYTHONPATH"] = ":".join(str(x) for x in pythonpath)
         yield env
 
 

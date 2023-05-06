@@ -696,6 +696,7 @@ def generate_repodata(
     """Generate the package.json file"""
 
     from . import __version__
+
     version = common.emscripten_version().replace(".", "_")
 
     # Build package.json data.
