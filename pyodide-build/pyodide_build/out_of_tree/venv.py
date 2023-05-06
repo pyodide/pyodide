@@ -5,7 +5,7 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import exit_with_stdio, get_make_flag, get_pyodide_root, in_xbuildenv
+from ..common import exit_with_stdio, get_build_flag, get_pyodide_root, in_xbuildenv
 from ..logger import logger
 
 
@@ -96,7 +96,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
     )
     check_result(result, "ERROR: failed to invoke Pyodide")
     platform_data = result.stdout
-    sysconfigdata_dir = Path(get_make_flag("TARGETINSTALLDIR")) / "sysconfigdata"
+    sysconfigdata_dir = Path(get_build_flag("TARGETINSTALLDIR")) / "sysconfigdata"
     return dedent(
         """\
         import os
@@ -189,7 +189,7 @@ def create_pyodide_script(venv_bin: Path) -> None:
         dedent(
             f"""
             #!/bin/sh
-            PATH='{PATH}' PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
+            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
             """
         )
     )

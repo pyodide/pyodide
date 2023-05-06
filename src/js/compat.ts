@@ -2,9 +2,9 @@
 declare var process: any;
 
 export const IN_NODE =
-  typeof process !== "undefined" &&
-  process.release &&
-  process.release.name === "node" &&
+  typeof process === "object" &&
+  typeof process.versions === "object" &&
+  typeof process.versions.node === "string" &&
   typeof process.browser ===
     "undefined"; /* This last condition checks if we run the browser shim of process */
 
