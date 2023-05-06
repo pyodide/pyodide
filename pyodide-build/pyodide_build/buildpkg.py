@@ -31,8 +31,9 @@ from .common import (
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
+    get_build_environment_vars,
+    get_pyodide_root,
     make_zip_archive,
-    set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -118,9 +119,8 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
-    PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env: dict[str, str] = {}
-    set_build_environment(env)
+    PYODIDE_ROOT = get_pyodide_root()
+    env = get_build_environment_vars()
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         # Working in-tree, add emscripten toolchain into PATH and set ccache
@@ -436,7 +436,7 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
     assert ext_suffix
     build_triplet = "-".join(build_soabi.split("-")[2:])
-    host_triplet = common.get_make_flag("PLATFORM_TRIPLET")
+    host_triplet = common.get_build_flag("PLATFORM_TRIPLET")
     for file in wheel_dir.glob(f"**/*{ext_suffix}"):
         file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
 
@@ -529,7 +529,7 @@ def package_wheel(
 
     vendor_sharedlib = build_metadata.vendor_sharedlib
     if vendor_sharedlib:
-        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
+        lib_dir = Path(common.get_build_flag("WASM_LIBRARY_DIR"))
         copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
     python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
@@ -932,35 +932,35 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETINSTALLDIR"),
+        default=common.get_build_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
         "--host-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("HOSTINSTALLDIR"),
+        default=common.get_build_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "
