@@ -3,6 +3,7 @@ import zipfile
 import pytest
 
 from pyodide_build.common import (
+    emscripten_platform,
     environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
@@ -39,6 +40,7 @@ def test_wheel_paths():
     PYMAJOR = int(get_build_flag("PYMAJOR"))
     PYMINOR = int(get_build_flag("PYMINOR"))
     PLATFORM = platform()
+    alternate_platform = emscripten_platform()
     current_version = f"cp{PYMAJOR}{PYMINOR}"
     future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
     strings = []
@@ -52,17 +54,24 @@ def test_wheel_paths():
         "py2.py3",
     ]:
         for abi in [interp, "abi3", "none"]:
-            for arch in [PLATFORM, "linux_x86_64", "any"]:
+            for arch in [PLATFORM, alternate_platform, "linux_x86_64", "any"]:
                 strings.append(f"wrapt-1.13.3-{interp}-{abi}-{arch}.whl")
 
+    print("strings", strings)
     paths = [Path(x) for x in strings]
     assert [x.stem.split("-", 2)[-1] for x in find_matching_wheels(paths)] == [
         f"{current_version}-{current_version}-{PLATFORM}",
+        f"{current_version}-{current_version}-{alternate_platform}",
         f"{current_version}-abi3-{PLATFORM}",
+        f"{current_version}-abi3-{alternate_platform}",
         f"{current_version}-none-{PLATFORM}",
+        f"{current_version}-none-{alternate_platform}",
         f"{old_version}-abi3-{PLATFORM}",
+        f"{old_version}-abi3-{alternate_platform}",
         f"py3-none-{PLATFORM}",
         f"py2.py3-none-{PLATFORM}",
+        f"py3-none-{alternate_platform}",
+        f"py2.py3-none-{alternate_platform}",
         "py3-none-any",
         "py2.py3-none-any",
         f"{current_version}-none-any",

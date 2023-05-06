@@ -101,6 +101,11 @@ def platform() -> str:
     return "pyodide"
 
 
+def emscripten_platform() -> str:
+    emver = emscripten_version().replace(".", "_")
+    return f"emscripten_{emver}_wasm32"
+
+
 def pyodide_tags() -> Iterator[Tag]:
     """
     Returns the sequence of tag triples for the Pyodide interpreter.
@@ -110,10 +115,11 @@ def pyodide_tags() -> Iterator[Tag]:
     PYMAJOR = get_pyversion_major()
     PYMINOR = get_pyversion_minor()
     # Accept both "pyodide" and "emscripten_3_1_32_wasm32" (rust packages)
-    platforms = [platform(), f"emscripten_{emscripten_version()}_wasm32"]
+    platforms = [platform(), emscripten_platform()]
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=platforms, python_version=python_version)
     yield from compatible_tags(platforms=platforms, python_version=python_version)
+    yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 
 
 def find_matching_wheels(wheel_paths: Iterable[Path]) -> Iterator[Path]:
