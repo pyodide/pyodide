@@ -393,11 +393,13 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
+// clang-format off
 EM_JS(JsRef, hiwire_syncify, (JsRef idpromise), {
   throw new Error("Syncify not supported");
 }
 Module.initSuspenders();
 )
+// clang-format on
 
 EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
