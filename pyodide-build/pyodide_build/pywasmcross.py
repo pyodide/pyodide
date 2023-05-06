@@ -52,7 +52,6 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
