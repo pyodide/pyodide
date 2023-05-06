@@ -136,7 +136,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	--pre-js src/core/wrap_syncifying.wasm.gen.js \
 	--pre-js src/core/wrap_apply.wasm.gen.js \
 	--pre-js src/core/continuations.js \
-	--js-library src/core/async_call.js \
 	\
 	-lGL \
 	-legl.js \

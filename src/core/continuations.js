@@ -221,32 +221,6 @@ Module.wrapApply = function (apply) {
   );
 };
 
-function patchCheckEmscriptenSignalHelpers() {
-  const _orig_Py_CheckEmscriptenSignals_Helper =
-    _Py_CheckEmscriptenSignals_Helper;
-  const suspending = new WebAssembly.Function(
-    { parameters: ["externref"], results: [] },
-    () => sleep(0),
-    { suspending: "first" },
-  );
-  const bytes = [
-    0, 97, 115, 109, 1, 0, 0, 0, 1, 9, 2, 96, 0, 1, 127, 96, 1, 111, 0, 2, 27,
-    4, 1, 101, 1, 115, 3, 111, 1, 1, 101, 1, 99, 3, 127, 1, 1, 101, 1, 105, 0,
-    0, 1, 101, 1, 114, 0, 1, 3, 2, 1, 0, 7, 5, 1, 1, 111, 0, 2, 10, 23, 1, 21,
-    1, 1, 111, 35, 1, 4, 64, 35, 0, 34, 0, 16, 1, 32, 0, 36, 0, 11, 16, 0, 11,
-  ];
-  const module = new WebAssembly.Module(new Uint8Array(bytes));
-  const instance = new WebAssembly.Instance(module, {
-    e: {
-      s: Module.suspenderGlobal,
-      r: suspending,
-      i: _orig_Py_CheckEmscriptenSignals_Helper,
-      c: Module.validSuspender,
-    },
-  });
-  _Py_CheckEmscriptenSignals_Helper = instance.exports.o;
-}
-
 Module.initSuspenders = function () {
   try {
     // Feature detect externref. Also need it for wrapApply to work.
@@ -272,7 +246,6 @@ Module.initSuspenders = function () {
     { value: "i32", mutable: true },
     0,
   );
-  // patchCheckEmscriptenSignalHelpers();
   patchHiwireSyncify();
   Module.suspendersAvailable = true;
 };
