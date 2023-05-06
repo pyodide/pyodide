@@ -1,4 +1,4 @@
-FROM node:14.16.1-buster-slim AS node-image
+FROM node:20.1.0-buster-slim AS node-image
 FROM python:3.11.3-slim-buster
 
 # Requirements for building packages

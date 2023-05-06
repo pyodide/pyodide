@@ -282,7 +282,7 @@ def test_config_get(cfg_name, env_var):
         ],
     )
 
-    assert result.stdout.strip() == common.get_make_flag(env_var)
+    assert result.stdout.strip() == common.get_build_flag(env_var)
 
 
 def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
@@ -444,9 +444,7 @@ def test_build1(tmp_path, monkeypatch):
     srcdir.mkdir()
     app = typer.Typer()
     app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
-    result = runner.invoke(
-        app, [str(srcdir), "--output-directory", str(outdir), "x", "y", "z"]
-    )
+    result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir), "x", "y", "z"])
     print(result)
     print(result.stdout)
     assert result.exit_code == 0

@@ -6,8 +6,8 @@ from pyodide_build.common import (
     environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
-    get_make_environment_vars,
-    get_make_flag,
+    get_build_environment_vars,
+    get_build_flag,
     get_num_cores,
     make_zip_archive,
     parse_top_level_import_name,
@@ -18,15 +18,15 @@ from pyodide_build.common import (
 )
 
 
-def test_get_make_flag():
-    assert len(get_make_flag("SIDE_MODULE_LDFLAGS")) > 0
-    assert len(get_make_flag("SIDE_MODULE_CFLAGS")) > 0
+def test_get_build_flag():
+    assert len(get_build_flag("SIDE_MODULE_LDFLAGS")) > 0
+    assert len(get_build_flag("SIDE_MODULE_CFLAGS")) > 0
     # n.b. right now CXXFLAGS is empty so don't check length here, just check it returns
-    get_make_flag("SIDE_MODULE_CXXFLAGS")
+    get_build_flag("SIDE_MODULE_CXXFLAGS")
 
 
-def test_get_make_environment_vars():
-    vars = get_make_environment_vars()
+def test_get_build_environment_vars():
+    vars = get_build_environment_vars()
     assert "SIDE_MODULE_LDFLAGS" in vars
     assert "SIDE_MODULE_CFLAGS" in vars
     assert "SIDE_MODULE_CXXFLAGS" in vars
@@ -36,8 +36,8 @@ def test_wheel_paths():
     from pathlib import Path
 
     old_version = "cp38"
-    PYMAJOR = int(get_make_flag("PYMAJOR"))
-    PYMINOR = int(get_make_flag("PYMINOR"))
+    PYMAJOR = int(get_build_flag("PYMAJOR"))
+    PYMINOR = int(get_build_flag("PYMINOR"))
     PLATFORM = platform()
     current_version = f"cp{PYMAJOR}{PYMINOR}"
     future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
