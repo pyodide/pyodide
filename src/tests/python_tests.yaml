@@ -308,7 +308,9 @@
 - test_filecmp
 - test_fileinput
 - test_fileio:
-    segfault-chrome: stack overflow
+    skip:
+      # stack overflow in v8
+      - "*Recursive*"
 - test_fileutils
 - test_finalization
 - test_float
@@ -823,7 +825,9 @@
 - test_typechecks
 - test_types
 - test_typing:
-    segfault-chrome: stack overflow
+    skip:
+      # stack overflow in v8
+      - "*recursion*"
 - test_ucn
 - test_unary
 - test_unicode
@@ -887,7 +891,9 @@
 - test_xdrlib
 - test_xml_dom_minicompat
 - test_xml_etree:
-    xfail-chrome: "RangeError: Maximum call stack size exceeded"
+    skip:
+      # stack overflow in v8
+      - "test_recursive_repr"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
