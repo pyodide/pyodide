@@ -23,7 +23,7 @@ build:
       "Modules/_sqlite/util.c"
     )
 
-    embuilder build --pic sqlite3
+    embuilder build sqlite3 --pic
 
     for file in "${FILES[@]}"; do
       emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \

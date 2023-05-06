@@ -300,6 +300,7 @@ jobs:
               export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
             echo "pytest cache dir: $CACHE_DIR"
+            source pyodide_env.sh
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -419,6 +420,7 @@ jobs:
             set -x
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
+            source pyodide_env.sh
             cd ~
             mkdir test
             cd test
