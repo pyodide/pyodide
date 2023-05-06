@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .common import (
     exit_with_stdio,
-    get_make_flag,
+    get_build_flag,
     get_pyodide_root,
     get_unisolated_packages,
 )
@@ -15,7 +15,7 @@ from .recipe import load_all_recipes
 def _copy_xbuild_files(
     pyodide_root: Path, xbuildenv_path: Path, skip_missing_files: bool = False
 ) -> None:
-    site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
+    site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
     # Store package cross-build-files into site_packages_extras in the same tree
     # structure as they would appear in the real package.
     # In install_xbuildenv, we will use:
@@ -44,7 +44,7 @@ def _copy_wasm_libs(
     pyodide_root: Path, xbuildenv_root: Path, skip_missing_files: bool = False
 ) -> None:
     def get_relative_path(pyodide_root: Path, flag: str) -> Path:
-        return Path(get_make_flag(flag)).relative_to(pyodide_root)
+        return Path(get_build_flag(flag)).relative_to(pyodide_root)
 
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     wasm_lib_dir = get_relative_path(pyodide_root, "WASM_LIBRARY_DIR")
@@ -123,7 +123,7 @@ def create(
         exit_with_stdio(res)
 
     res = subprocess.run(
-        ["pip", "freeze", "--path", get_make_flag("HOSTSITEPACKAGES")],
+        ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",
     )
