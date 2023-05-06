@@ -519,16 +519,16 @@ class PyodideAnalyzer:
         def get_val():
             return OrderedDict([("attribute", []), ("function", []), ("class", [])])
 
-        modules = ["globalThis", "pyodide", "pyodide.ffi"]
+        modules = ["globalThis", "pyodide", "pyodide.ffi", "pyodide.canvas"]
         self.js_docs = {key: get_val() for key in modules}
         items = {key: list[Any]() for key in modules}
         pyproxy_subclasses = []
         pyproxy_methods: dict[str, list[Any]] = {}
 
-        for (key, doclet) in self.doclets.items():
+        for key, doclet in self.doclets.items():
             self.set_doclet_is_private(key, doclet)
 
-        for (key, doclet) in self.doclets.items():
+        for key, doclet in self.doclets.items():
             if doclet.is_private:
                 continue
 
@@ -559,6 +559,10 @@ class PyodideAnalyzer:
                 # ends up working out on our favor. If we did want to filter
                 # them, we could probably test for:
                 # isinstance(doclet, Function) and doclet.is_static.
+                continue
+
+            if filename == "canvas.":
+                items["pyodide.canvas"].append(doclet)
                 continue
 
             if filename == "pyproxy.gen." and isinstance(doclet, Class):
@@ -811,7 +815,7 @@ def get_jsdoc_summary_directive(app):
         prefixes = get_import_prefixes_from_env(self.env)
         items = orig_get_items(self, names)
         new_items = []
-        for (name, item) in zip(names, items, strict=True):
+        for name, item in zip(names, items, strict=True):
             name = name.removeprefix("~")
             _, obj, *_ = self.import_by_name(name, prefixes=prefixes)
             prefix = "**async** " if iscoroutinefunction(obj) else ""

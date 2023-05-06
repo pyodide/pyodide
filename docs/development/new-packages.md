@@ -299,11 +299,11 @@ automatically.
 
 ### Partial Rebuilds
 
-By default, each time you run `buildpkg`, `pyodide-build` will delete the entire
+By default, each time you run `pyodide build-recipes`, it will delete the entire
 source directory and replace it with a fresh copy from the download url. This is
 to ensure build repeatability. For debugging purposes, this is likely to be
 undesirable. If you want to try out a modified source tree, you can pass the
-flag `--continue` and `buildpkg` will try to build from the existing source
+flag `--continue` and `build-recipes` will try to build from the existing source
 tree. This can cause various issues, but if it works it is much more convenient.
 
 Using the `--continue` flag, you can modify the sources in tree to fix the
@@ -348,7 +348,7 @@ as a starting point.
 
 After packaging a C library, it can be added as a dependency of a Python package
 like a normal dependency. See `lxml` and `libxml` for an example (and also
-`scipy` and `CLAPACK`).
+`scipy` and `OpenBLAS`).
 
 _Remark:_ Certain C libraries come as emscripten ports, and do not have to be
 built manually. They can be used by adding e.g. `-s USE_ZLIB` in the `cflags` of

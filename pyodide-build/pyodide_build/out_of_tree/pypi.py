@@ -27,7 +27,7 @@ from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
 from .. import common
-from ..common import chdir
+from ..common import repack_zip_archive
 from ..logger import logger
 from . import build
 
@@ -79,36 +79,38 @@ def _get_built_wheel_internal(url):
 
     cache_entry: dict[str, Any] = {}
     build_dir = tempfile.TemporaryDirectory()
+    build_path = Path(build_dir.name)
+
     cache_entry["build_dir"] = build_dir
-    with chdir(Path(build_dir.name)):
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
-            data = requests.get(url).content
-            f.write(data)
-            f.close()
-            shutil.unpack_archive(f.name, build_dir.name)
-            os.unlink(f.name)
-            files = list(Path(build_dir.name).iterdir())
-            if len(files) == 1 and files[0].is_dir():
-                os.chdir(Path(build_dir.name, files[0]))
-            else:
-                os.chdir(build_dir.name)
-        logger.info(f"Building wheel for {gz_name}...")
-        with tempfile.NamedTemporaryFile(mode="w+") as f:
-            try:
-                with (
-                    stream_redirected(to=f, stream=sys.stdout),
-                    stream_redirected(to=f, stream=sys.stderr),
-                ):
-                    wheel_path = build.run(
-                        PyPIProvider.BUILD_EXPORTS,
-                        PyPIProvider.BUILD_FLAGS,
-                        outdir=Path(build_dir.name) / "dist",
-                    )
-            except BaseException as e:
-                logger.error(" Failed\n Error is:")
-                f.seek(0)
-                logger.stderr(f.read())
-                raise e
+    with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as f:
+        data = requests.get(url).content
+        f.write(data)
+        f.close()
+        shutil.unpack_archive(f.name, build_path)
+        os.unlink(f.name)
+        files = list(build_path.iterdir())
+        if len(files) == 1 and files[0].is_dir():
+            source_path = build_path / files[0]
+        else:
+            source_path = build_path
+    logger.info(f"Building wheel for {gz_name}...")
+    with (
+        tempfile.NamedTemporaryFile(mode="w+") as logfile,
+        stream_redirected(to=logfile, stream=sys.stdout),
+        stream_redirected(to=logfile, stream=sys.stderr),
+    ):
+        try:
+            wheel_path = build.run(
+                source_path,
+                build_path / "dist",
+                PyPIProvider.BUILD_EXPORTS,
+                PyPIProvider.BUILD_FLAGS,
+            )
+        except BaseException as e:
+            logger.error(" Failed\n Error is:")
+            logfile.seek(0)
+            logger.stderr(logfile.read())
+            raise e
 
     logger.success("Success")
 
@@ -171,8 +173,8 @@ PYTHON_VERSION = Version(python_version())
 
 
 def get_target_python():
-    PYMAJOR = common.get_make_flag("PYMAJOR")
-    PYMINOR = common.get_make_flag("PYMINOR")
+    PYMAJOR = common.get_pyversion_major()
+    PYMINOR = common.get_pyversion_minor()
     tp = TargetPython(
         py_ver=(int(PYMAJOR), int(PYMINOR)),
         platforms=[common.platform()],
@@ -194,14 +196,20 @@ def get_project_from_pypi(package_name, extras):
         yield Candidate(i.name, i.version, url=i.link.url, extras=extras)
 
 
-def download_or_build_wheel(url: str, target_directory: Path) -> None:
+def download_or_build_wheel(
+    url: str, target_directory: Path, compression_level: int = 6
+) -> None:
     parsed_url = urlparse(url)
     if parsed_url.path.endswith("gz"):
         wheel_file = get_built_wheel(url)
         shutil.copy(wheel_file, target_directory)
+        wheel_path = target_directory / wheel_file.name
     elif parsed_url.path.endswith(".whl"):
-        with open(target_directory / Path(parsed_url.path).name, "wb") as f:
+        wheel_path = target_directory / Path(parsed_url.path).name
+        with open(wheel_path, "wb") as f:
             f.write(requests.get(url).content)
+
+    repack_zip_archive(wheel_path, compression_level=compression_level)
 
 
 def get_metadata_for_wheel(url):
@@ -225,7 +233,6 @@ def get_metadata_for_wheel(url):
 
 
 class PyPIProvider(APBase):
-
     BUILD_FLAGS: list[str] = []
     BUILD_SKIP: list[str] = []
     BUILD_EXPORTS: str = ""
@@ -324,11 +331,12 @@ def _resolve_and_build(
     build_dependencies: bool,
     extras: list[str],
     output_lockfile: str | None,
+    compression_level: int = 6,
 ) -> None:
     requirements = []
 
     target_env = {
-        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
+        "python_version": common.get_pyversion_major_minor(),
         "sys_platform": common.platform().split("_")[0],
         "extra": ",".join(extras),
     }
@@ -395,6 +403,7 @@ def build_dependencies_for_wheel(
     exports: str,
     build_flags: list[str],
     output_lockfile: str | None,
+    compression_level: int = 6,
 ) -> None:
     """Extract dependencies from this wheel and build pypi dependencies
     for each one in ./dist/
@@ -424,6 +433,7 @@ def build_dependencies_for_wheel(
         build_dependencies=True,
         extras=extras,
         output_lockfile=output_lockfile,
+        compression_level=compression_level,
     )
     # add the current wheel to the package-versions.txt
     if output_lockfile is not None and len(output_lockfile) > 0:

@@ -11,8 +11,20 @@
 #include "pyproxy.h"
 #include "python2js.h"
 
-#define Py_ENTER()
+#define Py_ENTER() _check_gil()
 #define Py_EXIT()
+
+EM_JS(void, throw_no_gil, (), {
+  throw new API.NoGilError("Attempted to use PyProxy when Python GIL not held");
+});
+
+void
+check_gil()
+{
+  if (!PyGILState_Check()) {
+    throw_no_gil();
+  }
+}
 
 PyObject* Generator;
 PyObject* AsyncGenerator;
@@ -115,7 +127,7 @@ int
 pyproxy_getflags(PyObject* pyobj)
 {
   // Reduce casework by ensuring that protos aren't NULL.
-  PyTypeObject* obj_type = pyobj->ob_type;
+  PyTypeObject* obj_type = Py_TYPE(pyobj);
 
   PySequenceMethods null_seq_proto = { 0 };
   PySequenceMethods* seq_proto =
@@ -248,7 +260,7 @@ finally:
 JsRef
 _pyproxy_type(PyObject* ptrobj)
 {
-  return hiwire_string_utf8(ptrobj->ob_type->tp_name);
+  return hiwire_string_utf8(Py_TYPE(ptrobj)->tp_name);
 }
 
 int
@@ -335,7 +347,7 @@ _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
   }
   if (is_method) {
     pyresult =
-      Py_TYPE(pydescr)->tp_descr_get(pydescr, pyobj, (PyObject*)pyobj->ob_type);
+      Py_TYPE(pydescr)->tp_descr_get(pydescr, pyobj, (PyObject*)Py_TYPE(pyobj));
     FAIL_IF_NULL(pyresult);
   } else {
     pyresult = pydescr;

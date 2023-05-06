@@ -6,8 +6,6 @@
 from hashlib import sha256
 from pathlib import Path
 
-import pathspec  # pip install pathspec
-
 
 def hash_file(filename):
     with open(filename, "rb") as f:
@@ -23,6 +21,8 @@ def get_ignore_pattern(root: Path) -> list[str]:
 
 
 def main():
+    import pathspec  # pip install pathspec
+
     root: Path = Path(__file__).parent.parent
     targets: list[Path] = [
         root / "Makefile",

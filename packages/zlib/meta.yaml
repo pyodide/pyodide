@@ -9,5 +9,16 @@ source:
 build:
   type: static_library
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure --prefix=${WASM_LIBRARY_DIR}
-    emmake make install -j ${PYODIDE_JOBS:-3}
+    mkdir -p "build"
+    pushd "build"
+    LDFLAGS="${SIDE_MODULE_LDFLAGS}" emcmake cmake \
+      -DBUILD_TESTING=OFF \
+      -DBUILD_BENCHMARKS=OFF \
+      -DBUILD_DOCUMENTATION=OFF \
+      -DCMAKE_C_FLAGS="-fPIC -Wno-deprecated-non-prototype" \
+      -DCMAKE_CXX_FLAGS="-fPIC -Wno-deprecated-non-prototype" \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      ../
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+    popd

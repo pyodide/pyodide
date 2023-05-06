@@ -1,0 +1,13 @@
+package:
+  name: xyzservices
+  version: "2022.9.0"
+  top-level:
+    - xyzservices
+source:
+  sha256: 55651961708b9a14849978b339df76008c886df7a8326308a5549bae5516260c
+  url: https://files.pythonhosted.org/packages/29/55/be649be6e2e53ae2b611b7639c4ebd424f354e39a459b2b51981731735fb/xyzservices-2022.9.0.tar.gz
+about:
+  home: https://github.com/geopandas/xyzservices
+  PyPI: https://pypi.org/project/xyzservices
+  summary: Source of XYZ tiles providers
+  license: BSD-3-Clause

@@ -5,6 +5,8 @@ packaging   # required by micropip at import time
 sphinx>=5.3.0
 sphinx-argparse-cli>=1.6.0
 sphinx_book_theme>=0.4.0rc1
+# A dependency of the above theme, which had some breaking changes in 0.13.2
+pydata_sphinx_theme < 0.13.2
 sphinx-issues
 sphinx-js>=3.2.1
 sphinx-click

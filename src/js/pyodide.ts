@@ -167,6 +167,7 @@ export type ConfigType = {
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
+  stdLibURL?: string;
   stdin?: () => string;
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
@@ -212,6 +213,14 @@ export async function loadPyodide(
      * Default: ``false``
      */
     fullStdLib?: boolean;
+    /**
+     * The URL from which to load the standard library ``python_stdlib.zip``
+     * file. This URL includes the most of the Python stadard library. Some
+     * stdlib modules were unvendored, and can be loaded separately
+     * with ``fullStdLib=true`` option or by their package name.
+     * Default: ```${indexURL}/python_stdlib.zip```
+     */
+    stdLibURL?: string;
     /**
      * Override the standard input callback. Should ask the user for one line of
      * input.

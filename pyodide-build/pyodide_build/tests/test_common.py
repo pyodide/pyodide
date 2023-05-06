@@ -6,24 +6,27 @@ from pyodide_build.common import (
     environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
-    get_make_environment_vars,
-    get_make_flag,
+    get_build_environment_vars,
+    get_build_flag,
     get_num_cores,
+    make_zip_archive,
     parse_top_level_import_name,
     platform,
+    repack_zip_archive,
     search_pyodide_root,
+    set_build_environment,
 )
 
 
-def test_get_make_flag():
-    assert len(get_make_flag("SIDE_MODULE_LDFLAGS")) > 0
-    assert len(get_make_flag("SIDE_MODULE_CFLAGS")) > 0
+def test_get_build_flag():
+    assert len(get_build_flag("SIDE_MODULE_LDFLAGS")) > 0
+    assert len(get_build_flag("SIDE_MODULE_CFLAGS")) > 0
     # n.b. right now CXXFLAGS is empty so don't check length here, just check it returns
-    get_make_flag("SIDE_MODULE_CXXFLAGS")
+    get_build_flag("SIDE_MODULE_CXXFLAGS")
 
 
-def test_get_make_environment_vars():
-    vars = get_make_environment_vars()
+def test_get_build_environment_vars():
+    vars = get_build_environment_vars()
     assert "SIDE_MODULE_LDFLAGS" in vars
     assert "SIDE_MODULE_CFLAGS" in vars
     assert "SIDE_MODULE_CXXFLAGS" in vars
@@ -33,8 +36,8 @@ def test_wheel_paths():
     from pathlib import Path
 
     old_version = "cp38"
-    PYMAJOR = int(get_make_flag("PYMAJOR"))
-    PYMINOR = int(get_make_flag("PYMINOR"))
+    PYMAJOR = int(get_build_flag("PYMAJOR"))
+    PYMINOR = int(get_build_flag("PYMINOR"))
     PLATFORM = platform()
     current_version = f"cp{PYMAJOR}{PYMINOR}"
     future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
@@ -198,3 +201,77 @@ def test_get_num_cores(monkeypatch, num_cpus):
         m.setattr(loky, "cpu_count", lambda: num_cpus)
 
         assert get_num_cores() == num_cpus
+
+
+@pytest.mark.parametrize(
+    "compression_level, expected_compression_type",
+    [(6, zipfile.ZIP_DEFLATED), (0, zipfile.ZIP_STORED)],
+)
+def test_make_zip_archive(tmp_path, compression_level, expected_compression_type):
+    input_dir = tmp_path / "a"
+    input_dir.mkdir()
+    (input_dir / "b.txt").write_text(".")
+    (input_dir / "c").mkdir()
+    (input_dir / "c/d").write_bytes(b"")
+
+    output_dir = tmp_path / "output.zip"
+
+    make_zip_archive(output_dir, input_dir, compression_level=compression_level)
+
+    with zipfile.ZipFile(output_dir) as fh:
+        assert set(fh.namelist()) == {"b.txt", "c/", "c/d"}
+        assert fh.read("b.txt") == b"."
+        assert fh.getinfo("b.txt").compress_type == expected_compression_type
+
+
+@pytest.mark.parametrize(
+    "compression_level, expected_compression_type, expected_size",
+    [(6, zipfile.ZIP_DEFLATED, 220), (0, zipfile.ZIP_STORED, 1207)],
+)
+def test_repack_zip_archive(
+    tmp_path, compression_level, expected_compression_type, expected_size
+):
+    input_path = tmp_path / "archive.zip"
+
+    data = "a" * 1000
+
+    with zipfile.ZipFile(
+        input_path, "w", compression=zipfile.ZIP_BZIP2, compresslevel=3
+    ) as fh:
+        fh.writestr("a/b.txt", data)
+        fh.writestr("a/b/c.txt", "d")
+
+    repack_zip_archive(input_path, compression_level=compression_level)
+
+    with zipfile.ZipFile(input_path) as fh:
+        assert fh.namelist() == ["a/b.txt", "a/b/c.txt"]
+        assert fh.getinfo("a/b.txt").compress_type == expected_compression_type
+    assert input_path.stat().st_size == expected_size
+
+
+def test_set_build_environment(monkeypatch):
+    import os
+
+    monkeypatch.delenv("PKG_CONFIG_PATH", raising=False)
+    monkeypatch.delenv("WASM_PKG_CONFIG_PATH", raising=False)
+    monkeypatch.setenv("RANDOM_ENV", 1234)
+    e: dict[str, str] = {}
+    set_build_environment(e)
+    assert e.get("HOME") == os.environ.get("HOME")
+    assert e.get("PATH") == os.environ.get("PATH")
+    assert e["PYODIDE"] == "1"
+    assert "RANDOM_ENV" not in e
+    assert e["PKG_CONFIG_PATH"] == ""
+
+    e = {}
+    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
+    set_build_environment(e)
+    assert e["PKG_CONFIG_PATH"] == "/x/y/z:/c/d/e"
+
+    monkeypatch.delenv("HOME")
+    monkeypatch.setenv("WASM_PKG_CONFIG_PATH", "/a/b/c")
+    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
+    e = {}
+    set_build_environment(e)
+    assert "HOME" not in e
+    assert e["PKG_CONFIG_PATH"] == "/a/b/c:/x/y/z:/c/d/e"

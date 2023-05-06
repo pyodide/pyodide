@@ -78,10 +78,14 @@ API.fatal_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     return;
   }
+
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
     return;
+  }
+  if (e instanceof NoGilError) {
+    throw e;
   }
   if (typeof e === "number") {
     // Hopefully a C++ exception?
@@ -136,6 +140,27 @@ API.fatal_error = function (e: any) {
     console.error(err2);
   }
   throw e;
+};
+
+/**
+ * Signal a fatal error if the exception is not an expected exception.
+ *
+ * @argument e {any} The cause of the fatal error.
+ * @private
+ */
+API.maybe_fatal_error = function (e: any) {
+  // Emscripten throws "unwind" to stop current code and return to the main event loop.
+  // This is expected behavior and should not be treated as a fatal error.
+  // However, after the "unwind" exception is caught, the call stack is not unwound
+  // properly and there are dead frames remaining on the stack.
+  // This might cause problems in the future, so we need to find a way to fix it.
+  // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
+  //      2) https://github.com/kitao/pyxel/issues/418
+  if (e && e == "unwind") {
+    return;
+  }
+
+  return API.fatal_error(e);
 };
 
 let stderr_chars: number[] = [];
@@ -194,11 +219,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
 }
 
 function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
-  if (!isPyodideFrame(frame)) {
-    return false;
-  }
-  const funcName = frame.functionName;
-  return funcName === "PythonError" || funcName === "new_error";
+  return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
 Module.handle_js_error = function (e: any) {
@@ -238,7 +259,7 @@ Module.handle_js_error = function (e: any) {
     // In this case we have no stack frames so we can quit
     return;
   }
-  if (isErrorStart(stack[0])) {
+  if (isErrorStart(stack[0]) || isErrorStart(stack[1])) {
     while (isPyodideFrame(stack[0])) {
       stack.shift();
     }
@@ -324,7 +345,15 @@ function setName(errClass: any) {
 
 class FatalPyodideError extends Error {}
 class Exit extends Error {}
-[_PropagatePythonError, FatalPyodideError, Exit, PythonError].forEach(setName);
+class NoGilError extends Error {}
+[
+  _PropagatePythonError,
+  FatalPyodideError,
+  Exit,
+  PythonError,
+  NoGilError,
+].forEach(setName);
+API.NoGilError = NoGilError;
 
 Module._PropagatePythonError = _PropagatePythonError;
 

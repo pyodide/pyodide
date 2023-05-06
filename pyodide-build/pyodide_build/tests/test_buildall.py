@@ -157,7 +157,6 @@ def test_requirements_executable(monkeypatch):
 
 @pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
 def test_is_rust_package(exe):
-
     pkg = buildall.BasePackage(
         pkgdir=Path(""),
         name="test",

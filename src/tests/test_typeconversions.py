@@ -411,6 +411,21 @@ def test_hyp_tojs_no_crash(selenium, obj):
         del __main__.x
 
 
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@given(obj=any_strategy)
+@example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
+@settings(
+    std_hypothesis_settings,
+    max_examples=25,
+)
+@run_in_pyodide
+def test_hypothesis(selenium_standalone, obj):
+    from pyodide.ffi import to_js
+
+    to_js(obj)
+
+
 @pytest.mark.parametrize(
     "py,js",
     [
