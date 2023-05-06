@@ -52,7 +52,6 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
@@ -390,11 +389,8 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
-    which_emcc = shutil.which("emcc")
-    assert which_emcc
-    emcc = Path(which_emcc)
     args = [
-        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "llvm-readobj",
         "--section-details",
         "-st",
     ] + objects
