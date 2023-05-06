@@ -342,28 +342,58 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
         fd.write(b"\n")
 
 
+def ensure_wheel_platform(path: Path) -> Path:
+    """
+    Change emscripten platformed wheels to pyodide platformed ones
+    """
+    if "emscripten" not in path.name:
+        return path
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wheel",
+            "tags",
+            "--remove",
+            "--platform-tag",
+            "pyodide",
+            str(path),
+        ],
+        check=False,
+        encoding="utf-8",
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Setting wheel {path.name} platform failed")
+        exit_with_stdio(result)
+    return path.with_name(result.stdout.strip())
+
+
 def unpack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Unpacking wheel {path.name} failed")
-            exit_with_stdio(result)
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {path.name} failed")
+        exit_with_stdio(result)
 
 
 def pack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Packing wheel {path} failed")
-            exit_with_stdio(result)
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {path} failed")
+        exit_with_stdio(result)
 
 
 def compile(
@@ -507,6 +537,8 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
+
+    wheel = ensure_wheel_platform(wheel)
     logger.info(f"Unpacking wheel to {str(wheel)}")
     unpack_wheel(wheel)
     wheel.unlink()
