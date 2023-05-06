@@ -826,6 +826,7 @@
 - test_types
 - test_typing:
     skip:
+      # stack overflow in v8
       - "*recursion*"
 - test_ucn
 - test_unary
@@ -891,6 +892,7 @@
 - test_xml_dom_minicompat
 - test_xml_etree:
     skip:
+      # stack overflow in v8
       - "test_recursive_repr"
 - test_xml_etree_c
 - test_xmlrpc:
