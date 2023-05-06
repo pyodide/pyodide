@@ -102,6 +102,7 @@ norecursedirs = [
     "build",
     "cpython",
     "emsdk",
+    "pyodide-build/pyodide_build/stdlib_overrides",
 ]
 addopts = '''
 --doctest-modules
