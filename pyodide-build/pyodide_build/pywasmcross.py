@@ -36,14 +36,15 @@ if IS_COMPILER_INVOCATION:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
-    try:
-        with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
-            PYWASMCROSS_ARGS = json.load(f)
-    except FileNotFoundError:
-        raise RuntimeError(
-            "Invalid invocation: can't find PYWASMCROSS_ARGS."
-            f" Invoked from {INVOKED_PATH}."
-        ) from None
+    else:
+        try:
+            with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
+                PYWASMCROSS_ARGS = json.load(f)
+        except FileNotFoundError:
+            raise RuntimeError(
+                "Invalid invocation: can't find PYWASMCROSS_ARGS."
+                f" Invoked from {INVOKED_PATH}."
+            ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
