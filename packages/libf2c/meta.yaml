@@ -33,9 +33,9 @@ build:
 
     # In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
     # instead of using the right variables
-    sed -i 's/^	-ranlib /^	$(RANLIB)/' **/Makefile
-    sed -i 's/^	ar /^	$(ARCH)/' **/Makefile
-    sed -i 's/^	ld /^	$(LD)/' **/Makefile
+    sed -i.bak -e 's/^\t-ranlib /^\t${RANLIB} /g' **/Makefile
+    sed -i.bak 's/^\tar /^\t${AR} /' **/Makefile
+    sed -i.bak 's/^\tld /^\t${LD} /' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} f2clib
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
