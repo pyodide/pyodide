@@ -133,10 +133,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	\
-	--pre-js src/core/wrap_syncifying.wasm.gen.js \
-	--pre-js src/core/wrap_apply.wasm.gen.js \
-	--pre-js src/core/continuations.js \
-	\
 	-lGL \
 	-legl.js \
 	-lwebgl.js \

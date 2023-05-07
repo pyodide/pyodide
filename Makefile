@@ -89,8 +89,6 @@ dist/libpyodide.a: \
 
 dist/pyodide.asm.js: \
 	src/core/main.o  \
-	src/core/wrap_syncifying.wasm.gen.js \
-	src/core/wrap_apply.wasm.gen.js \
 	$(wildcard src/py/lib/*.py) \
 	libgl \
 	$(CPYTHONLIB) \
@@ -147,9 +145,6 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/j
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
-
-%.wasm.gen.js: %.wat
-	node tools/assemble_wat.js $@
 
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
@@ -228,6 +223,7 @@ benchmark: all
 clean:
 	rm -fr dist/*
 	rm -fr src/*/*.o
+	rm -fr src/*/*.gen.*
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
@@ -239,7 +235,10 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
+continuations.gen.js.c: src/core/continuations.js src/core/build_continuations.mjs
+	node src/core/build_continuations.mjs
+
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) continuations.gen.js.c
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 

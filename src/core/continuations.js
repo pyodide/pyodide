@@ -1,3 +1,6 @@
+import wrap_syncifying_wasm from "./wrap_syncifying.wat";
+import wrap_apply_wasm from "./wrap_apply.wat";
+
 /**
  * For each continuation, we need to save and restore the Python wasm VM's
  * global state. There are three components to this:
@@ -221,7 +224,7 @@ Module.wrapApply = function (apply) {
   );
 };
 
-Module.initSuspenders = function () {
+function initSuspenders() {
   try {
     // Feature detect externref. Also need it for wrapApply to work.
     Module.suspenderGlobal = new WebAssembly.Global(
@@ -249,3 +252,4 @@ Module.initSuspenders = function () {
   patchHiwireSyncify();
   Module.suspendersAvailable = true;
 };
+initSuspenders();

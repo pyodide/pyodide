@@ -67,3 +67,5 @@ restoreThreadState(P* state)
   tstate->trash_delete_nesting = state->trash_delete_nesting;
   free(state);
 }
+
+#include "continuations.gen.js.c"

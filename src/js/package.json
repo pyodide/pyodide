@@ -126,6 +126,7 @@
   },
   "dependencies": {
     "base-64": "^1.0.0",
+    "wabt": "^1.0.32",
     "ws": "^8.5.0"
   },
   "types": "./pyodide.d.ts"
