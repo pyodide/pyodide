@@ -34,6 +34,7 @@ build:
     # easier to debug.
     chmod -R o+rx .
 
+    ARCH="emar" \
     emmake make -j ${PYODIDE_JOBS:-3} f2clib
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
     cp INCLUDE/f2c.h ${WASM_LIBRARY_DIR}/include

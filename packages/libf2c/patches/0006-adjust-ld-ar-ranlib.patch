@@ -17,7 +17,7 @@ Index: CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
  libf2c.a: $(OFILES)
 -	ar r libf2c.a $?
 -	-ranlib libf2c.a
-+	$(AR) r libf2c.a $?
++	$(ARCH) r libf2c.a $?
 +	$(RANLIB) libf2c.a
  
  ## Shared-library variant: the following rule works on Linux
