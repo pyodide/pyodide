@@ -203,7 +203,7 @@ function patchHiwireSyncify() {
       restore: restore_state,
     },
   });
-  _hiwire_syncify = instance.exports.o;
+  hiwire_syncify = instance.exports.o;
 }
 
 Module.wrapApply = function (apply) {
