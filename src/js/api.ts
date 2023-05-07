@@ -285,6 +285,20 @@ export class PyodideAPI {
     );
   }
 
+  static async runPythonSyncifying(
+    code: string,
+    options: { globals?: PyProxy; locals?: PyProxy } = {},
+  ): Promise<any> {
+    if (!options.globals) {
+      options.globals = API.globals;
+    }
+    return API.pyodide_code.eval_code.callSyncifying(
+      code,
+      options.globals,
+      options.locals,
+    );
+  }
+
   /**
    * Registers the JavaScript object ``module`` as a JavaScript module named
    * ``name``. This module can then be imported from Python using the standard
