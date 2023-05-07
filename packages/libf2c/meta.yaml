@@ -18,6 +18,9 @@ source:
     - patches/0003-remove-redundant-symbols.patch
     - patches/0004-correct-return-types.patch
     - patches/0005-Remove-symbols-defined-in-OpenBLAS.patch
+    # In CLAPACK's F2CLIBS/libf2c Makefile, some commands are mistakenly (?) hardcoded
+    # instead of using the right variables
+    - patches/0006-adjust-ld-ar-ranlib.patch
 
   extras:
     - [make.inc, make.inc]
@@ -30,12 +33,6 @@ build:
     # we cannot navigate into the folder. Setting it to 0750 makes it
     # easier to debug.
     chmod -R o+rx .
-
-    # In CLAPACK's Makefiles, some commands are mistakenly (?) hardcoded
-    # instead of using the right variables
-    sed -i.bak -e 's/^\t-ranlib /^\t${RANLIB} /g' **/Makefile
-    sed -i.bak 's/^\tar /^\t${AR} /' **/Makefile
-    sed -i.bak 's/^\tld /^\t${LD} /' **/Makefile
 
     emmake make -j ${PYODIDE_JOBS:-3} f2clib
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
