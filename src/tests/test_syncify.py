@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_syncify1(selenium):
     selenium.run_js(
@@ -14,7 +15,7 @@ def test_syncify1(selenium):
 
             from pyodide_js import loadPackage
             loadPackage("micropip").syncify()
-            
+
             assert importlib.metadata.version("micropip")
         `);
         """
