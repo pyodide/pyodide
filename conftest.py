@@ -249,6 +249,7 @@ from pytest_pyodide.runner import (
     JavascriptException,
     _BrowserBaseRunner,
     _SeleniumBaseRunner,
+    NodeRunner as _OrigNodeRunner
 )
 from pytest_pyodide.runner import __file__ as runner_file
 
@@ -273,7 +274,7 @@ class SeleniumChromeRunner(_SeleniumBaseRunner):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
 
-class NodeRunner(_BrowserBaseRunner):
+class NodeRunner(_OrigNodeRunner):
     browser = "node"
 
     def init_node(self):
