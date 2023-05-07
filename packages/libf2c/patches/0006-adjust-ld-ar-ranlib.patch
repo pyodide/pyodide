@@ -2,16 +2,7 @@ Index: CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
 ===================================================================
 --- CLAPACK-3.2.1.orig/F2CLIBS/libf2c/Makefile
 +++ CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
-@@ -20,7 +20,7 @@ include $(TOPDIR)/make.inc
- # compile, then strip unnecessary symbols
- .c.o:
- 	$(CC) -c -DSkip_f2c_Undefs $(CFLAGS) $*.c
--	ld -r -x -o $*.xxx $*.o
-+	$(LD) -r -x -o $*.xxx $*.o
- 	mv $*.xxx $*.o
- ## Under Solaris (and other systems that do not understand ld -x),
- ## omit -x in the ld line above.
-@@ -72,8 +72,8 @@ OFILES = $(MISC) $(POW) $(CX) $(DCX) $(R
+@@ -70,8 +70,8 @@ OFILES = $(MISC) $(POW) $(CX) $(DCX) $(R
  all: f2c.h signal1.h sysdep1.h libf2c.a clapack_install
  
  libf2c.a: $(OFILES)
@@ -22,7 +13,16 @@ Index: CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
  
  ## Shared-library variant: the following rule works on Linux
  ## systems.  Details are system-dependent.  Under Linux, -fPIC
-@@ -119,7 +119,7 @@ sysdep1.h: sysdep1.h0
+@@ -80,7 +80,7 @@ libf2c.a: $(OFILES)
+ ## of "cc -shared".
+ 
+ libf2c.so: $(OFILES)
+-	cc -shared -o libf2c.so $(OFILES)
++	$(CC) -shared -o libf2c.so $(OFILES)
+ 
+ ### If your system lacks ranlib, you don't need it; see README.
+ 
+@@ -117,7 +117,7 @@ sysdep1.h: sysdep1.h0
  
  install: libf2c.a
  	cp libf2c.a $(LIBDIR)
