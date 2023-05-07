@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.33
+  {pr}`3665`
+
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
