@@ -247,10 +247,9 @@ import pytest_pyodide.fixture
 import pytest_pyodide.runner
 from pytest_pyodide.runner import (
     JavascriptException,
-    _BrowserBaseRunner,
     _SeleniumBaseRunner,
-    NodeRunner as _OrigNodeRunner
 )
+from pytest_pyodide.runner import NodeRunner as _OrigNodeRunner
 from pytest_pyodide.runner import __file__ as runner_file
 
 
