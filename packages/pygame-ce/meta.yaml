@@ -10,6 +10,7 @@ build:
   script: |
     embuilder build sdl2 sdl2_ttf sdl2_mixer --pic
     export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
+    export PORTS_LIBDIR=$(em-config CACHE)/sysroot/lib/wasm32-emscripten/pic/
   cflags: |
     -sRELOCATABLE=1
     -DSDL_NO_COMPAT
@@ -46,13 +47,28 @@ build:
     # pygame_static can see the symbols.
     STATIC_OBJ=$(find . -name static.o)
     echo $STATIC_OBJ
+
+    SHARED_LIBS=$(find dist -name "*.so" ! -name "static*.so")
+    echo $SHARED_LIBS
+
     emcc \
       -shared \
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
       -lSDL2 \
-      ${STATIC_OBJ} dist/pygame_ce-${PKG_VERSION}/pygame/*.so dist/pygame_ce-${PKG_VERSION}/pygame/_sdl2/*.so \
+      -lSDL2_mixer_ogg \
+      -lSDL2_ttf \
+      -lfreetype \
+      -ljpeg \
+      -lpng \
+      ${WASM_LIBRARY_DIR}/lib/libSDL2_image.a \
+      ${STATIC_OBJ} \
+      ${SHARED_LIBS} \
       -o dist/pygame_ce-${PKG_VERSION}/pygame_static.so
+
+    # Remove duplicated static.so module
+    rm -f dist/pygame_ce-${PKG_VERSION}/pygame/static*.so
+
 requirements:
   host:
     - libsdl2_image
