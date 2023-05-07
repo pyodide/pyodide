@@ -251,5 +251,5 @@ function initSuspenders() {
   );
   patchHiwireSyncify();
   Module.suspendersAvailable = true;
-};
+}
 initSuspenders();
