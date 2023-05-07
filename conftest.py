@@ -238,3 +238,32 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+import pytest_pyodide.fixture  # type:ignore[import]
+import pytest_pyodide.runner
+from pytest_pyodide.runner import _SeleniumBaseRunner
+
+
+# Monkeypatch chrome runner to enable stack switching
+class SeleniumChromeRunner(_SeleniumBaseRunner):
+    browser = "chrome"
+
+    def get_driver(self):
+        from selenium.webdriver import Chrome  # type:ignore[import]
+        from selenium.webdriver.chrome.options import Options  # type:ignore[import]
+
+        options = Options()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--js-flags=--expose-gc")
+        options.add_argument("--experimental-wasm-stack-switching")
+        options.add_argument("--enable-experimental-webassembly-features")
+        return Chrome(options=options)
+
+    def collect_garbage(self):
+        self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
+
+
+pytest_pyodide.fixture.SeleniumChromeRunner = SeleniumChromeRunner
+pytest_pyodide.fixture.SeleniumChromeRunner = SeleniumChromeRunner
