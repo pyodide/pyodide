@@ -240,9 +240,17 @@ def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
 
 
-import pytest_pyodide.fixture  # type:ignore[import]
+from pathlib import Path
+
+import pexpect
+import pytest_pyodide.fixture
 import pytest_pyodide.runner
-from pytest_pyodide.runner import _SeleniumBaseRunner
+from pytest_pyodide.runner import (
+    JavascriptException,
+    _BrowserBaseRunner,
+    _SeleniumBaseRunner,
+)
+from pytest_pyodide.runner import __file__ as runner_file
 
 
 # Monkeypatch chrome runner to enable stack switching
@@ -250,14 +258,14 @@ class SeleniumChromeRunner(_SeleniumBaseRunner):
     browser = "chrome"
 
     def get_driver(self):
-        from selenium.webdriver import Chrome  # type:ignore[import]
-        from selenium.webdriver.chrome.options import Options  # type:ignore[import]
+        from selenium.webdriver import Chrome
+        from selenium.webdriver.chrome.options import Options
 
         options = Options()
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--js-flags=--expose-gc")
-        options.add_argument("--experimental-wasm-stack-switching")
+        options.add_argument("--enable-features=WebAssemblyExperimentalJSPI")
         options.add_argument("--enable-experimental-webassembly-features")
         return Chrome(options=options)
 
@@ -265,5 +273,31 @@ class SeleniumChromeRunner(_SeleniumBaseRunner):
         self.driver.execute_cdp_cmd("HeapProfiler.collectGarbage", {})
 
 
+class NodeRunner(_BrowserBaseRunner):
+    browser = "node"
+
+    def init_node(self):
+        curdir = Path(runner_file).parent
+        self.p = pexpect.spawn("/bin/bash", timeout=60)
+        self.p.setecho(False)
+        self.p.delaybeforesend = None
+        # disable canonical input processing mode to allow sending longer lines
+        # See: https://pexpect.readthedocs.io/en/stable/api/pexpect.html#pexpect.spawn.send
+        self.p.sendline("stty -icanon")
+
+        node_extra_args = "--experimental-wasm-stack-switching"
+
+        self.p.sendline(
+            f"node --expose-gc {node_extra_args} {curdir}/node_test_driver.js {self.base_url} {self.dist_dir}",
+        )
+
+        try:
+            self.p.expect_exact("READY!!")
+        except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT):
+            raise JavascriptException("", self.p.before.decode()) from None
+
+
 pytest_pyodide.fixture.SeleniumChromeRunner = SeleniumChromeRunner
-pytest_pyodide.fixture.SeleniumChromeRunner = SeleniumChromeRunner
+pytest_pyodide.runner.SeleniumChromeRunner = SeleniumChromeRunner
+pytest_pyodide.fixture.NodeRunner = NodeRunner
+pytest_pyodide.runner.NodeRunner = NodeRunner
