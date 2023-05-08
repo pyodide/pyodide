@@ -1615,7 +1615,6 @@ def test_relative_index_url(selenium, tmp_path):
         extra_node_args.append("--experimental-wasm-bigint")
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
-    shutil.copytree(ROOT_PATH / "dist/node_modules", tmp_dir / "node_modules")
 
     result = subprocess.run(
         [

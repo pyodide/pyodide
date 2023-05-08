@@ -1,5 +1,6 @@
 package:
   name: opencv-python
+  _disabled: true
   version: 4.7.0.72
   top-level:
     - cv2

@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20230411-chrome112-firefox112-py311
+    - image: pyodide/pyodide-env:20230506-chrome112-firefox112-py311
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -598,22 +598,22 @@ workflows:
                   - ./packages
                   - ./dist
 
-      - build-packages:
-          name: build-packages-opencv-python
-          packages: opencv-python
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/opencv-python/build
-                  - ./packages/opencv-python/dist
-                  - ./packages/build-logs/opencv*
-                  - ./dist/opencv*
+      # - build-packages:
+      #     name: build-packages-opencv-python
+      #     packages: opencv-python
+      #     requires:
+      #       - build-packages-no-numpy-dependents
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      #     post-steps:
+      #       - persist_to_workspace:
+      #           root: .
+      #           paths:
+      #             - ./packages/opencv-python/build
+      #             - ./packages/opencv-python/dist
+      #             - ./packages/build-logs/opencv*
+      #             - ./dist/opencv*
 
       - build-packages:
           name: build-packages-numpy-dependents
@@ -635,7 +635,7 @@ workflows:
           packages: "*"
           requires:
             - build-packages-numpy-dependents
-            - build-packages-opencv-python
+            # - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
