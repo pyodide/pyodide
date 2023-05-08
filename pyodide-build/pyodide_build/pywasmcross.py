@@ -111,9 +111,11 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present ...
                     subprocess.check_call(
                         [
-                            "gcc",
+                            "gfortran",
                             "-E",
                             "-C",
                             "-P",
@@ -521,9 +523,9 @@ def handle_command_generate_args(
     if cmd == "ar":
         line[0] = "emar"
         return line
-    elif cmd == "c++" or cmd == "g++":
+    elif cmd == "c++" or cmd == "g++" of cmd == "clang++":
         new_args = ["em++"]
-    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
+    elif cmd == "cc" or cmd == "gcc" or cmd == "ld" or cmd == "clang":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
@@ -549,6 +551,9 @@ def handle_command_generate_args(
         return line
     elif cmd == "strip":
         line[0] = "emstrip"
+        return line
+    elif cmd == "nm":
+        line[0] = "emnm"
         return line
     else:
         return line
