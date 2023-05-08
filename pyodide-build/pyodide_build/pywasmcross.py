@@ -523,9 +523,9 @@ def handle_command_generate_args(
     if cmd == "ar":
         line[0] = "emar"
         return line
-    elif cmd == "c++" or cmd == "g++" or cmd == "clang++":
+    elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    elif cmd == "cc" or cmd == "gcc" or cmd == "ld" or cmd == "clang":
+    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
