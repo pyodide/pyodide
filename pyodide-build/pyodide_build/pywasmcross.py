@@ -523,7 +523,7 @@ def handle_command_generate_args(
     if cmd == "ar":
         line[0] = "emar"
         return line
-    elif cmd == "c++" or cmd == "g++" of cmd == "clang++":
+    elif cmd == "c++" or cmd == "g++" or cmd == "clang++":
         new_args = ["em++"]
     elif cmd == "cc" or cmd == "gcc" or cmd == "ld" or cmd == "clang":
         new_args = ["emcc"]
