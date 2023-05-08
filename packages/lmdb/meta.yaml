@@ -1,0 +1,13 @@
+package:
+  name: lmdb
+  version: 1.4.1
+  top-level:
+    - lmdb
+source:
+  url: https://files.pythonhosted.org/packages/de/13/dd9b0c1924f0becc93e0bacd123a4e7a347966e3e74753ace3b1e85acc39/lmdb-1.4.1.tar.gz
+  sha256: 1f4c76af24e907593487c904ef5eba1993beb38ed385af82adb25a858f2d658d
+about:
+  home: http://github.com/jnwatson/py-lmdb/
+  PyPI: https://pypi.org/project/lmdb
+  summary: Universal Python binding for the LMDB 'Lightning' Database
+  license: OLDAP-2.8
