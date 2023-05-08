@@ -405,7 +405,6 @@ def test_ml_pca(selenium):
             )
 
         def getOrientation(pts, img):
-
             sz = len(pts)
             data_pts = np.empty((sz, 2), dtype=np.float64)
             for i in range(data_pts.shape[0]):
@@ -484,14 +483,14 @@ def test_objdetect_face(selenium):
 
         faces = face_cascade.detectMultiScale(gray)
         face_detected = src.copy()
-        for (x, y, w, h) in faces:
+        for x, y, w, h in faces:
             center = (x + w // 2, y + h // 2)
             face_detected = cv.ellipse(
                 face_detected, center, (w // 2, h // 2), 0, 0, 360, (255, 0, 255), 4
             )
             faceROI = gray[y : y + h, x : x + w]
             eyes = eyes_cascade.detectMultiScale(faceROI)
-            for (x2, y2, w2, h2) in eyes:
+            for x2, y2, w2, h2 in eyes:
                 eye_center = (x + x2 + w2 // 2, y + y2 + h2 // 2)
                 radius = int(round((w2 + h2) * 0.25))
                 face_detected = cv.circle(

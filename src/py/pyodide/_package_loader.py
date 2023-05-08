@@ -127,7 +127,7 @@ if IN_BROWSER:
 
 
 def get_format(format: str) -> str:
-    for (fmt, extensions, _) in shutil.get_unpack_formats():
+    for fmt, extensions, _ in shutil.get_unpack_formats():
         if format == fmt:
             return fmt
         if format in extensions:

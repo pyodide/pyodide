@@ -7,7 +7,6 @@ Builds a Pyodide package.
 import argparse
 import cgi
 import fnmatch
-import hashlib
 import json
 import os
 import shutil
@@ -27,11 +26,14 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
+    _get_sha256_checksum,
     chdir,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
-    set_build_environment,
+    get_build_environment_vars,
+    get_pyodide_root,
+    make_zip_archive,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -117,12 +119,14 @@ class BashRunnerWithSharedEnvironment:
 
 @contextmanager
 def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
-    PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    env: dict[str, str] = {}
-    set_build_environment(env)
+    PYODIDE_ROOT = get_pyodide_root()
+    env = get_build_environment_vars()
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
-        b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+        # Working in-tree, add emscripten toolchain into PATH and set ccache
+        if Path(PYODIDE_ROOT, "pyodide_env.sh").exists():
+            b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+
         yield b
 
 
@@ -141,16 +145,11 @@ def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     if source_metadata.sha256 is None:
         return
     checksum = source_metadata.sha256
-    CHUNK_SIZE = 1 << 16
-    h = hashlib.sha256()
-    with open(archive, "rb") as fd:
-        while True:
-            chunk = fd.read(CHUNK_SIZE)
-            h.update(chunk)
-            if len(chunk) < CHUNK_SIZE:
-                break
-    if h.hexdigest() != checksum:
-        raise ValueError(f"Invalid sha256 checksum: {h.hexdigest()}")
+    real_checksum = _get_sha256_checksum(archive)
+    if real_checksum != checksum:
+        raise ValueError(
+            f"Invalid sha256 checksum: {real_checksum} != {checksum} (expected)"
+        )
 
 
 def trim_archive_extension(tarballname: str) -> str:
@@ -418,21 +417,16 @@ def compile(
     )
     backend_flags = build_metadata.backend_flags
 
-    with chdir(srcpath), build_env_ctx as build_env:
+    with build_env_ctx as build_env:
         if build_metadata.cross_script is not None:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
-                runner.run(build_metadata.cross_script)
+                runner.run(build_metadata.cross_script, cwd=srcpath)
                 build_env = runner.env
 
         from .pypabuild import build
 
-        try:
-            build(build_env, backend_flags)
-        except BaseException:
-            build_log_path = Path("build.log")
-            if build_log_path.exists():
-                build_log_path.unlink()
-            raise
+        outpath = srcpath / "dist"
+        build(srcpath, outpath, build_env, backend_flags)
 
 
 def replace_so_abi_tags(wheel_dir: Path) -> None:
@@ -442,7 +436,7 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
     assert ext_suffix
     build_triplet = "-".join(build_soabi.split("-")[2:])
-    host_triplet = common.get_make_flag("PLATFORM_TRIPLET")
+    host_triplet = common.get_build_flag("PLATFORM_TRIPLET")
     for file in wheel_dir.glob(f"**/*{ext_suffix}"):
         file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
 
@@ -535,7 +529,7 @@ def package_wheel(
 
     vendor_sharedlib = build_metadata.vendor_sharedlib
     if vendor_sharedlib:
-        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
+        lib_dir = Path(common.get_build_flag("WASM_LIBRARY_DIR"))
         copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
     python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
@@ -789,7 +783,7 @@ def _build_package_inner(
             # and create a zip archive of the .so files
             shutil.rmtree(dist_dir, ignore_errors=True)
             dist_dir.mkdir(parents=True)
-            shutil.make_archive(str(dist_dir / src_dir_name), "zip", src_dist_dir)
+            make_zip_archive(dist_dir / f"{src_dir_name}.zip", src_dist_dir)
         else:  # wheel
             if not finished_wheel:
                 compile(
@@ -938,35 +932,35 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_CXXFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_make_flag("SIDE_MODULE_LDFLAGS"),
+        default=common.get_build_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("TARGETINSTALLDIR"),
+        default=common.get_build_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
         "--host-install-dir",
         type=str,
         nargs="?",
-        default=common.get_make_flag("HOSTINSTALLDIR"),
+        default=common.get_build_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "

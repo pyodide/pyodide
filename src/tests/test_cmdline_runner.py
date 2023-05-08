@@ -112,6 +112,25 @@ def test_dash_m(selenium):
 
 
 @only_node
+def test_dash_m_pip(selenium, monkeypatch, tmp_path):
+    import os
+
+    monkeypatch.setenv("PATH", str(tmp_path), prepend=":")
+    pip_path = tmp_path / "pip"
+    pip_path.write_text("echo 'pip got' $@")
+    os.chmod(pip_path, 0o777)
+
+    result = subprocess.run(
+        [script_path, "-m", "pip", "install", "pytest"],
+        capture_output=True,
+        encoding="utf8",
+    )
+    assert result.returncode == 0
+    assert result.stderr == ""
+    assert result.stdout.strip() == "pip got install pytest"
+
+
+@only_node
 def test_invalid_cmdline_option(selenium):
     result = subprocess.run([script_path, "-c"], capture_output=True, encoding="utf8")
     assert result.returncode != 0
@@ -124,6 +143,32 @@ usage: <...>/python [option] ... [-c cmd | -m mod | file | -] [arg] ...
 Try `python -h' for more information.
 """
     )
+
+
+@only_node
+def test_extra_mounts(selenium, tmp_path, monkeypatch):
+    dir_a = tmp_path / "a"
+    dir_b = tmp_path / "b"
+    dir_a.mkdir()
+    dir_b.mkdir()
+
+    tmp_path_a = dir_a / "script.py"
+    tmp_path_b = dir_b / "script.py"
+    tmp_path_a.write_text("print('hello 1')")
+    tmp_path_b.write_text("print('hello 2')")
+    monkeypatch.setenv("_PYODIDE_EXTRA_MOUNTS", f"{dir_a}:{dir_b}")
+    result = subprocess.run(
+        [script_path, tmp_path_a], capture_output=True, encoding="utf8"
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello 1\n"
+    assert result.stderr == ""
+    result = subprocess.run(
+        [script_path, tmp_path_b], capture_output=True, encoding="utf8"
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello 2\n"
+    assert result.stderr == ""
 
 
 @contextmanager
@@ -225,6 +270,17 @@ def install_pkg(venv, pkgname):
     )
 
 
+def check_installed_packages(venv, pkgs):
+    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    site_packages = venv / "lib" / python / "site-packages"
+    not_found = [
+        pkg
+        for pkg in pkgs
+        if not next(site_packages.glob(pkg + "*" + ".dist-info"), None)
+    ]
+    assert not_found == []
+
+
 def clean_pkg_install_stdout(stdout: str) -> str:
     # delete lines indicating whether package was downloaded or used from cache
     # since these don't reproduce.
@@ -301,23 +357,8 @@ def test_pip_install_from_pypi_deps(selenium, venv):
     """pure Python package with dependencies from pypi"""
     result = install_pkg(venv, "requests==2.28.1")
     assert result.returncode == 0
-    cleaned_stdout = clean_pkg_install_stdout(result.stdout)
-    # Sort packages since they don't come in a consistent order
-    cleaned_stdout = "\n".join(sorted(cleaned_stdout.split("\n")))
-    assert (
-        cleaned_stdout
-        == dedent(
-            """
-            Collecting certifi>=*
-            Collecting charset-normalizer<*,>=*
-            Collecting idna<*,>=*
-            Collecting requests==*
-            Collecting urllib3<*,>=*
-            Installing collected packages: urllib3, idna, charset-normalizer, certifi, requests
-            Looking in links: .../dist
-            Successfully installed certifi-* charset-normalizer-* idna-* requests-* urllib3-*
-            """
-        ).strip()
+    check_installed_packages(
+        venv, ["certifi", "charset_normalizer", "idna", "requests", "urllib3"]
     )
 
 
@@ -336,6 +377,17 @@ def test_pip_install_impure(selenium, venv):
             """
         ).strip()
     )
+
+
+@only_node
+def test_pip_install_executable(selenium, venv):
+    """impure python package from pypi"""
+    result = install_pkg(venv, "pytest")
+    assert result.returncode == 0
+    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    pytest_script = (venv / "bin/pytest").read_text()
+    shebang = pytest_script.splitlines()[0]
+    assert shebang == "#!" + str((venv / "bin" / python).absolute())
 
 
 @only_node

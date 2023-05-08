@@ -1,15 +1,15 @@
 package:
   name: micropip
   # This version needs to be consistent with docs/requirements-doc.txt
-  version: "0.2.2"
+  version: 0.3.0
   tag:
     - always
   top-level:
     - micropip
 
 source:
-  sha256: dfa8103c1e6c6fe0d8f184a3609df1a2dbdd1a9075f580f95b910a0c28779726
-  url: https://files.pythonhosted.org/packages/98/f6/30d2175be7edc524922f73285492a6f34c6bc39f948e9de3fc01694aee8a/micropip-0.2.2-py3-none-any.whl
+  sha256: 66bc593325699901002bfa436c44774dad887a81086d7f6277c8c69ecb6a089d
+  url: https://files.pythonhosted.org/packages/2d/72/225bec8a754522ea73793824d480d31265e89096d79b3660630a9e6b250d/micropip-0.3.0-py3-none-any.whl
 
 requirements:
   run:

@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "test": "deno task setup && deno task smoke-test",
+    "setup": "deno task cache:validate && deno task node-modules:clear && deno task node-modules:setup && deno task node-modules:setup-local-pyodide",
+    "cache:validate": "deno cache --lock=/tmp/pyodide-deno.lock --lock-write smoke-test.ts && diff -u deno.lock /tmp/pyodide-deno.lock",
+    "cache:update": "deno cache smoke-test.ts",
+    "node-modules:clear": "rm -rf node_modules",
+    "node-modules:setup": "deno cache --node-modules-dir smoke-test.ts",
+    "node-modules:setup-local-pyodide": "sh -c \"cp -r ../../dist/. ./node_modules/pyodide/\"",
+    "smoke-test": "deno run --node-modules-dir --allow-read=. smoke-test.ts"
+  }
+}

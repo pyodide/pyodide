@@ -141,7 +141,8 @@ callee because compiling with `-g3` increases the number of function pointers so
 the function pointer we are calling is in a different spot. I know of no way to
 determine the bad function pointer when compiling with `-g3`.
 
-Sometimes (particularly with Scipy/CLAPACK) the issue will be a mismatch between
+Sometimes (particularly with Scipy/OpenBLAS/libf2c) the issue will be a
+mismatch between
 `(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)` and
 `(param i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32 i32) (result i32)`
 
@@ -224,7 +225,7 @@ what is going on at an instruction-level. This limitation means that it is
 generally easier to work directly with instructions. One work around is to load
 a copy of Pyodide with the source maps next to one without the source maps. This
 situation is rapidly improving both on Emscripten's side and on the browser
-side. To build Pyodide with DWARF, you should set `DBGFLAGS="-g3 -gseparate-dwarf`.
+side. To build Pyodide with DWARF, you should set `DBGFLAGS="-g3 -gseparate-dwarf"`.
 
 If you are building in the docker image, you will get error 404s when the
 browser tries to look up the source maps because the path `/src/cpython/...`

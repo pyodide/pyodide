@@ -1,5 +1,6 @@
 import contextlib
 import functools
+import hashlib
 import os
 import re
 import shutil
@@ -11,6 +12,7 @@ from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
 
 if sys.version_info < (3, 11, 0):
@@ -27,6 +29,7 @@ from .recipe import load_all_recipes
 BUILD_VARS: set[str] = {
     "PATH",
     "PYTHONPATH",
+    "PYODIDE_JOBS",
     "PYODIDE_ROOT",
     "PYTHONINCLUDE",
     "NUMPY_LIB",
@@ -62,7 +65,7 @@ BUILD_VARS: set[str] = {
 
 
 def emscripten_version() -> str:
-    return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    return get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
 
 
 def get_emscripten_version_info() -> str:
@@ -95,7 +98,7 @@ def check_emscripten_version() -> None:
 
 
 def platform() -> str:
-    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    emscripten_version = get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
     return f"emscripten_{version}_wasm32"
 
@@ -106,8 +109,8 @@ def pyodide_tags() -> Iterator[Tag]:
 
     The sequence is ordered in decreasing specificity.
     """
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
+    PYMAJOR = get_pyversion_major()
+    PYMINOR = get_pyversion_minor()
     PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
@@ -186,29 +189,76 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-def get_make_flag(name: str) -> str:
-    """Get flags from makefile.envs.
-
-    For building packages we currently use:
-        SIDE_MODULE_LDFLAGS
-        SIDE_MODULE_CFLAGS
-        SIDE_MODULE_CXXFLAGS
+def get_build_flag(name: str) -> str:
     """
-    return get_make_environment_vars()[name]
+    Get a value of a build flag.
+    """
+    build_vars = get_build_environment_vars()
+    if name not in build_vars:
+        raise ValueError(f"Unknown build flag: {name}")
+
+    return build_vars[name]
+
+
+def get_pyversion_major() -> str:
+    return get_build_flag("PYMAJOR")
+
+
+def get_pyversion_minor() -> str:
+    return get_build_flag("PYMINOR")
+
+
+def get_pyversion_major_minor() -> str:
+    return f"{get_pyversion_major()}.{get_pyversion_minor()}"
 
 
 def get_pyversion() -> str:
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
-    return f"python{PYMAJOR}.{PYMINOR}"
+    return f"python{get_pyversion_major_minor()}"
 
 
 def get_hostsitepackages() -> str:
-    return get_make_flag("HOSTSITEPACKAGES")
+    return get_build_flag("HOSTSITEPACKAGES")
 
 
 @functools.cache
-def get_make_environment_vars() -> dict[str, str]:
+def get_build_environment_vars() -> dict[str, str]:
+    """
+    Get common environment variables for the in-tree and out-of-tree build.
+    """
+    env = _get_make_environment_vars().copy()
+
+    # Allow users to overwrite the build environment variables by setting
+    # host environment variables.
+    # TODO: Add modifiable configuration file instead.
+    # (https://github.com/pyodide/pyodide/pull/3737/files#r1161247201)
+    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
+
+    env["PYODIDE"] = "1"
+
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
+    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    if "PKG_CONFIG_PATH" in os.environ:
+        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+
+    hostsitepackages = env["HOSTSITEPACKAGES"]
+    pythonpath = [
+        hostsitepackages,
+    ]
+    env["PYTHONPATH"] = ":".join(pythonpath)
+
+    return env
+
+
+def _get_make_environment_vars() -> dict[str, str]:
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
@@ -220,6 +270,11 @@ def get_make_environment_vars() -> dict[str, str]:
         capture_output=True,
         text=True,
     )
+
+    if result.returncode != 0:
+        logger.error("ERROR: Failed to load environment variables from Makefile.envs")
+        exit_with_stdio(result)
+
     for line in result.stdout.splitlines():
         equalPos = line.find("=")
         if equalPos != -1:
@@ -306,18 +361,6 @@ def init_environment() -> None:
     else:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
 
-    os.environ.update(get_make_environment_vars())
-    try:
-        hostsitepackages = get_hostsitepackages()
-        pythonpath = [
-            hostsitepackages,
-        ]
-        os.environ["PYTHONPATH"] = ":".join(pythonpath)
-    except KeyError:
-        pass
-    os.environ["BASH_ENV"] = ""
-    get_unisolated_packages()
-
 
 @functools.cache
 def get_pyodide_root() -> Path:
@@ -327,11 +370,8 @@ def get_pyodide_root() -> Path:
 
 @functools.cache
 def get_unisolated_packages() -> list[str]:
-    import json
-
-    if "UNISOLATED_PACKAGES" in os.environ:
-        return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
+
     unisolated_file = PYODIDE_ROOT / "unisolated.txt"
     if unisolated_file.exists():
         # in xbuild env, read from file
@@ -343,7 +383,7 @@ def get_unisolated_packages() -> list[str]:
         for name, config in recipes.items():
             if config.build.cross_build_env:
                 unisolated_packages.append(name)
-    os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
+
     return unisolated_packages
 
 
@@ -393,14 +433,15 @@ def set_build_environment(env: dict[str, str]) -> None:
 
     Sets common environment between in tree and out of tree package builds.
     """
-    env.update({key: os.environ[key] for key in BUILD_VARS})
+    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
     env["PYODIDE"] = "1"
-    if "PYODIDE_JOBS" in os.environ:
-        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
 
-    env["PKG_CONFIG_PATH"] = env["WASM_PKG_CONFIG_PATH"]
+    pkg_config_parts = []
+    if "WASM_PKG_CONFIG_PATH" in os.environ:
+        pkg_config_parts.append(env["WASM_PKG_CONFIG_PATH"])
     if "PKG_CONFIG_PATH" in os.environ:
-        env["PKG_CONFIG_PATH"] += f":{os.environ['PKG_CONFIG_PATH']}"
+        pkg_config_parts.append(os.environ["PKG_CONFIG_PATH"])
+    env["PKG_CONFIG_PATH"] = ":".join(pkg_config_parts)
 
     tools_dir = Path(__file__).parent / "tools"
 
@@ -418,3 +459,72 @@ def get_num_cores() -> int:
     import loky
 
     return loky.cpu_count()
+
+
+def make_zip_archive(
+    archive_path: Path,
+    input_dir: Path,
+    compression_level: int = 6,
+) -> None:
+    """Create a zip archive out of a input folder
+
+    Parameters
+    ----------
+    archive_path
+       Path to the zip file that will be created
+    input_dir
+       input dir to compress
+    compression_level
+       compression level of the resulting zip file.
+    """
+    if compression_level > 0:
+        compression = zipfile.ZIP_DEFLATED
+    else:
+        compression = zipfile.ZIP_STORED
+
+    with zipfile.ZipFile(
+        archive_path, "w", compression=compression, compresslevel=compression_level
+    ) as zf:
+        for file in input_dir.rglob("*"):
+            zf.write(file, file.relative_to(input_dir))
+
+
+def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
+    """Repack zip archive with a different compression level"""
+    if compression_level > 0:
+        compression = zipfile.ZIP_DEFLATED
+    else:
+        compression = zipfile.ZIP_STORED
+
+    with TemporaryDirectory() as temp_dir:
+        input_path = Path(temp_dir) / archive_path.name
+        shutil.move(archive_path, input_path)
+        with zipfile.ZipFile(input_path) as fh_zip_in, zipfile.ZipFile(
+            archive_path, "w", compression=compression, compresslevel=compression_level
+        ) as fh_zip_out:
+            for name in fh_zip_in.namelist():
+                fh_zip_out.writestr(name, fh_zip_in.read(name))
+
+
+def _get_sha256_checksum(archive: Path) -> str:
+    """Compute the sha256 checksum of a file
+
+    Parameters
+    ----------
+    archive
+        the path to the archive we wish to checksum
+
+    Returns
+    -------
+    checksum
+         sha256 checksum of the archive
+    """
+    CHUNK_SIZE = 1 << 16
+    h = hashlib.sha256()
+    with open(archive, "rb") as fd:
+        while True:
+            chunk = fd.read(CHUNK_SIZE)
+            h.update(chunk)
+            if len(chunk) < CHUNK_SIZE:
+                break
+    return h.hexdigest()

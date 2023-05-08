@@ -1,4 +1,4 @@
-export PYVERSION ?= 3.11.2
+export PYVERSION ?= 3.11.3
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.34
 
 export PLATFORM_TRIPLET=wasm32-emscripten
@@ -34,6 +34,11 @@ export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/includ
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
+
+# The compression level used for zip files and wheels. When distributing via a
+# CDN it's more efficient to keep this value to 0, and let the CDN perform the
+# Brotli compression.
+export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
@@ -88,7 +93,6 @@ export LDFLAGS_BASE=\
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
 	-s MODULARIZE=1 \
-	-std=c++14 \
 	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
@@ -127,7 +131,13 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lproxyfs.js \
 	-lworkerfs.js \
 	-lwebsocket.js \
-	-leventloop.js
+	-leventloop.js \
+	\
+	-lGL \
+	-legl.js \
+	-lwebgl.js \
+	-lhtml5_webgl.js \
+	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
@@ -149,7 +159,7 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 # For RUST
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
-export RUST_TOOLCHAIN=nightly-2022-06-26
+export RUST_TOOLCHAIN=nightly-2023-04-29
 export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
 export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 

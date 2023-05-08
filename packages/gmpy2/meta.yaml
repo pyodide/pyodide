@@ -1,11 +1,11 @@
 package:
   name: gmpy2
-  version: 2.1.4
+  version: 2.1.5
   top-level:
     - gmpy2
 source:
-  url: https://files.pythonhosted.org/packages/12/8c/2ec8c83138cd56a2b8e7ccb87095f9e6402c64aa26a2ff3dfddb232e8cc6/gmpy2-2.1.4.tar.gz
-  sha256: 37a9959dae0d008fa750cbcdedd43518b7a1bdaa95a19f30effc6d045ad7adbd
+  url: https://files.pythonhosted.org/packages/d9/2e/2848cb5ab5240cb34b967602990450d0fd715f013806929b2f82821cef7f/gmpy2-2.1.5.tar.gz
+  sha256: bc297f1fd8c377ae67a4f493fc0f926e5d1b157e5c342e30a4d84dc7b9f95d96
 
 requirements:
   host:

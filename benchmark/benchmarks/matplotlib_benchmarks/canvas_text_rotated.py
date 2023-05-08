@@ -1,5 +1,5 @@
 # non-native
-# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib_pyodide.html5_canvas_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime
+# setup: import matplotlib ; import numpy as np ; matplotlib.use('module://matplotlib_pyodide.html5_canvas_backend') ; from matplotlib import pyplot as plt ; from matplotlib.dates import (YEARLY, DateFormatter, rrulewrapper, RRuleLocator, drange) ; import datetime  # noqa: E501
 # run: canvas_text_rotated()
 
 # pythran export canvas_text_rotated()

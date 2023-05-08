@@ -1,4 +1,3 @@
-import argparse
 import json
 import os
 import shutil
@@ -6,24 +5,9 @@ import subprocess
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
-from .common import exit_with_stdio, get_make_flag
+from .common import exit_with_stdio, get_build_flag
 from .create_pypa_index import create_pypa_index
 from .logger import logger
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Install xbuild env.\n\n"
-        "The installed environment is the same as the one that would result from\n"
-        "`PYODIDE_PACKAGES='scipy' make` except that it is much faster.\n"
-        "The goal is to enable out-of-tree builds for binary packages that depend\n"
-        "on numpy or scipy.\n"
-        "Note: this is a private endpoint that should not be used outside of the Pyodide Makefile."
-    )
-    parser.add_argument("--download", action="store_true", help="Download xbuild env")
-    parser.add_argument("--url", help="URL to download xbuild env from", default=None)
-    parser.add_argument("xbuildenv", type=str, nargs=1)
-    return parser
 
 
 def download_xbuildenv(
@@ -55,7 +39,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
 
     os.environ["PYODIDE_ROOT"] = str(xbuildenv_root)
 
-    host_site_packages = Path(get_make_flag("HOSTSITEPACKAGES"))
+    host_site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
@@ -115,7 +99,3 @@ def install(path: Path, *, download: bool = False, url: str | None = None) -> No
     if download:
         download_xbuildenv(version, path, url=url)
     install_xbuildenv(version, path)
-
-
-def main(args: argparse.Namespace) -> None:
-    install(Path(args.xbuildenv[0]), download=args.download, url=args.url)

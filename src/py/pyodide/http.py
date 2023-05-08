@@ -72,6 +72,11 @@ class FetchResponse:
         return self.js_response.bodyUsed
 
     @property
+    def headers(self) -> dict[str, str]:
+        """Response headers as dictionary."""
+        return Object.fromEntries(self.js_response.headers.entries()).to_py()
+
+    @property
     def ok(self) -> bool:
         """Was the request successful?
 

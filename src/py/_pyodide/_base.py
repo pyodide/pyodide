@@ -71,7 +71,7 @@ def _last_assign_to_expr(mod: ast.Module) -> None:
         # In this case there can be multiple targets as in `a = b = 1`.
         # We just take the first one.
         target = last_node.targets[0]
-    elif isinstance(last_node, (ast.AugAssign, ast.AnnAssign)):
+    elif isinstance(last_node, ast.AugAssign | ast.AnnAssign):
         target = last_node.target
     else:
         return
@@ -114,7 +114,7 @@ def _last_expr_to_raise(mod: ast.Module) -> None:
     if not mod.body:
         return
     last_node = mod.body[-1]
-    if not isinstance(mod.body[-1], (ast.Expr, ast.Await)):
+    if not isinstance(mod.body[-1], ast.Expr | ast.Await):
         return
     raise_expr = deepcopy(_raise_template_ast)
     # Replace x with our value in _raise_template_ast.

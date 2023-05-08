@@ -164,8 +164,8 @@ Files or folders in this folder will be packaged to make the Pyodide package.
 
 See the [zlib
 meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/zlib/meta.yaml)
-for an example of a static library specification, and the [CLAPACK
-meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/CLAPACK/meta.yaml)
+for an example of a static library specification, and the [OpenBLAS
+meta.yaml](https://github.com/pyodide/pyodide/blob/main/packages/openblas/meta.yaml)
 for an example of a shared library specification.
 
 ### `build/script`

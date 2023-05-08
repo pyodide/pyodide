@@ -36,14 +36,15 @@ if IS_COMPILER_INVOCATION:
     # If possible load from environment variable, if necessary load from disk.
     if "PYWASMCROSS_ARGS" in os.environ:
         PYWASMCROSS_ARGS = json.loads(os.environ["PYWASMCROSS_ARGS"])
-    try:
-        with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
-            PYWASMCROSS_ARGS = json.load(f)
-    except FileNotFoundError:
-        raise RuntimeError(
-            "Invalid invocation: can't find PYWASMCROSS_ARGS."
-            f" Invoked from {INVOKED_PATH}."
-        ) from None
+    else:
+        try:
+            with open(INVOKED_PATH.parent / "pywasmcross_env.json") as f:
+                PYWASMCROSS_ARGS = json.load(f)
+        except FileNotFoundError:
+            raise RuntimeError(
+                "Invalid invocation: can't find PYWASMCROSS_ARGS."
+                f" Invoked from {INVOKED_PATH}."
+            ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
     os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
@@ -52,7 +53,6 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
@@ -73,6 +73,7 @@ class BuildArgs:
     builddir: str = ""  # The path to run pypa/build
     pythoninclude: str = ""
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
+    compression_level: int = 6
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -122,7 +123,15 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                         ]
                     )
                     filepath = filepath.with_suffix(".f")
-                subprocess.check_call(["f2c", filepath.name], cwd=filepath.parent)
+                # -R flag is important, it means that Fortran functions that
+                # return real e.g. sdot will be transformed into C functions
+                # that return float. For historic reasons, by default f2c
+                # transform them into functions that return a double. Using -R
+                # allows to match what OpenBLAS has done when they f2ced their
+                # Fortran files, see
+                # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
+                # for more details
+                subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
@@ -381,11 +390,8 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
-    which_emcc = shutil.which("emcc")
-    assert which_emcc
-    emcc = Path(which_emcc)
     args = [
-        str((emcc / "../../bin/llvm-readobj").resolve()),
+        "llvm-readobj",
         "--section-details",
         "-st",
     ] + objects
@@ -415,14 +421,27 @@ def calculate_object_exports_nm(objects: list[str]) -> list[str]:
     return result.stdout.splitlines()
 
 
+def filter_objects(line: list[str]) -> list[str]:
+    """
+    Collect up all the object files and archive files being linked.
+    """
+    return [
+        arg
+        for arg in line
+        if arg.endswith((".a", ".o"))
+        or arg.startswith(
+            "@"
+        )  # response file (https://gcc.gnu.org/wiki/Response_Files)
+    ]
+
+
 def calculate_exports(line: list[str], export_all: bool) -> Iterable[str]:
     """
-    Collect up all the object files and archive files being linked and list out
-    symbols in them that are marked as public. If ``export_all`` is ``True``,
-    then return all public symbols. If not, return only the public symbols that
-    begin with `PyInit`.
+    List out symbols from object files and archive files that are marked as public.
+    If ``export_all`` is ``True``, then return all public symbols.
+    If not, return only the public symbols that begin with `PyInit`.
     """
-    objects = [arg for arg in line if arg.endswith((".a", ".o"))]
+    objects = filter_objects(line)
     exports = None
     # Using emnm is simpler but it cannot handle bitcode. If we're only
     # exporting the PyInit symbols, save effort by using nm.
@@ -535,8 +554,7 @@ def handle_command_generate_args(
         return line
 
     # set linker and C flags to error on anything to do with function declarations being wrong.
-    # In webassembly, any conflicts mean that a randomly selected 50% of calls to the function
-    # will fail. Better to fail at compile or link time.
+    # Better to fail at compile or link time.
     if is_link_command:
         new_args.append("-Wl,--fatal-warnings")
     new_args.extend(

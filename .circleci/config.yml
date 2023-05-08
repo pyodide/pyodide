@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20230301-chrome109-firefox109-py311
+    - image: pyodide/pyodide-env:20230506-chrome112-firefox112-py311
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -14,9 +14,11 @@ defaults: &defaults
       # Make sure the ccache dir is consistent between core and package builds
       # (it's not the case otherwise)
       CCACHE_DIR: /root/.ccache/
+      # Disable the compression of wheels, so they are better compressed by the CDN
+      PYODIDE_ZIP_COMPRESSION_LEVEL: 0
 
 orbs:
-  macos: circleci/macos@2.2.0
+  macos: circleci/macos@2.3.4
 
 jobs:
   build-core:
@@ -218,12 +220,12 @@ jobs:
           name: create xbuild environment
           command: |
             pip install -e ./pyodide-build
-            python -m pyodide_build create_xbuildenv
+            pyodide xbuildenv create .
 
       - run:
           name: Zip xbuild environment
           command: |
-            tar cjf xbuildenv.tar.gz  xbuildenv/
+            tar cjf xbuildenv.tar.gz ./xbuildenv/
 
       - store_artifacts:
           path: /root/repo/xbuildenv.tar.gz
@@ -232,6 +234,43 @@ jobs:
           root: .
           paths:
             - ./xbuildenv
+
+  build-test-pyc-packages:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -r requirements.txt
+            pip install -e ./pyodide-build
+            npm install -g node-fetch@2
+
+      - run:
+          name: Py-compile packages
+          command: |
+            pyodide py-compile --compression-level 0 dist/
+
+      - run:
+          name: Test import of py-compiled packages
+          command: |
+            tools/pytest_wrapper.py \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --durations 50 \
+              --benchmark-json=benchmark-time.json \
+              "packages/_tests/test_packages_common.py::test_import" -k "node"
+
+            mv dist/ dist-pyc/
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./dist-pyc
 
   test-main:
     parameters:
@@ -261,6 +300,7 @@ jobs:
               export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
             fi
             echo "pytest cache dir: $CACHE_DIR"
+            source pyodide_env.sh
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -380,6 +420,7 @@ jobs:
             set -x
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
+            source pyodide_env.sh
             cd ~
             mkdir test
             cd test
@@ -425,8 +466,7 @@ jobs:
     # similar as possible to the steps in deploy-dev!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -435,8 +475,11 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make npm
-            python3 -m pip install awscli
+            python3 -m pip install -e "./pyodide-build[deploy]"
+
+            wget https://github.com/tcnksm/ghr/releases/download/v0.16.0/ghr_v0.16.0_linux_amd64.tar.gz
+            tar xzf ghr_v0.16.0_linux_amd64.tar.gz
+            mv ghr_v0.16.0_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
           name: Deploy Github Releases
@@ -448,7 +491,7 @@ jobs:
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
-            ghr -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
+            /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
               -delete "${CIRCLE_TAG}" \
               dist
@@ -461,33 +504,30 @@ jobs:
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/full/" make dist/console.html
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*.data' --cache-control 'max-age=30758400, immutable, public' --content-encoding 'gzip'    # 1 year cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/full/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, immutable, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year
+            python3 tools/deploy_s3.py dist/ "v${CIRCLE_TAG}/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*.data' --cache-control 'max-age=30758400, public' --content-encoding 'gzip'  # 1 year cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/v${CIRCLE_TAG}/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=30758400, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 year cache
+            python3 tools/deploy_s3.py dist-debug/ "v${CIRCLE_TAG}/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
-          name: update 301 redirect for the /latest/* route.
+          name: Deploy the pyc version to S3
           command: |
-            aws s3api put-bucket-website --cli-input-json file://.circleci/s3-website-config.json
+            python3 tools/deploy_s3.py dist-pyc/ "v${CIRCLE_TAG}/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
 
   deploy-dev:
     # To reduce chance of deployment issues, try to keep the steps here as
     # similar as possible to the steps in deploy-release!
     resource_class: small
 
-    docker:
-      - image: cibuilds/github:0.13
+    <<: *defaults
 
     steps:
       - checkout
@@ -496,28 +536,43 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            apk add --no-cache --update python3 make
-            python3 -m pip install awscli
+            python3 -m pip install -e "./pyodide-build[deploy]"
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/pyc/" make dist/console.html
+            cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
             cp dist/console.html dist-debug/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/full/" make dist/console.html
+
       - run:
-          name: Deploy to pyodide-cdn2.iodide.io
+          name: Deploy to S3
           command: |
-            find dist/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/full/"
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist/ "s3://pyodide-cdn2.iodide.io/dev/full/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist/ "dev/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
       - run:
-          name: Deploy debug version to pyodide-cdn2.iodide.io
+          name: Deploy debug version to S3
           command: |
-            find dist-debug/ -type f -print0 | xargs -0 -n1 -I@ bash -c "echo \"Compressing @\"; gzip @; mv @.gz @;"
-            aws s3 rm --recursive "s3://pyodide-cdn2.iodide.io/dev/debug/"
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*.data' --cache-control 'max-age=3600, public' --content-encoding 'gzip'  # 1 hour cache
-            aws s3 sync dist-debug/ "s3://pyodide-cdn2.iodide.io/dev/debug/" --exclude '*' --include '*.data' --cache-control 'max-age=3600, public'  --content-type 'application/wasm' --content-encoding 'gzip'  # 1 hour cache
+            python3 tools/deploy_s3.py dist-debug/ "dev/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+      - run:
+          name: Deploy pyc version to S3
+          command: |
+            python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
+
+      - run:
+          # Unlike the release version, we upload the dev version to S3 not to GitHub.
+          name: Deploy release files to S3
+          command: |
+            mkdir -p /tmp/ghr/dist
+            cp -r dist /tmp/ghr/pyodide
+            cp -r xbuildenv /tmp/ghr/xbuildenv
+            cd /tmp/ghr
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+
+            cd -
+            python3 tools/deploy_s3.py /tmp/ghr/dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \
+              --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
   version: 2
@@ -543,22 +598,22 @@ workflows:
                   - ./packages
                   - ./dist
 
-      - build-packages:
-          name: build-packages-opencv-python
-          packages: opencv-python
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/opencv-python/build
-                  - ./packages/opencv-python/dist
-                  - ./packages/build-logs/opencv*
-                  - ./dist/opencv*
+      # - build-packages:
+      #     name: build-packages-opencv-python
+      #     packages: opencv-python
+      #     requires:
+      #       - build-packages-no-numpy-dependents
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      #     post-steps:
+      #       - persist_to_workspace:
+      #           root: .
+      #           paths:
+      #             - ./packages/opencv-python/build
+      #             - ./packages/opencv-python/dist
+      #             - ./packages/build-logs/opencv*
+      #             - ./dist/opencv*
 
       - build-packages:
           name: build-packages-numpy-dependents
@@ -580,7 +635,7 @@ workflows:
           packages: "*"
           requires:
             - build-packages-numpy-dependents
-            - build-packages-opencv-python
+            # - build-packages-opencv-python
           filters:
             tags:
               only: /.*/
@@ -791,12 +846,20 @@ workflows:
             tags:
               only: /.*/
 
+      - build-test-pyc-packages:
+          requires:
+            - build-packages
+          filters:
+            tags:
+              only: /.*/
+
       - deploy-release:
           requires:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
+            - build-test-pyc-packages
           filters:
             branches:
               ignore: /.*/
@@ -809,6 +872,8 @@ workflows:
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
+            - create-xbuild-env
+            - build-test-pyc-packages
           filters:
             branches:
               only: main

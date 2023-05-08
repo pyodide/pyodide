@@ -23,6 +23,7 @@ from packaging.requirements import Requirement
 from . import common, pywasmcross
 from .common import (
     environment_substitute_args,
+    get_build_flag,
     get_hostsitepackages,
     get_pyversion,
     get_unisolated_packages,
@@ -41,9 +42,10 @@ def symlink_unisolated_packages(env: IsolatedEnv) -> None:
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
     env_site_packages = Path(env.path) / site_packages_path  # type: ignore[attr-defined]
-    sysconfigdata_name = os.environ["SYSCONFIG_NAME"]
+    sysconfigdata_name = get_build_flag("SYSCONFIG_NAME")
     sysconfigdata_path = (
-        Path(os.environ["TARGETINSTALLDIR"]) / f"sysconfigdata/{sysconfigdata_name}.py"
+        Path(get_build_flag("TARGETINSTALLDIR"))
+        / f"sysconfigdata/{sysconfigdata_name}.py"
     )
 
     env_site_packages.mkdir(parents=True, exist_ok=True)
@@ -209,10 +211,10 @@ def get_build_env(
         symlink_dir = Path(symlink_dir_str)
         env.update(make_command_wrapper_symlinks(symlink_dir))
 
-        sysconfig_dir = Path(os.environ["TARGETINSTALLDIR"]) / "sysconfigdata"
+        sysconfig_dir = Path(get_build_flag("TARGETINSTALLDIR")) / "sysconfigdata"
         args["PYTHONPATH"] = sys.path + [str(sysconfig_dir)]
         args["orig__name__"] = __name__
-        args["pythoninclude"] = os.environ["PYTHONINCLUDE"]
+        args["pythoninclude"] = get_build_flag("PYTHONINCLUDE")
         args["PATH"] = env["PATH"]
 
         pywasmcross_env = json.dumps(args)
@@ -224,24 +226,24 @@ def get_build_env(
 
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = common.platform()
-        env["_PYTHON_SYSCONFIGDATA_NAME"] = os.environ["SYSCONFIG_NAME"]
+        env["_PYTHON_SYSCONFIGDATA_NAME"] = get_build_flag("SYSCONFIG_NAME")
         env["PYTHONPATH"] = str(sysconfig_dir)
         yield env
 
 
 def build(
-    build_env: Mapping[str, str], backend_flags: str, outdir: str | None = None
+    srcdir: Path,
+    outdir: Path,
+    build_env: Mapping[str, str],
+    backend_flags: str,
 ) -> str:
-    srcdir = Path.cwd()
-    if outdir is None:
-        outdir = str(srcdir / "dist")
     builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
     config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
-                build_env, builder, outdir, distribution, config_settings
+                build_env, builder, str(outdir), distribution, config_settings
             )
             print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
             return built

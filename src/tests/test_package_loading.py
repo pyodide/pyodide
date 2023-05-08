@@ -34,7 +34,6 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         raise AssertionError()
 
     with log_backup.open("r") as fh_backup, log_main.open("r") as fh_main:
-
         # skip existing log lines
         fh_main.seek(0, 2)
         fh_backup.seek(0, 2)

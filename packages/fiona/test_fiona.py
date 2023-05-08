@@ -33,7 +33,6 @@ def test_runtest(selenium):
         import pytest
 
         def runtest(test_filter, ignore_filters):
-
             ignore_filter = []
             for ignore in ignore_filters:
                 ignore_filter.append("--ignore-glob")

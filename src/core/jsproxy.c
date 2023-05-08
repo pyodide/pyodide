@@ -133,6 +133,11 @@ struct ExceptionFields
   char suppress_context;
 };
 
+struct ObjectMapFields
+{
+  bool hereditary;
+};
+
 // clang-format off
 
 // dict and js fields always needs to be in the same place.
@@ -150,6 +155,7 @@ typedef struct
     struct BufferFields bf;
     struct MethodFields mf;
     struct ExceptionFields ef;
+    struct ObjectMapFields omf;
   } tf;
   JsRef js;
 } JsProxy;
@@ -194,6 +200,8 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
 #define JsBuffer_BYTE_LENGTH(x) (((JsProxy*)x)->tf.bf.byteLength)
 #define JsBuffer_ITEMSIZE(x) (((JsProxy*)x)->tf.bf.itemsize)
 #define JsBuffer_CHECK_ASSIGNMENTS(x) (((JsProxy*)x)->tf.bf.check_assignments)
+
+#define JsObjMap_HEREDITARY(x) (((JsProxy*)x)->tf.omf.hereditary)
 
 int
 JsProxy_getflags(PyObject* self)
@@ -489,7 +497,7 @@ handle_next_result_js,
 });
 
 PySendResult
-handle_next_result(JsRef next_res, PyObject** result){
+handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
   JsRef idresult = NULL;
@@ -509,7 +517,10 @@ handle_next_result(JsRef next_res, PyObject** result){
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
-  *result = js2python(idresult);
+  *result = js2python_immutable(idresult);
+  if (!*result) {
+    *result = JsProxy_create_objmap(idresult, obj_map_hereditary);
+  }
   FAIL_IF_NULL(*result);
   if(pyproxy_Check(idresult)) {
     destroy_proxy(idresult,
@@ -542,7 +553,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
   FAIL_IF_NULL(next_res);
-  ret = handle_next_result(next_res, result);
+  ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
   if (proxies) {
     destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
@@ -561,7 +572,7 @@ JsProxy_IterNext(PyObject* self)
     // The Python docs for tp_iternext say "When the iterator is exhausted, it
     // must return NULL; a StopIteration exception may or may not be set."
     // So if the result is None, we can just leave error flag unset.
-    if (result != Py_None) {
+    if (!Py_IsNone(result)) {
       _PyGen_SetStopIterationValue(result);
     }
     Py_CLEAR(result);
@@ -574,7 +585,7 @@ JsGenerator_send(PyObject* self, PyObject* arg)
 {
   PyObject* result;
   if (JsProxy_am_send(self, arg, &result) == PYGEN_RETURN) {
-    if (result == Py_None) {
+    if (Py_IsNone(result)) {
       PyErr_SetNone(PyExc_StopIteration);
     } else {
       _PyGen_SetStopIterationValue(result);
@@ -692,7 +703,7 @@ JsException_init(PyBaseExceptionObject* self, PyObject* args, PyObject* kwds)
 JsRef
 process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
 {
-  if (tb == Py_None) {
+  if (Py_IsNone(tb)) {
     tb = NULL;
   } else if (tb != NULL && !PyTraceBack_Check(tb)) {
     PyErr_SetString(PyExc_TypeError,
@@ -711,7 +722,7 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
     }
   } else if (PyExceptionInstance_Check(typ)) {
     /* Raising an instance.  The value should be a dummy. */
-    if (val && val != Py_None) {
+    if (val && !Py_IsNone(val)) {
       PyErr_SetString(PyExc_TypeError,
                       "instance exception may not have a separate value");
       goto failed_throw;
@@ -775,9 +786,9 @@ JsGenerator_throw_inner(PyObject* self,
   throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_NULL(throw_res);
   console_error_obj(throw_res);
-  PySendResult ret = handle_next_result(throw_res, &result);
+  PySendResult ret = handle_next_result(throw_res, &result, false);
   if (ret == PYGEN_RETURN) {
-    if (result == Py_None) {
+    if (Py_IsNone(result)) {
       PyErr_SetNone(PyExc_StopIteration);
     } else {
       _PyGen_SetStopIterationValue(result);
@@ -1263,7 +1274,7 @@ JsArray_subscript(PyObject* o, PyObject* item)
   }
   PyErr_Format(PyExc_TypeError,
                "list indices must be integers or slices, not %.200s",
-               item->ob_type->tp_name);
+               Py_TYPE(item)->tp_name);
 success:
 finally:
   hiwire_CLEAR(jsresult);
@@ -1374,7 +1385,7 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
   } else {
     PyErr_Format(PyExc_TypeError,
                  "list indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return -1;
   }
 
@@ -2406,10 +2417,10 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  if (onfulfilled == Py_None) {
+  if (Py_IsNone(onfulfilled)) {
     Py_CLEAR(onfulfilled);
   }
-  if (onrejected == Py_None) {
+  if (Py_IsNone(onrejected)) {
     Py_CLEAR(onrejected);
   }
   promise_id = hiwire_resolve_promise(self->js);
@@ -2517,22 +2528,34 @@ static PyMethodDef JsProxy_finally_MethodDef = {
   METH_O,
 };
 
-// Forward declaration
 static PyObject*
-create_proxy_of_type(int type_flags, JsRef object, JsRef this);
-
-static PyObject*
-JsProxy_as_object_map(PyObject* self, PyObject* Py_UNUSED(ignored))
+JsProxy_as_object_map(PyObject* self,
+                      PyObject* const* args,
+                      Py_ssize_t nargs,
+                      PyObject* kwnames)
 {
+  static const char* const _keywords[] = { "hereditary", 0 };
+  static struct _PyArg_Parser _parser = { "|$p:as_object_map", _keywords, 0 };
+  bool hereditary = false;
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &hereditary)) {
+    return NULL;
+  }
+
   int type_flags = IS_OBJECT_MAP;
-  return create_proxy_of_type(
+  PyObject* proxy = JsProxy_create_with_type(
     type_flags, JsProxy_REF(self), JsMethod_THIS(self));
+  FAIL_IF_NULL(proxy);
+  JsObjMap_HEREDITARY(proxy) = hereditary;
+
+finally:
+  return proxy;
 }
 
 static PyMethodDef JsProxy_as_object_map_MethodDef = {
   "as_object_map",
   (PyCFunction)JsProxy_as_object_map,
-  METH_NOARGS,
+  METH_FASTCALL | METH_KEYWORDS
 };
 
 EM_JS_REF(JsRef, JsObjMap_GetIter_js, (JsRef idobj), {
@@ -2598,7 +2621,10 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
     }
     FAIL();
   }
-  pyresult = js2python(idresult);
+  pyresult = js2python_immutable(idresult);
+  if (pyresult == NULL) {
+    pyresult = JsProxy_create_objmap(idresult, JsObjMap_HEREDITARY(self));
+  }
 
 finally:
   hiwire_CLEAR(idkey);
@@ -3047,7 +3073,7 @@ JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
   JsRef jsobj = NULL;
   PyObject* result = NULL;
 
-  if (obj == Py_None || obj == NULL) {
+  if (Py_IsNone(obj) || obj == NULL) {
     Py_INCREF(self);
     return self;
   }
@@ -3960,7 +3986,10 @@ finally:
     type_flags |= flag;                                                        \
   }
 
-EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
+#define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
+  SET_FLAG_IF(flag, hasMethod(obj, meth))
+
+EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   let type_flags = 0;
   // clang-format off
@@ -3968,38 +3997,50 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
     return 0;
   }
 
-  const constructorName = obj.constructor ? obj.constructor.name : "";
-  let typeTag = getTypeTag(obj);
+  // test_jsproxy.test_revoked_proxy stress tests this code.
+  // Every single operation on a revoked proxy raises an error!
+
+  const typeTag = getTypeTag(obj);
+
+  function safeBool(cb) {
+    try {
+      return cb();
+    } catch(e) {
+      return false;
+    }
+  }
+  const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
+  const isArray = safeBool(() => Array.isArray(obj));
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
   // to pass in some weird and maliciously constructed object. Anyways for
   // maximum safety, we double check that only one of these is set.
-  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function")
-  SET_FLAG_IF(IS_AWAITABLE, typeof obj.then === 'function')
-  SET_FLAG_IF(IS_ITERABLE, typeof obj[Symbol.iterator] === 'function')
-  SET_FLAG_IF(IS_ASYNC_ITERABLE, typeof obj[Symbol.asyncIterator] === 'function')
-  SET_FLAG_IF(IS_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] === 'function' || typeof obj[Symbol.asyncIterator] !== 'function') );
-  SET_FLAG_IF(IS_ASYNC_ITERATOR, typeof obj.next === 'function' && (typeof obj[Symbol.iterator] !== 'function' || typeof obj[Symbol.asyncIterator] === 'function') );
+  SET_FLAG_IF(IS_CALLABLE, typeof obj === "function");
+  SET_FLAG_IF_HAS_METHOD(IS_AWAITABLE, "then");
+  SET_FLAG_IF_HAS_METHOD(IS_ITERABLE, Symbol.iterator);
+  SET_FLAG_IF_HAS_METHOD(IS_ASYNC_ITERABLE, Symbol.asyncIterator);
+  SET_FLAG_IF(IS_ITERATOR, hasMethod(obj, "next") && (hasMethod(obj, Symbol.iterator) || !hasMethod(obj, Symbol.asyncIterator)));
+  SET_FLAG_IF(IS_ASYNC_ITERATOR, hasMethod(obj, "next") && (!hasMethod(obj, Symbol.iterator) || hasMethod(obj, Symbol.asyncIterator)));
   SET_FLAG_IF(HAS_LENGTH,
-    (typeof obj.size === "number") ||
-    (typeof obj.length === "number" && typeof obj !== "function"));
-  SET_FLAG_IF(HAS_GET, typeof obj.get === "function");
-  SET_FLAG_IF(HAS_SET, typeof obj.set === "function");
-  SET_FLAG_IF(HAS_HAS, typeof obj.has === "function");
-  SET_FLAG_IF(HAS_INCLUDES, typeof obj.includes === "function");
+    (hasProperty(obj, "size")) ||
+    (hasProperty(obj, "length") && typeof obj !== "function"));
+  SET_FLAG_IF_HAS_METHOD(HAS_GET, "get");
+  SET_FLAG_IF_HAS_METHOD(HAS_SET, "set");
+  SET_FLAG_IF_HAS_METHOD(HAS_HAS, "has");
+  SET_FLAG_IF_HAS_METHOD(HAS_INCLUDES, "includes");
   SET_FLAG_IF(IS_BUFFER,
-              (ArrayBuffer.isView(obj) || (constructorName === "ArrayBuffer")) && !(type_flags & IS_CALLABLE));
+              (isBufferView || (typeTag === '[object ArrayBuffer]')) && !(type_flags & IS_CALLABLE));
   SET_FLAG_IF(IS_DOUBLE_PROXY, API.isPyProxy(obj));
-  SET_FLAG_IF(IS_ARRAY, Array.isArray(obj));
+  SET_FLAG_IF(IS_ARRAY, isArray);
   SET_FLAG_IF(IS_NODE_LIST,
               typeTag === "[object HTMLCollection]" ||
               typeTag === "[object NodeList]");
   SET_FLAG_IF(IS_TYPEDARRAY,
-              ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView");
+              isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
-  SET_FLAG_IF(IS_ERROR, (typeof obj.stack === "string" && typeof obj.message === "string") && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+  SET_FLAG_IF(IS_ERROR, (hasProperty(obj, "name") && hasProperty(obj, "message") && hasProperty(obj, "stack")) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
   // clang-format on
   return type_flags;
 });
@@ -4008,8 +4049,8 @@ EM_JS_NUM(int, compute_typeflags, (JsRef idobj), {
 ////////////////////////////////////////////////////////////
 // Public functions
 
-static PyObject*
-create_proxy_of_type(int type_flags, JsRef object, JsRef this)
+PyObject*
+JsProxy_create_with_type(int type_flags, JsRef object, JsRef this)
 {
   bool success = false;
   PyTypeObject* type = NULL;
@@ -4028,7 +4069,7 @@ create_proxy_of_type(int type_flags, JsRef object, JsRef this)
   }
   if (type_flags & IS_ERROR) {
     PyObject* arg =
-      create_proxy_of_type(type_flags & (~IS_ERROR), object, this);
+      JsProxy_create_with_type(type_flags & (~IS_ERROR), object, this);
     FAIL_IF_NULL(arg);
     PyObject* args = PyTuple_Pack(1, arg);
     Py_CLEAR(arg);
@@ -4045,6 +4086,16 @@ finally:
   return result;
 }
 
+PyObject*
+JsProxy_create_objmap(JsRef object, bool objmap)
+{
+  int typeflags = JsProxy_compute_typeflags(object);
+  if (typeflags == 0 && objmap) {
+    typeflags |= IS_OBJECT_MAP;
+  }
+  return JsProxy_create_with_type(typeflags, object, NULL);
+}
+
 /**
  * Create a JsProxy. In case it's a method, bind "this" to the argument. (In
  * most cases "this" will be NULL, `JsProxy_create` specializes to this case.)
@@ -4059,15 +4110,15 @@ JsProxy_create_with_this(JsRef object, JsRef this)
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
   } else {
-    type_flags = compute_typeflags(object);
+    type_flags = JsProxy_compute_typeflags(object);
     if (type_flags == -1) {
       fail_test();
       PyErr_SetString(internal_error,
-                      "Internal error occurred in compute_typeflags");
+                      "Internal error occurred in JsProxy_compute_typeflags");
       return NULL;
     }
   }
-  return create_proxy_of_type(type_flags, object, this);
+  return JsProxy_create_with_type(type_flags, object, this);
 }
 
 PyObject*

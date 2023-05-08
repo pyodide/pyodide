@@ -5,6 +5,7 @@ COMPRESSIONS = ("SNAPPY", "GZIP", "LZ4", "BROTLI", "ZSTD")
 
 
 # just check that we can read and write random data
+@pytest.mark.driver_timeout(60)
 @pytest.mark.parametrize("compression", COMPRESSIONS)
 @run_in_pyodide(packages=["fastparquet"])
 def test_simple_table(selenium, compression):

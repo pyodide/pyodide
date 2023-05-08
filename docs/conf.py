@@ -43,7 +43,7 @@ extensions = [
 ]
 
 
-myst_enable_extensions = ["substitution"]
+myst_enable_extensions = ["substitution", "attrs_inline"]
 
 js_language = "typescript"
 jsdoc_config_path = "../src/js/tsconfig.json"
@@ -103,6 +103,8 @@ html_logo = "_static/img/pyodide-logo.png"
 # theme-specific options
 html_theme_options: dict[str, Any] = {
     "announcement": "",
+    "repository_url": "https://github.com/pyodide/pyodide",
+    "use_repository_button": True,
 }
 
 # paths that contain custom static files (such as style sheets)
@@ -228,15 +230,15 @@ def write_console_html(app):
         Path("../dist/console.html").read_text().splitlines(keepends=True)
     )
     for idx, line in enumerate(list(console_html_lines)):
-        if 'pyodide.js">' in line:
-            # insert the analytics script after the `pyodide.js` script
+        if "</style>" in line:
+            # insert the analytics script after the end of the inline CSS block
             console_html_lines.insert(
                 idx,
                 '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
             )
             break
     else:
-        raise ValueError("Could not find pyodide.js in the <head> section")
+        raise ValueError("Could not find a CSS block in the <head> section")
     output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
