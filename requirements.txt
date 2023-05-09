@@ -12,4 +12,4 @@
   pytest-cov
   pytest-httpserver
   pytest-benchmark
-  pytest-pyodide @ git+https://github.com/hoodmane/pytest-pyodide@flags
+  pytest-pyodide @ git+https://github.com/pyodide/pytest-pyodide@main
