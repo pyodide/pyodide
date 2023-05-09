@@ -397,10 +397,12 @@ def generate_dependency_graph(
     # Locate the subset of packages that are transitive dependencies of packages
     # that are requested and not disabled.
     requested_with_deps = requested.copy()
+    disabled_packages = set()
     for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
         pkg = pkg_map[pkgname]
         if pkg.disabled:
             requested_with_deps.discard(pkgname)
+            disabled_packages.add(pkgname)
             continue
 
         if pkgname not in requested_with_deps:
@@ -413,6 +415,11 @@ def generate_dependency_graph(
     pkg_map = {name: pkg_map[name] for name in requested_with_deps}
 
     _validate_package_map(pkg_map)
+
+    if disabled_packages:
+        logger.warning(
+            f"The following packages are disabled: {', '.join(disabled_packages)}"
+        )
 
     return pkg_map
 
