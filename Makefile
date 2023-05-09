@@ -235,10 +235,10 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-continuations.gen.js.c: src/core/continuations.js src/core/build_continuations.mjs node_modules/.installed
+continuations.gen.js: src/core/continuations.js src/core/build_continuations.mjs node_modules/.installed
 	node src/core/build_continuations.mjs
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) continuations.gen.js.c
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) continuations.gen.js
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 

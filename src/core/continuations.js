@@ -1,3 +1,16 @@
+/**
+ * This file handles stack switching for the C in-memory stack and for the
+ * inaccessible wasm stack.
+ */
+
+/**
+ * This file is processed with build_continuations.mjs and then #included into
+ * continuations.c as the definition of continuations_init_js
+ *
+ * build_continuations resolves the wat imports by assembling wat and wraps it
+ * in EM_JS.
+ */
+
 import wrap_syncifying_wasm from "./wrap_syncifying.wat";
 import wrap_apply_wasm from "./wrap_apply.wat";
 
@@ -186,7 +199,11 @@ class StackState {
   }
 }
 
-function patchHiwireSyncify() {
+/**
+ * Module.syncifyHandler does all of the work of hiwire_syncify (defined in
+ * hiwire).
+ */
+function setSyncifyHandler() {
   const suspending_f = new WebAssembly.Function(
     { parameters: ["externref", "i32"], results: ["i32"] },
     async (x) => {
@@ -215,10 +232,10 @@ function patchHiwireSyncify() {
       restore: restore_state,
     },
   });
-  hiwire_syncify = function (...args) {
-    const result = instance.exports.o(...args);
+  const syncify_promise = instance.exports.o;
+  Module.syncifyHandler = function (idpromise) {
+    const result = syncify_promise(idpromise);
     if (result === 0) {
-      // Now we're ready to set the error state.
       Module.handle_js_error(Module.syncify_error);
       delete Module.syncify_error;
     }
@@ -226,6 +243,27 @@ function patchHiwireSyncify() {
   };
 }
 
+Module.suspendableApply = function (...args) {
+  // validSuspender is a flag so that we can ask for permission before trying
+  // to suspend. We can't ask for forgiveness because our normal technique for
+  // this is to insert a JavaScript frame where we can catch the error
+  // generated. We cannot suspend through JavaScript frames (this limitation
+  // is part of the intentional design of Wasm Promise Integration).
+  Module.validSuspender.value = true;
+  // Record the current stack position. See StackState in continuations.js
+  Module.stackStop = Module.___stack_pointer.value;
+  return Module.suspendableApplyHandler(...args);
+};
+
+/**
+ * Create the suspendableApplyHandler.
+ *
+ * The "promising" option to WebAssembly.Function magically provides an extra
+ * suspender argument to the function in front of the callee's arguments.
+ *
+ * wrap_apply.wat stores this argument into suspenderGlobal before making an
+ * onward call to apply.
+ */
 Module.wrapApply = function (apply) {
   var module = new WebAssembly.Module(new Uint8Array(wrap_apply_wasm));
   var instance = new WebAssembly.Instance(module, {
@@ -241,32 +279,49 @@ Module.wrapApply = function (apply) {
   );
 };
 
+/**
+ * This sets up syncify to work.
+ *
+ * We need to make:
+ *
+ * - suspenderGlobal where we store the suspender object
+ *
+ * - applyHandler which creates a suspender and stores it into suspenderGlobal
+ *   then makes an onward call (used by callKwargsSyncifying)
+ *
+ * - the syncifyHandler which uses suspenderGlobal to suspend execution, then
+ *   awaits a promise, then resumes execution and returns the promise result
+ *   (used by hiwire_syncify)
+ *
+ * If the creation of these fails because JSPI is missing, then we set it up so
+ * that callKwargsSyncifying and hiwire_syncify will always raise errors and
+ * everything else can work as normal. In the short term, we'll almost always
+ * end
+ */
 function initSuspenders() {
   try {
-    // Feature detect externref. Also need it for wrapApply to work.
     Module.suspenderGlobal = new WebAssembly.Global(
       { value: "externref", mutable: true },
       null,
     );
-    // Feature detect WebAssembly.Function and JS Promise integration
-    Module.wrapApply(
-      new WebAssembly.Function(
-        { parameters: ["i32", "i32", "i32", "i32", "i32"], results: ["i32"] },
-        () => {},
-      ),
+    Module.suspendableApplyHandler = Module.wrapApply(
+      Module.asm._pyproxy_apply,
     );
+    Module.validSuspender = new WebAssembly.Global(
+      { value: "i32", mutable: true },
+      0,
+    );
+    setSyncifyHandler();
+    Module.suspendersAvailable = true;
   } catch (e) {
-    // Browser doesn't support externref. This implies it also doesn't support
-    // stack switching so we won't need a suspender.
+    // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
     Module.suspendersAvailable = false;
+    Module.syncifyHandler = function () {
+      Module.handle_js_error(Error("Syncify not supported"));
+      return 0;
+    };
     return;
   }
-  Module.validSuspender = new WebAssembly.Global(
-    { value: "i32", mutable: true },
-    0,
-  );
-  patchHiwireSyncify();
-  Module.suspendersAvailable = true;
 }
 initSuspenders();

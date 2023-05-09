@@ -393,6 +393,11 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
+EM_JS(JsRef, hiwire_syncify, (JsRef idpromise), {
+  // See continuations.js for definition of syncifyHandler.
+  return Module.syncifyHandler(idpromise);
+})
+
 EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
   let obj = Hiwire.get_value(obj_id);

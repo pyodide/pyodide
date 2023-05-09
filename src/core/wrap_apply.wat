@@ -1,3 +1,7 @@
+;; Used in the definition of wrapApply.
+;; See pyproxy.ts.
+;; We use { promising: "first" }
+;;
 (module
     (global $suspender (import "e" "s") (mut externref))
     (import "e" "i" (func $apply_import (param i32 i32 i32 i32 i32) (result i32)))

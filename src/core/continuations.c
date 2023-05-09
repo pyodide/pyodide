@@ -2,11 +2,18 @@
 
 #include "internal/pycore_frame.h"
 
+// This file deals with Python stack / thread state.
+// continuations.js deals with the C stack state
+
 // This is taken from
 // https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/greenlet_greenlet.hpp
 //
 // When updating the major Python version it will be necessary to look at that
 // file.
+//
+// See also
+// https://github.com/python/cpython/pull/32303
+// which would move more of this logic into upstream CPython
 
 typedef struct
 {
@@ -68,4 +75,11 @@ restoreThreadState(P* state)
   free(state);
 }
 
-#include "continuations.gen.js.c"
+// Defines continuations_init_js
+#include "continuations.gen.js"
+
+int
+continuations_init(void)
+{
+  return continuations_init_js();
+}

@@ -4194,7 +4194,8 @@ JsProxy_init_docstrings()
 {
   bool success = false;
 
-  suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
+  suspendersAvailable =
+    EM_ASM_INT({ return !!Module.suspendableApplyHandler; });
   if (suspendersAvailable) {
     JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
   } else {

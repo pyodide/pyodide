@@ -446,7 +446,7 @@ async function callPyObjectKwargsSuspending(
   jsargs: any,
   kwargs: any,
 ) {
-  if (!Module.suspendersAvailable) {
+  if (!Module.suspendableApplyHandler) {
     throw new Error(
       "WebAssembly Promise integration not supported in this JavaScript runtime",
     );
@@ -463,24 +463,13 @@ async function callPyObjectKwargsSuspending(
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
 
-  if (!Module.wrappedApply) {
-    Module.wrappedApply = Module.wrapApply(Module.asm._pyproxy_apply);
-  }
   // Let the event loop go around once in case this gets syncified. This ensures
   // that the outer syncify call sees the original suspender and not the
   // new one we are about to create.
   await sleep(0);
   try {
     Py_ENTER();
-    // validSuspender is a flag so that we can ask for permission before trying
-    // to suspend. We can't ask for forgiveness because our normal technique for
-    // this is to insert a JavaScript frame where we can catch the error
-    // generated. We cannot suspend through JavaScript frames (this limitation
-    // is part of the intentional design  of Wasm Promise Integration).
-    Module.validSuspender.value = true;
-    // Record the current stack position. See StackState in continuations.js
-    Module.stackStop = Module.___stack_pointer.value;
-    idresult = await Module.wrappedApply(
+    idresult = await Module.suspendableApply(
       ptrobj,
       idargs,
       num_pos_args,
