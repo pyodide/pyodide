@@ -552,9 +552,6 @@ def handle_command_generate_args(  # noqa: C901
     elif cmd == "strip":
         line[0] = "emstrip"
         return line
-    elif cmd == "nm":
-        line[0] = "emnm"
-        return line
     else:
         return line
 
