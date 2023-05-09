@@ -478,7 +478,7 @@ def get_export_flags(
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
-def handle_command_generate_args(
+def handle_command_generate_args(  # noqa: C901
     line: list[str], build_args: BuildArgs, is_link_command: bool
 ) -> list[str]:
     """
