@@ -112,9 +112,11 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present ...
                     subprocess.check_call(
                         [
-                            "gcc",
+                            "gfortran",
                             "-E",
                             "-C",
                             "-P",
@@ -483,7 +485,7 @@ def get_export_flags(
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
-def handle_command_generate_args(
+def handle_command_generate_args(  # noqa: C901
     line: list[str], build_args: BuildArgs, is_link_command: bool
 ) -> list[str]:
     """
