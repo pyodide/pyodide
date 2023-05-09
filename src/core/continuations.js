@@ -190,7 +190,16 @@ function patchHiwireSyncify() {
   const suspending_f = new WebAssembly.Function(
     { parameters: ["externref", "i32"], results: ["i32"] },
     async (x) => {
-      return Hiwire.new_value(await Hiwire.get_value(x));
+      try {
+        return Hiwire.new_value(await Hiwire.get_value(x));
+      } catch (e) {
+        if (e && e.pyodide_fatal_error) {
+          throw e;
+        }
+        // Error handling is tricky here. We want to set the error flag after
+        // unswitching the stack. Just store the error for the moment.
+        Module.syncify_error = e;
+      }
     },
     { suspending: "first" },
   );
@@ -206,7 +215,15 @@ function patchHiwireSyncify() {
       restore: restore_state,
     },
   });
-  hiwire_syncify = instance.exports.o;
+  hiwire_syncify = function (...args) {
+    const result = instance.exports.o(...args);
+    if (result === 0) {
+      // Now we're ready to set the error state.
+      Module.handle_js_error(Module.syncify_error);
+      delete Module.syncify_error;
+    }
+    return result;
+  };
 }
 
 Module.wrapApply = function (apply) {
