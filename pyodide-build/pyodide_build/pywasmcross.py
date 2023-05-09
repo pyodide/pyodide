@@ -11,8 +11,8 @@ cross-compiling and then pass the command long to emscripten.
 import json
 import os
 import re
-import sys
 import shutil
+import sys
 from pathlib import Path
 
 from __main__ import __file__ as INVOKED_PATH_STR
