@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import shutil
 from pathlib import Path
 
 from __main__ import __file__ as INVOKED_PATH_STR
@@ -53,7 +54,6 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
@@ -112,8 +112,9 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
-                    # Use gfortran frontend, as gcc frontend might not be
-                    # present ...
+                    # As we can't assume that file-system is a case-sensitif
+                    # one, we need to take care we handle this.
+                    filepath_tmp = filepath.with_suffix(".tmp")
                     subprocess.check_call(
                         [
                             "gfortran",
@@ -122,10 +123,12 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             "-P",
                             filepath,
                             "-o",
-                            filepath.with_suffix(".f"),
+                            filepath_tmp,
                         ]
                     )
+                    shutil.move(filepath, filepath.with_suffix(".oldF"))
                     filepath = filepath.with_suffix(".f")
+                    shutil.move(filepath_tmp, filepath)
                 # -R flag is important, it means that Fortran functions that
                 # return real e.g. sdot will be transformed into C functions
                 # that return float. For historic reasons, by default f2c
