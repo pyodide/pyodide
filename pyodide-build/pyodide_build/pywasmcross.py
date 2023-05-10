@@ -151,7 +151,9 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                     if os.path.isfile(filepath):
                         os.remove(filepath)
                     if os.path.isfile(filepath.with_suffix(".oldF")):
-                        shutil.move(filepath.with_suffix(".oldF"), filepath.with_suffix(".F"))
+                        shutil.move(
+                            filepath.with_suffix(".oldF"), filepath.with_suffix(".F")
+                        )
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
