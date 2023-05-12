@@ -123,7 +123,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             "-P",
                             filepath,
                             "-o",
-                            filepathwith_suffix(".f77"),
+                            filepath.with_suffix(".f77"),
                         ]
                     )
                     filepath = filepath.with_suffix(".f77")
