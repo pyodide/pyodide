@@ -115,7 +115,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
-                    # The file-system might be not case-sensitiv,
+                    # The file-system might be not case-sensitive,
                     # so take care to handle this by renaming.
                     # For preprocessing and further operation the
                     # expected file-name and extension needs to be preserved.
