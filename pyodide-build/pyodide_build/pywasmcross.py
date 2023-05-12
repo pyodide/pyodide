@@ -126,7 +126,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             filepathwith_suffix(".f77"),
                         ]
                     )
-                    filepath = filepath.with_suffix(".fi77")
+                    filepath = filepath.with_suffix(".f77")
                 # -R flag is important, it means that Fortran functions that
                 # return real e.g. sdot will be transformed into C functions
                 # that return float. For historic reasons, by default f2c
