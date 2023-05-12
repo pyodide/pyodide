@@ -108,13 +108,17 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
         if arg.endswith(".f") or arg.endswith(".F"):
             filepath = Path(arg).resolve()
             if not dryrun:
+                # flag to indicate that renaming during preprocessing for
+                # .F files happened
+                redo_renaming = False
                 fix_f2c_input(arg)
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
-                    # File-system might be not case-sensitiv,
-                    # so take care to use a new extension to avoid
-                    # conflicts.
+                    # The file-system might be not case-sensitiv,
+                    # so take care to handle this by renaming.
+                    # For preprocessing and further operation the
+                    # expected file-name and extension needs to be preserved.
                     subprocess.check_call(
                         [
                             "gfortran",
@@ -126,7 +130,12 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             filepath.with_suffix(".f77"),
                         ]
                     )
-                    filepath = filepath.with_suffix(".f77")
+                    # restore old names later ...
+                    redo_renaming = True
+                    shutil.move(filepath, filepath.with_suffix(".oldF"))
+                    filepath = filepath.with_suffix(".f")
+                    # f2c needs either .F or .f file extension ...
+                    shutil.move(filepath.with_suffix(".f77"), filepath)
                 # -R flag is important, it means that Fortran functions that
                 # return real e.g. sdot will be transformed into C functions
                 # that return float. For historic reasons, by default f2c
@@ -137,6 +146,14 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 # for more details
                 subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
                 fix_f2c_output(arg[:-2] + ".c")
+                # if files where renamed, restore old naming
+                if redo_renaming:
+                    if os.path.isfile(filepath):
+                        os.remove(filepath)
+                    if os.path.isfile(filepath.with_suffix(".oldF")):
+                        shutil.move(
+                            filepath.with_suffix(".oldF"), filepath.with_suffix(".F")
+                        )
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
