@@ -52,6 +52,7 @@ declare var IS_ASYNC_ITERABLE: number;
 declare var IS_ASYNC_ITERATOR: number;
 declare var IS_GENERATOR: number;
 declare var IS_ASYNC_GENERATOR: number;
+declare var IS_SEQUENCE: number;
 
 declare var PYGEN_NEXT: number;
 declare var PYGEN_RETURN: number;
@@ -185,6 +186,7 @@ function pyproxy_new(
   if (flags === -1) {
     Module._pythonexc2js();
   }
+  const is_sequence = flags & IS_SEQUENCE;
   const cls = Module.getPyProxyClass(flags);
   let target;
   if (flags & IS_CALLABLE) {
@@ -235,7 +237,10 @@ function pyproxy_new(
   );
   Object.defineProperty(target, "$$props", { value: props });
 
-  let proxy = new Proxy(target, PyProxyHandlers);
+  let proxy = new Proxy(
+    target,
+    is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
+  );
   if (!isAlias) {
     trace_pyproxy_alloc(proxy);
   }
@@ -291,6 +296,7 @@ Module.getPyProxyClass = function (flags: number) {
     [IS_AWAITABLE, PyAwaitableMethods],
     [IS_BUFFER, PyBufferMethods],
     [IS_CALLABLE, PyCallableMethods],
+    [IS_SEQUENCE, PySequenceMethods],
   ];
   let result = pyproxyClassMap.get(flags);
   if (result) {
@@ -1437,6 +1443,162 @@ export class PyAsyncGeneratorMethods {
   }
 }
 
+export class PySequence extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+  }
+}
+
+export interface PySequence extends PySequenceMethods {}
+
+// JS default comparison is to convert to strings and compare lexicographically
+function defaultCompareFunc(a: any, b: any): number {
+  const astr = a.toString();
+  const bstr = b.toString();
+  if (astr === bstr) {
+    return 0;
+  }
+  if (astr < bstr) {
+    return -1;
+  }
+  return 1;
+}
+
+// Missing: splice, concat, find, findIndex, copyWithin, fill, entries, keys,
+// values, includes, flatMap, flat, findLast, findLastIndex
+export class PySequenceMethods {
+  join(separator?: string) {
+    return Array.prototype.join.call(this, separator);
+  }
+  reverse() {
+    // @ts-ignore
+    this.$reverse();
+    return this;
+  }
+  sort(compareFn?: (a: any, b: any) => number) {
+    // Copy the behavior of sort described here:
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
+    // Yes JS sort is weird.
+
+    // We need this adaptor to convert from js comparison function to Python key
+    // function.
+    const functools = API.public_api.pyimport("functools");
+    const cmp_to_key = functools.cmp_to_key;
+    let cf: (a: any, b: any) => number;
+    if (compareFn) {
+      cf = compareFn;
+    } else {
+      cf = defaultCompareFunc;
+    }
+    // spec says arguments to compareFunc "Will never be undefined."
+    // and undefined values should get sorted to end of list.
+    // Make wrapper to ensure this
+    function wrapper(a: any, b: any) {
+      if (a === undefined && b === undefined) {
+        return 0;
+      }
+      if (a === undefined) {
+        return 1;
+      }
+      if (b === undefined) {
+        return -1;
+      }
+      return cf(a, b);
+    }
+    let key;
+    try {
+      key = cmp_to_key(wrapper);
+      // @ts-ignore
+      this.$sort.callKwargs({ key });
+    } finally {
+      key?.destroy();
+      cmp_to_key.destroy();
+      functools.destroy();
+    }
+    return this;
+  }
+  push(elt: any) {
+    // @ts-ignore
+    this.append(elt);
+    // @ts-ignore
+    return this.length;
+  }
+  pop() {
+    // @ts-ignore
+    return this.$pop();
+  }
+  shift() {
+    // @ts-ignore
+    return this.$pop(0);
+  }
+  unshift(elt: any) {
+    // @ts-ignore
+    return this.insert(elt, 0);
+  }
+  slice(start?: number, stop?: number): any {
+    return Array.prototype.slice.call(this, start, stop);
+  }
+  lastIndexOf(elt: any) {
+    return Array.prototype.lastIndexOf.call(this, elt);
+  }
+  indexOf(elt: any) {
+    return Array.prototype.indexOf.call(this, elt);
+  }
+  forEach(callbackfn: (elt: any) => void, thisArg?: any) {
+    Array.prototype.forEach.call(this, callbackfn, thisArg);
+  }
+  map(
+    callbackfn: (elt: any, index: number, array: any) => void,
+    thisArg?: any,
+  ) {
+    return Array.prototype.map.call(this, callbackfn, thisArg);
+  }
+  filter(
+    predicate: (elt: any, index: number, array: any) => boolean,
+    thisArg?: any,
+  ) {
+    return Array.prototype.filter.call(this, predicate, thisArg);
+  }
+  reduce(
+    callbackfn: (
+      previousValue: any,
+      currentValue: any,
+      currentIndex: number,
+      array: any,
+    ) => any,
+    initialValue?: any,
+  ): any {
+    return Array.prototype.reduce.call(this, callbackfn, initialValue);
+  }
+  reduceRight(
+    callbackfn: (
+      previousValue: any,
+      currentValue: any,
+      currentIndex: number,
+      array: any,
+    ) => any,
+    initialValue?: any,
+  ): any {
+    return Array.prototype.reduceRight.call(this, callbackfn, initialValue);
+  }
+  some(
+    predicate: (value: any, index: number, array: any[]) => unknown,
+    thisArg?: any,
+  ): boolean {
+    return Array.prototype.some.call(this, predicate, thisArg);
+  }
+  every(
+    predicate: (value: any, index: number, array: any[]) => unknown,
+    thisArg?: any,
+  ): boolean {
+    return Array.prototype.every.call(this, predicate, thisArg);
+  }
+  at(index: number) {
+    return Array.prototype.at.call(this, index);
+  }
+}
+
 // Another layer of boilerplate. The PyProxyHandlers have some annoying logic
 // to deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
@@ -1526,7 +1688,7 @@ function python_delattr(jsobj: PyProxy, jskey: any) {
 // See explanation of which methods should be defined here and what they do
 // here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-let PyProxyHandlers = {
+const PyProxyHandlers = {
   isExtensible() {
     return true;
   },
@@ -1618,6 +1780,21 @@ let PyProxyHandlers = {
     return jsobj.apply(jsthis, jsargs);
   },
 };
+
+const PyProxySequenceHandlers = Object.assign({}, PyProxyHandlers, {
+  get(jsobj: PyProxy, jskey: any) {
+    if (/^[0-9]*$/.test(jskey)) {
+      return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
+    }
+    return PyProxyHandlers.get(jsobj, jskey);
+  },
+  has(jsobj: PyProxy, jskey: any) {
+    if (/^[0-9]*$/.test(jskey)) {
+      return Number(jskey) < jsobj.length;
+    }
+    return PyProxyHandlers.has(jsobj, jskey);
+  },
+});
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :ref:`awaitable

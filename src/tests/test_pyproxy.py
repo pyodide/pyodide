@@ -1578,3 +1578,75 @@ async def test_multiple_interpreters(selenium):
     d1 = {"a": 2}
     d2 = py2.runPython(str(d1))
     assert d2.toJs().to_py() == d1
+
+
+@run_in_pyodide
+def test_pyproxy_of_list1(selenium):
+    from pyodide.code import run_js
+
+    pylist = [9, 8, 7]
+    jslist = run_js(
+        """
+        (p) => {
+            return [p[0], p[1], p[2]]
+        }
+        """
+    )(pylist)
+    assert jslist.to_py() == pylist
+
+
+@run_in_pyodide
+def test_pyproxy_of_list2(selenium):
+    # from
+    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
+    # Yes, JavaScript sort is weird.
+    from pyodide.code import run_js
+
+    stringArray = ["Blue", "Humpback", "Beluga"]
+    numberArray = [40, None, 1, 5, 200]
+    numericStringArray = ["80", "9", "700"]
+    mixedNumericArray = ["80", "9", "700", 40, 1, 5, 200]
+
+    run_js("globalThis.compareNumbers = (a, b) => a - b")
+
+    assert run_js("((a) => a.join())")(stringArray) == "Blue,Humpback,Beluga"
+    assert run_js("((a) => a.sort())")(stringArray) is stringArray
+    assert stringArray == ["Beluga", "Blue", "Humpback"]
+
+    assert run_js("((a) => a.join())")(numberArray) == "40,,1,5,200"
+    assert run_js("((a) => a.sort())")(numberArray) == [1, 200, 40, 5, None]
+    assert run_js("((a) => a.sort(compareNumbers))")(numberArray) == [
+        1,
+        5,
+        40,
+        200,
+        None,
+    ]
+
+    assert run_js("((a) => a.join())")(numericStringArray) == "80,9,700"
+    assert run_js("((a) => a.sort())")(numericStringArray) == ["700", "80", "9"]
+    assert run_js("((a) => a.sort(compareNumbers))")(numericStringArray) == [
+        "9",
+        "80",
+        "700",
+    ]
+
+    assert run_js("((a) => a.join())")(mixedNumericArray) == "80,9,700,40,1,5,200"
+    assert run_js("((a) => a.sort())")(mixedNumericArray) == [
+        1,
+        200,
+        40,
+        5,
+        "700",
+        "80",
+        "9",
+    ]
+    assert run_js("((a) => a.sort(compareNumbers))")(mixedNumericArray) == [
+        1,
+        5,
+        "9",
+        40,
+        "80",
+        200,
+        "700",
+    ]

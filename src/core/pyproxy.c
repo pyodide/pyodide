@@ -28,6 +28,7 @@ check_gil()
 
 PyObject* Generator;
 PyObject* AsyncGenerator;
+PyObject* Sequence;
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
@@ -100,6 +101,7 @@ static PyObject* asyncio;
 #define IS_ASYNC_ITERATOR (1 << 10)
 #define IS_GENERATOR (1 << 11)
 #define IS_ASYNC_GENERATOR (1 << 12)
+#define IS_SEQUENCE (1 << 13)
 // clang-format on
 
 // Taken from genobject.c
@@ -197,6 +199,9 @@ pyproxy_getflags(PyObject* pyobj)
   SET_FLAG_IF(IS_CALLABLE,
               _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
                 obj_type->tp_call);
+  int is_sequence = PyObject_IsInstance(pyobj, Sequence);
+  FAIL_IF_MINUS_ONE(is_sequence);
+  SET_FLAG_IF(IS_SEQUENCE, is_sequence);
 
 #undef SET_FLAG_IF
 
@@ -1323,6 +1328,8 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(Generator);
   AsyncGenerator = PyObject_GetAttrString(collections_abc, "AsyncGenerator");
   FAIL_IF_NULL(AsyncGenerator);
+  Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Sequence);
 
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
