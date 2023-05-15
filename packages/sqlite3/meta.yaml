@@ -9,8 +9,6 @@ package:
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
-
     export FILES=(
       "Modules/_sqlite/blob.c"
       "Modules/_sqlite/connection.c"
@@ -24,6 +22,9 @@ build:
     )
 
     embuilder build sqlite3 --pic
+
+    git clone https://github.com/python/cpython --depth 1 --branch v${PYVERSION}
+    cd cpython
 
     for file in "${FILES[@]}"; do
       emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \

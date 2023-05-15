@@ -10,7 +10,8 @@ package:
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
+    git clone https://github.com/python/cpython --depth 1 --branch v${PYVERSION}
+    cd cpython
 
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
@@ -32,11 +33,10 @@ build:
     emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
 
     for testname in ${TEST_EXTENSIONS}; do \
-      cd ${CPYTHONBUILD} && \
       emcc Modules/${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
     done
 
-    cd ${CPYTHONBUILD}/Lib && \
+    cd Lib && \
       tar --exclude=__pycache__ -cf - \
       test distutils/tests sqlite3/test \
       | tar -C $DISTDIR -xf -

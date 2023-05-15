@@ -8,7 +8,8 @@ package:
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
+    git clone https://github.com/python/cpython --depth 1 --branch v${PYVERSION}
+    cd cpython
 
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \
       $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
