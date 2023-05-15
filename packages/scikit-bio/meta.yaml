@@ -1,0 +1,60 @@
+package:
+  name: scikit-bio
+  version: 0.5.8
+  tag:
+    - min-scipy-stack
+  top-level:
+    - skbio
+source:
+  url: https://files.pythonhosted.org/packages/f3/5b/7ae2c3cca0cee7825a24b9c68d7ba0893ef816c41e43aeccf9ca3bc63cb7/scikit-bio-0.5.8.tar.gz
+  sha256: d55a83c3e5f2ca1132744e1409233fb61d9af0c5a95deb7b291e6e340712b86b
+
+build:
+  cflags: -Wno-implicit-function-declaration
+
+requirements:
+  host:
+    - numpy
+    - scipy
+  run:
+    - scipy
+    - joblib
+    - threadpoolctl
+
+test:
+  imports:
+    - skbio
+    - skbio.alignment
+    - skbio.alignment._lib
+    - skbio.alignment.tests
+    - skbio.diversity
+    - skbio.diversity.alpha
+    - skbio.diversity.alpha.tests
+    - skbio.diversity.beta
+    - skbio.diversity.beta.tests
+    - skbio.diversity.tests
+    - skbio.io
+    - skbio.io.format
+    - skbio.io.format.tests
+    - skbio.io.tests
+    - skbio.sequence
+    - skbio.sequence.tests
+    - skbio.stats
+    - skbio.stats.distance
+    - skbio.stats.distance.tests
+    - skbio.stats.evolve
+    - skbio.stats.evolve.tests
+    - skbio.stats.ordination
+    - skbio.stats.ordination.tests
+    - skbio.stats.tests
+    - skbio.tests
+    - skbio.tree
+    - skbio.tree.tests
+    - skbio.util
+    - skbio.util.tests
+
+about:
+  home: http://scikit-bio.org
+  PyPI: https://pypi.org/project/scikit-bio/
+  summary: Data structures, algorithms and educational resources for bioinformatics
+  license: new BSD
