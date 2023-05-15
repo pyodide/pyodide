@@ -483,6 +483,42 @@ finally:
   return success ? 0 : -1;
 }
 
+JsRef
+_pyproxy_slice_assign(PyObject* pyobj,
+                      Py_ssize_t start,
+                      Py_ssize_t stop,
+                      JsRef idval)
+{
+  PyObject* pyval = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  JsRef proxies = NULL;
+  bool success = false;
+
+  pyval = js2python(idval);
+
+  Py_ssize_t len = PySequence_Length(pyobj);
+  if (len <= stop) {
+    stop = len;
+  }
+  pyresult = PySequence_GetSlice(pyobj, start, stop);
+  FAIL_IF_NULL(pyresult);
+  FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
+  proxies = JsArray_New();
+  FAIL_IF_NULL(proxies);
+  jsresult = python2js_with_depth(pyresult, 1, proxies);
+
+  success = true;
+finally:
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pyval);
+  hiwire_CLEAR(proxies);
+  return jsresult;
+}
+
 int
 _pyproxy_contains(PyObject* pyobj, JsRef idkey)
 {

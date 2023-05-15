@@ -1465,9 +1465,12 @@ function defaultCompareFunc(a: any, b: any): number {
   return 1;
 }
 
-// Missing: splice, concat, find, findIndex, copyWithin, fill, entries, keys,
-// values, includes, flatMap, flat, findLast, findLastIndex
+// Missing:
+// flatMap, flat,
 export class PySequenceMethods {
+  get [Symbol.isConcatSpreadable]() {
+    return true;
+  }
   join(separator?: string) {
     return Array.prototype.join.call(this, separator);
   }
@@ -1517,6 +1520,9 @@ export class PySequenceMethods {
       functools.destroy();
     }
     return this;
+  }
+  splice(start: number, deleteCount: number, ...items: any[]) {
+    return python_slice_assign(this, start, start + deleteCount, items);
   }
   push(elt: any) {
     // @ts-ignore
@@ -1596,6 +1602,40 @@ export class PySequenceMethods {
   }
   at(index: number) {
     return Array.prototype.at.call(this, index);
+  }
+  concat(...rest: ConcatArray<any>[]) {
+    return Array.prototype.concat.apply(this, rest);
+  }
+  includes(elt: any) {
+    // @ts-ignore
+    return this.has(elt);
+  }
+  copyWithin(target: number, start: number, end?: number) {
+    return Array.prototype.copyWithin.call(this, target, start, end);
+  }
+  fill(value: any, start?: number, end?: number) {
+    return Array.prototype.fill.call(this, value, start, end);
+  }
+  entries() {
+    return Array.prototype.entries.call(this);
+  }
+  keys() {
+    return Array.prototype.keys.call(this);
+  }
+  values() {
+    return Array.prototype.values.call(this);
+  }
+  find(
+    predicate: (value: any, index: number, obj: any[]) => any,
+    thisArg?: any,
+  ) {
+    return Array.prototype.find.call(this, predicate, thisArg);
+  }
+  findIndex(
+    predicate: (value: any, index: number, obj: any[]) => any,
+    thisArg?: any,
+  ): number {
+    return Array.prototype.findIndex.call(this, predicate, thisArg);
   }
 }
 
@@ -1683,6 +1723,30 @@ function python_delattr(jsobj: PyProxy, jskey: any) {
   if (errcode === -1) {
     Module._pythonexc2js();
   }
+}
+
+function python_slice_assign(
+  jsobj: any,
+  start: number,
+  stop: number,
+  val: any,
+): void {
+  let ptrobj = _getPtr(jsobj);
+  let idval = Hiwire.new_value(val);
+  let res;
+  try {
+    Py_ENTER();
+    res = Module.__pyproxy_slice_assign(ptrobj, start, stop, idval);
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
+  } finally {
+    Hiwire.decref(idval);
+  }
+  if (res === 0) {
+    Module._pythonexc2js();
+  }
+  return Hiwire.pop_value(res);
 }
 
 // See explanation of which methods should be defined here and what they do
@@ -1781,6 +1845,14 @@ const PyProxyHandlers = {
   },
 };
 
+function isPythonError(e: any): boolean {
+  return (
+    e &&
+    typeof e === "object" &&
+    e.constructor &&
+    e.constructor.name === "PythonError"
+  );
+}
 const PyProxySequenceHandlers = {
   isExtensible(): boolean {
     return true;
@@ -1792,8 +1864,18 @@ const PyProxySequenceHandlers = {
     return PyProxyHandlers.has(jsobj, jskey);
   },
   get(jsobj: PyProxy, jskey: any): any {
+    if (jskey === "length") {
+      return jsobj.length;
+    }
     if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
-      return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
+      try {
+        return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
+      } catch (e) {
+        if (isPythonError(e)) {
+          return undefined;
+        }
+        throw e;
+      }
     }
     return PyProxyHandlers.get(jsobj, jskey);
   },
@@ -1803,12 +1885,7 @@ const PyProxySequenceHandlers = {
         PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
         return true;
       } catch (e) {
-        if (
-          e &&
-          typeof e === "object" &&
-          e.constructor &&
-          e.constructor.name === "PythonError"
-        ) {
+        if (isPythonError(e)) {
           return false;
         }
         throw e;
@@ -1822,12 +1899,7 @@ const PyProxySequenceHandlers = {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;
       } catch (e) {
-        if (
-          e &&
-          typeof e === "object" &&
-          e.constructor &&
-          e.constructor.name === "PythonError"
-        ) {
+        if (isPythonError(e)) {
           return false;
         }
         throw e;
