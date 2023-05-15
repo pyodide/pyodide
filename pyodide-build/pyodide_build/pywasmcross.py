@@ -136,9 +136,14 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 # Fortran files, see
                 # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
                 # for more details
-                with open(filepath, "r") as input_pipe:
+                with open(filepath) as input_pipe:
                     with open(filepath.with_suffix(".c"), "w") as output_pipe:
-                        subprocess.check_call(["f2c", "-R" ], stdin=input_pipe, stdout=output_pipe, cwd=filepath.parent)
+                        subprocess.check_call(
+                            ["f2c", "-R"],
+                            stdin=input_pipe,
+                            stdout=output_pipe,
+                            cwd=filepath.parent,
+                        )
                 fix_f2c_output(arg[:-2] + ".c")
                 # if files where renamed, restore old naming
             new_args.append(arg[:-2] + ".c")
