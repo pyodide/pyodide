@@ -43,7 +43,7 @@ ARG FIREFOX_VERSION="latest"
 ARG GECKODRIVER_VERSION="0.32.2"
 
 #============================================
-# Firefox & gekcodriver
+# Firefox & geckodriver
 #============================================
 # can specify Firefox version by FIREFOX_VERSION;
 #  e.g. latest
