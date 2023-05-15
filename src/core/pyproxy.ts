@@ -1781,20 +1781,41 @@ const PyProxyHandlers = {
   },
 };
 
-const PyProxySequenceHandlers = Object.assign({}, PyProxyHandlers, {
-  get(jsobj: PyProxy, jskey: any) {
-    if (/^[0-9]*$/.test(jskey)) {
-      return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
-    }
-    return PyProxyHandlers.get(jsobj, jskey);
+const PyProxySequenceHandlers = {
+  isExtensible() {
+    return true;
   },
   has(jsobj: PyProxy, jskey: any) {
-    if (/^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
       return Number(jskey) < jsobj.length;
     }
     return PyProxyHandlers.has(jsobj, jskey);
   },
-});
+  get(jsobj: PyProxy, jskey: any) {
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
+    }
+    return PyProxyHandlers.get(jsobj, jskey);
+  },
+  set(jsobj: PyProxy, jskey: any, jsval: any) {
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      return PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+    }
+    return PyProxyHandlers.set(jsobj, jskey, jsval);
+  },
+  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      return PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
+    }
+    return PyProxyHandlers.deleteProperty(jsobj, jskey);
+  },
+  ownKeys(jsobj: PyProxy) {
+    const result = PyProxyHandlers.ownKeys(jsobj);
+    result.push(...Array.from({length: jsobj.length}, (_, k) => k.toString()));
+    result.push("length");
+    return result;
+  }
+};
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is :ref:`awaitable
