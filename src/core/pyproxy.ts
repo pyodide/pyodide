@@ -1689,10 +1689,10 @@ function python_delattr(jsobj: PyProxy, jskey: any) {
 // here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 const PyProxyHandlers = {
-  isExtensible() {
+  isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any) {
+  has(jsobj: PyProxy, jskey: any): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     let objHasKey = Reflect.has(jsobj, jskey);
@@ -1708,7 +1708,7 @@ const PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj: PyProxy, jskey: any) {
+  get(jsobj: PyProxy, jskey: any): any {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -1728,7 +1728,7 @@ const PyProxyHandlers = {
       return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any) {
+  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
       throw new TypeError(`Cannot set read only field '${jskey}'`);
@@ -1759,7 +1759,7 @@ const PyProxyHandlers = {
     // Otherwise JavaScript will throw a TypeError.
     return !descr || !!descr.configurable;
   },
-  ownKeys(jsobj: PyProxy) {
+  ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);
     let idresult;
     try {
@@ -1776,45 +1776,73 @@ const PyProxyHandlers = {
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
-  apply(jsobj: PyProxy & Function, jsthis: any, jsargs: any) {
+  apply(jsobj: PyProxy & Function, jsthis: any, jsargs: any): any {
     return jsobj.apply(jsthis, jsargs);
   },
 };
 
 const PyProxySequenceHandlers = {
-  isExtensible() {
+  isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any) {
+  has(jsobj: PyProxy, jskey: any): boolean {
     if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
       return Number(jskey) < jsobj.length;
     }
     return PyProxyHandlers.has(jsobj, jskey);
   },
-  get(jsobj: PyProxy, jskey: any) {
+  get(jsobj: PyProxy, jskey: any): any {
     if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
       return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
     }
     return PyProxyHandlers.get(jsobj, jskey);
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any) {
+  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
     if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
-      return PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+      try {
+        PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+        return true;
+      } catch (e) {
+        if (
+          e &&
+          typeof e === "object" &&
+          e.constructor &&
+          e.constructor.name === "PythonError"
+        ) {
+          return false;
+        }
+        throw e;
+      }
     }
     return PyProxyHandlers.set(jsobj, jskey, jsval);
   },
   deleteProperty(jsobj: PyProxy, jskey: any): boolean {
     if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
-      return PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
+      try {
+        PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
+        return true;
+      } catch (e) {
+        if (
+          e &&
+          typeof e === "object" &&
+          e.constructor &&
+          e.constructor.name === "PythonError"
+        ) {
+          return false;
+        }
+        throw e;
+      }
     }
     return PyProxyHandlers.deleteProperty(jsobj, jskey);
   },
-  ownKeys(jsobj: PyProxy) {
+  ownKeys(jsobj: PyProxy): (string | symbol)[] {
     const result = PyProxyHandlers.ownKeys(jsobj);
-    result.push(...Array.from({length: jsobj.length}, (_, k) => k.toString()));
+    result.push(
+      ...Array.from({ length: jsobj.length }, (_, k) => k.toString()),
+    );
     result.push("length");
     return result;
-  }
+  },
 };
 
 /**
