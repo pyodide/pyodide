@@ -29,6 +29,7 @@ check_gil()
 PyObject* Generator;
 PyObject* AsyncGenerator;
 PyObject* Sequence;
+PyObject* MutableSequence;
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(ensure_future);
@@ -102,6 +103,7 @@ static PyObject* asyncio;
 #define IS_GENERATOR (1 << 11)
 #define IS_ASYNC_GENERATOR (1 << 12)
 #define IS_SEQUENCE (1 << 13)
+#define IS_MUTABLE_SEQUENCE (1 << 14)
 // clang-format on
 
 // Taken from genobject.c
@@ -201,7 +203,10 @@ pyproxy_getflags(PyObject* pyobj)
                 obj_type->tp_call);
   int is_sequence = PyObject_IsInstance(pyobj, Sequence);
   FAIL_IF_MINUS_ONE(is_sequence);
+  int is_mutable_sequence = PyObject_IsInstance(pyobj, MutableSequence);
+  FAIL_IF_MINUS_ONE(is_mutable_sequence);
   SET_FLAG_IF(IS_SEQUENCE, is_sequence);
+  SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
 
 #undef SET_FLAG_IF
 
@@ -1366,6 +1371,8 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(AsyncGenerator);
   Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
   FAIL_IF_NULL(Sequence);
+  MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(MutableSequence);
 
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);

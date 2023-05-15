@@ -53,6 +53,7 @@ declare var IS_ASYNC_ITERATOR: number;
 declare var IS_GENERATOR: number;
 declare var IS_ASYNC_GENERATOR: number;
 declare var IS_SEQUENCE: number;
+declare var IS_MUTABLE_SEQUENCE: number;
 
 declare var PYGEN_NEXT: number;
 declare var PYGEN_RETURN: number;
@@ -297,6 +298,7 @@ Module.getPyProxyClass = function (flags: number) {
     [IS_BUFFER, PyBufferMethods],
     [IS_CALLABLE, PyCallableMethods],
     [IS_SEQUENCE, PySequenceMethods],
+    [IS_MUTABLE_SEQUENCE, PyMutableSequenceMethods],
   ];
   let result = pyproxyClassMap.get(flags);
   if (result) {
@@ -1474,74 +1476,6 @@ export class PySequenceMethods {
   join(separator?: string) {
     return Array.prototype.join.call(this, separator);
   }
-  reverse() {
-    // @ts-ignore
-    this.$reverse();
-    return this;
-  }
-  sort(compareFn?: (a: any, b: any) => number) {
-    // Copy the behavior of sort described here:
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
-    // Yes JS sort is weird.
-
-    // We need this adaptor to convert from js comparison function to Python key
-    // function.
-    const functools = API.public_api.pyimport("functools");
-    const cmp_to_key = functools.cmp_to_key;
-    let cf: (a: any, b: any) => number;
-    if (compareFn) {
-      cf = compareFn;
-    } else {
-      cf = defaultCompareFunc;
-    }
-    // spec says arguments to compareFunc "Will never be undefined."
-    // and undefined values should get sorted to end of list.
-    // Make wrapper to ensure this
-    function wrapper(a: any, b: any) {
-      if (a === undefined && b === undefined) {
-        return 0;
-      }
-      if (a === undefined) {
-        return 1;
-      }
-      if (b === undefined) {
-        return -1;
-      }
-      return cf(a, b);
-    }
-    let key;
-    try {
-      key = cmp_to_key(wrapper);
-      // @ts-ignore
-      this.$sort.callKwargs({ key });
-    } finally {
-      key?.destroy();
-      cmp_to_key.destroy();
-      functools.destroy();
-    }
-    return this;
-  }
-  splice(start: number, deleteCount: number, ...items: any[]) {
-    return python_slice_assign(this, start, start + deleteCount, items);
-  }
-  push(elt: any) {
-    // @ts-ignore
-    this.append(elt);
-    // @ts-ignore
-    return this.length;
-  }
-  pop() {
-    // @ts-ignore
-    return this.$pop();
-  }
-  shift() {
-    // @ts-ignore
-    return this.$pop(0);
-  }
-  unshift(elt: any) {
-    // @ts-ignore
-    return this.insert(elt, 0);
-  }
   slice(start?: number, stop?: number): any {
     return Array.prototype.slice.call(this, start, stop);
   }
@@ -1610,12 +1544,6 @@ export class PySequenceMethods {
     // @ts-ignore
     return this.has(elt);
   }
-  copyWithin(target: number, start: number, end?: number) {
-    return Array.prototype.copyWithin.call(this, target, start, end);
-  }
-  fill(value: any, start?: number, end?: number) {
-    return Array.prototype.fill.call(this, value, start, end);
-  }
   entries() {
     return Array.prototype.entries.call(this);
   }
@@ -1636,6 +1564,83 @@ export class PySequenceMethods {
     thisArg?: any,
   ): number {
     return Array.prototype.findIndex.call(this, predicate, thisArg);
+  }
+}
+
+export class PyMutableSequenceMethods {
+  reverse() {
+    // @ts-ignore
+    this.$reverse();
+    return this;
+  }
+  sort(compareFn?: (a: any, b: any) => number) {
+    // Copy the behavior of sort described here:
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
+    // Yes JS sort is weird.
+
+    // We need this adaptor to convert from js comparison function to Python key
+    // function.
+    const functools = API.public_api.pyimport("functools");
+    const cmp_to_key = functools.cmp_to_key;
+    let cf: (a: any, b: any) => number;
+    if (compareFn) {
+      cf = compareFn;
+    } else {
+      cf = defaultCompareFunc;
+    }
+    // spec says arguments to compareFunc "Will never be undefined."
+    // and undefined values should get sorted to end of list.
+    // Make wrapper to ensure this
+    function wrapper(a: any, b: any) {
+      if (a === undefined && b === undefined) {
+        return 0;
+      }
+      if (a === undefined) {
+        return 1;
+      }
+      if (b === undefined) {
+        return -1;
+      }
+      return cf(a, b);
+    }
+    let key;
+    try {
+      key = cmp_to_key(wrapper);
+      // @ts-ignore
+      this.$sort.callKwargs({ key });
+    } finally {
+      key?.destroy();
+      cmp_to_key.destroy();
+      functools.destroy();
+    }
+    return this;
+  }
+  splice(start: number, deleteCount: number, ...items: any[]) {
+    return python_slice_assign(this, start, start + deleteCount, items);
+  }
+  push(elt: any) {
+    // @ts-ignore
+    this.append(elt);
+    // @ts-ignore
+    return this.length;
+  }
+  pop() {
+    // @ts-ignore
+    return this.$pop();
+  }
+  shift() {
+    // @ts-ignore
+    return this.$pop(0);
+  }
+  unshift(elt: any) {
+    // @ts-ignore
+    return this.insert(elt, 0);
+  }
+  copyWithin(target: number, start: number, end?: number) {
+    return Array.prototype.copyWithin.call(this, target, start, end);
+  }
+  fill(value: any, start?: number, end?: number) {
+    return Array.prototype.fill.call(this, value, start, end);
   }
 }
 
