@@ -20,6 +20,7 @@ requirements:
     - scipy
     - joblib
     - threadpoolctl
+    - requests
 
 test:
   imports:
