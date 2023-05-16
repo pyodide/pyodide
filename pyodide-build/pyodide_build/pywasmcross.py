@@ -112,6 +112,8 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present on osx
                     # The file-system might be not case-sensitive,
                     # so take care to handle this by renaming.
                     # For preprocessing and further operation the
