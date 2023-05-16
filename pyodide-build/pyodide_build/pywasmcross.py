@@ -10,8 +10,6 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
-import re
-import shutil
 import sys
 from pathlib import Path
 
@@ -54,6 +52,8 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
+import re
+import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
