@@ -8,6 +8,7 @@ source:
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
     - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+    - patches/0003-fix-cmake-ar-use.patch
 
 build:
   type: shared_library
@@ -28,7 +29,7 @@ build:
     sed -ri 's@int ([cz](dotc|dotu|ladiv))@void \1@g' lapack-netlib/SRC/*.c\
         lapack-netlib/SRC/DEPRECATED/*.c
 
-    make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 \
+    emmake make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 \
         USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
     # Add libf2c symbols to libopenblas.so

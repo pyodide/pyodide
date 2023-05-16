@@ -53,6 +53,7 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
+import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
@@ -111,9 +112,11 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present ...
                     subprocess.check_call(
                         [
-                            "gcc",
+                            "gfortran",
                             "-E",
                             "-C",
                             "-P",
@@ -390,8 +393,14 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    readobj_path = shutil.which("llvm-readobj")
+    if not readobj_path:
+        which_emcc = shutil.which("emcc")
+        assert which_emcc
+        emcc = Path(which_emcc)
+        readobj_path = str((emcc / "../../bin/llvm-readobj").resolve())
     args = [
-        "llvm-readobj",
+        readobj_path,
         "--section-details",
         "-st",
     ] + objects
@@ -476,7 +485,7 @@ def get_export_flags(
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
-def handle_command_generate_args(
+def handle_command_generate_args(  # noqa: C901
     line: list[str], build_args: BuildArgs, is_link_command: bool
 ) -> list[str]:
     """

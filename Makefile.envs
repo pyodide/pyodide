@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.11.3
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.32
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.33
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
