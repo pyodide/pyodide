@@ -15,6 +15,7 @@ sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
+
 from pyodide.ffi import JsException
 
 pytest_pyodide.runner.CHROME_FLAGS.extend(
