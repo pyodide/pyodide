@@ -142,12 +142,12 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                     open(filepath) as input_pipe,
                     open(filepath.with_suffix(".c"), "w") as output_pipe,
                 ):
-                        subprocess.check_call(
-                            ["f2c", "-R"],
-                            stdin=input_pipe,
-                            stdout=output_pipe,
-                            cwd=filepath.parent,
-                        )
+                    subprocess.check_call(
+                        ["f2c", "-R"],
+                        stdin=input_pipe,
+                        stdout=output_pipe,
+                        cwd=filepath.parent,
+                    )
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
