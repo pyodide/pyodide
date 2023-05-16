@@ -10,7 +10,6 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -53,6 +52,7 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
+import re
 import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
@@ -113,7 +113,11 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
                     # Use gfortran frontend, as gcc frontend might not be
-                    # present ...
+                    # present on osx
+                    # The file-system might be not case-sensitive,
+                    # so take care to handle this by renaming.
+                    # For preprocessing and further operation the
+                    # expected file-name and extension needs to be preserved.
                     subprocess.check_call(
                         [
                             "gfortran",
@@ -122,10 +126,10 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             "-P",
                             filepath,
                             "-o",
-                            filepath.with_suffix(".f"),
+                            filepath.with_suffix(".f77"),
                         ]
                     )
-                    filepath = filepath.with_suffix(".f")
+                    filepath = filepath.with_suffix(".f77")
                 # -R flag is important, it means that Fortran functions that
                 # return real e.g. sdot will be transformed into C functions
                 # that return float. For historic reasons, by default f2c
@@ -134,7 +138,16 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 # Fortran files, see
                 # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
                 # for more details
-                subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
+                with (
+                    open(filepath) as input_pipe,
+                    open(filepath.with_suffix(".c"), "w") as output_pipe,
+                ):
+                    subprocess.check_call(
+                        ["f2c", "-R"],
+                        stdin=input_pipe,
+                        stdout=output_pipe,
+                        cwd=filepath.parent,
+                    )
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
