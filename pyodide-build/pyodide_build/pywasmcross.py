@@ -138,8 +138,10 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 # Fortran files, see
                 # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
                 # for more details
-                with open(filepath) as input_pipe:
-                    with open(filepath.with_suffix(".c"), "w") as output_pipe:
+                with (
+                    open(filepath) as input_pipe,
+                    open(filepath.with_suffix(".c"), "w") as output_pipe,
+                ):
                         subprocess.check_call(
                             ["f2c", "-R"],
                             stdin=input_pipe,
