@@ -149,7 +149,6 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                             cwd=filepath.parent,
                         )
                 fix_f2c_output(arg[:-2] + ".c")
-                # if files where renamed, restore old naming
             new_args.append(arg[:-2] + ".c")
             found_source = True
         else:
