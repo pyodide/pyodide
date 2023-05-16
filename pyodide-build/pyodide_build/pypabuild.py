@@ -71,6 +71,13 @@ def remove_avoided_requirements(
 
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
+    if os.environ.get("PYODIDE_BUILD_PACKAGE") == "scikit-image":
+        env.install(
+            [
+                "git+https://github.com/rth/meson-python.git@pyodide2",
+                "meson",
+            ]
+        )
     env.install(
         remove_avoided_requirements(
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
@@ -98,7 +105,7 @@ def _build_in_isolated_env(
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
     # needed.
-    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
+    _IsolatedEnvBuilder.__exit__ = lambda *args: None
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir
