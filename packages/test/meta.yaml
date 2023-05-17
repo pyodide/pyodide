@@ -5,14 +5,17 @@ package:
     - always
   top-level:
     - test
-
-# TODO: also include test directories included in other stdlib modules
+source:
+  sha256: 065040198fde6fd7229b8c0538fc8b848824e35930e3904f46c9e90e9f0f1a3f
+  url: https://github.com/python/cpython/archive/refs/tags/v$(PYVERSION).tar.gz
+  patches:
+    - patches/0005-gh-93839-Move-Lib-ctypes-test-to-Lib-test-test_ctype.patch
+    - patches/0006-gh-93839-Move-Lib-unttest-test-to-Lib-test-test_unit.patch
+    - patches/0007-gh-93839-Use-load_package_tests-for-testmock-GH-9405.patch
+    - patches/0008-Move-test-directories.patch
 build:
   type: cpython_module
   script: |
-    git clone https://github.com/python/cpython --depth 1 --branch v${PYVERSION}
-    cd cpython
-
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testcapi.so \

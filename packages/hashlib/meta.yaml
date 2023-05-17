@@ -5,12 +5,12 @@ package:
     - always
   top-level:
     - _hashlib
+source:
+  sha256: 065040198fde6fd7229b8c0538fc8b848824e35930e3904f46c9e90e9f0f1a3f
+  url: https://github.com/python/cpython/archive/refs/tags/v$(PYVERSION).tar.gz
 build:
   type: cpython_module
   script: |
-    git clone https://github.com/python/cpython --depth 1 --branch v${PYVERSION}
-    cd cpython
-
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \
       $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
 
