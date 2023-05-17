@@ -254,13 +254,7 @@ export function setStdin(
 function setDefaultStdout() {
   if (IN_NODE) {
     const tty = require("tty");
-    const raw = (x: number) => {
-      try {
-        process.stdout.write(Uint8Array.from([x]));
-      } catch (e) {
-        console.warn(e);
-      }
-    };
+    const raw = (x: number) => process.stdout.write(Uint8Array.from([x]));
     const isatty: boolean = tty.isatty(process.stdout.fd);
     setStdout({ raw, isatty });
   } else {
