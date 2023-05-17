@@ -26,6 +26,7 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
+    _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
     exit_with_stdio,
@@ -191,7 +192,10 @@ def download_and_extract(
         The source section from meta.yaml.
     """
     # We only call this function when the URL is defined
+    build_env = get_build_environment_vars()
     url = cast(str, src_metadata.url)
+    url = _environment_substitute_str(url, build_env)
+
     max_retry = 3
     for retry_cnt in range(max_retry):
         try:
