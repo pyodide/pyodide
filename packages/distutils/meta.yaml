@@ -11,4 +11,4 @@ source:
 build:
   type: cpython_module
   script: |
-    tar --exclude=__pycache__ --exclude=tests -cf - distutils | tar -C $DISTDIR -xf -
+    cd Lib && tar --exclude=__pycache__ --exclude=tests -cf - distutils | tar -C $DISTDIR -xf -

@@ -11,4 +11,5 @@ source:
 build:
   type: cpython_module
   script: |
+    cd Lib
     tar --exclude=__pycache__ -cf - pydoc_data | tar -C $DISTDIR -xf -
