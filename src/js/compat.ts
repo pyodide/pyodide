@@ -3,8 +3,6 @@ declare var process: any;
 declare var Deno: any;
 
 export const IN_DENO = typeof Deno !== undefined;
-const node_prefix = IN_DENO ? "node:" : "";
-const npm_prefix = IN_DENO ? "npm:" : "";
 export const IN_NODE =
   IN_DENO ||
   (typeof process === "object" &&
@@ -36,18 +34,18 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodeUrlMod = (await import(node_prefix + "url")).default;
+  nodeUrlMod = (await import("node:url")).default;
   // @ts-ignore
-  nodeFsPromisesMod = await import(node_prefix + "fs/promises");
+  nodeFsPromisesMod = await import("node:fs/promises");
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
     // @ts-ignore
-    nodeFetch = (await import(node_prefix + "node-fetch")).default;
+    nodeFetch = (await import("node:node-fetch")).default;
   }
   // @ts-ignore
-  nodeVmMod = (await import(node_prefix + "vm")).default;
-  nodePath = await import(node_prefix + "path");
+  nodeVmMod = (await import("node:vm")).default;
+  nodePath = await import("node:path");
   pathSep = nodePath.sep;
 
   // Emscripten uses `require`, so if it's missing (because we were imported as
@@ -65,16 +63,14 @@ export async function initNodeModules() {
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
-  const fs = await import(node_prefix + "fs");
-  const crypto = await import(node_prefix + "crypto");
+  const fs = await import("node:fs");
+  const crypto = await import("node:crypto");
   // @ts-ignore
-  const tty = await import(node_prefix + "tty");
+  const tty = await import("node:tty");
   // Stub these out in deno because otherwise I get:
   // TypeError: Loading unprepared module: npm:ws
-  const ws = IN_DENO ? {} : await import(npm_prefix + "ws");
-  const child_process = IN_DENO
-    ? {}
-    : await import(npm_prefix + "child_process");
+  const ws = IN_DENO ? {} : await import("ws");
+  const child_process = IN_DENO ? {} : await import("child_process");
   const node_modules: { [mode: string]: any } = {
     fs,
     crypto,
