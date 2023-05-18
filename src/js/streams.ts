@@ -144,8 +144,8 @@ function setDefaultStdin() {
   if (IN_NODE) {
     const BUFSIZE = 256;
     const buf = new Uint8Array(BUFSIZE);
-    const fs = require("fs");
-    const tty = require("tty");
+    const fs = require("node:fs");
+    const tty = require("node:tty");
     const stdin = function () {
       let bytesRead;
       try {
@@ -253,7 +253,7 @@ export function setStdin(
  */
 function setDefaultStdout() {
   if (IN_NODE) {
-    const tty = require("tty");
+    const tty = require("node:tty");
     const raw = (x: number) => process.stdout.write(Uint8Array.from([x]));
     const isatty: boolean = tty.isatty(process.stdout.fd);
     setStdout({ raw, isatty });
@@ -314,7 +314,7 @@ export function setStdout(
  */
 function setDefaultStderr() {
   if (IN_NODE) {
-    const tty = require("tty");
+    const tty = require("node:tty");
     const raw = (x: number) => process.stderr.write(Uint8Array.from([x]));
     const isatty: boolean = tty.isatty(process.stderr.fd);
     setStderr({ raw, isatty });
