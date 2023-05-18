@@ -583,6 +583,17 @@ def test_run_python_js_error(selenium):
     )
 
 
+@run_in_pyodide
+def test_run_python_dom_error(selenium):
+    import pytest
+
+    from js import DOMException
+    from pyodide.ffi import JsException
+
+    with pytest.raises(JsException, match="oops"):
+        raise DOMException.new("oops")
+
+
 def test_run_python_locals(selenium):
     selenium.run_js(
         """

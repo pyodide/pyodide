@@ -4043,7 +4043,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
 
   /**
-   * DomException is a weird special case. According to WHATWG, there are two
+   * DOMException is a weird special case. According to WHATWG, there are two
    * types of Exception objects, simple exceptions and DOMExceptions. The spec
    * says:
    *
@@ -4051,8 +4051,8 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
    * > nonstandard properties (such as a stack property), it should also expose
    * > those on DOMException objects
    *
-   * Firefox respects this and has DomException.stack. But Safari and Chrome do
-   * not. Hence the special check here for DomException.
+   * Firefox respects this and has DOMException.stack. But Safari and Chrome do
+   * not. Hence the special check here for DOMException.
    */
   SET_FLAG_IF(IS_ERROR,
     (
@@ -4060,7 +4060,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
       && hasProperty(obj, "message")
       && (
         hasProperty(obj, "stack")
-        || constructorName === "DomException"
+        || constructorName === "DOMException"
       )
     ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
   // clang-format on
