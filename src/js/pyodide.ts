@@ -174,6 +174,7 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+  env: { [key: string]: string };
 };
 
 /**
@@ -247,6 +248,15 @@ export async function loadPyodide(
      */
     args?: string[];
     /**
+     * Environment variables to pass to Python on startup. This also can be
+     * accessed inside of Python at runtime via `os.environ`, but you can
+     * alternatively use `os.environ` for setting at runtime. Certain environment
+     * variables change the way that Python loads:
+     * https://docs.python.org/3.10/using/cmdline.html#environment-variables
+     */
+    env?: { [key: string]: string };
+
+    /**
      * @ignore
      */
     _node_mounts?: string[];
@@ -268,8 +278,17 @@ export async function loadPyodide(
     lockFileURL: indexURL! + "repodata.json",
     args: [],
     _node_mounts: [],
+    env: {},
   };
+  if (options.env && options.env.HOME && options.homedir) {
+    throw new Error("Set both env.HOME and homedir arguments");
+  }
   const config = Object.assign(default_config, options) as ConfigType;
+  if (config.env.HOME) {
+    config.homedir = config.env.HOME;
+  } else {
+    config.env.HOME = config.homedir;
+  }
 
   const Module = createModule();
   Module.print = config.stdout;
