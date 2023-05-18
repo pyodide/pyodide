@@ -145,14 +145,6 @@ def test_handle_command_ldflags(build_args):
     )
 
 
-@pytest.mark.parametrize(
-    "in_ext, out_ext, executable, flag_name",
-    [
-        (".c", ".o", "emcc", "cflags"),
-        (".cpp", ".o", "em++", "cxxflags"),
-        (".c", ".so", "emcc", "ldflags"),
-    ],
-)
 def test_f2c():
     assert f2c_wrap("gfortran test.f") == "gcc test.c"
     assert f2c_wrap("gcc test.c") is None
