@@ -41,7 +41,7 @@ export async function initNodeModules() {
     nodeFetch = fetch;
   } else {
     // @ts-ignore
-    nodeFetch = (await import("node:node-fetch")).default;
+    nodeFetch = (await import("node-fetch")).default;
   }
   // @ts-ignore
   nodeVmMod = (await import("node:vm")).default;
@@ -56,7 +56,7 @@ export async function initNodeModules() {
   // When importing Deno as a module, require exists here but it does not exist
   // in pyodide.asm.js, not sure why. Anyways in that case go ahead and define
   // it.
-  if (typeof require !== "undefined" && !IN_DENO) {
+  if (typeof require !== "undefined") {
     return;
   }
 
