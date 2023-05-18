@@ -529,7 +529,7 @@ def handle_command_generate_args(  # noqa: C901
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
-    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
+    ['emcc', 'test.c', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
@@ -575,56 +575,9 @@ def handle_command_generate_args(  # noqa: C901
     else:
         return line
 
-    # set linker and C flags to error on anything to do with function declarations being wrong.
-    # Better to fail at compile or link time.
-    if is_link_command:
-        new_args.append("-Wl,--fatal-warnings")
-    new_args.extend(
-        [
-            "-Werror=implicit-function-declaration",
-            "-Werror=mismatched-parameter-types",
-            "-Werror=return-type",
-        ]
-    )
-
-    if is_link_command:
-        new_args.extend(build_args.ldflags.split())
-        new_args.extend(get_export_flags(line, build_args.exports))
-
-    if "-c" in line:
-        if new_args[0] == "emcc":
-            new_args.extend(build_args.cflags.split())
-        elif new_args[0] == "em++":
-            new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
-
-        if build_args.pythoninclude:
-            new_args.extend(["-I", build_args.pythoninclude])
-
-    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
-    optflag = None
-    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
-    # priority.
-    for arg in reversed(new_args):
-        if arg in optflags_valid:
-            optflag = arg
-            break
-    debugflag = None
-    # Identify the debug flag (e.g. -g0) in cflags/cxxflags/ldflags. Last one has
-    # priority.
-    for arg in reversed(new_args):
-        if arg.startswith("-g"):
-            debugflag = arg
-            break
-
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        if arg in optflags_valid and optflag is not None:
-            # There are multiple contradictory optflags provided, use the one
-            # from cflags/cxxflags/ldflags
-            continue
-        if arg.startswith("-g") and debugflag is not None:
-            continue
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
@@ -642,6 +595,30 @@ def handle_command_generate_args(  # noqa: C901
 
         if result:
             new_args.append(result)
+
+    new_args.extend(
+        [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
+        ]
+    )
+
+    # set linker and C flags to error on anything to do with function declarations being wrong.
+    # Better to fail at compile or link time.
+    if is_link_command:
+        new_args.append("-Wl,--fatal-warnings")
+        new_args.extend(build_args.ldflags.split())
+        new_args.extend(get_export_flags(line, build_args.exports))
+
+    if "-c" in line:
+        if new_args[0] == "emcc":
+            new_args.extend(build_args.cflags.split())
+        elif new_args[0] == "em++":
+            new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
+
+        if build_args.pythoninclude:
+            new_args.extend(["-I", build_args.pythoninclude])
 
     return new_args
 

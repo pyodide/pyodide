@@ -108,7 +108,7 @@ def test_handle_command(build_args):
     )
     assert (
         generate_args("gcc -I./lib1 -c test.cpp -o test.o", args)
-        == "em++ -I./lib2 -std=c++11 -I./lib1 -c test.cpp -o test.o"
+        == "em++ -I./lib1 -c test.cpp -o test.o -I./lib2 -std=c++11"
     )
 
     # check ldflags injection
@@ -121,7 +121,7 @@ def test_handle_command(build_args):
     )
     assert (
         generate_args("gcc -c test.o -o test.so", args, True)
-        == "emcc -lm -c test.o -o test.so"
+        == "emcc -c test.o -o test.so -lm"
     )
 
     # Test that repeated libraries are removed
@@ -142,25 +142,6 @@ def test_handle_command_ldflags(build_args):
             True,
         )
         == "emcc -Wl,-z,now -c test.o -o test.so"
-    )
-
-
-@pytest.mark.parametrize(
-    "in_ext, out_ext, executable, flag_name",
-    [
-        (".c", ".o", "emcc", "cflags"),
-        (".cpp", ".o", "em++", "cxxflags"),
-        (".c", ".so", "emcc", "ldflags"),
-    ],
-)
-def test_handle_command_optflags(in_ext, out_ext, executable, flag_name, build_args):
-    # Make sure that when multiple optflags are present those in cflags,
-    # cxxflags, or ldflags has priority
-    args = build_args
-    setattr(args, flag_name, "-Oz")
-    assert (
-        generate_args(f"gcc -O3 -c test.{in_ext} -o test.{out_ext}", args, True)
-        == f"{executable} -Oz -c test.{in_ext} -o test.{out_ext}"
     )
 
 
