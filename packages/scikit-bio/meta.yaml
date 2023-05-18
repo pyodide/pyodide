@@ -20,7 +20,7 @@ requirements:
     - scipy
     - joblib
     - threadpoolctl
-    - requests
+    - pyodide_http
 
 test:
   imports:
