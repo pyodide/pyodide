@@ -31,6 +31,10 @@ myst:
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
