@@ -29,6 +29,15 @@ myst:
 - {{ Enhancement }} Re-enabled sparseqr, freesasa, lightgbm, opencv-python, and wordcloud
   {pr}`3783`, {pr}`3970`
 
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
+
+- {{ Fix }} The feature detection for `JSProxy` has been improved so that it
+  should never fail even when handling strange or ill-behaved JavaScript proxy
+  objects.
+  {pr}`3740`, {pr}`3750`
+
 ## Version 0.23.3
 
 _June 17, 2023_
