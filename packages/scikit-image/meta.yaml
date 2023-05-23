@@ -31,6 +31,7 @@ requirements:
     - Pillow
     - imageio
     - pywavelets
+    - lazy_loader
 
 about:
   home: https://scikit-image.org
