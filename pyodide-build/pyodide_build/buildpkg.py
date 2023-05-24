@@ -431,7 +431,6 @@ def compile(
 
         from .pypabuild import build
 
-        os.environ["PYODIDE_BUILD_PACKAGE"] = name
         os.environ["MESON_FORCE_BACKTRACE"] = "1"
 
         outpath = srcpath / "dist"

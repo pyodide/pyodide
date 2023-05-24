@@ -71,13 +71,6 @@ def remove_avoided_requirements(
 
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
-    if os.environ.get("PYODIDE_BUILD_PACKAGE") == "scikit-image":
-        env.install(
-            [
-                "git+https://github.com/rth/meson-python.git@pyodide2",
-                "meson",
-            ]
-        )
     env.install(
         remove_avoided_requirements(
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
