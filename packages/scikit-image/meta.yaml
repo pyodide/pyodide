@@ -20,8 +20,6 @@ build:
     echo CFLAGS: $CFLAGS
     echo LDFLAGS: $LDFLAGS
 
-    pip install -r requirements/build.txt
-
 requirements:
   host:
     - numpy
