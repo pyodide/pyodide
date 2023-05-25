@@ -431,8 +431,6 @@ def compile(
 
         from .pypabuild import build
 
-        os.environ["MESON_FORCE_BACKTRACE"] = "1"
-
         outpath = srcpath / "dist"
         build(srcpath, outpath, build_env, backend_flags)
 
