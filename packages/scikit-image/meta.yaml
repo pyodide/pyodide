@@ -16,7 +16,7 @@ build:
     echo CFLAGS: $CFLAGS
     echo LDFLAGS: $LDFLAGS
     export CFLAGS=${SIDE_MODULE_CFLAGS}
-    export LDFLAGS=${SIDE_MODULE_LDFLAGS} # /-L /-L}
+    export LDFLAGS=${SIDE_MODULE_LDFLAGS/-L /-L}
     echo CFLAGS: $CFLAGS
     echo LDFLAGS: $LDFLAGS
   backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross
