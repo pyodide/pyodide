@@ -6,8 +6,8 @@ package:
   top-level:
     - distutils
 source:
-  sha256: 065040198fde6fd7229b8c0538fc8b848824e35930e3904f46c9e90e9f0f1a3f
-  url: https://github.com/python/cpython/archive/refs/tags/v$(PYVERSION).tar.gz
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
