@@ -131,7 +131,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
+def check_checksum(archive: Path, checksum: str) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -140,12 +140,9 @@ def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     ----------
     archive
         the path to the archive we wish to checksum
-    source_metadata
-        The source section from meta.yaml.
+    checksum
+        the checksum we expect the archive to have
     """
-    if source_metadata.sha256 is None:
-        return
-    checksum = source_metadata.sha256
     real_checksum = _get_sha256_checksum(archive)
     if real_checksum != checksum:
         raise ValueError(
@@ -222,7 +219,10 @@ def download_and_extract(
         with open(tarballpath, "wb") as f:
             f.write(response.read())
         try:
-            check_checksum(tarballpath, src_metadata)
+            checksum = src_metadata.sha256
+            if checksum is not None:
+                checksum = _environment_substitute_str(checksum, build_env)
+                check_checksum(tarballpath, checksum)
         except Exception:
             tarballpath.unlink()
             raise
