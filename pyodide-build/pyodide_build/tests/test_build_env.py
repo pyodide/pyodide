@@ -18,6 +18,7 @@ from pyodide_build.cli import xbuildenv
 def reset_env_vars():
     # Will reset the environment variables to their original values after each test.
 
+    os.environ.pop("PYODIDE_ROOT", None)
     old_environ = dict(os.environ)
 
     try:
