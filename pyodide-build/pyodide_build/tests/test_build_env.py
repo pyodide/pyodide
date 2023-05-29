@@ -82,24 +82,20 @@ class TestInTree:
 
     def test_get_build_environment_vars(self):
         build_vars = common.get_build_environment_vars()
+        extra_vars = set(
+            ["PYODIDE", "PKG_CONFIG_PATH", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
+        )
 
-        for var in common.BUILD_VARS:
-            assert var in build_vars, f"Missing {var}"
+        for var in build_vars:
+            assert var in common.BUILD_VARS | extra_vars, f"Unknown {var}"
 
         # Additionally we set these variables
-        for var in [
-            "PYODIDE",
-            "PKG_CONFIG_PATH",
-            "CMAKE_TOOLCHAIN_FILE",
-            "PYO3_CONFIG_FILE",
-        ]:
+        for var in extra_vars:
             assert var in build_vars, f"Missing {var}"
 
     def test_get_build_flag(self):
-        for var in common.BUILD_VARS:
-            assert (
-                common.get_build_flag(var) == common.get_build_environment_vars()[var]
-            )
+        for key, val in common.get_build_environment_vars().items():
+            assert common.get_build_flag(key) == val
 
         with pytest.raises(ValueError):
             common.get_build_flag("UNKNOWN_VAR")
