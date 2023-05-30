@@ -7,11 +7,9 @@ import os
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner  # type: ignore[import]
 
 from conftest import ROOT_PATH
 from pyodide_build import common
-from pyodide_build.cli import xbuildenv
 
 
 @pytest.fixture(scope="function")
@@ -108,25 +106,27 @@ class TestInTree:
 
 
 class TestOutOfTree(TestInTree):
+    # TODO: selenium fixture is a hack to make these tests run only after building Pyodide.
     @pytest.fixture(scope="function", autouse=True)
     def xbuildenv(self, selenium, tmp_path, reset_env_vars, reset_cache):
-        # TODO: selenium fixture is a hack to make these tests run only after building Pyodide.
+        import subprocess as sp
+
         assert "PYODIDE_ROOT" not in os.environ
 
-        runner = CliRunner()
-
         envpath = Path(tmp_path) / ".pyodide-xbuildenv"
-        result = runner.invoke(
-            xbuildenv.app,
+        result = sp.run(
             [
+                "pyodide",
+                "xbuildenv",
                 "create",
                 str(envpath),
                 "--root",
                 ROOT_PATH,
                 "--skip-missing-files",
-            ],
+            ]
         )
-        assert result.exit_code == 0
+
+        assert result.returncode == 0
 
         yield tmp_path
 
