@@ -285,8 +285,8 @@ export async function loadPyodide(
   }
   if (options.homedir) {
     console.warn(
-      "The homedir argument to loadPyodide is deprecated. "
-      + "Use 'env: { HOME: value }' instead of 'homedir: value'.",
+      "The homedir argument to loadPyodide is deprecated. " +
+        "Use 'env: { HOME: value }' instead of 'homedir: value'.",
     );
   }
   const config = Object.assign(default_config, options) as ConfigType;
