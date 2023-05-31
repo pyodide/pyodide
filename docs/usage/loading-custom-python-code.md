@@ -67,8 +67,8 @@ See {ref}`load-external-files-in-pyodide` for more information.
 
 ```js
 let response = await fetch("https://.../your_package.tar.gz"); // .zip, .whl, ...
-let buffer = await response.arraybuffer();
-await pyodide.unpackArchive(buffer); // by default, unpacks to the current dir
+let buffer = await response.arrayBuffer();
+await pyodide.unpackArchive(buffer, "gztar"); // by default, unpacks to the current dir
 pyodide.pyimport("your_package");
 ```
 

@@ -15,8 +15,8 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.33
-  {pr}`3665`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.34
+  {pr}`3665`, {pr}`3659`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
@@ -30,6 +30,10 @@ myst:
 
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
+
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
 
 ### Packages
 

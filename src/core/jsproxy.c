@@ -4011,6 +4011,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   }
   const isBufferView = safeBool(() => ArrayBuffer.isView(obj));
   const isArray = safeBool(() => Array.isArray(obj));
+  const constructorName = safeBool(() => obj.constructor.name) || "";
 
   // If we somehow set more than one of IS_CALLABLE, IS_BUFFER, and IS_ERROR,
   // we'll run into trouble. I think that for this to happen, someone would have
@@ -4040,7 +4041,28 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
               isBufferView && typeTag !== '[object DataView]');
   SET_FLAG_IF(IS_GENERATOR, typeTag === "[object Generator]");
   SET_FLAG_IF(IS_ASYNC_GENERATOR, typeTag === "[object AsyncGenerator]");
-  SET_FLAG_IF(IS_ERROR, (hasProperty(obj, "name") && hasProperty(obj, "message") && hasProperty(obj, "stack")) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+
+  /**
+   * DOMException is a weird special case. According to WHATWG, there are two
+   * types of Exception objects, simple exceptions and DOMExceptions. The spec
+   * says:
+   *
+   * > if an implementation gives native Error objects special powers or
+   * > nonstandard properties (such as a stack property), it should also expose
+   * > those on DOMException objects
+   *
+   * Firefox respects this and has DOMException.stack. But Safari and Chrome do
+   * not. Hence the special check here for DOMException.
+   */
+  SET_FLAG_IF(IS_ERROR,
+    (
+      hasProperty(obj, "name")
+      && hasProperty(obj, "message")
+      && (
+        hasProperty(obj, "stack")
+        || constructorName === "DOMException"
+      )
+    ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
   // clang-format on
   return type_flags;
 });

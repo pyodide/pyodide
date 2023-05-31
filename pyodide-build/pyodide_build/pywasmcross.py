@@ -10,7 +10,6 @@ cross-compiling and then pass the command long to emscripten.
 """
 import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -53,6 +52,8 @@ if IS_COMPILER_INVOCATION:
 
 
 import dataclasses
+import re
+import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
 from typing import Literal, NoReturn
@@ -111,18 +112,24 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 if arg.endswith(".F"):
                     # .F files apparently expect to be run through the C
                     # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present on osx
+                    # The file-system might be not case-sensitive,
+                    # so take care to handle this by renaming.
+                    # For preprocessing and further operation the
+                    # expected file-name and extension needs to be preserved.
                     subprocess.check_call(
                         [
-                            "gcc",
+                            "gfortran",
                             "-E",
                             "-C",
                             "-P",
                             filepath,
                             "-o",
-                            filepath.with_suffix(".f"),
+                            filepath.with_suffix(".f77"),
                         ]
                     )
-                    filepath = filepath.with_suffix(".f")
+                    filepath = filepath.with_suffix(".f77")
                 # -R flag is important, it means that Fortran functions that
                 # return real e.g. sdot will be transformed into C functions
                 # that return float. For historic reasons, by default f2c
@@ -131,7 +138,16 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 # Fortran files, see
                 # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
                 # for more details
-                subprocess.check_call(["f2c", "-R", filepath.name], cwd=filepath.parent)
+                with (
+                    open(filepath) as input_pipe,
+                    open(filepath.with_suffix(".c"), "w") as output_pipe,
+                ):
+                    subprocess.check_call(
+                        ["f2c", "-R"],
+                        stdin=input_pipe,
+                        stdout=output_pipe,
+                        cwd=filepath.parent,
+                    )
                 fix_f2c_output(arg[:-2] + ".c")
             new_args.append(arg[:-2] + ".c")
             found_source = True
@@ -390,8 +406,14 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    readobj_path = shutil.which("llvm-readobj")
+    if not readobj_path:
+        which_emcc = shutil.which("emcc")
+        assert which_emcc
+        emcc = Path(which_emcc)
+        readobj_path = str((emcc / "../../bin/llvm-readobj").resolve())
     args = [
-        "llvm-readobj",
+        readobj_path,
         "--section-details",
         "-st",
     ] + objects
@@ -476,7 +498,7 @@ def get_export_flags(
     yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
 
 
-def handle_command_generate_args(
+def handle_command_generate_args(  # noqa: C901
     line: list[str], build_args: BuildArgs, is_link_command: bool
 ) -> list[str]:
     """
@@ -507,7 +529,7 @@ def handle_command_generate_args(
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
     >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
-    ['emcc', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type', 'test.c']
+    ['emcc', 'test.c', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
@@ -553,56 +575,9 @@ def handle_command_generate_args(
     else:
         return line
 
-    # set linker and C flags to error on anything to do with function declarations being wrong.
-    # Better to fail at compile or link time.
-    if is_link_command:
-        new_args.append("-Wl,--fatal-warnings")
-    new_args.extend(
-        [
-            "-Werror=implicit-function-declaration",
-            "-Werror=mismatched-parameter-types",
-            "-Werror=return-type",
-        ]
-    )
-
-    if is_link_command:
-        new_args.extend(build_args.ldflags.split())
-        new_args.extend(get_export_flags(line, build_args.exports))
-
-    if "-c" in line:
-        if new_args[0] == "emcc":
-            new_args.extend(build_args.cflags.split())
-        elif new_args[0] == "em++":
-            new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
-
-        if build_args.pythoninclude:
-            new_args.extend(["-I", build_args.pythoninclude])
-
-    optflags_valid = [f"-O{tok}" for tok in "01234sz"]
-    optflag = None
-    # Identify the optflag (e.g. -O3) in cflags/cxxflags/ldflags. Last one has
-    # priority.
-    for arg in reversed(new_args):
-        if arg in optflags_valid:
-            optflag = arg
-            break
-    debugflag = None
-    # Identify the debug flag (e.g. -g0) in cflags/cxxflags/ldflags. Last one has
-    # priority.
-    for arg in reversed(new_args):
-        if arg.startswith("-g"):
-            debugflag = arg
-            break
-
     used_libs: set[str] = set()
     # Go through and adjust arguments
     for arg in line[1:]:
-        if arg in optflags_valid and optflag is not None:
-            # There are multiple contradictory optflags provided, use the one
-            # from cflags/cxxflags/ldflags
-            continue
-        if arg.startswith("-g") and debugflag is not None:
-            continue
         if new_args[-1].startswith("-B") and "compiler_compat" in arg:
             # conda uses custom compiler search paths with the compiler_compat folder.
             # Ignore it.
@@ -620,6 +595,30 @@ def handle_command_generate_args(
 
         if result:
             new_args.append(result)
+
+    new_args.extend(
+        [
+            "-Werror=implicit-function-declaration",
+            "-Werror=mismatched-parameter-types",
+            "-Werror=return-type",
+        ]
+    )
+
+    # set linker and C flags to error on anything to do with function declarations being wrong.
+    # Better to fail at compile or link time.
+    if is_link_command:
+        new_args.append("-Wl,--fatal-warnings")
+        new_args.extend(build_args.ldflags.split())
+        new_args.extend(get_export_flags(line, build_args.exports))
+
+    if "-c" in line:
+        if new_args[0] == "emcc":
+            new_args.extend(build_args.cflags.split())
+        elif new_args[0] == "em++":
+            new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
+
+        if build_args.pythoninclude:
+            new_args.extend(["-I", build_args.pythoninclude])
 
     return new_args
 
