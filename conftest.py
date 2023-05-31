@@ -15,7 +15,7 @@ sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
-import pytest_pyodide.pyodide
+import pytest_pyodide.decorator
 from pyodide.ffi import JsException
 pytest_pyodide.decorator.JsException = JsException
 
