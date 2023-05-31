@@ -1479,11 +1479,14 @@ export class PySequenceMethods {
   slice(start?: number, stop?: number): any {
     return Array.prototype.slice.call(this, start, stop);
   }
-  lastIndexOf(elt: any) {
-    return Array.prototype.lastIndexOf.call(this, elt);
+  lastIndexOf(elt: any, fromIndex?: number) {
+    if (fromIndex === undefined) {
+      fromIndex = (this as any).length;
+    }
+    return Array.prototype.lastIndexOf.call(this, elt, fromIndex);
   }
-  indexOf(elt: any) {
-    return Array.prototype.indexOf.call(this, elt);
+  indexOf(elt: any, fromIndex?: number) {
+    return Array.prototype.indexOf.call(this, elt, fromIndex);
   }
   forEach(callbackfn: (elt: any) => void, thisArg?: any) {
     Array.prototype.forEach.call(this, callbackfn, thisArg);
@@ -1508,8 +1511,10 @@ export class PySequenceMethods {
       array: any,
     ) => any,
     initialValue?: any,
-  ): any {
-    return Array.prototype.reduce.call(this, callbackfn, initialValue);
+  ): any;
+  reduce(...args: any[]) {
+    // @ts-ignore
+    return Array.prototype.reduce.apply(this, args);
   }
   reduceRight(
     callbackfn: (
@@ -1518,9 +1523,11 @@ export class PySequenceMethods {
       currentIndex: number,
       array: any,
     ) => any,
-    initialValue?: any,
-  ): any {
-    return Array.prototype.reduceRight.call(this, callbackfn, initialValue);
+    initialValue: any,
+  ): any;
+  reduceRight(...args: any[]) {
+    // @ts-ignore
+    return Array.prototype.reduceRight.apply(this, args);
   }
   some(
     predicate: (value: any, index: number, array: any[]) => unknown,
