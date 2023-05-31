@@ -14,6 +14,9 @@ build:
 source:
   url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz
   sha256: a3c5d4c6a10b9c1538e1051edcd6341ef3d13142b698ee9c4a1f112d9684d803
+  patches:
+    - patches/0001-fix-install_name.patch
+
 requirements:
   run:
     - numpy

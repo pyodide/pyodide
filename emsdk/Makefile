@@ -10,8 +10,6 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cd emsdk/upstream/emscripten/ && cat ../../../patches/*.patch | patch -p1 --verbose
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
-	# Put llvm-readobj on the path, needed by pywasmcross
-	ln emsdk/upstream/bin/llvm-readobj emsdk
 	touch emsdk/.complete
 
 clean:
