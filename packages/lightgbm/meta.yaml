@@ -1,5 +1,6 @@
 package:
   name: lightgbm
+  _disabled: true
   version: 3.3.5
 source:
   url: https://files.pythonhosted.org/packages/98/1f/fc5c183012f5fdd23e65d54ee09312d8b4dc9e4e39c227236f61942ef293/lightgbm-3.3.5.tar.gz

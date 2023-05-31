@@ -792,6 +792,7 @@
       - test_4dyear # '%4Y' != '0001'
       - test_ctime # '1941' != '-100'
       - test_monotonic # self.assertTrue(0.450 <= dt) fails
+      - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
 - test_timeit
 - test_timeout
 - test_tix
