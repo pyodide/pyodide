@@ -31,6 +31,10 @@ myst:
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
+- {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
+  as drop-in replacements for JavaScript Arrays.
+  {pr}`3853`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
