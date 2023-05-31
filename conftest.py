@@ -13,19 +13,13 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-from importlib import import_module
-
+import pytest_pyodide.decorator
 import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 from pyodide.ffi import JsException
 
-# Hide this from mypy
-# mypy (no tests) incorrectly checks this file.
-# As a result, mypy sees an error here but mypy-tests does not.
-# As a workaround, use weird reflection that mypy does not understand.
-decorator = import_module("pytest_pyodide.decorator")
-decorator.JsException = JsException
+pytest_pyodide.decorator.JsException = JsException
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
