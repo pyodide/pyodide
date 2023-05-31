@@ -16,6 +16,9 @@ deprecation warnings. More details about each item can often be found in the
 
 - The methods `PyProxy.supportsHas`, `PyProxy.isCallable`, etc will be removed.
 
+- Support for the `homedir` argument will be removed in favor of
+  `env: {HOME: "/the/home/directory"}`.
+
 ## 0.24.0
 
 - The `messageCallback` and `errorCallback` argument to `loadPackage` and
