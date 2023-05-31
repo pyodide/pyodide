@@ -15,8 +15,8 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.37
-  {pr}`3665`, {pr}`3659`, {pr}`3822`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.38
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
