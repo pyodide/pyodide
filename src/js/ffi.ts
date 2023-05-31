@@ -38,6 +38,7 @@ import {
   PyBuffer,
   PyBufferView,
   PySequence,
+  PyMutableSequence,
 } from "./pyproxy.gen";
 
 import { PythonError } from "./error_handling.gen";
@@ -65,4 +66,5 @@ export const ffi = {
   PyBufferView,
   PythonError,
   PySequence,
+  PyMutableSequence,
 };

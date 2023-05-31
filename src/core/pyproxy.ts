@@ -1445,6 +1445,10 @@ export class PyAsyncGeneratorMethods {
   }
 }
 
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is an
+ * :py:class:`~collections.abc.Sequence` (i.e., a :py:class:`list`)
+ */
 export class PySequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
@@ -1473,36 +1477,133 @@ export class PySequenceMethods {
   get [Symbol.isConcatSpreadable]() {
     return true;
   }
+  /**
+   * See :js:meth:`Array.join`. The :js:meth:`Array.join` method creates and
+   * returns a new string by concatenating all of the elements in the
+   * :py:class:`~collections.abc.Sequence`.
+   *
+   * @param separator A string to separate each pair of adjacent elements of the
+   * Sequence.
+   *
+   * @returns  A string with all Sequence elements joined.
+   */
   join(separator?: string) {
     return Array.prototype.join.call(this, separator);
   }
+  /**
+   * See :js:meth:`Array.slice`. The :js:meth:`Array.slice` method returns a
+   * shallow copy of a portion of a :py:class:`~collections.abc.Sequence` into a
+   * new array object selected from ``start`` to ``stop`` (`stop` not included)
+   * @param start Zero-based index at which to start extraction. Negative index
+   * counts back from the end of the Sequence.
+   * @param stop Zero-based index at which to end extraction. Negative index
+   * counts back from the end of the Sequence.
+   * @returns A new array containing the extracted elements.
+   */
   slice(start?: number, stop?: number): any {
     return Array.prototype.slice.call(this, start, stop);
   }
+  /**
+   * See :js:meth:`Array.lastIndexOf`. Returns the last index at which a given
+   * element can be found in the Sequence, or -1 if it is not present.
+   * @param elt Element to locate in the Sequence.
+   * @param fromIndex Zero-based index at which to start searching backwards,
+   * converted to an integer. Negative index counts back from the end of the
+   * Sequence.
+   * @returns The last index of the element in the Sequence; -1 if not found.
+   */
   lastIndexOf(elt: any, fromIndex?: number) {
     if (fromIndex === undefined) {
       fromIndex = (this as any).length;
     }
     return Array.prototype.lastIndexOf.call(this, elt, fromIndex);
   }
+  /**
+   * See :js:meth:`Array.indexOf`. Returns the first index at which a given
+   * element can be found in the Sequence, or -1 if it is not present.
+   * @param elt Element to locate in the Sequence.
+   * @param fromIndex Zero-based index at which to start searching, converted to
+   * an integer. Negative index counts back from the end of the Sequence.
+   * @returns The first index of the element in the Sequence; -1 if not found.
+   */
   indexOf(elt: any, fromIndex?: number) {
     return Array.prototype.indexOf.call(this, elt, fromIndex);
   }
+  /**
+   * See :js:meth:`Array.forEach`. Executes a provided function once for each
+   * ``Sequence`` element.
+   * @param callbackfn A function to execute for each element in the ``Sequence``. Its
+   * return value is discarded.
+   * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
+   */
   forEach(callbackfn: (elt: any) => void, thisArg?: any) {
     Array.prototype.forEach.call(this, callbackfn, thisArg);
   }
+  /**
+   * See :js:meth:`Array.map`. Creates a new array populated with the results of
+   * calling a provided function on every element in the calling ``Sequence``.
+   * @param callbackfn A function to execute for each element in the ``Sequence``. Its
+   * return value is added as a single element in the new array.
+   * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
+   */
   map(
     callbackfn: (elt: any, index: number, array: any) => void,
     thisArg?: any,
   ) {
     return Array.prototype.map.call(this, callbackfn, thisArg);
   }
+  /**
+   * See :js:meth:`Array.filter`. Creates a shallow copy of a portion of a given
+   * ``Sequence``, filtered down to just the elements from the given array that pass
+   * the test implemented by the provided function.
+   * @param callbackfn A function to execute for each element in the array. It
+   * should return a truthy value to keep the element in the resulting array,
+   * and a falsy value otherwise.
+   * @param thisArg A value to use as ``this`` when executing ``predicate``.
+   */
   filter(
     predicate: (elt: any, index: number, array: any) => boolean,
     thisArg?: any,
   ) {
     return Array.prototype.filter.call(this, predicate, thisArg);
   }
+  /**
+   * See :js:meth:`Array.some`. Tests whether at least one element in the
+   * ``Sequence`` passes the test implemented by the provided function.
+   * @param callbackfn A function to execute for each element in the
+   * ``Sequence``. It should return a truthy value to indicate the element
+   * passes the test, and a falsy value otherwise.
+   * @param thisArg A value to use as ``this`` when executing ``predicate``.
+   */
+  some(
+    predicate: (value: any, index: number, array: any[]) => unknown,
+    thisArg?: any,
+  ): boolean {
+    return Array.prototype.some.call(this, predicate, thisArg);
+  }
+  /**
+   * See :js:meth:`Array.every`. Tests whether every element in the ``Sequence``
+   * passes the test implemented by the provided function.
+   * @param callbackfn A function to execute for each element in the
+   * ``Sequence``. It should return a truthy value to indicate the element
+   * passes the test, and a falsy value otherwise.
+   * @param thisArg A value to use as ``this`` when executing ``predicate``.
+   */
+  every(
+    predicate: (value: any, index: number, array: any[]) => unknown,
+    thisArg?: any,
+  ): boolean {
+    return Array.prototype.every.call(this, predicate, thisArg);
+  }
+  /**
+   * See :js:meth:`Array.reduce`. Executes a user-supplied "reducer" callback
+   * function on each element of the Sequence, in order, passing in the return
+   * value from the calculation on the preceding element. The final result of
+   * running the reducer across all elements of the Sequence is a single value.
+   * @param callbackfn A function to execute for each element in the ``Sequence``. Its
+   * return value is discarded.
+   * @param thisArg A value to use as ``this`` when executing ``callbackfn``.
+   */
   reduce(
     callbackfn: (
       previousValue: any,
@@ -1516,6 +1617,14 @@ export class PySequenceMethods {
     // @ts-ignore
     return Array.prototype.reduce.apply(this, args);
   }
+  /**
+   * See :js:meth:`Array.reduceRight`. Applies a function against an accumulator
+   * and each value of the Sequence (from right to left) to reduce it to a
+   * single value.
+   * @param callbackfn A function to execute for each element in the Sequence.
+   * Its return value is discarded.
+   * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
+   */
   reduceRight(
     callbackfn: (
       previousValue: any,
@@ -1529,43 +1638,88 @@ export class PySequenceMethods {
     // @ts-ignore
     return Array.prototype.reduceRight.apply(this, args);
   }
-  some(
-    predicate: (value: any, index: number, array: any[]) => unknown,
-    thisArg?: any,
-  ): boolean {
-    return Array.prototype.some.call(this, predicate, thisArg);
-  }
-  every(
-    predicate: (value: any, index: number, array: any[]) => unknown,
-    thisArg?: any,
-  ): boolean {
-    return Array.prototype.every.call(this, predicate, thisArg);
-  }
+  /**
+   * See :js:meth:`Array.at`. Takes an integer value and returns the item at
+   * that index.
+   * @param index Zero-based index of the Sequence element to be returned,
+   * converted to an integer. Negative index counts back from the end of the
+   * Sequence.
+   * @returns The element in the Sequence matching the given index.
+   */
   at(index: number) {
     return Array.prototype.at.call(this, index);
   }
+  /**
+   * The :js:meth:`Array.concat` method is used to merge two or more arrays.
+   * This method does not change the existing arrays, but instead returns a new
+   * array.
+   * @param rest Arrays and/or values to concatenate into a new array.
+   * @returns A new Array instance.
+   */
   concat(...rest: ConcatArray<any>[]) {
     return Array.prototype.concat.apply(this, rest);
   }
+  /**
+   * The  :js:meth:`Array.includes` method determines whether a Sequence
+   * includes a certain value among its entries, returning true or false as
+   * appropriate.
+   * @param elt
+   * @returns
+   */
   includes(elt: any) {
     // @ts-ignore
     return this.has(elt);
   }
+  /**
+   * The :js:meth:`Array.entries` method returns a new iterator object that
+   * contains the key/value pairs for each index in the ``Sequence``.
+   * @returns A new iterator object.
+   */
   entries() {
     return Array.prototype.entries.call(this);
   }
+  /**
+   * The :js:meth:`Array.keys` method returns a new iterator object that
+   * contains the keys for each index in the ``Sequence``.
+   * @returns A new iterator object.
+   */
   keys() {
     return Array.prototype.keys.call(this);
   }
+  /**
+   * The :js:meth:`Array.values` method returns a new iterator object that
+   * contains the values for each index in the ``Sequence``.
+   * @returns A new iterator object.
+   */
   values() {
     return Array.prototype.values.call(this);
   }
+  /**
+   * The :js:meth:`Array.find` method returns the first element in the provided
+   * array that satisfies the provided testing function.
+   * @param predicate A function to execute for each element in the
+   * ``Sequence``. It should return a truthy value to indicate a matching
+   * element has been found, and a falsy value otherwise.
+   * @param thisArg A value to use as ``this`` when executing ``predicate``.
+   * @returns The first element in the ``Sequence`` that satisfies the provided
+   * testing function.
+   */
   find(
     predicate: (value: any, index: number, obj: any[]) => any,
     thisArg?: any,
   ) {
     return Array.prototype.find.call(this, predicate, thisArg);
   }
+  /**
+   * The :js:meth:`Array.findIndex` method returns the index of the first
+   * element in the provided array that satisfies the provided testing function.
+   * @param predicate A function to execute for each element in the
+   * ``Sequence``. It should return a truthy value to indicate a matching
+   * element has been found, and a falsy value otherwise.
+   * @param thisArg A value to use as ``this`` when executing ``predicate``.
+   * @returns The index of the first element in the ``Sequence`` that satisfies
+   * the provided testing function.
+   */
   findIndex(
     predicate: (value: any, index: number, obj: any[]) => any,
     thisArg?: any,
@@ -1574,12 +1728,36 @@ export class PySequenceMethods {
   }
 }
 
+/**
+ * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is an
+ * :py:class:`~collections.abc.MutableSequence` (i.e., a :py:class:`list`)
+ */
+export class PyMutableSequence extends PyProxy {
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+  }
+}
+
+export interface PyMutableSequence extends PyMutableSequenceMethods {}
+
 export class PyMutableSequenceMethods {
+  /**
+   * The :js:meth:`Array.reverse` method reverses a ``MutableSequence`` in
+   * place.
+   * @returns A reference to the same ``MutableSequence``
+   */
   reverse() {
     // @ts-ignore
     this.$reverse();
     return this;
   }
+  /**
+   * The :js:meth:`Array.sort` method sorts the elements of a
+   * ``MutableSequence`` in place.
+   * @param compareFn A function that defines the sort order.
+   * @returns A reference to the same ``MutableSequence``
+   */
   sort(compareFn?: (a: any, b: any) => number) {
     // Copy the behavior of sort described here:
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
@@ -1622,37 +1800,106 @@ export class PyMutableSequenceMethods {
     }
     return this;
   }
-  splice(start: number, deleteCount: number, ...items: any[]) {
+  /**
+   * The :js:meth:`Array.splice` method changes the contents of a
+   * ``MutableSequence`` by removing or replacing existing elements and/or
+   * adding new elements in place.
+   * @param start Zero-based index at which to start changing the
+   * ``MutableSequence``.
+   * @param deleteCount An integer indicating the number of elements in the
+   * ``MutableSequence`` to remove from ``start``.
+   * @param items The elements to add to the ``MutableSequence``, beginning from
+   * ``start``.
+   * @returns An array containing the deleted elements.
+   */
+  splice(start: number, deleteCount?: number, ...items: any[]) {
+    if (deleteCount === undefined) {
+      // Max ssize
+      deleteCount = 1 << (31 - 1);
+    }
     return python_slice_assign(this, start, start + deleteCount, items);
   }
-  push(elt: any) {
-    // @ts-ignore
-    this.append(elt);
+  /**
+   * The :js:meth:`Array.push` method adds the specified elements to the end of
+   * a ``MutableSequence``.
+   * @param elts The element(s) to add to the end of the ``MutableSequence``.
+   * @returns The new length property of the object upon which the method was
+   * called.
+   */
+  push(...elts: any[]) {
+    for (let elt of elts) {
+      // @ts-ignore
+      this.append(elt);
+    }
     // @ts-ignore
     return this.length;
   }
+  /**
+   * The :js:meth:`Array.pop` method removes the last element from a
+   * ``MutableSequence``.
+   * @returns The removed element from the ``MutableSequence``; undefined if the
+   * ``MutableSequence`` is empty.
+   */
   pop() {
-    // @ts-ignore
-    return this.$pop();
+    return python_pop(this, false);
   }
+  /**
+   * The :js:meth:`Array.shift` method removes the first element from a
+   * ``MutableSequence``.
+   * @returns The removed element from the ``MutableSequence``; undefined if the
+   * ``MutableSequence`` is empty.
+   */
   shift() {
+    return python_pop(this, true);
+  }
+  /**
+   * The :js:meth:`Array.unshift` method adds the specified elements to the
+   * beginning of a ``MutableSequence``.
+   * @param elts The elements to add to the front of the ``MutableSequence``.
+   * @returns The new length of the ``MutableSequence``.
+   */
+  unshift(...elts: any[]) {
+    elts.forEach((elt, idx) => {
+      // @ts-ignore
+      this.insert(idx, elt);
+    });
     // @ts-ignore
-    return this.$pop(0);
+    return this.length;
   }
-  unshift(elt: any) {
+  /**
+   * The :js:meth:`Array.copyWithin` method shallow copies part of a
+   * ``MutableSequence`` to another location in the same ``MutableSequence``
+   * without modifying its length.
+   * @param target Zero-based index at which to copy the sequence to.
+   * @param start Zero-based index at which to start copying elements from.
+   * @param end Zero-based index at which to end copying elements from.
+   * @returns The modified ``MutableSequence``.
+   */
+  copyWithin(target: number, start?: number, end?: number): any;
+  copyWithin(...args: number[]): any {
     // @ts-ignore
-    return this.insert(elt, 0);
+    Array.prototype.copyWithin.apply(this, args);
+    return this;
   }
-  copyWithin(target: number, start: number, end?: number) {
-    return Array.prototype.copyWithin.call(this, target, start, end);
-  }
-  fill(value: any, start?: number, end?: number) {
-    return Array.prototype.fill.call(this, value, start, end);
+  /**
+   * The :js:meth:`Array.fill` method changes all elements in an array to a
+   * static value, from a start index to an end index.
+   * @param value Value to fill the array with.
+   * @param start Zero-based index at which to start filling. Default 0.
+   * @param end Zero-based index at which to end filling. Default
+   * ``list.length``.
+   * @returns
+   */
+  fill(value: any, start?: number, end?: number): any;
+  fill(...args: any[]): any {
+    // @ts-ignore
+    Array.prototype.fill.apply(this, args);
+    return this;
   }
 }
 
-// Another layer of boilerplate. The PyProxyHandlers have some annoying logic
-// to deal with straining out the spurious "Function" properties "prototype",
+// Another layer of boilerplate. The PyProxyHandlers have some annoying logic to
+// deal with straining out the spurious "Function" properties "prototype",
 // "arguments", and "length", to deal with correctly satisfying the Proxy
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxy, jskey: any) {
@@ -1754,6 +2001,22 @@ function python_slice_assign(
     API.fatal_error(e);
   } finally {
     Hiwire.decref(idval);
+  }
+  if (res === 0) {
+    Module._pythonexc2js();
+  }
+  return Hiwire.pop_value(res);
+}
+
+function python_pop(jsobj: any, pop_start: boolean): void {
+  let ptrobj = _getPtr(jsobj);
+  let res;
+  try {
+    Py_ENTER();
+    res = Module.__pyproxy_pop(ptrobj, pop_start);
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
   }
   if (res === 0) {
     Module._pythonexc2js();

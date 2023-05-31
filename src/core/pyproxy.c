@@ -32,6 +32,7 @@ PyObject* Sequence;
 PyObject* MutableSequence;
 
 _Py_IDENTIFIER(result);
+_Py_IDENTIFIER(pop);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(asend);
@@ -521,6 +522,41 @@ finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pyval);
   hiwire_CLEAR(proxies);
+  return jsresult;
+}
+
+JsRef
+_pyproxy_pop(PyObject* pyobj, bool pop_start)
+{
+  bool success = false;
+  PyObject* idx = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  if (pop_start) {
+    idx = PyLong_FromLong(0);
+    FAIL_IF_NULL(idx);
+    pyresult = _PyObject_CallMethodIdOneArg(pyobj, &PyId_pop, idx);
+  } else {
+    pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
+  }
+  if (pyresult != NULL) {
+    jsresult = python2js(pyresult);
+    FAIL_IF_NULL(jsresult);
+  } else {
+    if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+      PyErr_Clear();
+      jsresult = Js_undefined;
+    } else {
+      FAIL();
+    }
+  }
+  success = true;
+finally:
+  Py_CLEAR(idx);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
   return jsresult;
 }
 
