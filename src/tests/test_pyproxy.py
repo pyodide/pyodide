@@ -2,7 +2,6 @@
 import time
 
 import pytest
-
 from pytest_pyodide.decorator import run_in_pyodide
 
 
