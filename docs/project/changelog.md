@@ -31,6 +31,10 @@ myst:
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
+- {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
+  as drop-in replacements for JavaScript Arrays.
+  {pr}`3853`
+
 - {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
   it can be raised in Python.
   {pr}`3868`

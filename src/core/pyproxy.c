@@ -28,8 +28,11 @@ check_gil()
 
 PyObject* Generator;
 PyObject* AsyncGenerator;
+PyObject* Sequence;
+PyObject* MutableSequence;
 
 _Py_IDENTIFIER(result);
+_Py_IDENTIFIER(pop);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(asend);
@@ -100,6 +103,8 @@ static PyObject* asyncio;
 #define IS_ASYNC_ITERATOR (1 << 10)
 #define IS_GENERATOR (1 << 11)
 #define IS_ASYNC_GENERATOR (1 << 12)
+#define IS_SEQUENCE (1 << 13)
+#define IS_MUTABLE_SEQUENCE (1 << 14)
 // clang-format on
 
 // Taken from genobject.c
@@ -197,6 +202,12 @@ pyproxy_getflags(PyObject* pyobj)
   SET_FLAG_IF(IS_CALLABLE,
               _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
                 obj_type->tp_call);
+  int is_sequence = PyObject_IsInstance(pyobj, Sequence);
+  FAIL_IF_MINUS_ONE(is_sequence);
+  int is_mutable_sequence = PyObject_IsInstance(pyobj, MutableSequence);
+  FAIL_IF_MINUS_ONE(is_mutable_sequence);
+  SET_FLAG_IF(IS_SEQUENCE, is_sequence);
+  SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
 
 #undef SET_FLAG_IF
 
@@ -476,6 +487,77 @@ _pyproxy_delitem(PyObject* pyobj, JsRef idkey)
 finally:
   Py_CLEAR(pykey);
   return success ? 0 : -1;
+}
+
+JsRef
+_pyproxy_slice_assign(PyObject* pyobj,
+                      Py_ssize_t start,
+                      Py_ssize_t stop,
+                      JsRef idval)
+{
+  PyObject* pyval = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  JsRef proxies = NULL;
+  bool success = false;
+
+  pyval = js2python(idval);
+
+  Py_ssize_t len = PySequence_Length(pyobj);
+  if (len <= stop) {
+    stop = len;
+  }
+  pyresult = PySequence_GetSlice(pyobj, start, stop);
+  FAIL_IF_NULL(pyresult);
+  FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
+  proxies = JsArray_New();
+  FAIL_IF_NULL(proxies);
+  jsresult = python2js_with_depth(pyresult, 1, proxies);
+
+  success = true;
+finally:
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pyval);
+  hiwire_CLEAR(proxies);
+  return jsresult;
+}
+
+JsRef
+_pyproxy_pop(PyObject* pyobj, bool pop_start)
+{
+  bool success = false;
+  PyObject* idx = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  if (pop_start) {
+    idx = PyLong_FromLong(0);
+    FAIL_IF_NULL(idx);
+    pyresult = _PyObject_CallMethodIdOneArg(pyobj, &PyId_pop, idx);
+  } else {
+    pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
+  }
+  if (pyresult != NULL) {
+    jsresult = python2js(pyresult);
+    FAIL_IF_NULL(jsresult);
+  } else {
+    if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+      PyErr_Clear();
+      jsresult = Js_undefined;
+    } else {
+      FAIL();
+    }
+  }
+  success = true;
+finally:
+  Py_CLEAR(idx);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  return jsresult;
 }
 
 int
@@ -1323,6 +1405,10 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(Generator);
   AsyncGenerator = PyObject_GetAttrString(collections_abc, "AsyncGenerator");
   FAIL_IF_NULL(AsyncGenerator);
+  Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Sequence);
+  MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(MutableSequence);
 
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
