@@ -85,6 +85,7 @@ export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	-fPIC \
+	-fwasm-exceptions \
 	$(EXTRA_CFLAGS)
 
 
