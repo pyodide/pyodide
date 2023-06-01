@@ -42,7 +42,7 @@ function ensureCaughtObjectIsError(e: any): Error {
 class CppException extends Error {
   ty: string;
   constructor(ty: string, msg: string | undefined, e: number) {
-    const ptr = Module.getCppExceptionThrownObjectFromWebAssemblyException(e)
+    const ptr = Module.getCppExceptionThrownObjectFromWebAssemblyException(e);
     if (!msg) {
       msg = `The exception is an object of type ${ty} at address ${ptr} which does not inherit from std::exception`;
     }
