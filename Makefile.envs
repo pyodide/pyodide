@@ -92,10 +92,9 @@ export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
-	-s MODULARIZE=1 \
-	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
+	-fwasm-exceptions \
 	$(EXTRA_LDFLAGS)
 
 export CXXFLAGS_BASE=\
@@ -104,11 +103,12 @@ export CXXFLAGS_BASE=\
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
+	-s MODULARIZE=1 \
+	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-sEXPORTED_RUNTIME_METHODS='stackAlloc,stackRestore,stackSave' \
 	-s DEMANGLE_SUPPORT=1 \
-	-fwasm-exceptions \
 	-sSUPPORT_LONGJMP \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
