@@ -988,6 +988,10 @@ class JsException(JsProxy, Exception):
         result.stack = stack
         return result
 
+    @classmethod
+    def new(cls, *args: Any) -> "JsException":
+        return cls()
+
     def __str__(self):
         return f"{self.name}: {self.message}"
 

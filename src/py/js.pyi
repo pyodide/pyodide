@@ -5,6 +5,7 @@ from _pyodide._core_docs import _JsProxyMetaClass
 from pyodide.ffi import (
     JsArray,
     JsDomElement,
+    JsException,
     JsFetchResponse,
     JsProxy,
     JsTypedArray,
@@ -90,3 +91,6 @@ class document(_JsObject):
     def createElement(tagName: str) -> JsDomElement: ...
     @staticmethod
     def appendChild(child: JsDomElement) -> None: ...
+
+class DOMException(JsException):
+    pass
