@@ -951,6 +951,10 @@ def test_dict_js2py2js(selenium):
 def test_error_js2py2js(selenium):
     selenium.run_js("self.err = new Error('hello there?');")
     assert_js_to_py_to_js(selenium, "err")
+    if selenium.browser == "node":
+        return
+    selenium.run_js("self.err = new DOMException('hello there?');")
+    assert_js_to_py_to_js(selenium, "err")
 
 
 def test_error_py2js2py(selenium):
