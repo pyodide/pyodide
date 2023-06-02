@@ -1,7 +1,6 @@
 package:
   name: Pillow
   version: 9.1.1
-  _disabled: true
   top-level:
     - PIL
 source:
