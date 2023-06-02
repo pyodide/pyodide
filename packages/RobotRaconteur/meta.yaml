@@ -14,8 +14,7 @@ requirements:
     - numpy
 
 build:
-  cxxflags: -fwasm-exceptions -fPIC -DBOOST_SP_DISABLE_THREADS=1 -O2
-  ldflags: -fwasm-exceptions
+  cxxflags: -DBOOST_SP_DISABLE_THREADS=1 -O2
   script: |
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
 
