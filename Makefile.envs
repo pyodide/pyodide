@@ -171,6 +171,7 @@ export RUSTFLAGS= \
 	-C link-arg=-fwasm-exceptions \
 	-C link-arg=-sDISABLE_EXCEPTION_CATCHING=1 \
 	-C llvm-args=-enable-emscripten-cxx-exceptions=0 \
+	-C llvm-args=-wasm-enable-sjlj \
 	-Z link-native-libraries=no
 .output_vars:
 	set
