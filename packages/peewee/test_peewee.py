@@ -1,5 +1,7 @@
 import os
-from peewee import SqliteDatabase, Model, CharField, IntegerField
+
+from peewee import CharField, IntegerField, Model, SqliteDatabase
+
 
 @run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
