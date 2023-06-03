@@ -234,6 +234,9 @@ def get_build_environment_vars() -> dict[str, str]:
     env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
     env["PYODIDE"] = "1"
 
+    if "PYODIDE_JOBS" in os.environ:
+        env["PYODIDE_JOBS"] = os.environ["PYODIDE_JOBS"]
+
     pkg_config_parts = []
     if "WASM_PKG_CONFIG_PATH" in os.environ:
         pkg_config_parts.append(env["WASM_PKG_CONFIG_PATH"])
