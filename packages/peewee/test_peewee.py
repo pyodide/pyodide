@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 import os
-from peewee import *
+from peewee import SqliteDatabase, Model, CharField, IntegerField
 
 @run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
