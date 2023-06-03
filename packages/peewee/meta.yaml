@@ -14,6 +14,5 @@ source:
 about:
   home: https://github.com/coleifer/peewee/
   PyPI: https://pypi.org/project/peewee/
-  summary:
-    Peewee is a simple and small ORM. It has few (but expressive) concepts, making it easy to learn and intuitive to use.
+  summary: Peewee is a simple and small ORM. It has few (but expressive) concepts, making it easy to learn and intuitive to use.
   license: MIT License
