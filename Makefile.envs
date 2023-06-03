@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.11.3
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.33
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.38
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -92,8 +92,6 @@ export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
-	-s MODULARIZE=1 \
-	-s LZ4=1 \
 	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	$(EXTRA_LDFLAGS)
@@ -104,6 +102,8 @@ export CXXFLAGS_BASE=\
 export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
+	-s MODULARIZE=1 \
+	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
