@@ -1,10 +1,11 @@
-import os
-
-from peewee import CharField, IntegerField, Model, SqliteDatabase
+from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
+    import os
+    from peewee import CharField, IntegerField, Model, SqliteDatabase
+
     database = SqliteDatabase(os.path.join("/tmp", "database.db"))
     # needs to be in '/tmp' for now, cf: https://github.com/jupyterlite/pyodide-kernel/issues/35
 
