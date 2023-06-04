@@ -249,22 +249,36 @@ def test_repack_zip_archive(
 
 
 def test_get_build_environment_vars_host_env(monkeypatch):
+    # host environment variables should have precedence over
+    # variables defined in Makefile.envs
+
     import os
 
-    monkeypatch.setenv("RANDOM_ENV", 1234)
+    get_build_environment_vars.cache_clear()
+    e = get_build_environment_vars()
+    assert e["PYODIDE"] == "1"
+
+    monkeypatch.setenv("HOME", "/home/user")
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
     monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
 
     get_build_environment_vars.cache_clear()
 
-    e = get_build_environment_vars()
-    assert e.get("HOME") == os.environ.get("HOME")
-    assert e.get("PATH") == os.environ.get("PATH")
-    assert e["PYODIDE"] == "1"
-    assert "RANDOM_ENV" not in e
-    assert e["PKG_CONFIG_PATH"].endswith("/x/y/z:/c/d/e")
+    e_host = get_build_environment_vars()
+    assert e_host.get("HOME") == os.environ.get("HOME")
+    assert e_host.get("PATH") == os.environ.get("PATH")
+    assert e_host["PKG_CONFIG_PATH"].endswith("/x/y/z:/c/d/e")
+
+    assert e_host.get("HOME") != e.get("HOME")
+    assert e_host.get("PATH") != e.get("PATH")
+    assert e_host.get("PKG_CONFIG_PATH") != e.get("PKG_CONFIG_PATH")
+
+    get_build_environment_vars.cache_clear()
 
     monkeypatch.delenv("HOME")
+    monkeypatch.setenv("RANDOM_ENV", "1234")
 
     get_build_environment_vars.cache_clear()
     e = get_build_environment_vars()
     assert "HOME" not in e
+    assert "RANDOM_ENV" not in e
