@@ -361,6 +361,8 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
     - In-tree builds: Searches for the root of the Pyodide repository in parent directories
     - Out-of-tree builds: Downloads and installs the Pyodide build environment into the current directory
 
+    Note: this function is supposed to be called only in init_environment(), and should not be called directly.
+
     Parameters
     ----------
     quiet
