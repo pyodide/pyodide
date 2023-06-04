@@ -97,14 +97,14 @@ def install(path: Path, *, download: bool = True, url: str | None = None) -> Non
 
     version = __version__
 
-    if download:
-        if path.exists():
-            logger.warning("xbuild environment already exists, skipping download")
-        else:
-            _download_xbuildenv(version, path, url=url)
-    else:
-        if not path.exists():
-            logger.error("xbuild environment not exists")
-            raise FileNotFoundError(path)
+    if not download and not path.exists():
+        logger.error("xbuild environment not exists")
+        raise FileNotFoundError(path)
+
+    if download and path.exists():
+        logger.warning("xbuild environment already exists, skipping download")
+
+    elif download:
+        _download_xbuildenv(version, path, url=url)
 
     install_xbuildenv(version, path)
