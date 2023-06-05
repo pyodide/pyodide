@@ -340,6 +340,18 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
+def in_pyodide_tree() -> bool:
+    """
+    Return True if we are in the Pyodide repository.
+    """
+
+    try:
+        search_pyodide_root(Path.cwd())
+        return True
+    except FileNotFoundError:
+        return False
+
+
 def init_environment(*, quiet: bool = False) -> None:
     """
     Initialize Pyodide build environment.
@@ -350,10 +362,36 @@ def init_environment(*, quiet: bool = False) -> None:
     if "PYODIDE_ROOT" in os.environ:
         return
     
-    _set_pyodide_root(quiet=quiet)
+    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
+
+    _init_build_env(xbuildenv_path, quiet=quiet)
+    _set_pyodide_root(xbuildenv_path)
 
 
-def _set_pyodide_root(*, quiet: bool = False) -> None:
+def _init_build_env(xbuildenv_path, *, quiet: bool = False) -> None:
+    """
+    Initialize the build environment.
+
+    - In-tree builds: Do nothing
+    - Out-of-tree builds: Install the Pyodide build environment
+
+    Parameters
+    ----------
+    quiet
+        If True, do not print any messages
+    """
+
+    if in_pyodide_tree():
+        return
+    
+    from . import install_xbuildenv  # avoid circular import
+
+    context = redirect_stdout(StringIO()) if quiet else nullcontext()
+    with context:
+        install_xbuildenv.install(xbuildenv_path, download=True)
+
+
+def _set_pyodide_root(xbuildenv_path, *, quiet: bool = False) -> None:
     """
     Set PYODIDE_ROOT environment variable.
 
@@ -369,27 +407,12 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
         If True, do not print any messages
     """
 
-    from . import install_xbuildenv  # avoid circular import
-
-    # If we are doing an in-tree build,
-    # set PYODIDE_ROOT to the root of the Pyodide repository
-    try:
+    if in_pyodide_tree():
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
         return
-    except FileNotFoundError:
-        pass
-
-    # If we are doing an out-of-tree build,
-    # download and install the Pyodide build environment
-    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
-
-    if xbuildenv_path.exists():
-        os.environ["PYODIDE_ROOT"] = str(xbuildenv_path / "xbuildenv" / "pyodide-root")
-        return
-
-    context = redirect_stdout(StringIO()) if quiet else nullcontext()
-    with context:
-        os.environ["PYODIDE_ROOT"] = install_xbuildenv.install(xbuildenv_path, download=True)
+    
+    os.environ["PYODIDE_ROOT"] = str(xbuildenv_path / "xbuildenv" / "pyodide-root")
+    return
 
 
 @functools.cache
