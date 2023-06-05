@@ -40,12 +40,12 @@ BUILD_VARS: set[str] = {
     "TARGETINSTALLDIR",
     "SYSCONFIG_NAME",
     "HOSTSITEPACKAGES",
+    "PYTHON_ARCHIVE_URL",
+    "PYTHON_ARCHIVE_SHA256",
     "PYVERSION",
     "PYMAJOR",
     "PYMINOR",
     "PYMICRO",
-    "CPYTHONBUILD",
-    "CPYTHONLIB",
     "SIDE_MODULE_CFLAGS",
     "SIDE_MODULE_CXXFLAGS",
     "SIDE_MODULE_LDFLAGS",
@@ -281,6 +281,31 @@ def _get_make_environment_vars() -> dict[str, str]:
     return environment
 
 
+def _environment_substitute_str(string: str, env: dict[str, str] | None = None) -> str:
+    """
+    Substitute $(VAR) in string with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    string
+        A string
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A string with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+
+    for e_name, e_value in env.items():
+        string = string.replace(f"$({e_name})", e_value)
+
+    return string
+
+
 def environment_substitute_args(
     args: dict[str, str], env: dict[str, str] | None = None
 ) -> dict[str, Any]:
@@ -304,8 +329,7 @@ def environment_substitute_args(
     subbed_args = {}
     for arg, value in args.items():
         if isinstance(value, str):
-            for e_name, e_value in env.items():
-                value = value.replace(f"$({e_name})", e_value)
+            value = _environment_substitute_str(value, env)
         subbed_args[arg] = value
     return subbed_args
 

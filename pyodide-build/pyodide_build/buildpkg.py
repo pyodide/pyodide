@@ -26,6 +26,7 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
+    _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
     exit_with_stdio,
@@ -130,7 +131,7 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
+def check_checksum(archive: Path, checksum: str) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -139,12 +140,9 @@ def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     ----------
     archive
         the path to the archive we wish to checksum
-    source_metadata
-        The source section from meta.yaml.
+    checksum
+        the checksum we expect the archive to have
     """
-    if source_metadata.sha256 is None:
-        return
-    checksum = source_metadata.sha256
     real_checksum = _get_sha256_checksum(archive)
     if real_checksum != checksum:
         raise ValueError(
@@ -191,7 +189,10 @@ def download_and_extract(
         The source section from meta.yaml.
     """
     # We only call this function when the URL is defined
+    build_env = get_build_environment_vars()
     url = cast(str, src_metadata.url)
+    url = _environment_substitute_str(url, build_env)
+
     max_retry = 3
     for retry_cnt in range(max_retry):
         try:
@@ -218,7 +219,10 @@ def download_and_extract(
         with open(tarballpath, "wb") as f:
             f.write(response.read())
         try:
-            check_checksum(tarballpath, src_metadata)
+            checksum = src_metadata.sha256
+            if checksum is not None:
+                checksum = _environment_substitute_str(checksum, build_env)
+                check_checksum(tarballpath, checksum)
         except Exception:
             tarballpath.unlink()
             raise
@@ -768,8 +772,7 @@ def _build_package_inner(
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         bash_runner.env["DISTDIR"] = str(src_dist_dir)
         if not continue_:
-            clear_only = package_type == "cpython_module"
-            prepare_source(build_dir, srcpath, source_metadata, clear_only=clear_only)
+            prepare_source(build_dir, srcpath, source_metadata)
             patch(pkg_root, srcpath, source_metadata)
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
