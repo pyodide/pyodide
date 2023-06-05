@@ -2,8 +2,8 @@ from pathlib import Path
 
 import typer
 
+from ..common import init_environment
 from ..out_of_tree import venv
-from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def main(
@@ -13,5 +13,5 @@ def main(
     ),
 ) -> None:
     """Create a Pyodide virtual environment"""
-    initialize_pyodide_root()
+    init_environment()
     venv.create_pyodide_venv(dest)
