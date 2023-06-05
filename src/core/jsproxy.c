@@ -1301,6 +1301,14 @@ JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
   bool success = false;
   JsRef jsval = NULL;
 
+  if (pyval == NULL) {
+    // Delete
+    jsval = JsArray_Splice(JsProxy_REF(o), i);
+    FAIL_IF_NULL(jsval);
+    success = true;
+    goto finally;
+  }
+
   jsval = python2js(pyval);
   FAIL_IF_NULL(jsval);
   FAIL_IF_MINUS_ONE(JsArray_Set(JsProxy_REF(o), i, jsval));
@@ -1309,6 +1317,16 @@ JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
 finally:
   hiwire_CLEAR(jsval);
   return success ? 0 : -1;
+}
+
+Py_ssize_t
+JsTypedArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
+{
+  if (pyval == NULL) {
+    PyErr_SetString(PyExc_TypeError, "object doesn't support item deletion");
+    return -1;
+  }
+  return JsArray_sq_ass_item(o, i, pyval);
 }
 
 /**
@@ -1446,7 +1464,7 @@ static int
 JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   if (pyvalue == NULL) {
-    PyErr_SetString(PyExc_ValueError, "cannot delete array elements");
+    PyErr_SetString(PyExc_TypeError, "object doesn't support item deletion");
     return -1;
   }
   if (PySlice_Check(item)) {
@@ -3834,8 +3852,9 @@ skip_container_slots:
       (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_ass_item,
-                                       .pfunc = (void*)JsArray_sq_ass_item };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_ass_item,
+                     .pfunc = (void*)JsTypedArray_sq_ass_item };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
