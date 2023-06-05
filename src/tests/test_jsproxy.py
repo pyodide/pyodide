@@ -665,6 +665,31 @@ def test_unregister_jsmodule_error(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js("pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }});")
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" in g
+        assert "f" in g
+        assert g["a"] == 2
+        assert g["b"] == 7
+        assert g["f"](9) == 10
+        assert "__all__" not in g
+    finally:
+        del sys.modules["xx"]
+        run_js("pyodide.unregisterJsModule('xx');")
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_nested_import(selenium_standalone):
     selenium = selenium_standalone
     assert (

@@ -88,6 +88,21 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
+  importhook.add_all = (o: object) => {
+    if ("__all__" in o) {
+      return;
+    }
+    Object.defineProperty(o, "__all__", {
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((x) =>
+            o.propertyIsEnumerable(x),
+          ),
+        ),
+      enumerable: false,
+      configurable: true,
+    });
+  };
   importhook.register_js_finder();
   importhook.register_js_module("js", config.jsglobals);
 
