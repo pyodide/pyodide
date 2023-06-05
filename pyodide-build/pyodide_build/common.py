@@ -342,7 +342,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
 
 def in_pyodide_tree() -> bool:
     """
-    Return True if we are in the Pyodide repository.
+    Check if we are inside the Pyodide repository tree.
     """
 
     try:
