@@ -1281,6 +1281,36 @@ finally:
   return pyresult;
 }
 
+PyObject*
+JsArray_sq_item(PyObject* o, Py_ssize_t i)
+{
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+
+  jsresult = JsArray_Get(JsProxy_REF(o), i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
+}
+
+Py_ssize_t
+JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
+{
+  bool success = false;
+  JsRef jsval = NULL;
+
+  jsval = python2js(pyval);
+  FAIL_IF_NULL(jsval);
+  FAIL_IF_MINUS_ONE(JsArray_Set(JsProxy_REF(o), i, jsval));
+
+  success = true;
+finally:
+  hiwire_CLEAR(jsval);
+  return success ? 0 : -1;
+}
+
 /**
  * __getitem__ for proxies of Js TypedArrays, controlled by IS_TYPEDARRAY
  */
@@ -3777,6 +3807,12 @@ skip_container_slots:
                                        .pfunc = (void*)JsArray_ass_subscript };
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_inplace_concat,
                                        .pfunc = (void*)JsArray_inplace_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_ass_item,
+                                       .pfunc = (void*)JsArray_sq_ass_item };
     methods[cur_method++] = JsArray_extend_MethodDef;
     methods[cur_method++] = JsArray_pop_MethodDef;
     methods[cur_method++] = JsArray_append_MethodDef;
@@ -3794,6 +3830,12 @@ skip_container_slots:
                      .pfunc = (void*)JsTypedArray_ass_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_ass_item,
+                                       .pfunc = (void*)JsArray_sq_ass_item };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
@@ -3802,6 +3844,10 @@ skip_container_slots:
   if (flags & IS_NODE_LIST) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsNodeList_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
     methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {
