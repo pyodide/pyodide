@@ -1478,6 +1478,13 @@ def test_array_sequence_methods(selenium, sequence_converter):
     typed_array = ArrayBuffer.isView(l)
     is_mutable = not node_list
     supports_del = not (node_list or typed_array)
+
+    if typed_array:
+        with raises(TypeError, match=r"unsupported operand type\(s\) for \+"):
+            l + [4, 5, 6]
+    else:
+        assert (l + [4, 5, 6]).to_py() == [77, 65, 23, 4, 5, 6]
+
     if is_mutable:
         pythonapi.PySequence_SetItem(l, 1, 29)
         assert l[1] == 29
