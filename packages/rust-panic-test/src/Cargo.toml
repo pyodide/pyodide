@@ -1,9 +1,8 @@
 [package]
-name = "hello-world"
+name = "rust-panic-test"
 version = "0.1.0"
 edition = "2018"
 publish = false
-
 
 [dependencies]
 pyo3 = { version = "0.15.2" }
@@ -13,7 +12,6 @@ extension-module = ["pyo3/extension-module"]
 default = ["extension-module"]
 
 [lib]
-name = "hello_world"
 crate-type = ["cdylib"]
 
 [profile.release]

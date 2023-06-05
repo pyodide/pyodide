@@ -3,11 +3,11 @@ from setuptools import setup
 from setuptools_rust import Binding,RustExtension
 
 setup(
-    name="rust_test",
+    name="rust_panic_test",
     version="1.0",
     rust_extensions=[
         RustExtension(
-            "rust_test",
+            "rust_panic_test",
             "Cargo.toml",
             binding=Binding.PyO3
         )
