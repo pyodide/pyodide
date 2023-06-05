@@ -1504,6 +1504,27 @@ def test_array_sequence_methods(selenium, sequence_converter):
 
 
 @run_in_pyodide
+def test_array_sequence_repeat(selenium):
+    from pyodide.ffi import JsArray, to_js
+
+    a = [77, 65, 23]
+    l: JsArray[int] = to_js(a)
+
+    assert (l * 0).to_py() == a * 0
+    assert (l * 1).to_py() == a * 1
+    assert (l * 2).to_py() == a * 2
+
+    l *= 0
+    assert list(l) == a * 0
+    l = to_js(a)
+    l *= 1
+    assert list(l) == a * 1
+    l = to_js(a)
+    l *= 2
+    assert list(l) == a * 2
+
+
+@run_in_pyodide
 def test_jsproxy_match(selenium):
     from pyodide.code import run_js
 
