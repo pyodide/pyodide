@@ -345,11 +345,11 @@ def init_environment(*, quiet: bool = False) -> None:
     Initialize Pyodide build environment.
     This function needs to be called before any other Pyodide build functions.
     """
-    if os.environ.get("__LOADED_PYODIDE_ENV"):
+
+    # Already initialized
+    if "PYODIDE_ROOT" in os.environ:
         return
-
-    os.environ["__LOADED_PYODIDE_ENV"] = "1"
-
+    
     _set_pyodide_root(quiet=quiet)
 
 
@@ -371,25 +371,16 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
 
     from . import install_xbuildenv  # avoid circular import
 
-    # If we are building docs, we don't need to know the PYODIDE_ROOT
-    if "sphinx" in sys.modules:
-        os.environ["PYODIDE_ROOT"] = ""
-        return
-
-    # 1) If PYODIDE_ROOT is already set, do nothing
-    if "PYODIDE_ROOT" in os.environ:
-        return
-
-    # 2) If we are doing an in-tree build,
-    #    set PYODIDE_ROOT to the root of the Pyodide repository
+    # If we are doing an in-tree build,
+    # set PYODIDE_ROOT to the root of the Pyodide repository
     try:
         os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
         return
     except FileNotFoundError:
         pass
 
-    # 3) If we are doing an out-of-tree build,
-    #    download and install the Pyodide build environment
+    # If we are doing an out-of-tree build,
+    # download and install the Pyodide build environment
     xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
 
     if xbuildenv_path.exists():
@@ -398,9 +389,7 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
-        # install_xbuildenv will set PYODIDE_ROOT env variable, so we don't need to do it here
-        # TODO: return the path to the xbuildenv instead of setting the env variable inside install_xbuildenv
-        install_xbuildenv.install(xbuildenv_path, download=True)
+        os.environ["PYODIDE_ROOT"] = install_xbuildenv.install(xbuildenv_path, download=True)
 
 
 @functools.cache
