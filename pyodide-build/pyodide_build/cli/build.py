@@ -10,13 +10,13 @@ import requests
 import typer
 
 from .. import common
+from ..common import init_environment
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
     build_wheels_from_pypi_requirements,
     fetch_pypi_package,
 )
-from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def pypi(
@@ -29,8 +29,6 @@ def pypi(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Fetch a wheel from pypi, or build from source if none available."""
-    initialize_pyodide_root()
-    common.check_emscripten_version()
     backend_flags = ctx.args
     with tempfile.TemporaryDirectory() as tmpdir:
         srcdir = Path(tmpdir)
@@ -70,8 +68,6 @@ def url(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Fetch a wheel or build sdist from url."""
-    initialize_pyodide_root()
-    common.check_emscripten_version()
     backend_flags = ctx.args
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
@@ -100,8 +96,6 @@ def source(
     ctx: typer.Context = typer.Context,
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
-    initialize_pyodide_root()
-    common.check_emscripten_version()
     backend_flags = ctx.args
     built_wheel = build.run(source_location, output_directory, exports, backend_flags)
     return built_wheel
@@ -147,6 +141,10 @@ def main(
     ctx: typer.Context = typer.Context,
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
+
+    init_environment()
+    common.check_emscripten_version()
+
     if output_directory_compat:
         print(
             "--output-directory is deprecated, use --outdir or -o instead",
