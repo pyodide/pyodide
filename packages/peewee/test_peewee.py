@@ -4,7 +4,6 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
     import os
-
     from peewee import CharField, IntegerField, Model, SqliteDatabase
 
     database = SqliteDatabase(os.path.join("/tmp", "database.db"))
@@ -14,9 +13,6 @@ def test_peewee(selenium):
     class Person(Model):
         name = CharField()
         age = IntegerField()
-
-        class Meta:
-            database = database
 
     # Connect to the database, create tables, and bind the model
     with database:
