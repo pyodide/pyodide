@@ -90,7 +90,7 @@ repos:
         name: mypy-tests
         args: [--ignore-missing-imports]
         files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
-        exclude: (^packages/.*/setup.py|/src|pyodide-build/pyodide_build/[a-zA-Z_]*.py)
+        exclude: (^packages/.*/setup.py|/src)
         additional_dependencies: *mypy-deps
 
 ci:
