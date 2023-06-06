@@ -1,8 +1,8 @@
 
 
 #[pyo3::prelude::pyfunction]
-fn panic_test(data: &[u8]) -> bool { 
-    if data[0] < 6 { 
+fn panic_test(data: &[u8]) -> bool {
+    if data[0] < 6 {
         panic!("this is a {} {message:?}", "fancy", message = data);
     }
     data[0] < 20

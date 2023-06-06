@@ -26,6 +26,7 @@ from urllib import request
 
 from . import common, pypabuild
 from .common import (
+    RUST_BUILD_PRELUDE,
     _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
@@ -35,7 +36,6 @@ from .common import (
     get_build_environment_vars,
     get_pyodide_root,
     make_zip_archive,
-    RUST_BUILD_PRELUDE
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger

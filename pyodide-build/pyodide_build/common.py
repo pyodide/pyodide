@@ -28,7 +28,7 @@ from .logger import logger
 from .recipe import load_all_recipes
 
 RUST_BUILD_PRELUDE = """
-rustup toolchain install ${RUST_TOOLCHAIN} 
+rustup toolchain install ${RUST_TOOLCHAIN}
 rustup default ${RUST_TOOLCHAIN}
 rustup component add rust-src --toolchain ${RUST_TOOLCHAIN}
 """
