@@ -231,7 +231,7 @@ def test_emfs(selenium_standalone_micropip):
 
             resp = await pyfetch(url + wheel_name)
             await resp._into_file(open(wheel_name, "wb"))
-            await micropip.install("emfs:" + wheel_name)
+            await micropip.install("emfs:" + wheel_name)  # type:ignore[attr-defined]
             import snowballstemmer
 
             stemmer = snowballstemmer.stemmer("english")

@@ -16,7 +16,7 @@ def callback():
     """
 
 
-@app.command("install")  # type: ignore[misc]
+@app.command("install")
 def _install(
     path: Path = typer.Option(".pyodide-xbuildenv", help="path to xbuildenv directory"),
     download: bool = typer.Option(False, help="download xbuildenv before installing"),
@@ -35,7 +35,7 @@ def _install(
     logger.info(f"xbuildenv installed at {path.resolve()}")
 
 
-@app.command("create")  # type: ignore[misc]
+@app.command("create")
 def _create(
     path: Path = typer.Argument(
         ".pyodide-xbuildenv", help="path to xbuildenv directory"

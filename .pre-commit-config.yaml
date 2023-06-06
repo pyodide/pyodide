@@ -85,6 +85,7 @@ repos:
           - resolvelib
           - rich
           - auditwheel_emscripten
+          - micropip
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
