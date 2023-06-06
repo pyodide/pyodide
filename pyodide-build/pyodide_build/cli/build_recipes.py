@@ -5,7 +5,6 @@ import typer
 from .. import buildall, buildpkg, common, pywasmcross
 from ..common import get_num_cores, init_environment
 from ..logger import logger
-from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def recipe(
@@ -67,7 +66,7 @@ def recipe(
     ),
 ) -> None:
     """Build packages using yaml recipes and create repodata.json"""
-    initialize_pyodide_root()
+    init_environment()
 
     if common.in_xbuildenv():
         common.check_emscripten_version()
@@ -80,8 +79,6 @@ def recipe(
 
     if not recipe_dir_.is_dir():
         raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")
-
-    init_environment()
 
     build_args = pywasmcross.BuildArgs(
         cflags=cflags,
