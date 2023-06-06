@@ -79,7 +79,7 @@ else
 endif
 
 ifdef PYODIDE_ASSERTIONS
-	EXTRA_CFLAGS+=" -DDEBUG_F"
+	EXTRA_CFLAGS+= -DDEBUG_F
 endif
 
 
