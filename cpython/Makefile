@@ -8,7 +8,6 @@ PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
-URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
@@ -50,8 +49,8 @@ clean-all: clean
 
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(URL)
-	shasum --algorithm 256 --check checksums --quiet || (rm $@; false)
+	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
+	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256)
 
 
 $(BUILD)/.patched: $(TARBALL)
