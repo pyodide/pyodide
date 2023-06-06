@@ -45,17 +45,28 @@ def test_subprocess_with_shared_env_cwd(tmp_path: Path) -> None:
         assert (src_dir / "out.txt").exists()
 
 
-def test_subprocess_with_shared_env_logging(monkeypatch, capfd, tmp_path):
-    import sys
+def test_subprocess_with_shared_env_logging(capfd, tmp_path):
     from pytest import raises
-    import re
+
     with buildpkg.BashRunnerWithSharedEnvironment() as p:
+        p.run("echo 1000", script_name="a test script")
+        cap = capfd.readouterr()
+        assert [l.strip() for l in cap.out.splitlines()] == [
+            f"Running a test script in {Path.cwd()}",
+            "1000",
+        ]
+        assert cap.err == ""
+
         dir = tmp_path / "a"
         dir.mkdir()
         p.run("echo 1000", script_name="test script", cwd=dir)
         cap = capfd.readouterr()
-        assert [l.strip() for l in cap.out.splitlines()] == ["Running test script in", str(dir), "1000"]
-
+        assert [l.strip() for l in cap.out.splitlines()] == [
+            "Running test script in",
+            str(dir),
+            "1000",
+        ]
+        assert cap.err == ""
 
         dir = tmp_path / "b"
         dir.mkdir()
@@ -63,11 +74,14 @@ def test_subprocess_with_shared_env_logging(monkeypatch, capfd, tmp_path):
             p.run("exit 7", script_name="test2 script", cwd=dir)
         cap = capfd.readouterr()
         assert e.value.args[0] == 7
-        assert [l.strip() for l in cap.out.splitlines()] == ["Running test2 script in", str(dir)]        
-        assert [l.strip() for l in cap.err.splitlines()] == ["ERROR: test2 script failed", "exit 7"]        
-
-
-
+        assert [l.strip() for l in cap.out.splitlines()] == [
+            "Running test2 script in",
+            str(dir),
+        ]
+        assert [l.strip() for l in cap.err.splitlines()] == [
+            "ERROR: test2 script failed",
+            "exit 7",
+        ]
 
 
 def test_prepare_source(monkeypatch):

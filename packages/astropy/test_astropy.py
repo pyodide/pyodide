@@ -37,7 +37,7 @@ async def test_astropy(selenium, package, specific_test):
 
     import micropip
 
-    await micropip.install(
+    await micropip.install(  # type:ignore[attr-defined]
         ["pytest_remotedata", "pytest_doctestplus", "pytest_astropy_header"]
     )
     assert (
