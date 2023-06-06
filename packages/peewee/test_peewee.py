@@ -4,6 +4,7 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
     import os
+
     from peewee import CharField, IntegerField, Model, SqliteDatabase
 
     db = SqliteDatabase(os.path.join("/tmp", "database.db"))
