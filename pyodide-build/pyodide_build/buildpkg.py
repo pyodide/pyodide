@@ -774,7 +774,7 @@ def _build_package_inner(
             patch(pkg_root, srcpath, source_metadata)
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
-        if "rustup" in pkg.requirements.executable:
+        if pkg.is_rust_package():
             run_script(bash_runner, RUST_BUILD_PRELUDE, srcpath)
         run_script(bash_runner, build_metadata.script, srcpath)
 

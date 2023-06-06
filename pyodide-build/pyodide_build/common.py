@@ -32,6 +32,7 @@ rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
 rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 """
 
+
 BUILD_VARS: set[str] = {
     "PATH",
     "PYTHONPATH",
