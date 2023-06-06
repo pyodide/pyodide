@@ -448,8 +448,8 @@ def replace_so_abi_tags(wheel_dir: Path) -> None:
 def copy_sharedlibs(
     wheel_file: Path, wheel_dir: Path, lib_dir: Path
 ) -> dict[str, Path]:
-    from auditwheel_emscripten import copylib, resolve_sharedlib  # type: ignore[import]
-    from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE  # type: ignore[import]
+    from auditwheel_emscripten import copylib, resolve_sharedlib
+    from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE
 
     match = WHEEL_INFO_RE.match(wheel_file.name)
     if match is None:
