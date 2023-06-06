@@ -35,6 +35,7 @@ from .common import (
     get_build_environment_vars,
     get_pyodide_root,
     make_zip_archive,
+    RUST_BUILD_PRELUDE
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -778,6 +779,9 @@ def _build_package_inner(
         src_dist_dir.mkdir(exist_ok=True, parents=True)
         run_script(build_dir, srcpath, build_metadata, bash_runner)
 
+        if "rustup" in pkg.requirements.executable:
+            bash_runner.run(RUST_BUILD_PRELUDE)
+
         if package_type == "static_library":
             # Nothing needs to be done for a static library
             pass
@@ -835,7 +839,7 @@ def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
     return package_dir, MetaConfig.from_yaml(meta_file)
 
 
-def _check_exetuables(pkg: MetaConfig) -> None:
+def _check_executables(pkg: MetaConfig) -> None:
     """
     Check that the executables required to build the package are available.
 
@@ -885,7 +889,7 @@ def build_package(
     meta_file = Path(package).resolve()
     pkg_root, pkg = _load_package_config(meta_file)
 
-    _check_exetuables(pkg)
+    _check_executables(pkg)
 
     pkg.build.cflags += f" {build_args.cflags}"
     pkg.build.cxxflags += f" {build_args.cxxflags}"
