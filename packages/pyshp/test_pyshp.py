@@ -8,4 +8,3 @@ def test_imports(selenium):
     import shapefile
 
     print(shapefile)
-
