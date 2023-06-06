@@ -775,8 +775,7 @@ def _build_package_inner(
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
         if "rustup" in pkg.requirements.executable:
-            run_script()
-            bash_runner.run(bash_runner, RUST_BUILD_PRELUDE, srcpath)
+            run_script(bash_runner, RUST_BUILD_PRELUDE, srcpath)
         run_script(bash_runner, build_metadata.script, srcpath)
 
         if package_type == "static_library":
