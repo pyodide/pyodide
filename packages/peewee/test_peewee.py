@@ -6,7 +6,7 @@ def test_peewee(selenium):
     import os
     from peewee import CharField, IntegerField, Model, SqliteDatabase
 
-    database = SqliteDatabase(os.path.join("/tmp", "database.db"))
+    db = SqliteDatabase(os.path.join("/tmp", "database.db"))
     # needs to be in '/tmp' for now, cf: https://github.com/jupyterlite/pyodide-kernel/issues/35
 
     # Define a model class
@@ -14,9 +14,12 @@ def test_peewee(selenium):
         name = CharField()
         age = IntegerField()
 
+        class Meta:
+            database = db
+
     # Connect to the database, create tables, and bind the model
-    with database:
-        database.create_tables([Person])
+    with db:
+        db.create_tables([Person])
 
         # Create a new person
         person = Person.create(name="John Doe", age=25)
