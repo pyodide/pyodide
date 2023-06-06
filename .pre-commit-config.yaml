@@ -84,11 +84,12 @@ repos:
           - unearth
           - resolvelib
           - rich
+          - auditwheel_emscripten
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|/conftest.py|src/tests)
-        exclude: (^packages/.*/setup.py|/src)
+        files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
+        exclude: (^packages/.*/setup.py|/src|pyodide-build/pyodide_build/[a-zA-Z_]*.py)
         additional_dependencies: *mypy-deps
 
 ci:
