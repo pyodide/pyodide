@@ -74,8 +74,7 @@ class BashRunnerWithSharedEnvironment:
         self._reader = os.fdopen(fd_read, "r")
         return self
 
-    def run(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
-        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+    def run_unchecked(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
         assert self._fd_write is not None
         assert self._reader is not None
 
@@ -95,12 +94,26 @@ class BashRunnerWithSharedEnvironment:
             encoding="utf8",
             **opts,
         )
+        if result.returncode == 0:
+            self.env = json.loads(self._reader.readline())
+        return result
+
+    def run(
+        self, cmd: str | None, *, script_name: str, cwd: Path | str | None, **opts: Any
+    ) -> subprocess.CompletedProcess[str] | None:
+        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        if not cmd:
+            return None
+        if cwd is None:
+            cwd = Path.cwd()
+        cwd = Path(cwd).absolute()
+        logger.info(f"Running {script_name} in {str(cwd)}")
+        opts["cwd"] = cwd
+        result = self.run_unchecked(cmd, **opts)
         if result.returncode != 0:
-            logger.error("ERROR: bash command failed")
+            logger.error(f"ERROR: {script_name} failed")
             logger.error(textwrap.indent(cmd, "    "))
             exit_with_stdio(result)
-
-        self.env = json.loads(self._reader.readline())
         return result
 
     def __exit__(
@@ -127,7 +140,11 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     with BashRunnerWithSharedEnvironment(env=env) as b:
         # Working in-tree, add emscripten toolchain into PATH and set ccache
         if Path(PYODIDE_ROOT, "pyodide_env.sh").exists():
-            b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+            b.run(
+                f"source {PYODIDE_ROOT}/pyodide_env.sh",
+                script_name="source pyodide_env",
+                stderr=subprocess.DEVNULL,
+            )
 
         yield b
 
@@ -425,7 +442,9 @@ def compile(
     with build_env_ctx as build_env:
         if build_metadata.cross_script is not None:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
-                runner.run(build_metadata.cross_script, cwd=srcpath)
+                runner.run(
+                    build_metadata.cross_script, script_name="cross script", cwd=srcpath
+                )
                 build_env = runner.env
 
         from .pypabuild import build
@@ -523,14 +542,9 @@ def package_wheel(
     # to maximize sanity.
     replace_so_abi_tags(wheel_dir)
 
+    bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
     post = build_metadata.post
-    if post:
-        logger.info(f"Running post script in {Path.cwd().absolute()}")
-        bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
-        result = bash_runner.run(post)
-        if result.returncode != 0:
-            logger.error("ERROR: post failed")
-            exit_with_stdio(result)
+    bash_runner.run(post, script_name="post script")
 
     vendor_sharedlib = build_metadata.vendor_sharedlib
     if vendor_sharedlib:
@@ -616,39 +630,6 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
 
 def create_packaged_token(buildpath: Path) -> None:
     (buildpath / ".packaged").write_text("\n")
-
-
-def run_script(
-    bash_runner: BashRunnerWithSharedEnvironment,
-    script: str | None,
-    cwd: Path,
-) -> None:
-    """
-    Run the build script indicated in meta.yaml
-
-    Parameters
-    ----------
-    buildpath
-        the package build path. Usually `packages/<name>/build`
-
-    srcpath
-        the package source path. Usually
-        `packages/<name>/build/<name>-<version>`.
-
-    build_metadata
-        The build section from meta.yaml.
-
-    bash_runner
-        The runner we will use to execute our bash commands. Preserves environment
-        variables from one invocation to the next.
-    """
-    if not script:
-        return
-
-    result = bash_runner.run(script, cwd=cwd)
-    if result.returncode != 0:
-        logger.error("ERROR: script failed")
-        exit_with_stdio(result)
 
 
 def needs_rebuild(
@@ -775,8 +756,10 @@ def _build_package_inner(
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
         if pkg.is_rust_package():
-            run_script(bash_runner, RUST_BUILD_PRELUDE, srcpath)
-        run_script(bash_runner, build_metadata.script, srcpath)
+            bash_runner.run(
+                RUST_BUILD_PRELUDE, script_name="rust build prelude", cwd=srcpath
+            )
+        bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
 
         if package_type == "static_library":
             # Nothing needs to be done for a static library
