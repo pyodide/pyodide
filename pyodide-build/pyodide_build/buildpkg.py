@@ -328,16 +328,16 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
     assert not src_metadata.url.endswith(".whl")
 
     # Apply all the patches
-    with chdir(srcpath):
-        for patch in patches:
-            result = subprocess.run(
-                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
-                check=False,
-                encoding="utf-8",
-            )
-            if result.returncode != 0:
-                logger.error(f"ERROR: Patch {pkg_root/patch} failed")
-                exit_with_stdio(result)
+    for patch in patches:
+        result = subprocess.run(
+            ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+            check=False,
+            encoding="utf-8",
+            cwd=srcpath
+        )
+        if result.returncode != 0:
+            logger.error(f"ERROR: Patch {pkg_root/patch} failed")
+            exit_with_stdio(result)
 
     # Add any extra files
     for src, dst in extras:
@@ -348,27 +348,27 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
 
 
 def unpack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Unpacking wheel {path.name} failed")
-            exit_with_stdio(result)
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {path.name} failed")
+        exit_with_stdio(result)
 
 
 def pack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Packing wheel {path} failed")
-            exit_with_stdio(result)
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {path} failed")
+        exit_with_stdio(result)
 
 
 def compile(
@@ -619,10 +619,9 @@ def create_packaged_token(buildpath: Path) -> None:
 
 
 def run_script(
-    buildpath: Path,
-    srcpath: Path,
-    build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
+    script: str | None,
+    cwd: Path,
 ) -> None:
     """
     Run the build script indicated in meta.yaml
@@ -643,15 +642,13 @@ def run_script(
         The runner we will use to execute our bash commands. Preserves environment
         variables from one invocation to the next.
     """
-    script = build_metadata.script
     if not script:
         return
 
-    with chdir(srcpath):
-        result = bash_runner.run(script)
-        if result.returncode != 0:
-            logger.error("ERROR: script failed")
-            exit_with_stdio(result)
+    result = bash_runner.run(script, cwd=cwd)
+    if result.returncode != 0:
+        logger.error("ERROR: script failed")
+        exit_with_stdio(result)
 
 
 def needs_rebuild(
@@ -777,10 +774,10 @@ def _build_package_inner(
             patch(pkg_root, srcpath, source_metadata)
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
-        run_script(build_dir, srcpath, build_metadata, bash_runner)
-
         if "rustup" in pkg.requirements.executable:
-            bash_runner.run(RUST_BUILD_PRELUDE)
+            run_script()
+            bash_runner.run(bash_runner, RUST_BUILD_PRELUDE, srcpath)
+        run_script(bash_runner, build_metadata.script, srcpath)
 
         if package_type == "static_library":
             # Nothing needs to be done for a static library
