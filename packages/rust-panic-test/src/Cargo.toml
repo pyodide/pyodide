@@ -17,4 +17,3 @@ crate-type = ["cdylib"]
 [profile.release]
 lto = "thin"
 overflow-checks = true
-
