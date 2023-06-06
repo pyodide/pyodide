@@ -639,6 +639,9 @@ def handle_command(
     # some libraries have different names on wasm e.g. png16 = png
     is_link_cmd = get_library_output(line) is not None
 
+    if line[0] == "cargo":
+        line.insert(2, "-Zbuild-std")
+
     if line[0] == "gfortran":
         if "-dumpversion" in line:
             sys.exit(subprocess.run(line).returncode)
