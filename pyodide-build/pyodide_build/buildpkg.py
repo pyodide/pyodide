@@ -333,7 +333,7 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
             ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
             check=False,
             encoding="utf-8",
-            cwd=srcpath
+            cwd=srcpath,
         )
         if result.returncode != 0:
             logger.error(f"ERROR: Patch {pkg_root/patch} failed")
@@ -352,7 +352,7 @@ def unpack_wheel(path: Path) -> None:
         [sys.executable, "-m", "wheel", "unpack", path.name],
         check=False,
         encoding="utf-8",
-        cwd=path.parent
+        cwd=path.parent,
     )
     if result.returncode != 0:
         logger.error(f"ERROR: Unpacking wheel {path.name} failed")
@@ -364,7 +364,7 @@ def pack_wheel(path: Path) -> None:
         [sys.executable, "-m", "wheel", "pack", path.name],
         check=False,
         encoding="utf-8",
-        cwd=path.parent
+        cwd=path.parent,
     )
     if result.returncode != 0:
         logger.error(f"ERROR: Packing wheel {path} failed")
