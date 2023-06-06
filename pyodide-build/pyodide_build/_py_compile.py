@@ -10,7 +10,6 @@ from typing import Any
 
 from packaging.tags import Tag
 from packaging.utils import parse_wheel_filename
-
 from pyodide_build.common import _get_sha256_checksum
 
 from .logger import logger, set_log_level

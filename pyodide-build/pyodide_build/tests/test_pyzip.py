@@ -55,12 +55,12 @@ def test_import_from_zip(temp_python_lib, temp_python_lib2, tmp_path, monkeypatc
 
     monkeypatch.setattr(sys, "path", [str(output)])
 
-    import hello_pyodide  # type: ignore[import]
+    import hello_pyodide
 
     assert hello_pyodide.__file__.startswith(str(output))
     assert hello_pyodide.hello() == "hello"
 
-    import bye_pyodide  # type: ignore[import]
+    import bye_pyodide
 
     assert bye_pyodide.__file__.startswith(str(output))
     assert bye_pyodide.bye() == "bye"

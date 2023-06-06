@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 import typer
-from typer.testing import CliRunner  # type: ignore[import]
+from typer.testing import CliRunner
 
 from pyodide_build.cli import build
 from pyodide_build.common import chdir
