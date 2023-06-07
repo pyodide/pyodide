@@ -171,5 +171,6 @@ export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no
+
 .output_vars:
 	set
