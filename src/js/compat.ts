@@ -15,10 +15,16 @@ let nodeVmMod: any;
 /** @private */
 export let nodeFsPromisesMod: any;
 
+// Detect if we're in Greasemonkey
+declare var GM: any;
+export const IN_GM =
+  typeof GM !== "undefined" && typeof GM.xmlHttpRequest === "function";
+
 declare var globalThis: {
   importScripts: (url: string) => void;
   document?: any;
   fetch?: any;
+  asmData?: any;
 };
 
 /**
@@ -157,6 +163,52 @@ async function browser_loadBinaryFile(
   return new Uint8Array(await response.arrayBuffer());
 }
 
+/**
+ * Perform an HTTP GET, only for use in Greasemonkey.
+ *
+ * @param path the path to load
+ * @returns A response
+ * @private
+ */
+async function greasemonkey_get(
+  path: string,
+  responseType: string,
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    // @ts-ignore
+    GM.xmlHttpRequest({
+      method: "GET",
+      url: path,
+      responseType: responseType,
+      // @ts-ignore
+      onload: function (response) {
+        resolve(response);
+      },
+      // @ts-ignore
+      onerror: function (response) {
+        reject(response);
+      },
+    });
+  });
+}
+
+/**
+ * Load a binary file, only for use in Greasemonkey. Resolves relative paths against
+ * indexURL.
+ *
+ * @param path the path to load
+ * @param subResourceHash the sub resource hash for fetch() integrity check
+ * @returns A Uint8Array containing the binary data
+ * @private
+ */
+async function greasemonkey_loadBinaryFile(
+  path: string,
+  subResourceHash: string | undefined,
+): Promise<Uint8Array> {
+  let response = await greasemonkey_get(path, "arraybuffer");
+  return new Uint8Array(response.response);
+}
+
 /** @private */
 export let loadBinaryFile: (
   path: string,
@@ -164,6 +216,8 @@ export let loadBinaryFile: (
 ) => Promise<Uint8Array>;
 if (IN_NODE) {
   loadBinaryFile = node_loadBinaryFile;
+} else if (IN_GM) {
+  loadBinaryFile = greasemonkey_loadBinaryFile;
 } else {
   loadBinaryFile = browser_loadBinaryFile;
 }
@@ -176,7 +230,10 @@ if (IN_NODE) {
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (globalThis.document) {
+if (IN_GM) {
+  // greasemonkey
+  loadScript = greasemonkeyLoadScript;
+} else if (globalThis.document) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
 } else if (globalThis.importScripts) {
@@ -218,4 +275,91 @@ async function nodeLoadScript(url: string) {
     // system.
     await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
+}
+
+/**
+ * Load a text file and executes it as Javascript
+ * @param url The path to load.
+ * @private
+ */
+async function greasemonkeyLoadScript(url: string) {
+  // If it's a url, load it with fetch then eval it.
+  //
+  // Check to see if we're loading pyodide.asm.js here
+  // cache asm.data so we can use emscripten's Module.getPreloadedPackage.
+  let urlParts = new URL(url);
+  let pathParts = urlParts.pathname.split("/");
+  let filename = pathParts[pathParts.length - 1];
+  if (filename == "pyodide.asm.js") {
+    let dataUrl = new URL(url);
+    let dataPathParts = dataUrl.pathname.split("/");
+    dataPathParts[dataPathParts.length - 1] = "pyodide.asm.data";
+    let dataPath = dataPathParts.join("/");
+    dataUrl.pathname = dataPath;
+    globalThis.asmData = await greasemonkey_loadBinaryFile(
+      dataUrl.href,
+      undefined,
+    );
+  }
+  // @ts-ignore
+  let response = await greasemonkey_get(url, "blob");
+  eval(response.responseText);
+}
+
+/**
+ * Load a file, only for use in Greasemonkey. Resolves relative paths against
+ * indexURL.
+ *
+ * @param path the path to load
+ * @returns a string containing the data
+ * @private
+ */
+export async function greasemonkey_loadFile(path: string): Promise<string> {
+  let response = await greasemonkey_get(path, "text");
+  return response.responseText;
+}
+
+export function greasemonkey_getPreloadedPackage(
+  remotePackageName: string,
+  remotePackageSize: number,
+): ArrayBuffer {
+  return globalThis.asmData.buffer;
+}
+
+/** @private */
+export let getPreloadedPackage: (
+  remotePackageName: string,
+  remotePackageSize: number,
+) => ArrayBuffer;
+if (IN_GM) {
+  getPreloadedPackage = greasemonkey_getPreloadedPackage;
+}
+
+export async function greasemonkey_instantiateWasm(
+  imports: object,
+  successCallback: any,
+): Promise<any> {
+  // @ts-ignore
+  let response = await greasemonkey_get(
+    // @ts-ignore
+    this.locateFile("pyodide.asm.wasm"),
+    "arraybuffer",
+  );
+  let wasmData = response.response;
+
+  // @ts-ignore
+  let result = await WebAssembly.instantiate(wasmData, imports);
+  successCallback(result["instance"], result["module"]);
+  return new Promise((resolve, reject) => {
+    resolve({});
+  });
+}
+
+/** @private */
+export let instantiateWasm: (
+  imports: object,
+  successCallback: any,
+) => Promise<any>;
+if (IN_GM) {
+  instantiateWasm = greasemonkey_instantiateWasm;
 }
