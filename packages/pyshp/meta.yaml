@@ -8,7 +8,7 @@ source:
   sha256: 67024c0ccdc352ba5db777c4e968483782dfa78f8e200672a90d2d30fd8b7b49
 test:
   imports:
-    - cartopy
+    - shapefile
 about:
   home: https://github.com/GeospatialPython/pyshp
   PyPI: https://pypi.org/project/pyshp
