@@ -1,10 +1,10 @@
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 from ._core_docs import JsProxy
 
@@ -21,7 +21,7 @@ def add_all(jsobj: JsProxy) -> None:
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
         self.jsproxies: dict[str, Any] = {}
-        self.hook : Callable[[JsProxy], None] = lambda _: None
+        self.hook: Callable[[JsProxy], None] = lambda _: None
 
     def find_spec(
         self,

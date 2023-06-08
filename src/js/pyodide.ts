@@ -102,8 +102,8 @@ function finalizeBootstrap(API: any, config: ConfigType) {
       enumerable: false,
       configurable: true,
     });
-  };
-  importhook.register_js_finder.callKwargs({hook: jsFinderHook});
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = API.makePublicAPI();
