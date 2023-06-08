@@ -41,8 +41,10 @@ module = [
   "tomllib",
   "typer",
   "virtualenv",
+  "auditwheel_emscripten.*"
 ]
 ignore_missing_imports = true
+
 
 [tool.ruff]
 select = [

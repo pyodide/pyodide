@@ -6,11 +6,12 @@ package:
   top-level:
     - sqlite3
     - _sqlite3
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
-
     export FILES=(
       "Modules/_sqlite/blob.c"
       "Modules/_sqlite/connection.c"

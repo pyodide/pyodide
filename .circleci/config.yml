@@ -378,7 +378,7 @@ jobs:
             make npm-link
             pip install -r requirements.txt
             npm install -g node-fetch@2
-            pytest -s benchmark/stack_usage.py --rt node chrome firefox | sed -n 's/## //pg'
+            pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
 
   test-js:
     <<: *defaults

@@ -10,9 +10,6 @@ source:
     - patches/0001-Use-patched-instant.patch
 build:
   script: |
-    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
-    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
-
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
 requirements:
