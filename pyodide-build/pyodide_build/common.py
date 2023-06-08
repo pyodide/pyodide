@@ -370,13 +370,13 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
-def in_pyodide_tree() -> bool:
+def in_pyodide_tree(curdir: str | Path) -> bool:
     """
     Check if we are inside the Pyodide repository tree.
     """
 
     try:
-        search_pyodide_root(Path.cwd())
+        search_pyodide_root(curdir)
         return True
     except FileNotFoundError:
         return False
@@ -391,58 +391,45 @@ def init_environment(*, quiet: bool = False) -> None:
     # Already initialized
     if "PYODIDE_ROOT" in os.environ:
         return
-    
-    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
 
-    _init_build_env(xbuildenv_path, quiet=quiet)
-    _set_pyodide_root(xbuildenv_path)
+    try:
+        root = search_pyodide_root(Path.cwd())
+    except FileNotFoundError:  # Not in Pyodide tree
+        root = _init_build_env(quiet=quiet)
+
+    _set_pyodide_root(root)
 
 
-def _init_build_env(xbuildenv_path, *, quiet: bool = False) -> None:
+def _init_build_env(*, quiet: bool = False) -> Path:
     """
-    Initialize the build environment.
-
-    - In-tree builds: Do nothing
-    - Out-of-tree builds: Install the Pyodide build environment
+    Initialize the build environment for out-of-tree builds.
 
     Parameters
     ----------
     quiet
         If True, do not print any messages
     """
-
-    if in_pyodide_tree():
-        return
-    
     from . import install_xbuildenv  # avoid circular import
+
+    # TODO: Do not hardcode the path
+    # TODO: Add version numbers to the path
+    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
-        install_xbuildenv.install(xbuildenv_path, download=True)
+        if xbuildenv_path.exists():
+            logger.info(
+                f"Found existing build environment at {xbuildenv_path}, skipping installation."
+            )
+
+        return install_xbuildenv.install(xbuildenv_path, download=True)
 
 
-def _set_pyodide_root(xbuildenv_path, *, quiet: bool = False) -> None:
+def _set_pyodide_root(root: Path) -> None:
     """
     Set PYODIDE_ROOT environment variable.
-
-    This function works both in-tree and out-of-tree builds:
-    - In-tree builds: Searches for the root of the Pyodide repository in parent directories
-    - Out-of-tree builds: Downloads and installs the Pyodide build environment into the current directory
-
-    Note: this function is supposed to be called only in init_environment(), and should not be called directly.
-
-    Parameters
-    ----------
-    quiet
-        If True, do not print any messages
     """
-
-    if in_pyodide_tree():
-        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
-        return
-    
-    os.environ["PYODIDE_ROOT"] = str(xbuildenv_path / "xbuildenv" / "pyodide-root")
-    return
+    os.environ["PYODIDE_ROOT"] = str(root)
 
 
 @functools.cache

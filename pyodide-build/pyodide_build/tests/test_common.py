@@ -9,6 +9,7 @@ from pyodide_build.common import (
     get_build_environment_vars,
     get_build_flag,
     get_num_cores,
+    in_pyodide_tree,
     make_zip_archive,
     parse_top_level_import_name,
     platform,
@@ -78,6 +79,19 @@ def test_search_pyodide_root(tmp_path):
     pyproject_file.unlink()
     with pytest.raises(FileNotFoundError):
         search_pyodide_root(tmp_path)
+
+
+def test_in_pyodide_tree(tmp_path):
+    pyproject_file = tmp_path / "pyproject.toml"
+    pyproject_file.write_text("[tool.pyodide]")
+    assert in_pyodide_tree(tmp_path)
+    assert in_pyodide_tree(tmp_path / "subdir")
+    assert in_pyodide_tree(tmp_path / "subdir" / "subdir")
+
+    pyproject_file.unlink()
+    assert not in_pyodide_tree(tmp_path)
+    assert not in_pyodide_tree(tmp_path / "subdir")
+    assert not in_pyodide_tree(tmp_path / "subdir" / "subdir")
 
 
 def test_check_emscripten_version(monkeypatch):
