@@ -12,10 +12,13 @@ def test_imports(selenium):
 
 
 @pytest.mark.driver_timeout(60)
-@run_in_pyodide(packages=["Cartopy", "matplotlib"])
+@run_in_pyodide(packages=["Cartopy", "matplotlib", "pyodide-http"])
 def test_matplotlib(selenium):
     import cartopy.crs as ccrs
     import matplotlib.pyplot as plt
+    import pyodide_http
+
+    pyodide_http.patch_all()
 
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.coastlines()
