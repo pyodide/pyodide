@@ -1,0 +1,16 @@
+diff --git a/src/iso19111/internal.cpp b/src/iso19111/internal.cpp
+index 4810202d..f7c667bc 100644
+--- a/src/iso19111/internal.cpp
++++ b/src/iso19111/internal.cpp
+@@ -242,6 +242,11 @@ bool ends_with(const std::string &str, const std::string &suffix) noexcept {
+ double c_locale_stod(const std::string &s) {
+ 
+     const auto s_size = s.size();
++    // Propagate <cstdlib>'s strtod behaviour
++    if (s_size == 0) {
++        return 0.0;
++    }
++
+     // Fast path
+     if (s_size > 0 && s_size < 15) {
+         std::int64_t acc = 0;
