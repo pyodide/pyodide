@@ -1,9 +1,6 @@
-from pytest_pyodide import run_in_pyodide
-
-
 def test_peewee(selenium):
     selenium.run(
-    """
+        """
     import os
 
     from peewee import CharField, IntegerField, Model, SqliteDatabase
@@ -43,4 +40,3 @@ def test_peewee(selenium):
         assert person not in Person.select()
     """
     )
-    
