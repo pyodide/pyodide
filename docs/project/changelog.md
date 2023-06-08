@@ -39,6 +39,9 @@ myst:
   it can be raised in Python.
   {pr}`3868`
 
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
