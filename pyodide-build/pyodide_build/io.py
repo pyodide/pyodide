@@ -225,3 +225,11 @@ class MetaConfig(BaseModel):
                         f"If source is a wheel, 'build/{key}' key is not allowed"
                     )
         return values
+
+    def is_rust_package(self) -> bool:
+        """
+        Check if a package requires rust toolchain to build.
+        """
+        return any(
+            q in self.requirements.executable for q in ("rustc", "cargo", "rustup")
+        )

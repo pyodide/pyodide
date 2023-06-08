@@ -26,7 +26,7 @@ def pypi(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
-    ctx: typer.Context = typer.Context,
+    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> Path:
     """Fetch a wheel from pypi, or build from source if none available."""
     backend_flags = ctx.args
@@ -65,7 +65,7 @@ def url(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
-    ctx: typer.Context = typer.Context,
+    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> Path:
     """Fetch a wheel or build sdist from url."""
     backend_flags = ctx.args
@@ -93,7 +93,7 @@ def source(
         "requested",
         help="Which symbols should be exported when linking .so files?",
     ),
-    ctx: typer.Context = typer.Context,
+    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
     backend_flags = ctx.args
@@ -138,7 +138,7 @@ def main(
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
     ),
-    ctx: typer.Context = typer.Context,
+    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
 

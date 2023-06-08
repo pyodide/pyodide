@@ -42,6 +42,12 @@ myst:
 - {{ Fix }} `from jsmodule import *` now works.
   {pr}`3903`
 
+- {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
+  functions that use the `PySequence_*` APIs, it now works as expected. Also
+  `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
+  new array with the result values from the iterable appended.
+  {pr}`3904`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
