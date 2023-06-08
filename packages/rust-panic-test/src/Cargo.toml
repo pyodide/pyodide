@@ -1,0 +1,19 @@
+[package]
+name = "rust-panic-test"
+version = "0.1.0"
+edition = "2018"
+publish = false
+
+[dependencies]
+pyo3 = { version = "0.15.2" }
+
+[features]
+extension-module = ["pyo3/extension-module"]
+default = ["extension-module"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = "thin"
+overflow-checks = true

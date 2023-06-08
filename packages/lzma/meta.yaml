@@ -6,10 +6,12 @@ package:
   top-level:
     - lzma
     - _lzma
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o Modules/_lzmamodule.o \
       $(pkg-config --cflags --dont-define-prefix liblzma)
 
