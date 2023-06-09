@@ -2,6 +2,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 def test_peewee(selenium):
+    selenium.load_package("peewee")
     selenium.run(
     """
     import os
