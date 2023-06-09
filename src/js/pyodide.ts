@@ -93,17 +93,12 @@ function finalizeBootstrap(API: any, config: ConfigType) {
       return;
     }
     Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((x) =>
-            o.propertyIsEnumerable(x),
-          ),
-        ),
+      get: () => pyodide.toPy(Object.getOwnPropertyNames(o)),
       enumerable: false,
       configurable: true,
     });
-  };
-  importhook.register_js_finder.callKwargs({hook: jsFinderHook});
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = API.makePublicAPI();
