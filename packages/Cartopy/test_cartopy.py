@@ -44,4 +44,6 @@ def test_matplotlib(selenium):
     fd = io.BytesIO()
     plt.savefig(fd, format="svg")
 
-    assert fd.getvalue() == base64.b64decode((REFERENCE_DATA_PATH / "cartopy.svg.b64").read_bytes())
+    assert fd.getvalue() == base64.b64decode(
+        (REFERENCE_DATA_PATH / "cartopy.svg.b64").read_bytes()
+    )
