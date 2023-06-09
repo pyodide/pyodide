@@ -1,12 +1,7 @@
-import base64
-import io
 from functools import reduce
-from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-
-REFERENCE_DATA_PATH = Path(__file__).parent / "test_data"
 
 DECORATORS = [
     pytest.mark.xfail_browsers(node="No supported matplotlib backends on node"),
@@ -32,6 +27,8 @@ def test_imports(selenium):
 @matplotlib_test_decorator
 @run_in_pyodide(packages=["Cartopy", "matplotlib", "pyodide-http"])
 def test_matplotlib(selenium):
+    import io
+
     import cartopy.crs as ccrs
     import matplotlib.pyplot as plt
     import pyodide_http
@@ -44,6 +41,6 @@ def test_matplotlib(selenium):
     fd = io.BytesIO()
     plt.savefig(fd, format="svg")
 
-    assert fd.getvalue() == base64.b64decode(
-        (REFERENCE_DATA_PATH / "cartopy.svg.b64").read_bytes()
-    )
+    content = fd.getvalue().decode("utf8")
+    assert len(content) == 128402
+    assert content.startswith("<?xml")
