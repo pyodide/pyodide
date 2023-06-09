@@ -1747,7 +1747,7 @@ def test_typed_array(selenium):
 
     import pytest
 
-    with pytest.raises(ValueError, match="cannot delete array elements"):
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del a[0]
 
     msg = "Slice subscripting isn't implemented for typed arrays"
