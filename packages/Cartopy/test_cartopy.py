@@ -1,5 +1,22 @@
+import io
+from functools import reduce
+from pathlib import Path
+
 import pytest
 from pytest_pyodide import run_in_pyodide
+
+REFERENCE_DATA_PATH = Path(__file__).parent / "test_data"
+
+DECORATORS = [
+    pytest.mark.xfail_browsers(node="No supported matplotlib backends on node"),
+    pytest.mark.skip_refcount_check,
+    pytest.mark.skip_pyproxy_check,
+    pytest.mark.driver_timeout(60),
+]
+
+
+def matplotlib_test_decorator(f):
+    return reduce(lambda x, g: g(x), DECORATORS, f)
 
 
 @pytest.mark.driver_timeout(60)
@@ -11,7 +28,7 @@ def test_imports(selenium):
     print(cartopy, cartopy.trace)
 
 
-@pytest.mark.driver_timeout(60)
+@matplotlib_test_decorator
 @run_in_pyodide(packages=["Cartopy", "matplotlib", "pyodide-http"])
 def test_matplotlib(selenium):
     import cartopy.crs as ccrs
@@ -23,4 +40,7 @@ def test_matplotlib(selenium):
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.coastlines()
 
-    plt.show()
+    fd = io.BytesIO()
+    plt.savefig(fd, format="svg")
+
+    assert (REFERENCE_DATA_PATH / "cartopy.svg").read_bytes() == fd.getvalue()
