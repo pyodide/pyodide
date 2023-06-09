@@ -6,27 +6,26 @@ from pyodide_build.common import (
     environment_substitute_args,
     find_matching_wheels,
     find_missing_executables,
-    get_make_environment_vars,
-    get_make_flag,
+    get_build_environment_vars,
+    get_build_flag,
     get_num_cores,
     make_zip_archive,
     parse_top_level_import_name,
     platform,
     repack_zip_archive,
     search_pyodide_root,
-    set_build_environment,
 )
 
 
-def test_get_make_flag():
-    assert len(get_make_flag("SIDE_MODULE_LDFLAGS")) > 0
-    assert len(get_make_flag("SIDE_MODULE_CFLAGS")) > 0
+def test_get_build_flag():
+    assert len(get_build_flag("SIDE_MODULE_LDFLAGS")) > 0
+    assert len(get_build_flag("SIDE_MODULE_CFLAGS")) > 0
     # n.b. right now CXXFLAGS is empty so don't check length here, just check it returns
-    get_make_flag("SIDE_MODULE_CXXFLAGS")
+    get_build_flag("SIDE_MODULE_CXXFLAGS")
 
 
-def test_get_make_environment_vars():
-    vars = get_make_environment_vars()
+def test_get_build_environment_vars():
+    vars = get_build_environment_vars()
     assert "SIDE_MODULE_LDFLAGS" in vars
     assert "SIDE_MODULE_CFLAGS" in vars
     assert "SIDE_MODULE_CXXFLAGS" in vars
@@ -36,8 +35,8 @@ def test_wheel_paths():
     from pathlib import Path
 
     old_version = "cp38"
-    PYMAJOR = int(get_make_flag("PYMAJOR"))
-    PYMINOR = int(get_make_flag("PYMINOR"))
+    PYMAJOR = int(get_build_flag("PYMAJOR"))
+    PYMINOR = int(get_build_flag("PYMINOR"))
     PLATFORM = platform()
     current_version = f"cp{PYMAJOR}{PYMINOR}"
     future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
@@ -249,29 +248,37 @@ def test_repack_zip_archive(
     assert input_path.stat().st_size == expected_size
 
 
-def test_set_build_environment(monkeypatch):
+def test_get_build_environment_vars_host_env(monkeypatch):
+    # host environment variables should have precedence over
+    # variables defined in Makefile.envs
+
     import os
 
-    monkeypatch.delenv("PKG_CONFIG_PATH", raising=False)
-    monkeypatch.delenv("WASM_PKG_CONFIG_PATH", raising=False)
-    monkeypatch.setenv("RANDOM_ENV", 1234)
-    e: dict[str, str] = {}
-    set_build_environment(e)
-    assert e.get("HOME") == os.environ.get("HOME")
-    assert e.get("PATH") == os.environ.get("PATH")
+    get_build_environment_vars.cache_clear()
+    e = get_build_environment_vars()
     assert e["PYODIDE"] == "1"
-    assert "RANDOM_ENV" not in e
-    assert e["PKG_CONFIG_PATH"] == ""
 
-    e = {}
+    monkeypatch.setenv("HOME", "/home/user")
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
     monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
-    set_build_environment(e)
-    assert e["PKG_CONFIG_PATH"] == "/x/y/z:/c/d/e"
+
+    get_build_environment_vars.cache_clear()
+
+    e_host = get_build_environment_vars()
+    assert e_host.get("HOME") == os.environ.get("HOME")
+    assert e_host.get("PATH") == os.environ.get("PATH")
+    assert e_host["PKG_CONFIG_PATH"].endswith("/x/y/z:/c/d/e")
+
+    assert e_host.get("HOME") != e.get("HOME")
+    assert e_host.get("PATH") != e.get("PATH")
+    assert e_host.get("PKG_CONFIG_PATH") != e.get("PKG_CONFIG_PATH")
+
+    get_build_environment_vars.cache_clear()
 
     monkeypatch.delenv("HOME")
-    monkeypatch.setenv("WASM_PKG_CONFIG_PATH", "/a/b/c")
-    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
-    e = {}
-    set_build_environment(e)
+    monkeypatch.setenv("RANDOM_ENV", "1234")
+
+    get_build_environment_vars.cache_clear()
+    e = get_build_environment_vars()
     assert "HOME" not in e
-    assert e["PKG_CONFIG_PATH"] == "/a/b/c:/x/y/z:/c/d/e"
+    assert "RANDOM_ENV" not in e

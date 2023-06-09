@@ -5,11 +5,12 @@ package:
     - always
   top-level:
     - _hashlib
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
-
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \
       $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
 

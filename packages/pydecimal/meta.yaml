@@ -5,9 +5,10 @@ package:
     - always
   top-level:
     - _pydecimal
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
-
     cp Lib/_pydecimal.py $DISTDIR

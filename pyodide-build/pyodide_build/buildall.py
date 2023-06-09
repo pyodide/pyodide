@@ -28,7 +28,11 @@ from rich.table import Table
 
 from . import common, recipe
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels, find_missing_executables, repack_zip_archive
+from .common import (
+    find_matching_wheels,
+    find_missing_executables,
+    repack_zip_archive,
+)
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 from .pywasmcross import BuildArgs
@@ -397,10 +401,12 @@ def generate_dependency_graph(
     # Locate the subset of packages that are transitive dependencies of packages
     # that are requested and not disabled.
     requested_with_deps = requested.copy()
+    disabled_packages = set()
     for pkgname in reversed(list(TopologicalSorter(graph).static_order())):
         pkg = pkg_map[pkgname]
         if pkg.disabled:
             requested_with_deps.discard(pkgname)
+            disabled_packages.add(pkgname)
             continue
 
         if pkgname not in requested_with_deps:
@@ -414,6 +420,11 @@ def generate_dependency_graph(
 
     _validate_package_map(pkg_map)
 
+    if disabled_packages:
+        logger.warning(
+            f"The following packages are disabled: {', '.join(disabled_packages)}"
+        )
+
     return pkg_map
 
 
@@ -422,13 +433,6 @@ def job_priority(pkg: BasePackage) -> int:
         return 0
     else:
         return 1
-
-
-def is_rust_package(pkg: BasePackage) -> bool:
-    """
-    Check if a package requires rust toolchain to build.
-    """
-    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
 
 
 def format_name_list(l: list[str]) -> str:
@@ -551,7 +555,7 @@ def build_from_graph(
             _, pkg = build_queue.get()
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     # Don't build multiple rust packages at the same time.
                     # See: https://github.com/pyodide/pyodide/issues/3565
                     # Note that if there are only rust packages left in the queue,
@@ -591,7 +595,7 @@ def build_from_graph(
             built_queue.put(pkg)
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     building_rust_pkg = False
 
             # Release the GIL so new packages get queued
@@ -813,16 +817,16 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_make_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
+        args.cflags = common.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_make_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
+        args.cxxflags = common.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_make_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
+        args.ldflags = common.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_make_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
+        args.target_install_dir = common.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_make_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+        args.host_install_dir = common.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(common.get_make_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(common.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args

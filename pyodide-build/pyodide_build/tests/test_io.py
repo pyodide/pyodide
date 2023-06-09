@@ -46,3 +46,30 @@ def test_build_fields():
     msg = "If building a static_library, 'build/post' key is not allowed."
     with pytest.raises(ValidationError, match=msg):
         _BuildSpec(type="static_library", post="a")
+
+
+@pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
+def test_is_rust_package_1(exe):
+    pkg = MetaConfig(
+        package={"name": "a", "version": "0.2"},
+        source={"url": "test.whl", "sha256": ""},
+        requirements={"executable": [exe]},
+    )
+    assert pkg.is_rust_package()
+
+
+@pytest.mark.parametrize(
+    "reqs",
+    [
+        dict(),
+        dict(requirements={"host": ["rustc"]}),
+        dict(requirements={"executable": ["something_else"]}),
+    ],
+)
+def test_is_rust_package_2(reqs):
+    pkg = MetaConfig(
+        package={"name": "a", "version": "0.2"},
+        source={"url": "test.tar", "sha256": ""},
+        **reqs
+    )
+    assert not pkg.is_rust_package()

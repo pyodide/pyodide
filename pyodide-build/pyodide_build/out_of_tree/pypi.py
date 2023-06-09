@@ -173,8 +173,8 @@ PYTHON_VERSION = Version(python_version())
 
 
 def get_target_python():
-    PYMAJOR = common.get_make_flag("PYMAJOR")
-    PYMINOR = common.get_make_flag("PYMINOR")
+    PYMAJOR = common.get_pyversion_major()
+    PYMINOR = common.get_pyversion_minor()
     tp = TargetPython(
         py_ver=(int(PYMAJOR), int(PYMINOR)),
         platforms=[common.platform()],
@@ -336,7 +336,7 @@ def _resolve_and_build(
     requirements = []
 
     target_env = {
-        "python_version": f'{common.get_make_flag("PYMAJOR")}.{common.get_make_flag("PYMINOR")}',
+        "python_version": common.get_pyversion_major_minor(),
         "sys_platform": common.platform().split("_")[0],
         "extra": ",".join(extras),
     }

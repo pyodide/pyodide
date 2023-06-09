@@ -308,7 +308,9 @@
 - test_filecmp
 - test_fileinput
 - test_fileio:
-    segfault-chrome: stack overflow
+    skip:
+      # stack overflow in v8
+      - "*Recursive*"
 - test_fileutils
 - test_finalization
 - test_float
@@ -790,6 +792,7 @@
       - test_4dyear # '%4Y' != '0001'
       - test_ctime # '1941' != '-100'
       - test_monotonic # self.assertTrue(0.450 <= dt) fails
+      - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
 - test_timeit
 - test_timeout
 - test_tix
@@ -823,7 +826,9 @@
 - test_typechecks
 - test_types
 - test_typing:
-    segfault-chrome: stack overflow
+    skip:
+      # stack overflow in v8
+      - "*recursion*"
 - test_ucn
 - test_unary
 - test_unicode
@@ -887,7 +892,9 @@
 - test_xdrlib
 - test_xml_dom_minicompat
 - test_xml_etree:
-    xfail-chrome: "RangeError: Maximum call stack size exceeded"
+    skip:
+      # stack overflow in v8
+      - "test_recursive_repr"
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking

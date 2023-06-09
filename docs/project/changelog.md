@@ -15,10 +15,11 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Changed the name of the `--output-directory` argument to
-  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
-  still accepted for backwards compatibility.
-  {pr}`3811`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
+
+- {{ Update }} The docker image now has node v20 instead of node v14.
+  {pr}`3819`
 
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
@@ -30,17 +31,42 @@ myst:
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
+- {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
+  as drop-in replacements for JavaScript Arrays.
+  {pr}`3853`
+
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
+
+- {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
+  functions that use the `PySequence_*` APIs, it now works as expected. Also
+  `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
+  new array with the result values from the iterable appended.
+  {pr}`3904`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
+## Version 0.23.2
+
+_May 2, 2023_
+
+- {{ Enhancement }} Changed the name of the `--output-directory` argument to
+  `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
+  still accepted for backwards compatibility.
+  {pr}`3811`
+
 ## Version 0.23.1
+
+_April 13, 2023_
 
 ### Deployment
 

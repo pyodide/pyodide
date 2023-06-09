@@ -10,7 +10,8 @@ import textwrap
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext, redirect_stdout
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
@@ -26,6 +27,12 @@ from packaging.utils import parse_wheel_filename
 from .logger import logger
 from .recipe import load_all_recipes
 
+RUST_BUILD_PRELUDE = """
+rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
+rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
+"""
+
+
 BUILD_VARS: set[str] = {
     "PATH",
     "PYTHONPATH",
@@ -39,19 +46,18 @@ BUILD_VARS: set[str] = {
     "TARGETINSTALLDIR",
     "SYSCONFIG_NAME",
     "HOSTSITEPACKAGES",
+    "PYTHON_ARCHIVE_URL",
+    "PYTHON_ARCHIVE_SHA256",
     "PYVERSION",
     "PYMAJOR",
     "PYMINOR",
     "PYMICRO",
-    "CPYTHONBUILD",
-    "CPYTHONLIB",
     "SIDE_MODULE_CFLAGS",
     "SIDE_MODULE_CXXFLAGS",
     "SIDE_MODULE_LDFLAGS",
     "STDLIB_MODULE_CFLAGS",
-    "UNISOLATED_PACKAGES",
     "WASM_LIBRARY_DIR",
-    "WASM_PKG_CONFIG_PATH",
+    "PKG_CONFIG_PATH",
     "CARGO_BUILD_TARGET",
     "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "RUSTFLAGS",
@@ -65,7 +71,7 @@ BUILD_VARS: set[str] = {
 
 
 def emscripten_version() -> str:
-    return get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    return get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
 
 
 def get_emscripten_version_info() -> str:
@@ -98,7 +104,7 @@ def check_emscripten_version() -> None:
 
 
 def platform() -> str:
-    emscripten_version = get_make_flag("PYODIDE_EMSCRIPTEN_VERSION")
+    emscripten_version = get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
     version = emscripten_version.replace(".", "_")
     return f"emscripten_{version}_wasm32"
 
@@ -109,8 +115,8 @@ def pyodide_tags() -> Iterator[Tag]:
 
     The sequence is ordered in decreasing specificity.
     """
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
+    PYMAJOR = get_pyversion_major()
+    PYMINOR = get_pyversion_minor()
     PLATFORM = platform()
     python_version = (int(PYMAJOR), int(PYMINOR))
     yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
@@ -189,29 +195,68 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-def get_make_flag(name: str) -> str:
-    """Get flags from makefile.envs.
-
-    For building packages we currently use:
-        SIDE_MODULE_LDFLAGS
-        SIDE_MODULE_CFLAGS
-        SIDE_MODULE_CXXFLAGS
+def get_build_flag(name: str) -> str:
     """
-    return get_make_environment_vars()[name]
+    Get a value of a build flag.
+    """
+    build_vars = get_build_environment_vars()
+    if name not in build_vars:
+        raise ValueError(f"Unknown build flag: {name}")
+
+    return build_vars[name]
+
+
+def get_pyversion_major() -> str:
+    return get_build_flag("PYMAJOR")
+
+
+def get_pyversion_minor() -> str:
+    return get_build_flag("PYMINOR")
+
+
+def get_pyversion_major_minor() -> str:
+    return f"{get_pyversion_major()}.{get_pyversion_minor()}"
 
 
 def get_pyversion() -> str:
-    PYMAJOR = get_make_flag("PYMAJOR")
-    PYMINOR = get_make_flag("PYMINOR")
-    return f"python{PYMAJOR}.{PYMINOR}"
+    return f"python{get_pyversion_major_minor()}"
 
 
 def get_hostsitepackages() -> str:
-    return get_make_flag("HOSTSITEPACKAGES")
+    return get_build_flag("HOSTSITEPACKAGES")
 
 
 @functools.cache
-def get_make_environment_vars() -> dict[str, str]:
+def get_build_environment_vars() -> dict[str, str]:
+    """
+    Get common environment variables for the in-tree and out-of-tree build.
+    """
+    env = _get_make_environment_vars().copy()
+
+    # Allow users to overwrite the build environment variables by setting
+    # host environment variables.
+    # TODO: Add modifiable configuration file instead.
+    # (https://github.com/pyodide/pyodide/pull/3737/files#r1161247201)
+    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
+    env["PYODIDE"] = "1"
+
+    tools_dir = Path(__file__).parent / "tools"
+
+    env["CMAKE_TOOLCHAIN_FILE"] = str(
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+    )
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+
+    hostsitepackages = env["HOSTSITEPACKAGES"]
+    pythonpath = [
+        hostsitepackages,
+    ]
+    env["PYTHONPATH"] = ":".join(pythonpath)
+
+    return env
+
+
+def _get_make_environment_vars() -> dict[str, str]:
     """Load environment variables from Makefile.envs
 
     This allows us to set all build vars in one place"""
@@ -242,6 +287,31 @@ def get_make_environment_vars() -> dict[str, str]:
     return environment
 
 
+def _environment_substitute_str(string: str, env: dict[str, str] | None = None) -> str:
+    """
+    Substitute $(VAR) in string with the value of the environment variable VAR.
+
+    Parameters
+    ----------
+    string
+        A string
+
+    env
+        A dictionary of environment variables. If None, use os.environ.
+
+    Returns
+    -------
+    A string with the substitutions applied.
+    """
+    if env is None:
+        env = dict(os.environ)
+
+    for e_name, e_value in env.items():
+        string = string.replace(f"$({e_name})", e_value)
+
+    return string
+
+
 def environment_substitute_args(
     args: dict[str, str], env: dict[str, str] | None = None
 ) -> dict[str, Any]:
@@ -265,8 +335,7 @@ def environment_substitute_args(
     subbed_args = {}
     for arg, value in args.items():
         if isinstance(value, str):
-            for e_name, e_value in env.items():
-                value = value.replace(f"$({e_name})", e_value)
+            value = _environment_substitute_str(value, env)
         subbed_args[arg] = value
     return subbed_args
 
@@ -301,30 +370,67 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
-def init_environment() -> None:
+def init_environment(*, quiet: bool = False) -> None:
+    """
+    Initialize Pyodide build environment.
+    This function needs to be called before any other Pyodide build functions.
+    """
     if os.environ.get("__LOADED_PYODIDE_ENV"):
         return
+
     os.environ["__LOADED_PYODIDE_ENV"] = "1"
+
+    _set_pyodide_root(quiet=quiet)
+
+
+def _set_pyodide_root(*, quiet: bool = False) -> None:
+    """
+    Set PYODIDE_ROOT environment variable.
+
+    This function works both in-tree and out-of-tree builds:
+    - In-tree builds: Searches for the root of the Pyodide repository in parent directories
+    - Out-of-tree builds: Downloads and installs the Pyodide build environment into the current directory
+
+    Note: this function is supposed to be called only in init_environment(), and should not be called directly.
+
+    Parameters
+    ----------
+    quiet
+        If True, do not print any messages
+    """
+
+    from . import install_xbuildenv  # avoid circular import
+
     # If we are building docs, we don't need to know the PYODIDE_ROOT
     if "sphinx" in sys.modules:
         os.environ["PYODIDE_ROOT"] = ""
+        return
 
+    # 1) If PYODIDE_ROOT is already set, do nothing
     if "PYODIDE_ROOT" in os.environ:
-        os.environ["PYODIDE_ROOT"] = str(Path(os.environ["PYODIDE_ROOT"]).resolve())
-    else:
-        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(os.getcwd()))
+        return
 
-    os.environ.update(get_make_environment_vars())
+    # 2) If we are doing an in-tree build,
+    #    set PYODIDE_ROOT to the root of the Pyodide repository
     try:
-        hostsitepackages = get_hostsitepackages()
-        pythonpath = [
-            hostsitepackages,
-        ]
-        os.environ["PYTHONPATH"] = ":".join(pythonpath)
-    except KeyError:
+        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
+        return
+    except FileNotFoundError:
         pass
-    os.environ["BASH_ENV"] = ""
-    get_unisolated_packages()
+
+    # 3) If we are doing an out-of-tree build,
+    #    download and install the Pyodide build environment
+    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
+
+    if xbuildenv_path.exists():
+        os.environ["PYODIDE_ROOT"] = str(xbuildenv_path / "xbuildenv" / "pyodide-root")
+        return
+
+    context = redirect_stdout(StringIO()) if quiet else nullcontext()
+    with context:
+        # install_xbuildenv will set PYODIDE_ROOT env variable, so we don't need to do it here
+        # TODO: return the path to the xbuildenv instead of setting the env variable inside install_xbuildenv
+        install_xbuildenv.install(xbuildenv_path, download=True)
 
 
 @functools.cache
@@ -335,11 +441,8 @@ def get_pyodide_root() -> Path:
 
 @functools.cache
 def get_unisolated_packages() -> list[str]:
-    import json
-
-    if "UNISOLATED_PACKAGES" in os.environ:
-        return json.loads(os.environ["UNISOLATED_PACKAGES"])
     PYODIDE_ROOT = get_pyodide_root()
+
     unisolated_file = PYODIDE_ROOT / "unisolated.txt"
     if unisolated_file.exists():
         # in xbuild env, read from file
@@ -351,7 +454,7 @@ def get_unisolated_packages() -> list[str]:
         for name, config in recipes.items():
             if config.build.cross_build_env:
                 unisolated_packages.append(name)
-    os.environ["UNISOLATED_PACKAGES"] = json.dumps(unisolated_packages)
+
     return unisolated_packages
 
 
@@ -394,29 +497,6 @@ def chdir(new_dir: Path) -> Generator[None, None, None]:
         yield
     finally:
         os.chdir(orig_dir)
-
-
-def set_build_environment(env: dict[str, str]) -> None:
-    """Assign build environment variables to env.
-
-    Sets common environment between in tree and out of tree package builds.
-    """
-    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
-    env["PYODIDE"] = "1"
-
-    pkg_config_parts = []
-    if "WASM_PKG_CONFIG_PATH" in os.environ:
-        pkg_config_parts.append(env["WASM_PKG_CONFIG_PATH"])
-    if "PKG_CONFIG_PATH" in os.environ:
-        pkg_config_parts.append(os.environ["PKG_CONFIG_PATH"])
-    env["PKG_CONFIG_PATH"] = ":".join(pkg_config_parts)
-
-    tools_dir = Path(__file__).parent / "tools"
-
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
 
 def get_num_cores() -> int:

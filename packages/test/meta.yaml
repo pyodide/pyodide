@@ -5,13 +5,17 @@ package:
     - always
   top-level:
     - test
-
-# TODO: also include test directories included in other stdlib modules
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
+  patches:
+    - patches/0005-gh-93839-Move-Lib-ctypes-test-to-Lib-test-test_ctype.patch
+    - patches/0006-gh-93839-Move-Lib-unttest-test-to-Lib-test-test_unit.patch
+    - patches/0007-gh-93839-Use-load_package_tests-for-testmock-GH-9405.patch
+    - patches/0008-Move-test-directories.patch
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
-
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testcapi.so \
@@ -32,11 +36,10 @@ build:
     emcc ${TEST_MODULE_CFLAGS} -c Modules/_ctypes/_ctypes_test.c -o Modules/_ctypes_test.o
 
     for testname in ${TEST_EXTENSIONS}; do \
-      cd ${CPYTHONBUILD} && \
       emcc Modules/${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
     done
 
-    cd ${CPYTHONBUILD}/Lib && \
+    cd Lib && \
       tar --exclude=__pycache__ -cf - \
       test distutils/tests sqlite3/test \
       | tar -C $DISTDIR -xf -

@@ -12,13 +12,13 @@ from ..logger import logger
 app = typer.Typer()
 
 
-@app.callback(no_args_is_help=True)  # type: ignore[misc]
+@app.callback(no_args_is_help=True)
 def callback() -> None:
     """Add a new package build recipe or update an existing recipe"""
     return
 
 
-@app.command("pypi")  # type: ignore[misc]
+@app.command("pypi")
 def new_recipe_pypi(
     name: str,
     update: bool = typer.Option(

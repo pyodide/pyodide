@@ -128,11 +128,11 @@ def test_py_compile_exceptions(tmp_path):
         (tmp_path / "_py_compile_test_b.pyc").write_bytes(fh_zip.read("b.pyc"))
 
     sys.path.append(str(tmp_path))
-    import _py_compile_test_a  # type: ignore[import]
+    import _py_compile_test_a
 
     assert _py_compile_test_a.x == 1
 
-    import _py_compile_test_b  # type: ignore[import]
+    import _py_compile_test_b
 
     try:
         _py_compile_test_b.func2()

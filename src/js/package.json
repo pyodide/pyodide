@@ -21,7 +21,6 @@
     "@types/expect": "^24.3.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.25",
-    "@types/node-fetch": "^2.6.1",
     "@types/ws": "^8.5.3",
     "chai": "^4.3.6",
     "chai-as-promised": "^7.1.1",
@@ -127,7 +126,6 @@
   },
   "dependencies": {
     "base-64": "^1.0.0",
-    "node-fetch": "^2.6.1",
     "ws": "^8.5.0"
   },
   "types": "./pyodide.d.ts"

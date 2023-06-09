@@ -11,7 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.common import emscripten_version, get_pyodide_root
-from pyodide_build.install_xbuildenv import download_xbuildenv, install_xbuildenv
+from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -270,6 +270,17 @@ def install_pkg(venv, pkgname):
     )
 
 
+def check_installed_packages(venv, pkgs):
+    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
+    site_packages = venv / "lib" / python / "site-packages"
+    not_found = [
+        pkg
+        for pkg in pkgs
+        if not next(site_packages.glob(pkg + "*" + ".dist-info"), None)
+    ]
+    assert not_found == []
+
+
 def clean_pkg_install_stdout(stdout: str) -> str:
     # delete lines indicating whether package was downloaded or used from cache
     # since these don't reproduce.
@@ -346,23 +357,8 @@ def test_pip_install_from_pypi_deps(selenium, venv):
     """pure Python package with dependencies from pypi"""
     result = install_pkg(venv, "requests==2.28.1")
     assert result.returncode == 0
-    cleaned_stdout = clean_pkg_install_stdout(result.stdout)
-    # Sort packages since they don't come in a consistent order
-    cleaned_stdout = "\n".join(sorted(cleaned_stdout.split("\n")))
-    assert (
-        cleaned_stdout
-        == dedent(
-            """
-            Collecting certifi>=*
-            Collecting charset-normalizer<*,>=*
-            Collecting idna<*,>=*
-            Collecting requests==*
-            Collecting urllib3<*,>=*
-            Installing collected packages: urllib3, idna, charset-normalizer, certifi, requests
-            Looking in links: .../dist
-            Successfully installed certifi-* charset-normalizer-* idna-* requests-* urllib3-*
-            """
-        ).strip()
+    check_installed_packages(
+        venv, ["certifi", "charset_normalizer", "idna", "requests", "urllib3"]
     )
 
 
@@ -445,7 +441,7 @@ def test_pypa_index(tmp_path):
     expected."""
     path = Path(tmp_path)
     version = "0.21.0"  # just need some version that already exists
-    download_xbuildenv(version, path)
+    _download_xbuildenv(version, path)
 
     # We don't need host dependencies for this test so zero them out
     (path / "xbuildenv/requirements.txt").write_text("")

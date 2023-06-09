@@ -1,0 +1,15 @@
+Index: rebound-3.24.2/setup.py
+===================================================================
+--- rebound-3.24.2.orig/setup.py
++++ rebound-3.24.2/setup.py
+@@ -23,8 +23,8 @@ extra_link_args=[]
+ if sys.platform == 'darwin':
+     from distutils import sysconfig
+     vars = sysconfig.get_config_vars()
+-    vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-shared')
+-    extra_link_args=['-Wl,-install_name,@rpath/librebound'+suffix]
++    # vars['LDSHARED'] = vars['LDSHARED'].replace('-bundle', '-shared')
++    # extra_link_args=['-Wl,-install_name,@rpath/librebound'+suffix]
+     
+ libreboundmodule = Extension('librebound',
+                     sources = [ 'src/rebound.c',

@@ -153,27 +153,3 @@ def test_requirements_executable(monkeypatch):
         m.setattr(shutil, "which", lambda exe: "/bin")
 
         buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
-
-
-@pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
-def test_is_rust_package(exe):
-    pkg = buildall.BasePackage(
-        pkgdir=Path(""),
-        name="test",
-        version="1.0.0",
-        disabled=False,
-        meta=None,  # type: ignore[arg-type]
-        package_type="package",
-        run_dependencies=[],
-        host_dependencies=[],
-        host_dependents=set(),
-        dependencies=set(),
-        unbuilt_host_dependencies=set(),
-        executables_required=[exe],
-    )
-
-    assert buildall.is_rust_package(pkg)
-
-    pkg.executables_required = []
-
-    assert not buildall.is_rust_package(pkg)

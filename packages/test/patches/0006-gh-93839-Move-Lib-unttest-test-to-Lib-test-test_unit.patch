@@ -1,0 +1,724 @@
+From c735d545343c3ab002c62596b2fb2cfa4488b0af Mon Sep 17 00:00:00 2001
+From: Victor Stinner <vstinner@python.org>
+Date: Tue, 21 Jun 2022 10:27:59 +0200
+Subject: [PATCH 6/9] gh-93839: Move Lib/unttest/test/ to Lib/test/test_unittest/
+ (#94043)
+
+* Move Lib/unittest/test/ to Lib/test/test_unittest/
+* Remove Lib/test/test_unittest.py
+* Replace unittest.test with test.test_unittest
+* Remove unittest.load_tests()
+* Rewrite unittest __init__.py and __main__.py
+* Update build system, CODEOWNERS, and wasm_assets.py
+---
+ .github/CODEOWNERS                            |  2 +-
+ Lib/test/test_unittest.py                     | 16 -----
+ Lib/test/test_unittest/__init__.py            |  6 ++
+ Lib/test/test_unittest/__main__.py            |  4 ++
+ .../test_unittest}/_test_warnings.py          |  0
+ .../test => test/test_unittest}/dummy.py      |  0
+ .../test => test/test_unittest}/support.py    |  0
+ .../test_unittest}/test_assertions.py         |  0
+ .../test_unittest}/test_async_case.py         |  0
+ .../test => test/test_unittest}/test_break.py |  0
+ .../test => test/test_unittest}/test_case.py  |  2 +-
+ .../test_unittest}/test_discovery.py          |  6 +-
+ .../test_unittest}/test_functiontestcase.py   |  2 +-
+ .../test_unittest}/test_loader.py             |  6 +-
+ .../test_unittest}/test_program.py            | 16 ++---
+ .../test_unittest}/test_result.py             |  0
+ .../test_unittest}/test_runner.py             |  2 +-
+ .../test_unittest}/test_setups.py             |  0
+ .../test_unittest}/test_skipping.py           |  2 +-
+ .../test => test/test_unittest}/test_suite.py |  2 +-
+ .../test_unittest}/testmock/__init__.py       |  2 +-
+ .../test_unittest}/testmock/__main__.py       |  2 +-
+ .../test_unittest}/testmock/support.py        |  0
+ .../test_unittest}/testmock/testasync.py      |  0
+ .../test_unittest}/testmock/testcallable.py   |  2 +-
+ .../test_unittest}/testmock/testhelpers.py    |  0
+ .../testmock/testmagicmethods.py              |  0
+ .../test_unittest}/testmock/testmock.py       |  2 +-
+ .../test_unittest}/testmock/testpatch.py      | 22 +++----
+ .../test_unittest}/testmock/testsealable.py   |  0
+ .../test_unittest}/testmock/testsentinel.py   |  0
+ .../test_unittest}/testmock/testwith.py       |  2 +-
+ Lib/unittest/__init__.py                      | 10 ----
+ Lib/unittest/test/__init__.py                 | 25 --------
+ Lib/unittest/test/__main__.py                 | 18 ------
+ Makefile.pre.in                               |  4 +-
+ PCbuild/lib.pyproj                            | 58 +++++++++----------
+ Tools/wasm/wasm_assets.py                     |  1 -
+ 38 files changed, 77 insertions(+), 137 deletions(-)
+ delete mode 100644 Lib/test/test_unittest.py
+ create mode 100644 Lib/test/test_unittest/__init__.py
+ create mode 100644 Lib/test/test_unittest/__main__.py
+ rename Lib/{unittest/test => test/test_unittest}/_test_warnings.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/dummy.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/support.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_assertions.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_async_case.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_break.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_case.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_discovery.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_functiontestcase.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_loader.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_program.py (96%)
+ rename Lib/{unittest/test => test/test_unittest}/test_result.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_runner.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_setups.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/test_skipping.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/test_suite.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/__init__.py (86%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/__main__.py (86%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/support.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testasync.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testcallable.py (98%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testhelpers.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testmagicmethods.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testmock.py (99%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testpatch.py (98%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testsealable.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testsentinel.py (100%)
+ rename Lib/{unittest/test => test/test_unittest}/testmock/testwith.py (99%)
+ delete mode 100644 Lib/unittest/test/__init__.py
+ delete mode 100644 Lib/unittest/test/__main__.py
+
+diff --git a/Lib/test/test_unittest.py b/Lib/test/test_unittest.py
+deleted file mode 100644
+index 1079c7df2e..0000000000
+--- a/Lib/test/test_unittest.py
++++ /dev/null
+@@ -1,16 +0,0 @@
+-import unittest.test
+-
+-from test import support
+-
+-
+-def load_tests(*_):
+-    # used by unittest
+-    return unittest.test.suite()
+-
+-
+-def tearDownModule():
+-    support.reap_children()
+-
+-
+-if __name__ == "__main__":
+-    unittest.main()
+diff --git a/Lib/test/test_unittest/__init__.py b/Lib/test/test_unittest/__init__.py
+new file mode 100644
+index 0000000000..bc502ef32d
+--- /dev/null
++++ b/Lib/test/test_unittest/__init__.py
+@@ -0,0 +1,6 @@
++import os.path
++from test.support import load_package_tests
++
++
++def load_tests(*args):
++    return load_package_tests(os.path.dirname(__file__), *args)
+diff --git a/Lib/test/test_unittest/__main__.py b/Lib/test/test_unittest/__main__.py
+new file mode 100644
+index 0000000000..40a23a297e
+--- /dev/null
++++ b/Lib/test/test_unittest/__main__.py
+@@ -0,0 +1,4 @@
++from . import load_tests
++import unittest
++
++unittest.main()
+diff --git a/Lib/unittest/test/_test_warnings.py b/Lib/test/test_unittest/_test_warnings.py
+similarity index 100%
+rename from Lib/unittest/test/_test_warnings.py
+rename to Lib/test/test_unittest/_test_warnings.py
+diff --git a/Lib/unittest/test/dummy.py b/Lib/test/test_unittest/dummy.py
+similarity index 100%
+rename from Lib/unittest/test/dummy.py
+rename to Lib/test/test_unittest/dummy.py
+diff --git a/Lib/unittest/test/support.py b/Lib/test/test_unittest/support.py
+similarity index 100%
+rename from Lib/unittest/test/support.py
+rename to Lib/test/test_unittest/support.py
+diff --git a/Lib/unittest/test/test_assertions.py b/Lib/test/test_unittest/test_assertions.py
+similarity index 100%
+rename from Lib/unittest/test/test_assertions.py
+rename to Lib/test/test_unittest/test_assertions.py
+diff --git a/Lib/unittest/test/test_async_case.py b/Lib/test/test_unittest/test_async_case.py
+similarity index 100%
+rename from Lib/unittest/test/test_async_case.py
+rename to Lib/test/test_unittest/test_async_case.py
+diff --git a/Lib/unittest/test/test_break.py b/Lib/test/test_unittest/test_break.py
+similarity index 100%
+rename from Lib/unittest/test/test_break.py
+rename to Lib/test/test_unittest/test_break.py
+diff --git a/Lib/unittest/test/test_case.py b/Lib/test/test_unittest/test_case.py
+similarity index 99%
+rename from Lib/unittest/test/test_case.py
+rename to Lib/test/test_unittest/test_case.py
+index 374a255255..e000fe4f07 100644
+--- a/Lib/unittest/test/test_case.py
++++ b/Lib/test/test_unittest/test_case.py
+@@ -15,7 +15,7 @@
+ 
+ import unittest
+ 
+-from unittest.test.support import (
++from test.test_unittest.support import (
+     TestEquality, TestHashing, LoggingResult, LegacyLoggingResult,
+     ResultWithNoStartTestRunStopTestRun
+ )
+diff --git a/Lib/unittest/test/test_discovery.py b/Lib/test/test_unittest/test_discovery.py
+similarity index 99%
+rename from Lib/unittest/test/test_discovery.py
+rename to Lib/test/test_unittest/test_discovery.py
+index 3b58786ec1..946fa1258e 100644
+--- a/Lib/unittest/test/test_discovery.py
++++ b/Lib/test/test_unittest/test_discovery.py
+@@ -10,7 +10,7 @@
+ 
+ import unittest
+ import unittest.mock
+-import unittest.test
++import test.test_unittest
+ 
+ 
+ class TestableTestProgram(unittest.TestProgram):
+@@ -789,7 +789,7 @@ def test_discovery_from_dotted_path(self):
+         loader = unittest.TestLoader()
+ 
+         tests = [self]
+-        expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
++        expectedPath = os.path.abspath(os.path.dirname(test.test_unittest.__file__))
+ 
+         self.wasRun = False
+         def _find_tests(start_dir, pattern):
+@@ -797,7 +797,7 @@ def _find_tests(start_dir, pattern):
+             self.assertEqual(start_dir, expectedPath)
+             return tests
+         loader._find_tests = _find_tests
+-        suite = loader.discover('unittest.test')
++        suite = loader.discover('test.test_unittest')
+         self.assertTrue(self.wasRun)
+         self.assertEqual(suite._tests, tests)
+ 
+diff --git a/Lib/unittest/test/test_functiontestcase.py b/Lib/test/test_unittest/test_functiontestcase.py
+similarity index 99%
+rename from Lib/unittest/test/test_functiontestcase.py
+rename to Lib/test/test_unittest/test_functiontestcase.py
+index 4971729880..2ebed9564a 100644
+--- a/Lib/unittest/test/test_functiontestcase.py
++++ b/Lib/test/test_unittest/test_functiontestcase.py
+@@ -1,6 +1,6 @@
+ import unittest
+ 
+-from unittest.test.support import LoggingResult
++from test.test_unittest.support import LoggingResult
+ 
+ 
+ class Test_FunctionTestCase(unittest.TestCase):
+diff --git a/Lib/unittest/test/test_loader.py b/Lib/test/test_unittest/test_loader.py
+similarity index 99%
+rename from Lib/unittest/test/test_loader.py
+rename to Lib/test/test_unittest/test_loader.py
+index de2268cda9..c06ebb658d 100644
+--- a/Lib/unittest/test/test_loader.py
++++ b/Lib/test/test_unittest/test_loader.py
+@@ -716,7 +716,7 @@ def test_loadTestsFromName__module_not_loaded(self):
+         # We're going to try to load this module as a side-effect, so it
+         # better not be loaded before we try.
+         #
+-        module_name = 'unittest.test.dummy'
++        module_name = 'test.test_unittest.dummy'
+         sys.modules.pop(module_name, None)
+ 
+         loader = unittest.TestLoader()
+@@ -844,7 +844,7 @@ def test_loadTestsFromNames__unknown_attr_name(self):
+         loader = unittest.TestLoader()
+ 
+         suite = loader.loadTestsFromNames(
+-            ['unittest.loader.sdasfasfasdf', 'unittest.test.dummy'])
++            ['unittest.loader.sdasfasfasdf', 'test.test_unittest.dummy'])
+         error, test = self.check_deferred_error(loader, list(suite)[0])
+         expected = "module 'unittest.loader' has no attribute 'sdasfasfasdf'"
+         self.assertIn(
+@@ -1141,7 +1141,7 @@ def test_loadTestsFromNames__module_not_loaded(self):
+         # We're going to try to load this module as a side-effect, so it
+         # better not be loaded before we try.
+         #
+-        module_name = 'unittest.test.dummy'
++        module_name = 'test.test_unittest.dummy'
+         sys.modules.pop(module_name, None)
+ 
+         loader = unittest.TestLoader()
+diff --git a/Lib/unittest/test/test_program.py b/Lib/test/test_unittest/test_program.py
+similarity index 96%
+rename from Lib/unittest/test/test_program.py
+rename to Lib/test/test_unittest/test_program.py
+index 26a8550af8..169fc4ed94 100644
+--- a/Lib/unittest/test/test_program.py
++++ b/Lib/test/test_unittest/test_program.py
+@@ -5,8 +5,8 @@
+ import subprocess
+ from test import support
+ import unittest
+-import unittest.test
+-from unittest.test.test_result import BufferedWriter
++import test.test_unittest
++from test.test_unittest.test_result import BufferedWriter
+ 
+ 
+ class Test_TestProgram(unittest.TestCase):
+@@ -15,7 +15,7 @@ def test_discovery_from_dotted_path(self):
+         loader = unittest.TestLoader()
+ 
+         tests = [self]
+-        expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
++        expectedPath = os.path.abspath(os.path.dirname(test.test_unittest.__file__))
+ 
+         self.wasRun = False
+         def _find_tests(start_dir, pattern):
+@@ -23,7 +23,7 @@ def _find_tests(start_dir, pattern):
+             self.assertEqual(start_dir, expectedPath)
+             return tests
+         loader._find_tests = _find_tests
+-        suite = loader.discover('unittest.test')
++        suite = loader.discover('test.test_unittest')
+         self.assertTrue(self.wasRun)
+         self.assertEqual(suite._tests, tests)
+ 
+@@ -93,10 +93,10 @@ def run(self, test):
+         sys.argv = ['faketest']
+         runner = FakeRunner()
+         program = unittest.TestProgram(testRunner=runner, exit=False,
+-                                       defaultTest='unittest.test',
++                                       defaultTest='test.test_unittest',
+                                        testLoader=self.FooBarLoader())
+         sys.argv = old_argv
+-        self.assertEqual(('unittest.test',), program.testNames)
++        self.assertEqual(('test.test_unittest',), program.testNames)
+ 
+     def test_defaultTest_with_iterable(self):
+         class FakeRunner(object):
+@@ -109,10 +109,10 @@ def run(self, test):
+         runner = FakeRunner()
+         program = unittest.TestProgram(
+             testRunner=runner, exit=False,
+-            defaultTest=['unittest.test', 'unittest.test2'],
++            defaultTest=['test.test_unittest', 'test.test_unittest2'],
+             testLoader=self.FooBarLoader())
+         sys.argv = old_argv
+-        self.assertEqual(['unittest.test', 'unittest.test2'],
++        self.assertEqual(['test.test_unittest', 'test.test_unittest2'],
+                           program.testNames)
+ 
+     def test_NonExit(self):
+diff --git a/Lib/unittest/test/test_result.py b/Lib/test/test_unittest/test_result.py
+similarity index 100%
+rename from Lib/unittest/test/test_result.py
+rename to Lib/test/test_unittest/test_result.py
+diff --git a/Lib/unittest/test/test_runner.py b/Lib/test/test_unittest/test_runner.py
+similarity index 99%
+rename from Lib/unittest/test/test_runner.py
+rename to Lib/test/test_unittest/test_runner.py
+index d3488b40e8..9e3a0a9ca0 100644
+--- a/Lib/unittest/test/test_runner.py
++++ b/Lib/test/test_unittest/test_runner.py
+@@ -8,7 +8,7 @@
+ import unittest
+ from unittest.case import _Outcome
+ 
+-from unittest.test.support import (LoggingResult,
++from test.test_unittest.support import (LoggingResult,
+                                    ResultWithNoStartTestRunStopTestRun)
+ 
+ 
+diff --git a/Lib/unittest/test/test_setups.py b/Lib/test/test_unittest/test_setups.py
+similarity index 100%
+rename from Lib/unittest/test/test_setups.py
+rename to Lib/test/test_unittest/test_setups.py
+diff --git a/Lib/unittest/test/test_skipping.py b/Lib/test/test_unittest/test_skipping.py
+similarity index 99%
+rename from Lib/unittest/test/test_skipping.py
+rename to Lib/test/test_unittest/test_skipping.py
+index 64ceeae37e..f146dcac18 100644
+--- a/Lib/unittest/test/test_skipping.py
++++ b/Lib/test/test_unittest/test_skipping.py
+@@ -1,6 +1,6 @@
+ import unittest
+ 
+-from unittest.test.support import LoggingResult
++from test.test_unittest.support import LoggingResult
+ 
+ 
+ class Test_TestSkipping(unittest.TestCase):
+diff --git a/Lib/unittest/test/test_suite.py b/Lib/test/test_unittest/test_suite.py
+similarity index 99%
+rename from Lib/unittest/test/test_suite.py
+rename to Lib/test/test_unittest/test_suite.py
+index 0551a16996..ca52ee9d9c 100644
+--- a/Lib/unittest/test/test_suite.py
++++ b/Lib/test/test_unittest/test_suite.py
+@@ -3,7 +3,7 @@
+ import gc
+ import sys
+ import weakref
+-from unittest.test.support import LoggingResult, TestEquality
++from test.test_unittest.support import LoggingResult, TestEquality
+ 
+ 
+ ### Support code for Test_TestSuite
+diff --git a/Lib/unittest/test/testmock/__init__.py b/Lib/test/test_unittest/testmock/__init__.py
+similarity index 86%
+rename from Lib/unittest/test/testmock/__init__.py
+rename to Lib/test/test_unittest/testmock/__init__.py
+index 87d7ae994d..6ee60b2376 100644
+--- a/Lib/unittest/test/testmock/__init__.py
++++ b/Lib/test/test_unittest/testmock/__init__.py
+@@ -10,7 +10,7 @@ def load_tests(*args):
+     suite = unittest.TestSuite()
+     for fn in os.listdir(here):
+         if fn.startswith("test") and fn.endswith(".py"):
+-            modname = "unittest.test.testmock." + fn[:-3]
++            modname = "test.test_unittest.testmock." + fn[:-3]
+             __import__(modname)
+             module = sys.modules[modname]
+             suite.addTest(loader.loadTestsFromModule(module))
+diff --git a/Lib/unittest/test/testmock/__main__.py b/Lib/test/test_unittest/testmock/__main__.py
+similarity index 86%
+rename from Lib/unittest/test/testmock/__main__.py
+rename to Lib/test/test_unittest/testmock/__main__.py
+index 45c633a4ee..1e3068b0dd 100644
+--- a/Lib/unittest/test/testmock/__main__.py
++++ b/Lib/test/test_unittest/testmock/__main__.py
+@@ -6,7 +6,7 @@ def load_tests(loader, standard_tests, pattern):
+     # top level directory cached on loader instance
+     this_dir = os.path.dirname(__file__)
+     pattern = pattern or "test*.py"
+-    # We are inside unittest.test.testmock, so the top-level is three notches up
++    # We are inside test.test_unittest.testmock, so the top-level is three notches up
+     top_level_dir = os.path.dirname(os.path.dirname(os.path.dirname(this_dir)))
+     package_tests = loader.discover(start_dir=this_dir, pattern=pattern,
+                                     top_level_dir=top_level_dir)
+diff --git a/Lib/unittest/test/testmock/support.py b/Lib/test/test_unittest/testmock/support.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/support.py
+rename to Lib/test/test_unittest/testmock/support.py
+diff --git a/Lib/unittest/test/testmock/testasync.py b/Lib/test/test_unittest/testmock/testasync.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/testasync.py
+rename to Lib/test/test_unittest/testmock/testasync.py
+diff --git a/Lib/unittest/test/testmock/testcallable.py b/Lib/test/test_unittest/testmock/testcallable.py
+similarity index 98%
+rename from Lib/unittest/test/testmock/testcallable.py
+rename to Lib/test/test_unittest/testmock/testcallable.py
+index 5eadc00704..ca88511f63 100644
+--- a/Lib/unittest/test/testmock/testcallable.py
++++ b/Lib/test/test_unittest/testmock/testcallable.py
+@@ -3,7 +3,7 @@
+ # http://www.voidspace.org.uk/python/mock/
+ 
+ import unittest
+-from unittest.test.testmock.support import is_instance, X, SomeClass
++from test.test_unittest.testmock.support import is_instance, X, SomeClass
+ 
+ from unittest.mock import (
+     Mock, MagicMock, NonCallableMagicMock,
+diff --git a/Lib/unittest/test/testmock/testhelpers.py b/Lib/test/test_unittest/testmock/testhelpers.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/testhelpers.py
+rename to Lib/test/test_unittest/testmock/testhelpers.py
+diff --git a/Lib/unittest/test/testmock/testmagicmethods.py b/Lib/test/test_unittest/testmock/testmagicmethods.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/testmagicmethods.py
+rename to Lib/test/test_unittest/testmock/testmagicmethods.py
+diff --git a/Lib/unittest/test/testmock/testmock.py b/Lib/test/test_unittest/testmock/testmock.py
+similarity index 99%
+rename from Lib/unittest/test/testmock/testmock.py
+rename to Lib/test/test_unittest/testmock/testmock.py
+index c99098dc4e..8a92490137 100644
+--- a/Lib/unittest/test/testmock/testmock.py
++++ b/Lib/test/test_unittest/testmock/testmock.py
+@@ -5,7 +5,7 @@
+ 
+ from test.support import ALWAYS_EQ
+ import unittest
+-from unittest.test.testmock.support import is_instance
++from test.test_unittest.testmock.support import is_instance
+ from unittest import mock
+ from unittest.mock import (
+     call, DEFAULT, patch, sentinel,
+diff --git a/Lib/unittest/test/testmock/testpatch.py b/Lib/test/test_unittest/testmock/testpatch.py
+similarity index 98%
+rename from Lib/unittest/test/testmock/testpatch.py
+rename to Lib/test/test_unittest/testmock/testpatch.py
+index 8ab63a1317..93ec0ca4be 100644
+--- a/Lib/unittest/test/testmock/testpatch.py
++++ b/Lib/test/test_unittest/testmock/testpatch.py
+@@ -7,8 +7,8 @@
+ from collections import OrderedDict
+ 
+ import unittest
+-from unittest.test.testmock import support
+-from unittest.test.testmock.support import SomeClass, is_instance
++from test.test_unittest.testmock import support
++from test.test_unittest.testmock.support import SomeClass, is_instance
+ 
+ from test.test_importlib.util import uncache
+ from unittest.mock import (
+@@ -669,7 +669,7 @@ def test_patch_dict_decorator_resolution(self):
+         # the new dictionary during function call
+         original = support.target.copy()
+ 
+-        @patch.dict('unittest.test.testmock.support.target', {'bar': 'BAR'})
++        @patch.dict('test.test_unittest.testmock.support.target', {'bar': 'BAR'})
+         def test():
+             self.assertEqual(support.target, {'foo': 'BAZ', 'bar': 'BAR'})
+ 
+@@ -1614,7 +1614,7 @@ def test_patch_with_spec_mock_repr(self):
+ 
+ 
+     def test_patch_nested_autospec_repr(self):
+-        with patch('unittest.test.testmock.support', autospec=True) as m:
++        with patch('test.test_unittest.testmock.support', autospec=True) as m:
+             self.assertIn(" name='support.SomeClass.wibble()'",
+                           repr(m.SomeClass.wibble()))
+             self.assertIn(" name='support.SomeClass().wibble()'",
+@@ -1882,7 +1882,7 @@ def foo(x=0):
+ 
+         with patch.object(foo, '__module__', "testpatch2"):
+             self.assertEqual(foo.__module__, "testpatch2")
+-        self.assertEqual(foo.__module__, 'unittest.test.testmock.testpatch')
++        self.assertEqual(foo.__module__, 'test.test_unittest.testmock.testpatch')
+ 
+         with patch.object(foo, '__annotations__', dict([('s', 1, )])):
+             self.assertEqual(foo.__annotations__, dict([('s', 1, )]))
+@@ -1917,16 +1917,16 @@ def test_dotted_but_module_not_loaded(self):
+         # This exercises the AttributeError branch of _dot_lookup.
+ 
+         # make sure it's there
+-        import unittest.test.testmock.support
++        import test.test_unittest.testmock.support
+         # now make sure it's not:
+         with patch.dict('sys.modules'):
+-            del sys.modules['unittest.test.testmock.support']
+-            del sys.modules['unittest.test.testmock']
+-            del sys.modules['unittest.test']
++            del sys.modules['test.test_unittest.testmock.support']
++            del sys.modules['test.test_unittest.testmock']
++            del sys.modules['test.test_unittest']
+             del sys.modules['unittest']
+ 
+             # now make sure we can patch based on a dotted path:
+-            @patch('unittest.test.testmock.support.X')
++            @patch('test.test_unittest.testmock.support.X')
+             def test(mock):
+                 pass
+             test()
+@@ -1943,7 +1943,7 @@ class Foo:
+ 
+ 
+     def test_cant_set_kwargs_when_passing_a_mock(self):
+-        @patch('unittest.test.testmock.support.X', new=object(), x=1)
++        @patch('test.test_unittest.testmock.support.X', new=object(), x=1)
+         def test(): pass
+         with self.assertRaises(TypeError):
+             test()
+diff --git a/Lib/unittest/test/testmock/testsealable.py b/Lib/test/test_unittest/testmock/testsealable.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/testsealable.py
+rename to Lib/test/test_unittest/testmock/testsealable.py
+diff --git a/Lib/unittest/test/testmock/testsentinel.py b/Lib/test/test_unittest/testmock/testsentinel.py
+similarity index 100%
+rename from Lib/unittest/test/testmock/testsentinel.py
+rename to Lib/test/test_unittest/testmock/testsentinel.py
+diff --git a/Lib/unittest/test/testmock/testwith.py b/Lib/test/test_unittest/testmock/testwith.py
+similarity index 99%
+rename from Lib/unittest/test/testmock/testwith.py
+rename to Lib/test/test_unittest/testmock/testwith.py
+index c74d49a63c..8dc8eb1137 100644
+--- a/Lib/unittest/test/testmock/testwith.py
++++ b/Lib/test/test_unittest/testmock/testwith.py
+@@ -1,7 +1,7 @@
+ import unittest
+ from warnings import catch_warnings
+ 
+-from unittest.test.testmock.support import is_instance
++from test.test_unittest.testmock.support import is_instance
+ from unittest.mock import MagicMock, Mock, patch, sentinel, mock_open, call
+ 
+ 
+diff --git a/Lib/unittest/__init__.py b/Lib/unittest/__init__.py
+index 005d23f6d0..b8de8c95d6 100644
+--- a/Lib/unittest/__init__.py
++++ b/Lib/unittest/__init__.py
+@@ -73,16 +73,6 @@ def testMultiply(self):
+ _TextTestResult = TextTestResult
+ 
+ 
+-# There are no tests here, so don't try to run anything discovered from
+-# introspecting the symbols (e.g. FunctionTestCase). Instead, all our
+-# tests come from within unittest.test.
+-def load_tests(loader, tests, pattern):
+-    import os.path
+-    # top level directory cached on loader instance
+-    this_dir = os.path.dirname(__file__)
+-    return loader.discover(start_dir=this_dir, pattern=pattern)
+-
+-
+ # Lazy import of IsolatedAsyncioTestCase from .async_case
+ # It imports asyncio, which is relatively heavy, but most tests
+ # do not need it.
+diff --git a/Lib/unittest/test/__init__.py b/Lib/unittest/test/__init__.py
+deleted file mode 100644
+index 143f4ab5a3..0000000000
+--- a/Lib/unittest/test/__init__.py
++++ /dev/null
+@@ -1,25 +0,0 @@
+-import os
+-import sys
+-import unittest
+-
+-
+-here = os.path.dirname(__file__)
+-loader = unittest.defaultTestLoader
+-
+-def suite():
+-    suite = unittest.TestSuite()
+-    for fn in os.listdir(here):
+-        if fn.startswith("test") and fn.endswith(".py"):
+-            modname = "unittest.test." + fn[:-3]
+-            try:
+-                __import__(modname)
+-            except unittest.SkipTest:
+-                continue
+-            module = sys.modules[modname]
+-            suite.addTest(loader.loadTestsFromModule(module))
+-    suite.addTest(loader.loadTestsFromName('unittest.test.testmock'))
+-    return suite
+-
+-
+-if __name__ == "__main__":
+-    unittest.main(defaultTest="suite")
+diff --git a/Lib/unittest/test/__main__.py b/Lib/unittest/test/__main__.py
+deleted file mode 100644
+index 44d0591e84..0000000000
+--- a/Lib/unittest/test/__main__.py
++++ /dev/null
+@@ -1,18 +0,0 @@
+-import os
+-import unittest
+-
+-
+-def load_tests(loader, standard_tests, pattern):
+-    # top level directory cached on loader instance
+-    this_dir = os.path.dirname(__file__)
+-    pattern = pattern or "test_*.py"
+-    # We are inside unittest.test, so the top-level is two notches up
+-    top_level_dir = os.path.dirname(os.path.dirname(this_dir))
+-    package_tests = loader.discover(start_dir=this_dir, pattern=pattern,
+-                                    top_level_dir=top_level_dir)
+-    standard_tests.addTests(package_tests)
+-    return standard_tests
+-
+-
+-if __name__ == '__main__':
+-    unittest.main()
+diff --git a/PCbuild/lib.pyproj b/PCbuild/lib.pyproj
+index 692b083349..f3f44d1d8f 100644
+--- a/PCbuild/lib.pyproj
++++ b/PCbuild/lib.pyproj
+@@ -1491,33 +1491,33 @@
+     <Compile Include="unittest\runner.py" />
+     <Compile Include="unittest\signals.py" />
+     <Compile Include="unittest\suite.py" />
+-    <Compile Include="unittest\test\dummy.py" />
+-    <Compile Include="unittest\test\support.py" />
+-    <Compile Include="unittest\test\testmock\support.py" />
+-    <Compile Include="unittest\test\testmock\testcallable.py" />
+-    <Compile Include="unittest\test\testmock\testhelpers.py" />
+-    <Compile Include="unittest\test\testmock\testmagicmethods.py" />
+-    <Compile Include="unittest\test\testmock\testmock.py" />
+-    <Compile Include="unittest\test\testmock\testpatch.py" />
+-    <Compile Include="unittest\test\testmock\testsentinel.py" />
+-    <Compile Include="unittest\test\testmock\testwith.py" />
+-    <Compile Include="unittest\test\testmock\__init__.py" />
+-    <Compile Include="unittest\test\testmock\__main__.py" />
+-    <Compile Include="unittest\test\test_assertions.py" />
+-    <Compile Include="unittest\test\test_break.py" />
+-    <Compile Include="unittest\test\test_case.py" />
+-    <Compile Include="unittest\test\test_discovery.py" />
+-    <Compile Include="unittest\test\test_functiontestcase.py" />
+-    <Compile Include="unittest\test\test_loader.py" />
+-    <Compile Include="unittest\test\test_program.py" />
+-    <Compile Include="unittest\test\test_result.py" />
+-    <Compile Include="unittest\test\test_runner.py" />
+-    <Compile Include="unittest\test\test_setups.py" />
+-    <Compile Include="unittest\test\test_skipping.py" />
+-    <Compile Include="unittest\test\test_suite.py" />
+-    <Compile Include="unittest\test\_test_warnings.py" />
+-    <Compile Include="unittest\test\__init__.py" />
+-    <Compile Include="unittest\test\__main__.py" />
++    <Compile Include="test\test_unittest\dummy.py" />
++    <Compile Include="test\test_unittest\support.py" />
++    <Compile Include="test\test_unittest\testmock\support.py" />
++    <Compile Include="test\test_unittest\testmock\testcallable.py" />
++    <Compile Include="test\test_unittest\testmock\testhelpers.py" />
++    <Compile Include="test\test_unittest\testmock\testmagicmethods.py" />
++    <Compile Include="test\test_unittest\testmock\testmock.py" />
++    <Compile Include="test\test_unittest\testmock\testpatch.py" />
++    <Compile Include="test\test_unittest\testmock\testsentinel.py" />
++    <Compile Include="test\test_unittest\testmock\testwith.py" />
++    <Compile Include="test\test_unittest\testmock\__init__.py" />
++    <Compile Include="test\test_unittest\testmock\__main__.py" />
++    <Compile Include="test\test_unittest\test_assertions.py" />
++    <Compile Include="test\test_unittest\test_break.py" />
++    <Compile Include="test\test_unittest\test_case.py" />
++    <Compile Include="test\test_unittest\test_discovery.py" />
++    <Compile Include="test\test_unittest\test_functiontestcase.py" />
++    <Compile Include="test\test_unittest\test_loader.py" />
++    <Compile Include="test\test_unittest\test_program.py" />
++    <Compile Include="test\test_unittest\test_result.py" />
++    <Compile Include="test\test_unittest\test_runner.py" />
++    <Compile Include="test\test_unittest\test_setups.py" />
++    <Compile Include="test\test_unittest\test_skipping.py" />
++    <Compile Include="test\test_unittest\test_suite.py" />
++    <Compile Include="test\test_unittest\_test_warnings.py" />
++    <Compile Include="test\test_unittest\__init__.py" />
++    <Compile Include="test\test_unittest\__main__.py" />
+     <Compile Include="unittest\util.py" />
+     <Compile Include="unittest\__init__.py" />
+     <Compile Include="unittest\__main__.py" />
+@@ -1804,6 +1804,8 @@
+     <Folder Include="test\test_json" />
+     <Folder Include="test\test_peg_generator" />
+     <Folder Include="test\test_tools" />
++    <Folder Include="test\test_unittest" />
++    <Folder Include="test\test_unittest\testmock" />
+     <Folder Include="test\test_warnings" />
+     <Folder Include="test\test_warnings\data" />
+     <Folder Include="test\tracedmodules" />
+@@ -1813,8 +1815,6 @@
+     <Folder Include="tkinter\test\test_ttk" />
+     <Folder Include="turtledemo" />
+     <Folder Include="unittest" />
+-    <Folder Include="unittest\test" />
+-    <Folder Include="unittest\test\testmock" />
+     <Folder Include="urllib" />
+     <Folder Include="venv" />
+     <Folder Include="wsgiref" />
+diff --git a/Tools/wasm/wasm_assets.py b/Tools/wasm/wasm_assets.py
+index d0a0570840..67afde60f0 100755
+--- a/Tools/wasm/wasm_assets.py
++++ b/Tools/wasm/wasm_assets.py
+@@ -112,7 +112,6 @@
+ # regression test sub directories
+ OMIT_SUBDIRS = (
+     "tkinter/test/",
+-    "unittest/test/",
+ )
+ 
+ def get_builddir(args: argparse.Namespace) -> pathlib.Path:
+-- 
+2.29.2.windows.2
+
