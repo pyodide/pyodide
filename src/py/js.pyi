@@ -92,5 +92,9 @@ class document(_JsObject):
     @staticmethod
     def appendChild(child: JsDomElement) -> None: ...
 
+class ArrayBuffer(_JsObject):
+    @staticmethod
+    def isView(x: Any) -> bool: ...
+
 class DOMException(JsException):
     pass

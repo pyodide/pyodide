@@ -8,7 +8,7 @@ import pytest
 from pytest_pyodide import spawn_web_server
 import zipfile
 import typer
-from typer.testing import CliRunner  # type: ignore[import]
+from typer.testing import CliRunner
 from typing import Any
 from pyodide_build import common
 from pyodide_build.cli import (
@@ -97,10 +97,10 @@ def test_build_recipe(selenium, tmp_path):
         [
             *pkgs.keys(),
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--install",
             "--install-dir",
-            output_dir,
+            str(output_dir),
         ],
     )
 
@@ -130,7 +130,7 @@ def test_build_recipe_no_deps(selenium, tmp_path):
         [
             *pkgs_to_build,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
         ],
     )
@@ -162,7 +162,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
         [
             pkg,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
         ],
     )
@@ -174,7 +174,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
         [
             pkg,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
         ],
     )
@@ -188,7 +188,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
         [
             pkg,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
             "--force-rebuild",
         ],
@@ -216,7 +216,7 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
         [
             pkg,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
         ],
     )
@@ -246,7 +246,7 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
         [
             pkg,
             "--recipe-dir",
-            recipe_dir,
+            str(recipe_dir),
             "--no-deps",
             "--continue",
         ],

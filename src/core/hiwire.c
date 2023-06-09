@@ -816,6 +816,10 @@ EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
   return arr.length - 1;
 });
 
+EM_JS_NUM(errcode, JsArray_Extend, (JsRef idarr, JsRef idvals), {
+  Hiwire.get_value(idarr).push(... Hiwire.get_value(idvals));
+});
+
 EM_JS_REF(JsRef, JsArray_Get, (JsRef idobj, int idx), {
   let obj = Hiwire.get_value(idobj);
   let result = obj[idx];
@@ -898,6 +902,12 @@ JsArray_slice_assign,
 EM_JS_NUM(errcode, JsArray_Clear, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   obj.splice(0, obj.length);
+})
+
+EM_JS_NUM(JsRef, JsArray_ShallowCopy, (JsRef idobj), {
+  const obj = Hiwire.get_value(idobj);
+  const res = ("slice" in obj) ? obj.slice() : Array.from(obj);
+  return Hiwire.new_value(res);
 })
 
 // ==================== JsObject API  ====================

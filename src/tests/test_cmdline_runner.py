@@ -11,7 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.common import emscripten_version, get_pyodide_root
-from pyodide_build.install_xbuildenv import download_xbuildenv, install_xbuildenv
+from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -441,7 +441,7 @@ def test_pypa_index(tmp_path):
     expected."""
     path = Path(tmp_path)
     version = "0.21.0"  # just need some version that already exists
-    download_xbuildenv(version, path)
+    _download_xbuildenv(version, path)
 
     # We don't need host dependencies for this test so zero them out
     (path / "xbuildenv/requirements.txt").write_text("")

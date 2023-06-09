@@ -28,7 +28,11 @@ from rich.table import Table
 
 from . import common, recipe
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels, find_missing_executables, repack_zip_archive
+from .common import (
+    find_matching_wheels,
+    find_missing_executables,
+    repack_zip_archive,
+)
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 from .pywasmcross import BuildArgs
@@ -431,13 +435,6 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
-def is_rust_package(pkg: BasePackage) -> bool:
-    """
-    Check if a package requires rust toolchain to build.
-    """
-    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
-
-
 def format_name_list(l: list[str]) -> str:
     """
     >>> format_name_list(["regex"])
@@ -558,7 +555,7 @@ def build_from_graph(
             _, pkg = build_queue.get()
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     # Don't build multiple rust packages at the same time.
                     # See: https://github.com/pyodide/pyodide/issues/3565
                     # Note that if there are only rust packages left in the queue,
@@ -598,7 +595,7 @@ def build_from_graph(
             built_queue.put(pkg)
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     building_rust_pkg = False
 
             # Release the GIL so new packages get queued

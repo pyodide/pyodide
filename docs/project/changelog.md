@@ -15,8 +15,8 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.38
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
@@ -38,6 +38,12 @@ myst:
 - {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
   it can be raised in Python.
   {pr}`3868`
+
+- {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
+  functions that use the `PySequence_*` APIs, it now works as expected. Also
+  `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
+  new array with the result values from the iterable appended.
+  {pr}`3904`
 
 ### Packages
 

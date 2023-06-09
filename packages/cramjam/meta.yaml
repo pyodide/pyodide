@@ -13,10 +13,6 @@ about:
   PyPI: https://pypi.org/project/cramjam
   summary: Thin Python bindings to de/compression algorithms in Rust
   license: MIT
-build:
-  script: |
-    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
-    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 requirements:
   executable:
     - rustup

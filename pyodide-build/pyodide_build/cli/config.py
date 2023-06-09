@@ -1,7 +1,6 @@
 import typer
 
-from ..common import get_build_environment_vars
-from ..out_of_tree.utils import initialize_pyodide_root
+from ..common import get_build_environment_vars, init_environment
 
 app = typer.Typer(help="Manage config variables used in pyodide")
 
@@ -13,13 +12,13 @@ PYODIDE_CONFIGS = {
 }
 
 
-@app.callback(no_args_is_help=True)  # type: ignore[misc]
+@app.callback(no_args_is_help=True)
 def callback() -> None:
     return
 
 
 def _get_configs() -> dict[str, str]:
-    initialize_pyodide_root(quiet=True)
+    init_environment(quiet=True)
 
     configs: dict[str, str] = get_build_environment_vars()
 
@@ -38,7 +37,7 @@ def list_config():
         typer.echo(f"{k}={v}")
 
 
-@app.command("get")  # type: ignore[misc]
+@app.command("get")
 def get_config(
     config_var: str = typer.Argument(
         ..., help="A config variable to get. Use `list` to see all possible values."
