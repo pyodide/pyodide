@@ -1,3 +1,4 @@
+import base64
 import io
 from functools import reduce
 from pathlib import Path
@@ -43,4 +44,4 @@ def test_matplotlib(selenium):
     fd = io.BytesIO()
     plt.savefig(fd, format="svg")
 
-    assert (REFERENCE_DATA_PATH / "cartopy.svg").read_bytes() == fd.getvalue()
+    assert fd.getvalue() == base64.b64decode((REFERENCE_DATA_PATH / "cartopy.svg.b64").read_bytes())
