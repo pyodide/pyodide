@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.11.3
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.38
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.39
 
 export PLATFORM_TRIPLET=wasm32-emscripten
 export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
@@ -18,6 +18,9 @@ export PYMICRO=$(word 3,$(version_tuple))
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
+export PYTHON_ARCHIVE_URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
+export PYTHON_ARCHIVE_SHA256=1a79f3df32265d9e6625f1a0b31c28eb1594df911403d11f3320ee1da1b3e048
+
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONINSTALL=$(CPYTHONROOT)/installs/python-$(PYVERSION)
 export CPYTHONLIB=$(CPYTHONINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)
@@ -28,7 +31,7 @@ export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
 export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
 export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
-export WASM_PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
+export PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
 
@@ -76,7 +79,7 @@ else
 endif
 
 ifdef PYODIDE_ASSERTIONS
-	EXTRA_CFLAGS+=" -DDEBUG_F"
+	EXTRA_CFLAGS+= -DDEBUG_F
 endif
 
 
@@ -168,5 +171,6 @@ export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
 	-Z link-native-libraries=no
+
 .output_vars:
 	set

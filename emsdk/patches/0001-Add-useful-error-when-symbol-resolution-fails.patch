@@ -1,0 +1,37 @@
+From a8bdb50a29062ee70c8667e4fd94dde47917f8fa Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 19 May 2023 12:19:00 -0700
+Subject: [PATCH] Add useful error when symbol resolution fails
+
+Currently if symbol resolution fails, we get:
+```js
+TypeError: Cannot read properties of undefined (reading 'apply')
+```
+It is very hard for newcomers to Emscripten to recognize this as a
+symbol resolution error. Even for people experienced with this message,
+it has the annoyance that it doesn't give any hint as to which symbol
+went missing.
+
+This adds a descriptive error message with the name of the missing
+symbol.
+---
+ src/library_dylink.js | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/library_dylink.js b/src/library_dylink.js
+index d96e6b425..7f63b5c5e 100644
+--- a/src/library_dylink.js
++++ b/src/library_dylink.js
+@@ -727,6 +727,9 @@ var LibraryDylink = {
+             var resolved;
+             stubs[prop] = function() {
+               if (!resolved) resolved = resolveSymbol(prop);
++              if (!resolved) {
++                throw new Error(`Dynamic linking error: cannot resolve symbol ${prop}`);
++              }
+               return resolved.apply(null, arguments);
+             };
+           }
+-- 
+2.25.1
+

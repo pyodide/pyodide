@@ -455,239 +455,6 @@ class JsBuffer(JsProxy):
         raise NotImplementedError
 
 
-class JsArray(JsProxy, Generic[T]):
-    """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
-
-    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
-
-    def __getitem__(self, idx: int | slice) -> T:
-        raise NotImplementedError
-
-    def __setitem__(self, idx: int | slice, value: T) -> None:
-        pass
-
-    def __delitem__(self, idx: int | slice) -> None:
-        pass
-
-    def __len__(self) -> int:
-        return 0
-
-    def extend(self, other: Iterable[T], /) -> None:
-        """Extend array by appending elements from the iterable."""
-
-    def __reversed__(self) -> Iterator[T]:
-        """Return a reverse iterator over the :js:class:`Array`."""
-        raise NotImplementedError
-
-    def pop(self, /, index: int = -1) -> T:
-        """Remove and return the ``item`` at ``index`` (default last).
-
-        Raises :py:exc:`IndexError` if list is empty or index is out of range.
-        """
-        raise NotImplementedError
-
-    def push(self, /, object: T) -> None:
-        pass
-
-    def append(self, /, object: T) -> None:
-        """Append object to the end of the list."""
-
-    def index(self, /, value: T, start: int = 0, stop: int = sys.maxsize) -> int:
-        """Return first ``index`` at which ``value`` appears in the ``Array``.
-
-        Raises :py:exc:`ValueError` if the value is not present.
-        """
-        raise NotImplementedError
-
-    def count(self, /, x: T) -> int:
-        """Return the number of times x appears in the list."""
-        raise NotImplementedError
-
-    def reverse(self) -> None:
-        """Reverse the array in place.
-
-        Present only if the wrapped Javascript object is an array.
-        """
-
-    def to_py(
-        self,
-        *,
-        depth: int = -1,
-        default_converter: Callable[
-            ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]],
-            Any,
-        ]
-        | None = None,
-    ) -> list[Any]:
-        raise NotImplementedError
-
-
-class JsTypedArray(JsBuffer, JsArray[int]):
-    _js_type_flags = ["IS_TYPEDARRAY"]
-    BYTES_PER_ELEMENT: int
-
-    def subarray(
-        self, start: int | None = None, stop: int | None = None
-    ) -> "JsTypedArray":
-        raise NotImplementedError
-
-    buffer: JsBuffer
-
-
-@Mapping.register
-class JsMap(JsProxy, Generic[KT, VTco]):
-    """A JavaScript Map
-
-    To be considered a map, a JavaScript object must have a ``get`` method, it
-    must have a ``size`` or a ``length`` property which is a number
-    (idiomatically it should be called ``size``) and it must be iterable.
-    """
-
-    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
-
-    def __getitem__(self, idx: KT) -> VTco:
-        raise NotImplementedError
-
-    def __len__(self) -> int:
-        return 0
-
-    def __iter__(self) -> KT:
-        raise NotImplementedError
-
-    def __contains__(self, idx: KT) -> bool:
-        raise NotImplementedError
-
-    def keys(self) -> KeysView[KT]:
-        """Return a :py:class:`~collections.abc.KeysView` for the map."""
-        raise NotImplementedError
-
-    def items(self) -> ItemsView[KT, VTco]:
-        """Return a :py:class:`~collections.abc.ItemsView` for the map."""
-        raise NotImplementedError
-
-    def values(self) -> ValuesView[VTco]:
-        """Return a :py:class:`~collections.abc.ValuesView` for the map."""
-        raise NotImplementedError
-
-    @overload
-    def get(self, key: KT, /) -> VTco | None:
-        ...
-
-    @overload
-    def get(self, key: KT, default: VTco | T, /) -> VTco | T:
-        ...
-
-    @docs_argspec("(self, key: KT, default: VTco | None, /) -> VTco")
-    def get(self, key: KT, default: Any = None, /) -> VTco:
-        r"""If ``key in self``, returns ``self[key]``. Otherwise returns ``default``."""
-        raise NotImplementedError
-
-
-@MutableMapping.register
-class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
-    """A JavaScript mutable map
-
-    To be considered a mutable map, a JavaScript object must have a ``get``
-    method, a ``has`` method, a ``size`` or a ``length`` property which is a
-    number (idiomatically it should be called ``size``) and it must be iterable.
-
-    Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap`` s.
-    Also proxies returned by :py:meth:`JsProxy.as_object_map` are instances of
-    ``JsMap`` .
-    """
-
-    _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
-
-    @overload
-    def pop(self, key: KT, /) -> VT:
-        ...
-
-    @overload
-    def pop(self, key: KT, default: VT | T = ..., /) -> VT | T:
-        ...
-
-    @docs_argspec("(self, key: KT, default: VT | None = None, /) -> VT")
-    def pop(self, key: KT, default: Any = None, /) -> Any:
-        r"""If ``key in self``, return ``self[key]`` and remove key from ``self``. Otherwise
-        returns ``default``.
-        """
-        raise NotImplementedError
-
-    def setdefault(self, key: KT, default: VT | None = None) -> VT:
-        """If ``key in self``, return ``self[key]``. Otherwise
-        sets ``self[key] = default`` and returns ``default``.
-        """
-        raise NotImplementedError
-
-    def popitem(self) -> tuple[KT, VT]:
-        """Remove some arbitrary ``key, value`` pair from the map and returns the
-        ``(key, value)`` tuple.
-        """
-        raise NotImplementedError
-
-    def clear(self) -> None:
-        """Empty out the map entirely."""
-
-    @overload
-    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
-        ...
-
-    @overload
-    def update(self, **kwargs: VT) -> None:
-        ...
-
-    @docs_argspec(
-        "(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None"
-    )
-    def update(self, *args: Any, **kwargs: Any) -> None:
-        r"""Updates ``self`` from ``other`` and ``kwargs``.
-
-        Parameters
-        ----------
-            other:
-
-                Either a mapping or an iterable of pairs. This can be left out.
-
-            kwargs:  ``VT``
-
-                Extra key-values pairs to insert into the map. Only usable for
-                inserting extra strings.
-
-        If ``other`` is present and is a :py:class:`~collections.abc.Mapping` or has a ``keys``
-        method, does
-
-        .. code-block:: python
-
-            for k in other:
-                self[k] = other[k]
-
-        If ``other`` is present and lacks a ``keys`` method, does
-
-        .. code-block:: python
-
-            for (k, v) in other:
-                self[k] = v
-
-        In all cases this is followed by:
-
-        .. code-block:: python
-
-            for (k, v) in kwargs.items():
-                self[k] = v
-
-        """
-
-    def __setitem__(self, idx: KT, value: VT) -> None:
-        pass
-
-    def __delitem__(self, idx: KT) -> None:
-        return None
-
-
 class JsIterator(JsProxy, Generic[Tco]):
     """A JsProxy of a JavaScript iterator.
 
@@ -958,6 +725,239 @@ class JsCallable(JsProxy):
 
     def __call__(self):
         pass
+
+
+class JsArray(JsIterable[T], Generic[T]):
+    """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
+
+    _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
+
+    def __getitem__(self, idx: int | slice) -> T:
+        raise NotImplementedError
+
+    def __setitem__(self, idx: int | slice, value: T) -> None:
+        pass
+
+    def __delitem__(self, idx: int | slice) -> None:
+        pass
+
+    def __len__(self) -> int:
+        return 0
+
+    def extend(self, other: Iterable[T], /) -> None:
+        """Extend array by appending elements from the iterable."""
+
+    def __reversed__(self) -> Iterator[T]:
+        """Return a reverse iterator over the :js:class:`Array`."""
+        raise NotImplementedError
+
+    def pop(self, /, index: int = -1) -> T:
+        """Remove and return the ``item`` at ``index`` (default last).
+
+        Raises :py:exc:`IndexError` if list is empty or index is out of range.
+        """
+        raise NotImplementedError
+
+    def push(self, /, object: T) -> None:
+        pass
+
+    def append(self, /, object: T) -> None:
+        """Append object to the end of the list."""
+
+    def index(self, /, value: T, start: int = 0, stop: int = sys.maxsize) -> int:
+        """Return first ``index`` at which ``value`` appears in the ``Array``.
+
+        Raises :py:exc:`ValueError` if the value is not present.
+        """
+        raise NotImplementedError
+
+    def count(self, /, x: T) -> int:
+        """Return the number of times x appears in the list."""
+        raise NotImplementedError
+
+    def reverse(self) -> None:
+        """Reverse the array in place.
+
+        Present only if the wrapped Javascript object is an array.
+        """
+
+    def to_py(
+        self,
+        *,
+        depth: int = -1,
+        default_converter: Callable[
+            ["JsProxy", Callable[["JsProxy"], Any], Callable[["JsProxy", Any], None]],
+            Any,
+        ]
+        | None = None,
+    ) -> list[Any]:
+        raise NotImplementedError
+
+    def __mul__(self, other: int) -> "JsArray[T]":
+        raise NotImplementedError
+
+
+class JsTypedArray(JsBuffer, JsArray[int]):
+    _js_type_flags = ["IS_TYPEDARRAY"]
+    BYTES_PER_ELEMENT: int
+
+    def subarray(
+        self, start: int | None = None, stop: int | None = None
+    ) -> "JsTypedArray":
+        raise NotImplementedError
+
+    buffer: JsBuffer
+
+
+@Mapping.register
+class JsMap(JsIterable[KT], Generic[KT, VTco]):
+    """A JavaScript Map
+
+    To be considered a map, a JavaScript object must have a ``get`` method, it
+    must have a ``size`` or a ``length`` property which is a number
+    (idiomatically it should be called ``size``) and it must be iterable.
+    """
+
+    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+
+    def __getitem__(self, idx: KT) -> VTco:
+        raise NotImplementedError
+
+    def __len__(self) -> int:
+        return 0
+
+    def __contains__(self, idx: KT) -> bool:
+        raise NotImplementedError
+
+    def keys(self) -> KeysView[KT]:
+        """Return a :py:class:`~collections.abc.KeysView` for the map."""
+        raise NotImplementedError
+
+    def items(self) -> ItemsView[KT, VTco]:
+        """Return a :py:class:`~collections.abc.ItemsView` for the map."""
+        raise NotImplementedError
+
+    def values(self) -> ValuesView[VTco]:
+        """Return a :py:class:`~collections.abc.ValuesView` for the map."""
+        raise NotImplementedError
+
+    @overload
+    def get(self, key: KT, /) -> VTco | None:
+        ...
+
+    @overload
+    def get(self, key: KT, default: VTco | T, /) -> VTco | T:
+        ...
+
+    @docs_argspec("(self, key: KT, default: VTco | None, /) -> VTco")
+    def get(self, key: KT, default: Any = None, /) -> VTco:
+        r"""If ``key in self``, returns ``self[key]``. Otherwise returns ``default``."""
+        raise NotImplementedError
+
+
+@MutableMapping.register
+class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
+    """A JavaScript mutable map
+
+    To be considered a mutable map, a JavaScript object must have a ``get``
+    method, a ``has`` method, a ``size`` or a ``length`` property which is a
+    number (idiomatically it should be called ``size``) and it must be iterable.
+
+    Instances of the JavaScript builtin ``Map`` class are ``JsMutableMap`` s.
+    Also proxies returned by :py:meth:`JsProxy.as_object_map` are instances of
+    ``JsMap`` .
+    """
+
+    _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+
+    @overload
+    def pop(self, key: KT, /) -> VT:
+        ...
+
+    @overload
+    def pop(self, key: KT, default: VT | T = ..., /) -> VT | T:
+        ...
+
+    @docs_argspec("(self, key: KT, default: VT | None = None, /) -> VT")
+    def pop(self, key: KT, default: Any = None, /) -> Any:
+        r"""If ``key in self``, return ``self[key]`` and remove key from ``self``. Otherwise
+        returns ``default``.
+        """
+        raise NotImplementedError
+
+    def setdefault(self, key: KT, default: VT | None = None) -> VT:
+        """If ``key in self``, return ``self[key]``. Otherwise
+        sets ``self[key] = default`` and returns ``default``.
+        """
+        raise NotImplementedError
+
+    def popitem(self) -> tuple[KT, VT]:
+        """Remove some arbitrary ``key, value`` pair from the map and returns the
+        ``(key, value)`` tuple.
+        """
+        raise NotImplementedError
+
+    def clear(self) -> None:
+        """Empty out the map entirely."""
+
+    @overload
+    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
+        ...
+
+    @overload
+    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
+        ...
+
+    @overload
+    def update(self, **kwargs: VT) -> None:
+        ...
+
+    @docs_argspec(
+        "(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None"
+    )
+    def update(self, *args: Any, **kwargs: Any) -> None:
+        r"""Updates ``self`` from ``other`` and ``kwargs``.
+
+        Parameters
+        ----------
+            other:
+
+                Either a mapping or an iterable of pairs. This can be left out.
+
+            kwargs:  ``VT``
+
+                Extra key-values pairs to insert into the map. Only usable for
+                inserting extra strings.
+
+        If ``other`` is present and is a :py:class:`~collections.abc.Mapping` or has a ``keys``
+        method, does
+
+        .. code-block:: python
+
+            for k in other:
+                self[k] = other[k]
+
+        If ``other`` is present and lacks a ``keys`` method, does
+
+        .. code-block:: python
+
+            for (k, v) in other:
+                self[k] = v
+
+        In all cases this is followed by:
+
+        .. code-block:: python
+
+            for (k, v) in kwargs.items():
+                self[k] = v
+
+        """
+
+    def __setitem__(self, idx: KT, value: VT) -> None:
+        pass
+
+    def __delitem__(self, idx: KT) -> None:
+        return None
 
 
 class JsOnceCallable(JsCallable):
