@@ -6,10 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/43/20/a30db880e28236b862ed8251d8c6f0e4432388a2692dee055f3adcd7b900/cbor_diag-1.0.0.tar.gz
   sha256: 21491a997f91c2d83cdeed26b5936e2191237ee066f006a95b5171935321dacc
-build:
-  script: |
-    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
-    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 requirements:
   executable:
     - rustup

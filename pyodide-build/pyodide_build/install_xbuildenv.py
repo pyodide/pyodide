@@ -10,7 +10,7 @@ from .create_pypa_index import create_pypa_index
 from .logger import logger
 
 
-def download_xbuildenv(
+def _download_xbuildenv(
     version: str, xbuildenv_path: Path, *, url: str | None = None
 ) -> None:
     from shutil import rmtree, unpack_archive
@@ -73,7 +73,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
     create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
 
 
-def install(path: Path, *, download: bool = False, url: str | None = None) -> None:
+def install(path: Path, *, download: bool = True, url: str | None = None) -> None:
     """
     Install cross-build environment.
 
@@ -96,6 +96,15 @@ def install(path: Path, *, download: bool = False, url: str | None = None) -> No
     from . import __version__
 
     version = __version__
-    if download:
-        download_xbuildenv(version, path, url=url)
+
+    if not download and not path.exists():
+        logger.error("xbuild environment not exists")
+        raise FileNotFoundError(path)
+
+    if download and path.exists():
+        logger.warning("xbuild environment already exists, skipping download")
+
+    elif download:
+        _download_xbuildenv(version, path, url=url)
+
     install_xbuildenv(version, path)
