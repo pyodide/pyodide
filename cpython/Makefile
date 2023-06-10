@@ -54,6 +54,7 @@ $(TARBALL):
 	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).crt $(PYTHON_ARCHIVE_URL).crt
 	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).sig $(PYTHON_ARCHIVE_URL).sig
 
+	cd $(DOWNLOADS) && \
 	$(HOSTPYTHON) -m sigstore verify identity \
 		--certificate $(PYTHON_ARCHIVE).crt \
 		--signature $(PYTHON_ARCHIVE).sig \
