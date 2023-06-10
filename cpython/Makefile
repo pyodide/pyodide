@@ -7,7 +7,8 @@ PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
-TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
+DOWNLOADS=$(ROOT)/downloads
+TARBALL=$(DOWNLOADS)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
@@ -49,8 +50,16 @@ clean-all: clean
 
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
-	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256)
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE)     $(PYTHON_ARCHIVE_URL)
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).crt $(PYTHON_ARCHIVE_URL).crt
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).sig $(PYTHON_ARCHIVE_URL).sig
+
+	$(HOSTPYTHON) -m sigstore verify identity \
+		--certificate $(PYTHON_ARCHIVE).crt \
+		--signature $(PYTHON_ARCHIVE).sig \
+		--cert-identity pablogsal@python.org \
+		--cert-oidc-issuer https://accounts.google.com \
+		$(PYTHON_ARCHIVE)
 
 
 $(BUILD)/.patched: $(TARBALL)
