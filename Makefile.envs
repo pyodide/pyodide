@@ -10,15 +10,21 @@ export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
 SHELL := /bin/bash
 
-version_tuple := $(subst ., ,$(PYVERSION:v%=%))
+version_tmp_1 := $(subst ., ,$(PYVERSION:v%=%))
+# Handle alpha, beta, and release candidate versions
+version_tmp_2 := $(subst a, ,$(version_tmp_1))
+version_tmp_3 := $(subst b, ,$(version_tmp_2))
+version_tuple := $(subst r, ,$(version_tmp_3))
+
 export PYMAJOR=$(word 1,$(version_tuple))
 export PYMINOR=$(word 2,$(version_tuple))
 export PYMICRO=$(word 3,$(version_tuple))
+export PYSTABLEVERSION=$(PYMAJOR).$(PYMINOR).$(PYMICRO)
 
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
-export PYTHON_ARCHIVE_URL=https://www.python.org/ftp/python/$(PYVERSION)/Python-$(PYVERSION).tgz
+export PYTHON_ARCHIVE_URL=https://www.python.org/ftp/python/$(PYSTABLEVERSION)/Python-$(PYVERSION).tgz
 export PYTHON_ARCHIVE_SHA256=1a79f3df32265d9e6625f1a0b31c28eb1594df911403d11f3320ee1da1b3e048
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
