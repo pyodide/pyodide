@@ -7,6 +7,7 @@ requirements:
   host:
     - cffi
   run:
+    - pysqlite3
     - cffi
 source:
   url: https://files.pythonhosted.org/packages/a9/50/1dd5ea74c559df4afb8391f8d05f0fec685dbe8effba13bb9072901eb288/peewee-3.16.2.tar.gz

@@ -1,7 +1,7 @@
 def test_peewee(selenium):
     selenium.load_package("peewee")
     selenium.run(
-        """
+    """
     import os
 
     from peewee import CharField, IntegerField, Model, SqliteDatabase
