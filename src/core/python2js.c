@@ -99,7 +99,11 @@ _python2js_long(PyObject* x)
     if (!overflow) {
       FAIL_IF_ERR_OCCURRED();
     } else {
-      size_t ndigits = Py_ABS(Py_SIZE(x));
+      // We want to group into u32 chunks for convenience of
+      // hiwire_int_from_digits. If the number of bits is evenly divisible by
+      // 32, we overestimate the number of needed u32s by one.
+      size_t nbits = _PyLong_NumBits(x);
+      size_t ndigits = (nbits >> 5) + 1;
       unsigned int digits[ndigits];
       FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
                                             (unsigned char*)digits,
@@ -776,7 +780,8 @@ to_js(PyObject* self,
   //      OOO       - PyObject* arguments for pyproxies, dict_converter, and
   //      default_converter.
   //         :to_js - name of this function for error messages
-  static struct _PyArg_Parser _parser = { "O|$ipOOO:to_js", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|$ipOOO:to_js",
+                                          .keywords = _keywords };
   if (!_PyArg_ParseStackAndKeywords(args,
                                     nargs,
                                     kwnames,
