@@ -99,7 +99,11 @@ _python2js_long(PyObject* x)
     if (!overflow) {
       FAIL_IF_ERR_OCCURRED();
     } else {
-      size_t ndigits = Py_ABS(Py_SIZE(x));
+      // We want to group into u32 chunks for convenience of
+      // hiwire_int_from_digits. If the number of bits is evenly divisible by
+      // 32, we overestimate the number of needed u32s by one.
+      size_t nbits = _PyLong_NumBits(x);
+      size_t ndigits = (nbits >> 5) + 1;
       unsigned int digits[ndigits];
       FAIL_IF_MINUS_ONE(_PyLong_AsByteArray((PyLongObject*)x,
                                             (unsigned char*)digits,
