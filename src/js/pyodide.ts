@@ -205,7 +205,7 @@ export async function loadPyodide(
 
     /**
      * The home directory which Pyodide will use inside virtual file system.
-     * Default: ``"/home/pyodide"``
+     * This is deprecated, use ``{env: {HOME : some_dir}}`` instead.
      */
     homedir?: string;
     /**
@@ -248,11 +248,13 @@ export async function loadPyodide(
      */
     args?: string[];
     /**
-     * Environment variables to pass to Python on startup. This also can be
-     * accessed inside of Python at runtime via `os.environ`, but you can
-     * alternatively use `os.environ` for setting at runtime. Certain environment
-     * variables change the way that Python loads:
+     * Environment variables to pass to Python. This can be accessed inside of
+     * Python at runtime via `os.environ`. Certain environment variables change
+     * the way that Python loads:
      * https://docs.python.org/3.10/using/cmdline.html#environment-variables
+     * Default: {}
+     * If `env.HOME` is undefined, it will be set to a default value of
+     * `"/home/pyodide"`
      */
     env?: { [key: string]: string };
 
@@ -274,7 +276,6 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    homedir: "/home/pyodide",
     lockFileURL: indexURL! + "repodata.json",
     args: [],
     _node_mounts: [],
@@ -283,17 +284,16 @@ export async function loadPyodide(
   if (options.env && options.env.HOME && options.homedir) {
     throw new Error("Set both env.HOME and homedir arguments");
   }
+  const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {
     console.warn(
       "The homedir argument to loadPyodide is deprecated. " +
         "Use 'env: { HOME: value }' instead of 'homedir: value'.",
     );
-  }
-  const config = Object.assign(default_config, options) as ConfigType;
-  if (config.env.HOME) {
-    config.homedir = config.env.HOME;
-  } else {
     config.env.HOME = config.homedir;
+  }
+  if (!config.env.HOME) {
+    config.env.HOME = "/home/pyodide";
   }
 
   const Module = createModule();
