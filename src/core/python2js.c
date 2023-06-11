@@ -780,7 +780,8 @@ to_js(PyObject* self,
   //      OOO       - PyObject* arguments for pyproxies, dict_converter, and
   //      default_converter.
   //         :to_js - name of this function for error messages
-  static struct _PyArg_Parser _parser = { "O|$ipOOO:to_js", _keywords, 0 };
+  static struct _PyArg_Parser _parser = { .format = "O|$ipOOO:to_js",
+                                          .keywords = _keywords };
   if (!_PyArg_ParseStackAndKeywords(args,
                                     nargs,
                                     kwnames,
