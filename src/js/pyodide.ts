@@ -74,7 +74,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, config.homedir);
+  API.sys.path.insert(0, config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals

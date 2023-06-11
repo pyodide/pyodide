@@ -176,7 +176,7 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
   }
 
   installStdlib(Module, stdLibURL);
-  createHomeDirectory(Module, config.homedir);
+  createHomeDirectory(Module, config.env.HOME);
   setEnvironment(Module, config.env);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
