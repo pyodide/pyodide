@@ -45,6 +45,11 @@ myst:
   new array with the result values from the iterable appended.
   {pr}`3904`
 
+- {{ Enhancement }} It is now possible to pass environment variables to
+  `loadPyodide` via the `env` argument. `HOMEDIR` is deprecated in favor of
+  `{env: {HOME: whatever_directory}}`.
+  {pr}`3870`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK

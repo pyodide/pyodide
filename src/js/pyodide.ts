@@ -281,15 +281,15 @@ export async function loadPyodide(
     _node_mounts: [],
     env: {},
   };
-  if (options.env && options.env.HOME && options.homedir) {
-    throw new Error("Set both env.HOME and homedir arguments");
-  }
   const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {
     console.warn(
       "The homedir argument to loadPyodide is deprecated. " +
         "Use 'env: { HOME: value }' instead of 'homedir: value'.",
     );
+    if (options.env && options.env.HOME) {
+      throw new Error("Set both env.HOME and homedir arguments");
+    }
     config.env.HOME = config.homedir;
   }
   if (!config.env.HOME) {
