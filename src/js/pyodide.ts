@@ -93,7 +93,10 @@ function finalizeBootstrap(API: any, config: ConfigType) {
       return;
     }
     Object.defineProperty(o, "__all__", {
-      get: () => pyodide.toPy(Object.getOwnPropertyNames(o)),
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+        ),
       enumerable: false,
       configurable: true,
     });
