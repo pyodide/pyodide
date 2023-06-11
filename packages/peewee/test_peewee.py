@@ -1,7 +1,8 @@
+from pytest_pyodide import run_in_pyodide
+
+
+@run_in_pyodide(packages=["peewee"])
 def test_peewee(selenium):
-    selenium.load_package("peewee")
-    selenium.run(
-        """
     import os
 
     from peewee import CharField, IntegerField, Model, SqliteDatabase
@@ -39,5 +40,3 @@ def test_peewee(selenium):
 
         # Verify that the person was deleted
         assert person not in Person.select()
-    """
-    )
