@@ -117,7 +117,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
 			  --with-build-python=$$(which python3.11) \
-		)
+	)
 
 
 $(BUILD)/Modules/Setup.local: Setup.local
