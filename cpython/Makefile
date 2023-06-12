@@ -71,9 +71,6 @@ $(TARBALL): $(SIGSTORE_PYTHON)
 		--cert-oidc-issuer https://accounts.google.com \
 		$(PYTHON_ARCHIVE)
 
-download: $(TARBALL)
-	echo "ok"
-
 
 $(BUILD)/.patched: $(TARBALL)
 	[ -d $(BUILD) ] || (mkdir -p $(dir $(BUILD)); tar -C $(dir $(BUILD)) -xf $(TARBALL))
