@@ -39,6 +39,9 @@ myst:
   it can be raised in Python.
   {pr}`3868`
 
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
+
 - {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
   functions that use the `PySequence_*` APIs, it now works as expected. Also
   `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
