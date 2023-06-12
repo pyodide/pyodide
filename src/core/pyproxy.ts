@@ -322,7 +322,7 @@ Module.getPyProxyClass = function (flags: number) {
     descriptors,
     Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
-  const super_proto = (flags & IS_CALLABLE) ? PyProxyFunctionProto : PyProxyProto;
+  const super_proto = flags & IS_CALLABLE ? PyProxyFunctionProto : PyProxyProto;
   const sub_proto = Object.create(super_proto, descriptors);
   function NewPyProxyClass() {}
   NewPyProxyClass.prototype = sub_proto;
@@ -474,7 +474,9 @@ export class PyProxy {
   $$flags: number;
 
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return [PyProxy, PyProxyFunction].some((cls) => Function.prototype[Symbol.hasInstance].call(cls, obj));
+    return [PyProxy, PyProxyFunction].some((cls) =>
+      Function.prototype[Symbol.hasInstance].call(cls, obj),
+    );
   }
 
   /**
@@ -740,7 +742,10 @@ export class PyProxy {
 }
 
 const PyProxyProto = PyProxy.prototype;
-const PyProxyFunctionProto = Object.create(Function.prototype, Object.getOwnPropertyDescriptors(PyProxyProto));
+const PyProxyFunctionProto = Object.create(
+  Function.prototype,
+  Object.getOwnPropertyDescriptors(PyProxyProto),
+);
 function PyProxyFunction() {}
 PyProxyFunction.prototype = PyProxyFunctionProto;
 
