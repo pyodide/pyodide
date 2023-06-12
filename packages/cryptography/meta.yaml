@@ -13,9 +13,6 @@ build:
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
     export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
 
-    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
-    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
-
     # TODO: remove this when instant makes a release
     git clone --depth 1 https://github.com/hoodmane/instant.git --branch emscripten-no-leading-underscore
   cflags: |

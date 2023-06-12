@@ -12,7 +12,7 @@ PYODIDE_CONFIGS = {
 }
 
 
-@app.callback(no_args_is_help=True)  # type: ignore[misc]
+@app.callback(no_args_is_help=True)
 def callback() -> None:
     return
 
@@ -37,7 +37,7 @@ def list_config():
         typer.echo(f"{k}={v}")
 
 
-@app.command("get")  # type: ignore[misc]
+@app.command("get")
 def get_config(
     config_var: str = typer.Argument(
         ..., help="A config variable to get. Use `list` to see all possible values."
