@@ -88,7 +88,20 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  importhook.register_js_finder();
+  function jsFinderHook(o: object) {
+    if ("__all__" in o) {
+      return;
+    }
+    Object.defineProperty(o, "__all__", {
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+        ),
+      enumerable: false,
+      configurable: true,
+    });
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = API.makePublicAPI();

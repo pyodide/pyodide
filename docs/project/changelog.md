@@ -44,6 +44,9 @@ myst:
   have dependencies that don't do this correctly.)
   {pr}`3925`
 
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
+
 ## Version 0.23.3
 
 _June 17, 2023_
