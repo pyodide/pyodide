@@ -322,9 +322,10 @@ Module.getPyProxyClass = function (flags: number) {
     descriptors,
     Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
-  let new_proto = Object.create(PyProxy.prototype, descriptors);
+  const super_proto = (flags & IS_CALLABLE) ? PyProxyFunctionProto : PyProxyProto;
+  const sub_proto = Object.create(super_proto, descriptors);
   function NewPyProxyClass() {}
-  NewPyProxyClass.prototype = new_proto;
+  NewPyProxyClass.prototype = sub_proto;
   pyproxyClassMap.set(flags, NewPyProxyClass);
   return NewPyProxyClass;
 };
@@ -471,6 +472,10 @@ export class PyProxy {
   $$props: PyProxyProps;
   /** @private */
   $$flags: number;
+
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return [PyProxy, PyProxyFunction].some((cls) => Function.prototype[Symbol.hasInstance].call(cls, obj));
+  }
 
   /**
    * @private
@@ -733,6 +738,11 @@ export class PyProxy {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
+
+const PyProxyProto = PyProxy.prototype;
+const PyProxyFunctionProto = Object.create(Function.prototype, Object.getOwnPropertyDescriptors(PyProxyProto));
+function PyProxyFunction() {}
+PyProxyFunction.prototype = PyProxyFunctionProto;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`

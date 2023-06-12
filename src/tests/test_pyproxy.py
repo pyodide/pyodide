@@ -2096,3 +2096,63 @@ def test_pyproxy_of_list_fill(selenium, func):
     assert func(a) is a
     func(ajs)
     assert a == ajs.to_py()
+
+
+def test_pyproxy_instanceof_function(selenium):
+    selenium.run_js(
+        """
+        const pyFunc_0 = pyodide.runPython(`
+            lambda: print("zero")
+        `);
+
+        const pyFunc_1 = pyodide.runPython(`
+            def foo():
+                print("two")
+            foo
+        `)
+
+        const pyFunc_2 = pyodide.runPython(`
+            class A():
+                def a(self):
+                    print("three") # method from class
+            A.a
+        `)
+
+        const pyFunc_3 = pyodide.runPython(`
+            class B():
+                def __call__(self):
+                    print("five (B as a callable instance)")
+
+            b = B()
+            b
+        `)
+
+        assert(() => pyFunc_0 instanceof Function);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_1 instanceof Function);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_2 instanceof Function);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_3 instanceof Function);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyCallable);
+
+        d = pyodide.runPython("{}");
+        assert(() => !(d instanceof Function));
+        assert(() => !(d instanceof pyodide.ffi.PyCallable));
+        assert(() => d instanceof pyodide.ffi.PyProxy);
+        assert(() => d instanceof pyFunc_0.constructor);
+        assert(() => d instanceof pyFunc_0.constructor);
+        assert(() => pyFunc_0 instanceof d.constructor);
+
+        for(const p of [pyFunc_0, pyFunc_1, pyFunc_2, pyFunc_3, d])  {
+            p.destroy();
+        }
+        """
+    )
