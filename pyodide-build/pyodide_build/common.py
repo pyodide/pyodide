@@ -576,3 +576,57 @@ def _get_sha256_checksum(archive: Path) -> str:
             if len(chunk) < CHUNK_SIZE:
                 break
     return h.hexdigest()
+
+
+def unpack_wheel(path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {path.name} failed")
+        exit_with_stdio(result)
+
+
+def pack_wheel(path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", path.name],
+        check=False,
+        encoding="utf-8",
+        cwd=path.parent,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {path} failed")
+        exit_with_stdio(result)
+
+
+@contextmanager
+def modify_wheel(wheel: Path) -> Iterator[Path]:
+    unpack_wheel(wheel)
+    wheel.unlink()
+    name, ver, _ = wheel.name.split("-", 2)
+    wheel_dir_name = f"{name}-{ver}"
+    wheel_dir = wheel.parent / wheel_dir_name
+    try:
+        yield wheel_dir
+    finally:
+        pack_wheel(wheel_dir)
+        # wheel_dir causes pytest collection failures for in-tree packages. To
+        # prevent these, we get rid of wheel_dir after repacking the wheel.
+        shutil.rmtree(wheel_dir)
+
+
+def replace_so_abi_tags(wheel_dir: Path) -> None:
+    """Replace native abi tag with emscripten abi tag in .so file names"""
+    import sysconfig
+
+    build_soabi = sysconfig.get_config_var("SOABI")
+    assert build_soabi
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    build_triplet = "-".join(build_soabi.split("-")[2:])
+    host_triplet = get_build_flag("PLATFORM_TRIPLET")
+    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
+        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
