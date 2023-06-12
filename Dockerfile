@@ -33,7 +33,6 @@ ADD pyodide-build /pyodide-build
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
     && pip3 --no-cache-dir install -r requirements-doc.txt \
-    && pip3 --no-cache-dir install -r https://raw.githubusercontent.com/sigstore/sigstore-python/v1.1.2/install/requirements.txt \
     && rm -rf requirements.txt requirements-doc.txt pyodide-build
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)

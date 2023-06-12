@@ -5,6 +5,11 @@ ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
+SIGSTORE_VENV=$(CPYTHONROOT)/.venv-sigstore
+SIGSTORE_PYTHON=$(SIGSTORE_VENV)/bin/python
+SIGSTORE_PIP=$(SIGSTORE_VENV)/bin/pip
+
+
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
 DOWNLOADS=$(ROOT)/downloads
@@ -47,20 +52,27 @@ clean:
 clean-all: clean
 	-rm -fr $(ROOT)/downloads
 
+$(SIGSTORE_PYTHON):
+	$(HOSTPYTHON) -m venv .venv-sigstore
+	$(SIGSTORE_PIP) install -r https://raw.githubusercontent.com/sigstore/sigstore-python/v1.1.2/install/requirements.txt
 
-$(TARBALL):
+
+$(TARBALL): $(SIGSTORE_PYTHON)
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE)     $(PYTHON_ARCHIVE_URL)
 	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).crt $(PYTHON_ARCHIVE_URL).crt
 	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).sig $(PYTHON_ARCHIVE_URL).sig
 
 	cd $(DOWNLOADS) && \
-	$(HOSTPYTHON) -m sigstore verify identity \
+	$(SIGSTORE_PYTHON) -m sigstore verify identity \
 		--certificate $(PYTHON_ARCHIVE).crt \
 		--signature $(PYTHON_ARCHIVE).sig \
 		--cert-identity pablogsal@python.org \
 		--cert-oidc-issuer https://accounts.google.com \
 		$(PYTHON_ARCHIVE)
+
+download: $(TARBALL)
+	echo "ok"
 
 
 $(BUILD)/.patched: $(TARBALL)
@@ -108,7 +120,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
 			  --with-build-python=$$(which python3.11) \
-	)
+		)
 
 
 $(BUILD)/Modules/Setup.local: Setup.local

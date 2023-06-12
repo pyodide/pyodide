@@ -122,7 +122,6 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install -r https://raw.githubusercontent.com/sigstore/sigstore-python/v1.1.2/install/requirements.txt
 
       - name: Build emsdk
         shell: bash -l {0}
