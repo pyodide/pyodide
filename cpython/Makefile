@@ -5,9 +5,15 @@ ROOT=$(abspath .)
 
 PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 
+SIGSTORE_VENV=$(CPYTHONROOT)/.venv-sigstore
+SIGSTORE_PYTHON=$(SIGSTORE_VENV)/bin/python
+SIGSTORE_PIP=$(SIGSTORE_VENV)/bin/pip
+
+
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
-TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
+DOWNLOADS=$(ROOT)/downloads
+TARBALL=$(DOWNLOADS)/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
@@ -46,11 +52,24 @@ clean:
 clean-all: clean
 	-rm -fr $(ROOT)/downloads
 
+$(SIGSTORE_PYTHON):
+	$(HOSTPYTHON) -m venv .venv-sigstore
+	$(SIGSTORE_PIP) install -r https://raw.githubusercontent.com/sigstore/sigstore-python/v1.1.2/install/requirements.txt
 
-$(TARBALL):
+
+$(TARBALL): $(SIGSTORE_PYTHON)
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
-	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
-	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256)
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE)     $(PYTHON_ARCHIVE_URL)
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).crt $(PYTHON_ARCHIVE_URL).crt
+	wget -q -O $(DOWNLOADS)/$(PYTHON_ARCHIVE).sig $(PYTHON_ARCHIVE_URL).sig
+
+	cd $(DOWNLOADS) && \
+	$(SIGSTORE_PYTHON) -m sigstore verify identity \
+		--certificate $(PYTHON_ARCHIVE).crt \
+		--signature $(PYTHON_ARCHIVE).sig \
+		--cert-identity pablogsal@python.org \
+		--cert-oidc-issuer https://accounts.google.com \
+		$(PYTHON_ARCHIVE)
 
 
 $(BUILD)/.patched: $(TARBALL)
