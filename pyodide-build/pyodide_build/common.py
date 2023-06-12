@@ -370,18 +370,6 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
     )
 
 
-def in_pyodide_tree(curdir: str | Path) -> bool:
-    """
-    Check if we are inside the Pyodide repository tree.
-    """
-
-    try:
-        search_pyodide_root(curdir)
-        return True
-    except FileNotFoundError:
-        return False
-
-
 def init_environment(*, quiet: bool = False) -> None:
     """
     Initialize Pyodide build environment.
@@ -395,12 +383,12 @@ def init_environment(*, quiet: bool = False) -> None:
     try:
         root = search_pyodide_root(Path.cwd())
     except FileNotFoundError:  # Not in Pyodide tree
-        root = _init_build_env(quiet=quiet)
+        root = _init_xbuild_env(quiet=quiet)
 
-    _set_pyodide_root(root)
+    os.environ["PYODIDE_ROOT"] = str(root)
 
 
-def _init_build_env(*, quiet: bool = False) -> Path:
+def _init_xbuild_env(*, quiet: bool = False) -> Path:
     """
     Initialize the build environment for out-of-tree builds.
 
@@ -423,13 +411,6 @@ def _init_build_env(*, quiet: bool = False) -> Path:
             )
 
         return install_xbuildenv.install(xbuildenv_path, download=True)
-
-
-def _set_pyodide_root(root: Path) -> None:
-    """
-    Set PYODIDE_ROOT environment variable.
-    """
-    os.environ["PYODIDE_ROOT"] = str(root)
 
 
 @functools.cache
