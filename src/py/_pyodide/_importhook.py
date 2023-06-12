@@ -9,15 +9,6 @@ from typing import Any
 from ._core_docs import JsProxy
 
 
-def add_all(jsobj: JsProxy) -> None:
-    """Add __all__ to the Js Object
-
-    This makes it possible to use `from jsmod import *`. It is overridden in
-    `pyodide.ts`.
-    """
-    pass
-
-
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
         self.jsproxies: dict[str, Any] = {}
