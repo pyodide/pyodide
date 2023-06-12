@@ -39,13 +39,19 @@ myst:
   it can be raised in Python.
   {pr}`3868`
 
+- {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
+  functions that use the `PySequence_*` APIs, it now works as expected. Also
+  `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
+  new array with the result values from the iterable appended.
+  {pr}`3904`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
