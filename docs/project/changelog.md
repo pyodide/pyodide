@@ -46,7 +46,7 @@ myst:
   {pr}`3904`
 
 - {{ Enhancement }} It is now possible to pass environment variables to
-  `loadPyodide` via the `env` argument. `HOMEDIR` is deprecated in favor of
+  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
