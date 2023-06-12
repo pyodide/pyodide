@@ -405,11 +405,6 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
-        if xbuildenv_path.exists():
-            logger.info(
-                f"Found existing build environment at {xbuildenv_path}, skipping installation."
-            )
-
         return install_xbuildenv.install(xbuildenv_path, download=True)
 
 

@@ -36,6 +36,9 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     xbuildenv_path = xbuildenv_path / "xbuildenv"
     xbuildenv_root = xbuildenv_path / "pyodide-root"
 
+    if (xbuildenv_path / ".installed").exists():
+        return xbuildenv_root
+
     host_site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
@@ -68,6 +71,8 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     repodata = json.loads(repodata_bytes)
     version = repodata["info"]["version"]
     create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
+
+    (xbuildenv_path / ".installed").touch()
 
     return xbuildenv_root
 
