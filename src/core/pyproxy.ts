@@ -2050,7 +2050,7 @@ const PyProxyHandlers = {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     let objHasKey = Reflect.has(jsobj, jskey);
-    if (objHasKey) {
+    if (objHasKey && jskey in jsobj && (!(jsobj instanceof Function) || jskey !== "name" && jskey !== "length")) {
       return true;
     }
     // python_hasattr will crash if given a Symbol.
@@ -2068,7 +2068,7 @@ const PyProxyHandlers = {
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
-    if (jskey in jsobj || typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || jskey in jsobj && (!(jsobj instanceof Function) || jskey !== "name" && jskey !== "length")) {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
