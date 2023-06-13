@@ -24,7 +24,7 @@ build:
 
     embuilder build zlib --pic
     embuilder build libjpeg --pic
-    embuilder build libpng --pic
+    embuilder build libpng-wasm-sjlj --pic
     embuilder build sqlite3 --pic
 
     mkdir -p build
@@ -35,7 +35,7 @@ build:
       -DBUILD_APPS=OFF \
       -DCMAKE_C_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
       -DCMAKE_CXX_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
-      -DCMAKE_SHARED_LINKER_FLAGS="-sSIDE_MODULE=1 -sWASM_BIGINT" \
+      -DCMAKE_SHARED_LINKER_FLAGS="${SIDE_MODULE_LDFLAGS}" \
       -DGDAL_USE_EXTERNAL_LIBS=OFF \
       -DGDAL_USE_INTERNAL_LIBS=OFF \
       \
@@ -60,7 +60,7 @@ build:
       \
       -DGDAL_USE_PNG=ON \
       -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
-      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng.a \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng-wasm-sjlj.a \
       \
       -DGDAL_USE_JPEG=ON \
       -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
