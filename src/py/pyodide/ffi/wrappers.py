@@ -1,10 +1,10 @@
 from collections.abc import Callable
 from typing import Any, Protocol, cast
 
-from . import IN_BROWSER, JsDomElement, JsProxy, create_once_callable, create_proxy
+from . import IN_BROWSER, JsDomElement, JsProxy, create_once_callable, create_proxy, to_js
 
 if IN_BROWSER:
-    from js import clearInterval, clearTimeout, setInterval, setTimeout
+    from js import clearInterval, clearTimeout, Object, setInterval, setTimeout
 
 
 class Destroyable(Protocol):
@@ -31,7 +31,7 @@ EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
 
 
 def add_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], *args: any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.addEventListener` which automatically manages the lifetime of a
@@ -39,18 +39,22 @@ def add_event_listener(
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
-    elt.addEventListener(event, cast(Callable[[Any], None], proxy))
+    converted_args = (to_js(arg, dict_converter=Object.fromEntries) if type(arg) == dict else arg
+                        for arg in args) # dicts are converted to objects
+    elt.addEventListener(event, cast(Callable[[Any], None], proxy), *converted_args)
 
 
 def remove_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], *args: any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.removeEventListener` which automatically manages the
     lifetime of a JsProxy corresponding to the ``listener`` parameter.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
-    elt.removeEventListener(event, cast(Callable[[Any], None], proxy))
+    converted_args = (to_js(arg, dict_converter=Object.fromEntries) if type(arg) == dict else arg
+                        for arg in args) # dicts are converted to objects
+    elt.removeEventListener(event, cast(Callable[[Any], None], proxy), converted_args)
     proxy.destroy()
 
 

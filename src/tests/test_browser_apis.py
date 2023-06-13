@@ -223,6 +223,20 @@ x;
 
     remove_event_listener(x, "click", foo)
 
+    # Test passing additional args
+
+    count = 0
+    def bar(obj):
+        nonlocal count
+        count += 1
+    
+    triggered = False
+    add_event_listener(x, "click", bar, {'once': True})
+    x.triggerEvent("click")
+    x.triggerEvent("click")
+    
+    assert count == 1
+
 
 @run_in_pyodide
 async def test_remove_event_listener(selenium):
