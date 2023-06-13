@@ -1,7 +1,6 @@
 package:
   name: rust-panic-test
   version: "1.0"
-  _disabled: true
 source:
   path: src
 build:
