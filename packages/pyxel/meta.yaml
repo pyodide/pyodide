@@ -1,6 +1,7 @@
 package:
   name: pyxel
   version: 1.9.10
+  _disabled: true
 source:
   url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
   sha256: e23a0c52daaa9c4967c402b3ad2c623f33c4a01e36c4b37b884d7b8c726521f4
