@@ -9,7 +9,7 @@ source:
 build:
   type: static_library
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure \
+    CFLAGS="${SIDE_MODULE_CFLAGS}" emconfigure ./configure \
       --prefix=${WASM_LIBRARY_DIR} \
       --disable-dependency-tracking \
       --disable-shared \
