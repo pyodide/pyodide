@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from urllib.request import urlopen, urlretrieve
 
-from .common import exit_with_stdio, get_build_flag
+from .common import _get_make_environment_vars, exit_with_stdio
 from .create_pypa_index import create_pypa_index
 from .logger import logger
 
@@ -39,7 +39,10 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     if (xbuildenv_path / ".installed").exists():
         return xbuildenv_root
 
-    host_site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
+    # TODO: use a separate configuration file for variables that are used only in package building
+    host_site_packages = Path(
+        _get_make_environment_vars(pyodide_root=xbuildenv_root)["HOSTSITEPACKAGES"]
+    )
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
