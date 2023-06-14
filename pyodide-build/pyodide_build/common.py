@@ -374,6 +374,11 @@ def init_environment(*, quiet: bool = False) -> None:
     """
     Initialize Pyodide build environment.
     This function needs to be called before any other Pyodide build functions.
+
+    Parameters
+    ----------
+    quiet
+        If True, do not print any messages
     """
 
     # Already initialized
@@ -396,6 +401,10 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     ----------
     quiet
         If True, do not print any messages
+
+    Returns
+    -------
+        The path to the Pyodide root directory inside the xbuild environment
     """
     from . import install_xbuildenv  # avoid circular import
 
