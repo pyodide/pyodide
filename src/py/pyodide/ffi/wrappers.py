@@ -36,6 +36,23 @@ def add_event_listener(
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.addEventListener` which automatically manages the lifetime of a
     JsProxy corresponding to the ``listener`` parameter.
+
+    Parameters
+    ----------
+    elt:
+        The DOM element to attach the listener to.
+    
+    event:
+        The event type to respond to.
+
+    listener:
+        A Callable to call when the named event type occurs. The ``listener`` will be 
+        passed the corresponding Event object from JavaScript.
+
+    *args:
+        Additional arguments to be passed to :js:meth:`~EventTarget.addEventListener`. For
+        convenience, ``dict`` arguments are converted to JavaScript Objects using 
+        :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
@@ -50,6 +67,22 @@ def remove_event_listener(
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.removeEventListener` which automatically manages the
     lifetime of a JsProxy corresponding to the ``listener`` parameter.
+
+    Parameters
+    ----------
+    elt:
+        The DOM element that the listener is already attached to
+    
+    event:
+        The event type to remove the listener from.
+
+    listener:
+        The Callable to remove.
+
+    *args:
+        Additional arguments to be passed to :js:meth:`~EventTarget.removeEventListener`. For
+        convenience, ``dict`` arguments are converted to JavaScript Objects using 
+        :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
     converted_args = (to_js(arg, dict_converter=Object.fromEntries) if type(arg) == dict else arg
