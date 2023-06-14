@@ -53,6 +53,11 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK

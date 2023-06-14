@@ -2409,12 +2409,15 @@ def test_python_reserved_keywords(selenium):
     assert o.async___ == 3
     assert getattr(o, "async_") == 1  # noqa: B009
     assert getattr(o, "async__") == 2  # noqa: B009
-    with pytest.raises(AttributeError, match="async"):
-        getattr(o, "async")
-    with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
-        setattr(o, "async", 2)
-    with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
-        delattr(o, "async")
+    assert getattr(o, "async") == 1
+
+    assert hasattr(o, "async_")
+    assert hasattr(o, "async")
+    setattr(o, "async", 2)
+    assert o.async_ == 2
+    delattr(o, "async")
+    assert not hasattr(o, "async_")
+    assert not hasattr(o, "async")
 
 
 @run_in_pyodide
