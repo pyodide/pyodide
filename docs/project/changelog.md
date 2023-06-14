@@ -53,13 +53,19 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
+  Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
