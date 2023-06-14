@@ -13,7 +13,16 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
 ## Version 0.23.2
+
+_May 2, 2023_
 
 - {{ Enhancement }} Changed the name of the `--output-directory` argument to
   `pyodide build` to `--outdir` to match pypa/build. `--output-directory` is
@@ -21,6 +30,8 @@ myst:
   {pr}`3811`
 
 ## Version 0.23.1
+
+_April 13, 2023_
 
 ### Deployment
 
