@@ -223,6 +223,7 @@ x;
 
     remove_event_listener(x, "click", foo)
 
+
 @run_in_pyodide
 async def test_additional_event_listener_arguments(selenium):
     from pyodide.code import run_js
@@ -268,10 +269,13 @@ x;
     foo = lambda: ...
 
     from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
+
     add_event_listener(x, "click", foo, "blah", {"somekey": True})
 
     assert x.listeners.click[0].arg1 == "blah"
-    assert x.listeners.click[0].arg2.somekey == True # test that dicts are converted to objects
+    assert (
+        x.listeners.click[0].arg2.somekey is True
+    )  # test that dicts are converted to objects
 
     remove_event_listener(x, "click", foo)
     assert len(x.listeners.click) == 0
