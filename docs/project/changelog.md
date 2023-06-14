@@ -53,6 +53,9 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
+- {{ Enhancement }} `add_event_listener` and `remove_event_listener` now pass 
+  any addition options arguments to the corresponding JavaScript functions.
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
