@@ -53,7 +53,7 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
-- {{ Enhancement }} `add_event_listener` and `remove_event_listener` now pass 
+- {{ Enhancement }} `add_event_listener` and `remove_event_listener` now pass
   any additional arguments to the corresponding JavaScript functions.
   {pr}`3929`
 
