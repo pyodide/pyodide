@@ -223,19 +223,58 @@ x;
 
     remove_event_listener(x, "click", foo)
 
-    # Test passing additional args
+@run_in_pyodide
+async def test_additional_event_listener_arguments(selenium):
+    from pyodide.code import run_js
 
-    count = 0
-    def bar(obj):
-        nonlocal count
-        count += 1
-    
-    triggered = False
-    add_event_listener(x, "click", bar, {'once': True})
-    x.triggerEvent("click")
-    x.triggerEvent("click")
-    
-    assert count == 1
+    x = run_js(
+        """
+class MockObject {
+    constructor() {
+        this.listeners = {};
+    }
+    addEventListener(event, handler, arg1, arg2) {
+        if (event in this.listeners) {
+            this.listeners[event].push(
+                {
+                    handler: handler,
+                    arg1: arg1,
+                    arg2: arg2
+                 });
+        }
+        else {
+            this.listeners[event] = [
+                {
+                    handler: handler,
+                    arg1: arg1,
+                    arg2: arg2
+                 }
+                ];
+        }
+    }
+    removeEventListener(event, handler) {
+        if (event in this.listeners) {
+            this.listeners[event] = this.listeners[event].filter(
+                (existingHandler) => existingHandler.handler !== handler
+            )
+        }
+    }
+}
+let x = new MockObject();
+x;
+    """
+    )
+
+    foo = lambda: ...
+
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
+    add_event_listener(x, "click", foo, "blah", {"somekey": True})
+
+    assert x.listeners.click[0].arg1 == "blah"
+    assert x.listeners.click[0].arg2.somekey == True # test that dicts are converted to objects
+
+    remove_event_listener(x, "click", foo)
+    assert len(x.listeners.click) == 0
 
 
 @run_in_pyodide
