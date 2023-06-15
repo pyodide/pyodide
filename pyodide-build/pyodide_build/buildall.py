@@ -26,7 +26,7 @@ from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
-from . import common, recipe
+from . import build_env, common, recipe
 from .buildpkg import needs_rebuild
 from .common import (
     find_matching_wheels,
@@ -113,7 +113,9 @@ class Package(BasePackage):
         if self.package_type in ("shared_library", "cpython_module"):
             candidates = list(dist_dir.glob("*.zip"))
         else:
-            candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))
+            candidates = list(
+                find_matching_wheels(dist_dir.glob("*.whl"), build_env.pyodide_tags())
+            )
 
         if len(candidates) != 1:
             raise RuntimeError(
@@ -702,7 +704,7 @@ def generate_repodata(
     from . import __version__
 
     # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
+    [platform, _, arch] = build_env.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
