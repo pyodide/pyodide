@@ -17,7 +17,6 @@ def reset_env_vars():
     # Will reset the environment variables to their original values after each test.
 
     os.environ.pop("PYODIDE_ROOT", None)
-    os.environ.pop("__LOADED_PYODIDE_ENV", None)
     old_environ = dict(os.environ)
 
     try:
