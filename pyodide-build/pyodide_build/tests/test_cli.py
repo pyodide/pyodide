@@ -453,7 +453,7 @@ def test_build1(tmp_path, monkeypatch):
     assert results["backend_flags"] == "x y z"
 
 
-def test_build2_replace_so_abi_tags(tmp_path, monkeypatch):
+def test_build2_replace_so_abi_tags(selenium, tmp_path, monkeypatch):
     """
     We intentionally include an "so" (actually an empty file) with Linux slug in
     the name into the wheel generated from the package in
