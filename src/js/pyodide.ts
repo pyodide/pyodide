@@ -74,7 +74,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, config.homedir);
+  API.sys.path.insert(0, config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -88,7 +88,20 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  importhook.register_js_finder();
+  function jsFinderHook(o: object) {
+    if ("__all__" in o) {
+      return;
+    }
+    Object.defineProperty(o, "__all__", {
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+        ),
+      enumerable: false,
+      configurable: true,
+    });
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = API.makePublicAPI();
@@ -174,6 +187,7 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+  env: { [key: string]: string };
 };
 
 /**
@@ -204,7 +218,7 @@ export async function loadPyodide(
 
     /**
      * The home directory which Pyodide will use inside virtual file system.
-     * Default: ``"/home/pyodide"``
+     * This is deprecated, use ``{env: {HOME : some_dir}}`` instead.
      */
     homedir?: string;
     /**
@@ -247,6 +261,17 @@ export async function loadPyodide(
      */
     args?: string[];
     /**
+     * Environment variables to pass to Python. This can be accessed inside of
+     * Python at runtime via `os.environ`. Certain environment variables change
+     * the way that Python loads:
+     * https://docs.python.org/3.10/using/cmdline.html#environment-variables
+     * Default: {}
+     * If `env.HOME` is undefined, it will be set to a default value of
+     * `"/home/pyodide"`
+     */
+    env?: { [key: string]: string };
+
+    /**
      * @ignore
      */
     _node_mounts?: string[];
@@ -264,12 +289,25 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    homedir: "/home/pyodide",
     lockFileURL: indexURL! + "repodata.json",
     args: [],
     _node_mounts: [],
+    env: {},
   };
   const config = Object.assign(default_config, options) as ConfigType;
+  if (options.homedir) {
+    console.warn(
+      "The homedir argument to loadPyodide is deprecated. " +
+        "Use 'env: { HOME: value }' instead of 'homedir: value'.",
+    );
+    if (options.env && options.env.HOME) {
+      throw new Error("Set both env.HOME and homedir arguments");
+    }
+    config.env.HOME = config.homedir;
+  }
+  if (!config.env.HOME) {
+    config.env.HOME = "/home/pyodide";
+  }
 
   const Module = createModule();
   Module.print = config.stdout;

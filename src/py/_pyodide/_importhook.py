@@ -1,5 +1,5 @@
 import sys
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from importlib.abc import Loader, MetaPathFinder
 from importlib.machinery import ModuleSpec
 from importlib.util import spec_from_loader
@@ -12,6 +12,7 @@ from ._core_docs import JsProxy
 class JsFinder(MetaPathFinder):
     def __init__(self) -> None:
         self.jsproxies: dict[str, Any] = {}
+        self.hook: Callable[[JsProxy], None] = lambda _: None
 
     def find_spec(
         self,
@@ -69,6 +70,7 @@ class JsFinder(MetaPathFinder):
             raise TypeError(
                 f"Argument 'jsproxy' must be a JsProxy, not {type(jsproxy).__name__!r}"
             )
+        self.hook(jsproxy)
         self.jsproxies[name] = jsproxy
 
     def unregister_js_module(self, name: str) -> None:
@@ -114,7 +116,7 @@ register_js_module = jsfinder.register_js_module
 unregister_js_module = jsfinder.unregister_js_module
 
 
-def register_js_finder() -> None:
+def register_js_finder(*, hook: Callable[[JsProxy], None]) -> None:
     """A bootstrap function, called near the end of Pyodide initialization.
 
     It is called in ``loadPyodide`` in ``pyodide.js`` once ``_pyodide_core`` is ready
@@ -129,7 +131,7 @@ def register_js_finder() -> None:
     for importer in sys.meta_path:
         if isinstance(importer, JsFinder):
             raise RuntimeError("JsFinder already registered")
-
+    jsfinder.hook = hook
     sys.meta_path.append(jsfinder)
 
 
