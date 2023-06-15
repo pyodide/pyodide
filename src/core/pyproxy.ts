@@ -2040,17 +2040,15 @@ function python_pop(jsobj: any, pop_start: boolean): void {
 }
 
 function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
-  if (!(jskey in jsobj)) {
-    return false;
-  }
-  // If we are a PyProxy of a callable we have to subclass function so that if
-  // someone feature detects callables with `instanceof Function` it works
-  // correctly. But the callable might have attributes `name` and `length` and
-  // we don't want to shadow them with the values from `Function.prototype`.
   if (jsobj instanceof Function) {
-    return (["name", "length"] as (string | symbol)[]).includes(jskey);
+    // If we are a PyProxy of a callable we have to subclass function so that if
+    // someone feature detects callables with `instanceof Function` it works
+    // correctly. But the callable might have attributes `name` and `length` and
+    // we don't want to shadow them with the values from `Function.prototype`.
+    return (jskey in jsobj) && !(["name", "length"] as (string | symbol)[]).includes(jskey);
+  } else {
+    return (jskey in jsobj);
   }
-  return false;
 }
 
 // See explanation of which methods should be defined here and what they do
