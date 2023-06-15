@@ -2039,7 +2039,7 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
-function filteredHasKey(jsobj, jskey) {
+function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
   if (!(jskey in jsobj)) {
     return false;
   }
@@ -2048,7 +2048,7 @@ function filteredHasKey(jsobj, jskey) {
   // correctly. But the callable might have attributes `name` and `length` and
   // we don't want to shadow them with the values from `Function.prototype`.
   if (jsobj instanceof Function) {
-    return ["name", "length"].includes(jskey);
+    return (["name", "length"] as (string | symbol)[]).includes(jskey);
   }
   return false;
 }
@@ -2060,7 +2060,7 @@ const PyProxyHandlers = {
   isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any): boolean {
+  has(jsobj: PyProxy, jskey: string | symbol): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
     if (filteredHasKey(jsobj, jskey)) {
@@ -2075,7 +2075,7 @@ const PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj: PyProxy, jskey: any): any {
+  get(jsobj: PyProxy, jskey: string | symbol): any {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -2095,10 +2095,10 @@ const PyProxyHandlers = {
       return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
+  set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${jskey}'`);
+      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
     }
     // python_setattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
@@ -2110,10 +2110,10 @@ const PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
+  deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${jskey}'`);
+      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
     }
     if (typeof jskey === "symbol") {
       return Reflect.deleteProperty(jsobj, jskey);
