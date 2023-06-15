@@ -436,6 +436,7 @@ def test_build1(tmp_path, monkeypatch):
         return str(outdir / "a.whl")
 
     from contextlib import nullcontext
+
     monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
     monkeypatch.setattr(common, "modify_wheel", lambda whl: nullcontext())
     monkeypatch.setattr(common, "replace_so_abi_tags", lambda whl: None)
