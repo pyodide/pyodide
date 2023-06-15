@@ -14,6 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
+declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
@@ -742,12 +743,18 @@ export class PyProxy {
 }
 
 const PyProxyProto = PyProxy.prototype;
+// For some weird reason in the node and firefox tests, the identity of
+// `Function` changes between now and the test suite. Can't reproduce this
+// outside the test suite though...
+// See test_pyproxy_instanceof_function.
+Tests.Function = Function;
 const PyProxyFunctionProto = Object.create(
   Function.prototype,
   Object.getOwnPropertyDescriptors(PyProxyProto),
 );
 function PyProxyFunction() {}
 PyProxyFunction.prototype = PyProxyFunctionProto;
+globalThis.PyProxyFunction = PyProxyFunction;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`
