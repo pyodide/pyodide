@@ -1,6 +1,6 @@
 import typer
 
-from ..common import get_build_environment_vars, init_environment
+from ..build_env import get_build_environment_vars, init_environment
 
 app = typer.Typer(help="Manage config variables used in pyodide")
 

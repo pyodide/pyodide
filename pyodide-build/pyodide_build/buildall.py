@@ -26,7 +26,7 @@ from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
-from . import build_env, common, recipe
+from . import build_env, recipe
 from .buildpkg import needs_rebuild
 from .common import (
     find_matching_wheels,
@@ -819,16 +819,16 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
+        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
+        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
+        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
+        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(common.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args

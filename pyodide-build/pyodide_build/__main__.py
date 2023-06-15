@@ -3,7 +3,7 @@ import argparse
 import sys
 
 from . import buildpkg, serve
-from .common import init_environment
+from .build_env import init_environment
 
 
 def make_parser() -> argparse.ArgumentParser:

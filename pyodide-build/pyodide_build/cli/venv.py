@@ -2,7 +2,7 @@ from pathlib import Path
 
 import typer
 
-from ..common import init_environment
+from ..build_env import init_environment
 from ..out_of_tree import venv
 
 

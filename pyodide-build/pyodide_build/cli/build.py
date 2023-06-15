@@ -9,8 +9,7 @@ from urllib.parse import urlparse
 import requests
 import typer
 
-from .. import common
-from ..common import init_environment
+from ..build_env import check_emscripten_version, init_environment
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
@@ -143,7 +142,7 @@ def main(
     """Use pypa/build to build a Python package from source, pypi or url."""
 
     init_environment()
-    common.check_emscripten_version()
+    check_emscripten_version()
 
     if output_directory_compat:
         print(
