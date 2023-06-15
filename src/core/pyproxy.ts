@@ -2045,9 +2045,12 @@ function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
     // someone feature detects callables with `instanceof Function` it works
     // correctly. But the callable might have attributes `name` and `length` and
     // we don't want to shadow them with the values from `Function.prototype`.
-    return (jskey in jsobj) && !(["name", "length"] as (string | symbol)[]).includes(jskey);
+    return (
+      jskey in jsobj &&
+      !(["name", "length"] as (string | symbol)[]).includes(jskey)
+    );
   } else {
-    return (jskey in jsobj);
+    return jskey in jsobj;
   }
 }
 
