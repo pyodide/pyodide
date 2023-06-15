@@ -621,7 +621,6 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
 def replace_so_abi_tags(wheel_dir: Path) -> None:
     """Replace native abi tag with emscripten abi tag in .so file names"""
     import sysconfig
-
     build_soabi = sysconfig.get_config_var("SOABI")
     assert build_soabi
     ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
