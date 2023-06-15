@@ -2148,7 +2148,6 @@ def test_pyproxy_instanceof_function(selenium):
         assert(() => !(d instanceof pyodide.ffi.PyCallable));
         assert(() => d instanceof pyodide.ffi.PyProxy);
         assert(() => d instanceof pyFunc_0.constructor);
-        assert(() => d instanceof pyFunc_0.constructor);
         assert(() => pyFunc_0 instanceof d.constructor);
 
         for(const p of [pyFunc_0, pyFunc_1, pyFunc_2, pyFunc_3, d])  {
