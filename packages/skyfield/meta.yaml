@@ -1,0 +1,14 @@
+package:
+  name: skyfield
+  version: '1.18'
+source:
+  sha256: 5ea2c35a8c186b29aee38422f4e2e138a7fbe1395d7c566550b1ee8185e15e14
+  url: https://files.pythonhosted.org/packages/dc/09/1bbcda50bb4c0d0bf3a1a0f67f28083a7fba6edbc9bc8333e12b5a2de563/skyfield-1.18.tar.gz
+requirements:
+  run:
+  - numpy
+  - jplephem
+  - sgp4
+test:
+  imports:
+  - skyfield
