@@ -2039,6 +2039,20 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
+function filteredHasKey(jsobj, jskey) {
+  if (!(jskey in jsobj)) {
+    return false;
+  }
+  // If we are a PyProxy of a callable we have to subclass function so that if
+  // someone feature detects callables with `instanceof Function` it works
+  // correctly. But the callable might have attributes `name` and `length` and
+  // we don't want to shadow them with the values from `Function.prototype`.
+  if (jsobj instanceof Function) {
+    return ["name", "length"].includes(jskey);
+  }
+  return false;
+}
+
 // See explanation of which methods should be defined here and what they do
 // here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -2049,12 +2063,7 @@ const PyProxyHandlers = {
   has(jsobj: PyProxy, jskey: any): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
-    let objHasKey = Reflect.has(jsobj, jskey);
-    if (
-      objHasKey &&
-      jskey in jsobj &&
-      (!(jsobj instanceof Function) || (jskey !== "name" && jskey !== "length"))
-    ) {
+    if (filteredHasKey(jsobj, jskey)) {
       return true;
     }
     // python_hasattr will crash if given a Symbol.
@@ -2072,12 +2081,7 @@ const PyProxyHandlers = {
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
-    if (
-      typeof jskey === "symbol" ||
-      (jskey in jsobj &&
-        (!(jsobj instanceof Function) ||
-          (jskey !== "name" && jskey !== "length")))
-    ) {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey)) {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
