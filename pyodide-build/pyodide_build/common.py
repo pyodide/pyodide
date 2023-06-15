@@ -616,10 +616,10 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
     wheel is left unchanged.
     """
     with TemporaryDirectory() as temp_dir:
-        unpack_wheel(wheel, temp_dir)
+        unpack_wheel(wheel, Path(temp_dir))
         name, ver, _ = wheel.name.split("-", 2)
         wheel_dir_name = f"{name}-{ver}"
-        wheel_dir = temp_dir / wheel_dir_name
+        wheel_dir = Path(temp_dir) / wheel_dir_name
         yield wheel_dir
         wheel.unlink()
         pack_wheel(wheel_dir, wheel.parent)
