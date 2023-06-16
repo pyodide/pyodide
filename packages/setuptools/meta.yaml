@@ -10,7 +10,7 @@ source:
   sha256: e728ca814a823bf7bf60162daf9db95b93d532948c4c0bea762ce62f60189078
 build:
   post: |
-    find build/setuptools-*/dist -name '*.exe' -delete
+    find $WHEELDIR -name '*.exe' -delete
 requirements:
   run:
     - distutils
