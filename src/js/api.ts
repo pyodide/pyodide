@@ -14,6 +14,8 @@ import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { makeWarnOnce } from "./util";
 
+import "emscripten";
+
 API.loadBinaryFile = loadBinaryFile;
 
 /**
@@ -112,7 +114,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as any;
+  static FS = {} as typeof FS;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
