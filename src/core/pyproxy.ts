@@ -2064,6 +2064,9 @@ function filteredHasKey(
           "length",
           "caller",
           "arguments",
+          // we are required by JS law to return `true` for `"prototype" in pycallable`
+          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+          // So we filter prototype out of the "get" trap but not out of the "has" trap
           filterProto ? "prototype" : undefined,
         ] as (string | symbol)[]
       ).includes(jskey)
