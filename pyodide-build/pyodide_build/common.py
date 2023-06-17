@@ -566,3 +566,64 @@ def _get_sha256_checksum(archive: Path) -> str:
             if len(chunk) < CHUNK_SIZE:
                 break
     return h.hexdigest()
+
+
+def unpack_wheel(wheel_path: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_path.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", wheel_path, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {wheel_path.name} failed")
+        exit_with_stdio(result)
+
+
+def pack_wheel(wheel_dir: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_dir.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", wheel_dir, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {wheel_dir} failed")
+        exit_with_stdio(result)
+
+
+@contextmanager
+def modify_wheel(wheel: Path) -> Iterator[Path]:
+    """Unpacks the wheel into a temp directory and yields the path to the
+    unpacked directory.
+
+    The body of the with block is expected to inspect the wheel contents and
+    possibly change it. If the body of the "with" block is successful, on
+    exiting the with block the wheel contents are replaced with the updated
+    contents of unpacked directory. If an exception is raised, then the original
+    wheel is left unchanged.
+    """
+    with TemporaryDirectory() as temp_dir:
+        unpack_wheel(wheel, Path(temp_dir))
+        name, ver, _ = wheel.name.split("-", 2)
+        wheel_dir_name = f"{name}-{ver}"
+        wheel_dir = Path(temp_dir) / wheel_dir_name
+        yield wheel_dir
+        wheel.unlink()
+        pack_wheel(wheel_dir, wheel.parent)
+
+
+def replace_so_abi_tags(wheel_dir: Path) -> None:
+    """Replace native abi tag with emscripten abi tag in .so file names"""
+    import sysconfig
+
+    build_soabi = sysconfig.get_config_var("SOABI")
+    assert build_soabi
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    build_triplet = "-".join(build_soabi.split("-")[2:])
+    host_triplet = get_build_flag("PLATFORM_TRIPLET")
+    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
+        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
