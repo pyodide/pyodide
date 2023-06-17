@@ -2046,7 +2046,11 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
-function filteredHasKey(jsobj: PyProxy, jskey: string | symbol, filterProto: boolean) {
+function filteredHasKey(
+  jsobj: PyProxy,
+  jskey: string | symbol,
+  filterProto: boolean,
+) {
   if (jsobj instanceof Function) {
     // If we are a PyProxy of a callable we have to subclass function so that if
     // someone feature detects callables with `instanceof Function` it works
@@ -2054,7 +2058,15 @@ function filteredHasKey(jsobj: PyProxy, jskey: string | symbol, filterProto: boo
     // we don't want to shadow them with the values from `Function.prototype`.
     return (
       jskey in jsobj &&
-      !(["name", "length", "caller", "arguments", filterProto? "prototype" : undefined] as (string | symbol)[]).includes(jskey)
+      !(
+        [
+          "name",
+          "length",
+          "caller",
+          "arguments",
+          filterProto ? "prototype" : undefined,
+        ] as (string | symbol)[]
+      ).includes(jskey)
     );
   } else {
     return jskey in jsobj;
