@@ -234,26 +234,24 @@ class MockObject {
     constructor() {
         this.listeners = {};
     }
-    addEventListener(event, handler, arg1, arg2) {
+    addEventListener(event, handler, kwargs) {
         if (event in this.listeners) {
             this.listeners[event].push(
                 {
                     handler: handler,
-                    arg1: arg1,
-                    arg2: arg2
+                    kwargs: kwargs
                  });
         }
         else {
             this.listeners[event] = [
                 {
                     handler: handler,
-                    arg1: arg1,
-                    arg2: arg2
+                    kwargs: kwargs
                  }
                 ];
         }
     }
-    removeEventListener(event, handler) {
+    removeEventListener(event, handler, kwargs) {
         if (event in this.listeners) {
             this.listeners[event] = this.listeners[event].filter(
                 (existingHandler) => existingHandler.handler !== handler
@@ -266,16 +264,15 @@ x;
     """
     )
 
-    foo = lambda: ...
-
     from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
 
-    add_event_listener(x, "click", foo, "blah", {"somekey": True})
+    def foo(obj):
+        pass
 
-    assert x.listeners.click[0].arg1 == "blah"
-    assert (
-        x.listeners.click[0].arg2.somekey is True
-    )  # test that dicts are converted to objects
+    add_event_listener(x, "click", foo, once=True, something_else="foo")
+
+    assert x.listeners.click[0].kwargs.once is True
+    assert x.listeners.click[0].kwargs.something_else == "foo"
 
     remove_event_listener(x, "click", foo)
     assert len(x.listeners.click) == 0

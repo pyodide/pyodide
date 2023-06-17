@@ -38,7 +38,7 @@ EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
 
 
 def add_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None], *args: any
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], **kwargs: Any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.addEventListener` which automatically manages the lifetime of a
@@ -56,22 +56,22 @@ def add_event_listener(
         A Callable to call when the named event type occurs. The ``listener`` will be
         passed the corresponding Event object from JavaScript.
 
-    *args:
-        Additional arguments to be passed to :js:meth:`~EventTarget.addEventListener`. For
-        convenience, ``dict`` arguments are converted to JavaScript Objects using
+    \\*\\*kwargs:
+        Keyword arguments are passed along to :js:meth:`~EventTarget.addEventListener`. For
+        convenience, arguments are converted to JavaScript Objects using
         :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
-    converted_args = (
-        to_js(arg, dict_converter=Object.fromEntries) if type(arg) == dict else arg
-        for arg in args
-    )  # dicts are converted to objects
-    elt.addEventListener(event, cast(Callable[[Any], None], proxy), *converted_args)
+    elt.addEventListener(
+        event,
+        cast(Callable[[Any], None], proxy),
+        to_js(kwargs, dict_converter=Object.fromEntries),
+    )
 
 
 def remove_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None], *args: any
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], **kwargs: Any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.removeEventListener` which automatically manages the
@@ -88,17 +88,17 @@ def remove_event_listener(
     listener:
         The Callable to remove.
 
-    *args:
-        Additional arguments to be passed to :js:meth:`~EventTarget.removeEventListener`. For
-        convenience, ``dict`` arguments are converted to JavaScript Objects using
+    \\*\\*kwargs:
+        Keyword arguments are passed along to :js:meth:`~EventTarget.addEventListener`. For
+        convenience, arguments are converted to JavaScript Objects using
         :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
-    converted_args = (
-        to_js(arg, dict_converter=Object.fromEntries) if type(arg) == dict else arg
-        for arg in args
-    )  # dicts are converted to objects
-    elt.removeEventListener(event, cast(Callable[[Any], None], proxy), converted_args)
+    elt.removeEventListener(
+        event,
+        cast(Callable[[Any], None], proxy),
+        to_js(kwargs, dict_converter=Object.fromEntries),
+    )
     proxy.destroy()
 
 

@@ -1027,10 +1027,14 @@ class JsDomElement(JsProxy):
     def appendChild(self, child: "JsDomElement") -> None:
         pass
 
-    def addEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+    def addEventListener(
+        self, event: str, listener: Callable[[Any], None], kwargs: Any
+    ) -> None:
         pass
 
-    def removeEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+    def removeEventListener(
+        self, event: str, listener: Callable[[Any], None], kwargs: Any
+    ) -> None:
         pass
 
 
