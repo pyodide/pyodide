@@ -53,7 +53,6 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
-
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
@@ -68,7 +67,6 @@ myst:
 ## Version 0.23.3
 
 _June 17, 2023_
-
 
 - {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
   (as well as `hasattr` and `setattr`). This fixes a regression introduced in
