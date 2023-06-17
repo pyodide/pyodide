@@ -1,3 +1,5 @@
+/// <reference types="emscripten" />
+
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
@@ -13,8 +15,6 @@ import { version } from "./version";
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { makeWarnOnce } from "./util";
-
-import "emscripten";
 
 API.loadBinaryFile = loadBinaryFile;
 
