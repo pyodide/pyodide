@@ -70,7 +70,7 @@ try {
     // simplify the umd dance for CommonJS by trying to set info on `exports`
     content = content.replace(
       "//# sourceMappingURL",
-      `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`
+      `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
     );
 
     writeFileSync(outfile, content);
