@@ -20,6 +20,12 @@ myst:
   {pr}`3617`.
   {pr}`3926`
 
+- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
+  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
+  so this is good. If they are actually native `.so`s then there is a problem
+  either way.
+  {pr}`3903`
+
 ## Version 0.23.2
 
 _May 2, 2023_
