@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pydantic
 
-from pyodide_build import buildpkg
+from pyodide_build import buildpkg, common
 from pyodide_build.io import MetaConfig, _SourceSpec
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
@@ -85,7 +85,12 @@ def test_subprocess_with_shared_env_logging(capfd, tmp_path):
 
 
 def test_prepare_source(monkeypatch):
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: True)
+    class subprocess_result:
+        returncode = 0
+        stdout = ""
+
+    common.get_build_environment_vars()
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess_result)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "move", lambda *args, **kwargs: True)
@@ -228,7 +233,7 @@ def test_copy_sharedlib(tmp_path):
     wheel_copy = tmp_path / wheel_file_name
     shutil.copy(wheel, wheel_copy)
 
-    buildpkg.unpack_wheel(wheel_copy)
+    common.unpack_wheel(wheel_copy)
     name, ver, _ = wheel.name.split("-", 2)
     wheel_dir_name = f"{name}-{ver}"
     wheel_dir = tmp_path / wheel_dir_name

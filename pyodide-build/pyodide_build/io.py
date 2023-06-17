@@ -176,6 +176,8 @@ class MetaConfig(BaseModel):
         config_raw = yaml.safe_load(stream)
 
         config = cls(**config_raw)
+        if config.source.path:
+            config.source.path = path.parent / config.source.path
         return config
 
     def to_yaml(self, path: Path) -> None:
