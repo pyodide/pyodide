@@ -558,6 +558,7 @@ def test_pyproxy_mixins41(selenium):
         """
     )
 
+
 def test_pyproxy_mixins42(selenium):
     selenium.run_js(
         """
