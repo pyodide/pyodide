@@ -536,11 +536,14 @@ def test_pyproxy_mixins4(selenium):
                 prototype="prototype"
                 name="me"
                 length=7
+                def __call__(self, x):
+                    return x + 1
+
             from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.$prototype === "prototype");
-        assert(() => Test.prototype === undefined);
+        assert(() => Test.prototype === "prototype");
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
@@ -548,6 +551,7 @@ def test_pyproxy_mixins4(selenium):
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
+        assert(() => t(7) === 8);
         Test.destroy();
         t.destroy();
         """
@@ -2171,3 +2175,26 @@ def test_pyproxy_instanceof_function(selenium):
         }
         """
     )
+
+
+def test_pyproxy_callable_prototype(selenium):
+    r = selenium.run_js(
+        """
+        const o = pyodide.runPython("lambda:None");
+        const res = Object.fromEntries(Reflect.ownKeys(Function.prototype).map(k => [k.toString(), k in o]));
+        o.destroy();
+        return res;
+        """
+    )
+    assert r == {
+        "length": False,
+        "name": False,
+        "arguments": False,
+        "caller": False,
+        "constructor": True,
+        "apply": True,
+        "bind": True,
+        "call": True,
+        "toString": True,
+        "Symbol(Symbol.hasInstance)": True,
+    }
