@@ -58,6 +58,9 @@ myst:
   {pr}`3617`.
   {pr}`3926`
 
+- {{ API }} `PyodideAPI.FS` now contains type information from `@types/emscripten`.
+  {pr}`3935`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
@@ -1657,7 +1660,6 @@ _August 3rd, 2021_
   converting dictionaries. For instance, pass `Object.fromEntries` to convert to
   an object or `Array.from` to convert to an array of pairs.
   {pr}`1742`
-- {{ API }} `PyodideAPI.FS` now contains type information from `@types/emscripten`. 
 
 ### pyodide-build
 
