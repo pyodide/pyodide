@@ -1657,7 +1657,7 @@ _August 3rd, 2021_
   converting dictionaries. For instance, pass `Object.fromEntries` to convert to
   an object or `Array.from` to convert to an array of pairs.
   {pr}`1742`
-- {{ API }} `PyodideAPI.FS` now contains type information from `@types/emscripten`. 
+- {{ API }} `PyodideAPI.FS` now contains type information from `@types/emscripten`.
 
 ### pyodide-build
 
