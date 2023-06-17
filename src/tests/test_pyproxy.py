@@ -527,7 +527,7 @@ def test_pyproxy_mixins3(selenium):
     )
 
 
-def test_pyproxy_mixins4(selenium):
+def test_pyproxy_mixins41(selenium):
     selenium.run_js(
         """
         [Test, t] = pyodide.runPython(`
@@ -548,11 +548,29 @@ def test_pyproxy_mixins4(selenium):
         assert(() => Test.length === 7);
 
         assert(() => t.caller === "fifty");
+        assert(() => "prototype" in t);
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
         assert(() => t(7) === 8);
         Test.destroy();
+        t.destroy();
+        """
+    )
+
+def test_pyproxy_mixins42(selenium):
+    selenium.run_js(
+        """
+        let t = pyodide.runPython(`
+            class Test:
+                def __call__(self, x):
+                    return x + 1
+
+            from pyodide.ffi import to_js
+            Test()
+        `);
+        assert(() => "prototype" in t);
+        assert(() => t.prototype === undefined);
         t.destroy();
         """
     )

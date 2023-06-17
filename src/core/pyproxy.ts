@@ -2046,7 +2046,7 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
-function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
+function filteredHasKey(jsobj: PyProxy, jskey: string | symbol, filterProto: boolean) {
   if (jsobj instanceof Function) {
     // If we are a PyProxy of a callable we have to subclass function so that if
     // someone feature detects callables with `instanceof Function` it works
@@ -2054,7 +2054,7 @@ function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
     // we don't want to shadow them with the values from `Function.prototype`.
     return (
       jskey in jsobj &&
-      !(["name", "length", "caller", "arguments", "prototype"] as (string | symbol)[]).includes(jskey)
+      !(["name", "length", "caller", "arguments", filterProto? "prototype" : undefined] as (string | symbol)[]).includes(jskey)
     );
   } else {
     return jskey in jsobj;
@@ -2071,7 +2071,7 @@ const PyProxyHandlers = {
   has(jsobj: PyProxy, jskey: string | symbol): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
-    if (filteredHasKey(jsobj, jskey)) {
+    if (filteredHasKey(jsobj, jskey, false)) {
       return true;
     }
     // python_hasattr will crash if given a Symbol.
@@ -2089,7 +2089,7 @@ const PyProxyHandlers = {
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
-    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey)) {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
