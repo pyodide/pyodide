@@ -2054,7 +2054,12 @@ function filteredHasKey(jsobj: PyProxy, jskey: string | symbol) {
     // we don't want to shadow them with the values from `Function.prototype`.
     return (
       jskey in jsobj &&
-      !(["name", "length", "caller", "arguments", "prototype"] as (string | symbol)[]).includes(jskey)
+      !(
+        ["name", "length", "caller", "arguments", "prototype"] as (
+          | string
+          | symbol
+        )[]
+      ).includes(jskey)
     );
   } else {
     return jskey in jsobj;
