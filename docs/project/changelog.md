@@ -53,16 +53,6 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
-- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
-  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
-  {pr}`3617`.
-  {pr}`3926`
-
-- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
-  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
-  so this is good. If they are actually native `.so`s then there is a problem
-  either way.
-  {pr}`3903`
 
 ### Packages
 
@@ -74,6 +64,22 @@ myst:
   Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
+
+## Version 0.23.3
+
+_June 17, 2023_
+
+
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
+- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
+  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
+  so this is good. If they are actually native `.so`s then there is a problem
+  either way.
+  {pr}`3903`
 
 ## Version 0.23.2
 
