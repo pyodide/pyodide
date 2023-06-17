@@ -1,0 +1,20 @@
+diff --git a/src/iso19111/internal.cpp b/src/iso19111/internal.cpp
+index 4810202d..14fb8d83 100644
+--- a/src/iso19111/internal.cpp
++++ b/src/iso19111/internal.cpp
+@@ -242,6 +242,15 @@ bool ends_with(const std::string &str, const std::string &suffix) noexcept {
+ double c_locale_stod(const std::string &s) {
+ 
+     const auto s_size = s.size();
++    // Ensure that empty strings are parsed as 0.0, matching the behaviour of
++    // <cstdlib>'s strtod
++    // Without this patch, initialisation in Cartopy fails when an empty string
++    // is passed to this function and an invalid argument exception is thrown.
++    // This exception is not triggered in the non-Emscripten build.
++    if (s_size == 0) {
++        return 0.0;
++    }
++
+     // Fast path
+     if (s_size > 0 && s_size < 15) {
+         std::int64_t acc = 0;

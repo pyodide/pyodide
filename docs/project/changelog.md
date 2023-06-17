@@ -56,6 +56,16 @@ myst:
 - {{ Enhancement }} `add_event_listener` and `remove_event_listener` now pass
   any additional arguments to the corresponding JavaScript functions.
   {pr}`3929`
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
+- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
+  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
+  so this is good. If they are actually native `.so`s then there is a problem
+  either way.
+  {pr}`3903`
 
 ### Packages
 
@@ -63,7 +73,8 @@ myst:
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
+  Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 
