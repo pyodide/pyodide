@@ -10,7 +10,7 @@ import zipfile
 import typer
 from typer.testing import CliRunner
 from typing import Any
-from pyodide_build import common
+from pyodide_build import common, build_env
 from pyodide_build.cli import (
     build,
     build_recipes,
@@ -282,7 +282,7 @@ def test_config_get(cfg_name, env_var):
         ],
     )
 
-    assert result.stdout.strip() == common.get_build_flag(env_var)
+    assert result.stdout.strip() == build_env.get_build_flag(env_var)
 
 
 def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
@@ -435,7 +435,7 @@ def test_build1(tmp_path, monkeypatch):
         results["backend_flags"] = backend_flags
         return str(outdir / "a.whl")
 
-    monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(build_env, "check_emscripten_version", lambda: None)
     monkeypatch.setattr(pypabuild, "build", mocked_build)
 
     results: dict[str, Any] = {}

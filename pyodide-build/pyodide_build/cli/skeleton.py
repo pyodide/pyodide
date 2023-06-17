@@ -6,7 +6,7 @@ from pathlib import Path
 
 import typer
 
-from .. import common, mkpkg
+from .. import build_env, mkpkg
 from ..logger import logger
 
 app = typer.Typer()
@@ -57,11 +57,11 @@ def new_recipe_pypi(
         cwd = Path.cwd()
 
         try:
-            root = common.search_pyodide_root(cwd)
+            root = build_env.search_pyodide_root(cwd)
         except FileNotFoundError:
             root = cwd
 
-        if common.in_xbuildenv():
+        if build_env.in_xbuildenv():
             root = cwd
 
         recipe_dir_ = root / "packages"
