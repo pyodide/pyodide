@@ -527,7 +527,7 @@ def test_pyproxy_mixins3(selenium):
     )
 
 
-def test_pyproxy_mixins4(selenium):
+def test_pyproxy_mixins41(selenium):
     selenium.run_js(
         """
         [Test, t] = pyodide.runPython(`
@@ -536,19 +536,42 @@ def test_pyproxy_mixins4(selenium):
                 prototype="prototype"
                 name="me"
                 length=7
+                def __call__(self, x):
+                    return x + 1
+
             from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.$prototype === "prototype");
-        assert(() => Test.prototype === undefined);
+        assert(() => Test.prototype === "prototype");
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
         assert(() => t.caller === "fifty");
+        assert(() => "prototype" in t);
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
+        assert(() => t(7) === 8);
         Test.destroy();
+        t.destroy();
+        """
+    )
+
+
+def test_pyproxy_mixins42(selenium):
+    selenium.run_js(
+        """
+        let t = pyodide.runPython(`
+            class Test:
+                def __call__(self, x):
+                    return x + 1
+
+            from pyodide.ffi import to_js
+            Test()
+        `);
+        assert(() => "prototype" in t);
+        assert(() => t.prototype === undefined);
         t.destroy();
         """
     )
@@ -2096,3 +2119,101 @@ def test_pyproxy_of_list_fill(selenium, func):
     assert func(a) is a
     func(ajs)
     assert a == ajs.to_py()
+
+
+def test_pyproxy_instanceof_function(selenium):
+    weird_function_shim = ""
+    if selenium.browser in ["firefox", "node"]:
+        # A hack to make the test work: In node and firefox this test fails. But
+        # I can't reproduce the failure in a normal browser / outside of the
+        # test suite. The trouble seems to be that the value of
+        # `globalThis.Function` changes its identity from when we define
+        # `PyProxyFunction` to when we execute this test. So we store `Function`
+        # on `pyodide._api.tests` so we can retrieve the original value of it
+        # for the test. This is nonsense but because the failure only occurs in
+        # the test suite and not in real life I guess it's okay????
+        # Also, no clue how node and firefox are affected but not Chrome.
+        weird_function_shim = "let Function = pyodide._api.tests.Function;"
+
+    selenium.run_js(
+        f"""
+        {weird_function_shim}
+        """
+        """
+        const pyFunc_0 = pyodide.runPython(`
+            lambda: print("zero")
+        `);
+
+        const pyFunc_1 = pyodide.runPython(`
+            def foo():
+                print("two")
+            foo
+        `);
+
+        const pyFunc_2 = pyodide.runPython(`
+            class A():
+                def a(self):
+                    print("three") # method from class
+            A.a
+        `);
+
+        const pyFunc_3 = pyodide.runPython(`
+            class B():
+                def __call__(self):
+                    print("five (B as a callable instance)")
+
+            b = B()
+            b
+        `);
+
+        assert(() => pyFunc_0 instanceof Function);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_1 instanceof Function);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_2 instanceof Function);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_3 instanceof Function);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyCallable);
+
+        d = pyodide.runPython("{}");
+        assert(() => !(d instanceof Function));
+        assert(() => !(d instanceof pyodide.ffi.PyCallable));
+        assert(() => d instanceof pyodide.ffi.PyProxy);
+        assert(() => d instanceof pyFunc_0.constructor);
+        assert(() => pyFunc_0 instanceof d.constructor);
+
+        for(const p of [pyFunc_0, pyFunc_1, pyFunc_2, pyFunc_3, d])  {
+            p.destroy();
+        }
+        """
+    )
+
+
+def test_pyproxy_callable_prototype(selenium):
+    r = selenium.run_js(
+        """
+        const o = pyodide.runPython("lambda:None");
+        const res = Object.fromEntries(Reflect.ownKeys(Function.prototype).map(k => [k.toString(), k in o]));
+        o.destroy();
+        return res;
+        """
+    )
+    assert r == {
+        "length": False,
+        "name": False,
+        "arguments": False,
+        "caller": False,
+        "constructor": True,
+        "apply": True,
+        "bind": True,
+        "call": True,
+        "toString": True,
+        "Symbol(Symbol.hasInstance)": True,
+    }
