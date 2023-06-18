@@ -38,6 +38,12 @@ myst:
   objects.
   {pr}`3740`, {pr}`3750`
 
+- {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
+  are trying to feature detect whether something is callable or not in
+  JavaScript, the correct way is to use `typeof o === "function"`. But you may
+  have dependencies that don't do this correctly.)
+  {pr}`3925`
+
 ## Version 0.23.3
 
 _June 17, 2023_
