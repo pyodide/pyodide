@@ -12,7 +12,6 @@ import os
 import shutil
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import urllib
 from collections.abc import Iterator
@@ -32,6 +31,8 @@ from .common import (
     find_matching_wheels,
     find_missing_executables,
     make_zip_archive,
+    modify_wheel,
+    replace_so_abi_tags,
     set_build_environment,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
@@ -429,18 +430,6 @@ def compile(
         build(srcpath, outpath, build_env, backend_flags)
 
 
-def replace_so_abi_tags(wheel_dir: Path) -> None:
-    """Replace native abi tag with emscripten abi tag in .so file names"""
-    build_soabi = sysconfig.get_config_var("SOABI")
-    assert build_soabi
-    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
-    assert ext_suffix
-    build_triplet = "-".join(build_soabi.split("-")[2:])
-    host_triplet = common.get_make_flag("PLATFORM_TRIPLET")
-    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
-        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
-
-
 def copy_sharedlibs(
     wheel_file: Path, wheel_dir: Path, lib_dir: Path
 ) -> dict[str, Path]:
@@ -508,55 +497,50 @@ def package_wheel(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
     logger.info(f"Unpacking wheel to {str(wheel)}")
-    unpack_wheel(wheel)
-    wheel.unlink()
+
     name, ver, _ = wheel.name.split("-", 2)
-    wheel_dir_name = f"{name}-{ver}"
-    wheel_dir = distdir / wheel_dir_name
 
-    # update so abi tags after build is complete but before running post script
-    # to maximize sanity.
-    replace_so_abi_tags(wheel_dir)
+    with modify_wheel(wheel) as wheel_dir:
+        # update so abi tags after build is complete but before running post script
+        # to maximize sanity.
+        replace_so_abi_tags(wheel_dir)
 
-    post = build_metadata.post
-    if post:
-        logger.info(f"Running post script in {Path.cwd().absolute()}")
-        bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
-        result = bash_runner.run(post)
-        if result.returncode != 0:
-            logger.error("ERROR: post failed")
-            exit_with_stdio(result)
+        post = build_metadata.post
+        if post:
+            logger.info(f"Running post script in {Path.cwd().absolute()}")
+            bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
+            result = bash_runner.run(post)
+            if result.returncode != 0:
+                logger.error("ERROR: post failed")
+                exit_with_stdio(result)
 
-    vendor_sharedlib = build_metadata.vendor_sharedlib
-    if vendor_sharedlib:
-        lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
-        copy_sharedlibs(wheel, wheel_dir, lib_dir)
+        vendor_sharedlib = build_metadata.vendor_sharedlib
+        if vendor_sharedlib:
+            lib_dir = Path(common.get_make_flag("WASM_LIBRARY_DIR"))
+            copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
-    python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
-    host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
-    if build_metadata.cross_build_env:
-        subprocess.check_call(
-            ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
-        )
+        python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
+        host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
+        if build_metadata.cross_build_env:
+            subprocess.check_call(
+                ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
+            )
 
-    cross_build_files = build_metadata.cross_build_files
-    if cross_build_files:
-        for file_ in cross_build_files:
-            shutil.copy((wheel_dir / file_), host_site_packages / file_)
+        cross_build_files = build_metadata.cross_build_files
+        if cross_build_files:
+            for file_ in cross_build_files:
+                shutil.copy((wheel_dir / file_), host_site_packages / file_)
 
-    test_dir = distdir / "tests"
-    nmoved = 0
-    if build_metadata.unvendor_tests:
-        nmoved = unvendor_tests(wheel_dir, test_dir)
-    if nmoved:
-        with chdir(distdir):
-            shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
-    pack_wheel(wheel_dir)
-    # wheel_dir causes pytest collection failures for in-tree packages like
-    # micropip. To prevent these, we get rid of wheel_dir after repacking the
-    # wheel.
-    shutil.rmtree(wheel_dir)
-    shutil.rmtree(test_dir, ignore_errors=True)
+        try:
+            test_dir = distdir / "tests"
+            nmoved = 0
+            if build_metadata.unvendor_tests:
+                nmoved = unvendor_tests(wheel_dir, test_dir)
+            if nmoved:
+                with chdir(distdir):
+                    shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
+        finally:
+            shutil.rmtree(test_dir, ignore_errors=True)
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
