@@ -947,7 +947,7 @@ EM_JS(bool, isReservedWord, (int word), {
  * action: a javascript string, one of get, set, or delete. For error reporting.
  * word: a javascript string, the property being accessed
  */
-EM_JS(int, normalizeReservedWords, (int action, int word), {
+EM_JS(int, normalizeReservedWords, (int word), {
   // clang-format off
   // 1. if word is not a reserved word followed by 0 or more underscores, return
   //    it unchanged.
@@ -960,19 +960,14 @@ EM_JS(int, normalizeReservedWords, (int action, int word), {
   if (noTrailing_ !== word) {
     return word.slice(0, -1);
   }
-  // 3. If the word is exactly a reserved word, this is an error.
-  let action_ptr = stringToNewUTF8(action);
-  let word_ptr = stringToNewUTF8(word);
-  _setReservedError(action_ptr, word_ptr);
-  _free(action_ptr);
-  _free(word_ptr);
-  throw new Module._PropagatePythonError();
+  // 3. If the word is exactly a reserved word, return it unchanged
+  return word;
   // clang-format on
 });
 
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords("get", UTF8ToString(ptrkey));
+  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
   if (jskey in jsobj) {
     return Hiwire.new_value(jsobj[jskey]);
   }
@@ -985,7 +980,7 @@ JsObject_SetString,
 (JsRef idobj, const char* ptrkey, JsRef idval),
 {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords("set", UTF8ToString(ptrkey));
+  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
   let jsval = Hiwire.get_value(idval);
   jsobj[jskey] = jsval;
 });
@@ -993,7 +988,7 @@ JsObject_SetString,
 
 EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
   let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords("delete", UTF8ToString(ptrkey));
+  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
   delete jsobj[jskey];
 });
 

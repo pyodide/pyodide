@@ -1,0 +1,20 @@
+diff --git a/setup.py b/setup.py
+index 8e061479..c1b592ff 100644
+--- a/setup.py
++++ b/setup.py
+@@ -81,11 +81,12 @@ def file_walk_relative(top, remove=''):
+ 
+ # GEOS
+ try:
+-    geos_version = subprocess.check_output(['geos-config', '--version'])
++    geos_config = os.environ.get("GEOS_CONFIG", "/src/packages/.libs/bin/geos-config")
++    geos_version = subprocess.check_output([geos_config, '--version'])
+     geos_version = tuple(int(v) for v in geos_version.split(b'.')
+                          if 'dev' not in str(v))
+-    geos_includes = subprocess.check_output(['geos-config', '--includes'])
+-    geos_clibs = subprocess.check_output(['geos-config', '--clibs'])
++    geos_includes = subprocess.check_output([geos_config, '--includes'])
++    geos_clibs = subprocess.check_output([geos_config, '--clibs'])
+ except (OSError, ValueError, subprocess.CalledProcessError):
+     warnings.warn(
+         'Unable to determine GEOS version. Ensure you have %s or later '

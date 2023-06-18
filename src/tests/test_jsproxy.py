@@ -665,6 +665,56 @@ def test_unregister_jsmodule_error(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star1(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js("pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }});")
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" in g
+        assert "f" in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+        assert g["b"] == 7
+        assert g["f"](9) == 10
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star2(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js(
+        "pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }, __all__ : pyodide.toPy(['a'])});"
+    )
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" not in g
+        assert "f" not in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
 def test_nested_import(selenium_standalone):
     selenium = selenium_standalone
     assert (
@@ -2359,12 +2409,15 @@ def test_python_reserved_keywords(selenium):
     assert o.async___ == 3
     assert getattr(o, "async_") == 1  # noqa: B009
     assert getattr(o, "async__") == 2  # noqa: B009
-    with pytest.raises(AttributeError, match="async"):
-        getattr(o, "async")
-    with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
-        setattr(o, "async", 2)
-    with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
-        delattr(o, "async")
+    assert getattr(o, "async") == 1
+
+    assert hasattr(o, "async_")
+    assert hasattr(o, "async")
+    setattr(o, "async", 2)
+    assert o.async_ == 2
+    delattr(o, "async")
+    assert not hasattr(o, "async_")
+    assert not hasattr(o, "async")
 
 
 @run_in_pyodide

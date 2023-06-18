@@ -1307,19 +1307,35 @@ def test_custom_stdin_stdout2(selenium):
 
 def test_home_directory(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    home = "/home/custom_home"
     selenium.run_js(
         """
-        let pyodide = await loadPyodide({
-            homedir : "%s",
+        const homedir = "/home/custom_home";
+        const pyodide = await loadPyodide({
+            homedir,
         });
         return pyodide.runPython(`
             import os
-            os.getcwd() == "%s"
+            os.getcwd() == "${homedir}"
         `)
         """
-        % (home, home)
     )
+    assert "The homedir argument to loadPyodide is deprecated" in selenium.logs
+
+
+def test_env(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    hashval = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            env : {PYTHONHASHSEED : 1},
+        });
+        return pyodide.runPython(`
+            hash((1,2,3))
+        `)
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert hashval == -2022708474
 
 
 def test_version_variable(selenium):

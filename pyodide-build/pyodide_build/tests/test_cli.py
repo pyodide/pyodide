@@ -435,7 +435,12 @@ def test_build1(tmp_path, monkeypatch):
         results["backend_flags"] = backend_flags
         return str(outdir / "a.whl")
 
+    from contextlib import nullcontext
+
     monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(common, "modify_wheel", lambda whl: nullcontext())
+    monkeypatch.setattr(common, "replace_so_abi_tags", lambda whl: None)
+
     monkeypatch.setattr(pypabuild, "build", mocked_build)
 
     results: dict[str, Any] = {}
@@ -451,3 +456,35 @@ def test_build1(tmp_path, monkeypatch):
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
     assert results["backend_flags"] == "x y z"
+
+
+def test_build2_replace_so_abi_tags(selenium, tmp_path, monkeypatch):
+    """
+    We intentionally include an "so" (actually an empty file) with Linux slug in
+    the name into the wheel generated from the package in
+    replace_so_abi_tags_test_package. Test that `pyodide build` renames it to
+    have the Emscripten slug. In order to ensure that this works on non-linux
+    machines too, we monkey patch config vars to look like a linux machine.
+    """
+    import sysconfig
+
+    config_vars = sysconfig.get_config_vars()
+    config_vars["EXT_SUFFIX"] = ".cpython-311-x86_64-linux-gnu.so"
+    config_vars["SOABI"] = "cpython-311-x86_64-linux-gnu"
+
+    def my_get_config_vars(*args):
+        return config_vars
+
+    monkeypatch.setattr(sysconfig, "get_config_vars", my_get_config_vars)
+
+    srcdir = Path(__file__).parent / "replace_so_abi_tags_test_package"
+    outdir = tmp_path / "out"
+    app = typer.Typer()
+    app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
+    result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir)])
+    wheel_file = next(outdir.glob("*.whl"))
+    print(zipfile.ZipFile(wheel_file).namelist())
+    so_file = next(
+        x for x in zipfile.ZipFile(wheel_file).namelist() if x.endswith(".so")
+    )
+    assert so_file.endswith(".cpython-311-wasm32-emscripten.so")
