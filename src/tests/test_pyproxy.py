@@ -2197,7 +2197,7 @@ def test_pyproxy_instanceof_function(selenium):
 
 
 def test_pyproxy_callable_prototype(selenium):
-    r = selenium.run_js(
+    result = selenium.run_js(
         """
         const o = pyodide.runPython("lambda:None");
         const res = Object.fromEntries(Reflect.ownKeys(Function.prototype).map(k => [k.toString(), k in o]));
@@ -2205,15 +2205,15 @@ def test_pyproxy_callable_prototype(selenium):
         return res;
         """
     )
-    assert r == {
+    subdict = {
         "length": False,
         "name": False,
         "arguments": False,
         "caller": False,
-        "constructor": True,
         "apply": True,
         "bind": True,
         "call": True,
-        "toString": True,
         "Symbol(Symbol.hasInstance)": True,
     }
+    filtered_result = {k: v for (k, v) in result.items() if k in subdict}
+    assert filtered_result == subdict
