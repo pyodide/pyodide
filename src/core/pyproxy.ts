@@ -14,6 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
+declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
@@ -322,9 +323,10 @@ Module.getPyProxyClass = function (flags: number) {
     descriptors,
     Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
-  let new_proto = Object.create(PyProxy.prototype, descriptors);
+  const super_proto = flags & IS_CALLABLE ? PyProxyFunctionProto : PyProxyProto;
+  const sub_proto = Object.create(super_proto, descriptors);
   function NewPyProxyClass() {}
-  NewPyProxyClass.prototype = new_proto;
+  NewPyProxyClass.prototype = sub_proto;
   pyproxyClassMap.set(flags, NewPyProxyClass);
   return NewPyProxyClass;
 };
@@ -471,6 +473,12 @@ export class PyProxy {
   $$props: PyProxyProps;
   /** @private */
   $$flags: number;
+
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return [PyProxy, PyProxyFunction].some((cls) =>
+      Function.prototype[Symbol.hasInstance].call(cls, obj),
+    );
+  }
 
   /**
    * @private
@@ -733,6 +741,20 @@ export class PyProxy {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
+
+const PyProxyProto = PyProxy.prototype;
+// For some weird reason in the node and firefox tests, the identity of
+// `Function` changes between now and the test suite. Can't reproduce this
+// outside the test suite though...
+// See test_pyproxy_instanceof_function.
+Tests.Function = Function;
+const PyProxyFunctionProto = Object.create(
+  Function.prototype,
+  Object.getOwnPropertyDescriptors(PyProxyProto),
+);
+function PyProxyFunction() {}
+PyProxyFunction.prototype = PyProxyFunctionProto;
+globalThis.PyProxyFunction = PyProxyFunction;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`
@@ -2024,6 +2046,36 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
+function filteredHasKey(
+  jsobj: PyProxy,
+  jskey: string | symbol,
+  filterProto: boolean,
+) {
+  if (jsobj instanceof Function) {
+    // If we are a PyProxy of a callable we have to subclass function so that if
+    // someone feature detects callables with `instanceof Function` it works
+    // correctly. But the callable might have attributes `name` and `length` and
+    // we don't want to shadow them with the values from `Function.prototype`.
+    return (
+      jskey in jsobj &&
+      !(
+        [
+          "name",
+          "length",
+          "caller",
+          "arguments",
+          // we are required by JS law to return `true` for `"prototype" in pycallable`
+          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+          // So we filter prototype out of the "get" trap but not out of the "has" trap
+          filterProto ? "prototype" : undefined,
+        ] as (string | symbol)[]
+      ).includes(jskey)
+    );
+  } else {
+    return jskey in jsobj;
+  }
+}
+
 // See explanation of which methods should be defined here and what they do
 // here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -2031,11 +2083,10 @@ const PyProxyHandlers = {
   isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any): boolean {
+  has(jsobj: PyProxy, jskey: string | symbol): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
-    let objHasKey = Reflect.has(jsobj, jskey);
-    if (objHasKey) {
+    if (filteredHasKey(jsobj, jskey, false)) {
       return true;
     }
     // python_hasattr will crash if given a Symbol.
@@ -2047,13 +2098,13 @@ const PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj: PyProxy, jskey: any): any {
+  get(jsobj: PyProxy, jskey: string | symbol): any {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
-    if (jskey in jsobj || typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
@@ -2067,10 +2118,10 @@ const PyProxyHandlers = {
       return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
+  set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${jskey}'`);
+      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
     }
     // python_setattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
@@ -2082,10 +2133,10 @@ const PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
+  deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
     if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${jskey}'`);
+      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
     }
     if (typeof jskey === "symbol") {
       return Reflect.deleteProperty(jsobj, jskey);
