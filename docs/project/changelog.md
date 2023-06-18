@@ -13,7 +13,10 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.23.3
+
+_June 17, 2023_
+
 
 - {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
   (as well as `hasattr` and `setattr`). This fixes a regression introduced in
