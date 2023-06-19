@@ -2,6 +2,7 @@ import json
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve
 
 from .common import _get_make_environment_vars, exit_with_stdio
@@ -65,15 +66,20 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
     cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
-    if (repodata_json := xbuildenv_root / "dist" / "repodata.json").exists():
-        repodata_bytes = repodata_json.read_bytes()
+    lockfile_path = xbuildenv_root / "dist" / "pyodide-lock.json"
+    if lockfile_path.exists():
+        lockfile_bytes = lockfile_path.read_bytes()
     else:
-        repodata_url = cdn_base + "repodata.json"
-        with urlopen(repodata_url) as response:
-            repodata_bytes = response.read()
-    repodata = json.loads(repodata_bytes)
-    version = repodata["info"]["version"]
-    create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
+        try:
+            with urlopen(cdn_base + "pyodide-lock.json") as response:
+                lockfile_bytes = response.read()
+        except HTTPError:
+            # Try again with old url
+            with urlopen(cdn_base + "repodata.json") as response:
+                lockfile_bytes = response.read()
+    lockfile = json.loads(lockfile_bytes)
+    version = lockfile["info"]["version"]
+    create_pypa_index(lockfile["packages"], xbuildenv_root, cdn_base)
 
     (xbuildenv_path / ".installed").touch()
 
