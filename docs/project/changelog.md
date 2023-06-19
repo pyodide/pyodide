@@ -59,6 +59,10 @@ myst:
   have dependencies that don't do this correctly.)
   {pr}`3925`
 
+- {{ API }} Changed the name of the default lockfile from `repodata.json` to
+  `pyodide-lock.json`
+  {pr}`3824`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
