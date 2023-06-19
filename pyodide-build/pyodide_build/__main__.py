@@ -34,6 +34,7 @@ def make_parser() -> argparse.ArgumentParser:
 
 
 def main() -> None:
+    1 / 0
     init_environment()
 
     main_parser = make_parser()

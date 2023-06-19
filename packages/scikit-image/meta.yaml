@@ -1,6 +1,6 @@
 package:
   name: scikit-image
-  version: 0.20.0
+  version: 0.21.0rc1
   top-level:
     - skimage
       # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
@@ -8,8 +8,8 @@ source:
   patches:
     - patches/make-tifffile-optional.patch
     - patches/meson-debug.patch
-  sha256: 2cd784fce18bd31d71ade62c6221440199ead03acf7544086261ee032264cf61
-  url: https://files.pythonhosted.org/packages/03/55/0ff6e41c39c64d9ad18bf31c953c28f525533609c7371fa2790558ca8197/scikit_image-0.20.0.tar.gz
+  sha256: 98b7eb01ad1645475440e2f5fed82bc06b657fe31f648bc2a4c163dd3b794e79
+  url: https://files.pythonhosted.org/packages/9a/31/ecc1b9d98cd3dcc50fd6e3fe2839fd111c1e43ee356452e2fad189da6d38/scikit_image-0.21.0rc1.tar.gz
 
 build:
   script: |
@@ -19,7 +19,7 @@ build:
     export LDFLAGS=${SIDE_MODULE_LDFLAGS/-L /-L}
     echo CFLAGS: $CFLAGS
     echo LDFLAGS: $LDFLAGS
-  backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross
+  backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross builddir=my-build
 
 requirements:
   host:
