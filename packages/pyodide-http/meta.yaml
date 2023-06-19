@@ -1,11 +1,11 @@
 package:
   name: pyodide-http
-  version: 0.2.0
+  version: 0.2.1
   top-level:
     - pyodide_http
 source:
-  url: https://files.pythonhosted.org/packages/71/54/fcdafe22904c679ba7b9d562f86f43cc71bfb65197f2b51ef6e6698d6296/pyodide_http-0.2.0-py3-none-any.whl
-  sha256: 0ab778a95fc09ce59f15e4890202d17ca48dfdbe8ee2e6139e9a8589fc54d61f
+  url: https://files.pythonhosted.org/packages/2d/14/d1bf3b7141ad5a42c26e4173a69e3e6529bd92b05bc587c570d28b6a3ce8/pyodide_http-0.2.1-py3-none-any.whl
+  sha256: 504f62904536a91049c12d0b9162ebaa187a84a3dd877e17c04fd9bf6ec3b68e
 about:
   home: https://github.com/koenvo/pyodide-http
   PyPI: https://pypi.org/project/pyodide-http
