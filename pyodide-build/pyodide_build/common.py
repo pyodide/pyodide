@@ -256,12 +256,18 @@ def get_build_environment_vars() -> dict[str, str]:
     return env
 
 
-def _get_make_environment_vars() -> dict[str, str]:
+def _get_make_environment_vars(*, pyodide_root: Path | None = None) -> dict[str, str]:
     """Load environment variables from Makefile.envs
 
-    This allows us to set all build vars in one place"""
+    This allows us to set all build vars in one place
 
-    PYODIDE_ROOT = get_pyodide_root()
+    Parameters
+    ----------
+    pyodide_root
+        The root directory of the Pyodide repository. If None, this will be inferred.
+    """
+
+    PYODIDE_ROOT = get_pyodide_root() if pyodide_root is None else pyodide_root
     environment = {}
     result = subprocess.run(
         ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
@@ -374,24 +380,6 @@ def init_environment(*, quiet: bool = False) -> None:
     """
     Initialize Pyodide build environment.
     This function needs to be called before any other Pyodide build functions.
-    """
-    if os.environ.get("__LOADED_PYODIDE_ENV"):
-        return
-
-    os.environ["__LOADED_PYODIDE_ENV"] = "1"
-
-    _set_pyodide_root(quiet=quiet)
-
-
-def _set_pyodide_root(*, quiet: bool = False) -> None:
-    """
-    Set PYODIDE_ROOT environment variable.
-
-    This function works both in-tree and out-of-tree builds:
-    - In-tree builds: Searches for the root of the Pyodide repository in parent directories
-    - Out-of-tree builds: Downloads and installs the Pyodide build environment into the current directory
-
-    Note: this function is supposed to be called only in init_environment(), and should not be called directly.
 
     Parameters
     ----------
@@ -399,38 +387,40 @@ def _set_pyodide_root(*, quiet: bool = False) -> None:
         If True, do not print any messages
     """
 
-    from . import install_xbuildenv  # avoid circular import
-
-    # If we are building docs, we don't need to know the PYODIDE_ROOT
-    if "sphinx" in sys.modules:
-        os.environ["PYODIDE_ROOT"] = ""
-        return
-
-    # 1) If PYODIDE_ROOT is already set, do nothing
+    # Already initialized
     if "PYODIDE_ROOT" in os.environ:
         return
 
-    # 2) If we are doing an in-tree build,
-    #    set PYODIDE_ROOT to the root of the Pyodide repository
     try:
-        os.environ["PYODIDE_ROOT"] = str(search_pyodide_root(Path.cwd()))
-        return
-    except FileNotFoundError:
-        pass
+        root = search_pyodide_root(Path.cwd())
+    except FileNotFoundError:  # Not in Pyodide tree
+        root = _init_xbuild_env(quiet=quiet)
 
-    # 3) If we are doing an out-of-tree build,
-    #    download and install the Pyodide build environment
+    os.environ["PYODIDE_ROOT"] = str(root)
+
+
+def _init_xbuild_env(*, quiet: bool = False) -> Path:
+    """
+    Initialize the build environment for out-of-tree builds.
+
+    Parameters
+    ----------
+    quiet
+        If True, do not print any messages
+
+    Returns
+    -------
+        The path to the Pyodide root directory inside the xbuild environment
+    """
+    from . import install_xbuildenv  # avoid circular import
+
+    # TODO: Do not hardcode the path
+    # TODO: Add version numbers to the path
     xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
-
-    if xbuildenv_path.exists():
-        os.environ["PYODIDE_ROOT"] = str(xbuildenv_path / "xbuildenv" / "pyodide-root")
-        return
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
-        # install_xbuildenv will set PYODIDE_ROOT env variable, so we don't need to do it here
-        # TODO: return the path to the xbuildenv instead of setting the env variable inside install_xbuildenv
-        install_xbuildenv.install(xbuildenv_path, download=True)
+        return install_xbuildenv.install(xbuildenv_path, download=True)
 
 
 @functools.cache
@@ -576,3 +566,64 @@ def _get_sha256_checksum(archive: Path) -> str:
             if len(chunk) < CHUNK_SIZE:
                 break
     return h.hexdigest()
+
+
+def unpack_wheel(wheel_path: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_path.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", wheel_path, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {wheel_path.name} failed")
+        exit_with_stdio(result)
+
+
+def pack_wheel(wheel_dir: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_dir.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", wheel_dir, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {wheel_dir} failed")
+        exit_with_stdio(result)
+
+
+@contextmanager
+def modify_wheel(wheel: Path) -> Iterator[Path]:
+    """Unpacks the wheel into a temp directory and yields the path to the
+    unpacked directory.
+
+    The body of the with block is expected to inspect the wheel contents and
+    possibly change it. If the body of the "with" block is successful, on
+    exiting the with block the wheel contents are replaced with the updated
+    contents of unpacked directory. If an exception is raised, then the original
+    wheel is left unchanged.
+    """
+    with TemporaryDirectory() as temp_dir:
+        unpack_wheel(wheel, Path(temp_dir))
+        name, ver, _ = wheel.name.split("-", 2)
+        wheel_dir_name = f"{name}-{ver}"
+        wheel_dir = Path(temp_dir) / wheel_dir_name
+        yield wheel_dir
+        wheel.unlink()
+        pack_wheel(wheel_dir, wheel.parent)
+
+
+def replace_so_abi_tags(wheel_dir: Path) -> None:
+    """Replace native abi tag with emscripten abi tag in .so file names"""
+    import sysconfig
+
+    build_soabi = sysconfig.get_config_var("SOABI")
+    assert build_soabi
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    assert ext_suffix
+    build_triplet = "-".join(build_soabi.split("-")[2:])
+    host_triplet = get_build_flag("PLATFORM_TRIPLET")
+    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
+        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))

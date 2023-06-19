@@ -441,30 +441,70 @@ lambda = (x) => {return x + 1};
 pyodide.runPython(`from js import lambda; print(lambda(1))`);
 ```
 
-For JS objects with attributes that are Python reserved keywords, {py:func}`getattr` and {py:func}`setattr` can be used to access the attribute by name:
+If you try to access a Python reserved word followed by one or more underscores
+on a `JsProxy`, Pyodide will remove a single underscore:
+
+```pyodide
+pyodide.runPython(`
+    from js import Array
+    print(Array.from_([1,2,3]))
+`);
+```
+
+If you meant to access the keyword with an underscore at the end, you'll have to
+add an extra one:
+
+```pyodide
+globalThis.lambda = 7;
+globalThis.lambda_ = 8;
+pyodide.runPython(`
+    from js import lambda_, lambda__
+    print(lambda_, lambda__) # 7, 8
+`);
+```
+
+Another example:
+
+```pyodide
+people = {global: "lots and lots"};
+pyodide.runPython(`
+    from js import people
+    # the dir contains global_ but not global:
+    assert "global_" in dir(people)
+    assert "global" not in dir(people)
+    people.global_ = 'even more'
+    print(people.global_)
+`);
+```
+
+You can also use `getattr`, `setattr`, and `delattr` to access the attribute:
 
 ```pyodide
 pyodide.runPython(`
     from js import Array
     fromFunc = getattr(Array, 'from')
     print(fromFunc([1,2,3]))
-    `);
+`);
 
 people = {global: "lots and lots"};
 pyodide.runPython(`
     from js import people
     setattr(people, 'global', 'even more')
     print(getattr(people, 'global'))
-    `);
+`);
 ```
 
-For objects whose names are keywords, one can similarly use {py:func}`getattr` on the `js` module itself:
+For JavaScript globals whose names are keywords, one can similarly use
+{py:func}`getattr` on the `js` module itself:
 
 ```pyodide
-lambda = (x) => {return x + 1};
+globalThis.lambda = 7;
+globalThis.lambda_ = 8;
 pyodide.runPython(`
     import js
     js_lambda = getattr(js, 'lambda')
-    print(js_lambda(1))
-    `);
+    js_lambda_ = getattr(js, 'lambda_')
+    js_lambda__ = getattr(js, 'lambda__')
+    print(js_lambda, js_lambda_, js_lambda__) # 7, 7, 8
+`);
 ```

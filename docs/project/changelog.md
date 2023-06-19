@@ -39,11 +39,25 @@ myst:
   it can be raised in Python.
   {pr}`3868`
 
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
+
 - {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
   functions that use the `PySequence_*` APIs, it now works as expected. Also
   `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
   new array with the result values from the iterable appended.
   {pr}`3904`
+
+- {{ Enhancement }} It is now possible to pass environment variables to
+  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
+  `{env: {HOME: whatever_directory}}`.
+  {pr}`3870`
+
+- {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
+  are trying to feature detect whether something is callable or not in
+  JavaScript, the correct way is to use `typeof o === "function"`. But you may
+  have dependencies that don't do this correctly.)
+  {pr}`3925`
 
 ### Packages
 
@@ -51,9 +65,25 @@ myst:
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
+  Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
+
+## Version 0.23.3
+
+_June 17, 2023_
+
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
+- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
+  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
+  so this is good. If they are actually native `.so`s then there is a problem
+  either way.
+  {pr}`3903`
 
 ## Version 0.23.2
 
