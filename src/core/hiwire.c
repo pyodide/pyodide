@@ -393,10 +393,22 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
-EM_JS(JsRef, hiwire_syncify, (JsRef idpromise), {
-  // See continuations.js for definition of syncifyHandler.
-  return Module.syncifyHandler(idpromise);
+
+JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
+
+EM_JS(void, hiwire_syncify_error, (void), {
+  Module.handle_js_error(Module.syncify_error);
+  delete Module.syncify_error;
 })
+
+JsRef hiwire_syncify(JsRef idpromise) {
+  JsRef result = syncifyHandler(idpromise);
+  if(result == 0) {
+    hiwire_syncify_error();
+  }
+  return result;
+}
+
 
 EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off

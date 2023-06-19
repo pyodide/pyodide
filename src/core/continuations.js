@@ -233,14 +233,7 @@ function setSyncifyHandler() {
     },
   });
   const syncify_promise = instance.exports.o;
-  Module.syncifyHandler = function (idpromise) {
-    const result = syncify_promise(idpromise);
-    if (result === 0) {
-      Module.handle_js_error(Module.syncify_error);
-      delete Module.syncify_error;
-    }
-    return result;
-  };
+  Module.HEAP32[Module._syncifyHandler/4] = Module.addFunction(syncify_promise);
 }
 
 Module.suspendableApply = function (...args) {
