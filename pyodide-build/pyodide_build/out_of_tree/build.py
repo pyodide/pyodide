@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from .. import build_env, pypabuild
+from .. import build_env, common, pypabuild
 
 
 def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
@@ -28,4 +28,9 @@ def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
 
     with build_env_ctx as env:
         built_wheel = pypabuild.build(srcdir, outdir, env, " ".join(args))
-    return Path(built_wheel)
+
+    wheel_path = Path(built_wheel)
+    with common.modify_wheel(wheel_path) as wheel_dir:
+        build_env.replace_so_abi_tags(wheel_dir)
+
+    return wheel_path

@@ -401,7 +401,7 @@ def test_run_python_async_toplevel_await(selenium):
         """
         await pyodide.runPythonAsync(`
             from js import fetch
-            resp = await fetch("repodata.json")
+            resp = await fetch("pyodide-lock.json")
             json = (await resp.json()).to_py()["packages"]
             assert "micropip" in json
         `);
@@ -1402,7 +1402,7 @@ def test_fullstdlib(selenium_standalone_noload):
             import pyodide_js
             import micropip
             loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
         `);
         """
     )
@@ -1553,7 +1553,7 @@ def test_module_not_found_hook(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    repodata_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = ["micropip", "packaging", "regex"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(
@@ -1570,7 +1570,7 @@ def test_module_not_found_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-    for lib in repodata_packages:
+    for lib in lockfile_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
         ):

@@ -7,6 +7,7 @@ import hashlib
 import os
 import shutil
 import subprocess
+import sys
 import textwrap
 import zipfile
 from collections import deque
@@ -264,3 +265,50 @@ def _get_sha256_checksum(archive: Path) -> str:
             if len(chunk) < CHUNK_SIZE:
                 break
     return h.hexdigest()
+
+
+def unpack_wheel(wheel_path: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_path.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "unpack", wheel_path, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Unpacking wheel {wheel_path.name} failed")
+        exit_with_stdio(result)
+
+
+def pack_wheel(wheel_dir: Path, target_dir: Path | None = None) -> None:
+    if target_dir is None:
+        target_dir = wheel_dir.parent
+    result = subprocess.run(
+        [sys.executable, "-m", "wheel", "pack", wheel_dir, "-d", target_dir],
+        check=False,
+        encoding="utf-8",
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Packing wheel {wheel_dir} failed")
+        exit_with_stdio(result)
+
+
+@contextmanager
+def modify_wheel(wheel: Path) -> Iterator[Path]:
+    """Unpacks the wheel into a temp directory and yields the path to the
+    unpacked directory.
+
+    The body of the with block is expected to inspect the wheel contents and
+    possibly change it. If the body of the "with" block is successful, on
+    exiting the with block the wheel contents are replaced with the updated
+    contents of unpacked directory. If an exception is raised, then the original
+    wheel is left unchanged.
+    """
+    with TemporaryDirectory() as temp_dir:
+        unpack_wheel(wheel, Path(temp_dir))
+        name, ver, _ = wheel.name.split("-", 2)
+        wheel_dir_name = f"{name}-{ver}"
+        wheel_dir = Path(temp_dir) / wheel_dir_name
+        yield wheel_dir
+        wheel.unlink()
+        pack_wheel(wheel_dir, wheel.parent)
