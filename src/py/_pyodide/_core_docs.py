@@ -1028,12 +1028,12 @@ class JsDomElement(JsProxy):
         pass
 
     def addEventListener(
-        self, event: str, listener: Callable[[Any], None], kwargs: Any
+        self, event: str, listener: Callable[[Any], None], **kwargs: Any
     ) -> None:
         pass
 
     def removeEventListener(
-        self, event: str, listener: Callable[[Any], None], kwargs: Any
+        self, event: str, listener: Callable[[Any], None], **kwargs: Any
     ) -> None:
         pass
 
