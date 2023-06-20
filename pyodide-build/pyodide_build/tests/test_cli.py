@@ -426,7 +426,7 @@ def test_py_compile(tmp_path, target, compression_level):
             assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
 
 
-def test_build1(tmp_path, monkeypatch):
+def test_build1(selenium, tmp_path, monkeypatch):
     from pyodide_build import pypabuild
 
     def mocked_build(srcdir: Path, outdir: Path, env: Any, backend_flags: Any) -> str:
@@ -450,8 +450,7 @@ def test_build1(tmp_path, monkeypatch):
     app = typer.Typer()
     app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
     result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir), "x", "y", "z"])
-    print(result)
-    print(result.stdout)
+
     assert result.exit_code == 0
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
