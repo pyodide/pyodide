@@ -83,3 +83,25 @@ continuations_init(void)
 {
   return continuations_init_js();
 }
+
+typedef PyObject* Trampoline(PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw);
+
+EM_JS(Trampoline*, continuations_get_trampoline, (PyCFunctionWithKeywords func), {
+  return Module.continuationsGetTrampoline(func);
+})
+
+EM_JS(PyObject*, normal_trampoline, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
+    return wasmTable.get(func)(self, args, kw);
+});
+
+
+bool has_suspender = false;
+
+PyObject*
+_PyCFunctionWithKeywords_TrampolineCall(PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw) {
+  if(has_suspender) {
+    Trampoline* trampoline = continuations_get_trampoline(func);
+    return trampoline(func, self, args, kw);
+  }
+  return normal_trampoline(func, self, args, kw);
+}

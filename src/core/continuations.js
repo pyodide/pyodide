@@ -272,6 +272,181 @@ Module.wrapApply = function (apply) {
   );
 };
 
+const trampolineMap = new Map();
+Module.continuationsGetTrampoline = function (func) {
+  const functype = WebAssembly.Function.type(wasmTableMirror[func]);
+  const functypeStr = `parameters:${functype.parameters};result:${functype.result}`;
+  const result = trampolineMap.get(functypeStr);
+  if(result) {
+    return result;
+  }
+  const expectedType = {parameters: Array(3).fill('i32'), results: ['i32']};
+  const trampoline = createTrampoline(expectedType, functype);
+  const ptr = addFunction(trampoline);
+  trampolineMap.set(functypeStr, ptr);
+  return ptr;
+};
+
+const typeCodes = {
+  "i32": 0x7f,
+  'i64': 0x7e,
+  'f32': 0x7d,
+  'f64': 0x7c,
+  'externref': 0x6f,
+};
+
+// const constCodes = {
+//   "i32": 0x41,
+//   'i64': 0x42,
+//   'f32': 0x43,
+//   'f64': 0x44,
+// };
+
+function generateFuncType({parameters, results}, target){
+  target.push(0x60 /* form: func */);
+  uleb128Encode(parameters.length, target);
+  for (let p of parameters) {
+    target.push(typeCodes[p]);
+  }
+  uleb128Encode(results.length, target);
+  for (let p of results) {
+    target.push(typeCodes[p]);
+  }
+}
+
+function insertSectionPrefix(sectionCode, sectionBody){
+  var section = [sectionCode];
+  uleb128Encode(sectionBody.length, section); // length of section in bytes
+  section.push(...sectionBody);
+  return section;
+}
+
+const WASM_PRELUDE = [
+  0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
+  0x01, 0x00, 0x00, 0x00, // version: 1
+];
+
+function provideSuspender(wrapped_jsfunc) {
+  const sections = [WASM_PRELUDE];
+  const typeSection = [
+    0x02, // number of types = 2
+  ];
+  const type = WebAssembly.Function.type(wrapped_jsfunc);
+  generateFuncType(type, typeSection);
+  type.parameters.shift();
+  generateFuncType(type, typeSection);
+  sections.push(insertSectionPrefix(0x01, typeSection));
+
+  const importSection = [
+    0x02, // number of imports
+    // Import the wasmTable, which we will call "t"
+    0x01, 0x65, // module "e"
+    0x01, 0x73, // field "s"
+    0x03, 0x6F, 0x01, // global externref mutable
+    0x01, 0x65, // module "e"
+    0x01, 0x69, // field "i"
+    0x00, 0x00, // function of type "type"
+  ];
+  sections.push(insertSectionPrefix(0x02, importSection));
+  const functionSection = [
+    0x01, // number of functions = 1
+    0x01, // type 1
+  ];
+  sections.push(insertSectionPrefix(0x03, functionSection));
+  const exportSection = [
+    0x01, // One export
+    0x01, 0x6f, // name "o"
+    0x00, // type: function
+    0x01, // function index 1
+  ];
+  sections.push(insertSectionPrefix(0x07, exportSection));
+  
+  const code = [];
+  code.push(        
+    0x01, // One run
+    0x01, // of length 1
+    0x6f, // of exterref
+  );
+  const suspenderLocal = type.parameters.length;
+  code.push(0x23, 0); // global.get 0
+  code.push(0x22, suspenderLocal); // local.tee suspender
+  for(let i = 0; i < type.parameters.length; i ++) {
+    code.push(0x20, i); // local.get i
+  }
+  code.push(0x10, 0x00);  // call "e.i"
+  code.push(0x20, suspenderLocal); // local.get suspender
+  code.push(0x24, 0); // global.set 0
+  code.push(0x0b); // end
+  const codeSection = insertSectionPrefix(0x01 /* number of codes */, code);
+  sections.push(insertSectionPrefix(0x0A, codeSection));
+
+  const bytes = new Uint8Array([].concat.apply([], sections));
+  console.log(Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join(""));
+  // We can compile this wasm module synchronously because it is small.
+  const module = new WebAssembly.Module(bytes);
+  const instance = new WebAssembly.Instance(module, {e: {i: wrapped_jsfunc, s: Module.suspenderGlobal}});
+  const trampoline = instance.exports['o'];
+  return trampoline;
+}
+globalThis.provideSuspender = provideSuspender;
+
+function createPromising(func) {
+  const sections = [WASM_PRELUDE];
+  const typeSection = [
+    0x02, // number of types = 2
+  ];
+  const type = WebAssembly.Function.type(func);
+  generateFuncType(type, typeSection);
+  type.parameters.unshift("externref");
+  generateFuncType(type, typeSection);
+  sections.push(insertSectionPrefix(0x01, typeSection));
+
+  const importSection = [
+    0x02, // number of imports
+    // Import the wasmTable, which we will call "t"
+    0x01, 0x65, // module "e"
+    0x01, 0x73, // field "s"
+    0x03, 0x6F, 0x01, // global externref mutable
+    0x01, 0x65, // module "e"
+    0x01, 0x69, // field "i"
+    0x00, 0x00, // function of type "type"
+  ];
+  sections.push(insertSectionPrefix(0x02, importSection));
+  const functionSection = [
+    0x01, // number of functions = 1
+    0x01, // type 1
+  ];
+  sections.push(insertSectionPrefix(0x03, functionSection));
+  const exportSection = [
+    0x01, // One export
+    0x01, 0x6f, // name "o"
+    0x00, // type: function
+    0x01, // the function we define
+  ];
+  sections.push(insertSectionPrefix(0x07, exportSection));
+  
+  const code = [];
+  code.push(0); // no locals
+  code.push(0x20, 0); // local.get 0
+  code.push(0x24, 0); // global.set 0
+  for(let i = 1; i < type.parameters.length; i ++) {
+    code.push(0x20, i); // local.get i
+  }
+  code.push(0x10, 0x00);  // call "e.i"
+  code.push(0x0b); // end
+  const codeSection = insertSectionPrefix(0x01 /* number of codes */, code);
+  sections.push(insertSectionPrefix(0x0A, codeSection));
+
+  const bytes = new Uint8Array([].concat.apply([], sections));
+  console.log(Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join(""));
+  // We can compile this wasm module synchronously because it is small.
+  const module = new WebAssembly.Module(bytes);
+  const instance = new WebAssembly.Instance(module, {e: {i: func, s: Module.suspenderGlobal}});
+  const trampoline = instance.exports['o'];
+  return trampoline;
+}
+
+
 /**
  * This sets up syncify to work.
  *
@@ -297,7 +472,7 @@ function initSuspenders() {
       { value: "externref", mutable: true },
       null,
     );
-    Module.suspendableApplyHandler = Module.wrapApply(
+    Module.suspendableApplyHandler = createPromising(
       Module.asm._pyproxy_apply,
     );
     Module.validSuspender = new WebAssembly.Global(
@@ -306,7 +481,9 @@ function initSuspenders() {
     );
     setSyncifyHandler();
     Module.suspendersAvailable = true;
+    HEAP32[_has_suspender/4] = 1
   } catch (e) {
+    console.warn(e);
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
     Module.suspendersAvailable = false;
@@ -318,3 +495,4 @@ function initSuspenders() {
   }
 }
 initSuspenders();
+
