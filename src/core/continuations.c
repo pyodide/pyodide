@@ -84,24 +84,58 @@ continuations_init(void)
   return continuations_init_js();
 }
 
-typedef PyObject* Trampoline(PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw);
-
-EM_JS(Trampoline*, continuations_get_trampoline, (PyCFunctionWithKeywords func), {
-  return Module.continuationsGetTrampoline(func);
-})
-
-EM_JS(PyObject*, normal_trampoline, (PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw), {
-    return wasmTable.get(func)(self, args, kw);
-});
-
-
 bool has_suspender = false;
 
+EM_JS(
+  PyObject*,
+  normal_trampoline,
+  (PyCFunctionWithKeywords func, PyObject* self, PyObject* args, PyObject* kw),
+  { return wasmTable.get(func)(self, args, kw); });
+
+typedef PyObject*
+Trampoline(PyCFunctionWithKeywords func,
+           PyObject* self,
+           PyObject* args,
+           PyObject* kw);
+
+Trampoline* async_trampoline = NULL;
+
 PyObject*
-_PyCFunctionWithKeywords_TrampolineCall(PyCFunctionWithKeywords func, PyObject *self, PyObject *args, PyObject *kw) {
-  if(has_suspender) {
-    Trampoline* trampoline = continuations_get_trampoline(func);
-    return trampoline(func, self, args, kw);
+_PyCFunctionWithKeywords_TrampolineCall(PyCFunctionWithKeywords func,
+                                        PyObject* self,
+                                        PyObject* args,
+                                        PyObject* kw)
+{
+  if (has_suspender) {
+    return async_trampoline(func, self, args, kw);
+  } else {
+    return normal_trampoline(func, self, args, kw);
   }
-  return normal_trampoline(func, self, args, kw);
+}
+
+int
+descr_set_trampoline_call(setter set,
+                          PyObject* obj,
+                          PyObject* value,
+                          void* closure)
+{
+  if (has_suspender) {
+    return (int)async_trampoline(
+      (PyCFunctionWithKeywords)set, obj, value, (PyObject*)closure);
+  } else {
+    return (int)normal_trampoline(
+      (PyCFunctionWithKeywords)set, obj, value, (PyObject*)closure);
+  }
+}
+
+PyObject*
+descr_get_trampoline_call(getter get, PyObject* obj, void* closure)
+{
+  if (has_suspender) {
+    return async_trampoline(
+      (PyCFunctionWithKeywords)get, obj, (PyObject*)closure, NULL);
+  } else {
+    return normal_trampoline(
+      (PyCFunctionWithKeywords)get, obj, (PyObject*)closure, NULL);
+  }
 }

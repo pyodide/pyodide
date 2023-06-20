@@ -11,9 +11,6 @@
  * in EM_JS.
  */
 
-import wrap_syncifying_wasm from "./wrap_syncifying.wat";
-import wrap_apply_wasm from "./wrap_apply.wat";
-
 /**
  * For each continuation, we need to save and restore the Python wasm VM's
  * global state. There are three components to this:
@@ -220,20 +217,9 @@ function setSyncifyHandler() {
     },
     { suspending: "first" },
   );
-
-  const module = new WebAssembly.Module(new Uint8Array(wrap_syncifying_wasm));
-
-  const instance = new WebAssembly.Instance(module, {
-    e: {
-      s: Module.suspenderGlobal,
-      i: suspending_f,
-      c: Module.validSuspender,
-      save: save_state,
-      restore: restore_state,
-    },
-  });
-  const syncify_promise = instance.exports.o;
-  Module.HEAP32[Module._syncifyHandler/4] = Module.addFunction(syncify_promise);
+  Module.HEAP32[Module._syncifyHandler / 4] = Module.addFunction(
+    provideSuspender(suspending_f),
+  );
 }
 
 Module.suspendableApply = function (...args) {
@@ -243,6 +229,7 @@ Module.suspendableApply = function (...args) {
   // generated. We cannot suspend through JavaScript frames (this limitation
   // is part of the intentional design of Wasm Promise Integration).
   Module.validSuspender.value = true;
+  Module.HEAP32[Module._has_suspender / 4] = 1;
   // Record the current stack position. See StackState in continuations.js
   Module.stackStop = Module.___stack_pointer.value;
   return Module.suspendableApplyHandler(...args);
@@ -277,10 +264,10 @@ Module.continuationsGetTrampoline = function (func) {
   const functype = WebAssembly.Function.type(wasmTableMirror[func]);
   const functypeStr = `parameters:${functype.parameters};result:${functype.result}`;
   const result = trampolineMap.get(functypeStr);
-  if(result) {
+  if (result) {
     return result;
   }
-  const expectedType = {parameters: Array(3).fill('i32'), results: ['i32']};
+  const expectedType = { parameters: Array(3).fill("i32"), results: ["i32"] };
   const trampoline = createTrampoline(expectedType, functype);
   const ptr = addFunction(trampoline);
   trampolineMap.set(functypeStr, ptr);
@@ -288,21 +275,14 @@ Module.continuationsGetTrampoline = function (func) {
 };
 
 const typeCodes = {
-  "i32": 0x7f,
-  'i64': 0x7e,
-  'f32': 0x7d,
-  'f64': 0x7c,
-  'externref': 0x6f,
+  i32: 0x7f,
+  i64: 0x7e,
+  f32: 0x7d,
+  f64: 0x7c,
+  externref: 0x6f,
 };
 
-// const constCodes = {
-//   "i32": 0x41,
-//   'i64': 0x42,
-//   'f32': 0x43,
-//   'f64': 0x44,
-// };
-
-function generateFuncType({parameters, results}, target){
+function generateFuncType({ parameters, results }, target) {
   target.push(0x60 /* form: func */);
   uleb128Encode(parameters.length, target);
   for (let p of parameters) {
@@ -314,18 +294,20 @@ function generateFuncType({parameters, results}, target){
   }
 }
 
-function insertSectionPrefix(sectionCode, sectionBody){
+function insertSectionPrefix(sectionCode, sectionBody) {
   var section = [sectionCode];
   uleb128Encode(sectionBody.length, section); // length of section in bytes
   section.push(...sectionBody);
   return section;
 }
 
+// prettier-ignore
 const WASM_PRELUDE = [
   0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
   0x01, 0x00, 0x00, 0x00, // version: 1
-];
+]
 
+// prettier-ignore
 function provideSuspender(wrapped_jsfunc) {
   const sections = [WASM_PRELUDE];
   const typeSection = [
@@ -360,9 +342,9 @@ function provideSuspender(wrapped_jsfunc) {
     0x01, // function index 1
   ];
   sections.push(insertSectionPrefix(0x07, exportSection));
-  
+
   const code = [];
-  code.push(        
+  code.push(
     0x01, // One run
     0x01, // of length 1
     0x6f, // of exterref
@@ -370,35 +352,46 @@ function provideSuspender(wrapped_jsfunc) {
   const suspenderLocal = type.parameters.length;
   code.push(0x23, 0); // global.get 0
   code.push(0x22, suspenderLocal); // local.tee suspender
-  for(let i = 0; i < type.parameters.length; i ++) {
+  for (let i = 0; i < type.parameters.length; i++) {
     code.push(0x20, i); // local.get i
   }
-  code.push(0x10, 0x00);  // call "e.i"
+  code.push(0x10, 0x00); // call "e.i"
   code.push(0x20, suspenderLocal); // local.get suspender
   code.push(0x24, 0); // global.set 0
   code.push(0x0b); // end
   const codeSection = insertSectionPrefix(0x01 /* number of codes */, code);
-  sections.push(insertSectionPrefix(0x0A, codeSection));
+  sections.push(insertSectionPrefix(0x0a, codeSection));
 
   const bytes = new Uint8Array([].concat.apply([], sections));
-  console.log(Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join(""));
   // We can compile this wasm module synchronously because it is small.
   const module = new WebAssembly.Module(bytes);
-  const instance = new WebAssembly.Instance(module, {e: {i: wrapped_jsfunc, s: Module.suspenderGlobal}});
-  const trampoline = instance.exports['o'];
+  const instance = new WebAssembly.Instance(module, {
+    e: { i: wrapped_jsfunc, s: Module.suspenderGlobal },
+  });
+  const trampoline = instance.exports["o"];
   return trampoline;
 }
-globalThis.provideSuspender = provideSuspender;
+Module.provideSuspender = provideSuspender;
 
-function createPromising(func) {
+const promisingModuleMap = new Map();
+function typeToString(ty) {
+  return `params:${ty.parameters};results:${ty.results}`;
+}
+
+// prettier-ignore
+function getPromisingModule(orig_type) {
+  const type_str = typeToString(orig_type);
+  if (promisingModuleMap.has(type_str)) {
+    return promisingModuleMap.get(type_str);
+  }
   const sections = [WASM_PRELUDE];
   const typeSection = [
     0x02, // number of types = 2
   ];
-  const type = WebAssembly.Function.type(func);
-  generateFuncType(type, typeSection);
-  type.parameters.unshift("externref");
-  generateFuncType(type, typeSection);
+  const wrapped_type = structuredClone(orig_type);
+  wrapped_type.parameters.unshift("externref");
+  generateFuncType(orig_type, typeSection);
+  generateFuncType(wrapped_type, typeSection);
   sections.push(insertSectionPrefix(0x01, typeSection));
 
   const importSection = [
@@ -424,28 +417,49 @@ function createPromising(func) {
     0x01, // the function we define
   ];
   sections.push(insertSectionPrefix(0x07, exportSection));
-  
+
   const code = [];
   code.push(0); // no locals
   code.push(0x20, 0); // local.get 0
   code.push(0x24, 0); // global.set 0
-  for(let i = 1; i < type.parameters.length; i ++) {
+  for (let i = 1; i < wrapped_type.parameters.length; i++) {
     code.push(0x20, i); // local.get i
   }
-  code.push(0x10, 0x00);  // call "e.i"
+  code.push(0x10, 0x00); // call "e.i"
   code.push(0x0b); // end
   const codeSection = insertSectionPrefix(0x01 /* number of codes */, code);
-  sections.push(insertSectionPrefix(0x0A, codeSection));
+  sections.push(insertSectionPrefix(0x0a, codeSection));
 
   const bytes = new Uint8Array([].concat.apply([], sections));
-  console.log(Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join(""));
   // We can compile this wasm module synchronously because it is small.
   const module = new WebAssembly.Module(bytes);
-  const instance = new WebAssembly.Instance(module, {e: {i: func, s: Module.suspenderGlobal}});
-  const trampoline = instance.exports['o'];
-  return trampoline;
+  promisingModuleMap.set(type_str, module);
+  return module;
 }
 
+const promisingFunctionMap = new WeakMap();
+function createPromising(wasm_func) {
+  if (promisingFunctionMap.has(wasm_func)) {
+    return promisingFunctionMap.get(wasm_func);
+  }
+  const type = WebAssembly.Function.type(wasm_func);
+  const module = getPromisingModule(type);
+  const instance = new WebAssembly.Instance(module, {
+    e: { i: wasm_func, s: Module.suspenderGlobal },
+  });
+  const result = new WebAssembly.Function(
+    { parameters: type.parameters, results: ["externref"] },
+    instance.exports.o,
+    { promising: "first" },
+  );
+  promisingFunctionMap.set(wasm_func, result);
+  return result;
+}
+Module.createPromising = createPromising;
+
+async function async_trampoline_call(func, self, args, kw) {
+  return await createPromising(getWasmTableEntry(func))(self, args, kw);
+}
 
 /**
  * This sets up syncify to work.
@@ -472,18 +486,26 @@ function initSuspenders() {
       { value: "externref", mutable: true },
       null,
     );
-    Module.suspendableApplyHandler = createPromising(
-      Module.asm._pyproxy_apply,
-    );
+    Module.suspendableApplyHandler = createPromising(Module.asm._pyproxy_apply);
     Module.validSuspender = new WebAssembly.Global(
       { value: "i32", mutable: true },
       0,
     );
+    const trampoline_wrapper = new WebAssembly.Function(
+      {
+        parameters: ["externref", "i32", "i32", "i32", "i32"],
+        results: ["i32"],
+      },
+      async_trampoline_call,
+      { suspending: "first" },
+    );
+    const async_trampoline_ptr = addFunction(
+      provideSuspender(trampoline_wrapper),
+    );
+    Module.HEAP32[Module._async_trampoline / 4] = async_trampoline_ptr;
     setSyncifyHandler();
     Module.suspendersAvailable = true;
-    HEAP32[_has_suspender/4] = 1
   } catch (e) {
-    console.warn(e);
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
     Module.suspendersAvailable = false;
@@ -495,4 +517,3 @@ function initSuspenders() {
   }
 }
 initSuspenders();
-

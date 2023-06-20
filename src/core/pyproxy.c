@@ -14,9 +14,12 @@
 #define Py_ENTER()                                                             \
   _check_gil();                                                                \
   const $$s = Module.validSuspender.value;                                     \
-  Module.validSuspender.value = false
+  Module.validSuspender.value = false;                                         \
+  Module.HEAP32[Module._has_suspender / 4] = 0
 
-#define Py_EXIT() Module.validSuspender.value = $$s
+#define Py_EXIT()                                                              \
+  Module.validSuspender.value = $$s;                                           \
+  Module.HEAP32[Module._has_suspender / 4] = $$s
 
 EM_JS(void, throw_no_gil, (), {
   throw new API.NoGilError("Attempted to use PyProxy when Python GIL not held");

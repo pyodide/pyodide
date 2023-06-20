@@ -68,3 +68,36 @@ def test_syncify_error(selenium):
         `);
         """
     )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_getset(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("fpcast-test")
+        await pyodide.runPythonSyncifying(`
+            def temp():
+                from pyodide.code import run_js
+
+                test = run_js(
+                    '''
+                    (async function test() {
+                        await sleep(1000);
+                        return 7;
+                    })
+                    '''
+                )
+                x = []
+                def wrapper():
+                    x.append(test().syncify())
+
+                import fpcast_test
+                t = fpcast_test.TestType()
+                t.getset_jspi_test = wrapper
+                t.getset_jspi_test
+                t.getset_jspi_test = None
+                assert x == [7, 7]
+            temp()
+        `);
+        """
+    )

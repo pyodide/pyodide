@@ -31,6 +31,28 @@ set_two(PyObject* self, PyObject* value)
   return 0;
 }
 
+PyObject* getset_func = NULL;
+
+static PyObject*
+get_one_call(PyObject* self)
+{
+  return PyObject_CallNoArgs(getset_func);
+}
+
+static int
+set_two_call(PyObject* self, PyObject* value)
+{
+  Py_CLEAR(getset_func);
+  Py_INCREF(value);
+  getset_func = value;
+  if (value == Py_None) {
+    return 0;
+  }
+  PyObject* result = PyObject_CallNoArgs(value);
+  Py_XDECREF(result);
+  return result ? 0 : -1;
+}
+
 // These two structs are the same but it's important that they have to be
 // duplicated here or else we miss test coverage.
 static PyMethodDef Test_Functions[] = {
@@ -72,6 +94,9 @@ static PyMethodDef Test_Methods[] = {
 static PyGetSetDef Test_GetSet[] = {
   { "getset0", .get = (getter)zero },
   { "getset1", .get = (getter)one, .set = (setter)set_two },
+  { "getset_jspi_test",
+    .get = (getter)get_one_call,
+    .set = (setter)set_two_call },
   { NULL }
 };
 

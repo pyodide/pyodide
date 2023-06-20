@@ -156,6 +156,15 @@ type PyProxyProps = {
   roundtrip: boolean;
 };
 
+function pyproxy_getflags(ptrobj: number) {
+  Py_ENTER();
+  try {
+    return Module._pyproxy_getflags(ptrobj);
+  } finally {
+    Py_EXIT();
+  }
+}
+
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
@@ -184,8 +193,7 @@ function pyproxy_new(
     props?: any;
   } = {},
 ): PyProxy {
-  const flags =
-    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
+  const flags = flags_arg !== undefined ? flags_arg : pyproxy_getflags(ptrobj);
   if (flags === -1) {
     Module._pythonexc2js();
   }
