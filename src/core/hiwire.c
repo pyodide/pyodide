@@ -393,7 +393,6 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
-
 JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
 
 EM_JS(void, hiwire_syncify_error, (void), {
@@ -401,14 +400,15 @@ EM_JS(void, hiwire_syncify_error, (void), {
   delete Module.syncify_error;
 })
 
-JsRef hiwire_syncify(JsRef idpromise) {
+JsRef
+hiwire_syncify(JsRef idpromise)
+{
   JsRef result = syncifyHandler(idpromise);
-  if(result == 0) {
+  if (result == 0) {
     hiwire_syncify_error();
   }
   return result;
 }
-
 
 EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
