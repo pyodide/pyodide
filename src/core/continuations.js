@@ -305,7 +305,7 @@ function insertSectionPrefix(sectionCode, sectionBody) {
 const WASM_PRELUDE = [
   0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
   0x01, 0x00, 0x00, 0x00, // version: 1
-]
+];
 
 // prettier-ignore
 function provideSuspender(wrapped_jsfunc) {
