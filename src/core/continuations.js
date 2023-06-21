@@ -235,7 +235,6 @@ function setSyncifyHandler() {
   });
   HEAP32[_syncifyHandler / 4] = addFunction(instance.exports.o);
 }
-globalThis.setSyncifyHandler = setSyncifyHandler;
 
 Module.suspendableApply = function (...args) {
   // validSuspender is a flag so that we can ask for permission before trying
