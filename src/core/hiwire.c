@@ -396,7 +396,7 @@ EM_JS_REF(JsRef,
 JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
 
 EM_JS(void, hiwire_syncify_error, (void), {
-  if(!Module.syncify_error) {
+  if (!Module.syncify_error) {
     return;
   }
   Module.handle_js_error(Module.syncify_error);

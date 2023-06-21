@@ -127,6 +127,7 @@ def test_syncify_getset(selenium):
         """
     )
 
+
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_syncify_ctypes(selenium):
     selenium.run_js(
