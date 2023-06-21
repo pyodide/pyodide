@@ -11,8 +11,8 @@ TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/libffi/libffi
-LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
+LIBFFIREPO=https://github.com/hoodmane/libffi
+LIBFFI_COMMIT=56aaef545a6398026f6c570662f9596cb7d4948d
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 

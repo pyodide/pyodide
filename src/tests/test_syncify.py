@@ -48,7 +48,7 @@ def test_syncify2(selenium):
 def test_syncify_error(selenium):
     selenium.run_js(
         """
-        await pyodide.loadPackage("pytest")
+        await pyodide.loadPackage("pytest");
         await pyodide.runPythonSyncifying(`
             def temp():
                 from pyodide.code import run_js
@@ -65,6 +65,31 @@ def test_syncify_error(selenium):
                 with pytest.raises(JsException, match="hi"):
                     asyncThrow().syncify()
             temp()
+        `);
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_no_suspender(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("pytest");
+        await pyodide.runPython(`
+            from pyodide.code import run_js
+            import pytest
+
+            test = run_js(
+                '''
+                (async function test() {
+                    await sleep(1000);
+                    return 7;
+                })
+                '''
+            )
+            with pytest.raises(RuntimeError, match="No suspender"):
+                test().syncify()
+            del test
         `);
         """
     )
@@ -98,6 +123,32 @@ def test_syncify_getset(selenium):
                 t.getset_jspi_test = None
                 assert x == [7, 7]
             temp()
+        `);
+        """
+    )
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_ctypes(selenium):
+    selenium.run_js(
+        """
+        await pyodide.runPythonSyncifying(`
+            from pyodide.code import run_js
+
+            test = run_js(
+                '''
+                (async function test() {
+                    await sleep(1000);
+                    return 7;
+                })
+                '''
+            )
+
+            def wrapper():
+                return test().syncify()
+            from ctypes import pythonapi, py_object
+            pythonapi.PyObject_CallNoArgs.argtypes = [py_object]
+            pythonapi.PyObject_CallNoArgs.restype = py_object
+            assert pythonapi.PyObject_CallNoArgs(wrapper) == 7
         `);
         """
     )

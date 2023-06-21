@@ -155,6 +155,17 @@ static struct PyModuleDef module = {
   Test_Methods
 };
 
+typedef double DFunc(double);
+
+double
+iter_f(DFunc f, double x, int n) {
+  double res = x;
+  for(int i = 0; i < n; i++) {
+    res = f(res);
+  }
+  return res;
+}
+
 PyMODINIT_FUNC
 PyInit_fpcast_test(void)
 {
