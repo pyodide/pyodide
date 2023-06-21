@@ -66,7 +66,7 @@ def add_event_listener(
     elt.addEventListener(
         event,
         cast(Callable[[Any], None], proxy),
-        to_js(kwargs, dict_converter=Object.fromEntries),
+        options=to_js(kwargs, dict_converter=Object.fromEntries),
     )
 
 
@@ -97,7 +97,7 @@ def remove_event_listener(
     elt.removeEventListener(
         event,
         cast(Callable[[Any], None], proxy),
-        to_js(kwargs, dict_converter=Object.fromEntries),
+        options=to_js(kwargs, dict_converter=Object.fromEntries),
     )
     proxy.destroy()
 
