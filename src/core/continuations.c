@@ -113,6 +113,7 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
 // available we'll replace it with a JSPI-aware trampoline in continuations.js
 Trampoline* py_trampoline = bootstrap_trampoline;
 
+// These are the Emscripten call trampolines that we patched out of CPython.
 PyObject*
 _PyCFunctionWithKeywords_TrampolineCall(PyCFunctionWithKeywords func,
                                         PyObject* self,

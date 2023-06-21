@@ -302,8 +302,8 @@ function generateFuncType({ parameters, results }, target) {
   }
 }
 
-// prettier-ignore
 const selectorModuleMap = new Map();
+// prettier-ignore
 function createSelectorModule(async_type) {
   const async_type_str = wasmTypeToString(async_type);
   if (selectorModuleMap.has(async_type_str)) {
@@ -322,35 +322,21 @@ function createSelectorModule(async_type) {
   const importSection = [
     0x04, // number of imports
 
-    0x01,
-    0x65, // module "e"
-    0x01,
-    0x63, // field "c"
-    0x03,
-    0x7f,
-    0x01, // global i32 mutable
+    0x01, 0x65, // module "e"
+    0x01, 0x63, // field "c"
+    0x03, 0x7F, 0x01, // global i32 mutable
 
-    0x01,
-    0x65, // module "e"
-    0x01,
-    0x73, // field "s"
-    0x03,
-    0x6f,
-    0x01, // global externref mutable
+    0x01, 0x65, // module "e"
+    0x01, 0x73, // field "s"
+    0x03, 0x6F, 0x01, // global externref mutable
 
-    0x01,
-    0x65, // module "e"
-    0x01,
-    0x66, // field "f"
-    0x00,
-    0x01, // function of type "sync_type"
+    0x01, 0x65, // module "e"
+    0x01, 0x66, // field "f"
+    0x00, 0x01, // function of type "sync_type"
 
-    0x01,
-    0x65, // module "e"
-    0x01,
-    0x61, // field "a"
-    0x00,
-    0x00, // function of type "async_type"
+    0x01, 0x65, // module "e"
+    0x01, 0x61, // field "a"
+    0x00, 0x00, // function of type "async_type"
   ];
   sections.push(insertSectionPrefix(0x02, importSection));
   const functionSection = [
@@ -360,8 +346,7 @@ function createSelectorModule(async_type) {
   sections.push(insertSectionPrefix(0x03, functionSection));
   const exportSection = [
     0x01, // One export
-    0x01,
-    0x6f, // name "o"
+    0x01, 0x6f, // name "o"
     0x00, // type: function
     0x02, // function index 1
   ];
@@ -374,17 +359,17 @@ function createSelectorModule(async_type) {
     0x6f, // of exterref
   );
   const suspenderLocal = sync_type.parameters.length;
-  code.push(0x23, 0); // global.get 0 <e.c> validSuspender
-  code.push(0x45); // i32.eqz
+  code.push(0x23, 0);    // global.get 0 <e.c> validSuspender
+  code.push(0x45);       // i32.eqz
   code.push(0x04, 0x40); // if
   for (let i = 0; i < sync_type.parameters.length; i++) {
-    code.push(0x20, i); // local.get i
+    code.push(0x20, i);  // local.get i
   }
   code.push(0x10, 0x00); // call "e.f" sync_fn
-  code.push(0x0f); // return
-  code.push(0x0b); // end if
+  code.push(0x0f);       // return
+  code.push(0x0b);       // end if
 
-  code.push(0x23, 1); // global.get 0 <e.s> suspenderGlobal
+  code.push(0x23, 1);    // global.get 0 <e.s> suspenderGlobal
   code.push(0x22, suspenderLocal); // local.tee suspender
   for (let i = 0; i < sync_type.parameters.length; i++) {
     code.push(0x20, i); // local.get i
@@ -515,7 +500,7 @@ function getHandlerFn(trampoline, sig) {
   const sync_fn = syncHandler.bind(null, trampoline);
   try {
     const async_wrapper = new WebAssembly.Function(
-      emscripten_sig__to_wasm(sig),
+      emscriptenSigToWasm(sig),
       promisingHandler.bind(null, trampoline),
       { suspending: "first" },
     );
