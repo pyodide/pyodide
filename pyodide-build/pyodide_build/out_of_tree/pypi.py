@@ -302,7 +302,7 @@ class PyPIProvider(APBase):
 def _get_json_package_list(fname: Path) -> Generator[str, None, None]:
     json_data = json.load(fname.open())
     if "packages" in json_data:
-        # pyodide repodata.json format
+        # pyodide-lock.json format
         yield from json_data["packages"].keys()
     else:
         # jupyterlite all.json format

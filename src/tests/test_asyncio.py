@@ -406,7 +406,7 @@ def test_await_pyproxy_eval_async(selenium):
         """
         let c = pyodide._api.pyodide_code.eval_code_async(`
             from js import fetch
-            await (await fetch('repodata.json')).json()
+            await (await fetch('pyodide-lock.json')).json()
         `);
         let result = await c;
         c.destroy();
@@ -421,7 +421,7 @@ def test_await_pyproxy_async_def(selenium):
         let packages = await pyodide.runPythonAsync(`
             from js import fetch
             async def temp():
-                return await (await fetch('repodata.json')).json()
+                return await (await fetch('pyodide-lock.json')).json()
             await temp()
         `);
         return (!!packages.packages) && (!!packages.info);

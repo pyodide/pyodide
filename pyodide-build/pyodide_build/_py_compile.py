@@ -258,18 +258,18 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
         return None
 
 
-def _update_repodata(
-    input_dir: Path, repodata: dict[str, Any], name_mapping: dict[str, str]
+def _update_lockfile(
+    input_dir: Path, lockfile: dict[str, Any], name_mapping: dict[str, str]
 ) -> dict[str, Any]:
-    """Update repodata.json with the new names of the py-compiled wheels.
+    """Update pyodide-lock.json with the new names of the py-compiled wheels.
 
     Also update the checksums of the updated wheels
     """
-    for row in repodata["packages"].values():
+    for row in lockfile["packages"].values():
         if row.get("file_name") in name_mapping:
             row["file_name"] = name_mapping[row["file_name"]]
             row["sha256"] = _get_sha256_checksum(input_dir / row["file_name"])
-    return repodata
+    return lockfile
 
 
 def _py_compile_archive_dir(
@@ -321,13 +321,13 @@ def _py_compile_archive_dir(
             )
             name_mapping[file_path.name] = output_name
 
-    repodata_path = input_dir / "repodata.json"
-    if name_mapping and repodata_path.exists():
+    lockfile_path = input_dir / "pyodide-lock.json"
+    if name_mapping and lockfile_path.exists():
         if verbose:
-            print(f"Updating {repodata_path.name}")
-        with open(repodata_path) as fh:
-            repodata = json.load(fh)
-        repodata = _update_repodata(input_dir, repodata, name_mapping)
-        with open(repodata_path, "w") as fh:
-            json.dump(repodata, fh)
+            print(f"Updating {lockfile_path.name}")
+        with open(lockfile_path) as fh:
+            lockfile = json.load(fh)
+        lockfile = _update_lockfile(input_dir, lockfile, name_mapping)
+        with open(lockfile_path, "w") as fh:
+            json.dump(lockfile, fh)
     return name_mapping

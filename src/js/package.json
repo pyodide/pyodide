@@ -50,7 +50,7 @@
     "./pyodide.mjs": "./pyodide.mjs",
     "./pyodide.js": "./pyodide.js",
     "./package.json": "./package.json",
-    "./repodata.json": "./repodata.json"
+    "./pyodide-lock.json": "./pyodide-lock.json"
   },
   "files": [
     "pyodide.asm.js",
@@ -61,7 +61,7 @@
     "pyodide.mjs.map",
     "pyodide.d.ts",
     "ffi.d.ts",
-    "repodata.json",
+    "pyodide-lock.json",
     "console.html"
   ],
   "browser": {
