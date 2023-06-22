@@ -7,7 +7,6 @@ package:
 source:
   patches:
     - patches/make-tifffile-optional.patch
-    - patches/meson-debug.patch
   sha256: b33e823c54e6f11873ea390ee49ef832b82b9f70752c8759efd09d5a4e3d87f0
   url: https://files.pythonhosted.org/packages/1d/c2/a54d5e6e2d6708e0722a1aaccef4b7cc1e6df6f76c8b4ce98cd6d0c332c3/scikit_image-0.21.0.tar.gz
 
