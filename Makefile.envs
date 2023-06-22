@@ -101,7 +101,7 @@ export LDFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	$(DBG_LDFLAGS) \
-	-L $(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
+	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	$(EXTRA_LDFLAGS)
 

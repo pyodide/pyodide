@@ -13,13 +13,9 @@ source:
 
 build:
   script: |
-    echo CFLAGS: $CFLAGS
-    echo LDFLAGS: $LDFLAGS
     export CFLAGS=${SIDE_MODULE_CFLAGS}
-    export LDFLAGS=${SIDE_MODULE_LDFLAGS/-L /-L}
-    echo CFLAGS: $CFLAGS
-    echo LDFLAGS: $LDFLAGS
-  backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross builddir=my-build
+    export LDFLAGS=${SIDE_MODULE_LDFLAGS}
+  backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross
 
 requirements:
   host:
@@ -39,4 +35,3 @@ about:
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
   license: Modified BSD
-# Note: this package cannot be updated until we add support for building with meson
