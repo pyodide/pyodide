@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@matplotlib_test_decorator
+@pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["netCDF4", "numpy"])
 def test_netCDF4_tutorial(selenium):
     """
