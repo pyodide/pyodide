@@ -9,10 +9,6 @@ ROOT=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 ; pwd -P)
 # shellcheck source=/dev/null
 source "$ROOT/emsdk/emsdk/emsdk_env.sh" 2> /dev/null || true
 export PATH="$ROOT/node_modules/.bin/:$ROOT/emsdk/emsdk/ccache/git-emscripten_64bit/bin:$PATH:$ROOT/packages/.artifacts/bin/"
-
-# Remove node v14 from path (Emscripten adds it but we want to use a newer system node)
-export PATH=${PATH/"emsdk/emsdk/node/14.18.2_64bit/bin"/"node_modules/.bin"}
-
 EMCC_PATH=$(which emcc.py || echo ".")
 EM_DIR=$(dirname "$EMCC_PATH")
 export EM_DIR
