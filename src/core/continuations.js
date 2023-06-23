@@ -511,7 +511,6 @@ function createInvoke(sig) {
 }
 
 Module.adjustWasmImports = function (wasmImports) {
-  wasmImports.__indirect_function_table = wasmTable;
   if (jsWrapperTag) {
     const i = "invoke_";
     for (let name of Object.keys(wasmImports)) {
