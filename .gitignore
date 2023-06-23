@@ -2,7 +2,6 @@
 *.o
 *.pyc
 *.gen.*
-src/core/*.wasm
 src/js/*.out.*
 
 *.egg-info/

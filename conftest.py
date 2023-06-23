@@ -16,8 +16,6 @@ sys.path.append(str(ROOT_PATH / "src" / "py"))
 import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
-from pyodide.ffi import JsException
-
 pytest_pyodide.runner.CHROME_FLAGS.extend(
     [
         "--enable-features=WebAssemblyExperimentalJSPI",
@@ -25,7 +23,6 @@ pytest_pyodide.runner.CHROME_FLAGS.extend(
     ]
 )
 pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
-pytest_pyodide.decorator.JsException = JsException
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.

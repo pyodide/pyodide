@@ -98,8 +98,6 @@ static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
 
-bool suspendersAvailable;
-
 static char* PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL =
   "This borrowed proxy was automatically destroyed at the "
   "end of a function call. Try using "
@@ -4373,15 +4371,6 @@ JsProxy_init_docstrings()
 {
   bool success = false;
 
-  suspendersAvailable =
-    EM_ASM_INT({ return !!Module.suspendableApplyHandler; });
-  if (suspendersAvailable) {
-    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
-  } else {
-    JsProxy_syncify_MethodDef.ml_meth =
-      (PyCFunction)JsProxy_syncify_not_supported;
-  }
-
   PyObject* _pyodide_core_docs = NULL;
   PyObject* _it = NULL;
   PyObject* JsProxy = NULL;
@@ -4496,6 +4485,15 @@ int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+  
+  bool suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
+  if (suspendersAvailable) {
+    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
+  } else {
+    JsProxy_syncify_MethodDef.ml_meth =
+      (PyCFunction)JsProxy_syncify_not_supported;
+  }
+
 
   PyObject* asyncio_module = NULL;
   PyObject* flag_dict = NULL;
