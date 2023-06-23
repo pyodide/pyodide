@@ -1,9 +1,9 @@
 import json
 import shutil
 from pathlib import Path
-from typing import Any
 
 import pytest
+from pyodide_lock import PyodideLockSpec
 
 from ..common import chdir
 
@@ -41,15 +41,13 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_pyodide_lock() -> dict[str, Any]:
-    # TODO: use pydantic
-
-    return {
-        "info": {
+def mock_pyodide_lock() -> PyodideLockSpec:
+    return PyodideLockSpec(
+        info={
             "version": "0.22.1",
         },
-        "packages": {},
-    }
+        packages={},
+    )
 
 
 @pytest.fixture(scope="module")
