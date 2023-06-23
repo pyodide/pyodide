@@ -111,6 +111,7 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
   return bootstrap_trampoline_js(func, self, args, kw);
 }
 
+// clang-format off
 EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
   if (count_params.cache.has(func)) {
     return count_params.cache.get(func);
@@ -121,7 +122,10 @@ EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
   }
   count_params.cache.set(func, n);
   return n;
-} count_params.cache = new Map();)
+}
+count_params.cache = new Map();
+)
+// clang-format on
 
 typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
@@ -148,7 +152,7 @@ py_trampoline(PyCFunctionWithKeywords func,
       case 3:
         return ((three_arg)func)(self, args, kw);
       default:
-        unreachable();
+        __builtin_unreachable();
     }
   }
 }
