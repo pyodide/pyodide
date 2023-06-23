@@ -764,7 +764,6 @@ function initSuspenders() {
       0,
     );
     setSyncifyHandler();
-    setPythonTrampoline();
   } else {
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
