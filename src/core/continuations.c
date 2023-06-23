@@ -1,8 +1,8 @@
 #include <Python.h>
 
-#include <stddef.h>
 #include "emscripten.h"
 #include "internal/pycore_frame.h"
+#include <stddef.h>
 
 // This file deals with Python stack / thread state.
 // continuations.js deals with the C stack state
@@ -112,7 +112,7 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
 }
 
 EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
-  if(count_params.cache.has(func)) {
+  if (count_params.cache.has(func)) {
     return count_params.cache.get(func);
   }
   const n = WebAssembly.Function.type(wasmTableMirror[func]).parameters.length;
@@ -121,9 +121,7 @@ EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
   }
   count_params.cache.set(func, n);
   return n;
-}
-count_params.cache = new Map();
-)
+} count_params.cache = new Map();)
 
 typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
