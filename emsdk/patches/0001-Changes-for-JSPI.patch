@@ -17,7 +17,7 @@ index 167767e0f..95f28eed6 100644
      return `assert(false, '${assertInfo}');`;
    }
 -  return `throw ${excPtr};`;
-+  return `throw wrapException(${excPtr});`;
++  return `throw Module.wrapException(${excPtr});`;
  }
  
  function storeException(varName, excPtr) {
