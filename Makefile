@@ -222,6 +222,7 @@ benchmark: all
 clean:
 	rm -fr dist/*
 	rm -fr src/*/*.o
+	rm -fr src/*/*.gen.*
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
