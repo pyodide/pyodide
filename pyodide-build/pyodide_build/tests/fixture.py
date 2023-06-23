@@ -1,4 +1,3 @@
-import json
 import shutil
 from pathlib import Path
 
@@ -45,6 +44,9 @@ def mock_pyodide_lock() -> PyodideLockSpec:
     return PyodideLockSpec(
         info={
             "version": "0.22.1",
+            "arch": "wasm32",
+            "platform": "emscripten_xxx",
+            "python": "3.11",
         },
         packages={},
     )
@@ -79,9 +81,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 """  # noqa: W191
     )
     (pyodide_root / "dist").mkdir()
-    (pyodide_root / "dist" / "pyodide-lock.json").write_text(
-        json.dumps(mock_pyodide_lock())
-    )
+    mock_pyodide_lock().to_json(pyodide_root / "dist" / "pyodide-lock.json")
 
     with chdir(base):
         archive_name = shutil.make_archive("xbuildenv", "tar")
