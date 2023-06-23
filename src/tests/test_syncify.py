@@ -153,3 +153,46 @@ def test_syncify_ctypes(selenium):
         `);
         """
     )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_cpp_exceptions_and_syncify(selenium):
+    assert (
+        selenium.run_js(
+            """
+            ptr = pyodide.runPython(`
+                from pyodide.code import run_js
+                temp = run_js(
+                    '''
+                    (async function temp() {
+                        await sleep(100);
+                        return 9;
+                    })
+                    '''
+                )
+
+                def f():
+                    try:
+                        return temp().syncify()
+                    except Exception as e:
+                        print(e)
+                        return -1
+                id(f)
+            `);
+
+            await pyodide.loadPackage("cpp-exceptions-test")
+            const Module = pyodide._module;
+            const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+            async function t(x){
+                Module.validSuspender.value = true;
+                const ptr = await Module.createPromising(catchlib.catch_call_pyobj)(x);
+                Module.validSuspender.value = false;
+                const res = Module.UTF8ToString(ptr);
+                Module._free(ptr);
+                return res;
+            }
+            return await t(ptr)
+            """
+        )
+        == "result was: 9"
+    )

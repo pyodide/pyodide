@@ -55,7 +55,18 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-function convertCppException(e: number) {
+function isWasmException(e: any) {
+  return e instanceof ((WebAssembly as any).Exception || function () {});
+}
+
+function convertCppException(e: any) {
+  if (isWasmException(e)) {
+    if (e.is(Module.jsWrapperTag)) {
+      e = e.getArg(Module.jsWrapperTag, 0);
+    } else {
+      return e;
+    }
+  }
   let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg, e);
 }
@@ -87,7 +98,7 @@ API.fatal_error = function (e: any) {
   if (e instanceof NoGilError) {
     throw e;
   }
-  if (typeof e === "number") {
+  if (typeof e === "number" || isWasmException(e)) {
     // Hopefully a C++ exception?
     e = convertCppException(e);
   } else {

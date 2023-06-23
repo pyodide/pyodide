@@ -56,7 +56,8 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	echo '()<::>{' >> tmp.dat             # zero argument argspec and start body
 	cat src/js/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
 	echo '}' >> tmp.dat                   # Close function body
-	cat src/core/pre.js >> tmp.dat        # Execute pre.js too
+	cat src/core/pre.js >> tmp.dat        # Execute pre.js
+	cat src/core/continuations.gen.js >> tmp.dat # and continuations.gen.js too
 	echo "pyodide_js_init();" >> tmp.dat  # Then execute the function.
 
 	# Now generate the C file. Define a string __em_js__pyodide_js_init with

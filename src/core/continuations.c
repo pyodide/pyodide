@@ -1,5 +1,6 @@
 #include <Python.h>
 
+#include "emscripten.h"
 #include "internal/pycore_frame.h"
 
 // This file deals with Python stack / thread state.
@@ -75,8 +76,11 @@ restoreThreadState(P* state)
   free(state);
 }
 
-// Defines continuations_init_js
-#include "continuations.gen.js"
+// clang-format off
+EM_JS(int, continuations_init_js, (), {
+  initSuspenders();
+})
+// clang-format on
 
 int
 continuations_init(void)

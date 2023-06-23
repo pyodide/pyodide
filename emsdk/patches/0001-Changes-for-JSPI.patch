@@ -1,0 +1,51 @@
+From 4da0e85d9038b9576d8bb670722be2eb93358482 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 22 Jun 2023 18:53:22 -0700
+Subject: [PATCH] Changes for JSPI
+
+---
+ src/parseTools.js | 2 +-
+ src/preamble.js   | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/src/parseTools.js b/src/parseTools.js
+index 167767e0f..95f28eed6 100644
+--- a/src/parseTools.js
++++ b/src/parseTools.js
+@@ -527,7 +527,7 @@ function makeThrow(excPtr) {
+     }
+     return `assert(false, '${assertInfo}');`;
+   }
+-  return `throw ${excPtr};`;
++  return `throw wrapException(${excPtr});`;
+ }
+ 
+ function storeException(varName, excPtr) {
+diff --git a/src/preamble.js b/src/preamble.js
+index 51783e5a5..1a8d7b496 100644
+--- a/src/preamble.js
++++ b/src/preamble.js
+@@ -14,6 +14,10 @@
+ // An online HTML version (which may be of a different version of Emscripten)
+ //    is up at http://kripken.github.io/emscripten-site/docs/api_reference/preamble.js.html
+ 
++if(!Module.wrapException) {
++  Module.wrapException = (e) => e;
++}
++
+ #if BENCHMARK
+ Module.realPrint = out;
+ out = err = () => {};
+@@ -937,6 +941,9 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
+ // Create the wasm instance.
+ // Receives the wasm imports, returns the exports.
+ function createWasm() {
++  if (Module.adjustWasmImports) {
++    Module.adjustWasmImports(wasmImports);
++  }
+   // prepare imports
+   var info = {
+ #if MINIFY_WASM_IMPORTED_MODULES
+-- 
+2.25.1
+

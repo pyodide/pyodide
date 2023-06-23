@@ -197,6 +197,222 @@ class StackState {
   }
 }
 
+// prettier-ignore
+const WASM_PRELUDE = [
+  0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
+  0x01, 0x00, 0x00, 0x00, // version: 1
+];
+
+function insertSectionPrefix(sectionCode, sectionBody) {
+  var section = [sectionCode];
+  uleb128Encode(sectionBody.length, section); // length of section in bytes
+  section.push(...sectionBody);
+  return section;
+}
+
+const typeCodes = {
+  i32: 0x7f,
+  i64: 0x7e,
+  f32: 0x7d,
+  f64: 0x7c,
+  externref: 0x6f,
+};
+
+const constCodes = {
+  i32: 0x41,
+  i64: 0x42,
+  f32: 0x43,
+  f64: 0x44,
+};
+
+function generateType({ parameters, results }, target) {
+  target.push(0x60 /* form: func */);
+  uleb128Encode(parameters.length, target);
+  for (let p of parameters) {
+    target.push(typeCodes[p]);
+  }
+  uleb128Encode(results.length, target);
+  for (let p of results) {
+    target.push(typeCodes[p]);
+  }
+}
+
+function emscriptenSigToWasm(sig) {
+  const lookup = {
+    i: "i32",
+    j: "i64",
+    f: "f32",
+    d: "f64",
+    e: "externref",
+    v: "",
+  };
+  const parameters = sig.split("").map((x) => lookup[x]);
+  const result = parameters.shift();
+  const results = result ? [result] : [];
+  return { parameters, results };
+}
+
+// prettier-ignore
+function createInvokeModule(sig) {
+  const sections = [WASM_PRELUDE];
+  const typeSection = [
+    0x07, // number of types
+  ];
+  const invoke_sig = emscriptenSigToWasm(sig);
+  const export_sig = structuredClone(invoke_sig);
+  export_sig.parameters.unshift("i32");
+  const try_sig = structuredClone(invoke_sig);
+  try_sig.parameters = [];
+  const tag_sig = emscriptenSigToWasm("ve");
+  const save_sig = emscriptenSigToWasm("i");
+  const restore_sig = emscriptenSigToWasm("vi");
+  const setThrew_sig = emscriptenSigToWasm("vii");
+  generateType(invoke_sig, typeSection);
+  const invoke_type = 0x00;
+  generateType(export_sig, typeSection);
+  const export_type = 0x01;
+  generateType(tag_sig, typeSection);
+  const tag_type = 0x02;
+  generateType(save_sig, typeSection);
+  const save_type = 0x03;
+  generateType(restore_sig, typeSection);
+  const restore_type = 0x04;
+  generateType(setThrew_sig, typeSection);
+  const setThrew_type = 0x05;
+  generateType(try_sig, typeSection);
+  const try_type = 0x06;
+  sections.push(insertSectionPrefix(0x01, typeSection));
+
+  // (import "e" "t" (table $t 0 funcref))
+  // (import "e" "s" (func $save (result i32)))
+  // (import "e" "r" (func $restore (param i32)))
+  // (import "e" "tag" (tag $tag (param externref)))
+
+  const descr_func = 0x00;
+  const descr_table = 0x01;
+  const descr_tag = 0x04;
+  const importSection = [
+    0x05, // number of imports
+
+    0x01, 0x65, // module "e"
+    0x01, 0x74, // field "t"
+    descr_table, 0x70, 0x00, 0x00, // table of funcref, no max, min of 0
+
+    0x01, 0x65, // module "e"
+    0x03, 0x74, 0x61, 0x67, // field "tag"
+    descr_tag, 0x00, tag_type,
+
+    0x01, 0x65, // module "e"
+    0x01, 0x73, // field "s"
+    descr_func, save_type,
+
+    0x01, 0x65, // module "e"
+    0x01, 0x72, // field "r"
+    descr_func, restore_type,
+    0x01, 0x65, // module "e"
+    0x01, 0x71, // field "q"
+    descr_func, setThrew_type,
+  ];
+  sections.push(insertSectionPrefix(0x02, importSection));
+  const functionSection = [
+    0x01, // number of functions = 1
+    export_type,
+  ];
+  sections.push(insertSectionPrefix(0x03, functionSection));
+  const exportSection = [
+    0x01, // One export
+    0x01,
+    0x6f, // name "o"
+    0x00, // type: function
+    0x03, // function index 2 (after the three function imports)
+  ];
+  sections.push(insertSectionPrefix(0x07, exportSection));
+
+  const code = [];
+  code.push(
+    0x01, // One run
+    0x01, // of length 1
+    typeCodes.i32, // of i32
+  );
+  const stateLocal = export_sig.parameters.length;
+
+  code.push(0x10, 0x00); // call save
+  code.push(0x21, stateLocal); // local.set stateLocal
+
+  code.push(0x06, try_type); // try
+  for(let i = 1; i < export_sig.parameters.length; i++) {
+    code.push(0x20, i); // local.get i
+  }
+  code.push(0x20, 0); // local.get 0
+
+  code.push(0x11, 0x00, 0x00); // call_indirect invoke type
+  code.push(0x07, 0x00); // catch $tag
+  code.push(0x1a); // drop the caught externref
+  code.push(0x20, stateLocal); // local.get stateLocal
+  code.push(0x10, 0x01); // call restore
+
+  code.push(constCodes.i32, 0x01);
+  code.push(constCodes.i32, 0x00);
+  code.push(0x10, 0x02); // call setThrew
+  const val = {
+    i32 : [0],
+    i64 : [0],
+    f32 : [0,0,0,0],
+    f64 : [0,0,0,0,0,0,0,0],
+  };
+  for(let x of export_sig.results) {
+    code.push(constCodes[x], ...val[x]);
+  }
+  code.push(0x0b); // end
+  code.push(0x0b); // end
+  const codeSection = insertSectionPrefix(0x01 /* number of codes */, code);
+  sections.push(insertSectionPrefix(0x0a, codeSection));
+
+  const bytes = new Uint8Array([].concat.apply([], sections));
+  // const fs = require("fs");
+  // fs.writeFileSync("gen.wasm", bytes);
+  // We can compile this wasm module synchronously because it is small.
+  const module = new WebAssembly.Module(bytes);
+  return module;
+}
+
+let jsWrapperTag;
+try {
+  jsWrapperTag = new WebAssembly.Tag({ parameters: ["externref"] });
+  Module.jsWrapperTag = jsWrapperTag;
+} catch (e) {}
+
+if (jsWrapperTag) {
+  Module.wrapException = (e) => new WebAssembly.Exception(jsWrapperTag, [e]);
+}
+
+function createInvoke(sig) {
+  const module = createInvokeModule(sig);
+  const instance = new WebAssembly.Instance(module, {
+    e: {
+      t: wasmTable,
+      s: () => stackSave(),
+      r: (x) => stackRestore(x),
+      q: (x, y) => _setThrew(x, y),
+      tag: jsWrapperTag,
+    },
+  });
+  return instance.exports["o"];
+}
+
+Module.adjustWasmImports = function (wasmImports) {
+  wasmImports.__indirect_function_table = wasmTable;
+  if (jsWrapperTag) {
+    const i = "invoke_";
+    for (let name of Object.keys(wasmImports)) {
+      if (!name.startsWith(i)) {
+        continue;
+      }
+      wasmImports[name] = createInvoke(name.slice(i.length));
+    }
+  }
+};
+
 /**
  * Module.syncifyHandler does all of the work of hiwire_syncify (defined in
  * hiwire).
@@ -253,54 +469,6 @@ function wasmTypeToString(ty) {
   return `params:${ty.parameters};results:${ty.results}`;
 }
 
-function emscriptenSigToWasm(sig) {
-  const lookup = {
-    i: "i32",
-    j: "i64",
-    f: "f32",
-    d: "f64",
-    v: "",
-  };
-  const parameters = sig.split("").map((x) => lookup[x]);
-  const result = parameters.shift();
-  parameters.unshift("externref");
-  const results = result ? [result] : [];
-  return { parameters, results };
-}
-
-// prettier-ignore
-const WASM_PRELUDE = [
-  0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
-  0x01, 0x00, 0x00, 0x00, // version: 1
-];
-
-function insertSectionPrefix(sectionCode, sectionBody) {
-  var section = [sectionCode];
-  uleb128Encode(sectionBody.length, section); // length of section in bytes
-  section.push(...sectionBody);
-  return section;
-}
-
-const typeCodes = {
-  i32: 0x7f,
-  i64: 0x7e,
-  f32: 0x7d,
-  f64: 0x7c,
-  externref: 0x6f,
-};
-
-function generateFuncType({ parameters, results }, target) {
-  target.push(0x60 /* form: func */);
-  uleb128Encode(parameters.length, target);
-  for (let p of parameters) {
-    target.push(typeCodes[p]);
-  }
-  uleb128Encode(results.length, target);
-  for (let p of results) {
-    target.push(typeCodes[p]);
-  }
-}
-
 const selectorModuleMap = new Map();
 // prettier-ignore
 function createSelectorModule(async_type) {
@@ -314,8 +482,8 @@ function createSelectorModule(async_type) {
   ];
   const sync_type = structuredClone(async_type);
   sync_type.parameters.shift();
-  generateFuncType(async_type, typeSection);
-  generateFuncType(sync_type, typeSection);
+  generateType(async_type, typeSection);
+  generateType(sync_type, typeSection);
   sections.push(insertSectionPrefix(0x01, typeSection));
 
   const importSection = [
@@ -415,8 +583,8 @@ function getPromisingModule(orig_type) {
   ];
   const wrapped_type = structuredClone(orig_type);
   wrapped_type.parameters.unshift("externref");
-  generateFuncType(orig_type, typeSection);
-  generateFuncType(wrapped_type, typeSection);
+  generateType(orig_type, typeSection);
+  generateType(wrapped_type, typeSection);
   sections.push(insertSectionPrefix(0x01, typeSection));
 
   const importSection = [
@@ -497,14 +665,16 @@ async function promisingHandler(genfunc, ...args) {
 
 function getHandlerFn(trampoline, sig) {
   const sync_fn = syncHandler.bind(null, trampoline);
-  try {
+  if (Module.suspendersAvailable) {
+    const wasmsig = emscriptenSigToWasm(sig);
+    wasmsig.parameters.unshift("externref");
     const async_wrapper = new WebAssembly.Function(
-      emscriptenSigToWasm(sig),
+      wasmsig,
       promisingHandler.bind(null, trampoline),
       { suspending: "first" },
     );
     return createSelector(sync_fn, async_wrapper);
-  } catch (e) {
+  } else {
     return convertJsFunctionToWasm(sync_fn, sig);
   }
 }
@@ -544,14 +714,18 @@ function initSuspenders() {
       null,
     );
     Module.suspendableApplyHandler = createPromising(Module.asm._pyproxy_apply);
+    Module.suspendersAvailable = true;
+  } catch (e) {
+    Module.suspendersAvailable = false;
+  }
+  if (Module.suspendersAvailable) {
     Module.validSuspender = new WebAssembly.Global(
       { value: "i32", mutable: true },
       0,
     );
     setSyncifyHandler();
-    Module.suspendersAvailable = true;
     setPythonTrampoline();
-  } catch (e) {
+  } else {
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
     Module.suspendersAvailable = false;
@@ -559,7 +733,5 @@ function initSuspenders() {
       Module.handle_js_error(Error("Syncify not supported"));
       return 0;
     };
-    return;
   }
 }
-initSuspenders();

@@ -58,16 +58,7 @@ async function buildContinuations() {
     encoding: "utf8",
   });
   const output = await handleWatImports(input);
-  const emjs_wrapped_output = [
-    "#include <emscripten.h>",
-    "EM_JS(int, continuations_init_js, (), {",
-    output,
-    "});",
-  ];
-  writeFileSync(
-    join(__dirname, "./continuations.gen.js"),
-    emjs_wrapped_output.join("\n"),
-  );
+  writeFileSync(join(__dirname, "./continuations.gen.js"), output);
 }
 
 buildContinuations();

@@ -1,3 +1,4 @@
+#include <Python.h>
 #include <exception>
 #include <stdexcept>
 using namespace std;
@@ -21,4 +22,13 @@ throw_exc(int x)
   } else {
     throw "abc";
   }
+}
+
+extern "C" int
+call_pyobj(PyObject* x)
+{
+  PyObject* result = PyObject_CallNoArgs(x);
+  int r = PyLong_AsLong(result);
+  Py_DECREF(result);
+  return r;
 }
