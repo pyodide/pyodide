@@ -509,6 +509,7 @@ function createInvoke(sig) {
   });
   return instance.exports["o"];
 }
+Module.createInvoke = createInvoke;
 
 Module.adjustWasmImports = function (wasmImports) {
   if (jsWrapperTag) {

@@ -1,15 +1,37 @@
-From 4da0e85d9038b9576d8bb670722be2eb93358482 Mon Sep 17 00:00:00 2001
+From 39492b68bd96b0830c44477c26a50a34815dba9a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH] Changes for JSPI
 
 ---
- src/parseTools.js | 2 +-
- src/preamble.js   | 7 +++++++
- 2 files changed, 8 insertions(+), 1 deletion(-)
+ src/library_dylink.js | 3 ++-
+ src/parseTools.js     | 2 +-
+ src/preamble.js       | 7 +++++++
+ 3 files changed, 10 insertions(+), 2 deletions(-)
 
+diff --git a/src/library_dylink.js b/src/library_dylink.js
+index d96e6b425..eea49130c 100644
+--- a/src/library_dylink.js
++++ b/src/library_dylink.js
+@@ -92,7 +92,7 @@ var LibraryDylink = {
+     // Asm.js-style exception handling: invoke wrapper generation
+     else if (symName.startsWith('invoke_')) {
+       // Create (and cache) new invoke_ functions on demand.
+-      sym = wasmImports[symName] = createInvokeFunction(symName.split('_')[1]);
++      sym = wasmImports[symName] = Module.createInvoke(symName.split('_')[1]);
+     }
+ #endif
+     return {sym: sym, name: symName};
+@@ -343,6 +343,7 @@ var LibraryDylink = {
+ #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
+   $createInvokeFunction__internal: true,
+   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
++  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
+   $createInvokeFunction: function(sig) {
+     return function() {
+       var sp = stackSave();
 diff --git a/src/parseTools.js b/src/parseTools.js
-index 167767e0f..95f28eed6 100644
+index 167767e0f..78626462b 100644
 --- a/src/parseTools.js
 +++ b/src/parseTools.js
 @@ -527,7 +527,7 @@ function makeThrow(excPtr) {
