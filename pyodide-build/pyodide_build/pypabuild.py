@@ -98,7 +98,7 @@ def _build_in_isolated_env(
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
     # needed.
-    # _IsolatedEnvBuilder.__exit__ = lambda *args: None  # type: ignore[method-assign]
+    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir
