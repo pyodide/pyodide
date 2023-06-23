@@ -111,7 +111,7 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
 }
 
 EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
-  return WebAssembly.Function.type(func).parameters.length;
+  return WebAssembly.Function.type(wasmTableMirror[func]).parameters.length;
 })
 
 typedef PyObject* (*zero_arg)(void);
