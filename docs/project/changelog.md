@@ -59,6 +59,10 @@ myst:
   have dependencies that don't do this correctly.)
   {pr}`3925`
 
+- {{ API }} Changed the name of the default lockfile from `repodata.json` to
+  `pyodide-lock.json`
+  {pr}`3824`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
@@ -69,6 +73,8 @@ myst:
   Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
+- Upgraded scikit-image to 0.21 {pr}`3874`
+- Upgraded pyodide-http to 0.2.1
 
 ## Version 0.23.3
 

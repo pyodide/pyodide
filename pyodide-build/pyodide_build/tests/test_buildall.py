@@ -46,7 +46,7 @@ def test_generate_dependency_graph_disabled():
     assert set(pkg_map.keys()) == set()
 
 
-def test_generate_repodata(tmp_path):
+def test_generate_lockfile(tmp_path):
     pkg_map = buildall.generate_dependency_graph(
         RECIPE_DIR, {"pkg_1", "pkg_2", "libtest", "libtest_shared"}
     )
@@ -60,7 +60,7 @@ def test_generate_repodata(tmp_path):
         with open(tmp_path / pkg.file_name, "rb") as f:
             hashes[pkg.name] = hashlib.sha256(f.read()).hexdigest()
 
-    package_data = buildall.generate_repodata(tmp_path, pkg_map)
+    package_data = buildall.generate_lockfile(tmp_path, pkg_map)
     assert set(package_data.keys()) == {"info", "packages"}
     assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
     assert package_data["info"]["arch"] == "wasm32"

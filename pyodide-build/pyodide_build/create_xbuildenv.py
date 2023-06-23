@@ -54,7 +54,7 @@ def _copy_wasm_libs(
         sysconfig_dir,
         Path("Makefile.envs"),
         wasm_lib_dir / "cmake",
-        Path("dist/repodata.json"),
+        Path("dist/pyodide-lock.json"),
         Path("dist/python"),
         Path("dist/python_stdlib.zip"),
     ]

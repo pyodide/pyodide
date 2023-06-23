@@ -248,7 +248,7 @@ export class PyodideAPI {
    *
    *    let result = await pyodide.runPythonAsync(`
    *        from js import fetch
-   *        response = await fetch("./repodata.json")
+   *        response = await fetch("./pyodide-lock.json")
    *        packages = await response.json()
    *        # If final statement is an expression, its value is returned to JavaScript
    *        len(packages.packages.object_keys())

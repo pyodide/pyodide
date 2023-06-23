@@ -1,15 +1,21 @@
 package:
   name: scikit-image
-  version: 0.19.3
+  version: 0.21.0
   top-level:
     - skimage
-    # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
+      # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
 source:
   patches:
-    - patches/preferred_plugins.patch
     - patches/make-tifffile-optional.patch
-  sha256: 24b5367de1762da6ee126dd8f30cc4e7efda474e0d7d70685433f0e3aa2ec450
-  url: https://files.pythonhosted.org/packages/00/d4/6682033d02917b10a2024dbe5a0636d2338b0799f7bd1885508fb114aec9/scikit-image-0.19.3.tar.gz
+  sha256: b33e823c54e6f11873ea390ee49ef832b82b9f70752c8759efd09d5a4e3d87f0
+  url: https://files.pythonhosted.org/packages/1d/c2/a54d5e6e2d6708e0722a1aaccef4b7cc1e6df6f76c8b4ce98cd6d0c332c3/scikit_image-0.21.0.tar.gz
+
+build:
+  script: |
+    export CFLAGS=${SIDE_MODULE_CFLAGS}
+    export LDFLAGS=${SIDE_MODULE_LDFLAGS}
+  backend-flags: setup-args=--cross-file=$PYODIDE_ROOT/tools/emscripten.meson.cross
+
 requirements:
   host:
     - numpy
@@ -21,10 +27,10 @@ requirements:
     - Pillow
     - imageio
     - pywavelets
+    - lazy_loader
 
 about:
   home: https://scikit-image.org
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
   license: Modified BSD
-# Note: this package cannot be updated until we add support for building with meson

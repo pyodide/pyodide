@@ -102,7 +102,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,repodata}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -143,7 +143,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='<< parameters.packages >>' make dist/repodata.json
+            PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -156,7 +156,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,repodata}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -489,7 +489,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
@@ -567,7 +567,7 @@ jobs:
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cd /tmp/ghr
-            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,repodata}.json pyodide/python_stdlib.zip
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
 
             cd -

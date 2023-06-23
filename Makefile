@@ -15,7 +15,7 @@ all: check \
 	dist/package.json \
 	dist/python \
 	dist/console.html \
-	dist/repodata.json \
+	dist/pyodide-lock.json \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
@@ -249,7 +249,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/repodata.json: FORCE pyodide_build
+dist/pyodide-lock.json: FORCE pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."

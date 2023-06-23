@@ -26,7 +26,7 @@ def recipe(
     ),
     install_dir: str = typer.Option(
         None,
-        help="Path to install built packages and repodata.json. "
+        help="Path to install built packages and pyodide-lock.json. "
         "If not specified, the default is `./dist`.",
     ),
     cflags: str = typer.Option(
@@ -65,7 +65,7 @@ def recipe(
         help="Level of zip compression to apply when installing. 0 means no compression.",
     ),
 ) -> None:
-    """Build packages using yaml recipes and create repodata.json"""
+    """Build packages using yaml recipes and create pyodide-lock.json"""
     init_environment()
 
     if common.in_xbuildenv():
