@@ -1,5 +1,6 @@
 #include <Python.h>
 
+#include <stddef.h>
 #include "emscripten.h"
 #include "internal/pycore_frame.h"
 
@@ -111,8 +112,18 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
 }
 
 EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
-  return WebAssembly.Function.type(wasmTableMirror[func]).parameters.length;
-})
+  if(count_params.cache.has(func)) {
+    return count_params.cache.get(func);
+  }
+  const n = WebAssembly.Function.type(wasmTableMirror[func]).parameters.length;
+  if (n > 3) {
+    throw new Error("handler takes too many arguments");
+  }
+  count_params.cache.set(func, n);
+  return n;
+}
+count_params.cache = new Map();
+)
 
 typedef PyObject* (*zero_arg)(void);
 typedef PyObject* (*one_arg)(PyObject*);
@@ -138,6 +149,8 @@ py_trampoline(PyCFunctionWithKeywords func,
         return ((two_arg)func)(self, args);
       case 3:
         return ((three_arg)func)(self, args, kw);
+      default:
+        unreachable();
     }
   }
 }
