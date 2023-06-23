@@ -331,7 +331,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
 
 @given(obj=any_equal_to_self_strategy)
 @std_hypothesis_settings
-@run_in_pyodide
+@run_in_pyodide(packages=["hypothesis"])
 def test_hyp_py2js2py(selenium, obj):
     import __main__
 
@@ -358,7 +358,7 @@ def test_hyp_py2js2py(selenium, obj):
 
 @given(obj=any_equal_to_self_strategy)
 @std_hypothesis_settings
-@run_in_pyodide
+@run_in_pyodide(packages=["hypothesis"])
 def test_hyp_py2js2py_2(selenium, obj):
     import __main__
 
@@ -391,7 +391,7 @@ def test_big_integer_py2js2py(selenium, a):
 @pytest.mark.skip_pyproxy_check
 @given(obj=any_strategy)
 @std_hypothesis_settings
-@run_in_pyodide
+@run_in_pyodide(packages=["hypothesis"])
 def test_hyp_tojs_no_crash(selenium, obj):
     import __main__
 
@@ -419,7 +419,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
     std_hypothesis_settings,
     max_examples=25,
 )
-@run_in_pyodide
+@run_in_pyodide(packages=["hypothesis"])
 def test_hypothesis(selenium_standalone, obj):
     from pyodide.ffi import to_js
 

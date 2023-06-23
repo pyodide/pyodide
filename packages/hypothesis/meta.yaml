@@ -1,0 +1,17 @@
+package:
+  name: hypothesis
+  version: 6.79.2
+  tag:
+    - core
+  top-level:
+    - _hypothesis_ftz_detector
+    - _hypothesis_pytestplugin
+    - hypothesis
+source:
+  url: https://files.pythonhosted.org/packages/5f/f6/87415c69136e381da94a8a45d56a16527c3f360dfe5a40198b983ead992e/hypothesis-6.79.2-py3-none-any.whl
+  sha256: 564d9860ed5e09b0434b7bafea392b0da8f67131190202c6002e58c2c96b7596
+about:
+  home: https://hypothesis.works
+  PyPI: https://pypi.org/project/hypothesis
+  summary: A library for property-based testing
+  license: MPL-2.0
