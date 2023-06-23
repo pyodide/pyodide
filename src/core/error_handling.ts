@@ -55,10 +55,9 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-
 // As a fallback for when Wasm EH is not available, use an empty function.
 // The fallback ensures instanceof always returns false.
-const wasmException = ((WebAssembly as any).Exception || function () {});
+const wasmException = (WebAssembly as any).Exception || function () {};
 const isWasmException = (e: any) => e instanceof wasmException;
 
 function convertCppException(e: any) {

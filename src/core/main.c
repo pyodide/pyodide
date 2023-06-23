@@ -43,6 +43,9 @@ finally:
   }
 }
 
+int
+pytrampoline_init(void);
+
 PyObject*
 PyInit__pyodide_core(void);
 
@@ -61,6 +64,7 @@ main(int argc, char** argv)
 {
   // This exits and prints a message to stderr on failure,
   // no status code to check.
+  pytrampoline_init();
   PyImport_AppendInittab("_pyodide_core", PyInit__pyodide_core);
   initialize_python(argc, argv);
   emscripten_exit_with_live_runtime();

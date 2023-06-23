@@ -4485,7 +4485,7 @@ int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
-  
+
   bool suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
   if (suspendersAvailable) {
     JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
@@ -4493,7 +4493,6 @@ JsProxy_init(PyObject* core_module)
     JsProxy_syncify_MethodDef.ml_meth =
       (PyCFunction)JsProxy_syncify_not_supported;
   }
-
 
   PyObject* asyncio_module = NULL;
   PyObject* flag_dict = NULL;
