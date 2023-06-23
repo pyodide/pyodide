@@ -1,5 +1,5 @@
-#include <emscripten.h>
 #include <Python.h>
+#include <emscripten.h>
 
 // clang-format off
 EM_JS(
@@ -13,9 +13,9 @@ py_emjs_trampoline_js,
 
 static PyObject*
 py_emjs_trampoline(PyCFunctionWithKeywords func,
-                     PyObject* self,
-                     PyObject* args,
-                     PyObject* kw)
+                   PyObject* self,
+                   PyObject* args,
+                   PyObject* kw)
 {
   return py_emjs_trampoline_js(func, self, args, kw);
 }
@@ -27,7 +27,7 @@ py_trampoline(PyCFunctionWithKeywords func,
               PyObject* args,
               PyObject* kw)
 {
-    return py_emjs_trampoline(func, self, args, kw);
+  return py_emjs_trampoline(func, self, args, kw);
 }
 
 PyObject*
