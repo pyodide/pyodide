@@ -57,6 +57,7 @@ build:
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
+    sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'
