@@ -728,14 +728,6 @@ function getHandlerFn(trampoline, sig) {
 }
 Module.getHandlerFn = getHandlerFn;
 
-function setPythonTrampoline() {
-  function* trampoline_generator(func, self, args, kw) {
-    return yield [func, [self, args, kw]];
-  }
-  const handler = getHandlerFn(trampoline_generator, "iiiii");
-  Module.HEAP32[Module._py_trampoline / 4] = addFunction(handler);
-}
-
 /**
  * This sets up syncify to work.
  *

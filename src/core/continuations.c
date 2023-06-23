@@ -82,17 +82,14 @@ EM_JS(int, continuations_init_js, (), {
 })
 // clang-format on
 
+static bool type_reflection_available;
+
 int
 continuations_init(void)
 {
+  type_reflection_available = EM_ASM_INT({ return "Function" in WebAssembly; });
   return continuations_init_js();
 }
-
-typedef PyObject*
-Trampoline(PyCFunctionWithKeywords func,
-           PyObject* self,
-           PyObject* args,
-           PyObject* kw);
 
 // clang-format off
 EM_JS(
@@ -113,11 +110,38 @@ bootstrap_trampoline(PyCFunctionWithKeywords func,
   return bootstrap_trampoline_js(func, self, args, kw);
 }
 
-// At startup py_trampoline points to bootstrap_trampoline but if JSPI is
-// available we'll replace it with a JSPI-aware trampoline in continuations.js
-Trampoline* py_trampoline = bootstrap_trampoline;
+EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
+  return WebAssembly.Function.type(func).parameters.length;
+})
+
+typedef PyObject* (*zero_arg)(void);
+typedef PyObject* (*one_arg)(PyObject*);
+typedef PyObject* (*two_arg)(PyObject*, PyObject*);
+typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 
 // These are the Emscripten call trampolines that we patched out of CPython.
+PyObject*
+py_trampoline(PyCFunctionWithKeywords func,
+              PyObject* self,
+              PyObject* args,
+              PyObject* kw)
+{
+  if (!type_reflection_available) {
+    return bootstrap_trampoline(func, self, args, kw);
+  } else {
+    switch (count_params(func)) {
+      case 0:
+        return ((zero_arg)func)();
+      case 1:
+        return ((one_arg)func)(self);
+      case 2:
+        return ((two_arg)func)(self, args);
+      case 3:
+        return ((three_arg)func)(self, args, kw);
+    }
+  }
+}
+
 PyObject*
 _PyCFunctionWithKeywords_TrampolineCall(PyCFunctionWithKeywords func,
                                         PyObject* self,
