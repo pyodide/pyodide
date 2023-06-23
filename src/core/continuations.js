@@ -392,10 +392,7 @@ class WasmModule {
   }
 
   addSectionBody(sectionCode, sectionBody) {
-    const section = [sectionCode];
-    uleb128Encode(sectionBody.length, section); // length of section in bytes
-    section.push(...sectionBody);
-    this._sections.push(section);
+    this._sections.push(insertSectionPrefix(sectionCode, sectionBody));
   }
 
   addImportSection(imports) {
