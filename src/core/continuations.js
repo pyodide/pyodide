@@ -12,7 +12,6 @@
  */
 import wrap_syncifying_wasm from "./wrap_syncifying.wat";
 
-
 // prettier-ignore
 const WASM_PRELUDE = [
   0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
@@ -361,9 +360,8 @@ function setSyncifyHandler() {
     { suspending: "first" },
   );
   // This module checks validSuspender, if there is no validSuspender returns 0
-  // for error. Otherwise, it calls save_state, stores the result into an
-  // externef, calls suspending_f with suspenderGlobal and the original argument
-  // then it calls restore_state with the saved state and returns the result.
+  // for error. Otherwise, it calls suspending_f with suspenderGlobal and the
+  // original argument.
   // See wrap_syncifying.wat
   const module = new WebAssembly.Module(new Uint8Array(wrap_syncifying_wasm));
   const instance = new WebAssembly.Instance(module, {
@@ -371,8 +369,6 @@ function setSyncifyHandler() {
       s: Module.suspenderGlobal,
       i: suspending_f,
       c: Module.validSuspender,
-      save: save_state,
-      restore: restore_state,
     },
   });
   HEAP32[_syncifyHandler / 4] = addFunction(instance.exports.o);
