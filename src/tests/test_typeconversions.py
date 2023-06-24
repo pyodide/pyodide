@@ -1,7 +1,7 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
-from typing import Any
-import pickle
 import io
+import pickle
+from typing import Any
 
 import pytest
 from hypothesis import example, given, settings
