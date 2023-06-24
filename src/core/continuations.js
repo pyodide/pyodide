@@ -1,17 +1,3 @@
-/**
- * This file handles stack switching for the C in-memory stack and for the
- * inaccessible wasm stack.
- */
-
-/**
- * This file is processed with build_continuations.mjs and then #included into
- * continuations.c as the definition of continuations_init_js
- *
- * build_continuations resolves the wat imports by assembling wat and wraps it
- * in EM_JS.
- */
-import wrap_syncifying_wasm from "./wrap_syncifying.wat";
-
 // prettier-ignore
 const WASM_PRELUDE = [
   0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
