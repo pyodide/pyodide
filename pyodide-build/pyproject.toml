@@ -1,3 +1,86 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyodide-build"
+authors = [{name = "Pyodide developers"}]
+description = '"Tools for building Pyodide"'
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+]
+license = {text = "MPL-2.0"}
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml",
+    "cython<3.0",
+    "ruamel.yaml",
+    "packaging",
+    "wheel",
+    "tomli",
+    "build==0.7.0",
+    "virtualenv",
+    "pydantic>=1.10.2",
+    "pyodide-cli~=0.2.1",
+    "cmake>=3.24",
+    "unearth~=0.6",
+    "requests",
+    "types-requests",
+    "typer",
+    "auditwheel-emscripten~=0.0.9",
+    "resolvelib",
+    "rich",
+    "loky",
+]
+dynamic = ["version"]
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/pyodide/pyodide"
+"Bug Tracker" = "https://github.com/pyodide/pyodide/issues"
+Documentation = "https://pyodide.org/en/stable/"
+
+[project.entry-points."pyodide.cli"]
+build = "pyodide_build.cli.build:main"
+build-recipes = "pyodide_build.cli.build_recipes:recipe"
+venv = "pyodide_build.cli.venv:main"
+skeleton = "pyodide_build.cli.skeleton:app"
+py-compile = "pyodide_build.cli.py_compile:main"
+config = "pyodide_build.cli.config:app"
+create-zipfile = "pyodide_build.cli.create_zipfile:main"
+xbuildenv = "pyodide_build.cli.xbuildenv:app"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-pyodide==0.52.2",
+]
+deploy = [
+    "boto3",
+    "moto",
+]
+
+[project.scripts]
+pyodide-build = "pyodide_build.__main__:main"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+license-files = ["LICENSE"]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = ["pyodide_build.tests"]
+namespaces = true
+
+[tool.setuptools.package-data]
+"pyodide_build.tools" = ["*.ini"]
+"pyodide_build.tools.cmake.modules.platform" = ["*.cmake"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyodide_build.__version__"}
