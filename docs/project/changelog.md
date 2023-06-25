@@ -73,6 +73,7 @@ myst:
   Cartopy {pr}`3909`, pyshp {pr}`3909`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
+- Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded pyodide-http to 0.2.1
 
 ## Version 0.23.3

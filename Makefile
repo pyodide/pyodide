@@ -145,9 +145,6 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/j
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
 
-%.wasm.gen.js: %.wat
-	node tools/assemble_wat.js $@
-
 src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
@@ -225,6 +222,7 @@ benchmark: all
 clean:
 	rm -fr dist/*
 	rm -fr src/*/*.o
+	rm -fr src/*/*.gen.*
 	rm -fr node_modules
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
