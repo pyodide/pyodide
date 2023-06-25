@@ -5,8 +5,8 @@ from pytest_pyodide import run_in_pyodide
 @pytest.mark.driver_timeout(60)
 @run_in_pyodide(packages=["netCDF4", "numpy"])
 def test_netCDF4_tutorial(selenium):
-    import datetime
     import re
+    from datetime import datetime
 
     DATETIME_PATTERN = re.compile(
         r"[a-zA-Z]{3} [a-zA-Z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}"
@@ -91,9 +91,8 @@ def test_netCDF4_tutorial(selenium):
 
     def replace_netcdf_datetime(match):
         try:
-            datetime.datetime.strptime(match.group(0), DATETIME_FORMAT)
+            datetime.strptime(match.group(0), DATETIME_FORMAT)
         except:
-            raise
             return match.group(0)
         else:
             return DATETIME_FORMAT
@@ -246,7 +245,7 @@ def test_netCDF4_tutorial(selenium):
     assert_print(temp[0, 0, [0, 1, 2, 3], [0, 1, 2, 3]].shape)
 
     # fill in times.
-    from datetime import datetime, timedelta
+    from datetime import timedelta
 
     from netCDF4 import date2num, num2date
 
