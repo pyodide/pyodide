@@ -92,7 +92,7 @@ def test_netCDF4_tutorial(selenium):
     def replace_netcdf_datetime(match):
         try:
             datetime.strptime(match.group(0), DATETIME_FORMAT)
-        except:
+        except Exception:
             return match.group(0)
         else:
             return DATETIME_FORMAT
