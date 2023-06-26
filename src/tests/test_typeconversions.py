@@ -28,7 +28,7 @@ def no_hypothesis(x):
     try:
         NoHypothesisUnpickler(io.BytesIO(pickle.dumps(x))).load()
         return True
-    except pickle.UnpicklingError:
+    except Exception:
         return False
 
 
