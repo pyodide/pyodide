@@ -1,7 +1,6 @@
+# flake8: noqa
 # This file contains tests that ensure build environment is properly initialized in
 # both in-tree and out-of-tree builds.
-
-# TODO: move functions that are tested here to a separate module
 
 import os
 
@@ -9,6 +8,8 @@ import pytest
 
 from conftest import ROOT_PATH
 from pyodide_build import build_env, common
+
+from .fixture import reset_cache, reset_env_vars, xbuildenv
 
 
 class TestInTree:

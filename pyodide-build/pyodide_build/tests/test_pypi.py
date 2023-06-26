@@ -1,3 +1,5 @@
+# flake8: noqa
+
 import re
 import subprocess
 import sys
@@ -13,6 +15,7 @@ import typer
 from typer.testing import CliRunner
 
 from pyodide_build.cli import build
+from .fixture import reset_cache, reset_env_vars, xbuildenv
 
 runner = CliRunner()
 
