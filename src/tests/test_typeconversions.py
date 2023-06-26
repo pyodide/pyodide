@@ -1,4 +1,6 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
+import io
+import pickle
 from typing import Any
 
 import pytest
@@ -12,6 +14,22 @@ from pytest_pyodide.hypothesis import (
     any_strategy,
     std_hypothesis_settings,
 )
+
+
+class NoHypothesisUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # Only allow safe classes from builtins.
+        if module == "hypothesis":
+            raise pickle.UnpicklingError()
+        return super().find_class(module, name)
+
+
+def no_hypothesis(x):
+    try:
+        NoHypothesisUnpickler(io.BytesIO(pickle.dumps(x))).load()
+        return True
+    except Exception:
+        return False
 
 
 @given(s=text())
@@ -329,7 +347,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
         main(selenium, s)
 
 
-@given(obj=any_equal_to_self_strategy)
+@given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py(selenium, obj):
@@ -356,7 +374,7 @@ def test_hyp_py2js2py(selenium, obj):
         del __main__.obj
 
 
-@given(obj=any_equal_to_self_strategy)
+@given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py_2(selenium, obj):
@@ -389,7 +407,7 @@ def test_big_integer_py2js2py(selenium, a):
 # Generate an object of any type
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=any_strategy)
+@given(obj=any_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_tojs_no_crash(selenium, obj):
@@ -413,7 +431,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=any_strategy)
+@given(obj=any_strategy.filter(no_hypothesis))
 @example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
 @settings(
     std_hypothesis_settings,

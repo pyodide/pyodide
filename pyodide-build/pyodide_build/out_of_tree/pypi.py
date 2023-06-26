@@ -26,7 +26,7 @@ from resolvelib.providers import AbstractProvider
 from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
-from .. import common
+from .. import build_env
 from ..common import repack_zip_archive
 from ..logger import logger
 from . import build
@@ -173,11 +173,11 @@ PYTHON_VERSION = Version(python_version())
 
 
 def get_target_python():
-    PYMAJOR = common.get_pyversion_major()
-    PYMINOR = common.get_pyversion_minor()
+    PYMAJOR = build_env.get_pyversion_major()
+    PYMINOR = build_env.get_pyversion_minor()
     tp = TargetPython(
         py_ver=(int(PYMAJOR), int(PYMINOR)),
-        platforms=[common.platform()],
+        platforms=[build_env.platform()],
         abis=[f"cp{PYMAJOR}{PYMINOR}"],
     )
     return tp
@@ -336,8 +336,8 @@ def _resolve_and_build(
     requirements = []
 
     target_env = {
-        "python_version": common.get_pyversion_major_minor(),
-        "sys_platform": common.platform().split("_")[0],
+        "python_version": build_env.get_pyversion_major_minor(),
+        "sys_platform": build_env.platform().split("_")[0],
         "extra": ",".join(extras),
     }
 
