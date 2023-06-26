@@ -12,7 +12,7 @@ LIB=libpython$(PYMAJOR).$(PYMINOR).a
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/hoodmane/libffi
-LIBFFI_COMMIT=56aaef545a6398026f6c570662f9596cb7d4948d
+LIBFFI_COMMIT=943bf78f62fc53ad619e6da1259e04c2e5ce35cb
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
