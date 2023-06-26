@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pydantic
 
-from pyodide_build import buildpkg, common
+from pyodide_build import build_env, buildpkg, common
 from pyodide_build.io import MetaConfig, _SourceSpec
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
@@ -89,7 +89,7 @@ def test_prepare_source(monkeypatch):
         returncode = 0
         stdout = ""
 
-    common.get_build_environment_vars()
+    build_env.get_build_environment_vars()
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess_result)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)
