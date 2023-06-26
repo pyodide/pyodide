@@ -2,12 +2,12 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from .common import (
-    exit_with_stdio,
+from .build_env import (
     get_build_flag,
     get_pyodide_root,
     get_unisolated_packages,
 )
+from .common import exit_with_stdio
 from .logger import logger
 from .recipe import load_all_recipes
 
