@@ -43,7 +43,9 @@ build:
   script: |
     # export VERBOSE=1
 
-    embuilder build --pic libjpeg libpng zlib
+    embuilder build libjpeg --pic
+    embuilder build libpng --pic
+    embuilder build zlib --pic
 
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
