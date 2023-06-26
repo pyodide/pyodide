@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.common import emscripten_version, get_pyodide_root
+from pyodide_build.build_env import emscripten_version, get_pyodide_root
 from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(

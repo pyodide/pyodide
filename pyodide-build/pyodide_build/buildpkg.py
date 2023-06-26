@@ -23,20 +23,24 @@ from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
 
-from . import common, pypabuild
-from .common import (
+from . import pypabuild
+from .build_env import (
     RUST_BUILD_PRELUDE,
+    get_build_environment_vars,
+    get_build_flag,
+    get_pyodide_root,
+    pyodide_tags,
+    replace_so_abi_tags,
+)
+from .common import (
     _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
-    get_build_environment_vars,
-    get_pyodide_root,
     make_zip_archive,
     modify_wheel,
-    replace_so_abi_tags,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -496,7 +500,7 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
-    wheel, *rest = find_matching_wheels(distdir.glob("*.whl"))
+    wheel, *rest = find_matching_wheels(distdir.glob("*.whl"), pyodide_tags())
     if rest:
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
@@ -516,7 +520,7 @@ def package_wheel(
 
         vendor_sharedlib = build_metadata.vendor_sharedlib
         if vendor_sharedlib:
-            lib_dir = Path(common.get_build_flag("WASM_LIBRARY_DIR"))
+            lib_dir = Path(get_build_flag("WASM_LIBRARY_DIR"))
             copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
         python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
@@ -723,7 +727,9 @@ def _build_package_inner(
         src_dist_dir.mkdir(exist_ok=True, parents=True)
         if pkg.is_rust_package():
             bash_runner.run(
-                RUST_BUILD_PRELUDE, script_name="rust build prelude", cwd=srcpath
+                RUST_BUILD_PRELUDE,
+                script_name="rust build prelude",
+                cwd=srcpath,
             )
         bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
 
@@ -884,35 +890,35 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_CFLAGS"),
+        default=get_build_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_CXXFLAGS"),
+        default=get_build_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_LDFLAGS"),
+        default=get_build_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_build_flag("TARGETINSTALLDIR"),
+        default=get_build_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
         "--host-install-dir",
         type=str,
         nargs="?",
-        default=common.get_build_flag("HOSTINSTALLDIR"),
+        default=get_build_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "
