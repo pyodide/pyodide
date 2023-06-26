@@ -2,8 +2,9 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, buildpkg, common, pywasmcross
-from ..common import get_num_cores, init_environment
+from .. import build_env, buildall, buildpkg, pywasmcross
+from ..build_env import init_environment
+from ..common import get_num_cores
 from ..logger import logger
 
 
@@ -68,8 +69,8 @@ def recipe(
     """Build packages using yaml recipes and create pyodide-lock.json"""
     init_environment()
 
-    if common.in_xbuildenv():
-        common.check_emscripten_version()
+    if build_env.in_xbuildenv():
+        build_env.check_emscripten_version()
 
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()

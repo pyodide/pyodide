@@ -26,7 +26,7 @@ from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
-from . import common, recipe
+from . import build_env, recipe
 from .buildpkg import needs_rebuild
 from .common import (
     find_matching_wheels,
@@ -113,7 +113,9 @@ class Package(BasePackage):
         if self.package_type in ("shared_library", "cpython_module"):
             candidates = list(dist_dir.glob("*.zip"))
         else:
-            candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))
+            candidates = list(
+                find_matching_wheels(dist_dir.glob("*.whl"), build_env.pyodide_tags())
+            )
 
         if len(candidates) != 1:
             raise RuntimeError(
@@ -702,7 +704,7 @@ def generate_lockfile(
     from . import __version__
 
     # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
+    [platform, _, arch] = build_env.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
@@ -817,16 +819,16 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
+        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
+        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
+        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
+        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(common.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args

@@ -10,7 +10,7 @@ import zipfile
 import typer
 from typer.testing import CliRunner
 from typing import Any
-from pyodide_build import common
+from pyodide_build import common, build_env
 from pyodide_build.cli import (
     build,
     build_recipes,
@@ -282,7 +282,7 @@ def test_config_get(cfg_name, env_var):
         ],
     )
 
-    assert result.stdout.strip() == common.get_build_flag(env_var)
+    assert result.stdout.strip() == build_env.get_build_flag(env_var)
 
 
 def test_create_zipfile(temp_python_lib, temp_python_lib2, tmp_path):
@@ -426,7 +426,7 @@ def test_py_compile(tmp_path, target, compression_level):
             assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
 
 
-def test_build1(tmp_path, monkeypatch):
+def test_build1(selenium, tmp_path, monkeypatch):
     from pyodide_build import pypabuild
 
     def mocked_build(srcdir: Path, outdir: Path, env: Any, backend_flags: Any) -> str:
@@ -437,9 +437,9 @@ def test_build1(tmp_path, monkeypatch):
 
     from contextlib import nullcontext
 
-    monkeypatch.setattr(common, "check_emscripten_version", lambda: None)
     monkeypatch.setattr(common, "modify_wheel", lambda whl: nullcontext())
-    monkeypatch.setattr(common, "replace_so_abi_tags", lambda whl: None)
+    monkeypatch.setattr(build_env, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(build_env, "replace_so_abi_tags", lambda whl: None)
 
     monkeypatch.setattr(pypabuild, "build", mocked_build)
 
@@ -450,8 +450,7 @@ def test_build1(tmp_path, monkeypatch):
     app = typer.Typer()
     app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
     result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir), "x", "y", "z"])
-    print(result)
-    print(result.stdout)
+
     assert result.exit_code == 0
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
