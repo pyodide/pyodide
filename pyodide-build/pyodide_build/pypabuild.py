@@ -21,13 +21,12 @@ from build.env import IsolatedEnv
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
-from .common import (
-    environment_substitute_args,
+from .build_env import (
     get_build_flag,
     get_hostsitepackages,
     get_pyversion,
     get_unisolated_packages,
-    replace_env,
+    platform,
 )
 from .io import _BuildSpecExports
 
@@ -116,7 +115,7 @@ def _build_in_isolated_env(
             install_reqs(env, build_reqs)
             installed_requires_for_build = True
 
-        with replace_env(build_env):
+        with common.replace_env(build_env):
             if not installed_requires_for_build:
                 install_reqs(
                     env,
@@ -202,7 +201,7 @@ def get_build_env(
         target_install_dir=target_install_dir,
     )
 
-    args = environment_substitute_args(kwargs, env)
+    args = common.environment_substitute_args(kwargs, env)
     args["builddir"] = str(Path(".").absolute())
     args["exports"] = exports
     env = env.copy()
@@ -225,7 +224,7 @@ def get_build_env(
         (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
 
         env["PATH"] = f"{symlink_dir}:{env['PATH']}"
-        env["_PYTHON_HOST_PLATFORM"] = common.platform()
+        env["_PYTHON_HOST_PLATFORM"] = platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = get_build_flag("SYSCONFIG_NAME")
         env["PYTHONPATH"] = str(sysconfig_dir)
         yield env
