@@ -1,7 +1,7 @@
-From 6f15df83c5945c9b2e65241bb38af8b71f57da52 Mon Sep 17 00:00:00 2001
+From ec7665ee83d4d430b340a87e4b3061672ce02974 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 15:08:18 -0800
-Subject: [PATCH 07/11] skip fortran fails to link
+Subject: [PATCH 07/12] skip fortran fails to link
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
@@ -11,7 +11,7 @@ function argument cast problems. Not worth fixing for tests.
  2 files changed, 9 deletions(-)
 
 diff --git a/scipy/integrate/setup.py b/scipy/integrate/setup.py
-index 1ba82d18c..dd298a480 100644
+index 682f4cfb0..48976129a 100644
 --- a/scipy/integrate/setup.py
 +++ b/scipy/integrate/setup.py
 @@ -95,12 +95,6 @@ def configuration(parent_package='',top_path=None):
@@ -42,5 +42,5 @@ index 0b936ceed..bf0c16d6c 100644
      config.add_subpackage('matlab')
      config.add_subpackage('arff')
 -- 
-2.34.1
+2.25.1
 

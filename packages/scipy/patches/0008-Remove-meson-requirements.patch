@@ -1,14 +1,14 @@
-From 08f0d9aa483d4edf5a86b2bc822af6686265c344 Mon Sep 17 00:00:00 2001
+From 9ed9022d88cb05e46b3d1aa077ba9e4d4ec740f8 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 10:58:25 -0700
-Subject: [PATCH 08/11] Remove meson requirements
+Subject: [PATCH 08/12] Remove meson requirements
 
 ---
  pyproject.toml | 5 ++---
  1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/pyproject.toml b/pyproject.toml
-index 6dc1d4070..f09cd3138 100644
+index 454a3c2e3..753b58365 100644
 --- a/pyproject.toml
 +++ b/pyproject.toml
 @@ -8,10 +8,9 @@
@@ -25,5 +25,5 @@ index 6dc1d4070..f09cd3138 100644
      # https://github.com/pybind/pybind11/issues/4420
      "pybind11==2.10.1",
 -- 
-2.34.1
+2.25.1
 
