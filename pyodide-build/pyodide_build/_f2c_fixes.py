@@ -473,6 +473,12 @@ def scipy_fix_cfile(path: str) -> None:
     if path.endswith("_flapackmodule.c"):
         text = text.replace(",size_t", "")
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
+        text = re.sub(
+            r"(\*f2py_rout__flapack_.gees.*(\n.*){3}),F_INT,F_INT ",
+            r"\1",
+            text,
+            flags=re.MULTILINE,
+        )
 
     if path.endswith("stats/statlib/spearman.c"):
         # in scipy/stats/statlib/swilk.f ALNORM is called with a double, and in
