@@ -298,6 +298,9 @@ if (jsWrapperTag) {
 }
 
 function createInvoke(sig) {
+  if (!jsWrapperTag) {
+    return createInvokeFunction(sig);
+  }
   const module = createInvokeModule(sig);
   const instance = new WebAssembly.Instance(module, {
     e: {

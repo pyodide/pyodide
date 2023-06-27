@@ -1,14 +1,28 @@
-From 39492b68bd96b0830c44477c26a50a34815dba9a Mon Sep 17 00:00:00 2001
+From b8b4364d0529dcff8bc25f9e0f2549d97e03180c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH] Changes for JSPI
 
 ---
+ src/library.js        | 2 +-
  src/library_dylink.js | 3 ++-
  src/parseTools.js     | 2 +-
  src/preamble.js       | 7 +++++++
- 3 files changed, 10 insertions(+), 2 deletions(-)
+ 4 files changed, 11 insertions(+), 3 deletions(-)
 
+diff --git a/src/library.js b/src/library.js
+index 75c97e6eb..fbf5cf090 100644
+--- a/src/library.js
++++ b/src/library.js
+@@ -1223,7 +1223,7 @@ mergeInto(LibraryManager.library, {
+ #if EXCEPTION_STACK_TRACES
+     throw new EmscriptenSjLj;
+ #else
+-    throw Infinity;
++    throw Module.wrapException(Infinity);
+ #endif
+   },
+ #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
 index d96e6b425..eea49130c 100644
 --- a/src/library_dylink.js
