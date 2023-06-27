@@ -97,7 +97,7 @@ def _build_in_isolated_env(
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
     # needed.
-    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
+    _IsolatedEnvBuilder.__exit__ = lambda *args: None
     with _IsolatedEnvBuilder() as env:
         builder.python_executable = env.executable
         builder.scripts_dir = env.scripts_dir
@@ -207,7 +207,9 @@ def get_build_env(
     env = env.copy()
 
     with TemporaryDirectory() as symlink_dir_str:
+        symlink_dir_str = "/home/hood/Documents/programming/pyodide/packages/scipy/build/symlinks"
         symlink_dir = Path(symlink_dir_str)
+        symlink_dir.mkdir(exist_ok=True)
         env.update(make_command_wrapper_symlinks(symlink_dir))
 
         sysconfig_dir = Path(get_build_flag("TARGETINSTALLDIR")) / "sysconfigdata"
