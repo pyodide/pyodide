@@ -207,7 +207,9 @@ def get_build_env(
     env = env.copy()
 
     with TemporaryDirectory() as symlink_dir_str:
-        symlink_dir_str = "/home/hood/Documents/programming/pyodide/packages/scipy/build/symlinks"
+        symlink_dir_str = (
+            "/home/hood/Documents/programming/pyodide/packages/scipy/build/symlinks"
+        )
         symlink_dir = Path(symlink_dir_str)
         symlink_dir.mkdir(exist_ok=True)
         env.update(make_command_wrapper_symlinks(symlink_dir))
