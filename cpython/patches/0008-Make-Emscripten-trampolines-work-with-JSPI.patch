@@ -1,4 +1,4 @@
-From 3a41dc4b23f05715c3107676718567eefa49cc39 Mon Sep 17 00:00:00 2001
+From 910e26ca8d373e95017b9c0e7f32a45aaf7ccd98 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -23,13 +23,13 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
- Include/internal/pycore_object.h | 16 +++++++---
- Objects/descrobject.c            | 22 ++++++++------
- Objects/methodobject.c           |  7 -----
- Python/emscripten_trampoline.c   | 52 ++++++++++++++++++++++++++++++++
+ Include/internal/pycore_object.h | 16 ++++++---
+ Objects/descrobject.c            | 22 +++++++-----
+ Objects/methodobject.c           |  7 ----
+ Python/emscripten_trampoline.c   | 59 ++++++++++++++++++++++++++++++++
  configure                        |  2 +-
  configure.ac                     |  2 +-
- 6 files changed, 79 insertions(+), 22 deletions(-)
+ 6 files changed, 86 insertions(+), 22 deletions(-)
  create mode 100644 Python/emscripten_trampoline.c
 
 diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
@@ -110,23 +110,24 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..44927459df
+index 0000000000..77aa0de3af
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,59 @@
 +#if defined(PY_CALL_TRAMPOLINE)
 +
 +#include <emscripten.h>
++#include <Python.h>
 +
-+EMSCRIPTEN_KEEPALIVE bool _PyEM_type_reflection_available;
++EMSCRIPTEN_KEEPALIVE int _PyEM_type_reflection_available;
 +
 +EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
-+EM_JS(int, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
++EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
 +    return wasmTable.get(func)(self, args, kw);
 +}
 +);
 +
-+EM_JS(int, count_params, (PyCFunctionWithKeywords func), {
++EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
 +  let n = count_params.cache.get(func);
 +  if (n !== undefined) {
 +    return n;
@@ -139,6 +140,12 @@ index 0000000000..44927459df
 +HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly;
 +)
 +
++
++typedef PyObject* (*zero_arg)(void);
++typedef PyObject* (*one_arg)(PyObject*);
++typedef PyObject* (*two_arg)(PyObject*, PyObject*);
++typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
++
 +PyObject*
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +              PyObject* self,
@@ -148,7 +155,7 @@ index 0000000000..44927459df
 +  if (!_PyEM_type_reflection_available) {
 +    return _PyEMJS_TrampolineCall(func, self, args, kw);
 +  } else {
-+    switch (count_params(func)) {
++    switch (_PyEM_CountFuncParams(func)) {
 +      case 0:
 +        return ((zero_arg)func)();
 +      case 1:
@@ -158,7 +165,7 @@ index 0000000000..44927459df
 +      case 3:
 +        return ((three_arg)func)(self, args, kw);
 +      default:
-+        PyErr_SetString(SystemError, "Handler takes too many arguments");
++        PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
 +        return NULL;
 +    }
 +  }
