@@ -7,7 +7,7 @@ PyObject*,
 py_emjs_trampoline_js,
 (PyCFunctionWithKeywords func, PyObject* self, PyObject* args, PyObject* kw),
 {
-    return wasmTableMirror[func](self, args, kw);
+    return getWasmTableEntry(func)(self, args, kw);
 });
 // clang-format on
 
