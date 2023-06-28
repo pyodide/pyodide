@@ -3,7 +3,8 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Jun 2023 12:32:05 -0700
 Subject: [PATCH 7/7] Remove trampoline definitions
 
-We need to make our own JSPI aware versions
+We need to make our own JSPI aware versions. They live in src/core/trampoline.c.
+
 ---
  Objects/descrobject.c  | 15 +++++++--------
  Objects/methodobject.c |  3 ---
