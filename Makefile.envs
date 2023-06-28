@@ -1,8 +1,12 @@
 export PYVERSION ?= 3.11.3
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.39
 
+ifdef CPYTHON_DEBUG
+	export CPYTHON_ABI_FLAGS=d
+endif
+
 export PLATFORM_TRIPLET=wasm32-emscripten
-export SYSCONFIG_NAME=_sysconfigdata__emscripten_$(PLATFORM_TRIPLET)
+export SYSCONFIG_NAME=_sysconfigdata_$(CPYTHON_ABI_FLAGS)_emscripten_$(PLATFORM_TRIPLET)
 
 # BASH_ENV tells bash to run pyodide_env.sh on startup, which sets various
 # environment variables. The next line instructs make to use bash to run each
@@ -39,7 +43,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
 export PKG_CONFIG_PATH=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
-export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)
+export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS)
 
 # Use env variable if defined, otherwise fallback to './'
 export PYODIDE_BASE_URL?=./
@@ -132,7 +136,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
 	\
-	-lpython$(PYMAJOR).$(PYMINOR) \
+	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
 	-lstdc++ \
 	-lidbfs.js \
