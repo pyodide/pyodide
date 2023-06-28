@@ -229,6 +229,13 @@ async function downloadPackage(
   channel: string,
   checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
+  if (IN_NODE) {
+    // ensure that the directory exists before trying to download files into it
+    await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
+      recursive: true,
+    });
+  }
+
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.lockfile_packages)) {
