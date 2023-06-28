@@ -1,4 +1,4 @@
-From 475c270f16817e6c3a3f973d6b3f7aaebc58be00 Mon Sep 17 00:00:00 2001
+From 09a31eee16e33b9de1146c9a16569f567f845708 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -61,7 +61,7 @@ index f022f82469..9b960ce9ce 100644
  #define _PyCFunction_TrampolineCall(meth, self, args) \
      (meth)((self), (args))
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 4d8b83758b..93e720e070 100644
+index 4d8b83758b..f9d4c00399 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
 @@ -15,15 +15,21 @@ class property "propertyobject *" "&PyProperty_Type"
@@ -86,7 +86,7 @@ index 4d8b83758b..93e720e070 100644
 +    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
 +
 +
-+#define descr_set_trampoline_call(get, obj, value, closure) \
++#define descr_get_trampoline_call(get, obj, closure) \
 +    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
 +
  #else
