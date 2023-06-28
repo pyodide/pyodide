@@ -1,3 +1,13 @@
+// This file provides the following trampolines:
+//
+//    * _PyCFunctionWithKeywords_TrampolineCall
+//    * descr_set_trampoline_call
+//    * descr_get_trampoline_call
+//
+// These are all imported from libpython because we deleted them with the
+// Remove-trampoline-definitions patch. We need this for JSPI because it
+// does not get along with JS trampolines.
+
 #include <Python.h>
 #include <emscripten.h>
 
