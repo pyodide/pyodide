@@ -1,4 +1,4 @@
-From 910e26ca8d373e95017b9c0e7f32a45aaf7ccd98 Mon Sep 17 00:00:00 2001
+From 1dff182675286b7f27160596e425c817af39eb3f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -23,13 +23,13 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
- Include/internal/pycore_object.h | 16 ++++++---
- Objects/descrobject.c            | 22 +++++++-----
+ Include/internal/pycore_object.h | 16 ++++++--
+ Objects/descrobject.c            | 22 ++++++-----
  Objects/methodobject.c           |  7 ----
- Python/emscripten_trampoline.c   | 59 ++++++++++++++++++++++++++++++++
+ Python/emscripten_trampoline.c   | 67 ++++++++++++++++++++++++++++++++
  configure                        |  2 +-
  configure.ac                     |  2 +-
- 6 files changed, 86 insertions(+), 22 deletions(-)
+ 6 files changed, 94 insertions(+), 22 deletions(-)
  create mode 100644 Python/emscripten_trampoline.c
 
 diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
@@ -110,10 +110,10 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..77aa0de3af
+index 0000000000..4be63d13f0
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,67 @@
 +#if defined(PY_CALL_TRAMPOLINE)
 +
 +#include <emscripten.h>
@@ -123,21 +123,29 @@ index 0000000000..77aa0de3af
 +
 +EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
 +EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
-+    return wasmTable.get(func)(self, args, kw);
++    return getWasmTableEntry(func)(arg1, arg2, arg3);
 +}
 +);
 +
 +EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
-+  let n = count_params.cache.get(func);
++  let n = _PyEM_CountFuncParams.cache.get(func);
 +  if (n !== undefined) {
 +    return n;
 +  }
 +  n = WebAssembly.Function.type(getWasmTableEntry(func)).parameters.length;
-+  count_params.cache.set(func, n);
++  _PyEM_CountFuncParams.cache.set(func, n);
 +  return n;
 +}
-+count_params.cache = new Map();
-+HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly;
++_PyEM_CountFuncParams.cache = new Map();
++switch(typeof Module.preRun) {
++    case "undefined":
++        Module.preRun = [];
++        break;
++    case "function":
++        Module.preRun = [Module.preRun];
++        break;
++}
++Module.preRun.push(() => HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly);
 +)
 +
 +
