@@ -214,11 +214,11 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to installURL from `pyodide-lock.json`, otherwise use the URL specified by
+ * relative to packageCacheDir from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
- * wheel or the path to the wheel relative to installURL.
+ * wheel or the path to the wheel relative to packageCacheDir.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
  * @returns The binary data for the package
@@ -235,7 +235,7 @@ async function downloadPackage(
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.lockfile_packages[name].file_name;
-    uri = resolvePath(file_name, API.config.installURL);
+    uri = resolvePath(file_name, API.config.packageCacheDir);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
       API.lockfile_packages[name].sha256,
     );

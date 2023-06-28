@@ -177,7 +177,7 @@ function calculateIndexURL(): string {
  */
 export type ConfigType = {
   indexURL: string;
-  installURL: string;
+  packageCacheDir: string;
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -211,11 +211,11 @@ export async function loadPyodide(
     indexURL?: string;
 
     /*
-     * The base URL for where new packages will be loaded.
+     * The base URL for where new packages will be downloaded.
      *
      * Default: same as indexURL
      */
-    installURL?: string;
+    packageCacheDir?: string;
 
     /**
      * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
@@ -292,7 +292,7 @@ export async function loadPyodide(
     indexURL += "/";
   }
   options.indexURL = indexURL;
-  options.installURL = options.installURL ?? indexURL;
+  options.packageCacheDir = options.packageCacheDir ?? indexURL;
 
   const default_config = {
     fullStdLib: false,
