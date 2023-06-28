@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Allow customizing installation location for packages
+  {pr}`3967`
+
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
   {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
 
