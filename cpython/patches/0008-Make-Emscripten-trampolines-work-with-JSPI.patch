@@ -1,4 +1,4 @@
-From 1dff182675286b7f27160596e425c817af39eb3f Mon Sep 17 00:00:00 2001
+From 475c270f16817e6c3a3f973d6b3f7aaebc58be00 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -24,12 +24,12 @@ We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
  Include/internal/pycore_object.h | 16 ++++++--
- Objects/descrobject.c            | 22 ++++++-----
+ Objects/descrobject.c            | 22 +++++++----
  Objects/methodobject.c           |  7 ----
  Python/emscripten_trampoline.c   | 67 ++++++++++++++++++++++++++++++++
  configure                        |  2 +-
  configure.ac                     |  2 +-
- 6 files changed, 94 insertions(+), 22 deletions(-)
+ 6 files changed, 95 insertions(+), 21 deletions(-)
  create mode 100644 Python/emscripten_trampoline.c
 
 diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
@@ -61,10 +61,10 @@ index f022f82469..9b960ce9ce 100644
  #define _PyCFunction_TrampolineCall(meth, self, args) \
      (meth)((self), (args))
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 4d8b83758b..403802d4d4 100644
+index 4d8b83758b..93e720e070 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
-@@ -15,15 +15,19 @@ class property "propertyobject *" "&PyProperty_Type"
+@@ -15,15 +15,21 @@ class property "propertyobject *" "&PyProperty_Type"
  
  // see pycore_object.h
  #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
@@ -76,7 +76,6 @@ index 4d8b83758b..403802d4d4 100644
 -EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
 -    return wasmTable.get(get)(obj, closure);
 -});
--#else
 +extern PyObject*
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +                     PyObject* self,
@@ -89,6 +88,8 @@ index 4d8b83758b..403802d4d4 100644
 +
 +#define descr_set_trampoline_call(get, obj, value, closure) \
 +    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
++
+ #else
 +
  #define descr_set_trampoline_call(set, obj, value, closure) \
      (set)((obj), (value), (closure))
