@@ -212,6 +212,7 @@ export async function loadPyodide(
 
     /*
      * The base URL for where new packages will be downloaded.
+     * Only applies when running in node.js. Ignored in browsers.
      *
      * Default: same as indexURL
      */
