@@ -34,6 +34,7 @@ source:
     # been fixed upstream in https://github.com/scipy/scipy/pull/18124
     - patches/0010-When-forward-declaring-print_soln-give-it-the-correc.patch
     - patches/0011-Enable-long-double-support-in-Boost-library-for-emsc.patch
+    - patches/0012-Fix-gees-calls.patch
 
 build:
   cflags: |
@@ -57,6 +58,7 @@ build:
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
+    sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h
 
     # Change many functions that return void into functions that return int
     find scipy -name "*.c*" -type f | xargs sed -i 's/extern void F_FUNC/extern int F_FUNC/g'

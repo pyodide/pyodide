@@ -1,7 +1,7 @@
-From bf08421e892aa528c5f89fcb94f75fe7eb41f0c3 Mon Sep 17 00:00:00 2001
+From abce2808389410c0b38c0127fab12fa802a1ab91 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 05/11] make int return values
+Subject: [PATCH 05/12] make int return values
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are
@@ -461,5 +461,5 @@ index 66a8e9f87..81d49c3bd 100644
 +c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
 +c     &           tmvopx, tmvbx, tgetv0, titref, trvec
 -- 
-2.34.1
+2.25.1
 
