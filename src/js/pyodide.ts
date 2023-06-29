@@ -295,7 +295,6 @@ export async function loadPyodide(
     indexURL += "/";
   }
   options.indexURL = indexURL;
-  options.packageCacheDir = options.packageCacheDir ?? indexURL;
 
   const default_config = {
     fullStdLib: false,
@@ -305,6 +304,7 @@ export async function loadPyodide(
     args: [],
     _node_mounts: [],
     env: {},
+    packageCacheDir: indexURL,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {
