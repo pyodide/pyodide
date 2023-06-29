@@ -214,11 +214,11 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to indexURL from `pyodide-lock.json`, otherwise use the URL specified by
+ * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
- * wheel or the path to the wheel relative to indexURL.
+ * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
  * @returns The binary data for the package
@@ -229,13 +229,24 @@ async function downloadPackage(
   channel: string,
   checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
+  let installBaseUrl: string;
+  if (IN_NODE) {
+    installBaseUrl = API.config.packageCacheDir;
+    // ensure that the directory exists before trying to download files into it
+    await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
+      recursive: true,
+    });
+  } else {
+    installBaseUrl = API.config.indexURL;
+  }
+
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.lockfile_packages[name].file_name;
-    uri = resolvePath(file_name, API.config.indexURL);
+    uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
       API.lockfile_packages[name].sha256,
     );
