@@ -1,7 +1,7 @@
-From 39c94e7f760354d5d42e6a354ba4a184f618c31d Mon Sep 17 00:00:00 2001
+From 3dc3d0fc7fa53422586c607a78e5cbf251dbfc62 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 11:51:53 -0700
-Subject: [PATCH 09/11] Fix fitpack
+Subject: [PATCH 09/12] Fix fitpack
 
 ---
  scipy/interpolate/fitpack/dblint.f | 9 ++++-----
@@ -84,7 +84,7 @@ index 71c57eb01..97b5851df 100644
        return
        end
 diff --git a/scipy/interpolate/fitpack/splint.f b/scipy/interpolate/fitpack/splint.f
-index f038b931b..776b06b9e 100644
+index 02b00da6a..6024a0476 100644
 --- a/scipy/interpolate/fitpack/splint.f
 +++ b/scipy/interpolate/fitpack/splint.f
 @@ -1,6 +1,5 @@
@@ -95,7 +95,7 @@ index f038b931b..776b06b9e 100644
  c  function splint calculates the integral of a spline function s(x)
  c  of degree k, which is given in its normalized b-spline representation
  c
-@@ -52,9 +51,9 @@ c  calculate the integrals wrk(i) of the normalized b-splines
+@@ -54,9 +53,9 @@ c  calculate the integrals wrk(i) of the normalized b-splines
  c  ni,k+1(x), i=1,2,...nk1.
        call fpintb(t,n,wrk,nk1,a,b)
  c  calculate the integral of s(x).
@@ -108,5 +108,5 @@ index f038b931b..776b06b9e 100644
        return
        end
 -- 
-2.34.1
+2.25.1
 

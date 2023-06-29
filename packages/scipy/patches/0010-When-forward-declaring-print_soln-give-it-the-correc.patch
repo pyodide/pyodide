@@ -1,7 +1,7 @@
-From bb4e0d92ee2ba91ac5defd36ca5781433de25688 Mon Sep 17 00:00:00 2001
+From 088146f257d89e2a73c64cddf0e4b6e4e613e3fe Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 10 Mar 2023 14:47:00 +0000
-Subject: [PATCH 10/11] When forward declaring print_soln, give it the correct
+Subject: [PATCH 10/12] When forward declaring print_soln, give it the correct
  signature
 
 ---
@@ -66,5 +66,5 @@ index df95d6fdc..7e032992d 100644
      *info = 0;
      Bstore = B->Store;
 -- 
-2.34.1
+2.25.1
 
