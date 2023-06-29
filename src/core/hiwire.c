@@ -966,12 +966,15 @@ EM_JS(int, normalizeReservedWords, (int word), {
 });
 
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
-  if (jskey in jsobj) {
-    return Hiwire.new_value(jsobj[jskey]);
+  const jsobj = Hiwire.get_value(idobj);
+  const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  const result = jsobj[jskey];
+  // clang-format off
+  if (result === undefined && !(jskey in jsobj)) {
+    // clang-format on
+    return ERROR_REF;
   }
-  return ERROR_REF;
+  return Hiwire.new_value(result);
 });
 
 // clang-format off
