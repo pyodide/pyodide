@@ -214,11 +214,11 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to packageCacheDir(when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
+ * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
- * wheel or the path to the wheel relative to packageCacheDir(when IN_NODE), or indexURL.
+ * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
  * @returns The binary data for the package

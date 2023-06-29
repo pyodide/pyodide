@@ -211,7 +211,9 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The base URL for where new packages will be downloaded.
+     * The file path where packages will be cached in `node.js`. If a package
+     * exists in `packageCacheDir` it is loaded from there, otherwise it is
+     * downloaded from the JsDelivr CDN and then cached into `packageCacheDir`.
      * Only applies when running in node.js. Ignored in browsers.
      *
      * Default: same as indexURL
