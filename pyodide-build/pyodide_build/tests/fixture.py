@@ -1,10 +1,9 @@
-import json
 import os
 import shutil
 from pathlib import Path
-from typing import Any
 
 import pytest
+from pyodide_lock import PyodideLockSpec
 
 from conftest import ROOT_PATH
 from pyodide_build import build_env
@@ -44,15 +43,16 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_pyodide_lock() -> dict[str, Any]:
-    # TODO: use pydantic
-
-    return {
-        "info": {
+def mock_pyodide_lock() -> PyodideLockSpec:
+    return PyodideLockSpec(
+        info={
             "version": "0.22.1",
+            "arch": "wasm32",
+            "platform": "emscripten_xxx",
+            "python": "3.11",
         },
-        "packages": {},
-    }
+        packages={},
+    )
 
 
 @pytest.fixture(scope="module")
@@ -84,9 +84,7 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 """  # noqa: W191
     )
     (pyodide_root / "dist").mkdir()
-    (pyodide_root / "dist" / "pyodide-lock.json").write_text(
-        json.dumps(mock_pyodide_lock())
-    )
+    mock_pyodide_lock().to_json(pyodide_root / "dist" / "pyodide-lock.json")
 
     with chdir(base):
         archive_name = shutil.make_archive("xbuildenv", "tar")

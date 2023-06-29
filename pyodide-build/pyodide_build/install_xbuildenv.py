@@ -5,6 +5,8 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve
 
+from pyodide_lock import PyodideLockSpec
+
 from . import build_env
 from .common import exit_with_stdio
 from .create_pypa_index import create_pypa_index
@@ -71,7 +73,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
     lockfile_path = xbuildenv_root / "dist" / "pyodide-lock.json"
     if lockfile_path.exists():
-        lockfile_bytes = lockfile_path.read_bytes()
+        lockfile = PyodideLockSpec.from_json(lockfile_path)
     else:
         try:
             with urlopen(cdn_base + "pyodide-lock.json") as response:
@@ -80,9 +82,8 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
             # Try again with old url
             with urlopen(cdn_base + "repodata.json") as response:
                 lockfile_bytes = response.read()
-    lockfile = json.loads(lockfile_bytes)
-    version = lockfile["info"]["version"]
-    create_pypa_index(lockfile["packages"], xbuildenv_root, cdn_base)
+        lockfile = PyodideLockSpec(**json.loads(lockfile_bytes))
+    create_pypa_index(lockfile.packages, xbuildenv_root, cdn_base)
 
     (xbuildenv_path / ".installed").touch()
 

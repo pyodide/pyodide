@@ -1,15 +1,11 @@
 from pathlib import Path
 from textwrap import dedent
-from typing import TypedDict
 
-
-class PackageInfo(TypedDict):
-    file_name: str
-    sha256: str
+from pyodide_lock.spec import PackageSpec
 
 
 def create_pypa_index(
-    packages: dict[str, PackageInfo], target_dir: Path, dist_url: str
+    packages: dict[str, PackageSpec], target_dir: Path, dist_url: str
 ) -> None:
     """Create a pip-compatible Python package (pypa) index to be used with a Pyodide virtual
     environment.
@@ -40,7 +36,7 @@ def create_pypa_index(
     packages = {
         pkgname: pkginfo
         for (pkgname, pkginfo) in packages.items()
-        if pkginfo["file_name"].endswith(".whl")
+        if pkginfo.file_name.endswith(".whl")
     }
     if not target_dir.exists():
         raise RuntimeError(f"target_dir={target_dir} does not exist")
@@ -87,8 +83,8 @@ def create_pypa_index(
 
     for pkgname, pkginfo in packages.items():
         pkgdir = index_dir / pkgname
-        filename = pkginfo["file_name"]
-        shasum = pkginfo["sha256"]
+        filename = pkginfo.file_name
+        shasum = pkginfo.sha256
         href = f"{dist_url}{filename}#sha256={shasum}"
         links_str = f'<a href="{href}">{pkgname}</a>\n'
         files_html = files_template.format(pkgname=pkgname, links=links_str)
