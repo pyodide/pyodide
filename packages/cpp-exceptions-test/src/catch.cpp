@@ -1,10 +1,7 @@
 #include <exception>
 using namespace std;
 #include <Python.h>
-<<<<<<< HEAD
-=======
 #include <setjmp.h>
->>>>>>> main
 #include <stdexcept>
 #include <stdio.h>
 
