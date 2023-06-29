@@ -6,6 +6,7 @@ source:
   sha256: 10b8fbdcf851e4f68a1f02f38d99bdc44c7c7fb9b1a62dcf924a0d29ff73395c
 build:
   backend-flags: --build-option=--nomp
+  exports: requested
 requirements:
   run:
     - numpy
