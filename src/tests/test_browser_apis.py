@@ -271,8 +271,8 @@ async def test_additional_event_listener_arguments(selenium):
 
     add_event_listener(x, "click", foo, once=True, something_else="foo")
 
-    assert x.listeners.click[0].kwargs.once is True
-    assert x.listeners.click[0].kwargs.something_else == "foo"
+    assert x.listeners.click[0].kwargs["once"] is True
+    assert x.listeners.click[0].kwargs["something_else"] == "foo"
 
     remove_event_listener(x, "click", foo)
     assert len(x.listeners.click) == 0
