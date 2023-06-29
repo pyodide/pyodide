@@ -1,6 +1,10 @@
 #include <exception>
 using namespace std;
 #include <Python.h>
+<<<<<<< HEAD
+=======
+#include <setjmp.h>
+>>>>>>> main
 #include <stdexcept>
 #include <stdio.h>
 
@@ -46,4 +50,18 @@ catch_call_pyobj(PyObject* x)
     asprintf(&msg, "caught ????");
   }
   return msg;
+}
+
+jmp_buf my_jump_buffer;
+void
+longjmp_func(int status);
+
+extern "C" int
+set_jmp_func()
+{
+  int status = setjmp(my_jump_buffer);
+  if (status == 0) {
+    longjmp_func(4);
+  }
+  return status;
 }

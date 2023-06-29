@@ -1,6 +1,11 @@
 #include <Python.h>
 #include <exception>
 #include <stdexcept>
+
+#include <setjmp.h>
+#include <stdnoreturn.h>
+
+jmp_buf my_jump_buffer;
 using namespace std;
 
 class myexception : public exception
@@ -31,4 +36,10 @@ call_pyobj(PyObject* x)
   int r = PyLong_AsLong(result);
   Py_DECREF(result);
   return r;
+}
+
+noreturn void
+longjmp_func(int status)
+{
+  longjmp(my_jump_buffer, status + 1); // will return status+1 out of setjmp
 }

@@ -54,3 +54,19 @@ def test_cpp_exception_catching(selenium):
             "caught ????",
         ]
     )
+
+
+def test_sjlj(selenium):
+    assert (
+        (
+            selenium.run_js(
+                """
+                await pyodide.loadPackage("cpp-exceptions-test");
+                const Module = pyodide._module;
+                const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+                return catchlib.set_jmp_func();
+                """
+            )
+        )
+        == 5
+    )

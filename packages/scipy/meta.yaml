@@ -34,6 +34,7 @@ source:
     # been fixed upstream in https://github.com/scipy/scipy/pull/18124
     - patches/0010-When-forward-declaring-print_soln-give-it-the-correc.patch
     - patches/0011-Enable-long-double-support-in-Boost-library-for-emsc.patch
+    - patches/0012-Fix-gees-calls.patch
 
 build:
   cflags: |
