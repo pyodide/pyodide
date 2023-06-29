@@ -164,6 +164,7 @@ function calculateIndexURL(): string {
  */
 export type ConfigType = {
   indexURL: string;
+  packageCacheDir: string;
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -196,7 +197,6 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
      * file. You can produce custom lock files with :py:func:`micropip.freeze`.
      * Default: ```${indexURL}/repodata.json```
      */
@@ -268,6 +268,7 @@ export async function loadPyodide(
     lockFileURL: indexURL! + "repodata.json",
     args: [],
     _node_mounts: [],
+    packageCacheDir: indexURL,
   };
   const config = Object.assign(default_config, options) as ConfigType;
 
