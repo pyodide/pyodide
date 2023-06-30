@@ -64,7 +64,7 @@ const sectionCodes = {
 function findSection(mod, section) {
   // start after wasm_prelude
   const sectionCode = sectionCodes[section];
-  let p = 8;
+  let p = WASM_PRELUDE.length;
   while (true) {
     const [body_len, ndigits] = uleb128Decode(mod, p + 1);
     const prefix_len = 1 + ndigits;
