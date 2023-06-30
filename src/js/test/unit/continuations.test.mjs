@@ -4,9 +4,9 @@ import { expect } from "chai";
 import { readFileSync, writeFileSync } from "node:fs";
 import * as vm from "node:vm";
 import loadWabt from "wabt";
-import { URL } from 'url'; // in Browser, the URL in native accessible on window
+import { URL } from "url"; // in Browser, the URL in native accessible on window
 
-const __dirname = new URL('.', import.meta.url).pathname;
+const __dirname = new URL(".", import.meta.url).pathname;
 
 const { parseWat } = await loadWabt();
 
@@ -18,7 +18,7 @@ function fromWat(wat) {
 }
 
 function fromWatFile(file) {
-  return parseWat(file, readFileSync(__dirname + file, {encoding: "utf8"}), {
+  return parseWat(file, readFileSync(__dirname + "invokes/" + file, { encoding: "utf8" }), {
     mutable_globals: true,
     exceptions: true,
   }).toBinary({}).buffer;
@@ -98,7 +98,6 @@ function compareModules(result, expected) {
     expect(result).to.deep.equal(expected);
   });
 }
-
 
 describe("dynamic wasm generation code", () => {
   describe("insertSectionPrefix", () => {
@@ -279,13 +278,12 @@ describe("dynamic wasm generation code", () => {
             )
             `);
 
-            compareModules(result, expected);
-
+      compareModules(result, expected);
     });
 
     describe("createInvokeModule", () => {
-      for(let sig of ["v", "vd", "jd", "jjjj"]) {
-        describe(sig,  () => {
+      for (let sig of ["v", "vd", "jd", "jjjj"]) {
+        describe(sig, () => {
           const result = createInvokeModule(sig);
           const expected = fromWatFile(`invoke_${sig}.wat`);
           compareModules(result, expected);
