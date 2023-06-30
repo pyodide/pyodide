@@ -220,7 +220,6 @@ describe("dynamic wasm generation code", () => {
       code.const("f64", ...Array(8).fill(0));
       code.call(0);
       code.call_indirect(0);
-      code.end();
       const codeSection = new Uint8Array(code.generate());
 
       const comparisonModule = fromWat(`
@@ -267,7 +266,6 @@ describe("dynamic wasm generation code", () => {
       mod.setExportType(export_tidx);
 
       const code = new CodeSection();
-      code.end();
       mod.addSection(code);
       const result = mod.generate();
       const expected = fromWat(`

@@ -7,6 +7,8 @@ const WASM_PRELUDE = [
 /**
  * This helper method finishes the section from the section body. It returns
  * [sectionCode, sectionLength, ...sectionBody]
+ *
+ * See https://webassembly.github.io/spec/core/binary/modules.html#sections
  */
 function insertSectionPrefix(sectionCode, sectionBody) {
   var section = [sectionCode];
@@ -15,6 +17,7 @@ function insertSectionPrefix(sectionCode, sectionBody) {
   return section;
 }
 
+// See https://webassembly.github.io/spec/core/appendix/index-types.html
 const typeCodes = {
   i32: 0x7f,
   i64: 0x7e,
@@ -24,6 +27,7 @@ const typeCodes = {
   void: 0x40,
 };
 
+// See https://webassembly.github.io/spec/core/appendix/index-instructions.html
 const constCodes = {
   i32: 0x41,
   i64: 0x42,
@@ -31,6 +35,18 @@ const constCodes = {
   f64: 0x44,
 };
 
+/**
+ * Convert from an emscripten sig to a wasm signature.
+ *
+ * Emscripten provides us with Emscripten sigs, WebAssembly.Function
+ * requires wasm sigs.
+ *
+ * Emscripten sigs only have vijfd but it's convenient to also include
+ * externref.
+ *
+ * @param {string} sig Emscripten signature
+ * @returns wasm signature
+ */
 function emscriptenSigToWasm(sig) {
   const lookup = {
     i: "i32",
@@ -46,22 +62,43 @@ function emscriptenSigToWasm(sig) {
   return { parameters, results };
 }
 
+/**
+ * The type section of a generated wasm module.
+ *
+ * The body of the type section is a vector of function types.
+ * See https://webassembly.github.io/spec/core/binary/modules.html#type-section
+ */
 class TypeSection {
   constructor() {
     this._numTypes = 0;
     this._section = [0];
   }
 
+  /**
+   * Adds an emscripten signature to the type section
+   * @param {string} sig the Emscripten signature
+   * @returns the index of the added type
+   */
   addEmscripten(sig) {
     return this.addWasm(emscriptenSigToWasm(sig));
   }
 
+  /**
+   * Adds a wasm signature to the type section
+   * @param {*} The wasm signature
+   * @returns the index of the added type
+   */
   addWasm({ parameters, results }) {
-    this._section.push(0x60 /* form: func */);
+    // A function type is 0x60 followed by a vector of value types representing
+    // the parameters followed by a vector of value types representing the
+    // results. See index of types.
+    this._section.push(0x60); // functype code
+    // parameters
     uleb128Encode(parameters.length, this._section);
     for (let p of parameters) {
       this._section.push(typeCodes[p]);
     }
+    // results
     uleb128Encode(results.length, this._section);
     for (let p of results) {
       this._section.push(typeCodes[p]);
@@ -75,11 +112,15 @@ class TypeSection {
   }
 }
 
+// Names are encoded as a vector of bytes:
+// https://webassembly.github.io/spec/core/binary/values.html#names
 function encodeStr(s) {
   const buf = new TextEncoder().encode(s);
   return [buf.length, ...buf];
 }
 
+// The import section is a vector of imports.
+// See https://webassembly.github.io/spec/core/binary/modules.html#binary-importsec
 class ImportSection {
   constructor() {
     this._numImports = 0;
@@ -93,19 +134,42 @@ class ImportSection {
     this._section.push(...encodeStr(name));
   }
 
+  /**
+   * Add a function import
+   * @param {*} name The name of the function import
+   * @param {*} sig the index into the type table
+   * @returns the index of the function
+   */
   addFunction(name, sig) {
     this._addName(name);
+    // A function import is specified by the index into the type table
     this._section.push(ImportSection.descr.func, sig);
     this._numImports++;
     return this.numFuncs++;
   }
 
+  /**
+   * Add a table. Always a table of funcref.
+   * @param {*} name The name of the table import
+   */
   addTable(name) {
     this._addName(name);
-    this._section.push(ImportSection.descr.table, 0x70, 0, 0);
+    this._section.push(
+      ImportSection.descr.table,
+      0x70 /* type funcref */,
+      0 /* no max */,
+      0 /* no min */,
+    );
     this._numImports++;
   }
 
+  /**
+   * Add a global of the given type
+   * @param {string} name
+   * @param {string} type A value type, so one of i32, i64, f32, f64, or
+   * externref
+   * @returns The index of the added global
+   */
   addGlobal(name, type) {
     this._addName(name);
     // 0x01 = mutable
@@ -114,8 +178,16 @@ class ImportSection {
     return this.numGlobals++;
   }
 
+  /**
+   * Add an exception handling tag.
+   * @param {*} name The name of the import
+   * @param {*} sig The signature of the tag. Must have empty parameters, tag
+   * sigs can only have results.
+   */
   addTag(name, sig) {
     this._addName(name);
+    // The 0 is reserved for future use (eg for wasm-stack-switching?)
+    // https://webassembly.github.io/exception-handling/core/binary/modules.html#binary-tag
     this._section.push(ImportSection.descr.tag, 0, sig);
     this._numImports++;
   }
@@ -134,7 +206,19 @@ ImportSection.descr = {
   tag: 4,
 };
 
+/**
+ * Generate a code section with one code object. We never need more than one. A
+ * code section is a vector of codes. A code entry consists of the size in bytes
+ * followed by a vector of locals which is run length encoded then the function
+ * body, ending in `end`.
+ *
+ * https://webassembly.github.io/spec/core/binary/modules.html#code-section
+ */
 class CodeSection {
+  /**
+   * Takes a varargs of local variables.
+   * A code object
+   */
   constructor(...locals) {
     this._section = [];
     this.add(locals.length);
@@ -143,6 +227,9 @@ class CodeSection {
     }
   }
 
+  /**
+   * Use this for any one-off instructions.
+   */
   add(...args) {
     this._section.push(...args);
   }
@@ -184,6 +271,7 @@ class CodeSection {
   }
 
   generate() {
+    this.end();
     return insertSectionPrefix(0x0a, insertSectionPrefix(1, this._section));
   }
 }
@@ -203,42 +291,86 @@ class WasmModule {
 
   addImportSection(imports) {
     this.addSection(imports);
+    // Have to record the number of imported functions to know the index of the
+    // function we define and want to export
     this._numImportFuncs = imports.numFuncs;
   }
 
+  /**
+   * We export exactly one function, so this sets the functionSection to have
+   * the given export type.
+   * @param {} type
+   */
   setExportType(type) {
     const functionSection = [
       0x01, // number of functions = 1
-      type,
+      type, // which has the type we plan to export
     ];
     this.addSectionBody(0x03, functionSection);
     const exportSection = [
       0x01, // One export
       ...encodeStr("o"),
       0x00, // a function
-      this._numImportFuncs,
+      this._numImportFuncs, // index of the function we define
     ];
     this.addSectionBody(0x07, exportSection);
   }
 
   generate() {
     const bytes = new Uint8Array(this._sections.flat());
-    // const fs = require("fs");
-    // fs.writeFileSync("gen.wasm", bytes);
     return new WebAssembly.Module(bytes);
   }
 }
 
+/**
+ * These produce the following pseudocode:
+ * ```
+ * function (func, ...args) {
+ *    let stack = stackSave();
+ *    try {
+ *       return func(...args);
+ *    } catch(e) {
+ *      stackRestore(stack);
+ *      __setThrew(1, 0);
+ *      return 0;
+ *    }
+ * }
+ * ```
+ *
+ * You can look in src/js/test/unit/invokes/ for a few examples of what this
+ * function produces.
+ *
+ * See
+ * https://webassembly.github.io/exception-handling/core/appendix/index-instructions.html
+ */
 function createInvokeModule(sig) {
   const mod = new WasmModule();
   const types = new TypeSection();
+  // invoke_sig is the signature of the function pointer we have to call
   const invoke_sig = emscriptenSigToWasm(sig);
+  // export_sig is the signature of the function we define.
+  // It takes one extra function pointer argument
   const export_sig = structuredClone(invoke_sig);
   export_sig.parameters.unshift("i32");
   const invoke_tidx = types.addWasm(invoke_sig);
   const export_tidx = types.addWasm(export_sig);
-  // Since results length is <= 1, we can fold the result type.
+  // Since results length is <= 1, we can fold the result type. wabt will
+  // automatically apply this folding so it's hard to make a unit test if we
+  // don't do it. Per the spec:
+  //
+  //    A block type is given either as a type index that refers to a suitable
+  //    function type, or as an optional value type inline, which is a shorthand
+  //    for the function type [] -> [valtype?]
+  //
+  // See https://webassembly.github.io/exception-handling/core/syntax/instructions.html#syntax-blocktype
   const try_tidx = typeCodes[invoke_sig.results[0] || "void"];
+
+  // The tag has an externref which wraps the original exception. We don't
+  // actually use the wrapped externref unless the exception isn't caught.
+  // Before throwing, Emscripten stores the exception into Module.lastException
+  // and it looks there to get info about the exception if it needs it. But if
+  // the error goes uncaught, we'll extract the original value of it in
+  // src/core/error_handling.ts in convertCppException.
   const tag_tidx = types.addEmscripten("ve");
   const save_tidx = types.addEmscripten("i");
   const restore_tidx = types.addEmscripten("vi");
@@ -248,33 +380,44 @@ function createInvokeModule(sig) {
   const imports = new ImportSection();
   imports.addTable("t");
   imports.addTag("tag", tag_tidx);
-  const save_func = imports.addFunction("s", save_tidx);
-  const restore_func = imports.addFunction("r", restore_tidx);
+  const save_stack_func = imports.addFunction("s", save_tidx);
+  const restore_stack_func = imports.addFunction("r", restore_tidx);
   const set_threw_func = imports.addFunction("q", setThrew_tidx);
   mod.addImportSection(imports);
   mod.setExportType(export_tidx);
 
+  // We need an extra local to store the stack pointer
   const code = new CodeSection(["i32"]);
-  const stateLocal = export_sig.parameters.length;
+  const stackLocal = export_sig.parameters.length;
 
-  code.call(save_func);
-  code.local_set(stateLocal);
+  // Save the stack into stackLocal
+  code.call(save_stack_func);
+  code.local_set(stackLocal);
 
-  code.add(0x06, try_tidx); // try
+  // try with the same return type as the function we're defining
+  code.add(0x06, try_tidx);
+  // add the arguments
   for (let i = 1; i < export_sig.parameters.length; i++) {
     code.local_get(i);
   }
+  // Then add the function pointer last
   code.local_get(0);
-
+  // make onwards call, if it throws we'll catch it!
   code.call_indirect(invoke_tidx);
+
   code.add(0x07, 0); // catch $tag
   code.add(0x1a); // drop the caught externref
-  code.local_get(stateLocal);
-  code.call(restore_func);
+  // restore stack
+  code.local_get(stackLocal);
+  code.call(restore_stack_func);
 
+  // call set_threw
   code.const("i32", 0x01);
   code.const("i32", 0x00);
   code.call(set_threw_func);
+
+  // If there's a return value, we need to put some 0's in to return.
+  // Since we called set_threw, the caller will ignore the return value
   const sizes = {
     i32: 1,
     i64: 1,
@@ -284,8 +427,7 @@ function createInvokeModule(sig) {
   for (let x of export_sig.results) {
     code.const(x, ...Array(sizes[x]).fill(0));
   }
-  code.end(); // end try
-  code.end(); // end func def
+  code.end(); // end try block
   mod.addSection(code);
 
   return mod.generate();
@@ -319,6 +461,9 @@ function createInvoke(sig) {
 }
 Module.createInvoke = createInvoke;
 
+// We patched Emscripten to call this function on the wasmImports just prior to
+// wasm instantiation if it is defined. It replaces all invoke functions with
+// our Wasm invokes if wasm EH is available.
 Module.adjustWasmImports = function (wasmImports) {
   if (jsWrapperTag) {
     const i = "invoke_";
