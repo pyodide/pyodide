@@ -1,14 +1,24 @@
 globalThis.Module = {};
 import { expect } from "chai";
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import * as vm from "node:vm";
 import loadWabt from "wabt";
+import { URL } from 'url'; // in Browser, the URL in native accessible on window
+
+const __dirname = new URL('.', import.meta.url).pathname;
 
 const { parseWat } = await loadWabt();
 
 function fromWat(wat) {
   return parseWat("fake.wat", wat, {
+    mutable_globals: true,
+    exceptions: true,
+  }).toBinary({}).buffer;
+}
+
+function fromWatFile(file) {
+  return parseWat(file, readFileSync(__dirname + file, {encoding: "utf8"}), {
     mutable_globals: true,
     exceptions: true,
   }).toBinary({}).buffer;
@@ -76,12 +86,19 @@ WasmModule.prototype.generate = function () {
   return new Uint8Array(this._sections.flat());
 };
 
-if (typeof it === "undefined") {
-  globalThis.it = function (a, b) {
-    console.log(a);
-    b();
-  };
+function compareModules(result, expected) {
+  for (const section of ["type", "import", "function", "export", "code"]) {
+    it(section, () => {
+      expect(findSection(result, section)).to.deep.equal(
+        findSection(expected, section),
+      );
+    });
+  }
+  it("full module", () => {
+    expect(result).to.deep.equal(expected);
+  });
 }
+
 
 describe("dynamic wasm generation code", () => {
   describe("insertSectionPrefix", () => {
@@ -252,7 +269,7 @@ describe("dynamic wasm generation code", () => {
       code.end();
       mod.addSection(code);
       const result = mod.generate();
-      const comparison = fromWat(`
+      const expected = fromWat(`
             (module
                 (import "e" "save"    (func (result i32)))
                 (import "e" "restore" (func (param i32)))
@@ -262,70 +279,18 @@ describe("dynamic wasm generation code", () => {
             )
             `);
 
-      // Check section-by-section first for ease of debugging
-      // Hypothetically wabt could produce the sections in a noncanonical order
-      // or the imports / types in a different order, but it seems to work.
-      for (const section of ["type", "import", "function", "export", "code"]) {
-        // console.log("section", section);
-        it(section, () => {
-          expect(findSection(result, section)).to.deep.equal(
-            findSection(comparison, section),
-          );
-        });
-      }
-      it("full module", () => {
-        expect(result).to.deep.equal(comparison);
-      });
+            compareModules(result, expected);
+
     });
 
     describe("createInvokeModule", () => {
-      const result = createInvokeModule("jd");
-      // We have to include the types explicitly to ensure that the type section
-      // of the generated module is in the right order
-      const expected = fromWat(`
-            (module
-                (type $a (func (param f64) (result i64)))
-                (type $x (func (param i32 f64) (result i64)))
-                (type $ttag (func (param externref)))
-                (type $tsave (func (result i32)))
-                (type $trestore (func (param i32)))
-                (type $tset_threw (func (param i32 i32)))
-
-                (import "e" "t" (table 0 funcref))
-                (import "e" "tag" (tag $tag (type $ttag)))
-                (import "e" "s" (func $stack_save (type $tsave)))
-                (import "e" "r" (func $stack_restore (type $trestore)))
-                (import "e" "q" (func $set_threw (type $tset_threw)))
-
-                (func (export "o") (param $fptr i32) (param $p1 f64) (result i64)
-                (local $stack i32)
-                call $stack_save
-                local.set $stack
-                try (result i64)
-                    local.get $p1
-                    local.get $fptr
-                    call_indirect (type $a)
-                catch $tag
-                    drop
-                    local.get $stack
-                    call $stack_restore
-                    (call $set_threw (i32.const 1) (i32.const 0))
-                    i64.const 0
-                end)
-                )
-            `);
-
-      // check section by section first to help with debugging
-      for (const section of ["import", "function", "export", "code"]) {
-        it(section, () => {
-          expect(findSection(result, section)).to.deep.equal(
-            findSection(expected, section),
-          );
+      for(let sig of ["v", "vd", "jd", "jjjj"]) {
+        describe(sig,  () => {
+          const result = createInvokeModule(sig);
+          const expected = fromWatFile(`invoke_${sig}.wat`);
+          compareModules(result, expected);
         });
       }
-      it("full module", () => {
-        expect(result).to.deep.equal(expected);
-      });
     });
   });
 });

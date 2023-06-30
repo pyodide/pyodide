@@ -21,6 +21,7 @@ const typeCodes = {
   f32: 0x7d,
   f64: 0x7c,
   externref: 0x6f,
+  void: 0x40,
 };
 
 const constCodes = {
@@ -236,8 +237,8 @@ function createInvokeModule(sig) {
   export_sig.parameters.unshift("i32");
   const invoke_tidx = types.addWasm(invoke_sig);
   const export_tidx = types.addWasm(export_sig);
-  // Since results length is 1, we can fold the result type.
-  const try_tidx = typeCodes[invoke_sig.results[0]];
+  // Since results length is <= 1, we can fold the result type.
+  const try_tidx = typeCodes[invoke_sig.results[0] || "void"];
   const tag_tidx = types.addEmscripten("ve");
   const save_tidx = types.addEmscripten("i");
   const restore_tidx = types.addEmscripten("vi");
