@@ -1,4 +1,4 @@
-From 52cc1a584fc9d6580842c2c841db1c240d4f97b9 Mon Sep 17 00:00:00 2001
+From 3231caa9ef541509c36f3c2c5d9acdd422b872ac Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -192,7 +192,7 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..e7c8bfe5e9
+index 0000000000..9da85eef3b
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
 @@ -0,0 +1,78 @@
@@ -254,7 +254,7 @@ index 0000000000..e7c8bfe5e9
 +              PyObject* args,
 +              PyObject* kw)
 +{
-+  if (!_PyEM_type_reflection_available) {
++  if (!type_reflection_available) {
 +    return _PyEMJS_TrampolineCall(func, self, args, kw);
 +  } else {
 +    switch (_PyEM_CountFuncParams(func)) {
