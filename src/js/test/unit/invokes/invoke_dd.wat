@@ -1,6 +1,6 @@
 (module
-    (type $a (func (param f64) (result i64)))
-    (type $x (func (param i32 f64) (result i64)))
+    (type $a (func (param f64) (result f64)))
+    (type $x (func (param i32 f64) (result f64)))
     (type $ttag (func (param externref)))
     (type $tsave (func (result i32)))
     (type $trestore (func (param i32)))
@@ -12,11 +12,11 @@
     (import "e" "r" (func $stack_restore (type $trestore)))
     (import "e" "q" (func $set_threw (type $tset_threw)))
 
-    (func (export "o") (param $fptr i32) (param $p1 f64) (result i64)
+    (func (export "o") (param $fptr i32) (param $p1 f64) (result f64)
             (local $stack i32)
         call $stack_save
         local.set $stack
-        try (result i64)
+        try (result f64)
             local.get $p1
             local.get $fptr
             call_indirect (type $a)
@@ -25,7 +25,7 @@
             local.get $stack
             call $stack_restore
             (call $set_threw (i32.const 1) (i32.const 0))
-            i64.const 0
+            f64.const 0
         end
     )
 )

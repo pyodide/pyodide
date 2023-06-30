@@ -282,7 +282,7 @@ describe("dynamic wasm generation code", () => {
     });
 
     describe("createInvokeModule", () => {
-      for (let sig of ["v", "vd", "jd", "jjjj"]) {
+      for (let sig of ["v", "vd", "fd", "dd", "jjjj"]) {
         describe(sig, () => {
           const result = createInvokeModule(sig);
           const expected = fromWatFile(`invoke_${sig}.wat`);
