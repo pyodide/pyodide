@@ -18,10 +18,14 @@ function fromWat(wat) {
 }
 
 function fromWatFile(file) {
-  return parseWat(file, readFileSync(__dirname + "invokes/" + file, { encoding: "utf8" }), {
-    mutable_globals: true,
-    exceptions: true,
-  }).toBinary({}).buffer;
+  return parseWat(
+    file,
+    readFileSync(__dirname + "invokes/" + file, { encoding: "utf8" }),
+    {
+      mutable_globals: true,
+      exceptions: true,
+    },
+  ).toBinary({}).buffer;
 }
 
 // Normally comes from Emscripten
@@ -162,17 +166,17 @@ describe("dynamic wasm generation code", () => {
 
       // Note: it's an implementation detail that wat2wasm generates the imports
       // in the same order that they are used, but it seems to work.
-      const comparison = fromWat(`
-            (module
-                (import "e" "a" (func (param i32) (param i32) (result i32) (result i32)))
-                (import "e" "b" (func (param externref)))
-                (import "e" "c" (func (result i32)))
-                (import "e" "d" (func (param i32) (result i32)))
-                (import "e" "e" (func (param i32) (param i32)))
-            )
-            `);
-      const comparisonTypeSection = findSection(comparison, "type");
-      expect(typeSection).to.deep.equal(comparisonTypeSection);
+      const comparisonModule = fromWat(`
+        (module
+          (type (func (param i32) (param i32) (result i32) (result i32)))
+          (type (func (param externref)))
+          (type (func (result i32)))
+          (type (func (param i32) (result i32)))
+          (type (func (param i32) (param i32)))
+        )
+      `);
+      const expectedTypeSection = findSection(comparisonModule, "type");
+      expect(typeSection).to.deep.equal(expectedTypeSection);
     });
 
     it("import section is generated correctly", () => {
@@ -187,20 +191,20 @@ describe("dynamic wasm generation code", () => {
 
       // Note: it's an implementation detail that wat2wasm generates the imports
       // in the same order that they appear in the wat but it seems to work.
-      const comparison = fromWat(`
-            (module
-                ;; addTable adds a table of type funcref with no limits
-                (import "e" "t" (table 0 funcref))
-                (import "e" "tag" (tag (param i32) (param i32)))
-                (import "e" "blah" (func (param i32) (param i32)))
-                ;; globals are all mutable
-                (global (import "e" "i32") (mut i32))
-                (global (import "e" "i64") (mut i64))
-                (global (import "e" "externref") (mut externref))
-            )
-            `);
-      const comparisonImportSection = findSection(comparison, "import");
-      expect(importSection).to.deep.equal(comparisonImportSection);
+      const comparisonModule = fromWat(`
+        (module
+          ;; addTable adds a table of type funcref with no limits
+          (import "e" "t" (table 0 funcref))
+          (import "e" "tag" (tag (param i32) (param i32)))
+          (import "e" "blah" (func (param i32) (param i32)))
+          ;; globals are all mutable
+          (global (import "e" "i32") (mut i32))
+          (global (import "e" "i64") (mut i64))
+          (global (import "e" "externref") (mut externref))
+        )
+      `);
+      const expectedImportSection = findSection(comparisonModule, "import");
+      expect(importSection).to.deep.equal(expectedImportSection);
     });
 
     it("code section is generated correctly", () => {
@@ -219,33 +223,31 @@ describe("dynamic wasm generation code", () => {
       code.end();
       const codeSection = new Uint8Array(code.generate());
 
-      const comparison = fromWat(`
-            (module
-                (global $suspender (import "e" "s") (mut externref))
-                (import "e" "f" (func $f (param i32) (result externref)))
+      const comparisonModule = fromWat(`
+        (module
+          (global $suspender (import "e" "s") (mut externref))
+          (import "e" "f" (func $f (param i32) (result externref)))
 
-                (func (export "o")
-                (param i32) (result i32)
-                    (local $a i32)
-                    (local $b externref)
-                (local.get 7)
-                (local.set 3)
-                (local.tee 9)
-                (global.get 1)
-                (global.set 2)
-                (i32.const 50)
-                (i64.const 57)
-                (f32.const 0)
-                (f64.const 0)
-                (call $f)
-                (call_indirect (param i32) (result externref))
-                )
-            )
-            `);
-      const comparisonCodeSection = findSection(comparison, "code");
-      expect(codeSection.slice(2)).to.deep.equal(
-        comparisonCodeSection.slice(2),
-      );
+          (func (export "o")
+              (param i32) (result i32)
+                (local $a i32)
+                (local $b externref)
+            (local.get 7)
+            (local.set 3)
+            (local.tee 9)
+            (global.get 1)
+            (global.set 2)
+            (i32.const 50)
+            (i64.const 57)
+            (f32.const 0)
+            (f64.const 0)
+            (call $f)
+            (call_indirect (param i32) (result externref))
+          )
+        )
+      `);
+      const expectedCodeSection = findSection(comparisonModule, "code");
+      expect(codeSection.slice(2)).to.deep.equal(expectedCodeSection.slice(2));
     });
   });
 
@@ -269,14 +271,14 @@ describe("dynamic wasm generation code", () => {
       mod.addSection(code);
       const result = mod.generate();
       const expected = fromWat(`
-            (module
-                (import "e" "save"    (func (result i32)))
-                (import "e" "restore" (func (param i32)))
-                (func (export "o")
-                    (param externref) (param i32) (result f32)
-                )
-            )
-            `);
+        (module
+          (import "e" "save"    (func (result i32)))
+          (import "e" "restore" (func (param i32)))
+          (func (export "o")
+              (param externref) (param i32) (result f32)
+          )
+        )
+      `);
 
       compareModules(result, expected);
     });
