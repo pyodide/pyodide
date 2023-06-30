@@ -1,4 +1,4 @@
-From e60c14b47bdef4b4be3346cac9373d8bed61ad8b Mon Sep 17 00:00:00 2001
+From 52cc1a584fc9d6580842c2c841db1c240d4f97b9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -27,11 +27,11 @@ was negatively affected.
  Include/internal/pycore_object.h              | 28 +------
  Objects/descrobject.c                         | 22 ++++--
  Objects/methodobject.c                        |  7 --
- Python/emscripten_trampoline.c                | 75 +++++++++++++++++++
+ Python/emscripten_trampoline.c                | 78 +++++++++++++++++++
  Python/pylifecycle.c                          |  5 ++
  configure                                     |  4 +-
  configure.ac                                  |  4 +-
- 8 files changed, 153 insertions(+), 46 deletions(-)
+ 8 files changed, 156 insertions(+), 46 deletions(-)
  create mode 100644 Include/internal/pycore_emscripten_trampoline.h
  create mode 100644 Python/emscripten_trampoline.c
 
@@ -192,24 +192,28 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..709c4f76a5
+index 0000000000..e7c8bfe5e9
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,75 @@
+@@ -0,0 +1,78 @@
 +#if defined(PY_CALL_TRAMPOLINE)
 +
 +#include <emscripten.h>
 +#include <Python.h>
 +
-+static int _PyEM_type_reflection_available;
++static int type_reflection_available;
 +
 +/**
 + * This is the GoogleChromeLabs approved way to feature detect type-reflection:
 + * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
 + */
++EM_JS(int, _PyEM_detect_type_reflection, (), {
++  return "function" in WebAssembly;
++});
++
 +void
 +_Py_EmscriptenTrampoline_Init(){
-+  _PyEM_type_reflection_available = EM_ASM_INT({return "function" in WebAssembly});
++  type_reflection_available = _PyEM_detect_type_reflection();
 +}
 +
 +/**
@@ -268,7 +272,6 @@ index 0000000000..709c4f76a5
 +    }
 +  }
 +}
-+
 +
 +#endif
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
