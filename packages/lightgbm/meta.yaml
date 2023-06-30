@@ -1,12 +1,12 @@
 package:
   name: lightgbm
-  _disabled: true
   version: 3.3.5
 source:
   url: https://files.pythonhosted.org/packages/98/1f/fc5c183012f5fdd23e65d54ee09312d8b4dc9e4e39c227236f61942ef293/lightgbm-3.3.5.tar.gz
   sha256: 10b8fbdcf851e4f68a1f02f38d99bdc44c7c7fb9b1a62dcf924a0d29ff73395c
 build:
   backend-flags: --build-option=--nomp
+  exports: whole_archive # FIXME: using "requested" fails with SIGKILL, not sure why
 requirements:
   run:
     - numpy

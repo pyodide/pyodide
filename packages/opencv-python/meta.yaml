@@ -1,6 +1,5 @@
 package:
   name: opencv-python
-  _disabled: true
   version: 4.7.0.72
   top-level:
     - cv2
@@ -40,10 +39,9 @@ build:
     -ljpeg
     -lz
     -lpng
-
   # Note on CMAKE_ARGS:
   #   CMake args are adopted from OpenCV.js (https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py)
-  #   But we support more of modules than OpenCV.js.
+  #   But we support more modules than OpenCV.js.
   #
   # List of OpenCV modules can be found at: https://docs.opencv.org/4.x/
   # Build configs can be found at: https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html

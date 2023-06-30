@@ -1,6 +1,6 @@
 package:
   name: wordcloud
-  version: 1.8.2.2
+  version: 1.9.2
   _disabled: true
   top-level:
     - wordcloud
@@ -8,8 +8,8 @@ requirements:
   run:
     - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/71/8b/0feea1341a29c645ca9dbc7f453b1101ee0725059977c7fce23e1bd75b83/wordcloud-1.8.2.2.tar.gz
-  sha256: 523db887e47e840eb5c2e60428243bb1d7439fdc60f89626b17bafa1be64459c
+  url: https://files.pythonhosted.org/packages/fe/f9/35e6f31e57c2f51351625045c9d1ad2fc33fe79cac21973f8985c7dbcbb9/wordcloud-1.9.2.tar.gz
+  sha256: 71062ba6bfeaf1a7f8b6f18f6a8a7a810ef10973ebd9aa10c04d9fff690363d3
 about:
   home: https://github.com/amueller/word_cloud
   PyPI: https://pypi.org/project/wordcloud
