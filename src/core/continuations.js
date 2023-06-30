@@ -4,6 +4,10 @@ const WASM_PRELUDE = [
   0x01, 0x00, 0x00, 0x00, // version: 1
 ];
 
+/**
+ * This helper method finishes the section from the section body. It returns
+ * [sectionCode, sectionLength, ...sectionBody]
+ */
 function insertSectionPrefix(sectionCode, sectionBody) {
   var section = [sectionCode];
   uleb128Encode(sectionBody.length, section); // length of section in bytes
@@ -132,9 +136,9 @@ ImportSection.descr = {
 class CodeSection {
   constructor(...locals) {
     this._section = [];
-    this._section.push(locals.length);
+    this.add(locals.length);
     for (let l of locals) {
-      this._section.push(1, typeCodes[l]);
+      this.add(1, typeCodes[l]);
     }
   }
 
@@ -143,39 +147,39 @@ class CodeSection {
   }
 
   local_get(idx) {
-    this._section.push(0x20, idx);
+    this.add(0x20, idx);
   }
 
   local_set(idx) {
-    this._section.push(0x21, idx);
+    this.add(0x21, idx);
   }
 
   local_tee(idx) {
-    this._section.push(0x22, idx);
+    this.add(0x22, idx);
   }
 
   global_get(idx) {
-    this._section.push(0x23, idx);
+    this.add(0x23, idx);
   }
 
   global_set(idx) {
-    this._section.push(0x24, idx);
+    this.add(0x24, idx);
   }
 
   call(func) {
-    this._section.push(0x10, func);
+    this.add(0x10, func);
   }
 
   call_indirect(func) {
-    this._section.push(0x11, func, 0);
+    this.add(0x11, func, 0);
   }
 
   const(type, ...val) {
-    this._section.push(constCodes[type], ...val);
+    this.add(constCodes[type], ...val);
   }
 
   end() {
-    this._section.push(0x0b);
+    this.add(0x0b);
   }
 
   generate() {
@@ -230,11 +234,10 @@ function createInvokeModule(sig) {
   const invoke_sig = emscriptenSigToWasm(sig);
   const export_sig = structuredClone(invoke_sig);
   export_sig.parameters.unshift("i32");
-  const try_sig = structuredClone(invoke_sig);
-  try_sig.parameters = [];
   const invoke_tidx = types.addWasm(invoke_sig);
   const export_tidx = types.addWasm(export_sig);
-  const try_tidx = types.addWasm(try_sig);
+  // Since results length is 1, we can fold the result type.
+  const try_tidx = typeCodes[invoke_sig.results[0]];
   const tag_tidx = types.addEmscripten("ve");
   const save_tidx = types.addEmscripten("i");
   const restore_tidx = types.addEmscripten("vi");
