@@ -80,7 +80,7 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic
+          - pydantic<2
           - unearth
           - resolvelib
           - rich
