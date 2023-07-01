@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pin `pydantic` to `<2`.
+  {pr}`3971`
+
 - {{ Enhancement }} Allow customizing installation location for packages
   {pr}`3967`
 
