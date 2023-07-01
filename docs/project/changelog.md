@@ -18,7 +18,8 @@ myst:
 - {{ Enhancement }} Allow customizing cache location for packages when running in Node
   {pr}`3967`
 
-- {{ Enhancement }} Re-enabled sparseqr
+- {{ Enhancement }} Re-enabled sparseqr, freesasa, lightgbm, opencv-python, and wordcloud
+  {pr}`3783`, {pr}`3970`
 
 ## Version 0.23.3
 
