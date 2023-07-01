@@ -21,9 +21,8 @@ from ..out_of_tree.pypi import (
 def pypi(
     package: str,
     output_directory: Path,
-    exports: str
-    | None = typer.Option(
-        None,
+    exports: str = typer.Option(
+        "",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -61,9 +60,8 @@ def download_url(url: str, output_directory: Path) -> str:
 def url(
     package_url: str,
     output_directory: Path,
-    exports: str
-    | None = typer.Option(
-        None,
+    exports: str = typer.Option(
+        "",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -90,9 +88,8 @@ def url(
 def source(
     source_location: Path,
     output_directory: Path,
-    exports: str
-    | None = typer.Option(
-        None,
+    exports: str = typer.Option(
+        "",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -122,9 +119,8 @@ def main(
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
     ),
-    exports: str
-    | None = typer.Option(
-        None,
+    exports: str = typer.Option(
+        "",
         help="Which symbols should be exported when linking .so files?",
     ),
     build_dependencies: bool = typer.Option(

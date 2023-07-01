@@ -25,7 +25,7 @@ def convert_exports(exports: str, source: str) -> _BuildSpecExports | list[str]:
     sys.exit(1)
 
 
-def run(srcdir: Path, outdir: Path, exports: str | None, args: list[str]) -> Path:
+def run(srcdir: Path, outdir: Path, exports: str, args: list[str]) -> Path:
     real_exports = None
     if exports:
         real_exports = convert_exports(exports, "--exports")
