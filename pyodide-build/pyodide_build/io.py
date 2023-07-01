@@ -85,8 +85,10 @@ class _EnumExports(str, Enum):
 _BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
 
 
-def _convert_exports(e: _EnumExports | None) -> _BuildSpecExports | None:
-    return cast(_BuildSpecExports | None, e)
+def _convert_exports(
+    e: _EnumExports | list[str] | None,
+) -> _BuildSpecExports | list[str] | None:
+    return cast(_BuildSpecExports | list[str] | None, e)
 
 
 _BuildSpecTypes = Literal[
@@ -95,7 +97,7 @@ _BuildSpecTypes = Literal[
 
 
 class _BuildSpec(BaseModel):
-    exports: _BuildSpecExports = "pyinit"
+    exports: _BuildSpecExports | list[str] = "pyinit"
     backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""

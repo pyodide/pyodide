@@ -18,6 +18,7 @@ from build.__main__ import (
     _ProjectBuilder,
 )
 from build.env import IsolatedEnv
+
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
@@ -186,7 +187,7 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    exports: _BuildSpecExports,
+    exports: _BuildSpecExports | list[str],
 ) -> Iterator[dict[str, str]]:
     """
     Returns a dict of environment variables that should be used when building

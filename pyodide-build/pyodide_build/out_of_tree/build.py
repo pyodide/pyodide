@@ -7,10 +7,9 @@ from ..io import _BuildSpecExports
 from ..logger import logger
 
 
-def default_exports() -> _BuildSpecExports:
-    if "PYODIDE_EXPORTS" not in os.environ:
-        return "requested"
-    exports = os.environ["PYODIDE_EXPORTS"]
+def convert_exports(exports: str, source: str) -> _BuildSpecExports | list[str]:
+    if "," in exports:
+        return [x.strip() for x in exports.split(",")]
     if exports == "pyinit":
         return "pyinit"
     if exports == "requested":
@@ -18,19 +17,22 @@ def default_exports() -> _BuildSpecExports:
     if exports == "whole_archive":
         return "whole_archive"
     logger.stderr(
-        'Expected PYODIDE_EXPORTS to be one of "pyinit", "requested", or"whole_archive" '
-        f"Got {exports}"
+        f"Expected {source} to be one of "
+        '"pyinit", "requested", "whole_archive", '
+        "or an explicit list of names to export. "
+        f'Got "{exports}".'
     )
     sys.exit(1)
 
 
-def run(
-    srcdir: Path, outdir: Path, exports: _BuildSpecExports | None, args: list[str]
-) -> Path:
-    if exports is None:
-        real_exports = default_exports()
-    else:
-        real_exports = exports
+def run(srcdir: Path, outdir: Path, exports: str | None, args: list[str]) -> Path:
+    real_exports = None
+    if exports:
+        real_exports = convert_exports(exports, "--exports")
+    if real_exports is None and "PYODIDE_EXPORTS" in os.environ:
+        real_exports = convert_exports(os.environ["PYODIDE_EXPORTS"], "PYODIDE_EXPORTS")
+    if real_exports is None:
+        real_exports = "requested"
 
     outdir = outdir.resolve()
     cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")

@@ -18,17 +18,17 @@ from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
-from packaging.version import Version
 from resolvelib import BaseReporter, Resolver
 from resolvelib.providers import AbstractProvider
 from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
 
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
+from packaging.version import Version
+
 from .. import build_env
 from ..common import repack_zip_archive
-from ..io import _BuildSpecExports
 from ..logger import logger
 from . import build
 
@@ -236,7 +236,7 @@ def get_metadata_for_wheel(url):
 class PyPIProvider(APBase):
     BUILD_FLAGS: list[str] = []
     BUILD_SKIP: list[str] = []
-    BUILD_EXPORTS: _BuildSpecExports | None = None
+    BUILD_EXPORTS: str | None = None
 
     def __init__(self, build_dependencies: bool):
         self.build_dependencies = build_dependencies
@@ -377,7 +377,7 @@ def build_wheels_from_pypi_requirements(
     target_folder: Path,
     build_dependencies: bool,
     skip_dependency: list[str],
-    exports: _BuildSpecExports | None,
+    exports: str | None,
     build_flags: list[str],
     output_lockfile: str | None,
 ) -> None:
@@ -401,7 +401,7 @@ def build_dependencies_for_wheel(
     wheel: Path,
     extras: list[str],
     skip_dependency: list[str],
-    exports: _BuildSpecExports | None,
+    exports: str | None,
     build_flags: list[str],
     output_lockfile: str | None,
     compression_level: int = 6,
