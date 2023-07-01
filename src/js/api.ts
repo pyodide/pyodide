@@ -560,8 +560,19 @@ export class PyodideAPI {
    * during execution of C code.
    */
   static checkInterrupt() {
-    if (Module.__PyErr_CheckSignals()) {
-      Module._pythonexc2js();
+    if (Module._PyGILState_Check()) {
+      // GIL held, so it's okay to call __PyErr_CheckSignals.
+      if (Module.__PyErr_CheckSignals()) {
+        Module._pythonexc2js();
+      }
+      return;
+    } else {
+      // GIL not held. This is very likely because we're in a IO handler. If
+      // buffer has a 2, throwing EINTR quits out from the IO handler and tells
+      // the calling context to call `PyErr_CheckSignals`.
+      if (Module.Py_EmscriptenSignalBuffer[0] === 2) {
+        throw new Module.FS.ErrnoError(cDefs.EINTR);
+      }
     }
   }
 

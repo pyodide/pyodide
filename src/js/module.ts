@@ -4,20 +4,54 @@ import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile } from "./compat";
 
-type FSNode = any;
-type FSStream = any;
+export type FSNode = {
+  timestamp: number;
+  rdev: number;
+  contents: Uint8Array;
+};
+
+export type FSStream = {
+  tty?: boolean;
+  seekable?: boolean;
+  stream_ops: FSStreamOps;
+  node: FSNode;
+};
+
+export type FSStreamOps = FSStreamOpsGen<FSStream>;
+
+export type FSStreamOpsGen<T> = {
+  open: (a: T) => void;
+  close: (a: T) => void;
+  fsync: (a: T) => void;
+  read: (
+    a: T,
+    b: Uint8Array,
+    offset: number,
+    length: number,
+    pos: number,
+  ) => number;
+  write: (
+    a: T,
+    b: Uint8Array,
+    offset: number,
+    length: number,
+    pos: number,
+  ) => number;
+};
 
 export interface FS {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
   chdir: (path: string) => void;
   symlink: (target: string, src: string) => FSNode;
-  createDevice: (
+  createDevice: ((
     parent: string,
     name: string,
     input?: (() => number | null) | null,
     output?: ((code: number) => void) | null,
-  ) => FSNode;
+  ) => FSNode) & {
+    major: number;
+  };
   closeStream: (fd: number) => void;
   open: (path: string, flags: string | number, mode?: number) => FSStream;
   makedev: (major: number, minor: number) => number;
@@ -26,7 +60,7 @@ export interface FS {
   stat: (path: string, dontFollow?: boolean) => any;
   readdir: (node: FSNode) => string[];
   isDir: (mode: number) => boolean;
-  lookupPath: (path: string) => FSNode;
+  lookupPath: (path: string) => { node: FSNode };
   isFile: (mode: number) => boolean;
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
   chmod: (path: string, mode: number) => void;
@@ -41,6 +75,8 @@ export interface FS {
     position?: number,
   ) => number;
   close: (stream: FSStream) => void;
+  ErrnoError: { new (errno: number): Error };
+  registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
 }
 
 export interface Module {
@@ -58,6 +94,7 @@ export interface Module {
   canvas?: HTMLCanvasElement;
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
+  reportUndefinedSymbols: () => void;
 }
 
 /**
