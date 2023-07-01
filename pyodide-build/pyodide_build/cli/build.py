@@ -10,6 +10,7 @@ import requests
 import typer
 
 from ..build_env import check_emscripten_version, init_environment
+from ..io import _convert_exports, _EnumExports
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
@@ -21,8 +22,9 @@ from ..out_of_tree.pypi import (
 def pypi(
     package: str,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
+    exports: _EnumExports
+    | None = typer.Option(
+        None,
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -41,7 +43,9 @@ def pypi(
             print(f"Successfully fetched: {package_path.name}")
             return dest_file
 
-        built_wheel = build.run(srcdir, output_directory, exports, backend_flags)
+        built_wheel = build.run(
+            srcdir, output_directory, _convert_exports(exports), backend_flags
+        )
         return built_wheel
 
 
@@ -60,8 +64,9 @@ def download_url(url: str, output_directory: Path) -> str:
 def url(
     package_url: str,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
+    exports: _EnumExports
+    | None = typer.Option(
+        None,
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -81,22 +86,27 @@ def url(
         if len(files) == 1 and files[0].is_dir():
             # unzipped into subfolder
             builddir = files[0]
-        wheel_path = build.run(builddir, output_directory, exports, backend_flags)
+        wheel_path = build.run(
+            builddir, output_directory, _convert_exports(exports), backend_flags
+        )
         return wheel_path
 
 
 def source(
     source_location: Path,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
+    exports: _EnumExports
+    | None = typer.Option(
+        None,
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
     backend_flags = ctx.args
-    built_wheel = build.run(source_location, output_directory, exports, backend_flags)
+    built_wheel = build.run(
+        source_location, output_directory, _convert_exports(exports), backend_flags
+    )
     return built_wheel
 
 
@@ -119,8 +129,9 @@ def main(
         "-r",
         help="Build a list of package requirements from a requirements.txt file",
     ),
-    exports: str = typer.Option(
-        "requested",
+    exports: _EnumExports
+    | None = typer.Option(
+        None,
         help="Which symbols should be exported when linking .so files?",
     ),
     build_dependencies: bool = typer.Option(
@@ -188,7 +199,7 @@ def main(
                 outpath,
                 build_dependencies,
                 skip_dependency,
-                exports,
+                _convert_exports(exports),
                 ctx.args,
                 output_lockfile=output_lockfile,
             )
@@ -223,7 +234,9 @@ def main(
                 wheel,
                 extras,
                 skip_dependency,
-                exports,
+                # TODO: should we really use same "exports" value for all of our
+                # dependencies? Not sure this makes sense...
+                _convert_exports(exports),
                 ctx.args,
                 output_lockfile=output_lockfile,
                 compression_level=compression_level,

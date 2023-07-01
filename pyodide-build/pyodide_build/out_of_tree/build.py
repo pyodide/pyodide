@@ -1,11 +1,37 @@
 import os
+import sys
 from pathlib import Path
-from typing import Any
 
 from .. import build_env, common, pypabuild
+from ..io import _BuildSpecExports
+from ..logger import logger
 
 
-def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
+def default_exports() -> _BuildSpecExports:
+    if "PYODIDE_EXPORTS" not in os.environ:
+        return "requested"
+    exports = os.environ["PYODIDE_EXPORTS"]
+    if exports == "pyinit":
+        return "pyinit"
+    if exports == "requested":
+        return "requested"
+    if exports == "whole_archive":
+        return "whole_archive"
+    logger.stderr(
+        'Expected PYODIDE_EXPORTS to be one of "pyinit", "requested", or"whole_archive" '
+        f"Got {exports}"
+    )
+    sys.exit(1)
+
+
+def run(
+    srcdir: Path, outdir: Path, exports: _BuildSpecExports | None, args: list[str]
+) -> Path:
+    if exports is None:
+        real_exports = default_exports()
+    else:
+        real_exports = exports
+
     outdir = outdir.resolve()
     cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
@@ -23,7 +49,7 @@ def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir="",
-        exports=exports,
+        exports=real_exports,
     )
 
     with build_env_ctx as env:
