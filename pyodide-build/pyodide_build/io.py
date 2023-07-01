@@ -95,7 +95,7 @@ _BuildSpecTypes = Literal[
 
 
 class _BuildSpec(BaseModel):
-    exports: _BuildSpecExports | list[_BuildSpecExports] = "pyinit"
+    exports: _BuildSpecExports = "pyinit"
     backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""
