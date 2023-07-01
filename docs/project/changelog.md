@@ -15,6 +15,9 @@ myst:
 
 ## Version 0.23.4
 
+- {{ Fix }} Pin `pydantic` to `<2`.
+  {pr}`3971`
+
 - {{ Enhancement }} Allow customizing cache location for packages when running in Node
   {pr}`3967`
 
