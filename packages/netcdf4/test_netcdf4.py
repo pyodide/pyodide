@@ -9,7 +9,7 @@ def test_netCDF4_tutorial(selenium):
     from datetime import datetime
 
     DATETIME_PATTERN = re.compile(
-        r"[a-zA-Z]{3} [a-zA-Z]{3} \d{1,2} \d{2}:\d{2}:\d{2} \d{4}"
+        r"[a-zA-Z]{3} [a-zA-Z]{3} [0-9]{1,2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}"
     )
     DATETIME_FORMAT = "%a %b %d %H:%M:%S %Y"
 
