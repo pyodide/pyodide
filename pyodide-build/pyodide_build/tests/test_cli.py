@@ -517,7 +517,7 @@ def test_build_exports(monkeypatch):
         exports_ = None
         result = runner.invoke(
             app,
-            ["build", *args],
+            [".", *args],
         )
         print("output", result.output)
         return result
