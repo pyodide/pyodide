@@ -1,6 +1,5 @@
-from enum import Enum
 from pathlib import Path
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 import pydantic
 from pydantic import BaseModel, Field
@@ -76,21 +75,7 @@ class _SourceSpec(BaseModel):
         return values
 
 
-class _EnumExports(str, Enum):
-    pyinit = "pyinit"
-    requested = "requested"
-    whole_archive = "whole_archive"
-
-
 _BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
-
-
-def _convert_exports(
-    e: _EnumExports | list[str] | None,
-) -> _BuildSpecExports | list[str] | None:
-    return cast(_BuildSpecExports | list[str] | None, e)
-
-
 _BuildSpecTypes = Literal[
     "package", "static_library", "shared_library", "cpython_module"
 ]

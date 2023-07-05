@@ -1,39 +1,13 @@
 import os
-import sys
 from pathlib import Path
 
 from .. import build_env, common, pypabuild
 from ..io import _BuildSpecExports
-from ..logger import logger
 
 
-def convert_exports(exports: str, source: str) -> _BuildSpecExports | list[str]:
-    if "," in exports:
-        return [x.strip() for x in exports.split(",")]
-    if exports == "pyinit":
-        return "pyinit"
-    if exports == "requested":
-        return "requested"
-    if exports == "whole_archive":
-        return "whole_archive"
-    logger.stderr(
-        f"Expected {source} to be one of "
-        '"pyinit", "requested", "whole_archive", '
-        "or an explicit list of names to export. "
-        f'Got "{exports}".'
-    )
-    sys.exit(1)
-
-
-def run(srcdir: Path, outdir: Path, exports: str, args: list[str]) -> Path:
-    real_exports = None
-    if exports:
-        real_exports = convert_exports(exports, "--exports")
-    if real_exports is None and "PYODIDE_EXPORTS" in os.environ:
-        real_exports = convert_exports(os.environ["PYODIDE_EXPORTS"], "PYODIDE_EXPORTS")
-    if real_exports is None:
-        real_exports = "requested"
-
+def run(
+    srcdir: Path, outdir: Path, exports: _BuildSpecExports | list[str], args: list[str]
+) -> Path:
     outdir = outdir.resolve()
     cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
@@ -51,7 +25,7 @@ def run(srcdir: Path, outdir: Path, exports: str, args: list[str]) -> Path:
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir="",
-        exports=real_exports,
+        exports=exports,
     )
 
     with build_env_ctx as env:
