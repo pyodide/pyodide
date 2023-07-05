@@ -543,6 +543,6 @@ def test_build_exports(monkeypatch):
     r = run("--exports", "x")
     assert r.exit_code == 1
     assert (
-        r.output.strip()
-        == 'Expected exports to be one of "pyinit", "requested", "whole_archive", or an comma separated list of symbols to export. Got "x".'
+        r.output.strip().replace("\n", " ").replace("  ", " ")
+        == 'Expected exports to be one of "pyinit", "requested", "whole_archive", or a comma separated list of symbols to export. Got "x".'
     )

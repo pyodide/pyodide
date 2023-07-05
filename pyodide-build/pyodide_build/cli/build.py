@@ -32,7 +32,7 @@ def convert_exports(exports: str) -> _BuildSpecExports | list[str]:
     logger.stderr(
         f"Expected exports to be one of "
         '"pyinit", "requested", "whole_archive", '
-        "or an comma separated list of symbols to export. "
+        "or a comma separated list of symbols to export. "
         f'Got "{exports}".'
     )
     sys.exit(1)
