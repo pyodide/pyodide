@@ -10,6 +10,8 @@ source:
 requirements:
   run:
     - numpy
+  host:
+    - numpy
 
 about:
   home: https://github.com/Unidata/cftime
