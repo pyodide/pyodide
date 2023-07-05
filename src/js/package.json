@@ -42,7 +42,8 @@
   "exports": {
     ".": {
       "require": "./pyodide.js",
-      "import": "./pyodide.mjs"
+      "import": "./pyodide.mjs",
+      "types": "./pyodide.d.ts"
     },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
