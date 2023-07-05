@@ -504,7 +504,8 @@ def test_build_exports(monkeypatch):
         nonlocal exports_
         exports_ = exports
 
-    # monkeypatch.setattr(cli.build, "download_url", download_url_shim)
+    monkeypatch.setattr(build_env, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(cli.build, "download_url", download_url_shim)
     monkeypatch.setattr(shutil, "unpack_archive", unpack_archive_shim)
     monkeypatch.setattr(pyodide_build.out_of_tree.build, "run", run_shim)
 
