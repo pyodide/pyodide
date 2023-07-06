@@ -96,6 +96,54 @@ def test_load_relative_url(
         )
 
 
+def test_load_absolute_url_package_json(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    """Check that URLs are supported in repodata.json"""
+    main_baseurl = f"http://{web_server_main[0]}:{web_server_main[1]}"
+    with spawn_web_server(tmp_path) as web_server, selenium_common(
+        request,
+        runtime,
+        web_server,
+        load_pyodide=False,
+        browsers=playwright_browsers,
+        script_type="classic",
+    ) as selenium, set_webdriver_script_timeout(
+        selenium, script_timeout=parse_driver_timeout(request.node)
+    ):
+        lockfile = json.loads((DIST_PATH / "pyodide-lock.json").read_text())
+        url, port, _ = web_server
+        new_baseurl = f"http://{url}:{port}"
+        for package in lockfile["packages"].values():
+            package["url"] = f"{new_baseurl}/{package['file_name']}"
+
+        (tmp_path / "pyodide-lock.json").write_text(json.dumps(lockfile))
+        lockFileURL = f"{new_baseurl}/pyodide-lock.json"
+
+        if selenium.browser != "node":
+            selenium.goto(f"{main_baseurl}/test.html")
+
+        # Equivalent to selenium.load_pyodide() but with custom
+        # see pytest-pyodide/pytest_pyodide/runner.py
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{ fullStdLib: false, jsglobals : self, lockFileURL: "{lockFileURL}" }});
+            self.pyodide = pyodide;
+            globalThis.pyodide = pyodide;
+            """
+        )
+        selenium.initialize_pyodide()
+        # if selenium.browser == "node":
+        #    selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
+        selenium.load_package("pytz")
+        assert (
+            selenium.run(
+                "import pytz; from pyodide_js import loadedPackages; loadedPackages.pytz"
+            )
+            == "default channel"
+        )
+
+
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 

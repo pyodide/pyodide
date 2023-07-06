@@ -240,40 +240,46 @@ async function downloadPackage(
     installBaseUrl = API.config.indexURL;
   }
 
-  let file_name, uri, file_sub_resource_hash;
+  let file_name, remote_url, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.lockfile_packages[name].file_name;
+    remote_url = API.lockfile_packages[name].url;
     uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
       API.lockfile_packages[name].sha256,
     );
   } else {
     uri = channel;
+    remote_url = channel;
     file_sub_resource_hash = undefined;
   }
 
   if (!checkIntegrity) {
     file_sub_resource_hash = undefined;
   }
+  if (!IN_NODE) {
+    // Use url field if it's defined
+    return await loadBinaryFile(remote_url || uri, file_sub_resource_hash);
+  }
+
+  // IN_NODE try loading from the local file system first
   try {
     return await loadBinaryFile(uri, file_sub_resource_hash);
   } catch (e) {
-    if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
-      throw e;
-    }
+    // pass
   }
   console.log(
-    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`,
+    `Didn't find package ${file_name} locally, attempting to load from ${
+      remote_url || cdnURL
+    }`,
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await loadBinaryFile(cdnURL + file_name);
-  console.log(
-    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`,
-  );
+  let binary = await loadBinaryFile(remote_url || cdnURL + file_name);
+  console.log(`Caching ${file_name} in node_modules for future use.`);
   await nodeFsPromisesMod.writeFile(uri, binary);
   return binary;
 }
