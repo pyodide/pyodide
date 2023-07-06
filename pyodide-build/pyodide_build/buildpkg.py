@@ -18,6 +18,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 from types import TracebackType
 from typing import Any, TextIO, cast
