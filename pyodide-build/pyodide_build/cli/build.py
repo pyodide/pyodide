@@ -10,7 +10,7 @@ import requests
 import typer
 
 from ..build_env import check_emscripten_version, init_environment
-from ..io import _BuildSpecExports
+from ..io import _BuildSpecExports, _ExportTypes
 from ..logger import logger
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
@@ -20,12 +20,12 @@ from ..out_of_tree.pypi import (
 )
 
 
-def convert_exports(exports: str) -> _BuildSpecExports | list[str]:
+def convert_exports(exports: str) -> _BuildSpecExports:
     if "," in exports:
         return [x.strip() for x in exports.split(",") if x.strip()]
-    possible_exports = get_args(_BuildSpecExports)
+    possible_exports = get_args(_ExportTypes)
     if exports in possible_exports:
-        return cast(_BuildSpecExports, exports)
+        return cast(_ExportTypes, exports)
     logger.stderr(
         f"Expected exports to be one of "
         '"pyinit", "requested", "whole_archive", '

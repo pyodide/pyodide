@@ -6,7 +6,7 @@ from ..io import _BuildSpecExports
 
 
 def run(
-    srcdir: Path, outdir: Path, exports: _BuildSpecExports | list[str], args: list[str]
+    srcdir: Path, outdir: Path, exports: _BuildSpecExports, args: list[str]
 ) -> Path:
     outdir = outdir.resolve()
     cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
