@@ -10,6 +10,7 @@ all:
 	--recipe-dir=./ \
 	--install \
 	--install-dir=../dist \
+	--metadata-files \
 	--n-jobs $${PYODIDE_JOBS:-4} \
 	--log-dir=./build-logs \
 	--compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)"

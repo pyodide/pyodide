@@ -30,6 +30,11 @@ def recipe(
         help="Path to install built packages and pyodide-lock.json. "
         "If not specified, the default is `./dist`.",
     ),
+    metadata_files: bool = typer.Option(
+        False, help="If true, extract the METADATA file from the built wheels "
+        "to a matching *.whl.metadata file. "
+        "If false, no *.whl.metadata file is produced.",
+    ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
     ),
@@ -99,7 +104,7 @@ def recipe(
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
-            buildpkg.build_package(package_path, build_args, force_rebuild, continue_)
+            buildpkg.build_package(package_path, build_args, metadata_files, force_rebuild, continue_)
 
     else:
         if len(packages) == 1 and "," in packages[0]:
