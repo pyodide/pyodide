@@ -554,7 +554,10 @@ def package_wheel(
             unpack_wheel(wheel, Path(temp_dir))
             name, ver, _ = wheel.name.split("-", 2)
             wheel_dist_info_dir_name = f"{name}-{ver}.dist-info"
-            shutil.copy2(Path(temp_dir) / wheel_dist_info_dir_name / "METADATA",distdir / f"{wheel.name}.metadata")
+            shutil.copy2(
+                Path(temp_dir) / wheel_dist_info_dir_name / "METADATA",
+                distdir / f"{wheel.name}.metadata",
+            )
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
@@ -763,7 +766,12 @@ def _build_package_inner(
                 )
 
             package_wheel(
-                name, srcpath, build_metadata, bash_runner, build_args.host_install_dir, extract_metadata_file,
+                name,
+                srcpath,
+                build_metadata,
+                bash_runner,
+                build_args.host_install_dir,
+                extract_metadata_file,
             )
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
@@ -975,7 +983,13 @@ def main(args: argparse.Namespace) -> None:
         target_install_dir=args.target_install_dir,
         host_install_dir=args.host_install_dir,
     )
-    build_package(args.package[0], build_args, args.metadata_file, args.force_rebuild, args.continue_)
+    build_package(
+        args.package[0],
+        build_args,
+        args.metadata_file,
+        args.force_rebuild,
+        args.continue_,
+    )
 
 
 if __name__ == "__main__":
