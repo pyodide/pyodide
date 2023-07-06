@@ -1,4 +1,4 @@
-From 3231caa9ef541509c36f3c2c5d9acdd422b872ac Mon Sep 17 00:00:00 2001
+From 6be83783273a194d5fee89bed989a6e3c1a6d970 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -25,13 +25,15 @@ was negatively affected.
 ---
  .../internal/pycore_emscripten_trampoline.h   | 54 +++++++++++++
  Include/internal/pycore_object.h              | 28 +------
+ Include/internal/pycore_runtime.h             |  5 ++
  Objects/descrobject.c                         | 22 ++++--
  Objects/methodobject.c                        |  7 --
- Python/emscripten_trampoline.c                | 78 +++++++++++++++++++
- Python/pylifecycle.c                          |  5 ++
+ Python/emscripten_trampoline.c                | 79 +++++++++++++++++++
+ Python/pylifecycle.c                          |  3 +
+ Python/pystate.c                              |  2 +
  configure                                     |  4 +-
  configure.ac                                  |  4 +-
- 8 files changed, 156 insertions(+), 46 deletions(-)
+ 10 files changed, 162 insertions(+), 46 deletions(-)
  create mode 100644 Include/internal/pycore_emscripten_trampoline.h
  create mode 100644 Python/emscripten_trampoline.c
 
@@ -141,6 +143,22 @@ index f022f82469..8bf4ebac38 100644
  #ifdef __cplusplus
  }
  #endif
+diff --git a/Include/internal/pycore_runtime.h b/Include/internal/pycore_runtime.h
+index ae63ae74af..521a1e87a4 100644
+--- a/Include/internal/pycore_runtime.h
++++ b/Include/internal/pycore_runtime.h
+@@ -75,6 +75,11 @@ typedef struct pyruntimestate {
+     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+     int initialized;
+ 
++#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++    /* Choose between trampoline based on type reflection vs based on EM_JS */
++    int wasm_type_reflection_available;
++#endif
++
+     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
+        is called again.
+ 
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
 index 4d8b83758b..f9d4c00399 100644
 --- a/Objects/descrobject.c
@@ -192,16 +210,16 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..9da85eef3b
+index 0000000000..33c9d25d2e
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,78 @@
+@@ -0,0 +1,79 @@
 +#if defined(PY_CALL_TRAMPOLINE)
 +
-+#include <emscripten.h>
++#include <emscripten.h>             // EM_JS, EM_JS_DEPS
 +#include <Python.h>
++#include "pycore_runtime.h"         // _PyRuntime
 +
-+static int type_reflection_available;
 +
 +/**
 + * This is the GoogleChromeLabs approved way to feature detect type-reflection:
@@ -212,8 +230,9 @@ index 0000000000..9da85eef3b
 +});
 +
 +void
-+_Py_EmscriptenTrampoline_Init(){
-+  type_reflection_available = _PyEM_detect_type_reflection();
++_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
++{
++  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
 +}
 +
 +/**
@@ -254,7 +273,7 @@ index 0000000000..9da85eef3b
 +              PyObject* args,
 +              PyObject* kw)
 +{
-+  if (!type_reflection_available) {
++  if (!_PyRuntime.wasm_type_reflection_available) {
 +    return _PyEMJS_TrampolineCall(func, self, args, kw);
 +  } else {
 +    switch (_PyEM_CountFuncParams(func)) {
@@ -275,7 +294,7 @@ index 0000000000..9da85eef3b
 +
 +#endif
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
-index 9248e971d9..43e821fb33 100644
+index 9248e971d9..05fd28b2df 100644
 --- a/Python/pylifecycle.c
 +++ b/Python/pylifecycle.c
 @@ -5,6 +5,7 @@
@@ -286,18 +305,36 @@ index 9248e971d9..43e821fb33 100644
  #include "pycore_exceptions.h"    // _PyExc_InitTypes()
  #include "pycore_dict.h"          // _PyDict_Fini()
  #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
-@@ -606,7 +607,11 @@ pycore_init_runtime(_PyRuntimeState *runtime,
+@@ -606,7 +607,9 @@ pycore_init_runtime(_PyRuntimeState *runtime,
      if (_PyStatus_EXCEPTION(status)) {
          return status;
      }
-+
-+    _Py_EmscriptenTrampoline_Init();
 +
      return _PyStatus_OK();
 +
  }
  
  
+diff --git a/Python/pystate.c b/Python/pystate.c
+index dfca3f5fd7..0dd2e7733e 100644
+--- a/Python/pystate.c
++++ b/Python/pystate.c
+@@ -2,6 +2,7 @@
+ /* Thread and interpreter state structures and their interfaces */
+ 
+ #include "Python.h"
++#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
+ #include "pycore_ceval.h"
+ #include "pycore_code.h"           // stats
+ #include "pycore_frame.h"
+@@ -126,6 +127,7 @@ init_runtime(_PyRuntimeState *runtime,
+     runtime->unicode_ids.lock = unicode_ids_mutex;
+ 
+     runtime->_initialized = 1;
++    _Py_EmscriptenTrampoline_Init(runtime);
+ }
+ 
+ PyStatus
 diff --git a/configure b/configure
 index 9e76287725..630ba49c0b 100755
 --- a/configure
