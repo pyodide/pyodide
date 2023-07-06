@@ -3,7 +3,7 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast, get_args
 from urllib.parse import urlparse
 
 import requests
@@ -23,12 +23,9 @@ from ..out_of_tree.pypi import (
 def convert_exports(exports: str) -> _BuildSpecExports | list[str]:
     if "," in exports:
         return [x.strip() for x in exports.split(",") if x.strip()]
-    if exports == "pyinit":
-        return "pyinit"
-    if exports == "requested":
-        return "requested"
-    if exports == "whole_archive":
-        return "whole_archive"
+    possible_exports = get_args(_BuildSpecExports)
+    if exports in possible_exports:
+        return cast(_BuildSpecExports, exports)
     logger.stderr(
         f"Expected exports to be one of "
         '"pyinit", "requested", "whole_archive", '
