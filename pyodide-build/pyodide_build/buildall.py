@@ -725,9 +725,9 @@ def copy_packages_to_dist_dir(
 
         if metadata_files and dist_artifact_path.suffix == ".whl":
             with ZipFile(dist_artifact_path, mode="r") as wheel:
-                name, ver, _ = wheel.name.split("-", 2)
+                name, ver, _ = dist_artifact_path.name.split("-", 2)
                 metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
-                wheel.getinfo(metadata_path).filename = f"{wheel.name}.metadata"
+                wheel.getinfo(metadata_path).filename = f"{dist_artifact_path.name}.metadata"
                 wheel.extract(metadata_path, output_dir)
 
         test_path = pkg.tests_path()
