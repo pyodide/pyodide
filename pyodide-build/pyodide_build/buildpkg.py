@@ -753,11 +753,7 @@ def _build_package_inner(
                 )
 
             package_wheel(
-                name,
-                srcpath,
-                build_metadata,
-                bash_runner,
-                build_args.host_install_dir,
+                name, srcpath, build_metadata, bash_runner, build_args.host_install_dir
             )
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
@@ -960,12 +956,7 @@ def main(args: argparse.Namespace) -> None:
         target_install_dir=args.target_install_dir,
         host_install_dir=args.host_install_dir,
     )
-    build_package(
-        args.package[0],
-        build_args,
-        args.force_rebuild,
-        args.continue_,
-    )
+    build_package(args.package[0], build_args, args.force_rebuild, args.continue_)
 
 
 if __name__ == "__main__":
