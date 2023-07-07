@@ -97,16 +97,16 @@ def recipe(
     build_args = buildall.set_default_build_args(build_args)
 
     if no_deps:
-        if install or log_dir_:
+        if install or log_dir_ or metadata_files:
             logger.warning(
-                "WARNING: when --no-deps is set, --install and --log-dir parameters are ignored",
+                "WARNING: when --no-deps is set, the --install, --log-dir, and --metadata-files parameters are ignored",
             )
 
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
             buildpkg.build_package(
-                package_path, build_args, metadata_files, force_rebuild, continue_
+                package_path, build_args, force_rebuild, continue_
             )
 
     else:
@@ -118,7 +118,7 @@ def recipe(
             targets = ",".join(packages)
 
         pkg_map = buildall.build_packages(
-            recipe_dir_, targets, build_args, metadata_files, n_jobs, force_rebuild
+            recipe_dir_, targets, build_args, n_jobs, force_rebuild
         )
 
         if log_dir_:
@@ -130,4 +130,8 @@ def recipe(
                 install_dir_,
                 compression_level=compression_level,
                 metadata_files=metadata_files,
+            )
+        else:
+            logger.warning(
+                "WARNING: when --install is not set, the --metadata-files parameter is ignored",
             )

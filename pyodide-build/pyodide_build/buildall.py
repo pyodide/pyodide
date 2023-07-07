@@ -18,6 +18,7 @@ from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
+from zipfile import ZipFile
 
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
@@ -78,7 +79,7 @@ class BasePackage:
     def needs_rebuild(self) -> bool:
         return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
 
-    def build(self, build_args: BuildArgs, extract_metadata_file: bool = False) -> None:
+    def build(self, build_args: BuildArgs) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -131,7 +132,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, build_args: BuildArgs, extract_metadata_file: bool = False) -> None:
+    def build(self, build_args: BuildArgs) -> None:
         p = subprocess.run(
             [
                 sys.executable,
@@ -149,8 +150,7 @@ class Package(BasePackage):
                 # been updated and should be rebuilt even though its own
                 # files haven't been updated.
                 "--force-rebuild",
-            ]
-            + (["--metadata-file"] if extract_metadata_file else []),
+            ],
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -489,7 +489,6 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
 def build_from_graph(
     pkg_map: dict[str, BasePackage],
     build_args: BuildArgs,
-    extract_metadata_files: bool = False,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> None:
@@ -587,7 +586,7 @@ def build_from_graph(
 
             success = True
             try:
-                pkg.build(build_args, extract_metadata_file=extract_metadata_files)
+                pkg.build(build_args)
             except Exception as e:
                 built_queue.put(e)
                 success = False
@@ -711,6 +710,7 @@ def copy_packages_to_dist_dir(
     packages: Iterable[BasePackage],
     output_dir: Path,
     compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
@@ -723,6 +723,13 @@ def copy_packages_to_dist_dir(
             output_dir / dist_artifact_path.name, compression_level=compression_level
         )
 
+        if metadata_files and dist_artifact_path.suffix == ".whl":
+            with ZipFile(dist_artifact_path, mode="r") as wheel:
+                name, ver, _ = wheel.name.split("-", 2)
+                metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
+                wheel.getinfo(metadata_path).filename = f"{wheel.name}.metadata"
+                wheel.extract(metadata_path, output_dir)
+
         test_path = pkg.tests_path()
         if test_path:
             shutil.copy(test_path, output_dir)
@@ -732,7 +739,6 @@ def build_packages(
     packages_dir: Path,
     targets: str,
     build_args: BuildArgs,
-    extract_metadata_files: bool = False,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
@@ -742,7 +748,7 @@ def build_packages(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, build_args, extract_metadata_files, n_jobs, force_rebuild)
+    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -800,7 +806,7 @@ def install_packages(
 
     logger.info(f"Copying built packages to {output_dir}")
     copy_packages_to_dist_dir(
-        pkg_map.values(), output_dir, compression_level=compression_level
+        pkg_map.values(), output_dir, compression_level=compression_level, metadata_files=metadata_files,
     )
 
     lockfile_path = output_dir / "pyodide-lock.json"

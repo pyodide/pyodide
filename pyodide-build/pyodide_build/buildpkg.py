@@ -22,7 +22,6 @@ from textwrap import dedent
 from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
-from zipfile import ZipFile
 
 from . import pypabuild
 from .build_env import (
@@ -474,7 +473,6 @@ def package_wheel(
     build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
     host_install_dir: str,
-    extract_metadata_file: bool = False,
 ) -> None:
     """Package a wheel
 
@@ -548,13 +546,6 @@ def package_wheel(
                     shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
         finally:
             shutil.rmtree(test_dir, ignore_errors=True)
-
-    if extract_metadata_file:
-        with ZipFile(wheel, mode="r") as unpacked_wheel:
-            name, ver, _ = wheel.name.split("-", 2)
-            metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
-            unpacked_wheel.getinfo(metadata_path).filename = f"{wheel.name}.metadata"
-            unpacked_wheel.extract(metadata_path, distdir)
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
@@ -657,7 +648,6 @@ def _build_package_inner(
     *,
     force_rebuild: bool = False,
     continue_: bool = False,
-    extract_metadata_file: bool = False,
 ) -> None:
     """
     Build the package.
@@ -768,7 +758,6 @@ def _build_package_inner(
                 build_metadata,
                 bash_runner,
                 build_args.host_install_dir,
-                extract_metadata_file,
             )
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
@@ -828,7 +817,6 @@ def _check_executables(pkg: MetaConfig) -> None:
 def build_package(
     package: str | Path,
     build_args: BuildArgs,
-    extract_metadata_file: bool = False,
     force_rebuild: bool = False,
     continue_: bool = False,
 ) -> None:
@@ -874,7 +862,6 @@ def build_package(
             build_args,
             force_rebuild=force_rebuild,
             continue_=continue_,
-            extract_metadata_file=extract_metadata_file,
         )
 
     except Exception:
@@ -943,13 +930,6 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--metadata-file",
-        action="store_true",
-        help=(
-            "Extract the METADATA file from the built wheel to a matching *.whl.metadata file"
-        ),
-    )
-    parser.add_argument(
         "--force-rebuild",
         action="store_true",
         help=(
@@ -983,7 +963,6 @@ def main(args: argparse.Namespace) -> None:
     build_package(
         args.package[0],
         build_args,
-        args.metadata_file,
         args.force_rebuild,
         args.continue_,
     )
