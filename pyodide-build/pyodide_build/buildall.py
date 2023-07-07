@@ -149,7 +149,8 @@ class Package(BasePackage):
                 # been updated and should be rebuilt even though its own
                 # files haven't been updated.
                 "--force-rebuild",
-            ] + (["--metadata-file"] if extract_metadata_file else []),
+            ]
+            + (["--metadata-file"] if extract_metadata_file else []),
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -707,7 +708,9 @@ def generate_lockfile(
 
 
 def copy_packages_to_dist_dir(
-    packages: Iterable[BasePackage], output_dir: Path, compression_level: int = 6,
+    packages: Iterable[BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
@@ -775,7 +778,10 @@ def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
 
 
 def install_packages(
-    pkg_map: dict[str, BasePackage], output_dir: Path, compression_level: int = 6, metadata_files: bool = False
+    pkg_map: dict[str, BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     """
     Install packages into the output directory.

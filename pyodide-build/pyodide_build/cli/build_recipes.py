@@ -126,5 +126,8 @@ def recipe(
 
         if install:
             buildall.install_packages(
-                pkg_map, install_dir_, compression_level=compression_level, metadata_files=metadata_files,
+                pkg_map,
+                install_dir_,
+                compression_level=compression_level,
+                metadata_files=metadata_files,
             )

@@ -41,7 +41,7 @@ from .common import (
     find_matching_wheels,
     find_missing_executables,
     make_zip_archive,
-    modify_wheel
+    modify_wheel,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
