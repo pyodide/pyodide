@@ -1,4 +1,4 @@
-From d72cb06d645f138c3c610cac69759d487e098564 Mon Sep 17 00:00:00 2001
+From 68a77d4dab1c27231fed2a541095929bdb2f34ab Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -23,7 +23,7 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
- .../internal/pycore_emscripten_trampoline.h   | 54 +++++++++++++
+ .../internal/pycore_emscripten_trampoline.h   | 55 +++++++++++++
  Include/internal/pycore_object.h              | 28 +------
  Include/internal/pycore_runtime.h             |  5 ++
  Objects/descrobject.c                         | 22 ++++--
@@ -33,19 +33,20 @@ was negatively affected.
  Python/pystate.c                              |  2 +
  configure                                     |  4 +-
  configure.ac                                  |  4 +-
- 10 files changed, 162 insertions(+), 46 deletions(-)
+ 10 files changed, 163 insertions(+), 46 deletions(-)
  create mode 100644 Include/internal/pycore_emscripten_trampoline.h
  create mode 100644 Python/emscripten_trampoline.c
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 new file mode 100644
-index 0000000000..1b1f1dd56d
+index 0000000000..e5031c8362
 --- /dev/null
 +++ b/Include/internal/pycore_emscripten_trampoline.h
-@@ -0,0 +1,54 @@
+@@ -0,0 +1,55 @@
 +#ifndef Py_EMSCRIPTEN_TRAMPOLINE_H
 +#define Py_EMSCRIPTEN_TRAMPOLINE_H
 +
++#include "pycore_runtime.h"  // _PyRuntimeState
 +
 +/**
 + * C function call trampolines to mitigate bad function pointer casts.
