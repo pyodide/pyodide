@@ -118,7 +118,7 @@ def recipe(
             targets = ",".join(packages)
 
         pkg_map = buildall.build_packages(
-            recipe_dir_, targets, build_args, n_jobs, force_rebuild
+            recipe_dir_, targets, build_args, metadata_files, n_jobs, force_rebuild
         )
 
         if log_dir_:
@@ -126,5 +126,5 @@ def recipe(
 
         if install:
             buildall.install_packages(
-                pkg_map, install_dir_, compression_level=compression_level
+                pkg_map, install_dir_, compression_level=compression_level, metadata_files=metadata_files,
             )

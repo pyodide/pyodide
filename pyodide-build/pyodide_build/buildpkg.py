@@ -18,11 +18,11 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from textwrap import dedent
 from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
+from zipfile import ZipFile
 
 from . import pypabuild
 from .build_env import (
@@ -41,8 +41,7 @@ from .common import (
     find_matching_wheels,
     find_missing_executables,
     make_zip_archive,
-    modify_wheel,
-    unpack_wheel,
+    modify_wheel
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -475,7 +474,7 @@ def package_wheel(
     build_metadata: _BuildSpec,
     bash_runner: BashRunnerWithSharedEnvironment,
     host_install_dir: str,
-    extract_metadata_file: bool,
+    extract_metadata_file: bool = False,
 ) -> None:
     """Package a wheel
 
@@ -551,14 +550,11 @@ def package_wheel(
             shutil.rmtree(test_dir, ignore_errors=True)
 
     if extract_metadata_file:
-        with TemporaryDirectory() as temp_dir:
-            unpack_wheel(wheel, Path(temp_dir))
+        with ZipFile(wheel, mode="r") as unpacked_wheel:
             name, ver, _ = wheel.name.split("-", 2)
-            wheel_dist_info_dir_name = f"{name}-{ver}.dist-info"
-            shutil.copy2(
-                Path(temp_dir) / wheel_dist_info_dir_name / "METADATA",
-                distdir / f"{wheel.name}.metadata",
-            )
+            metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
+            unpacked_wheel.getinfo(metadata_path).filename = f"{wheel.name}.metadata"
+            unpacked_wheel.extract(metadata_path, distdir)
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
