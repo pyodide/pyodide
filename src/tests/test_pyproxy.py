@@ -1551,7 +1551,6 @@ async def test_multiple_interpreters(selenium):
     assert d2.toJs().to_py() == d1
 
 
-
 def test_pyproxy_instanceof_function(selenium):
     weird_function_shim = ""
     if selenium.browser in ["firefox", "node"]:

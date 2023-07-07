@@ -15,6 +15,8 @@ myst:
 
 ## Version 0.23.4
 
+_July 6, 2023_
+
 - {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
   used instead of the `--exports` argument to `pyodide build` to specify `.so`
   file exports of packages.
