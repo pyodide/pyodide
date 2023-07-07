@@ -806,7 +806,10 @@ def install_packages(
 
     logger.info(f"Copying built packages to {output_dir}")
     copy_packages_to_dist_dir(
-        pkg_map.values(), output_dir, compression_level=compression_level, metadata_files=metadata_files,
+        pkg_map.values(),
+        output_dir,
+        compression_level=compression_level,
+        metadata_files=metadata_files,
     )
 
     lockfile_path = output_dir / "pyodide-lock.json"

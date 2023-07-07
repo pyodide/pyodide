@@ -105,9 +105,7 @@ def recipe(
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
-            buildpkg.build_package(
-                package_path, build_args, force_rebuild, continue_
-            )
+            buildpkg.build_package(package_path, build_args, force_rebuild, continue_)
 
     else:
         if len(packages) == 1 and "," in packages[0]:
