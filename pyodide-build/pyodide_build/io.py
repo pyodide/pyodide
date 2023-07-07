@@ -75,14 +75,15 @@ class _SourceSpec(BaseModel):
         return values
 
 
-_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+_ExportTypes = Literal["pyinit", "requested", "whole_archive"]
+_BuildSpecExports = _ExportTypes | list[str]
 _BuildSpecTypes = Literal[
     "package", "static_library", "shared_library", "cpython_module"
 ]
 
 
 class _BuildSpec(BaseModel):
-    exports: _BuildSpecExports | list[_BuildSpecExports] = "pyinit"
+    exports: _BuildSpecExports = "pyinit"
     backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""
