@@ -213,9 +213,22 @@ function recursiveDependencies(
 //
 
 /**
- * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
- * `channel`.
+ * Download a package.
+ *
+ * In the browser:
+ *  - If `channel` is not `DEFAULT_CHANNEL`, download the package from the URL
+ *    specified by `channel`.
+ *  - If `channel` is `DEFAULT_CHANNEL`:
+ *    - if package->url field is specified, download it from there
+ *    - otherwise construct the wheel URL as indexURL / package->file_name
+ *
+ * In Node:
+ *  - If `channel` is not `DEFAULT_CHANNEL`, same logic as in the browser (i.e. no caching)
+ *  - If `channel` is `DEFAULT_CHANNEL`:
+ *    - If the package is already in packageCacheDir / package->file_name, use that
+ *    - Use package->url is defined or indexURL / package->file_name to
+ *    download the wheel and copy it into packageCacheDir
+ *
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
@@ -252,6 +265,7 @@ async function downloadPackage(
       API.lockfile_packages[name].sha256,
     );
   } else {
+    // in this case channel is the URL
     uri = channel;
     remote_url = channel;
     file_sub_resource_hash = undefined;
@@ -260,8 +274,8 @@ async function downloadPackage(
   if (!checkIntegrity) {
     file_sub_resource_hash = undefined;
   }
-  if (!IN_NODE) {
-    // Use url field if it's defined
+  if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
+    // Use url field if it's defined. Caching in Node is not yet supported in this case.
     return await loadBinaryFile(remote_url || uri, file_sub_resource_hash);
   }
 
