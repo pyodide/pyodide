@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
+  used instead of the `--exports` argument to `pyodide build` to specify `.so`
+  file exports of packages.
+  {pr}`3973`
+
 - {{ Fix }} Pin `pydantic` to `<2`.
   {pr}`3971`
 
