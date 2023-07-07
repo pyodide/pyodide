@@ -727,7 +727,9 @@ def copy_packages_to_dist_dir(
             with ZipFile(dist_artifact_path, mode="r") as wheel:
                 name, ver, _ = dist_artifact_path.name.split("-", 2)
                 metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
-                wheel.getinfo(metadata_path).filename = f"{dist_artifact_path.name}.metadata"
+                wheel.getinfo(
+                    metadata_path
+                ).filename = f"{dist_artifact_path.name}.metadata"
                 wheel.extract(metadata_path, output_dir)
 
         test_path = pkg.tests_path()
