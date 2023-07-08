@@ -95,9 +95,6 @@
       "pyodide",
       "page",
       "chai"
-    ],
-    "file": [
-      "test/conftest.js"
     ]
   },
   "nyc": {
