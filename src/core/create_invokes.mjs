@@ -1,4 +1,25 @@
-import {WasmModule, CodeSection, ImportSection, emscriptenSigToWasm, TypeSection, typeCodes} from "./runtime_wasm.mjs"
+/**
+ * Create wasm invokes
+ *
+ * The "invoke_<sig>" trampolines are used to call functions in C++ try blocks /
+ * C contexts where a longjmp can happen. They catch any errors.
+ *
+ * Ordinarily, Emscripten generates these as JavaScript functions but we need to
+ * replace them with wasm functions when possible to enable us to use JS Promise
+ * Integration, since JSPI is incompatible with JS trampolines by design.
+ *
+ * TODO: switching to using wasm error handling will let us get rid of this
+ * code. Currently, switching to wasm eh is blocked on Rust support.
+ */
+
+import {
+  WasmModule,
+  CodeSection,
+  ImportSection,
+  emscriptenSigToWasm,
+  TypeSection,
+  typeCodes,
+} from "./runtime_wasm.mjs";
 
 if (typeof Module === "undefined") {
   globalThis.Module = {};

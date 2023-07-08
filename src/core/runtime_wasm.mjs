@@ -1,3 +1,33 @@
+/**
+ * Tools to generate webassembly adaptor modules at runtime.
+ *
+ * This is not intended to be fully general but rather to balance tradeoff
+ * between expressiveness and simplicity. I find that the hardest part of
+ * maintaining hand-written modules is updating indices and offsets when
+ * changing the wasm code. Thus, this makes it so that it is not necessary to
+ * manually update lengths or indices.
+ *
+ * The generated modules have five sections: Type, Imports, Exports, Function,
+ * and Code. The following limitations allow minor code simplifications. In the
+ * future they could be relaxed if needed for some reason.
+ *
+ * Restrictions on Imports:
+ *  * global imports are mutable
+ *  * no memory import
+ *  * table imports are unbounded tables of funcrefs.
+ *
+ * Restrictions on Functions:
+ *  * exactly one
+ *
+ * Restrictions on Exports:
+ *  * exactly one export
+ *  * which is the function we define
+ *  * called "o"
+ *
+ * Restriction on Code:
+ *  * can't run length encode exports
+ */
+
 // prettier-ignore
 export const WASM_PRELUDE = [
   0x00, 0x61, 0x73, 0x6d, // magic ("\0asm")
@@ -164,7 +194,8 @@ export class ImportSection {
   }
 
   /**
-   * Add a global of the given type
+   * Add a global of the given type. All globals are mutable.
+   *
    * @param {string} name
    * @param {string} type A value type, so one of i32, i64, f32, f64, or
    * externref
@@ -172,8 +203,11 @@ export class ImportSection {
    */
   addGlobal(name, type) {
     this._addName(name);
-    // 0x01 = mutable
-    this._section.push(ImportSection.descr.global, typeCodes[type], 0x01);
+    this._section.push(
+      ImportSection.descr.global,
+      typeCodes[type],
+      0x01 /* mutable */,
+    );
     this._numImports++;
     return this.numGlobals++;
   }
