@@ -394,13 +394,20 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: test
+          name: test-types
           command: |
             cd src/test-js
             npm ci
             npm link ../../dist
             npm run test-types
             npm test
+
+      - run:
+          name: test-unit
+          command: |
+            cd src/js
+            npm run test:unit
+
       # - run:
       #     name: check if Pyodide works with Webpack
       #     command: |
