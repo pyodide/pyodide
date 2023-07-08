@@ -3,13 +3,15 @@ import shutil
 import sys
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Optional, cast, get_args
 from urllib.parse import urlparse
 
 import requests
 import typer
 
 from ..build_env import check_emscripten_version, init_environment
+from ..io import _BuildSpecExports, _ExportTypes
+from ..logger import logger
 from ..out_of_tree import build
 from ..out_of_tree.pypi import (
     build_dependencies_for_wheel,
@@ -18,11 +20,27 @@ from ..out_of_tree.pypi import (
 )
 
 
+def convert_exports(exports: str) -> _BuildSpecExports:
+    if "," in exports:
+        return [x.strip() for x in exports.split(",") if x.strip()]
+    possible_exports = get_args(_ExportTypes)
+    if exports in possible_exports:
+        return cast(_ExportTypes, exports)
+    logger.stderr(
+        f"Expected exports to be one of "
+        '"pyinit", "requested", "whole_archive", '
+        "or a comma separated list of symbols to export. "
+        f'Got "{exports}".'
+    )
+    sys.exit(1)
+
+
 def pypi(
     package: str,
     output_directory: Path,
     exports: str = typer.Option(
         "requested",
+        envvar="PYODIDE_BUILD_EXPORTS",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -41,7 +59,9 @@ def pypi(
             print(f"Successfully fetched: {package_path.name}")
             return dest_file
 
-        built_wheel = build.run(srcdir, output_directory, exports, backend_flags)
+        built_wheel = build.run(
+            srcdir, output_directory, convert_exports(exports), backend_flags
+        )
         return built_wheel
 
 
@@ -62,6 +82,7 @@ def url(
     output_directory: Path,
     exports: str = typer.Option(
         "requested",
+        envvar="PYODIDE_BUILD_EXPORTS",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
@@ -81,7 +102,9 @@ def url(
         if len(files) == 1 and files[0].is_dir():
             # unzipped into subfolder
             builddir = files[0]
-        wheel_path = build.run(builddir, output_directory, exports, backend_flags)
+        wheel_path = build.run(
+            builddir, output_directory, convert_exports(exports), backend_flags
+        )
         return wheel_path
 
 
@@ -90,13 +113,16 @@ def source(
     output_directory: Path,
     exports: str = typer.Option(
         "requested",
+        envvar="PYODIDE_BUILD_EXPORTS",
         help="Which symbols should be exported when linking .so files?",
     ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
     backend_flags = ctx.args
-    built_wheel = build.run(source_location, output_directory, exports, backend_flags)
+    built_wheel = build.run(
+        source_location, output_directory, convert_exports(exports), backend_flags
+    )
     return built_wheel
 
 
@@ -104,7 +130,9 @@ def source(
 def main(
     source_location: "Optional[str]" = typer.Argument(
         "",
-        help="Build source, can be source folder, pypi version specification, or url to a source dist archive or wheel file. If this is blank, it will build the current directory.",
+        help="Build source, can be source folder, pypi version specification, "
+        "or url to a source dist archive or wheel file. If this is blank, it "
+        "will build the current directory.",
     ),
     output_directory: str = typer.Option(
         "",
@@ -121,6 +149,7 @@ def main(
     ),
     exports: str = typer.Option(
         "requested",
+        envvar="PYODIDE_BUILD_EXPORTS",
         help="Which symbols should be exported when linking .so files?",
     ),
     build_dependencies: bool = typer.Option(
@@ -132,7 +161,8 @@ def main(
     ),
     skip_dependency: list[str] = typer.Option(
         [],
-        help="Skip building or resolving a single dependency. Use multiple times or provide a comma separated list to skip multiple dependencies.",
+        help="Skip building or resolving a single dependency. "
+        "Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
@@ -140,9 +170,12 @@ def main(
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
-
     init_environment()
-    check_emscripten_version()
+    try:
+        check_emscripten_version()
+    except RuntimeError as e:
+        print(e.args[0], file=sys.stderr)
+        sys.exit(1)
 
     if output_directory_compat:
         print(
@@ -188,7 +221,9 @@ def main(
                 outpath,
                 build_dependencies,
                 skip_dependency,
-                exports,
+                # TODO: should we really use same "exports" value for all of our
+                # dependencies? Not sure this makes sense...
+                convert_exports(exports),
                 ctx.args,
                 output_lockfile=output_lockfile,
             )
@@ -223,7 +258,9 @@ def main(
                 wheel,
                 extras,
                 skip_dependency,
-                exports,
+                # TODO: should we really use same "exports" value for all of our
+                # dependencies? Not sure this makes sense...
+                convert_exports(exports),
                 ctx.args,
                 output_lockfile=output_lockfile,
                 compression_level=compression_level,

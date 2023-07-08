@@ -1,40 +1,15 @@
+# flake8: noqa
 # This file contains tests that ensure build environment is properly initialized in
 # both in-tree and out-of-tree builds.
 
-# TODO: move functions that are tested here to a separate module
-
 import os
-from pathlib import Path
 
 import pytest
 
 from conftest import ROOT_PATH
 from pyodide_build import build_env, common
 
-
-@pytest.fixture(scope="function")
-def reset_env_vars():
-    # Will reset the environment variables to their original values after each test.
-
-    os.environ.pop("PYODIDE_ROOT", None)
-    old_environ = dict(os.environ)
-
-    try:
-        yield
-    finally:
-        os.environ.clear()
-        os.environ.update(old_environ)
-
-
-@pytest.fixture(scope="function")
-def reset_cache():
-    # Will remove all caches before each test.
-
-    build_env.get_pyodide_root.cache_clear()
-    build_env.get_build_environment_vars.cache_clear()
-    build_env.get_unisolated_packages.cache_clear()
-
-    yield
+from .fixture import reset_cache, reset_env_vars, xbuildenv
 
 
 class TestInTree:
@@ -96,6 +71,13 @@ class TestInTree:
         for var in extra_vars:
             assert var in build_vars, f"Missing {var}"
 
+    def test_get_make_environment_vars(self, reset_env_vars, reset_cache):
+        make_vars = build_env._get_make_environment_vars()
+        assert make_vars["PYODIDE_ROOT"] == str(ROOT_PATH)
+
+        make_vars = build_env._get_make_environment_vars(pyodide_root=ROOT_PATH)
+        assert make_vars["PYODIDE_ROOT"] == str(ROOT_PATH)
+
     def test_get_build_flag(self, reset_env_vars, reset_cache):
         for key, val in build_env.get_build_environment_vars().items():
             assert build_env.get_build_flag(key) == val
@@ -141,41 +123,6 @@ class TestInTree:
 
 
 class TestOutOfTree(TestInTree):
-    # TODO: selenium fixture is a hack to make these tests run only after building Pyodide.
-    @pytest.fixture(scope="function", autouse=True)
-    def xbuildenv(self, selenium, tmp_path, reset_env_vars, reset_cache):
-        import subprocess as sp
-
-        assert "PYODIDE_ROOT" not in os.environ
-
-        envpath = Path(tmp_path) / ".pyodide-xbuildenv"
-        result = sp.run(
-            [
-                "pyodide",
-                "xbuildenv",
-                "create",
-                str(envpath),
-                "--root",
-                ROOT_PATH,
-                "--skip-missing-files",
-            ]
-        )
-
-        assert result.returncode == 0
-
-        yield tmp_path
-
-    @pytest.fixture(scope="function", autouse=True)
-    def chdir_xbuildenv(self, xbuildenv):
-        cur_dir = os.getcwd()
-
-        os.chdir(xbuildenv)
-
-        try:
-            yield
-        finally:
-            os.chdir(cur_dir)
-
     # Note: other tests are inherited from TestInTree
 
     def test_init_environment(self, xbuildenv, reset_env_vars, reset_cache):
@@ -196,8 +143,16 @@ class TestOutOfTree(TestInTree):
             == xbuildenv / ".pyodide-xbuildenv/xbuildenv/pyodide-root"
         )
 
-    def test_in_xbuildenv(self, reset_env_vars, reset_cache):
+    def test_in_xbuildenv(self, xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
+
+    def test_get_make_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
+        xbuildenv_root = xbuildenv / ".pyodide-xbuildenv/xbuildenv/pyodide-root"
+        make_vars = build_env._get_make_environment_vars()
+        assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_root)
+
+        make_vars = build_env._get_make_environment_vars(pyodide_root=xbuildenv_root)
+        assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_root)
 
 
 def test_check_emscripten_version(monkeypatch):

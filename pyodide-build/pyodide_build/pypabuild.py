@@ -186,7 +186,7 @@ def get_build_env(
     cxxflags: str,
     ldflags: str,
     target_install_dir: str,
-    exports: _BuildSpecExports | list[_BuildSpecExports],
+    exports: _BuildSpecExports,
 ) -> Iterator[dict[str, str]]:
     """
     Returns a dict of environment variables that should be used when building

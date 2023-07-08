@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 From 09a31eee16e33b9de1146c9a16569f567f845708 Mon Sep 17 00:00:00 2001
+=======
+From 68a77d4dab1c27231fed2a541095929bdb2f34ab Mon Sep 17 00:00:00 2001
+>>>>>>> next
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -23,6 +27,7 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
+<<<<<<< HEAD
  Include/internal/pycore_object.h | 16 ++++++--
  Objects/descrobject.c            | 22 +++++++----
  Objects/methodobject.c           |  7 ----
@@ -41,25 +46,159 @@ index f022f82469..9b960ce9ce 100644
   */
  #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 +extern PyObject*
+=======
+ .../internal/pycore_emscripten_trampoline.h   | 55 +++++++++++++
+ Include/internal/pycore_object.h              | 28 +------
+ Include/internal/pycore_runtime.h             |  5 ++
+ Objects/descrobject.c                         | 22 ++++--
+ Objects/methodobject.c                        |  7 --
+ Python/emscripten_trampoline.c                | 79 +++++++++++++++++++
+ Python/pylifecycle.c                          |  3 +
+ Python/pystate.c                              |  2 +
+ configure                                     |  4 +-
+ configure.ac                                  |  4 +-
+ 10 files changed, 163 insertions(+), 46 deletions(-)
+ create mode 100644 Include/internal/pycore_emscripten_trampoline.h
+ create mode 100644 Python/emscripten_trampoline.c
+
+diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
+new file mode 100644
+index 0000000000..e5031c8362
+--- /dev/null
++++ b/Include/internal/pycore_emscripten_trampoline.h
+@@ -0,0 +1,55 @@
++#ifndef Py_EMSCRIPTEN_TRAMPOLINE_H
++#define Py_EMSCRIPTEN_TRAMPOLINE_H
++
++#include "pycore_runtime.h"  // _PyRuntimeState
++
++/**
++ * C function call trampolines to mitigate bad function pointer casts.
++ *
++ * Section 6.3.2.3, paragraph 8 reads:
++ *
++ *      A pointer to a function of one type may be converted to a pointer to a
++ *      function of another type and back again; the result shall compare equal to
++ *      the original pointer. If a converted pointer is used to call a function
++ *      whose type is not compatible with the pointed-to type, the behavior is
++ *      undefined.
++ *
++ * Typical native ABIs ignore additional arguments or fill in missing values
++ * with 0/NULL in function pointer cast. Compilers do not show warnings when a
++ * function pointer is explicitly casted to an incompatible type.
++ *
++ * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
++ * function signature checks. Argument count, types, and return type must match.
++ *
++ * Third party code unintentionally rely on problematic fpcasts. The call
++ * trampoline mitigates common occurrences of bad fpcasts on Emscripten.
++ */
++
++#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++
++void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
++
++PyObject*
+>>>>>>> next
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +                     PyObject* self,
 +                     PyObject* args,
 +                     PyObject* kw);
 +
+<<<<<<< HEAD
  #define _PyCFunction_TrampolineCall(meth, self, args) \
 -    _PyCFunctionWithKeywords_TrampolineCall( \
 -        (*(PyCFunctionWithKeywords)(void(*)(void))meth), self, args, NULL)
 -extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
 -    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
+=======
++#define _PyCFunction_TrampolineCall(meth, self, args) \
+>>>>>>> next
 +    _PyEM_TrampolineCall( \
 +        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
 +
 +#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
 +    _PyEM_TrampolineCall((meth), (self), (args), (kw))
 +
+<<<<<<< HEAD
  #else
  #define _PyCFunction_TrampolineCall(meth, self, args) \
      (meth)((self), (args))
+=======
++#else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++
++#define _Py_EmscriptenTrampoline_Init(runtime)
++
++#define _PyCFunction_TrampolineCall(meth, self, args) \
++    (meth)((self), (args))
++#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
++    (meth)((self), (args), (kw))
++
++#endif // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++#endif // ndef Py_EMSCRIPTEN_SIGNAL_H
+diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
+index f022f82469..8bf4ebac38 100644
+--- a/Include/internal/pycore_object.h
++++ b/Include/internal/pycore_object.h
+@@ -10,6 +10,7 @@ extern "C" {
+ 
+ #include <stdbool.h>
+ #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
++#include "pycore_emscripten_trampoline.h" // _PyCFunction_TrampolineCall()
+ #include "pycore_interp.h"        // PyInterpreterState.gc
+ #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+ #include "pycore_runtime.h"       // _PyRuntime
+@@ -277,33 +278,6 @@ extern PyObject* _PyType_GetSubclasses(PyTypeObject *);
+ 
+ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
+ 
+-/* C function call trampolines to mitigate bad function pointer casts.
+- *
+- * Typical native ABIs ignore additional arguments or fill in missing
+- * values with 0/NULL in function pointer cast. Compilers do not show
+- * warnings when a function pointer is explicitly casted to an
+- * incompatible type.
+- *
+- * Bad fpcasts are an issue in WebAssembly. WASM's indirect_call has strict
+- * function signature checks. Argument count, types, and return type must
+- * match.
+- *
+- * Third party code unintentionally rely on problematic fpcasts. The call
+- * trampoline mitigates common occurences of bad fpcasts on Emscripten.
+- */
+-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+-#define _PyCFunction_TrampolineCall(meth, self, args) \
+-    _PyCFunctionWithKeywords_TrampolineCall( \
+-        (*(PyCFunctionWithKeywords)(void(*)(void))meth), self, args, NULL)
+-extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
+-    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
+-#else
+-#define _PyCFunction_TrampolineCall(meth, self, args) \
+-    (meth)((self), (args))
+-#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+-    (meth)((self), (args), (kw))
+-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
+-
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/Include/internal/pycore_runtime.h b/Include/internal/pycore_runtime.h
+index ae63ae74af..521a1e87a4 100644
+--- a/Include/internal/pycore_runtime.h
++++ b/Include/internal/pycore_runtime.h
+@@ -75,6 +75,11 @@ typedef struct pyruntimestate {
+     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+     int initialized;
+ 
++#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++    /* Choose between trampoline based on type reflection vs based on EM_JS */
++    int wasm_type_reflection_available;
++#endif
++
+     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
+        is called again.
+ 
+>>>>>>> next
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
 index 4d8b83758b..f9d4c00399 100644
 --- a/Objects/descrobject.c
@@ -111,6 +250,7 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
+<<<<<<< HEAD
 index 0000000000..4be63d13f0
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
@@ -122,12 +262,49 @@ index 0000000000..4be63d13f0
 +
 +EMSCRIPTEN_KEEPALIVE int _PyEM_type_reflection_available;
 +
+=======
+index 0000000000..33c9d25d2e
+--- /dev/null
++++ b/Python/emscripten_trampoline.c
+@@ -0,0 +1,79 @@
++#if defined(PY_CALL_TRAMPOLINE)
++
++#include <emscripten.h>             // EM_JS, EM_JS_DEPS
++#include <Python.h>
++#include "pycore_runtime.h"         // _PyRuntime
++
++
++/**
++ * This is the GoogleChromeLabs approved way to feature detect type-reflection:
++ * https://github.com/GoogleChromeLabs/wasm-feature-detect/blob/main/src/detectors/type-reflection/index.js
++ */
++EM_JS(int, _PyEM_detect_type_reflection, (), {
++  return "function" in WebAssembly;
++});
++
++void
++_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
++{
++  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
++}
++
++/**
++ * Backwards compatible trampoline works with all JS runtimes
++ */
+>>>>>>> next
 +EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
 +EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
 +    return getWasmTableEntry(func)(arg1, arg2, arg3);
 +}
 +);
 +
+<<<<<<< HEAD
+=======
++/**
++ * In runtimes with WebAssembly type reflection, count the number of parameters
++ * and cast to the appropriate signature
++ */
+>>>>>>> next
 +EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
 +  let n = _PyEM_CountFuncParams.cache.get(func);
 +  if (n !== undefined) {
@@ -138,6 +315,7 @@ index 0000000000..4be63d13f0
 +  return n;
 +}
 +_PyEM_CountFuncParams.cache = new Map();
+<<<<<<< HEAD
 +switch(typeof Module.preRun) {
 +    case "undefined":
 +        Module.preRun = [];
@@ -147,6 +325,8 @@ index 0000000000..4be63d13f0
 +        break;
 +}
 +Module.preRun.push(() => HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly);
+=======
+>>>>>>> next
 +)
 +
 +
@@ -155,13 +335,21 @@ index 0000000000..4be63d13f0
 +typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 +typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 +
+<<<<<<< HEAD
+=======
++
+>>>>>>> next
 +PyObject*
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +              PyObject* self,
 +              PyObject* args,
 +              PyObject* kw)
 +{
+<<<<<<< HEAD
 +  if (!_PyEM_type_reflection_available) {
+=======
++  if (!_PyRuntime.wasm_type_reflection_available) {
+>>>>>>> next
 +    return _PyEMJS_TrampolineCall(func, self, args, kw);
 +  } else {
 +    switch (_PyEM_CountFuncParams(func)) {
@@ -180,6 +368,7 @@ index 0000000000..4be63d13f0
 +  }
 +}
 +
+<<<<<<< HEAD
 +
 +#endif
 diff --git a/configure b/configure
@@ -187,10 +376,61 @@ index 9e76287725..f7e714018f 100755
 --- a/configure
 +++ b/configure
 @@ -15083,7 +15083,7 @@ PLATFORM_OBJS=
+=======
++#endif
+diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
+index 9248e971d9..05fd28b2df 100644
+--- a/Python/pylifecycle.c
++++ b/Python/pylifecycle.c
+@@ -5,6 +5,7 @@
+ #include "pycore_bytesobject.h"   // _PyBytes_InitTypes()
+ #include "pycore_ceval.h"         // _PyEval_FiniGIL()
+ #include "pycore_context.h"       // _PyContext_Init()
++#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
+ #include "pycore_exceptions.h"    // _PyExc_InitTypes()
+ #include "pycore_dict.h"          // _PyDict_Fini()
+ #include "pycore_fileutils.h"     // _Py_ResetForceASCII()
+@@ -606,7 +607,9 @@ pycore_init_runtime(_PyRuntimeState *runtime,
+     if (_PyStatus_EXCEPTION(status)) {
+         return status;
+     }
++
+     return _PyStatus_OK();
++
+ }
+ 
+ 
+diff --git a/Python/pystate.c b/Python/pystate.c
+index dfca3f5fd7..0dd2e7733e 100644
+--- a/Python/pystate.c
++++ b/Python/pystate.c
+@@ -2,6 +2,7 @@
+ /* Thread and interpreter state structures and their interfaces */
+ 
+ #include "Python.h"
++#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
+ #include "pycore_ceval.h"
+ #include "pycore_code.h"           // stats
+ #include "pycore_frame.h"
+@@ -126,6 +127,7 @@ init_runtime(_PyRuntimeState *runtime,
+     runtime->unicode_ids.lock = unicode_ids_mutex;
+ 
+     runtime->_initialized = 1;
++    _Py_EmscriptenTrampoline_Init(runtime);
+ }
+ 
+ PyStatus
+diff --git a/configure b/configure
+index 9e76287725..630ba49c0b 100755
+--- a/configure
++++ b/configure
+@@ -15083,8 +15083,8 @@ PLATFORM_OBJS=
+>>>>>>> next
  case $ac_sys_system in #(
    Emscripten) :
  
 -    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
+<<<<<<< HEAD
 +    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
      as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
     ;; #(
@@ -200,14 +440,36 @@ index c62a565eb6..6860bbdfc3 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -4523,7 +4523,7 @@ PLATFORM_OBJS=
+=======
+-    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
++    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
++    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
+    ;; #(
+   *) :
+      ;;
+diff --git a/configure.ac b/configure.ac
+index c62a565eb6..9b488da03b 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -4523,8 +4523,8 @@ PLATFORM_OBJS=
+>>>>>>> next
  
  AS_CASE([$ac_sys_system],
    [Emscripten], [
 -    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
+<<<<<<< HEAD
 +    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
      AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
    ],
  )
+=======
+-    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
++    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
++    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
+   ],
+ )
+ AC_SUBST([PLATFORM_HEADERS])
+>>>>>>> next
 -- 
 2.25.1
 

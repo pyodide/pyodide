@@ -2431,3 +2431,32 @@ def test_revoked_proxy(selenium):
 
     x = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
     run_js("((x) => x)")(x)
+
+
+@run_in_pyodide
+def test_js_proxy_attribute(selenium):
+    # Check that `in` is only consulted as a fallback if indexing returns None
+    import pytest
+
+    from pyodide.code import run_js
+
+    x = run_js(
+        """
+        new Proxy(
+            {},
+            {
+                get(target, val) {
+                    return { a: 3, b: 7, c: undefined, d: undefined }[val];
+                },
+                has(target, val) {
+                    return { a: true, b: false, c: true, d: false }[val];
+                },
+            }
+        );
+        """
+    )
+    assert x.a == 3
+    assert x.b == 7  # Previously this raised AttributeError
+    assert x.c is None
+    with pytest.raises(AttributeError):
+        x.d

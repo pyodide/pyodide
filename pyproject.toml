@@ -93,6 +93,7 @@ known-first-party = [
 ]
 known-third-party = [
   "build",
+  "pyodide_lock",
 ]
 
 [tool.ruff.mccabe]

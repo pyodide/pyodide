@@ -199,6 +199,7 @@ def _get_make_environment_vars(*, pyodide_root: Path | None = None) -> dict[str,
         ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
         capture_output=True,
         text=True,
+        env={"PYODIDE_ROOT": str(PYODIDE_ROOT)},
     )
 
     if result.returncode != 0:

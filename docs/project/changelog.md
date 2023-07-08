@@ -15,6 +15,17 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
+  used instead of the `--exports` argument to `pyodide build` to specify `.so`
+  file exports of packages.
+  {pr}`3973`
+
+- {{ Fix }} Pin `pydantic` to `<2`.
+  {pr}`3971`
+
+- {{ Enhancement }} Allow customizing installation location for packages
+  {pr}`3967`
+
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
   {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
 
@@ -74,6 +85,7 @@ myst:
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.10.1 {pr}`3794`
 - Upgraded scikit-image to 0.21 {pr}`3874`
+- Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
 
 ## Version 0.23.3

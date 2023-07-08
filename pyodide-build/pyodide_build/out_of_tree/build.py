@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
-from typing import Any
 
 from .. import build_env, common, pypabuild
+from ..io import _BuildSpecExports
 
 
-def run(srcdir: Path, outdir: Path, exports: Any, args: list[str]) -> Path:
+def run(
+    srcdir: Path, outdir: Path, exports: _BuildSpecExports, args: list[str]
+) -> Path:
     outdir = outdir.resolve()
     cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
     cflags += f" {os.environ.get('CFLAGS', '')}"
