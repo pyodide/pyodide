@@ -177,6 +177,7 @@ function calculateIndexURL(): string {
  */
 export type ConfigType = {
   indexURL: string;
+  packageCacheDir: string;
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -208,6 +209,16 @@ export async function loadPyodide(
      * (``pyodide.js`` or ``pyodide.mjs``) removed.
      */
     indexURL?: string;
+
+    /**
+     * The file path where packages will be cached in `node.js`. If a package
+     * exists in `packageCacheDir` it is loaded from there, otherwise it is
+     * downloaded from the JsDelivr CDN and then cached into `packageCacheDir`.
+     * Only applies when running in node.js. Ignored in browsers.
+     *
+     * Default: same as indexURL
+     */
+    packageCacheDir?: string;
 
     /**
      * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
@@ -293,6 +304,7 @@ export async function loadPyodide(
     args: [],
     _node_mounts: [],
     env: {},
+    packageCacheDir: indexURL,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {

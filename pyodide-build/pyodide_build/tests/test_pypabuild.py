@@ -57,7 +57,7 @@ def test_get_build_env(tmp_path):
         cxxflags="",
         ldflags="",
         target_install_dir=str(tmp_path),
-        exports=["pyinit"],
+        exports="pyinit",
     )
 
     with build_env_ctx as env:

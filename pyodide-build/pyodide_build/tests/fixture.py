@@ -1,11 +1,13 @@
-import json
+import os
 import shutil
 from pathlib import Path
-from typing import Any
 
 import pytest
+from pyodide_lock import PyodideLockSpec
 
-from ..common import chdir
+from conftest import ROOT_PATH
+from pyodide_build import build_env
+from pyodide_build.common import chdir
 
 
 @pytest.fixture(scope="module")
@@ -41,15 +43,16 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_pyodide_lock() -> dict[str, Any]:
-    # TODO: use pydantic
-
-    return {
-        "info": {
+def mock_pyodide_lock() -> PyodideLockSpec:
+    return PyodideLockSpec(
+        info={
             "version": "0.22.1",
+            "arch": "wasm32",
+            "platform": "emscripten_xxx",
+            "python": "3.11",
         },
-        "packages": {},
-    }
+        packages={},
+    )
 
 
 @pytest.fixture(scope="module")
@@ -81,11 +84,65 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 """  # noqa: W191
     )
     (pyodide_root / "dist").mkdir()
-    (pyodide_root / "dist" / "pyodide-lock.json").write_text(
-        json.dumps(mock_pyodide_lock())
-    )
+    mock_pyodide_lock().to_json(pyodide_root / "dist" / "pyodide-lock.json")
 
     with chdir(base):
         archive_name = shutil.make_archive("xbuildenv", "tar")
 
     yield base, archive_name
+
+
+@pytest.fixture(scope="function")
+def reset_env_vars():
+    # Will reset the environment variables to their original values after each test.
+
+    os.environ.pop("PYODIDE_ROOT", None)
+    old_environ = dict(os.environ)
+
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(old_environ)
+
+
+@pytest.fixture(scope="function")
+def reset_cache():
+    # Will remove all caches before each test.
+
+    build_env.get_pyodide_root.cache_clear()
+    build_env.get_build_environment_vars.cache_clear()
+    build_env.get_unisolated_packages.cache_clear()
+
+    yield
+
+
+@pytest.fixture(scope="function")
+def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
+    import subprocess as sp
+
+    assert "PYODIDE_ROOT" not in os.environ
+
+    envpath = Path(tmp_path) / ".pyodide-xbuildenv"
+    result = sp.run(
+        [
+            "pyodide",
+            "xbuildenv",
+            "create",
+            str(envpath),
+            "--root",
+            ROOT_PATH,
+            "--skip-missing-files",
+        ]
+    )
+
+    assert result.returncode == 0
+
+    cur_dir = os.getcwd()
+
+    os.chdir(tmp_path)
+
+    try:
+        yield tmp_path
+    finally:
+        os.chdir(cur_dir)

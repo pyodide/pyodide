@@ -28,6 +28,7 @@ from unearth.finder import PackageFinder
 
 from .. import build_env
 from ..common import repack_zip_archive
+from ..io import _BuildSpecExports
 from ..logger import logger
 from . import build
 
@@ -235,7 +236,7 @@ def get_metadata_for_wheel(url):
 class PyPIProvider(APBase):
     BUILD_FLAGS: list[str] = []
     BUILD_SKIP: list[str] = []
-    BUILD_EXPORTS: str = ""
+    BUILD_EXPORTS: _BuildSpecExports = []
 
     def __init__(self, build_dependencies: bool):
         self.build_dependencies = build_dependencies
@@ -376,7 +377,7 @@ def build_wheels_from_pypi_requirements(
     target_folder: Path,
     build_dependencies: bool,
     skip_dependency: list[str],
-    exports: str,
+    exports: _BuildSpecExports,
     build_flags: list[str],
     output_lockfile: str | None,
 ) -> None:
@@ -400,7 +401,7 @@ def build_dependencies_for_wheel(
     wheel: Path,
     extras: list[str],
     skip_dependency: list[str],
-    exports: str,
+    exports: _BuildSpecExports,
     build_flags: list[str],
     output_lockfile: str | None,
     compression_level: int = 6,

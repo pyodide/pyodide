@@ -1,4 +1,5 @@
-import os
+# flake8: noqa
+
 import re
 import subprocess
 import sys
@@ -14,7 +15,7 @@ import typer
 from typer.testing import CliRunner
 
 from pyodide_build.cli import build
-from pyodide_build.common import chdir
+from .fixture import reset_cache, reset_env_vars, xbuildenv
 
 runner = CliRunner()
 
@@ -213,16 +214,15 @@ def fake_pypi_url(fake_pypi_server):
     pyodide_build.out_of_tree.pypi._PYPI_INDEX = pypi_old
 
 
-def test_fetch_or_build_pypi(selenium, tmp_path):
+def test_fetch_or_build_pypi(xbuildenv):
     # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+    output_dir = xbuildenv / "dist"
     # one pure-python package (doesn't need building) and one sdist package (needs building)
     pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
 
     app = typer.Typer()
     app.command()(build.main)
 
-    os.chdir(tmp_path)
     for p in pkgs:
         result = runner.invoke(
             app,
@@ -234,16 +234,15 @@ def test_fetch_or_build_pypi(selenium, tmp_path):
     assert len(built_wheels) == len(pkgs)
 
 
-def test_fetch_or_build_pypi_with_deps_and_extras(selenium, tmp_path):
+def test_fetch_or_build_pypi_with_deps_and_extras(xbuildenv):
     # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+    output_dir = xbuildenv / "dist"
     # one pure-python package (doesn't need building) which depends on one sdist package (needs building)
     pkgs = ["eth-hash[pycryptodome]==0.5.1", "safe-pysha3 (>=1.0.0)"]
 
     app = typer.Typer()
     app.command()(build.main)
 
-    os.chdir(tmp_path)
     for p in pkgs:
         result = runner.invoke(
             app,
@@ -255,38 +254,36 @@ def test_fetch_or_build_pypi_with_deps_and_extras(selenium, tmp_path):
     assert len(built_wheels) == 3
 
 
-def test_fake_pypi_succeed(selenium, tmp_path, fake_pypi_url):
+def test_fake_pypi_succeed(xbuildenv, fake_pypi_url):
     # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+    output_dir = xbuildenv / "dist"
     # build package that resolves right
     app = typer.Typer()
     app.command()(build.main)
 
-    with chdir(tmp_path):
-        result = runner.invoke(
-            app,
-            ["resolves-package", "--build-dependencies"],
-        )
+    result = runner.invoke(
+        app,
+        ["resolves-package", "--build-dependencies"],
+    )
 
-        assert result.exit_code == 0, str(result.stdout) + str(result)
+    assert result.exit_code == 0, str(result.stdout) + str(result)
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 5
 
 
-def test_fake_pypi_resolve_fail(selenium, tmp_path, fake_pypi_url):
-    # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+def test_fake_pypi_resolve_fail(xbuildenv, fake_pypi_url):
+    output_dir = xbuildenv / "dist"
+
     # build package that resolves right
 
     app = typer.Typer()
     app.command()(build.main)
 
-    with chdir(tmp_path):
-        result = runner.invoke(
-            app,
-            ["fails-package", "--build-dependencies"],
-        )
+    result = runner.invoke(
+        app,
+        ["fails-package", "--build-dependencies"],
+    )
 
     # this should fail and should not build any wheels
     assert result.exit_code != 0, result.stdout
@@ -294,18 +291,17 @@ def test_fake_pypi_resolve_fail(selenium, tmp_path, fake_pypi_url):
     assert len(built_wheels) == 0
 
 
-def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
+def test_fake_pypi_extras_build(xbuildenv, fake_pypi_url):
     # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+    output_dir = xbuildenv / "dist"
     # build package that resolves right
     app = typer.Typer()
     app.command()(build.main)
 
-    with chdir(tmp_path):
-        result = runner.invoke(
-            app,
-            ["pkg-b[docs]", "--build-dependencies"],
-        )
+    result = runner.invoke(
+        app,
+        ["pkg-b[docs]", "--build-dependencies"],
+    )
 
     # this should work
     assert result.exit_code == 0, result.stdout
@@ -313,16 +309,16 @@ def test_fake_pypi_extras_build(selenium, tmp_path, fake_pypi_url):
     assert len(built_wheels) == 2
 
 
-def test_fake_pypi_repeatable_build(selenium, tmp_path, fake_pypi_url):
-    # TODO: - make test run without pyodide
-    output_dir = tmp_path / "dist"
+def test_fake_pypi_repeatable_build(xbuildenv, fake_pypi_url):
+    output_dir = xbuildenv / "dist"
+
     # build package that resolves right
     app = typer.Typer()
     app.command()(build.main)
 
     # override a dependency version and build
     # pkg-a
-    with open(tmp_path / "requirements.txt", "w") as req_file:
+    with open("requirements.txt", "w") as req_file:
         req_file.write(
             """
 # Whole line comment
@@ -330,17 +326,17 @@ pkg-c~=1.0.0 # end of line comment
 pkg-a
             """
         )
-    with chdir(tmp_path):
-        result = runner.invoke(
-            app,
-            [
-                "-r",
-                "requirements.txt",
-                "--build-dependencies",
-                "--output-lockfile",
-                "lockfile.txt",
-            ],
-        )
+
+    result = runner.invoke(
+        app,
+        [
+            "-r",
+            "requirements.txt",
+            "--build-dependencies",
+            "--output-lockfile",
+            "lockfile.txt",
+        ],
+    )
     # this should work
     assert result.exit_code == 0, result.stdout
     built_wheels = list(output_dir.glob("*.whl"))
@@ -354,11 +350,10 @@ pkg-a
 
     # rebuild from package-versions lockfile and
     # check it outputs the same version number
-    with chdir(tmp_path):
-        result = runner.invoke(
-            app,
-            ["-r", str(tmp_path / "lockfile.txt")],
-        )
+    result = runner.invoke(
+        app,
+        ["-r", "lockfile.txt"],
+    )
 
     # should still have built 1.0.0 of pkg-c
     built_wheels = list(output_dir.glob("*.whl"))
@@ -369,7 +364,7 @@ pkg-a
     assert len(built_wheels) == 2, result.stdout
 
 
-def test_bad_requirements_text(selenium, tmp_path):
+def test_bad_requirements_text(xbuildenv):
     app = typer.Typer()
     app.command()(build.main)
     # test 1 - error on URL location in requirements
@@ -377,11 +372,11 @@ def test_bad_requirements_text(selenium, tmp_path):
     # test 3 - error on editable install of package
     bad_lines = [" pkg-c@http://www.pkg-c.org", "  -r bob.txt", "   -e pkg-c"]
     for line in bad_lines:
-        with open(tmp_path / "requirements.txt", "w") as req_file:
+        with open("requirements.txt", "w") as req_file:
             req_file.write(line + "\n")
-        with chdir(tmp_path):
-            result = runner.invoke(
-                app,
-                ["-r", "requirements.txt"],
-            )
-            assert result.exit_code != 0 and line.strip() in str(result)
+
+        result = runner.invoke(
+            app,
+            ["-r", "requirements.txt"],
+        )
+        assert result.exit_code != 0 and line.strip() in str(result)

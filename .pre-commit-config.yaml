@@ -80,11 +80,12 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic
+          - pydantic<2
           - unearth
           - resolvelib
           - rich
           - auditwheel_emscripten
+          - pyodide-lock==0.1.0a1
           - micropip
       - id: mypy
         name: mypy-tests
