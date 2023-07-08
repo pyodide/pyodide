@@ -1,7 +1,7 @@
-From bb33672157df771613c9d6c61756c5294f13333d Mon Sep 17 00:00:00 2001
+From 08cc579925825da3388a6b4967868d86ea2c488f Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 2 Dec 2022 11:36:44 +0000
-Subject: [PATCH 3/9] Add emscripten platform support to
+Subject: [PATCH 3/8] Add emscripten platform support to
  ctypes.util.find_library
 
 ---
@@ -44,5 +44,5 @@ index 0c2510e161..c8875ec009 100644
      # AIX has two styles of storing shared libraries
      # GNU auto_tools refer to these as svr4 and aix
 -- 
-2.29.2.windows.2
+2.25.1
 
