@@ -1,7 +1,7 @@
-From d82e0bfe8b98a122ca443b356d81998c804b686e Mon Sep 17 00:00:00 2001
+From b08715ecc79e6398f5480bfb3b1b197f07d8a741 Mon Sep 17 00:00:00 2001
 From: Victor Stinner <vstinner@python.org>
 Date: Tue, 21 Jun 2022 10:24:33 +0200
-Subject: [PATCH 5/9] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
+Subject: [PATCH 5/8] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
  (#94041)
 
 * Move Lib/ctypes/test/ to Lib/test/test_ctypes/
@@ -64,11 +64,10 @@ Subject: [PATCH 5/9] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
  .../test_ctypes}/test_varsize_struct.py       |   0
  .../test => test/test_ctypes}/test_win32.py   |   0
  .../test_ctypes}/test_wintypes.py             |   0
- Makefile.pre.in                               |   4 +-
  ...2-06-20-23-04-52.gh-issue-93839.OE3Ybk.rst |   2 +
  PCbuild/lib.pyproj                            | 109 +++++++++---------
  Tools/wasm/wasm_assets.py                     |   1 -
- 60 files changed, 83 insertions(+), 93 deletions(-)
+ 59 files changed, 81 insertions(+), 91 deletions(-)
  delete mode 100644 Lib/ctypes/test/__main__.py
  delete mode 100644 Lib/test/test_ctypes.py
  rename Lib/{ctypes/test => test/test_ctypes}/__init__.py (100%)
@@ -205,7 +204,7 @@ diff --git a/Lib/ctypes/test/test_as_parameter.py b/Lib/test/test_ctypes/test_as
 similarity index 99%
 rename from Lib/ctypes/test/test_as_parameter.py
 rename to Lib/test/test_ctypes/test_as_parameter.py
-index f9d27cb89d..b35defb158 100644
+index 9c39179d2a..e9ec9ad847 100644
 --- a/Lib/ctypes/test/test_as_parameter.py
 +++ b/Lib/test/test_ctypes/test_as_parameter.py
 @@ -1,6 +1,6 @@
@@ -256,7 +255,7 @@ diff --git a/Lib/ctypes/test/test_callbacks.py b/Lib/test/test_ctypes/test_callb
 similarity index 99%
 rename from Lib/ctypes/test/test_callbacks.py
 rename to Lib/test/test_ctypes/test_callbacks.py
-index 1099cf9a69..2758720d4a 100644
+index 8f95a24443..b5bef04e14 100644
 --- a/Lib/ctypes/test/test_callbacks.py
 +++ b/Lib/test/test_ctypes/test_callbacks.py
 @@ -3,7 +3,7 @@
@@ -286,7 +285,7 @@ diff --git a/Lib/ctypes/test/test_cfuncs.py b/Lib/test/test_ctypes/test_cfuncs.p
 similarity index 99%
 rename from Lib/ctypes/test/test_cfuncs.py
 rename to Lib/test/test_ctypes/test_cfuncs.py
-index ac2240fa19..0a9394bf31 100644
+index 09b06840bf..7cba4b0e52 100644
 --- a/Lib/ctypes/test/test_cfuncs.py
 +++ b/Lib/test/test_ctypes/test_cfuncs.py
 @@ -3,7 +3,7 @@
@@ -338,7 +337,7 @@ diff --git a/Lib/ctypes/test/test_functions.py b/Lib/test/test_ctypes/test_funct
 similarity index 99%
 rename from Lib/ctypes/test/test_functions.py
 rename to Lib/test/test_ctypes/test_functions.py
-index f9e92e1cc6..4a784c8d79 100644
+index fc571700ce..a3db003353 100644
 --- a/Lib/ctypes/test/test_functions.py
 +++ b/Lib/test/test_ctypes/test_functions.py
 @@ -6,7 +6,7 @@
@@ -434,7 +433,7 @@ diff --git a/Lib/ctypes/test/test_parameters.py b/Lib/test/test_ctypes/test_para
 similarity index 99%
 rename from Lib/ctypes/test/test_parameters.py
 rename to Lib/test/test_ctypes/test_parameters.py
-index 38af7ac13d..2f755a6d09 100644
+index 3fdc994e90..662a17e094 100644
 --- a/Lib/ctypes/test/test_parameters.py
 +++ b/Lib/test/test_ctypes/test_parameters.py
 @@ -1,5 +1,5 @@
@@ -540,7 +539,7 @@ diff --git a/Lib/ctypes/test/test_structures.py b/Lib/test/test_ctypes/test_stru
 similarity index 99%
 rename from Lib/ctypes/test/test_structures.py
 rename to Lib/test/test_ctypes/test_structures.py
-index 97ad2b8ed8..13c0470ba2 100644
+index f95d5a99a3..df39dc7f50 100644
 --- a/Lib/ctypes/test/test_structures.py
 +++ b/Lib/test/test_ctypes/test_structures.py
 @@ -2,7 +2,7 @@
@@ -737,10 +736,10 @@ index 43c570f1da..692b083349 100644
      <Folder Include="test\test_email\data" />
      <Folder Include="test\test_import" />
 diff --git a/Tools/wasm/wasm_assets.py b/Tools/wasm/wasm_assets.py
-index b7e83517ca..d0a0570840 100755
+index 6557e3f37a..aa09d2dda8 100755
 --- a/Tools/wasm/wasm_assets.py
 +++ b/Tools/wasm/wasm_assets.py
-@@ -111,7 +111,6 @@
+@@ -112,7 +112,6 @@
  
  # regression test sub directories
  OMIT_SUBDIRS = (
@@ -749,5 +748,5 @@ index b7e83517ca..d0a0570840 100755
      "unittest/test/",
  )
 -- 
-2.29.2.windows.2
+2.25.1
 
