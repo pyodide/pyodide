@@ -153,7 +153,6 @@ class FetchResponse:
 
     async def string(self) -> str:
         """Return the response body as a string"""
-        self._raise_if_failed()
         return await self.js_response.text()
 
     async def json(self, **kwargs: Any) -> Any:
@@ -162,7 +161,6 @@ class FetchResponse:
 
         Any keyword arguments are passed to :py:func:`json.loads`.
         """
-        self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
