@@ -464,7 +464,7 @@ async function callPyObjectKwargsSuspending(
   jsargs: any,
   kwargs: any,
 ) {
-  if (!Module.suspendableApplyHandler) {
+  if (!Module.promisingApplyHandler) {
     throw new Error(
       "WebAssembly Promise integration not supported in this JavaScript runtime",
     );
@@ -487,7 +487,7 @@ async function callPyObjectKwargsSuspending(
   await sleep(0);
   try {
     Py_ENTER();
-    idresult = await Module.suspendableApply(
+    idresult = await Module.promisingApply(
       ptrobj,
       idargs,
       num_pos_args,

@@ -12,8 +12,9 @@ import {
   TypeSection,
   WASM_PRELUDE,
   insertSectionPrefix,
-} from "../../../core/runtime_wasm.mjs";
-import { createInvokeModule } from "../../../core/create_invokes.mjs";
+} from "../../../core/continuations/runtime_wasm.mjs";
+import { createInvokeModule } from "../../../core/continuations/create_invokes.mjs";
+import { createPromisingModule } from "../../../core/continuations/suspenders.mjs";
 
 const __dirname = new URL(".", import.meta.url).pathname;
 
@@ -29,7 +30,7 @@ function fromWat(wat) {
 function fromWatFile(file) {
   return parseWat(
     file,
-    readFileSync(__dirname + "invokes/" + file, { encoding: "utf8" }),
+    readFileSync(__dirname + "wat/" + file, { encoding: "utf8" }),
     {
       mutable_globals: true,
       exceptions: true,
@@ -295,6 +296,16 @@ describe("dynamic wasm generation code", () => {
         describe(sig, () => {
           const result = createInvokeModule(sig);
           const expected = fromWatFile(`invoke_${sig}.wat`);
+          compareModules(result, expected);
+        });
+      }
+    });
+
+    describe("createPromisingModule", () => {
+      for (let sig of ["v", "vd", "fd", "dd", "jjjj"]) {
+        describe(sig, () => {
+          const result = createPromisingModule(emscriptenSigToWasm(sig));
+          const expected = fromWatFile(`promising_${sig}.wat`);
           compareModules(result, expected);
         });
       }

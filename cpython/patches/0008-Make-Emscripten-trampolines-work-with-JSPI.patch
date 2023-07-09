@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-From 09a31eee16e33b9de1146c9a16569f567f845708 Mon Sep 17 00:00:00 2001
-=======
 From 68a77d4dab1c27231fed2a541095929bdb2f34ab Mon Sep 17 00:00:00 2001
->>>>>>> next
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -27,26 +23,6 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
-<<<<<<< HEAD
- Include/internal/pycore_object.h | 16 ++++++--
- Objects/descrobject.c            | 22 +++++++----
- Objects/methodobject.c           |  7 ----
- Python/emscripten_trampoline.c   | 67 ++++++++++++++++++++++++++++++++
- configure                        |  2 +-
- configure.ac                     |  2 +-
- 6 files changed, 95 insertions(+), 21 deletions(-)
- create mode 100644 Python/emscripten_trampoline.c
-
-diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
-index f022f82469..9b960ce9ce 100644
---- a/Include/internal/pycore_object.h
-+++ b/Include/internal/pycore_object.h
-@@ -292,11 +292,19 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
-  * trampoline mitigates common occurences of bad fpcasts on Emscripten.
-  */
- #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-+extern PyObject*
-=======
  .../internal/pycore_emscripten_trampoline.h   | 55 +++++++++++++
  Include/internal/pycore_object.h              | 28 +------
  Include/internal/pycore_runtime.h             |  5 ++
@@ -99,32 +75,18 @@ index 0000000000..e5031c8362
 +void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
 +
 +PyObject*
->>>>>>> next
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +                     PyObject* self,
 +                     PyObject* args,
 +                     PyObject* kw);
 +
-<<<<<<< HEAD
- #define _PyCFunction_TrampolineCall(meth, self, args) \
--    _PyCFunctionWithKeywords_TrampolineCall( \
--        (*(PyCFunctionWithKeywords)(void(*)(void))meth), self, args, NULL)
--extern PyObject* _PyCFunctionWithKeywords_TrampolineCall(
--    PyCFunctionWithKeywords meth, PyObject *, PyObject *, PyObject *);
-=======
 +#define _PyCFunction_TrampolineCall(meth, self, args) \
->>>>>>> next
 +    _PyEM_TrampolineCall( \
 +        (*(PyCFunctionWithKeywords)(void(*)(void))(meth)), (self), (args), NULL)
 +
 +#define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
 +    _PyEM_TrampolineCall((meth), (self), (args), (kw))
 +
-<<<<<<< HEAD
- #else
- #define _PyCFunction_TrampolineCall(meth, self, args) \
-     (meth)((self), (args))
-=======
 +#else // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 +
 +#define _Py_EmscriptenTrampoline_Init(runtime)
@@ -198,7 +160,6 @@ index ae63ae74af..521a1e87a4 100644
      /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
         is called again.
  
->>>>>>> next
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
 index 4d8b83758b..f9d4c00399 100644
 --- a/Objects/descrobject.c
@@ -250,19 +211,6 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-<<<<<<< HEAD
-index 0000000000..4be63d13f0
---- /dev/null
-+++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,67 @@
-+#if defined(PY_CALL_TRAMPOLINE)
-+
-+#include <emscripten.h>
-+#include <Python.h>
-+
-+EMSCRIPTEN_KEEPALIVE int _PyEM_type_reflection_available;
-+
-=======
 index 0000000000..33c9d25d2e
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
@@ -291,20 +239,16 @@ index 0000000000..33c9d25d2e
 +/**
 + * Backwards compatible trampoline works with all JS runtimes
 + */
->>>>>>> next
 +EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
 +EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
 +    return getWasmTableEntry(func)(arg1, arg2, arg3);
 +}
 +);
 +
-<<<<<<< HEAD
-=======
 +/**
 + * In runtimes with WebAssembly type reflection, count the number of parameters
 + * and cast to the appropriate signature
 + */
->>>>>>> next
 +EM_JS(int, _PyEM_CountFuncParams, (PyCFunctionWithKeywords func), {
 +  let n = _PyEM_CountFuncParams.cache.get(func);
 +  if (n !== undefined) {
@@ -315,18 +259,6 @@ index 0000000000..33c9d25d2e
 +  return n;
 +}
 +_PyEM_CountFuncParams.cache = new Map();
-<<<<<<< HEAD
-+switch(typeof Module.preRun) {
-+    case "undefined":
-+        Module.preRun = [];
-+        break;
-+    case "function":
-+        Module.preRun = [Module.preRun];
-+        break;
-+}
-+Module.preRun.push(() => HEAP32[__PyEM_type_reflection_available/4] = "Function" in WebAssembly);
-=======
->>>>>>> next
 +)
 +
 +
@@ -335,21 +267,14 @@ index 0000000000..33c9d25d2e
 +typedef PyObject* (*two_arg)(PyObject*, PyObject*);
 +typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
 +
-<<<<<<< HEAD
-=======
 +
->>>>>>> next
 +PyObject*
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
 +              PyObject* self,
 +              PyObject* args,
 +              PyObject* kw)
 +{
-<<<<<<< HEAD
-+  if (!_PyEM_type_reflection_available) {
-=======
 +  if (!_PyRuntime.wasm_type_reflection_available) {
->>>>>>> next
 +    return _PyEMJS_TrampolineCall(func, self, args, kw);
 +  } else {
 +    switch (_PyEM_CountFuncParams(func)) {
@@ -368,15 +293,6 @@ index 0000000000..33c9d25d2e
 +  }
 +}
 +
-<<<<<<< HEAD
-+
-+#endif
-diff --git a/configure b/configure
-index 9e76287725..f7e714018f 100755
---- a/configure
-+++ b/configure
-@@ -15083,7 +15083,7 @@ PLATFORM_OBJS=
-=======
 +#endif
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
 index 9248e971d9..05fd28b2df 100644
@@ -425,22 +341,10 @@ index 9e76287725..630ba49c0b 100755
 --- a/configure
 +++ b/configure
 @@ -15083,8 +15083,8 @@ PLATFORM_OBJS=
->>>>>>> next
  case $ac_sys_system in #(
    Emscripten) :
  
 -    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o'
-<<<<<<< HEAD
-+    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
-     as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
-    ;; #(
-   *) :
-diff --git a/configure.ac b/configure.ac
-index c62a565eb6..6860bbdfc3 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -4523,7 +4523,7 @@ PLATFORM_OBJS=
-=======
 -    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h'
 +    as_fn_append PLATFORM_OBJS ' Python/emscripten_signal.o Python/emscripten_trampoline.o'
 +    as_fn_append PLATFORM_HEADERS ' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'
@@ -452,24 +356,16 @@ index c62a565eb6..9b488da03b 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -4523,8 +4523,8 @@ PLATFORM_OBJS=
->>>>>>> next
  
  AS_CASE([$ac_sys_system],
    [Emscripten], [
 -    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o'])
-<<<<<<< HEAD
-+    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
-     AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
-   ],
- )
-=======
 -    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h'])
 +    AS_VAR_APPEND([PLATFORM_OBJS], [' Python/emscripten_signal.o Python/emscripten_trampoline.o'])
 +    AS_VAR_APPEND([PLATFORM_HEADERS], [' $(srcdir)/Include/internal/pycore_emscripten_signal.h $(srcdir)/Include/internal/pycore_emscripten_trampoline.h'])
    ],
  )
  AC_SUBST([PLATFORM_HEADERS])
->>>>>>> next
 -- 
 2.25.1
 

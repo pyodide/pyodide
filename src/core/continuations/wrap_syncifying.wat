@@ -12,14 +12,13 @@
       (global.get $check)
       (i32.eqz)
       if
-        ;; If no valid suspender, return 0. Callee needs to check for this case
-        ;; and set Python error flag (or otherwise handle it).
+        ;; We tried to syncify with no valid suspender, return 0.
+        ;; JsProxy.c checks for this case and sets Python error flag appropriately.
         i32.const 0
         return
       end
       (global.get $suspender)
       (local.get $idpromise)
       (call $syncify_promise_import) ;; onwards call args are (suspender, orig argument)
-      ;; restore $suspender and $check variable
     )
 )

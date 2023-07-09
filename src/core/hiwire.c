@@ -397,6 +397,9 @@ JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
 
 EM_JS(void, hiwire_syncify_handle_error, (void), {
   if (!Module.syncify_error) {
+    // In this case we tried to syncify in a context where there is no
+    // suspender. JsProxy.c checks for this case and sets the error flag
+    // appropriately.
     return;
   }
   Module.handle_js_error(Module.syncify_error);

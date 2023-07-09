@@ -24,7 +24,7 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js src/core/create_invokes.out.js
+src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js src/core/continuations/continuations.out.js
 # Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
 # when linked, Emscripten will include it. We use the same pathway that EM_JS
 # uses, but EM_JS is itself unsuitable. Why? Because the C preprocessor /
@@ -56,7 +56,7 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js src/core/create_i
 	echo '()<::>{' >> tmp.dat             # zero argument argspec and start body
 	cat src/js/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
 	echo '}' >> tmp.dat                   # Close function body
-	cat src/core/create_invokes.out.js >> tmp.dat
+	cat src/core/continuations/continuations.out.js >> tmp.dat
 	cat src/core/pre.js >> tmp.dat           # And pre.js
 	echo "pyodide_js_init();" >> tmp.dat     # Then execute the function.
 
@@ -129,8 +129,6 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
-src/core/create_invokes.out.js : src/core/create_invokes.mjs src/core/runtime_wasm.mjs
-	cd src/core && npx esbuild --bundle create_invokes.mjs --outfile=create_invokes.out.js
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -239,10 +237,10 @@ clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
 
-continuations.gen.js: src/core/continuations.js src/core/build_continuations.mjs node_modules/.installed
-	node src/core/build_continuations.mjs
+src/core/continuations/continuations.out.js: src/core/continuations/*.mjs node_modules/.installed
+	node src/core/continuations/esbuild.config.mjs
 
-%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js) continuations.gen.js
+%.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
 
 
