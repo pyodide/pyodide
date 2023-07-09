@@ -11,8 +11,8 @@ TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 LIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
 FFIBUILD=$(ROOT)/build/libffi
-LIBFFIREPO=https://github.com/hoodmane/libffi
-LIBFFI_COMMIT=ceacefd205c4a49266dd1112e4024cef973ce058
+LIBFFIREPO=https://github.com/libffi/libffi
+LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
