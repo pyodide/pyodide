@@ -334,8 +334,8 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path):
         try:
             wheel.getinfo(metadata_path).filename = output_path.name
             wheel.extract(metadata_path, output_path.parent)
-        except KeyError:
-            raise Exception(f"METADATA file not found for {pkg_name}")
+        except KeyError as err:
+            raise Exception(f"METADATA file not found for {pkg_name}") from err
 
 
 def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
@@ -349,7 +349,7 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     """
 
     # Zip file path separators must be /
-    subdirs = {name.split("/", 1)[0] for name in source.namelist()}
+    subdirs = {name.split("/", 1)[0] for name in wheel.namelist()}
     info_dirs = [subdir for subdir in subdirs if subdir.endswith(".dist-info")]
 
     if len(info_dirs) == 0:
