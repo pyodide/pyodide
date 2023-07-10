@@ -5,6 +5,7 @@
 import contextlib
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -315,22 +316,72 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
         pack_wheel(wheel_dir, wheel.parent)
 
 
-def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> bool:
+def extract_wheel_metadata_file(wheel_path: Path, output_path: Path):
     """Extracts the METADATA file from the given wheel and writes it to the
     output path.
 
-    Returns `True` if the METADATA file exists, and `False` otherwise.
+    Raises an exception if the METADATA file does not exist.
 
     For a wheel called "NAME-VERSION-...", the METADATA file is expected to be
-    found at "NAME-VERSION.dist-info/METADATA" inside the wheel archive. See:
+    found in a directory inside the wheel archive, whose name starts with NAME
+    and ends with ".dist-info". See:
     https://packaging.python.org/en/latest/specifications/binary-distribution-format/#file-contents
     """
     with ZipFile(wheel_path, mode="r") as wheel:
-        name, ver, _ = wheel_path.name.split("-", 2)
-        metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
+        pkg_name = wheel_path.split('-', 1)[0]
+        dist_info_dir = get_wheel_dist_info_dir(wheel, pkg_name)
+        metadata_path = f"{dist_info_dir}/METADATA"
         try:
             wheel.getinfo(metadata_path).filename = output_path.name
             wheel.extract(metadata_path, output_path.parent)
         except KeyError:
-            return False
-    return True
+            raise Exception(f"METADATA file not found for {pkg_name}")
+
+
+def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
+    """Returns the path of the contained .dist-info directory.
+
+    Raises an Exception if the directory is not found, more than
+    one is found, or it does not match the provided `pkg_name`.
+
+    Adapated from:
+    https://github.com/pypa/pip/blob/ea727e4d6ab598f34f97c50a22350febc1214a97/src/pip/_internal/utils/wheel.py#L38
+    """
+
+    # Zip file path separators must be /
+    subdirs = { name.split("/", 1)[0] for name in source.namelist() }
+    info_dirs = [ subdir for subdir in subdirs if subdir.endswith(".dist-info") ]
+
+    if len(info_dirs) == 0:
+        raise Exception(f".dist-info directory not found for {pkg_name}")
+
+    if len(info_dirs) > 1:
+        raise Exception(
+            "multiple .dist-info directories found for {}: {}".format(pkg_name, ", ".join(info_dirs))
+        )
+
+    info_dir, = info_dirs
+
+    info_dir_name = _canonicalize_package_name(info_dir)
+    canonical_name = _canonicalize_package_name(pkg_name)
+
+    if not info_dir_name.startswith(canonical_name):
+        raise Exception(
+            ".dist-info directory {!r} does not start with {!r}".format(
+                info_dir, canonical_name
+            )
+        )
+
+    return info_dir
+
+
+_canonicalize_regex = re.compile(r"[-_.]+")
+
+
+def _canonicalize_package_name(name: str) -> str:
+    """Adapted from:
+    https://github.com/pypa/pip/blob/ea727e4d6ab598f34f97c50a22350febc1214a97/src/pip/_vendor/packaging/utils.py#L32
+    """
+
+    # This is taken from PEP 503.
+    return _canonicalize_regex.sub("-", name).lower()

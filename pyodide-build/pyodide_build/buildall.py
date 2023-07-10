@@ -724,11 +724,10 @@ def copy_packages_to_dist_dir(
         )
 
         if metadata_files and dist_artifact_path.suffix == ".whl":
-            if not extract_wheel_metadata_file(
+            extract_wheel_metadata_file(
                 dist_artifact_path,
                 output_dir / f"{dist_artifact_path.name}.metadata",
-            ):
-                logger.warning(f"Warning: {pkg.name} has no METADATA file")
+            )
 
         test_path = pkg.tests_path()
         if test_path:
