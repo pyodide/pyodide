@@ -1,4 +1,4 @@
-From 0e38c825a15bd7063a3f193123060f38782b5696 Mon Sep 17 00:00:00 2001
+From 9e722eb6b6eadac839eff7d1e37f6bd25f6d2e65 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -26,14 +26,14 @@ was negatively affected.
  .../internal/pycore_emscripten_trampoline.h   | 67 +++++++++++++++++
  Include/internal/pycore_object.h              | 28 +------
  Include/internal/pycore_runtime.h             |  5 ++
- Objects/descrobject.c                         | 22 ++++--
+ Objects/descrobject.c                         | 18 +----
  Objects/methodobject.c                        |  7 --
  Python/emscripten_trampoline.c                | 74 +++++++++++++++++++
  Python/pylifecycle.c                          |  3 +
  Python/pystate.c                              |  2 +
  configure                                     |  4 +-
  configure.ac                                  |  4 +-
- 10 files changed, 170 insertions(+), 46 deletions(-)
+ 10 files changed, 159 insertions(+), 53 deletions(-)
  create mode 100644 Include/internal/pycore_emscripten_trampoline.h
  create mode 100644 Python/emscripten_trampoline.c
 
@@ -89,7 +89,7 @@ index 0000000000..5da6db790a
 +#define _PyEM_TrampolineCall(meth, self, args, kw) \
 +    ((_PyRuntime.wasm_type_reflection_available) ? \
 +        (_PyEM_TrampolineCall_Reflection(meth, self, args, kw)) : \
-+        (_PyEM_TrampolineCall_JS(meth, self, args, kw)))
++        (_PyEM_TrampolineCall_Js(meth, self, args, kw)))
 +
 +
 +#define _PyCFunction_TrampolineCall(meth, self, args) \
@@ -173,13 +173,23 @@ index ae63ae74af..521a1e87a4 100644
         is called again.
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 4d8b83758b..f9d4c00399 100644
+index 4d8b83758b..11badd4860 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
-@@ -15,15 +15,21 @@ class property "propertyobject *" "&PyProperty_Type"
+@@ -2,6 +2,7 @@
  
- // see pycore_object.h
- #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+ #include "Python.h"
+ #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
++#include "pycore_emscripten_trampoline.h" // _PyEM_TrampolineCall()
+ #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+ #include "pycore_pystate.h"       // _PyThreadState_GET()
+ #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+@@ -13,24 +14,11 @@ class property "propertyobject *" "&PyProperty_Type"
+ [clinic start generated code]*/
+ /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+ 
+-// see pycore_object.h
+-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 -#include <emscripten.h>
 -EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
 -    return wasmTable.get(set)(obj, value, closure);
@@ -188,24 +198,19 @@ index 4d8b83758b..f9d4c00399 100644
 -EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
 -    return wasmTable.get(get)(obj, closure);
 -});
-+extern PyObject*
-+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-+                     PyObject* self,
-+                     PyObject* args,
-+                     PyObject* kw);
-+
-+#define descr_set_trampoline_call(set, obj, value, closure) \
-+    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
-+
-+
-+#define descr_get_trampoline_call(get, obj, closure) \
-+    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
-+
- #else
-+
+-#else
  #define descr_set_trampoline_call(set, obj, value, closure) \
-     (set)((obj), (value), (closure))
+-    (set)((obj), (value), (closure))
++    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
  
+ #define descr_get_trampoline_call(get, obj, closure) \
+-    (get)((obj), (closure))
+-
+-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
++    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
+ 
+ static void
+ descr_dealloc(PyDescrObject *descr)
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
 index 953cf4666d..d344bfa234 100644
 --- a/Objects/methodobject.c
