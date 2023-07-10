@@ -4,13 +4,12 @@
  */
 
 import {
-  createInvoke,
   jsWrapperTag,
   wrapException,
   adjustWasmImports,
 } from "./create_invokes.mjs";
 
-export { createInvoke, jsWrapperTag };
+export { jsWrapperTag };
 
 if (jsWrapperTag) {
   Module.adjustWasmImports = adjustWasmImports;
