@@ -138,7 +138,7 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     output_path = tmp_path / f"{input_path.name}.metadata"
 
-    assert extract_wheel_metadata_file(input_path, output_path)
+    extract_wheel_metadata_file(input_path, output_path)
     assert output_path.read_text() == metadata_str
 
     # Test extraction if metadata is missing
@@ -150,4 +150,9 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     output_path_empty = tmp_path / f"{input_path_empty.name}.metadata"
 
-    assert not extract_wheel_metadata_file(input_path_empty, output_path_empty)
+    try:
+        extract_wheel_metadata_file(input_path_empty, output_path_empty)
+    except Exception:
+        pass
+    else:
+        assert False

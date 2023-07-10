@@ -344,7 +344,7 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     Raises an Exception if the directory is not found, more than
     one is found, or it does not match the provided `pkg_name`.
 
-    Adapated from:
+    Adapted from:
     https://github.com/pypa/pip/blob/ea727e4d6ab598f34f97c50a22350febc1214a97/src/pip/_internal/utils/wheel.py#L38
     """
 
