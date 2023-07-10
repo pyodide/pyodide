@@ -50,6 +50,10 @@ myst:
   `pyodide-lock.json`
   {pr}`3824`
 
+- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
+  throw an OSError exception for 400 and above response status codes
+  {pr}`3986`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK

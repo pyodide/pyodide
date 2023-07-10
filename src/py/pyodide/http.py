@@ -126,10 +126,6 @@ class FetchResponse:
         return self.js_response.url
 
     def _raise_if_failed(self) -> None:
-        if self.js_response.status >= 400:
-            raise OSError(
-                f"Request for {self._url} failed with status {self.status}: {self.status_text}"
-            )
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 
@@ -153,6 +149,7 @@ class FetchResponse:
 
     async def string(self) -> str:
         """Return the response body as a string"""
+        self._raise_if_failed()
         return await self.js_response.text()
 
     async def json(self, **kwargs: Any) -> Any:
@@ -161,6 +158,7 @@ class FetchResponse:
 
         Any keyword arguments are passed to :py:func:`json.loads`.
         """
+        self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:

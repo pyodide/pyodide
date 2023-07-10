@@ -35,6 +35,15 @@ async def test_pyfetch_create_file(selenium):
 
 
 @run_in_pyodide
+async def test_pyfetch_return_400_status_body(selenium):
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch("http://httpstat.us/404")
+    body = await resp.string()
+    assert body == "404 Not Found"
+
+
+@run_in_pyodide
 async def test_pyfetch_unpack_archive(selenium):
     import pathlib
 
