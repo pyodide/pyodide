@@ -144,7 +144,6 @@ def test_extract_wheel_metadata_file(tmp_path):
     # Test extraction if metadata is missing
 
     input_path_empty = tmp_path / "pkg-0.2-abc.whl"
-    metadata_path_empty = "pkg-0.2.dist-info/METADATA"
 
     with zipfile.ZipFile(input_path_empty, "w") as fh:
         pass

@@ -329,9 +329,7 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> bool:
         name, ver, _ = wheel_path.name.split("-", 2)
         metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
         try:
-            wheel.getinfo(
-                metadata_path
-            ).filename = output_path.name
+            wheel.getinfo(metadata_path).filename = output_path.name
             wheel.extract(metadata_path, output_path.parent)
         except KeyError:
             return False

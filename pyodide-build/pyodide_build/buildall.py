@@ -18,7 +18,6 @@ from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
-from zipfile import ZipFile
 
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
@@ -726,7 +725,8 @@ def copy_packages_to_dist_dir(
 
         if metadata_files and dist_artifact_path.suffix == ".whl":
             if not extract_wheel_metadata_file(
-                dist_artifact_path, output_dir / f"{dist_artifact_path.name}.metadata",
+                dist_artifact_path,
+                output_dir / f"{dist_artifact_path.name}.metadata",
             ):
                 logger.warning(f"Warning: {pkg.name} has no METADATA file")
 
