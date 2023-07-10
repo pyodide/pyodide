@@ -1,7 +1,6 @@
 import { expect } from "chai";
 
-import { readFileSync, writeFileSync } from "node:fs";
-import * as vm from "node:vm";
+import { readFileSync } from "node:fs";
 import loadWabt from "wabt";
 import { URL } from "url"; // in Browser, the URL in native accessible on window
 import {
@@ -12,8 +11,8 @@ import {
   TypeSection,
   WASM_PRELUDE,
   insertSectionPrefix,
-} from "../../../core/runtime_wasm.mjs";
-import { createInvokeModule } from "../../../core/create_invokes.mjs";
+} from "../../../core/stack_switching/runtime_wasm.mjs";
+import { createInvokeModule } from "../../../core/stack_switching/create_invokes.mjs";
 
 const __dirname = new URL(".", import.meta.url).pathname;
 
@@ -29,7 +28,7 @@ function fromWat(wat) {
 function fromWatFile(file) {
   return parseWat(
     file,
-    readFileSync(__dirname + "invokes/" + file, { encoding: "utf8" }),
+    readFileSync(__dirname + "wat/" + file, { encoding: "utf8" }),
     {
       mutable_globals: true,
       exceptions: true,

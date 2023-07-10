@@ -21,10 +21,6 @@ import {
   typeCodes,
 } from "./runtime_wasm.mjs";
 
-if (typeof Module === "undefined") {
-  globalThis.Module = {};
-}
-
 /**
  * These produce the following pseudocode:
  * ```
@@ -136,15 +132,13 @@ export function createInvokeModule(sig) {
   return mod.generate();
 }
 
-let jsWrapperTag;
+export let jsWrapperTag;
 try {
   jsWrapperTag = new WebAssembly.Tag({ parameters: ["externref"] });
-  Module.jsWrapperTag = jsWrapperTag;
 } catch (e) {}
 
-if (jsWrapperTag) {
-  Module.wrapException = (e) => new WebAssembly.Exception(jsWrapperTag, [e]);
-}
+export const wrapException = (e) =>
+  new WebAssembly.Exception(jsWrapperTag, [e]);
 
 function createInvoke(sig) {
   if (!jsWrapperTag) {
@@ -162,19 +156,16 @@ function createInvoke(sig) {
   });
   return instance.exports["o"];
 }
-Module.createInvoke = createInvoke;
 
 // We patched Emscripten to call this function on the wasmImports just prior to
 // wasm instantiation if it is defined. It replaces all invoke functions with
 // our Wasm invokes if wasm EH is available.
-Module.adjustWasmImports = function (wasmImports) {
-  if (jsWrapperTag) {
-    const i = "invoke_";
-    for (let name of Object.keys(wasmImports)) {
-      if (!name.startsWith(i)) {
-        continue;
-      }
-      wasmImports[name] = createInvoke(name.slice(i.length));
+export function adjustWasmImports(wasmImports) {
+  const i = "invoke_";
+  for (let name of Object.keys(wasmImports)) {
+    if (!name.startsWith(i)) {
+      continue;
     }
+    wasmImports[name] = createInvoke(name.slice(i.length));
   }
-};
+}
