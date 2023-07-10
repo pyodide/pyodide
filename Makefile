@@ -129,7 +129,7 @@ dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js
 	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
-	node src/core/stack_switching/esbuild.mjs
+	node src/core/stack_switching/esbuild.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
