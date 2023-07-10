@@ -226,9 +226,9 @@ benchmark: all
 clean:
 	rm -fr dist/*
 	rm -fr node_modules
-	shopt -s globstar && rm -fr src/**/*.o
-	shopt -s globstar && rm -fr src/**/*.gen.*
-	shopt -s globstar && rm -fr src/**/*.out.*
+	find src -name '*.o' -delete
+	find src -name '*.gen.*' -delete
+	find src -name '*.out.*' -delete
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
