@@ -328,7 +328,7 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path):
     https://packaging.python.org/en/latest/specifications/binary-distribution-format/#file-contents
     """
     with ZipFile(wheel_path, mode="r") as wheel:
-        pkg_name = wheel_path.split('-', 1)[0]
+        pkg_name = wheel_path.split("-", 1)[0]
         dist_info_dir = get_wheel_dist_info_dir(wheel, pkg_name)
         metadata_path = f"{dist_info_dir}/METADATA"
         try:
@@ -349,18 +349,20 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     """
 
     # Zip file path separators must be /
-    subdirs = { name.split("/", 1)[0] for name in source.namelist() }
-    info_dirs = [ subdir for subdir in subdirs if subdir.endswith(".dist-info") ]
+    subdirs = {name.split("/", 1)[0] for name in source.namelist()}
+    info_dirs = [subdir for subdir in subdirs if subdir.endswith(".dist-info")]
 
     if len(info_dirs) == 0:
         raise Exception(f".dist-info directory not found for {pkg_name}")
 
     if len(info_dirs) > 1:
         raise Exception(
-            "multiple .dist-info directories found for {}: {}".format(pkg_name, ", ".join(info_dirs))
+            "multiple .dist-info directories found for {}: {}".format(
+                pkg_name, ", ".join(info_dirs)
+            )
         )
 
-    info_dir, = info_dirs
+    (info_dir,) = info_dirs
 
     info_dir_name = _canonicalize_package_name(info_dir)
     canonical_name = _canonicalize_package_name(pkg_name)
