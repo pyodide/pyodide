@@ -30,6 +30,7 @@ from rich.table import Table
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
 from .common import (
+    extract_wheel_metadata_file,
     find_matching_wheels,
     find_missing_executables,
     repack_zip_archive,
@@ -724,13 +725,10 @@ def copy_packages_to_dist_dir(
         )
 
         if metadata_files and dist_artifact_path.suffix == ".whl":
-            with ZipFile(dist_artifact_path, mode="r") as wheel:
-                name, ver, _ = dist_artifact_path.name.split("-", 2)
-                metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
-                wheel.getinfo(
-                    metadata_path
-                ).filename = f"{dist_artifact_path.name}.metadata"
-                wheel.extract(metadata_path, output_dir)
+            if not extract_wheel_metadata_file(
+                dist_artifact_path, output_dir / f"{dist_artifact_path.name}.metadata",
+            ):
+                logger.warning(f"Warning: {pkg.name} has no METADATA file")
 
         test_path = pkg.tests_path()
         if test_path:

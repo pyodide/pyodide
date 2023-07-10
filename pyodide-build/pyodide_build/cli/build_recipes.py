@@ -129,7 +129,7 @@ def recipe(
                 compression_level=compression_level,
                 metadata_files=metadata_files,
             )
-        else:
+        elif metadata_files:
             logger.warning(
                 "WARNING: when --install is not set, the --metadata-files parameter is ignored",
             )

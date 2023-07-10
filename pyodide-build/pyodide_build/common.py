@@ -16,6 +16,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
+from zipfile import ZipFile
 
 from packaging.tags import Tag
 from packaging.utils import parse_wheel_filename
@@ -312,3 +313,26 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
         yield wheel_dir
         wheel.unlink()
         pack_wheel(wheel_dir, wheel.parent)
+
+
+def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> bool:
+    """Extracts the METADATA file from the given wheel and writes it to the
+    output path.
+
+    Returns `True` if the METADATA file exists, and `False` otherwise.
+
+    For a wheel called "NAME-VERSION-...", the METADATA file is expected to be
+    found at "NAME-VERSION.dist-info/METADATA" inside the wheel archive. See:
+    https://packaging.python.org/en/latest/specifications/binary-distribution-format/#file-contents
+    """
+    with ZipFile(wheel_path, mode="r") as wheel:
+        name, ver, _ = wheel_path.name.split("-", 2)
+        metadata_path = str(Path(f"{name}-{ver}.dist-info") / "METADATA")
+        try:
+            wheel.getinfo(
+                metadata_path
+            ).filename = output_path.name
+            wheel.extract(metadata_path, output_path.parent)
+        except KeyError:
+            return False
+    return True
