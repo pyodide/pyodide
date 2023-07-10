@@ -48,7 +48,9 @@ const config = {
   metafile: true,
 };
 
-const { metafile } = await build(Object.assign({}, config, { format: "esm" }));
+const { metafile } = await build(
+  Object.assign({}, config, { format: "esm", bundle: false }),
+);
 const exports = Object.entries(metafile.outputs)[0][1].exports;
 const footer = `
   const {${exports}} = Continuations;
