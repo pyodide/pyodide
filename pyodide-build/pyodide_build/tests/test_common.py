@@ -155,4 +155,4 @@ def test_extract_wheel_metadata_file(tmp_path):
     except Exception:
         pass
     else:
-        assert False
+        raise AssertionError()
