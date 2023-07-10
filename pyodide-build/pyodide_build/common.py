@@ -316,7 +316,7 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
         pack_wheel(wheel_dir, wheel.parent)
 
 
-def extract_wheel_metadata_file(wheel_path: Path, output_path: Path):
+def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
     """Extracts the METADATA file from the given wheel and writes it to the
     output path.
 
@@ -328,7 +328,7 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path):
     https://packaging.python.org/en/latest/specifications/binary-distribution-format/#file-contents
     """
     with ZipFile(wheel_path, mode="r") as wheel:
-        pkg_name = wheel_path.split("-", 1)[0]
+        pkg_name = wheel_path.name.split("-", 1)[0]
         dist_info_dir = get_wheel_dist_info_dir(wheel, pkg_name)
         metadata_path = f"{dist_info_dir}/METADATA"
         try:
