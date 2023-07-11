@@ -1,4 +1,4 @@
-From 9e722eb6b6eadac839eff7d1e37f6bd25f6d2e65 Mon Sep 17 00:00:00 2001
+From 6b7bbe2570f1fd4e2601036eb0c56013b7390bc4 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -39,7 +39,7 @@ was negatively affected.
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 new file mode 100644
-index 0000000000..5da6db790a
+index 0000000000..900d527e48
 --- /dev/null
 +++ b/Include/internal/pycore_emscripten_trampoline.h
 @@ -0,0 +1,67 @@
@@ -89,7 +89,7 @@ index 0000000000..5da6db790a
 +#define _PyEM_TrampolineCall(meth, self, args, kw) \
 +    ((_PyRuntime.wasm_type_reflection_available) ? \
 +        (_PyEM_TrampolineCall_Reflection(meth, self, args, kw)) : \
-+        (_PyEM_TrampolineCall_Js(meth, self, args, kw)))
++        (_PyEM_TrampolineCall_JS(meth, self, args, kw)))
 +
 +
 +#define _PyCFunction_TrampolineCall(meth, self, args) \
