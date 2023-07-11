@@ -16,6 +16,7 @@ import { createInvokeModule } from "../../../core/stack_switching/create_invokes
 import {
   createPromisingModule,
   createPromising,
+  suspenderGlobal,
 } from "../../../core/stack_switching/suspenders.mjs";
 
 const __dirname = new URL(".", import.meta.url).pathname;
@@ -312,10 +313,6 @@ describe("dynamic wasm generation code", () => {
 
     it("createPromising", async () => {
       WasmModule.prototype.generate = origWasmGenerate;
-      const suspenderGlobal = new WebAssembly.Global(
-        { value: "externref", mutable: true },
-        null,
-      );
       const bin = fromWat(`
         (module
           (global $suspender (import "e" "s") (mut externref))

@@ -34,9 +34,9 @@ function setSyncifyHandler() {
   const module = new WebAssembly.Module(new Uint8Array(wrap_syncifying_wasm));
   const instance = new WebAssembly.Instance(module, {
     e: {
-      s: Module.suspenderGlobal,
+      s: suspenderGlobal,
       i: suspending_f,
-      c: Module.validSuspender,
+      c: validSuspender,
     },
   });
   // Assign to the function pointer so that hiwire_syncify calls our wrapper
@@ -44,13 +44,12 @@ function setSyncifyHandler() {
   HEAP32[_syncifyHandler / 4] = addFunction(instance.exports.o);
 }
 
+let promisingApplyHandler;
 export function promisingApply(...args) {
   // validSuspender is a flag so that we can ask for permission before trying to
   // suspend.
-  Module.validSuspender.value = true;
-  // Record the current stack position.
-  Module.stackStop = Module.___stack_pointer.value;
-  return Module.promisingApplyHandler(...args);
+  validSuspender.value = true;
+  return promisingApplyHandler(...args);
 }
 
 // for using wasm types as map keys
@@ -110,10 +109,7 @@ const promisingFunctionMap = new WeakMap();
  *
  * For unit testing, allow passing suspenderGlobal as an argument.
  */
-export function createPromising(wasm_func, suspenderGlobal) {
-  if (!suspenderGlobal) {
-    suspenderGlobal = Module.suspenderGlobal;
-  }
+export function createPromising(wasm_func) {
   if (promisingFunctionMap.has(wasm_func)) {
     return promisingFunctionMap.get(wasm_func);
   }
@@ -130,6 +126,16 @@ export function createPromising(wasm_func, suspenderGlobal) {
   promisingFunctionMap.set(wasm_func, result);
   return result;
 }
+
+export let suspenderGlobal;
+try {
+  suspenderGlobal = new WebAssembly.Global(
+    { value: "externref", mutable: true },
+    null,
+  );
+} catch (e) {}
+
+let validSuspender;
 
 /**
  * This sets up syncify to work.
@@ -156,20 +162,14 @@ export function initSuspenders() {
   // in stack_switching.test.mjs. There is also integration test coverage for
   // it in test_syncify.test_cpp_exceptions_and_syncify.
   try {
-    Module.suspenderGlobal = new WebAssembly.Global(
-      { value: "externref", mutable: true },
-      null,
-    );
-    Module.promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
+    promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
   } catch (e) {}
 
-  Module.jspiSupported = !!Module.promisingApplyHandler;
+  Module.jspiSupported = !!promisingApplyHandler;
 
   if (Module.jspiSupported) {
-    Module.validSuspender = new WebAssembly.Global(
-      { value: "i32", mutable: true },
-      0,
-    );
+    validSuspender = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
+    Module.validSuspender = validSuspender;
     setSyncifyHandler();
   } else {
     // Browser doesn't support JSPI.
