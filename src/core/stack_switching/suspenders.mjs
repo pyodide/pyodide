@@ -158,9 +158,5 @@ export function initSuspenders() {
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
     Module.suspendersAvailable = false;
-    Module.syncifyHandler = function () {
-      Module.handle_js_error(Error("Syncify not supported"));
-      return 0;
-    };
   }
 }
