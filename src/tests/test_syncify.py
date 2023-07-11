@@ -128,10 +128,9 @@ def test_syncify_getset(selenium):
     )
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
-def test_syncify_ctypes(selenium):
-    pytest.xfail(reason="Will fix in a followup")
-    selenium.run_js(
+@pytest.mark.xfail(reason="Will fix in a followup")
+def test_syncify_ctypes():
+    selenium.run_js( # type: ignore[name-defined]
         """
         await pyodide.runPythonSyncifying(`
             from pyodide.code import run_js

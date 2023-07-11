@@ -1,10 +1,9 @@
 /**
- * This file handles stack switching for the C in-memory stack and for the
- * inaccessible wasm stack.
+ * Files exported from here are copied into the Emscripten namespace.
+ * See esbuild.config.mjs.
  */
 
 import {
-  createInvoke,
   jsWrapperTag,
   wrapException,
   adjustWasmImports,
@@ -16,6 +15,7 @@ export {
 } from "./suspenders.mjs";
 
 export { jsWrapperTag };
+
 if (jsWrapperTag) {
   Module.adjustWasmImports = adjustWasmImports;
   Module.wrapException = wrapException;

@@ -140,7 +140,7 @@ try {
 export const wrapException = (e) =>
   new WebAssembly.Exception(jsWrapperTag, [e]);
 
-export function createInvoke(sig) {
+function createInvoke(sig) {
   if (!jsWrapperTag) {
     return createInvokeFunction(sig);
   }
