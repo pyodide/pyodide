@@ -7,7 +7,9 @@ import {
 } from "./runtime_wasm.mjs";
 
 /**
- * syncifyHandler does all of the work of hiwire_syncify (defined in hiwire).
+ * Set the syncifyHandler used by hiwire_syncify.
+ *
+ * syncifyHandler does the work of hiwire_syncify (defined in hiwire).
  */
 function setSyncifyHandler() {
   const suspending_f = new WebAssembly.Function(
@@ -57,7 +59,8 @@ function wasmTypeToString(ty) {
 }
 
 /**
- * This function stores the first argument into
+ * This function stores the first argument into suspenderGlobal and then makes
+ * an onward call with one fewer argument.
  *
  * You can look at src/js/test/unit/wat/promising_<sig>.wat for a few examples
  * of what this function produces.
@@ -100,7 +103,13 @@ function getPromisingModule(orig_type) {
 }
 
 const promisingFunctionMap = new WeakMap();
-// For unit testing, allow passing suspenderGlobal as an argument.
+/**
+ * This creates a wrapper around wasm_func that receives an extra suspender
+ * argument and returns a promise. The suspender is stored into suspenderGlobal
+ * so it can be used by syncify (see wrap_syncifying.wat)
+ *
+ * For unit testing, allow passing suspenderGlobal as an argument.
+ */
 export function createPromising(wasm_func, suspenderGlobal) {
   if (!suspenderGlobal) {
     suspenderGlobal = Module.suspenderGlobal;
@@ -129,8 +138,8 @@ export function createPromising(wasm_func, suspenderGlobal) {
  *
  * - suspenderGlobal where we store the suspender object
  *
- * - applyHandler which creates a suspender and stores it into suspenderGlobal
- *   then makes an onward call (used by callKwargsSyncifying)
+ * - promisingApplyHandler which calls a Python function with stack switching
+ *   enabled (used in callPyObjectKwargsSuspending in pyproxy.ts)
  *
  * - the syncifyHandler which uses suspenderGlobal to suspend execution, then
  *   awaits a promise, then resumes execution and returns the promise result
@@ -138,22 +147,22 @@ export function createPromising(wasm_func, suspenderGlobal) {
  *
  * If the creation of these fails because JSPI is missing, then we set it up so
  * that callKwargsSyncifying and hiwire_syncify will always raise errors and
- * everything else can work as normal. In the short term, we'll almost always
- * end
+ * everything else can work as normal.
  */
 export function initSuspenders() {
+  // It would be nice to have a better way to feature detect wasm stack
+  // switching than this. For now I haven't come up with anything better.
+  // Since createPromising is called in this catch-all block, we unit test it
+  // in stack_switching.test.mjs. There is also integration test coverage for
+  // it in test_syncify.test_cpp_exceptions_and_syncify.
   try {
     Module.suspenderGlobal = new WebAssembly.Global(
       { value: "externref", mutable: true },
       null,
     );
-    // It would be nice to have a better way to feature detect wasm stack
-    // switching than this. For now I haven't come up with anything better.
-    // Since createPromising is called in this catch-all block, we unit test it
-    // in stack_switching.test.mjs There is also integration test coverage for
-    // it in test_syncify.test_cpp_exceptions_and_syncify.
     Module.promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
   } catch (e) {}
+
   Module.jspiSupported = !!Module.promisingApplyHandler;
 
   if (Module.jspiSupported) {
