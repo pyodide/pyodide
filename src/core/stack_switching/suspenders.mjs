@@ -154,9 +154,9 @@ export function initSuspenders() {
     // it in test_syncify.test_cpp_exceptions_and_syncify.
     Module.promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
   } catch (e) {}
-  Module.suspendersAvailable = !!Module.promisingApplyHandler;
+  Module.jspiSupported = !!Module.promisingApplyHandler;
 
-  if (Module.suspendersAvailable) {
+  if (Module.jspiSupported) {
     Module.validSuspender = new WebAssembly.Global(
       { value: "i32", mutable: true },
       0,

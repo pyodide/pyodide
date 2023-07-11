@@ -13,9 +13,9 @@ const __dirname = dirname(new URL(import.meta.url).pathname);
 const { parseWat } = await loadWabt();
 
 /**
- * An esbuild plugin that imports wat files.
- *
- * It
+ * An esbuild plugin to handle wat imports. It uses the wasm binary toolkit to
+ * assemble the wat source and returns the assembled binary.
+ * esbuild automatically base 64 encodes/decodes the result for us.
  */
 function watPlugin() {
   return {

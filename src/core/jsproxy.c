@@ -2843,7 +2843,7 @@ JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
 {
   PyErr_SetString(
     PyExc_RuntimeError,
-    "WebAssembly Promise integration not supported in this JavaScript runtime");
+    "WebAssembly stack switching not supported in this JavaScript runtime");
   return NULL;
 }
 
@@ -4486,8 +4486,8 @@ JsProxy_init(PyObject* core_module)
 {
   bool success = false;
 
-  bool suspendersAvailable = EM_ASM_INT({ return Module.suspendersAvailable; });
-  if (suspendersAvailable) {
+  bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
+  if (jspiSupported) {
     JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
   } else {
     JsProxy_syncify_MethodDef.ml_meth =

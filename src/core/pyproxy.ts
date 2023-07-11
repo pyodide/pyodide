@@ -464,9 +464,9 @@ async function callPyObjectKwargsSuspending(
   jsargs: any,
   kwargs: any,
 ) {
-  if (!Module.promisingApplyHandler) {
+  if (!Module.jspiSupported) {
     throw new Error(
-      "WebAssembly Promise integration not supported in this JavaScript runtime",
+      "WebAssembly stack switching not supported in this JavaScript runtime",
     );
   }
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs

@@ -310,7 +310,7 @@ describe("dynamic wasm generation code", () => {
       }
     });
 
-    describe("createPromising", async () => {
+    it("createPromising", async () => {
       WasmModule.prototype.generate = origWasmGenerate;
       const suspenderGlobal = new WebAssembly.Global(
         { value: "externref", mutable: true },
@@ -331,7 +331,7 @@ describe("dynamic wasm generation code", () => {
         return new Promise((res) => setTimeout(res, ms));
       }
       async function f() {
-        await sleep(100);
+        await sleep(20);
         return 7;
       }
       const i = new WebAssembly.Function(

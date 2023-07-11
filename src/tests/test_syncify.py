@@ -11,12 +11,12 @@ def test_syncify_not_supported(selenium_standalone_noload):
         await assertThrowsAsync(
           async () => await pyodide.runPythonSyncifying("1+1"),
           "Error",
-          "WebAssembly Promise integration not supported in this JavaScript runtime"
+          "WebAssembly stack switching not supported in this JavaScript runtime"
         );
         await assertThrows(
           () => pyodide.runPython("from js import sleep; sleep().syncify()"),
           "PythonError",
-          "RuntimeError: WebAssembly Promise integration not supported in this JavaScript runtime"
+          "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
         );
         """
     )
