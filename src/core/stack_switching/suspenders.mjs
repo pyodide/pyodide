@@ -100,14 +100,18 @@ function getPromisingModule(orig_type) {
 }
 
 const promisingFunctionMap = new WeakMap();
-export function createPromising(wasm_func) {
+// For unit testing, allow passing suspenderGlobal as an argument.
+export function createPromising(wasm_func, suspenderGlobal) {
+  if (!suspenderGlobal) {
+    suspenderGlobal = Module.suspenderGlobal;
+  }
   if (promisingFunctionMap.has(wasm_func)) {
     return promisingFunctionMap.get(wasm_func);
   }
   const type = WebAssembly.Function.type(wasm_func);
   const module = getPromisingModule(type);
   const instance = new WebAssembly.Instance(module, {
-    e: { i: wasm_func, s: Module.suspenderGlobal },
+    e: { i: wasm_func, s: suspenderGlobal },
   });
   const result = new WebAssembly.Function(
     { parameters: type.parameters, results: ["externref"] },
@@ -143,11 +147,15 @@ export function initSuspenders() {
       { value: "externref", mutable: true },
       null,
     );
+    // It would be nice to have a better way to feature detect wasm stack
+    // switching than this. For now I haven't come up with anything better.
+    // Since createPromising is called in this catch-all block, we unit test it
+    // in stack_switching.test.mjs There is also integration test coverage for
+    // it in test_syncify.test_cpp_exceptions_and_syncify.
     Module.promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
-    Module.suspendersAvailable = true;
-  } catch (e) {
-    Module.suspendersAvailable = false;
-  }
+  } catch (e) {}
+  Module.suspendersAvailable = !!Module.promisingApplyHandler;
+
   if (Module.suspendersAvailable) {
     Module.validSuspender = new WebAssembly.Global(
       { value: "i32", mutable: true },
@@ -157,6 +165,5 @@ export function initSuspenders() {
   } else {
     // Browser doesn't support JSPI.
     Module.validSuspender = { value: 0 };
-    Module.suspendersAvailable = false;
   }
 }
