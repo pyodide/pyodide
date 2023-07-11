@@ -1,6 +1,27 @@
 import pytest
 
 
+def test_syncify_not_supported(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        // Ensure that it's not supported by deleting WebAssembly.Function
+        delete WebAssembly.Function;
+        let pyodide = await loadPyodide({});
+        await assertThrowsAsync(
+          async () => await pyodide.runPythonSyncifying("1+1"),
+          "Error",
+          "WebAssembly Promise integration not supported in this JavaScript runtime"
+        );
+        await assertThrows(
+          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          "PythonError",
+          "RuntimeError: WebAssembly Promise integration not supported in this JavaScript runtime"
+        );
+        """
+    )
+
+
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_syncify1(selenium):
     selenium.run_js(
