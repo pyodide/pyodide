@@ -10,10 +10,7 @@ import {
 } from "./create_invokes.mjs";
 import { initSuspenders } from "./suspenders.mjs";
 
-export {
-  promisingApply,
-  createPromising,
-} from "./suspenders.mjs";
+export { promisingApply, createPromising } from "./suspenders.mjs";
 
 export { jsWrapperTag };
 
