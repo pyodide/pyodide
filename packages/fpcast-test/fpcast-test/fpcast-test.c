@@ -31,6 +31,15 @@ set_two(PyObject* self, PyObject* value)
   return 0;
 }
 
+
+/**
+ * This get-set pair test that the getter/setter call trampolines interact
+ * correctly with stack switching. They are used in `src/tests/test_syncify.py`.
+ * We see that the descriptor trampoline is used because the signatures don't
+ * take a closure argument. We assign `getset_func` to be a function that calls
+ * `syncify()` so that if the trampoline uses JS frames then the stack switch
+ * would fail.
+ */
 PyObject* getset_func = NULL;
 
 static PyObject*
