@@ -31,7 +31,6 @@ set_two(PyObject* self, PyObject* value)
   return 0;
 }
 
-
 /**
  * This get-set pair test that the getter/setter call trampolines interact
  * correctly with stack switching. They are used in `src/tests/test_syncify.py`.
