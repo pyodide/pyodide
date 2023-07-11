@@ -8,5 +8,3 @@ package:
     - fpcast_test
 source:
   path: fpcast-test
-build:
-  exports: requested
