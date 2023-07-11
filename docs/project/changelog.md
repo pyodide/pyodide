@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
 - {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
   used instead of the `--exports` argument to `pyodide build` to specify `.so`
   file exports of packages.
