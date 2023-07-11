@@ -1,4 +1,4 @@
-From 68a77d4dab1c27231fed2a541095929bdb2f34ab Mon Sep 17 00:00:00 2001
+From 6b7bbe2570f1fd4e2601036eb0c56013b7390bc4 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
@@ -23,26 +23,26 @@ trampoline.
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
 ---
- .../internal/pycore_emscripten_trampoline.h   | 55 +++++++++++++
+ .../internal/pycore_emscripten_trampoline.h   | 67 +++++++++++++++++
  Include/internal/pycore_object.h              | 28 +------
  Include/internal/pycore_runtime.h             |  5 ++
- Objects/descrobject.c                         | 22 ++++--
+ Objects/descrobject.c                         | 18 +----
  Objects/methodobject.c                        |  7 --
- Python/emscripten_trampoline.c                | 79 +++++++++++++++++++
+ Python/emscripten_trampoline.c                | 74 +++++++++++++++++++
  Python/pylifecycle.c                          |  3 +
  Python/pystate.c                              |  2 +
  configure                                     |  4 +-
  configure.ac                                  |  4 +-
- 10 files changed, 163 insertions(+), 46 deletions(-)
+ 10 files changed, 159 insertions(+), 53 deletions(-)
  create mode 100644 Include/internal/pycore_emscripten_trampoline.h
  create mode 100644 Python/emscripten_trampoline.c
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 new file mode 100644
-index 0000000000..e5031c8362
+index 0000000000..900d527e48
 --- /dev/null
 +++ b/Include/internal/pycore_emscripten_trampoline.h
-@@ -0,0 +1,55 @@
+@@ -0,0 +1,67 @@
 +#ifndef Py_EMSCRIPTEN_TRAMPOLINE_H
 +#define Py_EMSCRIPTEN_TRAMPOLINE_H
 +
@@ -75,10 +75,22 @@ index 0000000000..e5031c8362
 +void _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime);
 +
 +PyObject*
-+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-+                     PyObject* self,
-+                     PyObject* args,
-+                     PyObject* kw);
++_PyEM_TrampolineCall_JS(PyCFunctionWithKeywords func,
++                        PyObject* self,
++                        PyObject* args,
++                        PyObject* kw);
++
++PyObject*
++_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
++                                PyObject* self,
++                                PyObject* args,
++                                PyObject* kw);
++
++#define _PyEM_TrampolineCall(meth, self, args, kw) \
++    ((_PyRuntime.wasm_type_reflection_available) ? \
++        (_PyEM_TrampolineCall_Reflection(meth, self, args, kw)) : \
++        (_PyEM_TrampolineCall_JS(meth, self, args, kw)))
++
 +
 +#define _PyCFunction_TrampolineCall(meth, self, args) \
 +    _PyEM_TrampolineCall( \
@@ -161,13 +173,23 @@ index ae63ae74af..521a1e87a4 100644
         is called again.
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 4d8b83758b..f9d4c00399 100644
+index 4d8b83758b..11badd4860 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
-@@ -15,15 +15,21 @@ class property "propertyobject *" "&PyProperty_Type"
+@@ -2,6 +2,7 @@
  
- // see pycore_object.h
- #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+ #include "Python.h"
+ #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
++#include "pycore_emscripten_trampoline.h" // _PyEM_TrampolineCall()
+ #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+ #include "pycore_pystate.h"       // _PyThreadState_GET()
+ #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+@@ -13,24 +14,11 @@ class property "propertyobject *" "&PyProperty_Type"
+ [clinic start generated code]*/
+ /*[clinic end generated code: output=da39a3ee5e6b4b0d input=556352653fd4c02e]*/
+ 
+-// see pycore_object.h
+-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 -#include <emscripten.h>
 -EM_JS(int, descr_set_trampoline_call, (setter set, PyObject *obj, PyObject *value, void *closure), {
 -    return wasmTable.get(set)(obj, value, closure);
@@ -176,24 +198,19 @@ index 4d8b83758b..f9d4c00399 100644
 -EM_JS(PyObject*, descr_get_trampoline_call, (getter get, PyObject *obj, void *closure), {
 -    return wasmTable.get(get)(obj, closure);
 -});
-+extern PyObject*
-+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-+                     PyObject* self,
-+                     PyObject* args,
-+                     PyObject* kw);
-+
-+#define descr_set_trampoline_call(set, obj, value, closure) \
-+    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
-+
-+
-+#define descr_get_trampoline_call(get, obj, closure) \
-+    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
-+
- #else
-+
+-#else
  #define descr_set_trampoline_call(set, obj, value, closure) \
-     (set)((obj), (value), (closure))
+-    (set)((obj), (value), (closure))
++    ((int)_PyEM_TrampolineCall((PyCFunctionWithKeywords)(set), (obj), (value), (PyObject*)(closure)))
  
+ #define descr_get_trampoline_call(get, obj, closure) \
+-    (get)((obj), (closure))
+-
+-#endif // __EMSCRIPTEN__ && PY_CALL_TRAMPOLINE
++    _PyEM_TrampolineCall((PyCFunctionWithKeywords)(get), (obj), (PyObject*)(closure), NULL)
+ 
+ static void
+ descr_dealloc(PyDescrObject *descr)
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
 index 953cf4666d..d344bfa234 100644
 --- a/Objects/methodobject.c
@@ -211,10 +228,10 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..33c9d25d2e
+index 0000000000..d2d24a6e0a
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,74 @@
 +#if defined(PY_CALL_TRAMPOLINE)
 +
 +#include <emscripten.h>             // EM_JS, EM_JS_DEPS
@@ -239,9 +256,8 @@ index 0000000000..33c9d25d2e
 +/**
 + * Backwards compatible trampoline works with all JS runtimes
 + */
-+EM_JS_DEPS(_PyEMJS_TrampolineCall, "$getWasmTableEntry")
-+EM_JS(PyObject*, _PyEMJS_TrampolineCall, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
-+    return getWasmTableEntry(func)(arg1, arg2, arg3);
++EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
++    return wasmTable.get(func)(arg1, arg2, arg3);
 +}
 +);
 +
@@ -254,7 +270,7 @@ index 0000000000..33c9d25d2e
 +  if (n !== undefined) {
 +    return n;
 +  }
-+  n = WebAssembly.Function.type(getWasmTableEntry(func)).parameters.length;
++  n = WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
 +  _PyEM_CountFuncParams.cache.set(func, n);
 +  return n;
 +}
@@ -269,27 +285,23 @@ index 0000000000..33c9d25d2e
 +
 +
 +PyObject*
-+_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
++_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
 +              PyObject* self,
 +              PyObject* args,
 +              PyObject* kw)
 +{
-+  if (!_PyRuntime.wasm_type_reflection_available) {
-+    return _PyEMJS_TrampolineCall(func, self, args, kw);
-+  } else {
-+    switch (_PyEM_CountFuncParams(func)) {
-+      case 0:
-+        return ((zero_arg)func)();
-+      case 1:
-+        return ((one_arg)func)(self);
-+      case 2:
-+        return ((two_arg)func)(self, args);
-+      case 3:
-+        return ((three_arg)func)(self, args, kw);
-+      default:
-+        PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
-+        return NULL;
-+    }
++  switch (_PyEM_CountFuncParams(func)) {
++    case 0:
++      return ((zero_arg)func)();
++    case 1:
++      return ((one_arg)func)(self);
++    case 2:
++      return ((two_arg)func)(self, args);
++    case 3:
++      return ((three_arg)func)(self, args, kw);
++    default:
++      PyErr_SetString(PyExc_SystemError, "Handler takes too many arguments");
++      return NULL;
 +  }
 +}
 +
