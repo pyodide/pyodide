@@ -130,7 +130,7 @@ def test_syncify_getset(selenium):
 
 @pytest.mark.xfail(reason="Will fix in a followup")
 def test_syncify_ctypes():
-    selenium.run_js( # type: ignore[name-defined]
+    selenium.run_js(  # type: ignore[name-defined]
         """
         await pyodide.runPythonSyncifying(`
             from pyodide.code import run_js
