@@ -8,13 +8,16 @@ import {
   wrapException,
   adjustWasmImports,
 } from "./create_invokes.mjs";
+import { initSuspenders } from "./suspenders.mjs";
+
 export {
-  initSuspenders,
   promisingApply,
   createPromising,
 } from "./suspenders.mjs";
 
 export { jsWrapperTag };
+
+Module.preRun.push(initSuspenders);
 
 if (jsWrapperTag) {
   Module.adjustWasmImports = adjustWasmImports;

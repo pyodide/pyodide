@@ -75,7 +75,6 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js src/core/stack_sw
 dist/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
-	src/core/continuations.o \
 	src/core/hiwire.o \
 	src/core/_pyodide_core.o \
 	src/core/js2python.o \
@@ -239,7 +238,6 @@ clean-python: clean
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
-
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/

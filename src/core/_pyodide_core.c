@@ -68,7 +68,6 @@ PyInit__pyodide_core(void)
   }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
-  TRY_INIT(continuations);
   TRY_INIT(hiwire);
   TRY_INIT(docstring);
   TRY_INIT(js2python);
