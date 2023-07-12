@@ -26,10 +26,11 @@ check_gil()
   }
 }
 
-PyObject* Generator;
-PyObject* AsyncGenerator;
-PyObject* Sequence;
-PyObject* MutableSequence;
+static PyObject* Generator;
+static PyObject* AsyncGenerator;
+static PyObject* Sequence;
+static PyObject* MutableSequence;
+static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(pop);
@@ -694,6 +695,16 @@ finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pykwnames);
   return idresult;
+}
+
+bool
+_iscoroutinefunction(PyObject* f)
+{
+  PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
+  if (!result) {
+    PyErr_Clear();
+  }
+  return Py_IsTrue(result);
 }
 
 JsRef
@@ -1401,6 +1412,7 @@ pyproxy_init(PyObject* core)
 
   PyObject* collections_abc = NULL;
   PyObject* docstring_source = NULL;
+  PyObject* inspect = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -1421,9 +1433,15 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
 
+  inspect = PyImport_ImportModule("inspect");
+  FAIL_IF_NULL(inspect);
+  iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
+  FAIL_IF_NULL(iscoroutinefunction);
+
   success = true;
 finally:
   Py_CLEAR(docstring_source);
   Py_CLEAR(collections_abc);
+  Py_CLEAR(inspect);
   return success ? 0 : -1;
 }

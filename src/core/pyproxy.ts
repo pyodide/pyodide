@@ -445,7 +445,12 @@ Module.callPyObjectKwargs = function (
   let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
-    result._ensure_future();
+    Py_ENTER();
+    let is_coroutine = Module.__iscoroutinefunction(ptrobj);
+    Py_EXIT();
+    if (is_coroutine) {
+      result._ensure_future();
+    }
   }
   return result;
 };
