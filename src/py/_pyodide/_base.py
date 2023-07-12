@@ -6,6 +6,7 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 import builtins
+import linecache
 import tokenize
 from collections.abc import Generator
 from copy import deepcopy
@@ -237,6 +238,7 @@ class CodeRunner:
         flags: int = 0x0,
     ):
         self._compiled = False
+        self._source = source
         self._gen = _parse_and_compile_gen(
             source,
             return_mode=return_mode,
@@ -264,6 +266,14 @@ class CodeRunner:
         else:
             raise AssertionError()
         return self
+
+    def _set_linecache(self):
+        assert self.code
+        filename = self.code.co_filename
+        if filename.startswith("<") and filename.endswith(">"):
+            return
+
+        linecache.cache[filename] = [lambda: self._source]  # type:ignore[assignment]
 
     def run(
         self,
@@ -306,6 +316,7 @@ class CodeRunner:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
             return None
+        self._set_linecache()
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
@@ -359,6 +370,7 @@ class CodeRunner:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
             return
+        self._set_linecache()
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
