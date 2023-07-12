@@ -2,6 +2,17 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.fixture
+def url_notfound(httpserver):
+    httpserver.expect_request("/data").respond_with_data(
+        b"404 Not Found",
+        content_type="text/text",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=404,
+    )
+    return httpserver.url_for("/data")
+
+
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_open_url(selenium, httpserver):
     httpserver.expect_request("/data").respond_with_data(
@@ -32,6 +43,15 @@ async def test_pyfetch_create_file(selenium):
         pathlib.Path("/home/pyodide/console.html").read_text().find("fatal error.")
         > 3000
     )
+
+
+@run_in_pyodide
+async def test_pyfetch_return_400_status_body(selenium, url_notfound):
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch(url_notfound)
+    body = await resp.string()
+    assert body == "404 Not Found"
 
 
 @run_in_pyodide
