@@ -12,6 +12,10 @@ source:
     - patches/0002-fix-wasm32-size_t.patch
     - patches/0003-fix-no-libxml2-in-wasm-builds.patch
 
+requirements:
+  run:
+    - texttable
+
 build:
   cflags: |
     -Wno-return-type
