@@ -1,7 +1,7 @@
 From 4f96e535431ee93d266546f41dd40096b9008a1c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 25 Dec 2021 18:04:18 -0800
-Subject: [PATCH 02/12] int to string
+Subject: [PATCH 02/10] int to string
 
 f2c does not handle implicit casts of function arguments correctly. The msg
 argument of `xerrwv` is defined to be an `int *`, and then implicitly cast

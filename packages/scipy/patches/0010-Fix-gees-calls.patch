@@ -1,7 +1,7 @@
 From f8f0f47c05c0a3dbd55c96f50724528c1073e85b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 26 Jun 2023 20:12:25 -0700
-Subject: [PATCH 12/12] Fix gees calls
+Subject: [PATCH 10/10] Fix gees calls
 
 ---
  scipy/linalg/flapack_gen.pyf.src | 8 ++++----
