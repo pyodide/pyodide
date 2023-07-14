@@ -63,7 +63,7 @@ myst:
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
   Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
-- Upgraded scipy to 1.10.1 {pr}`3794`
+- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
