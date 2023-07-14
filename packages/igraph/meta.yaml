@@ -1,0 +1,27 @@
+package:
+  name: igraph
+  version: 0.10.6
+  top-level:
+    - igraph
+
+source:
+  url: https://files.pythonhosted.org/packages/75/a9/3351da0a498502707f548ca48b2c4abc9e2f6e1901ad143c8559a95b0985/igraph-0.10.6.tar.gz
+  sha256: 76f7aad294514412f835366a7d9a9c1e7a34c3e6ef0a6c3a1a835234323228e8
+
+requirements:
+  run:
+    - texttable
+
+build:
+  cflags: |
+    -Wno-return-type
+
+test:
+  imports:
+    - igraph
+
+about:
+  home: https://igraph.org/python
+  PyPI: https://pypi.org/project/igraph
+  summary: High performance graph data structures and algorithms
+  license: GNU General Public License (GPL)

@@ -61,7 +61,7 @@ myst:
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
-  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`.
+  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`
