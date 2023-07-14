@@ -700,11 +700,29 @@ finally:
 bool
 _iscoroutinefunction(PyObject* f)
 {
+  // Some fast paths for common cases to avoid calling into Python
+  if (PyMethod_Check(f)) {
+    f = PyMethod_GET_FUNCTION(f);
+  }
+
+  // _is_coroutine_marker is added to Python stdlib in 3.12. Check for it here
+  // to make sure we don't accidentally return false negatives when we update to
+  // 3.12.
+  if (PyFunction_Check(f) &&
+      !PyObject_HasAttrString(f, "_is_coroutine_marker")) {
+    PyFunctionObject* func = (PyFunctionObject*)f;
+    PyCodeObject* code = (PyCodeObject*)PyFunction_GET_CODE(func);
+    return (code->co_flags) & CO_COROUTINE;
+  }
+
+  // Wasn't a basic callable, call into inspect.iscoroutinefunction
   PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
   if (!result) {
     PyErr_Clear();
   }
-  return Py_IsTrue(result);
+  bool ret = Py_IsTrue(result);
+  Py_CLEAR(result);
+  return ret;
 }
 
 JsRef
