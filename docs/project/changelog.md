@@ -15,6 +15,13 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `filename`
+  optional argument which is passed as the `filename` argument to `eval_code`
+  (resp. `eval_code_async`). Also, if a `filename` is passed to `eval_code`
+  which does not start with `<` and end with `>`, Pyodide now uses the
+  `linecache` module to ensure that source lines can appear in tracebacks.
+  {pr}`3993`
+
 - {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
   used instead of the `--exports` argument to `pyodide build` to specify `.so`
   file exports of packages.
