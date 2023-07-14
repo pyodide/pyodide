@@ -126,10 +126,6 @@ class FetchResponse:
         return self.js_response.url
 
     def _raise_if_failed(self) -> None:
-        if self.js_response.status >= 400:
-            raise OSError(
-                f"Request for {self._url} failed with status {self.status}: {self.status_text}"
-            )
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 

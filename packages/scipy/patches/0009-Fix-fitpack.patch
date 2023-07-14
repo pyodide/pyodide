@@ -1,7 +1,7 @@
 From 3dc3d0fc7fa53422586c607a78e5cbf251dbfc62 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 11:51:53 -0700
-Subject: [PATCH 09/12] Fix fitpack
+Subject: [PATCH 09/10] Fix fitpack
 
 ---
  scipy/interpolate/fitpack/dblint.f | 9 ++++-----

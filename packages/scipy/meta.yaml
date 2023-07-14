@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.10.1
+  version: 1.11.1
   tag:
     - min-scipy-stack
   top-level:
@@ -17,8 +17,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/84/a9/2bf119f3f9cff1f376f924e39cfae18dec92a1514784046d185731301281/scipy-1.10.1.tar.gz
-  sha256: 2cf9dfb80a7b4589ba4c40ce7588986d6d5cebc5457cad2c2880f6bc2d42f3a5
+  url: https://files.pythonhosted.org/packages/a6/98/fceb84466a74b8fe74ce2dcc3a0a89cb7b4a689d4775e0fb4c95f335ef6a/scipy-1.11.1.tar.gz
+  sha256: fb5b492fa035334fd249f0973cc79ecad8b09c604b42a127a677b45a9a3d4289
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
@@ -30,11 +30,7 @@ source:
     - patches/0007-skip-fortran-fails-to-link.patch
     - patches/0008-Remove-meson-requirements.patch
     - patches/0009-Fix-fitpack.patch
-    # TODO remove the next patch when we upgrade to scipy 1.11, since it has
-    # been fixed upstream in https://github.com/scipy/scipy/pull/18124
-    - patches/0010-When-forward-declaring-print_soln-give-it-the-correc.patch
-    - patches/0011-Enable-long-double-support-in-Boost-library-for-emsc.patch
-    - patches/0012-Fix-gees-calls.patch
+    - patches/0010-Fix-gees-calls.patch
 
 build:
   cflags: |

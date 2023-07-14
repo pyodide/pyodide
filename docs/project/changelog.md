@@ -53,13 +53,6 @@ myst:
   as drop-in replacements for JavaScript Arrays.
   {pr}`3853`
 
-- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
-  it can be raised in Python.
-  {pr}`3868`
-
-- {{ Fix }} `from jsmodule import *` now works.
-  {pr}`3903`
-
 - {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
   functions that use the `PySequence_*` APIs, it now works as expected. Also
   `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
@@ -71,15 +64,13 @@ myst:
   `{env: {HOME: whatever_directory}}`.
   {pr}`3870`
 
-- {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
-  are trying to feature detect whether something is callable or not in
-  JavaScript, the correct way is to use `typeof o === "function"`. But you may
-  have dependencies that don't do this correctly.)
-  {pr}`3925`
-
 - {{ API }} Changed the name of the default lockfile from `repodata.json` to
   `pyodide-lock.json`
   {pr}`3824`
+
+- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
+  throw an OSError exception for 400 and above response status codes
+  {pr}`3986`
 
 ### Packages
 
@@ -90,10 +81,46 @@ myst:
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
   Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
-- Upgraded scipy to 1.10.1 {pr}`3794`
+- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
+
+## Version 0.23.4
+
+_July 6, 2023_
+
+- {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
+  used instead of the `--exports` argument to `pyodide build` to specify `.so`
+  file exports of packages.
+  {pr}`3973`
+
+- {{ Fix }} Pin `pydantic` to `<2`.
+  {pr}`3971`
+
+- {{ Enhancement }} Allow customizing cache location for packages when running in Node
+  {pr}`3967`
+
+- {{ Enhancement }} Re-enabled sparseqr, freesasa, lightgbm, opencv-python, and wordcloud
+  {pr}`3783`, {pr}`3970`
+
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
+
+- {{ Fix }} The feature detection for `JSProxy` has been improved so that it
+  should never fail even when handling strange or ill-behaved JavaScript proxy
+  objects.
+  {pr}`3740`, {pr}`3750`
+
+- {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
+  are trying to feature detect whether something is callable or not in
+  JavaScript, the correct way is to use `typeof o === "function"`. But you may
+  have dependencies that don't do this correctly.)
+  {pr}`3925`
+
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
 
 ## Version 0.23.3
 
