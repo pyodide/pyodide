@@ -273,7 +273,8 @@ class CodeRunner:
         if filename.startswith("<") and filename.endswith(">"):
             return
 
-        linecache.cache[filename] = [lambda: self._source]  # type:ignore[assignment]
+        source = self._source
+        linecache.cache[filename] = [lambda: source]  # type:ignore[assignment]
 
     def run(
         self,
