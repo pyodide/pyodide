@@ -5,7 +5,6 @@
 import contextlib
 import hashlib
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -20,7 +19,8 @@ from typing import Any, NoReturn
 from zipfile import ZipFile
 
 from packaging.tags import Tag
-from packaging.utils import parse_wheel_filename, canonicalize_name as canonicalize_package_name
+from packaging.utils import canonicalize_name as canonicalize_package_name
+from packaging.utils import parse_wheel_filename
 
 from .logger import logger
 
