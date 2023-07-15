@@ -150,9 +150,5 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     output_path_empty = tmp_path / f"{input_path_empty.name}.metadata"
 
-    try:
+    with pytest.raises(Exception):
         extract_wheel_metadata_file(input_path_empty, output_path_empty)
-    except Exception:
-        pass
-    else:
-        raise AssertionError()

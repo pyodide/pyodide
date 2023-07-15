@@ -20,7 +20,7 @@ from typing import Any, NoReturn
 from zipfile import ZipFile
 
 from packaging.tags import Tag
-from packaging.utils import parse_wheel_filename
+from packaging.utils import parse_wheel_filename, canonicalize_name as canonicalize_package_name
 
 from .logger import logger
 
@@ -357,33 +357,17 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
 
     if len(info_dirs) > 1:
         raise Exception(
-            "multiple .dist-info directories found for {}: {}".format(
-                pkg_name, ", ".join(info_dirs)
-            )
+            f"multiple .dist-info directories found for {pkg_name}: {', '.join(info_dirs)}"
         )
 
     (info_dir,) = info_dirs
 
-    info_dir_name = _canonicalize_package_name(info_dir)
-    canonical_name = _canonicalize_package_name(pkg_name)
+    info_dir_name = canonicalize_package_name(info_dir)
+    canonical_name = canonicalize_package_name(pkg_name)
 
     if not info_dir_name.startswith(canonical_name):
         raise Exception(
-            ".dist-info directory {!r} does not start with {!r}".format(
-                info_dir, canonical_name
-            )
+            f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
         )
 
     return info_dir
-
-
-_canonicalize_regex = re.compile(r"[-_.]+")
-
-
-def _canonicalize_package_name(name: str) -> str:
-    """Adapted from:
-    https://github.com/pypa/pip/blob/ea727e4d6ab598f34f97c50a22350febc1214a97/src/pip/_vendor/packaging/utils.py#L32
-    """
-
-    # This is taken from PEP 503.
-    return _canonicalize_regex.sub("-", name).lower()
