@@ -5,10 +5,6 @@ API.tests = Tests;
 API.version = "0.24.0.dev0";
 Module.hiwire = Hiwire;
 
-function sleep(ms) {
-  return new Promise((res) => setTimeout(res, ms));
-}
-
 function getTypeTag(x) {
   try {
     return Object.prototype.toString.call(x);

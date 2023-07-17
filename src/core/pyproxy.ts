@@ -18,7 +18,6 @@ declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
-declare function sleep(ms: number): Promise<undefined>;
 declare var HEAPU32: Uint32Array;
 
 declare function _check_gil(): void;
@@ -493,10 +492,6 @@ async function callPyObjectKwargsSuspending(
   let idkwnames = Hiwire.new_value(kwargs_names);
   let idresult;
 
-  // Let the event loop go around once in case this gets syncified. This ensures
-  // that the outer syncify call sees the original suspender and not the
-  // new one we are about to create.
-  await sleep(0);
   try {
     Py_ENTER();
     idresult = await Module.promisingApply(
