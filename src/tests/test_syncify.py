@@ -5,8 +5,8 @@ def test_syncify_not_supported(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
-        // Ensure that it's not supported by deleting WebAssembly.Function
-        delete WebAssembly.Function;
+        // Ensure that it's not supported by deleting WebAssembly.Suspender
+        delete WebAssembly.Suspender;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide.runPythonSyncifying("1+1"),
