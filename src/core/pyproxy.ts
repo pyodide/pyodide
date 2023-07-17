@@ -459,6 +459,18 @@ Module.callPyObjectKwargs = function (
   return result;
 };
 
+/**
+ * A version of callPyObjectKwargs that supports the JSPI.
+ *
+ * It returns a promise. Inside Python, JS promises can be syncified, which
+ * switches the stack to synchronously wait for them to be resolved.
+ *
+ * Pretty much everything is the same as callPyObjectKwargs except we use the
+ * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
+ * causes the VM to invent a suspender and call a wrapper module which stores it
+ * into suspenderGlobal (for later use by hiwire_syncify). Then it calls
+ * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ */
 async function callPyObjectKwargsSuspending(
   ptrobj: number,
   jsargs: any,
