@@ -2217,3 +2217,48 @@ def test_pyproxy_callable_prototype(selenium):
     }
     filtered_result = {k: v for (k, v) in result.items() if k in subdict}
     assert filtered_result == subdict
+
+
+@pytest.mark.skip_pyproxy_check
+def test_automatic_coroutine_scheduling(selenium):
+    res = selenium.run_js(
+        """
+        function d(x) {
+            if(x && x.destroy) {
+                x.destroy();
+            }
+        }
+
+        d(pyodide.runPython(`
+            l = []
+            async def f(n):
+                l.append(n)
+
+            def g(n):
+                return f(n)
+
+            async def h(n):
+                return f(n)
+
+            f(1)
+        `));
+        const f = pyodide.globals.get("f");
+        const g = pyodide.globals.get("g");
+        const h = pyodide.globals.get("h");
+        f(3);
+        d(pyodide.runPython("f(2)"));
+        pyodide.runPythonAsync("f(4)");
+        d(g(5));
+        h(6);
+        await sleep(0);
+        await sleep(0);
+        await sleep(0);
+        const l = pyodide.globals.get("l");
+        const res = l.toJs();
+        for(let p of [f, g, l]) {
+            p.destroy();
+        }
+        return res;
+        """
+    )
+    assert res == [3, 4, 6]
