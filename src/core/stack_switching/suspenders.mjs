@@ -59,7 +59,8 @@ function wasmTypeToString(ty) {
 
 /**
  * This function stores the first argument into suspenderGlobal and then makes
- * an onward call with one fewer argument.
+ * an onward call with one fewer argument. The suspenderGlobal is later used by
+ * syncify (see wrap_syncifying.wat)
  *
  * You can look at src/js/test/unit/wat/promising_<sig>.wat for a few examples
  * of what this function produces.
@@ -106,8 +107,6 @@ const promisingFunctionMap = new WeakMap();
  * This creates a wrapper around wasm_func that receives an extra suspender
  * argument and returns a promise. The suspender is stored into suspenderGlobal
  * so it can be used by syncify (see wrap_syncifying.wat)
- *
- * For unit testing, allow passing suspenderGlobal as an argument.
  */
 export function createPromising(wasm_func) {
   if (promisingFunctionMap.has(wasm_func)) {
@@ -133,7 +132,10 @@ try {
     { value: "externref", mutable: true },
     null,
   );
-} catch (e) {}
+} catch (e) {
+  // An error is thrown if externref isn't supported. In this case JSPI is also
+  // not supported and everything is fine.
+}
 
 let validSuspender;
 
@@ -156,19 +158,15 @@ let validSuspender;
  * everything else can work as normal.
  */
 export function initSuspenders() {
-  // It would be nice to have a better way to feature detect wasm stack
-  // switching than this. For now I haven't come up with anything better.
-  // Since createPromising is called in this catch-all block, we unit test it
-  // in stack_switching.test.mjs. There is also integration test coverage for
-  // it in test_syncify.test_cpp_exceptions_and_syncify.
-  try {
-    promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
-  } catch (e) {}
-
-  Module.jspiSupported = !!promisingApplyHandler;
+  // This is what wasm-feature-detect uses to feature detect JSPI. It is not
+  // 100% clear based on the text of the JSPI proposal that this will actually
+  // work in the future, but if it breaks we can replace it with something else
+  // that does work.
+  Module.jspiSupported = "Suspender" in WebAssembly;
 
   if (Module.jspiSupported) {
     validSuspender = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
+    promisingApplyHandler = createPromising(Module.asm._pyproxy_apply);
     Module.validSuspender = validSuspender;
     setSyncifyHandler();
   } else {
