@@ -1,6 +1,6 @@
 package:
   name: xarray
-  version: 2023.6.0
+  version: 2023.7.0
 
   top-level:
     - xarray
