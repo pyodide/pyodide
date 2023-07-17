@@ -700,6 +700,8 @@ finally:
 bool
 _iscoroutinefunction(PyObject* f)
 {
+  _Py_IDENTIFIER(_is_coroutine_marker);
+
   // Some fast paths for common cases to avoid calling into Python
   if (PyMethod_Check(f)) {
     f = PyMethod_GET_FUNCTION(f);
@@ -709,7 +711,7 @@ _iscoroutinefunction(PyObject* f)
   // to make sure we don't accidentally return false negatives when we update to
   // 3.12.
   if (PyFunction_Check(f) &&
-      !PyObject_HasAttrString(f, "_is_coroutine_marker")) {
+      !PyObject_HasAttr(f, _PyUnicode_FromId(&PyId__is_coroutine_marker))) {
     PyFunctionObject* func = (PyFunctionObject*)f;
     PyCodeObject* code = (PyCodeObject*)PyFunction_GET_CODE(func);
     return (code->co_flags) & CO_COROUTINE;
