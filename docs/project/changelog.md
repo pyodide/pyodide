@@ -68,6 +68,13 @@ myst:
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
 
+### CLI
+
+- {{ Enhancement }} `pyodide build-recipes` now accepts a `--metadata-files`
+  option to install `*.whl.metadata` files as specified in
+  [PEP 658](https://peps.python.org/pep-0658/).
+  {pr}`3981`
+
 ## Version 0.23.4
 
 _July 6, 2023_

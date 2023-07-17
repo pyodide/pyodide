@@ -4,6 +4,7 @@ import pytest
 
 from pyodide_build.common import (
     environment_substitute_args,
+    extract_wheel_metadata_file,
     find_missing_executables,
     get_num_cores,
     make_zip_archive,
@@ -123,3 +124,31 @@ def test_repack_zip_archive(
         assert fh.namelist() == ["a/b.txt", "a/b/c.txt"]
         assert fh.getinfo("a/b.txt").compress_type == expected_compression_type
     assert input_path.stat().st_size == expected_size
+
+
+def test_extract_wheel_metadata_file(tmp_path):
+    # Test extraction if metadata exists
+
+    input_path = tmp_path / "pkg-0.1-abc.whl"
+    metadata_path = "pkg-0.1.dist-info/METADATA"
+    metadata_str = "This is METADATA"
+
+    with zipfile.ZipFile(input_path, "w") as fh:
+        fh.writestr(metadata_path, metadata_str)
+
+    output_path = tmp_path / f"{input_path.name}.metadata"
+
+    extract_wheel_metadata_file(input_path, output_path)
+    assert output_path.read_text() == metadata_str
+
+    # Test extraction if metadata is missing
+
+    input_path_empty = tmp_path / "pkg-0.2-abc.whl"
+
+    with zipfile.ZipFile(input_path_empty, "w") as fh:
+        pass
+
+    output_path_empty = tmp_path / f"{input_path_empty.name}.metadata"
+
+    with pytest.raises(Exception):
+        extract_wheel_metadata_file(input_path_empty, output_path_empty)

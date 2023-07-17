@@ -16,8 +16,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
+from zipfile import ZipFile
 
 from packaging.tags import Tag
+from packaging.utils import canonicalize_name as canonicalize_package_name
 from packaging.utils import parse_wheel_filename
 
 from .logger import logger
@@ -312,3 +314,60 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
         yield wheel_dir
         wheel.unlink()
         pack_wheel(wheel_dir, wheel.parent)
+
+
+def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
+    """Extracts the METADATA file from the given wheel and writes it to the
+    output path.
+
+    Raises an exception if the METADATA file does not exist.
+
+    For a wheel called "NAME-VERSION-...", the METADATA file is expected to be
+    found in a directory inside the wheel archive, whose name starts with NAME
+    and ends with ".dist-info". See:
+    https://packaging.python.org/en/latest/specifications/binary-distribution-format/#file-contents
+    """
+    with ZipFile(wheel_path, mode="r") as wheel:
+        pkg_name = wheel_path.name.split("-", 1)[0]
+        dist_info_dir = get_wheel_dist_info_dir(wheel, pkg_name)
+        metadata_path = f"{dist_info_dir}/METADATA"
+        try:
+            wheel.getinfo(metadata_path).filename = output_path.name
+            wheel.extract(metadata_path, output_path.parent)
+        except KeyError as err:
+            raise Exception(f"METADATA file not found for {pkg_name}") from err
+
+
+def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
+    """Returns the path of the contained .dist-info directory.
+
+    Raises an Exception if the directory is not found, more than
+    one is found, or it does not match the provided `pkg_name`.
+
+    Adapted from:
+    https://github.com/pypa/pip/blob/ea727e4d6ab598f34f97c50a22350febc1214a97/src/pip/_internal/utils/wheel.py#L38
+    """
+
+    # Zip file path separators must be /
+    subdirs = {name.split("/", 1)[0] for name in wheel.namelist()}
+    info_dirs = [subdir for subdir in subdirs if subdir.endswith(".dist-info")]
+
+    if len(info_dirs) == 0:
+        raise Exception(f".dist-info directory not found for {pkg_name}")
+
+    if len(info_dirs) > 1:
+        raise Exception(
+            f"multiple .dist-info directories found for {pkg_name}: {', '.join(info_dirs)}"
+        )
+
+    (info_dir,) = info_dirs
+
+    info_dir_name = canonicalize_package_name(info_dir)
+    canonical_name = canonicalize_package_name(pkg_name)
+
+    if not info_dir_name.startswith(canonical_name):
+        raise Exception(
+            f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
+        )
+
+    return info_dir

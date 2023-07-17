@@ -29,6 +29,7 @@ from rich.table import Table
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
 from .common import (
+    extract_wheel_metadata_file,
     find_matching_wheels,
     find_missing_executables,
     repack_zip_archive,
@@ -706,7 +707,10 @@ def generate_lockfile(
 
 
 def copy_packages_to_dist_dir(
-    packages: Iterable[BasePackage], output_dir: Path, compression_level: int = 6
+    packages: Iterable[BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
@@ -718,6 +722,12 @@ def copy_packages_to_dist_dir(
         repack_zip_archive(
             output_dir / dist_artifact_path.name, compression_level=compression_level
         )
+
+        if metadata_files and dist_artifact_path.suffix == ".whl":
+            extract_wheel_metadata_file(
+                dist_artifact_path,
+                output_dir / f"{dist_artifact_path.name}.metadata",
+            )
 
         test_path = pkg.tests_path()
         if test_path:
@@ -773,7 +783,10 @@ def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
 
 
 def install_packages(
-    pkg_map: dict[str, BasePackage], output_dir: Path, compression_level: int = 6
+    pkg_map: dict[str, BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     """
     Install packages into the output directory.
@@ -792,7 +805,10 @@ def install_packages(
 
     logger.info(f"Copying built packages to {output_dir}")
     copy_packages_to_dist_dir(
-        pkg_map.values(), output_dir, compression_level=compression_level
+        pkg_map.values(),
+        output_dir,
+        compression_level=compression_level,
+        metadata_files=metadata_files,
     )
 
     lockfile_path = output_dir / "pyodide-lock.json"
