@@ -1,6 +1,7 @@
 package:
   name: pyproj
   version: 3.4.1
+  _disabled: true
   top-level:
     - pyproj
 source:
