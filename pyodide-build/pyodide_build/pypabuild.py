@@ -18,10 +18,12 @@ from build.__main__ import (
     _ProjectBuilder,
 )
 from build.env import IsolatedEnv
+
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
 from .build_env import (
+    TOOLS_DIR,
     get_build_flag,
     get_hostsitepackages,
     get_pyversion,
@@ -70,21 +72,15 @@ def remove_avoided_requirements(
 
 
 def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
+    os.environ["PIP_CONSTRAINT"] = str(TOOLS_DIR / "constraints.txt")
+
     env.install(
         remove_avoided_requirements(
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
         )
     )
 
-    pinned_reqs = {
-        # Remove this when mypy releases a new version
-        # https://github.com/python/mypy/pull/14788
-        "types-setuptools": "types-setuptools<67.4.0.2"
-    }
-
-    for pkg, req in pinned_reqs.items():
-        if pkg in reqs:
-            env.install([req])
+    del os.environ["PIP_CONSTRAINT"]
 
 
 def _build_in_isolated_env(
