@@ -21,8 +21,6 @@ from .common import exit_with_stdio
 from .logger import logger
 from .recipe import load_all_recipes
 
-TOOLS_DIR = Path(__file__).parent / "tools"
-
 RUST_BUILD_PRELUDE = """
 rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
 rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
@@ -39,6 +37,7 @@ BUILD_VARS: set[str] = {
     "PATH",
     "PKG_CONFIG_PATH",
     "PLATFORM_TRIPLET",
+    "PIP_CONSTRAINT",
     "PYMAJOR",
     "PYMICRO",
     "PYMINOR",
@@ -168,10 +167,12 @@ def get_build_environment_vars() -> dict[str, str]:
     env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
     env["PYODIDE"] = "1"
 
+    tools_dir = Path(__file__).parent / "tools"
+
     env["CMAKE_TOOLCHAIN_FILE"] = str(
-        TOOLS_DIR / "cmake/Modules/Platform/Emscripten.cmake"
+        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
     )
-    env["PYO3_CONFIG_FILE"] = str(TOOLS_DIR / "pyo3_config.ini")
+    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
     hostsitepackages = env["HOSTSITEPACKAGES"]
     pythonpath = [

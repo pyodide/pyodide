@@ -57,6 +57,7 @@ def _copy_wasm_libs(
         Path("dist/pyodide-lock.json"),
         Path("dist/python"),
         Path("dist/python_stdlib.zip"),
+        Path("tools/constraints.txt"),
     ]
     to_copy.extend(
         x.relative_to(pyodide_root) for x in (pyodide_root / "dist").glob("pyodide.*")

@@ -53,6 +53,8 @@ export PYODIDE_BASE_URL?=./
 # Brotli compression.
 export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 
+export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
+
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?
 export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/
