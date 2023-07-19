@@ -37,6 +37,7 @@ BUILD_VARS: set[str] = {
     "PATH",
     "PKG_CONFIG_PATH",
     "PLATFORM_TRIPLET",
+    "PIP_CONSTRAINT",
     "PYMAJOR",
     "PYMICRO",
     "PYMINOR",

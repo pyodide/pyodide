@@ -1,0 +1,4 @@
+cython<3
+# Remove the following when mypy releases a new version
+# https://github.com/python/mypy/pull/14788
+types-setuptools<67.4.0.2
