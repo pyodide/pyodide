@@ -30,7 +30,8 @@ dependencies = [
     "types-requests",
     "typer",
     "auditwheel-emscripten~=0.0.9",
-    "pyodide-lock==0.1.0a1",
+    # Revert once there is a release
+    "git+https://github.com/rth/pyodide-lock.git@add-check-wheel-filename",
     "resolvelib",
     "rich",
     "loky",

@@ -703,7 +703,9 @@ def generate_lockfile(
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
-    return PyodideLockSpec(info=info, packages=packages)
+    lock_spec = PyodideLockSpec(info=info, packages=packages)
+    lock_spec.check_wheel_filenames()
+    return lock_spec
 
 
 def copy_packages_to_dist_dir(
