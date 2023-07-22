@@ -258,6 +258,19 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
+
+    Examples
+    --------
+    >>> from pyodide.http import pyfetch
+    >>> res = await pyfetch("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json")
+    >>> res.ok
+    True
+    >>> res.status
+    200
+    >>> data = await res.json()
+    >>> data
+    {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
+    'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
     try:
         return FetchResponse(
