@@ -1,6 +1,7 @@
 """
 Various common utilities for testing.
 """
+import os
 import pathlib
 import re
 import sys
@@ -15,6 +16,8 @@ sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
+
+os.environ["IN_PYTEST"] = "1"
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
@@ -136,7 +139,15 @@ def pytest_collection_modifyitems(config, items):
         cache = config.cache
         prev_test_result = cache.get("cache/lasttestresult", {})
 
+    skipped_docstrings = [
+        "_pyodide._base.CodeRunner",
+        "pyodide.http.open_url",
+    ]
+
     for item in items:
+        if isinstance(item, pytest.DoctestItem) and item.name in skipped_docstrings:
+            item.add_marker(pytest.mark.skip(reason="skipped docstring"))
+            continue
         if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
             item.add_marker(pytest.mark.skip(reason="previously passed"))
             continue
