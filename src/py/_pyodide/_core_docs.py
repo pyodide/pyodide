@@ -136,7 +136,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         >>> [(key, val) for key, val in entries] # doctest: +SKIP
         [('first', 'aa'), ('second', 22)]
         """
-        
+
         raise NotImplementedError
 
     def object_keys(self) -> "JsProxy":
