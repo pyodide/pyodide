@@ -1,10 +1,10 @@
 """
 Various common utilities for testing.
 """
+import os
 import pathlib
 import re
 import sys
-import os
 
 import pytest
 
