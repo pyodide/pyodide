@@ -340,7 +340,9 @@ class JsPromise(JsProxy):
 
     _js_type_flags = ["IS_AWAITABLE"]
 
-    def then(self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]) -> "JsPromise":
+    def then(
+        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
+    ) -> "JsPromise":
         """The :js:meth:`Promise.then` API, wrapped to manage the lifetimes of the
         handlers.
 
@@ -832,7 +834,9 @@ class JsTypedArray(JsBuffer, JsArray[int]):
     _js_type_flags = ["IS_TYPEDARRAY"]
     BYTES_PER_ELEMENT: int
 
-    def subarray(self, start: int | None = None, stop: int | None = None) -> "JsTypedArray":
+    def subarray(
+        self, start: int | None = None, stop: int | None = None
+    ) -> "JsTypedArray":
         raise NotImplementedError
 
     buffer: JsBuffer
@@ -941,7 +945,9 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
     def update(self, **kwargs: VT) -> None:
         ...
 
-    @docs_argspec("(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None")
+    @docs_argspec(
+        "(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None"
+    )
     def update(self, *args: Any, **kwargs: Any) -> None:
         r"""Updates ``self`` from ``other`` and ``kwargs``.
 
@@ -1074,7 +1080,9 @@ def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
     return obj  # type: ignore[return-value]
 
 
-def create_proxy(obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True) -> JsDoubleProxy:
+def create_proxy(
+    obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
+) -> JsDoubleProxy:
     """Create a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`.
 
     This allows explicit control over the lifetime of the
@@ -1122,7 +1130,10 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
 ) -> JsArray[Any]:
     ...
 
@@ -1136,7 +1147,10 @@ def to_js(
     pyproxies: JsProxy | None,
     create_pyproxies: bool,
     dict_converter: None,
-    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
 ) -> JsMap[Any, Any]:
     ...
 
@@ -1150,7 +1164,10 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
 ) -> Any:
     ...
 
@@ -1163,7 +1180,10 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: Callable[[Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy] | None = None,
+    default_converter: Callable[
+        [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
+    ]
+    | None = None,
 ) -> Any:
     """Convert the object to JavaScript.
 

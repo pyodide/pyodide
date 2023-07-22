@@ -65,10 +65,14 @@ def maybe_skip_test(item, delayed=False):
 
     skip_msg = None
     # Testing a package. Skip the test if the package is not built.
-    match = re.match(r".*/packages/(?P<name>[\w\-]+)/test_[\w\-]+\.py", str(item.parent.fspath))
+    match = re.match(
+        r".*/packages/(?P<name>[\w\-]+)/test_[\w\-]+\.py", str(item.parent.fspath)
+    )
     if match and not is_common_test:
         package_name = match.group("name")
-        if not package_is_built(package_name) and re.match(rf"test_[\w\-\.]+\[({browsers})[^\]]*\]", item.name):
+        if not package_is_built(package_name) and re.match(
+            rf"test_[\w\-\.]+\[({browsers})[^\]]*\]", item.name
+        ):
             skip_msg = f"package '{package_name}' is not built."
 
     # Common package import test. Skip it if the package is not built.
@@ -77,7 +81,9 @@ def maybe_skip_test(item, delayed=False):
             skip_msg = "Not running browser tests"
 
         else:
-            match = re.match(rf"test_import\[({browsers})-(?P<name>[\w\-\.]+)\]", item.name)
+            match = re.match(
+                rf"test_import\[({browsers})-(?P<name>[\w\-\.]+)\]", item.name
+            )
             if match:
                 package_name = match.group("name")
                 if not package_is_built(package_name):
@@ -201,7 +207,9 @@ def pytest_runtest_call(item):
         return
 
     trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
-    trace_hiwire_refs = trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+    trace_hiwire_refs = (
+        trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
+    )
     yield from extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies)
 
 
