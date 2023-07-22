@@ -1,4 +1,5 @@
 import sys
+import os
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -38,7 +39,8 @@ Vco = TypeVar("Vco", covariant=True)  # Any type covariant containers.
 VTco = TypeVar("VTco", covariant=True)  # Value type covariant containers.
 Tcontra = TypeVar("Tcontra", contravariant=True)  # Ditto contravariant.
 
-__name__ = "pyodide.ffi"
+if "IN_PYTEST" not in os.environ:
+    __name__ = "pyodide.ffi"
 
 _js_flags: dict[str, int] = {}
 
