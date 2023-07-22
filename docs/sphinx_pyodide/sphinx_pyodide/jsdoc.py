@@ -190,9 +190,9 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
     if not converted:
         return converted, more_todo
     converted.is_private = node.get("flags", {}).get("isPrivate", False)
-    if kind in ['Call signature', 'Constructor signature']:
-        tags = node.get('comment', {}).get('tags', [])
-        converted.examples = [tag['text'] for tag in tags if tag['tag'] == 'example']    
+    if kind in ["Call signature", "Constructor signature"]:
+        tags = node.get("comment", {}).get("tags", [])
+        converted.examples = [tag["text"] for tag in tags if tag["tag"] == "example"]
     return converted, more_todo
 
 
