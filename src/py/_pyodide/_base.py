@@ -217,15 +217,15 @@ class CodeRunner:
     >>> from pyodide.code import CodeRunner
     >>> source = "1 + 1"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile() # doctest: +SKIP
+    >>> code_runner.compile()
     <_pyodide._base.CodeRunner object at 0x113de58>
-    >>> code_runner.run() # doctest: +SKIP
+    >>> code_runner.run()
     2
     >>> my_globals = {"x": 20}
     >>> my_locals = {"y": 5}
     >>> source = "x + y"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile() # doctest: +SKIP
+    >>> code_runner.compile()
     <_pyodide._base.CodeRunner object at 0x1166bb0>
     >>> code_runner.run(globals=my_globals, locals=my_locals)
     25

@@ -43,8 +43,8 @@ def open_url(url: str) -> StringIO:
     --------
     >>> from pyodide.http import open_url
     >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
-    >>> url_contents = open_url(url) # doctest: +SKIP
-    >>> url_contents.read() # doctest: +SKIP
+    >>> url_contents = open_url(url)
+    >>> url_contents.read()
     {
       "info": {
           ... # long output truncated
