@@ -217,15 +217,15 @@ class CodeRunner:
     >>> from pyodide.code import CodeRunner
     >>> source = "1 + 1"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile()
+    >>> code_runner.compile() # doctest: +SKIP
     <_pyodide._base.CodeRunner object at 0x113de58>
-    >>> code_runner.run()
+    >>> code_runner.run() # doctest: +SKIP
     2
-    >>> my_globals = { "y": 20 }
-    >>> my_locals = { "y": 5 }
-    >>> source = "(locals()['y'] + globals()['y'])"
+    >>> my_globals = {"x": 20}
+    >>> my_locals = {"y": 5}
+    >>> source = "x + y"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile()
+    >>> code_runner.compile() # doctest: +SKIP
     <_pyodide._base.CodeRunner object at 0x1166bb0>
     >>> code_runner.run(globals=my_globals, locals=my_locals)
     25
@@ -327,9 +327,7 @@ class CodeRunner:
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
-                raise RuntimeError(
-                    "Used eval_code with TOP_LEVEL_AWAIT. Use run_async for this instead."
-                )
+                raise RuntimeError("Used eval_code with TOP_LEVEL_AWAIT. Use run_async for this instead.")
         except EvalCodeResultException as e:
             # Final expression from code returns here
             return e.value

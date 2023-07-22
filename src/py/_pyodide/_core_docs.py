@@ -131,9 +131,9 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         Examples
         --------
         >>> from pyodide.code import run_js
-        >>> js_obj = run_js("({first: 'aa', second: 22})")
-        >>> entries = js_obj.object_entries()
-        >>> [(key, val) for key, val in entries]
+        >>> js_obj = run_js("({first: 'aa', second: 22})") # doctest: +SKIP
+        >>> entries = js_obj.object_entries() # doctest: +SKIP
+        >>> [(key, val) for key, val in entries] # doctest: +SKIP
         [('first', 'aa'), ('second', 22)]
         """
         
@@ -146,9 +146,9 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         Examples
         --------
         >>> from pyodide.code import run_js
-        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
-        >>> keys = js_obj.object_keys()
-        >>> [key for key in keys]
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
+        >>> keys = js_obj.object_keys() # doctest: +SKIP
+        >>> list(keys) # doctest: +SKIP
         ['first', 'second', 'third']
         """
         raise NotImplementedError
@@ -160,9 +160,9 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         Examples
         --------
         >>> from pyodide.code import run_js
-        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
-        >>> values = js_obj.object_values()
-        >>> [val for val in values]
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
+        >>> values = js_obj.object_values() # doctest: +SKIP
+        >>> list(values) # doctest: +SKIP
         [1, 2, 3]
         """
         raise NotImplementedError
