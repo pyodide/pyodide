@@ -327,7 +327,9 @@ class CodeRunner:
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
-                raise RuntimeError("Used eval_code with TOP_LEVEL_AWAIT. Use run_async for this instead.")
+                raise RuntimeError(
+                    "Used eval_code with TOP_LEVEL_AWAIT. Use run_async for this instead."
+                )
         except EvalCodeResultException as e:
             # Final expression from code returns here
             return e.value
