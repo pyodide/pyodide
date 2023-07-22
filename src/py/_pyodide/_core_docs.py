@@ -125,15 +125,46 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         return "object"
 
     def object_entries(self) -> "JsProxy":
-        "The JavaScript API ``Object.entries(object)``"
+        """
+        The JavaScript API ``Object.entries(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 'aa', second: 22})")
+        >>> entries = js_obj.object_entries()
+        >>> [(key, val) for key, val in entries]
+        [('first', 'aa'), ('second', 22)]
+        """
+        
         raise NotImplementedError
 
     def object_keys(self) -> "JsProxy":
-        "The JavaScript API ``Object.keys(object)``"
+        """
+        The JavaScript API ``Object.keys(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
+        >>> keys = js_obj.object_keys()
+        >>> [key for key in keys]
+        ['first', 'second', 'third']
+        """
         raise NotImplementedError
 
     def object_values(self) -> "JsProxy":
-        "The JavaScript API ``Object.values(object)``"
+        """
+        The JavaScript API ``Object.values(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
+        >>> values = js_obj.object_values()
+        >>> [val for val in values]
+        [1, 2, 3]
+        """
         raise NotImplementedError
 
     def as_object_map(self, *, hereditary: bool = False) -> "JsMutableMap[str, Any]":

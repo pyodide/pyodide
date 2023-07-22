@@ -38,6 +38,18 @@ def open_url(url: str) -> StringIO:
     Returns
     -------
         The contents of the URL.
+
+    Examples
+    --------
+    >>> from pyodide.http import open_url
+    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
+    >>> url_contents = open_url(url)
+    >>> url_contents.read()
+    {
+      "info": {
+          ... # long output truncated
+        }
+    }
     """
 
     req = XMLHttpRequest.new()
@@ -202,9 +214,7 @@ class FetchResponse:
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
-    async def unpack_archive(
-        self, *, extract_dir: str | None = None, format: str | None = None
-    ) -> None:
+    async def unpack_archive(self, *, extract_dir: str | None = None, format: str | None = None) -> None:
         """Treat the data as an archive and unpack it into target directory.
 
         Assumes that the file is an archive in a format that :py:mod:`shutil` has
@@ -248,8 +258,6 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
     """
     try:
-        return FetchResponse(
-            url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
-        )
+        return FetchResponse(url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)))
     except JsException as e:
         raise OSError(e.message) from None
