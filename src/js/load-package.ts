@@ -394,9 +394,9 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *
  * @param names Either a single package name or URL or a list of them. URLs can
  * be absolute or relative. The URLs must correspond to Python wheels:
- * either pure Python wheels, with a file name ending with `none-any.whl`
+ * either pure Python wheels, with a file name ending with ``none-any.whl``
  * or Emscripten/WASM 32 wheels, with a file name ending with
- * `cp<pyversion>_emscripten_<em_version>_wasm32.whl`.
+ * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
  * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
  * which case the list will be converted to JavaScript and the
  * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
