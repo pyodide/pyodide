@@ -15,7 +15,7 @@ myst:
 
 ## Unreleased
 
-  - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
+- {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
