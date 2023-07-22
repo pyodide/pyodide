@@ -479,6 +479,7 @@ export class PyProxy {
   /** @private */
   $$flags: number;
 
+  /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
     return [PyProxy, PyProxyFunction].some((cls) =>
       Function.prototype[Symbol.hasInstance].call(cls, obj),
