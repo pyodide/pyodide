@@ -187,8 +187,12 @@ def _convert_node(self: TsAnalyzer, node: dict[str, Any]) -> Any:
     # See docstring for destructure_param
     fix_up_inline_object_signature(self, node)
     converted, more_todo = _orig_convert_node(self, node)
-    if converted:
-        converted.is_private = node.get("flags", {}).get("isPrivate", False)
+    if not converted:
+        return converted, more_todo
+    converted.is_private = node.get("flags", {}).get("isPrivate", False)
+    if kind in ["Call signature", "Constructor signature"]:
+        tags = node.get("comment", {}).get("tags", [])
+        converted.examples = [tag["text"] for tag in tags if tag["tag"] == "example"]
     return converted, more_todo
 
 
