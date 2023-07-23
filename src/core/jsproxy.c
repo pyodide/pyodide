@@ -2849,7 +2849,7 @@ static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
-  .tp_name = "pyodide.JsProxy",
+  .tp_name = "pyodide.ffi.JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_getattro = JsProxy_GetAttr,
