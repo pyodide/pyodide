@@ -24,6 +24,7 @@ declare function _check_gil(): void;
 declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;
+declare var pyproxy_lookup: WeakMap<PyProxy, any>;
 
 import { warnOnce } from "./util";
 
@@ -229,6 +230,8 @@ function pyproxy_new(
     Module._Py_IncRef(ptrobj);
   }
 
+  pyproxy_lookup.set(target, $$);
+  // TODO: remove this?
   Object.defineProperty(target, "$$", { value: $$ });
   if (!props) {
     props = {};
@@ -251,7 +254,11 @@ function pyproxy_new(
 Module.pyproxy_new = pyproxy_new;
 
 function _getPtr(jsobj: any) {
-  let ptr: number = jsobj.$$.ptr;
+  let $$ = pyproxy_lookup.get(jsobj);
+  if (!$$) {
+    $$ = jsobj.$$;
+  }
+  let ptr: number = $$ ? $$.ptr : 0;
   if (ptr === 0) {
     throw new Error(jsobj.$$.destroyed_msg);
   }
@@ -359,7 +366,9 @@ Module.pyproxy_destroy = function (
   destroyed_msg: string,
   destroy_roundtrip: boolean,
 ) {
-  if (proxy.$$.ptr === 0) {
+  const $$ = pyproxy_lookup.get(proxy);
+  if (!$$) {
+    // already destroyed
     return;
   }
   if (!destroy_roundtrip && proxy.$$props.roundtrip) {
@@ -380,15 +389,16 @@ Module.pyproxy_destroy = function (
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
-  proxy.$$.ptr = 0;
+  $$.ptr = 0;
   destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
     destroyed_msg += `had repr "${proxy_repr}"`;
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  proxy.$$.destroyed_msg = destroyed_msg;
-  pyproxy_decref_cache(proxy.$$.cache);
+  $$.destroyed_msg = destroyed_msg;
+  pyproxy_decref_cache($$.cache);
+  pyproxy_lookup.delete(proxy);
   try {
     Py_ENTER();
     Module._Py_DecRef(ptrobj);
@@ -2108,6 +2118,10 @@ const PyProxyHandlers = {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
+    if (jskey === "$$") {
+      // TODO: remove this?
+      return pyproxy_lookup.get(jsobj);
+    }
 
     // python_getattr will crash if given a Symbol.
     if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {

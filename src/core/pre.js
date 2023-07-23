@@ -50,3 +50,5 @@ function hasMethod(obj, prop) {
     return false;
   }
 }
+
+const pyproxy_lookup = new WeakMap();

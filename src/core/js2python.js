@@ -115,7 +115,7 @@ JS_FILE(js2python_init, () => {
     } else if (value === false) {
       return __js2python_false();
     } else if (API.isPyProxy(value)) {
-      if (value.$$.ptr == 0) {
+      if (!pyproxy_lookup.has(value)) {
         // Make sure to throw an error!
         Module.PyProxy_getPtr(value);
       }

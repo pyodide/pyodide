@@ -310,7 +310,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Hiwire.get_value(proxyId).$$.ptr) {
+  if (pyproxy_lookup.has(Hiwire.get_value(proxyId))) {
     return proxyId;
   } else {
     // It's dead, tidy up
