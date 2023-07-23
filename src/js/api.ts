@@ -224,6 +224,21 @@ export class PyodideAPI {
    *        Defaults to the same as ``globals``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
+   * @example
+   * async function main(){
+   *   const pyodide = await loadPyodide();
+   *   console.log(pyodide.runPython("1 + 2"));
+   *   // 3
+   *
+   *   const globals = pyodide.toPy({ x: 3 });
+   *   console.log(pyodide.runPython("x + 1", { globals }));
+   *   // 4
+   *
+   *   const locals = pyodide.toPy({ arr: [1, 2, 3] });
+   *   console.log(pyodide.runPython("sum(arr)", { locals }));
+   *   // 6
+   * }
+   * main();
    */
   static runPython(
     code: string,
