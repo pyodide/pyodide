@@ -15,8 +15,8 @@ myst:
 
 ## Unreleased
 
- - {{ Enhancement }} Add an example for `loadPyodide`.
-   {pr}`4012`
+- {{ Enhancement }} Add an example for `loadPyodide`.
+  {pr}`4012`
 
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
