@@ -15,7 +15,7 @@ myst:
 
 ## Unreleased
 
-  - {{ Enhancement }} Add examples for `pyodide.runPython`.
+- {{ Enhancement }} Add examples for `pyodide.runPython`.
   {pr}`4011`
 
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
