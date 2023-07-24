@@ -142,6 +142,7 @@ def pytest_collection_modifyitems(config, items):
     skipped_docstrings = [
         "_pyodide._base.CodeRunner",
         "pyodide.http.open_url",
+        "pyodide.http.pyfetch",
     ]
 
     for item in items:
