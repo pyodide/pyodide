@@ -371,3 +371,10 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
         )
 
     return info_dir
+
+
+def check_wacm_magic_number(file_path: Path):
+    WASM_BINARY_MAGIC = b"\0asm"
+    with file_path.open(mode="rb") as file:
+        return file.read(4) == WASM_BINARY_MAGIC
+    

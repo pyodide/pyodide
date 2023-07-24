@@ -152,3 +152,11 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     with pytest.raises(Exception):
         extract_wheel_metadata_file(input_path_empty, output_path_empty)
+        
+        
+def test_check_wasm_number(tmp_path):
+    (tmp_path/"goodfile.so").write_bytes(b'\x00asm\x01\x00\x00\x00\x00\x11')
+    assert check_wasm_number("goodfile.so") == True
+    (tmp_path/"goodfile.so").write_bytes(b'\x00asm\x01\x00\x00\x00\x00\x11')
+    
+    # pytest <path to test_common.py> -k <testfuncname>
