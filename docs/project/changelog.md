@@ -17,7 +17,7 @@ myst:
 
 - {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
-  {pr}`4017`
+  {pr}`4018`
 
 - {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
 {pr}`4012`, {pr}`4011`
