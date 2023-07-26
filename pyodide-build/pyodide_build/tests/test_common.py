@@ -10,6 +10,7 @@ from pyodide_build.common import (
     make_zip_archive,
     parse_top_level_import_name,
     repack_zip_archive,
+    check_wacm_magic_number,
 )
 
 
@@ -152,11 +153,14 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     with pytest.raises(Exception):
         extract_wheel_metadata_file(input_path_empty, output_path_empty)
-        
-        
-def test_check_wasm_number(tmp_path):
-    (tmp_path/"goodfile.so").write_bytes(b'\x00asm\x01\x00\x00\x00\x00\x11')
-    assert check_wasm_number("goodfile.so") == True
-    (tmp_path/"goodfile.so").write_bytes(b'\x00asm\x01\x00\x00\x00\x00\x11')
-    
-    # pytest <path to test_common.py> -k <testfuncname>
+
+
+def test_check_wasm_magic_number(tmp_path):
+    wasm_magic_number = b"\x00asm\x01\x00\x00\x00\x00\x11"
+    not_wasm_magic_number = b"\x7fELF\x02\x01\x01\x00\x00\x00"
+
+    (tmp_path/"goodfile.so").write_bytes(wasm_magic_number)
+    assert check_wacm_magic_number(tmp_path/"goodfile.so") is True
+
+    (tmp_path/"badfile.so").write_bytes(not_wasm_magic_number)
+    assert check_wacm_magic_number(tmp_path/"badfile.so") is False
