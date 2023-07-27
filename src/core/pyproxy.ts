@@ -171,7 +171,6 @@ const destroyed_msg_map: WeakMap<PyProxy, string> = new WeakMap();
 const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
 const pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs> = new WeakMap();
 
-
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
