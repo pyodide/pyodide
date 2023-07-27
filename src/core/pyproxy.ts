@@ -24,9 +24,6 @@ declare function _check_gil(): void;
 declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;
-const destroyed_msg_map: WeakMap<PyProxy, string> = new WeakMap();
-
-declare var pyproxyAttrsSymbol: any;
 
 import { warnOnce } from "./util";
 
@@ -170,7 +167,10 @@ type PyProxyAttrs = {
   target: PyProxy;
 };
 
-declare var pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs>;
+const destroyed_msg_map: WeakMap<PyProxy, string> = new WeakMap();
+const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
+const pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs> = new WeakMap();
+
 
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
@@ -265,8 +265,12 @@ function pyproxy_new(
 }
 Module.pyproxy_new = pyproxy_new;
 
+function _getAttrsQuiet(jsobj: any): PyProxyAttrs | undefined {
+  return pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
+}
+Module.PyProxy_getAttrsQuiet = _getAttrsQuiet;
 function _getAttrs(jsobj: any): PyProxyAttrs {
-  const attrs = pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
+  const attrs = _getAttrsQuiet(jsobj);
   if (!attrs) {
     throw new Error(destroyed_msg_map.get(jsobj));
   }
@@ -383,7 +387,7 @@ Module.pyproxy_destroy = function (
   destroyed_msg: string,
   destroy_roundtrip: boolean,
 ) {
-  const attrs = pyproxy_lookup.get(proxy) || proxy[pyproxyAttrsSymbol];
+  const attrs = _getAttrsQuiet(proxy);
   if (!attrs) {
     // already destroyed
     return;

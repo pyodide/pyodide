@@ -75,7 +75,7 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   const px = Module.hiwire.get_value(proxy_id);
-  const attrs = pyproxy_lookup.get(px) || px[pyproxyAttrsSymbol];
+  const attrs = Module.PyProxy_getAttrsQuiet(px);
   if (!attrs) {
     // already destroyed
     return;
