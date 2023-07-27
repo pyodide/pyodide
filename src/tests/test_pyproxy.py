@@ -153,18 +153,14 @@ def test_pyproxy_refcount(selenium):
 
 
 def test_pyproxy_destroy(selenium):
-    selenium.run(
-        """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
-        """
-    )
-
     selenium.run_js(
         """
+        pyodide.runPython(`
+            class Foo:
+                def get_value(self, value):
+                    return value * 64
+            f = Foo()
+        `);
         let f = pyodide.globals.get('f');
         assert(()=> f.get_value(1) === 64);
         f.destroy();

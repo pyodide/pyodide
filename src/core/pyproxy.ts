@@ -415,7 +415,7 @@ Module.pyproxy_destroy = function (
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  destroyed_msg_map.set(px, destroyed_msg);
+  destroyed_msg_map.set(target, destroyed_msg);
   pyproxy_decref_cache(shared.cache);
   pyproxy_lookup.delete(px);
   pyproxy_lookup.delete(target);
