@@ -24,9 +24,9 @@ declare function _check_gil(): void;
 declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;
-const destroyed_msg_map : WeakMap<PyProxy, string> = new WeakMap();
+const destroyed_msg_map: WeakMap<PyProxy, string> = new WeakMap();
 
-declare var pyproxyAttrsSymbol : any;
+declare var pyproxyAttrsSymbol: any;
 
 import { warnOnce } from "./util";
 
@@ -168,7 +168,7 @@ type PyProxyAttrs = {
   props: PyProxyProps;
   proxy: PyProxy;
   target: PyProxy;
-}
+};
 
 declare var pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs>;
 
@@ -191,7 +191,7 @@ function pyproxy_new(
     flags: flags_arg,
     cache,
     props,
-    shared
+    shared,
   }: {
     flags?: number;
     cache?: PyProxyCache;
@@ -274,12 +274,11 @@ function _getAttrs(jsobj: any): PyProxyAttrs {
 }
 Module.PyProxy_getAttrs = _getAttrs;
 
-
 function _getPtr(jsobj: any) {
   return _getAttrs(jsobj).shared.ptr;
 }
 
-function _getFlags(jsobj: any) : number {
+function _getFlags(jsobj: any): number {
   return Object.getPrototypeOf(jsobj).$$flags;
 }
 
@@ -389,7 +388,7 @@ Module.pyproxy_destroy = function (
     // already destroyed
     return;
   }
-  const {shared, props, proxy: px, target} = attrs;
+  const { shared, props, proxy: px, target } = attrs;
   if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
@@ -1017,7 +1016,9 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
 export class PyIterable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR));
+    return (
+      API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR))
+    );
   }
 }
 
@@ -1977,7 +1978,7 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 function python_getattr(jsobj: PyProxy, jskey: any) {
   let idkey = Hiwire.new_value(jskey);
   let idresult;
-  const attrs = _getAttrs(jsobj)
+  const attrs = _getAttrs(jsobj);
   let cacheId = attrs.shared.cache.cacheId;
   try {
     Py_ENTER();
@@ -2292,7 +2293,7 @@ export interface PyAwaitable extends Promise<any> {}
 /** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
 export type PyProxyAwaitable = PyAwaitable;
 
-const promise_map : WeakMap<any, Promise<any>> = new WeakMap();
+const promise_map: WeakMap<any, Promise<any>> = new WeakMap();
 
 /**
  * The Promise / JavaScript awaitable API.
@@ -2507,7 +2508,11 @@ export class PyCallableMethods {
       isBound: true,
       boundThis,
     });
-    return pyproxy_new(attrs.shared.ptr, { shared: attrs.shared, flags: _getFlags(self), props });
+    return pyproxy_new(attrs.shared.ptr, {
+      shared: attrs.shared,
+      flags: _getFlags(self),
+      props,
+    });
   }
 
   /**
@@ -2540,7 +2545,7 @@ export class PyCallableMethods {
    *
    */
   captureThis(): PyProxy {
-    let {props, shared} = _getAttrs(this);
+    let { props, shared } = _getAttrs(this);
     props = Object.assign({}, props, {
       captureThis: true,
     });
