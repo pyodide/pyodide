@@ -519,8 +519,6 @@ def test_pyproxy_mixins3(selenium):
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
 
-        assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
-        assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
         Test.destroy();
         t.destroy();
         """

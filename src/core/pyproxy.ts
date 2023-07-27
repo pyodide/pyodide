@@ -24,7 +24,9 @@ declare function _check_gil(): void;
 declare function stackSave(): number;
 declare function stackRestore(ptr: number): void;
 declare function stackAlloc(size: number): number;
-declare var pyproxy_lookup: WeakMap<PyProxy, any>;
+const destroyed_msg_map : WeakMap<PyProxy, string> = new WeakMap();
+
+declare var pyproxyAttrsSymbol : any;
 
 import { warnOnce } from "./util";
 
@@ -133,6 +135,11 @@ Module.disable_pyproxy_allocation_tracing = function () {
 Module.disable_pyproxy_allocation_tracing();
 
 type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
+type PyProxyShared = {
+  ptr: number;
+  cache: PyProxyCache;
+  flags: number;
+};
 type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
@@ -156,6 +163,15 @@ type PyProxyProps = {
   roundtrip: boolean;
 };
 
+type PyProxyAttrs = {
+  shared: PyProxyShared;
+  props: PyProxyProps;
+  proxy: PyProxy;
+  target: PyProxy;
+}
+
+declare var pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs>;
+
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
@@ -170,22 +186,22 @@ type PyProxyProps = {
  * @private
  */
 function pyproxy_new(
-  ptrobj: number,
+  ptr: number,
   {
     flags: flags_arg,
     cache,
     props,
-    $$,
+    shared
   }: {
     flags?: number;
     cache?: PyProxyCache;
-    $$?: any;
+    shared?: PyProxyShared;
     roundtrip?: boolean;
     props?: any;
   } = {},
 ): PyProxy {
   const flags =
-    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
+    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptr);
   if (flags === -1) {
     Module._pythonexc2js();
   }
@@ -215,9 +231,7 @@ function pyproxy_new(
     target = Object.create(cls.prototype);
   }
 
-  const isAlias = !!$$;
-
-  if (!isAlias) {
+  if (!shared) {
     if (!cache) {
       // The cache needs to be accessed primarily from the C function
       // _pyproxy_getattr so we make a hiwire id.
@@ -225,14 +239,11 @@ function pyproxy_new(
       cache = { cacheId, refcnt: 0 };
     }
     cache.refcnt++;
-    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
-    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
-    Module._Py_IncRef(ptrobj);
+    shared = { ptr, cache, flags };
+    Module.finalizationRegistry.register(shared, [ptr, cache], shared);
+    Module._Py_IncRef(ptr);
   }
 
-  pyproxy_lookup.set(target, $$);
-  // TODO: remove this?
-  Object.defineProperty(target, "$$", { value: $$ });
   if (!props) {
     props = {};
   }
@@ -240,34 +251,41 @@ function pyproxy_new(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
   );
-  Object.defineProperty(target, "$$props", { value: props });
-
   let proxy = new Proxy(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
-  if (!isAlias) {
+  if (!shared) {
     trace_pyproxy_alloc(proxy);
   }
+  const attrs = { shared, props, proxy, target };
+  pyproxy_lookup.set(proxy, attrs);
+  pyproxy_lookup.set(target, attrs);
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
 
+function _getAttrs(jsobj: any): PyProxyAttrs {
+  const attrs = pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
+  if (!attrs) {
+    throw new Error(destroyed_msg_map.get(jsobj));
+  }
+  return attrs;
+}
+Module.PyProxy_getAttrs = _getAttrs;
+
+
 function _getPtr(jsobj: any) {
-  let $$ = pyproxy_lookup.get(jsobj);
-  if (!$$) {
-    $$ = jsobj.$$;
-  }
-  let ptr: number = $$ ? $$.ptr : 0;
-  if (ptr === 0) {
-    throw new Error(jsobj.$$.destroyed_msg);
-  }
-  return ptr;
+  return _getAttrs(jsobj).shared.ptr;
+}
+
+function _getFlags(jsobj: any) : number {
+  return Object.getPrototypeOf(jsobj).$$flags;
 }
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
   const { captureThis, boundArgs, boundThis, isBound } =
-    proxyobj.$$props as PyProxyProps;
+    _getAttrs(proxyobj).props;
   if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
@@ -366,16 +384,16 @@ Module.pyproxy_destroy = function (
   destroyed_msg: string,
   destroy_roundtrip: boolean,
 ) {
-  const $$ = pyproxy_lookup.get(proxy);
-  if (!$$) {
+  const attrs = pyproxy_lookup.get(proxy) || proxy[pyproxyAttrsSymbol];
+  if (!attrs) {
     // already destroyed
     return;
   }
-  if (!destroy_roundtrip && proxy.$$props.roundtrip) {
+  const {shared, props, proxy: px, target} = attrs;
+  if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
-  let ptrobj = _getPtr(proxy);
-  Module.finalizationRegistry.unregister(proxy.$$);
+  Module.finalizationRegistry.unregister(shared);
   destroyed_msg = destroyed_msg || "Object has already been destroyed";
   let proxy_type = proxy.type;
   let proxy_repr;
@@ -389,19 +407,21 @@ Module.pyproxy_destroy = function (
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
-  $$.ptr = 0;
+  const ptr = shared.ptr;
+  shared.ptr = 0;
   destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
     destroyed_msg += `had repr "${proxy_repr}"`;
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  $$.destroyed_msg = destroyed_msg;
-  pyproxy_decref_cache($$.cache);
-  pyproxy_lookup.delete(proxy);
+  destroyed_msg_map.set(px, destroyed_msg);
+  pyproxy_decref_cache(shared.cache);
+  pyproxy_lookup.delete(px);
+  pyproxy_lookup.delete(target);
   try {
     Py_ENTER();
-    Module._Py_DecRef(ptrobj);
+    Module._Py_DecRef(ptr);
     trace_pyproxy_dealloc(proxy);
     Py_EXIT();
   } catch (e) {
@@ -478,14 +498,6 @@ export interface PyProxy {
  * JavaScript. See :ref:`type-translations-pyproxy`.
  */
 export class PyProxy {
-  /** @private */
-  $$: {
-    ptr: number;
-    cache: PyProxyCache;
-    destroyed_msg?: string;
-  };
-  /** @private */
-  $$props: PyProxyProps;
   /** @private */
   $$flags: number;
 
@@ -566,11 +578,11 @@ export class PyProxy {
    * Useful if the :js:class:`~pyodide.ffi.PyProxy` is destroyed somewhere else.
    */
   copy(): PyProxy {
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, {
-      flags: this.$$flags,
-      cache: this.$$.cache,
-      props: this.$$props,
+    let attrs = _getAttrs(this);
+    return pyproxy_new(attrs.shared.ptr, {
+      flags: _getFlags(this),
+      cache: attrs.shared.cache,
+      props: attrs.props,
     });
   }
   /**
@@ -672,7 +684,7 @@ export class PyProxy {
     "supportsLength() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithLength` instead.",
   )
   supportsLength(): this is PyProxyWithLength {
-    return !!(this.$$flags & HAS_LENGTH);
+    return !!(_getFlags(this) & HAS_LENGTH);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithGet`.
@@ -682,7 +694,7 @@ export class PyProxy {
     "supportsGet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithGet` instead.",
   )
   supportsGet(): this is PyProxyWithGet {
-    return !!(this.$$flags & HAS_GET);
+    return !!(_getFlags(this) & HAS_GET);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithSet`.
@@ -692,7 +704,7 @@ export class PyProxy {
     "supportsSet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithSet` instead.",
   )
   supportsSet(): this is PyProxyWithSet {
-    return !!(this.$$flags & HAS_SET);
+    return !!(_getFlags(this) & HAS_SET);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithHas`.
@@ -702,7 +714,7 @@ export class PyProxy {
     "supportsHas() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithHas` instead.",
   )
   supportsHas(): this is PyProxyWithHas {
-    return !!(this.$$flags & HAS_CONTAINS);
+    return !!(_getFlags(this) & HAS_CONTAINS);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
@@ -713,7 +725,7 @@ export class PyProxy {
     "isIterable() is deprecated. Use `instanceof pyodide.ffi.PyIterable` instead.",
   )
   isIterable(): this is PyIterable {
-    return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
+    return !!(_getFlags(this) & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
@@ -724,7 +736,7 @@ export class PyProxy {
     "isIterator() is deprecated. Use `instanceof pyodide.ffi.PyIterator` instead.",
   )
   isIterator(): this is PyIterator {
-    return !!(this.$$flags & IS_ITERATOR);
+    return !!(_getFlags(this) & IS_ITERATOR);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
@@ -734,7 +746,7 @@ export class PyProxy {
     "isAwaitable() is deprecated. Use `instanceof pyodide.ffi.PyAwaitable` instead.",
   )
   isAwaitable(): this is PyAwaitable {
-    return !!(this.$$flags & IS_AWAITABLE);
+    return !!(_getFlags(this) & IS_AWAITABLE);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
@@ -744,7 +756,7 @@ export class PyProxy {
     "isBuffer() is deprecated. Use `instanceof pyodide.ffi.PyBuffer` instead.",
   )
   isBuffer(): this is PyBuffer {
-    return !!(this.$$flags & IS_BUFFER);
+    return !!(_getFlags(this) & IS_BUFFER);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
@@ -754,7 +766,7 @@ export class PyProxy {
     "isCallable() is deprecated. Use `instanceof pyodide.ffi.PyCallable` instead.",
   )
   isCallable(): this is PyCallable {
-    return !!(this.$$flags & IS_CALLABLE);
+    return !!(_getFlags(this) & IS_CALLABLE);
   }
 }
 
@@ -779,7 +791,7 @@ globalThis.PyProxyFunction = PyProxyFunction;
 export class PyProxyWithLength extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_LENGTH);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_LENGTH);
   }
 }
 
@@ -815,7 +827,7 @@ export class PyLengthMethods {
 export class PyProxyWithGet extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_GET);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_GET);
   }
 }
 
@@ -861,7 +873,7 @@ export class PyGetItemMethods {
 export class PyProxyWithSet extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_SET);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_SET);
   }
 }
 
@@ -925,7 +937,7 @@ export class PySetItemMethods {
 export class PyProxyWithHas extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_CONTAINS);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_CONTAINS);
   }
 }
 
@@ -1005,7 +1017,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
 export class PyIterable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & (IS_ITERABLE | IS_ITERATOR));
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR));
   }
 }
 
@@ -1111,7 +1123,7 @@ export class PyAsyncIterable extends PyProxy {
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
     return (
       API.isPyProxy(obj) &&
-      !!(obj.$$flags & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
+      !!(_getFlags(obj) & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
     );
   }
 }
@@ -1153,7 +1165,7 @@ export class PyAsyncIterableMethods {
 export class PyIterator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ITERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ITERATOR);
   }
 }
 
@@ -1218,7 +1230,7 @@ export class PyIteratorMethods {
 export class PyGenerator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_GENERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_GENERATOR);
   }
 }
 
@@ -1314,7 +1326,7 @@ export class PyGeneratorMethods {
 export class PyAsyncIterator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_ITERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_ITERATOR);
   }
 }
 
@@ -1382,7 +1394,7 @@ export class PyAsyncIteratorMethods {
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_GENERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_GENERATOR);
   }
 }
 
@@ -1490,7 +1502,7 @@ export class PyAsyncGeneratorMethods {
 export class PySequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
 
@@ -1773,7 +1785,7 @@ export class PySequenceMethods {
 export class PyMutableSequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
 
@@ -1963,13 +1975,13 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
 function python_getattr(jsobj: PyProxy, jskey: any) {
-  let ptrobj = _getPtr(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let idresult;
-  let cacheId = jsobj.$$.cache.cacheId;
+  const attrs = _getAttrs(jsobj)
+  let cacheId = attrs.shared.cache.cacheId;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
+    idresult = Module.__pyproxy_getattr(attrs.shared.ptr, idkey, cacheId);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2115,14 +2127,16 @@ const PyProxyHandlers = {
     return python_hasattr(jsobj, jskey);
   },
   get(jsobj: PyProxy, jskey: string | symbol): any {
+    // pyproxyAttrsSymbol is a fallback path to access pyproxy_lookup on
+    // wrappers of PyProxy like the one created by `wrapPythonGlobals`. The
+    // point is that we unwrap the Proxy to the inner target before trying to
+    // access the map, since a wrapper won't be in the pyproxy_lookup map.
+    if (jskey === pyproxyAttrsSymbol) {
+      return pyproxy_lookup.get(jsobj);
+    }
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
-    if (jskey === "$$") {
-      // TODO: remove this?
-      return pyproxy_lookup.get(jsobj);
-    }
-
     // python_getattr will crash if given a Symbol.
     if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
@@ -2270,13 +2284,15 @@ const PyProxySequenceHandlers = {
 export class PyAwaitable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_AWAITABLE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_AWAITABLE);
   }
 }
 
 export interface PyAwaitable extends Promise<any> {}
 /** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
 export type PyProxyAwaitable = PyAwaitable;
+
+const promise_map : WeakMap<any, Promise<any>> = new WeakMap();
 
 /**
  * The Promise / JavaScript awaitable API.
@@ -2291,8 +2307,9 @@ export class PyAwaitableMethods {
    * @private
    */
   _ensure_future(): Promise<any> {
-    if (this.$$.promise) {
-      return this.$$.promise;
+    const res = promise_map.get(this);
+    if (res) {
+      return res;
     }
     let ptrobj = _getPtr(this);
     let resolveHandle;
@@ -2321,7 +2338,7 @@ export class PyAwaitableMethods {
     if (errcode === -1) {
       Module._pythonexc2js();
     }
-    this.$$.promise = promise;
+    promise_map.set(this, promise);
     // @ts-ignore
     this.destroy();
     return promise;
@@ -2385,7 +2402,7 @@ export class PyAwaitableMethods {
 export class PyCallable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyCallable {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_CALLABLE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_CALLABLE);
   }
 }
 
@@ -2474,25 +2491,23 @@ export class PyCallableMethods {
    * @returns
    */
   bind(thisArg: any, ...jsargs: any) {
-    const self = this as unknown as PyProxy;
+    const attrs = _getAttrs(this);
     const {
       boundArgs: boundArgsOld,
       boundThis: boundThisOld,
       isBound,
-    } = self.$$props;
+    } = attrs.props;
     let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
     let boundArgs = boundArgsOld.concat(jsargs);
-    const props: PyProxyProps = Object.assign({}, self.$$props, {
+    const props: PyProxyProps = Object.assign({}, attrs.props, {
       boundArgs,
       isBound: true,
       boundThis,
     });
-    const $$ = self.$$;
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, props });
+    return pyproxy_new(attrs.shared.ptr, { shared: attrs.shared, flags: _getFlags(self), props });
   }
 
   /**
@@ -2525,13 +2540,13 @@ export class PyCallableMethods {
    *
    */
   captureThis(): PyProxy {
-    const self = this as unknown as PyProxy;
-    const props: PyProxyProps = Object.assign({}, self.$$props, {
+    let {props, shared} = _getAttrs(this);
+    props = Object.assign({}, props, {
       captureThis: true,
     });
-    return pyproxy_new(_getPtr(this), {
-      $$: self.$$,
-      flags: self.$$flags,
+    return pyproxy_new(shared.ptr, {
+      shared,
+      flags: _getFlags(this),
       props,
     });
   }
@@ -2569,7 +2584,7 @@ let type_to_array_map: Map<string, any> = new Map([
 export class PyBuffer extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyBuffer {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_BUFFER);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_BUFFER);
   }
 }
 

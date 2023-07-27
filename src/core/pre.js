@@ -51,4 +51,7 @@ function hasMethod(obj, prop) {
   }
 }
 
+const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
 const pyproxy_lookup = new WeakMap();
+const pyproxyIsAlive = (px) => pyproxy_lookup.has(px) || !!px[pyproxyAttrsSymbol];
+API.pyproxyIsAlive = pyproxyIsAlive;
