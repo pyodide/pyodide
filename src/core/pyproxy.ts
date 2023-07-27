@@ -1979,9 +1979,9 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
 function python_getattr(jsobj: PyProxy, jskey: any) {
+  const attrs = _getAttrs(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let idresult;
-  const attrs = _getAttrs(jsobj);
   let cacheId = attrs.shared.cache.cacheId;
   try {
     Py_ENTER();
