@@ -399,7 +399,6 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    Module.finalizationRegistry.unregister(cache);
     let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
       const cache_entry = Hiwire.pop_value(proxy_id);
