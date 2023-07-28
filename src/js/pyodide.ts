@@ -31,9 +31,11 @@ export type Py2JsResult = any;
 
 export { version };
 
-
 const globalsWrapperHandlers = {
-  get({globals, builtins} : {globals: PyDict, builtins: PyDict} , symbol: PropertyKey) {
+  get(
+    { globals, builtins }: { globals: PyDict; builtins: PyDict },
+    symbol: PropertyKey,
+  ) {
     if (symbol === "get") {
       return (key: any) => {
         let result = globals.get(key);
@@ -58,7 +60,7 @@ const globalsWrapperHandlers = {
  * @private
  */
 function wrapPythonGlobals(globals: PyDict, builtins: PyDict) {
-  return new Proxy({globals, builtins}, globalsWrapperHandlers);
+  return new Proxy({ globals, builtins }, globalsWrapperHandlers);
 }
 
 /**
