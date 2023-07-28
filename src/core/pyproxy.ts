@@ -79,7 +79,7 @@ declare var globalThis: any;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
-    ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
+    ({ptr, cache}: PyProxyShared) => {
       if (cache) {
         cache.leaked = true;
         pyproxy_decref_cache(cache);
@@ -191,12 +191,14 @@ function pyproxy_new(
     cache,
     props,
     shared,
+    dontGCRegister,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     shared?: PyProxyShared;
     roundtrip?: boolean;
     props?: any;
+    dontGCRegister?: boolean;
   } = {},
 ): PyProxy {
   const flags =
@@ -230,6 +232,7 @@ function pyproxy_new(
     target = Object.create(cls.prototype);
   }
 
+  const gcRegister = !dontGCRegister && !shared;
   if (!shared) {
     if (!cache) {
       // The cache needs to be accessed primarily from the C function
@@ -239,7 +242,6 @@ function pyproxy_new(
     }
     cache.refcnt++;
     shared = { ptr, cache, flags };
-    Module.finalizationRegistry.register(shared, [ptr, cache], shared);
     Module._Py_IncRef(ptr);
   }
 
@@ -254,6 +256,9 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
+  if(gcRegister) {
+    Module.finalizationRegistry.register(proxy, shared, cache);
+  }
   if (!shared) {
     trace_pyproxy_alloc(proxy);
   }
@@ -263,6 +268,11 @@ function pyproxy_new(
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
+
+Module.gc_register_proxy = function (proxy: PyProxy) {
+  const {shared} = _getAttrs(proxy);
+  Module.finalizationRegistry.register(proxy, shared, shared.cache);
+}
 
 function _getAttrsQuiet(jsobj: any): PyProxyAttrs | undefined {
   return pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
@@ -371,6 +381,7 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
+    Module.finalizationRegistry.unregister(cache);
     let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
       const cache_entry = Hiwire.pop_value(proxy_id);
@@ -395,7 +406,6 @@ Module.pyproxy_destroy = function (
   if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
-  Module.finalizationRegistry.unregister(shared);
   destroyed_msg = destroyed_msg || "Object has already been destroyed";
   let proxy_type = proxy.type;
   let proxy_repr;

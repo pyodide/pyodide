@@ -548,7 +548,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   if (arg) {
     proxies = JsArray_New();
     FAIL_IF_NULL(proxies);
-    jsarg = python2js_track_proxies(arg, proxies);
+    jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
@@ -1055,7 +1055,7 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   if (arg != NULL) {
     proxies = JsArray_New();
     FAIL_IF_NULL(proxies);
-    jsarg = python2js_track_proxies(arg, proxies);
+    jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
@@ -1807,7 +1807,7 @@ JsArray_index(PyObject* o, PyObject* args)
     stop = length;
   }
 
-  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     for (int i = start; i < stop; i++) {
@@ -1867,7 +1867,7 @@ static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     int result = 0;
@@ -2903,7 +2903,7 @@ JsMethod_ConvertArgs(PyObject* const* args,
   idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js_track_proxies(args[i], proxies);
+    idarg = python2js_track_proxies(args[i], proxies, false);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
@@ -2930,7 +2930,7 @@ JsMethod_ConvertArgs(PyObject* const* args,
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
     const char* name_utf8 = PyUnicode_AsUTF8(name);
-    idarg = python2js_track_proxies(args[k], proxies);
+    idarg = python2js_track_proxies(args[k], proxies, false);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
@@ -3130,6 +3130,8 @@ finally:
       JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  } else {
+    gc_register_proxies(proxies);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
