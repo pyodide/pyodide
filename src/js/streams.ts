@@ -284,7 +284,10 @@ function setDefaultStdout() {
  *   // 'ABC'
  *   pyodide.setStdout({ raw: (byte) => console.log(byte) });
  *   pyodide.runPython("print('ABC')");
- *   // 65 66 67 10 (ascii values for 'ABC' including a new line character)
+ *   // 65
+ *   // 66 
+ *   // 67 
+ *   // 10 (the ascii values for 'ABC' including a new line character)
  * }
  * main();
  */
