@@ -81,6 +81,8 @@ if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
     ({ ptr, cache }: { ptr: number; cache: PyProxyCache }) => {
       if (cache) {
+        // If we leak a proxy, we must transitively leak everything in its cache
+        // too =(
         cache.leaked = true;
         pyproxy_decref_cache(cache);
       }
@@ -158,9 +160,16 @@ type PyProxyProps = {
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
- * The argument cache is only needed to implement the PyProxy.copy API, it
- * allows the copy of the PyProxy to share its attribute cache with the original
- * version. In all other cases, pyproxy_new should be called with one argument.
+ * Two proxies are **aliases** if they share `$$` (they may have different
+ * $$props). Aliases are created by `bind` and `captureThis`. Aliases share the
+ * same lifetime: `destroy` destroys both of them, they are only registered with
+ * the garbage collector once, they only own a single refcount.  An **alias** is
+ * created by passing the $$ option.
+ *
+ * Two proxies are **copies** if they share `$$.cache`. Two copies share
+ * attribute caches but they otherwise have independent lifetimes. The attribute
+ * caches are refcounted so that they can be cleaned up when all copies are
+ * destroyed. A **copy** is made by passing the `cache` argument.
  *
  * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
@@ -218,6 +227,7 @@ function pyproxy_new(
   const isAlias = !!$$;
   if (!isAlias) {
     if (!cache) {
+      // In this case it's not a copy.
       // The cache needs to be accessed primarily from the C function
       // _pyproxy_getattr so we make a hiwire id.
       let cacheId = Hiwire.new_value(new Map());
@@ -243,7 +253,14 @@ function pyproxy_new(
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
   if (!isAlias && !dontGCRegister) {
-    Module.finalizationRegistry.register($$, Object.assign({}, $$), $$);
+    // we need to register only once for a set of aliases. we can't register the
+    // proxy directly since that isn't shared between aliases. The aliases all
+    // share $$ so we can register that. They also need access to the data in
+    // $$, but we can't use $$ itself as the held object since that would keep
+    // $$ from being gc'd ever. So we make a copy. To prevent double free, we
+    // have to be careful to unregister when we destroy.
+    const $$copy = Object.assign({}, $$);
+    Module.finalizationRegistry.register($$, $$copy, $$);
   }
   if (!isAlias) {
     trace_pyproxy_alloc(proxy);
@@ -346,7 +363,6 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    Module.finalizationRegistry.unregister(cache);
     let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
       const cache_entry = Hiwire.pop_value(proxy_id);
@@ -384,6 +400,7 @@ Module.pyproxy_destroy = function (
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = 0;
+  Module.finalizationRegistry.unregister(proxy.$$);
   destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
     destroyed_msg += `had repr "${proxy_repr}"`;
