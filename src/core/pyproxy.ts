@@ -81,6 +81,8 @@ if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
     ({ ptr, cache }: PyProxyShared) => {
       if (cache) {
+        // If we leak a proxy, we must transitively leak everything in its cache
+        // too =(
         cache.leaked = true;
         pyproxy_decref_cache(cache);
       }
@@ -174,9 +176,16 @@ const pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs> = new WeakMap();
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
- * The argument cache is only needed to implement the PyProxy.copy API, it
- * allows the copy of the PyProxy to share its attribute cache with the original
- * version. In all other cases, pyproxy_new should be called with one argument.
+ * Two proxies are **aliases** if they share `shared` (they may have different
+ * props). Aliases are created by `bind` and `captureThis`. Aliases share the
+ * same lifetime: `destroy` destroys both of them, they are only registered with
+ * the garbage collector once, they only own a single refcount.  An **alias** is
+ * created by passing the shared option.
+ *
+ * Two proxies are **copies** if they share `shared.cache`. Two copies share
+ * attribute caches but they otherwise have independent lifetimes. The attribute
+ * caches are refcounted so that they can be cleaned up when all copies are
+ * destroyed. A **copy** is made by passing the `cache` argument.
  *
  * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
@@ -196,7 +205,6 @@ function pyproxy_new(
     flags?: number;
     cache?: PyProxyCache;
     shared?: PyProxyShared;
-    roundtrip?: boolean;
     props?: any;
     dontGCRegister?: boolean;
   } = {},
@@ -232,9 +240,10 @@ function pyproxy_new(
     target = Object.create(cls.prototype);
   }
 
-  const gcRegister = !dontGCRegister && !shared;
   if (!shared) {
+    // Not an alias so we have to make `shared`.
     if (!cache) {
+      // Not a copy, have to make `cache` too
       // The cache needs to be accessed primarily from the C function
       // _pyproxy_getattr so we make a hiwire id.
       let cacheId = Hiwire.new_value(new Map());
@@ -245,9 +254,6 @@ function pyproxy_new(
     Module._Py_IncRef(ptr);
   }
 
-  if (!props) {
-    props = {};
-  }
   props = Object.assign(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
@@ -256,8 +262,15 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
-  if (gcRegister) {
-    Module.finalizationRegistry.register(proxy, shared, cache);
+  if (!shared && !dontGCRegister) {
+    // we need to register only once for a set of aliases. we can't register the
+    // proxy directly since that isn't shared between aliases. The aliases all
+    // share $$ so we can register that. They also need access to the data in
+    // $$, but we can't use $$ itself as the held object since that would keep
+    // $$ from being gc'd ever. So we make a copy. To prevent double free, we
+    // have to be careful to unregister when we destroy.
+    const shared_copy = Object.assign({}, shared);
+    Module.finalizationRegistry.register(shared, shared_copy, shared);
   }
   if (!shared) {
     trace_pyproxy_alloc(proxy);
@@ -421,6 +434,7 @@ Module.pyproxy_destroy = function (
   // just in case!
   const ptr = shared.ptr;
   shared.ptr = 0;
+  Module.finalizationRegistry.unregister(shared);
   destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
   if (proxy_repr) {
     destroyed_msg += `had repr "${proxy_repr}"`;
