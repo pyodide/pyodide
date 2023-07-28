@@ -230,9 +230,6 @@ function pyproxy_new(
   }
 
   Object.defineProperty(target, "$$", { value: $$ });
-  if (!props) {
-    props = {};
-  }
   props = Object.assign(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
