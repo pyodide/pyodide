@@ -79,7 +79,7 @@ declare var globalThis: any;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
-    ({ptr, cache}: PyProxyShared) => {
+    ({ ptr, cache }: PyProxyShared) => {
       if (cache) {
         cache.leaked = true;
         pyproxy_decref_cache(cache);
@@ -256,7 +256,7 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
-  if(gcRegister) {
+  if (gcRegister) {
     Module.finalizationRegistry.register(proxy, shared, cache);
   }
   if (!shared) {
@@ -270,9 +270,9 @@ function pyproxy_new(
 Module.pyproxy_new = pyproxy_new;
 
 Module.gc_register_proxy = function (proxy: PyProxy) {
-  const {shared} = _getAttrs(proxy);
+  const { shared } = _getAttrs(proxy);
   Module.finalizationRegistry.register(proxy, shared, shared.cache);
-}
+};
 
 function _getAttrsQuiet(jsobj: any): PyProxyAttrs | undefined {
   return pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
