@@ -138,6 +138,8 @@ type PyProxyShared = {
   ptr: number;
   cache: PyProxyCache;
   flags: number;
+  promise: Promise<any> | undefined;
+  destroyed_msg: string | undefined;
 };
 type PyProxyProps = {
   /**
@@ -163,15 +165,13 @@ type PyProxyProps = {
 };
 
 type PyProxyAttrs = {
+  // shared between aliases but not between copies
   shared: PyProxyShared;
+  // properties that may be different between aliases
   props: PyProxyProps;
-  proxy: PyProxy;
-  target: PyProxy;
 };
 
 const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
-const pyproxyDestroyedMsgSymbol = Symbol("pyproxy.destroyed_msg");
-const pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs> = new WeakMap();
 
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
@@ -250,7 +250,13 @@ function pyproxy_new(
       cache = { cacheId, refcnt: 0 };
     }
     cache.refcnt++;
-    shared = { ptr, cache, flags };
+    shared = {
+      ptr,
+      cache,
+      flags,
+      promise: undefined,
+      destroyed_msg: undefined,
+    };
     Module._Py_IncRef(ptr);
   }
 
@@ -275,9 +281,8 @@ function pyproxy_new(
   if (!shared) {
     trace_pyproxy_alloc(proxy);
   }
-  const attrs = { shared, props, proxy, target };
-  pyproxy_lookup.set(proxy, attrs);
-  pyproxy_lookup.set(target, attrs);
+  const attrs = { shared, props };
+  target[pyproxyAttrsSymbol] = attrs;
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
@@ -287,14 +292,14 @@ Module.gc_register_proxy = function (proxy: PyProxy) {
   Module.finalizationRegistry.register(proxy, shared, shared.cache);
 };
 
-function _getAttrsQuiet(jsobj: any): PyProxyAttrs | undefined {
-  return pyproxy_lookup.get(jsobj) || jsobj[pyproxyAttrsSymbol];
+function _getAttrsQuiet(jsobj: any): PyProxyAttrs {
+  return jsobj[pyproxyAttrsSymbol];
 }
 Module.PyProxy_getAttrsQuiet = _getAttrsQuiet;
 function _getAttrs(jsobj: any): PyProxyAttrs {
   const attrs = _getAttrsQuiet(jsobj);
-  if (!attrs) {
-    throw new Error(jsobj[pyproxyDestroyedMsgSymbol]);
+  if (!attrs.shared.ptr) {
+    throw new Error(attrs.shared.destroyed_msg);
   }
   return attrs;
 }
@@ -415,7 +420,7 @@ Module.pyproxy_destroy = function (
     // already destroyed
     return;
   }
-  const { shared, props, proxy: px, target } = attrs;
+  const { shared, props } = attrs;
   if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
@@ -441,10 +446,8 @@ Module.pyproxy_destroy = function (
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  target[pyproxyDestroyedMsgSymbol as any] = destroyed_msg;
+  shared.destroyed_msg = destroyed_msg;
   pyproxy_decref_cache(shared.cache);
-  pyproxy_lookup.delete(px);
-  pyproxy_lookup.delete(target);
   try {
     Py_ENTER();
     Module._Py_DecRef(ptr);
@@ -2155,13 +2158,6 @@ const PyProxyHandlers = {
     return python_hasattr(jsobj, jskey);
   },
   get(jsobj: PyProxy, jskey: string | symbol): any {
-    // pyproxyAttrsSymbol is a fallback path to access pyproxy_lookup on
-    // wrappers of PyProxy like the one created by `wrapPythonGlobals`. The
-    // point is that we unwrap the Proxy to the inner target before trying to
-    // access the map, since a wrapper won't be in the pyproxy_lookup map.
-    if (jskey === pyproxyAttrsSymbol) {
-      return pyproxy_lookup.get(jsobj);
-    }
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
@@ -2335,11 +2331,15 @@ export class PyAwaitableMethods {
    * @private
    */
   _ensure_future(): Promise<any> {
-    const res = promise_map.get(this);
-    if (res) {
-      return res;
+    const attrs = _getAttrsQuiet(this);
+    if (attrs.shared.promise) {
+      return attrs.shared.promise;
     }
-    let ptrobj = _getPtr(this);
+    const ptr = attrs.shared.ptr;
+    if (!ptr) {
+      // Destroyed and promise wasn't resolved. Raise error!
+      _getAttrs(this);
+    }
     let resolveHandle;
     let rejectHandle;
     let promise = new Promise((resolve, reject) => {
@@ -2352,7 +2352,7 @@ export class PyAwaitableMethods {
     try {
       Py_ENTER();
       errcode = Module.__pyproxy_ensure_future(
-        ptrobj,
+        ptr,
         resolve_handle_id,
         reject_handle_id,
       );
