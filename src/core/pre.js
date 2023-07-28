@@ -51,5 +51,5 @@ function hasMethod(obj, prop) {
   }
 }
 
-const pyproxyIsAlive = (px) => Module.PyProxy_getAttrsQuiet(px);
+const pyproxyIsAlive = (px) => !Module.PyProxy_getAttrsQuiet(px).shared.ptr;
 API.pyproxyIsAlive = pyproxyIsAlive;

@@ -82,12 +82,12 @@ EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   const px = Module.hiwire.get_value(proxy_id);
-  const attrs = Module.PyProxy_getAttrsQuiet(px);
-  if (!attrs) {
+  const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
+  if (!shared.ptr) {
     // already destroyed
     return;
   }
-  if (attrs.props.roundtrip) {
+  if (props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
   }

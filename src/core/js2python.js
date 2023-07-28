@@ -115,14 +115,14 @@ JS_FILE(js2python_init, () => {
     } else if (value === false) {
       return __js2python_false();
     } else if (API.isPyProxy(value)) {
-      const attrs = Module.PyProxy_getAttrs(value);
-      if (attrs.props.roundtrip) {
+      const { props, shared } = Module.PyProxy_getAttrs(value);
+      if (props.roundtrip) {
         if (id === undefined) {
           id = Hiwire.new_value(value);
         }
         return _JsProxy_create(id);
       } else {
-        return __js2python_pyproxy(attrs.shared.ptr);
+        return __js2python_pyproxy(shared.ptr);
       }
     }
     return undefined;

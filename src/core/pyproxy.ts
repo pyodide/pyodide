@@ -414,12 +414,11 @@ Module.pyproxy_destroy = function (
   destroyed_msg: string,
   destroy_roundtrip: boolean,
 ) {
-  const attrs = _getAttrsQuiet(proxy);
-  if (!attrs) {
+  const { shared, props } = _getAttrsQuiet(proxy);
+  if (!shared.ptr) {
     // already destroyed
     return;
   }
-  const { shared, props } = attrs;
   if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
@@ -2005,13 +2004,13 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 // (in which case we return 0) and "found 'None'" (in which case we return
 // Js_undefined).
 function python_getattr(jsobj: PyProxy, jskey: any) {
-  const attrs = _getAttrs(jsobj);
+  const { shared } = _getAttrs(jsobj);
   let idkey = Hiwire.new_value(jskey);
   let idresult;
-  let cacheId = attrs.shared.cache.cacheId;
+  let cacheId = shared.cache.cacheId;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_getattr(attrs.shared.ptr, idkey, cacheId);
+    idresult = Module.__pyproxy_getattr(shared.ptr, idkey, cacheId);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2330,11 +2329,11 @@ export class PyAwaitableMethods {
    * @private
    */
   _ensure_future(): Promise<any> {
-    const attrs = _getAttrsQuiet(this);
-    if (attrs.shared.promise) {
-      return attrs.shared.promise;
+    const { shared } = _getAttrsQuiet(this);
+    if (shared.promise) {
+      return shared.promise;
     }
-    const ptr = attrs.shared.ptr;
+    const ptr = shared.ptr;
     if (!ptr) {
       // Destroyed and promise wasn't resolved. Raise error!
       _getAttrs(this);
@@ -2518,24 +2517,20 @@ export class PyCallableMethods {
    * @returns
    */
   bind(thisArg: any, ...jsargs: any) {
-    const attrs = _getAttrs(this);
-    const {
-      boundArgs: boundArgsOld,
-      boundThis: boundThisOld,
-      isBound,
-    } = attrs.props;
+    let { shared, props } = _getAttrs(this);
+    const { boundArgs: boundArgsOld, boundThis: boundThisOld, isBound } = props;
     let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
     let boundArgs = boundArgsOld.concat(jsargs);
-    const props: PyProxyProps = Object.assign({}, attrs.props, {
+    props = Object.assign({}, props, {
       boundArgs,
       isBound: true,
       boundThis,
     });
-    return pyproxy_new(attrs.shared.ptr, {
-      shared: attrs.shared,
+    return pyproxy_new(shared.ptr, {
+      shared,
       flags: _getFlags(self),
       props,
     });
