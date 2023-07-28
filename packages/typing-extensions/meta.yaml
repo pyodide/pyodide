@@ -1,6 +1,6 @@
 package:
   name: typing-extensions
-  version: 4.5.0
+  version: 4.7.1
   top-level:
     - typing_extensions
 source:
