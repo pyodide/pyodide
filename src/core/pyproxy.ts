@@ -167,8 +167,8 @@ type PyProxyAttrs = {
   target: PyProxy;
 };
 
-const destroyed_msg_map: WeakMap<PyProxy, string> = new WeakMap();
 const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
+const pyproxyDestroyedMsgSymbol = Symbol("pyproxy.destroyed_msg");
 const pyproxy_lookup: WeakMap<PyProxy, PyProxyAttrs> = new WeakMap();
 
 /**
@@ -271,7 +271,7 @@ Module.PyProxy_getAttrsQuiet = _getAttrsQuiet;
 function _getAttrs(jsobj: any): PyProxyAttrs {
   const attrs = _getAttrsQuiet(jsobj);
   if (!attrs) {
-    throw new Error(destroyed_msg_map.get(jsobj));
+    throw new Error(jsobj[pyproxyDestroyedMsgSymbol]);
   }
   return attrs;
 }
@@ -417,8 +417,7 @@ Module.pyproxy_destroy = function (
   } else {
     destroyed_msg += "an error was raised when trying to generate its repr";
   }
-  destroyed_msg_map.set(target, destroyed_msg);
-  destroyed_msg_map.set(px, destroyed_msg);
+  target[pyproxyDestroyedMsgSymbol as any] = destroyed_msg;
   pyproxy_decref_cache(shared.cache);
   pyproxy_lookup.delete(px);
   pyproxy_lookup.delete(target);
