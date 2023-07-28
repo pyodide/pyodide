@@ -31,6 +31,25 @@ export type Py2JsResult = any;
 
 export { version };
 
+
+const globalsWrapperHandlers = {
+  get({globals, builtins} : {globals: PyDict, builtins: PyDict} , symbol: PropertyKey) {
+    if (symbol === "get") {
+      return (key: any) => {
+        let result = globals.get(key);
+        if (result !== undefined) {
+          return result;
+        }
+        return builtins.get(key);
+      };
+    }
+    if (symbol === "has") {
+      return (key: any) => globals.has(key) || builtins.has(key);
+    }
+    return Reflect.get(globals, symbol);
+  },
+};
+
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
  * get fails to find a global with the given key. Note that this proxy is
@@ -38,24 +57,8 @@ export { version };
  * will translate this proxy to the globals dictionary.
  * @private
  */
-function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
-  return new Proxy(globals_dict, {
-    get(target, symbol) {
-      if (symbol === "get") {
-        return (key: any) => {
-          let result = target.get(key);
-          if (result === undefined) {
-            result = builtins_dict.get(key);
-          }
-          return result;
-        };
-      }
-      if (symbol === "has") {
-        return (key: any) => target.has(key) || builtins_dict.has(key);
-      }
-      return Reflect.get(target, symbol);
-    },
-  });
+function wrapPythonGlobals(globals: PyDict, builtins: PyDict) {
+  return new Proxy({globals, builtins}, globalsWrapperHandlers);
 }
 
 /**
