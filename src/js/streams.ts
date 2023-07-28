@@ -285,8 +285,8 @@ function setDefaultStdout() {
  *   pyodide.setStdout({ raw: (byte) => console.log(byte) });
  *   pyodide.runPython("print('ABC')");
  *   // 65
- *   // 66 
- *   // 67 
+ *   // 66
+ *   // 67
  *   // 10 (the ascii values for 'ABC' including a new line character)
  * }
  * main();
@@ -360,7 +360,10 @@ function setDefaultStderr() {
  *   // 'ABC'
  *   pyodide.setStderr({ raw: (byte) => console.warn(byte) });
  *   pyodide.runPython("import sys; print('ABC', file=sys.stderr)");
- *   // 65 66 67 10 (ascii values for 'ABC' including a new line character)
+ *   // 65
+ *   // 66
+ *   // 67
+ *   // 10 (the ascii values for 'ABC' including a new line character)
  * }
  * main();
  */
