@@ -79,7 +79,7 @@ declare var globalThis: any;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
-    ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
+    ({ ptr, cache }: { ptr: number; cache: PyProxyCache }) => {
       if (cache) {
         cache.leaked = true;
         pyproxy_decref_cache(cache);
@@ -175,12 +175,13 @@ function pyproxy_new(
     cache,
     props,
     $$,
+    dontGCRegister,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     $$?: any;
-    roundtrip?: boolean;
     props?: any;
+    dontGCRegister?: boolean;
   } = {},
 ): PyProxy {
   const flags =
@@ -215,7 +216,6 @@ function pyproxy_new(
   }
 
   const isAlias = !!$$;
-
   if (!isAlias) {
     if (!cache) {
       // The cache needs to be accessed primarily from the C function
@@ -224,8 +224,7 @@ function pyproxy_new(
       cache = { cacheId, refcnt: 0 };
     }
     cache.refcnt++;
-    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
-    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
+    $$ = { ptr: ptrobj, cache, flags };
     Module._Py_IncRef(ptrobj);
   }
 
@@ -243,6 +242,9 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
+  if (!isAlias && !dontGCRegister) {
+    Module.finalizationRegistry.register($$, Object.assign({}, $$), $$);
+  }
   if (!isAlias) {
     trace_pyproxy_alloc(proxy);
   }
@@ -344,6 +346,7 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
+    Module.finalizationRegistry.unregister(cache);
     let cache_map = Hiwire.pop_value(cache.cacheId);
     for (let proxy_id of cache_map.values()) {
       const cache_entry = Hiwire.pop_value(proxy_id);

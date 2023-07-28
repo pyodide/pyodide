@@ -73,6 +73,13 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
 });
 
+EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
+  let proxies = Hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.gc_register_proxy(px);
+  }
+});
+
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   let px = Module.hiwire.get_value(proxy_id);
   if (px.$$props.roundtrip) {
@@ -1244,14 +1251,19 @@ success:
   return 0;
 }
 
+// clang-format off
 EM_JS_REF(JsRef,
-          pyproxy_new_ex,
-          (PyObject * ptrobj, bool capture_this, bool roundtrip),
-          {
-            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
-              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
-            }));
-          });
+pyproxy_new_ex,
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gc_register),
+{
+  return Hiwire.new_value(
+    Module.pyproxy_new(ptrobj, {
+      props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
+      dontGCRegister: !gc_register,
+    })
+  );
+});
+// clang-format on
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
@@ -1405,7 +1417,7 @@ create_proxy(PyObject* self,
     return NULL;
   }
 
-  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip, true);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
