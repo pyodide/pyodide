@@ -276,6 +276,20 @@ function setDefaultStdout() {
  * @param options.isatty Should :py:func:`isatty(stdout) <os.isatty>` return
  * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
  * provided (default ``false``).
+ * @example
+ * async function main(){
+ *   const pyodide = await loadPyodide();
+ *   pyodide.setStdout({ batched: (msg) => console.log(msg) });
+ *   pyodide.runPython("print('ABC')");
+ *   // 'ABC'
+ *   pyodide.setStdout({ raw: (byte) => console.log(byte) });
+ *   pyodide.runPython("print('ABC')");
+ *   // 65
+ *   // 66
+ *   // 67
+ *   // 10 (the ascii values for 'ABC' including a new line character)
+ * }
+ * main();
  */
 export function setStdout(
   options: {
@@ -338,6 +352,20 @@ function setDefaultStderr() {
  * @param options.isatty Should :py:func:`isatty(stderr) <os.isatty>` return
  * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
  * provided (default ``false``).
+ * @example
+ * async function main(){
+ *   const pyodide = await loadPyodide();
+ *   pyodide.setStderr({ batched: (msg) => console.warn(msg) });
+ *   pyodide.runPython("import sys; print('ABC', file=sys.stderr)");
+ *   // 'ABC'
+ *   pyodide.setStderr({ raw: (byte) => console.warn(byte) });
+ *   pyodide.runPython("import sys; print('ABC', file=sys.stderr)");
+ *   // 65
+ *   // 66
+ *   // 67
+ *   // 10 (the ascii values for 'ABC' including a new line character)
+ * }
+ * main();
  */
 export function setStderr(
   options: {
