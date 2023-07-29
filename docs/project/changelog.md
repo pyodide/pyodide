@@ -77,6 +77,7 @@ myst:
 - Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
+- Upgraded typing-extensions to 4.7.1 {pr}`4026`
 
 ### CLI
 
