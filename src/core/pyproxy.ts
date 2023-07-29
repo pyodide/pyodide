@@ -269,6 +269,12 @@ function pyproxy_new(
 }
 Module.pyproxy_new = pyproxy_new;
 
+Module.gc_register_proxy = function (proxy: PyProxy) {
+  const $$ = proxy.$$;
+  const $$copy = Object.assign({}, $$);
+  Module.finalizationRegistry.register($$, $$copy, $$);
+};
+
 function _getPtr(jsobj: any) {
   let ptr: number = jsobj.$$.ptr;
   if (ptr === 0) {
