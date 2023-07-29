@@ -12,7 +12,6 @@ import os
 import shutil
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import urllib
 from collections.abc import Iterator
@@ -24,16 +23,24 @@ from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
 
-from . import common, pypabuild
+from . import pypabuild
+from .build_env import (
+    RUST_BUILD_PRELUDE,
+    get_build_environment_vars,
+    get_build_flag,
+    get_pyodide_root,
+    pyodide_tags,
+    replace_so_abi_tags,
+)
 from .common import (
+    _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
-    get_build_environment_vars,
-    get_pyodide_root,
     make_zip_archive,
+    modify_wheel,
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
@@ -72,8 +79,7 @@ class BashRunnerWithSharedEnvironment:
         self._reader = os.fdopen(fd_read, "r")
         return self
 
-    def run(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
-        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+    def run_unchecked(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
         assert self._fd_write is not None
         assert self._reader is not None
 
@@ -93,12 +99,31 @@ class BashRunnerWithSharedEnvironment:
             encoding="utf8",
             **opts,
         )
+        if result.returncode == 0:
+            self.env = json.loads(self._reader.readline())
+        return result
+
+    def run(
+        self,
+        cmd: str | None,
+        *,
+        script_name: str,
+        cwd: Path | str | None = None,
+        **opts: Any,
+    ) -> subprocess.CompletedProcess[str] | None:
+        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
+        if not cmd:
+            return None
+        if cwd is None:
+            cwd = Path.cwd()
+        cwd = Path(cwd).absolute()
+        logger.info(f"Running {script_name} in {str(cwd)}")
+        opts["cwd"] = cwd
+        result = self.run_unchecked(cmd, **opts)
         if result.returncode != 0:
-            logger.error("ERROR: bash command failed")
+            logger.error(f"ERROR: {script_name} failed")
             logger.error(textwrap.indent(cmd, "    "))
             exit_with_stdio(result)
-
-        self.env = json.loads(self._reader.readline())
         return result
 
     def __exit__(
@@ -125,12 +150,16 @@ def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
     with BashRunnerWithSharedEnvironment(env=env) as b:
         # Working in-tree, add emscripten toolchain into PATH and set ccache
         if Path(PYODIDE_ROOT, "pyodide_env.sh").exists():
-            b.run(f"source {PYODIDE_ROOT}/pyodide_env.sh", stderr=subprocess.DEVNULL)
+            b.run(
+                f"source {PYODIDE_ROOT}/pyodide_env.sh",
+                script_name="source pyodide_env",
+                stderr=subprocess.DEVNULL,
+            )
 
         yield b
 
 
-def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
+def check_checksum(archive: Path, checksum: str) -> None:
     """
     Checks that an archive matches the checksum in the package metadata.
 
@@ -139,12 +168,9 @@ def check_checksum(archive: Path, source_metadata: _SourceSpec) -> None:
     ----------
     archive
         the path to the archive we wish to checksum
-    source_metadata
-        The source section from meta.yaml.
+    checksum
+        the checksum we expect the archive to have
     """
-    if source_metadata.sha256 is None:
-        return
-    checksum = source_metadata.sha256
     real_checksum = _get_sha256_checksum(archive)
     if real_checksum != checksum:
         raise ValueError(
@@ -191,7 +217,10 @@ def download_and_extract(
         The source section from meta.yaml.
     """
     # We only call this function when the URL is defined
+    build_env = get_build_environment_vars()
     url = cast(str, src_metadata.url)
+    url = _environment_substitute_str(url, build_env)
+
     max_retry = 3
     for retry_cnt in range(max_retry):
         try:
@@ -218,7 +247,10 @@ def download_and_extract(
         with open(tarballpath, "wb") as f:
             f.write(response.read())
         try:
-            check_checksum(tarballpath, src_metadata)
+            checksum = src_metadata.sha256
+            if checksum is not None:
+                checksum = _environment_substitute_str(checksum, build_env)
+                check_checksum(tarballpath, checksum)
         except Exception:
             tarballpath.unlink()
             raise
@@ -323,16 +355,16 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
     assert not src_metadata.url.endswith(".whl")
 
     # Apply all the patches
-    with chdir(srcpath):
-        for patch in patches:
-            result = subprocess.run(
-                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
-                check=False,
-                encoding="utf-8",
-            )
-            if result.returncode != 0:
-                logger.error(f"ERROR: Patch {pkg_root/patch} failed")
-                exit_with_stdio(result)
+    for patch in patches:
+        result = subprocess.run(
+            ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+            check=False,
+            encoding="utf-8",
+            cwd=srcpath,
+        )
+        if result.returncode != 0:
+            logger.error(f"ERROR: Patch {pkg_root/patch} failed")
+            exit_with_stdio(result)
 
     # Add any extra files
     for src, dst in extras:
@@ -340,30 +372,6 @@ def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
 
     with open(srcpath / ".patched", "wb") as fd:
         fd.write(b"\n")
-
-
-def unpack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "unpack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Unpacking wheel {path.name} failed")
-            exit_with_stdio(result)
-
-
-def pack_wheel(path: Path) -> None:
-    with chdir(path.parent):
-        result = subprocess.run(
-            [sys.executable, "-m", "wheel", "pack", path.name],
-            check=False,
-            encoding="utf-8",
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Packing wheel {path} failed")
-            exit_with_stdio(result)
 
 
 def compile(
@@ -420,7 +428,9 @@ def compile(
     with build_env_ctx as build_env:
         if build_metadata.cross_script is not None:
             with BashRunnerWithSharedEnvironment(build_env) as runner:
-                runner.run(build_metadata.cross_script, cwd=srcpath)
+                runner.run(
+                    build_metadata.cross_script, script_name="cross script", cwd=srcpath
+                )
                 build_env = runner.env
 
         from .pypabuild import build
@@ -429,23 +439,11 @@ def compile(
         build(srcpath, outpath, build_env, backend_flags)
 
 
-def replace_so_abi_tags(wheel_dir: Path) -> None:
-    """Replace native abi tag with emscripten abi tag in .so file names"""
-    build_soabi = sysconfig.get_config_var("SOABI")
-    assert build_soabi
-    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
-    assert ext_suffix
-    build_triplet = "-".join(build_soabi.split("-")[2:])
-    host_triplet = common.get_build_flag("PLATFORM_TRIPLET")
-    for file in wheel_dir.glob(f"**/*{ext_suffix}"):
-        file.rename(file.with_name(file.name.replace(build_triplet, host_triplet)))
-
-
 def copy_sharedlibs(
     wheel_file: Path, wheel_dir: Path, lib_dir: Path
 ) -> dict[str, Path]:
-    from auditwheel_emscripten import copylib, resolve_sharedlib  # type: ignore[import]
-    from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE  # type: ignore[import]
+    from auditwheel_emscripten import copylib, resolve_sharedlib
+    from auditwheel_emscripten.wheel_utils import WHEEL_INFO_RE
 
     match = WHEEL_INFO_RE.match(wheel_file.name)
     if match is None:
@@ -502,61 +500,52 @@ def package_wheel(
         return
 
     distdir = srcpath / "dist"
-    wheel, *rest = find_matching_wheels(distdir.glob("*.whl"))
+    wheel, *rest = find_matching_wheels(distdir.glob("*.whl"), pyodide_tags())
     if rest:
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
     logger.info(f"Unpacking wheel to {str(wheel)}")
-    unpack_wheel(wheel)
-    wheel.unlink()
+
     name, ver, _ = wheel.name.split("-", 2)
-    wheel_dir_name = f"{name}-{ver}"
-    wheel_dir = distdir / wheel_dir_name
 
-    # update so abi tags after build is complete but before running post script
-    # to maximize sanity.
-    replace_so_abi_tags(wheel_dir)
+    with modify_wheel(wheel) as wheel_dir:
+        # update so abi tags after build is complete but before running post script
+        # to maximize sanity.
+        replace_so_abi_tags(wheel_dir)
 
-    post = build_metadata.post
-    if post:
-        logger.info(f"Running post script in {Path.cwd().absolute()}")
         bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
-        result = bash_runner.run(post)
-        if result.returncode != 0:
-            logger.error("ERROR: post failed")
-            exit_with_stdio(result)
+        post = build_metadata.post
+        bash_runner.run(post, script_name="post script")
 
-    vendor_sharedlib = build_metadata.vendor_sharedlib
-    if vendor_sharedlib:
-        lib_dir = Path(common.get_build_flag("WASM_LIBRARY_DIR"))
-        copy_sharedlibs(wheel, wheel_dir, lib_dir)
+        vendor_sharedlib = build_metadata.vendor_sharedlib
+        if vendor_sharedlib:
+            lib_dir = Path(get_build_flag("WASM_LIBRARY_DIR"))
+            copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
-    python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
-    host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
-    if build_metadata.cross_build_env:
-        subprocess.check_call(
-            ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"]
-        )
+        python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
+        host_site_packages = Path(host_install_dir) / f"lib/{python_dir}/site-packages"
+        if build_metadata.cross_build_env:
+            subprocess.run(
+                ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"],
+                check=True,
+            )
 
-    cross_build_files = build_metadata.cross_build_files
-    if cross_build_files:
-        for file_ in cross_build_files:
-            shutil.copy((wheel_dir / file_), host_site_packages / file_)
+        cross_build_files = build_metadata.cross_build_files
+        if cross_build_files:
+            for file_ in cross_build_files:
+                shutil.copy((wheel_dir / file_), host_site_packages / file_)
 
-    test_dir = distdir / "tests"
-    nmoved = 0
-    if build_metadata.unvendor_tests:
-        nmoved = unvendor_tests(wheel_dir, test_dir)
-    if nmoved:
-        with chdir(distdir):
-            shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
-    pack_wheel(wheel_dir)
-    # wheel_dir causes pytest collection failures for in-tree packages like
-    # micropip. To prevent these, we get rid of wheel_dir after repacking the
-    # wheel.
-    shutil.rmtree(wheel_dir)
-    shutil.rmtree(test_dir, ignore_errors=True)
+        try:
+            test_dir = distdir / "tests"
+            nmoved = 0
+            if build_metadata.unvendor_tests:
+                nmoved = unvendor_tests(wheel_dir, test_dir)
+            if nmoved:
+                with chdir(distdir):
+                    shutil.make_archive(f"{pkg_name}-tests", "tar", test_dir)
+        finally:
+            shutil.rmtree(test_dir, ignore_errors=True)
 
 
 def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
@@ -611,42 +600,6 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
 
 def create_packaged_token(buildpath: Path) -> None:
     (buildpath / ".packaged").write_text("\n")
-
-
-def run_script(
-    buildpath: Path,
-    srcpath: Path,
-    build_metadata: _BuildSpec,
-    bash_runner: BashRunnerWithSharedEnvironment,
-) -> None:
-    """
-    Run the build script indicated in meta.yaml
-
-    Parameters
-    ----------
-    buildpath
-        the package build path. Usually `packages/<name>/build`
-
-    srcpath
-        the package source path. Usually
-        `packages/<name>/build/<name>-<version>`.
-
-    build_metadata
-        The build section from meta.yaml.
-
-    bash_runner
-        The runner we will use to execute our bash commands. Preserves environment
-        variables from one invocation to the next.
-    """
-    script = build_metadata.script
-    if not script:
-        return
-
-    with chdir(srcpath):
-        result = bash_runner.run(script)
-        if result.returncode != 0:
-            logger.error("ERROR: script failed")
-            exit_with_stdio(result)
 
 
 def needs_rebuild(
@@ -768,12 +721,17 @@ def _build_package_inner(
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         bash_runner.env["DISTDIR"] = str(src_dist_dir)
         if not continue_:
-            clear_only = package_type == "cpython_module"
-            prepare_source(build_dir, srcpath, source_metadata, clear_only=clear_only)
+            prepare_source(build_dir, srcpath, source_metadata)
             patch(pkg_root, srcpath, source_metadata)
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
-        run_script(build_dir, srcpath, build_metadata, bash_runner)
+        if pkg.is_rust_package():
+            bash_runner.run(
+                RUST_BUILD_PRELUDE,
+                script_name="rust build prelude",
+                cwd=srcpath,
+            )
+        bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
 
         if package_type == "static_library":
             # Nothing needs to be done for a static library
@@ -832,7 +790,7 @@ def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
     return package_dir, MetaConfig.from_yaml(meta_file)
 
 
-def _check_exetuables(pkg: MetaConfig) -> None:
+def _check_executables(pkg: MetaConfig) -> None:
     """
     Check that the executables required to build the package are available.
 
@@ -882,7 +840,7 @@ def build_package(
     meta_file = Path(package).resolve()
     pkg_root, pkg = _load_package_config(meta_file)
 
-    _check_exetuables(pkg)
+    _check_executables(pkg)
 
     pkg.build.cflags += f" {build_args.cflags}"
     pkg.build.cxxflags += f" {build_args.cxxflags}"
@@ -932,35 +890,35 @@ def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         "--cflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_CFLAGS"),
+        default=get_build_flag("SIDE_MODULE_CFLAGS"),
         help="Extra compiling flags",
     )
     parser.add_argument(
         "--cxxflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_CXXFLAGS"),
+        default=get_build_flag("SIDE_MODULE_CXXFLAGS"),
         help="Extra C++ specific compiling flags",
     )
     parser.add_argument(
         "--ldflags",
         type=str,
         nargs="?",
-        default=common.get_build_flag("SIDE_MODULE_LDFLAGS"),
+        default=get_build_flag("SIDE_MODULE_LDFLAGS"),
         help="Extra linking flags",
     )
     parser.add_argument(
         "--target-install-dir",
         type=str,
         nargs="?",
-        default=common.get_build_flag("TARGETINSTALLDIR"),
+        default=get_build_flag("TARGETINSTALLDIR"),
         help="The path to the target Python installation",
     )
     parser.add_argument(
         "--host-install-dir",
         type=str,
         nargs="?",
-        default=common.get_build_flag("HOSTINSTALLDIR"),
+        default=get_build_flag("HOSTINSTALLDIR"),
         help=(
             "Directory for installing built host packages. Defaults to setup.py "
             "default. Set to 'skip' to skip installation. Installation is "

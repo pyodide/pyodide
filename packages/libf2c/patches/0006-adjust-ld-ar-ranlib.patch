@@ -1,0 +1,33 @@
+Index: CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
+===================================================================
+--- CLAPACK-3.2.1.orig/F2CLIBS/libf2c/Makefile
++++ CLAPACK-3.2.1/F2CLIBS/libf2c/Makefile
+@@ -70,8 +70,8 @@ OFILES = $(MISC) $(POW) $(CX) $(DCX) $(R
+ all: f2c.h signal1.h sysdep1.h libf2c.a clapack_install
+ 
+ libf2c.a: $(OFILES)
+-	ar r libf2c.a $?
+-	-ranlib libf2c.a
++	$(ARCH) r libf2c.a $?
++	$(RANLIB) libf2c.a
+ 
+ ## Shared-library variant: the following rule works on Linux
+ ## systems.  Details are system-dependent.  Under Linux, -fPIC
+@@ -80,7 +80,7 @@ libf2c.a: $(OFILES)
+ ## of "cc -shared".
+ 
+ libf2c.so: $(OFILES)
+-	cc -shared -o libf2c.so $(OFILES)
++	$(CC) -shared -o libf2c.so $(OFILES)
+ 
+ ### If your system lacks ranlib, you don't need it; see README.
+ 
+@@ -117,7 +117,7 @@ sysdep1.h: sysdep1.h0
+ 
+ install: libf2c.a
+ 	cp libf2c.a $(LIBDIR)
+-	-ranlib $(LIBDIR)/libf2c.a
++	$(RANLIB) $(LIBDIR)/libf2c.a
+ 
+ clapack_install: libf2c.a
+ 	mv libf2c.a ..

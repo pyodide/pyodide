@@ -2,7 +2,7 @@
 import time
 
 import pytest
-from pytest_pyodide import run_in_pyodide
+from pytest_pyodide.decorator import run_in_pyodide
 
 
 def test_pyproxy_class(selenium):
@@ -527,7 +527,7 @@ def test_pyproxy_mixins3(selenium):
     )
 
 
-def test_pyproxy_mixins4(selenium):
+def test_pyproxy_mixins41(selenium):
     selenium.run_js(
         """
         [Test, t] = pyodide.runPython(`
@@ -536,19 +536,42 @@ def test_pyproxy_mixins4(selenium):
                 prototype="prototype"
                 name="me"
                 length=7
+                def __call__(self, x):
+                    return x + 1
+
             from pyodide.ffi import to_js
             to_js([Test, Test()])
         `);
         assert(() => Test.$prototype === "prototype");
-        assert(() => Test.prototype === undefined);
+        assert(() => Test.prototype === "prototype");
         assert(() => Test.name==="me");
         assert(() => Test.length === 7);
 
         assert(() => t.caller === "fifty");
+        assert(() => "prototype" in t);
         assert(() => t.prototype === "prototype");
         assert(() => t.name==="me");
         assert(() => t.length === 7);
+        assert(() => t(7) === 8);
         Test.destroy();
+        t.destroy();
+        """
+    )
+
+
+def test_pyproxy_mixins42(selenium):
+    selenium.run_js(
+        """
+        let t = pyodide.runPython(`
+            class Test:
+                def __call__(self, x):
+                    return x + 1
+
+            from pyodide.ffi import to_js
+            Test()
+        `);
+        assert(() => "prototype" in t);
+        assert(() => t.prototype === undefined);
         t.destroy();
         """
     )
@@ -1578,3 +1601,664 @@ async def test_multiple_interpreters(selenium):
     d1 = {"a": 2}
     d2 = py2.runPython(str(d1))
     assert d2.toJs().to_py() == d1
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_index(selenium):
+    from pyodide.code import run_js
+
+    pylist = [9, 8, 7]
+    jslist = run_js(
+        """
+        (p) => {
+            return [p[0], p[1], p[2]]
+        }
+        """
+    )(pylist)
+    assert jslist.to_py() == pylist
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_join(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["Wind", "Water", "Fire"]
+    ajs = to_js(a)
+    func = run_js("((a, k) => a.join(k))")
+
+    assert func(a, None) == func(ajs, None)
+    assert func(a, ", ") == func(ajs, ", ")
+    assert func(a, " ") == func(ajs, " ")
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_slice(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["ant", "bison", "camel", "duck", "elephant"]
+    ajs = to_js(a)
+
+    func_strs = [
+        "a.slice(2)",
+        "a.slice(2, 4)",
+        "a.slice(1, 5)",
+        "a.slice(-2)",
+        "a.slice(2, -1)",
+        "a.slice()",
+    ]
+    for func_str in func_strs:
+        func = run_js(f"(a) => {func_str}")
+        assert func(a).to_py() == func(ajs).to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_indexOf(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["ant", "bison", "camel", "duck", "bison"]
+    ajs = to_js(a)
+
+    func_strs = [
+        "beasts.indexOf('bison')",
+        "beasts.indexOf('bison', 2)",
+        "beasts.indexOf('bison', -4)",
+        "beasts.indexOf('bison', 3)",
+        "beasts.indexOf('giraffe')",
+    ]
+    for func_str in func_strs:
+        func = run_js(f"(beasts) => {func_str}")
+        assert func(a) == func(ajs)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_lastIndexOf(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["ant", "bison", "camel", "duck", "bison"]
+    ajs = to_js(a)
+
+    func_strs = [
+        "beasts.lastIndexOf('bison')",
+        "beasts.lastIndexOf('bison', 2)",
+        "beasts.lastIndexOf('bison', -4)",
+        "beasts.lastIndexOf('bison', 3)",
+        "beasts.lastIndexOf('giraffe')",
+    ]
+    for func_str in func_strs:
+        func = run_js(f"(beasts) => {func_str}")
+        assert func(a) == func(ajs)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_forEach(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["a", "b", "c"]
+    ajs = to_js(a)
+
+    func = run_js(
+        """
+        ((a) => {
+            let s = "";
+            a.forEach((elt, idx, list) => {
+                s += "::";
+                s += idx;
+                s += elt;
+                s += this[elt];
+            },
+                {a: 6, b: 9, c: 22}
+            );
+            return s;
+        })
+        """
+    )
+
+    assert func(a) == func(ajs)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_map(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["a", "b", "c"]
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => a.map(
+            function (elt, idx, list){
+                return [elt, idx, this[elt]]
+            },
+            {a: 6, b: 9, c: 22}
+        )
+        """
+    )
+    assert func(a).to_py() == func(ajs).to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_filter(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = list(range(20, 0, -2))
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => a.filter(
+            function (elt, idx){
+                return elt + idx > 12
+            }
+        )
+        """
+    )
+    assert func(a).to_py() == func(ajs).to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_reduce(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = list(range(20, 0, -2))
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => a.reduce((l, r) => l + 2*r)
+        """
+    )
+    assert func(a) == func(ajs)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_reduceRight(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = list(range(20, 0, -2))
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => a.reduceRight((l, r) => l + 2*r)
+        """
+    )
+    assert func(a) == func(ajs)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_some(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    func = run_js("(a) => a.some((element, idx) => (element + idx) % 2 === 0)")
+    for a in [
+        [1, 2, 3, 4, 5],
+        [2, 3, 4, 5],
+        [1, 3, 5],
+        [1, 4, 5],
+        [4, 5],
+    ]:
+        assert func(a) == func(to_js(a))
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_every(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    func = run_js("(a) => a.every((element, idx) => (element + idx) % 2 === 0)")
+    for a in [
+        [1, 2, 3, 4, 5],
+        [2, 3, 4, 5],
+        [1, 3, 5],
+        [1, 4, 5],
+        [4, 5],
+    ]:
+        assert func(a) == func(to_js(a))
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_at(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [5, 12, 8, 130, 44]
+    ajs = to_js(a)
+
+    func = run_js("(a, idx) => a.at(idx)")
+    for idx in [2, 3, 4, -2, -3, -4, 5, 7, -7]:
+        assert func(a, idx) == func(ajs, idx)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_concat(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [[5, 12, 8], [130, 44], [6, 7, 7]]
+    ajs = to_js(a)
+
+    func = run_js("(a, b, c) => a.concat(b, c)")
+    assert func(*a).to_py() == func(*ajs).to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_includes(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [5, 12, 8, 130, 44, 6, 7, 7]
+    ajs = to_js(a)
+
+    func = run_js("(a, n) => a.includes(n)")
+    for n in range(4, 10):
+        assert func(a, n) == func(ajs, n)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_entries(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [5, 12, 8, 130, 44, 6, 7, 7]
+    ajs = to_js(a)
+
+    func = run_js("(a, k) => Array.from(a[k]())")
+    for k in ["entries", "keys", "values"]:
+        assert func(a, k).to_py() == func(ajs, k).to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_find(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [5, 12, 8, 130, 44, 6, 7, 7]
+    ajs = to_js(a)
+
+    func = run_js("(a, k) => a[k](element => element > 10)")
+    for k in ["find", "findIndex"]:
+        assert func(a, k) == func(ajs, k)
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_sort(selenium):
+    # from
+    # https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
+    # Yes, JavaScript sort is weird.
+    from pyodide.code import run_js
+
+    stringArray = ["Blue", "Humpback", "Beluga"]
+    numberArray = [40, None, 1, 5, 200]
+    numericStringArray = ["80", "9", "700"]
+    mixedNumericArray = ["80", "9", "700", 40, 1, 5, 200]
+
+    run_js("globalThis.compareNumbers = (a, b) => a - b")
+
+    assert run_js("((a) => a.join())")(stringArray) == "Blue,Humpback,Beluga"
+    assert run_js("((a) => a.sort())")(stringArray) is stringArray
+    assert stringArray == ["Beluga", "Blue", "Humpback"]
+
+    assert run_js("((a) => a.join())")(numberArray) == "40,,1,5,200"
+    assert run_js("((a) => a.sort())")(numberArray) == [1, 200, 40, 5, None]
+    assert run_js("((a) => a.sort(compareNumbers))")(numberArray) == [
+        1,
+        5,
+        40,
+        200,
+        None,
+    ]
+
+    assert run_js("((a) => a.join())")(numericStringArray) == "80,9,700"
+    assert run_js("((a) => a.sort())")(numericStringArray) == ["700", "80", "9"]
+    assert run_js("((a) => a.sort(compareNumbers))")(numericStringArray) == [
+        "9",
+        "80",
+        "700",
+    ]
+
+    assert run_js("((a) => a.join())")(mixedNumericArray) == "80,9,700,40,1,5,200"
+    assert run_js("((a) => a.sort())")(mixedNumericArray) == [
+        1,
+        200,
+        40,
+        5,
+        "700",
+        "80",
+        "9",
+    ]
+    assert run_js("((a) => a.sort(compareNumbers))")(mixedNumericArray) == [
+        1,
+        5,
+        "9",
+        40,
+        "80",
+        200,
+        "700",
+    ]
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_reverse(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [3, 2, 4, 1, 5]
+    ajs = to_js(a)
+
+    func = run_js("((a) => a.reverse())")
+    assert func(a) is a
+    func(ajs)
+    assert ajs.to_py() == a
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        'splice(2, 0, "drum")',
+        'splice(2, 0, "drum", "guitar")',
+        "splice(3, 1)",
+        'splice(2, 1, "trumpet")',
+        'splice(0, 2, "parrot", "anemone", "blue")',
+        "splice(2, 2)",
+        "splice(-2, 1)",
+        "splice(2)",
+        "splice()",
+    ],
+)
+@run_in_pyodide
+def test_pyproxy_of_list_splice(selenium, func):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["angel", "clown", "mandarin", "sturgeon"]
+    ajs = to_js(a)
+
+    func = run_js(f"((a) => a.{func})")
+    assert func(a).to_py() == func(ajs).to_py()
+    assert a == ajs.to_py()
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_push(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [4, 5, 6]
+    ajs = to_js(a)
+
+    func = run_js("(a) => a.push(1, 2, 3)")
+    assert func(a) == func(ajs)
+    assert ajs.to_py() == a
+
+    a = [4, 5, 6]
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => {
+            a.push(1);
+            a.push(2);
+            return a.push(3);
+        }
+        """
+    )
+    assert func(a) == func(ajs)
+    assert ajs.to_py() == a
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_pop(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    func = run_js("((a) => a.pop())")
+
+    for a in [
+        [],
+        ["broccoli", "cauliflower", "cabbage", "kale", "tomato"],
+    ]:
+        ajs = to_js(a)
+        assert func(a) == func(ajs)
+        assert ajs.to_py() == a
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_shift(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["Andrew", "Tyrone", "Paul", "Maria", "Gayatri"]
+    ajs = to_js(a)
+
+    func = run_js(
+        """
+        (a) => {
+            let result = [];
+            while (typeof (i = a.shift()) !== "undefined") {
+                result.push(i);
+            }
+            return result;
+        }
+        """
+    )
+    assert func(a).to_py() == func(ajs).to_py()
+    assert a == []
+    assert ajs.to_py() == []
+
+
+@run_in_pyodide
+def test_pyproxy_of_list_unshift(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = [4, 5, 6]
+    ajs = to_js(a)
+
+    func = run_js("(a) => a.unshift(1, 2, 3)")
+    assert func(a) == func(ajs)
+    assert ajs.to_py() == a
+
+    a = [4, 5, 6]
+    ajs = to_js(a)
+    func = run_js(
+        """
+        (a) => {
+            a.unshift(1);
+            a.unshift(2);
+            return a.unshift(3);
+        }
+        """
+    )
+    assert func(a) == func(ajs)
+    assert ajs.to_py() == a
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        "copyWithin(-2)",
+        "copyWithin(0, 3)",
+        "copyWithin(0, 3, 4)",
+        "copyWithin(-2, -3, -1)",
+    ],
+)
+@run_in_pyodide
+def test_pyproxy_of_list_copyWithin(selenium, func):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["a", "b", "c", "d", "e"]
+    ajs = to_js(a)
+    func = run_js(f"(a) => a.{func}")
+    assert func(a) is a
+    func(ajs)
+    assert a == ajs.to_py()
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        "fill(0, 2, 4)",
+        "fill(5, 1)",
+        "fill(6)",
+    ],
+)
+@run_in_pyodide
+def test_pyproxy_of_list_fill(selenium, func):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    a = ["a", "b", "c", "d", "e"]
+    ajs = to_js(a)
+    func = run_js(f"(a) => a.{func}")
+    assert func(a) is a
+    func(ajs)
+    assert a == ajs.to_py()
+
+
+def test_pyproxy_instanceof_function(selenium):
+    weird_function_shim = ""
+    if selenium.browser in ["firefox", "node"]:
+        # A hack to make the test work: In node and firefox this test fails. But
+        # I can't reproduce the failure in a normal browser / outside of the
+        # test suite. The trouble seems to be that the value of
+        # `globalThis.Function` changes its identity from when we define
+        # `PyProxyFunction` to when we execute this test. So we store `Function`
+        # on `pyodide._api.tests` so we can retrieve the original value of it
+        # for the test. This is nonsense but because the failure only occurs in
+        # the test suite and not in real life I guess it's okay????
+        # Also, no clue how node and firefox are affected but not Chrome.
+        weird_function_shim = "let Function = pyodide._api.tests.Function;"
+
+    selenium.run_js(
+        f"""
+        {weird_function_shim}
+        """
+        """
+        const pyFunc_0 = pyodide.runPython(`
+            lambda: print("zero")
+        `);
+
+        const pyFunc_1 = pyodide.runPython(`
+            def foo():
+                print("two")
+            foo
+        `);
+
+        const pyFunc_2 = pyodide.runPython(`
+            class A():
+                def a(self):
+                    print("three") # method from class
+            A.a
+        `);
+
+        const pyFunc_3 = pyodide.runPython(`
+            class B():
+                def __call__(self):
+                    print("five (B as a callable instance)")
+
+            b = B()
+            b
+        `);
+
+        assert(() => pyFunc_0 instanceof Function);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_0 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_1 instanceof Function);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_1 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_2 instanceof Function);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_2 instanceof pyodide.ffi.PyCallable);
+
+        assert(() => pyFunc_3 instanceof Function);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyProxy);
+        assert(() => pyFunc_3 instanceof pyodide.ffi.PyCallable);
+
+        d = pyodide.runPython("{}");
+        assert(() => !(d instanceof Function));
+        assert(() => !(d instanceof pyodide.ffi.PyCallable));
+        assert(() => d instanceof pyodide.ffi.PyProxy);
+        assert(() => d instanceof pyFunc_0.constructor);
+        assert(() => pyFunc_0 instanceof d.constructor);
+
+        for(const p of [pyFunc_0, pyFunc_1, pyFunc_2, pyFunc_3, d])  {
+            p.destroy();
+        }
+        """
+    )
+
+
+def test_pyproxy_callable_prototype(selenium):
+    result = selenium.run_js(
+        """
+        const o = pyodide.runPython("lambda:None");
+        const res = Object.fromEntries(Reflect.ownKeys(Function.prototype).map(k => [k.toString(), k in o]));
+        o.destroy();
+        return res;
+        """
+    )
+    subdict = {
+        "length": False,
+        "name": False,
+        "arguments": False,
+        "caller": False,
+        "apply": True,
+        "bind": True,
+        "call": True,
+        "Symbol(Symbol.hasInstance)": True,
+    }
+    filtered_result = {k: v for (k, v) in result.items() if k in subdict}
+    assert filtered_result == subdict
+
+
+@pytest.mark.skip_pyproxy_check
+def test_automatic_coroutine_scheduling(selenium):
+    res = selenium.run_js(
+        """
+        function d(x) {
+            if(x && x.destroy) {
+                x.destroy();
+            }
+        }
+
+        d(pyodide.runPython(`
+            l = []
+            async def f(n):
+                l.append(n)
+
+            def g(n):
+                return f(n)
+
+            async def h(n):
+                return f(n)
+
+            f(1)
+        `));
+        const f = pyodide.globals.get("f");
+        const g = pyodide.globals.get("g");
+        const h = pyodide.globals.get("h");
+        f(3);
+        d(pyodide.runPython("f(2)"));
+        pyodide.runPythonAsync("f(4)");
+        d(g(5));
+        h(6);
+        await sleep(0);
+        await sleep(0);
+        await sleep(0);
+        const l = pyodide.globals.get("l");
+        const res = l.toJs();
+        for(let p of [f, g, l]) {
+            p.destroy();
+        }
+        return res;
+        """
+    )
+    assert res == [3, 4, 6]

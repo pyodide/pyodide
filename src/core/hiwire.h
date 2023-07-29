@@ -445,6 +445,12 @@ JsArray_Push(JsRef idobj, JsRef idval);
 int
 JsArray_Push_unchecked(JsRef idobj, JsRef idval);
 
+errcode
+JsArray_Extend(JsRef idobj, JsRef idvals);
+
+JsRef
+JsArray_ShallowCopy(JsRef idobj);
+
 /**
  * Get an object member by integer.
  *

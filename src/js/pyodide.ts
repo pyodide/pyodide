@@ -74,7 +74,7 @@ function finalizeBootstrap(API: any, config: ConfigType) {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, config.homedir);
+  API.sys.path.insert(0, config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -88,7 +88,20 @@ function finalizeBootstrap(API: any, config: ConfigType) {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  importhook.register_js_finder();
+  function jsFinderHook(o: object) {
+    if ("__all__" in o) {
+      return;
+    }
+    Object.defineProperty(o, "__all__", {
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+        ),
+      enumerable: false,
+      configurable: true,
+    });
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", config.jsglobals);
 
   let pyodide = API.makePublicAPI();
@@ -164,6 +177,7 @@ function calculateIndexURL(): string {
  */
 export type ConfigType = {
   indexURL: string;
+  packageCacheDir: string;
   lockFileURL: string;
   homedir: string;
   fullStdLib?: boolean;
@@ -174,6 +188,7 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+  env: { [key: string]: string };
 };
 
 /**
@@ -182,6 +197,16 @@ export type ConfigType = {
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
+ * @example
+ * async function main() {
+ *   const pyodide = await loadPyodide({
+ *     fullStdLib: true,
+ *     homedir: "/pyodide",
+ *     stdout: (msg) => console.log(`Pyodide: ${msg}`),
+ *   });
+ *   console.log("Loaded Pyodide");
+ * }
+ * main();
  */
 export async function loadPyodide(
   options: {
@@ -196,15 +221,25 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The URL from which Pyodide will load the Pyodide ``repodata.json`` lock
+     * The file path where packages will be cached in `node.js`. If a package
+     * exists in `packageCacheDir` it is loaded from there, otherwise it is
+     * downloaded from the JsDelivr CDN and then cached into `packageCacheDir`.
+     * Only applies when running in node.js. Ignored in browsers.
+     *
+     * Default: same as indexURL
+     */
+    packageCacheDir?: string;
+
+    /**
+     * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
      * file. You can produce custom lock files with :py:func:`micropip.freeze`.
-     * Default: ```${indexURL}/repodata.json```
+     * Default: ```${indexURL}/pyodide-lock.json```
      */
     lockFileURL?: string;
 
     /**
      * The home directory which Pyodide will use inside virtual file system.
-     * Default: ``"/home/pyodide"``
+     * This is deprecated, use ``{env: {HOME : some_dir}}`` instead.
      */
     homedir?: string;
     /**
@@ -247,6 +282,17 @@ export async function loadPyodide(
      */
     args?: string[];
     /**
+     * Environment variables to pass to Python. This can be accessed inside of
+     * Python at runtime via `os.environ`. Certain environment variables change
+     * the way that Python loads:
+     * https://docs.python.org/3.10/using/cmdline.html#environment-variables
+     * Default: {}
+     * If `env.HOME` is undefined, it will be set to a default value of
+     * `"/home/pyodide"`
+     */
+    env?: { [key: string]: string };
+
+    /**
      * @ignore
      */
     _node_mounts?: string[];
@@ -264,12 +310,26 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    homedir: "/home/pyodide",
-    lockFileURL: indexURL! + "repodata.json",
+    lockFileURL: indexURL! + "pyodide-lock.json",
     args: [],
     _node_mounts: [],
+    env: {},
+    packageCacheDir: indexURL,
   };
   const config = Object.assign(default_config, options) as ConfigType;
+  if (options.homedir) {
+    console.warn(
+      "The homedir argument to loadPyodide is deprecated. " +
+        "Use 'env: { HOME: value }' instead of 'homedir: value'.",
+    );
+    if (options.env && options.env.HOME) {
+      throw new Error("Set both env.HOME and homedir arguments");
+    }
+    config.env.HOME = config.homedir;
+  }
+  if (!config.env.HOME) {
+    config.env.HOME = "/home/pyodide";
+  }
 
   const Module = createModule();
   Module.print = config.stdout;
@@ -340,15 +400,15 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   let importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
     API._import_name_to_package_name,
-    API.repodata_unvendored_stdlibs_and_test,
+    API.lockfile_unvendored_stdlibs_and_test,
   );
 
-  if (API.repodata_info.version !== version) {
+  if (API.lockfile_info.version !== version) {
     throw new Error("Lock file version doesn't match Pyodide version");
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
-    await pyodide.loadPackage(API.repodata_unvendored_stdlibs);
+    await pyodide.loadPackage(API.lockfile_unvendored_stdlibs);
   }
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;

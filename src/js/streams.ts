@@ -264,7 +264,7 @@ function setDefaultStdout() {
 
 /**
  * Sets the standard out handler. A batched handler or a raw handler can be
- * provided (both not both). If neither is provided, we restore the default
+ * provided (but not both). If neither is provided, we restore the default
  * handler.
  *
  * @param options.batched A batched handler is called with a string whenever a
@@ -325,7 +325,7 @@ function setDefaultStderr() {
 
 /**
  * Sets the standard error handler. A batched handler or a raw handler can be
- * provided (both not both). If neither is provided, we restore the default
+ * provided (but not both). If neither is provided, we restore the default
  * handler.
  *
  * @param options.batched A batched handler is called with a string whenever a

@@ -13,7 +13,7 @@ from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, ROOT_PATH
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.common import get_pyodide_root
+from pyodide_build.build_env import get_pyodide_root
 
 
 def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
@@ -401,7 +401,7 @@ def test_run_python_async_toplevel_await(selenium):
         """
         await pyodide.runPythonAsync(`
             from js import fetch
-            resp = await fetch("repodata.json")
+            resp = await fetch("pyodide-lock.json")
             json = (await resp.json()).to_py()["packages"]
             assert "micropip" in json
         `);
@@ -581,6 +581,18 @@ def test_run_python_js_error(selenium):
         `);
         """
     )
+
+
+@pytest.mark.xfail_browsers(node="No DOMException in node")
+@run_in_pyodide
+def test_run_python_dom_error(selenium):
+    import pytest
+
+    from js import DOMException
+    from pyodide.ffi import JsException
+
+    with pytest.raises(JsException, match="oops"):
+        raise DOMException.new("oops")
 
 
 def test_run_python_locals(selenium):
@@ -1295,19 +1307,35 @@ def test_custom_stdin_stdout2(selenium):
 
 def test_home_directory(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    home = "/home/custom_home"
     selenium.run_js(
         """
-        let pyodide = await loadPyodide({
-            homedir : "%s",
+        const homedir = "/home/custom_home";
+        const pyodide = await loadPyodide({
+            homedir,
         });
         return pyodide.runPython(`
             import os
-            os.getcwd() == "%s"
+            os.getcwd() == "${homedir}"
         `)
         """
-        % (home, home)
     )
+    assert "The homedir argument to loadPyodide is deprecated" in selenium.logs
+
+
+def test_env(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    hashval = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            env : {PYTHONHASHSEED : 1},
+        });
+        return pyodide.runPython(`
+            hash((1,2,3))
+        `)
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert hashval == -2022708474
 
 
 def test_version_variable(selenium):
@@ -1374,7 +1402,7 @@ def test_fullstdlib(selenium_standalone_noload):
             import pyodide_js
             import micropip
             loaded_packages = micropip.list()
-            assert all((lib in micropip.list()) for lib in pyodide_js._api.repodata_unvendored_stdlibs)
+            assert all((lib in micropip.list()) for lib in pyodide_js._api.lockfile_unvendored_stdlibs)
         `);
         """
     )
@@ -1525,7 +1553,7 @@ def test_module_not_found_hook(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    repodata_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = ["micropip", "packaging", "regex"]
 
     for lib in unvendored_stdlibs:
         with pytest.raises(
@@ -1542,7 +1570,7 @@ def test_module_not_found_hook(selenium_standalone):
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
-    for lib in repodata_packages:
+    for lib in lockfile_packages:
         with pytest.raises(
             ModuleNotFoundError, match="included in the Pyodide distribution"
         ):

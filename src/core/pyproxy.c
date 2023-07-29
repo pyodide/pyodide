@@ -26,10 +26,14 @@ check_gil()
   }
 }
 
-PyObject* Generator;
-PyObject* AsyncGenerator;
+static PyObject* Generator;
+static PyObject* AsyncGenerator;
+static PyObject* Sequence;
+static PyObject* MutableSequence;
+static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
+_Py_IDENTIFIER(pop);
 _Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(add_done_callback);
 _Py_IDENTIFIER(asend);
@@ -100,6 +104,8 @@ static PyObject* asyncio;
 #define IS_ASYNC_ITERATOR (1 << 10)
 #define IS_GENERATOR (1 << 11)
 #define IS_ASYNC_GENERATOR (1 << 12)
+#define IS_SEQUENCE (1 << 13)
+#define IS_MUTABLE_SEQUENCE (1 << 14)
 // clang-format on
 
 // Taken from genobject.c
@@ -197,6 +203,12 @@ pyproxy_getflags(PyObject* pyobj)
   SET_FLAG_IF(IS_CALLABLE,
               _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
                 obj_type->tp_call);
+  int is_sequence = PyObject_IsInstance(pyobj, Sequence);
+  FAIL_IF_MINUS_ONE(is_sequence);
+  int is_mutable_sequence = PyObject_IsInstance(pyobj, MutableSequence);
+  FAIL_IF_MINUS_ONE(is_mutable_sequence);
+  SET_FLAG_IF(IS_SEQUENCE, is_sequence);
+  SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
 
 #undef SET_FLAG_IF
 
@@ -478,6 +490,77 @@ finally:
   return success ? 0 : -1;
 }
 
+JsRef
+_pyproxy_slice_assign(PyObject* pyobj,
+                      Py_ssize_t start,
+                      Py_ssize_t stop,
+                      JsRef idval)
+{
+  PyObject* pyval = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  JsRef proxies = NULL;
+  bool success = false;
+
+  pyval = js2python(idval);
+
+  Py_ssize_t len = PySequence_Length(pyobj);
+  if (len <= stop) {
+    stop = len;
+  }
+  pyresult = PySequence_GetSlice(pyobj, start, stop);
+  FAIL_IF_NULL(pyresult);
+  FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
+  proxies = JsArray_New();
+  FAIL_IF_NULL(proxies);
+  jsresult = python2js_with_depth(pyresult, 1, proxies);
+
+  success = true;
+finally:
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  Py_CLEAR(pyresult);
+  Py_CLEAR(pyval);
+  hiwire_CLEAR(proxies);
+  return jsresult;
+}
+
+JsRef
+_pyproxy_pop(PyObject* pyobj, bool pop_start)
+{
+  bool success = false;
+  PyObject* idx = NULL;
+  PyObject* pyresult = NULL;
+  JsRef jsresult = NULL;
+  if (pop_start) {
+    idx = PyLong_FromLong(0);
+    FAIL_IF_NULL(idx);
+    pyresult = _PyObject_CallMethodIdOneArg(pyobj, &PyId_pop, idx);
+  } else {
+    pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
+  }
+  if (pyresult != NULL) {
+    jsresult = python2js(pyresult);
+    FAIL_IF_NULL(jsresult);
+  } else {
+    if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+      PyErr_Clear();
+      jsresult = Js_undefined;
+    } else {
+      FAIL();
+    }
+  }
+  success = true;
+finally:
+  Py_CLEAR(idx);
+  Py_CLEAR(pyresult);
+  if (!success) {
+    hiwire_CLEAR(jsresult);
+  }
+  return jsresult;
+}
+
 int
 _pyproxy_contains(PyObject* pyobj, JsRef idkey)
 {
@@ -612,6 +695,36 @@ finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pykwnames);
   return idresult;
+}
+
+bool
+_iscoroutinefunction(PyObject* f)
+{
+  _Py_IDENTIFIER(_is_coroutine_marker);
+
+  // Some fast paths for common cases to avoid calling into Python
+  if (PyMethod_Check(f)) {
+    f = PyMethod_GET_FUNCTION(f);
+  }
+
+  // _is_coroutine_marker is added to Python stdlib in 3.12. Check for it here
+  // to make sure we don't accidentally return false negatives when we update to
+  // 3.12.
+  if (PyFunction_Check(f) &&
+      !PyObject_HasAttr(f, _PyUnicode_FromId(&PyId__is_coroutine_marker))) {
+    PyFunctionObject* func = (PyFunctionObject*)f;
+    PyCodeObject* code = (PyCodeObject*)PyFunction_GET_CODE(func);
+    return (code->co_flags) & CO_COROUTINE;
+  }
+
+  // Wasn't a basic callable, call into inspect.iscoroutinefunction
+  PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
+  if (!result) {
+    PyErr_Clear();
+  }
+  bool ret = Py_IsTrue(result);
+  Py_CLEAR(result);
+  return ret;
 }
 
 JsRef
@@ -1283,7 +1396,10 @@ create_proxy(PyObject* self,
   bool capture_this = false;
   bool roundtrip = true;
   PyObject* obj;
-  static struct _PyArg_Parser _parser = { "O|$pp:create_proxy", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|$pp:create_proxy",
+    .keywords = _keywords,
+  };
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
@@ -1316,6 +1432,7 @@ pyproxy_init(PyObject* core)
 
   PyObject* collections_abc = NULL;
   PyObject* docstring_source = NULL;
+  PyObject* inspect = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -1323,6 +1440,10 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(Generator);
   AsyncGenerator = PyObject_GetAttrString(collections_abc, "AsyncGenerator");
   FAIL_IF_NULL(AsyncGenerator);
+  Sequence = PyObject_GetAttrString(collections_abc, "Sequence");
+  FAIL_IF_NULL(Sequence);
+  MutableSequence = PyObject_GetAttrString(collections_abc, "MutableSequence");
+  FAIL_IF_NULL(MutableSequence);
 
   docstring_source = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(docstring_source);
@@ -1332,9 +1453,15 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
 
+  inspect = PyImport_ImportModule("inspect");
+  FAIL_IF_NULL(inspect);
+  iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
+  FAIL_IF_NULL(iscoroutinefunction);
+
   success = true;
 finally:
   Py_CLEAR(docstring_source);
   Py_CLEAR(collections_abc);
+  Py_CLEAR(inspect);
   return success ? 0 : -1;
 }

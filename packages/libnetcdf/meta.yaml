@@ -1,0 +1,41 @@
+package:
+  name: libnetcdf
+  version: 4.9.2
+
+source:
+  sha256: bc104d101278c68b303359b3dc4192f81592ae8640f1aee486921138f7f88cb7
+  url: https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
+  patches:
+    - patches/0001-disable-hdf5-configure-tests.patch
+
+requirements:
+  host:
+    - libhdf5
+    - zlib
+    - libxml
+
+build:
+  type: shared_library
+  script: |
+    export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
+
+    # dap + byterange: no libcurl
+
+    emconfigure ./configure \
+      --prefix=${WASM_LIBRARY_DIR} \
+      --disable-doxygen \
+      --enable-netcdf-4 \
+      --disable-dap \
+      --disable-byterange \
+      --disable-dap-remote-tests \
+      --disable-examples \
+      --disable-utilities \
+      --disable-testsets \
+      CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
+      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
+      LDFLAGS="-L${WASM_LIBRARY_DIR}/lib";
+
+    emmake make -j ${PYODIDE_JOBS:-3};
+    emmake make -j ${PYODIDE_JOBS:-3} install;
+
+    cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}

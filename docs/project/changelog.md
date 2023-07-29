@@ -15,6 +15,19 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
+  files for WebAssembly (WASM) compatibility.
+  {pr}`4018`
+
+- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
+{pr}`4012`, {pr}`4011`
+
+- {{ Enhancement }} Make it possible to use the @example JSDoc directive.
+  {pr}`4009`
+
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
+
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
 
@@ -28,15 +41,101 @@ myst:
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
 
+- {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
+  as drop-in replacements for JavaScript Arrays.
+  {pr}`3853`
+
+- {{ Enhancement }} When a `JsProxy` of an array is passed to Python builtin
+  functions that use the `PySequence_*` APIs, it now works as expected. Also
+  `jsarray * n` repeats the array `n` times and `jsarray + iterable` returns a
+  new array with the result values from the iterable appended.
+  {pr}`3904`
+
+- {{ Enhancement }} It is now possible to pass environment variables to
+  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
+  `{env: {HOME: whatever_directory}}`.
+  {pr}`3870`
+
+- {{ API }} Changed the name of the default lockfile from `repodata.json` to
+  `pyodide-lock.json`
+  {pr}`3824`
+
+- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
+  throw an OSError exception for 400 and above response status codes
+  {pr}`3986`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`.
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
+  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
-- Upgraded scipy to 1.10.1 {pr}`3794`
+- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
+- Upgraded scikit-image to 0.21 {pr}`3874`
+- Upgraded scikit-learn to 1.3.0 {pr}`3976`
+- Upgraded pyodide-http to 0.2.1
+- Upgraded typing-extensions to 4.7.1 {pr}`4026`
+
+### CLI
+
+- {{ Enhancement }} `pyodide build-recipes` now accepts a `--metadata-files`
+  option to install `*.whl.metadata` files as specified in
+  [PEP 658](https://peps.python.org/pep-0658/).
+  {pr}`3981`
+
+## Version 0.23.4
+
+_July 6, 2023_
+
+- {{ Enhancement }} The environment variable `PYODIDE_BUILD_EXPORTS` can now be
+  used instead of the `--exports` argument to `pyodide build` to specify `.so`
+  file exports of packages.
+  {pr}`3973`
+
+- {{ Fix }} Pin `pydantic` to `<2`.
+  {pr}`3971`
+
+- {{ Enhancement }} Allow customizing cache location for packages when running in Node
+  {pr}`3967`
+
+- {{ Enhancement }} Re-enabled sparseqr, freesasa, lightgbm, opencv-python, and wordcloud
+  {pr}`3783`, {pr}`3970`
+
+- {{ Fix }} A `JSProxy` of a `DOMException` will now inherit from exception so
+  it can be raised in Python.
+  {pr}`3868`
+
+- {{ Fix }} The feature detection for `JSProxy` has been improved so that it
+  should never fail even when handling strange or ill-behaved JavaScript proxy
+  objects.
+  {pr}`3740`, {pr}`3750`
+
+- {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
+  are trying to feature detect whether something is callable or not in
+  JavaScript, the correct way is to use `typeof o === "function"`. But you may
+  have dependencies that don't do this correctly.)
+  {pr}`3925`
+
+- {{ Fix }} `from jsmodule import *` now works.
+  {pr}`3903`
+
+## Version 0.23.3
+
+_June 17, 2023_
+
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
+
+- {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
+  slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
+  so this is good. If they are actually native `.so`s then there is a problem
+  either way.
+  {pr}`3903`
 
 ## Version 0.23.2
 

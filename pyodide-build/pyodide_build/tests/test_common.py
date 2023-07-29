@@ -3,137 +3,15 @@ import zipfile
 import pytest
 
 from pyodide_build.common import (
+    check_wasm_magic_number,
     environment_substitute_args,
-    find_matching_wheels,
+    extract_wheel_metadata_file,
     find_missing_executables,
-    get_build_environment_vars,
-    get_build_flag,
     get_num_cores,
     make_zip_archive,
     parse_top_level_import_name,
-    platform,
     repack_zip_archive,
-    search_pyodide_root,
-    set_build_environment,
 )
-
-
-def test_get_build_flag():
-    assert len(get_build_flag("SIDE_MODULE_LDFLAGS")) > 0
-    assert len(get_build_flag("SIDE_MODULE_CFLAGS")) > 0
-    # n.b. right now CXXFLAGS is empty so don't check length here, just check it returns
-    get_build_flag("SIDE_MODULE_CXXFLAGS")
-
-
-def test_get_build_environment_vars():
-    vars = get_build_environment_vars()
-    assert "SIDE_MODULE_LDFLAGS" in vars
-    assert "SIDE_MODULE_CFLAGS" in vars
-    assert "SIDE_MODULE_CXXFLAGS" in vars
-
-
-def test_wheel_paths():
-    from pathlib import Path
-
-    old_version = "cp38"
-    PYMAJOR = int(get_build_flag("PYMAJOR"))
-    PYMINOR = int(get_build_flag("PYMINOR"))
-    PLATFORM = platform()
-    current_version = f"cp{PYMAJOR}{PYMINOR}"
-    future_version = f"cp{PYMAJOR}{PYMINOR + 1}"
-    strings = []
-
-    for interp in [
-        old_version,
-        current_version,
-        future_version,
-        "py3",
-        "py2",
-        "py2.py3",
-    ]:
-        for abi in [interp, "abi3", "none"]:
-            for arch in [PLATFORM, "linux_x86_64", "any"]:
-                strings.append(f"wrapt-1.13.3-{interp}-{abi}-{arch}.whl")
-
-    paths = [Path(x) for x in strings]
-    assert [x.stem.split("-", 2)[-1] for x in find_matching_wheels(paths)] == [
-        f"{current_version}-{current_version}-{PLATFORM}",
-        f"{current_version}-abi3-{PLATFORM}",
-        f"{current_version}-none-{PLATFORM}",
-        f"{old_version}-abi3-{PLATFORM}",
-        f"py3-none-{PLATFORM}",
-        f"py2.py3-none-{PLATFORM}",
-        "py3-none-any",
-        "py2.py3-none-any",
-        f"{current_version}-none-any",
-    ]
-
-
-def test_search_pyodide_root(tmp_path):
-    pyproject_file = tmp_path / "pyproject.toml"
-    pyproject_file.write_text("[tool.pyodide]")
-    assert search_pyodide_root(tmp_path) == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir") == tmp_path
-    assert search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
-
-    pyproject_file.unlink()
-    with pytest.raises(FileNotFoundError):
-        search_pyodide_root(tmp_path)
-
-
-def test_check_emscripten_version(monkeypatch):
-    from pyodide_build import common
-
-    s = None
-
-    def get_emscripten_version_info():
-        return s
-
-    needed_version = common.emscripten_version()
-    monkeypatch.setattr(
-        common, "get_emscripten_version_info", get_emscripten_version_info
-    )
-    s = """\
-emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 3.1.4 (14cd48e6ead13b02a79f47df1a252abc501a3269)
-clang version 15.0.0 (https://github.com/llvm/llvm-project ce5588fdf478b6af724977c11a405685cebc3d26)
-Target: wasm32-unknown-emscripten
-Thread model: posix
-"""
-    with pytest.raises(
-        RuntimeError,
-        match=f"Incorrect Emscripten version 3.1.4. Need Emscripten version {needed_version}",
-    ):
-        common.check_emscripten_version()
-
-    s = """\
-emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) 1.39.20
-clang version 12.0.0 (/b/s/w/ir/cache/git/chromium.googlesource.com-external-github.com-llvm-llvm--project 55fa315b0352b63454206600d6803fafacb42d5e)
-"""
-
-    with pytest.raises(
-        RuntimeError,
-        match=f"Incorrect Emscripten version 1.39.20. Need Emscripten version {needed_version}",
-    ):
-        common.check_emscripten_version()
-
-    s = f"""\
-emcc (Emscripten gcc/clang-like replacement + linker emulating GNU ld) {common.emscripten_version()} (4343cbec72b7db283ea3bda1adc6cb1811ae9a73)
-clang version 15.0.0 (https://github.com/llvm/llvm-project 7effcbda49ba32991b8955821b8fdbd4f8f303e2)
-"""
-    common.check_emscripten_version()
-
-    def get_emscripten_version_info():  # type: ignore[no-redef]
-        raise FileNotFoundError()
-
-    monkeypatch.setattr(
-        common, "get_emscripten_version_info", get_emscripten_version_info
-    )
-
-    with pytest.raises(
-        RuntimeError,
-        match=f"No Emscripten compiler found. Need Emscripten version {needed_version}",
-    ):
-        common.check_emscripten_version()
 
 
 @pytest.mark.parametrize(
@@ -249,29 +127,40 @@ def test_repack_zip_archive(
     assert input_path.stat().st_size == expected_size
 
 
-def test_set_build_environment(monkeypatch):
-    import os
+def test_extract_wheel_metadata_file(tmp_path):
+    # Test extraction if metadata exists
 
-    monkeypatch.delenv("PKG_CONFIG_PATH", raising=False)
-    monkeypatch.delenv("WASM_PKG_CONFIG_PATH", raising=False)
-    monkeypatch.setenv("RANDOM_ENV", 1234)
-    e: dict[str, str] = {}
-    set_build_environment(e)
-    assert e.get("HOME") == os.environ.get("HOME")
-    assert e.get("PATH") == os.environ.get("PATH")
-    assert e["PYODIDE"] == "1"
-    assert "RANDOM_ENV" not in e
-    assert e["PKG_CONFIG_PATH"] == ""
+    input_path = tmp_path / "pkg-0.1-abc.whl"
+    metadata_path = "pkg-0.1.dist-info/METADATA"
+    metadata_str = "This is METADATA"
 
-    e = {}
-    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
-    set_build_environment(e)
-    assert e["PKG_CONFIG_PATH"] == "/x/y/z:/c/d/e"
+    with zipfile.ZipFile(input_path, "w") as fh:
+        fh.writestr(metadata_path, metadata_str)
 
-    monkeypatch.delenv("HOME")
-    monkeypatch.setenv("WASM_PKG_CONFIG_PATH", "/a/b/c")
-    monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
-    e = {}
-    set_build_environment(e)
-    assert "HOME" not in e
-    assert e["PKG_CONFIG_PATH"] == "/a/b/c:/x/y/z:/c/d/e"
+    output_path = tmp_path / f"{input_path.name}.metadata"
+
+    extract_wheel_metadata_file(input_path, output_path)
+    assert output_path.read_text() == metadata_str
+
+    # Test extraction if metadata is missing
+
+    input_path_empty = tmp_path / "pkg-0.2-abc.whl"
+
+    with zipfile.ZipFile(input_path_empty, "w") as fh:
+        pass
+
+    output_path_empty = tmp_path / f"{input_path_empty.name}.metadata"
+
+    with pytest.raises(Exception):
+        extract_wheel_metadata_file(input_path_empty, output_path_empty)
+
+
+def test_check_wasm_magic_number(tmp_path):
+    wasm_magic_number = b"\x00asm\x01\x00\x00\x00\x00\x11"
+    not_wasm_magic_number = b"\x7fELF\x02\x01\x01\x00\x00\x00"
+
+    (tmp_path / "goodfile.so").write_bytes(wasm_magic_number)
+    assert check_wasm_magic_number(tmp_path / "goodfile.so") is True
+
+    (tmp_path / "badfile.so").write_bytes(not_wasm_magic_number)
+    assert check_wasm_magic_number(tmp_path / "badfile.so") is False

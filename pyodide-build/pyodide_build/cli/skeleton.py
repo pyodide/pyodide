@@ -6,19 +6,19 @@ from pathlib import Path
 
 import typer
 
-from .. import common, mkpkg
+from .. import build_env, mkpkg
 from ..logger import logger
 
 app = typer.Typer()
 
 
-@app.callback(no_args_is_help=True)  # type: ignore[misc]
+@app.callback(no_args_is_help=True)
 def callback() -> None:
     """Add a new package build recipe or update an existing recipe"""
     return
 
 
-@app.command("pypi")  # type: ignore[misc]
+@app.command("pypi")
 def new_recipe_pypi(
     name: str,
     update: bool = typer.Option(
@@ -57,11 +57,11 @@ def new_recipe_pypi(
         cwd = Path.cwd()
 
         try:
-            root = common.search_pyodide_root(cwd)
+            root = build_env.search_pyodide_root(cwd)
         except FileNotFoundError:
             root = cwd
 
-        if common.in_xbuildenv():
+        if build_env.in_xbuildenv():
             root = cwd
 
         recipe_dir_ = root / "packages"

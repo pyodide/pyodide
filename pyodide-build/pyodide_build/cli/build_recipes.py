@@ -2,10 +2,10 @@ from pathlib import Path
 
 import typer
 
-from .. import buildall, buildpkg, common, pywasmcross
-from ..common import get_num_cores, init_environment
+from .. import build_env, buildall, buildpkg, pywasmcross
+from ..build_env import init_environment
+from ..common import get_num_cores
 from ..logger import logger
-from ..out_of_tree.utils import initialize_pyodide_root
 
 
 def recipe(
@@ -27,8 +27,14 @@ def recipe(
     ),
     install_dir: str = typer.Option(
         None,
-        help="Path to install built packages and repodata.json. "
+        help="Path to install built packages and pyodide-lock.json. "
         "If not specified, the default is `./dist`.",
+    ),
+    metadata_files: bool = typer.Option(
+        False,
+        help="If true, extract the METADATA file from the built wheels "
+        "to a matching *.whl.metadata file. "
+        "If false, no *.whl.metadata file is produced.",
     ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
@@ -66,11 +72,11 @@ def recipe(
         help="Level of zip compression to apply when installing. 0 means no compression.",
     ),
 ) -> None:
-    """Build packages using yaml recipes and create repodata.json"""
-    initialize_pyodide_root()
+    """Build packages using yaml recipes and create pyodide-lock.json"""
+    init_environment()
 
-    if common.in_xbuildenv():
-        common.check_emscripten_version()
+    if build_env.in_xbuildenv():
+        build_env.check_emscripten_version()
 
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
@@ -80,8 +86,6 @@ def recipe(
 
     if not recipe_dir_.is_dir():
         raise FileNotFoundError(f"Recipe directory {recipe_dir_} not found")
-
-    init_environment()
 
     build_args = pywasmcross.BuildArgs(
         cflags=cflags,
@@ -93,9 +97,9 @@ def recipe(
     build_args = buildall.set_default_build_args(build_args)
 
     if no_deps:
-        if install or log_dir_:
+        if install or log_dir_ or metadata_files:
             logger.warning(
-                "WARNING: when --no-deps is set, --install and --log-dir parameters are ignored",
+                "WARNING: when --no-deps is set, the --install, --log-dir, and --metadata-files parameters are ignored",
             )
 
         # TODO: use multiprocessing?
@@ -120,5 +124,12 @@ def recipe(
 
         if install:
             buildall.install_packages(
-                pkg_map, install_dir_, compression_level=compression_level
+                pkg_map,
+                install_dir_,
+                compression_level=compression_level,
+                metadata_files=metadata_files,
+            )
+        elif metadata_files:
+            logger.warning(
+                "WARNING: when --install is not set, the --metadata-files parameter is ignored",
             )

@@ -1,4 +1,6 @@
 # See also test_pyproxy, test_jsproxy, and test_python.
+import io
+import pickle
 from typing import Any
 
 import pytest
@@ -12,6 +14,22 @@ from pytest_pyodide.hypothesis import (
     any_strategy,
     std_hypothesis_settings,
 )
+
+
+class NoHypothesisUnpickler(pickle.Unpickler):
+    def find_class(self, module, name):
+        # Only allow safe classes from builtins.
+        if module == "hypothesis":
+            raise pickle.UnpicklingError()
+        return super().find_class(module, name)
+
+
+def no_hypothesis(x):
+    try:
+        NoHypothesisUnpickler(io.BytesIO(pickle.dumps(x))).load()
+        return True
+    except Exception:
+        return False
 
 
 @given(s=text())
@@ -329,7 +347,7 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
         main(selenium, s)
 
 
-@given(obj=any_equal_to_self_strategy)
+@given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py(selenium, obj):
@@ -356,7 +374,7 @@ def test_hyp_py2js2py(selenium, obj):
         del __main__.obj
 
 
-@given(obj=any_equal_to_self_strategy)
+@given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_py2js2py_2(selenium, obj):
@@ -389,7 +407,7 @@ def test_big_integer_py2js2py(selenium, a):
 # Generate an object of any type
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=any_strategy)
+@given(obj=any_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
 def test_hyp_tojs_no_crash(selenium, obj):
@@ -413,7 +431,7 @@ def test_hyp_tojs_no_crash(selenium, obj):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-@given(obj=any_strategy)
+@given(obj=any_strategy.filter(no_hypothesis))
 @example(obj=range(0, 2147483648))  # length is too big to fit in ssize_t
 @settings(
     std_hypothesis_settings,
@@ -950,6 +968,10 @@ def test_dict_js2py2js(selenium):
 
 def test_error_js2py2js(selenium):
     selenium.run_js("self.err = new Error('hello there?');")
+    assert_js_to_py_to_js(selenium, "err")
+    if selenium.browser == "node":
+        return
+    selenium.run_js("self.err = new DOMException('hello there?');")
     assert_js_to_py_to_js(selenium, "err")
 
 
@@ -1743,7 +1765,7 @@ def test_typed_array(selenium):
 
     import pytest
 
-    with pytest.raises(ValueError, match="cannot delete array elements"):
+    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del a[0]
 
     msg = "Slice subscripting isn't implemented for typed arrays"

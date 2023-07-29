@@ -5,7 +5,8 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..common import exit_with_stdio, get_build_flag, get_pyodide_root, in_xbuildenv
+from ..build_env import get_build_flag, get_pyodide_root, in_xbuildenv
+from ..common import exit_with_stdio
 from ..logger import logger
 
 
@@ -211,11 +212,11 @@ def install_stdlib(venv_bin: Path) -> None:
             dedent(
                 f"""
                 from pyodide_js import loadPackage
-                from pyodide_js._api import repodata_packages
-                from pyodide_js._api import repodata_unvendored_stdlibs_and_test
-                shared_libs = [pkgname for (pkgname,pkg) in repodata_packages.object_entries() if getattr(pkg, "shared_library", False)]
+                from pyodide_js._api import lockfile_packages
+                from pyodide_js._api import lockfile_unvendored_stdlibs_and_test
+                shared_libs = [pkgname for (pkgname,pkg) in lockfile_packages.object_entries() if getattr(pkg, "shared_library", False)]
 
-                to_load = [*repodata_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
+                to_load = [*lockfile_unvendored_stdlibs_and_test, *shared_libs, *{to_load!r}]
                 loadPackage(to_load);
                 """
             ),

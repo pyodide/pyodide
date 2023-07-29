@@ -86,7 +86,7 @@ export function createModule(): any {
  * @param path The path to the home directory.
  * @private
  */
-function setHomeDirectory(Module: Module, path: string) {
+function createHomeDirectory(Module: Module, path: string) {
   Module.preRun.push(function () {
     const fallbackPath = "/";
     try {
@@ -97,8 +97,13 @@ function setHomeDirectory(Module: Module, path: string) {
       console.error(`Using '${fallbackPath}' for a home directory instead`);
       path = fallbackPath;
     }
-    Module.ENV.HOME = path;
     Module.FS.chdir(path);
+  });
+}
+
+function setEnvironment(Module: Module, env: { [key: string]: string }) {
+  Module.preRun.push(function () {
+    Object.assign(Module.ENV, env);
   });
 }
 
@@ -171,7 +176,8 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
   }
 
   installStdlib(Module, stdLibURL);
-  setHomeDirectory(Module, config.homedir);
+  createHomeDirectory(Module, config.env.HOME);
+  setEnvironment(Module, config.env);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
 }

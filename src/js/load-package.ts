@@ -17,46 +17,50 @@ import { makeWarnOnce } from "./util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
- * loadPyodide so that fetching repodata.json can occur in parallel with other
+ * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
  * operations.
  * @param lockFileURL
  * @private
  */
 async function initializePackageIndex(lockFileURL: string) {
-  let repodata;
+  let lockfile;
   if (IN_NODE) {
     await initNodeModules();
     const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    repodata = JSON.parse(package_string);
+    lockfile = JSON.parse(package_string);
   } else {
     let response = await fetch(lockFileURL);
-    repodata = await response.json();
+    lockfile = await response.json();
   }
-  if (!repodata.packages) {
+  if (!lockfile.packages) {
     throw new Error(
-      "Loaded repodata.json does not contain the expected key 'packages'.",
+      "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
-  API.repodata_info = repodata.info;
-  API.repodata_packages = repodata.packages;
-  API.repodata_unvendored_stdlibs_and_test = [];
+  API.lockfile_info = lockfile.info;
+  API.lockfile_packages = lockfile.packages;
+  API.lockfile_unvendored_stdlibs_and_test = [];
+
+  // micropip compatibility
+  API.repodata_info = lockfile.info;
+  API.repodata_packages = lockfile.packages;
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
-  for (let name of Object.keys(API.repodata_packages)) {
-    const pkg = API.repodata_packages[name];
+  for (let name of Object.keys(API.lockfile_packages)) {
+    const pkg = API.lockfile_packages[name];
 
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
     }
 
     if (pkg.package_type === "cpython_module") {
-      API.repodata_unvendored_stdlibs_and_test.push(name);
+      API.lockfile_unvendored_stdlibs_and_test.push(name);
     }
   }
 
-  API.repodata_unvendored_stdlibs =
-    API.repodata_unvendored_stdlibs_and_test.filter(
+  API.lockfile_unvendored_stdlibs =
+    API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
 }
@@ -97,7 +101,7 @@ type PackageLoadMetadata = {
   installPromise?: Promise<void>;
 };
 
-// Package data inside repodata.json
+// Package data inside pyodide-lock.json
 export type PackageData = {
   file_name: string;
   shared_library: boolean;
@@ -140,7 +144,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info: PackageData = API.repodata_packages[name];
+  const pkg_info: PackageData = API.lockfile_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -210,11 +214,11 @@ function recursiveDependencies(
 
 /**
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to indexURL from `repodata.json`, otherwise use the URL specified by
+ * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
- * wheel or the path to the wheel relative to indexURL.
+ * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
  * @returns The binary data for the package
@@ -225,15 +229,26 @@ async function downloadPackage(
   channel: string,
   checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
+  let installBaseUrl: string;
+  if (IN_NODE) {
+    installBaseUrl = API.config.packageCacheDir;
+    // ensure that the directory exists before trying to download files into it
+    await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
+      recursive: true,
+    });
+  } else {
+    installBaseUrl = API.config.indexURL;
+  }
+
   let file_name, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
-    if (!(name in API.repodata_packages)) {
+    if (!(name in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = API.repodata_packages[name].file_name;
-    uri = resolvePath(file_name, API.config.indexURL);
+    file_name = API.lockfile_packages[name].file_name;
+    uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.repodata_packages[name].sha256,
+      API.lockfile_packages[name].sha256,
     );
   } else {
     uri = channel;
@@ -274,7 +289,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg: PackageData = API.repodata_packages[name];
+  let pkg: PackageData = API.lockfile_packages[name];
   if (!pkg) {
     pkg = {
       file_name: ".whl",
@@ -379,9 +394,9 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *
  * @param names Either a single package name or URL or a list of them. URLs can
  * be absolute or relative. The URLs must correspond to Python wheels:
- * either pure Python wheels, with a file name ending with `none-any.whl`
+ * either pure Python wheels, with a file name ending with ``none-any.whl``
  * or Emscripten/WASM 32 wheels, with a file name ending with
- * `cp<pyversion>_emscripten_<em_version>_wasm32.whl`.
+ * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
  * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
  * which case the list will be converted to JavaScript and the
  * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.

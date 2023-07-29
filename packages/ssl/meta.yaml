@@ -6,10 +6,12 @@ package:
   top-level:
     - ssl
     - _ssl
+source:
+  sha256: $(PYTHON_ARCHIVE_SHA256)
+  url: $(PYTHON_ARCHIVE_URL)
 build:
   type: cpython_module
   script: |
-    cd $CPYTHONBUILD
     emcc $STDLIB_MODULE_CFLAGS -c Modules/_ssl.c -o Modules/_ssl.o \
       $(pkg-config --cflags --dont-define-prefix openssl) \
       $(pkg-config --libs --dont-define-prefix openssl) \
