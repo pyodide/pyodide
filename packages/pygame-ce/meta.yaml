@@ -8,7 +8,7 @@ source:
   sha256: 17244d4ef049e053bbd14e801f1a4c2ec0a65c069a3cf6793b66c622e15077bc
 build:
   script: |
-    embuilder build sdl2 sdl2_ttf sdl2_mixer --pic
+    embuilder build sdl2 sdl2_ttf sdl2_mixer sdl2_image --pic
     export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
     export PORTS_LIBDIR=$(em-config CACHE)/sysroot/lib/wasm32-emscripten/pic/
   cflags: |
@@ -19,6 +19,7 @@ build:
     -sUSE_SDL=2
     -sUSE_SDL_MIXER=2
     -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
     -sUSE_FREETYPE=1
     -sUSE_LIBJPEG=1
     -sUSE_LIBPNG=1
@@ -28,6 +29,7 @@ build:
     -sUSE_SDL=2
     -sUSE_SDL_MIXER=2
     -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
     -sUSE_FREETYPE=1
     -sUSE_LIBJPEG=1
     -sUSE_LIBPNG=1
@@ -38,7 +40,7 @@ build:
 
     # Remove docs to reduce the size of a wheel
     # (Perhaps also remove typeshed and examples?)
-    rm -rf dist/pygame_ce-${PKG_VERSION}/pygame/docs
+    rm -rf ${WHEELDIR}/pygame/docs
 
     # WASM version of pygame uses a single module 'pygame_static',
     # and pygame_static calls PyInit_* functions from other modules.
@@ -48,7 +50,7 @@ build:
     STATIC_OBJ=$(find . -name static.o)
     echo $STATIC_OBJ
 
-    SHARED_LIBS=$(find dist -name "*.so" ! -name "static*.so")
+    SHARED_LIBS=$(find ${WHEELDIR} -name "*.so" ! -name "static*.so")
     echo $SHARED_LIBS
 
     emcc \
@@ -58,20 +60,17 @@ build:
       -lSDL2 \
       -lSDL2_mixer_ogg \
       -lSDL2_ttf \
+      -lSDL2_image \
       -lfreetype \
       -ljpeg \
       -lpng \
-      ${WASM_LIBRARY_DIR}/lib/libSDL2_image.a \
       ${STATIC_OBJ} \
       ${SHARED_LIBS} \
-      -o dist/pygame_ce-${PKG_VERSION}/pygame_static.so
+      -o ${WHEELDIR}/pygame_static.so
 
     # Remove duplicated static.so module
-    rm -f dist/pygame_ce-${PKG_VERSION}/pygame/static*.so
+    rm -f ${WHEELDIR}/pygame/static*.so
 
-requirements:
-  host:
-    - libsdl2_image
 about:
   home: https://www.pygame.org
   PyPI: https://pypi.org/project/pygame
