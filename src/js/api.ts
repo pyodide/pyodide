@@ -68,6 +68,9 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
  * there are a lot of constraints so we have to do some slightly weird things.
  * We convert it back into an object in makePublicAPI.
+ *
+ * TODO: move the definitions of public things defined in this file into the
+ * class body.
  * @private
  */
 export class PyodideAPI {
