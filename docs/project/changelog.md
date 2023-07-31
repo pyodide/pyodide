@@ -15,8 +15,12 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Add examples for `pyodide.runPython`.
-  {pr}`4011`
+- {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
+  files for WebAssembly (WASM) compatibility.
+  {pr}`4018`
+
+- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
+{pr}`4012`, {pr}`4011`
 
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
@@ -73,6 +77,7 @@ myst:
 - Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
+- Upgraded typing-extensions to 4.7.1 {pr}`4026`
 
 ### CLI
 

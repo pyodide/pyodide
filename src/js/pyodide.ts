@@ -197,6 +197,16 @@ export type ConfigType = {
  * @returns The :ref:`js-api-pyodide` module.
  * @memberof globalThis
  * @async
+ * @example
+ * async function main() {
+ *   const pyodide = await loadPyodide({
+ *     fullStdLib: true,
+ *     homedir: "/pyodide",
+ *     stdout: (msg) => console.log(`Pyodide: ${msg}`),
+ *   });
+ *   console.log("Loaded Pyodide");
+ * }
+ * main();
  */
 export async function loadPyodide(
   options: {
