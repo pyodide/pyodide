@@ -19,6 +19,13 @@ import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
+pytest_pyodide.runner.CHROME_FLAGS.extend(
+    [
+        "--enable-features=WebAssemblyExperimentalJSPI",
+        "--enable-experimental-webassembly-features",
+    ]
+)
+pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.

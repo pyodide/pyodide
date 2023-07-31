@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
 ## Version 0.24.0
 
 _September 13, 2023_
