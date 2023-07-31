@@ -294,7 +294,7 @@ Module.pyproxy_new = pyproxy_new;
 function gc_register_proxy(shared: PyProxyShared) {
   const shared_copy = Object.assign({}, shared);
   Module.finalizationRegistry.register(shared, shared_copy, shared);
-};
+}
 Module.gc_register_proxy = gc_register_proxy;
 
 function _getAttrsQuiet(jsobj: any): PyProxyAttrs {
