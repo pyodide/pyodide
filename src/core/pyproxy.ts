@@ -2319,8 +2319,6 @@ export interface PyAwaitable extends Promise<any> {}
 /** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
 export type PyProxyAwaitable = PyAwaitable;
 
-const promise_map: WeakMap<any, Promise<any>> = new WeakMap();
-
 /**
  * The Promise / JavaScript awaitable API.
  * @private
@@ -2369,7 +2367,7 @@ export class PyAwaitableMethods {
     if (errcode === -1) {
       Module._pythonexc2js();
     }
-    promise_map.set(this, promise);
+    shared.promise = promise;
     // @ts-ignore
     this.destroy();
     return promise;
