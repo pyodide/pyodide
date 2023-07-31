@@ -76,7 +76,7 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
 EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    Module.gc_register_proxy(px);
+    Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
   }
 });
 
@@ -1259,12 +1259,12 @@ success:
 // clang-format off
 EM_JS_REF(JsRef,
 pyproxy_new_ex,
-(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gc_register),
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
 {
   return Hiwire.new_value(
     Module.pyproxy_new(ptrobj, {
       props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
-      dontGCRegister: !gc_register,
+      gcRegister,
     })
   );
 });
