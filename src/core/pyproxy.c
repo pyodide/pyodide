@@ -1254,12 +1254,12 @@ success:
 // clang-format off
 EM_JS_REF(JsRef,
 pyproxy_new_ex,
-(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gc_register),
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
 {
   return Hiwire.new_value(
     Module.pyproxy_new(ptrobj, {
       props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
-      dontGCRegister: !gc_register,
+      gcRegister,
     })
   );
 });

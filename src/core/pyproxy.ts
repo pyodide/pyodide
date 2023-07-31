@@ -184,15 +184,19 @@ function pyproxy_new(
     cache,
     props,
     $$,
-    dontGCRegister,
+    gcRegister,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     $$?: any;
     props?: any;
-    dontGCRegister?: boolean;
+    gcRegister?: boolean;
   } = {},
 ): PyProxy {
+  if(gcRegister === undefined) {
+    // register by default
+    gcRegister = true;
+  }
   const flags =
     flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
   if (flags === -1) {
@@ -252,7 +256,7 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
-  if (!isAlias && !dontGCRegister) {
+  if (!isAlias && gcRegister) {
     // we need to register only once for a set of aliases. we can't register the
     // proxy directly since that isn't shared between aliases. The aliases all
     // share $$ so we can register that. They also need access to the data in
