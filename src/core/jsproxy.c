@@ -2840,6 +2840,43 @@ finally:
   return result;
 }
 
+PyObject*
+JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  PyErr_SetString(
+    PyExc_RuntimeError,
+    "WebAssembly stack switching not supported in this JavaScript runtime");
+  return NULL;
+}
+
+PyObject*
+JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
+{
+  JsRef jsresult = NULL;
+  PyObject* result = NULL;
+
+  jsresult = hiwire_syncify(self->js);
+  if (jsresult == NULL) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+    }
+    FAIL();
+  }
+  result = js2python(jsresult);
+
+finally:
+  hiwire_CLEAR(jsresult);
+  return result;
+}
+
+static PyMethodDef JsProxy_syncify_MethodDef = {
+  "syncify",
+  // We select the appropriate choice between JsProxy_syncify and
+  // JsProxy_syncify_not_supported in JsProxy_init.
+  (PyCFunction)NULL,
+  METH_NOARGS,
+};
+
 // clang-format off
 static PyNumberMethods JsProxy_NumberMethods = {
   .nb_bool = JsProxy_Bool
@@ -3078,7 +3115,7 @@ JsMethod_Vectorcall(PyObject* self,
   PyObject* pyresult = NULL;
 
   // Recursion error?
-  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Vectorcall"));
+  FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   proxies = JsArray_New();
   idargs =
     JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames, proxies);
@@ -3883,6 +3920,7 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_then_MethodDef;
     methods[cur_method++] = JsProxy_catch_MethodDef;
     methods[cur_method++] = JsProxy_finally_MethodDef;
+    methods[cur_method++] = JsProxy_syncify_MethodDef;
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
@@ -4461,6 +4499,14 @@ int
 JsProxy_init(PyObject* core_module)
 {
   bool success = false;
+
+  bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
+  if (jspiSupported) {
+    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
+  } else {
+    JsProxy_syncify_MethodDef.ml_meth =
+      (PyCFunction)JsProxy_syncify_not_supported;
+  }
 
   PyObject* asyncio_module = NULL;
   PyObject* flag_dict = NULL;

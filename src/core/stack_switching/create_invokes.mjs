@@ -36,7 +36,7 @@ import {
  * }
  * ```
  *
- * You can look in src/js/test/unit/invokes/ for a few examples of what this
+ * You can look at src/js/test/unit/wat/invoke_<sig>.wat for a few examples of what this
  * function produces.
  *
  * See
