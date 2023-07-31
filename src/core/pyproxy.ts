@@ -193,7 +193,7 @@ function pyproxy_new(
     gcRegister?: boolean;
   } = {},
 ): PyProxy {
-  if(gcRegister === undefined) {
+  if (gcRegister === undefined) {
     // register by default
     gcRegister = true;
   }
