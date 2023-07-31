@@ -167,6 +167,15 @@ class PyodideFuture(Future[T]):
         self.add_done_callback(wrapper)
         return result
 
+    def syncify(self):
+        from .ffi import create_proxy
+
+        p = create_proxy(self)
+        try:
+            return p.syncify()  # type:ignore[attr-defined]
+        finally:
+            p.destroy()
+
 
 class PyodideTask(Task[T], PyodideFuture[T]):
     """Inherits from both :py:class:`~asyncio.Task` and
