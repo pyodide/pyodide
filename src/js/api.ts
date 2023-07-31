@@ -626,6 +626,15 @@ export class PyodideAPI {
     Object.defineProperty(this, "PythonError", { value: PythonError });
     return PythonError;
   }
+
+  /**
+   * Turn on or off debug mode. In debug mode, some error messages are improved
+   * at a performance cost.
+   * @param debug If true, turn debug mode on. If false, turn debug mode off.
+   */
+  static setDebug(debug: boolean) {
+    API.debug_ffi = debug;
+  }
 }
 
 /** @hidetype */
