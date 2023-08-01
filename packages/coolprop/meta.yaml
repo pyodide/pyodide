@@ -23,7 +23,6 @@ requirements:
 test:
   imports:
     - CoolProp
-    - CoolProp.tests
     - CoolProp.GUI
     - CoolProp.Plots
 
