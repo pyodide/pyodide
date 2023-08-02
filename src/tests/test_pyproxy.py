@@ -489,9 +489,10 @@ def test_pyproxy_mixins2(selenium):
     )
 
 
-def test_pyproxy_mixins3(selenium):
+def test_pyproxy_mixins31(selenium):
     selenium.run_js(
         """
+        "use strict";
         let [Test, t] = pyodide.runPython(`
             class Test: pass
             from pyodide.ffi import to_js
@@ -512,20 +513,75 @@ def test_pyproxy_mixins3(selenium):
         pyodide.runPython("assert Test.prototype == 7");
         pyodide.runPython("assert Test.name == 7");
         pyodide.runPython("assert Test.length == 7");
-        delete Test.prototype;
+        // prototype cannot be removed once added because it is nonconfigurable...
+        assertThrows(() => delete Test.prototype, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property 'prototype'/);
         delete Test.name;
         delete Test.length;
-        pyodide.runPython(`assert not hasattr(Test, "prototype")`);
+        pyodide.runPython(`assert Test.prototype == 7`);
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
 
-        assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
-        assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
+        assertThrows(() => Test.$$ = 7, "TypeError", /^'set' on proxy: trap returned falsish for property '\\$\\$'/);
+        assertThrows(() => delete Test.$$, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property '\\$\\$'/);
+
+        Test.$a = 7;
+        Object.defineProperty(Test, "a", {
+            get(){ return Test.$a + 1; },
+            set(v) {
+                Test.$a = v;
+            }
+        });
+
+        pyodide.runPython("assert Test.a == 7")
+        assert(() => Test.a === 8);
+        Test.a = 9;
+        assert(() => Test.a === 10);
+        pyodide.runPython("assert Test.a == 9")
+        assertThrows(() => delete Test.a, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property 'a'/);
+
+        Object.defineProperty(Test, "b", {
+            get(){ return Test.$a + 2; },
+        });
+        assert(() => Test.b === 11);
+        assertThrows(() => Test.b = 7,"TypeError", /^'set' on proxy: trap returned falsish for property 'b'/);
+        assertThrows(() => delete Test.b, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property 'b'/);
         Test.destroy();
         t.destroy();
         """
     )
 
+@pytest.mark.parametrize("configurable", [False, True])
+@pytest.mark.parametrize("writable", [False, True])
+def test_pyproxy_mixins32(selenium, configurable, writable):
+    selenium.run_js(
+        f"""
+        "use strict";
+        const configurable = !!{int(configurable)};
+        const writable = !!{int(writable)};
+        """
+        """
+        const d = pyodide.runPython("{}");
+        Object.defineProperty(d, "x", {
+            value: 9,
+            configurable,
+            writable,
+        });
+        assert(() => d.x === 9);
+        if(writable) {
+            d.x = 10;
+            assert(() => d.x === 10);
+        } else {
+            assertThrows(() => d.x = 10, "TypeError", "'set' on proxy: trap returned falsish for property 'x'");
+        }
+        if(configurable) {
+            delete d.x;
+            assert(() => d.x === undefined);
+        } else {
+            assertThrows(() => delete d.x, "TypeError", "'deleteProperty' on proxy: trap returned falsish for property 'x'");
+        }
+        d.destroy();
+        """
+    )
 
 def test_pyproxy_mixins41(selenium):
     selenium.run_js(
@@ -578,27 +634,36 @@ def test_pyproxy_mixins42(selenium):
 
 
 def test_pyproxy_mixins5(selenium):
-    selenium.run_js(
-        """
-        [Test, t] = pyodide.runPython(`
-            class Test:
-                def __len__(self):
-                    return 9
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => !("length" in Test));
-        assert(() => t.length === 9);
-        assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-        t.length = 10;
-        assert(() => t.$length === 10);
-        let t__len__ = t.__len__;
-        assert(() => t__len__() === 9);
-        t__len__.destroy();
-        Test.destroy();
-        t.destroy();
-        """
-    )
+    try:
+        r = selenium.run_js(
+            """
+            "use strict";
+            const [Test, t] = pyodide.runPython(`
+                class Test:
+                    def __len__(self):
+                        return 9
+                from pyodide.ffi import to_js
+                to_js([Test, Test()])
+            `);
+            assert(() => !("length" in Test));
+            assert(() => t.length === 9);
+            assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
+            assertThrows(() => {t.length = 10}, "TypeError", "'set' on proxy: trap returned falsish for property 'length'");
+            assert(() => t.length === 9);
+
+            // For some reason, this is the normal behavior for a JS getter:
+            // delete just does nothing...
+            delete t.length;
+            assert(() => t.length === 9);
+
+            Test.destroy();
+            t.destroy();
+            """
+        )
+        print(r)
+    finally:
+        print(selenium.logs)
+
 
 
 def test_pyproxy_mixins6(selenium):
