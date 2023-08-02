@@ -550,6 +550,7 @@ def test_pyproxy_mixins31(selenium):
         """
     )
 
+
 @pytest.mark.parametrize("configurable", [False, True])
 @pytest.mark.parametrize("writable", [False, True])
 def test_pyproxy_mixins32(selenium, configurable, writable):
@@ -582,6 +583,7 @@ def test_pyproxy_mixins32(selenium, configurable, writable):
         d.destroy();
         """
     )
+
 
 def test_pyproxy_mixins41(selenium):
     selenium.run_js(
@@ -663,7 +665,6 @@ def test_pyproxy_mixins5(selenium):
         print(r)
     finally:
         print(selenium.logs)
-
 
 
 def test_pyproxy_mixins6(selenium):
