@@ -2183,8 +2183,7 @@ const PyProxyHandlers = {
       jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
-
-    return !descr || !!descr.configurable;
+    return true;
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);
