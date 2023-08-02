@@ -2153,8 +2153,8 @@ const PyProxyHandlers = {
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
+    if (descr && !descr.writable && !descr.set) {
+      return false;
     }
     // python_setattr will crash if given a Symbol.
     if (typeof jskey === "symbol") {
@@ -2168,8 +2168,8 @@ const PyProxyHandlers = {
   },
   deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
+    if (descr && !descr.configurable) {
+      return false;
     }
     if (typeof jskey === "symbol") {
       return Reflect.deleteProperty(jsobj, jskey);
