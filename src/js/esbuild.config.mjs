@@ -49,7 +49,9 @@ function toDefines(o, path = "") {
   });
 }
 
-const constants = JSON.parse(readFileSync("./generated_struct_info32.gen.json"));
+const constants = JSON.parse(
+  readFileSync("./generated_struct_info32.gen.json"),
+);
 Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
 
 const config = ({ input, output, format, name: globalName }) => ({
