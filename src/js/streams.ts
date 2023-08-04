@@ -103,6 +103,8 @@ const stream_ops: StreamOps = {
     if (bytesRead === undefined) {
       // Prevent an infinite loop caused by incorrect code that doesn't return a
       // value
+      //
+      // Maybe we should set bytesWritten = buffer.length here instead?
       console.warn(
         "read returned undefined; a correct implementation must return a number",
       );
@@ -131,6 +133,8 @@ const stream_ops: StreamOps = {
     if (bytesWritten === undefined) {
       // Prevent an infinite loop caused by incorrect code that doesn't return a
       // value
+      //
+      // Maybe we should set bytesWritten = buffer.length here instead?
       console.warn(
         "write returned undefined; a correct implementation must return a number",
       );
@@ -225,12 +229,29 @@ type StdinOptions = {
 };
 
 /**
- * Set a stdin handler.
+ * Set a stdin handler. There are two different ways to make a handler:
+ * 1. by passing a ``read`` function, or
+ * 2. by passing a ``stdin`` function.
  *
- * The stdin handler is called with zero arguments whenever stdin is read and
- * the current input buffer is exhausted. It should return one of:
+ * You can also pass ``error: true`` to indicate that attempting to read from
+ * stdin should always raise an IO error.
  *
- * - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of file.
+ * The functions on the ``options`` argument will be called with ``options``
+ * bound to ``this`` so passing an instance of a class as the ``options`` object
+ * works as expected.
+ *
+ * 1. The ``read`` function is called with a ``Uint8Array`` argument. The
+ *    function should place the utf8-encoded input into this buffer and return
+ *    the number of bytes written. For instance, if the buffer was completely
+ *    filled with input, then return `buffer.length`. If a ``read`` function is
+ *    passed you may optionally also pass an ``fsync`` function which is called
+ *    when stdin is flushed.
+ *
+ * 2. The ``stdin`` function is called with zero arguments. It should return one
+ *    of:
+ *
+ * - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of
+ *   file.
  * - a number
  * - a string
  * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
@@ -239,14 +260,12 @@ type StdinOptions = {
  * If a number is returned, it is interpreted as a single character code. The
  * number should be between 0 and 255.
  *
- * If a string is returned, a new line is appended if one is not present and the
- * resulting string is turned into a :js:class:`Uint8Array` using
+ * If a string is returned and it doesn't end in a new line, a new line is
+ * appended. The resulting string is then encoded into a buffer using
  * :js:class:`TextEncoder`.
  *
- * Returning a buffer is more efficient and allows returning partial lines of
- * text.
- *
- * @param options.stdin The stdin handler.
+ * @param options.stdin A stdin handler
+ * @param options.read A read handler
  * @param options.error If this is set to ``true``, attempts to read from stdin
  * will always set an IO error.
  * @param options.isatty Should :py:func:`isatty(stdin) <os.isatty>` be ``true``
@@ -255,14 +274,13 @@ type StdinOptions = {
  * buffer? (default ``true``).
  */
 export function setStdin(
-  options:
-    | {
-        stdin?: InFuncType;
-        error?: boolean;
-        isatty?: boolean;
-        autoEOF?: boolean;
-      }
-    | Reader = {},
+  options: {
+    stdin?: InFuncType;
+    read?: (buffer: Uint8Array) => number;
+    error?: boolean;
+    isatty?: boolean;
+    autoEOF?: boolean;
+  },
 ) {
   let { stdin, error, isatty, autoEOF, read } = options as StdinOptions &
     Partial<Reader>;
@@ -286,7 +304,7 @@ export function setStdin(
   }
   if (stdin) {
     autoEOF = autoEOF === undefined ? true : autoEOF;
-    _setStdinOps(new LegacyReader(stdin, !!isatty, autoEOF));
+    _setStdinOps(new LegacyReader(stdin.bind(options), !!isatty, autoEOF));
   }
   if (read) {
     _setStdinOps(options as Reader);
@@ -323,10 +341,10 @@ function _setStdwrite(
     );
   }
   if (raw) {
-    setOps(new CharacterCodeWriter(raw, !!isatty));
+    setOps(new CharacterCodeWriter(raw.bind(options), !!isatty));
   }
   if (batched) {
-    setOps(new StringWriter(batched));
+    setOps(new StringWriter(batched.bind(options)));
   }
   if (write) {
     setOps(options as Writer);
@@ -361,9 +379,13 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
 }
 
 /**
- * Sets the standard out handler. A batched handler or a raw handler can be
- * provided (but not both). If neither is provided, we restore the default
+ * Sets the standard out handler. A batched handler, a raw handler, or a write
+ * function can be provided. If no handler is provided, we restore the default
  * handler.
+ *
+ * The functions on the ``options`` argument will be called with ``options``
+ * bound to ``this`` so passing an instance of a class as the ``options`` object
+ * works as expected.
  *
  * @param options.batched A batched handler is called with a string whenever a
  * newline character is written is written or stdout is flushed. In the former
@@ -371,9 +393,12 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
  * not.
  * @param options.raw A raw handler is called with the handler is called with a
  * `number` for each byte of the output to stdout.
+ * @param options.write A write handler is called with a buffer that contains
+ * the utf8 encoded binary data
  * @param options.isatty Should :py:func:`isatty(stdout) <os.isatty>` return
- * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
- * provided (default ``false``).
+ * ``true`` or ``false``. Must be ``false`` if a batched handler is used.
+ * (default ``false``).
+ *
  * @example
  * async function main(){
  *   const pyodide = await loadPyodide();
@@ -390,55 +415,28 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
  * main();
  */
 export function setStdout(
-  options:
-    | {
-        batched?: (a: string) => void;
-        raw?: (a: number) => void;
-        isatty?: boolean;
-      }
-    | Writer = ({} = {}),
+  options: {
+    batched?: (a: string) => void;
+    raw?: (a: number) => void;
+    write?: (a: Uint8Array) => number;
+    isatty?: boolean;
+  },
 ) {
   _setStdwrite(options, _setStdoutOps, _getStdoutDefaults);
 }
 
 /**
- * Sets the standard error handler. A batched handler or a raw handler can be
- * provided (but not both). If neither is provided, we restore the default
- * handler.
- *
- * @param options.batched A batched handler is called with a string whenever a
- * newline character is written is written or stderr is flushed. In the former
- * case, the received line will end with a newline, in the latter case it will
- * not. isatty(stderr) is set to false (when using a batched handler, stderr is
- * buffered so it is impossible to make a tty with it).
- * @param options.raw A raw handler is called with the handler is called with a
- * `number` for each byte of the output to stderr.
- * @param options.isatty Should :py:func:`isatty(stderr) <os.isatty>` return
- * ``true`` or ``false``. Can only be set to ``true`` if a raw handler is
- * provided (default ``false``).
- * @example
- * async function main(){
- *   const pyodide = await loadPyodide();
- *   pyodide.setStderr({ batched: (msg) => console.warn(msg) });
- *   pyodide.runPython("import sys; print('ABC', file=sys.stderr)");
- *   // 'ABC'
- *   pyodide.setStderr({ raw: (byte) => console.warn(byte) });
- *   pyodide.runPython("import sys; print('ABC', file=sys.stderr)");
- *   // 65
- *   // 66
- *   // 67
- *   // 10 (the ascii values for 'ABC' including a new line character)
- * }
- * main();
+ * Sets the standard error handler. See the documentation for
+ * {js:func}`pyodide.setStdout`.
  */
 export function setStderr(
   options:
-    | {
-        batched?: (a: string) => void;
-        raw?: (a: number) => void;
-        isatty?: boolean;
-      }
-    | Writer = {},
+    {
+      batched?: (a: string) => void;
+      raw?: (a: number) => void;
+      write?: (a: Uint8Array) => number;
+      isatty?: boolean;
+    }
 ) {
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
