@@ -298,7 +298,7 @@ export class PyodideAPI {
   }
 
   /**
-   * Registers the JavaScript object ``module`` as a JavaScript module named
+   * Registers the JavaScript object ``module`` as a Python module named
    * ``name``. This module can then be imported from Python using the standard
    * Python import system. If another module by the same name has already been
    * imported, this won't have much effect unless you also delete the imported

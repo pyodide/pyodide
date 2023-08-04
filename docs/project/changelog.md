@@ -15,6 +15,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Fix typo in jsdoc for registerJsModule() method of JS API.
+  {pr}`4034`
+
 - {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
