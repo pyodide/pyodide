@@ -1,0 +1,8 @@
+package:
+  name: pymongo
+  version: "4.4.1"
+  top-level:
+    - MongoDB
+source:
+  sha256: 980da627edc1275896d7d4670596433ec66e1f452ec244e07bbb2f91c955b581
+  url: https://files.pythonhosted.org/packages/ca/8a/fd22c1b57f9effe50a5db1373b135e6ce85593e79e6c0af6e7bfad5d8cba/pymongo-4.4.1-cp311-cp311-win_amd64.whl
