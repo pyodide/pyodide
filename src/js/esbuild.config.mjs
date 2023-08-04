@@ -29,6 +29,29 @@ const outputs = [
 const dest = (output) => join(__dirname, "..", "..", output);
 const DEFINES = { DEBUG: DEBUG.toString() };
 
+copyFileSync(
+  "../../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json",
+  "generated_struct_info32.gen.json",
+);
+
+function toDefines(o, path = "") {
+  return Object.entries(o).flatMap(([x, v]) => {
+    // Drop anything that's not a valid identifier
+    if (!/^[A-Za-z_$]*$/.test(x)) {
+      return [];
+    }
+    // Flatten objects
+    if (typeof v === "object") {
+      return toDefines(v, path + x + ".");
+    }
+    // Else convert to string
+    return [[path + x, v.toString()]];
+  });
+}
+
+const constants = JSON.parse(readFileSync("./generated_struct_info32.gen.json"));
+Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
+
 const config = ({ input, output, format, name: globalName }) => ({
   entryPoints: [join(__dirname, input + ".ts")],
   outfile: dest(output),
@@ -52,39 +75,6 @@ const config = ({ input, output, format, name: globalName }) => ({
   format,
   globalName,
 });
-
-copyFileSync(
-  "../../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json",
-  "generated_struct_info32.gen.json",
-);
-
-const constants_out = "src/js/_constants.gen.mjs";
-
-await build(
-  config({
-    input: "constants",
-    output: constants_out,
-    format: "esm",
-  }),
-);
-
-function toDefines(o, path = "") {
-  return Object.entries(o).flatMap(([x, v]) => {
-    // Drop anything that's not a valid identifier
-    if (!/^[A-Za-z_$]*$/.test(x)) {
-      return [];
-    }
-    // Flatten objects
-    if (typeof v === "object") {
-      return toDefines(v, path + x + ".");
-    }
-    // Else convert to string
-    return [[path + x, v.toString()]];
-  });
-}
-
-const constants = await import(dest(constants_out));
-Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
 
 const builds = [];
 for (const output of outputs) {
