@@ -279,7 +279,7 @@ export function setStdin(options: {
   error?: boolean;
   isatty?: boolean;
   autoEOF?: boolean;
-}) {
+} = {}) {
   let { stdin, error, isatty, autoEOF, read } = options as StdinOptions &
     Partial<Reader>;
   const numset = +!!stdin + +!!error + +!!read;
@@ -417,7 +417,7 @@ export function setStdout(options: {
   raw?: (a: number) => void;
   write?: (a: Uint8Array) => number;
   isatty?: boolean;
-}) {
+} = {}) {
   _setStdwrite(options, _setStdoutOps, _getStdoutDefaults);
 }
 
@@ -430,7 +430,7 @@ export function setStderr(options: {
   raw?: (a: number) => void;
   write?: (a: Uint8Array) => number;
   isatty?: boolean;
-}) {
+} = {}) {
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
 
