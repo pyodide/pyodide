@@ -273,15 +273,13 @@ type StdinOptions = {
  * @param options.autoEOF Insert an EOF automatically after each string or
  * buffer? (default ``true``).
  */
-export function setStdin(
-  options: {
-    stdin?: InFuncType;
-    read?: (buffer: Uint8Array) => number;
-    error?: boolean;
-    isatty?: boolean;
-    autoEOF?: boolean;
-  },
-) {
+export function setStdin(options: {
+  stdin?: InFuncType;
+  read?: (buffer: Uint8Array) => number;
+  error?: boolean;
+  isatty?: boolean;
+  autoEOF?: boolean;
+}) {
   let { stdin, error, isatty, autoEOF, read } = options as StdinOptions &
     Partial<Reader>;
   const numset = +!!stdin + +!!error + +!!read;
@@ -414,14 +412,12 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
  * }
  * main();
  */
-export function setStdout(
-  options: {
-    batched?: (a: string) => void;
-    raw?: (a: number) => void;
-    write?: (a: Uint8Array) => number;
-    isatty?: boolean;
-  },
-) {
+export function setStdout(options: {
+  batched?: (a: string) => void;
+  raw?: (a: number) => void;
+  write?: (a: Uint8Array) => number;
+  isatty?: boolean;
+}) {
   _setStdwrite(options, _setStdoutOps, _getStdoutDefaults);
 }
 
@@ -429,15 +425,12 @@ export function setStdout(
  * Sets the standard error handler. See the documentation for
  * {js:func}`pyodide.setStdout`.
  */
-export function setStderr(
-  options:
-    {
-      batched?: (a: string) => void;
-      raw?: (a: number) => void;
-      write?: (a: Uint8Array) => number;
-      isatty?: boolean;
-    }
-) {
+export function setStderr(options: {
+  batched?: (a: string) => void;
+  raw?: (a: number) => void;
+  write?: (a: Uint8Array) => number;
+  isatty?: boolean;
+}) {
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
 
