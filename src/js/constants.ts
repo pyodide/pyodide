@@ -7,7 +7,6 @@ export { defines as cDefs };
 
 declare global {
   export const cDefs: typeof defines;
-  // export const DEBUG = false;
   export const DEBUG: boolean;
   export var Module: OrigModule;
   export var API: any;
