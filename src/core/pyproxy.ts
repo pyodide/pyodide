@@ -462,7 +462,7 @@ Module.pyproxy_destroy = function (
   // just in case!
   const ptr = shared.ptr;
   shared.ptr = 0;
-  Module.finalizationRegistry.unregister(shared);  
+  Module.finalizationRegistry.unregister(shared);
   pyproxy_decref_cache(shared.cache);
 
   try {
