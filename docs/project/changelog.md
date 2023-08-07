@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed adding getters/setters to a `PyProxy` with
+  `Object.defineProperty` and improved compliance with JavaScript rules around
+  Proxy traps.
+  {pr}`4033`
+
 - {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
