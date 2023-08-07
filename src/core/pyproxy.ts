@@ -2165,11 +2165,11 @@ const PyProxyHandlers = {
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
+    if (descr && !descr.writable && !descr.set) {
+      return false;
     }
     // python_setattr will crash if given a Symbol.
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.set(jsobj, jskey, jsval);
     }
     if (jskey.startsWith("$")) {
@@ -2180,19 +2180,22 @@ const PyProxyHandlers = {
   },
   deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
+    if (descr && !descr.configurable) {
+      // Must return "false" if "jskey" is a nonconfigurable own property.
+      // Otherwise JavaScript will throw a TypeError.
+      // Strict mode JS will throw an error here saying that the property cannot
+      // be deleted. It's good to leave everything alone so that the behavior is
+      // consistent with the error message.
+      return false;
     }
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.deleteProperty(jsobj, jskey);
     }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
-    // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise JavaScript will throw a TypeError.
-    return !descr || !!descr.configurable;
+    return true;
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);
