@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} For performance reasons, don't render extra information in
+  PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
+  can opt into worse performance and better error messages.
+  {pr}`4027`
+
 - {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
