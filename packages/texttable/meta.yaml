@@ -1,0 +1,19 @@
+package:
+  name: texttable
+  version: 1.6.7
+  top-level:
+    - texttable
+
+source:
+  url: https://files.pythonhosted.org/packages/ba/a7/2c12b543f853dae886286b824200eb9d7cd2466e3d14eff1799fbe8223b9/texttable-1.6.7-py2.py3-none-any.whl
+  sha256: b7b68139aa8a6339d2c320ca8b1dc42d13a7831a346b446cb9eb385f0c76310c
+
+test:
+  imports:
+    - texttable
+
+about:
+  home: https://github.com/foutaise/texttable/
+  PyPI: https://pypi.org/project/texttable
+  summary: module to create simple ASCII tables
+  license: MIT

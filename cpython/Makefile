@@ -8,11 +8,15 @@ PYTHON_CFLAGS=$(CFLAGS_BASE) -DPY_CALL_TRAMPOLINE
 BUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)
 INSTALL=$(CPYTHONINSTALL)
 TARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
-LIB=libpython$(PYMAJOR).$(PYMINOR).a
+LIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
+
+ifdef CPYTHON_DEBUG
+	MAYBE_WITH_PYDEBUG=--with-pydebug
+endif
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
 
@@ -98,6 +102,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
 			  --with-build-python=$$(which python3.11) \
+			  $(MAYBE_WITH_PYDEBUG) \
 	)
 
 

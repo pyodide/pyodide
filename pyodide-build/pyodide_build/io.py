@@ -75,14 +75,15 @@ class _SourceSpec(BaseModel):
         return values
 
 
-_BuildSpecExports = Literal["pyinit", "requested", "whole_archive"]
+_ExportTypes = Literal["pyinit", "requested", "whole_archive"]
+_BuildSpecExports = _ExportTypes | list[str]
 _BuildSpecTypes = Literal[
     "package", "static_library", "shared_library", "cpython_module"
 ]
 
 
 class _BuildSpec(BaseModel):
-    exports: _BuildSpecExports | list[_BuildSpecExports] = "pyinit"
+    exports: _BuildSpecExports = "pyinit"
     backend_flags: str = Field("", alias="backend-flags")
     cflags: str = ""
     cxxflags: str = ""
@@ -176,6 +177,8 @@ class MetaConfig(BaseModel):
         config_raw = yaml.safe_load(stream)
 
         config = cls(**config_raw)
+        if config.source.path:
+            config.source.path = path.parent / config.source.path
         return config
 
     def to_yaml(self, path: Path) -> None:
@@ -225,3 +228,11 @@ class MetaConfig(BaseModel):
                         f"If source is a wheel, 'build/{key}' key is not allowed"
                     )
         return values
+
+    def is_rust_package(self) -> bool:
+        """
+        Check if a package requires rust toolchain to build.
+        """
+        return any(
+            q in self.requirements.executable for q in ("rustc", "cargo", "rustup")
+        )

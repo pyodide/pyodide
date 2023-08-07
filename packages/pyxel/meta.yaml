@@ -6,13 +6,10 @@ source:
   sha256: e23a0c52daaa9c4967c402b3ad2c623f33c4a01e36c4b37b884d7b8c726521f4
 build:
   script: |
-    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
-    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
-
     embuilder build sdl2 --pic
     export RUSTFLAGS="\
+      $RUSTFLAGS \
       -C link-arg=-sUSE_SDL=2 \
-      -C link-arg=-fPIC \
       -C link-arg=-lSDL2 \
     "
 

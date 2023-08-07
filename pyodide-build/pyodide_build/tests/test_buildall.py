@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from pyodide_lock.spec import PackageSpec
 
 from pyodide_build import buildall
 from pyodide_build.pywasmcross import BuildArgs
@@ -46,7 +47,7 @@ def test_generate_dependency_graph_disabled():
     assert set(pkg_map.keys()) == set()
 
 
-def test_generate_repodata(tmp_path):
+def test_generate_lockfile(tmp_path):
     pkg_map = buildall.generate_dependency_graph(
         RECIPE_DIR, {"pkg_1", "pkg_2", "libtest", "libtest_shared"}
     )
@@ -60,13 +61,11 @@ def test_generate_repodata(tmp_path):
         with open(tmp_path / pkg.file_name, "rb") as f:
             hashes[pkg.name] = hashlib.sha256(f.read()).hexdigest()
 
-    package_data = buildall.generate_repodata(tmp_path, pkg_map)
-    assert set(package_data.keys()) == {"info", "packages"}
-    assert set(package_data["info"].keys()) == {"arch", "platform", "version", "python"}
-    assert package_data["info"]["arch"] == "wasm32"
-    assert package_data["info"]["platform"].startswith("emscripten")
+    package_data = buildall.generate_lockfile(tmp_path, pkg_map)
+    assert package_data.info.arch == "wasm32"
+    assert package_data.info.platform.startswith("emscripten")
 
-    assert set(package_data["packages"]) == {
+    assert set(package_data.packages) == {
         "pkg_1",
         "pkg_1_1",
         "pkg_2",
@@ -74,22 +73,20 @@ def test_generate_repodata(tmp_path):
         "pkg_3_1",
         "libtest_shared",
     }
-    assert package_data["packages"]["pkg_1"] == {
-        "name": "pkg_1",
-        "version": "1.0.0",
-        "file_name": "pkg_1.whl",
-        "depends": ["pkg_1_1", "pkg_3", "libtest_shared"],
-        "imports": ["pkg_1"],
-        "package_type": "package",
-        "install_dir": "site",
-        "sha256": hashes["pkg_1"],
-    }
-
-    assert (
-        package_data["packages"]["libtest_shared"]["package_type"] == "shared_library"
+    assert package_data.packages["pkg_1"] == PackageSpec(
+        name="pkg_1",
+        version="1.0.0",
+        file_name="pkg_1.whl",
+        depends=["pkg_1_1", "pkg_3", "libtest_shared"],
+        imports=["pkg_1"],
+        package_type="package",
+        install_dir="site",
+        sha256=hashes["pkg_1"],
     )
 
-    sharedlib_imports = package_data["packages"]["libtest_shared"]["imports"]
+    assert package_data.packages["libtest_shared"].package_type == "shared_library"
+
+    sharedlib_imports = package_data.packages["libtest_shared"].imports
     assert not sharedlib_imports, (
         "shared libraries should not have any imports, but got " f"{sharedlib_imports}"
     )
@@ -153,27 +150,3 @@ def test_requirements_executable(monkeypatch):
         m.setattr(shutil, "which", lambda exe: "/bin")
 
         buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_test_executable"})
-
-
-@pytest.mark.parametrize("exe", ["rustc", "cargo", "rustup"])
-def test_is_rust_package(exe):
-    pkg = buildall.BasePackage(
-        pkgdir=Path(""),
-        name="test",
-        version="1.0.0",
-        disabled=False,
-        meta=None,  # type: ignore[arg-type]
-        package_type="package",
-        run_dependencies=[],
-        host_dependencies=[],
-        host_dependents=set(),
-        dependencies=set(),
-        unbuilt_host_dependencies=set(),
-        executables_required=[exe],
-    )
-
-    assert buildall.is_rust_package(pkg)
-
-    pkg.executables_required = []
-
-    assert not buildall.is_rust_package(pkg)

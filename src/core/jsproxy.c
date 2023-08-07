@@ -548,7 +548,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   if (arg) {
     proxies = JsArray_New();
     FAIL_IF_NULL(proxies);
-    jsarg = python2js_track_proxies(arg, proxies);
+    jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
@@ -1055,7 +1055,7 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   if (arg != NULL) {
     proxies = JsArray_New();
     FAIL_IF_NULL(proxies);
-    jsarg = python2js_track_proxies(arg, proxies);
+    jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
   next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
@@ -1281,6 +1281,54 @@ finally:
   return pyresult;
 }
 
+PyObject*
+JsArray_sq_item(PyObject* o, Py_ssize_t i)
+{
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+
+  jsresult = JsArray_Get(JsProxy_REF(o), i);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
+}
+
+Py_ssize_t
+JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
+{
+  bool success = false;
+  JsRef jsval = NULL;
+
+  if (pyval == NULL) {
+    // Delete
+    jsval = JsArray_Splice(JsProxy_REF(o), i);
+    FAIL_IF_NULL(jsval);
+    success = true;
+    goto finally;
+  }
+
+  jsval = python2js(pyval);
+  FAIL_IF_NULL(jsval);
+  FAIL_IF_MINUS_ONE(JsArray_Set(JsProxy_REF(o), i, jsval));
+
+  success = true;
+finally:
+  hiwire_CLEAR(jsval);
+  return success ? 0 : -1;
+}
+
+Py_ssize_t
+JsTypedArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
+{
+  if (pyval == NULL) {
+    PyErr_SetString(PyExc_TypeError, "object doesn't support item deletion");
+    return -1;
+  }
+  return JsArray_sq_ass_item(o, i, pyval);
+}
+
 /**
  * __getitem__ for proxies of Js TypedArrays, controlled by IS_TYPEDARRAY
  */
@@ -1416,7 +1464,7 @@ static int
 JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   if (pyvalue == NULL) {
-    PyErr_SetString(PyExc_ValueError, "cannot delete array elements");
+    PyErr_SetString(PyExc_TypeError, "object doesn't support item deletion");
     return -1;
   }
   if (PySlice_Check(item)) {
@@ -1427,20 +1475,17 @@ JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
   return JsArray_ass_subscript(o, item, pyvalue);
 }
 
-static PyObject*
-JsArray_extend(PyObject* o, PyObject* iterable)
+static int
+JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef temp = NULL;
   PyObject* it = NULL;
+  JsRef jsval = NULL;
   bool success = false;
 
-  temp = JsArray_New();
-  FAIL_IF_NULL(temp);
   if (PyList_CheckExact(iterable) || PyTuple_CheckExact(iterable)) {
     iterable = PySequence_Fast(iterable, "argument must be iterable");
     if (!iterable)
-      return NULL;
+      return -1;
     Py_ssize_t n = PySequence_Fast_GET_SIZE(iterable);
     if (n == 0) {
       /* short circuit when iterable is empty */
@@ -1455,11 +1500,10 @@ JsArray_extend(PyObject* o, PyObject* iterable)
     /* populate the end of self with iterable's items */
     PyObject** src = PySequence_Fast_ITEMS(iterable);
     for (int i = 0; i < n; i++) {
-      PyObject* pyval = src[i];
-      JsRef jsval = python2js(pyval);
+      jsval = python2js(src[i]);
       FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(temp, jsval));
-      hiwire_decref(jsval);
+      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
+      hiwire_CLEAR(jsval);
     }
   } else {
     Py_INCREF(iterable);
@@ -1482,38 +1526,46 @@ JsArray_extend(PyObject* o, PyObject* iterable)
       }
       JsRef jsval = python2js(item);
       FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(temp, jsval));
-      hiwire_decref(jsval);
+      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
+      hiwire_CLEAR(jsval);
     }
   }
-  EM_ASM(
-    {
-      // clang-format off
-      Hiwire.get_value($1).push(...Hiwire.get_value($0));
-      // clang-format on
-    },
-    temp,
-    self->js);
   success = true;
 finally:
-  Py_CLEAR(iterable);
+  hiwire_CLEAR(jsval);
   Py_CLEAR(it);
+  return success ? 0 : -1;
+}
+
+EM_JS(void, destroy_jsarray_entries, (JsRef idarray), {
+  for (let v of Hiwire.get_value(idarray)) {
+    // clang-format off
+    try {
+      if(typeof v.destroy === "function"){
+          v.destroy();
+      }
+    } catch(e) {
+      console.warn("Weird error:", e);
+    }
+    // clang-format on
+  }
+})
+
+static PyObject*
+JsArray_extend_meth(PyObject* o, PyObject* iterable)
+{
+  JsRef temp = NULL;
+  bool success = false;
+
+  temp = JsArray_New();
+  FAIL_IF_NULL(temp);
+  // Make sure that if anything goes wrong the original array stays unmodified
+  FAIL_IF_MINUS_ONE(JsArray_extend_by_python_iterable(temp, iterable));
+  FAIL_IF_MINUS_ONE(JsArray_Extend(JsProxy_REF(o), temp));
+  success = true;
+finally:
   if (!success) {
-    EM_ASM(
-      {
-        for (let v of Hiwire.get_value($0)) {
-          // clang-format off
-        if(typeof v.destroy === "function"){
-          try{
-            v.destroy();
-          } catch(e) {
-            console.warn("Weird error:", e);
-          }
-        }
-          // clang-format on
-        }
-      },
-      temp);
+    destroy_jsarray_entries(temp);
   }
   hiwire_CLEAR(temp);
   if (success) {
@@ -1525,19 +1577,79 @@ finally:
 
 static PyMethodDef JsArray_extend_MethodDef = {
   "extend",
-  (PyCFunction)JsArray_extend,
+  (PyCFunction)JsArray_extend_meth,
   METH_O,
 };
 
 static PyObject*
-JsArray_inplace_concat(PyObject* self, PyObject* other)
+JsArray_sq_concat(PyObject* self, PyObject* other)
 {
-  PyObject* result = JsArray_extend(self, other);
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+  bool success = true;
+
+  jsresult = JsArray_ShallowCopy(JsProxy_REF(self));
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+  FAIL_IF_NULL(pyresult);
+  FAIL_IF_MINUS_ONE(
+    JsArray_extend_by_python_iterable(JsProxy_REF(pyresult), other));
+finally:
+  if (!success) {
+    Py_CLEAR(pyresult);
+  }
+  hiwire_CLEAR(jsresult);
+  return pyresult;
+}
+
+static PyObject*
+JsArray_sq_inplace_concat(PyObject* self, PyObject* other)
+{
+  PyObject* result = JsArray_extend_meth(self, other);
   if (result == NULL)
-    return result;
+    return NULL;
   Py_DECREF(result);
   Py_INCREF(self);
   return self;
+}
+
+EM_JS_REF(JsRef, JsArray_repeat_js, (JsRef oid, Py_ssize_t count), {
+  const o = Hiwire.get_value(oid);
+  // clang-format off
+  return Hiwire.new_value(Array.from({ length : count }, () => o).flat())
+  // clang-format on
+})
+
+static PyObject*
+JsArray_sq_repeat(PyObject* o, Py_ssize_t count)
+{
+  JsRef jsresult = NULL;
+  PyObject* pyresult = NULL;
+
+  jsresult = JsArray_repeat_js(JsProxy_REF(o), count);
+  FAIL_IF_NULL(jsresult);
+  pyresult = js2python(jsresult);
+
+finally:
+  hiwire_CLEAR(jsresult);
+  return pyresult;
+}
+
+EM_JS_NUM(errcode, JsArray_inplace_repeat_js, (JsRef oid, Py_ssize_t count), {
+  const o = Hiwire.get_value(oid);
+  // clang-format off
+  o.splice(0, o.length, ... Array.from({ length : count }, () => o).flat());
+  // clang-format on
+})
+
+static PyObject*
+JsArray_sq_inplace_repeat(PyObject* o, Py_ssize_t count)
+{
+  FAIL_IF_MINUS_ONE(JsArray_inplace_repeat_js(JsProxy_REF(o), count));
+  Py_INCREF(o);
+  return o;
+finally:
+  return NULL;
 }
 
 static PyObject*
@@ -1695,7 +1807,7 @@ JsArray_index(PyObject* o, PyObject* args)
     stop = length;
   }
 
-  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     for (int i = start; i < stop; i++) {
@@ -1755,7 +1867,7 @@ static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsvalue = python2js_track_proxies(value, NULL);
+  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     int result = 0;
@@ -2026,7 +2138,10 @@ JsMap_get(PyObject* self,
           PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|O:get",
+    .keywords = _keywords,
+  };
   PyObject* key;
   PyObject* default_ = Py_None;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2056,7 +2171,10 @@ JsMap_pop(PyObject* self,
           PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|O:pop",
+    .keywords = _keywords,
+  };
   PyObject* key;
   PyObject* default_ = NULL;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2170,7 +2288,10 @@ JsMap_setdefault(PyObject* self,
                  PyObject* kwnames)
 {
   static const char* const _keywords[] = { "key", "default", 0 };
-  static struct _PyArg_Parser _parser = { "O|O:get", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|O:setdefault",
+    .keywords = _keywords,
+  };
   PyObject* key;
   PyObject* default_ = Py_None;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2271,7 +2392,10 @@ JsProxy_toPy(PyObject* self,
              PyObject* kwnames)
 {
   static const char* const _keywords[] = { "depth", "default_converter", 0 };
-  static struct _PyArg_Parser _parser = { "|$iO:to_py", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "|$iO:to_py",
+    .keywords = _keywords,
+  };
   int depth = -1;
   PyObject* default_converter = NULL;
   if (!_PyArg_ParseStackAndKeywords(
@@ -2535,7 +2659,10 @@ JsProxy_as_object_map(PyObject* self,
                       PyObject* kwnames)
 {
   static const char* const _keywords[] = { "hereditary", 0 };
-  static struct _PyArg_Parser _parser = { "|$p:as_object_map", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "|$p:as_object_map",
+    .keywords = _keywords,
+  };
   bool hereditary = false;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &hereditary)) {
@@ -2722,7 +2849,7 @@ static PyGetSetDef JsProxy_GetSet[] = { { "typeof", .get = JsProxy_typeof },
                                         { NULL } };
 
 static PyTypeObject JsProxyType = {
-  .tp_name = "pyodide.JsProxy",
+  .tp_name = "pyodide.ffi.JsProxy",
   .tp_basicsize = sizeof(JsProxy),
   .tp_dealloc = (destructor)JsProxy_dealloc,
   .tp_getattro = JsProxy_GetAttr,
@@ -2776,7 +2903,7 @@ JsMethod_ConvertArgs(PyObject* const* args,
   idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js_track_proxies(args[i], proxies);
+    idarg = python2js_track_proxies(args[i], proxies, false);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
     hiwire_CLEAR(idarg);
@@ -2803,7 +2930,7 @@ JsMethod_ConvertArgs(PyObject* const* args,
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
     const char* name_utf8 = PyUnicode_AsUTF8(name);
-    idarg = python2js_track_proxies(args[k], proxies);
+    idarg = python2js_track_proxies(args[k], proxies, false);
     FAIL_IF_NULL(idarg);
     FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
     hiwire_CLEAR(idarg);
@@ -3003,6 +3130,8 @@ finally:
       JsArray_Push_unchecked(proxies, idresult);
     }
     destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+  } else {
+    gc_register_proxies(proxies);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
@@ -3514,7 +3643,10 @@ JsBuffer_tostring(PyObject* self,
                   PyObject* kwnames)
 {
   static const char* const _keywords[] = { "encoding", 0 };
-  static struct _PyArg_Parser _parser = { "|s:to_string", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "|s:to_string",
+    .keywords = _keywords,
+  };
   char* encoding = NULL;
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &encoding)) {
@@ -3775,8 +3907,22 @@ skip_container_slots:
                                        .pfunc = (void*)JsArray_subscript };
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_ass_subscript,
                                        .pfunc = (void*)JsArray_ass_subscript };
-    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_inplace_concat,
-                                       .pfunc = (void*)JsArray_inplace_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_inplace_concat,
+                     .pfunc = (void*)JsArray_sq_inplace_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_concat, .pfunc = (void*)JsArray_sq_concat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_repeat, .pfunc = (void*)JsArray_sq_repeat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_inplace_repeat,
+                     .pfunc = (void*)JsArray_sq_inplace_repeat };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
+    slots[cur_slot++] = (PyType_Slot){ .slot = Py_sq_ass_item,
+                                       .pfunc = (void*)JsArray_sq_ass_item };
     methods[cur_method++] = JsArray_extend_MethodDef;
     methods[cur_method++] = JsArray_pop_MethodDef;
     methods[cur_method++] = JsArray_append_MethodDef;
@@ -3794,6 +3940,13 @@ skip_container_slots:
                      .pfunc = (void*)JsTypedArray_ass_subscript };
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsProxy_item_array };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_ass_item,
+                     .pfunc = (void*)JsTypedArray_sq_ass_item };
     methods[cur_method++] = JsArray_index_MethodDef;
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
@@ -3802,6 +3955,12 @@ skip_container_slots:
   if (flags & IS_NODE_LIST) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,
                                        .pfunc = (void*)JsNodeList_subscript };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_length, .pfunc = (void*)JsProxy_length };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_item, .pfunc = (void*)JsArray_sq_item };
+    slots[cur_slot++] =
+      (PyType_Slot){ .slot = Py_sq_concat, .pfunc = (void*)JsArray_sq_concat };
     methods[cur_method++] = JsArray_reversed_MethodDef;
   }
   if (flags & IS_BUFFER) {

@@ -68,9 +68,6 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
  * there are a lot of constraints so we have to do some slightly weird things.
  * We convert it back into an object in makePublicAPI.
- *
- * TODO: move the definitions of public things defined in this file into the
- * class body.
  * @private
  */
 export class PyodideAPI {
@@ -224,6 +221,21 @@ export class PyodideAPI {
    *        Defaults to the same as ``globals``.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
+   * @example
+   * async function main(){
+   *   const pyodide = await loadPyodide();
+   *   console.log(pyodide.runPython("1 + 2"));
+   *   // 3
+   *
+   *   const globals = pyodide.toPy({ x: 3 });
+   *   console.log(pyodide.runPython("x + 1", { globals }));
+   *   // 4
+   *
+   *   const locals = pyodide.toPy({ arr: [1, 2, 3] });
+   *   console.log(pyodide.runPython("sum(arr)", { locals }));
+   *   // 6
+   * }
+   * main();
    */
   static runPython(
     code: string,
@@ -248,7 +260,7 @@ export class PyodideAPI {
    *
    *    let result = await pyodide.runPythonAsync(`
    *        from js import fetch
-   *        response = await fetch("./repodata.json")
+   *        response = await fetch("./pyodide-lock.json")
    *        packages = await response.json()
    *        # If final statement is an expression, its value is returned to JavaScript
    *        len(packages.packages.object_keys())
@@ -613,6 +625,18 @@ export class PyodideAPI {
     );
     Object.defineProperty(this, "PythonError", { value: PythonError });
     return PythonError;
+  }
+
+  /**
+   * Turn on or off debug mode. In debug mode, some error messages are improved
+   * at a performance cost.
+   * @param debug If true, turn debug mode on. If false, turn debug mode off.
+   * @returns The old value of the debug flag.
+   */
+  static setDebug(debug: boolean): boolean {
+    const orig = !!API.debug_ffi;
+    API.debug_ffi = debug;
+    return orig;
   }
 }
 

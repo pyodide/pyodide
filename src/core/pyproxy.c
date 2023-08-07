@@ -26,10 +26,11 @@ check_gil()
   }
 }
 
-PyObject* Generator;
-PyObject* AsyncGenerator;
-PyObject* Sequence;
-PyObject* MutableSequence;
+static PyObject* Generator;
+static PyObject* AsyncGenerator;
+static PyObject* Sequence;
+static PyObject* MutableSequence;
+static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(pop);
@@ -69,6 +70,13 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
     Module.pyproxy_destroy(px, msg, false);
+  }
+});
+
+EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
+  let proxies = Hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.gc_register_proxy(px);
   }
 });
 
@@ -696,6 +704,36 @@ finally:
   return idresult;
 }
 
+bool
+_iscoroutinefunction(PyObject* f)
+{
+  _Py_IDENTIFIER(_is_coroutine_marker);
+
+  // Some fast paths for common cases to avoid calling into Python
+  if (PyMethod_Check(f)) {
+    f = PyMethod_GET_FUNCTION(f);
+  }
+
+  // _is_coroutine_marker is added to Python stdlib in 3.12. Check for it here
+  // to make sure we don't accidentally return false negatives when we update to
+  // 3.12.
+  if (PyFunction_Check(f) &&
+      !PyObject_HasAttr(f, _PyUnicode_FromId(&PyId__is_coroutine_marker))) {
+    PyFunctionObject* func = (PyFunctionObject*)f;
+    PyCodeObject* code = (PyCodeObject*)PyFunction_GET_CODE(func);
+    return (code->co_flags) & CO_COROUTINE;
+  }
+
+  // Wasn't a basic callable, call into inspect.iscoroutinefunction
+  PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
+  if (!result) {
+    PyErr_Clear();
+  }
+  bool ret = Py_IsTrue(result);
+  Py_CLEAR(result);
+  return ret;
+}
+
 JsRef
 _pyproxy_iter_next(PyObject* iterator)
 {
@@ -1213,14 +1251,19 @@ success:
   return 0;
 }
 
+// clang-format off
 EM_JS_REF(JsRef,
-          pyproxy_new_ex,
-          (PyObject * ptrobj, bool capture_this, bool roundtrip),
-          {
-            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
-              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
-            }));
-          });
+pyproxy_new_ex,
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
+{
+  return Hiwire.new_value(
+    Module.pyproxy_new(ptrobj, {
+      props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
+      gcRegister,
+    })
+  );
+});
+// clang-format on
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
@@ -1365,13 +1408,16 @@ create_proxy(PyObject* self,
   bool capture_this = false;
   bool roundtrip = true;
   PyObject* obj;
-  static struct _PyArg_Parser _parser = { "O|$pp:create_proxy", _keywords, 0 };
+  static struct _PyArg_Parser _parser = {
+    .format = "O|$pp:create_proxy",
+    .keywords = _keywords,
+  };
   if (!_PyArg_ParseStackAndKeywords(
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
 
-  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip, true);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1398,6 +1444,7 @@ pyproxy_init(PyObject* core)
 
   PyObject* collections_abc = NULL;
   PyObject* docstring_source = NULL;
+  PyObject* inspect = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -1418,9 +1465,15 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
 
+  inspect = PyImport_ImportModule("inspect");
+  FAIL_IF_NULL(inspect);
+  iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
+  FAIL_IF_NULL(iscoroutinefunction);
+
   success = true;
 finally:
   Py_CLEAR(docstring_source);
   Py_CLEAR(collections_abc);
+  Py_CLEAR(inspect);
   return success ? 0 : -1;
 }

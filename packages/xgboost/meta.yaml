@@ -16,6 +16,7 @@ build:
     -DDMLC_ENABLE_STD_THREAD=0
     -DDMLC_CXX11_THREAD_LOCAL=0
     -DUSE_OPENMP=0
+  exports: requested
 requirements:
   run:
     - numpy

@@ -348,6 +348,7 @@ def test_call_pyproxy_destroy_args(selenium):
     selenium.run_js(
         r"""
         let y;
+        pyodide.setDebug(true);
         self.f = function(x){ y = x; }
         pyodide.runPython(`
             from js import f
@@ -357,6 +358,23 @@ def test_call_pyproxy_destroy_args(selenium):
         assertThrows(() => y.length, "Error",
             "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
             'The object was of type "list" and had repr "\\[\\]"'
+        );
+        """
+    )
+
+    selenium.run_js(
+        r"""
+        let y;
+        pyodide.setDebug(false);
+        self.f = function(x){ y = x; }
+        pyodide.runPython(`
+            from js import f
+            f({})
+            f([])
+        `);
+        assertThrows(() => y.length, "Error",
+            "This borrowed proxy was automatically destroyed at the end of a function call.*\n" +
+            'For more information about the cause of this error, use `pyodide.setDebug.true.`'
         );
         """
     )
@@ -509,14 +527,14 @@ def test_import_invocation(selenium):
     from pyodide.ffi import create_once_callable
 
     js.setTimeout(create_once_callable(temp), 100)
-    js.fetch("repodata.json")
+    js.fetch("pyodide-lock.json")
 
 
 @run_in_pyodide
 def test_import_bind(selenium):
     from js import fetch
 
-    fetch("repodata.json")
+    fetch("pyodide-lock.json")
 
 
 @run_in_pyodide
@@ -661,6 +679,56 @@ def test_unregister_jsmodule_error(selenium):
         }
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star1(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js("pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }});")
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" in g
+        assert "f" in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+        assert g["b"] == 7
+        assert g["f"](9) == 10
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@run_in_pyodide
+def test_jsmod_import_star2(selenium):
+    import sys
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    run_js(
+        "pyodide.registerJsModule('xx', {a: 2, b: 7, f(x){ return x + 1; }, __all__ : pyodide.toPy(['a'])});"
+    )
+    g: dict[str, Any] = {}
+    exec("from xx import *", g)
+    try:
+        assert "a" in g
+        assert "b" not in g
+        assert "f" not in g
+        assert "__all__" not in g
+        assert g["a"] == 2
+    finally:
+        sys.modules.pop("xx", None)
+        run_js("pyodide.unregisterJsModule('xx');")
 
 
 @pytest.mark.skip_refcount_check
@@ -1408,7 +1476,7 @@ def test_typed_array(selenium):
 
     import pytest
 
-    with pytest.raises(ValueError, match="cannot delete array elements"):
+    with pytest.raises(TypeError, match="object doesn't support item deletion"):
         del a[0]
 
     msg = "Slice subscripting isn't implemented for typed arrays"
@@ -1440,6 +1508,88 @@ def test_html_array(selenium):
 
     with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del x[0]
+
+
+@pytest.mark.parametrize(
+    "sequence_converter",
+    [
+        "(x) => x",
+        "(x) => new Uint8Array(x)",
+        "(x) => Object.create({[Symbol.toStringTag] : 'NodeList'}, Object.getOwnPropertyDescriptors(x))",
+    ],
+)
+@run_in_pyodide
+def test_array_sequence_methods(selenium, sequence_converter):
+    from pytest import raises
+
+    from js import ArrayBuffer
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    x = to_js([77, 65, 23])
+    l = run_js(sequence_converter)(x)
+    from ctypes import c_bool, c_ssize_t, py_object, pythonapi
+
+    pythonapi.PySequence_Check.argtypes = [py_object]
+    pythonapi.PySequence_Check.restype = c_bool
+    pythonapi.PySequence_Length.argtypes = [py_object]
+    pythonapi.PySequence_GetItem.argtypes = [py_object, c_ssize_t]
+    pythonapi.PySequence_GetItem.restype = py_object
+    pythonapi.PySequence_SetItem.argtypes = [py_object, c_ssize_t, py_object]
+    pythonapi.PySequence_DelItem.argtypes = [py_object, c_ssize_t]
+
+    assert pythonapi.PySequence_Check(l)
+    assert pythonapi.PySequence_Length(l) == 3
+    assert pythonapi.PySequence_GetItem(l, 0) == 77
+
+    node_list = "NodeList" in str(l)
+    typed_array = ArrayBuffer.isView(l)
+    is_mutable = not node_list
+    supports_del = not (node_list or typed_array)
+
+    if typed_array:
+        with raises(TypeError, match=r"unsupported operand type\(s\) for \+"):
+            l + [4, 5, 6]
+    else:
+        assert (l + [4, 5, 6]).to_py() == [77, 65, 23, 4, 5, 6]
+
+    if is_mutable:
+        pythonapi.PySequence_SetItem(l, 1, 29)
+        assert l[1] == 29
+        l[1] = 65
+    else:
+        with raises(TypeError, match="does ?n[o']t support item assignment"):
+            pythonapi.PySequence_SetItem(l, 1, 29)
+        assert l[1] == 65
+
+    if supports_del:
+        pythonapi.PySequence_DelItem(l, 1)
+        assert l.to_py() == [77, 23]
+    else:
+        with raises(TypeError, match="does ?n[o']t support item deletion"):
+            pythonapi.PySequence_DelItem(l, 1)
+        assert list(l) == [77, 65, 23]
+
+
+@run_in_pyodide
+def test_array_sequence_repeat(selenium):
+    from pyodide.ffi import JsArray, to_js
+
+    a = [77, 65, 23]
+    l: JsArray[int] = to_js(a)
+
+    assert (l * 0).to_py() == a * 0
+    assert (l * 1).to_py() == a * 1
+    assert (l * 2).to_py() == a * 2
+
+    l *= 0
+    assert list(l) == a * 0
+    l = to_js(a)
+    l *= 1
+    assert list(l) == a * 1
+    l = to_js(a)
+    l *= 2
+    assert list(l) == a * 2
 
 
 @run_in_pyodide
@@ -2277,12 +2427,15 @@ def test_python_reserved_keywords(selenium):
     assert o.async___ == 3
     assert getattr(o, "async_") == 1  # noqa: B009
     assert getattr(o, "async__") == 2  # noqa: B009
-    with pytest.raises(AttributeError, match="async"):
-        getattr(o, "async")
-    with pytest.raises(AttributeError, match="reserved.*set.*'async_'"):
-        setattr(o, "async", 2)
-    with pytest.raises(AttributeError, match="reserved.*delete.*'async_'"):
-        delattr(o, "async")
+    assert getattr(o, "async") == 1
+
+    assert hasattr(o, "async_")
+    assert hasattr(o, "async")
+    setattr(o, "async", 2)
+    assert o.async_ == 2
+    delattr(o, "async")
+    assert not hasattr(o, "async_")
+    assert not hasattr(o, "async")
 
 
 @run_in_pyodide
@@ -2296,3 +2449,32 @@ def test_revoked_proxy(selenium):
 
     x = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
     run_js("((x) => x)")(x)
+
+
+@run_in_pyodide
+def test_js_proxy_attribute(selenium):
+    # Check that `in` is only consulted as a fallback if indexing returns None
+    import pytest
+
+    from pyodide.code import run_js
+
+    x = run_js(
+        """
+        new Proxy(
+            {},
+            {
+                get(target, val) {
+                    return { a: 3, b: 7, c: undefined, d: undefined }[val];
+                },
+                has(target, val) {
+                    return { a: true, b: false, c: true, d: false }[val];
+                },
+            }
+        );
+        """
+    )
+    assert x.a == 3
+    assert x.b == 7  # Previously this raised AttributeError
+    assert x.c is None
+    with pytest.raises(AttributeError):
+        x.d

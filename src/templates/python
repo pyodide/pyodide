@@ -80,9 +80,9 @@ async function main() {
     try {
         py = await loadPyodide({
             args,
+            env: Object.assign({}, process.env, {HOME: process.cwd() }),
             fullStdLib: false,
             _node_mounts: dirsToMount(),
-            homedir: process.cwd(),
             // Strip out messages written to stderr while loading
             // After Pyodide is loaded we will replace stdstreams with setupStreams.
             stderr(e) {

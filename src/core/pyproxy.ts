@@ -14,6 +14,7 @@
  * See Makefile recipe for src/js/pyproxy.gen.ts
  */
 
+declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
 declare var API: any;
@@ -78,8 +79,10 @@ declare var globalThis: any;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
-    ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
+    ({ ptr, cache }: { ptr: number; cache: PyProxyCache }) => {
       if (cache) {
+        // If we leak a proxy, we must transitively leak everything in its cache
+        // too =(
         cache.leaked = true;
         pyproxy_decref_cache(cache);
       }
@@ -157,9 +160,16 @@ type PyProxyProps = {
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
- * The argument cache is only needed to implement the PyProxy.copy API, it
- * allows the copy of the PyProxy to share its attribute cache with the original
- * version. In all other cases, pyproxy_new should be called with one argument.
+ * Two proxies are **aliases** if they share `$$` (they may have different
+ * $$props). Aliases are created by `bind` and `captureThis`. Aliases share the
+ * same lifetime: `destroy` destroys both of them, they are only registered with
+ * the garbage collector once, they only own a single refcount.  An **alias** is
+ * created by passing the $$ option.
+ *
+ * Two proxies are **copies** if they share `$$.cache`. Two copies share
+ * attribute caches but they otherwise have independent lifetimes. The attribute
+ * caches are refcounted so that they can be cleaned up when all copies are
+ * destroyed. A **copy** is made by passing the `cache` argument.
  *
  * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
@@ -174,14 +184,19 @@ function pyproxy_new(
     cache,
     props,
     $$,
+    gcRegister,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     $$?: any;
-    roundtrip?: boolean;
     props?: any;
+    gcRegister?: boolean;
   } = {},
 ): PyProxy {
+  if (gcRegister === undefined) {
+    // register by default
+    gcRegister = true;
+  }
   const flags =
     flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
   if (flags === -1) {
@@ -214,24 +229,20 @@ function pyproxy_new(
   }
 
   const isAlias = !!$$;
-
   if (!isAlias) {
     if (!cache) {
+      // In this case it's not a copy.
       // The cache needs to be accessed primarily from the C function
       // _pyproxy_getattr so we make a hiwire id.
       let cacheId = Hiwire.new_value(new Map());
       cache = { cacheId, refcnt: 0 };
     }
     cache.refcnt++;
-    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
-    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
+    $$ = { ptr: ptrobj, cache, flags };
     Module._Py_IncRef(ptrobj);
   }
 
   Object.defineProperty(target, "$$", { value: $$ });
-  if (!props) {
-    props = {};
-  }
   props = Object.assign(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
@@ -242,12 +253,28 @@ function pyproxy_new(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
+  if (!isAlias && gcRegister) {
+    // we need to register only once for a set of aliases. we can't register the
+    // proxy directly since that isn't shared between aliases. The aliases all
+    // share $$ so we can register that. They also need access to the data in
+    // $$, but we can't use $$ itself as the held object since that would keep
+    // $$ from being gc'd ever. So we make a copy. To prevent double free, we
+    // have to be careful to unregister when we destroy.
+    const $$copy = Object.assign({}, $$);
+    Module.finalizationRegistry.register($$, $$copy, $$);
+  }
   if (!isAlias) {
     trace_pyproxy_alloc(proxy);
   }
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
+
+Module.gc_register_proxy = function (proxy: PyProxy) {
+  const $$ = proxy.$$;
+  const $$copy = Object.assign({}, $$);
+  Module.finalizationRegistry.register($$, $$copy, $$);
+};
 
 function _getPtr(jsobj: any) {
   let ptr: number = jsobj.$$.ptr;
@@ -322,9 +349,10 @@ Module.getPyProxyClass = function (flags: number) {
     descriptors,
     Object.getOwnPropertyDescriptors({ $$flags: flags }),
   );
-  let new_proto = Object.create(PyProxy.prototype, descriptors);
+  const super_proto = flags & IS_CALLABLE ? PyProxyFunctionProto : PyProxyProto;
+  const sub_proto = Object.create(super_proto, descriptors);
   function NewPyProxyClass() {}
-  NewPyProxyClass.prototype = new_proto;
+  NewPyProxyClass.prototype = sub_proto;
   pyproxyClassMap.set(flags, NewPyProxyClass);
   return NewPyProxyClass;
 };
@@ -352,6 +380,35 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
 }
 
+function generateDestroyedMessage(
+  proxy: PyProxy,
+  destroyed_msg: string,
+): string {
+  destroyed_msg = destroyed_msg || "Object has already been destroyed";
+  if (API.debug_ffi) {
+    let proxy_type = proxy.type;
+    let proxy_repr;
+    try {
+      proxy_repr = proxy.toString();
+    } catch (e) {
+      if ((e as any).pyodide_fatal_error) {
+        throw e;
+      }
+    }
+    destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
+    if (proxy_repr) {
+      destroyed_msg += `had repr "${proxy_repr}"`;
+    } else {
+      destroyed_msg += "an error was raised when trying to generate its repr";
+    }
+  } else {
+    destroyed_msg +=
+      "\n" +
+      "For more information about the cause of this error, use `pyodide.setDebug(true)`";
+  }
+  return destroyed_msg;
+}
+
 Module.pyproxy_destroy = function (
   proxy: PyProxy,
   destroyed_msg: string,
@@ -365,28 +422,12 @@ Module.pyproxy_destroy = function (
   }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy.$$);
-  destroyed_msg = destroyed_msg || "Object has already been destroyed";
-  let proxy_type = proxy.type;
-  let proxy_repr;
-  try {
-    proxy_repr = proxy.toString();
-  } catch (e) {
-    if ((e as any).pyodide_fatal_error) {
-      throw e;
-    }
-  }
+  proxy.$$.destroyed_msg = generateDestroyedMessage(proxy, destroyed_msg);
+  pyproxy_decref_cache(proxy.$$.cache);
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = 0;
-  destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
-  if (proxy_repr) {
-    destroyed_msg += `had repr "${proxy_repr}"`;
-  } else {
-    destroyed_msg += "an error was raised when trying to generate its repr";
-  }
-  proxy.$$.destroyed_msg = destroyed_msg;
-  pyproxy_decref_cache(proxy.$$.cache);
   try {
     Py_ENTER();
     Module._Py_DecRef(ptrobj);
@@ -443,7 +484,12 @@ Module.callPyObjectKwargs = function (
   let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
-    result._ensure_future();
+    Py_ENTER();
+    let is_coroutine = Module.__iscoroutinefunction(ptrobj);
+    Py_EXIT();
+    if (is_coroutine) {
+      result._ensure_future();
+    }
   }
   return result;
 };
@@ -471,6 +517,13 @@ export class PyProxy {
   $$props: PyProxyProps;
   /** @private */
   $$flags: number;
+
+  /** @private */
+  static [Symbol.hasInstance](obj: any): obj is PyProxy {
+    return [PyProxy, PyProxyFunction].some((cls) =>
+      Function.prototype[Symbol.hasInstance].call(cls, obj),
+    );
+  }
 
   /**
    * @private
@@ -733,6 +786,20 @@ export class PyProxy {
     return !!(this.$$flags & IS_CALLABLE);
   }
 }
+
+const PyProxyProto = PyProxy.prototype;
+// For some weird reason in the node and firefox tests, the identity of
+// `Function` changes between now and the test suite. Can't reproduce this
+// outside the test suite though...
+// See test_pyproxy_instanceof_function.
+Tests.Function = Function;
+const PyProxyFunctionProto = Object.create(
+  Function.prototype,
+  Object.getOwnPropertyDescriptors(PyProxyProto),
+);
+function PyProxyFunction() {}
+PyProxyFunction.prototype = PyProxyFunctionProto;
+globalThis.PyProxyFunction = PyProxyFunction;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`
@@ -2024,6 +2091,36 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   return Hiwire.pop_value(res);
 }
 
+function filteredHasKey(
+  jsobj: PyProxy,
+  jskey: string | symbol,
+  filterProto: boolean,
+) {
+  if (jsobj instanceof Function) {
+    // If we are a PyProxy of a callable we have to subclass function so that if
+    // someone feature detects callables with `instanceof Function` it works
+    // correctly. But the callable might have attributes `name` and `length` and
+    // we don't want to shadow them with the values from `Function.prototype`.
+    return (
+      jskey in jsobj &&
+      !(
+        [
+          "name",
+          "length",
+          "caller",
+          "arguments",
+          // we are required by JS law to return `true` for `"prototype" in pycallable`
+          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+          // So we filter prototype out of the "get" trap but not out of the "has" trap
+          filterProto ? "prototype" : undefined,
+        ] as (string | symbol)[]
+      ).includes(jskey)
+    );
+  } else {
+    return jskey in jsobj;
+  }
+}
+
 // See explanation of which methods should be defined here and what they do
 // here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
@@ -2031,11 +2128,10 @@ const PyProxyHandlers = {
   isExtensible(): boolean {
     return true;
   },
-  has(jsobj: PyProxy, jskey: any): boolean {
+  has(jsobj: PyProxy, jskey: string | symbol): boolean {
     // Note: must report "prototype" in proxy when we are callable.
     // (We can return the wrong value from "get" handler though.)
-    let objHasKey = Reflect.has(jsobj, jskey);
-    if (objHasKey) {
+    if (filteredHasKey(jsobj, jskey, false)) {
       return true;
     }
     // python_hasattr will crash if given a Symbol.
@@ -2047,13 +2143,13 @@ const PyProxyHandlers = {
     }
     return python_hasattr(jsobj, jskey);
   },
-  get(jsobj: PyProxy, jskey: any): any {
+  get(jsobj: PyProxy, jskey: string | symbol): any {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
 
     // python_getattr will crash if given a Symbol.
-    if (jskey in jsobj || typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
@@ -2067,13 +2163,13 @@ const PyProxyHandlers = {
       return Hiwire.pop_value(idresult);
     }
   },
-  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
+  set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${jskey}'`);
+    if (descr && !descr.writable && !descr.set) {
+      return false;
     }
     // python_setattr will crash if given a Symbol.
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.set(jsobj, jskey, jsval);
     }
     if (jskey.startsWith("$")) {
@@ -2082,21 +2178,24 @@ const PyProxyHandlers = {
     python_setattr(jsobj, jskey, jsval);
     return true;
   },
-  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
+  deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${jskey}'`);
+    if (descr && !descr.configurable) {
+      // Must return "false" if "jskey" is a nonconfigurable own property.
+      // Otherwise JavaScript will throw a TypeError.
+      // Strict mode JS will throw an error here saying that the property cannot
+      // be deleted. It's good to leave everything alone so that the behavior is
+      // consistent with the error message.
+      return false;
     }
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.deleteProperty(jsobj, jskey);
     }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
-    // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise JavaScript will throw a TypeError.
-    return !descr || !!descr.configurable;
+    return true;
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);

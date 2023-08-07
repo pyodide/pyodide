@@ -38,6 +38,18 @@ def open_url(url: str) -> StringIO:
     Returns
     -------
         The contents of the URL.
+
+    Examples
+    --------
+    >>> from pyodide.http import open_url
+    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
+    >>> url_contents = open_url(url)
+    >>> url_contents.read()
+    {
+      "info": {
+          ... # long output truncated
+        }
+    }
     """
 
     req = XMLHttpRequest.new()
@@ -126,10 +138,6 @@ class FetchResponse:
         return self.js_response.url
 
     def _raise_if_failed(self) -> None:
-        if self.js_response.status >= 400:
-            raise OSError(
-                f"Request for {self._url} failed with status {self.status}: {self.status_text}"
-            )
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 
@@ -250,6 +258,19 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
+
+    Examples
+    --------
+    >>> from pyodide.http import pyfetch
+    >>> res = await pyfetch("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json")
+    >>> res.ok
+    True
+    >>> res.status
+    200
+    >>> data = await res.json()
+    >>> data
+    {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
+    'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
     try:
         return FetchResponse(

@@ -1,11 +1,14 @@
 import json
-import os
 import shutil
 import subprocess
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve
 
-from .common import exit_with_stdio, get_build_flag
+from pyodide_lock import PyodideLockSpec
+
+from . import build_env
+from .common import exit_with_stdio
 from .create_pypa_index import create_pypa_index
 from .logger import logger
 
@@ -31,15 +34,21 @@ def _download_xbuildenv(
         unpack_archive(f.name, xbuildenv_path)
 
 
-def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
+def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     logger.info("Installing xbuild environment")
 
     xbuildenv_path = xbuildenv_path / "xbuildenv"
     xbuildenv_root = xbuildenv_path / "pyodide-root"
 
-    os.environ["PYODIDE_ROOT"] = str(xbuildenv_root)
+    if (xbuildenv_path / ".installed").exists():
+        return xbuildenv_root
 
-    host_site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
+    # TODO: use a separate configuration file for variables that are used only in package building
+    host_site_packages = Path(
+        build_env._get_make_environment_vars(pyodide_root=xbuildenv_root)[
+            "HOSTSITEPACKAGES"
+        ]
+    )
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
@@ -62,18 +71,26 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> None:
         xbuildenv_path / "site-packages-extras", host_site_packages, dirs_exist_ok=True
     )
     cdn_base = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
-    if (repodata_json := xbuildenv_root / "dist" / "repodata.json").exists():
-        repodata_bytes = repodata_json.read_bytes()
+    lockfile_path = xbuildenv_root / "dist" / "pyodide-lock.json"
+    if lockfile_path.exists():
+        lockfile = PyodideLockSpec.from_json(lockfile_path)
     else:
-        repodata_url = cdn_base + "repodata.json"
-        with urlopen(repodata_url) as response:
-            repodata_bytes = response.read()
-    repodata = json.loads(repodata_bytes)
-    version = repodata["info"]["version"]
-    create_pypa_index(repodata["packages"], xbuildenv_root, cdn_base)
+        try:
+            with urlopen(cdn_base + "pyodide-lock.json") as response:
+                lockfile_bytes = response.read()
+        except HTTPError:
+            # Try again with old url
+            with urlopen(cdn_base + "repodata.json") as response:
+                lockfile_bytes = response.read()
+        lockfile = PyodideLockSpec(**json.loads(lockfile_bytes))
+    create_pypa_index(lockfile.packages, xbuildenv_root, cdn_base)
+
+    (xbuildenv_path / ".installed").touch()
+
+    return xbuildenv_root
 
 
-def install(path: Path, *, download: bool = True, url: str | None = None) -> None:
+def install(path: Path, *, download: bool = True, url: str | None = None) -> Path:
     """
     Install cross-build environment.
 
@@ -92,6 +109,10 @@ def install(path: Path, *, download: bool = True, url: str | None = None) -> Non
         Warning: if you are downloading from a version that is not the same
         as the current version of pyodide-build, make sure that the cross-build
         environment is compatible with the current version of Pyodide.
+
+    Returns
+    -------
+    Path to the Pyodide root directory for the cross-build environment.
     """
     from . import __version__
 
@@ -107,4 +128,4 @@ def install(path: Path, *, download: bool = True, url: str | None = None) -> Non
     elif download:
         _download_xbuildenv(version, path, url=url)
 
-    install_xbuildenv(version, path)
+    return install_xbuildenv(version, path)

@@ -5,8 +5,6 @@ Build all of the packages in a given directory.
 """
 
 import dataclasses
-import hashlib
-import json
 import shutil
 import subprocess
 import sys
@@ -21,14 +19,21 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from pyodide_lock import PyodideLockSpec
+from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
-from . import common, recipe
+from . import build_env, recipe
 from .buildpkg import needs_rebuild
-from .common import find_matching_wheels, find_missing_executables, repack_zip_archive
+from .common import (
+    extract_wheel_metadata_file,
+    find_matching_wheels,
+    find_missing_executables,
+    repack_zip_archive,
+)
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 from .pywasmcross import BuildArgs
@@ -109,7 +114,9 @@ class Package(BasePackage):
         if self.package_type in ("shared_library", "cpython_module"):
             candidates = list(dist_dir.glob("*.zip"))
         else:
-            candidates = list(find_matching_wheels(dist_dir.glob("*.whl")))
+            candidates = list(
+                find_matching_wheels(dist_dir.glob("*.whl"), build_env.pyodide_tags())
+            )
 
         if len(candidates) != 1:
             raise RuntimeError(
@@ -431,13 +438,6 @@ def job_priority(pkg: BasePackage) -> int:
         return 1
 
 
-def is_rust_package(pkg: BasePackage) -> bool:
-    """
-    Check if a package requires rust toolchain to build.
-    """
-    return any([q in pkg.executables_required for q in ("rustc", "cargo", "rustup")])
-
-
 def format_name_list(l: list[str]) -> str:
     """
     >>> format_name_list(["regex"])
@@ -558,7 +558,7 @@ def build_from_graph(
             _, pkg = build_queue.get()
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     # Don't build multiple rust packages at the same time.
                     # See: https://github.com/pyodide/pyodide/issues/3565
                     # Note that if there are only rust packages left in the queue,
@@ -598,7 +598,7 @@ def build_from_graph(
             built_queue.put(pkg)
 
             with thread_lock:
-                if is_rust_package(pkg):
+                if pkg.meta.is_rust_package():
                     building_rust_pkg = False
 
             # Release the GIL so new packages get queued
@@ -631,65 +631,54 @@ def build_from_graph(
                     build_queue.put((job_priority(dependent), dependent))
 
 
-def _generate_package_hash(full_path: Path) -> str:
-    sha256_hash = hashlib.sha256()
-    with open(full_path, "rb") as f:
-        while chunk := f.read(4096):
-            sha256_hash.update(chunk)
-    return sha256_hash.hexdigest()
-
-
 def generate_packagedata(
     output_dir: Path, pkg_map: dict[str, BasePackage]
-) -> dict[str, Any]:
-    packages: dict[str, Any] = {}
+) -> dict[str, PackageLockSpec]:
+    packages: dict[str, PackageLockSpec] = {}
     for name, pkg in pkg_map.items():
         if not pkg.file_name or pkg.package_type == "static_library":
             continue
         if not Path(output_dir, pkg.file_name).exists():
             continue
-        pkg_entry: Any = {
-            "name": name,
-            "version": pkg.version,
-            "file_name": pkg.file_name,
-            "install_dir": pkg.install_dir,
-            "sha256": _generate_package_hash(Path(output_dir, pkg.file_name)),
-            "package_type": pkg.package_type,
-            "imports": [],
-        }
+        pkg_entry = PackageLockSpec(
+            name=name,
+            version=pkg.version,
+            file_name=pkg.file_name,
+            install_dir=pkg.install_dir,
+            package_type=pkg.package_type,
+        )
+        pkg_entry.update_sha256(output_dir / pkg.file_name)
 
         pkg_type = pkg.package_type
         if pkg_type in ("shared_library", "cpython_module"):
             # We handle cpython modules as shared libraries
-            pkg_entry["shared_library"] = True
-            pkg_entry["install_dir"] = (
+            pkg_entry.shared_library = True
+            pkg_entry.install_dir = (
                 "stdlib" if pkg_type == "cpython_module" else "dynlib"
             )
 
-        pkg_entry["depends"] = [x.lower() for x in pkg.run_dependencies]
+        pkg_entry.depends = [x.lower() for x in pkg.run_dependencies]
 
         if pkg.package_type not in ("static_library", "shared_library"):
-            pkg_entry["imports"] = (
+            pkg_entry.imports = (
                 pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
             )
 
         packages[name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            packages[name.lower()]["unvendored_tests"] = True
+            packages[name.lower()].unvendored_tests = True
 
             # Create the test package if necessary
-            pkg_entry = {
-                "name": name + "-tests",
-                "version": pkg.version,
-                "depends": [name.lower()],
-                "imports": [],
-                "file_name": pkg.unvendored_tests.name,
-                "install_dir": pkg.install_dir,
-                "sha256": _generate_package_hash(
-                    Path(output_dir, pkg.unvendored_tests.name)
-                ),
-            }
+            pkg_entry = PackageLockSpec(
+                name=name + "-tests",
+                version=pkg.version,
+                depends=[name.lower()],
+                file_name=pkg.unvendored_tests.name,
+                install_dir=pkg.install_dir,
+            )
+            pkg_entry.update_sha256(output_dir / pkg.unvendored_tests.name)
+
             packages[name.lower() + "-tests"] = pkg_entry
 
     # sort packages by name
@@ -697,15 +686,15 @@ def generate_packagedata(
     return packages
 
 
-def generate_repodata(
+def generate_lockfile(
     output_dir: Path, pkg_map: dict[str, BasePackage]
-) -> dict[str, dict[str, Any]]:
+) -> PyodideLockSpec:
     """Generate the package.json file"""
 
     from . import __version__
 
     # Build package.json data.
-    [platform, _, arch] = common.platform().rpartition("_")
+    [platform, _, arch] = build_env.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
@@ -714,11 +703,14 @@ def generate_repodata(
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
-    return dict(info=info, packages=packages)
+    return PyodideLockSpec(info=info, packages=packages)
 
 
 def copy_packages_to_dist_dir(
-    packages: Iterable[BasePackage], output_dir: Path, compression_level: int = 6
+    packages: Iterable[BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     for pkg in packages:
         if pkg.package_type == "static_library":
@@ -730,6 +722,12 @@ def copy_packages_to_dist_dir(
         repack_zip_archive(
             output_dir / dist_artifact_path.name, compression_level=compression_level
         )
+
+        if metadata_files and dist_artifact_path.suffix == ".whl":
+            extract_wheel_metadata_file(
+                dist_artifact_path,
+                output_dir / f"{dist_artifact_path.name}.metadata",
+            )
 
         test_path = pkg.tests_path()
         if test_path:
@@ -785,12 +783,15 @@ def copy_logs(pkg_map: dict[str, BasePackage], log_dir: Path) -> None:
 
 
 def install_packages(
-    pkg_map: dict[str, BasePackage], output_dir: Path, compression_level: int = 6
+    pkg_map: dict[str, BasePackage],
+    output_dir: Path,
+    compression_level: int = 6,
+    metadata_files: bool = False,
 ) -> None:
     """
     Install packages into the output directory.
     - copies build artifacts (wheel, zip, ...) to the output directory
-    - create repodata.json
+    - create pyodide_lock.json
 
 
     pkg_map
@@ -804,32 +805,33 @@ def install_packages(
 
     logger.info(f"Copying built packages to {output_dir}")
     copy_packages_to_dist_dir(
-        pkg_map.values(), output_dir, compression_level=compression_level
+        pkg_map.values(),
+        output_dir,
+        compression_level=compression_level,
+        metadata_files=metadata_files,
     )
 
-    repodata_path = output_dir / "repodata.json"
-    logger.info(f"Writing repodata.json to {repodata_path}")
+    lockfile_path = output_dir / "pyodide-lock.json"
+    logger.info(f"Writing pyodide-lock.json to {lockfile_path}")
 
-    package_data = generate_repodata(output_dir, pkg_map)
-    with repodata_path.open("w") as fd:
-        json.dump(package_data, fd)
-        fd.write("\n")
+    package_data = generate_lockfile(output_dir, pkg_map)
+    package_data.to_json(lockfile_path)
 
 
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
     if args.cflags is None:
-        args.cflags = common.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
+        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
     if args.cxxflags is None:
-        args.cxxflags = common.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
+        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
     if args.ldflags is None:
-        args.ldflags = common.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
+        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
     if args.target_install_dir is None:
-        args.target_install_dir = common.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
+        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
-        args.host_install_dir = common.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(common.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args

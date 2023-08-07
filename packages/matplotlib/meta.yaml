@@ -30,7 +30,7 @@ build:
     -fno-lto
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
-    cd build/matplotlib-$PKG_VERSION/dist/matplotlib-$PKG_VERSION/
+    cd $WHEELDIR
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext
