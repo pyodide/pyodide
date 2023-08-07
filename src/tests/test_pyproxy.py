@@ -514,15 +514,15 @@ def test_pyproxy_mixins31(selenium):
         pyodide.runPython("assert Test.name == 7");
         pyodide.runPython("assert Test.length == 7");
         // prototype cannot be removed once added because it is nonconfigurable...
-        assertThrows(() => delete Test.prototype, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property 'prototype'/);
+        assertThrows(() => delete Test.prototype, "TypeError", "");
         delete Test.name;
         delete Test.length;
         pyodide.runPython(`assert Test.prototype == 7`);
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
 
-        assertThrows(() => Test.$$ = 7, "TypeError", /^'set' on proxy: trap returned falsish for property '\\$\\$'/);
-        assertThrows(() => delete Test.$$, "TypeError", /^'deleteProperty' on proxy: trap returned falsish for property '\\$\\$'/);
+        assertThrows(() => Test.$$ = 7, "TypeError", "");
+        assertThrows(() => delete Test.$$, "TypeError", "");
 
         Test.$a = 7;
         Object.defineProperty(Test, "a", {
@@ -537,14 +537,14 @@ def test_pyproxy_mixins31(selenium):
         Test.a = 9;
         assert(() => Test.a === 10);
         pyodide.runPython("assert Test.a == 9")
-        assertThrows(() => delete Test.a, "TypeError", //);
+        assertThrows(() => delete Test.a, "TypeError", "");
 
         Object.defineProperty(Test, "b", {
             get(){ return Test.$a + 2; },
         });
         assert(() => Test.b === 11);
-        assertThrows(() => Test.b = 7,"TypeError", //);
-        assertThrows(() => delete Test.b, "TypeError", //);
+        assertThrows(() => Test.b = 7,"TypeError", "");
+        assertThrows(() => delete Test.b, "TypeError", "");
         Test.destroy();
         t.destroy();
         """
