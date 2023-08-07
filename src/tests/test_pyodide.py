@@ -744,7 +744,7 @@ def test_return_destroyed_value(selenium):
     f = run_js("(function(x){ return x; })")
     p = create_proxy([])
     p.destroy()
-    with pytest.raises(JsException, match='The object was of type "list" and had repr'):
+    with pytest.raises(JsException, match="Object has already been destroyed"):
         f(p)
 
 
