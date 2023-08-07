@@ -9,6 +9,8 @@ behavior of reading from {py:data}`~sys.stdin` and writing to {py:data}`~sys.std
 
 ## Standard Input
 
+(streams-stdin)=
+
 {js:func}`pyodide.setStdin` sets the standard in handler. There are several
 different ways to do this depending on the options passed to `setStdin`.
 
@@ -23,6 +25,13 @@ pyodide.runPython(`
         input()
 `);
 ```
+
+### Set the default behavior
+
+You can set the default behavior by calling `pyodide.setStdin()` with no
+arguments. In Node the default behavior is to read directly from Node's standard
+input. In the browser, the default is the same as
+`pyodide.setStdin({ error: true })`.
 
 ### A stdin handler
 
@@ -42,10 +51,10 @@ For example, the following class plays back a list of results.
 
 ```js
 class StdinHandler {
-  constructor(results, isatty) {
+  constructor(results, options) {
     this.results = results;
-    this.isatty = isatty;
     this.idx = 0;
+    Object.assign(this, options);
   }
 
   stdin() {
@@ -54,16 +63,13 @@ class StdinHandler {
 }
 ```
 
-Here's it in use:
+Here it is in use:
 
 ```pyodide
 pyodide.setStdin(
-  new StdinHandler(["a", "bcd", "efg"], true /* isatty should be true */),
+  new StdinHandler(["a", "bcd", "efg"]),
 );
 pyodide.runPython(`
-    import sys
-    assert sys.stdin.isatty() # returns true as we requested
-    # input plays back the three strings we gave:
     assert input() == "a"
     assert input() == "bcd"
     assert input() == "efg"
@@ -80,9 +86,9 @@ have been appended to strings that don't end in a newline:
 
 ```pyodide
 pyodide.setStdin(
-  new StdinHandler(["a", "bcd\n", "efg", undefined, "h", "i"], true),
+  new StdinHandler(["a", "bcd\n", "efg", undefined, "h", "i"]),
 );
-pyodide.runPython(`
+pyodide.runPython(String.raw`
     import sys
     assert sys.stdin.read() == "a\nbcd\nefg\n"
     assert sys.stdin.read() == "h\ni\n"
@@ -109,7 +115,7 @@ render:
 
 ```pyodide
 pyodide.setStdin(
-  new StdinHandler([new Uint8Array([0x61, 0x0a, 0x62, 0x63])], true),
+  new StdinHandler([new Uint8Array([0x61, 0x0a, 0x62, 0x63])]),
 );
 pyodide.runPython(`
     assert input() == "a"
@@ -157,7 +163,104 @@ fd = fs.openSync("/dev/stdin", "r");
 py.setStdin(new NodeReader(fd));
 ```
 
+### isatty
+
+It is possible to control whether or not {py:meth}`sys.stdin.isatty() <io.IOBase.isatty>`
+returns true with the `isatty` option:
+
+```pyodide
+pyodide.setStdin(new StdinHandler([], {isatty: true}));
+pyodide.runPython(`
+    import sys
+    assert sys.stdin.isatty() # returns true as we requested
+`);
+pyodide.setStdin(new StdinHandler([], {isatty: false}));
+pyodide.runPython(`
+  assert not sys.stdin.isatty() # returns false as we requested
+`);
+```
+
+This will change the behavior of cli applications that behave differently in an
+interactive terminal, for example pytest does this.
+
+### Raising IO errors
+
+To raise an IO error in either a `stdin` or `read` handler, you should throw an
+IO error as follows:
+
+```js
+throw new pyodide.FS.ErrnoError(pyodide.ERRNO_CODES.EIO);
+```
+
+for instance, saying:
+
+```js
+pyodide.setStdin({
+  read(buf) {
+    throw new pyodide.FS.ErrnoError(pyodide.ERRNO_CODES.EIO);
+  },
+});
+```
+
+is the same as `pyodide.setStdin({error: true})`.
+
+### Handling Keyboard interrupts
+
+To handle a keyboard interrupt in an input handler, you should periodically call
+{js:func}`pyodide.checkInterrupt`. For example, the following stdin handler
+always raises a keyboard interrupt:
+
+```js
+const interruptBuffer = new Int32Array(new SharedArrayBuffer(4));
+pyodide.setInterruptBuffer(interruptBuffer);
+pyodide.setStdin({
+  read(buf) {
+    // Put signal into interrupt buffer
+    interruptBuffer[0] = 2;
+    // Call checkInterrupt to raise an error
+    pyodide.checkInterrupt();
+    console.log(
+      "This code won't ever be executed because pyodide.checkInterrupt raises an error!",
+    );
+  },
+});
+```
+
+For a more realistic example that handles reading stdin in a worker and also
+keyboard interrupts, you might something like the following code:
+
+```js
+pyodide.setStdin({read(buf) {
+  const timeoutMilliseconds = 100;
+  while(true) {
+    switch(Atomics.wait(stdinSharedBuffer, 0, 0, timeoutMilliseconds) {
+      case "timed-out":
+        // 100 ms passed but got no data, check for keyboard interrupt then return to waiting on data.
+        pyodide.checkInterrupt();
+        break;
+      case "ok":
+        // ... handle the data somehow
+        break;
+    }
+  }
+}});
+```
+
+See also {ref}`interrupting_execution`.
+
 ## Standard Out / Standard Error
+
+(streams-stdout)=
+
+{js:func}`pyodide.setStdout` and {js:func}`pyodide.setStderr` respectively set
+the standard output and standard error handlers. These APIs are identical except
+in their defaults, so we will only discuss the `pyodide.setStdout` except in
+cases where they differ.
+
+As with {js:func}`pyodide.setStdin`, there are quite a few different ways to set
+the standard output handlers.
+
+### Set the default behavior
 
 `setStdout({batched?, raw?, isatty?})` sets the standard out handler and
 similarly `setStderr` (same arguments) sets the stdandard error handler. If a
@@ -171,12 +274,12 @@ text (or when the output is flushed). A `batched` handler cannot have `isatty`
 set to `true` because it is impossible to use such a handler to make something
 behave like a tty.
 
-Passing neither `raw` nor `batched` sets the default behavior. In Node the
+Calling `setStdout` with no arguments sets the default behavior. In Node the
 default behavior is to write directly to {js:data}`process.stdout` and
 {js:data}`process.stderr` (in this case `isatty` depends on whether
 {js:data}`process.stdout` and {js:data}`process.stderr` are ttys). In browser,
-the default behavior is achieved with `pyodide.setStdout({batched: console.log})`
-and `pyodide.setStderr({batched: console.warn})`.
+the default behavior is achieved with `pyodide.setStdout({batched:
+console.log})` and `pyodide.setStderr({batched: console.warn})`.
 
 The arguments `stdin`, `stdout`, and `stderr` to `loadPyodide` provide a
 diminished amount of control compared to `setStdin`, `setStdout`, and

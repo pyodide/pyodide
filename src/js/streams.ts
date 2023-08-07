@@ -229,16 +229,23 @@ type StdinOptions = {
 };
 
 /**
- * Set a stdin handler. There are two different ways to make a handler:
- * 1. by passing a ``read`` function, or
- * 2. by passing a ``stdin`` function.
+ * Set a stdin handler. See :ref:`redirecting standard streams <streams-stdin>`
+ * for a more detailed explanation. There are two different possible interfaces
+ * to implement a handler. It's also possible to select either the default
+ * handler or an error handler that always returns an IO error.
  *
- * You can also pass ``error: true`` to indicate that attempting to read from
- * stdin should always raise an IO error.
+ * 1. passing a ``read`` function (see below),
+ * 2. passing a ``stdin`` function (see below),
+ * 3. passing ``error: true`` indicates that attempting to read from stdin
+ *    should always raise an IO error.
+ * 4. passing none of these sets the default behavior. In node, the default is
+ *    to read from stdin. In the browser, the default is to raise an error.
  *
  * The functions on the ``options`` argument will be called with ``options``
  * bound to ``this`` so passing an instance of a class as the ``options`` object
  * works as expected.
+ *
+ * The interfaces that the handlers implement are as follows:
  *
  * 1. The ``read`` function is called with a ``Uint8Array`` argument. The
  *    function should place the utf8-encoded input into this buffer and return
@@ -250,19 +257,21 @@ type StdinOptions = {
  * 2. The ``stdin`` function is called with zero arguments. It should return one
  *    of:
  *
- * - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of
- *   file.
- * - a number
- * - a string
- * - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
- *   :js:data:`~TypedArray.BYTES_PER_ELEMENT` equal to 1.
+ *    - :js:data:`null` or :js:data:`undefined`: these are interpreted as end of
+ *      file.
+ *    - a number
+ *    - a string
+ *    - an :js:class:`ArrayBuffer` or :js:class:`TypedArray` with
+ *      :js:data:`~TypedArray.BYTES_PER_ELEMENT` equal to 1. The buffer should
+ *      contain utf8 encoded text.
  *
- * If a number is returned, it is interpreted as a single character code. The
- * number should be between 0 and 255.
+ *    If a number is returned, it is interpreted as a single character code. The
+ *    number should be between 0 and 255.
  *
- * If a string is returned and it doesn't end in a new line, a new line is
- * appended. The resulting string is then encoded into a buffer using
- * :js:class:`TextEncoder`.
+ *    If a string is returned, it is encoded into a buffer using
+ *    :js:class:`TextEncoder`. By default, an EOF is appended after each string
+ *    or buffer returned. If this behavior is not desired, pass `autoEOF:
+ *    false`.
  *
  * @param options.stdin A stdin handler
  * @param options.read A read handler
@@ -271,7 +280,8 @@ type StdinOptions = {
  * @param options.isatty Should :py:func:`isatty(stdin) <os.isatty>` be ``true``
  * or ``false`` (default ``false``).
  * @param options.autoEOF Insert an EOF automatically after each string or
- * buffer? (default ``true``).
+ * buffer? (default ``true``). This option can only be used with the stdin
+ * handler.
  */
 export function setStdin(
   options: {
