@@ -595,7 +595,8 @@ def test_pyproxy_mixins32(selenium, configurable, writable):
             assertThrows(() => delete d.x, "TypeError", "%s");
         }
         d.destroy();
-        """ % (setText, deleteText)
+        """
+        % (setText, deleteText)
     )
 
 
