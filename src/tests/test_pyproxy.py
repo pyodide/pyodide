@@ -775,48 +775,48 @@ def test_pyproxy_implicit_copy(selenium):
 def test_errors(selenium):
     selenium.run_js(
         r"""
-        let t = pyodide.runPython(`
-            from pyodide.ffi import to_js
-            def te(self, *args, **kwargs):
-                raise Exception(repr(args))
-            class Temp:
-                __getattr__ = te
-                __setattr__ = te
-                __delattr__ = te
-                __dir__ = te
-                __call__ = te
-                __getitem__ = te
-                __setitem__ = te
-                __delitem__ = te
-                __iter__ = te
-                __len__ = te
-                __contains__ = te
-                __await__ = te
-                __repr__ = te
-            to_js(Temp())
-            Temp()
-        `);
-        assertThrows(() => t.x, "PythonError", "");
-        try {
-            t.x;
-        } catch(e){
-            assert(() => e instanceof pyodide.ffi.PythonError);
-        }
-        assertThrows(() => t.x = 2, "PythonError", "");
-        assertThrows(() => delete t.x, "PythonError", "");
-        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
-        assertThrows(() => t(), "PythonError", "");
-        assertThrows(() => t.get(1), "PythonError", "");
-        assertThrows(() => t.set(1, 2), "PythonError", "");
-        assertThrows(() => t.delete(1), "PythonError", "");
-        assertThrows(() => t.has(1), "PythonError", "");
-        assertThrows(() => t.length, "PythonError", "");
-        assertThrows(() => t.toString(), "PythonError", "");
-        assertThrows(() => Array.from(t), "PythonError", "");
-        await assertThrowsAsync(async () => await t, "PythonError", "");
-        t.destroy();
         const origDebug = pyodide.setDebug(true);
         try {
+            const t = pyodide.runPython(`
+                from pyodide.ffi import to_js
+                def te(self, *args, **kwargs):
+                    raise Exception(repr(args))
+                class Temp:
+                    __getattr__ = te
+                    __setattr__ = te
+                    __delattr__ = te
+                    __dir__ = te
+                    __call__ = te
+                    __getitem__ = te
+                    __setitem__ = te
+                    __delitem__ = te
+                    __iter__ = te
+                    __len__ = te
+                    __contains__ = te
+                    __await__ = te
+                    __repr__ = te
+                to_js(Temp())
+                Temp()
+            `);
+            assertThrows(() => t.x, "PythonError", "");
+            try {
+                t.x;
+            } catch(e){
+                assert(() => e instanceof pyodide.ffi.PythonError);
+            }
+            assertThrows(() => t.x = 2, "PythonError", "");
+            assertThrows(() => delete t.x, "PythonError", "");
+            assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+            assertThrows(() => t(), "PythonError", "");
+            assertThrows(() => t.get(1), "PythonError", "");
+            assertThrows(() => t.set(1, 2), "PythonError", "");
+            assertThrows(() => t.delete(1), "PythonError", "");
+            assertThrows(() => t.has(1), "PythonError", "");
+            assertThrows(() => t.length, "PythonError", "");
+            assertThrows(() => t.toString(), "PythonError", "");
+            assertThrows(() => Array.from(t), "PythonError", "");
+            await assertThrowsAsync(async () => await t, "PythonError", "");
+            t.destroy();
             assertThrows(() => t.type, "Error",
                 "Object has already been destroyed\n" +
                 'The object was of type "Temp" and an error was raised when trying to generate its repr'
