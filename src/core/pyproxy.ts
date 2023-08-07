@@ -456,6 +456,7 @@ Module.pyproxy_destroy = function (
   if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
+  shared.destroyed_msg = generateDestroyedMessage(proxy, destroyed_msg);
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
@@ -463,7 +464,6 @@ Module.pyproxy_destroy = function (
   shared.ptr = 0;
   Module.finalizationRegistry.unregister(shared);  
   pyproxy_decref_cache(shared.cache);
-  shared.destroyed_msg = generateDestroyedMessage(proxy, destroyed_msg);
 
   try {
     Py_ENTER();
