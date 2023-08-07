@@ -816,12 +816,12 @@ def test_errors(selenium):
         await assertThrowsAsync(async () => await t, "PythonError", "");
         t.destroy();
         const origDebug = pyodide.setDebug(true);
-        try {        
+        try {
             assertThrows(() => t.type, "Error",
                 "Object has already been destroyed\n" +
                 'The object was of type "Temp" and an error was raised when trying to generate its repr'
             );
-        } finally {        
+        } finally {
             pyodide.setDebug(origDebug);
         }
         """
