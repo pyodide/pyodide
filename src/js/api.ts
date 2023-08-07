@@ -631,9 +631,12 @@ export class PyodideAPI {
    * Turn on or off debug mode. In debug mode, some error messages are improved
    * at a performance cost.
    * @param debug If true, turn debug mode on. If false, turn debug mode off.
+   * @returns The old value of the debug flag.
    */
-  static setDebug(debug: boolean) {
+  static setDebug(debug: boolean): boolean {
+    const orig = !!API.debug_ffi;
     API.debug_ffi = debug;
+    return orig;
   }
 }
 
