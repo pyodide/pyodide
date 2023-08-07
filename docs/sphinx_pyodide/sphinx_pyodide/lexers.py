@@ -24,7 +24,10 @@ class PyodideLexer(JavascriptLexer):
             (
                 rf"([A-Za-z.]*)({quotemark})((?:\\\\|\\[^\\]|[^{quotemark}\\])*)({quotemark})",
                 bygroups(
-                    using(JavascriptLexer), Token.Literal.String, using(PythonLexer), Token.Literal.String
+                    using(JavascriptLexer),
+                    Token.Literal.String,
+                    using(PythonLexer),
+                    Token.Literal.String,
                 ),
                 "#pop",
             )
