@@ -159,14 +159,6 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
-    async def string(self) -> str:
-        """Return the response body as a string
-
-        Does the same thing as :py:meth:`Response.text`.
-        """
-        self._raise_if_failed()
-        return await self.js_response.text()
-
     async def text(self) -> str:
         """Return the response body as a string
 
@@ -174,6 +166,13 @@ class FetchResponse:
         """
         self._raise_if_failed()
         return await self.js_response.text()
+
+    async def string(self) -> str:
+        """Return the response body as a string
+
+        Does the same thing as :py:meth:`Response.text`.
+        """
+        return await self.text()
 
     async def json(self, **kwargs: Any) -> Any:
         """Treat the response body as a JSON string and use
