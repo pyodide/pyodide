@@ -141,6 +141,21 @@ class FetchResponse:
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 
+    def raise_for_status(self) -> None:
+        http_error_msg = ""
+        if 400 <= self.status < 500:
+            http_error_msg = (
+                f"{self.status} Client Error: {self.status_text} for url: {self.url}"
+            )
+
+        if 500 <= self.status < 600:
+            http_error_msg = (
+                f"{self.status} Server Error: {self.status_text} for url: {self.url}"
+            )
+
+        if http_error_msg:
+            raise OSError(http_error_msg)
+
     def clone(self) -> "FetchResponse":
         """Return an identical copy of the :py:class:`FetchResponse`.
 

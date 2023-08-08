@@ -54,6 +54,50 @@ async def test_pyfetch_return_400_status_body(selenium, url_notfound):
     assert body == "404 Not Found"
 
 
+@pytest.fixture
+def raise_for_status_fixture(httpserver):
+    httpserver.expect_request("/200").respond_with_data(
+        b"Some data here!",
+        content_type="text/text",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    httpserver.expect_request("/404").respond_with_data(
+        b"Not Found",
+        content_type="text/text",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=404,
+    )
+    httpserver.expect_request("/504").respond_with_data(
+        b"Gateway timeout",
+        content_type="text/text",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=504,
+    )
+    return {p: httpserver.url_for(p) for p in ["/200", "/404", "/504"]}
+
+
+@run_in_pyodide
+async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
+    import pytest
+
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch(raise_for_status_fixture["/200"])
+    resp.raise_for_status()
+    assert await resp.string() == "Some data here!"
+
+    resp = await pyfetch(raise_for_status_fixture["/404"])
+    with pytest.raises(OSError, match="404 Client Error: NOT FOUND for url: .*/404"):
+        resp.raise_for_status()
+
+    resp = await pyfetch(raise_for_status_fixture["/504"])
+    with pytest.raises(
+        OSError, match="504 Server Error: GATEWAY TIMEOUT for url: .*/504"
+    ):
+        resp.raise_for_status()
+
+
 @run_in_pyodide
 async def test_pyfetch_unpack_archive(selenium):
     import pathlib
