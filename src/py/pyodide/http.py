@@ -160,7 +160,18 @@ class FetchResponse:
         return await self.js_response.arrayBuffer()
 
     async def string(self) -> str:
-        """Return the response body as a string"""
+        """Return the response body as a string
+
+        Does the same thing as :py:meth:`Response.text`.
+        """
+        self._raise_if_failed()
+        return await self.js_response.text()
+
+    async def text(self) -> str:
+        """Return the response body as a string
+
+        Does the same thing as :py:meth:`Response.string`.
+        """
         self._raise_if_failed()
         return await self.js_response.text()
 
