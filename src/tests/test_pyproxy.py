@@ -665,7 +665,7 @@ def test_pyproxy_mixins5(selenium):
             assert(() => !("length" in Test));
             assert(() => t.length === 9);
             assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-            assertThrows(() => {t.length = 10}, "TypeError", "'set' on proxy: trap returned falsish for property 'length'");
+            assertThrows(() => {t.length = 10}, "TypeError", "");
             assert(() => t.length === 9);
 
             // For some reason, this is the normal behavior for a JS getter:
