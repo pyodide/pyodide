@@ -380,6 +380,35 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
 }
 
+function generateDestroyedMessage(
+  proxy: PyProxy,
+  destroyed_msg: string,
+): string {
+  destroyed_msg = destroyed_msg || "Object has already been destroyed";
+  if (API.debug_ffi) {
+    let proxy_type = proxy.type;
+    let proxy_repr;
+    try {
+      proxy_repr = proxy.toString();
+    } catch (e) {
+      if ((e as any).pyodide_fatal_error) {
+        throw e;
+      }
+    }
+    destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
+    if (proxy_repr) {
+      destroyed_msg += `had repr "${proxy_repr}"`;
+    } else {
+      destroyed_msg += "an error was raised when trying to generate its repr";
+    }
+  } else {
+    destroyed_msg +=
+      "\n" +
+      "For more information about the cause of this error, use `pyodide.setDebug(true)`";
+  }
+  return destroyed_msg;
+}
+
 Module.pyproxy_destroy = function (
   proxy: PyProxy,
   destroyed_msg: string,
@@ -393,29 +422,12 @@ Module.pyproxy_destroy = function (
   }
   let ptrobj = _getPtr(proxy);
   Module.finalizationRegistry.unregister(proxy.$$);
-  destroyed_msg = destroyed_msg || "Object has already been destroyed";
-  let proxy_type = proxy.type;
-  let proxy_repr;
-  try {
-    proxy_repr = proxy.toString();
-  } catch (e) {
-    if ((e as any).pyodide_fatal_error) {
-      throw e;
-    }
-  }
+  proxy.$$.destroyed_msg = generateDestroyedMessage(proxy, destroyed_msg);
+  pyproxy_decref_cache(proxy.$$.cache);
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
   proxy.$$.ptr = 0;
-  Module.finalizationRegistry.unregister(proxy.$$);
-  destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
-  if (proxy_repr) {
-    destroyed_msg += `had repr "${proxy_repr}"`;
-  } else {
-    destroyed_msg += "an error was raised when trying to generate its repr";
-  }
-  proxy.$$.destroyed_msg = destroyed_msg;
-  pyproxy_decref_cache(proxy.$$.cache);
   try {
     Py_ENTER();
     Module._Py_DecRef(ptrobj);
@@ -2153,11 +2165,11 @@ const PyProxyHandlers = {
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
+    if (descr && !descr.writable && !descr.set) {
+      return false;
     }
     // python_setattr will crash if given a Symbol.
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.set(jsobj, jskey, jsval);
     }
     if (jskey.startsWith("$")) {
@@ -2168,19 +2180,22 @@ const PyProxyHandlers = {
   },
   deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
+    if (descr && !descr.configurable) {
+      // Must return "false" if "jskey" is a nonconfigurable own property.
+      // Otherwise JavaScript will throw a TypeError.
+      // Strict mode JS will throw an error here saying that the property cannot
+      // be deleted. It's good to leave everything alone so that the behavior is
+      // consistent with the error message.
+      return false;
     }
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.deleteProperty(jsobj, jskey);
     }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
-    // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise JavaScript will throw a TypeError.
-    return !descr || !!descr.configurable;
+    return true;
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);

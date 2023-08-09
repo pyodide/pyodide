@@ -15,6 +15,16 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} For performance reasons, don't render extra information in
+  PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
+  can opt into worse performance and better error messages.
+  {pr}`4027`
+
+- {{ Fix }} Fixed adding getters/setters to a `PyProxy` with
+  `Object.defineProperty` and improved compliance with JavaScript rules around
+  Proxy traps.
+  {pr}`4033`
+
 - {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
@@ -25,8 +35,8 @@ myst:
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.40
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
