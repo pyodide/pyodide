@@ -95,6 +95,7 @@ export interface Module {
   addRunDependency: (id: string) => void;
   removeRunDependency: (id: string) => void;
   reportUndefinedSymbols: () => void;
+  ERRNO_CODES: {[k: string]: number};
 }
 
 /**

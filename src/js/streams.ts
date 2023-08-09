@@ -67,6 +67,37 @@ function isErrnoError(e: any) {
   return e && typeof e === "object" && "errno" in e;
 }
 
+const waitBuffer = new Int32Array(
+  new WebAssembly.Memory({ shared: true, initial: 1, maximum: 1 }).buffer,
+);
+function syncSleep(ms: number): boolean {
+  try {
+    Atomics.wait(waitBuffer, 0, 0, ms);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function readHelper(devops: Reader, buffer: Uint8Array): number {
+  while (true) {
+    try {
+      return devops.read(buffer);
+    } catch (e: any) {
+      if (e && e.code === "EAGAIN") {
+        // Presumably this means we're in node and tried to read from an
+        // O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
+        // requested by EAGAIN and try again. In case for some reason we fail to
+        // sleep, propagate the error (it will turn into an EOFError).
+        if (syncSleep(100)) {
+          continue;
+        }
+      }
+      throw e;
+    }
+  }
+}
+
 const stream_ops: StreamOps = {
   open: function (stream) {
     const devops = DEVOPS[stream.node.rdev];
@@ -88,12 +119,19 @@ const stream_ops: StreamOps = {
     }
   },
   read: function (stream, buffer, offset, length, pos /* ignored */) {
-    buffer = API.typedArrayAsUint8Array(buffer);
+    buffer = API.typedArrayAsUint8Array(buffer).subarray(
+      offset,
+      offset + length,
+    );
     let bytesRead;
     try {
-      bytesRead = stream.devops.read(buffer.subarray(offset, offset + length));
-    } catch (e) {
+      bytesRead = readHelper(stream.devops, buffer);
+    } catch (e: any) {
+      if (e && e.code && Module.ERRNO_CODES[e.code]) {
+        throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
+      }
       if (isErrnoError(e)) {
+        // the handler set an errno, propagate it
         throw e;
       }
       console.error("Error thrown in read:");
