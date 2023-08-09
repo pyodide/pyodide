@@ -142,6 +142,7 @@ class FetchResponse:
             raise OSError("Response body is already used")
 
     def raise_for_status(self) -> None:
+        """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
         http_error_msg = ""
         if 400 <= self.status < 500:
             http_error_msg = (
