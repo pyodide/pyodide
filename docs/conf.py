@@ -262,6 +262,8 @@ def ensure_typedoc_on_path():
 def create_generated_typescript_files(app):
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
+    shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
+    shutil.copy("../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json", "../src/js/generated_struct_info32.gen.json")
     app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
 
     def remove_pyproxy_gen_ts():
