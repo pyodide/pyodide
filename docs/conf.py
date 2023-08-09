@@ -61,7 +61,7 @@ autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.10", None),
+    "python": ("https://docs.python.org/3.11", None),
     "micropip": (f"https://micropip.pyodide.org/en/v{micropip.__version__}/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
@@ -259,11 +259,36 @@ def ensure_typedoc_on_path():
     )
 
 
+def get_emscripten_version():
+    prefix = "export PYODIDE_EMSCRIPTEN_VERSION ?= "
+    for line in Path("../Makefile.envs").read_text().splitlines():
+        if line.startswith(prefix):
+            return line.removeprefix(prefix)
+
+
+def create_struct_info():
+    struct_info_path = Path("../src/js/generated_struct_info32.gen.json")
+    if struct_info_path.exists():
+        return
+    src_path = Path(
+        "../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json"
+    )
+    if src_path.exists():
+        shutil.copy(src_path, struct_info_path)
+        return
+    import urllib
+
+    urllib.request.urlretrieve(
+        f"https://raw.githubusercontent.com/emscripten-core/emscripten/{get_emscripten_version()}/src/generated_struct_info32.json",
+        struct_info_path,
+    )
+
+
 def create_generated_typescript_files(app):
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
-    shutil.copy("../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json", "../src/js/generated_struct_info32.gen.json")
+    create_struct_info()
     app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
 
     def remove_pyproxy_gen_ts():
