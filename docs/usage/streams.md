@@ -134,15 +134,12 @@ descriptor:
 const fs = require("fs");
 const tty = require("tty");
 class NodeReader {
-  fd: number;
-  isatty: boolean;
-
-  constructor(fd: number) {
+  constructor(fd) {
     this.fd = fd;
     this.isatty = tty.isatty(fd);
   }
 
-  read(buffer: Uint8Array): number {
+  read(buffer) {
     return fs.readSync(this.fd, buffer);
   }
 }
@@ -262,28 +259,99 @@ the standard output handlers.
 
 ### Set the default behavior
 
-`setStdout({batched?, raw?, isatty?})` sets the standard out handler and
-similarly `setStderr` (same arguments) sets the stdandard error handler. If a
-`raw` handler is provided then the handler is called with a `number` for each
-byte of the output to stdout. The handler is expected to deal with this in
-whatever way it prefers. `isatty` again controls whether {py:func}`isatty(stdout) <os.isatty>`
-returns `true` or `false`.
+As with stdin, `pyodide.setStdout()` sets the default behavior. In node, this is
+to write directly to `process.stdout`. In the browser, the default is as if you
+wrote
+`setStdout({batched: (str) => console.log(str)}})`
+see below.
 
-On the other hand, a `batched` handler is only called with complete lines of
-text (or when the output is flushed). A `batched` handler cannot have `isatty`
-set to `true` because it is impossible to use such a handler to make something
-behave like a tty.
+### A batched handler
 
-Calling `setStdout` with no arguments sets the default behavior. In Node the
-default behavior is to write directly to {js:data}`process.stdout` and
-{js:data}`process.stderr` (in this case `isatty` depends on whether
-{js:data}`process.stdout` and {js:data}`process.stderr` are ttys). In browser,
-the default behavior is achieved with `pyodide.setStdout({batched:
-console.log})` and `pyodide.setStderr({batched: console.warn})`.
+A batched handler is the easiest standard out handler to implement but it is
+also the coarsest. It is intended to use with APIs like `console.log` that don't
+understand partial lines of text or for quick and dirty code.
 
-The arguments `stdin`, `stdout`, and `stderr` to `loadPyodide` provide a
-diminished amount of control compared to `setStdin`, `setStdout`, and
-`setStderr`. They all set `isatty` to `false` and use batched processing for
-`setStdout` and `setStderr`. In most cases, nothing is written or read to any of
-these streams while Pyodide is starting, so if you need the added flexibility
-you can wait until Pyodide is loaded and then use the `pyodide.setStdxxx` apis.
+The batched handler receives a string which is either:
+
+1. a complete line of text with the newline removed or
+2. a partial line of text that was flushed.
+
+For instance after:
+
+```py
+print("hello!")
+import sys
+print("partial line", end="")
+sys.stdout.flush()
+```
+
+the batched handler is called with `"hello!"` and then with `"partial line"`.
+Note that there is no indication that `"hello!"` was a complete line of text and
+`"partial line"` was not.
+
+### A raw handler
+
+A raw handler receives the output one character code at a time. This is neither
+very convenient nor very efficient. It is present primarily for backwards
+compatibility reasons.
+
+For example, the following code:
+
+```py
+print("h")
+import sys
+print("p ", end="")
+print("l", end="")
+sys.stdout.flush()
+```
+
+will call the raw handler with the sequence of bytes:
+
+```py
+0x68 - h
+0x0A - newline
+0x70 - p
+0x20 - space
+0x6c - l
+```
+
+### A write handler
+
+A write handler takes a `Uint8Array` as an argument and is supposed to write the
+data in this buffer to standard output and return the number of bytes written.
+For example, the following class can be used to write to a Node file descriptor:
+
+```js
+const fs = require("fs");
+const tty = require("tty");
+class NodeWriter {
+  constructor(fd) {
+    this.fd = fd;
+    this.isatty = tty.isatty(fd);
+  }
+
+  write(buffer) {
+    return fs.writeSync(this.fd, buffer);
+  }
+}
+```
+
+Using it as follows redirects output from Pyodide to `out.txt`:
+
+```js
+const fd = fs.openSync("out.txt", "w");
+py.setStdout(new NodeWriter(fd));
+```
+
+Or the following gives the default behavior:
+
+```js
+const fd = fs.openSync("out.txt", "w");
+py.setStdout(new NodeWriter(process.stdout.fd));
+```
+
+### isatty
+
+As with `stdin`, is possible to control whether or not
+{py:meth}`sys.stdout.isatty() <io.IOBase.isatty>` returns true with the `isatty`
+option. You cannot combine `isatty: true` with a batched handler.
