@@ -48,9 +48,6 @@ myst:
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
 
-- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
-  {pr}`2078`
-
 - {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
   as drop-in replacements for JavaScript Arrays.
   {pr}`3853`
@@ -70,9 +67,13 @@ myst:
   `pyodide-lock.json`
   {pr}`3824`
 
-- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
-  throw an OSError exception for 400 and above response status codes
-  {pr}`3986`
+- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
+  {pr}`2078`
+
+- {{ Breaking }} Changed the `FetchResponse` body getter methods to no longer
+  throw an `OSError` exception for 400 and above response status codes. Added
+  `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
+  {pr}`3986` {pr}`4053`
 
 ### Packages
 
