@@ -29,9 +29,13 @@ const outputs = [
 const dest = (output) => join(__dirname, "..", "..", output);
 const DEFINES = { DEBUG: DEBUG.toString() };
 
+const cdefsFile = join(__dirname, "generated_struct_info32.gen.json");
 copyFileSync(
-  join(__dirname, "../../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json"),
-  join(__dirname, "generated_struct_info32.gen.json"),
+  join(
+    __dirname,
+    "../../emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json",
+  ),
+  cdefsFile,
 );
 
 function toDefines(o, path = "") {
@@ -49,9 +53,7 @@ function toDefines(o, path = "") {
   });
 }
 
-const origConstants = JSON.parse(
-  readFileSync(join(__dirname, "./generated_struct_info32.gen.json")),
-);
+const origConstants = JSON.parse(readFileSync(cdefsFile));
 const constants = { cDefs: origConstants.defines };
 Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
 
