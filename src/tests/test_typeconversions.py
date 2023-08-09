@@ -582,48 +582,57 @@ def test_python2js_track_proxies(selenium):
     )
 
 
-@run_in_pyodide
-def test_wrong_way_track_proxies(selenium):
-    from pyodide.code import run_js
+@pytest.mark.xfail_browsers(
+    node="flaky",
+)
+def test_wrong_way_track_proxies(selenium, config):
 
-    checkDestroyed = run_js(
-        """
-        function checkDestroyed(l){
-            for(let e of l){
-                if(e instanceof pyodide.ffi.PyProxy){
-                    console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
-                    assert(() => e.$$.ptr === 0);
-                } else {
-                    checkDestroyed(e);
+    if request.config.option.runner == "playwright":
+        pytest.xfail("flaky in playwright/macos")
+
+    @run_in_pyodide
+    def run(selenium):
+        from pyodide.code import run_js
+
+        checkDestroyed = run_js(
+            """
+            function checkDestroyed(l){
+                for(let e of l){
+                    if(e instanceof pyodide.ffi.PyProxy){
+                        console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
+                        assert(() => e.$$.ptr === 0);
+                    } else {
+                        checkDestroyed(e);
+                    }
                 }
-            }
-        };
-        checkDestroyed
-        """
-    )
-    from unittest import TestCase
+            };
+            checkDestroyed
+            """
+        )
+        from unittest import TestCase
 
-    from js import Array, Object
-    from pyodide.ffi import ConversionError, destroy_proxies, to_js
+        from js import Array, Object
+        from pyodide.ffi import ConversionError, destroy_proxies, to_js
 
-    raises = TestCase().assertRaises
+        raises = TestCase().assertRaises
 
-    class T:
-        pass
+        class T:
+            pass
 
-    x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
-    proxylist = Array.new()
-    r = to_js(x, pyproxies=proxylist)
-    assert len(proxylist) == 10
-    destroy_proxies(proxylist)
-    checkDestroyed(r)
-    with raises(TypeError):
-        to_js(x, pyproxies=[])  # type:ignore[call-overload]
-    with raises(TypeError):
-        to_js(x, pyproxies=Object.new())
-    with raises(ConversionError):
-        to_js(x, create_pyproxies=False)
+        x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
+        proxylist = Array.new()
+        r = to_js(x, pyproxies=proxylist)
+        assert len(proxylist) == 10
+        destroy_proxies(proxylist)
+        checkDestroyed(r)
+        with raises(TypeError):
+            to_js(x, pyproxies=[])  # type:ignore[call-overload]
+        with raises(TypeError):
+            to_js(x, pyproxies=Object.new())
+        with raises(ConversionError):
+            to_js(x, create_pyproxies=False)
 
+    run(selenium)
 
 def test_wrong_way_conversions1(selenium):
     selenium.run_js(

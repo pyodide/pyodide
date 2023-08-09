@@ -4,7 +4,7 @@ from pytest_pyodide import run_in_pyodide
 
 @pytest.fixture
 def url_notfound(httpserver):
-    httpserver.expect_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/data").respond_with_data(
         b"404 Not Found",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
@@ -15,7 +15,7 @@ def url_notfound(httpserver):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_open_url(selenium, httpserver):
-    httpserver.expect_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/data").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
     )
     request_url = httpserver.url_for("/data")
@@ -56,19 +56,19 @@ async def test_pyfetch_return_400_status_body(selenium, url_notfound):
 
 @pytest.fixture
 def raise_for_status_fixture(httpserver):
-    httpserver.expect_request("/200").respond_with_data(
+    httpserver.expect_oneshot_request("/200").respond_with_data(
         b"Some data here!",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=200,
     )
-    httpserver.expect_request("/404").respond_with_data(
+    httpserver.expect_oneshot_request("/404").respond_with_data(
         b"Not Found",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=404,
     )
-    httpserver.expect_request("/504").respond_with_data(
+    httpserver.expect_oneshot_request("/504").respond_with_data(
         b"Gateway timeout",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
@@ -127,7 +127,7 @@ async def test_pyfetch_unpack_archive(selenium):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_headers(selenium, httpserver):
-    httpserver.expect_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",
         headers={
@@ -151,7 +151,7 @@ def test_pyfetch_headers(selenium, httpserver):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
-    httpserver.expect_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",
         headers={"Access-Control-Allow-Origin": "*"},
@@ -174,8 +174,8 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     node="XMLHttpRequest is not available in node",
     safari="raises TypeError: exceptions must derive from BaseException",
 )
-def test_pyfetch_coors_error(selenium, httpserver):
-    httpserver.expect_request("/data").respond_with_data(
+def test_pyfetch_cors_error(selenium, httpserver, reqeust):
+    httpserver.expect_oneshot_request("/data").respond_with_data(
         b"HELLO",
         content_type="text/plain",
     )
