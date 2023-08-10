@@ -4152,7 +4152,7 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   let type_flags = 0;
   // clang-format off
-  if (API.isPyProxy(obj) && obj.$$.ptr === 0) {
+  if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
     return 0;
   }
 

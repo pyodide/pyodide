@@ -569,7 +569,7 @@ def test_python2js_track_proxies(selenium):
         function check(l){
             for(let x of l){
                 if(x instanceof pyodide.ffi.PyProxy){
-                    assert(() => x.$$.ptr === 0);
+                    assert(() => !pyodide._api.pyproxyIsAlive(x));
                 } else {
                     check(x);
                 }
@@ -591,8 +591,7 @@ def test_wrong_way_track_proxies(selenium):
         function checkDestroyed(l){
             for(let e of l){
                 if(e instanceof pyodide.ffi.PyProxy){
-                    console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
-                    assert(() => e.$$.ptr === 0);
+                    assert(() => !pyodide._api.pyproxyIsAlive(e));
                 } else {
                     checkDestroyed(e);
                 }
@@ -1080,14 +1079,16 @@ def test_python2js_with_depth(selenium):
         let Module = pyodide._module;
         let proxies = [];
         let proxies_id = Module.hiwire.new_value(proxies);
-        let result = Module.hiwire.pop_value(Module._python2js_with_depth(x.$$.ptr, -1, proxies_id));
+
+        let result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies_id));
         Module.hiwire.decref(proxies_id);
 
         assert(() => proxies.length === 4);
 
         let result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
-        proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
-        result_proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
+        const sortFunc = (x, y) => Module.PyProxy_getPtr(x) < Module.PyProxy_getPtr(y);
+        proxies.sort(sortFunc);
+        result_proxies.sort(sortFunc);
         for(let i = 0; i < 4; i++){
             assert(() => proxies[i] == result_proxies[i]);
         }

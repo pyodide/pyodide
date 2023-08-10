@@ -76,13 +76,18 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
 EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    Module.gc_register_proxy(px);
+    Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
   }
 });
 
 EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
-  let px = Module.hiwire.get_value(proxy_id);
-  if (px.$$props.roundtrip) {
+  const px = Module.hiwire.get_value(proxy_id);
+  const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
+  if (!shared.ptr) {
+    // already destroyed
+    return;
+  }
+  if (props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
   }
@@ -317,7 +322,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Hiwire.get_value(proxyId).$$.ptr) {
+  if (pyproxyIsAlive(Hiwire.get_value(proxyId))) {
     return proxyId;
   } else {
     // It's dead, tidy up
