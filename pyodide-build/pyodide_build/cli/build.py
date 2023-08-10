@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import requests
 import typer
 
-from ..build_env import check_emscripten_version, init_environment, get_pyodide_root
+from ..build_env import check_emscripten_version, get_pyodide_root, init_environment
 from ..io import _BuildSpecExports, _ExportTypes
 from ..logger import logger
 from ..out_of_tree import build
@@ -165,7 +165,8 @@ def main(
         "Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
     skip_built_in_packages: bool = typer.Option(
-        True, help="Don't build dependencies that are built into the pyodide distribution."
+        True,
+        help="Don't build dependencies that are built into the pyodide distribution.",
     ),
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
