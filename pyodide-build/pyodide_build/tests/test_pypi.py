@@ -147,7 +147,11 @@ def fake_pypi_server():
             # this package depends on bcrypt which is in pyodide already
             # and should not be rebuilt
             _make_fake_package(
-                simple_root, "resolves-package", "1.0.0", ["pkg-a", "pkg-b[docs]","bcrypt"], True
+                simple_root,
+                "resolves-package",
+                "1.0.0",
+                ["pkg-a", "pkg-b[docs]", "bcrypt"],
+                True,
             )
             _make_fake_package(simple_root, "pkg-a", "1.0.0", ["pkg-c"], True)
             _make_fake_package(
