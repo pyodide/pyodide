@@ -15,6 +15,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} In pyodide build, automatically skip building package dependencies that are already included
+  in the pyodide distribution.
+  {pr}`4058`
+
+
 - {{ Enhancement }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
   can opt into worse performance and better error messages.

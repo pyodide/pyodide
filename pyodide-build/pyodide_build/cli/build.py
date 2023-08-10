@@ -161,7 +161,7 @@ def main(
     ),
     skip_dependency: list[str] = typer.Option(
         [],
-        help="Skip building or resolving a single dependency. "
+        help="Skip building or resolving a single dependency, or a pyodide-lock.json file. "
         "Use multiple times or provide a comma separated list to skip multiple dependencies.",
     ),
     skip_built_in_packages: bool = typer.Option(
