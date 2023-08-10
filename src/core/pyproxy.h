@@ -36,7 +36,7 @@ pyproxy_AsPyObject(JsRef x);
  * Destroy a list of PyProxies.
  */
 void
-destroy_proxies(JsRef proxies_id, char* msg);
+destroy_proxies(JsRef proxies_id, Js_Identifier* msg);
 
 void
 gc_register_proxies(JsRef proxies_id);
@@ -45,7 +45,7 @@ gc_register_proxies(JsRef proxies_id);
  * Destroy a PyProxy.
  */
 void
-destroy_proxy(JsRef proxy, char* msg);
+destroy_proxy(JsRef proxy, Js_Identifier* msg);
 
 /**
  * Wrap a Python callable in a JavaScript function that can be called once.
