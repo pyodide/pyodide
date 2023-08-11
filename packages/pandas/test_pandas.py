@@ -55,7 +55,7 @@ def test_load_largish_file(selenium_standalone, request, httpserver):
 
     data = generate_largish_json(n_rows)
 
-    httpserver.expect_request("/data").respond_with_json(
+    httpserver.expect_oneshot_request("/data").respond_with_json(
         data, headers={"Access-Control-Allow-Origin": "*"}
     )
     request_url = httpserver.url_for("/data")
