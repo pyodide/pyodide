@@ -569,7 +569,7 @@ def test_python2js_track_proxies(selenium):
         function check(l){
             for(let x of l){
                 if(x instanceof pyodide.ffi.PyProxy){
-                    assert(() => x.$$.ptr === 0);
+                    assert(() => !pyodide._api.pyproxyIsAlive(x));
                 } else {
                     check(x);
                 }
@@ -582,57 +582,47 @@ def test_python2js_track_proxies(selenium):
     )
 
 
-@pytest.mark.xfail_browsers(
-    node="flaky",
-)
-def test_wrong_way_track_proxies(selenium, config):
+@run_in_pyodide
+def test_wrong_way_track_proxies(selenium):
+    from pyodide.code import run_js
 
-    if request.config.option.runner == "playwright":
-        pytest.xfail("flaky in playwright/macos")
-
-    @run_in_pyodide
-    def run(selenium):
-        from pyodide.code import run_js
-
-        checkDestroyed = run_js(
-            """
-            function checkDestroyed(l){
-                for(let e of l){
-                    if(e instanceof pyodide.ffi.PyProxy){
-                        console.log("\\n\\n", "!!!!!!!!!", e.$$.ptr);
-                        assert(() => e.$$.ptr === 0);
-                    } else {
-                        checkDestroyed(e);
-                    }
+    checkDestroyed = run_js(
+        """
+        function checkDestroyed(l){
+            for(let e of l){
+                if(e instanceof pyodide.ffi.PyProxy){
+                    assert(() => !pyodide._api.pyproxyIsAlive(e));
+                } else {
+                    checkDestroyed(e);
                 }
-            };
-            checkDestroyed
-            """
-        )
-        from unittest import TestCase
+            }
+        };
+        checkDestroyed
+        """
+    )
+    from unittest import TestCase
 
-        from js import Array, Object
-        from pyodide.ffi import ConversionError, destroy_proxies, to_js
+    from js import Array, Object
+    from pyodide.ffi import ConversionError, destroy_proxies, to_js
 
-        raises = TestCase().assertRaises
+    raises = TestCase().assertRaises
 
-        class T:
-            pass
+    class T:
+        pass
 
-        x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
-        proxylist = Array.new()
-        r = to_js(x, pyproxies=proxylist)
-        assert len(proxylist) == 10
-        destroy_proxies(proxylist)
-        checkDestroyed(r)
-        with raises(TypeError):
-            to_js(x, pyproxies=[])  # type:ignore[call-overload]
-        with raises(TypeError):
-            to_js(x, pyproxies=Object.new())
-        with raises(ConversionError):
-            to_js(x, create_pyproxies=False)
+    x = [[T()], [T()], [[[T()], [T()]], [T(), [], [[T()]], T()], T(), T()], T()]
+    proxylist = Array.new()
+    r = to_js(x, pyproxies=proxylist)
+    assert len(proxylist) == 10
+    destroy_proxies(proxylist)
+    checkDestroyed(r)
+    with raises(TypeError):
+        to_js(x, pyproxies=[])  # type:ignore[call-overload]
+    with raises(TypeError):
+        to_js(x, pyproxies=Object.new())
+    with raises(ConversionError):
+        to_js(x, create_pyproxies=False)
 
-    run(selenium)
 
 def test_wrong_way_conversions1(selenium):
     selenium.run_js(
@@ -1089,14 +1079,16 @@ def test_python2js_with_depth(selenium):
         let Module = pyodide._module;
         let proxies = [];
         let proxies_id = Module.hiwire.new_value(proxies);
-        let result = Module.hiwire.pop_value(Module._python2js_with_depth(x.$$.ptr, -1, proxies_id));
+
+        let result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies_id));
         Module.hiwire.decref(proxies_id);
 
         assert(() => proxies.length === 4);
 
         let result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
-        proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
-        result_proxies.sort((x, y) => x.$$.ptr < y.$$.ptr);
+        const sortFunc = (x, y) => Module.PyProxy_getPtr(x) < Module.PyProxy_getPtr(y);
+        proxies.sort(sortFunc);
+        result_proxies.sort(sortFunc);
         for(let i = 0; i < 4; i++){
             assert(() => proxies[i] == result_proxies[i]);
         }
