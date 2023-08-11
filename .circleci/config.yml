@@ -18,7 +18,7 @@ defaults: &defaults
       PYODIDE_ZIP_COMPRESSION_LEVEL: 0
 
 orbs:
-  macos: circleci/macos@2.3.4
+  macos: circleci/macos@2.3.6
 
 jobs:
   build-core:
