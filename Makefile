@@ -136,7 +136,7 @@ npm-link: dist/package.json
 
 dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts src/js/generated_struct_info32.gen.json
 	node src/js/esbuild.config.mjs
-	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
+	cd src/js && npx dts-bundle-generator {pyodide,ffi}.ts --export-referenced-types false --project tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
