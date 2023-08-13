@@ -6,6 +6,7 @@ import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
+import { loop } from "./infinite-loop";
 import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
@@ -138,6 +139,8 @@ export class PyodideAPI {
    * from JavaScript.
    */
   static pyodide_py = {} as PyProxy; // actually defined in loadPyodide (see pyodide.js)
+
+  static loop = loop;
 
   /**
    * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install

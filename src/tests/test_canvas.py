@@ -8,9 +8,6 @@ def test_canvas2D(selenium_standalone):
         const canvas = document.createElement('canvas');
         canvas.id = "canvas";
 
-        // Temporary workaround for pyodide#3697
-        pyodide._api._skip_unwind_fatal_error = true;
-
         pyodide.canvas.setCanvas2D(canvas);
 
         assert(() => pyodide._module.canvas === canvas);
@@ -25,9 +22,6 @@ def test_canvas3D(selenium_standalone):
         """
         const canvas = document.createElement('canvas');
         canvas.id = "canvas";
-
-        // Temporary workaround for pyodide#3697
-        pyodide._api._skip_unwind_fatal_error = true;
 
         pyodide.canvas.setCanvas3D(canvas);
 
