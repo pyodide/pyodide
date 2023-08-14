@@ -74,7 +74,9 @@ def raise_for_status_fixture(httpserver):
         headers={"Access-Control-Allow-Origin": "*"},
         status=504,
     )
-    return {p: httpserver.url_for(p) for p in ["/status_200", "/status_404", "/status_504"]}
+    return {
+        p: httpserver.url_for(p) for p in ["/status_200", "/status_404", "/status_504"]
+    }
 
 
 @run_in_pyodide
@@ -151,7 +153,9 @@ def test_pyfetch_headers(selenium, httpserver):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
-    httpserver.expect_oneshot_request("/test_pyfetch_set_valid_credentials_value").respond_with_data(
+    httpserver.expect_oneshot_request(
+        "/test_pyfetch_set_valid_credentials_value"
+    ).respond_with_data(
         b"HELLO",
         content_type="text/plain",
         headers={"Access-Control-Allow-Origin": "*"},
