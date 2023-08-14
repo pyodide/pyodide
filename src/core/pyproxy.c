@@ -62,10 +62,10 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
   return Module.PyProxy_getPtr(val);
 });
 
-EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
@@ -80,7 +80,7 @@ EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
   }
 });
 
-EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
+EM_JS(void, destroy_proxy, (JsRef proxy_id, Js_Identifier* msg_ptr), {
   const px = Module.hiwire.get_value(proxy_id);
   const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
   if (!shared.ptr) {
@@ -93,7 +93,7 @@ EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
   }
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   Module.pyproxy_destroy(px, msg, false);
 });
