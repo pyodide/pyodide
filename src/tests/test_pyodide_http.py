@@ -4,21 +4,21 @@ from pytest_pyodide import run_in_pyodide
 
 @pytest.fixture
 def url_notfound(httpserver):
-    httpserver.expect_oneshot_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/url_notfound").respond_with_data(
         b"404 Not Found",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=404,
     )
-    return httpserver.url_for("/data")
+    return httpserver.url_for("/daturl_notfounda")
 
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_open_url(selenium, httpserver):
-    httpserver.expect_oneshot_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/test_open_url").respond_with_data(
         b"HELLO", content_type="text/text", headers={"Access-Control-Allow-Origin": "*"}
     )
-    request_url = httpserver.url_for("/data")
+    request_url = httpserver.url_for("/test_open_url")
 
     assert (
         selenium.run(
@@ -56,25 +56,25 @@ async def test_pyfetch_return_400_status_body(selenium, url_notfound):
 
 @pytest.fixture
 def raise_for_status_fixture(httpserver):
-    httpserver.expect_oneshot_request("/200").respond_with_data(
+    httpserver.expect_oneshot_request("/status_200").respond_with_data(
         b"Some data here!",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=200,
     )
-    httpserver.expect_oneshot_request("/404").respond_with_data(
+    httpserver.expect_oneshot_request("/status_404").respond_with_data(
         b"Not Found",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=404,
     )
-    httpserver.expect_oneshot_request("/504").respond_with_data(
+    httpserver.expect_oneshot_request("/status_504").respond_with_data(
         b"Gateway timeout",
         content_type="text/text",
         headers={"Access-Control-Allow-Origin": "*"},
         status=504,
     )
-    return {p: httpserver.url_for(p) for p in ["/200", "/404", "/504"]}
+    return {p: httpserver.url_for(p) for p in ["/status_200", "/status_404", "/status_504"]}
 
 
 @run_in_pyodide
@@ -127,7 +127,7 @@ async def test_pyfetch_unpack_archive(selenium):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_headers(selenium, httpserver):
-    httpserver.expect_oneshot_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/test_pyfetch_headers").respond_with_data(
         b"HELLO",
         content_type="text/plain",
         headers={
@@ -136,7 +136,7 @@ def test_pyfetch_headers(selenium, httpserver):
             "Content-Type": "text/plain",
         },
     )
-    request_url = httpserver.url_for("/data")
+    request_url = httpserver.url_for("/test_pyfetch_headers")
 
     selenium.run_async(
         f"""
@@ -151,12 +151,12 @@ def test_pyfetch_headers(selenium, httpserver):
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
 def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
-    httpserver.expect_oneshot_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/test_pyfetch_set_valid_credentials_value").respond_with_data(
         b"HELLO",
         content_type="text/plain",
         headers={"Access-Control-Allow-Origin": "*"},
     )
-    request_url = httpserver.url_for("/data")
+    request_url = httpserver.url_for("/test_pyfetch_set_valid_credentials_value")
 
     assert (
         selenium.run_async(
@@ -175,11 +175,11 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     safari="raises TypeError: exceptions must derive from BaseException",
 )
 def test_pyfetch_cors_error(selenium, httpserver, reqeust):
-    httpserver.expect_oneshot_request("/data").respond_with_data(
+    httpserver.expect_oneshot_request("/test_pyfetch_cors_error").respond_with_data(
         b"HELLO",
         content_type="text/plain",
     )
-    request_url = httpserver.url_for("/data")
+    request_url = httpserver.url_for("/test_pyfetch_cors_error")
 
     selenium.run_async(
         f"""
