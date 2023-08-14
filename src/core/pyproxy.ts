@@ -2551,7 +2551,7 @@ export class PyCallableMethods {
     });
     return pyproxy_new(shared.ptr, {
       shared,
-      flags: _getFlags(self),
+      flags: _getFlags(this),
       props,
     });
   }
