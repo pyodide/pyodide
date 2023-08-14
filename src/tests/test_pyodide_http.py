@@ -178,7 +178,7 @@ def test_pyfetch_set_valid_credentials_value(selenium, httpserver):
     node="XMLHttpRequest is not available in node",
     safari="raises TypeError: exceptions must derive from BaseException",
 )
-def test_pyfetch_cors_error(selenium, httpserver, reqeust):
+def test_pyfetch_cors_error(selenium, httpserver):
     httpserver.expect_oneshot_request("/test_pyfetch_cors_error").respond_with_data(
         b"HELLO",
         content_type="text/plain",
