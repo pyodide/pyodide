@@ -29,7 +29,7 @@ def test_custom_stdin1(selenium_standalone_noload):
         function stdin(){
             return stdinStringsGen.next().value;
         }
-        let pyodide = await loadPyodide({
+        const pyodide = await loadPyodide({
             fullStdLib: false,
             jsglobals : self,
             stdin,
@@ -60,12 +60,14 @@ def test_custom_stdout1(selenium_standalone_noload, runtime):
         function stderr(s){
             stderrStrings.push(s);
         }
-        globalThis.pyodide = await loadPyodide({
+        const pyodide = await loadPyodide({
             fullStdLib: false,
             jsglobals : self,
             stdout,
             stderr,
         });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
         pyodide.runPython(`
             import sys
             print("something to stdout")
