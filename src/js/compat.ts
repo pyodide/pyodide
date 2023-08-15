@@ -1,12 +1,15 @@
 // Detect if we're in node
 declare var process: any;
+declare var Deno: any;
 
+export const IN_DENO = typeof Deno !== undefined;
 export const IN_NODE =
-  typeof process === "object" &&
-  typeof process.versions === "object" &&
-  typeof process.versions.node === "string" &&
-  typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+  IN_DENO ||
+  (typeof process === "object" &&
+    typeof process.versions === "object" &&
+    typeof process.versions.node === "string" &&
+    typeof process.browser ===
+      "undefined"); /* This last condition checks if we run the browser shim of process */
 
 let nodeUrlMod: any;
 let nodeFetch: any;
@@ -31,8 +34,9 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodeUrlMod = (await import("url")).default;
-  nodeFsPromisesMod = await import("fs/promises");
+  nodeUrlMod = (await import("node:url")).default;
+  // @ts-ignore
+  nodeFsPromisesMod = await import("node:fs/promises");
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
@@ -40,30 +44,40 @@ export async function initNodeModules() {
     nodeFetch = (await import("node-fetch")).default;
   }
   // @ts-ignore
-  nodeVmMod = (await import("vm")).default;
-  nodePath = await import("path");
+  nodeVmMod = (await import("node:vm")).default;
+  nodePath = await import("node:path");
   pathSep = nodePath.sep;
 
   // Emscripten uses `require`, so if it's missing (because we were imported as
   // an ES6 module) we need to polyfill `require` with `import`. `import` is
   // async and `require` is synchronous, so we import all packages that might be
   // required up front and define require to look them up in this table.
-
+  //
+  // When importing Deno as a module, require exists here but it does not exist
+  // in pyodide.asm.js, not sure why. Anyways in that case go ahead and define
+  // it.
   if (typeof require !== "undefined") {
     return;
   }
+
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
-  const fs = await import("fs");
-  const crypto = await import("crypto");
-  const ws = await import("ws");
-  const child_process = await import("child_process");
+  const fs = await import("node:fs");
+  const crypto = await import("node:crypto");
+  // @ts-ignore
+  const tty = await import("node:tty");
+  // Stub these out in deno because otherwise I get:
+  // TypeError: Loading unprepared module: npm:ws
+  const ws = IN_DENO ? {} : await import("ws");
+  const child_process = IN_DENO ? {} : await import("child_process");
   const node_modules: { [mode: string]: any } = {
     fs,
     crypto,
     ws,
     child_process,
+    path: nodePath,
+    tty,
   };
   // Since we're in an ES6 module, this is only modifying the module namespace,
   // it's still private to Pyodide.
@@ -71,8 +85,10 @@ export async function initNodeModules() {
     return node_modules[mod];
   };
 }
-
 function node_resolvePath(path: string, base?: string): string {
+  if (path.startsWith("file://")) {
+    path = path.slice("file://".length);
+  }
   return nodePath.resolve(base || ".", path);
 }
 
@@ -96,11 +112,7 @@ if (IN_NODE) {
  * In Windows, it's \.
  * @private
  */
-export let pathSep: string;
-
-if (!IN_NODE) {
-  pathSep = "/";
-}
+export let pathSep = "/";
 
 /**
  * Load a binary file, only for use in Node. If the path explicitly is a URL,
