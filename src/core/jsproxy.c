@@ -2014,9 +2014,9 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   }
   success = true;
 finally:
-  hiwire_CLEAR(ididx);
-  hiwire_CLEAR(idvalue);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(ididx);
   return success ? 0 : -1;
 }
 
@@ -2038,8 +2038,8 @@ JsProxy_includes(JsProxy* self, PyObject* obj)
   result = hiwire_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsobj);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(jsobj);
   return result;
 }
 
@@ -2060,8 +2060,8 @@ JsProxy_has(JsProxy* self, PyObject* obj)
   result = hiwire_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsobj);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(jsobj);
   return result;
 }
 
@@ -2756,8 +2756,8 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
   }
 
 finally:
-  hiwire_CLEAR(idkey);
   hiwire_CLEAR(idresult);
+  hiwire_CLEAR(idkey);
   return pyresult;
 }
 
@@ -2812,8 +2812,8 @@ JsObjMap_ass_subscript(PyObject* self, PyObject* pykey, PyObject* pyvalue)
   }
   success = true;
 finally:
-  hiwire_CLEAR(idkey);
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(idkey);
   return success ? 0 : -1;
 }
 

@@ -127,16 +127,19 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.intern_object = function(obj)
   {
     const id = (_hiwire.immortals.push(obj) - 1) << 2;
-    _hiwire.obj_to_key.set(id, obj);
+    _hiwire.obj_to_key.set(obj, id);
     return id;
   };
 
   // for testing purposes.
-  Hiwire.num_keys = function(){
+  Hiwire.num_keys = function()
+  {
     // clang-format off
-    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length
+    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length;
     // clang-format on
   };
+
+  Hiwire.stack_length = () = > _hiwire.stack.length;
 
   // clang-format off
   Hiwire.get_value = function (idval) {
@@ -186,7 +189,6 @@ EM_JS_NUM(int, hiwire_init, (), {
     return _hiwire.objects.get(idval)[0];
   };
   // clang-format on
-
 
   Hiwire.decref = function(idval)
   {
