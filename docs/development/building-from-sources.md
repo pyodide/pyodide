@@ -95,7 +95,7 @@ You would need a working native compiler toolchain, enough to build
 Then install the required Python version and other build dependencies in a separate conda environment,
 
     conda env create -f environment.yml
-    conda activate conda-forge
+    conda activate pyodide-env
 
 ```
 ```{tab-item} MacOS with conda
@@ -109,7 +109,7 @@ You would need,
 Then install the required Python version and other build dependencies in a separate conda environment,
 
     conda env create -f environment.yml
-    conda activate conda-forge
+    conda activate pyodide-env
 
 ```
 

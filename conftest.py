@@ -37,6 +37,7 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
     pyodide.pyimport("pyodide.http").destroy();
+    pyodide.pyimport("pyodide_js._api")
 """
 
 
