@@ -273,8 +273,8 @@ _python2js_dict(ConversionContext context, PyObject* x)
       FAIL_IF_MINUS_ONE(
         context.dict_add_keyvalue(context, jsdict, jskey, jsval));
     }
-    hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
+    hiwire_CLEAR(jskey);
   }
   if (context.dict_postprocess) {
     JsRef temp = context.dict_postprocess(context, jsdict);
@@ -285,8 +285,8 @@ _python2js_dict(ConversionContext context, PyObject* x)
   FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   success = true;
 finally:
-  hiwire_CLEAR(jskey);
   hiwire_CLEAR(jsval);
+  hiwire_CLEAR(jskey);
   if (!success) {
     hiwire_CLEAR(jsdict);
   }
@@ -463,8 +463,7 @@ int, _python2js_add_to_cache,
   if (old_value !== undefined) {
     Hiwire.decref(old_value);
   }
-  Hiwire.incref(jsparent);
-  cache.set(pyparent, jsparent);
+  cache.set(pyparent, Hiwire.incref(jsparent));
 });
 // clang-format oh
 

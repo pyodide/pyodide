@@ -10,13 +10,13 @@
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
 
-const JsRef Js_undefined = ((JsRef)(2));
-const JsRef Js_true = ((JsRef)(4));
-const JsRef Js_false = ((JsRef)(6));
-const JsRef Js_null = ((JsRef)(8));
+const JsRef Js_undefined = ((JsRef)(4));
+const JsRef Js_true = ((JsRef)(8));
+const JsRef Js_false = ((JsRef)(12));
+const JsRef Js_null = ((JsRef)(16));
 
 // For when the return value would be Option<JsRef>
-const JsRef Js_novalue = ((JsRef)(10));
+const JsRef Js_novalue = ((JsRef)(20));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -55,18 +55,24 @@ EM_JS_NUM(int, hiwire_init, (), {
     // it to a float.)
     // 0 == C NULL is an error code for compatibility with Python calling
     // conventions.
-    counter : new Uint32Array([1])
+    counter : new Uint32Array([1]),
+    stack : [],
   };
   HIWIRE_INIT_CONST(_Js_undefined, UNDEFINED, undefined);
   HIWIRE_INIT_CONST(_Js_null, JSNULL, null);
   HIWIRE_INIT_CONST(_Js_true, TRUE, true);
   HIWIRE_INIT_CONST(_Js_false, FALSE, false);
-  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 2;
+  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 4;
 
 #ifdef DEBUG_F
   Hiwire._hiwire = _hiwire;
   let many_objects_warning_threshold = 200;
 #endif
+
+  Hiwire.new_stack = function(jsval)
+  {
+    return ((_hiwire.stack.push(jsval) - 1) << 2) | 2;
+  };
 
   Hiwire.new_value = function(jsval)
   {
@@ -107,7 +113,7 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.intern_object = function(obj)
   {
     let id = hiwire_next_permanent;
-    hiwire_next_permanent += 2;
+    hiwire_next_permanent += 4;
     _hiwire.objects.set(id, [ obj, -1 ]);
     return id;
   };
@@ -138,35 +144,55 @@ EM_JS_NUM(int, hiwire_init, (), {
         );
         throw e;
       } else {
-        console.error(
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
-          + ' (but error indicator is not set).'
-        );
-        throw new Error(
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
-          + ' (but error indicator is not set).'
-        );
+        const msg = `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
+          + ' (but error indicator is not set).';
+        console.error(msg);
+        throw new Error(msg);
       }
       // clang-format on
     }
+    // clang-format off
+    if ((idval & 3) === 2) {
+      // stack reference
+      const idx = idval >> 2;
+      if (idx >= _hiwire.stack.length) {
+        API.fail_test = true;
+        const msg = `Pyodide internal error : Invalid stack reference handling`;
+        console.error(msg);
+        throw new Error(msg);
+      }
+      return _hiwire.stack[idval >> 2];
+    }
+    // heap or immortal reference
     if (!_hiwire.objects.has(idval)) {
       API.fail_test = true;
-      // clang-format off
       console.error(`Pyodide internal error: Undefined id ${ idval }`);
       throw new Error(`Undefined id ${ idval }`);
-      // clang-format on
     }
+    // clang-format on
     return _hiwire.objects.get(idval)[0];
   };
 
   Hiwire.decref = function(idval)
   {
     // clang-format off
-    if ((idval & 1) === 0) {
-      // least significant bit unset ==> idval is a singleton / interned value.
-      // We don't reference count interned values.
+    if ((idval & 3) === 0) {
+      // immortal reference
       return;
     }
+    if ((idval & 3) === 2) {
+      // stack reference
+      const idx = idval >> 2;
+      if (idx + 1 !== _hiwire.stack.length) {
+        API.fail_test = true;
+        const msg = `Pyodide internal error: Invalid stack reference handling`;
+        console.error(msg);
+        throw new Error(msg);
+      }
+      _hiwire.stack.pop();
+      return;
+    }
+    // heap reference
 #ifdef DEBUG_F
     if(DEREF_U8(_tracerefs, 0)){
       console.warn("hw.decref", idval, _hiwire.objects.get(idval));
@@ -182,15 +208,22 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.incref = function(idval)
   {
-    if ((idval & 1) === 0) {
-      return;
+    if ((idval & 3) === 0) {
+      // immortal reference
+      return idval;
     }
-    _hiwire.objects.get(idval)[1]++;
+    if ((idval & 3) === 2) {
+      // stack reference ==> move to heap
+      return Hiwire.new_value(_hiwire.objects.get(idval)[0]);
+    }
 #ifdef DEBUG_F
-    if (DEREF_U8(_tracerefs, 0)) {
-      console.warn("hw.incref", idval, _hiwire.objects.get(idval));
+    if(DEREF_U8(_tracerefs, 0)){
+      console.warn("hw.decref", idval, _hiwire.objects.get(idval));
     }
 #endif
+    // heap reference
+    _hiwire.objects.get(idval)[1]++;
+    return idval;
   };
   // clang-format on
 
@@ -289,13 +322,8 @@ EM_JS_NUM(int, hiwire_init, (), {
   return 0;
 });
 
-EM_JS(JsRef, hiwire_incref, (JsRef idval), {
-  if (idval & 1) {
-    // least significant bit unset ==> idval is a singleton.
-    // We don't reference count singletons.
-    Hiwire.incref(idval);
-  }
-  return idval;
+EM_JS(JsRef WARN_UNUSED, hiwire_incref, (JsRef idval), {
+  return Hiwire.incref(idval);
 });
 
 // clang-format off
@@ -306,7 +334,7 @@ EM_JS(void, hiwire_decref, (JsRef idval), {
 
 // clang-format off
 EM_JS_REF(JsRef, hiwire_int, (int val), {
-  return Hiwire.new_value(val);
+  return Hiwire.new_stack(val);
 });
 // clang-format on
 
@@ -322,16 +350,16 @@ hiwire_int_from_digits, (const unsigned int* digits, size_t ndigits), {
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
   }
-  return Hiwire.new_value(result);
+  return Hiwire.new_stack(result);
 })
 // clang-format on
 
 EM_JS_REF(JsRef, hiwire_double, (double val), {
-  return Hiwire.new_value(val);
+  return Hiwire.new_stack(val);
 });
 
 EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
-  return Hiwire.new_value(UTF8ToString(ptr));
+  return Hiwire.new_stack(UTF8ToString(ptr));
 });
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
