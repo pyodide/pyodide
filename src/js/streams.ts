@@ -5,6 +5,17 @@ import type { FSStream, FSStreamOpsGen } from "./module";
 const fs: any = IN_NODE ? require("fs") : undefined;
 const tty: any = IN_NODE ? require("tty") : undefined;
 
+function nodeFsync(fd: number): void {
+  try {
+    fs.fsyncSync(fd);
+  } catch (e: any) {
+    if (e && e.code === "EINVAL") {
+      return;
+    }
+    throw e;
+  }
+}
+
 type Reader = {
   isatty?: boolean;
   fsync?: () => void;
@@ -524,7 +535,7 @@ class NodeReader {
   }
 
   fsync() {
-    fs.fsyncSync(this.fd);
+    nodeFsync(this.fd);
   }
 }
 
@@ -704,6 +715,6 @@ class NodeWriter {
   }
 
   fsync() {
-    fs.fsyncSync(this.fd);
+    nodeFsync(this.fd);
   }
 }
