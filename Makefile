@@ -124,7 +124,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts src/js/generated_struct_info32.gen.json node_modules/.installed
+dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
 	cd src/js && node esbuild.config.mjs && npm run tsc && cd -
 
 dist/package.json : src/js/package.json
@@ -134,19 +134,13 @@ dist/package.json : src/js/package.json
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts src/js/generated_struct_info32.gen.json
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
 	node src/js/esbuild.config.mjs
 	# See https://github.com/timocov/dts-bundle-generator/issues/255
-	echo "export declare const defines: {[k:string] : number};" > src/js/generated_struct_info32.gen.json.d.ts
 	cd src/js && npx dts-bundle-generator {pyodide,ffi}.ts --export-referenced-types false --project tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
-
-
-src/js/generated_struct_info32.gen.json : emsdk/emsdk/.complete
-	cp emsdk/emsdk/upstream/emscripten/src/generated_struct_info32.json $@
-
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
