@@ -187,7 +187,6 @@ EM_JS_NUM(int, hiwire_init, (), {
   };
   // clang-format on
 
-
   Hiwire.decref = function(idval)
   {
     // clang-format off
