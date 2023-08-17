@@ -90,7 +90,9 @@ async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
     assert await resp.string() == "Some data here!"
 
     resp = await pyfetch(raise_for_status_fixture["/status_404"])
-    with pytest.raises(OSError, match="404 Client Error: NOT FOUND for url: .*/status_404"):
+    with pytest.raises(
+        OSError, match="404 Client Error: NOT FOUND for url: .*/status_404"
+    ):
         resp.raise_for_status()
 
     resp = await pyfetch(raise_for_status_fixture["/status_504"])
