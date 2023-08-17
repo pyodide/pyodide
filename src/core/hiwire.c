@@ -131,17 +131,15 @@ EM_JS_NUM(int, hiwire_init, (), {
     return id;
   };
 
+  // clang-format off
   // for testing purposes.
   Hiwire.num_keys = function()
   {
-    // clang-format off
     return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length;
-    // clang-format on
   };
 
-  Hiwire.stack_length = () = > _hiwire.stack.length;
+  Hiwire.stack_length = () => _hiwire.stack.length;
 
-  // clang-format off
   Hiwire.get_value = function (idval) {
     if (!idval) {
       API.fail_test = true;
