@@ -10,7 +10,7 @@ def url_notfound(httpserver):
         headers={"Access-Control-Allow-Origin": "*"},
         status=404,
     )
-    return httpserver.url_for("/daturl_notfounda")
+    return httpserver.url_for("/url_notfound")
 
 
 @pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
