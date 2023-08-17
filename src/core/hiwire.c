@@ -10,13 +10,31 @@
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
 
-const JsRef Js_undefined = ((JsRef)(4));
-const JsRef Js_true = ((JsRef)(8));
-const JsRef Js_false = ((JsRef)(12));
-const JsRef Js_null = ((JsRef)(16));
+#define HIWIRE_INIT_CONSTS()                                                   \
+  HIWIRE_INIT_CONST(UNDEFINED, undefined, 4);                                  \
+  HIWIRE_INIT_CONST(JSNULL, null, 8);                                          \
+  HIWIRE_INIT_CONST(TRUE, true, 12);                                           \
+  HIWIRE_INIT_CONST(FALSE, false, 16)
+
+// we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
+// definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
+// C definition:
+#define HIWIRE_INIT_CONST(hiwire_attr, js_value, id)                           \
+  const JsRef Js_##js_value = ((JsRef)(id));
+
+HIWIRE_INIT_CONSTS();
+
+// JS definition:
+#undef HIWIRE_INIT_CONST
+#define HIWIRE_INIT_CONST(hiwire_attr, js_value, id)                           \
+  Hiwire.hiwire_attr = DEREF_U8(_Js_##js_value, 0);                            \
+  _hiwire.immortals.push(js_value);                                            \
+  _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
 // For when the return value would be Option<JsRef>
-const JsRef Js_novalue = ((JsRef)(20));
+// we use the largest possible stack reference so that `get_value` on it will
+// always raise an error.
+const JsRef Js_novalue = ((JsRef)(2147483646));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -33,11 +51,6 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 #ifdef DEBUG_F
 bool tracerefs;
 #endif
-
-#define HIWIRE_INIT_CONST(js_const, hiwire_attr, js_value)                     \
-  Hiwire.hiwire_attr = DEREF_U8(js_const, 0);                                  \
-  _hiwire.objects.set(Hiwire.hiwire_attr, [ js_value, -1 ]);                   \
-  _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
@@ -57,12 +70,10 @@ EM_JS_NUM(int, hiwire_init, (), {
     // conventions.
     counter : new Uint32Array([1]),
     stack : [],
+    // Actual 0 is reserved for NULL so we have to leave a space for it.
+    immortals : [ null ],
   };
-  HIWIRE_INIT_CONST(_Js_undefined, UNDEFINED, undefined);
-  HIWIRE_INIT_CONST(_Js_null, JSNULL, null);
-  HIWIRE_INIT_CONST(_Js_true, TRUE, true);
-  HIWIRE_INIT_CONST(_Js_false, FALSE, false);
-  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 4;
+  HIWIRE_INIT_CONSTS();
 
 #ifdef DEBUG_F
   Hiwire._hiwire = _hiwire;
@@ -81,7 +92,10 @@ EM_JS_NUM(int, hiwire_init, (), {
     let idval = _hiwire.obj_to_key.get(jsval);
     // clang-format off
     if (idval !== undefined) {
-      _hiwire.objects.get(idval)[1]++;
+      if (idval & 1) {
+        // incref if it's not immortal
+        _hiwire.objects.get(idval)[1]++;
+      }
       return idval;
     }
     // clang-format on
@@ -112,9 +126,8 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.intern_object = function(obj)
   {
-    let id = hiwire_next_permanent;
-    hiwire_next_permanent += 4;
-    _hiwire.objects.set(id, [ obj, -1 ]);
+    const id = (_hiwire.immortals.push(obj) - 1) << 2;
+    _hiwire.obj_to_key.set(id, obj);
     return id;
   };
 
@@ -125,11 +138,10 @@ EM_JS_NUM(int, hiwire_init, (), {
     // clang-format on
   };
 
-  Hiwire.get_value = function(idval)
-  {
+  // clang-format off
+  Hiwire.get_value = function (idval) {
     if (!idval) {
       API.fail_test = true;
-      // clang-format off
       // This might have happened because the error indicator is set. Let's
       // check.
       if (_PyErr_Occurred()) {
@@ -138,20 +150,23 @@ EM_JS_NUM(int, hiwire_init, (), {
         let e = Hiwire.pop_value(exc);
         console.error(
           `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
-          "This was probably because the Python error indicator was set when get_value was called. " +
-          "The Python error that caused this was:",
+            "This was probably because the Python error indicator was set when get_value was called. " +
+            "The Python error that caused this was:",
           e
         );
         throw e;
       } else {
-        const msg = `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
-          + ' (but error indicator is not set).';
+        const msg =
+          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy` +
+          " (but error indicator is not set).";
         console.error(msg);
         throw new Error(msg);
       }
-      // clang-format on
     }
-    // clang-format off
+    if ((idval & 3) === 0) {
+      // immortal reference
+      return _hiwire.immortals[idval >> 2];
+    }
     if ((idval & 3) === 2) {
       // stack reference
       const idx = idval >> 2;
@@ -163,15 +178,15 @@ EM_JS_NUM(int, hiwire_init, (), {
       }
       return _hiwire.stack[idval >> 2];
     }
-    // heap or immortal reference
     if (!_hiwire.objects.has(idval)) {
       API.fail_test = true;
-      console.error(`Pyodide internal error: Undefined id ${ idval }`);
-      throw new Error(`Undefined id ${ idval }`);
+      console.error(`Pyodide internal error: Undefined id ${idval}`);
+      throw new Error(`Undefined id ${idval}`);
     }
-    // clang-format on
     return _hiwire.objects.get(idval)[0];
   };
+  // clang-format on
+
 
   Hiwire.decref = function(idval)
   {
@@ -214,7 +229,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
     if ((idval & 3) === 2) {
       // stack reference ==> move to heap
-      return Hiwire.new_value(_hiwire.objects.get(idval)[0]);
+      return Hiwire.new_value(_hiwire.stack[idval]);
     }
 #ifdef DEBUG_F
     if(DEREF_U8(_tracerefs, 0)){
