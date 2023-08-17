@@ -1,5 +1,5 @@
 import type { Module as OrigModule } from "./module";
-import { defines } from "./generated_struct_info32.gen.json";
+import { defines } from "./generated_struct_info32.json";
 
 declare global {
   export const cDefs: typeof defines;
