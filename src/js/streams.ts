@@ -55,11 +55,11 @@ export type InFuncType = () =>
  */
 let INITIALIZED = false;
 const DEVOPS: { [k: number]: Reader & Writer } = {};
+// DEVS is initialized in initializeStreams
 const DEVS = {} as {
   stdin: number;
   stdout: number;
   stderr: number;
-  tty: number;
 };
 
 function _setStdinOps(ops: Reader) {
