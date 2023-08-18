@@ -1,6 +1,11 @@
 JS_FILE(hiwire_init, () => {
   0, 0; /* Magic, see include_js_file.h */
 
+  // TODO: more explain
+  // occupied info : [version][refcnt  ]1
+  //    empty info : [version][nextfree]0
+  //    id : [version][index   ]1
+
   let _hiwire = {
     objects: [null],
     slotInfo: new Uint32Array(0),
@@ -41,6 +46,41 @@ JS_FILE(hiwire_init, () => {
     const idval = (version << VERSION_SHIFT) | (index << 1) | 1;
     TRACEREFS("hw.new_value", index, idval, jsval);
     return idval;
+  };
+
+  /**
+   * Increase the reference count on an object and return a JsRef which is unique
+   * to the object.
+   *
+   * I.e., if `Hiwire.get_value(id1) === Hiwire.get_value(id2)` then
+   * hiwire_incref_deduplicate(id1) == hiwire_incref_deduplicate(id2).
+   *
+   * This is used for the id for JsProxies so that equality checks work correctly.
+   *
+   */
+  Hiwire.incref_deduplicate = function (idval) {
+    const obj = Hiwire.get_value(idval);
+    const key = _hiwire.obj_to_key.get(obj);
+    if (key) {
+      if (key & (3 === 0)) {
+        // immortal
+        return key;
+      }
+      const index = (key & INDEX_REFCOUNT_MASK) >> 1;
+      const idversion = key >> VERSION_SHIFT;
+      let info = _hiwire.slotInfo[index];
+      const slotVersion = info >> VERSION_SHIFT;
+      if (idversion === slotVersion && obj === _hiwire.objects[index]) {
+        // increment refcount & return
+        _hiwire.slotInfo += 2;
+        return key;
+      }
+    }
+    // Either not present or key is out of date.
+    // Use incref result to force possible stack reference to heap reference.
+    const result = Hiwire.incref(idval);
+    _hiwire.obj_to_key.set(result, obj);
+    return result;
   };
 
   Hiwire.intern_object = function (obj) {

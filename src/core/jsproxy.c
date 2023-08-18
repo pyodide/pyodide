@@ -2869,7 +2869,7 @@ static int
 JsProxy_cinit(PyObject* obj, JsRef idobj)
 {
   JsProxy* self = (JsProxy*)obj;
-  self->js = hiwire_incref(idobj);
+  self->js = hiwire_incref_deduplicate(idobj);
 #ifdef DEBUG_F
   extern bool tracerefs;
   if (tracerefs) {

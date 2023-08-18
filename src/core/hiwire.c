@@ -61,7 +61,7 @@ bool tracerefs;
     console.warn(args);                                                        \
   }
 
-#define DEBUG_INIT(cb) cb()
+#define DEBUG_INIT(cb) (cb)()
 
 #else
 
@@ -76,6 +76,10 @@ bool tracerefs;
 
 EM_JS(JsRef WARN_UNUSED, hiwire_incref, (JsRef idval), {
   return Hiwire.incref(idval);
+});
+
+EM_JS(JsRef WARN_UNUSED, hiwire_incref_deduplicate, (JsRef idval), {
+  return Hiwire.incref_deduplicate(idval);
 });
 
 // clang-format off
