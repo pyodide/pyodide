@@ -486,7 +486,7 @@ export function setStdout(
 
 /**
  * Sets the standard error handler. See the documentation for
- * {js:func}`pyodide.setStdout`.
+ * :js:func:`pyodide.setStdout`.
  */
 export function setStderr(
   options: {

@@ -20,7 +20,6 @@ def test_custom_stdin1(selenium_standalone_noload):
     outstrings: list[str] = sum(
         ((s.removesuffix("\n") + "\n").splitlines(keepends=True) for s in strings), []
     )
-    print(outstrings)
     result = selenium.run_js(
         f"const strings = {strings};"
         f"const numOutlines = {len(outstrings)};"

@@ -21,7 +21,7 @@ If we pass `{error: true}`, any read from stdin raises an I/O error.
 ```js
 pyodide.setStdin({ error: true });
 pyodide.runPython(`
-    with pytest.raises(OsError, match="I/O error"):
+    with pytest.raises(OSError, match="I/O error"):
         input()
 `);
 ```
@@ -262,7 +262,7 @@ the standard output handlers.
 As with stdin, `pyodide.setStdout()` sets the default behavior. In node, this is
 to write directly to `process.stdout`. In the browser, the default is as if you
 wrote
-`setStdout({batched: (str) => console.log(str)}})`
+`setStdout({batched: (str) => console.log(str)})`
 see below.
 
 ### A batched handler
