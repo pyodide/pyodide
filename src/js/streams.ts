@@ -81,9 +81,9 @@ function isErrnoError(e: any) {
 const waitBuffer = new Int32Array(
   new WebAssembly.Memory({ shared: true, initial: 1, maximum: 1 }).buffer,
 );
-function syncSleep(ms: number): boolean {
+function syncSleep(timeout: number): boolean {
   try {
-    Atomics.wait(waitBuffer, 0, 0, ms);
+    Atomics.wait(waitBuffer, 0, 0, timeout);
     return true;
   } catch (_) {
     return false;
@@ -475,9 +475,9 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
  */
 export function setStdout(
   options: {
-    batched?: (a: string) => void;
-    raw?: (a: number) => void;
-    write?: (a: Uint8Array) => number;
+    batched?: (output: string) => void;
+    raw?: (charCode: number) => void;
+    write?: (buffer: Uint8Array) => number;
     isatty?: boolean;
   } = {},
 ) {
@@ -490,9 +490,9 @@ export function setStdout(
  */
 export function setStderr(
   options: {
-    batched?: (a: string) => void;
-    raw?: (a: number) => void;
-    write?: (a: Uint8Array) => number;
+    batched?: (output: string) => void;
+    raw?: (charCode: number) => void;
+    write?: (buffer: Uint8Array) => number;
     isatty?: boolean;
   } = {},
 ) {
