@@ -32,9 +32,9 @@ HIWIRE_INIT_CONSTS();
   _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
 // For when the return value would be Option<JsRef>
-// we use the largest possible stack reference so that `get_value` on it will
+// we use the largest possible immortal reference so that `get_value` on it will
 // always raise an error.
-const JsRef Js_novalue = ((JsRef)(2147483646));
+const JsRef Js_novalue = ((JsRef)(2147483644));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -82,7 +82,13 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.new_stack = function(jsval)
   {
-    return ((_hiwire.stack.push(jsval) - 1) << 2) | 2;
+    const idx = _hiwire.stack.push(jsval) - 1;
+#ifdef DEBUG_F
+    if (DEREF_U8(_tracerefs, 0)) {
+      console.warn("hw.new_stack", (idx << 2) | 2, idx, jsval);
+    }
+#endif
+    return (idx << 2) | 2;
   };
 
   Hiwire.new_value = function(jsval)
@@ -198,9 +204,14 @@ EM_JS_NUM(int, hiwire_init, (), {
     if ((idval & 3) === 2) {
       // stack reference
       const idx = idval >> 2;
+#ifdef DEBUG_F
+      if(DEREF_U8(_tracerefs, 0)){
+        console.warn("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
+      }
+#endif
       if (idx + 1 !== _hiwire.stack.length) {
         API.fail_test = true;
-        const msg = `Pyodide internal error: Invalid stack reference handling`;
+        const msg = `Pyodide internal error: Invalid stack reference handling: decref index ${idx} stack size ${_hiwire.stack.length}`;
         console.error(msg);
         throw new Error(msg);
       }
@@ -228,8 +239,13 @@ EM_JS_NUM(int, hiwire_init, (), {
       return idval;
     }
     if ((idval & 3) === 2) {
+#ifdef DEBUG_F
+      if(DEREF_U8(_tracerefs, 0)){
+        console.warn("hw.incref.stack", idval, idval >> 2, _hiwire.stack[idval]);
+      }
+#endif
       // stack reference ==> move to heap
-      return Hiwire.new_value(_hiwire.stack[idval]);
+      return Hiwire.new_value(_hiwire.stack[idval >> 2]);
     }
 #ifdef DEBUG_F
     if(DEREF_U8(_tracerefs, 0)){
