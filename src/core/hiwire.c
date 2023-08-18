@@ -24,6 +24,11 @@
 
 HIWIRE_INIT_CONSTS();
 
+#define VERSION_SHIFT 26
+#define INDEX_REFCOUNT_MASK 0x03FFFFFE
+_Static_assert(INDEX_REFCOUNT_MASK == ((1 << VERSION_SHIFT) - 2), "Oops!");
+#define OCCUPIED_BIT 1
+
 // JS definition:
 #undef HIWIRE_INIT_CONST
 #define HIWIRE_INIT_CONST(hiwire_attr, js_value, id)                           \
@@ -50,308 +55,24 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 
 #ifdef DEBUG_F
 bool tracerefs;
-#endif
 
-EM_JS_NUM(int, hiwire_init, (), {
-  let _hiwire = {
-    objects : new Map(),
-    // The reverse of the object maps, needed to deduplicate keys so that key
-    // equality is object identity.
-    obj_to_key : new Map(),
-    // counter is used to allocate keys for the objects map.
-    // We use even integers to represent singleton constants which we won't
-    // reference count. We only want to allocate odd keys so we start at 1 and
-    // step by 2. We use a native uint32 for our counter, so counter
-    // automatically overflows back to 1 if it ever gets up to the max u32 =
-    // 2^{31} - 1. This ensures we can keep recycling keys even for very long
-    // sessions. (Also the native u32 is faster since javascript won't convert
-    // it to a float.)
-    // 0 == C NULL is an error code for compatibility with Python calling
-    // conventions.
-    counter : new Uint32Array([1]),
-    stack : [],
-    // Actual 0 is reserved for NULL so we have to leave a space for it.
-    immortals : [ null ],
-  };
-  HIWIRE_INIT_CONSTS();
-
-#ifdef DEBUG_F
-  Hiwire._hiwire = _hiwire;
-  let many_objects_warning_threshold = 200;
-#endif
-
-  Hiwire.new_stack = function(jsval)
-  {
-    const idx = _hiwire.stack.push(jsval) - 1;
-#ifdef DEBUG_F
-    if (DEREF_U8(_tracerefs, 0)) {
-      console.warn("hw.new_stack", (idx << 2) | 2, idx, jsval);
-    }
-#endif
-    return (idx << 2) | 2;
-  };
-
-  Hiwire.new_value = function(jsval)
-  {
-    // If jsval already has a hiwire key, then use existing key. We need this to
-    // ensure that obj1 === obj2 implies key1 == key2.
-    let idval = _hiwire.obj_to_key.get(jsval);
-    // clang-format off
-    if (idval !== undefined) {
-      if (idval & 1) {
-        // incref if it's not immortal
-        _hiwire.objects.get(idval)[1]++;
-      }
-      return idval;
-    }
-    // clang-format on
-    while (_hiwire.objects.has(_hiwire.counter[0])) {
-      // Increment by two here (and below) because even integers are reserved
-      // for singleton constants
-      _hiwire.counter[0] += 2;
-    }
-    idval = _hiwire.counter[0];
-    _hiwire.objects.set(idval, [ jsval, 1 ]);
-    _hiwire.obj_to_key.set(jsval, idval);
-    _hiwire.counter[0] += 2;
-#ifdef DEBUG_F
-    if (_hiwire.objects.size > many_objects_warning_threshold) {
-      console.warn(
-        "A fairly large number of hiwire objects are present, this could " +
-        "be a sign of a memory leak.");
-      many_objects_warning_threshold += 100;
-    }
-#endif
-#ifdef DEBUG_F
-    if (DEREF_U8(_tracerefs, 0)) {
-      console.warn("hw.new_value", idval, jsval);
-    }
-#endif
-    return idval;
-  };
-
-  Hiwire.intern_object = function(obj)
-  {
-    const id = (_hiwire.immortals.push(obj) - 1) << 2;
-    _hiwire.obj_to_key.set(obj, id);
-    return id;
-  };
-
-  // clang-format off
-  // for testing purposes.
-  Hiwire.num_keys = function()
-  {
-    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length;
-  };
-
-  Hiwire.stack_length = () => _hiwire.stack.length;
-
-  Hiwire.get_value = function (idval) {
-    if (!idval) {
-      API.fail_test = true;
-      // This might have happened because the error indicator is set. Let's
-      // check.
-      if (_PyErr_Occurred()) {
-        // This will lead to a more helpful error message.
-        let exc = _wrap_exception();
-        let e = Hiwire.pop_value(exc);
-        console.error(
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
-            "This was probably because the Python error indicator was set when get_value was called. " +
-            "The Python error that caused this was:",
-          e
-        );
-        throw e;
-      } else {
-        const msg =
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy` +
-          " (but error indicator is not set).";
-        console.error(msg);
-        throw new Error(msg);
-      }
-    }
-    if ((idval & 3) === 0) {
-      // immortal reference
-      return _hiwire.immortals[idval >> 2];
-    }
-    if ((idval & 3) === 2) {
-      // stack reference
-      const idx = idval >> 2;
-      if (idx >= _hiwire.stack.length) {
-        API.fail_test = true;
-        const msg = `Pyodide internal error : Invalid stack reference handling`;
-        console.error(msg);
-        throw new Error(msg);
-      }
-      return _hiwire.stack[idval >> 2];
-    }
-    if (!_hiwire.objects.has(idval)) {
-      API.fail_test = true;
-      console.error(`Pyodide internal error: Undefined id ${idval}`);
-      throw new Error(`Undefined id ${idval}`);
-    }
-    return _hiwire.objects.get(idval)[0];
-  };
-  // clang-format on
-
-  Hiwire.decref = function(idval)
-  {
-    // clang-format off
-    if ((idval & 3) === 0) {
-      // immortal reference
-      return;
-    }
-    if ((idval & 3) === 2) {
-      // stack reference
-      const idx = idval >> 2;
-#ifdef DEBUG_F
-      if(DEREF_U8(_tracerefs, 0)){
-        console.warn("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
-      }
-#endif
-      if (idx + 1 !== _hiwire.stack.length) {
-        API.fail_test = true;
-        const msg = `Pyodide internal error: Invalid stack reference handling: decref index ${idx} stack size ${_hiwire.stack.length}`;
-        console.error(msg);
-        throw new Error(msg);
-      }
-      _hiwire.stack.pop();
-      return;
-    }
-    // heap reference
-#ifdef DEBUG_F
-    if(DEREF_U8(_tracerefs, 0)){
-      console.warn("hw.decref", idval, _hiwire.objects.get(idval));
-    }
-#endif
-    let pair = _hiwire.objects.get(idval);
-    let new_refcnt = --pair[1];
-    if (new_refcnt === 0) {
-      _hiwire.objects.delete(idval);
-      _hiwire.obj_to_key.delete(pair[0]);
-    }
-  };
-
-  Hiwire.incref = function(idval)
-  {
-    if ((idval & 3) === 0) {
-      // immortal reference
-      return idval;
-    }
-    if ((idval & 3) === 2) {
-#ifdef DEBUG_F
-      if(DEREF_U8(_tracerefs, 0)){
-        console.warn("hw.incref.stack", idval, idval >> 2, _hiwire.stack[idval]);
-      }
-#endif
-      // stack reference ==> move to heap
-      return Hiwire.new_value(_hiwire.stack[idval >> 2]);
-    }
-#ifdef DEBUG_F
-    if(DEREF_U8(_tracerefs, 0)){
-      console.warn("hw.decref", idval, _hiwire.objects.get(idval));
-    }
-#endif
-    // heap reference
-    _hiwire.objects.get(idval)[1]++;
-    return idval;
-  };
-  // clang-format on
-
-  Hiwire.pop_value = function(idval)
-  {
-    let result = Hiwire.get_value(idval);
-    Hiwire.decref(idval);
-    return result;
-  };
-
-  // This is factored out primarily for testing purposes.
-  Hiwire.isPromise = function(obj)
-  {
-    try {
-      // clang-format off
-      return (!!obj) && typeof obj.then === 'function';
-      // clang-format on
-    } catch (e) {
-      return false;
-    }
-  };
-
-  /**
-   * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
-   *
-   * This respects slices: if the ArrayBuffer view is restricted to a slice of
-   * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
-   */
-  API.typedArrayAsUint8Array = function(arg)
-  {
-    // clang-format off
-    if(ArrayBuffer.isView(arg)){
-      // clang-format on
-      return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
-    } else {
-      return new Uint8Array(arg);
-    }
-  };
-
-  {
-    let dtypes_str =
-      [ "b", "B", "h", "H", "i", "I", "f", "d" ].join(String.fromCharCode(0));
-    let dtypes_ptr = stringToNewUTF8(dtypes_str);
-    let dtypes_map = {};
-    for (let[idx, val] of Object.entries(dtypes_str)) {
-      dtypes_map[val] = dtypes_ptr + Number(idx);
-    }
-
-    let buffer_datatype_map = new Map([
-      [ 'Int8Array', [ dtypes_map['b'], 1, true ] ],
-      [ 'Uint8Array', [ dtypes_map['B'], 1, true ] ],
-      [ 'Uint8ClampedArray', [ dtypes_map['B'], 1, true ] ],
-      [ 'Int16Array', [ dtypes_map['h'], 2, true ] ],
-      [ 'Uint16Array', [ dtypes_map['H'], 2, true ] ],
-      [ 'Int32Array', [ dtypes_map['i'], 4, true ] ],
-      [ 'Uint32Array', [ dtypes_map['I'], 4, true ] ],
-      [ 'Float32Array', [ dtypes_map['f'], 4, true ] ],
-      [ 'Float64Array', [ dtypes_map['d'], 8, true ] ],
-      // These last two default to Uint8. They have checked : false to allow use
-      // with other types.
-      [ 'DataView', [ dtypes_map['B'], 1, false ] ],
-      [ 'ArrayBuffer', [ dtypes_map['B'], 1, false ] ],
-    ]);
-
-    /**
-     * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
-     * triple: [char* format_ptr, int itemsize, bool checked] If argument is
-     * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
-     * the flag checked to false in that case so we allow assignment to/from
-     * anything.
-     *
-     * This is the API for use from JavaScript, there's also an EM_JS
-     * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
-     * in jsproxy.c for buffers.
-     */
-    Module.get_buffer_datatype = function(jsobj)
-    {
-      return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
-    }
+#define TRACEREFS(args...)                                                     \
+  if (DEREF_U8(_tracerefs, 0)) {                                               \
+    console.warn(args);                                                        \
   }
 
-  Module.iterObject = function * (object)
-  {
-    for (let k in object) {
-      if (Object.prototype.hasOwnProperty.call(object, k)) {
-        yield k;
-      }
-    }
-  };
+#define DEBUG_INIT(cb) cb()
 
-  if (globalThis.BigInt) {
-    Module.BigInt = BigInt;
-  } else {
-    Module.BigInt = Number;
-  }
-  return 0;
-});
+#else
+
+#define TRACEREFS(args...)
+#define DEBUG_INIT(cb)
+
+#endif
+
+#include <include_js_file.h>
+
+#include "hiwire.js"
 
 EM_JS(JsRef WARN_UNUSED, hiwire_incref, (JsRef idval), {
   return Hiwire.incref(idval);
