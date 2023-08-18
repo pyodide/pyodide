@@ -125,7 +125,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	cd src/js && node esbuild.config.mjs && npm run tsc && cd -
+	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -135,12 +135,12 @@ npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
 dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
-	node src/js/esbuild.config.mjs
-	# See https://github.com/timocov/dts-bundle-generator/issues/255
-	cd src/js && npx dts-bundle-generator {pyodide,ffi}.ts --export-referenced-types false --project tsconfig.json
+	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
+
+
 
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@

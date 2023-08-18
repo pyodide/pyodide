@@ -259,13 +259,6 @@ def ensure_typedoc_on_path():
     )
 
 
-def get_emscripten_version():
-    prefix = "export PYODIDE_EMSCRIPTEN_VERSION ?= "
-    for line in Path("../Makefile.envs").read_text().splitlines():
-        if line.startswith(prefix):
-            return line.removeprefix(prefix)
-
-
 def create_generated_typescript_files(app):
     shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
     shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")

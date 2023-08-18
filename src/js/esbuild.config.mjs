@@ -1,5 +1,5 @@
 import { dirname, join } from "node:path";
-import { readFileSync, writeFileSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 
 import { build } from "esbuild";
 
@@ -65,7 +65,7 @@ const config = ({ input, output, format, name: globalName }) => ({
     "ws",
   ],
   define: DEFINES,
-  minify: false,
+  minify: !DEBUG,
   keepNames: true,
   sourcemap: true,
   bundle: true,
