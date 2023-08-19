@@ -72,14 +72,14 @@ JS_FILE(hiwire_init, () => {
       const slotVersion = info >> VERSION_SHIFT;
       if (idversion === slotVersion && obj === _hiwire.objects[index]) {
         // increment refcount & return
-        _hiwire.slotInfo += 2;
+        _hiwire.slotInfo[index] += 2;
         return key;
       }
     }
     // Either not present or key is out of date.
     // Use incref result to force possible stack reference to heap reference.
     const result = Hiwire.incref(idval);
-    _hiwire.obj_to_key.set(result, obj);
+    _hiwire.obj_to_key.set(obj, result);
     return result;
   };
 
