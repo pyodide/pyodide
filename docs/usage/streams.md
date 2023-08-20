@@ -31,7 +31,7 @@ pyodide.runPython(`
 You can set the default behavior by calling `pyodide.setStdin()` with no
 arguments. In Node the default behavior is to read directly from Node's standard
 input. In the browser, the default is the same as
-`pyodide.setStdin({ error: true })`.
+`pyodide.setStdin({ stdin: () => prompt() })`.
 
 ### A stdin handler
 

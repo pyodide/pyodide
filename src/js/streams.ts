@@ -257,7 +257,7 @@ function setDefaultStdin() {
   if (IN_NODE) {
     setStdin(new NodeReader(process.stdin.fd));
   } else {
-    setStdinError();
+    setStdin({stdin: () => prompt()});
   }
 }
 
