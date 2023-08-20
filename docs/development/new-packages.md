@@ -33,7 +33,7 @@ is a Python package without C extensions):
   the wheel.
 
 If however the package has C extensions or its code requires patching, then
-continue to the next steps. 
+continue to the next steps.
 
 If you are on Windows, you will need to use WSL 2.
 
