@@ -79,7 +79,6 @@ myst:
   improved with extra control and better performance.
   {pr}`4035`
 
-
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
