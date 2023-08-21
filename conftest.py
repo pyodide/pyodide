@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import sys
+from collections.abc import Sequence
 
 import pytest
 
@@ -251,3 +252,18 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
+        ]:
+            continue
+        res.append(msg)
+    return res
