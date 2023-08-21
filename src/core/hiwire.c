@@ -31,6 +31,16 @@ HIWIRE_INIT_CONSTS();
   _hiwire.immortals.push(js_value);                                            \
   _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
+// clang-format off
+// JsRefs are:
+// * ordinary if they are odd,
+// * immortal if they are divisible by 4
+// * stack references if they are congruent to 2 mod 4
+// Note that "NULL" is immortal which is important.
+#define IS_IMMORTAL(idval) (((idval) & 3) === 0)
+#define IS_STACK(idval) (((idval) & 3) === 2)
+// clang-format on
+
 // For when the return value would be Option<JsRef>
 // we use the largest possible immortal reference so that `get_value` on it will
 // always raise an error.
@@ -170,11 +180,10 @@ EM_JS_NUM(int, hiwire_init, (), {
         throw new Error(msg);
       }
     }
-    if ((idval & 3) === 0) {
-      // immortal reference
+    if (IS_IMMORTAL(idval)) {
       return _hiwire.immortals[idval >> 2];
     }
-    if ((idval & 3) === 2) {
+    if (IS_STACK(idval)) {
       // stack reference
       const idx = idval >> 2;
       if (idx >= _hiwire.stack.length) {
@@ -197,11 +206,11 @@ EM_JS_NUM(int, hiwire_init, (), {
   Hiwire.decref = function(idval)
   {
     // clang-format off
-    if ((idval & 3) === 0) {
+    if (IS_IMMORTAL(idval)) {
       // immortal reference
       return;
     }
-    if ((idval & 3) === 2) {
+    if (IS_STACK(idval)) {
       // stack reference
       const idx = idval >> 2;
 #ifdef DEBUG_F
@@ -234,11 +243,11 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.incref = function(idval)
   {
-    if ((idval & 3) === 0) {
+    if (IS_IMMORTAL(idval)) {
       // immortal reference
       return idval;
     }
-    if ((idval & 3) === 2) {
+    if (IS_STACK(idval)) {
 #ifdef DEBUG_F
       if(DEREF_U8(_tracerefs, 0)){
         console.warn("hw.incref.stack", idval, idval >> 2, _hiwire.stack[idval]);
