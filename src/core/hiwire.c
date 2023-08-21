@@ -32,13 +32,22 @@ HIWIRE_INIT_CONSTS();
   _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
 // clang-format off
+
 // JsRefs are:
 // * ordinary if they are odd,
 // * immortal if they are divisible by 4
 // * stack references if they are congruent to 2 mod 4
+//
 // Note that "NULL" is immortal which is important.
+//
+// Both immortal and stack indexes are converted to id by bitshifting right by
+// two to remove the lower order bits which indicate the reference type.
 #define IS_IMMORTAL(idval) (((idval) & 3) === 0)
+#define IMMORTAL_INDEX(id) (id >> 2)
+
 #define IS_STACK(idval) (((idval) & 3) === 2)
+#define STACK_INDEX(idval) (idval >> 2)
+
 // clang-format on
 
 // For when the return value would be Option<JsRef>
@@ -181,18 +190,18 @@ EM_JS_NUM(int, hiwire_init, (), {
       }
     }
     if (IS_IMMORTAL(idval)) {
-      return _hiwire.immortals[idval >> 2];
+      return _hiwire.immortals[IMMORTAL_INDEX(idval)];
     }
     if (IS_STACK(idval)) {
       // stack reference
-      const idx = idval >> 2;
+      const idx = STACK_INDEX(idval);
       if (idx >= _hiwire.stack.length) {
         API.fail_test = true;
         const msg = `Pyodide internal error : Invalid stack reference handling`;
         console.error(msg);
         throw new Error(msg);
       }
-      return _hiwire.stack[idval >> 2];
+      return _hiwire.stack[idx];
     }
     if (!_hiwire.objects.has(idval)) {
       API.fail_test = true;
@@ -212,7 +221,7 @@ EM_JS_NUM(int, hiwire_init, (), {
     }
     if (IS_STACK(idval)) {
       // stack reference
-      const idx = idval >> 2;
+      const idx = STACK_INDEX(idval);
 #ifdef DEBUG_F
       if(DEREF_U8(_tracerefs, 0)){
         console.warn("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
@@ -250,17 +259,12 @@ EM_JS_NUM(int, hiwire_init, (), {
     if (IS_STACK(idval)) {
 #ifdef DEBUG_F
       if(DEREF_U8(_tracerefs, 0)){
-        console.warn("hw.incref.stack", idval, idval >> 2, _hiwire.stack[idval]);
+        console.warn("hw.incref.stack", idval, STACK_INDEX(idval), _hiwire.stack[STACK_INDEX(idval)]);
       }
 #endif
       // stack reference ==> move to heap
-      return Hiwire.new_value(_hiwire.stack[idval >> 2]);
+      return Hiwire.new_value(_hiwire.stack[STACK_INDEX(idval)]);
     }
-#ifdef DEBUG_F
-    if(DEREF_U8(_tracerefs, 0)){
-      console.warn("hw.decref", idval, _hiwire.objects.get(idval));
-    }
-#endif
     // heap reference
     _hiwire.objects.get(idval)[1]++;
     return idval;
