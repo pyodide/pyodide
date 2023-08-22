@@ -75,6 +75,10 @@ myst:
   `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
   {pr}`3986` {pr}`4053`
 
+- {{ Enhancement }} The `setStdin`, `setStdout` and `setStderr` APIs have been
+  improved with extra control and better performance.
+  {pr}`4035`
+
 ### Packages
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK

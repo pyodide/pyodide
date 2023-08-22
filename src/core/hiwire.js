@@ -121,20 +121,18 @@ JS_FILE(hiwire_init, () => {
         throw new Error(msg);
       }
     }
-    if ((idval & 3) === 0) {
-      // immortal reference
-      return _hiwire.immortals[idval >> 2];
+    if (IS_IMMORTAL(idval)) {
+      return _hiwire.immortals[IMMORTAL_INDEX(idval)];
     }
-    if ((idval & 3) === 2) {
-      // stack reference
-      const idx = idval >> 2;
+    if (Is_STACK(idval)) {
+      const idx = STACK_INDEX(idval);
       if (idx >= _hiwire.stack.length) {
         API.fail_test = true;
         const msg = `Pyodide internal error : Invalid stack reference handling`;
         console.error(msg);
         throw new Error(msg);
       }
-      return _hiwire.stack[idval >> 2];
+      return _hiwire.stack[idx];
     }
     const index = (idval & INDEX_REFCOUNT_MASK) >> 1;
     const idversion = idval >> VERSION_SHIFT;
@@ -151,13 +149,11 @@ JS_FILE(hiwire_init, () => {
 
   Hiwire.decref = function (idval) {
     // clang-format off
-    if ((idval & 3) === 0) {
-      // immortal reference
+    if (Is_IMMORTAL(idval)) {
       return;
     }
-    if ((idval & 3) === 2) {
-      // stack reference
-      const idx = idval >> 2;
+    if (Is_STACK(idval)) {
+      const idx = STACK_INDEX(idval);
       TRACEREFS("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
       if (idx + 1 !== _hiwire.stack.length) {
         API.fail_test = true;
@@ -189,14 +185,14 @@ JS_FILE(hiwire_init, () => {
   };
 
   Hiwire.incref = function (idval) {
-    if ((idval & 3) === 0) {
-      // immortal reference
+    if (Is_IMMORTAL(idval)) {
       return idval;
     }
-    if ((idval & 3) === 2) {
-      TRACEREFS("hw.incref.stack", idval, idval >> 2, _hiwire.stack[idval]);
+    if (Is_STACK(idval)) {
+      const idx = STACK_INDEX(idx);
+      TRACEREFS("hw.incref.stack", idval, idx, _hiwire.stack[idx]);
       // stack reference ==> move to heap
-      return Hiwire.new_value(_hiwire.stack[idval >> 2]);
+      return Hiwire.new_value(_hiwire.stack[idx]);
     }
     // heap reference
     const index = (idval & INDEX_REFCOUNT_MASK) >> 1;

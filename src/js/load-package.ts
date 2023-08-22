@@ -1,7 +1,4 @@
-declare var Module: any;
-declare var Tests: any;
-declare var API: any;
-declare var DEBUG: boolean;
+import "./constants";
 
 import {
   IN_NODE,

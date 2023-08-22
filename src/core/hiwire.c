@@ -36,6 +36,23 @@ _Static_assert(INDEX_REFCOUNT_MASK == ((1 << VERSION_SHIFT) - 2), "Oops!");
   _hiwire.immortals.push(js_value);                                            \
   _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
 
+// clang-format off
+// JsRefs are:
+// * ordinary if they are odd,
+// * immortal if they are divisible by 4
+// * stack references if they are congruent to 2 mod 4
+//
+// Note that "NULL" is immortal which is important.
+//
+// Both immortal and stack indexes are converted to id by bitshifting right by
+// two to remove the lower order bits which indicate the reference type.
+#define IS_IMMORTAL(idval) (((idval) & 3) === 0)
+#define IMMORTAL_INDEX(id) (id >> 2)
+
+#define IS_STACK(idval) (((idval) & 3) === 2)
+#define STACK_INDEX(idval) (idval >> 2)
+// clang-format on
+
 // For when the return value would be Option<JsRef>
 // we use the largest possible immortal reference so that `get_value` on it will
 // always raise an error.
