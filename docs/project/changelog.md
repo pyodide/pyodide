@@ -93,6 +93,7 @@ myst:
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
 - Upgraded typing-extensions to 4.7.1 {pr}`4026`
+- Upgraded sourmash to 4.8.3 {pr}`4075`
 
 ### CLI
 
