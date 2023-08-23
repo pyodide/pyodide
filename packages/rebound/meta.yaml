@@ -1,6 +1,6 @@
 package:
   name: rebound
-  version: 3.26.3
+  version: 3.24.2
   top-level:
     - rebound
 build:
@@ -12,8 +12,8 @@ build:
     cp $WHEELDIR/librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
 
 source:
-  url: https://files.pythonhosted.org/packages/dc/1a/b71d8270f03979027c29e3777e6dac277b248d616efa43fed6ecb0681399/rebound-3.26.3.tar.gz
-  sha256: 84ee3fc0cf49be71bd6c0498a215badd0b6431822041303cd34cae16a9d93c4f
+  url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz
+  sha256: a3c5d4c6a10b9c1538e1051edcd6341ef3d13142b698ee9c4a1f112d9684d803
   patches:
     - patches/0001-fix-install_name.patch
 
