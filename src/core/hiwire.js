@@ -1,12 +1,9 @@
 JS_FILE(hiwire_init, () => {
   0, 0; /* Magic, see include_js_file.h */
 
-  // TODO: more explain
-  // occupied info : [version][refcnt  ]1
-  //    empty info : [version][nextfree]0
-  //    id : [version][index   ]1
-
-  let _hiwire = {
+  // See the macros and extensive comment in hiwire.c for more info.
+  const _hiwire = {
+    // next free = 0 means that all slots are full, so we don't use slot 0.
     objects: [null],
     slotInfo: new Uint32Array(0),
     slotInfoSize: 0,
@@ -25,25 +22,25 @@ JS_FILE(hiwire_init, () => {
   });
   Hiwire.new_stack = function (jsval) {
     const idx = _hiwire.stack.push(jsval) - 1;
-    TRACEREFS("hw.new_stack", (idx << 2) | 2, idx, jsval);
-    return (idx << 2) | 2;
+    TRACEREFS("hw.new_stack", STACK_INDEX_TO_REF(idx), idx, jsval);
+    return STACK_INDEX_TO_REF(idx);
   };
 
   Hiwire.new_value = function (jsval) {
     const index = _hiwire.freeHead;
     const info = _hiwire.slotInfo[index];
     _hiwire.objects[index] = jsval;
-    _hiwire.freeHead =
-      (info & INDEX_REFCOUNT_MASK) >> 1 || _hiwire.objects.length;
+    // if nextfree is 0 then we'll add a new entry to the list next
+    _hiwire.freeHead = HEAP_INFO_TO_NEXTFREE(info) || _hiwire.objects.length;
     if (index >= _hiwire.slotInfoSize) {
-      _hiwire.slotInfoSize += 1 << 10;
+      // we ran out of space in the slotInfo map, reallocate.
+      _hiwire.slotInfoSize += 1024;
       const old = _hiwire.slotInfo;
       _hiwire.slotInfo = new Uint32Array(_hiwire.slotInfoSize);
       _hiwire.slotInfo.set(old);
     }
-    _hiwire.slotInfo[index] = (info & ~INDEX_REFCOUNT_MASK) | 3;
-    const version = info >> VERSION_SHIFT;
-    const idval = (version << VERSION_SHIFT) | (index << 1) | 1;
+    _hiwire.slotInfo[index] = HEAP_NEW_OCCUPIED_INFO(info);
+    const idval = HEAP_NEW_REF(index, info);
     TRACEREFS("hw.new_value", index, idval, jsval);
     return idval;
   };
@@ -56,35 +53,28 @@ JS_FILE(hiwire_init, () => {
    * hiwire_incref_deduplicate(id1) == hiwire_incref_deduplicate(id2).
    *
    * This is used for the id for JsProxies so that equality checks work correctly.
-   *
    */
   Hiwire.incref_deduplicate = function (idval) {
     const obj = Hiwire.get_value(idval);
-    const key = _hiwire.obj_to_key.get(obj);
-    if (key) {
-      if (key & (3 === 0)) {
-        // immortal
-        return key;
+    let result = _hiwire.obj_to_key.get(obj);
+    if (result) {
+      if (!IS_IMMORTAL(result)) {
+        HEAP_INCREF(_hiwire.slotInfo[HEAP_REF_TO_INDEX(result)]);
       }
-      const index = (key & INDEX_REFCOUNT_MASK) >> 1;
-      const idversion = key >> VERSION_SHIFT;
-      let info = _hiwire.slotInfo[index];
-      const slotVersion = info >> VERSION_SHIFT;
-      if (idversion === slotVersion && obj === _hiwire.objects[index]) {
-        // increment refcount & return
-        _hiwire.slotInfo[index] += 2;
-        return key;
-      }
+      return result;
     }
     // Either not present or key is out of date.
-    // Use incref result to force possible stack reference to heap reference.
-    const result = Hiwire.incref(idval);
+    // Use incref to force possible stack reference to heap reference.
+    result = Hiwire.incref(idval);
     _hiwire.obj_to_key.set(obj, result);
+    // Record that we need to remove this entry from obj_to_key when the
+    // reference is freed. (Touching a map is expensive, avoid if possible!)
+    _hiwire.slotInfo[HEAP_REF_TO_INDEX(result)] |= DEDUPLICATED_BIT;
     return result;
   };
 
   Hiwire.intern_object = function (obj) {
-    const id = (_hiwire.immortals.push(obj) - 1) << 2;
+    const id = IMMORTAL_INDEX_TO_REF(_hiwire.immortals.push(obj) - 1);
     _hiwire.obj_to_key.set(obj, id);
     return id;
   };
@@ -122,10 +112,10 @@ JS_FILE(hiwire_init, () => {
       }
     }
     if (IS_IMMORTAL(idval)) {
-      return _hiwire.immortals[IMMORTAL_INDEX(idval)];
+      return _hiwire.immortals[IMMORTAL_REF_TO_INDEX(idval)];
     }
-    if (Is_STACK(idval)) {
-      const idx = STACK_INDEX(idval);
+    if (IS_STACK(idval)) {
+      const idx = STACK_REF_TO_INDEX(idval);
       if (idx >= _hiwire.stack.length) {
         API.fail_test = true;
         const msg = `Pyodide internal error : Invalid stack reference handling`;
@@ -134,11 +124,9 @@ JS_FILE(hiwire_init, () => {
       }
       return _hiwire.stack[idx];
     }
-    const index = (idval & INDEX_REFCOUNT_MASK) >> 1;
-    const idversion = idval >> VERSION_SHIFT;
+    const index = HEAP_REF_TO_INDEX(idval);
     const info = _hiwire.slotInfo[index];
-    const slotVersion = info >> VERSION_SHIFT;
-    if (!(info & OCCUPIED_BIT) || idversion !== slotVersion) {
+    if (HEAP_REF_IS_OUT_OF_DATE(idval, info)) {
       API.fail_test = true;
       console.error(`Pyodide internal error: Undefined id ${idval}`);
       throw new Error(`Undefined id ${idval}`);
@@ -149,11 +137,11 @@ JS_FILE(hiwire_init, () => {
 
   Hiwire.decref = function (idval) {
     // clang-format off
-    if (Is_IMMORTAL(idval)) {
+    if (IS_IMMORTAL(idval)) {
       return;
     }
-    if (Is_STACK(idval)) {
-      const idx = STACK_INDEX(idval);
+    if (IS_STACK(idval)) {
+      const idx = STACK_REF_TO_INDEX(idval);
       TRACEREFS("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
       if (idx + 1 !== _hiwire.stack.length) {
         API.fail_test = true;
@@ -165,47 +153,46 @@ JS_FILE(hiwire_init, () => {
       return;
     }
     // heap reference
-    const index = (idval & INDEX_REFCOUNT_MASK) >> 1;
+    const index = HEAP_REF_TO_INDEX(idval);
     TRACEREFS("hw.decref", index, idval, _hiwire.objects[index]);
-    const idversion = idval >> VERSION_SHIFT;
     let info = _hiwire.slotInfo[index];
-    const slotVersion = info >> VERSION_SHIFT;
-    if (!(info & OCCUPIED_BIT) || idversion !== slotVersion) {
+    if (HEAP_REF_IS_OUT_OF_DATE(idval, info)) {
       API.fail_test = true;
       console.error(`Pyodide internal error: Undefined id ${idval}`);
       throw new Error(`Undefined id ${idval}`);
     }
-    info -= 2;
-    if ((info & INDEX_REFCOUNT_MASK) === 0) {
+    HEAP_DECREF(info);
+    if (HEAP_IS_REFCNT_ZERO(info)) {
+      if (HEAP_IS_DEDUPLICATED(info)) {
+        _hiwire.obj_to_key.delete(_hiwire.objects[index]);
+      }
       delete _hiwire.objects[index];
-      info = ((slotVersion + 1) << VERSION_SHIFT) | (_hiwire.freeHead << 1);
+      info = FREE_LIST_INFO(info, _hiwire.freeHead);
       _hiwire.freeHead = index;
     }
     _hiwire.slotInfo[index] = info;
   };
 
   Hiwire.incref = function (idval) {
-    if (Is_IMMORTAL(idval)) {
+    if (IS_IMMORTAL(idval)) {
       return idval;
     }
-    if (Is_STACK(idval)) {
-      const idx = STACK_INDEX(idx);
+    if (IS_STACK(idval)) {
+      const idx = STACK_REF_TO_INDEX(idx);
       TRACEREFS("hw.incref.stack", idval, idx, _hiwire.stack[idx]);
       // stack reference ==> move to heap
       return Hiwire.new_value(_hiwire.stack[idx]);
     }
     // heap reference
-    const index = (idval & INDEX_REFCOUNT_MASK) >> 1;
+    const index = HEAP_REF_TO_INDEX(idval);
     TRACEREFS("hw.incref", index, idval, _hiwire.objects[index]);
-    const idversion = idval >> VERSION_SHIFT;
-    let info = _hiwire.slotInfo[index];
-    const slotVersion = info >> VERSION_SHIFT;
-    if (!(info & OCCUPIED_BIT) || idversion !== slotVersion) {
+    const info = _hiwire.slotInfo[index];
+    if (HEAP_REF_IS_OUT_OF_DATE(idval, info)) {
       API.fail_test = true;
       console.error(`Pyodide internal error: Undefined id ${idval}`);
       throw new Error(`Undefined id ${idval}`);
     }
-    _hiwire.slotInfo[index] += 2;
+    HEAP_INCREF(_hiwire.slotInfo[index]);
     return idval;
   };
   // clang-format on
