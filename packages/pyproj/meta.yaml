@@ -1,11 +1,11 @@
 package:
   name: pyproj
-  version: 3.6.0
+  version: 3.4.1
   top-level:
     - pyproj
 source:
-  url: https://files.pythonhosted.org/packages/38/77/46fe6a107b934fd23b903cb7402b69c8b2480a6cab9481d9f98c6dc7726e/pyproj-3.6.0.tar.gz
-  sha256: a5b111865b3f0f8b77b3983f2fbe4dd6248fc09d3730295949977c8dcd988062
+  url: https://files.pythonhosted.org/packages/c0/fc/fd53e45d2ad5862d32ab8614e70c3c1f52a8e0d8bd243ee6a23b6a481b4a/pyproj-3.4.1.tar.gz
+  sha256: 261eb29b1d55b1eb7f336127344d9b31284d950a9446d1e0d1c2411f7dd8e3ac
 
 requirements:
   host:
