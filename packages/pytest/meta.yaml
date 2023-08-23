@@ -1,6 +1,6 @@
 package:
   name: pytest
-  version: 7.2.2
+  version: 7.4.0
   tag:
     - core
     - min-scipy-stack
@@ -8,8 +8,8 @@ package:
     - _pytest
     - pytest
 source:
-  url: https://files.pythonhosted.org/packages/b2/68/5321b5793bd506961bd40bdbdd0674e7de4fb873ee7cab33dd27283ad513/pytest-7.2.2-py3-none-any.whl
-  sha256: 130328f552dcfac0b1cec75c12e3f005619dc5f874f0a06e8ff7263f0ee6225e
+  url: https://files.pythonhosted.org/packages/33/b2/741130cbcf2bbfa852ed95a60dc311c9e232c7ed25bac3d9b8880a8df4ae/pytest-7.4.0-py3-none-any.whl
+  sha256: 78bf16451a2eb8c7a2ea98e32dc119fd2aa758f1d5d66dbf0a59d69a3969df32
 requirements:
   run:
     - atomicwrites

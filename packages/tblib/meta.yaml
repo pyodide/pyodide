@@ -1,14 +1,14 @@
 package:
   name: tblib
-  version: 1.7.0
+  version: 2.0.0
   tag:
     - core
     - min-scipy-stack
   top-level:
     - tblib
 source:
-  url: https://files.pythonhosted.org/packages/6f/f0/84df460611f1d1c9c348fd4ac2295178083e54962b1be94d571602fafb4c/pyodide_tblib-1.7.1-py3-none-any.whl
-  sha256: 6e21535b5be695b4ee2751c5bde21eb5a003ed74aabafaecdca8ef5b3cfa3ea1
+  url: https://files.pythonhosted.org/packages/9e/bd/ccb241b97e39dd8ec143418f89b3fd5752f872c862877a0f1b2d9fb9e815/tblib-2.0.0-py3-none-any.whl
+  sha256: 9100bfa016b047d5b980d66e7efed952fbd20bd85b56110aaf473cb97d18709a
 about:
   home: https://github.com/ionelmc/python-tblib
   PyPI: https://pypi.org/project/tblib
