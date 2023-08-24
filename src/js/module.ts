@@ -2,7 +2,7 @@
 
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
-import { loadBinaryFile } from "./compat";
+import { loadBinaryFile, getBinaryResponse } from "./compat";
 
 export type FSNode = {
   timestamp: number;
@@ -236,7 +236,9 @@ export function preloadWasm(Module: Module, indexURL: string) {
     // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
     return;
   }
-  const wasmResponse = fetch(indexURL! + "pyodide.asm.wasm");
+  const { binary, response } = getBinaryResponse(
+    indexURL! + "pyodide.asm.wasm",
+  );
   Module.instantiateWasm = function (
     imports: { [key: string]: any },
     successCallback: (
@@ -246,10 +248,13 @@ export function preloadWasm(Module: Module, indexURL: string) {
   ) {
     (async function () {
       try {
-        const { module, instance } = await WebAssembly.instantiateStreaming(
-          wasmResponse,
-          imports,
-        );
+        let res: WebAssembly.WebAssemblyInstantiatedSource;
+        if (response) {
+          res = await WebAssembly.instantiateStreaming(response, imports);
+        } else {
+          res = await WebAssembly.instantiate(await binary, imports);
+        }
+        const { instance, module } = res;
         // When overriding instantiateWasm, in asan builds, we also need
         // to take care of creating the WasmOffsetConverter
         // @ts-ignore
