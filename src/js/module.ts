@@ -96,6 +96,13 @@ export interface Module {
   removeRunDependency: (id: string) => void;
   reportUndefinedSymbols: () => void;
   ERRNO_CODES: { [k: string]: number };
+  instantiateWasm?: (
+    imports: { [key: string]: any },
+    successCallback: (
+      instance: WebAssembly.Instance,
+      module: WebAssembly.Module,
+    ) => void,
+  ) => void;
 }
 
 /**
@@ -218,4 +225,45 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
   setEnvironment(Module, config.env);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
+}
+
+export function preloadWasm(Module: Module, indexURL: string) {
+  if (SOURCEMAP) {
+    // According to the docs:
+    //
+    // "Sanitizers or source map is currently not supported if overriding
+    // WebAssembly instantiation with Module.instantiateWasm."
+    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
+    return;
+  }
+  const wasmResponse = fetch(indexURL! + "pyodide.asm.wasm");
+  Module.instantiateWasm = function (
+    imports: { [key: string]: any },
+    successCallback: (
+      instance: WebAssembly.Instance,
+      module: WebAssembly.Module,
+    ) => void,
+  ) {
+    (async function () {
+      try {
+        const { module, instance } = await WebAssembly.instantiateStreaming(
+          wasmResponse,
+          imports,
+        );
+        // When overriding instantiateWasm, in asan builds, we also need
+        // to take care of creating the WasmOffsetConverter
+        // @ts-ignore
+        if (typeof WasmOffsetConverter != "undefined") {
+          // @ts-ignore
+          wasmOffsetConverter = new WasmOffsetConverter(wasmBinary, module);
+        }
+        successCallback(instance, module);
+      } catch (e) {
+        console.warn("wasm instantiation failed!");
+        console.warn(e);
+      }
+    })();
+
+    return {}; // Compiling asynchronously, no exports.
+  };
 }

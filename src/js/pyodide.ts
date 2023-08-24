@@ -4,7 +4,7 @@
 import ErrorStackParser from "error-stack-parser";
 import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
 
-import { createModule, initializeFileSystem } from "./module";
+import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -335,9 +335,11 @@ export async function loadPyodide(
   Module.print = config.stdout;
   Module.printErr = config.stderr;
   Module.arguments = config.args;
+
   const API: any = { config };
   Module.API = API;
 
+  preloadWasm(Module, indexURL);
   initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
