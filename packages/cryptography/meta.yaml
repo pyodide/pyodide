@@ -1,11 +1,11 @@
 package:
   name: cryptography
-  version: 41.0.3
+  version: 39.0.2
   top-level:
     - cryptography
 source:
-  url: https://files.pythonhosted.org/packages/8e/5d/2bf54672898375d081cb24b30baeb7793568ae5d958ef781349e9635d1c8/cryptography-41.0.3.tar.gz
-  sha256: 6d192741113ef5e30d89dcb5b956ef4e1578f304708701b8b73d38e3e1461f34
+  url: https://files.pythonhosted.org/packages/fa/f3/f4b8c175ea9a1de650b0085858059050b7953a93d66c97ed89b93b232996/cryptography-39.0.2.tar.gz
+  sha256: bc5b871e977c8ee5a1bbc42fa8d19bcc08baf0c51cbf1586b0e87a2694dde42f
   patches:
     - patches/0001-Use-patched-instant.patch
 build:
