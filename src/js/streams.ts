@@ -90,13 +90,13 @@ function syncSleep(timeout: number): boolean {
   }
 }
 
-function readHelper(devops: Reader, buffer: Uint8Array): number {
+function readWriteHelper(cb: () => number): number {
   while (true) {
     try {
-      return devops.read(buffer);
+      return cb();
     } catch (e: any) {
       if (e && e.code === "EAGAIN") {
-        // Presumably this means we're in node and tried to read from an
+        // Presumably this means we're in node and tried to read from/write to an
         // O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
         // requested by EAGAIN and try again. In case for some reason we fail to
         // sleep, propagate the error (it will turn into an EOFError).
@@ -136,7 +136,7 @@ const stream_ops: StreamOps = {
     );
     let bytesRead;
     try {
-      bytesRead = readHelper(stream.devops, buffer);
+      bytesRead = readWriteHelper(() => stream.devops.read(buffer));
     } catch (e: any) {
       if (e && e.code && Module.ERRNO_CODES[e.code]) {
         throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
@@ -165,12 +165,13 @@ const stream_ops: StreamOps = {
     return bytesRead;
   },
   write: function (stream, buffer, offset, length, pos /* ignored */): number {
-    buffer = API.typedArrayAsUint8Array(buffer);
+    buffer = API.typedArrayAsUint8Array(buffer).subarray(
+      offset,
+      offset + length,
+    );
     let bytesWritten;
     try {
-      bytesWritten = stream.devops.write(
-        buffer.subarray(offset, offset + length),
-      );
+      bytesWritten = readWriteHelper(() => stream.devops.write(buffer));
     } catch (e) {
       if (isErrnoError(e)) {
         throw e;
