@@ -792,8 +792,7 @@ _pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
       // If GeneratorExit comes back out, return original value.
       PyErr_Clear();
       status = PYGEN_RETURN;
-      hiwire_incref(jsval);
-      *result = jsval;
+      *result = hiwire_incref(jsval);
       success = true;
       goto finally;
     }

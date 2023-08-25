@@ -10,13 +10,50 @@
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
 
-const JsRef Js_undefined = ((JsRef)(2));
-const JsRef Js_true = ((JsRef)(4));
-const JsRef Js_false = ((JsRef)(6));
-const JsRef Js_null = ((JsRef)(8));
+#define HIWIRE_INIT_CONSTS()                                                   \
+  HIWIRE_INIT_CONST(UNDEFINED, undefined, 4);                                  \
+  HIWIRE_INIT_CONST(JSNULL, null, 8);                                          \
+  HIWIRE_INIT_CONST(TRUE, true, 12);                                           \
+  HIWIRE_INIT_CONST(FALSE, false, 16)
+
+// we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
+// definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
+// C definition:
+#define HIWIRE_INIT_CONST(hiwire_attr, js_value, id)                           \
+  const JsRef Js_##js_value = ((JsRef)(id));
+
+HIWIRE_INIT_CONSTS();
+
+// JS definition:
+#undef HIWIRE_INIT_CONST
+#define HIWIRE_INIT_CONST(hiwire_attr, js_value, id)                           \
+  Hiwire.hiwire_attr = DEREF_U8(_Js_##js_value, 0);                            \
+  _hiwire.immortals.push(js_value);                                            \
+  _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
+
+// clang-format off
+
+// JsRefs are:
+// * ordinary if they are odd,
+// * immortal if they are divisible by 4
+// * stack references if they are congruent to 2 mod 4
+//
+// Note that "NULL" is immortal which is important.
+//
+// Both immortal and stack indexes are converted to id by bitshifting right by
+// two to remove the lower order bits which indicate the reference type.
+#define IS_IMMORTAL(idval) (((idval) & 3) === 0)
+#define IMMORTAL_INDEX(id) (id >> 2)
+
+#define IS_STACK(idval) (((idval) & 3) === 2)
+#define STACK_INDEX(idval) (idval >> 2)
+
+// clang-format on
 
 // For when the return value would be Option<JsRef>
-const JsRef Js_novalue = ((JsRef)(10));
+// we use the largest possible immortal reference so that `get_value` on it will
+// always raise an error.
+const JsRef Js_novalue = ((JsRef)(2147483644));
 
 JsRef
 hiwire_from_bool(bool boolean)
@@ -34,11 +71,6 @@ EM_JS(bool, hiwire_to_bool, (JsRef val), {
 bool tracerefs;
 #endif
 
-#define HIWIRE_INIT_CONST(js_const, hiwire_attr, js_value)                     \
-  Hiwire.hiwire_attr = DEREF_U8(js_const, 0);                                  \
-  _hiwire.objects.set(Hiwire.hiwire_attr, [ js_value, -1 ]);                   \
-  _hiwire.obj_to_key.set(js_value, Hiwire.hiwire_attr);
-
 EM_JS_NUM(int, hiwire_init, (), {
   let _hiwire = {
     objects : new Map(),
@@ -55,18 +87,28 @@ EM_JS_NUM(int, hiwire_init, (), {
     // it to a float.)
     // 0 == C NULL is an error code for compatibility with Python calling
     // conventions.
-    counter : new Uint32Array([1])
+    counter : new Uint32Array([1]),
+    stack : [],
+    // Actual 0 is reserved for NULL so we have to leave a space for it.
+    immortals : [ null ],
   };
-  HIWIRE_INIT_CONST(_Js_undefined, UNDEFINED, undefined);
-  HIWIRE_INIT_CONST(_Js_null, JSNULL, null);
-  HIWIRE_INIT_CONST(_Js_true, TRUE, true);
-  HIWIRE_INIT_CONST(_Js_false, FALSE, false);
-  let hiwire_next_permanent = HEAPU8[_Js_novalue] + 2;
+  HIWIRE_INIT_CONSTS();
 
 #ifdef DEBUG_F
   Hiwire._hiwire = _hiwire;
   let many_objects_warning_threshold = 200;
 #endif
+
+  Hiwire.new_stack = function(jsval)
+  {
+    const idx = _hiwire.stack.push(jsval) - 1;
+#ifdef DEBUG_F
+    if (DEREF_U8(_tracerefs, 0)) {
+      console.warn("hw.new_stack", (idx << 2) | 2, idx, jsval);
+    }
+#endif
+    return (idx << 2) | 2;
+  };
 
   Hiwire.new_value = function(jsval)
   {
@@ -75,7 +117,10 @@ EM_JS_NUM(int, hiwire_init, (), {
     let idval = _hiwire.obj_to_key.get(jsval);
     // clang-format off
     if (idval !== undefined) {
-      _hiwire.objects.get(idval)[1]++;
+      if (idval & 1) {
+        // incref if it's not immortal
+        _hiwire.objects.get(idval)[1]++;
+      }
       return idval;
     }
     // clang-format on
@@ -106,24 +151,23 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.intern_object = function(obj)
   {
-    let id = hiwire_next_permanent;
-    hiwire_next_permanent += 2;
-    _hiwire.objects.set(id, [ obj, -1 ]);
+    const id = (_hiwire.immortals.push(obj) - 1) << 2;
+    _hiwire.obj_to_key.set(obj, id);
     return id;
   };
 
+  // clang-format off
   // for testing purposes.
-  Hiwire.num_keys = function(){
-    // clang-format off
-    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length
-    // clang-format on
+  Hiwire.num_keys = function()
+  {
+    return Array.from(_hiwire.objects.keys()).filter((x) => x % 2).length;
   };
 
-  Hiwire.get_value = function(idval)
-  {
+  Hiwire.stack_length = () => _hiwire.stack.length;
+
+  Hiwire.get_value = function (idval) {
     if (!idval) {
       API.fail_test = true;
-      // clang-format off
       // This might have happened because the error indicator is set. Let's
       // check.
       if (_PyErr_Occurred()) {
@@ -132,41 +176,67 @@ EM_JS_NUM(int, hiwire_init, (), {
         let e = Hiwire.pop_value(exc);
         console.error(
           `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy. ` +
-          "This was probably because the Python error indicator was set when get_value was called. " +
-          "The Python error that caused this was:",
+            "This was probably because the Python error indicator was set when get_value was called. " +
+            "The Python error that caused this was:",
           e
         );
         throw e;
       } else {
-        console.error(
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
-          + ' (but error indicator is not set).'
-        );
-        throw new Error(
-          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy`
-          + ' (but error indicator is not set).'
-        );
+        const msg =
+          `Pyodide internal error: Argument '${idval}' to hiwire.get_value is falsy` +
+          " (but error indicator is not set).";
+        console.error(msg);
+        throw new Error(msg);
       }
-      // clang-format on
+    }
+    if (IS_IMMORTAL(idval)) {
+      return _hiwire.immortals[IMMORTAL_INDEX(idval)];
+    }
+    if (IS_STACK(idval)) {
+      // stack reference
+      const idx = STACK_INDEX(idval);
+      if (idx >= _hiwire.stack.length) {
+        API.fail_test = true;
+        const msg = `Pyodide internal error : Invalid stack reference handling`;
+        console.error(msg);
+        throw new Error(msg);
+      }
+      return _hiwire.stack[idx];
     }
     if (!_hiwire.objects.has(idval)) {
       API.fail_test = true;
-      // clang-format off
-      console.error(`Pyodide internal error: Undefined id ${ idval }`);
-      throw new Error(`Undefined id ${ idval }`);
-      // clang-format on
+      console.error(`Pyodide internal error: Undefined id ${idval}`);
+      throw new Error(`Undefined id ${idval}`);
     }
     return _hiwire.objects.get(idval)[0];
   };
+  // clang-format on
 
   Hiwire.decref = function(idval)
   {
     // clang-format off
-    if ((idval & 1) === 0) {
-      // least significant bit unset ==> idval is a singleton / interned value.
-      // We don't reference count interned values.
+    if (IS_IMMORTAL(idval)) {
+      // immortal reference
       return;
     }
+    if (IS_STACK(idval)) {
+      // stack reference
+      const idx = STACK_INDEX(idval);
+#ifdef DEBUG_F
+      if(DEREF_U8(_tracerefs, 0)){
+        console.warn("hw.decref.stack", idval, idx, _hiwire.stack[idx]);
+      }
+#endif
+      if (idx + 1 !== _hiwire.stack.length) {
+        API.fail_test = true;
+        const msg = `Pyodide internal error: Invalid stack reference handling: decref index ${idx} stack size ${_hiwire.stack.length}`;
+        console.error(msg);
+        throw new Error(msg);
+      }
+      _hiwire.stack.pop();
+      return;
+    }
+    // heap reference
 #ifdef DEBUG_F
     if(DEREF_U8(_tracerefs, 0)){
       console.warn("hw.decref", idval, _hiwire.objects.get(idval));
@@ -182,15 +252,22 @@ EM_JS_NUM(int, hiwire_init, (), {
 
   Hiwire.incref = function(idval)
   {
-    if ((idval & 1) === 0) {
-      return;
+    if (IS_IMMORTAL(idval)) {
+      // immortal reference
+      return idval;
     }
-    _hiwire.objects.get(idval)[1]++;
+    if (IS_STACK(idval)) {
 #ifdef DEBUG_F
-    if (DEREF_U8(_tracerefs, 0)) {
-      console.warn("hw.incref", idval, _hiwire.objects.get(idval));
-    }
+      if(DEREF_U8(_tracerefs, 0)){
+        console.warn("hw.incref.stack", idval, STACK_INDEX(idval), _hiwire.stack[STACK_INDEX(idval)]);
+      }
 #endif
+      // stack reference ==> move to heap
+      return Hiwire.new_value(_hiwire.stack[STACK_INDEX(idval)]);
+    }
+    // heap reference
+    _hiwire.objects.get(idval)[1]++;
+    return idval;
   };
   // clang-format on
 
@@ -289,13 +366,8 @@ EM_JS_NUM(int, hiwire_init, (), {
   return 0;
 });
 
-EM_JS(JsRef, hiwire_incref, (JsRef idval), {
-  if (idval & 1) {
-    // least significant bit unset ==> idval is a singleton.
-    // We don't reference count singletons.
-    Hiwire.incref(idval);
-  }
-  return idval;
+EM_JS(JsRef WARN_UNUSED, hiwire_incref, (JsRef idval), {
+  return Hiwire.incref(idval);
 });
 
 // clang-format off
@@ -306,7 +378,7 @@ EM_JS(void, hiwire_decref, (JsRef idval), {
 
 // clang-format off
 EM_JS_REF(JsRef, hiwire_int, (int val), {
-  return Hiwire.new_value(val);
+  return Hiwire.new_stack(val);
 });
 // clang-format on
 
@@ -322,16 +394,16 @@ hiwire_int_from_digits, (const unsigned int* digits, size_t ndigits), {
   if (-Number.MAX_SAFE_INTEGER < result && result < Number.MAX_SAFE_INTEGER) {
     result = Number(result);
   }
-  return Hiwire.new_value(result);
+  return Hiwire.new_stack(result);
 })
 // clang-format on
 
 EM_JS_REF(JsRef, hiwire_double, (double val), {
-  return Hiwire.new_value(val);
+  return Hiwire.new_stack(val);
 });
 
 EM_JS_REF(JsRef, hiwire_string_utf8, (const char* ptr), {
-  return Hiwire.new_value(UTF8ToString(ptr));
+  return Hiwire.new_stack(UTF8ToString(ptr));
 });
 
 EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
