@@ -166,7 +166,7 @@ JS_FILE(hiwire_init, () => {
       if (HEAP_IS_DEDUPLICATED(info)) {
         _hiwire.obj_to_key.delete(_hiwire.objects[index]);
       }
-      delete _hiwire.objects[index];
+      _hiwire.objects[index] = undefined;
       info = FREE_LIST_INFO(info, _hiwire.freeHead);
       _hiwire.freeHead = index;
     }
