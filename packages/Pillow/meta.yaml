@@ -19,17 +19,17 @@ build:
   ldflags: |
     -ljpeg
   backend-flags: |
-    --disable-platform-guessing
-    --enable-zlib
-    --enable-jpeg
-    --enable-freetype
-    --enable-webp
-    --enable-tiff
-    --disable-lcms
-    --disable-xcb
-    --disable-webpmux
-    --disable-jpeg2000
-    --disable-imagequant
+    --disable-platform-guessing=True
+    --enable-zlib=True
+    --enable-jpeg=True
+    --enable-freetype=True
+    --enable-webp=True
+    --enable-tiff=True
+    --disable-lcms=True
+    --disable-xcb=True
+    --disable-webpmux=True
+    --disable-jpeg2000=True
+    --disable-imagequant=True
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
