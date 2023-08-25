@@ -310,7 +310,7 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    lockFileURL: indexURL! + "pyodide-lock.json",
+    lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     _node_mounts: [],
     env: {},

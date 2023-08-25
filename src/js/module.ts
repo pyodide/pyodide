@@ -237,7 +237,7 @@ export function preloadWasm(Module: Module, indexURL: string) {
     return;
   }
   const { binary, response } = getBinaryResponse(
-    indexURL! + "pyodide.asm.wasm",
+    indexURL + "pyodide.asm.wasm",
   );
   Module.instantiateWasm = function (
     imports: { [key: string]: any },
