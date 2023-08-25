@@ -8,9 +8,6 @@ source:
   url: https://files.pythonhosted.org/packages/43/6e/59853546226ee6200f9ba6e574d11604b60ad0754d2cbd1c8f3246b70418/Pillow-9.1.1.tar.gz
   patches:
     - patches/0001-Enable-image-formats.patch
-  extras:
-    - - src/setup.cfg
-      - ./setup.cfg
 build:
   # RELOCATABLE flag is required because if affects how emscripten build ports.
   cflags: |
@@ -21,6 +18,18 @@ build:
     -s USE_LIBJPEG=1
   ldflags: |
     -ljpeg
+  backend-flags: |
+    --disable-platform-guessing
+    --enable-zlib
+    --enable-jpeg
+    --enable-freetype
+    --enable-webp
+    --enable-tiff
+    --disable-lcms
+    --disable-xcb
+    --disable-webpmux
+    --disable-jpeg2000
+    --disable-imagequant
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
