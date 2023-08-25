@@ -236,9 +236,7 @@ export function preloadWasm(Module: Module, indexURL: string) {
     // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
     return;
   }
-  const { binary, response } = getBinaryResponse(
-    indexURL + "pyodide.asm.wasm",
-  );
+  const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
   Module.instantiateWasm = function (
     imports: { [key: string]: any },
     successCallback: (
