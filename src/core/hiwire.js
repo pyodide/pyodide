@@ -8,6 +8,7 @@ JS_FILE(hiwire_init, () => {
     slotInfo: new Uint32Array(0),
     slotInfoSize: 0,
     freeHead: 1,
+    numKeys: 0,
     // The reverse of the object maps, needed to deduplicate keys so that key
     // equality is object identity.
     obj_to_key: new Map(),
@@ -41,6 +42,7 @@ JS_FILE(hiwire_init, () => {
     }
     _hiwire.slotInfo[index] = HEAP_NEW_OCCUPIED_INFO(info);
     const idval = HEAP_NEW_REF(index, info);
+    _hiwire.numKeys++;
     TRACEREFS("hw.new_value", index, idval, jsval);
     return idval;
   };
@@ -79,10 +81,9 @@ JS_FILE(hiwire_init, () => {
     return id;
   };
 
-  // clang-format off
   // for testing purposes.
   Hiwire.num_keys = function () {
-    return Object.keys(_hiwire.objects).length;
+    return _hiwire.numKeys;
   };
 
   Hiwire.stack_length = () => _hiwire.stack.length;
@@ -133,10 +134,8 @@ JS_FILE(hiwire_init, () => {
     }
     return _hiwire.objects[index];
   };
-  // clang-format on
 
   Hiwire.decref = function (idval) {
-    // clang-format off
     if (IS_IMMORTAL(idval)) {
       return;
     }
@@ -167,6 +166,7 @@ JS_FILE(hiwire_init, () => {
         _hiwire.obj_to_key.delete(_hiwire.objects[index]);
       }
       _hiwire.objects[index] = undefined;
+      _hiwire.numKeys--;
       info = FREE_LIST_INFO(info, _hiwire.freeHead);
       _hiwire.freeHead = index;
     }
@@ -195,7 +195,6 @@ JS_FILE(hiwire_init, () => {
     HEAP_INCREF(_hiwire.slotInfo[index]);
     return idval;
   };
-  // clang-format on
 
   Hiwire.pop_value = function (idval) {
     let result = Hiwire.get_value(idval);
@@ -206,9 +205,7 @@ JS_FILE(hiwire_init, () => {
   // This is factored out primarily for testing purposes.
   Hiwire.isPromise = function (obj) {
     try {
-      // clang-format off
       return !!obj && typeof obj.then === "function";
-      // clang-format on
     } catch (e) {
       return false;
     }
@@ -221,9 +218,7 @@ JS_FILE(hiwire_init, () => {
    * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
    */
   API.typedArrayAsUint8Array = function (arg) {
-    // clang-format off
     if (ArrayBuffer.isView(arg)) {
-      // clang-format on
       return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
     } else {
       return new Uint8Array(arg);
