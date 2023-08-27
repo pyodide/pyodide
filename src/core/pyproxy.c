@@ -226,7 +226,7 @@ pyproxy_getflags(PyObject* pyobj)
                 obj_type->tp_call);
   // A sequence has __len__, __getitem__, __contains__, and __iter__ so if any
   // of these settings is missing, can skip the IsInstance check.
-  if (((^result) & (HAS_LENGTH | HAS_GET | HAS_CONTAINS | IS_ITERABLE)) == 0) {
+  if (((~result) & (HAS_LENGTH | HAS_GET | HAS_CONTAINS | IS_ITERABLE)) == 0) {
     int is_sequence = PyObject_IsInstance(pyobj, Sequence);
     FAIL_IF_MINUS_ONE(is_sequence);
     // Only need to check Sequences for MutableSequence.
