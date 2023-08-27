@@ -140,6 +140,8 @@ gen_is_coroutine(PyObject* o)
  * protocol API defined in `abstract.c`. We wrote these tests to check whether
  * the corresponding CPython APIs are likely to work without actually creating
  * any temporary objects.
+ *
+ * Note: PyObject_IsInstance is expensive, avoid if possible!
  */
 int
 pyproxy_getflags(PyObject* pyobj)
@@ -197,12 +199,19 @@ pyproxy_getflags(PyObject* pyobj)
     result |= IS_ASYNC_ITERATOR;
   }
 
-  int isgen = PyObject_IsInstance(pyobj, Generator);
-  FAIL_IF_MINUS_ONE(isgen);
-  int isasyncgen = PyObject_IsInstance(pyobj, AsyncGenerator);
-  FAIL_IF_MINUS_ONE(isasyncgen);
-  SET_FLAG_IF(IS_GENERATOR, isgen);
-  SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
+  // All generators are iterators, so if not an iterator skip the expensive
+  // check. (This is a bit odd though, since if a generator uses the return
+  // value of `yield` it isn't really an iterator...)
+  if (result & IS_ITERATOR) {
+    int isgen = PyObject_IsInstance(pyobj, Generator);
+    FAIL_IF_MINUS_ONE(isgen);
+    SET_FLAG_IF(IS_GENERATOR, isgen);
+  }
+  if (result & IS_ASYNC_ITERATOR) {
+    int isasyncgen = PyObject_IsInstance(pyobj, AsyncGenerator);
+    FAIL_IF_MINUS_ONE(isasyncgen);
+    SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
+  }
 
   // There's no CPython API that corresponds directly to the "await" keyword.
   // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
@@ -215,12 +224,18 @@ pyproxy_getflags(PyObject* pyobj)
   SET_FLAG_IF(IS_CALLABLE,
               _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
                 obj_type->tp_call);
-  int is_sequence = PyObject_IsInstance(pyobj, Sequence);
-  FAIL_IF_MINUS_ONE(is_sequence);
-  int is_mutable_sequence = PyObject_IsInstance(pyobj, MutableSequence);
-  FAIL_IF_MINUS_ONE(is_mutable_sequence);
-  SET_FLAG_IF(IS_SEQUENCE, is_sequence);
-  SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
+  // A sequence has __len__, __getitem__, __contains__, and __iter__ so if any
+  // of these settings is missing, can skip the IsInstance check.
+  if (((^result) & (HAS_LENGTH | HAS_GET | HAS_CONTAINS | IS_ITERABLE)) == 0) {
+    int is_sequence = PyObject_IsInstance(pyobj, Sequence);
+    FAIL_IF_MINUS_ONE(is_sequence);
+    // Only need to check Sequences for MutableSequence.
+    int is_mutable_sequence =
+      is_sequence ? PyObject_IsInstance(pyobj, MutableSequence) : 0;
+    FAIL_IF_MINUS_ONE(is_mutable_sequence);
+    SET_FLAG_IF(IS_SEQUENCE, is_sequence);
+    SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
+  }
 
 #undef SET_FLAG_IF
 
