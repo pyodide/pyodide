@@ -94,7 +94,7 @@ const JsRef Js_novalue = ((JsRef)(2147483644));
 // If a slot is occupied, the multipurpose field of the slotInfo contains a 24
 // bit reference count and an IS_DEDUPLICATED bit.
 //
-//      occupied slot: [version (5 bits)][refcount (24 bits)][IS_DEDUPLICATED bit]0
+//      occupied slot: [version (5 bits)][refcount (24 bits)][IS_DEDUPLICATED bit]1
 //
 // References used by JsProxies are deduplicated which makes allocating/freeing
 // them more expensive.
