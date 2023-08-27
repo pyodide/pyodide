@@ -143,12 +143,10 @@ gen_is_coroutine(PyObject* o)
  *
  * Note: PyObject_IsInstance is expensive, avoid if possible!
  */
-int
-pyproxy_getflags(PyObject* pyobj)
+static int
+type_getflags(PyTypeObject* obj_type)
 {
   // Reduce casework by ensuring that protos aren't NULL.
-  PyTypeObject* obj_type = Py_TYPE(pyobj);
-
   PySequenceMethods null_seq_proto = { 0 };
   PySequenceMethods* seq_proto =
     obj_type->tp_as_sequence ? obj_type->tp_as_sequence : &null_seq_proto;
@@ -176,21 +174,16 @@ pyproxy_getflags(PyObject* pyobj)
   // PyObject_GetItem
   if (map_proto->mp_subscript || seq_proto->sq_item) {
     result |= HAS_GET;
-  } else if (PyType_Check(pyobj)) {
-    _Py_IDENTIFIER(__class_getitem__);
-    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
-    if (PyObject_HasAttr(pyobj, oname)) {
-      result |= HAS_GET;
-    }
   }
   // PyObject_SetItem
   SET_FLAG_IF(HAS_SET, map_proto->mp_ass_subscript || seq_proto->sq_ass_item);
   // PySequence_Contains
   SET_FLAG_IF(HAS_CONTAINS, seq_proto->sq_contains);
   // PyObject_GetIter
-  SET_FLAG_IF(IS_ITERABLE, obj_type->tp_iter || PySequence_Check(pyobj));
+  SET_FLAG_IF(IS_ITERABLE, obj_type->tp_iter || seq_proto->sq_item);
   SET_FLAG_IF(IS_ASYNC_ITERABLE, async_proto->am_aiter);
-  if (PyIter_Check(pyobj)) {
+  if (obj_type->tp_iternext != NULL &&
+      obj_type->tp_iternext != &_PyObject_NextNotImplemented) {
     result &= ~IS_ITERABLE;
     result |= IS_ITERATOR;
   }
@@ -199,39 +192,32 @@ pyproxy_getflags(PyObject* pyobj)
     result |= IS_ASYNC_ITERATOR;
   }
 
-  // All generators are iterators, so if not an iterator skip the expensive
-  // check. (This is a bit odd though, since if a generator uses the return
-  // value of `yield` it isn't really an iterator...)
-  if (result & IS_ITERATOR) {
-    int isgen = PyObject_IsInstance(pyobj, Generator);
-    FAIL_IF_MINUS_ONE(isgen);
-    SET_FLAG_IF(IS_GENERATOR, isgen);
-  }
-  if (result & IS_ASYNC_ITERATOR) {
-    int isasyncgen = PyObject_IsInstance(pyobj, AsyncGenerator);
-    FAIL_IF_MINUS_ONE(isasyncgen);
-    SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
-  }
+  int isgen = PyObject_IsSubclass((PyObject*)obj_type, Generator);
+  FAIL_IF_MINUS_ONE(isgen);
+  int isasyncgen = PyObject_IsSubclass((PyObject*)obj_type, AsyncGenerator);
+  FAIL_IF_MINUS_ONE(isasyncgen);
+  SET_FLAG_IF(IS_GENERATOR, isgen);
+  SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
 
   // There's no CPython API that corresponds directly to the "await" keyword.
   // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
   // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
   // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
   // succeed.
-  SET_FLAG_IF(IS_AWAITABLE, async_proto->am_await || gen_is_coroutine(pyobj));
+  //  || gen_is_coroutine(pyobj)
+  SET_FLAG_IF(IS_AWAITABLE, async_proto->am_await);
   SET_FLAG_IF(IS_BUFFER, buffer_proto->bf_getbuffer);
   // PyObject_Call (from call.c)
-  SET_FLAG_IF(IS_CALLABLE,
-              _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
-                obj_type->tp_call);
+  SET_FLAG_IF(IS_CALLABLE, obj_type->tp_call);
   // A sequence has __len__, __getitem__, __contains__, and __iter__ so if any
   // of these settings is missing, can skip the IsInstance check.
   if (((~result) & (HAS_LENGTH | HAS_GET | HAS_CONTAINS | IS_ITERABLE)) == 0) {
-    int is_sequence = PyObject_IsInstance(pyobj, Sequence);
+    int is_sequence = PyObject_IsSubclass((PyObject*)obj_type, Sequence);
     FAIL_IF_MINUS_ONE(is_sequence);
     // Only need to check Sequences for MutableSequence.
     int is_mutable_sequence =
-      is_sequence ? PyObject_IsInstance(pyobj, MutableSequence) : 0;
+      is_sequence ? PyObject_IsSubclass((PyObject*)obj_type, MutableSequence)
+                  : 0;
     FAIL_IF_MINUS_ONE(is_mutable_sequence);
     SET_FLAG_IF(IS_SEQUENCE, is_sequence);
     SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
@@ -242,6 +228,41 @@ pyproxy_getflags(PyObject* pyobj)
   success = true;
 finally:
   return success ? result : -1;
+}
+
+static int dict_flags;
+static int tuple_flags;
+static int list_flags;
+
+int
+pyproxy_getflags(PyObject* pyobj)
+{
+  // Fast paths for some common cases
+  if (PyDict_CheckExact(pyobj)) {
+    return dict_flags;
+  }
+  if (PyTuple_CheckExact(pyobj)) {
+    return tuple_flags;
+  }
+  if (PyList_CheckExact(pyobj)) {
+    return list_flags;
+  }
+  PyTypeObject* obj_type = Py_TYPE(pyobj);
+  int result = type_getflags(obj_type);
+  FAIL_IF_MINUS_ONE(result);
+  if (PyType_Check(pyobj)) {
+    _Py_IDENTIFIER(__class_getitem__);
+    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
+    if (PyObject_HasAttr(pyobj, oname)) {
+      result |= HAS_GET;
+    }
+  }
+  if (!(result & IS_AWAITABLE) && (result & IS_GENERATOR) &&
+      gen_is_coroutine(pyobj)) {
+    result |= IS_AWAITABLE;
+  }
+finally:
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1488,6 +1509,10 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(inspect);
   iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
   FAIL_IF_NULL(iscoroutinefunction);
+
+  dict_flags = type_getflags(&PyDict_Type);
+  tuple_flags = type_getflags(&PyTuple_Type);
+  list_flags = type_getflags(&PyList_Type);
 
   success = true;
 finally:
