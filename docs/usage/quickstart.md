@@ -56,6 +56,7 @@ After importing Pyodide, only packages from the standard library are available.
 See {ref}`loading_packages` for information about loading additional packages.
 
 (complete-example)=
+
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
