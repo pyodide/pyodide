@@ -3,6 +3,7 @@ myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
     Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
     Fix: "<span class='badge badge-danger'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
@@ -14,6 +15,9 @@ myst:
 # Change Log
 
 ## Unreleased
+
+- {{ Performance }} Improved performance of PyProxy creation.
+  {pr}`4096`
 
 - {{ Enhancement }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
