@@ -90,14 +90,37 @@ function syncSleep(timeout: number): boolean {
   }
 }
 
+/**
+ * Calls the callback and handle node EAGAIN errors.
+ *
+ * In the long run, it may be helpful to allow C code to handle these errors on
+ * their own, at least if the Emscripten file descriptor has O_NONBLOCK on it.
+ * That way the code could do other periodic tasks in the delay loop.
+ *
+ * This code is outside of the stream handler itself so if the user wants to
+ * inject some code in this loop they could do it with:
+ * ```js
+ * read(buffer) {
+ *   try {
+ *     return doTheRead();
+ *   } catch(e) {
+ *     if (e && e.code === "EAGAIN") {
+ *       // do periodic tasks
+ *     }
+ *     // in every case rethrow the error
+ *     throw e;
+ *   }
+ * }
+ * ```
+ */
 function readWriteHelper(cb: () => number): number {
   while (true) {
     try {
       return cb();
     } catch (e: any) {
       if (e && e.code === "EAGAIN") {
-        // Presumably this means we're in node and tried to read from/write to an
-        // O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
+        // Presumably this means we're in node and tried to read from/write to
+        // an O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
         // requested by EAGAIN and try again. In case for some reason we fail to
         // sleep, propagate the error (it will turn into an EOFError).
         if (syncSleep(100)) {
@@ -561,20 +584,7 @@ class LegacyReader {
     if (this.saved) {
       return this.saved;
     }
-    let val;
-    try {
-      val = this.infunc();
-    } catch (e) {
-      if (isErrnoError(e)) {
-        // Allow infunc to set other errno
-        throw e;
-      }
-      // Since we're throwing a new error without the traceback, let people know
-      // what the original cause was.
-      console.error("Error thrown in stdin:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
+    let val = this.infunc();
     if (typeof val === "number") {
       return val;
     }
