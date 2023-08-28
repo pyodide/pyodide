@@ -163,10 +163,12 @@ function readWriteHelper(stream: Stream, cb: () => number, method: string) {
   return nbytes;
 }
 
-const prepareBuffer = (buffer: Uint8Array, offset: number, length: number): Uint8Array => API.typedArrayAsUint8Array(buffer).subarray(
-  offset,
-  offset + length,
-);
+const prepareBuffer = (
+  buffer: Uint8Array,
+  offset: number,
+  length: number,
+): Uint8Array =>
+  API.typedArrayAsUint8Array(buffer).subarray(offset, offset + length);
 
 const stream_ops: StreamOps = {
   open: function (stream) {
