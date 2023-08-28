@@ -32,17 +32,19 @@ def test_line(selenium, name, line_type):
 
     lines = cont_gen.lines(2.0)
 
-    expect0 = [
-        [0.38461538, 1.0],
-        [1.0, 0.38461538],
-        [1.33333333, 1.0],
-        [1.0, 1.28571429],
-        [0.38461538, 1.0],
-    ]
+    expect0 = np.array(
+        [
+            [0.38461538, 1.0],
+            [1.0, 0.38461538],
+            [1.33333333, 1.0],
+            [1.0, 1.28571429],
+            [0.38461538, 1.0],
+        ]
+    )
     if name in ("mpl2005", "mpl2014"):
         expect0 = np.vstack((expect0[1:], expect0[1]))  # Starts with index 1
 
-    expect1 = [[2.23076923, 2.0], [3.0, 1.23076923]]
+    expect1 = np.array([[2.23076923, 2.0], [3.0, 1.23076923]])
     if name == "mpl2005":
         expect1 = expect1[::-1]
 
@@ -76,7 +78,7 @@ def test_line(selenium, name, line_type):
         assert_array_almost_equal(points[5:], expect1)
         assert_array_equal(offsets, [0, 5, 7])
     else:
-        raise RuntimeError(f"Unexpect line_type {line_type}")
+        raise RuntimeError(f"Unexpected line_type {line_type}")
 
 
 @pytest.mark.parametrize(
@@ -113,30 +115,34 @@ def test_fill(selenium, name, fill_type):
 
     filled = cont_gen.filled(1.0, 2.0)
 
-    expect0 = [
-        [0.0, 0.0],
-        [1.0, 0.0],
-        [1.83333333, 0.0],
-        [1.75, 1.0],
-        [1.0, 1.64285714],
-        [0.0, 1.33333333],
-        [0.0, 1.0],
-        [0.0, 0.0],
-        [1.0, 0.38461538],
-        [0.38461538, 1.0],
-        [1.0, 1.28571429],
-        [1.33333333, 1.0],
-        [1.0, 0.38461538],
-    ]
+    expect0 = np.array(
+        [
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [1.83333333, 0.0],
+            [1.75, 1.0],
+            [1.0, 1.64285714],
+            [0.0, 1.33333333],
+            [0.0, 1.0],
+            [0.0, 0.0],
+            [1.0, 0.38461538],
+            [0.38461538, 1.0],
+            [1.0, 1.28571429],
+            [1.33333333, 1.0],
+            [1.0, 0.38461538],
+        ]
+    )
     if name == "mpl2014":
         expect0 = np.vstack((expect0[1:8], expect0[1], expect0[9:], expect0[9]))
 
-    expect1 = [[2.18181818, 2.0], [3.0, 1.18181818], [3.0, 2.0], [2.18181818, 2.0]]
+    expect1 = np.array(
+        [[2.18181818, 2.0], [3.0, 1.18181818], [3.0, 2.0], [2.18181818, 2.0]]
+    )
     if name in ("mpl2005", "mpl2014"):
         expect1 = np.vstack((expect1[1:], expect1[1]))  # Starts with index 1
 
     # Helper functions to avoid code duplication for the different FillTypes.
-    def assert_outer_points(points) -> None:
+    def assert_outer_points(points):
         assert isinstance(points, list) and len(points) == 2
         assert_array_almost_equal(points[0], expect0)
         assert_array_almost_equal(points[1], expect1)
@@ -190,4 +196,4 @@ def test_fill(selenium, name, fill_type):
         assert isinstance(outer_offsets, list) and len(outer_offsets) == 1
         assert_array_equal(outer_offsets[0], [0, 2, 3])
     else:
-        raise RuntimeError(f"Unexpect fill_type {fill_type}")
+        raise RuntimeError(f"Unexpected fill_type {fill_type}")
