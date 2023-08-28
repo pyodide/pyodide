@@ -15,6 +15,7 @@ requirements:
     - packaging
     - h5py
     - cftime
+    - certifi
 test:
   imports:
     - netCDF4

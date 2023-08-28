@@ -1,11 +1,11 @@
 package:
   name: yt
-  version: 4.2.1
+  version: 4.1.4
   top-level:
     - yt
 source:
-  url: https://files.pythonhosted.org/packages/ac/f2/fcfec00fb21fed77ce4623785ccd572a42feb2c68200cbc26b0e0c6649d7/yt-4.2.1.tar.gz
-  sha256: d5355d56933da4e597e1d8d23d3fa05ca9a9511add94635b27ac67c6e97e2ed8
+  url: https://files.pythonhosted.org/packages/4e/4a/c21cf26bd7f51ec7b2d4445bb60fd667c2fe28faa76cb996e7dca2e42deb/yt-4.1.4.tar.gz
+  sha256: c50a4c8ddf32088c57957d364cddb769d284b025bbe26bba85cc598078e8ad78
 
   patches:
     - patches/skip-openmp.patch
