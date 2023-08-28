@@ -1646,3 +1646,56 @@ def test_pickle_internal_error(selenium):
 
     with pytest.raises(InternalError):
         helper(selenium)
+
+
+@pytest.mark.parametrize(
+    "run_python", ["pyodide.runPython", "await pyodide.runPythonAsync"]
+)
+def test_runpython_filename(selenium, run_python):
+    msg = selenium.run_js(
+        """
+        try {
+            %s(`
+                def f1():
+                    f2()
+
+                def f2():
+                    raise Exception("oops")
+
+                f1()
+            `, {filename: "a.py"});
+        } catch(e) {
+            return e.message
+        }
+        """
+        % run_python
+    )
+    expected = dedent(
+        """
+        File "a.py", line 8, in <module>
+          f1()
+        File "a.py", line 3, in f1
+          f2()
+        File "a.py", line 6, in f2
+          raise Exception("oops")
+        """
+    ).strip()
+
+    assert dedent("\n".join(msg.splitlines()[-7:-1])) == expected
+    msg = selenium.run_js(
+        """
+        let f1;
+        try {
+            f1 = pyodide.globals.get("f1");
+            f1();
+        } catch(e) {
+            console.log(e);
+            return e.message;
+        } finally {
+            f1.destroy();
+        }
+        """
+    )
+    assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
+        expected.splitlines()[2:]
+    )

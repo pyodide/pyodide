@@ -90,14 +90,37 @@ function syncSleep(timeout: number): boolean {
   }
 }
 
-function readHelper(devops: Reader, buffer: Uint8Array): number {
+/**
+ * Calls the callback and handle node EAGAIN errors.
+ *
+ * In the long run, it may be helpful to allow C code to handle these errors on
+ * their own, at least if the Emscripten file descriptor has O_NONBLOCK on it.
+ * That way the code could do other periodic tasks in the delay loop.
+ *
+ * This code is outside of the stream handler itself so if the user wants to
+ * inject some code in this loop they could do it with:
+ * ```js
+ * read(buffer) {
+ *   try {
+ *     return doTheRead();
+ *   } catch(e) {
+ *     if (e && e.code === "EAGAIN") {
+ *       // do periodic tasks
+ *     }
+ *     // in every case rethrow the error
+ *     throw e;
+ *   }
+ * }
+ * ```
+ */
+function handleEAGAIN(cb: () => number): number {
   while (true) {
     try {
-      return devops.read(buffer);
+      return cb();
     } catch (e: any) {
       if (e && e.code === "EAGAIN") {
-        // Presumably this means we're in node and tried to read from an
-        // O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
+        // Presumably this means we're in node and tried to read from/write to
+        // an O_NONBLOCK file descriptor. Synchronously sleep for 100ms as
         // requested by EAGAIN and try again. In case for some reason we fail to
         // sleep, propagate the error (it will turn into an EOFError).
         if (syncSleep(100)) {
@@ -108,6 +131,44 @@ function readHelper(devops: Reader, buffer: Uint8Array): number {
     }
   }
 }
+
+function readWriteHelper(stream: Stream, cb: () => number, method: string) {
+  let nbytes;
+  try {
+    nbytes = handleEAGAIN(cb);
+  } catch (e: any) {
+    if (e && e.code && Module.ERRNO_CODES[e.code]) {
+      throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
+    }
+    if (isErrnoError(e)) {
+      // the handler set an errno, propagate it
+      throw e;
+    }
+    console.error("Error thrown in read:");
+    console.error(e);
+    throw new FS.ErrnoError(cDefs.EIO);
+  }
+  if (nbytes === undefined) {
+    // Prevent an infinite loop caused by incorrect code that doesn't return a
+    // value
+    // Maybe we should set nbytes = buffer.length here instead?
+    console.warn(
+      `${method} returned undefined; a correct implementation must return a number`,
+    );
+    throw new FS.ErrnoError(cDefs.EIO);
+  }
+  if (nbytes !== 0) {
+    stream.node.timestamp = Date.now();
+  }
+  return nbytes;
+}
+
+const prepareBuffer = (
+  buffer: Uint8Array,
+  offset: number,
+  length: number,
+): Uint8Array =>
+  API.typedArrayAsUint8Array(buffer).subarray(offset, offset + length);
 
 const stream_ops: StreamOps = {
   open: function (stream) {
@@ -130,69 +191,12 @@ const stream_ops: StreamOps = {
     }
   },
   read: function (stream, buffer, offset, length, pos /* ignored */) {
-    buffer = API.typedArrayAsUint8Array(buffer).subarray(
-      offset,
-      offset + length,
-    );
-    let bytesRead;
-    try {
-      bytesRead = readHelper(stream.devops, buffer);
-    } catch (e: any) {
-      if (e && e.code && Module.ERRNO_CODES[e.code]) {
-        throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
-      }
-      if (isErrnoError(e)) {
-        // the handler set an errno, propagate it
-        throw e;
-      }
-      console.error("Error thrown in read:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesRead === undefined) {
-      // Prevent an infinite loop caused by incorrect code that doesn't return a
-      // value
-      //
-      // Maybe we should set bytesWritten = buffer.length here instead?
-      console.warn(
-        "read returned undefined; a correct implementation must return a number",
-      );
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesRead !== 0) {
-      stream.node.timestamp = Date.now();
-    }
-    return bytesRead;
+    buffer = prepareBuffer(buffer, offset, length);
+    return readWriteHelper(stream, () => stream.devops.read(buffer), "read");
   },
   write: function (stream, buffer, offset, length, pos /* ignored */): number {
-    buffer = API.typedArrayAsUint8Array(buffer);
-    let bytesWritten;
-    try {
-      bytesWritten = stream.devops.write(
-        buffer.subarray(offset, offset + length),
-      );
-    } catch (e) {
-      if (isErrnoError(e)) {
-        throw e;
-      }
-      console.error("Error thrown in write:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesWritten === undefined) {
-      // Prevent an infinite loop caused by incorrect code that doesn't return a
-      // value
-      //
-      // Maybe we should set bytesWritten = buffer.length here instead?
-      console.warn(
-        "write returned undefined; a correct implementation must return a number",
-      );
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (length) {
-      stream.node.timestamp = Date.now();
-    }
-    return bytesWritten;
+    buffer = prepareBuffer(buffer, offset, length);
+    return readWriteHelper(stream, () => stream.devops.write(buffer), "write");
   },
 };
 
@@ -560,20 +564,7 @@ class LegacyReader {
     if (this.saved) {
       return this.saved;
     }
-    let val;
-    try {
-      val = this.infunc();
-    } catch (e) {
-      if (isErrnoError(e)) {
-        // Allow infunc to set other errno
-        throw e;
-      }
-      // Since we're throwing a new error without the traceback, let people know
-      // what the original cause was.
-      console.error("Error thrown in stdin:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
+    let val = this.infunc();
     if (typeof val === "number") {
       return val;
     }
