@@ -11,6 +11,8 @@ source:
     - patches/fixzlib.patch
 build:
   script: |
+    export DISABLE_NUMCODECS_SSE2=1
+    export DISABLE_NUMCODECS_AVX2=1
     rm numcodecs/blosc.c
 requirements:
   run:
