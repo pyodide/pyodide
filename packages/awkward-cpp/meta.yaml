@@ -8,7 +8,6 @@ source:
   url: https://pypi.io/packages/source/a/awkward-cpp/awkward-cpp-22.tar.gz
   sha256: 21679636fb21cfe3715f88a32326a579199384db2da4a62995c310502d7fe85f
 
-
 build:
   script: |
     export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
@@ -21,7 +20,7 @@ requirements:
 test:
   imports:
     - awkward_cpp
-    
+
 about:
   home: https://pypi.org/project/awkward-cpp/
   pypi: https://pypi.org/project/awkward-cpp
