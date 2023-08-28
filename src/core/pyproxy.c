@@ -200,12 +200,25 @@ type_getflags(PyTypeObject* obj_type)
   SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
 
   // There's no CPython API that corresponds directly to the "await" keyword.
-  // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
-  // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
-  // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
-  // succeed.
-  //  || gen_is_coroutine(pyobj)
-  SET_FLAG_IF(IS_AWAITABLE, async_proto->am_await);
+  // Looking at disassembly, "await" translates into the GET_AWAITABLE opcode.
+  // GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in genobject.c.
+  // _PyCoro_GetAwaitableIter(obj) succeeds if one of the following conditions
+  // are met:
+  //
+  //   1. obj is of exact type Coroutine (not a subtype),
+  //   2. obj is of exact type Generator and the CO_ITERABLE_COROUTINE flag is
+  //      set on the code object, or
+  //   3. obj_type->tp_as_async->am_await is not NULL and calling it returns an
+  //      iterator
+  //
+  // Here we check if the object has exact type Coroutine or if
+  // `obj_type->tp_as_async->am_await` is defined. we can't check here if the
+  // return value is an iterator (and if it's not the object is still awaitable
+  // just with a wrong definition). we also can't tell here if condition 2 is
+  // met, we check for this in pyproxy_getflags.
+
+  SET_FLAG_IF(IS_AWAITABLE,
+              Py_Is(obj_type, &PyCoro_Type) || async_proto->am_await);
   SET_FLAG_IF(IS_BUFFER, buffer_proto->bf_getbuffer);
   // PyObject_Call (from call.c)
   SET_FLAG_IF(IS_CALLABLE, obj_type->tp_call);
@@ -250,13 +263,20 @@ pyproxy_getflags(PyObject* pyobj)
   PyTypeObject* obj_type = Py_TYPE(pyobj);
   int result = type_getflags(obj_type);
   FAIL_IF_MINUS_ONE(result);
+  // Check for some flags that depend on the object itself and not just the
+  // type.
   if (PyType_Check(pyobj)) {
+    // If it's a type with a __class_getitem__, then this makes it indexable.
+    // Nobody is very likely to want to index such a class from JavaScript, but
+    // we try to be comprehensive.
     _Py_IDENTIFIER(__class_getitem__);
     PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
     if (PyObject_HasAttr(pyobj, oname)) {
       result |= HAS_GET;
     }
   }
+  // More importantly, if the result is a coroutine generator we can't tell just
+  // by looking at the type...
   if (!(result & IS_AWAITABLE) && (result & IS_GENERATOR) &&
       gen_is_coroutine(pyobj)) {
     result |= IS_AWAITABLE;
