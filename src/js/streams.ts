@@ -113,7 +113,7 @@ function syncSleep(timeout: number): boolean {
  * }
  * ```
  */
-function readWriteHelper(cb: () => number): number {
+function handleEAGAIN(cb: () => number): number {
   while (true) {
     try {
       return cb();
@@ -131,6 +131,42 @@ function readWriteHelper(cb: () => number): number {
     }
   }
 }
+
+function readWriteHelper(stream: Stream, cb: () => number, method: string) {
+  let nbytes;
+  try {
+    nbytes = handleEAGAIN(cb);
+  } catch (e: any) {
+    if (e && e.code && Module.ERRNO_CODES[e.code]) {
+      throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
+    }
+    if (isErrnoError(e)) {
+      // the handler set an errno, propagate it
+      throw e;
+    }
+    console.error("Error thrown in read:");
+    console.error(e);
+    throw new FS.ErrnoError(cDefs.EIO);
+  }
+  if (nbytes === undefined) {
+    // Prevent an infinite loop caused by incorrect code that doesn't return a
+    // value
+    // Maybe we should set nbytes = buffer.length here instead?
+    console.warn(
+      `${method} returned undefined; a correct implementation must return a number`,
+    );
+    throw new FS.ErrnoError(cDefs.EIO);
+  }
+  if (nbytes !== 0) {
+    stream.node.timestamp = Date.now();
+  }
+  return nbytes;
+}
+
+const prepareBuffer = (buffer: Uint8Array, offset: number, length: number): Uint8Array => API.typedArrayAsUint8Array(buffer).subarray(
+  offset,
+  offset + length,
+);
 
 const stream_ops: StreamOps = {
   open: function (stream) {
@@ -153,70 +189,12 @@ const stream_ops: StreamOps = {
     }
   },
   read: function (stream, buffer, offset, length, pos /* ignored */) {
-    buffer = API.typedArrayAsUint8Array(buffer).subarray(
-      offset,
-      offset + length,
-    );
-    let bytesRead;
-    try {
-      bytesRead = readWriteHelper(() => stream.devops.read(buffer));
-    } catch (e: any) {
-      if (e && e.code && Module.ERRNO_CODES[e.code]) {
-        throw new FS.ErrnoError(Module.ERRNO_CODES[e.code]);
-      }
-      if (isErrnoError(e)) {
-        // the handler set an errno, propagate it
-        throw e;
-      }
-      console.error("Error thrown in read:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesRead === undefined) {
-      // Prevent an infinite loop caused by incorrect code that doesn't return a
-      // value
-      //
-      // Maybe we should set bytesWritten = buffer.length here instead?
-      console.warn(
-        "read returned undefined; a correct implementation must return a number",
-      );
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesRead !== 0) {
-      stream.node.timestamp = Date.now();
-    }
-    return bytesRead;
+    buffer = prepareBuffer(buffer, offset, length);
+    return readWriteHelper(stream, () => stream.devops.read(buffer), "read");
   },
   write: function (stream, buffer, offset, length, pos /* ignored */): number {
-    buffer = API.typedArrayAsUint8Array(buffer).subarray(
-      offset,
-      offset + length,
-    );
-    let bytesWritten;
-    try {
-      bytesWritten = readWriteHelper(() => stream.devops.write(buffer));
-    } catch (e) {
-      if (isErrnoError(e)) {
-        throw e;
-      }
-      console.error("Error thrown in write:");
-      console.error(e);
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (bytesWritten === undefined) {
-      // Prevent an infinite loop caused by incorrect code that doesn't return a
-      // value
-      //
-      // Maybe we should set bytesWritten = buffer.length here instead?
-      console.warn(
-        "write returned undefined; a correct implementation must return a number",
-      );
-      throw new FS.ErrnoError(cDefs.EIO);
-    }
-    if (length) {
-      stream.node.timestamp = Date.now();
-    }
-    return bytesWritten;
+    buffer = prepareBuffer(buffer, offset, length);
+    return readWriteHelper(stream, () => stream.devops.write(buffer), "write");
   },
 };
 
