@@ -189,6 +189,7 @@ export type ConfigType = {
   args: string[];
   _node_mounts: string[];
   env: { [key: string]: string };
+  packages: string[];
 };
 
 /**
@@ -291,7 +292,15 @@ export async function loadPyodide(
      * `"/home/pyodide"`
      */
     env?: { [key: string]: string };
-
+    /**
+     * A list of packages to load as Pyodide is initializing.
+     *
+     * This is the same as loading the packages with
+     * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
+     * `packages` option is more efficient because the packages are downloaded
+     * while Pyodide bootstraps itself.
+     */
+    packages?: string[];
     /**
      * @ignore
      */
@@ -315,6 +324,7 @@ export async function loadPyodide(
     _node_mounts: [],
     env: {},
     packageCacheDir: indexURL,
+    packages: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {
@@ -343,6 +353,10 @@ export async function loadPyodide(
   initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
+  let bootstrapFinalized: () => void;
+  API.bootstrapFinalizedPromise = new Promise<void>(
+    (r) => (bootstrapFinalized = r),
+  );
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
@@ -390,6 +404,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
 
   const pyodide = finalizeBootstrap(API, config);
+  bootstrapFinalized!();
 
   // runPython works starting here.
   if (!pyodide.version.includes("dev")) {
