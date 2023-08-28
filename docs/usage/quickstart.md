@@ -9,7 +9,7 @@ Try Pyodide in a [REPL](../console.html){.external} directly in your browser
 
 ## Setup
 
-There is a {ref}`complete-example <complete example>` that you can copy & paste
+There is a [complete example](complete-example) that you can copy & paste
 into an html file below. To include Pyodide in your project you can use the
 following CDN URL:
 
