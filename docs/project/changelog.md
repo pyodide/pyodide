@@ -19,6 +19,17 @@ myst:
 - {{ Performance }} Improved performance of PyProxy creation.
   {pr}`4096`
 
+- {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
+  `FetchResponse.string()` for better compatibility with other requests APIs.
+  {pr}`4052`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `filename`
+  optional argument which is passed as the `filename` argument to `eval_code`
+  (resp. `eval_code_async`). Also, if a `filename` is passed to `eval_code`
+  which does not start with `<` and end with `>`, Pyodide now uses the
+  `linecache` module to ensure that source lines can appear in tracebacks.
+  {pr}`3993`
+
 - {{ Enhancement }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
   can opt into worse performance and better error messages.

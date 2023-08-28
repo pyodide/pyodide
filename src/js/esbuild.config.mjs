@@ -4,6 +4,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { build } from "esbuild";
 
 const DEBUG = !!process.env.PYODIDE_DEBUG_JS;
+const SOURCEMAP = !!(
+  process.env.PYODIDE_SOURCEMAP || process.env.PYODIDE_SYMBOLS
+);
 
 const __dirname = dirname(new URL(import.meta.url).pathname);
 
@@ -27,7 +30,6 @@ const outputs = [
 ];
 
 const dest = (output) => join(__dirname, "..", "..", output);
-const DEFINES = { DEBUG: DEBUG.toString() };
 
 function toDefines(o, path = "") {
   return Object.entries(o).flatMap(([x, v]) => {
@@ -46,8 +48,8 @@ function toDefines(o, path = "") {
 
 const cdefsFile = join(__dirname, "generated_struct_info32.json");
 const origConstants = JSON.parse(readFileSync(cdefsFile));
-const constants = { cDefs: origConstants.defines };
-Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
+const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines };
+const DEFINES = Object.fromEntries(toDefines(constants));
 
 const config = ({ input, output, format, name: globalName }) => ({
   entryPoints: [join(__dirname, input + ".ts")],
