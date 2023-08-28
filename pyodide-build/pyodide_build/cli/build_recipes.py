@@ -30,6 +30,12 @@ def recipe(
         help="Path to install built packages and pyodide-lock.json. "
         "If not specified, the default is `./dist`.",
     ),
+    metadata_files: bool = typer.Option(
+        False,
+        help="If true, extract the METADATA file from the built wheels "
+        "to a matching *.whl.metadata file. "
+        "If false, no *.whl.metadata file is produced.",
+    ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
     ),
@@ -91,9 +97,9 @@ def recipe(
     build_args = buildall.set_default_build_args(build_args)
 
     if no_deps:
-        if install or log_dir_:
+        if install or log_dir_ or metadata_files:
             logger.warning(
-                "WARNING: when --no-deps is set, --install and --log-dir parameters are ignored",
+                "WARNING: when --no-deps is set, the --install, --log-dir, and --metadata-files parameters are ignored",
             )
 
         # TODO: use multiprocessing?
@@ -118,5 +124,12 @@ def recipe(
 
         if install:
             buildall.install_packages(
-                pkg_map, install_dir_, compression_level=compression_level
+                pkg_map,
+                install_dir_,
+                compression_level=compression_level,
+                metadata_files=metadata_files,
+            )
+        elif metadata_files:
+            logger.warning(
+                "WARNING: when --install is not set, the --metadata-files parameter is ignored",
             )

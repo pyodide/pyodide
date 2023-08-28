@@ -137,6 +137,8 @@ def deploy_to_s3_main(
                 # However, JsDelivr will currently not serve .ts file in the
                 # custom CDN configuration, so it does not really matter.
                 content_type = "text/x.typescript"
+            elif file_path.name.endswith(".whl.metadata"):
+                content_type = "text/plain"
             else:
                 content_type = mimetypes.guess_type(file_path)[0]
                 if content_type is None:

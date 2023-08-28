@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.11.3
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.39
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.44
 
 ifdef CPYTHON_DEBUG
 	export CPYTHON_ABI_FLAGS=d
@@ -52,6 +52,8 @@ export PYODIDE_BASE_URL?=./
 # CDN it's more efficient to keep this value to 0, and let the CDN perform the
 # Brotli compression.
 export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
+
+export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
 
 # For packages that depend on numpy.
 # TODO: maybe move this somewhere else?

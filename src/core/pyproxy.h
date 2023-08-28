@@ -11,7 +11,7 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsRef
-pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip);
+pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip, bool register);
 
 JsRef
 pyproxy_new(PyObject* obj);
@@ -36,13 +36,16 @@ pyproxy_AsPyObject(JsRef x);
  * Destroy a list of PyProxies.
  */
 void
-destroy_proxies(JsRef proxies_id, char* msg);
+destroy_proxies(JsRef proxies_id, Js_Identifier* msg);
+
+void
+gc_register_proxies(JsRef proxies_id);
 
 /**
  * Destroy a PyProxy.
  */
 void
-destroy_proxy(JsRef proxy, char* msg);
+destroy_proxy(JsRef proxy, Js_Identifier* msg);
 
 /**
  * Wrap a Python callable in a JavaScript function that can be called once.

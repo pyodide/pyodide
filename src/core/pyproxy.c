@@ -26,10 +26,11 @@ check_gil()
   }
 }
 
-PyObject* Generator;
-PyObject* AsyncGenerator;
-PyObject* Sequence;
-PyObject* MutableSequence;
+static PyObject* Generator;
+static PyObject* AsyncGenerator;
+static PyObject* Sequence;
+static PyObject* MutableSequence;
+static PyObject* iscoroutinefunction;
 
 _Py_IDENTIFIER(result);
 _Py_IDENTIFIER(pop);
@@ -61,10 +62,10 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
   return Module.PyProxy_getPtr(val);
 });
 
-EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
@@ -72,15 +73,27 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
 });
 
-EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
-  let px = Module.hiwire.get_value(proxy_id);
-  if (px.$$props.roundtrip) {
+EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
+  let proxies = Hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
+  }
+});
+
+EM_JS(void, destroy_proxy, (JsRef proxy_id, Js_Identifier* msg_ptr), {
+  const px = Module.hiwire.get_value(proxy_id);
+  const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
+  if (!shared.ptr) {
+    // already destroyed
+    return;
+  }
+  if (props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
   }
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   Module.pyproxy_destroy(px, msg, false);
 });
@@ -309,7 +322,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Hiwire.get_value(proxyId).$$.ptr) {
+  if (pyproxyIsAlive(Hiwire.get_value(proxyId))) {
     return proxyId;
   } else {
     // It's dead, tidy up
@@ -696,6 +709,36 @@ finally:
   return idresult;
 }
 
+bool
+_iscoroutinefunction(PyObject* f)
+{
+  _Py_IDENTIFIER(_is_coroutine_marker);
+
+  // Some fast paths for common cases to avoid calling into Python
+  if (PyMethod_Check(f)) {
+    f = PyMethod_GET_FUNCTION(f);
+  }
+
+  // _is_coroutine_marker is added to Python stdlib in 3.12. Check for it here
+  // to make sure we don't accidentally return false negatives when we update to
+  // 3.12.
+  if (PyFunction_Check(f) &&
+      !PyObject_HasAttr(f, _PyUnicode_FromId(&PyId__is_coroutine_marker))) {
+    PyFunctionObject* func = (PyFunctionObject*)f;
+    PyCodeObject* code = (PyCodeObject*)PyFunction_GET_CODE(func);
+    return (code->co_flags) & CO_COROUTINE;
+  }
+
+  // Wasn't a basic callable, call into inspect.iscoroutinefunction
+  PyObject* result = PyObject_CallOneArg(iscoroutinefunction, f);
+  if (!result) {
+    PyErr_Clear();
+  }
+  bool ret = Py_IsTrue(result);
+  Py_CLEAR(result);
+  return ret;
+}
+
 JsRef
 _pyproxy_iter_next(PyObject* iterator)
 {
@@ -749,8 +792,7 @@ _pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
       // If GeneratorExit comes back out, return original value.
       PyErr_Clear();
       status = PYGEN_RETURN;
-      hiwire_incref(jsval);
-      *result = jsval;
+      *result = hiwire_incref(jsval);
       success = true;
       goto finally;
     }
@@ -1213,14 +1255,19 @@ success:
   return 0;
 }
 
+// clang-format off
 EM_JS_REF(JsRef,
-          pyproxy_new_ex,
-          (PyObject * ptrobj, bool capture_this, bool roundtrip),
-          {
-            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
-              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
-            }));
-          });
+pyproxy_new_ex,
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
+{
+  return Hiwire.new_value(
+    Module.pyproxy_new(ptrobj, {
+      props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
+      gcRegister,
+    })
+  );
+});
+// clang-format on
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
@@ -1374,7 +1421,7 @@ create_proxy(PyObject* self,
     return NULL;
   }
 
-  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip, true);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1401,6 +1448,7 @@ pyproxy_init(PyObject* core)
 
   PyObject* collections_abc = NULL;
   PyObject* docstring_source = NULL;
+  PyObject* inspect = NULL;
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -1421,9 +1469,15 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(asyncio);
   FAIL_IF_MINUS_ONE(PyType_Ready(&FutureDoneCallbackType));
 
+  inspect = PyImport_ImportModule("inspect");
+  FAIL_IF_NULL(inspect);
+  iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
+  FAIL_IF_NULL(iscoroutinefunction);
+
   success = true;
 finally:
   Py_CLEAR(docstring_source);
   Py_CLEAR(collections_abc);
+  Py_CLEAR(inspect);
   return success ? 0 : -1;
 }

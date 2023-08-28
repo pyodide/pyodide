@@ -22,9 +22,12 @@ class PyodideLexer(JavascriptLexer):
         ],
         "python-code": [
             (
-                rf"({quotemark})((?:\\\\|\\[^\\]|[^{quotemark}\\])*)({quotemark})",
+                rf"([A-Za-z.]*)({quotemark})((?:\\\\|\\[^\\]|[^{quotemark}\\])*)({quotemark})",
                 bygroups(
-                    Token.Literal.String, using(PythonLexer), Token.Literal.String
+                    using(JavascriptLexer),
+                    Token.Literal.String,
+                    using(PythonLexer),
+                    Token.Literal.String,
                 ),
                 "#pop",
             )

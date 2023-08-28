@@ -68,9 +68,6 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
  * Between typescript, typedoc, dts-bundle-generator, rollup, and Emscripten,
  * there are a lot of constraints so we have to do some slightly weird things.
  * We convert it back into an object in makePublicAPI.
- *
- * TODO: move the definitions of public things defined in this file into the
- * class body.
  * @private
  */
 export class PyodideAPI {
@@ -228,6 +225,21 @@ export class PyodideAPI {
    *        will show source lines.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
+   * @example
+   * async function main(){
+   *   const pyodide = await loadPyodide();
+   *   console.log(pyodide.runPython("1 + 2"));
+   *   // 3
+   *
+   *   const globals = pyodide.toPy({ x: 3 });
+   *   console.log(pyodide.runPython("x + 1", { globals }));
+   *   // 4
+   *
+   *   const locals = pyodide.toPy({ arr: [1, 2, 3] });
+   *   console.log(pyodide.runPython("sum(arr)", { locals }));
+   *   // 6
+   * }
+   * main();
    */
   static runPython(
     code: string,
@@ -552,8 +564,19 @@ export class PyodideAPI {
    * during execution of C code.
    */
   static checkInterrupt() {
-    if (Module.__PyErr_CheckSignals()) {
-      Module._pythonexc2js();
+    if (Module._PyGILState_Check()) {
+      // GIL held, so it's okay to call __PyErr_CheckSignals.
+      if (Module.__PyErr_CheckSignals()) {
+        Module._pythonexc2js();
+      }
+      return;
+    } else {
+      // GIL not held. This is very likely because we're in a IO handler. If
+      // buffer has a 2, throwing EINTR quits out from the IO handler and tells
+      // the calling context to call `PyErr_CheckSignals`.
+      if (Module.Py_EmscriptenSignalBuffer[0] === 2) {
+        throw new Module.FS.ErrnoError(cDefs.EINTR);
+      }
     }
   }
 
@@ -617,6 +640,18 @@ export class PyodideAPI {
     );
     Object.defineProperty(this, "PythonError", { value: PythonError });
     return PythonError;
+  }
+
+  /**
+   * Turn on or off debug mode. In debug mode, some error messages are improved
+   * at a performance cost.
+   * @param debug If true, turn debug mode on. If false, turn debug mode off.
+   * @returns The old value of the debug flag.
+   */
+  static setDebug(debug: boolean): boolean {
+    const orig = !!API.debug_ffi;
+    API.debug_ffi = debug;
+    return orig;
   }
 }
 
