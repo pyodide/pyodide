@@ -9,7 +9,9 @@ Try Pyodide in a [REPL](../console.html){.external} directly in your browser
 
 ## Setup
 
-To include Pyodide in your project you can use the following CDN URL:
+There is a {ref}`complete-example <complete example>` that you can copy & paste
+into an html file below. To include Pyodide in your project you can use the
+following CDN URL:
 
 ```text
 {{PYODIDE_CDN_URL}}pyodide.js
@@ -53,6 +55,7 @@ pyodide.runPython(`
 After importing Pyodide, only packages from the standard library are available.
 See {ref}`loading_packages` for information about loading additional packages.
 
+(complete-example)=
 ## Complete example
 
 Create and save a test `index.html` page with the following contents:
@@ -138,7 +141,7 @@ Create and save a test `index.html` page with the following contents:
 All functions and variables defined in the Python global scope are accessible
 via the {js:attr}`pyodide.globals` object.
 
-For example, if you run the code `x = numpy.ones([3,3])` in Python global scope,
+For example, if you run the code `x = [3, 4]` in Python global scope,
 you can access the global variable `x` from JavaScript in your browser's
 developer console with `pyodide.globals.get("x")`. The same goes for functions
 and imports. See {ref}`type-translations` for more details.
@@ -148,13 +151,11 @@ URL](../console.html){.external} and type the following into the browser
 console:
 
 ```pyodide
-await pyodide.loadPackage("numpy");
 pyodide.runPython(`
-  import numpy
-  x=numpy.ones((3, 4))
+  x = [3, 4]
 `);
 pyodide.globals.get('x').toJs();
-// >>> [ Float64Array(4), Float64Array(4), Float64Array(4) ]
+// >>> [ 3, 4 ]
 ```
 
 You can assign new values to Python global variables or create new ones from
