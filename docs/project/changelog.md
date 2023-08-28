@@ -39,8 +39,8 @@ myst:
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.44
+  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`, {pr}`4056`, {pr}`4073`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
@@ -51,9 +51,6 @@ myst:
 - {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
   present also on `Task`s as well as `Future`s.
   {pr}`3748`
-
-- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
-  {pr}`2078`
 
 - {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
   as drop-in replacements for JavaScript Arrays.
@@ -74,9 +71,17 @@ myst:
   `pyodide-lock.json`
   {pr}`3824`
 
-- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
-  throw an OSError exception for 400 and above response status codes
-  {pr}`3986`
+- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
+  {pr}`2078`
+
+- {{ Breaking }} Changed the `FetchResponse` body getter methods to no longer
+  throw an `OSError` exception for 400 and above response status codes. Added
+  `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
+  {pr}`3986` {pr}`4053`
+
+- {{ Enhancement }} The `setStdin`, `setStdout` and `setStderr` APIs have been
+  improved with extra control and better performance.
+  {pr}`4035`
 
 ### Packages
 
@@ -85,13 +90,15 @@ myst:
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
-  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`.
+  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`,
+  CoolProp {pr}`4028`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`
 - Upgraded scikit-learn to 1.3.0 {pr}`3976`
 - Upgraded pyodide-http to 0.2.1
 - Upgraded typing-extensions to 4.7.1 {pr}`4026`
+- Upgraded sourmash to 4.8.3 {pr}`4075`
 
 ### CLI
 

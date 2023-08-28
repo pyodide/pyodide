@@ -27,6 +27,27 @@ const outputs = [
 ];
 
 const dest = (output) => join(__dirname, "..", "..", output);
+const DEFINES = { DEBUG: DEBUG.toString() };
+
+function toDefines(o, path = "") {
+  return Object.entries(o).flatMap(([x, v]) => {
+    // Drop anything that's not a valid identifier
+    if (!/^[A-Za-z_$]*$/.test(x)) {
+      return [];
+    }
+    // Flatten objects
+    if (typeof v === "object") {
+      return toDefines(v, path + x + ".");
+    }
+    // Else convert to string
+    return [[path + x, v.toString()]];
+  });
+}
+
+const cdefsFile = join(__dirname, "generated_struct_info32.json");
+const origConstants = JSON.parse(readFileSync(cdefsFile));
+const constants = { cDefs: origConstants.defines };
+Object.assign(DEFINES, Object.fromEntries(toDefines(constants)));
 
 const config = ({ input, output, format, name: globalName }) => ({
   entryPoints: [join(__dirname, input + ".ts")],
@@ -43,7 +64,7 @@ const config = ({ input, output, format, name: globalName }) => ({
     "vm",
     "ws",
   ],
-  define: { DEBUG: DEBUG.toString() },
+  define: DEFINES,
   minify: !DEBUG,
   keepNames: true,
   sourcemap: true,

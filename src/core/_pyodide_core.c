@@ -50,6 +50,9 @@ PyInit__pyodide_core(void)
     // Emscripten has a bug where it accidentally exposes an empty object as
     // Module.ERRNO_CODES
     Module.ERRNO_CODES = ERRNO_CODES;
+    // sourmash needs open64 to mean the same thing as open.
+    // Emscripten 3.1.44 seems to have removed it??
+    wasmImports["open64"] = wasmImports["open"];
   });
 
   bool success = false;

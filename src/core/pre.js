@@ -2,7 +2,7 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.24.0.dev0";
+API.version = "0.24.0a1";
 Module.hiwire = Hiwire;
 function getTypeTag(x) {
   try {
@@ -50,3 +50,6 @@ function hasMethod(obj, prop) {
     return false;
   }
 }
+
+const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr;
+API.pyproxyIsAlive = pyproxyIsAlive;

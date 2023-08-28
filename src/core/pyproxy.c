@@ -62,10 +62,10 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
   return Module.PyProxy_getPtr(val);
 });
 
-EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
@@ -76,19 +76,24 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
 EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
-    Module.gc_register_proxy(px);
+    Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
   }
 });
 
-EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
-  let px = Module.hiwire.get_value(proxy_id);
-  if (px.$$props.roundtrip) {
+EM_JS(void, destroy_proxy, (JsRef proxy_id, Js_Identifier* msg_ptr), {
+  const px = Module.hiwire.get_value(proxy_id);
+  const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
+  if (!shared.ptr) {
+    // already destroyed
+    return;
+  }
+  if (props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
   }
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   Module.pyproxy_destroy(px, msg, false);
 });
@@ -317,7 +322,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Hiwire.get_value(proxyId).$$.ptr) {
+  if (pyproxyIsAlive(Hiwire.get_value(proxyId))) {
     return proxyId;
   } else {
     // It's dead, tidy up
@@ -787,8 +792,7 @@ _pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
       // If GeneratorExit comes back out, return original value.
       PyErr_Clear();
       status = PYGEN_RETURN;
-      hiwire_incref(jsval);
-      *result = jsval;
+      *result = hiwire_incref(jsval);
       success = true;
       goto finally;
     }
