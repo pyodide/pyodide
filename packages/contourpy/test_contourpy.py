@@ -2,27 +2,28 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
-@pytest.mark.parametrize("name, line_type", [
-    ("mpl2005", "SeparateCode"),
-    ("mpl2014", "SeparateCode"),
-    ("serial", "Separate"),
-    ("serial", "SeparateCode"),
-    ("serial", "ChunkCombinedCode"),
-    ("serial", "ChunkCombinedOffset"),
-    ("threaded", "Separate"),
-    ("threaded", "SeparateCode"),
-    ("threaded", "ChunkCombinedCode"),
-    ("threaded", "ChunkCombinedOffset"),
-])
+@pytest.mark.parametrize(
+    "name, line_type",
+    [
+        ("mpl2005", "SeparateCode"),
+        ("mpl2014", "SeparateCode"),
+        ("serial", "Separate"),
+        ("serial", "SeparateCode"),
+        ("serial", "ChunkCombinedCode"),
+        ("serial", "ChunkCombinedOffset"),
+        ("threaded", "Separate"),
+        ("threaded", "SeparateCode"),
+        ("threaded", "ChunkCombinedCode"),
+        ("threaded", "ChunkCombinedOffset"),
+    ],
+)
 @run_in_pyodide(packages=["contourpy", "numpy"])
 def test_line(selenium, name, line_type):
-    from contourpy import LineType, contour_generator
     import numpy as np
-    from numpy.testing import assert_array_equal, assert_array_almost_equal
+    from contourpy import LineType, contour_generator
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-    z = [[1.5, 1.5, 0.9, 0.0],
-         [1.5, 2.8, 0.4, 0.8],
-         [0.0, 0.0, 0.8, 6.0]]
+    z = [[1.5, 1.5, 0.9, 0.0], [1.5, 2.8, 0.4, 0.8], [0.0, 0.0, 0.8, 6.0]]
 
     cont_gen = contour_generator(z=z, name=name, line_type=line_type)
     assert cont_gen.line_type.name == line_type
@@ -31,8 +32,13 @@ def test_line(selenium, name, line_type):
 
     lines = cont_gen.lines(2.0)
 
-    expect0 = [[0.38461538, 1.0], [1.0, 0.38461538], [1.33333333, 1.0], [1.0, 1.28571429],
-               [0.38461538, 1.0]]
+    expect0 = [
+        [0.38461538, 1.0],
+        [1.0, 0.38461538],
+        [1.33333333, 1.0],
+        [1.0, 1.28571429],
+        [0.38461538, 1.0],
+    ]
     if name in ("mpl2005", "mpl2014"):
         expect0 = np.vstack((expect0[1:], expect0[1]))  # Starts with index 1
 
@@ -73,31 +79,32 @@ def test_line(selenium, name, line_type):
         raise RuntimeError(f"Unexpect line_type {line_type}")
 
 
-@pytest.mark.parametrize("name, fill_type", [
-    ("mpl2005", "OuterCode"),
-    ("mpl2014", "OuterCode"),
-    ("serial", "OuterCode"),
-    ("serial", "OuterOffset"),
-    ("serial", "ChunkCombinedCode"),
-    ("serial", "ChunkCombinedOffset"),
-    ("serial", "ChunkCombinedCodeOffset"),
-    ("serial", "ChunkCombinedOffsetOffset"),
-    ("threaded", "OuterCode"),
-    ("threaded", "OuterOffset"),
-    ("threaded", "ChunkCombinedCode"),
-    ("threaded", "ChunkCombinedOffset"),
-    ("threaded", "ChunkCombinedCodeOffset"),
-    ("threaded", "ChunkCombinedOffsetOffset"),
-])
+@pytest.mark.parametrize(
+    "name, fill_type",
+    [
+        ("mpl2005", "OuterCode"),
+        ("mpl2014", "OuterCode"),
+        ("serial", "OuterCode"),
+        ("serial", "OuterOffset"),
+        ("serial", "ChunkCombinedCode"),
+        ("serial", "ChunkCombinedOffset"),
+        ("serial", "ChunkCombinedCodeOffset"),
+        ("serial", "ChunkCombinedOffsetOffset"),
+        ("threaded", "OuterCode"),
+        ("threaded", "OuterOffset"),
+        ("threaded", "ChunkCombinedCode"),
+        ("threaded", "ChunkCombinedOffset"),
+        ("threaded", "ChunkCombinedCodeOffset"),
+        ("threaded", "ChunkCombinedOffsetOffset"),
+    ],
+)
 @run_in_pyodide(packages=["contourpy", "numpy"])
 def test_fill(selenium, name, fill_type):
-    from contourpy import FillType, contour_generator
     import numpy as np
-    from numpy.testing import assert_array_equal, assert_array_almost_equal
+    from contourpy import FillType, contour_generator
+    from numpy.testing import assert_array_almost_equal, assert_array_equal
 
-    z = [[1.5, 1.5, 0.9, 0.0],
-         [1.5, 2.8, 0.4, 0.8],
-         [0.0, 0.0, 0.8, 1.9]]
+    z = [[1.5, 1.5, 0.9, 0.0], [1.5, 2.8, 0.4, 0.8], [0.0, 0.0, 0.8, 1.9]]
 
     cont_gen = contour_generator(z=z, name=name, fill_type=fill_type)
     assert cont_gen.fill_type.name == fill_type
@@ -106,9 +113,21 @@ def test_fill(selenium, name, fill_type):
 
     filled = cont_gen.filled(1.0, 2.0)
 
-    expect0 = [[0.0, 0.0], [1.0, 0.0], [1.83333333, 0.0], [1.75, 1.0], [1.0, 1.64285714],
-               [0.0, 1.33333333], [0.0, 1.0], [0.0, 0.0], [1.0, 0.38461538], [0.38461538, 1.0],
-               [1.0, 1.28571429], [1.33333333, 1.0], [1.0, 0.38461538]]
+    expect0 = [
+        [0.0, 0.0],
+        [1.0, 0.0],
+        [1.83333333, 0.0],
+        [1.75, 1.0],
+        [1.0, 1.64285714],
+        [0.0, 1.33333333],
+        [0.0, 1.0],
+        [0.0, 0.0],
+        [1.0, 0.38461538],
+        [0.38461538, 1.0],
+        [1.0, 1.28571429],
+        [1.33333333, 1.0],
+        [1.0, 0.38461538],
+    ]
     if name == "mpl2014":
         expect0 = np.vstack((expect0[1:8], expect0[1], expect0[9:], expect0[9]))
 
@@ -130,7 +149,9 @@ def test_fill(selenium, name, fill_type):
 
     def assert_chunk_codes(codes):
         assert isinstance(codes, list) and len(codes) == 1
-        assert_array_equal(codes[0], [1, 2, 2, 2, 2, 2, 2, 79, 1, 2, 2, 2, 79, 1, 2, 2, 79])
+        assert_array_equal(
+            codes[0], [1, 2, 2, 2, 2, 2, 2, 79, 1, 2, 2, 2, 79, 1, 2, 2, 79]
+        )
 
     def assert_chunk_offsets(offsets):
         assert isinstance(offsets, list) and len(offsets) == 1
