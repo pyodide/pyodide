@@ -297,7 +297,7 @@ export async function loadPyodide(
      *
      * This is the same as loading the packages with
      * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
-     * `packages` option is more efficient because the packages are downloaded
+     * ``packages`` option is more efficient because the packages are downloaded
      * while Pyodide bootstraps itself.
      */
     packages?: string[];
