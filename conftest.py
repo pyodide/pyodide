@@ -33,7 +33,6 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.package_loader.sub_resource_hash;
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
     pyodide.pyimport("pyodide.http").destroy();

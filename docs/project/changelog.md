@@ -16,6 +16,11 @@ myst:
 
 ## Unreleased
 
+- {{ Performance }} Added a `packages` optional argument to `loadPyodide`.
+  Passing packages here saves time by downloading them during the Pyodide
+  bootstrap.
+  {pr}`4100`
+
 - {{ Performance }} Improved performance of PyProxy creation.
   {pr}`4096`
 
