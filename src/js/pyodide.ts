@@ -295,7 +295,7 @@ export async function loadPyodide(
      * Python at runtime via :py:data:`os.environ`. Certain environment variables change
      * the way that Python loads:
      * https://docs.python.org/3.10/using/cmdline.html#environment-variables
-     * Default: {}
+     * Default: ``{}``.
      * If ``env.HOME`` is undefined, it will be set to a default value of
      * ``"/home/pyodide"``
      */
