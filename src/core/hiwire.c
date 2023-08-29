@@ -48,7 +48,6 @@ HIWIRE_INIT_CONSTS();
 #define IS_STACK(idval) (((idval) & 3) === 2)
 #define STACK_REF_TO_INDEX(idval) ((idval) >> 2)
 #define STACK_INDEX_TO_REF(index) (((index) << 2) | 2)
-#define STACK_INDEX(idval) ((idval) >> 2)
 
 // For when the return value would be Option<JsRef>
 // we use the largest possible immortal reference so that `get_value` on it will
