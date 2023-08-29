@@ -3,6 +3,7 @@ myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
     Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
     Fix: "<span class='badge badge-danger'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
@@ -14,6 +15,9 @@ myst:
 # Change Log
 
 ## Unreleased
+
+- {{ Performance }} Improved performance of PyProxy creation.
+  {pr}`4096`
 
 - {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
   `FetchResponse.string()` for better compatibility with other requests APIs.
@@ -98,7 +102,7 @@ myst:
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
   Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`,
-  CoolProp {pr}`4028`.
+  CoolProp {pr}`4028`, contourpy {pr}`4102`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`
