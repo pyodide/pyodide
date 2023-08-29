@@ -33,8 +33,8 @@ HIWIRE_INIT_CONSTS();
 
 // clang-format off
 // JsRefs are:
-// * heap     if they are odd,
-// * immortal if they are divisible by 4
+// * heap             if they are odd,
+// * immortal         if they are divisible by 4
 // * stack references if they are congruent to 2 mod 4
 //
 // Note that "NULL" is immortal which is important.
