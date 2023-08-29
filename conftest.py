@@ -40,6 +40,10 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.pyimport("pyodide_js._api")
 """
 
+only_node = pytest.mark.xfail_browsers(
+    chrome="node only", firefox="node only", safari="node only"
+)
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
