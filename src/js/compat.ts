@@ -235,6 +235,7 @@ async function nodeLoadScript(url: string) {
   }
 }
 
+// consider dropping this this once we drop support for node 14?
 function nodeBase16ToBase64(b16: string): string {
   return Buffer.from(b16, "hex").toString("base64");
 }
