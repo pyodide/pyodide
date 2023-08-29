@@ -35,8 +35,9 @@ myst:
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.44
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`, {pr}`4056`, {pr}`4073`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+  {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
+  {pr}`4056`, {pr}`4073`, {pr}`4094`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
