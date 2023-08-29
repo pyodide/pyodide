@@ -1,4 +1,4 @@
-ackage:
+package:
   name: awkward-cpp
   version: 22
   top-level:
@@ -23,6 +23,5 @@ test:
 
 about:
   home: https://pypi.org/project/awkward-cpp/
-  pypi: https://pypi.org/project/awkward-cpp
   summary: CPU kernels and compiled extensions for Awkward Array
   license: BSD-3-Clause
