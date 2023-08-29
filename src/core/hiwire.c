@@ -77,12 +77,13 @@ const JsRef Js_novalue = ((JsRef)(2147483644));
 //
 //  [version (5 bits)][multipurpose field (25 bits)][1 bit]
 //
-// The least significant bit must be set in the references to indicate that it's
-// a heap reference. In the info, it is set if the slot is occupied and unset if
-// the slot is unoccupied
+// The least significant bit is set in the references to indicate that they are
+// heap references. The least significant bit is set in the info if the slot is
+// occupied and unset if the slot is unoccupied.
 //
-// In a reference, the mulipurpose field contains the slot index. reference:
-//          [version (5 bits)][index (25 bits)]1
+// In a reference, the mulipurpose field contains the slot index.
+//
+//          reference: [version (5 bits)][index (25 bits)]1
 //
 // If a slot is unoccupied, the multipurpose field of the slotInfo contains the
 // index of the next free slot in the free list or zero if this is the last free
@@ -116,9 +117,6 @@ _Static_assert(VERSION_OCCUPIED_MASK == (~INDEX_MASK), "Oops!");
 _Static_assert(VERSION_OCCUPIED_MASK == (VERSION_MASK | OCCUPIED_BIT), "Oops!");
 _Static_assert(NEW_INFO_FLAGS == (REFCOUNT_INTERVAL | OCCUPIED_BIT), "Oops");
 
-// These three all have the same definition since the index of the reference,
-// the refcount of an occupied info, and the next free index of an unoccupied
-// info are all in the same bitfield
 #define HEAP_REF_TO_INDEX(ref) (((ref) & INDEX_MASK) >> 1)
 #define HEAP_INFO_TO_NEXTFREE(info) HEAP_REF_TO_INDEX(info)
 
