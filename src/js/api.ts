@@ -219,6 +219,10 @@ export class PyodideAPI {
    *        Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
+   * @param options.filename An optional string to use as the filename. Defaults
+   *        to "<exec>". If the filename does not start with "<" and end with ">",
+   *        the source code will be added to the Python linecache and tracebacks
+   *        will show source lines.
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -239,12 +243,12 @@ export class PyodideAPI {
    */
   static runPython(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy } = {},
+    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): any {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return API.pyodide_code.eval_code(code, options.globals, options.locals);
+    return API.pyodide_code.eval_code.callKwargs(code, options);
   }
 
   /**
@@ -280,21 +284,21 @@ export class PyodideAPI {
    * Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
+   * @param options.filename An optional string to use as the filename. Defaults
+   *        to "<exec>". If the filename does not start with "<" and end with ">",
+   *        the source code will be added to the Python linecache and tracebacks
+   *        will show source lines.
    * @returns The result of the Python code translated to JavaScript.
    * @async
    */
   static async runPythonAsync(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy } = {},
+    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return await API.pyodide_code.eval_code_async(
-      code,
-      options.globals,
-      options.locals,
-    );
+    return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
   /**
