@@ -165,6 +165,7 @@ JS_FILE(hiwire_init, () => {
       if (HEAP_IS_DEDUPLICATED(info)) {
         _hiwire.obj_to_key.delete(_hiwire.objects[index]);
       }
+      // Note: it's 100x faster to set the value to `undefined` than to `delete` it.
       _hiwire.objects[index] = undefined;
       _hiwire.numKeys--;
       info = FREE_LIST_INFO(info, _hiwire.freeHead);
