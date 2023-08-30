@@ -1,0 +1,22 @@
+package:
+  name: thinc
+  version: 8.2.0
+  top-level:
+    - thinc
+source:
+  url: https://files.pythonhosted.org/packages/f2/68/73009f29388fce841b8f5a113532fb7a52d3770d820eee17942dc3e084fc/thinc-8.2.0.tar.gz
+  sha256: 82ca1e7831e354d74c6776ed87dbd73f4aad59ed258c8746cbe868688186fc49
+about:
+  home: https://github.com/explosion/thinc
+  PyPI: https://pypi.org/project/thinc
+  summary:
+    A refreshing functional take on deep learning, compatible with your favorite
+    libraries
+  license: MIT
+requirements:
+ host:
+    - numpy
+    - cymem
+    - preshed
+    - murmurhash
+    - blis

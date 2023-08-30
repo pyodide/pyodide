@@ -1,0 +1,16 @@
+package:
+  name: srsly
+  version: 2.4.7
+  top-level:
+    - srsly
+source:
+  url: https://files.pythonhosted.org/packages/3c/65/95b58400f96ff8db3a60e1dd0b8915790df9e9e87d72f91cd96f031358b3/srsly-2.4.7.tar.gz
+  sha256: 93c2cc4588778261ccb23dd0543b24ded81015dd8ab4ec137cd7d04965035d08
+about:
+  home: https://github.com/explosion/srsly
+  PyPI: https://pypi.org/project/srsly
+  summary: Modern high-performance serialization utilities for Python
+  license: MIT
+requirements:
+  run:
+    - catalogue

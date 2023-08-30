@@ -1,0 +1,41 @@
+package:
+  name: spacy
+  version: 3.6.1
+  top-level:
+    - spacy
+source:
+  url: https://files.pythonhosted.org/packages/94/f5/c1cb70915af0a1976c40512e450ec86dba02ef547e3af49bd9061af4bbd0/spacy-3.6.1.tar.gz
+  sha256: 6323a98706ae2d5561694b03a8b0b5751887a002903a4894e68aeb29cc672166
+about:
+  home: https://spacy.io
+  PyPI: https://pypi.org/project/spacy
+  summary: Industrial-strength Natural Language Processing (NLP) in Python
+  license: MIT
+requirements:
+  host:
+    - numpy
+    - murmurhash
+    - cymem
+    - preshed
+    - thinc
+  run:
+    # Our libraries
+    - spacy-legacy
+    - murmurhash
+    - cymem
+    - preshed
+    - thinc
+    - wasabi
+    - srsly
+    - catalogue
+    - spacy-loggers
+    - typer
+    - pathy
+    - smart_open
+    # Third-party dependencies
+    - tqdm
+    - numpy
+    - pydantic
+    - jinja2
+    - langcodes
+    # Official Python utilities

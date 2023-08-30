@@ -1,0 +1,13 @@
+package:
+  name: typer
+  version: 0.9.0
+  top-level:
+    - typer
+source:
+  url: https://files.pythonhosted.org/packages/bf/0e/c68adf10adda05f28a6ed7b9f4cd7b8e07f641b44af88ba72d9c89e4de7a/typer-0.9.0-py3-none-any.whl
+  sha256: 5d96d986a21493606a358cae4461bd8cdf83cbf33a5aa950ae629ca3b51467ee
+about:
+  home: https://github.com/tiangolo/typer
+  PyPI: https://pypi.org/project/typer
+  summary: Typer, build great CLIs. Easy to code. Based on Python type hints.
+  license: null

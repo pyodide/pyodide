@@ -1,0 +1,20 @@
+package:
+  name: preshed
+  version: 3.0.8
+  top-level:
+    - preshed
+source:
+  url: https://files.pythonhosted.org/packages/f1/78/c28a568317088b9cef21f8516bed2f41210492ae569c5842ad80251631a0/preshed-3.0.8.tar.gz
+  sha256: 6c74c70078809bfddda17be96483c41d06d717934b07cab7921011d81758b357
+about:
+  home: https://github.com/explosion/preshed
+  PyPI: https://pypi.org/project/preshed
+  summary: Cython hash table that trusts the keys are pre-hashed
+  license: MIT
+requirements:
+  host:
+    - cymem
+    - murmurhash
+  run:
+    - cymem
+    - murmurhash

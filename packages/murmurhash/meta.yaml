@@ -1,0 +1,14 @@
+package:
+  name: murmurhash
+  version: 1.0.9
+  top-level:
+    - murmurhash
+source:
+  url: https://files.pythonhosted.org/packages/f6/24/30e74dc5970f357a897b3ec0fd44e1330c3f5fabefcfa0bc54c80b7ee0a5/murmurhash-1.0.9.tar.gz
+  sha256: fe7a38cb0d3d87c14ec9dddc4932ffe2dbc77d75469ab80fd5014689b0e07b58
+about:
+  home: https://github.com/explosion/murmurhash
+  PyPI: https://pypi.org/project/murmurhash
+  summary: Cython bindings for MurmurHash
+  license: MIT
+

@@ -1,0 +1,13 @@
+package:
+  name: wasabi
+  version: 1.1.2
+  top-level:
+    - wasabi
+source:
+  url: https://files.pythonhosted.org/packages/8f/69/26cbf0bad11703241cb84d5324d868097f7a8faf2f1888354dac8883f3fc/wasabi-1.1.2-py3-none-any.whl
+  sha256: 0a3f933c4bf0ed3f93071132c1b87549733256d6c8de6473c5f7ed2e171b5cf9
+about:
+  home: https://github.com/explosion/wasabi
+  PyPI: https://pypi.org/project/wasabi
+  summary: A lightweight console printing and formatting toolkit
+  license: MIT

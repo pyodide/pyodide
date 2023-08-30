@@ -1,0 +1,13 @@
+package:
+  name: cymem
+  version: 2.0.7
+  top-level:
+    - cymem
+source:
+  url: https://files.pythonhosted.org/packages/b0/d3/50c90dd821e44ad289653f0029d1690fca82f90df293e77e21443f5ea4fc/cymem-2.0.7.tar.gz
+  sha256: e6034badb5dd4e10344211c81f16505a55553a7164adc314c75bd80cf07e57a8
+about:
+  home: https://github.com/explosion/cymem
+  PyPI: https://pypi.org/project/cymem
+  summary: Manage calls to calloc/free through Cython
+  license: MIT

@@ -1,0 +1,13 @@
+package:
+  name: pathy
+  version: 0.10.2
+  top-level:
+    - pathy
+source:
+  url: https://files.pythonhosted.org/packages/b5/c3/04a002ace658133f5ac48d30258ed9ceab720595dc1ac36df02fe52018af/pathy-0.10.2-py3-none-any.whl
+  sha256: 681bc98dbff28e7de3e50efa8246910f727e8ac254c4318c47ce341f7c1ce21d
+about:
+  home: https://github.com/justindujardin/pathy
+  PyPI: https://pypi.org/project/pathy
+  summary: pathlib.Path subclasses for local and cloud bucket storage
+  license: Apache 2.0

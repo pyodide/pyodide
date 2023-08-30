@@ -1,0 +1,13 @@
+package:
+  name: langcodes
+  version: 3.3.0
+  top-level:
+    - langcodes
+source:
+  url: https://files.pythonhosted.org/packages/fe/c3/0d04d248624a181e57c2870127dfa8d371973561caf54333c85e8f9133a2/langcodes-3.3.0-py3-none-any.whl
+  sha256: 4d89fc9acb6e9c8fdef70bcdf376113a3db09b67285d9e1d534de6d8818e7e69
+about:
+  home: https://github.com/rspeer/langcodes
+  PyPI: https://pypi.org/project/langcodes
+  summary: Tools for labeling human languages with IETF language tags
+  license: MIT
