@@ -16,8 +16,8 @@ def test_awkward_cpp(selenium):
 
     kernel_impl = lib.awkward_ByteMaskedArray_numnull
     args = [
-        ctypes.cast(num_null.ctypes, kernel_impl.argtypes[0]),
-        ctypes.cast(mask.ctypes, kernel_impl.argtypes[1]),
+        ctypes.cast(num_null.ctypes, kernel_impl.argtypes[0]),  # type: ignore[arg-type]
+        ctypes.cast(mask.ctypes, kernel_impl.argtypes[1]),  # type: ignore[arg-type]
         length,
         valid_when,
     ]
