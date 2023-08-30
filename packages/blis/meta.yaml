@@ -12,7 +12,7 @@ about:
   summary: The Blis BLAS-like linear algebra library, as a self-contained C-extension.
   license: BSD
 requirements:
-  host: 
+  host:
     - numpy
 build:
   script: |

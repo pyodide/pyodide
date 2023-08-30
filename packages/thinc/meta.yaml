@@ -14,7 +14,7 @@ about:
     libraries
   license: MIT
 requirements:
- host:
+  host:
     - numpy
     - cymem
     - preshed
