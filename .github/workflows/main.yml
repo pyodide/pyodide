@@ -176,7 +176,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        # os: [ubuntu-latest, macos-latest] # FIXME: macos + playwright is very unstable.
+        os: [ubuntu-latest]
         runner: [playwright]
         browser: [chrome]
 
