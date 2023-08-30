@@ -1,9 +1,11 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["awkward-cpp"])
 def test_awkward_cpp(selenium):
     # Test a single kernel
     import ctypes
+
     import numpy as np
     from awkward_cpp.cpu_kernels import lib
 
@@ -12,7 +14,7 @@ def test_awkward_cpp(selenium):
     length = 6
     valid_when = True
 
-    kernel_impl = getattr(lib, "awkward_ByteMaskedArray_numnull")
+    kernel_impl = lib.awkward_ByteMaskedArray_numnull
     args = [
         ctypes.cast(num_null.ctypes, kernel_impl.argtypes[0]),
         ctypes.cast(mask.ctypes, kernel_impl.argtypes[1]),
