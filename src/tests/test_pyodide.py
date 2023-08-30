@@ -1,7 +1,6 @@
 import re
 import shutil
 import subprocess
-from collections.abc import Sequence
 from pathlib import Path
 from textwrap import dedent
 from typing import Any
@@ -11,24 +10,9 @@ from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
-from conftest import DIST_PATH, ROOT_PATH
+from conftest import DIST_PATH, ROOT_PATH, strip_assertions_stderr
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
 from pyodide_build.build_env import get_pyodide_root
-
-
-def _strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
-    """Strip additional messages on stderr included when ASSERTIONS=1"""
-    res = []
-    for msg in messages:
-        if msg.strip() in [
-            "sigaction: signal type not supported: this is a no-op.",
-            "Calling stub instead of siginterrupt()",
-            "warning: no blob constructor, cannot create blobs with mimetypes",
-            "warning: no BlobBuilder",
-        ]:
-            continue
-        res.append(msg)
-    return res
 
 
 def test_find_imports():
@@ -863,7 +847,7 @@ def test_fatal_error(selenium_standalone):
         return x
 
     err_msg = strip_stack_trace(selenium_standalone.logs)
-    err_msg = "".join(_strip_assertions_stderr(err_msg.splitlines(keepends=True)))
+    err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
     assert (
         err_msg
         == dedent(
@@ -1132,177 +1116,6 @@ def test_restore_error(selenium):
         `);
         """
     )
-
-
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
-def test_custom_stdin_stdout(selenium_standalone_noload, runtime):
-    selenium = selenium_standalone_noload
-    strings = [
-        "hello world",
-        "hello world\n",
-        "This has a \x00 null byte in the middle...",
-        "several\nlines\noftext",
-        "pyodidé",
-        "碘化物",
-        "🐍",
-    ]
-    selenium.run_js(
-        """
-        function* stdinStrings(){
-            for(let x of %s){
-                yield x;
-            }
-        }
-        let stdinStringsGen = stdinStrings();
-        function stdin(){
-            return stdinStringsGen.next().value;
-        }
-        self.stdin = stdin;
-        """
-        % strings
-    )
-    selenium.run_js(
-        """
-        self.stdoutStrings = [];
-        self.stderrStrings = [];
-        function stdout(s){
-            stdoutStrings.push(s);
-        }
-        function stderr(s){
-            stderrStrings.push(s);
-        }
-        let pyodide = await loadPyodide({
-            fullStdLib: false,
-            jsglobals : self,
-            stdin,
-            stdout,
-            stderr,
-        });
-        self.pyodide = pyodide;
-        globalThis.pyodide = pyodide;
-        """
-    )
-    outstrings: list[str] = sum((s.removesuffix("\n").split("\n") for s in strings), [])
-    print(outstrings)
-    assert (
-        selenium.run_js(
-            f"""
-            return pyodide.runPython(`
-                [input() for x in range({len(outstrings)})]
-                # ... test more stuff
-            `).toJs();
-            """
-        )
-        == outstrings
-    )
-
-    [stdoutstrings, stderrstrings] = selenium.run_js(
-        """
-        pyodide.runPython(`
-            import sys
-            print("something to stdout")
-            print("something to stderr",file=sys.stderr)
-        `);
-        return [self.stdoutStrings, self.stderrStrings];
-        """
-    )
-    assert stdoutstrings[-2:] == [
-        "something to stdout",
-    ]
-    stderrstrings = _strip_assertions_stderr(stderrstrings)
-    assert stderrstrings == ["something to stderr"]
-    IN_NODE = runtime == "node"
-    selenium.run_js(
-        f"""
-        pyodide.runPython(`
-            import sys
-            assert not sys.stdin.isatty()
-            assert not sys.stdout.isatty()
-            assert not sys.stderr.isatty()
-        `);
-        pyodide.setStdin();
-        pyodide.setStdout();
-        pyodide.setStderr();
-        pyodide.runPython(`
-            import sys
-            assert sys.stdin.isatty() is {IN_NODE}
-            assert sys.stdout.isatty() is {IN_NODE}
-            assert sys.stderr.isatty() is {IN_NODE}
-        `);
-        """
-    )
-
-
-def test_custom_stdin_stdout2(selenium):
-    result = selenium.run_js(
-        """
-        function stdin(){
-            return "hello there!\\nThis is a several\\nline\\nstring";
-        }
-        pyodide.setStdin({stdin});
-        pyodide.runPython(`
-            import sys
-            assert sys.stdin.read(1) == "h"
-            assert not sys.stdin.isatty()
-        `);
-        pyodide.setStdin({stdin, isatty: false});
-        pyodide.runPython(`
-            import sys
-            assert sys.stdin.read(1) == "e"
-        `);
-        pyodide.setStdout();
-        pyodide.runPython(`
-            assert sys.stdin.read(1) == "l"
-            assert not sys.stdin.isatty()
-        `);
-        pyodide.setStdin({stdin, isatty: true});
-        pyodide.runPython(`
-            assert sys.stdin.read(1) == "l"
-            assert sys.stdin.isatty()
-        `);
-
-        let stdout_codes = [];
-        function rawstdout(code) {
-            stdout_codes.push(code);
-        }
-        pyodide.setStdout({raw: rawstdout});
-        pyodide.runPython(`
-            print("hello")
-            assert sys.stdin.read(1) == "o"
-            assert not sys.stdout.isatty()
-            assert sys.stdin.isatty()
-        `);
-        pyodide.setStdout({raw: rawstdout, isatty: false});
-        pyodide.runPython(`
-            print("2hello again")
-            assert sys.stdin.read(1) == " "
-            assert not sys.stdout.isatty()
-            assert sys.stdin.isatty()
-        `);
-        pyodide.setStdout({raw: rawstdout, isatty: true});
-        pyodide.runPython(`
-            print("3hello")
-            assert sys.stdin.read(1) == "t"
-            assert sys.stdout.isatty()
-            assert sys.stdin.isatty()
-        `);
-        pyodide.runPython(`
-            print("partial line", end="")
-        `);
-        let result1 = new TextDecoder().decode(new Uint8Array(stdout_codes));
-        pyodide.runPython(`
-            sys.stdout.flush()
-        `);
-        let result2 = new TextDecoder().decode(new Uint8Array(stdout_codes));
-        pyodide.setStdin();
-        pyodide.setStdout();
-        pyodide.setStderr();
-        return [result1, result2];
-        """
-    )
-    assert result[0] == "hello\n2hello again\n3hello\n"
-    assert result[1] == "hello\n2hello again\n3hello\npartial line"
 
 
 def test_home_directory(selenium_standalone_noload):
@@ -1833,3 +1646,56 @@ def test_pickle_internal_error(selenium):
 
     with pytest.raises(InternalError):
         helper(selenium)
+
+
+@pytest.mark.parametrize(
+    "run_python", ["pyodide.runPython", "await pyodide.runPythonAsync"]
+)
+def test_runpython_filename(selenium, run_python):
+    msg = selenium.run_js(
+        """
+        try {
+            %s(`
+                def f1():
+                    f2()
+
+                def f2():
+                    raise Exception("oops")
+
+                f1()
+            `, {filename: "a.py"});
+        } catch(e) {
+            return e.message
+        }
+        """
+        % run_python
+    )
+    expected = dedent(
+        """
+        File "a.py", line 8, in <module>
+          f1()
+        File "a.py", line 3, in f1
+          f2()
+        File "a.py", line 6, in f2
+          raise Exception("oops")
+        """
+    ).strip()
+
+    assert dedent("\n".join(msg.splitlines()[-7:-1])) == expected
+    msg = selenium.run_js(
+        """
+        let f1;
+        try {
+            f1 = pyodide.globals.get("f1");
+            f1();
+        } catch(e) {
+            console.log(e);
+            return e.message;
+        } finally {
+            f1.destroy();
+        }
+        """
+    )
+    assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
+        expected.splitlines()[2:]
+    )

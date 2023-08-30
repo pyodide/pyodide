@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import sys
+from collections.abc import Sequence
 
 import pytest
 
@@ -32,12 +33,15 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.package_loader.sub_resource_hash;
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
     pyodide.pyimport("pyodide.http").destroy();
     pyodide.pyimport("pyodide_js._api")
 """
+
+only_node = pytest.mark.xfail_browsers(
+    chrome="node only", firefox="node only", safari="node only"
+)
 
 
 def pytest_addoption(parser):
@@ -240,6 +244,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         a.get_result()
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
+    assert browser.run_js("return pyodide._module.hiwire.stack_length()") == 0
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
@@ -251,3 +256,18 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
+        ]:
+            continue
+        res.append(msg)
+    return res

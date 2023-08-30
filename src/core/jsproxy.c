@@ -98,10 +98,10 @@ static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
 
-static char* PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL =
-  "This borrowed proxy was automatically destroyed at the "
-  "end of a function call. Try using "
-  "create_proxy or create_once_callable.";
+Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
+                 "This borrowed proxy was automatically destroyed at the "
+                 "end of a function call. Try using "
+                 "create_proxy or create_once_callable.");
 
 ////////////////////////////////////////////////////////////
 // JsProxy
@@ -523,9 +523,9 @@ handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
   }
   FAIL_IF_NULL(*result);
   if(pyproxy_Check(idresult)) {
-    destroy_proxy(idresult,
-                  "This borrowed proxy was automatically destroyed at the end"
-                  " of a generator");
+    Js_static_string(msg, "This borrowed proxy was automatically destroyed at the end"
+                          " of a generator");
+    destroy_proxy(idresult, &msg);
   }
 
   res = done ? PYGEN_RETURN : PYGEN_NEXT;
@@ -556,7 +556,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
   if (proxies) {
-    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
@@ -905,9 +905,11 @@ _agen_handle_result_js_c(PyObject* set_result,
   }
 
   if (status == 1 && pyproxy_Check(jsvalue)) {
-    destroy_proxy(jsvalue,
-                  "This borrowed proxy was automatically destroyed at the end"
-                  " of an async generator");
+    Js_static_string(
+      msg,
+      "This borrowed proxy was automatically destroyed at the end"
+      " of a async generator");
+    destroy_proxy(jsvalue, &msg);
   }
 
   if (status == 0) {
@@ -1064,7 +1066,7 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
 
 finally:
   if (proxies) {
-    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
@@ -2012,9 +2014,9 @@ JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
   }
   success = true;
 finally:
-  hiwire_CLEAR(ididx);
-  hiwire_CLEAR(idvalue);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(ididx);
   return success ? 0 : -1;
 }
 
@@ -2036,8 +2038,8 @@ JsProxy_includes(JsProxy* self, PyObject* obj)
   result = hiwire_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsobj);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(jsobj);
   return result;
 }
 
@@ -2058,8 +2060,8 @@ JsProxy_has(JsProxy* self, PyObject* obj)
   result = hiwire_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsobj);
   hiwire_CLEAR(jsresult);
+  hiwire_CLEAR(jsobj);
   return result;
 }
 
@@ -2754,8 +2756,8 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
   }
 
 finally:
-  hiwire_CLEAR(idkey);
   hiwire_CLEAR(idresult);
+  hiwire_CLEAR(idkey);
   return pyresult;
 }
 
@@ -2810,8 +2812,8 @@ JsObjMap_ass_subscript(PyObject* self, PyObject* pykey, PyObject* pyvalue)
   }
   success = true;
 finally:
-  hiwire_CLEAR(idkey);
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(idkey);
   return success ? 0 : -1;
 }
 
@@ -3129,7 +3131,7 @@ finally:
       // TODO: don't destroy proxies with roundtrip = true?
       JsArray_Push_unchecked(proxies, idresult);
     }
-    destroy_proxies(proxies, PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
+    destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   } else {
     gc_register_proxies(proxies);
   }
@@ -3176,9 +3178,10 @@ JsMethod_Construct(PyObject* self,
   success = true;
 finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Construct" */);
-  destroy_proxies(proxies,
-                  "This borrowed proxy was automatically destroyed. Try using "
-                  "create_proxy or create_once_callable.");
+  Js_static_string(msg,
+                   "This borrowed proxy was automatically destroyed. Try using "
+                   "create_proxy or create_once_callable.");
+  destroy_proxies(proxies, &msg);
   hiwire_CLEAR(proxies);
   hiwire_CLEAR(idargs);
   hiwire_CLEAR(idresult);
