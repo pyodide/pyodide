@@ -315,6 +315,8 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         '-fno-second-underscore',
         '-fstack-protector',  # doesn't work?
         '-fno-strict-overflow',  # warning: argument unused during compilation
+        "-mno-sse2", # warning: argument unused during compilation
+        "-mno-avx2", # warning: argument unused during compilation
     ]:
         return None
     # fmt: on
