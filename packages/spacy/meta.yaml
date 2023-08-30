@@ -36,6 +36,6 @@ requirements:
     - tqdm
     - numpy
     - pydantic
-    - jinja2
+    - Jinja2
     - langcodes
     # Official Python utilities
