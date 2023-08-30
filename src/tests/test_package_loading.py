@@ -515,7 +515,7 @@ def test_custom_lockfile(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     lock = selenium.run_js(
         """
-        let pyodide = await loadPyodide({fullStdLib: false});
+        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
         await pyodide.loadPackage("micropip")
         return pyodide.runPythonAsync(`
             import micropip
@@ -531,8 +531,7 @@ def test_custom_lockfile(selenium_standalone_noload):
         assert (
             selenium.run_js(
                 """
-                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json" });
-                await pyodide.loadPackage("hypothesis");
+                let pyodide = await loadPyodide({fullStdLib: false, lockFileURL: "custom_lockfile.json", packages: ["hypothesis"] });
                 return pyodide.runPython("import hypothesis; hypothesis.__version__")
                 """
             )
