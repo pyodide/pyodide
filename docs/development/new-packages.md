@@ -73,9 +73,7 @@ use the `pyodide-env` docker container with:
 
 This will mount the current working directory as `/src` within the container so
 if you build the package within the container the files created will persist in
-the directory after you exit the container. For local testing purposes, make
-sure to forward a port by setting the environment variable PYODIDE_SYSTEM_PORT or
-starting docker with `./run_docker -p <port>`.
+the directory after you exit the container.
 
 You should install `pyodide-build`:
 
@@ -152,9 +150,12 @@ and see if there are any errors.
 
 If the build succeeds you can try to load the package:
 
-1. Serve the dist directory with `python -m http.server --directory ./dist`
-2. Open `localhost:<port>/console.html` and try to import the package
-3. You can test the package in the repl
+1. Serve the dist directory with `python -m http.server --directory ./dist`.
+If you use docker, you can execute this either outside of the docker container or
+make sure to forward a port by setting the environment variable
+PYODIDE_SYSTEM_PORT or starting docker with `./run_docker -p <port>`.
+2. Open `localhost:<port>/console.html` and try to import the package.
+3. You can test the package in the repl.
 
 ### Fixing build issues
 
