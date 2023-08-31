@@ -73,7 +73,9 @@ use the `pyodide-env` docker container with:
 
 This will mount the current working directory as `/src` within the container so
 if you build the package within the container the files created will persist in
-the directory after you exit the container.
+the directory after you exit the container. For local testing purposes, make
+sure to forward a port by setting the environment variable PYODIDE_SYSTEM_PORT or
+starting docker with `./run_docker -p <port>`.
 
 You should install `pyodide-build`:
 
