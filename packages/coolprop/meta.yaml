@@ -1,0 +1,33 @@
+package:
+  name: coolprop
+  version: 6.4.3
+  top-level:
+    - CoolProp
+
+source:
+  url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.4.3/source/CoolProp_sources.zip
+  sha256: 7d43ef778e5e245720261311fe86c8a1492a7dc49c0155408344117a81465f7d
+  extract_dir: source
+
+  extras:
+    - - setup.py
+      - ./setup.py
+    - - pyproject.toml
+      - ./pyproject.toml
+
+requirements:
+  run:
+    - numpy
+    - matplotlib
+
+test:
+  imports:
+    - CoolProp
+    - CoolProp.GUI
+    - CoolProp.Plots
+
+about:
+  home: http://www.coolprop.org
+  PyPI: https://pypi.org/project/CoolProp
+  summary: "Open-source thermodynamic and transport properties database"
+  license: MIT

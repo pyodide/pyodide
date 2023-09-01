@@ -1,5 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
+  "rootDir": "../../",
   "compilerOptions": {
     "outDir": "../../dist",
     "esModuleInterop": true,
@@ -8,11 +9,12 @@
     "moduleResolution": "node",
     "composite": true,
     "strict": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "types": ["node"],
     "experimentalDecorators": true,
-    "lib": ["ES2018", "DOM"]
+    "lib": ["ES2018", "DOM"],
+    "resolveJsonModule": true
   },
-  "include": ["*.ts"],
+  "include": ["*.ts", "*.json"],
   "exclude": ["test/**/*"]
 }

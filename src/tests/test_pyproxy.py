@@ -153,18 +153,14 @@ def test_pyproxy_refcount(selenium):
 
 
 def test_pyproxy_destroy(selenium):
-    selenium.run(
-        """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
-        """
-    )
-
     selenium.run_js(
         """
+        pyodide.runPython(`
+            class Foo:
+                def get_value(self, value):
+                    return value * 64
+            f = Foo()
+        `);
         let f = pyodide.globals.get('f');
         assert(()=> f.get_value(1) === 64);
         f.destroy();
@@ -520,9 +516,6 @@ def test_pyproxy_mixins31(selenium):
         pyodide.runPython(`assert Test.prototype == 7`);
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
-
-        assertThrows(() => Test.$$ = 7, "TypeError", "");
-        assertThrows(() => delete Test.$$, "TypeError", "");
 
         Test.$a = 7;
         Object.defineProperty(Test, "a", {
@@ -1645,36 +1638,34 @@ async def test_async_gen_throw(selenium):
 def test_roundtrip_no_destroy(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import create_proxy
-
-    def isalive(p):
-        return getattr(p, "$$").ptr != 0
+    from pyodide_js._api import pyproxyIsAlive as isalive
 
     p = create_proxy({1: 2})
     run_js("(x) => x")(p)
     assert isalive(p)
     run_js(
         """
-    (p) => {
-        p.destroy({destroyRoundtrip : false});
-    }
-    """
+        (p) => {
+            p.destroy({destroyRoundtrip : false});
+        }
+        """
     )(p)
     assert isalive(p)
     run_js(
         """
-    (p) => {
-        p.destroy({destroyRoundtrip : true});
-    }
-    """
+        (p) => {
+            p.destroy({destroyRoundtrip : true});
+        }
+        """
     )(p)
     assert not isalive(p)
     p = create_proxy({1: 2})
     run_js(
         """
-    (p) => {
-        p.destroy();
-    }
-    """
+        (p) => {
+            p.destroy();
+        }
+        """
     )(p)
     assert not isalive(p)
 

@@ -10,3 +10,4 @@ cpython
 .pytest_cache
 .clang-format
 packages/libf2c/make.inc
+src/js/generated_struct_info32.json

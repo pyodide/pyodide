@@ -55,13 +55,21 @@ since they currently wouldn't work in the WebAssembly VM,
 - curses
 - dbm
 - ensurepip
+- fcntl
+- grp
 - idlelib
 - lib2to3
+- msvcrt
+- pwd
+- resource
+- syslog
+- termios
 - tkinter
 - turtle.py
 - turtledemo
 - venv
-- pwd
+- winreg
+- winsound
 
 ### Included but not working modules
 
@@ -72,3 +80,8 @@ The following modules can be imported, but are not functional due to the limitat
 - sockets
 
 as well as any functionality that requires these.
+
+The following are present but cannot be imported due to a dependency on the termios package which has been removed:
+
+- pty
+- tty
