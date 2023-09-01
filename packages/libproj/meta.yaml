@@ -1,7 +1,8 @@
 package:
   name: libproj
   version: 8.2.1
-
+  tag:
+    - library
 source:
   sha256: 76ed3d0c3a348a6693dfae535e5658bbfd47f71cb7ff7eb96d9f12f7e068b1cf
   url: https://download.osgeo.org/proj/proj-8.2.1.tar.gz
