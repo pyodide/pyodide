@@ -1,5 +1,3 @@
-import base64
-import binascii
 import re
 import shutil
 import sys
@@ -360,23 +358,3 @@ def init_loaded_packages() -> None:
     """
     for dist in importlib_distributions():
         setattr(loadedPackages, dist.name, get_dist_source(dist))
-
-
-def sub_resource_hash(sha_256: str) -> str:
-    """Calculates the sub resource integrity hash given a SHA-256
-
-    Parameters
-    ----------
-    sha_256
-        A hexdigest of the SHA-256 sum.
-
-    Returns
-    -------
-        The sub resource integrity hash corresponding to the sum.
-
-    >>> sha_256 = 'c0dc86efda0060d4084098a90ec92b3d4aa89d7f7e0fba5424561d21451e1758'
-    >>> sub_resource_hash(sha_256)
-    'sha256-wNyG79oAYNQIQJipDskrPUqonX9+D7pUJFYdIUUeF1g='
-    """
-    binary_digest = binascii.unhexlify(sha_256)
-    return "sha256-" + base64.b64encode(binary_digest).decode()
