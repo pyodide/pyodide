@@ -140,7 +140,6 @@ def main(
         "-o",
         help="which directory should the output be placed into?",
     ),
-    output_directory_compat: str = typer.Option("", "--output-directory", hidden=True),
     requirements_txt: str = typer.Option(
         "",
         "--requirements",
@@ -177,15 +176,7 @@ def main(
         print(e.args[0], file=sys.stderr)
         sys.exit(1)
 
-    if output_directory_compat:
-        print(
-            "--output-directory is deprecated, use --outdir or -o instead",
-            file=sys.stderr,
-        )
-    if output_directory_compat and output_directory:
-        print("Cannot provide both --outdir and --output-directory", file=sys.stderr)
-        sys.exit(1)
-    output_directory = output_directory_compat or output_directory or "./dist"
+    output_directory = output_directory or "./dist"
 
     outpath = Path(output_directory).resolve()
     outpath.mkdir(exist_ok=True)
