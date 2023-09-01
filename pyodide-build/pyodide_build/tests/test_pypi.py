@@ -144,10 +144,10 @@ def fake_pypi_server():
         if not simple_root.exists():
             simple_root.mkdir(exist_ok=True, parents=True)
             # top package resolves_package that should resolve okay - nb:
-            # this package depends on bcrypt which is in pyodide already
+            # this package depends on micropip which is in pyodide already
             # and should not be rebuilt
             _make_fake_package(
-                simple_root, "resolves-package", "1.0.0", ["pkg-a", "pkg-b[docs]","bcrypt"], True
+                simple_root, "resolves-package", "1.0.0", ["pkg-a", "pkg-b[docs]","micropip"], True
             )
             _make_fake_package(simple_root, "pkg-a", "1.0.0", ["pkg-c"], True)
             _make_fake_package(
@@ -272,8 +272,8 @@ def test_fake_pypi_succeed(xbuildenv, fake_pypi_url):
 
     built_wheels = set(output_dir.glob("*.whl"))
     assert len(built_wheels) == 5
-    # make sure built in package bcrypt is not rebuilt
-    assert len(set(output_dir.glob("bcrypt*.whl"))) == 0
+    # make sure built in package micropip is not rebuilt
+    assert len(set(output_dir.glob("micropip*.whl"))) == 0
 
 
 def test_fake_pypi_resolve_fail(xbuildenv, fake_pypi_url):
