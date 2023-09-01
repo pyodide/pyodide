@@ -1,7 +1,8 @@
 package:
   name: openblas
   version: 0.3.23
-
+  tag:
+    - library
 source:
   sha256: 5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
   url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
