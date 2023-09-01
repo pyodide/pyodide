@@ -1,0 +1,13 @@
+package:
+  name: colorama
+  version: 0.4.6
+  top-level:
+    - colorama
+source:
+  url: https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl
+  sha256: 4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
+about:
+  home: ""
+  PyPI: https://pypi.org/project/colorama
+  summary: Cross-platform colored terminal text.
+  license: ""

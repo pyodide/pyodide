@@ -20,3 +20,15 @@ requirements:
     - preshed
     - murmurhash
     - blis
+  run:
+    - numpy
+    - murmurhash
+    - cymem
+    - preshed
+    - blis
+    - wasabi
+    - srsly
+    - catalogue
+    - confection
+    - pydantic
+    - packaging

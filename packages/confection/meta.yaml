@@ -1,0 +1,13 @@
+package:
+  name: confection
+  version: 0.1.1
+  top-level:
+    - confection
+source:
+  url: https://files.pythonhosted.org/packages/05/5e/1a56e81e3335ce18f6742539edd2f6ea98bbf477fefc9a4dc5c0694bace4/confection-0.1.1-py3-none-any.whl
+  sha256: d2d9e53a5a61395caae1ab09281bab17b08a23fa94aabd1cc24c134880d41c30
+about:
+  home: https://github.com/explosion/confection
+  PyPI: https://pypi.org/project/confection
+  summary: The sweetest config system for Python
+  license: MIT

@@ -1,0 +1,13 @@
+package:
+  name: shellingham
+  version: 1.5.3
+  top-level:
+    - shellingham
+source:
+  url: https://files.pythonhosted.org/packages/57/70/0265437683625b2e6491736706d3d679d90e2a26f6bff59f4e46e09872b9/shellingham-1.5.3-py2.py3-none-any.whl
+  sha256: 419c6a164770c9c7cfcaeddfacb3d31ac7a8db0b0f3e9c1287679359734107e9
+about:
+  home: https://github.com/sarugaku/shellingham
+  PyPI: https://pypi.org/project/shellingham
+  summary: Tool to Detect Surrounding Shell
+  license: ISC License

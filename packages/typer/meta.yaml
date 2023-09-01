@@ -4,10 +4,19 @@ package:
   top-level:
     - typer
 source:
-  url: https://files.pythonhosted.org/packages/bf/0e/c68adf10adda05f28a6ed7b9f4cd7b8e07f641b44af88ba72d9c89e4de7a/typer-0.9.0-py3-none-any.whl
-  sha256: 5d96d986a21493606a358cae4461bd8cdf83cbf33a5aa950ae629ca3b51467ee
+  url: https://files.pythonhosted.org/packages/5b/49/39f10d0f75886439ab3dac889f14f8ad511982a754e382c9b6ca895b29e9/typer-0.9.0.tar.gz
+  sha256: 50922fd79aea2f4751a8e0408ff10d2662bd0c8bbfa84755a699f3bada2978b2
 about:
   home: https://github.com/tiangolo/typer
   PyPI: https://pypi.org/project/typer
   summary: Typer, build great CLIs. Easy to code. Based on Python type hints.
   license: null
+requirements:
+  host:
+    - flit-core
+  run:
+    - click
+    - colorama
+    - rich
+    - shellingham
+    - typing-extensions
