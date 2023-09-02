@@ -9,10 +9,6 @@ source:
 requirements:
   host:
     - numpy
-    - cymem
-    - preshed
-    - murmurhash
-    - blis
   run:
     - numpy
     - murmurhash

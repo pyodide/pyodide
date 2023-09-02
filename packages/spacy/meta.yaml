@@ -9,10 +9,6 @@ source:
 requirements:
   host:
     - numpy
-    - murmurhash
-    - cymem
-    - preshed
-    - thinc
   run:
     # Our libraries
     - spacy-legacy

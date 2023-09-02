@@ -7,8 +7,6 @@ source:
   url: https://files.pythonhosted.org/packages/5b/49/39f10d0f75886439ab3dac889f14f8ad511982a754e382c9b6ca895b29e9/typer-0.9.0.tar.gz
   sha256: 50922fd79aea2f4751a8e0408ff10d2662bd0c8bbfa84755a699f3bada2978b2
 requirements:
-  host:
-    - flit-core
   run:
     - click
     - colorama
