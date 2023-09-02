@@ -78,7 +78,7 @@ repos:
           - types-setuptools
           - types-requests
           - numpy
-          - build
+          - build==0.7.0
           - pytest
           - pydantic<2
           - unearth
