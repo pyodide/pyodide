@@ -407,7 +407,6 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
- * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackage(
@@ -419,16 +418,7 @@ export async function loadPackage(
   } = {
     checkIntegrity: true,
   },
-  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  if (typeof options === "function") {
-    cbDeprecationWarnOnce();
-    options = {
-      messageCallback: options,
-      errorCallback: errorCallbackDeprecated,
-    };
-  }
-
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {
