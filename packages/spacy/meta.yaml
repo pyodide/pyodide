@@ -29,6 +29,36 @@ requirements:
     - pydantic
     - Jinja2
     - langcodes
+test:
+  imports:
+    spacy
+    spacy.attrs
+    spacy.compat
+    spacy.errors
+    spacy.glossary
+    spacy.language
+    spacy.lexeme
+    spacy.lookups
+    spacy.matcher
+    spacy.displacy
+    spacy.ml
+    spacy.pipeline
+    spacy.tokens
+    spacy.training
+    spacy.pipe_analysis
+    spacy.schemas
+    spacy.scorer
+    spacy.morphology
+    spacy.strings
+    spacy.parts_of_speech
+    spacy.structs
+    spacy.symbols
+    spacy.tokenizer
+    spacy.ty
+    spacy.typedefs
+    spacy.util
+    spacy.vectors
+    spacy.vocab
 about:
   home: https://spacy.io
   PyPI: https://pypi.org/project/spacy

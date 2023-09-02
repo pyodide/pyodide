@@ -8,7 +8,7 @@ source:
   sha256: 93c2cc4588778261ccb23dd0543b24ded81015dd8ab4ec137cd7d04965035d08
 requirements:
   run:
-    - numpy # In theory not required, but due to a mysterious bug we actually need it when loading spacy
+    - numpy # In theory not required, but due to a mysterious bug we actually need it when loading spacy models
     - catalogue
 about:
   home: https://github.com/explosion/srsly
