@@ -39,13 +39,10 @@ myst:
   `linecache` module to ensure that source lines can appear in tracebacks.
   {pr}`3993`
 
-- {{ Enhancement }} For performance reasons, don't render extra information in
+- {{ Performance }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
   can opt into worse performance and better error messages.
   {pr}`4027`
-
-- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
-{pr}`4012`, {pr}`4011`
 
 - {{ Enhancement }} It is now possible to pass environment variables to
   `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
@@ -105,7 +102,7 @@ myst:
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
 
-- {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
+- {{ Enhancement }} Added `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
 
@@ -131,8 +128,8 @@ myst:
 
 ### Misc
 
-- {{ Enhancement }} Make it possible to use the @example JSDoc directive.
-  {pr}`4009`
+- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
+{pr}`4012`, {pr}`4011`
 
 ## Version 0.23.4
 
