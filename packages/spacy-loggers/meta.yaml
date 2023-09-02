@@ -1,0 +1,13 @@
+package:
+  name: spacy-loggers
+  version: 1.0.4
+  top-level:
+    - spacy_loggers
+source:
+  url: https://files.pythonhosted.org/packages/62/8c/814e0bd139a8c94b50298be3a4e640d90cdce78efe0099e373a767b7d854/spacy_loggers-1.0.4-py3-none-any.whl
+  sha256: e050bf2e63208b2f096b777e494971c962ad7c1dc997641c8f95c622550044ae
+about:
+  home: https://github.com/explosion/spacy-loggers
+  PyPI: https://pypi.org/project/spacy-loggers
+  summary: Logging utilities for SpaCy
+  license: MIT

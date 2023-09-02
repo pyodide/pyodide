@@ -1,0 +1,15 @@
+package:
+  name: rich
+  version: 13.5.2
+  top-level:
+    - rich
+source:
+  url: https://files.pythonhosted.org/packages/8d/5f/21a93b2ec205f4b79853ff6e838e3c99064d5dbe85ec6b05967506f14af0/rich-13.5.2-py3-none-any.whl
+  sha256: 146a90b3b6b47cac4a73c12866a499e9817426423f57c5a66949c086191a8808
+about:
+  home: https://github.com/Textualize/rich
+  PyPI: https://pypi.org/project/rich
+  summary:
+    Render rich text, tables, progress bars, syntax highlighting, markdown
+    and more to the terminal
+  license: MIT
