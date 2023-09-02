@@ -1,11 +1,11 @@
 package:
   name: blis
-  version: 0.9.1
+  version: 0.7.9 # Currently the newest version crashes explosion's thinc library: https://github.com/explosion/thinc/issues/771
   top-level:
     - blis
 source:
-  url: https://files.pythonhosted.org/packages/74/1e/18f5068e5c4f2e10248f65bc0f799e9017f70749fa3f5c9fdd30be179784/blis-0.9.1.tar.gz
-  sha256: 7ceac466801f9d97ecb34e10dded8c24cf5e0927ea7e834da1cc9d2ed3fc366f
+  url: https://files.pythonhosted.org/packages/ff/a1/0ece7b0cceda6ca764ecba21e32f099cebff3448d88aa33ff0fce708d34b/blis-0.7.9.tar.gz
+  sha256: 29ef4c25007785a90ffc2f0ab3d3bd3b75cd2d7856a9a482b7d0dac8d511a09d
 about:
   home: https://github.com/explosion/cython-blis
   PyPI: https://pypi.org/project/blis
