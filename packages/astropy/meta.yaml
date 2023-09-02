@@ -1,11 +1,11 @@
 package:
   name: astropy
-  version: 5.2.2
+  version: 5.3.2
   top-level:
     - astropy
 source:
-  url: https://files.pythonhosted.org/packages/bf/01/947bf59bc5e515c49e1eccf68d7f30e903dc528c0e4df9f3246b1095ad7d/astropy-5.2.2.tar.gz
-  sha256: e6a9e34716bda5945788353c63f0644721ee7e5447d16b1cdcb58c48a96b0d9c
+  url: https://files.pythonhosted.org/packages/5d/2a/0bb1e43f5643e47208e53882414f088f13d52b890b9349fa2c1c108d0e31/astropy-5.3.2.tar.gz
+  sha256: 222003dedd4d1ad00cf3b3a02747fd59c4fc93a97ddbe6328952916ad5f1558f
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored

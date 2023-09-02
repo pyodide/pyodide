@@ -1,15 +1,16 @@
 package:
   name: galpy
-  version: 1.8.3
+  version: 1.9.0
   top-level:
     - galpy
 source:
-  url: https://files.pythonhosted.org/packages/60/a6/13823c49ccc8514912157362e486f33abd7f2eae70534d15639452cdd32c/galpy-1.8.3.tar.gz
-  sha256: 27f164e76a89c7b9a4fb06ce7950f879765a13bb2b6257f19ee182cde8cfbb91
+  url: https://files.pythonhosted.org/packages/1b/1c/2ea110267578374abfada7ec8315f36ca860c0a60e241a0111624db89d9f/galpy-1.9.0.tar.gz
+  sha256: f454259f1cb77c3c21265e0214b7dfecdde1486d59318d3b65dba912f4d77128
 build:
   script:
-    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix gsl)
-    export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix gsl)
+    export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix
+    gsl) export LIBGSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix
+    gsl)
   cflags: |
     $(LIBGSL_INCLUDE_PATH)
   ldflags: |

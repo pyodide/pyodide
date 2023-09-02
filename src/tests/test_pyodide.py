@@ -1276,20 +1276,6 @@ def test_deprecations(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
         """
-        p = [];
-        let cb = (x) => console.log('!!! ' + x);
-        await pyodide.loadPackage("micropip", cb);
-        pyodide.loadPackage("micropip", cb);
-        pyodide.loadPackagesFromImports("import micropip", cb);
-        pyodide.loadPackagesFromImports("import micropip", cb);
-        """
-    )
-    dep_msg = "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to {} is deprecated and will be removed in v0.24."
-    assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
-    assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
-    assert selenium.logs.count("!!! No new packages to load") == 3
-    selenium.run_js(
-        """
         let a = pyodide.PyBuffer;
         let b = pyodide.PyBuffer;
         assert(() => a === b);
