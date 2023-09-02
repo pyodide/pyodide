@@ -3,6 +3,7 @@ myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
     Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
     Fix: "<span class='badge badge-danger'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
@@ -14,6 +15,25 @@ myst:
 # Change Log
 
 ## Unreleased
+
+- {{ Performance }} Added a `packages` optional argument to `loadPyodide`.
+  Passing packages here saves time by downloading them during the Pyodide
+  bootstrap.
+  {pr}`4100`
+
+- {{ Performance }} Improved performance of PyProxy creation.
+  {pr}`4096`
+
+- {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
+  `FetchResponse.string()` for better compatibility with other requests APIs.
+  {pr}`4052`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `filename`
+  optional argument which is passed as the `filename` argument to `eval_code`
+  (resp. `eval_code_async`). Also, if a `filename` is passed to `eval_code`
+  which does not start with `<` and end with `>`, Pyodide now uses the
+  `linecache` module to ensure that source lines can appear in tracebacks.
+  {pr}`3993`
 
 - {{ Enhancement }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
@@ -35,8 +55,9 @@ myst:
 - {{ Enhancement }} Make it possible to use the @example JSDoc directive.
   {pr}`4009`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.44
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`, {pr}`4056`, {pr}`4073`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+  {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
+  {pr}`4056`, {pr}`4073`, {pr}`4094`
 
 - {{ Update }} The docker image now has node v20 instead of node v14.
   {pr}`3819`
@@ -87,7 +108,7 @@ myst:
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
   Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`,
-  CoolProp {pr}`4028`.
+  CoolProp {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`.
 - Upgraded libmpfr to 4.2.0 {pr}`3756`.
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 - Upgraded scikit-image to 0.21 {pr}`3874`

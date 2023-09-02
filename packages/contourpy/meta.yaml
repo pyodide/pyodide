@@ -1,0 +1,19 @@
+package:
+  name: contourpy
+  version: 1.0.7
+  top-level:
+    - contourpy
+
+source:
+  url: https://files.pythonhosted.org/packages/b4/9b/6edb9d3e334a70a212f66a844188fcb57ddbd528cbc3b1fe7abfc317ddd7/contourpy-1.0.7.tar.gz
+  sha256: d8165a088d31798b59e91117d1f5fc3df8168d8b48c4acc10fc0df0d0bdbcc5e
+
+requirements:
+  run:
+    - numpy
+
+about:
+  home: https://github.org/contourpy/contourpy
+  PyPI: https://pypi.org/project/contourpy
+  summary: Python library for calculating contours of 2D quadrilateral grids
+  license: BSD-3-Clause

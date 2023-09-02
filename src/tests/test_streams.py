@@ -1,7 +1,7 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import strip_assertions_stderr
+from conftest import only_node, strip_assertions_stderr
 
 
 @pytest.mark.skip_refcount_check
@@ -574,5 +574,51 @@ def test_custom_stdout_interrupts(selenium, method):
             """
             pyodide.setInterruptBuffer();
             pyodide.setStdout();
+            """
+        )
+
+
+@only_node
+@run_in_pyodide
+def test_node_eagain(selenium):
+    from pyodide.code import run_js
+
+    result = run_js(
+        """
+        pyodide.setStdin({
+            i: 0,
+            stdin() {
+                this.i ++;
+                if (this.i < 3) {
+                    throw {code: "EAGAIN"};
+                }
+                this.i = 0;
+                return "abcdefg";
+            }
+        });
+        let result = [];
+        pyodide.setStdout({
+            i: 0,
+            write(a) {
+                this.i ++;
+                if (this.i < 3) {
+                    throw {code: "EAGAIN"};
+                }
+                this.i = 0;
+                result.push(new TextDecoder().decode(a));
+                return a.length;
+            }
+        });
+        result
+        """
+    )
+    try:
+        assert input() == "abcdefg"
+        print("hi there!")
+        assert result[0] == "hi there!\n"
+    finally:
+        run_js(
+            """
+            pyodide.setStdin();
             """
         )
