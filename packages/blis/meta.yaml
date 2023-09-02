@@ -17,5 +17,3 @@ about:
   PyPI: https://pypi.org/project/blis
   summary: The Blis BLAS-like linear algebra library, as a self-contained C-extension.
   license: BSD
-
-
