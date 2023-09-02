@@ -30,8 +30,7 @@ requirements:
     - Jinja2
     - langcodes
 test:
-  imports:
-    spacy
+  imports: spacy
     spacy.attrs
     spacy.compat
     spacy.errors
