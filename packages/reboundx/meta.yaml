@@ -1,6 +1,6 @@
 package:
   name: reboundx
-  version: 3.10.0
+  version: 3.10.1
   top-level:
     - reboundx
 build:
@@ -10,8 +10,8 @@ build:
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib/
 source:
-  url: https://files.pythonhosted.org/packages/78/c1/83a10b80cf7c3cff3d31830a9a5355efd8c7ffb05b3d991a767f2dd4eb60/reboundx-3.10.0.tar.gz
-  sha256: bd76a74ac01221644b7ef555a88bb04ab14f9cca76346c6e139f25e077e7fccc
+  url: https://files.pythonhosted.org/packages/14/08/c1c0b83c90ea43ea8e218beadb13332259e930a2ca62f85024be89d811f3/reboundx-3.10.1.tar.gz
+  sha256: 65b2fcecf296661aad15a81a8d7d7b7b96cc2ba834c89e49dba24445f146d642
 requirements:
   run:
     - rebound

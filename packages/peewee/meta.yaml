@@ -1,6 +1,6 @@
 package:
   name: peewee
-  version: 3.16.2
+  version: 3.16.3
   top-level:
     - peewee
 requirements:
@@ -10,10 +10,12 @@ requirements:
     - sqlite3
     - cffi
 source:
-  url: https://files.pythonhosted.org/packages/a9/50/1dd5ea74c559df4afb8391f8d05f0fec685dbe8effba13bb9072901eb288/peewee-3.16.2.tar.gz
-  sha256: 10769981198c7311f84a0ca8db892fa213303a8eb1305deb795a71e7bd606a91
+  url: https://files.pythonhosted.org/packages/e2/1e/6455dc3c759af3e565414985c5c6f845d3e5f83bbf4a24cdd0aef9cc3f83/peewee-3.16.3.tar.gz
+  sha256: 12b30e931193bc37b11f7c2ac646e3f67125a8b1a543ad6ab37ad124c8df7d16
 about:
   home: https://github.com/coleifer/peewee/
   PyPI: https://pypi.org/project/peewee/
-  summary: Peewee is a simple and small ORM. It has few (but expressive) concepts, making it easy to learn and intuitive to use.
+  summary:
+    Peewee is a simple and small ORM. It has few (but expressive) concepts,
+    making it easy to learn and intuitive to use.
   license: MIT License

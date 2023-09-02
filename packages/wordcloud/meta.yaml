@@ -1,7 +1,6 @@
 package:
   name: wordcloud
   version: 1.9.2
-  _disabled: true
   top-level:
     - wordcloud
 requirements:

@@ -1,11 +1,11 @@
 package:
   name: traits
-  version: 6.4.1
+  version: 6.4.2
   top-level:
     - traits
 source:
-  sha256: 78bb2ccafd60aff606515aac46de64668a0a81cb5c54c650b9877a841aa9e812
-  url: https://files.pythonhosted.org/packages/ca/72/8d08717884ac41811c4cdbd5bce3101a3df64e0a1890aab7b1a1311c1f50/traits-6.4.1.tar.gz
+  sha256: 5be7cc5fb7a99cba7e9014786373e3ad2f75efb445eeced094654bbaf3b0fa82
+  url: https://files.pythonhosted.org/packages/73/29/3c105ce8464a9993c1437a4922f3f9b48572cd49a49ff5180c4daf447426/traits-6.4.2.tar.gz
 about:
   home: http://docs.enthought.com/traits
   PyPI: https://pypi.org/project/traits
