@@ -2,7 +2,7 @@ from pytest_pyodide.decorator import run_in_pyodide
 
 
 @run_in_pyodide(packages=["spacy", "pyodide-http", "requests"])
-def test_spacy(selenium):
+async def test_spacy(selenium):
     import pyodide_http
 
     pyodide_http.patch_all()
