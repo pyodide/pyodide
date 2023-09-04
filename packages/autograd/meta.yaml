@@ -1,11 +1,11 @@
 package:
   name: autograd
-  version: "1.5"
+  version: 1.6.2
   top-level:
     - autograd
 source:
-  sha256: d80bd225154d1db13cb4eaccf7a18c358be72092641b68717f96fcf1d16acd0b
-  url: https://files.pythonhosted.org/packages/a5/17/f7ed67aa979abc3355a73ca68fc501aa780c670bdf62acaaab1cdbbc76b2/autograd-1.5.tar.gz
+  sha256: 8731e08a0c4e389d8695a40072ada4512641c113b6cace8f4cfbe8eb7e9aedeb
+  url: https://files.pythonhosted.org/packages/42/03/9d00fbea21fd702970f157a6b79caa1a947b08c1c518296fe94cb7d549f0/autograd-1.6.2.tar.gz
 requirements:
   host:
     - numpy

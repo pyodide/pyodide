@@ -111,25 +111,29 @@ if (!IN_NODE) {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
-async function node_loadBinaryFile(
+function node_getBinaryResponse(
   path: string,
   _file_sub_resource_hash?: string | undefined, // Ignoring sub resource hash. See issue-2431.
-): Promise<Uint8Array> {
+):
+  | { response: Promise<Response>; binary?: undefined }
+  | { binary: Promise<Uint8Array> } {
   if (path.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
     path = path.slice("file://".length);
   }
   if (path.includes("://")) {
     // If it has a protocol, make a fetch request
-    let response = await nodeFetch(path);
-    if (!response.ok) {
-      throw new Error(`Failed to load '${path}': request failed.`);
-    }
-    return new Uint8Array(await response.arrayBuffer());
+    return { response: nodeFetch(path) };
   } else {
     // Otherwise get it from the file system
-    const data = await nodeFsPromisesMod.readFile(path);
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    return {
+      binary: nodeFsPromisesMod
+        .readFile(path)
+        .then(
+          (data: Buffer) =>
+            new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+        ),
+    };
   }
 }
 
@@ -142,30 +146,41 @@ async function node_loadBinaryFile(
  * @returns A Uint8Array containing the binary data
  * @private
  */
-async function browser_loadBinaryFile(
+function browser_getBinaryResponse(
   path: string,
   subResourceHash: string | undefined,
-): Promise<Uint8Array> {
-  // @ts-ignore
-  const url = new URL(path, location);
+): { response: Promise<Response>; binary?: undefined } {
+  const url = new URL(path, location as unknown as URL);
   let options = subResourceHash ? { integrity: subResourceHash } : {};
-  // @ts-ignore
-  let response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Failed to load '${url}': request failed.`);
-  }
-  return new Uint8Array(await response.arrayBuffer());
+  return { response: fetch(url, options) };
 }
 
 /** @private */
-export let loadBinaryFile: (
+export let getBinaryResponse: (
   path: string,
   file_sub_resource_hash?: string | undefined,
-) => Promise<Uint8Array>;
+) =>
+  | { response: Promise<Response>; binary?: undefined }
+  | { response?: undefined; binary: Promise<Uint8Array> };
 if (IN_NODE) {
-  loadBinaryFile = node_loadBinaryFile;
+  getBinaryResponse = node_getBinaryResponse;
 } else {
-  loadBinaryFile = browser_loadBinaryFile;
+  getBinaryResponse = browser_getBinaryResponse;
+}
+
+export async function loadBinaryFile(
+  path: string,
+  file_sub_resource_hash?: string | undefined,
+): Promise<Uint8Array> {
+  const { response, binary } = getBinaryResponse(path, file_sub_resource_hash);
+  if (binary) {
+    return binary;
+  }
+  const r = await response;
+  if (!r.ok) {
+    throw new Error(`Failed to load '${path}': request failed.`);
+  }
+  return new Uint8Array(await r.arrayBuffer());
 }
 
 /**
@@ -219,3 +234,23 @@ async function nodeLoadScript(url: string) {
     await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
 }
+
+// consider dropping this this once we drop support for node 14?
+function nodeBase16ToBase64(b16: string): string {
+  return Buffer.from(b16, "hex").toString("base64");
+}
+
+function browserBase16ToBase64(b16: string): string {
+  return btoa(
+    b16
+      .match(/\w{2}/g)!
+      .map(function (a) {
+        return String.fromCharCode(parseInt(a, 16));
+      })
+      .join(""),
+  );
+}
+
+export const base16ToBase64 = IN_NODE
+  ? nodeBase16ToBase64
+  : browserBase16ToBase64;

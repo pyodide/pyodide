@@ -1,11 +1,11 @@
 package:
   name: distlib
-  version: 0.3.6
+  version: 0.3.7
   top-level:
     - distlib
 source:
-  sha256: f35c4b692542ca110de7ef0bea44d73981caeb34ca0b9b6b2e6d7790dda8f80e
-  url: https://files.pythonhosted.org/packages/76/cb/6bbd2b10170ed991cf64e8c8b85e01f2fb38f95d1bc77617569e0b0b26ac/distlib-0.3.6-py2.py3-none-any.whl
+  sha256: 2e24928bc811348f0feb63014e97aaae3037f2cf48712d51ae61df7fd6075057
+  url: https://files.pythonhosted.org/packages/43/a0/9ba967fdbd55293bacfc1507f58e316f740a3b231fc00e3d86dc39bc185a/distlib-0.3.7-py2.py3-none-any.whl
 build:
   post: |
     find $WHEELDIR -name '*.exe' -delete

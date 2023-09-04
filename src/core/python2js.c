@@ -273,8 +273,8 @@ _python2js_dict(ConversionContext context, PyObject* x)
       FAIL_IF_MINUS_ONE(
         context.dict_add_keyvalue(context, jsdict, jskey, jsval));
     }
-    hiwire_CLEAR(jskey);
     hiwire_CLEAR(jsval);
+    hiwire_CLEAR(jskey);
   }
   if (context.dict_postprocess) {
     JsRef temp = context.dict_postprocess(context, jsdict);
@@ -285,8 +285,8 @@ _python2js_dict(ConversionContext context, PyObject* x)
   FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsdict));
   success = true;
 finally:
-  hiwire_CLEAR(jskey);
   hiwire_CLEAR(jsval);
+  hiwire_CLEAR(jskey);
   if (!success) {
     hiwire_CLEAR(jsdict);
   }
@@ -463,8 +463,7 @@ int, _python2js_add_to_cache,
   if (old_value !== undefined) {
     Hiwire.decref(old_value);
   }
-  Hiwire.incref(jsparent);
-  cache.set(pyparent, jsparent);
+  cache.set(pyparent, Hiwire.incref(jsparent));
 });
 // clang-format oh
 
@@ -501,7 +500,7 @@ _python2js(ConversionContext context, PyObject* x)
     if (context.default_converter) {
       return python2js__default_converter(context.jscontext, x);
     }
-    return python2js_track_proxies(x, context.proxies);
+    return python2js_track_proxies(x, context.proxies, true);
   } else {
     context.depth--;
     return _python2js_deep(context, x);
@@ -516,7 +515,7 @@ finally:
  *
  */
 JsRef
-python2js_inner(PyObject* x, JsRef proxies, bool track_proxies)
+python2js_inner(PyObject* x, JsRef proxies, bool track_proxies, bool gc_register)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
@@ -524,7 +523,7 @@ python2js_inner(PyObject* x, JsRef proxies, bool track_proxies)
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
   }
-  JsRef proxy = pyproxy_new(x);
+  JsRef proxy = pyproxy_new_ex(x, false, false, gc_register);
   FAIL_IF_NULL(proxy);
   if (track_proxies) {
     JsArray_Push_unchecked(proxies, proxy);
@@ -552,9 +551,9 @@ finally:
  * of creating a proxy.
  */
 JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies)
+python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register)
 {
-  return python2js_inner(x, proxies, true);
+  return python2js_inner(x, proxies, true, gc_register);
 }
 
 /**
@@ -564,7 +563,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies)
 JsRef
 python2js(PyObject* x)
 {
-  return python2js_inner(x, NULL, false);
+  return python2js_inner(x, NULL, false, true);
 }
 
 // taking function pointers to EM_JS functions leads to linker errors.

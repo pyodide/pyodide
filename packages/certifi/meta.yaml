@@ -1,11 +1,11 @@
 package:
   name: certifi
-  version: 2023.5.7
+  version: 2023.7.22
   top-level:
     - certifi
 source:
-  url: https://files.pythonhosted.org/packages/9d/19/59961b522e6757f0c9097e4493fa906031b95b3ebe9360b2c3083561a6b4/certifi-2023.5.7-py3-none-any.whl
-  sha256: c6c2e98f5c7869efca1f8916fed228dd91539f9f1b444c314c06eef02980c716
+  url: https://files.pythonhosted.org/packages/4c/dd/2234eab22353ffc7d94e8d13177aaa050113286e93e7b40eae01fbf7c3d9/certifi-2023.7.22-py3-none-any.whl
+  sha256: 92d6037539857d8206b8f6ae472e8b77db8058fec5937a1ef3f54304089edbb9
 about:
   home: https://github.com/certifi/python-certifi
   PyPI: https://pypi.org/project/certifi

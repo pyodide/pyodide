@@ -38,6 +38,18 @@ def open_url(url: str) -> StringIO:
     Returns
     -------
         The contents of the URL.
+
+    Examples
+    --------
+    >>> from pyodide.http import open_url
+    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
+    >>> url_contents = open_url(url)
+    >>> url_contents.read()
+    {
+      "info": {
+          ... # long output truncated
+        }
+    }
     """
 
     req = XMLHttpRequest.new()
@@ -129,6 +141,22 @@ class FetchResponse:
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 
+    def raise_for_status(self) -> None:
+        """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
+        http_error_msg = ""
+        if 400 <= self.status < 500:
+            http_error_msg = (
+                f"{self.status} Client Error: {self.status_text} for url: {self.url}"
+            )
+
+        if 500 <= self.status < 600:
+            http_error_msg = (
+                f"{self.status} Server Error: {self.status_text} for url: {self.url}"
+            )
+
+        if http_error_msg:
+            raise OSError(http_error_msg)
+
     def clone(self) -> "FetchResponse":
         """Return an identical copy of the :py:class:`FetchResponse`.
 
@@ -147,10 +175,22 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
-    async def string(self) -> str:
+    async def text(self) -> str:
         """Return the response body as a string"""
         self._raise_if_failed()
         return await self.js_response.text()
+
+    async def string(self) -> str:
+        """Return the response body as a string
+
+        Does the same thing as :py:meth:`FetchResponse.text`.
+
+
+        .. deprecated:: 0.24.0
+
+            Use :py:meth:`FetchResponse.text` instead.
+        """
+        return await self.text()
 
     async def json(self, **kwargs: Any) -> Any:
         """Treat the response body as a JSON string and use
@@ -246,6 +286,19 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
         <https://developer.mozilla.org/en-US/docs/Web/API/fetch#options>`_.
+
+    Examples
+    --------
+    >>> from pyodide.http import pyfetch
+    >>> res = await pyfetch("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json")
+    >>> res.ok
+    True
+    >>> res.status
+    200
+    >>> data = await res.json()
+    >>> data
+    {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
+    'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
     try:
         return FetchResponse(

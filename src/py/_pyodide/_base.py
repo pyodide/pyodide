@@ -6,6 +6,7 @@ A library of helper utilities for connecting Python to the browser environment.
 
 import ast
 import builtins
+import linecache
 import tokenize
 from collections.abc import Generator
 from copy import deepcopy
@@ -211,6 +212,24 @@ class CodeRunner:
 
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
+
+    Examples
+    --------
+    >>> from pyodide.code import CodeRunner
+    >>> source = "1 + 1"
+    >>> code_runner = CodeRunner(source)
+    >>> code_runner.compile()
+    <_pyodide._base.CodeRunner object at 0x113de58>
+    >>> code_runner.run()
+    2
+    >>> my_globals = {"x": 20}
+    >>> my_locals = {"y": 5}
+    >>> source = "x + y"
+    >>> code_runner = CodeRunner(source)
+    >>> code_runner.compile()
+    <_pyodide._base.CodeRunner object at 0x1166bb0>
+    >>> code_runner.run(globals=my_globals, locals=my_locals)
+    25
     """
 
     ast: ast.Module
@@ -237,6 +256,7 @@ class CodeRunner:
         flags: int = 0x0,
     ):
         self._compiled = False
+        self._source = source
         self._gen = _parse_and_compile_gen(
             source,
             return_mode=return_mode,
@@ -264,6 +284,15 @@ class CodeRunner:
         else:
             raise AssertionError()
         return self
+
+    def _set_linecache(self):
+        assert self.code
+        filename = self.code.co_filename
+        if filename.startswith("<") and filename.endswith(">"):
+            return
+
+        source = self._source
+        linecache.cache[filename] = [lambda: source]  # type:ignore[assignment]
 
     def run(
         self,
@@ -306,6 +335,7 @@ class CodeRunner:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
             return None
+        self._set_linecache()
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:
@@ -359,6 +389,7 @@ class CodeRunner:
             raise RuntimeError("Not yet compiled")
         if self.code is None:
             return
+        self._set_linecache()
         try:
             coroutine = eval(self.code, globals, locals)
             if coroutine:

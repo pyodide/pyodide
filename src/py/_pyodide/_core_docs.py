@@ -1,3 +1,4 @@
+import os
 import sys
 from collections.abc import (
     AsyncIterator,
@@ -38,7 +39,8 @@ Vco = TypeVar("Vco", covariant=True)  # Any type covariant containers.
 VTco = TypeVar("VTco", covariant=True)  # Value type covariant containers.
 Tcontra = TypeVar("Tcontra", contravariant=True)  # Ditto contravariant.
 
-__name__ = "pyodide.ffi"
+if "IN_PYTEST" not in os.environ:
+    __name__ = "pyodide.ffi"
 
 _js_flags: dict[str, int] = {}
 
@@ -125,15 +127,46 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         return "object"
 
     def object_entries(self) -> "JsProxy":
-        "The JavaScript API ``Object.entries(object)``"
+        """
+        The JavaScript API ``Object.entries(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 'aa', second: 22})")
+        >>> entries = js_obj.object_entries()
+        >>> [(key, val) for key, val in entries]
+        [('first', 'aa'), ('second', 22)]
+        """
+
         raise NotImplementedError
 
     def object_keys(self) -> "JsProxy":
-        "The JavaScript API ``Object.keys(object)``"
+        """
+        The JavaScript API ``Object.keys(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
+        >>> keys = js_obj.object_keys() # doctest: +SKIP
+        >>> list(keys) # doctest: +SKIP
+        ['first', 'second', 'third']
+        """
         raise NotImplementedError
 
     def object_values(self) -> "JsProxy":
-        "The JavaScript API ``Object.values(object)``"
+        """
+        The JavaScript API ``Object.values(object)``
+
+        Examples
+        --------
+        >>> from pyodide.code import run_js
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
+        >>> values = js_obj.object_values() # doctest: +SKIP
+        >>> list(values) # doctest: +SKIP
+        [1, 2, 3]
+        """
         raise NotImplementedError
 
     def as_object_map(self, *, hereditary: bool = False) -> "JsMutableMap[str, Any]":

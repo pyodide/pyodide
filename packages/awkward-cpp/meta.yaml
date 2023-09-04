@@ -1,0 +1,27 @@
+package:
+  name: awkward-cpp
+  version: 22
+  top-level:
+    - awkward_cpp
+
+source:
+  url: https://files.pythonhosted.org/packages/8b/f8/97efcc2d52e2f9967f9beed86ed6736fc6eed91eb2d974a1bdc8c438146d/awkward-cpp-22.tar.gz
+  sha256: 21679636fb21cfe3715f88a32326a579199384db2da4a62995c310502d7fe85f
+
+build:
+  script: |
+    export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
+  exports: whole_archive
+
+requirements:
+  run:
+    - numpy
+
+test:
+  imports:
+    - awkward_cpp
+
+about:
+  home: https://pypi.org/project/awkward-cpp/
+  summary: CPU kernels and compiled extensions for Awkward Array
+  license: BSD-3-Clause

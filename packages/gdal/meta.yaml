@@ -1,7 +1,8 @@
 package:
   name: gdal
   version: 3.5.1
-
+  tag:
+    - library
 source:
   url: https://github.com/OSGeo/gdal/releases/download/v3.5.2/gdal-3.5.2.tar.gz
   sha256: fbd696e1b2a858fbd2eb3718db16b14ed9ba82521d3578770d480c74fe1146d2

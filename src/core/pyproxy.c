@@ -62,10 +62,10 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
   return Module.PyProxy_getPtr(val);
 });
 
-EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsRef proxies_id, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
@@ -73,15 +73,27 @@ EM_JS(void, destroy_proxies, (JsRef proxies_id, char* msg_ptr), {
   }
 });
 
-EM_JS(void, destroy_proxy, (JsRef proxy_id, char* msg_ptr), {
-  let px = Module.hiwire.get_value(proxy_id);
-  if (px.$$props.roundtrip) {
+EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
+  let proxies = Hiwire.get_value(proxies_id);
+  for (let px of proxies) {
+    Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
+  }
+});
+
+EM_JS(void, destroy_proxy, (JsRef proxy_id, Js_Identifier* msg_ptr), {
+  const px = Module.hiwire.get_value(proxy_id);
+  const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
+  if (!shared.ptr) {
+    // already destroyed
+    return;
+  }
+  if (props.roundtrip) {
     // Don't destroy roundtrip proxies!
     return;
   }
   let msg = undefined;
   if (msg_ptr) {
-    msg = UTF8ToString(msg_ptr);
+    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
   Module.pyproxy_destroy(px, msg, false);
 });
@@ -128,13 +140,13 @@ gen_is_coroutine(PyObject* o)
  * protocol API defined in `abstract.c`. We wrote these tests to check whether
  * the corresponding CPython APIs are likely to work without actually creating
  * any temporary objects.
+ *
+ * Note: PyObject_IsInstance is expensive, avoid if possible!
  */
-int
-pyproxy_getflags(PyObject* pyobj)
+static int
+type_getflags(PyTypeObject* obj_type)
 {
   // Reduce casework by ensuring that protos aren't NULL.
-  PyTypeObject* obj_type = Py_TYPE(pyobj);
-
   PySequenceMethods null_seq_proto = { 0 };
   PySequenceMethods* seq_proto =
     obj_type->tp_as_sequence ? obj_type->tp_as_sequence : &null_seq_proto;
@@ -162,21 +174,16 @@ pyproxy_getflags(PyObject* pyobj)
   // PyObject_GetItem
   if (map_proto->mp_subscript || seq_proto->sq_item) {
     result |= HAS_GET;
-  } else if (PyType_Check(pyobj)) {
-    _Py_IDENTIFIER(__class_getitem__);
-    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
-    if (PyObject_HasAttr(pyobj, oname)) {
-      result |= HAS_GET;
-    }
   }
   // PyObject_SetItem
   SET_FLAG_IF(HAS_SET, map_proto->mp_ass_subscript || seq_proto->sq_ass_item);
   // PySequence_Contains
   SET_FLAG_IF(HAS_CONTAINS, seq_proto->sq_contains);
   // PyObject_GetIter
-  SET_FLAG_IF(IS_ITERABLE, obj_type->tp_iter || PySequence_Check(pyobj));
+  SET_FLAG_IF(IS_ITERABLE, obj_type->tp_iter || seq_proto->sq_item);
   SET_FLAG_IF(IS_ASYNC_ITERABLE, async_proto->am_aiter);
-  if (PyIter_Check(pyobj)) {
+  if (obj_type->tp_iternext != NULL &&
+      obj_type->tp_iternext != &_PyObject_NextNotImplemented) {
     result &= ~IS_ITERABLE;
     result |= IS_ITERATOR;
   }
@@ -185,36 +192,97 @@ pyproxy_getflags(PyObject* pyobj)
     result |= IS_ASYNC_ITERATOR;
   }
 
-  int isgen = PyObject_IsInstance(pyobj, Generator);
+  int isgen = PyObject_IsSubclass((PyObject*)obj_type, Generator);
   FAIL_IF_MINUS_ONE(isgen);
-  int isasyncgen = PyObject_IsInstance(pyobj, AsyncGenerator);
+  int isasyncgen = PyObject_IsSubclass((PyObject*)obj_type, AsyncGenerator);
   FAIL_IF_MINUS_ONE(isasyncgen);
   SET_FLAG_IF(IS_GENERATOR, isgen);
   SET_FLAG_IF(IS_ASYNC_GENERATOR, isasyncgen);
 
   // There's no CPython API that corresponds directly to the "await" keyword.
-  // Looking at disassembly, "await" translates into opcodes GET_AWAITABLE and
-  // YIELD_FROM. GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in
-  // genobject.c. This tests whether _PyCoro_GetAwaitableIter is likely to
-  // succeed.
-  SET_FLAG_IF(IS_AWAITABLE, async_proto->am_await || gen_is_coroutine(pyobj));
+  // Looking at disassembly, "await" translates into the GET_AWAITABLE opcode.
+  // GET_AWAITABLE uses _PyCoro_GetAwaitableIter defined in genobject.c.
+  // _PyCoro_GetAwaitableIter(obj) succeeds if one of the following conditions
+  // are met:
+  //
+  //   1. obj is of exact type Coroutine (not a subtype),
+  //   2. obj is of exact type Generator and the CO_ITERABLE_COROUTINE flag is
+  //      set on the code object, or
+  //   3. obj_type->tp_as_async->am_await is not NULL and calling it returns an
+  //      iterator
+  //
+  // Here we check if the object has exact type Coroutine or if
+  // `obj_type->tp_as_async->am_await` is defined. we can't check here if the
+  // return value is an iterator (and if it's not the object is still awaitable
+  // just with a wrong definition). we also can't tell here if condition 2 is
+  // met, we check for this in pyproxy_getflags.
+
+  SET_FLAG_IF(IS_AWAITABLE,
+              Py_Is(obj_type, &PyCoro_Type) || async_proto->am_await);
   SET_FLAG_IF(IS_BUFFER, buffer_proto->bf_getbuffer);
   // PyObject_Call (from call.c)
-  SET_FLAG_IF(IS_CALLABLE,
-              _PyVectorcall_Function(pyobj) || PyCFunction_Check(pyobj) ||
-                obj_type->tp_call);
-  int is_sequence = PyObject_IsInstance(pyobj, Sequence);
-  FAIL_IF_MINUS_ONE(is_sequence);
-  int is_mutable_sequence = PyObject_IsInstance(pyobj, MutableSequence);
-  FAIL_IF_MINUS_ONE(is_mutable_sequence);
-  SET_FLAG_IF(IS_SEQUENCE, is_sequence);
-  SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
+  SET_FLAG_IF(IS_CALLABLE, obj_type->tp_call);
+  // A sequence has __len__, __getitem__, __contains__, and __iter__ so if any
+  // of these settings is missing, can skip the IsInstance check.
+  if (((~result) & (HAS_LENGTH | HAS_GET | HAS_CONTAINS | IS_ITERABLE)) == 0) {
+    int is_sequence = PyObject_IsSubclass((PyObject*)obj_type, Sequence);
+    FAIL_IF_MINUS_ONE(is_sequence);
+    // Only need to check Sequences for MutableSequence.
+    int is_mutable_sequence =
+      is_sequence ? PyObject_IsSubclass((PyObject*)obj_type, MutableSequence)
+                  : 0;
+    FAIL_IF_MINUS_ONE(is_mutable_sequence);
+    SET_FLAG_IF(IS_SEQUENCE, is_sequence);
+    SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
+  }
 
 #undef SET_FLAG_IF
 
   success = true;
 finally:
   return success ? result : -1;
+}
+
+static int dict_flags;
+static int tuple_flags;
+static int list_flags;
+
+int
+pyproxy_getflags(PyObject* pyobj)
+{
+  // Fast paths for some common cases
+  if (PyDict_CheckExact(pyobj)) {
+    return dict_flags;
+  }
+  if (PyTuple_CheckExact(pyobj)) {
+    return tuple_flags;
+  }
+  if (PyList_CheckExact(pyobj)) {
+    return list_flags;
+  }
+  PyTypeObject* obj_type = Py_TYPE(pyobj);
+  int result = type_getflags(obj_type);
+  FAIL_IF_MINUS_ONE(result);
+  // Check for some flags that depend on the object itself and not just the
+  // type.
+  if (PyType_Check(pyobj)) {
+    // If it's a type with a __class_getitem__, then this makes it indexable.
+    // Nobody is very likely to want to index such a class from JavaScript, but
+    // we try to be comprehensive.
+    _Py_IDENTIFIER(__class_getitem__);
+    PyObject* oname = _PyUnicode_FromId(&PyId___class_getitem__); /* borrowed */
+    if (PyObject_HasAttr(pyobj, oname)) {
+      result |= HAS_GET;
+    }
+  }
+  // More importantly, if the result is a coroutine generator we can't tell just
+  // by looking at the type...
+  if (!(result & IS_AWAITABLE) && (result & IS_GENERATOR) &&
+      gen_is_coroutine(pyobj)) {
+    result |= IS_AWAITABLE;
+  }
+finally:
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -310,7 +378,7 @@ EM_JS(JsRef, proxy_cache_get, (JsRef proxyCacheId, PyObject* descr), {
     return undefined;
   }
   // Okay found a proxy. Is it alive?
-  if (Hiwire.get_value(proxyId).$$.ptr) {
+  if (pyproxyIsAlive(Hiwire.get_value(proxyId))) {
     return proxyId;
   } else {
     // It's dead, tidy up
@@ -780,8 +848,7 @@ _pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
       // If GeneratorExit comes back out, return original value.
       PyErr_Clear();
       status = PYGEN_RETURN;
-      hiwire_incref(jsval);
-      *result = jsval;
+      *result = hiwire_incref(jsval);
       success = true;
       goto finally;
     }
@@ -1244,14 +1311,19 @@ success:
   return 0;
 }
 
+// clang-format off
 EM_JS_REF(JsRef,
-          pyproxy_new_ex,
-          (PyObject * ptrobj, bool capture_this, bool roundtrip),
-          {
-            return Hiwire.new_value(Module.pyproxy_new(ptrobj, {
-              props : { captureThis : !!capture_this, roundtrip : !!roundtrip }
-            }));
-          });
+pyproxy_new_ex,
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
+{
+  return Hiwire.new_value(
+    Module.pyproxy_new(ptrobj, {
+      props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
+      gcRegister,
+    })
+  );
+});
+// clang-format on
 
 EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
   return Hiwire.new_value(Module.pyproxy_new(ptrobj));
@@ -1405,7 +1477,7 @@ create_proxy(PyObject* self,
     return NULL;
   }
 
-  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip);
+  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip, true);
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1457,6 +1529,10 @@ pyproxy_init(PyObject* core)
   FAIL_IF_NULL(inspect);
   iscoroutinefunction = PyObject_GetAttrString(inspect, "iscoroutinefunction");
   FAIL_IF_NULL(iscoroutinefunction);
+
+  dict_flags = type_getflags(&PyDict_Type);
+  tuple_flags = type_getflags(&PyTuple_Type);
+  list_flags = type_getflags(&PyList_Type);
 
   success = true;
 finally:

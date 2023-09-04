@@ -10,7 +10,22 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cd emsdk/upstream/emscripten/ && cat ../../../patches/*.patch | patch -p1 --verbose
 	cd emsdk && ./emsdk install --build=Release $(PYODIDE_EMSCRIPTEN_VERSION) ccache-git-emscripten-64bit
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
+
+	# Check that generated_struct_info is up to date.
+	cmp --silent emsdk/upstream/emscripten/src/generated_struct_info32.json ../src/js/generated_struct_info32.json || \
+		( \
+			echo "" && \
+			echo "The vendored copy of generated_struct_info32.json does not match the copy in Emscripten" && \
+			exit 1 \
+		)
+
 	touch emsdk/.complete
+
+
+update_struct_info:
+	rm ../src/js/generated_struct_info32.json
+	cd ../src/js && wget "https://raw.githubusercontent.com/emscripten-core/emscripten/$(PYODIDE_EMSCRIPTEN_VERSION)/src/generated_struct_info32.json"
+
 
 clean:
 	rm -rf emsdk
