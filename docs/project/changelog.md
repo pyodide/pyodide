@@ -16,17 +16,21 @@ myst:
 
 ## Unreleased
 
+### General
+
+- {{ Update }} Pyodide now runs Python 3.11.3.
+  {pr}`3741`
+
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+  {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
+  {pr}`4056`, {pr}`4073`, {pr}`4094`
+
+### JavaScript API
+
 - {{ Performance }} Added a `packages` optional argument to `loadPyodide`.
   Passing packages here saves time by downloading them during the Pyodide
   bootstrap.
   {pr}`4100`
-
-- {{ Performance }} Improved performance of PyProxy creation.
-  {pr}`4096`
-
-- {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
-  `FetchResponse.string()` for better compatibility with other requests APIs.
-  {pr}`4052`
 
 - {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `filename`
   optional argument which is passed as the `filename` argument to `eval_code`
@@ -35,35 +39,43 @@ myst:
   `linecache` module to ensure that source lines can appear in tracebacks.
   {pr}`3993`
 
-- {{ Enhancement }} For performance reasons, don't render extra information in
+- {{ Performance }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
   can opt into worse performance and better error messages.
   {pr}`4027`
+
+- {{ Enhancement }} It is now possible to pass environment variables to
+  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
+  `{env: {HOME: whatever_directory}}`.
+  {pr}`3870`
+
+- {{ Enhancement }} The `setStdin`, `setStdout` and `setStderr` APIs have been
+  improved with extra control and better performance.
+  {pr}`4035`
+
+### Python API
+
+- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
+  {pr}`2078`
+
+- {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
+  `FetchResponse.string()` for better compatibility with other requests APIs.
+  {pr}`4052`
+
+- {{ Breaking }} Changed the `FetchResponse` body getter methods to no longer
+  throw an `OSError` exception for 400 and above response status codes. Added
+  `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
+  {pr}`3986` {pr}`4053`
+
+### Python / JavaScript Foreign Function Interface
+
+- {{ Performance }} Improved performance of PyProxy creation.
+  {pr}`4096`
 
 - {{ Fix }} Fixed adding getters/setters to a `PyProxy` with
   `Object.defineProperty` and improved compliance with JavaScript rules around
   Proxy traps.
   {pr}`4033`
-
-- {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
-  files for WebAssembly (WASM) compatibility.
-  {pr}`4018`
-
-- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
-{pr}`4012`, {pr}`4011`
-
-- {{ Enhancement }} Make it possible to use the @example JSDoc directive.
-  {pr}`4009`
-
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
-  {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
-  {pr}`4056`, {pr}`4073`, {pr}`4094`
-
-- {{ Update }} The docker image now has node v20 instead of node v14.
-  {pr}`3819`
-
-- {{ Update }} Pyodide now runs Python 3.11.3.
-  {pr}`3741`
 
 - {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
   present also on `Task`s as well as `Future`s.
@@ -79,50 +91,45 @@ myst:
   new array with the result values from the iterable appended.
   {pr}`3904`
 
-- {{ Enhancement }} It is now possible to pass environment variables to
-  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
-  `{env: {HOME: whatever_directory}}`.
-  {pr}`3870`
+### Deployment
 
 - {{ API }} Changed the name of the default lockfile from `repodata.json` to
   `pyodide-lock.json`
   {pr}`3824`
 
-- {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
-  {pr}`2078`
+### Build System
 
-- {{ Breaking }} Changed the `FetchResponse` body getter methods to no longer
-  throw an `OSError` exception for 400 and above response status codes. Added
-  `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
-  {pr}`3986` {pr}`4053`
+- {{ Update }} The docker image now has node v20 instead of node v14.
+  {pr}`3819`
 
-- {{ Enhancement }} The `setStdin`, `setStdout` and `setStderr` APIs have been
-  improved with extra control and better performance.
-  {pr}`4035`
+- {{ Enhancement }} Added `check_wasm_magic_number` function to validate `.so`
+  files for WebAssembly (WASM) compatibility.
+  {pr}`4018`
 
 ### Packages
 
-- OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
-  {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
   Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`,
   CoolProp {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`.
-- Upgraded libmpfr to 4.2.0 {pr}`3756`.
-- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
-- Upgraded scikit-image to 0.21 {pr}`3874`
-- Upgraded scikit-learn to 1.3.0 {pr}`3976`
-- Upgraded pyodide-http to 0.2.1
-- Upgraded typing-extensions to 4.7.1 {pr}`4026`
-- Upgraded sourmash to 4.8.3 {pr}`4075`
 
-### CLI
+- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
+
+- OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
+  {pr}`3331`.
+
+### Pyodide CLI
 
 - {{ Enhancement }} `pyodide build-recipes` now accepts a `--metadata-files`
   option to install `*.whl.metadata` files as specified in
   [PEP 658](https://peps.python.org/pep-0658/).
   {pr}`3981`
+
+### Misc
+
+- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
+{pr}`4012`, {pr}`4011`
 
 ## Version 0.23.4
 
