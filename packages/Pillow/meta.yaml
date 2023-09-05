@@ -1,16 +1,13 @@
 package:
   name: Pillow
-  version: 9.1.1
+  version: 10.0.0
   top-level:
     - PIL
 source:
-  sha256: 7502539939b53d7565f3d11d87c78e7ec900d3c72945d4ee0e2f250d598309a0
-  url: https://files.pythonhosted.org/packages/43/6e/59853546226ee6200f9ba6e574d11604b60ad0754d2cbd1c8f3246b70418/Pillow-9.1.1.tar.gz
+  sha256: 9c82b5b3e043c7af0d95792d0d20ccf68f61a1fec6b3530e718b688422727396
+  url: https://files.pythonhosted.org/packages/0f/8b/2ebaf9adcf4260c00f842154865f8730cf745906aa5dd499141fb6063e26/Pillow-10.0.0.tar.gz
   patches:
     - patches/0001-Enable-image-formats.patch
-  extras:
-    - - src/setup.cfg
-      - ./setup.cfg
 build:
   # RELOCATABLE flag is required because if affects how emscripten build ports.
   cflags: |
@@ -21,6 +18,18 @@ build:
     -s USE_LIBJPEG=1
   ldflags: |
     -ljpeg
+  backend-flags: |
+    platform-guessing=disable
+    zlib=True
+    jpeg=True
+    freetype=True
+    webp=True
+    tiff=True
+    lcms=False
+    xcb=False
+    webpmux=False
+    jpeg2000=False
+    imagequant=False
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.

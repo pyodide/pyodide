@@ -4,7 +4,7 @@
 import ErrorStackParser from "error-stack-parser";
 import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
 
-import { createModule, initializeFileSystem } from "./module";
+import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
@@ -26,8 +26,6 @@ export type {
   PyBuffer as PyProxyBuffer,
   PyBufferView as PyBuffer,
 } from "./pyproxy.gen";
-
-export type Py2JsResult = any;
 
 export { version };
 
@@ -189,6 +187,7 @@ export type ConfigType = {
   args: string[];
   _node_mounts: string[];
   env: { [key: string]: string };
+  packages: string[];
 };
 
 /**
@@ -221,10 +220,10 @@ export async function loadPyodide(
     indexURL?: string;
 
     /**
-     * The file path where packages will be cached in `node.js`. If a package
-     * exists in `packageCacheDir` it is loaded from there, otherwise it is
-     * downloaded from the JsDelivr CDN and then cached into `packageCacheDir`.
-     * Only applies when running in node.js. Ignored in browsers.
+     * The file path where packages will be cached in node. If a package
+     * exists in ``packageCacheDir`` it is loaded from there, otherwise it is
+     * downloaded from the JsDelivr CDN and then cached into ``packageCacheDir``.
+     * Only applies when running in node; ignored in browsers.
      *
      * Default: same as indexURL
      */
@@ -250,23 +249,32 @@ export async function loadPyodide(
     fullStdLib?: boolean;
     /**
      * The URL from which to load the standard library ``python_stdlib.zip``
-     * file. This URL includes the most of the Python stadard library. Some
+     * file. This URL includes the most of the Python standard library. Some
      * stdlib modules were unvendored, and can be loaded separately
-     * with ``fullStdLib=true`` option or by their package name.
+     * with ``fullStdLib: true`` option or by their package name.
      * Default: ```${indexURL}/python_stdlib.zip```
      */
     stdLibURL?: string;
     /**
      * Override the standard input callback. Should ask the user for one line of
-     * input.
+     * input. The :js:func:`pyodide.setStdin` function is more flexible and
+     * should be preferred.
      */
     stdin?: () => string;
     /**
-     * Override the standard output callback.
+     * Override the standard output callback. The :js:func:`pyodide.setStdout`
+     * function is more flexible and should be preferred in most cases, but
+     * depending on the ``args`` passed to ``loadPyodide``, Pyodide may write to
+     * stdout on startup, which can only be controlled by passing a custom
+     * ``stdout`` function.
      */
     stdout?: (msg: string) => void;
     /**
-     * Override the standard error output callback.
+     * Override the standard error output callback. The
+     * :js:func:`pyodide.setStderr` function is more flexible and should be
+     * preferred in most cases, but depending on the ``args`` passed to
+     * ``loadPyodide``, Pyodide may write to stdout on startup, which can only
+     * be controlled by passing a custom ``stdout`` function.
      */
     stderr?: (msg: string) => void;
     /**
@@ -283,15 +291,23 @@ export async function loadPyodide(
     args?: string[];
     /**
      * Environment variables to pass to Python. This can be accessed inside of
-     * Python at runtime via `os.environ`. Certain environment variables change
+     * Python at runtime via :py:data:`os.environ`. Certain environment variables change
      * the way that Python loads:
      * https://docs.python.org/3.10/using/cmdline.html#environment-variables
-     * Default: {}
-     * If `env.HOME` is undefined, it will be set to a default value of
-     * `"/home/pyodide"`
+     * Default: ``{}``.
+     * If ``env.HOME`` is undefined, it will be set to a default value of
+     * ``"/home/pyodide"``
      */
     env?: { [key: string]: string };
-
+    /**
+     * A list of packages to load as Pyodide is initializing.
+     *
+     * This is the same as loading the packages with
+     * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
+     * ``packages`` option is more efficient because the packages are downloaded
+     * while Pyodide bootstraps itself.
+     */
+    packages?: string[];
     /**
      * @ignore
      */
@@ -310,11 +326,12 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    lockFileURL: indexURL! + "pyodide-lock.json",
+    lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     _node_mounts: [],
     env: {},
     packageCacheDir: indexURL,
+    packages: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (options.homedir) {
@@ -335,12 +352,18 @@ export async function loadPyodide(
   Module.print = config.stdout;
   Module.printErr = config.stderr;
   Module.arguments = config.args;
+
   const API: any = { config };
   Module.API = API;
 
+  preloadWasm(Module, indexURL);
   initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
+  let bootstrapFinalized: () => void;
+  API.bootstrapFinalizedPromise = new Promise<void>(
+    (r) => (bootstrapFinalized = r),
+  );
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
@@ -388,6 +411,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
 
   const pyodide = finalizeBootstrap(API, config);
+  bootstrapFinalized!();
 
   // runPython works starting here.
   if (!pyodide.version.includes("dev")) {

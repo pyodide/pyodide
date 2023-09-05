@@ -153,18 +153,14 @@ def test_pyproxy_refcount(selenium):
 
 
 def test_pyproxy_destroy(selenium):
-    selenium.run(
-        """
-        class Foo:
-          bar = 42
-          def get_value(self, value):
-            return value * 64
-        f = Foo()
-        """
-    )
-
     selenium.run_js(
         """
+        pyodide.runPython(`
+            class Foo:
+                def get_value(self, value):
+                    return value * 64
+            f = Foo()
+        `);
         let f = pyodide.globals.get('f');
         assert(()=> f.get_value(1) === 64);
         f.destroy();
@@ -383,7 +379,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         selenium.run_js("a.destroy(); self.a = undefined;")
 
 
-def test_pyproxy_mixins(selenium):
+def test_pyproxy_mixins1(selenium):
     result = selenium.run_js(
         """
         let [noimpls, awaitable, iterable, iterator, awaititerable, awaititerator] = pyodide.runPython(`
@@ -489,9 +485,10 @@ def test_pyproxy_mixins2(selenium):
     )
 
 
-def test_pyproxy_mixins3(selenium):
+def test_pyproxy_mixins31(selenium):
     selenium.run_js(
         """
+        "use strict";
         let [Test, t] = pyodide.runPython(`
             class Test: pass
             from pyodide.ffi import to_js
@@ -512,18 +509,87 @@ def test_pyproxy_mixins3(selenium):
         pyodide.runPython("assert Test.prototype == 7");
         pyodide.runPython("assert Test.name == 7");
         pyodide.runPython("assert Test.length == 7");
-        delete Test.prototype;
+        // prototype cannot be removed once added because it is nonconfigurable...
+        assertThrows(() => delete Test.prototype, "TypeError", "");
         delete Test.name;
         delete Test.length;
-        pyodide.runPython(`assert not hasattr(Test, "prototype")`);
+        pyodide.runPython(`assert Test.prototype == 7`);
         pyodide.runPython(`assert not hasattr(Test, "name")`);
         pyodide.runPython(`assert not hasattr(Test, "length")`);
 
-        assertThrows( () => Test.$$ = 7, "TypeError", /^Cannot set read only field/);
-        assertThrows( () => delete Test.$$, "TypeError", /^Cannot delete read only field/);
+        Test.$a = 7;
+        Object.defineProperty(Test, "a", {
+            get(){ return Test.$a + 1; },
+            set(v) {
+                Test.$a = v;
+            }
+        });
+
+        pyodide.runPython("assert Test.a == 7")
+        assert(() => Test.a === 8);
+        Test.a = 9;
+        assert(() => Test.a === 10);
+        pyodide.runPython("assert Test.a == 9")
+        assertThrows(() => delete Test.a, "TypeError", "");
+
+        Object.defineProperty(Test, "b", {
+            get(){ return Test.$a + 2; },
+        });
+        assert(() => Test.b === 11);
+        assertThrows(() => Test.b = 7,"TypeError", "");
+        assertThrows(() => delete Test.b, "TypeError", "");
         Test.destroy();
         t.destroy();
         """
+    )
+
+
+@pytest.mark.parametrize("configurable", [False, True])
+@pytest.mark.parametrize("writable", [False, True])
+def test_pyproxy_mixins32(selenium, configurable, writable):
+    # Probably should get rid of this...
+    match selenium.browser:
+        case "node" | "chrome":
+            template = "'{}' on proxy: trap returned falsish for property 'x'"
+            setText = template.format("set")
+            deleteText = template.format("deleteProperty")
+        case "firefox":
+            template = "proxy {} handler returned false"
+            setText = template.format("set")
+            deleteText = template.format("deleteProperty")
+        case "safari":
+            setText = "Proxy object's 'set' trap returned falsy value for property 'x'"
+            deleteText = "Unable to delete property."
+
+    selenium.run_js(
+        f"""
+        "use strict";
+        const configurable = !!{int(configurable)};
+        const writable = !!{int(writable)};
+        """
+        """
+        const d = pyodide.runPython("{}");
+        Object.defineProperty(d, "x", {
+            value: 9,
+            configurable,
+            writable,
+        });
+        assert(() => d.x === 9);
+        if(writable) {
+            d.x = 10;
+            assert(() => d.x === 10);
+        } else {
+            assertThrows(() => d.x = 10, "TypeError", "%s");
+        }
+        if(configurable) {
+            delete d.x;
+            assert(() => d.x === undefined);
+        } else {
+            assertThrows(() => delete d.x, "TypeError", "%s");
+        }
+        d.destroy();
+        """
+        % (setText, deleteText)
     )
 
 
@@ -578,27 +644,35 @@ def test_pyproxy_mixins42(selenium):
 
 
 def test_pyproxy_mixins5(selenium):
-    selenium.run_js(
-        """
-        [Test, t] = pyodide.runPython(`
-            class Test:
-                def __len__(self):
-                    return 9
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => !("length" in Test));
-        assert(() => t.length === 9);
-        assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-        t.length = 10;
-        assert(() => t.$length === 10);
-        let t__len__ = t.__len__;
-        assert(() => t__len__() === 9);
-        t__len__.destroy();
-        Test.destroy();
-        t.destroy();
-        """
-    )
+    try:
+        r = selenium.run_js(
+            """
+            "use strict";
+            const [Test, t] = pyodide.runPython(`
+                class Test:
+                    def __len__(self):
+                        return 9
+                from pyodide.ffi import to_js
+                to_js([Test, Test()])
+            `);
+            assert(() => !("length" in Test));
+            assert(() => t.length === 9);
+            assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
+            assertThrows(() => {t.length = 10}, "TypeError", "");
+            assert(() => t.length === 9);
+
+            // For some reason, this is the normal behavior for a JS getter:
+            // delete just does nothing...
+            delete t.length;
+            assert(() => t.length === 9);
+
+            Test.destroy();
+            t.destroy();
+            """
+        )
+        print(r)
+    finally:
+        print(selenium.logs)
 
 
 def test_pyproxy_mixins6(selenium):
@@ -775,50 +849,55 @@ def test_pyproxy_implicit_copy(selenium):
 def test_errors(selenium):
     selenium.run_js(
         r"""
-        let t = pyodide.runPython(`
-            from pyodide.ffi import to_js
-            def te(self, *args, **kwargs):
-                raise Exception(repr(args))
-            class Temp:
-                __getattr__ = te
-                __setattr__ = te
-                __delattr__ = te
-                __dir__ = te
-                __call__ = te
-                __getitem__ = te
-                __setitem__ = te
-                __delitem__ = te
-                __iter__ = te
-                __len__ = te
-                __contains__ = te
-                __await__ = te
-                __repr__ = te
-            to_js(Temp())
-            Temp()
-        `);
-        assertThrows(() => t.x, "PythonError", "");
+        const origDebug = pyodide.setDebug(true);
         try {
-            t.x;
-        } catch(e){
-            assert(() => e instanceof pyodide.ffi.PythonError);
+            const t = pyodide.runPython(`
+                from pyodide.ffi import to_js
+                def te(self, *args, **kwargs):
+                    raise Exception(repr(args))
+                class Temp:
+                    __getattr__ = te
+                    __setattr__ = te
+                    __delattr__ = te
+                    __dir__ = te
+                    __call__ = te
+                    __getitem__ = te
+                    __setitem__ = te
+                    __delitem__ = te
+                    __iter__ = te
+                    __len__ = te
+                    __contains__ = te
+                    __await__ = te
+                    __repr__ = te
+                to_js(Temp())
+                Temp()
+            `);
+            assertThrows(() => t.x, "PythonError", "");
+            try {
+                t.x;
+            } catch(e){
+                assert(() => e instanceof pyodide.ffi.PythonError);
+            }
+            assertThrows(() => t.x = 2, "PythonError", "");
+            assertThrows(() => delete t.x, "PythonError", "");
+            assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
+            assertThrows(() => t(), "PythonError", "");
+            assertThrows(() => t.get(1), "PythonError", "");
+            assertThrows(() => t.set(1, 2), "PythonError", "");
+            assertThrows(() => t.delete(1), "PythonError", "");
+            assertThrows(() => t.has(1), "PythonError", "");
+            assertThrows(() => t.length, "PythonError", "");
+            assertThrows(() => t.toString(), "PythonError", "");
+            assertThrows(() => Array.from(t), "PythonError", "");
+            await assertThrowsAsync(async () => await t, "PythonError", "");
+            t.destroy();
+            assertThrows(() => t.type, "Error",
+                "Object has already been destroyed\n" +
+                'The object was of type "Temp" and an error was raised when trying to generate its repr'
+            );
+        } finally {
+            pyodide.setDebug(origDebug);
         }
-        assertThrows(() => t.x = 2, "PythonError", "");
-        assertThrows(() => delete t.x, "PythonError", "");
-        assertThrows(() => Object.getOwnPropertyNames(t), "PythonError", "");
-        assertThrows(() => t(), "PythonError", "");
-        assertThrows(() => t.get(1), "PythonError", "");
-        assertThrows(() => t.set(1, 2), "PythonError", "");
-        assertThrows(() => t.delete(1), "PythonError", "");
-        assertThrows(() => t.has(1), "PythonError", "");
-        assertThrows(() => t.length, "PythonError", "");
-        assertThrows(() => t.toString(), "PythonError", "");
-        assertThrows(() => Array.from(t), "PythonError", "");
-        await assertThrowsAsync(async () => await t, "PythonError", "");
-        t.destroy();
-        assertThrows(() => t.type, "Error",
-            "Object has already been destroyed\n" +
-            'The object was of type "Temp" and an error was raised when trying to generate its repr'
-        );
         """
     )
 
@@ -1559,36 +1638,34 @@ async def test_async_gen_throw(selenium):
 def test_roundtrip_no_destroy(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import create_proxy
-
-    def isalive(p):
-        return getattr(p, "$$").ptr != 0
+    from pyodide_js._api import pyproxyIsAlive as isalive
 
     p = create_proxy({1: 2})
     run_js("(x) => x")(p)
     assert isalive(p)
     run_js(
         """
-    (p) => {
-        p.destroy({destroyRoundtrip : false});
-    }
-    """
+        (p) => {
+            p.destroy({destroyRoundtrip : false});
+        }
+        """
     )(p)
     assert isalive(p)
     run_js(
         """
-    (p) => {
-        p.destroy({destroyRoundtrip : true});
-    }
-    """
+        (p) => {
+            p.destroy({destroyRoundtrip : true});
+        }
+        """
     )(p)
     assert not isalive(p)
     p = create_proxy({1: 2})
     run_js(
         """
-    (p) => {
-        p.destroy();
-    }
-    """
+        (p) => {
+            p.destroy();
+        }
+        """
     )(p)
     assert not isalive(p)
 

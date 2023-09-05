@@ -1,7 +1,4 @@
-declare var Module: any;
-declare var Tests: any;
-declare var API: any;
-declare var DEBUG: boolean;
+import "./constants";
 
 import {
   IN_NODE,
@@ -9,6 +6,7 @@ import {
   loadBinaryFile,
   initNodeModules,
   resolvePath,
+  base16ToBase64,
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
@@ -63,6 +61,7 @@ async function initializePackageIndex(lockFileURL: string) {
     API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
+  await loadPackage(API.config.packages, { messageCallback() {} });
 }
 
 API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
@@ -247,9 +246,8 @@ async function downloadPackage(
     }
     file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, installBaseUrl);
-    file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.lockfile_packages[name].sha256,
-    );
+    file_sub_resource_hash =
+      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
   } else {
     uri = channel;
     file_sub_resource_hash = undefined;
@@ -345,14 +343,16 @@ async function downloadAndInstall(
 
   try {
     const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
-    const installPromisDependencies = pkg.depends.map((dependency) => {
+    const installPromiseDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
         : Promise.resolve();
     });
+    // Can't install until bootstrap is finalized.
+    await API.bootstrapFinalizedPromise;
 
     // wait until all dependencies are installed
-    await Promise.all(installPromisDependencies);
+    await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
     loaded.add(pkg.name);
@@ -407,7 +407,6 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
- * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackage(
@@ -419,16 +418,7 @@ export async function loadPackage(
   } = {
     checkIntegrity: true,
   },
-  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  if (typeof options === "function") {
-    cbDeprecationWarnOnce();
-    options = {
-      messageCallback: options,
-      errorCallback: errorCallbackDeprecated,
-    };
-  }
-
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {

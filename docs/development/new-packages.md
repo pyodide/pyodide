@@ -35,6 +35,8 @@ is a Python package without C extensions):
 If however the package has C extensions or its code requires patching, then
 continue to the next steps.
 
+If you are on Windows, you will need to use WSL 2.
+
 ```{note}
 To determine if a package has C extensions, check if its `setup.py` contains
 any compilation commands.
@@ -76,7 +78,7 @@ the directory after you exit the container.
 You should install `pyodide-build`:
 
 ```bash
-pip install -e pyodide-build
+pip install -e ./pyodide-build
 ```
 
 If you want to build the package, you will need to build Python which you can do

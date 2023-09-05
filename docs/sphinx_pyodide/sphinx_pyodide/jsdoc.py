@@ -575,6 +575,7 @@ class PyodideAnalyzer:
             if doclet.name in FFI_FIELDS and not has_tag(doclet, "alias"):
                 items["pyodide.ffi"].append(doclet)
             else:
+                doclet.is_static = False
                 items["pyodide"].append(doclet)
 
         for cls in pyproxy_subclasses:
