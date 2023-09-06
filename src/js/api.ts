@@ -38,12 +38,6 @@ API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
 };
 
-const positionalCallbackWarnOnce = makeWarnOnce(
-  "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackageFromImports " +
-    "is deprecated and will be removed in v0.24. Instead use:\n" +
-    "   { messageCallback : callbackFunc }",
-);
-
 /** @private */
 export type NativeFS = {
   syncfs: () => Promise<void>;
@@ -162,7 +156,6 @@ export class PyodideAPI {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @param errorCallbackDeprecated @ignore
    * @async
    */
   static async loadPackagesFromImports(
@@ -174,16 +167,7 @@ export class PyodideAPI {
     } = {
       checkIntegrity: true,
     },
-    errorCallbackDeprecated?: (message: string) => void,
   ) {
-    if (typeof options === "function") {
-      positionalCallbackWarnOnce();
-      options = {
-        messageCallback: options,
-        errorCallback: errorCallbackDeprecated,
-      };
-    }
-
     let pyimports = API.pyodide_code.find_imports(code);
     let imports;
     try {

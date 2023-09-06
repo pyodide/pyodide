@@ -1,13 +1,13 @@
 package:
   name: setuptools
-  version: 67.6.1
+  version: 68.1.2
   top-level:
     - _distutils_hack
     - pkg_resources
     - setuptools
 source:
-  url: https://files.pythonhosted.org/packages/0b/fc/8781442def77b0aa22f63f266d4dadd486ebc0c5371d6290caf4320da4b7/setuptools-67.6.1-py3-none-any.whl
-  sha256: e728ca814a823bf7bf60162daf9db95b93d532948c4c0bea762ce62f60189078
+  url: https://files.pythonhosted.org/packages/4f/ab/0bcfebdfc3bfa8554b2b2c97a555569c4c1ebc74ea288741ea8326c51906/setuptools-68.1.2-py3-none-any.whl
+  sha256: 3d8083eed2d13afc9426f227b24fd1659489ec107c0e86cec2ffdde5c92e790b
 build:
   post: |
     find $WHEELDIR -name '*.exe' -delete

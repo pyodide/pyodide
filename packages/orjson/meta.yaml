@@ -1,0 +1,20 @@
+package:
+  name: orjson
+  version: 3.9.2
+  top-level:
+    - orjson
+source:
+  url: https://files.pythonhosted.org/packages/30/a4/96bcb52da0de9ccfcd99a60719b995c9b9c3aaa3a70701f0790ce856c10d/orjson-3.9.2.tar.gz
+  sha256: 24257c8f641979bf25ecd3e27251b5cc194cdd3a6e96004aac8446f5e63d9664
+requirements:
+  executable:
+    - rustup
+build:
+  script: export RUSTFLAGS="-Z link-native-libraries=yes"
+about:
+  home: https://github.com/ijl/orjson
+  PyPI: https://pypi.org/project/orjson
+  summary:
+    Fast, correct Python JSON library supporting dataclasses, datetimes, and
+    numpy
+  license: Apache-2.0 OR MIT

@@ -1,5 +1,6 @@
 package:
-  name: tblib
+  # use original tblib when https://github.com/ionelmc/python-tblib/pull/66 is merged
+  name: pyodide-tblib
   version: 1.7.0
   tag:
     - core

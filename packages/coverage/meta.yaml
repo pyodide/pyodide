@@ -1,11 +1,11 @@
 package:
   name: coverage
-  version: 7.2.2
+  version: 7.3.0
   top-level:
     - coverage
 source:
-  url: https://files.pythonhosted.org/packages/54/8a/db9d9cd24f96bb872eea151bb0d5c8cb6a96825b70a0cfaf07bceab2884d/coverage-7.2.2.tar.gz
-  sha256: 36dd42da34fe94ed98c39887b86db9d06777b1c8f860520e21126a75507024f2
+  url: https://files.pythonhosted.org/packages/4e/87/c0163d39ac70cab62ebcaee164c988215cd312919a78940c2251a2fcfabb/coverage-7.3.0.tar.gz
+  sha256: 49dbb19cdcafc130f597d9e04a29d0a032ceedf729e41b181f51cd170e6ee865
 requirements:
   run:
     - sqlite3

@@ -1,7 +1,8 @@
 package:
   name: libtiff
   version: 4.4.0
-
+  tag:
+    - library
 source:
   # TODO: The root certificate of `download.osgeo.org` has been expired and requires the latest version (2022.6.15) of certifi.
   # url: https://download.osgeo.org/libtiff/tiff-4.4.0.tar.gz

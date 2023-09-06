@@ -27,8 +27,6 @@ export type {
   PyBufferView as PyBuffer,
 } from "./pyproxy.gen";
 
-export type Py2JsResult = any;
-
 export { version };
 
 /**

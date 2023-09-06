@@ -103,6 +103,20 @@ JsRef
 hiwire_incref(JsRef idval);
 
 /**
+ * Increase the reference count on an object and return a JsRef which is unique
+ * to the object.
+ *
+ * I.e., if `Hiwire.get_value(id1) === Hiwire.get_value(id2)` then
+ * hiwire_incref_deduplicate(id1) == hiwire_incref_deduplicate(id2).
+ *
+ * This is used for the id for JsProxies so that equality checks work correctly.
+ *
+ * Returns: The new reference
+ */
+JsRef
+hiwire_incref_deduplicate(JsRef idval);
+
+/**
  * Decrease the reference count on an object.
  */
 void
