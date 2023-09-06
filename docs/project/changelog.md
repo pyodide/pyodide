@@ -39,10 +39,6 @@ myst:
   `linecache` module to ensure that source lines can appear in tracebacks.
   {pr}`3993`
 
-- {{ Enhancement }} In pyodide build, automatically skip building package dependencies that are already included
-  in the pyodide distribution.
-  {pr}`4058`
-
 - {{ Performance }} For performance reasons, don't render extra information in
   PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
   can opt into worse performance and better error messages.
@@ -109,6 +105,10 @@ myst:
 - {{ Enhancement }} Added `check_wasm_magic_number` function to validate `.so`
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
+
+- {{ Enhancement }} In pyodide build, automatically skip building package dependencies that are already included
+  in the pyodide distribution.
+  {pr}`4058`
 
 ### Packages
 
