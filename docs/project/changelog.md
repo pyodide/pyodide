@@ -106,6 +106,10 @@ myst:
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
 
+- {{ Enhancement }} In pyodide build, automatically skip building package dependencies that are already included
+  in the pyodide distribution.
+  {pr}`4058`
+
 ### Packages
 
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
