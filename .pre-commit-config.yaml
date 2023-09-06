@@ -85,8 +85,7 @@ repos:
           - resolvelib
           - rich
           - auditwheel_emscripten
-          # Revert once there is a release
-          - git+https://github.com/rth/pyodide-lock.git@add-check-wheel-filename
+          - pyodide-lock==0.1.0a2
           - micropip
       - id: mypy
         name: mypy-tests
