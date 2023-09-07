@@ -1,13 +1,13 @@
 package:
   name: numpy
-  version: 1.24.3
+  version: 1.25.2
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/2c/d4/590ae7df5044465cc9fa2db152ae12468694d62d952b1528ecff328ef7fc/numpy-1.24.3.tar.gz
-  sha256: ab344f1bf21f140adab8e47fdbc7c35a477dc01408791f8ba00d018dd0bc5155
+  url: https://files.pythonhosted.org/packages/a0/41/8f53eff8e969dd8576ddfb45e7ed315407d27c7518ae49418be8ed532b07/numpy-1.25.2.tar.gz
+  sha256: fd608e19c8d7c55021dffd43bfe5492fab8cc105cc8986f813f8c3c048b38760
 
 build:
   backend-flags: --disable-optimization
