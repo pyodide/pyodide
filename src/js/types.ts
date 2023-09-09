@@ -89,7 +89,7 @@ declare global {
 
   export const _pyproxy_getflags: (ptr: number) => number;
   export const __pyproxy_type: (ptr: number) => number;
-  export const __pyproxy_repr: (ptr: number) => number;
+  export const __pyproxy_repr: (ptr: number) => string;
   export const __pyproxy_getitem: (obj: number, item: number) => number;
   export const __pyproxy_setitem: (
     ptr: number,
@@ -148,12 +148,12 @@ declare global {
   export const _buffer_struct_size: number;
   export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;
   export const __pyproxy_apply: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-  ) => number;
+    ptr: number,
+    jsargs: any[],
+    num_pos_args: number,
+    kwargs_names: string[],
+    num_kwargs: number,
+  ) => any;
   export const __iscoroutinefunction: (a: number) => number;
 }
 

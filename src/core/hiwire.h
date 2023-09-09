@@ -9,17 +9,19 @@
 #define hiwire_incref wrapped_hiwire_incref
 
 typedef HwRef JsRef;
+typedef __externref_t JsVal;
 
 // Error handling will want to see JsRef.
 #include "error_handling.h"
 
 // Special JsRefs for singleton constants.
-// (These must be even because the least significance bit is set to 0 for
-// singleton constants.)
 extern const JsRef Js_undefined;
 extern const JsRef Js_true;
 extern const JsRef Js_false;
 extern const JsRef Js_null;
+extern const JsRef Js_error;
+
+#define JsVal_error_token hiwire_get(Js_error)
 
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;

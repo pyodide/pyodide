@@ -3,11 +3,13 @@
 #include "error_handling.h"
 #include <emscripten.h>
 
+
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
+#include "jslib.h"
 #include "pyproxy.h"
 #include "python2js.h"
 
@@ -309,19 +311,25 @@ finally:
 //  logic is very boilerplatey, so there isn't much surprising code hidden
 //  somewhere else.
 
-EMSCRIPTEN_KEEPALIVE JsRef
+EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_repr(PyObject* pyobj)
 {
   PyObject* repr_py = NULL;
-  JsRef repr_js = NULL;
+  JsRef repr_ref = NULL;
+  JsVal repr_val = JsVal_error_token;
 
   repr_py = PyObject_Repr(pyobj);
   FAIL_IF_NULL(repr_py);
-  repr_js = python2js(repr_py);
+  repr_ref = python2js(repr_py);
+  if (repr_ref == NULL) {
+    repr_ref = Js_error;
+  }
+  repr_val = hiwire_get(repr_ref);
+  hiwire_decref(repr_ref);
 
 finally:
   Py_CLEAR(repr_py);
-  return repr_js;
+  return repr_val;
 }
 
 /**
@@ -705,16 +713,16 @@ finally:
  *
  *   Returns: The return value translated to JavaScript.
  */
-EMSCRIPTEN_KEEPALIVE JsRef
+EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_apply(PyObject* callable,
-               JsRef jsargs,
+               JsVal jsargs,
                size_t numposargs,
-               JsRef jskwnames,
+               JsVal jskwnames,
                size_t numkwargs)
 {
+  bool success = false;
   size_t total_args = numposargs + numkwargs;
   size_t last_converted_arg = total_args;
-  JsRef jsitem = NULL;
   PyObject* pyargs_array[total_args + 1];
   PyObject** pyargs = pyargs_array;
   pyargs++; // leave a space for self argument in case callable is a bound
@@ -722,28 +730,27 @@ _pyproxy_apply(PyObject* callable,
   PyObject* pykwnames = NULL;
   PyObject* pyresult = NULL;
   JsRef idresult = NULL;
+  JsVal result;
 
   // Put both arguments and keyword arguments into pyargs
   for (Py_ssize_t i = 0; i < total_args; ++i) {
-    jsitem = JsArray_Get(jsargs, i);
+    JsVal jsitem = JsLib_Array_Get(jsargs, i);
     // pyitem is moved into pyargs so we don't need to clear it later.
-    PyObject* pyitem = js2python(jsitem);
+    PyObject* pyitem = js2python_val(jsitem);
     if (pyitem == NULL) {
       last_converted_arg = i;
       FAIL();
     }
     pyargs[i] = pyitem; // pyitem is moved into pyargs.
-    hiwire_CLEAR(jsitem);
   }
   if (numkwargs > 0) {
     // Put names of keyword arguments into a tuple
     pykwnames = PyTuple_New(numkwargs);
     for (Py_ssize_t i = 0; i < numkwargs; i++) {
-      jsitem = JsArray_Get(jskwnames, i);
+      JsVal jsitem = JsLib_Array_Get(jskwnames, i);
       // pyitem is moved into pykwargs so we don't need to clear it later.
-      PyObject* pyitem = js2python(jsitem);
+      PyObject* pyitem = js2python_val(jsitem);
       PyTuple_SET_ITEM(pykwnames, i, pyitem);
-      hiwire_CLEAR(jsitem);
     }
   }
   // Tell callee that we left space for a self argument
@@ -752,9 +759,13 @@ _pyproxy_apply(PyObject* callable,
   FAIL_IF_NULL(pyresult);
   idresult = python2js(pyresult);
   FAIL_IF_NULL(idresult);
+  result = hiwire_get(idresult);
 
+  success = true;
 finally:
-  hiwire_CLEAR(jsitem);
+  if (!success) {
+    result = JsVal_error_token;
+  }
   // If we failed to convert one of the arguments, then pyargs is partially
   // uninitialized. Only clear the part that actually has stuff in it.
   for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
@@ -762,7 +773,8 @@ finally:
   }
   Py_CLEAR(pyresult);
   Py_CLEAR(pykwnames);
-  return idresult;
+  hiwire_CLEAR(idresult);
+  return result;
 }
 
 EMSCRIPTEN_KEEPALIVE bool

@@ -17,6 +17,7 @@
 declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
+declare var errorToken: any;
 
 import { TypedArray } from "types";
 import { warnOnce } from "pyodide_util";
@@ -476,7 +477,7 @@ Module.pyproxy_destroy = function (
 
 Module.callPyObjectKwargs = function (
   ptrobj: number,
-  jsargs: any,
+  jsargs: any[],
   kwargs: any,
 ) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
@@ -487,30 +488,24 @@ Module.callPyObjectKwargs = function (
   let num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  let idargs = Hiwire.new_value(jsargs);
-  let idkwnames = Hiwire.new_value(kwargs_names);
-  let idresult;
+  let result;
   try {
     Py_ENTER();
-    idresult = __pyproxy_apply(
+    result = __pyproxy_apply(
       ptrobj,
-      idargs,
+      jsargs,
       num_pos_args,
-      idkwnames,
+      kwargs_names,
       num_kwargs,
     );
     Py_EXIT();
   } catch (e) {
     API.maybe_fatal_error(e);
     return;
-  } finally {
-    Hiwire.decref(idargs);
-    Hiwire.decref(idkwnames);
   }
-  if (idresult === 0) {
+  if (result === errorToken) {
     _pythonexc2js();
   }
-  let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
@@ -578,18 +573,18 @@ export class PyProxy {
   }
   toString(): string {
     let ptrobj = _getPtr(this);
-    let jsref_repr;
+    let result;
     try {
       Py_ENTER();
-      jsref_repr = __pyproxy_repr(ptrobj);
+      result = __pyproxy_repr(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (jsref_repr === 0) {
+    if (result === errorToken) {
       _pythonexc2js();
     }
-    return Hiwire.pop_value(jsref_repr);
+    return result;
   }
   /**
    * Destroy the :js:class:`~pyodide.ffi.PyProxy`. This will release the memory. Any further attempt

@@ -84,6 +84,7 @@ dist/libpyodide.a: \
 	src/core/jsproxy.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
+	src/core/jslib.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
 	src/core/pyversion.o

@@ -20,23 +20,28 @@ int tracerefs = 0;
 // always raise an error.
 const JsRef Js_novalue = ((JsRef)(2147483644));
 
+#define HIWIRE_INIT_CONST(val) HIWIRE_INIT_CONST_VAR(val, val)
+
+#undef true
+#undef false
 #define HIWIRE_INIT_CONSTS()                                                   \
   HIWIRE_INIT_CONST(undefined)                                                 \
   HIWIRE_INIT_CONST(null)                                                      \
   HIWIRE_INIT_CONST(true)                                                      \
-  HIWIRE_INIT_CONST(false)
+  HIWIRE_INIT_CONST(false)                                                     \
+  HIWIRE_INIT_CONST_VAR(error, errorToken)
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
 // C definition:
-#define HIWIRE_INIT_CONST(js_value)                                            \
-  EMSCRIPTEN_KEEPALIVE const JsRef Js_##js_value;
+#define HIWIRE_INIT_CONST_VAR(name, value) EMSCRIPTEN_KEEPALIVE const JsRef Js_##name;
+
 HIWIRE_INIT_CONSTS();
 
-#undef HIWIRE_INIT_CONST
+#undef HIWIRE_INIT_CONST_VAR
 
-#define HIWIRE_INIT_CONST(js_value)                                            \
-  HEAP32[_Js_##js_value / 4] = _hiwire_intern(js_value);
+#define HIWIRE_INIT_CONST_VAR(name, value)                                            \
+  HEAP32[_Js_##name / 4] = _hiwire_intern(value);
 
 EM_JS_NUM(int, hiwire_init_js, (void), {
   HIWIRE_INIT_CONSTS();
@@ -243,7 +248,7 @@ static JsRef
 convert_va_args(va_list args)
 {
   JsRef idargs = JsArray_New();
-  while (true) {
+  while (1) {
     JsRef idarg = va_arg(args, JsRef);
     if (idarg == NULL) {
       break;
