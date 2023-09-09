@@ -9,6 +9,7 @@ CXX=em++
 
 
 all: check \
+	check-emcc \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
@@ -267,6 +268,10 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+
+
+check-emcc: emsdk/emsdk/.complete
+	python3 tools/check_ccache.py
 
 
 debug :
