@@ -35,21 +35,21 @@ HIWIRE_INIT_CONSTS();
 
 EM_JS_NUM(int, hiwire_init_js, (void), {
   HIWIRE_INIT_CONSTS();
+  // clang-format off
   Hiwire.new_value = _hiwire_new;
   Hiwire.new_stack = _hiwire_new;
   Hiwire.intern_object = _hiwire_intern;
   Hiwire.num_keys = _hiwire_num_refs;
-  // clang-format off
   Hiwire.stack_length = () => 0;
-  // clang-format on
   Hiwire.get_value = _hiwire_get;
-  Hiwire.incref = (x) = >
+  Hiwire.incref = (x) =>
   {
     _hiwire_incref(x);
     return x;
   };
   Hiwire.decref = _hiwire_decref;
   Hiwire.pop_value = _hiwire_pop;
+  // clang-format on
 
   // This is factored out primarily for testing purposes.
   Hiwire.isPromise = function(obj)
