@@ -2,7 +2,6 @@
 #define PYODIDE_HIWIRE_H
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "hiwire.h"
 #include "hiwire/hiwire.h"
 #include "stdalign.h"
 #include "types.h"
