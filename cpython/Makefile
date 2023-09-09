@@ -82,7 +82,7 @@ $(INSTALL)/lib/libffi.a :
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
 
-$(INSTALL)/lib/hiwire.a :
+$(INSTALL)/lib/libhiwire.a :
 	rm -rf $(HIWIREBUILD)
 	mkdir $(HIWIREBUILD)
 	(\
