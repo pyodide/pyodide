@@ -17,20 +17,20 @@
 const JsRef Js_novalue = ((JsRef)(2147483644));
 
 #define HIWIRE_INIT_CONSTS()                                                   \
-  HIWIRE_INIT_CONST(UNDEFINED, undefined)                                      \
-  HIWIRE_INIT_CONST(JSNULL, null)                                              \
-  HIWIRE_INIT_CONST(TRUE, true)                                                \
-  HIWIRE_INIT_CONST(FALSE, false)
+  HIWIRE_INIT_CONST(undefined)                                                 \
+  HIWIRE_INIT_CONST(null)                                                      \
+  HIWIRE_INIT_CONST(true)                                                      \
+  HIWIRE_INIT_CONST(false)
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
 // C definition:
-#define HIWIRE_INIT_CONST(hiwire_attr, js_value) const JsRef Js_##js_value;
+#define HIWIRE_INIT_CONST(js_value) const JsRef Js_##js_value;
 HIWIRE_INIT_CONSTS();
 
 #undef HIWIRE_INIT_CONST
 
-#define HIWIRE_INIT_CONST(hiwire_attr, js_value)                               \
+#define HIWIRE_INIT_CONST(js_value)                                            \
   HEAP32[_Js_##js_value / 4] = _hiwire_intern(js_value);
 
 EM_JS_NUM(int, hiwire_init_js, (void), {
