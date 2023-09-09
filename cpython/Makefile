@@ -93,7 +93,8 @@ $(INSTALL)/lib/libhiwire.a :
 		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
-	cp -r $(HIWIREBUILD)/dist/* $(INSTALL)
+	cp -r $(HIWIREBUILD)/dist/lib $(INSTALL)/
+	cp -r $(HIWIREBUILD)/dist/include $(INSTALL)/include/hiwire
 
 $(BUILD)/Makefile: $(BUILD)/.patched
 	# --enable-big-digits=30 :
