@@ -3,6 +3,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "hiwire/hiwire.h"
 #include "Python.h"
+#include "hiwire.h"
 #include "stdalign.h"
 #include "types.h"
 #define WARN_UNUSED __attribute__((warn_unused_result))
