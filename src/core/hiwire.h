@@ -1,7 +1,7 @@
-#ifndef HIWIRE_H
-// #define HIWIRE_H
+#ifndef PYODIDE_HIWIRE_H
+#define PYODIDE_HIWIRE_H
 #define PY_SSIZE_T_CLEAN
-#include "../../../hiwire/dist/include/hiwire.h"
+#include "hiwire.h"
 #include "Python.h"
 #include "stdalign.h"
 #include "types.h"
