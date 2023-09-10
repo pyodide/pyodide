@@ -855,6 +855,19 @@ EM_JS(int, normalizeReservedWords, (int word), {
   // clang-format on
 });
 
+EM_JS_REF(JsRef, JsObject_Get, (JsRef idobj, JsRef idkey), {
+  const jsobj = Hiwire.get_value(idobj);
+  const key = Hiwire.get_value(idkey);
+  const jskey = normalizeReservedWords(key);
+  const result = jsobj[jskey];
+  // clang-format off
+  if (result === undefined && !(jskey in jsobj)) {
+    // clang-format on
+    return ERROR_REF;
+  }
+  return Hiwire.new_value(result);
+});
+
 EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
   const jsobj = Hiwire.get_value(idobj);
   const jskey = normalizeReservedWords(UTF8ToString(ptrkey));

@@ -329,24 +329,26 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   bool success = false;
   JsRef idresult = 0;
+  JsRef jskey = NULL;
   // result:
   PyObject* pyresult = NULL;
 
-  const char* key = PyUnicode_AsUTF8(attr);
-  FAIL_IF_NULL(key);
-  if (strcmp(key, "keys") == 0 && JsArray_Check(JsProxy_REF(self))) {
+  const char* ckey = PyUnicode_AsUTF8(attr);
+  FAIL_IF_NULL(ckey);
+  if (strcmp(ckey, "keys") == 0 && JsArray_Check(JsProxy_REF(self))) {
     // Sometimes Python APIs test for the existence of a "keys" function
     // to decide whether something should be treated like a dict.
     // This mixes badly with the javascript Array.keys API, so pretend that it
     // doesn't exist. (Array.keys isn't very useful anyways so hopefully this
     // won't confuse too many people...)
-    PyErr_SetString(PyExc_AttributeError, key);
+    PyErr_SetString(PyExc_AttributeError, ckey);
     FAIL();
   }
+  jskey = python2js(attr);
 
-  idresult = JsObject_GetString(JsProxy_REF(self), key);
+  idresult = JsObject_Get(JsProxy_REF(self), jskey);
   if (idresult == NULL) {
-    PyErr_SetString(PyExc_AttributeError, key);
+    PyErr_SetString(PyExc_AttributeError, ckey);
     FAIL();
   }
 
@@ -360,6 +362,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   success = true;
 finally:
   hiwire_decref(idresult);
+  hiwire_CLEAR(jskey);
   if (!success) {
     Py_CLEAR(pyresult);
   }

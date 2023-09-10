@@ -1,0 +1,95 @@
+From c98c13edb1de1846e0feb1282f5999995a4b3efe Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 9 Sep 2023 15:09:03 -0700
+Subject: [PATCH] Add an extra field to strings to intern js conversions
+
+---
+ Include/cpython/unicodeobject.h        |  1 +
+ Include/internal/pycore_runtime_init.h |  1 +
+ Objects/unicodeobject.c                | 18 +++++++++++++++++-
+ 3 files changed, 19 insertions(+), 1 deletion(-)
+
+diff --git a/Include/cpython/unicodeobject.h b/Include/cpython/unicodeobject.h
+index 84307d1885..9e5460c7f3 100644
+--- a/Include/cpython/unicodeobject.h
++++ b/Include/cpython/unicodeobject.h
+@@ -146,6 +146,7 @@ typedef struct {
+     PyObject_HEAD
+     Py_ssize_t length;          /* Number of code points in the string */
+     Py_hash_t hash;             /* Hash value; -1 if not set */
++    void *extra;
+     struct {
+         /*
+            SSTATE_NOT_INTERNED (0)
+diff --git a/Include/internal/pycore_runtime_init.h b/Include/internal/pycore_runtime_init.h
+index 13eae1e4c8..239ecd2a43 100644
+--- a/Include/internal/pycore_runtime_init.h
++++ b/Include/internal/pycore_runtime_init.h
+@@ -98,6 +98,7 @@ extern "C" {
+         .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+         .length = sizeof(LITERAL) - 1, \
+         .hash = -1, \
++        .extra = NULL, \
+         .state = { \
+             .kind = 1, \
+             .compact = 1, \
+diff --git a/Objects/unicodeobject.c b/Objects/unicodeobject.c
+index 84d17f000b..cf2629c3d9 100644
+--- a/Objects/unicodeobject.c
++++ b/Objects/unicodeobject.c
+@@ -508,6 +508,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
+ 
+     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
+     unsigned int kind = ascii->state.kind;
++    CHECK(ascii->extra == NULL);
+ 
+     if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
+         CHECK(kind == PyUnicode_1BYTE_KIND);
+@@ -1243,6 +1244,7 @@ _PyUnicode_New(Py_ssize_t length)
+     _PyUnicode_LENGTH(unicode) = 0;
+     _PyUnicode_UTF8(unicode) = NULL;
+     _PyUnicode_UTF8_LENGTH(unicode) = 0;
++    _PyASCIIObject_CAST(unicode)->extra = NULL;
+ 
+     _PyUnicode_WSTR(unicode) = (Py_UNICODE*) PyObject_Malloc(new_size);
+     if (!_PyUnicode_WSTR(unicode)) {
+@@ -1440,6 +1442,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
+     _PyUnicode_STATE(unicode).compact = 1;
+     _PyUnicode_STATE(unicode).ready = 1;
+     _PyUnicode_STATE(unicode).ascii = is_ascii;
++    ((PyASCIIObject*)unicode)->extra = NULL;
+     if (is_ascii) {
+         ((char*)data)[size] = 0;
+         _PyUnicode_WSTR(unicode) = NULL;
+@@ -1952,7 +1955,11 @@ unicode_dealloc(PyObject *unicode)
+     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
+         PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+     }
+-
++    void hiwire_decref(void*);
++    void *extra = ((PyASCIIObject*)unicode)->extra;
++    if (extra) {
++        hiwire_decref(extra);
++    }
+     Py_TYPE(unicode)->tp_free(unicode);
+ }
+ 
+@@ -15611,6 +15618,15 @@ PyUnicode_InternFromString(const char *cp)
+     return s;
+ }
+ 
++void
++PyUnicode_SetExtra(PyObject* unicode, void* extra) {
++    _PyASCIIObject_CAST(unicode)->extra = extra;
++}
++
++void*
++PyUnicode_GetExtra(PyObject* unicode) {
++    return _PyASCIIObject_CAST(unicode)->extra;
++}
+ 
+ void
+ _PyUnicode_ClearInterned(PyInterpreterState *interp)
+-- 
+2.25.1
+

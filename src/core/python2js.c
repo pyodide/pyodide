@@ -164,22 +164,40 @@ EM_JS_REF(JsRef, _python2js_ucs4, (const char* ptr, int len), {
   return Hiwire.new_value(jsstr);
 });
 
+void
+PyUnicode_SetExtra(PyObject* unicode, JsRef extra);
+
+JsRef
+PyUnicode_GetExtra(PyObject* unicode);
+
 static JsRef
 _python2js_unicode(PyObject* x)
 {
+  JsRef result = PyUnicode_GetExtra(x);
+  if (result != NULL) {
+    hiwire_incref(result);
+    return result;
+  }
+
   int kind = PyUnicode_KIND(x);
   char* data = (char*)PyUnicode_DATA(x);
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
-      return _python2js_ucs1(data, length);
+      result = _python2js_ucs1(data, length);
+      break;
     case PyUnicode_2BYTE_KIND:
-      return _python2js_ucs2(data, length);
+      result = _python2js_ucs2(data, length);
+      break;
     case PyUnicode_4BYTE_KIND:
-      return _python2js_ucs4(data, length);
+      result = _python2js_ucs4(data, length);
+      break;
     default:
       assert(false /* invalid Unicode kind */);
   }
+  PyUnicode_SetExtra(x, result);
+  hiwire_incref(result);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

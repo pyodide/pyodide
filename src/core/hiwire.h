@@ -519,6 +519,9 @@ JsObject_New();
 JsRef
 JsObject_GetString(JsRef idobj, const char* ptrname);
 
+JsRef
+JsObject_Get(JsRef idobj, JsRef name);
+
 /**
  * Set an object member by string.
  */
