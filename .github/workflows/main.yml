@@ -154,6 +154,7 @@ jobs:
           ccache -s
 
       - name: check-size
+        shell: bash -l {0}
         run: |
           ls -lh dist/
 

@@ -106,6 +106,10 @@ myst:
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
 
+- {{ Enhancement }} In pyodide build, automatically skip building package dependencies that are already included
+  in the pyodide distribution.
+  {pr}`4058`
+
 ### Packages
 
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
@@ -115,6 +119,8 @@ myst:
   {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`, orjson {pr}`4036`.
 
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
+
+- Upgraded numpy to 1.25.2 {pr}`4125`
 
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
