@@ -1,4 +1,5 @@
 import subprocess
+import sys
 
 import pytest
 
@@ -10,6 +11,7 @@ from pyodide_build.pywasmcross import (
     get_library_output,
     handle_command_generate_args,
     replay_f2c,
+    replay_genargs_handle_dashI,
 )
 
 
@@ -143,6 +145,18 @@ def test_handle_command_ldflags(build_args):
         )
         == "emcc -Wl,-z,now -c test.o -o test.so"
     )
+
+
+@pytest.mark.parametrize(
+    "arg, expected",
+    [
+        ("-I/usr/include", None),
+        (f"-I{sys.prefix}/include/python3.11", "-I/target/include/python3.11"),
+        (f"-I{sys.base_prefix}/include/python3.11", "-I/target/include/python3.11"),
+    ],
+)
+def test_replay_genargs_handle_dashI(arg, expected):
+    assert replay_genargs_handle_dashI(arg, "/target") == expected
 
 
 def test_f2c():
