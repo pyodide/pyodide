@@ -1,4 +1,4 @@
-From b8b4364d0529dcff8bc25f9e0f2549d97e03180c Mon Sep 17 00:00:00 2001
+From 61ba04ca096add7e450ddb690fa5895706fdd79b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH] Changes for JSPI
@@ -11,10 +11,10 @@ Subject: [PATCH] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 75c97e6eb..fbf5cf090 100644
+index b33d2ea65..e17fe94f0 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -1223,7 +1223,7 @@ mergeInto(LibraryManager.library, {
+@@ -1206,7 +1206,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
@@ -24,10 +24,18 @@ index 75c97e6eb..fbf5cf090 100644
    },
  #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index d96e6b425..eea49130c 100644
+index 736f73c66..fd769f7cc 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
-@@ -92,7 +92,7 @@ var LibraryDylink = {
+@@ -73,6 +73,7 @@ var LibraryDylink = {
+ #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
+   $createInvokeFunction__internal: true,
+   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
++  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
+   $createInvokeFunction: (sig) => {
+     return function() {
+       var sp = stackSave();
+@@ -125,7 +126,7 @@ var LibraryDylink = {
      // Asm.js-style exception handling: invoke wrapper generation
      else if (symName.startsWith('invoke_')) {
        // Create (and cache) new invoke_ functions on demand.
@@ -35,20 +43,12 @@ index d96e6b425..eea49130c 100644
 +      sym = wasmImports[symName] = Module.createInvoke(symName.split('_')[1]);
      }
  #endif
-     return {sym: sym, name: symName};
-@@ -343,6 +343,7 @@ var LibraryDylink = {
- #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
-   $createInvokeFunction__internal: true,
-   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
-+  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
-   $createInvokeFunction: function(sig) {
-     return function() {
-       var sp = stackSave();
+ #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.js b/src/parseTools.js
-index 167767e0f..78626462b 100644
+index a069d0e21..0f99ab28a 100644
 --- a/src/parseTools.js
 +++ b/src/parseTools.js
-@@ -527,7 +527,7 @@ function makeThrow(excPtr) {
+@@ -538,7 +538,7 @@ function makeThrow(excPtr) {
      }
      return `assert(false, '${assertInfo}');`;
    }
@@ -58,7 +58,7 @@ index 167767e0f..78626462b 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index 51783e5a5..1a8d7b496 100644
+index d4041cd26..6f44924cf 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -72,7 +72,7 @@ index 51783e5a5..1a8d7b496 100644
  #if BENCHMARK
  Module.realPrint = out;
  out = err = () => {};
-@@ -937,6 +941,9 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
+@@ -928,6 +932,9 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
  // Create the wasm instance.
  // Receives the wasm imports, returns the exports.
  function createWasm() {
