@@ -110,6 +110,9 @@ myst:
   in the pyodide distribution.
   {pr}`4058`
 
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happens in out-of-tree build.
+  {pr}`4136`
+
 ### Packages
 
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
