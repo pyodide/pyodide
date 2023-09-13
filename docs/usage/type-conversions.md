@@ -464,7 +464,7 @@ JavaScript, or it must be created with {py:func}`~pyodide.ffi.create_proxy` or
 once use {py:func}`~pyodide.ffi.create_once_callable`:
 
 ```py
-from pyodide import create_once_callable
+from pyodide.ffi import create_once_callable
 from js import setTimeout
 def my_callback():
     print("hi")
@@ -474,11 +474,11 @@ setTimeout(create_once_callable(my_callback), 1000)
 If it's going to be called many times use {py:func}`~pyodide.ffi.create_proxy`:
 
 ```py
-from pyodide import create_proxy
+from pyodide.ffi import create_proxy
 from js import document
 def my_callback():
     print("hi")
-proxy = pyodide.create_proxy(my_callback)
+proxy = create_proxy(my_callback)
 document.body.addEventListener("click", proxy)
 # ...
 # make sure to hold on to proxy
