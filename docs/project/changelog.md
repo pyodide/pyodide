@@ -124,7 +124,6 @@ _September 13, 2023_
 
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 
-
 - OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
   {pr}`3331`.
 
