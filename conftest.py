@@ -230,6 +230,13 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_pyproxies:
         browser.enable_pyproxy_tracing()
         init_num_proxies = browser.get_num_proxies()
+    if trace_hiwire_refs:
+        browser.run_js(
+            """
+            pyodide._api.stringRefSet = new Set();
+            pyodide._module.HEAP32[pyodide._module._track_stringrefs/4] = 1;
+            """
+        )
     a = yield
     try:
         # If these guys cause a crash because the test really screwed things up,
@@ -245,6 +252,16 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     assert browser.run_js("return pyodide._module.hiwire.stack_length()") == 0
+    if trace_hiwire_refs:
+        browser.run_js(
+            """
+            for(let s of pyodide._api.stringRefSet) {
+                pyodide._module._clear_stringref(s);
+            }
+            pyodide._module.HEAP32[pyodide._module._track_stringrefs/4] = 0;
+            pyodide._api.stringRefSet = null;
+            """
+        )
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys

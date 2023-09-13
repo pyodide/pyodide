@@ -164,18 +164,48 @@ EM_JS_REF(JsRef, _python2js_ucs4, (const char* ptr, int len), {
   return Hiwire.new_value(jsstr);
 });
 
+bool track_stringrefs = false;
+
 void
-PyUnicode_SetExtra(PyObject* unicode, JsRef extra);
+PyUnicode_SetJsString(PyObject* unicode, JsRef js_string);
 
 JsRef
-PyUnicode_GetExtra(PyObject* unicode);
+PyUnicode_GetJsString(PyObject* unicode);
+
+EM_JS(void, __add_stringref, (PyObject * unicode), {
+  API.stringRefSet.add(unicode);
+})
+
+EM_JS(void, __remove_stringref, (PyObject * unicode), {
+  API.stringRefSet.delete(unicode);
+})
+
+void
+_pyodide_free_js_string(PyObject* unicode, JsRef js_string)
+{
+  hiwire_decref(js_string);
+  if (track_stringrefs) {
+    __remove_stringref(unicode);
+  }
+}
+
+void
+clear_stringref(PyObject* unicode)
+{
+  JsRef js_string = PyUnicode_GetJsString(unicode);
+  PyUnicode_SetJsString(unicode, NULL);
+  hiwire_decref(js_string);
+}
 
 static JsRef
 _python2js_unicode(PyObject* x)
 {
-  JsRef result = PyUnicode_GetExtra(x);
+  JsRef result = PyUnicode_GetJsString(x);
   if (result != NULL) {
     hiwire_incref(result);
+    if (track_stringrefs) {
+      __add_stringref(x);
+    }
     return result;
   }
 
@@ -195,7 +225,7 @@ _python2js_unicode(PyObject* x)
     default:
       assert(false /* invalid Unicode kind */);
   }
-  PyUnicode_SetExtra(x, result);
+  PyUnicode_SetJsString(x, result);
   hiwire_incref(result);
   return result;
 }
