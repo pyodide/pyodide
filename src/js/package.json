@@ -36,8 +36,7 @@
     "ts-mocha": "^9.0.2",
     "tsd": "^0.24.1",
     "typedoc": "^0.22.15",
-    "typescript": "^4.6.4",
-    "wabt": "^1.0.32"
+    "typescript": "^4.6.4"
   },
   "main": "pyodide.js",
   "exports": {
@@ -78,7 +77,7 @@
   },
   "scripts": {
     "test": "npm-run-all test:*",
-    "test:unit": "cross-env TEST_NODE=1 ts-mocha --node-option=experimental-loader=./test/loader.mjs --node-option=experimental-wasm-stack-switching -p tsconfig.test.json test/unit/**/*.test.*",
+    "test:unit": "cross-env TEST_NODE=1 ts-mocha -p tsconfig.test.json test/unit/**/*.test.ts",
     "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
     "test:browser": "mocha test/integration/**/*.test.js",
     "tsc": "tsc --noEmit",
@@ -95,6 +94,9 @@
       "pyodide",
       "page",
       "chai"
+    ],
+    "file": [
+      "test/conftest.js"
     ]
   },
   "nyc": {

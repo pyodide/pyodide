@@ -55,19 +55,7 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-// As a fallback for when Wasm EH is not available, use an empty function.
-// The fallback ensures instanceof always returns false.
-const wasmException = (WebAssembly as any).Exception || function () {};
-const isWasmException = (e: any) => e instanceof wasmException;
-
-function convertCppException(e: any) {
-  if (isWasmException(e)) {
-    if (e.is(Module.jsWrapperTag)) {
-      e = e.getArg(Module.jsWrapperTag, 0);
-    } else {
-      return e;
-    }
-  }
+function convertCppException(e: number) {
   let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg, e);
 }
@@ -99,7 +87,7 @@ API.fatal_error = function (e: any) {
   if (e instanceof NoGilError) {
     throw e;
   }
-  if (typeof e === "number" || isWasmException(e)) {
+  if (typeof e === "number") {
     // Hopefully a C++ exception?
     e = convertCppException(e);
   } else {
