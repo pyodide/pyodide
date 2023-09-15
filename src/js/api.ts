@@ -611,7 +611,7 @@ export class PyodideAPI {
   }
 
   /**
-   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
+   * An alias for :js:class:`pyodide.ffi.PythonError`.
    *
    * @hidetype
    * @alias
