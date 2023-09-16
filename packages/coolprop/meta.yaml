@@ -10,7 +10,7 @@ source:
   extract_dir: source
 
   extras:
-    - - setup.py
+    - - setup.py.wrapper
       - ./setup.py
     - - pyproject.toml
       - ./pyproject.toml
