@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
 ## Version 0.24.0
 
 _September 13, 2023_
@@ -111,9 +116,6 @@ _September 13, 2023_
 - {{ Enhancement }} In pyodide build, automatically skip building package
   dependencies that are already included in the pyodide distribution.
   {pr}`4058`
-
-- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happens in out-of-tree build.
-  {pr}`4136`
 
 ### Packages
 
