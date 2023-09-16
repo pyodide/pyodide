@@ -357,5 +357,6 @@ def init_loaded_packages() -> None:
     doesn't install over them.
     """
     for dist_path in SITE_PACKAGES.glob("*.dist-info"):
-        dist_name = dist_path.name.replace(".dist-info", "")
+        # Strip version (PEP 440)
+        dist_name = dist_path.name.replace(".dist-info", "").rpartition("-")[0]
         setattr(loadedPackages, dist_name, get_dist_source(dist_path))
