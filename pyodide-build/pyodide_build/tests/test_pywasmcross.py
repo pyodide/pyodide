@@ -1,5 +1,4 @@
 import subprocess
-import sys
 
 import pytest
 
@@ -147,16 +146,28 @@ def test_handle_command_ldflags(build_args):
     )
 
 
-@pytest.mark.parametrize(
-    "arg, expected",
-    [
-        ("-I/usr/include", None),
-        (f"-I{sys.prefix}/include/python3.11", "-I/target/include/python3.11"),
-        (f"-I{sys.base_prefix}/include/python3.11", "-I/target/include/python3.11"),
-    ],
-)
-def test_replay_genargs_handle_dashI(arg, expected):
-    assert replay_genargs_handle_dashI(arg, "/target") == expected
+def test_replay_genargs_handle_dashI(monkeypatch):
+    import sys
+
+    mock_prefix = "/mock_prefix"
+    mock_base_prefix = "/mock_base_prefix"
+    monkeypatch.setattr(sys, "prefix", mock_prefix)
+    monkeypatch.setattr(sys, "base_prefix", mock_base_prefix)
+
+    target_dir = "/target"
+    target_cpython_include = "/target/include/python3.11"
+
+    assert replay_genargs_handle_dashI("-I/usr/include", target_dir) is None
+    assert (
+        replay_genargs_handle_dashI(f"-I{mock_prefix}/include/python3.11", target_dir)
+        == f"-I{target_cpython_include}"
+    )
+    assert (
+        replay_genargs_handle_dashI(
+            f"-I{mock_base_prefix}/include/python3.11", target_dir
+        )
+        == f"-I{target_cpython_include}"
+    )
 
 
 def test_f2c():
