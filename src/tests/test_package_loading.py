@@ -498,7 +498,7 @@ result_dist_pairs = [
     ),
     ("pip (index unknown)", DummyDistribution("F", installer="pip")),
     ("other (index unknown)", DummyDistribution("G", installer="other")),
-    ("Unknown", DummyDistribution("H")),
+    ("Unknown", DummyDistribution("H-H")),
 ]
 
 
@@ -519,6 +519,7 @@ def test_init_loaded_packages(monkeypatch, tmp_path):
 
     loadedPackages = loadedPackagesCls()
     monkeypatch.setattr(_package_loader, "SITE_PACKAGES", tmp_path)
+    monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
     dists = [dist for [_, dist] in result_dist_pairs]
     for dist in dists:
         dist.write(tmp_path)

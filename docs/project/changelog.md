@@ -14,6 +14,14 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Load time & size optimizations
+
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
+  which reduces the time to load Pyodide.
+  {pr}`4147`
+
 ## Version 0.24.0
 
 _September 13, 2023_
