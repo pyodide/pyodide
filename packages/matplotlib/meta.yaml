@@ -17,7 +17,7 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    - - src/setup.cfg
+    - - extras/setup.cfg
       - ./mplsetup.cfg
 
 build:
@@ -36,8 +36,8 @@ build:
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext
-    cp $PKGDIR/src/fontlist.json matplotlib
-    cp $PKGDIR/src/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
+    cp $PKGDIR/extras/fontlist.json matplotlib
+    cp $PKGDIR/extras/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
     mkdir -p $PKGDIR/../../dist/fonts
     cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../dist/fonts/
 
