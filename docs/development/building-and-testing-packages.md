@@ -152,13 +152,13 @@ runs-on: ubuntu-22.04
   steps:
   - uses: actions/checkout@v3
   - uses: actions/setup-python@v4
-     with:
+    with:
        python-version: 3.11.2
   - run: |
       pip install pyodide-build>=0.23.0
       echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
   - uses: mymindstorm/setup-emsdk@v12
-     with:
+    with:
        version: ${{ env.EMSCRIPTEN_VERSION }}
   - run: pyodide build
 ```
