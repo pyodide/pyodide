@@ -1,4 +1,5 @@
 import json
+import re
 import shutil
 from pathlib import Path
 
@@ -432,8 +433,10 @@ class DummyDistribution:
         source: str | None = None,
         direct_url: dict[str, str] | None = None,
         installer: str | None = None,
+        version: str = "0.0.1",
     ):
         self.name = name
+        self.version = version
         direct_url_json = json.dumps(direct_url) if direct_url else None
         self._files: dict[str, str | None] = {
             "PYODIDE_SOURCE": source,
@@ -441,8 +444,23 @@ class DummyDistribution:
             "INSTALLER": installer,
         }
 
-    def read_text(self, key: str) -> str | None:
-        return self._files.get(key)
+    @property
+    def dist_info_name(self):
+        # https://packaging.python.org/en/latest/specifications/name-normalization/#normalization
+        normalized_name = re.sub(r"[-_.]+", "-", self.name).lower()
+        return f"{normalized_name}-{self.version}.dist-info"
+
+    def write(self, base_dir: Path) -> None:
+        dist_info_dir = base_dir / self.dist_info_name
+        dist_info_dir.mkdir(exist_ok=True)
+        for key, value in self._files.items():
+            if value is not None:
+                (dist_info_dir / key).write_text(value)
+        with (dist_info_dir / "METADATA").open("w") as f:
+            f.write(
+                f"Metadata-Version: 2.1\nName: {self.name}\n"
+                f"Version: {self.version}\n"
+            )
 
     def __repr__(self):
         return self.name
@@ -480,27 +498,31 @@ result_dist_pairs = [
     ),
     ("pip (index unknown)", DummyDistribution("F", installer="pip")),
     ("other (index unknown)", DummyDistribution("G", installer="other")),
-    ("Unknown", DummyDistribution("H")),
+    ("Unknown", DummyDistribution("H-H")),
 ]
 
 
 @pytest.mark.parametrize("result,dist", result_dist_pairs)
-def test_get_dist_source(result, dist):
+def test_get_dist_source(result, dist, tmp_path):
     from pyodide._package_loader import get_dist_source
 
-    assert result == get_dist_source(dist)
+    dist.write(tmp_path)
+
+    assert (dist.name, result) == get_dist_source(tmp_path / dist.dist_info_name)
 
 
-def test_init_loaded_packages(monkeypatch):
+def test_init_loaded_packages(monkeypatch, tmp_path):
     from pyodide import _package_loader
 
     class loadedPackagesCls:
         pass
 
     loadedPackages = loadedPackagesCls()
+    monkeypatch.setattr(_package_loader, "SITE_PACKAGES", tmp_path)
     monkeypatch.setattr(_package_loader, "loadedPackages", loadedPackages)
     dists = [dist for [_, dist] in result_dist_pairs]
-    monkeypatch.setattr(_package_loader, "importlib_distributions", lambda: dists)
+    for dist in dists:
+        dist.write(tmp_path)
     _package_loader.init_loaded_packages()
 
     for [result, dist] in result_dist_pairs:
