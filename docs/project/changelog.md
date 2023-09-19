@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Packages
+
+- Upgraded sourmash to 4.8.4 {pr}`4154`
+
 ## Version 0.24.0
 
 _September 13, 2023_
