@@ -12,9 +12,9 @@ source:
   url: https://files.pythonhosted.org/packages/32/72/03747a6820bc970aeb0b89e653d1084068ac1ed606a83d8b5ac6fc237c14/opencv-python-4.8.0.76.tar.gz
   sha256: 56d84c43ce800938b9b1ec74b33942b2edbcef3f70c2754eb9bfe5dff1ee3ace
   extras:
-    - [cmake/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
+    - [extras/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
     - [
-        cmake/detect_ffmpeg.cmake,
+        extras/detect_ffmpeg.cmake,
         opencv/modules/videoio/cmake/detect_ffmpeg.cmake,
       ]
   patches:
@@ -52,4 +52,4 @@ build:
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
 
-    source $PKGDIR/cmake/build_args.sh
+    source $PKGDIR/extras/build_args.sh
