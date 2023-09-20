@@ -25,6 +25,10 @@ myst:
   which reduces the time to load Pyodide.
   {pr}`4147`
 
+### Packages
+
+- Upgraded scipy to 1.11.2 {pr}`4156`
+
 ## Version 0.24.0
 
 _September 13, 2023_
