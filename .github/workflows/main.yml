@@ -14,7 +14,7 @@ jobs:
     outputs:
       PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Read the Python version from Makefile.envs
         id: get_python_version
         run: |
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
         uses: actions/setup-python@v4
         with:
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
         uses: actions/setup-python@v4
         with:
@@ -85,7 +85,7 @@ jobs:
       CCACHE_DIR: /tmp/ccache
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Cache ccache output
         uses: actions/cache@v3
@@ -183,7 +183,7 @@ jobs:
         browser: [chrome]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download build artifact
         uses: actions/download-artifact@v3
@@ -251,7 +251,7 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Download build artifact
         uses: actions/download-artifact@v3
