@@ -15,6 +15,9 @@ def run(
     cxxflags += f" {os.environ.get('CXXFLAGS', '')}"
     ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")
     ldflags += f" {os.environ.get('LDFLAGS', '')}"
+    target_install_dir = os.environ.get(
+        "TARGETINSTALLDIR", build_env.get_build_flag("TARGETINSTALLDIR")
+    )
     env = os.environ.copy()
     env.update(build_env.get_build_environment_vars())
 
@@ -24,7 +27,7 @@ def run(
         cflags=cflags,
         cxxflags=cxxflags,
         ldflags=ldflags,
-        target_install_dir="",
+        target_install_dir=target_install_dir,
         exports=exports,
     )
 
