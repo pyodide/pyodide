@@ -2,11 +2,8 @@ import re
 import shutil
 import sys
 import sysconfig
-import tarfile
 from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
-from importlib.metadata import Distribution
-from importlib.metadata import distributions as importlib_distributions
 from pathlib import Path
 from site import getsitepackages
 from tempfile import NamedTemporaryFile
@@ -311,6 +308,8 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         The list of paths to dynamic libraries ('.so' files) that were in the archive,
         but adjusted to point to their unpacked locations.
     """
+    import tarfile
+
     dynlib_paths_iter: Iterable[str]
     if suffix in ZIP_TYPES:
         dynlib_paths_iter = ZipFile(archive).namelist()
@@ -326,27 +325,37 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
     ]
 
 
-def get_dist_source(dist: Distribution) -> str:
-    """Get a description of the source of a package.
+def get_dist_source(dist_path: Path) -> tuple[str, str]:
+    """Get the package name and a description of the source of a package.
 
     This is used in loadPackage to explain where the package came from. Purely
     for informative purposes.
     """
-    source = dist.read_text("PYODIDE_SOURCE")
-    if source == "pyodide":
-        return "default channel"
-    if source:
-        return source
-    direct_url = dist.read_text("direct_url.json")
-    if direct_url:
+    with (dist_path / "METADATA").open() as f:
+        for line in f:
+            if line.startswith("Name:"):
+                dist_name = line[5:].strip()
+                break
+        else:
+            raise ValueError(f"Package name not found in {dist_path.name} METADATA")
+
+    source_path = dist_path / "PYODIDE_SOURCE"
+    if source_path.exists():
+        source = source_path.read_text().strip()
+        if source == "pyodide":
+            return dist_name, "default channel"
+        elif source:
+            return dist_name, source
+    direct_url_path = dist_path / "direct_url.json"
+    if direct_url_path.exists():
         import json
 
-        return json.loads(direct_url)["url"]
-    installer = dist.read_text("INSTALLER")
-    if installer:
-        installer = installer.strip()
-        return f"{installer} (index unknown)"
-    return "Unknown"
+        return dist_name, json.loads(direct_url_path.read_text())["url"]
+    installer_path = dist_path / "INSTALLER"
+    if installer_path.exists():
+        installer = installer_path.read_text().strip()
+        return dist_name, f"{installer} (index unknown)"
+    return dist_name, "Unknown"
 
 
 def init_loaded_packages() -> None:
@@ -356,5 +365,6 @@ def init_loaded_packages() -> None:
     This ensures that `pyodide.loadPackage` knows that they are around and
     doesn't install over them.
     """
-    for dist in importlib_distributions():
-        setattr(loadedPackages, dist.name, get_dist_source(dist))
+    for dist_path in SITE_PACKAGES.glob("*.dist-info"):
+        dist_name, dist_source = get_dist_source(dist_path)
+        setattr(loadedPackages, dist_name, dist_source)

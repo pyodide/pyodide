@@ -16,8 +16,18 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+### Load time & size optimizations
+
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
+  which reduces the time to load Pyodide.
+  {pr}`4147`
+
 ### Packages
 
+- Upgraded scipy to 1.11.2 {pr}`4156`
 - Upgraded sourmash to 4.8.4 {pr}`4154`
 
 ## Version 0.24.0
