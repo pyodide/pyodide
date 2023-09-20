@@ -26,6 +26,9 @@ myst:
   the gil is not held.
   {pr}`4164`
 
+### Packages
+
+- Upgraded scipy to 1.11.2 {pr}`4156`
 
 ## Version 0.24.0
 
