@@ -226,14 +226,19 @@ def replay_genargs_handle_dashI(arg: str, target_install_dir: str) -> str | None
         The new argument, or None to delete the argument.
     """
     assert arg.startswith("-I")
-    if (
-        str(Path(arg[2:]).resolve()).startswith(sys.prefix + "/include/python")
-        and "site-packages" not in arg
-    ):
-        return arg.replace("-I" + sys.prefix, "-I" + target_install_dir)
+
     # Don't include any system directories
     if arg[2:].startswith("/usr"):
         return None
+
+    # Replace local Python include paths with the cross compiled ones
+    include_path = str(Path(arg[2:]).resolve())
+    if include_path.startswith(sys.prefix + "/include/python"):
+        return arg.replace("-I" + sys.prefix, "-I" + target_install_dir)
+
+    if include_path.startswith(sys.base_prefix + "/include/python"):
+        return arg.replace("-I" + sys.base_prefix, "-I" + target_install_dir)
+
     return arg
 
 

@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
