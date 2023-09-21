@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
 ## Version 0.24.0
 
 _September 13, 2023_
