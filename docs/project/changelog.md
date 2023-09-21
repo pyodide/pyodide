@@ -29,6 +29,8 @@ myst:
 
 - Upgraded scipy to 1.11.2 {pr}`4156`
 
+- Upgraded scikit-learn to 1.3.1 {pr}`4161`
+
 ## Version 0.24.0
 
 _September 13, 2023_
