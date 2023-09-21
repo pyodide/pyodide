@@ -3,6 +3,8 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 21 Sep 2023 15:07:24 -0700
 Subject: [PATCH] FIX Turn off `settings.LTO` if `-fno-lto` is passed
 
+Backport of https://github.com/emscripten-core/emscripten/pull/20309
+
 ---
  emcc.py | 2 ++
  1 file changed, 2 insertions(+)
