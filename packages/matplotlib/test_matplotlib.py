@@ -600,6 +600,7 @@ def test_transparency(selenium_standalone):
     patch_font_loading_and_dpi(selenium, handle)
     run(selenium, handle, ref)
 
+
 @matplotlib_test_decorator
 def test_triangulation(selenium_standalone):
     """This test uses setjmp/longjmp so hopefully prevents any more screw ups
@@ -620,7 +621,6 @@ def test_triangulation(selenium_standalone):
 
     x = (radii * np.cos(angles)).flatten()
     y = (radii * np.sin(angles)).flatten()
-    z = (np.cos(radii) * np.cos(3 * angles)).flatten()
 
     # Create the Triangulation; no triangles so Delaunay triangulation created.
-    triang = tri.Triangulation(x, y)
+    tri.Triangulation(x, y)
