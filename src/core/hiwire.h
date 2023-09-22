@@ -510,15 +510,6 @@ JsArray_Clear(JsRef idobj);
 JsRef
 JsObject_New();
 
-/**
- * Get an object member by string.
- *
- *
- * Returns: New reference
- */
-JsRef
-JsObject_GetString(JsRef idobj, const char* ptrname);
-
 JsRef
 JsObject_Get(JsRef idobj, JsRef name);
 
@@ -526,13 +517,13 @@ JsObject_Get(JsRef idobj, JsRef name);
  * Set an object member by string.
  */
 errcode WARN_UNUSED
-JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
+JsObject_Set(JsRef idobj, JsRef name, JsRef idval);
 
 /**
  * Delete an object member by string.
  */
 errcode WARN_UNUSED
-JsObject_DeleteString(JsRef idobj, const char* ptrname);
+JsObject_Delete(JsRef idobj, JsRef name);
 
 /**
  * Get the methods on an object, both on itself and what it inherits.

@@ -5,6 +5,7 @@
 #include "error_handling.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
+#include "python2js.h"
 #include <emscripten.h>
 #include <stdio.h>
 
@@ -57,10 +58,10 @@ set_error(PyObject* err)
 EM_JS_REF(
 JsRef,
 new_error,
-(const char* type, const char* msg, PyObject* err),
+(JsRef type, JsRef msg, PyObject* err),
 {
   return Hiwire.new_value(
-    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
+    new API.PythonError(Hiwire.get_value(type), Hiwire.get_value(msg), err));
 });
 // clang-format on
 
@@ -192,21 +193,23 @@ wrap_exception()
   PyObject* type = NULL;
   PyObject* value = NULL;
   PyObject* traceback = NULL;
-  PyObject* typestr = NULL;
+  PyObject* py_typestr = NULL;
+  JsRef js_typestr = NULL;
   PyObject* pystr = NULL;
+  JsRef jsstr = NULL;
   JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
-  typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
-  FAIL_IF_NULL(typestr);
-  const char* typestr_utf8 = PyUnicode_AsUTF8(typestr);
-  FAIL_IF_NULL(typestr_utf8);
+  py_typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
+  FAIL_IF_NULL(py_typestr);
+  js_typestr = python2js(py_typestr);
+  FAIL_IF_NULL(js_typestr);
   pystr = format_exception_traceback(type, value, traceback);
   FAIL_IF_NULL(pystr);
-  const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
-  FAIL_IF_NULL(pystr_utf8);
-  jserror = new_error(typestr_utf8, pystr_utf8, value);
+  jsstr = python2js(pystr);
+  FAIL_IF_NULL(jsstr);
+  jserror = new_error(js_typestr, jsstr, value);
   FAIL_IF_NULL(jserror);
 
   success = true;
@@ -220,13 +223,20 @@ finally:
       PySys_WriteStderr("\nOriginal exception was:\n");
       PyErr_Display(type, value, traceback);
     }
-    jserror = new_error(
-      "PyodideInternalError", "Error occurred while formatting traceback", 0);
+    Js_static_string(InternalError, "PyodideInternalError");
+    Js_static_string(error_formatting_tb,
+                     "Error occurred while formatting traceback");
+    jserror = new_error(JsString_FromId(&InternalError),
+                        JsString_FromId(&error_formatting_tb),
+                        0);
   }
   Py_CLEAR(type);
   Py_CLEAR(value);
   Py_CLEAR(traceback);
+  Py_CLEAR(py_typestr);
+  hiwire_CLEAR(js_typestr);
   Py_CLEAR(pystr);
+  hiwire_CLEAR(jsstr);
   return jserror;
 }
 

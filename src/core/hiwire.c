@@ -868,33 +868,23 @@ EM_JS_REF(JsRef, JsObject_Get, (JsRef idobj, JsRef idkey), {
   return Hiwire.new_value(result);
 });
 
-EM_JS_REF(JsRef, JsObject_GetString, (JsRef idobj, const char* ptrkey), {
-  const jsobj = Hiwire.get_value(idobj);
-  const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
-  const result = jsobj[jskey];
-  // clang-format off
-  if (result === undefined && !(jskey in jsobj)) {
-    // clang-format on
-    return ERROR_REF;
-  }
-  return Hiwire.new_value(result);
-});
-
 // clang-format off
 EM_JS_NUM(errcode,
-JsObject_SetString,
-(JsRef idobj, const char* ptrkey, JsRef idval),
+JsObject_Set,
+(JsRef idobj, JsRef idkey, JsRef idval),
 {
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
-  let jsval = Hiwire.get_value(idval);
+  const jsobj = Hiwire.get_value(idobj);
+  const key = Hiwire.get_value(idkey);
+  const jskey = normalizeReservedWords(key);
+  const jsval = Hiwire.get_value(idval);
   jsobj[jskey] = jsval;
 });
 // clang-format on
 
-EM_JS_NUM(errcode, JsObject_DeleteString, (JsRef idobj, const char* ptrkey), {
-  let jsobj = Hiwire.get_value(idobj);
-  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+EM_JS_NUM(errcode, JsObject_Delete, (JsRef idobj, JsRef idkey), {
+  const jsobj = Hiwire.get_value(idobj);
+  const key = Hiwire.get_value(idkey);
+  const jskey = normalizeReservedWords(key);
   delete jsobj[jskey];
 });
 

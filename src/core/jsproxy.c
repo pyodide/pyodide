@@ -345,6 +345,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
   jskey = python2js(attr);
+  FAIL_IF_NULL(jskey);
 
   idresult = JsObject_Get(JsProxy_REF(self), jskey);
   if (idresult == NULL) {
@@ -378,10 +379,10 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 {
   bool success = false;
   JsRef idvalue = NULL;
+  JsRef jskey = NULL;
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-
   if (strncmp(key, "__", 2) == 0) {
     // Avoid creating reference loops between Python and JavaScript with js
     // modules. Such reference loops make it hard to avoid leaking memory.
@@ -392,16 +393,21 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
     }
   }
 
+  jskey = python2js(attr);
+  FAIL_IF_NULL(jskey);
+
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(JsObject_DeleteString(JsProxy_REF(self), key));
+    FAIL_IF_MINUS_ONE(JsObject_Delete(JsProxy_REF(self), jskey));
   } else {
     idvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(JsObject_SetString(JsProxy_REF(self), key, idvalue));
+    FAIL_IF_NULL(idvalue);
+    FAIL_IF_MINUS_ONE(JsObject_Set(JsProxy_REF(self), jskey, idvalue));
   }
 
   success = true;
 finally:
   hiwire_CLEAR(idvalue);
+  hiwire_CLEAR(jskey);
   return success ? 0 : -1;
 }
 
@@ -2904,6 +2910,7 @@ JsMethod_ConvertArgs(PyObject* const* args,
   JsRef idargs = NULL;
   JsRef idarg = NULL;
   JsRef idkwargs = NULL;
+  JsRef namejs = NULL;
 
   idargs = JsArray_New();
   FAIL_IF_NULL(idargs);
@@ -2934,10 +2941,12 @@ JsMethod_ConvertArgs(PyObject* const* args,
   Py_ssize_t nkwargs = PyTuple_Size(kwnames);
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
-    const char* name_utf8 = PyUnicode_AsUTF8(name);
+    namejs = python2js(name);
+    FAIL_IF_NULL(namejs);
     idarg = python2js_track_proxies(args[k], proxies, false);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
+    FAIL_IF_MINUS_ONE(JsObject_Set(idkwargs, namejs, idarg));
+    hiwire_CLEAR(namejs);
     hiwire_CLEAR(idarg);
   }
   FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idkwargs));
@@ -2947,6 +2956,7 @@ success:
 finally:
   hiwire_CLEAR(idarg);
   hiwire_CLEAR(idkwargs);
+  hiwire_CLEAR(namejs);
   if (!success) {
     hiwire_CLEAR(idargs);
   }
