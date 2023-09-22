@@ -255,7 +255,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_hiwire_refs:
         browser.run_js(
             """
-            for(let s of pyodide._api.stringRefSet) {
+            for(let s of pyodide._api.stringRefSet || []) {
                 pyodide._module._clear_stringref(s);
             }
             pyodide._module.HEAP32[pyodide._module._track_stringrefs/4] = 0;
