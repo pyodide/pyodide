@@ -22,6 +22,9 @@ myst:
 - {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
   {pr}`4136`
 
+- {{ Enhancement }} Unvendored hiwire
+  {pr}`4128`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
