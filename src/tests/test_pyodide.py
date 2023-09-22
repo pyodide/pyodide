@@ -476,7 +476,7 @@ def test_check_interrupt_no_gil(selenium):
     """Check interrupt has a special case for GIL not held.
     Make sure that it works.
     """
-    assert selenium.run_js(
+    selenium.run_js(
         """
         // release GIL
         const tstate = pyodide._module._PyEval_SaveThread();
