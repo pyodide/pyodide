@@ -499,6 +499,8 @@ def test_check_interrupt_no_gil(selenium):
             }
             assert(() => err instanceof pyodide.FS.ErrnoError);
             assert(() => err.errno === pyodide.ERRNO_CODES.EINTR);
+            assert(() => ib[0] === 2);
+            ib[0] = 0;
         } finally {
             // acquire GIL
             pyodide._module._PyEval_RestoreThread(tstate)
