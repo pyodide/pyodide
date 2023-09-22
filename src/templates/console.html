@@ -90,6 +90,8 @@
           }
         }
         const { loadPyodide } = await import(indexURL + "pyodide.mjs");
+        // to facilitate debugging
+        globalThis.loadPyodide = loadPyodide;
 
         let term;
         globalThis.pyodide = await loadPyodide({

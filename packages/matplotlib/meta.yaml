@@ -17,7 +17,7 @@ source:
     - patches/fix-threading.patch
 
   extras:
-    - - src/setup.cfg
+    - - extras/setup.cfg
       - ./mplsetup.cfg
 
 build:
@@ -27,17 +27,21 @@ build:
     -s USE_FREETYPE=1
     -s USE_LIBPNG=1
     -s USE_ZLIB=1
+    -fexceptions
     -fno-lto
   cxxflags: |
     -std=c++14
+    -fexceptions
+  ldflags: |
+    -fexceptions
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
     cd $WHEELDIR
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext
-    cp $PKGDIR/src/fontlist.json matplotlib
-    cp $PKGDIR/src/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
+    cp $PKGDIR/extras/fontlist.json matplotlib
+    cp $PKGDIR/extras/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
     mkdir -p $PKGDIR/../../dist/fonts
     cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../dist/fonts/
 

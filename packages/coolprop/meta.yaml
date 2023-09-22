@@ -10,9 +10,9 @@ source:
   extract_dir: source
 
   extras:
-    - - setup.py
+    - - extras/setup.py
       - ./setup.py
-    - - pyproject.toml
+    - - extras/pyproject.toml
       - ./pyproject.toml
 
 requirements:

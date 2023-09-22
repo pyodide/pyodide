@@ -108,8 +108,8 @@ norecursedirs = [
 ]
 addopts = '''
 --doctest-modules
---ignore="packages/matplotlib/src"
 --ignore-glob="**/dist/"
+--ignore-glob="packages/**/extras/"
 --tb=short
 --dist-dir=dist'''
 testpaths = [
