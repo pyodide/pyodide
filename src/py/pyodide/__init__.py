@@ -10,7 +10,7 @@
 # This package is imported by the test suite as well, and currently we don't use
 # pytest mocks for js or pyodide_js, so make sure to test "if IN_BROWSER" before
 # importing from these.
-__version__ = "0.24.0.dev0"
+__version__ = "0.25.0.dev0"
 
 __all__ = ["__version__", "console", "code", "ffi", "http", "webloop"]
 

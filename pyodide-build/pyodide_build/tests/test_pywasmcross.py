@@ -10,6 +10,7 @@ from pyodide_build.pywasmcross import (
     get_library_output,
     handle_command_generate_args,
     replay_f2c,
+    replay_genargs_handle_dashI,
 )
 
 
@@ -142,6 +143,30 @@ def test_handle_command_ldflags(build_args):
             True,
         )
         == "emcc -Wl,-z,now -c test.o -o test.so"
+    )
+
+
+def test_replay_genargs_handle_dashI(monkeypatch):
+    import sys
+
+    mock_prefix = "/mock_prefix"
+    mock_base_prefix = "/mock_base_prefix"
+    monkeypatch.setattr(sys, "prefix", mock_prefix)
+    monkeypatch.setattr(sys, "base_prefix", mock_base_prefix)
+
+    target_dir = "/target"
+    target_cpython_include = "/target/include/python3.11"
+
+    assert replay_genargs_handle_dashI("-I/usr/include", target_dir) is None
+    assert (
+        replay_genargs_handle_dashI(f"-I{mock_prefix}/include/python3.11", target_dir)
+        == f"-I{target_cpython_include}"
+    )
+    assert (
+        replay_genargs_handle_dashI(
+            f"-I{mock_base_prefix}/include/python3.11", target_dir
+        )
+        == f"-I{target_cpython_include}"
     )
 
 

@@ -156,11 +156,11 @@ API.maybe_fatal_error = function (e: any) {
   // This might cause problems in the future, so we need to find a way to fix it.
   // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
   //      2) https://github.com/kitao/pyxel/issues/418
-  if (e && e == "unwind") {
+  if (API._skip_unwind_fatal_error && e === "unwind") {
     return;
   }
 
-  return API.fatal_error(e);
+  API.fatal_error(e);
 };
 
 let stderr_chars: number[] = [];

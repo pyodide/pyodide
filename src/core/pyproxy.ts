@@ -140,6 +140,7 @@ type PyProxyShared = {
   flags: number;
   promise: Promise<any> | undefined;
   destroyed_msg: string | undefined;
+  gcRegistered: boolean;
 };
 type PyProxyProps = {
   /**
@@ -261,6 +262,7 @@ function pyproxy_new(
       flags,
       promise: undefined,
       destroyed_msg: undefined,
+      gcRegistered: false,
     };
     Module._Py_IncRef(ptr);
   }
@@ -293,6 +295,7 @@ Module.pyproxy_new = pyproxy_new;
 
 function gc_register_proxy(shared: PyProxyShared) {
   const shared_copy = Object.assign({}, shared);
+  shared.gcRegistered = true;
   Module.finalizationRegistry.register(shared, shared_copy, shared);
 }
 Module.gc_register_proxy = gc_register_proxy;
@@ -462,7 +465,9 @@ Module.pyproxy_destroy = function (
   // just in case!
   const ptr = shared.ptr;
   shared.ptr = 0;
-  Module.finalizationRegistry.unregister(shared);
+  if (shared.gcRegistered) {
+    Module.finalizationRegistry.unregister(shared);
+  }
   pyproxy_decref_cache(shared.cache);
 
   try {
@@ -505,11 +510,7 @@ Module.callPyObjectKwargs = function (
     );
     Py_EXIT();
   } catch (e) {
-    if (API._skip_unwind_fatal_error) {
-      API.maybe_fatal_error(e);
-    } else {
-      API.fatal_error(e);
-    }
+    API.maybe_fatal_error(e);
     return;
   } finally {
     Hiwire.decref(idargs);

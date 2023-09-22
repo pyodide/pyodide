@@ -16,6 +16,29 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+### Load time & size optimizations
+
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
+  which reduces the time to load Pyodide.
+  {pr}`4147`
+
+### Packages
+
+- Upgraded scipy to 1.11.2 {pr}`4156`
+- Upgraded sourmash to 4.8.4 {pr}`4154`
+
+- Upgraded scikit-learn to 1.3.1 {pr}`4161`
+
+## Version 0.24.0
+
+_September 13, 2023_
+
 ### General
 
 - {{ Update }} Pyodide now runs Python 3.11.3.
@@ -106,6 +129,10 @@ myst:
   files for WebAssembly (WASM) compatibility.
   {pr}`4018`
 
+- {{ Enhancement }} In pyodide build, automatically skip building package
+  dependencies that are already included in the pyodide distribution.
+  {pr}`4058`
+
 ### Packages
 
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
@@ -113,6 +140,8 @@ myst:
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`, Cartopy
   {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`, CoolProp
   {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`, orjson {pr}`4036`.
+
+- Upgraded numpy to 1.25.2 {pr}`4125`
 
 - Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
 
