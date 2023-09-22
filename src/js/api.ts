@@ -558,7 +558,8 @@ export class PyodideAPI {
       // GIL not held. This is very likely because we're in a IO handler. If
       // buffer has a 2, throwing EINTR quits out from the IO handler and tells
       // the calling context to call `PyErr_CheckSignals`.
-      if (Module.Py_EmscriptenSignalBuffer[0] === 2) {
+      const buf = Module.Py_EmscriptenSignalBuffer;
+      if (buf && buf[0] === 2) {
         throw new Module.FS.ErrnoError(cDefs.EINTR);
       }
     }
