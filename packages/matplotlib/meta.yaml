@@ -27,9 +27,13 @@ build:
     -s USE_FREETYPE=1
     -s USE_LIBPNG=1
     -s USE_ZLIB=1
+    -fexceptions
     -fno-lto
   cxxflags: |
     -std=c++14
+    -fexceptions
+  ldflags: |
+    -fexceptions
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
     cd $WHEELDIR
