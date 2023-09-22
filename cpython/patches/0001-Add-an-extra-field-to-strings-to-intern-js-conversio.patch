@@ -1,4 +1,4 @@
-From 21e31f133ff0c447b6510cd0051dac010e9ff6d8 Mon Sep 17 00:00:00 2001
+From ca8ed408bb8ad650f299f8af0e87d58eecbbb204 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 9 Sep 2023 15:09:03 -0700
 Subject: [PATCH] Add an extra field to strings to intern js conversions
@@ -6,8 +6,9 @@ Subject: [PATCH] Add an extra field to strings to intern js conversions
 ---
  Include/cpython/unicodeobject.h        |  1 +
  Include/internal/pycore_runtime_init.h |  1 +
+ Lib/test/test_unicode.py               |  2 +-
  Objects/unicodeobject.c                | 20 +++++++++++++++++++-
- 3 files changed, 21 insertions(+), 1 deletion(-)
+ 4 files changed, 22 insertions(+), 2 deletions(-)
 
 diff --git a/Include/cpython/unicodeobject.h b/Include/cpython/unicodeobject.h
 index 84307d1885..a411deaeac 100644
@@ -33,6 +34,19 @@ index 13eae1e4c8..bd1bf7d395 100644
          .state = { \
              .kind = 1, \
              .compact = 1, \
+diff --git a/Lib/test/test_unicode.py b/Lib/test/test_unicode.py
+index c265438a86..3d81018650 100644
+--- a/Lib/test/test_unicode.py
++++ b/Lib/test/test_unicode.py
+@@ -2434,7 +2434,7 @@ def test_expandtabs_optimization(self):
+         self.assertIs(s.expandtabs(), s)
+ 
+     def test_raiseMemError(self):
+-        asciifields = "nnbP"
++        asciifields = "nnbPP"
+         compactfields = asciifields + "nPn"
+         ascii_struct_size = support.calcobjsize(asciifields)
+         compact_struct_size = support.calcobjsize(compactfields)
 diff --git a/Objects/unicodeobject.c b/Objects/unicodeobject.c
 index 84d17f000b..5a0d87ecf8 100644
 --- a/Objects/unicodeobject.c
