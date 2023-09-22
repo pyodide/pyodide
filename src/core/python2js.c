@@ -203,9 +203,6 @@ _python2js_unicode(PyObject* x)
   JsRef result = PyUnicode_GetJsString(x);
   if (result != NULL) {
     hiwire_incref(result);
-    if (track_stringrefs) {
-      __add_stringref(x);
-    }
     return result;
   }
 
@@ -224,6 +221,9 @@ _python2js_unicode(PyObject* x)
       break;
     default:
       assert(false /* invalid Unicode kind */);
+  }
+  if (track_stringrefs) {
+    __add_stringref(x);
   }
   PyUnicode_SetJsString(x, result);
   hiwire_incref(result);
