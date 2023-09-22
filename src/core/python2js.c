@@ -166,6 +166,8 @@ EM_JS_REF(JsRef, _python2js_ucs4, (const char* ptr, int len), {
 
 bool track_stringrefs = false;
 
+// PyUnicode_SetJsString and PyUnicode_GetJsString are added by
+// 0001-Add-an-extra-field-to-strings-to-intern-js-conversio.patch
 void
 PyUnicode_SetJsString(PyObject* unicode, JsRef js_string);
 
