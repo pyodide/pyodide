@@ -1,6 +1,6 @@
 package:
   name: sourmash
-  version: 4.8.3
+  version: 4.8.4
   top-level:
     - sourmash
 requirements:
@@ -17,8 +17,8 @@ requirements:
   executable:
     - rustup
 source:
-  url: https://files.pythonhosted.org/packages/82/dc/bfc4ce1bd64d58495b6ccd5b10cbad79b568e327b347539d465ba0bcc43a/sourmash-4.8.3.tar.gz
-  sha256: 2c83292fd70b69fcad445c8f6a6fc504d8bbe7b8f5bfaa35146fcad899270d06
+  url: https://files.pythonhosted.org/packages/fb/e3/278bc9a265d99008d0b788a464de21337e6ce99f242916a9119ff81823e7/sourmash-4.8.4.tar.gz
+  sha256: 43584c112c3310719771de175b89cba94f1c2d30b1aea46000eaf5a81efbae8a
 about:
   home: https://github.com/sourmash-bio/sourmash
   PyPI: https://pypi.org/project/sourmash
