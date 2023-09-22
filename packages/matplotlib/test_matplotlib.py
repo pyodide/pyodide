@@ -602,7 +602,8 @@ def test_transparency(selenium_standalone):
 
 
 @matplotlib_test_decorator
-def test_triangulation(selenium_standalone):
+@run_in_pyodide(packages=["matplotlib"])
+def test_triangulation(selenium):
     """This test uses setjmp/longjmp so hopefully prevents any more screw ups
     with that...
     """
