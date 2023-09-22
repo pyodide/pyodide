@@ -43,6 +43,12 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	rm pybuilddir.txt
 
 
+.PHONY=rebuild
+rebuild:
+	emmake make -C $(BUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3}
+	cp $(BUILD)/$(LIB) $(INSTALL)/lib/
+
+
 clean:
 	-rm -fr $(ROOT)/build
 	-rm -fr $(ROOT)/installs
