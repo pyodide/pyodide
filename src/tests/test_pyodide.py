@@ -1686,12 +1686,14 @@ def test_runpython_filename(selenium, run_python):
         expected.splitlines()[2:]
     )
 
+
 @run_in_pyodide
 def test_hiwire_invalid_ref(selenium):
-    import pyodide_js
-    from pyodide.ffi import JsException
-    from pyodide.code import run_js
     import pytest
+
+    import pyodide_js
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
 
     _hiwire_get = pyodide_js._module._hiwire_get
     _hiwire_incref = pyodide_js._module._hiwire_incref
@@ -1735,4 +1737,3 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
-
