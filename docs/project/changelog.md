@@ -14,6 +14,24 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
+- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
+  the gil is not held.
+  {pr}`4164`
+
+### Packages
+
+- Upgraded scipy to 1.11.2 {pr}`4156`
+- Upgraded sourmash to 4.8.4 {pr}`4154`
+- Upgraded scikit-learn to 1.3.1 {pr}`4161`
+
 ## Version 0.24.0
 
 _September 13, 2023_

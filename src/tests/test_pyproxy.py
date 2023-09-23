@@ -926,30 +926,33 @@ def test_nogil(selenium):
             Temp()
         `);
         // release GIL
-        const tstate = pyodide._module._PyEval_SaveThread()
+        const tstate = pyodide._module._PyEval_SaveThread();
 
-        assertThrows(() => t.x, "NoGilError", "");
         try {
-            t.x;
-        } catch(e){
-            assert(() => e instanceof pyodide._api.NoGilError);
-        }
-        assertThrows(() => t.x = 2, "NoGilError", "");
-        assertThrows(() => delete t.x, "NoGilError", "");
-        assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
-        assertThrows(() => t(), "NoGilError", "");
-        assertThrows(() => t.get(1), "NoGilError", "");
-        assertThrows(() => t.set(1, 2), "NoGilError", "");
-        assertThrows(() => t.delete(1), "NoGilError", "");
-        assertThrows(() => t.has(1), "NoGilError", "");
-        assertThrows(() => t.length, "NoGilError", "");
-        assertThrows(() => t.toString(), "NoGilError", "");
-        assertThrows(() => Array.from(t), "NoGilError", "");
-        await assertThrowsAsync(async () => await t, "NoGilError", "");
-        assertThrows(() => t.destroy(), "NoGilError", "");
+            assertThrows(() => t.x, "NoGilError", "");
+            try {
+                t.x;
+            } catch(e){
+                assert(() => e instanceof pyodide._api.NoGilError);
+            }
+            assertThrows(() => t.x = 2, "NoGilError", "");
+            assertThrows(() => delete t.x, "NoGilError", "");
+            assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
+            assertThrows(() => t(), "NoGilError", "");
+            assertThrows(() => t.get(1), "NoGilError", "");
+            assertThrows(() => t.set(1, 2), "NoGilError", "");
+            assertThrows(() => t.delete(1), "NoGilError", "");
+            assertThrows(() => t.has(1), "NoGilError", "");
+            assertThrows(() => t.length, "NoGilError", "");
+            assertThrows(() => t.toString(), "NoGilError", "");
+            assertThrows(() => Array.from(t), "NoGilError", "");
+            await assertThrowsAsync(async () => await t, "NoGilError", "");
+            assertThrows(() => t.destroy(), "NoGilError", "");
+        } finally {
+            // acquire GIL
+            pyodide._module._PyEval_RestoreThread(tstate)
 
-        // acquire GIL
-        pyodide._module._PyEval_RestoreThread(tstate)
+        }
         """
     )
 
