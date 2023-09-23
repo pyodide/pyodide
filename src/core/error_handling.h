@@ -92,7 +92,7 @@ console_error_obj(JsRef obj);
 #endif
 
 // Need an extra layer to expand LOG_EM_JS_ERROR.
-#define EM_JS_DEFER(ret, func_name, args, body...)                             \
+#define EM_JS_MACROS(ret, func_name, args, body...)                             \
   EM_JS(ret, func_name, args, body)
 
 #define EM_JS_UNCHECKED(ret, func_name, args, body...)                         \
@@ -101,7 +101,7 @@ console_error_obj(JsRef obj);
 #define WARN_UNUSED __attribute__((warn_unused_result))
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -115,7 +115,7 @@ console_error_obj(JsRef obj);
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -128,7 +128,7 @@ console_error_obj(JsRef obj);
 
 // If there is a Js error, catch it and return false.
 #define EM_JS_BOOL(ret, func_name, args, body...)                              \
-  EM_JS_DEFER(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
