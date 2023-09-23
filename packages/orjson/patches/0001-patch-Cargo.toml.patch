@@ -1,0 +1,24 @@
+From 0b328df1f037657aeba462d7fd003ed7702c0b0a Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Fri, 22 Sep 2023 21:41:10 -0700
+Subject: [PATCH] patch Cargo.toml
+
+---
+ Cargo.toml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Cargo.toml b/Cargo.toml
+index 8ca77f7..fd168ee 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -90,3 +90,7 @@ panic = "abort"
+ 
+ [profile.release.build-override]
+ opt-level = 0
++
++[patch.crates-io]
++pyo3-ffi = { git = 'https://github.com/hoodmane/pyo3.git', branch = 'js-string-0.19.1' }
++pyo3-build-config = { git = 'https://github.com/hoodmane/pyo3.git', branch = 'js-string-0.19.1' }
+-- 
+2.25.1
+
