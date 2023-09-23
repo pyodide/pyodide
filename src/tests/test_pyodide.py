@@ -419,6 +419,15 @@ def test_run_python_last_exc(selenium):
 
 
 def test_check_interrupt(selenium):
+    # First make sure checkInterrupt works when interrupt buffer is undefined.
+    # It should just do nothing in this case.
+    selenium.run_js(
+        """
+        pyodide.setInterruptBuffer(undefined);
+        pyodide.checkInterrupt();
+        """
+    )
+
     assert selenium.run_js(
         """
         let buffer = new Uint8Array(1);
@@ -459,6 +468,43 @@ def test_check_interrupt(selenium):
         console.log({err_code, err_occurred});
         pyodide._module._PyErr_Clear();
         return buffer[0] === 0 && err_code === -1 && err_occurred !== 0;
+        """
+    )
+
+
+def test_check_interrupt_no_gil(selenium):
+    """Check interrupt has a special case for GIL not held.
+    Make sure that it works.
+    """
+    selenium.run_js(
+        """
+        // release GIL
+        const tstate = pyodide._module._PyEval_SaveThread();
+
+        try {
+            // check that checkInterrupt works when interrupt buffer not defined
+            // it should do nothing.
+            pyodide.setInterruptBuffer(undefined);
+            pyodide.checkInterrupt();
+            ib = new Int32Array(1);
+            pyodide.setInterruptBuffer(ib);
+            pyodide.checkInterrupt();
+
+            ib[0] = 2;
+            let err;
+            try {
+                pyodide.checkInterrupt();
+            } catch(e) {
+                err = e;
+            }
+            assert(() => err instanceof pyodide.FS.ErrnoError);
+            assert(() => err.errno === pyodide.ERRNO_CODES.EINTR);
+            assert(() => ib[0] === 2);
+            ib[0] = 0;
+        } finally {
+            // acquire GIL
+            pyodide._module._PyEval_RestoreThread(tstate)
+        }
         """
     )
 

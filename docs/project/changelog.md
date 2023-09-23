@@ -16,11 +16,18 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error
+  happened in out-of-tree build.
+
 - {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
   {pr}`4163`
 
 - {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
   {pr}`4136`
+
+- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
+  the gil is not held.
+  {pr}`4164`
 
 ### Load time & size optimizations
 
