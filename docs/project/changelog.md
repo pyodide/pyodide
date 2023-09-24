@@ -14,7 +14,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.24.1
+
+_September 24, 2023_
 
 - {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
   {pr}`4136`
@@ -30,7 +32,6 @@ myst:
 
 - Upgraded scipy to 1.11.2 {pr}`4156`
 - Upgraded sourmash to 4.8.4 {pr}`4154`
-
 - Upgraded scikit-learn to 1.3.1 {pr}`4161`
 
 ## Version 0.24.0
