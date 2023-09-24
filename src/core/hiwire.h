@@ -1,43 +1,14 @@
-#ifndef HIWIRE_H
-#define HIWIRE_H
+#ifndef PYODIDE_HIWIRE_H
+#define PYODIDE_HIWIRE_H
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "hiwire/hiwire.h"
 #include "stdalign.h"
 #include "types.h"
 #define WARN_UNUSED __attribute__((warn_unused_result))
+#define hiwire_incref wrapped_hiwire_incref
 
-/**
- * hiwire: A super-simple framework for converting values between C and
- * JavaScript.
- *
- * Arbitrary JavaScript objects are referenced from C using an opaque JsRef
- * value.
- *
- * JavaScript objects passed to the C side must be manually reference-counted.
- * Use `hiwire_incref` if you plan to store the object on the C side. Use
- * `hiwire_decref` when done. Internally, the objects are stored in a global
- * object. There may be one or more keys pointing to the same object.
- */
-
-// JsRef is a NewType of int. We need
-//
-// alignof(JsRef) = alignof(int) = 4 and
-// sizeof(JsRef) = sizeof(int) = 4
-//
-// To be future proof, we have _Static_asserts for this.
-// I also added
-// -Werror=int-conversion -Werror=incompatible-pointer-types
-// to the compile flags, to ensure that no implicit casts will happen between
-// JsRef and any other type.
-struct _JsRefStruct
-{};
-
-typedef struct _JsRefStruct* JsRef;
-
-_Static_assert(alignof(JsRef) == alignof(int),
-               "JsRef should have the same alignment as int.");
-_Static_assert(sizeof(JsRef) == sizeof(int),
-               "JsRef should have the same size as int.");
+typedef HwRef JsRef;
 
 // Error handling will want to see JsRef.
 #include "error_handling.h"

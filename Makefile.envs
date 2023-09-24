@@ -146,6 +146,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lworkerfs.js \
 	-lwebsocket.js \
 	-leventloop.js \
+	-lhiwire \
 	\
 	-lGL \
 	-legl.js \
@@ -165,7 +166,9 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=int-conversion \
 	-Werror=incompatible-pointer-types \
 	-Werror=unused-result \
+	-mreference-types \
 	-I$(PYTHONINCLUDE) \
+	-I$(PYTHONINCLUDE)/.. \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
