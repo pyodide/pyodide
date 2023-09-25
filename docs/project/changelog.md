@@ -16,7 +16,7 @@ myst:
 
 ## Version 0.24.1
 
-_September 24, 2023_
+_September 25, 2023_
 
 - {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
   {pr}`4136`
