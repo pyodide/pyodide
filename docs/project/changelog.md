@@ -16,31 +16,32 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error
-  happened in out-of-tree build.
-
-- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
-  {pr}`4163`
-
-- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
-  {pr}`4136`
-
-- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
-  the gil is not held.
-  {pr}`4164`
-
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
   which reduces the time to load Pyodide.
   {pr}`4147`
 
+## Version 0.24.1
+
+_September 25, 2023_
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
+- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
+  the gil is not held.
+  {pr}`4164`
+
 ### Packages
 
 - Upgraded scipy to 1.11.2 {pr}`4156`
 - Upgraded sourmash to 4.8.4 {pr}`4154`
-
 - Upgraded scikit-learn to 1.3.1 {pr}`4161`
+- Upgraded micropip to 0.5.0 {pr}`4167`
 
 ## Version 0.24.0
 
