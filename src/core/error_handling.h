@@ -109,9 +109,7 @@ console_error_obj(JsRef obj);
         Module.handle_js_error(e);                                             \
         return 0;                                                              \
     }                                                                          \
-    throw new Error(                                                           \
-      "Assertion error: control reached end of function without return"        \
-    );                                                                         \
+    errNoRet();                                                                \
   })
 
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
