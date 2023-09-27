@@ -20,36 +20,44 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
-import os
 import contextlib
-import sys
-import warnings
-import traceback
+import os
 import subprocess
-from collections.abc import Iterator, Sequence
-from typing import NoReturn, TextIO
+import sys
+import traceback
+import warnings
+from collections.abc import Iterator
+from typing import NoReturn
 
-from build import BuildBackendException, BuildException, FailedProcessError, ProjectBuilder
+from build import (
+    BuildBackendException,
+    BuildException,
+    FailedProcessError,
+    ProjectBuilder,
+)
 from build.env import DefaultIsolatedEnv
 
 _COLORS = {
-    'red': '\33[91m',
-    'green': '\33[92m',
-    'yellow': '\33[93m',
-    'bold': '\33[1m',
-    'dim': '\33[2m',
-    'underline': '\33[4m',
-    'reset': '\33[0m',
+    "red": "\33[91m",
+    "green": "\33[92m",
+    "yellow": "\33[93m",
+    "bold": "\33[1m",
+    "dim": "\33[2m",
+    "underline": "\33[4m",
+    "reset": "\33[0m",
 }
-_NO_COLORS = {color: '' for color in _COLORS}
+_NO_COLORS = {color: "" for color in _COLORS}
 
 
 def _init_colors() -> dict[str, str]:
-    if 'NO_COLOR' in os.environ:
-        if 'FORCE_COLOR' in os.environ:
-            warnings.warn('Both NO_COLOR and FORCE_COLOR environment variables are set, disabling color', stacklevel=2)
+    if "NO_COLOR" in os.environ:
+        if "FORCE_COLOR" in os.environ:
+            warnings.warn(
+                "Both NO_COLOR and FORCE_COLOR environment variables are set, disabling color",
+                stacklevel=2,
+            )
         return _NO_COLORS
-    elif 'FORCE_COLOR' in os.environ or sys.stdout.isatty():
+    elif "FORCE_COLOR" in os.environ or sys.stdout.isatty():
         return _COLORS
     return _NO_COLORS
 
@@ -57,7 +65,7 @@ def _init_colors() -> dict[str, str]:
 _STYLES = _init_colors()
 
 
-def _cprint(fmt: str = '', msg: str = '') -> None:
+def _cprint(fmt: str = "", msg: str = "") -> None:
     print(fmt.format(msg, **_STYLES), flush=True)
 
 
@@ -68,20 +76,20 @@ def _error(msg: str, code: int = 1) -> NoReturn:  # pragma: no cover
     :param msg: Error message
     :param code: Error code
     """
-    _cprint('{red}ERROR{reset} {}', msg)
+    _cprint("{red}ERROR{reset} {}", msg)
     raise SystemExit(code)
 
 
 class _ProjectBuilder(ProjectBuilder):
     @staticmethod
     def log(message: str) -> None:
-        _cprint('{bold}* {}{reset}', message)
+        _cprint("{bold}* {}{reset}", message)
 
 
 class _DefaultIsolatedEnv(DefaultIsolatedEnv):
     @staticmethod
     def log(message: str) -> None:
-        _cprint('{bold}* {}{reset}', message)
+        _cprint("{bold}* {}{reset}", message)
 
 
 @contextlib.contextmanager
@@ -102,8 +110,8 @@ def _handle_build_error() -> Iterator[None]:
                 e.exc_info[2],
                 limit=-1,
             )
-            tb = ''.join(tb_lines)
+            tb = "".join(tb_lines)
         else:
             tb = traceback.format_exc(-1)  # type: ignore[unreachable]
-        _cprint('\n{dim}{}{reset}\n', tb.strip('\n'))
+        _cprint("\n{dim}{}{reset}\n", tb.strip("\n"))
         _error(str(e))
