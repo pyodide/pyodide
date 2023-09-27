@@ -1,9 +1,10 @@
 import json
 import os
 import shutil
+import subprocess as sp
 import sys
 import traceback
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
@@ -30,11 +31,28 @@ from .build_env import (
 )
 from .io import _BuildSpecExports
 
-AVOIDED_REQUIREMENTS = [
-    # We don't want to install cmake Python package inside the isolated env as it will shadow
-    # the pywasmcross cmake wrapper.
-    "cmake",
-]
+
+def runner(
+    compiler_wrapper_dir: str,
+) -> Callable[[Sequence[str], str | None, Mapping[str, str] | None], None]:
+    """
+    This returns a slightly modified version of default subprocess runner that pypa/build uses.
+    pypa/build prepends the virtual environment's bin directory to the PATH environment variable.
+    This is problematic because it shadows the pywasmcross compiler wrappers for cmake, meson, etc.
+
+    This function prepends the compiler wrapper directory to the PATH again so that our compiler wrappers
+    are searched first.
+    """
+
+    def _runner(cmd, cwd=None, extra_environ=None):
+        env = os.environ.copy()
+        if extra_environ:
+            env.update(extra_environ)
+
+        env["PATH"] = f"{compiler_wrapper_dir}:{env['PATH']}"
+        sp.check_call(cmd, cwd=cwd, env=env)
+
+    return _runner
 
 
 def symlink_unisolated_packages(env: DefaultIsolatedEnv) -> None:
@@ -72,7 +90,7 @@ def remove_avoided_requirements(
 def install_reqs(env: DefaultIsolatedEnv, reqs: set[str]) -> None:
     env.install(
         remove_avoided_requirements(
-            reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
+            reqs, get_unisolated_packages()
         )
     )
 
@@ -102,6 +120,7 @@ def _build_in_isolated_env(
         builder = _ProjectBuilder.from_isolated_env(
             env,
             srcdir,
+            runner=runner(build_env["PYODIDE_COMPILER_WRAPPER_DIR"]),
         )
 
         # first install the build dependencies
@@ -226,10 +245,10 @@ def get_build_env(
         env["PYWASMCROSS_ARGS"] = pywasmcross_env
         (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
 
-        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = get_build_flag("SYSCONFIG_NAME")
         env["PYTHONPATH"] = str(sysconfig_dir)
+        env["PYODIDE_COMPILER_WRAPPER_DIR"] = str(symlink_dir)
         yield env
 
 
