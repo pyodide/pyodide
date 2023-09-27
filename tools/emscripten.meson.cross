@@ -1,10 +1,10 @@
 [binaries]
-c = 'emcc'
-cpp = 'em++'
-ar = 'emar'
-fortran = '/usr/bin/gfortran'
+c = 'cc'
+cpp = 'c++'
+ar = 'ar'
+fortran = 'gfortran'
 
-cmake = ['emmake', 'cmake']
+cmake = 'cmake'
 sdl2-config = ['emconfigure', 'sdl2-config']
 
 [host_machine]

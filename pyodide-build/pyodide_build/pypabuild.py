@@ -50,6 +50,8 @@ def runner(
             env.update(extra_environ)
 
         env["PATH"] = f"{compiler_wrapper_dir}:{env['PATH']}"
+        # For debugging: Uncomment the following line to print the build command
+        # print("Build backend call:", cmd)
         sp.check_call(cmd, cwd=cwd, env=env)
 
     return _runner
@@ -130,6 +132,7 @@ def _build_in_isolated_env(
         try:
             build_reqs = builder.get_requires_for_build(
                 distribution,
+                config_settings,
             )
         except BuildBackendException:
             pass
@@ -143,8 +146,10 @@ def _build_in_isolated_env(
                     env,
                     builder.get_requires_for_build(
                         distribution,
+                        config_settings,
                     ),
                 )
+                
             return builder.build(distribution, outdir, config_settings)
 
 
