@@ -13,7 +13,7 @@ from pathlib import Path
 if sys.version_info < (3, 11, 0):
     import tomli as tomllib
 else:
-    import tomllib  # type: ignore[no-redef]
+    import tomllib
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 

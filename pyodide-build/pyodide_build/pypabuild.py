@@ -9,15 +9,15 @@ from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from build import BuildBackendException, ConfigSettingsType, ProjectBuilder
+from build import BuildBackendException, ConfigSettingsType
 from build.__main__ import (
     _STYLES,
+    _DefaultIsolatedEnv,
     _error,
     _handle_build_error,
-    _IsolatedEnvBuilder,
     _ProjectBuilder,
 )
-from build.env import IsolatedEnv
+from build.env import DefaultIsolatedEnv
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross
@@ -37,10 +37,10 @@ AVOIDED_REQUIREMENTS = [
 ]
 
 
-def symlink_unisolated_packages(env: IsolatedEnv) -> None:
+def symlink_unisolated_packages(env: DefaultIsolatedEnv) -> None:
     pyversion = get_pyversion()
     site_packages_path = f"lib/{pyversion}/site-packages"
-    env_site_packages = Path(env.path) / site_packages_path  # type: ignore[attr-defined]
+    env_site_packages = Path(env.path) / site_packages_path
     sysconfigdata_name = get_build_flag("SYSCONFIG_NAME")
     sysconfigdata_path = (
         Path(get_build_flag("TARGETINSTALLDIR"))
@@ -69,7 +69,7 @@ def remove_avoided_requirements(
     return requires
 
 
-def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
+def install_reqs(env: DefaultIsolatedEnv, reqs: set[str]) -> None:
     env.install(
         remove_avoided_requirements(
             reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
@@ -89,7 +89,7 @@ def install_reqs(env: IsolatedEnv, reqs: set[str]) -> None:
 
 def _build_in_isolated_env(
     build_env: Mapping[str, str],
-    builder: ProjectBuilder,
+    srcdir: Path,
     outdir: str,
     distribution: str,
     config_settings: ConfigSettingsType,
@@ -97,10 +97,13 @@ def _build_in_isolated_env(
     # For debugging: The following line disables removal of the isolated venv.
     # It will be left in the /tmp folder and can be inspected or entered as
     # needed.
-    # _IsolatedEnvBuilder.__exit__ = lambda *args: None
-    with _IsolatedEnvBuilder() as env:
-        builder.python_executable = env.executable
-        builder.scripts_dir = env.scripts_dir
+    # _DefaultIsolatedEnv.__exit__ = lambda *args: None
+    with _DefaultIsolatedEnv() as env:
+        builder = _ProjectBuilder.from_isolated_env(
+            env,
+            srcdir,
+        )
+
         # first install the build dependencies
         symlink_unisolated_packages(env)
         install_reqs(env, builder.build_system_requires)
@@ -236,13 +239,12 @@ def build(
     build_env: Mapping[str, str],
     backend_flags: str,
 ) -> str:
-    builder = _ProjectBuilder(str(srcdir))
     distribution = "wheel"
     config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
-                build_env, builder, str(outdir), distribution, config_settings
+                build_env, srcdir, str(outdir), distribution, config_settings
             )
             print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
             return built
