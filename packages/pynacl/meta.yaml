@@ -11,6 +11,8 @@ source:
 requirements:
   run:
     - cffi
+  host:
+    - cffi
 about:
   home: https://github.com/pyca/pynacl/
   PyPI: https://pypi.org/project/pynacl
