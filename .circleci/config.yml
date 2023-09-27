@@ -321,7 +321,7 @@ jobs:
         description: pytest-cache-dir.
         type: string
         default: ""
-    resource_class: medium
+    resource_class: macos.x86.medium.gen2
     macos:
       xcode: 14.3.1
 
