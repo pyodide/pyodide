@@ -53,3 +53,9 @@ function hasMethod(obj, prop) {
 
 const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr;
 API.pyproxyIsAlive = pyproxyIsAlive;
+
+const errNoRet = () => {
+  throw new Error(
+    "Assertion error: control reached end of function without return",
+  );
+};
