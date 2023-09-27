@@ -413,12 +413,21 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
-    readobj_path = shutil.which("llvm-readobj")
-    if not readobj_path:
-        which_emcc = shutil.which("emcc")
-        assert which_emcc
-        emcc = Path(which_emcc)
-        readobj_path = str((emcc / "../../bin/llvm-readobj").resolve())
+    which_emcc = shutil.which("emcc")
+    assert which_emcc
+    emcc = Path(which_emcc)
+    readobj = (emcc / "../../bin/llvm-readobj").resolve()
+    if readobj.exists():
+        readobj_path=str(readobj)
+    else:
+        readobj_path = shutil.which("llvm-readobj")
+    assert(readobj_path)
+    args = [
+        readobj_path,
+        "--section-details",
+        "-st",
+    ] + objects
+
     args = [
         readobj_path,
         "--section-details",
