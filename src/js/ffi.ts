@@ -16,6 +16,8 @@ export type {
   PyBuffer,
   PyBufferView,
   TypedArray,
+  PySequence,
+  PyMutableSequence,
 } from "./pyproxy.gen";
 
 export type { PythonError } from "./error_handling.gen";

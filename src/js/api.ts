@@ -583,7 +583,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PyBuffer() {
@@ -599,7 +599,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
 
@@ -616,7 +616,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PythonError() {
