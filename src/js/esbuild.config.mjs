@@ -57,6 +57,7 @@ const config = ({ input, output, format, name: globalName }) => ({
   external: [
     "child_process",
     "crypto",
+    "emscripten",
     "fs",
     "fs/promises",
     "node-fetch",

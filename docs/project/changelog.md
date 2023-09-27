@@ -213,6 +213,9 @@ _June 17, 2023_
   {pr}`3617`.
   {pr}`3926`
 
+- {{ API }} `PyodideAPI.FS` now contains type information from `@types/emscripten`.
+  {pr}`3935`
+
 - {{ Fix }} `pyodide build` now replaces native `.so` slugs with Emscripten
   slugs. Usually `.so`s in the generated wheels are actually Emscripten `.so`s
   so this is good. If they are actually native `.so`s then there is a problem
