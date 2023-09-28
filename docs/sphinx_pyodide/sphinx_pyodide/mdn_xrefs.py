@@ -18,6 +18,7 @@ DATA = {
         "Array": "$global/",
         "NodeList": "API/",
         "HTMLCollection": "API/",
+        "HTMLCanvasElement": "API/",
         "Generator": "$global/",
         "AsyncGenerator": "$global/",
         "Date": "$global/",

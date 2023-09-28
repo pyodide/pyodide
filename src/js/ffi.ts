@@ -1,25 +1,3 @@
-export type {
-  PyProxy,
-  PyProxyWithLength,
-  PyProxyWithGet,
-  PyProxyWithSet,
-  PyProxyWithHas,
-  PyDict,
-  PyIterable,
-  PyAsyncIterable,
-  PyIterator,
-  PyAsyncIterator,
-  PyGenerator,
-  PyAsyncGenerator,
-  PyAwaitable,
-  PyCallable,
-  PyBuffer,
-  PyBufferView,
-  TypedArray,
-  PySequence,
-  PyMutableSequence,
-} from "./pyproxy.gen";
-
 export type { PythonError } from "./error_handling.gen";
 
 import {

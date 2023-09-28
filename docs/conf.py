@@ -145,6 +145,9 @@ extra_sys_path_dirs = [
 ]
 
 
+def ts_should_destructure_arg(sig, param):
+    return param.name == "options" and sig.name != "destroy"
+
 if IN_SPHINX:
     # sphinx_pyodide is imported before setup() is called because it's a sphinx
     # extension, so we need it to be on the path early. Everything else can be
