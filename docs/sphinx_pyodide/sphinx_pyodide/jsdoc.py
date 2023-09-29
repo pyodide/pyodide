@@ -594,7 +594,7 @@ class PyodideAnalyzer:
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
-                _, kind = get_tag(obj, "doc_kind")
+                _, kind = get_tag(obj, "dockind")
                 if kind:
                     obj.kind = kind
                 elif isinstance(obj, Class):
