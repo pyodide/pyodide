@@ -21,4 +21,4 @@ build:
     nodejs: "20"
   jobs:
     post_install:
-      - npm install -g typedoc==0.25
+      - npm install -g typedoc@0.25
