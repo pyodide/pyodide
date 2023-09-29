@@ -52,7 +52,6 @@ def remove_property_prefix():
 
 
 def setup(app):
-    # patch_templates()
     fix_pyodide_ffi_path()
     remove_property_prefix()
     app.add_lexer("pyodide", PyodideLexer)
