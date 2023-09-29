@@ -85,6 +85,8 @@ def ts_xref_formatter(self, xref):
     from sphinx_pyodide.mdn_xrefs import JSDATA
 
     name = xref.name
+    if name == "PyodideInterface":
+        return ":ref:`PyodideInterface <js-api-pyodide>`"
     if name in JSDATA:
         result = f":js:data:`{name}`"
     elif name in FFI_FIELDS:
