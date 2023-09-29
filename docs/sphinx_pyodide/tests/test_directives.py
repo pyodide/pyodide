@@ -12,7 +12,8 @@ if not hasattr(inspect, "getargspec"):
 
 
 from sphinx_js.suffix_tree import SuffixTree
-from sphinx_js.typedoc import Analyzer as TsAnalyzer, Project
+from sphinx_js.typedoc import Analyzer as TsAnalyzer
+from sphinx_js.typedoc import Project
 
 test_directory = Path(__file__).resolve().parent
 sys.path.append(str(test_directory.parent))
@@ -34,14 +35,19 @@ from sphinx_pyodide.jsdoc import (
     get_jsdoc_summary_directive,
     ts_post_convert,
     ts_should_destructure_arg,
-    ts_xref_formatter
+    ts_xref_formatter,
 )
 
 with gzip.open(test_directory / "tsdoc_dump.json.gz") as fh:
     jsdoc_json = Project.parse_raw(fh.read())
 settings_json = json.loads((test_directory / "app_settings.json").read_text())
 
-inner_analyzer = TsAnalyzer(jsdoc_json, str(src_dir), post_convert=ts_post_convert, should_destructure_arg=ts_should_destructure_arg)
+inner_analyzer = TsAnalyzer(
+    jsdoc_json,
+    str(src_dir),
+    post_convert=ts_post_convert,
+    should_destructure_arg=ts_should_destructure_arg,
+)
 settings = OptionParser().get_default_values()
 settings.update(settings_json, OptionParser())
 
@@ -221,4 +227,3 @@ def test_summary():
         "loadPackagesFromImports",
         "(code, options)",
     )
-
