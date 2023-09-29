@@ -19,6 +19,3 @@ build:
   tools:
     python: "3.11"
     nodejs: "20"
-  jobs:
-    post_install:
-      - npm install -g typedoc@0.25
