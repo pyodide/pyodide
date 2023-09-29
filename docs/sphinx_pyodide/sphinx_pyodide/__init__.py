@@ -3,6 +3,7 @@ from .jsdoc import (
     get_jsdoc_content_directive,
     get_jsdoc_summary_directive,
     ts_post_convert,
+    ts_should_destructure_arg,
     ts_xref_formatter,
 )
 from .lexers import HtmlPyodideLexer, PyodideLexer
@@ -63,5 +64,6 @@ def setup(app):
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
     app.connect("builder-inited", add_mdn_xrefs)
     app.config.ts_post_convert = ts_post_convert
-    app.config.ts_type_bold = True
+    app.config.ts_should_destructure_arg = ts_should_destructure_arg
     app.config.ts_type_xref_formatter = ts_xref_formatter
+    app.config.ts_type_bold = True

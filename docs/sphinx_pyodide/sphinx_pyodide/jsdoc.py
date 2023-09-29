@@ -41,6 +41,10 @@ def member_properties(self):
 Base.member_properties = member_properties
 
 
+def ts_should_destructure_arg(sig, param):
+    return param.name == "options" and sig.name != "destroy"
+
+
 def ts_post_convert(converter, node, doclet):
     doclet.exported_from = None
     COMMENT_DICT[str(doclet.path)] = node.comment
