@@ -63,5 +63,4 @@ def setup(app):
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
     app.connect("builder-inited", add_mdn_xrefs)
     app.config.ts_post_convert = ts_post_convert
-    app.config.ts_type_bold = True
     app.config.ts_type_xref_formatter = ts_xref_formatter
