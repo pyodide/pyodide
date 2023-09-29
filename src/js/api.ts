@@ -114,10 +114,8 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * This provides APIs to set a canvas for rendering graphics.
-   *
-   * For example, you need to set a canvas if you want to use the
-   * SDL library. See :ref:`using-sdl` for more information.
+   * See :ref:`js-api-pyodide-canvas`.
+   * @hidetype
    */
   static canvas: CanvasInterface = canvas;
 
@@ -583,7 +581,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PyBuffer() {
@@ -599,7 +597,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
 
@@ -616,7 +614,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PythonError() {
