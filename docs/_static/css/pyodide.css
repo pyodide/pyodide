@@ -33,10 +33,6 @@ code {
   font-weight: bold;
 }
 
-.sphinx_js-type {
-  font-weight: bolder;
-}
-
 code.literal {
   /* I don't like the badge py-data puts around code literals, it is too aggressive */
   background-color: unset;

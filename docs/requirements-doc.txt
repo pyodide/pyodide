@@ -18,4 +18,4 @@ pydantic
 micropip==0.2.2
 jinja2>=3.0
 ruamel.yaml
-sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@fe0a98c685bd59e76571da2b917cf3b7e79482bc
+sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@c4a53dc539c3042a4bb1e0cd57e55f30451d9c8e
