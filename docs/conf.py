@@ -256,12 +256,6 @@ def ensure_typedoc_on_path():
         return
     if IN_READTHEDOCS:
         subprocess.run(["npm", "ci"], cwd="../src/js")
-        p = Path("../src/js/node_modules/@types/node/globals.d.ts")
-        p.write_text(
-            p.read_text().replace(
-                "declare var AbortSignal:", "declare var AbortSignal1:"
-            )
-        )
     if shutil.which("typedoc"):
         return
     raise Exception(
