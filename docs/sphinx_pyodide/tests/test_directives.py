@@ -189,11 +189,12 @@ def test_summary():
     functions = jsdoc_summary.get_summary_table(
         "pyodide", dummy_app._sphinxjs_analyzer.js_docs["pyodide"]["function"]
     )
-    globals = {t[1]: t for t in globals}
-    attributes = {t[1]: t for t in attributes}
-    functions = {t[1]: t for t in functions}
+    globals = {t[2]: t for t in globals}
+    attributes = {t[2]: t for t in attributes}
+    functions = {t[2]: t for t in functions}
     assert globals["loadPyodide"] == (
         "**async** ",
+        "any",
         "loadPyodide",
         "(options)",
         "Load the main Pyodide wasm module and initialize it.",
@@ -202,6 +203,7 @@ def test_summary():
 
     assert attributes["pyodide_py"] == (
         "",
+        "any",
         "pyodide_py",
         "",
         "An alias to the Python :ref:`pyodide <python-api>` package.",
@@ -209,6 +211,7 @@ def test_summary():
     )
     assert attributes["version"] == (
         "",
+        "any",
         "version",
         "",
         "The Pyodide version.",
@@ -216,6 +219,7 @@ def test_summary():
     )
     assert attributes["loadedPackages"] == (
         "",
+        "any",
         "loadedPackages",
         "",
         "The list of packages that Pyodide has loaded.",
@@ -224,6 +228,7 @@ def test_summary():
 
     assert functions["loadPackagesFromImports"][:-2] == (
         "**async** ",
+        "any",
         "loadPackagesFromImports",
         "(code, options)",
     )
