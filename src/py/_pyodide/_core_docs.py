@@ -252,7 +252,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         --------
 
         Here are a couple examples of converter functions. In addition to the
-        normal conversions, convert :js:class:`Date`` to :py:class:`~datetime.datetime`:
+        normal conversions, convert :js:class:`Date` to :py:class:`~datetime.datetime`:
 
         .. code-block:: python
 

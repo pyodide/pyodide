@@ -78,7 +78,10 @@ def fix_set_stdin(converter, node, doclet):
         if param.name == "stdin":
             break
     target = converter.index[param.type.target]
-    doclet.params[-1].type = target.type.render_name(converter)
+    for docparam in doclet.params:
+        if docparam.name == "stdin":
+            break
+    docparam.type = target.type.render_name(converter)
 
 
 def fix_native_fs(converter, node, doclet):
@@ -416,11 +419,15 @@ def get_jsdoc_summary_directive(app):
             sig = self.get_sig(obj)
             display_name = obj.name
             prefix = "**async** " if getattr(obj, "is_async", False) else ""
+            qualifier = "any"
+            if obj.name == "ffi":
+                qualifier = "js:mod"
+
             summary = self.extract_summary(
                 JsRenderer.render_description(None, obj.description)
             )
             link_name = pkgname + "." + display_name
-            return (prefix, display_name, sig, summary, link_name)
+            return (prefix, qualifier, display_name, sig, summary, link_name)
 
         def get_summary_table(self, pkgname, group):
             """Get the data for a summary tget_summary_tableable. Return value
@@ -469,9 +476,8 @@ def get_jsdoc_summary_directive(app):
                         row.append(nodes.entry("", node))
                 body.append(row)
 
-            for prefix, name, sig, summary, real_name in items:
+            for prefix, qualifier, name, sig, summary, real_name in items:
                 # The body of this loop is changed from copied code.
-                qualifier = "any"
                 sig = rst.escape(sig)
                 if sig:
                     sig = f"**{sig}**"
@@ -502,7 +508,7 @@ def get_jsdoc_summary_directive(app):
             name = name.removeprefix("~")
             _, obj, *_ = self.import_by_name(name, prefixes=prefixes)
             prefix = "**async** " if iscoroutinefunction(obj) else ""
-            new_items.append((prefix, *item))
+            new_items.append((prefix, "any", *item))
         return new_items
 
     Autosummary.get_items = get_items
