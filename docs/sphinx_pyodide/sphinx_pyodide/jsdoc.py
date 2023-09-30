@@ -19,7 +19,7 @@ from sphinx_js.renderers import (
     JsRenderer,
 )
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
-from sphinx_js.typedoc import Base, Converter
+from sphinx_js.typedoc import Base, Callable, Converter, ReflectionType
 
 # Custom tags are a great way of conveniently passing information from the
 # source code to this file. No custom tags will be seen by this code unless they
@@ -62,6 +62,31 @@ def ts_post_convert(converter, node, doclet):
 
     if isinstance(doclet, ir.Class) and has_tag(doclet, "hideconstructor"):
         doclet.constructor = None
+
+    if node.name == "setStdin":
+        fix_set_stdin(converter, node, doclet)
+
+    if node.name == "mountNativeFS":
+        fix_native_fs(converter, node, doclet)
+
+
+def fix_set_stdin(converter, node, doclet):
+    assert isinstance(node, Callable)
+    options = node.signatures[0].parameters[0]
+    assert isinstance(options.type, ReflectionType)
+    for param in options.type.declaration.children:
+        if param.name == "stdin":
+            break
+    target = converter.index[param.type.target]
+    doclet.params[-1].type = target.type.render_name(converter)
+
+
+def fix_native_fs(converter, node, doclet):
+    assert isinstance(node, Callable)
+    ty = node.signatures[0].type
+    target = converter.index[ty.typeArguments[0].target]
+    ty.typeArguments[0] = target.type
+    doclet.returns[0].type = ty.render_name(converter)
 
 
 orig_convert_all_nodes = Converter.convert_all_nodes
