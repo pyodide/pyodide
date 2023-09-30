@@ -192,7 +192,6 @@ const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
  * Function so that PyProxy objects can be callable. In that case we MUST expose
  * certain properties inherited from Function, but we do our best to remove as
  * many as possible.
- * @private
  */
 function pyproxy_new(
   ptr: number,
@@ -344,7 +343,6 @@ let pyproxyClassMap = new Map();
  * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
  * will share the same prototype, so the memory footprint of each individual
  * PyProxy is minimal.
- * @private
  */
 Module.getPyProxyClass = function (flags: number) {
   const FLAG_TYPE_PAIRS: [number, any][] = [
@@ -556,7 +554,6 @@ export class PyProxy {
   }
 
   /**
-   * @private
    * @hideconstructor
    */
   constructor() {
@@ -1033,7 +1030,6 @@ export class PyContainsMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
@@ -1122,7 +1118,6 @@ export class PyIterableMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
   try {
@@ -2343,7 +2338,6 @@ export type PyProxyAwaitable = PyAwaitable;
 
 /**
  * The Promise / JavaScript awaitable API.
- * @private
  */
 export class PyAwaitableMethods {
   $$: any;
@@ -2962,10 +2956,8 @@ export class PyBufferView {
    */
   f_contiguous: boolean;
 
-  /** @private */
   _released: boolean;
 
-  /** @private */
   _view_ptr: number;
 
   /** @private */
