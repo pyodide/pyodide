@@ -2442,7 +2442,7 @@ export class PyAwaitableMethods {
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is
- * :std:term:`callable` (i.e., has an :py:meth:`~operator.__call__` method).
+ * :std:term:`callable` (i.e., has an :py:meth:`~object.__call__` method).
  */
 export class PyCallable extends PyProxy {
   /** @private */
