@@ -280,7 +280,7 @@ Module.handle_js_error = function (e: any) {
 /**
  * A JavaScript error caused by a Python exception.
  *
- * In order to reduce the risk of large memory leaks, the :py:exc:`PythonError`
+ * In order to reduce the risk of large memory leaks, the :js:class:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
  * the actual Python exception that caused this error as
  * :py:data:`sys.last_value`.

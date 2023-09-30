@@ -43,7 +43,7 @@ import type { PyProxy } from "pyodide/ffi";
 This provides APIs to set a canvas for rendering graphics.
 
 For example, you need to set a canvas if you want to use the SDL library. See
-:ref:`using-sdl` for more information.
+{ref}`using-sdl` for more information.
 
 ```{eval-rst}
 .. js-doc-summary:: pyodide.canvas

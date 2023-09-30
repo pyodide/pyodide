@@ -8,7 +8,6 @@ sphinx_book_theme>=0.4.0rc1
 # A dependency of the above theme, which had some breaking changes in 0.13.2
 pydata_sphinx_theme < 0.13.2
 sphinx-issues
-sphinx-js>=3.2.1
 sphinx-click
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
@@ -19,3 +18,4 @@ pydantic
 micropip==0.2.2
 jinja2>=3.0
 ruamel.yaml
+sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@3c02e364d3444c9c75ca68419d71237b61f3f5d8

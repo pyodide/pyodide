@@ -192,7 +192,6 @@ const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
  * Function so that PyProxy objects can be callable. In that case we MUST expose
  * certain properties inherited from Function, but we do our best to remove as
  * many as possible.
- * @private
  */
 function pyproxy_new(
   ptr: number,
@@ -344,7 +343,6 @@ let pyproxyClassMap = new Map();
  * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
  * will share the same prototype, so the memory footprint of each individual
  * PyProxy is minimal.
- * @private
  */
 Module.getPyProxyClass = function (flags: number) {
   const FLAG_TYPE_PAIRS: [number, any][] = [
@@ -556,14 +554,13 @@ export class PyProxy {
   }
 
   /**
-   * @private
    * @hideconstructor
    */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
 
-  /** @private */
+  /** @hidden */
   get [Symbol.toStringTag]() {
     return "PyProxy";
   }
@@ -1033,7 +1030,6 @@ export class PyContainsMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
@@ -1122,7 +1118,6 @@ export class PyIterableMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
   try {
@@ -1573,6 +1568,7 @@ function defaultCompareFunc(a: any, b: any): number {
 // Missing:
 // flatMap, flat,
 export class PySequenceMethods {
+  /** @hidden */
   get [Symbol.isConcatSpreadable]() {
     return true;
   }
@@ -1645,10 +1641,11 @@ export class PySequenceMethods {
    * return value is added as a single element in the new array.
    * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
    */
-  map(
-    callbackfn: (elt: any, index: number, array: any) => void,
+  map<U>(
+    callbackfn: (elt: any, index: number, array: any) => U,
     thisArg?: any,
-  ) {
+  ): U[] {
+    // @ts-ignore
     return Array.prototype.map.call(this, callbackfn, thisArg);
   }
   /**
@@ -1842,22 +1839,23 @@ export interface PyMutableSequence extends PyMutableSequenceMethods {}
 
 export class PyMutableSequenceMethods {
   /**
-   * The :js:meth:`Array.reverse` method reverses a ``MutableSequence`` in
+   * The :js:meth:`Array.reverse` method reverses a :js:class:`PyMutableSequence` in
    * place.
-   * @returns A reference to the same ``MutableSequence``
+   * @returns A reference to the same :js:class:`PyMutableSequence`
    */
-  reverse() {
+  reverse(): PyMutableSequence {
     // @ts-ignore
     this.$reverse();
+    // @ts-ignore
     return this;
   }
   /**
    * The :js:meth:`Array.sort` method sorts the elements of a
-   * ``MutableSequence`` in place.
+   * :js:class:`PyMutableSequence` in place.
    * @param compareFn A function that defines the sort order.
-   * @returns A reference to the same ``MutableSequence``
+   * @returns A reference to the same :js:class:`PyMutableSequence`
    */
-  sort(compareFn?: (a: any, b: any) => number) {
+  sort(compareFn?: (a: any, b: any) => number): PyMutableSequence {
     // Copy the behavior of sort described here:
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
     // Yes JS sort is weird.
@@ -1897,17 +1895,18 @@ export class PyMutableSequenceMethods {
       cmp_to_key.destroy();
       functools.destroy();
     }
+    // @ts-ignore
     return this;
   }
   /**
    * The :js:meth:`Array.splice` method changes the contents of a
-   * ``MutableSequence`` by removing or replacing existing elements and/or
+   * :js:class:`PyMutableSequence` by removing or replacing existing elements and/or
    * adding new elements in place.
    * @param start Zero-based index at which to start changing the
-   * ``MutableSequence``.
+   * :js:class:`PyMutableSequence`.
    * @param deleteCount An integer indicating the number of elements in the
-   * ``MutableSequence`` to remove from ``start``.
-   * @param items The elements to add to the ``MutableSequence``, beginning from
+   * :js:class:`PyMutableSequence` to remove from ``start``.
+   * @param items The elements to add to the :js:class:`PyMutableSequence`, beginning from
    * ``start``.
    * @returns An array containing the deleted elements.
    */
@@ -1920,8 +1919,8 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.push` method adds the specified elements to the end of
-   * a ``MutableSequence``.
-   * @param elts The element(s) to add to the end of the ``MutableSequence``.
+   * a :js:class:`PyMutableSequence`.
+   * @param elts The element(s) to add to the end of the :js:class:`PyMutableSequence`.
    * @returns The new length property of the object upon which the method was
    * called.
    */
@@ -1935,27 +1934,27 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.pop` method removes the last element from a
-   * ``MutableSequence``.
-   * @returns The removed element from the ``MutableSequence``; undefined if the
-   * ``MutableSequence`` is empty.
+   * :js:class:`PyMutableSequence`.
+   * @returns The removed element from the :js:class:`PyMutableSequence`; undefined if the
+   * :js:class:`PyMutableSequence` is empty.
    */
   pop() {
     return python_pop(this, false);
   }
   /**
    * The :js:meth:`Array.shift` method removes the first element from a
-   * ``MutableSequence``.
-   * @returns The removed element from the ``MutableSequence``; undefined if the
-   * ``MutableSequence`` is empty.
+   * :js:class:`PyMutableSequence`.
+   * @returns The removed element from the :js:class:`PyMutableSequence`; undefined if the
+   * :js:class:`PyMutableSequence` is empty.
    */
   shift() {
     return python_pop(this, true);
   }
   /**
    * The :js:meth:`Array.unshift` method adds the specified elements to the
-   * beginning of a ``MutableSequence``.
-   * @param elts The elements to add to the front of the ``MutableSequence``.
-   * @returns The new length of the ``MutableSequence``.
+   * beginning of a :js:class:`PyMutableSequence`.
+   * @param elts The elements to add to the front of the :js:class:`PyMutableSequence`.
+   * @returns The new length of the :js:class:`PyMutableSequence`.
    */
   unshift(...elts: any[]) {
     elts.forEach((elt, idx) => {
@@ -1967,12 +1966,12 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.copyWithin` method shallow copies part of a
-   * ``MutableSequence`` to another location in the same ``MutableSequence``
+   * :js:class:`PyMutableSequence` to another location in the same :js:class:`PyMutableSequence`
    * without modifying its length.
    * @param target Zero-based index at which to copy the sequence to.
    * @param start Zero-based index at which to start copying elements from.
    * @param end Zero-based index at which to end copying elements from.
-   * @returns The modified ``MutableSequence``.
+   * @returns The modified :js:class:`PyMutableSequence`.
    */
   copyWithin(target: number, start?: number, end?: number): any;
   copyWithin(...args: number[]): any {
@@ -2339,7 +2338,6 @@ export type PyProxyAwaitable = PyAwaitable;
 
 /**
  * The Promise / JavaScript awaitable API.
- * @private
  */
 export class PyAwaitableMethods {
   $$: any;
@@ -2444,7 +2442,7 @@ export class PyAwaitableMethods {
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is
- * :std:term:`callable` (i.e., has an :py:meth:`~operator.__call__` method).
+ * :std:term:`callable` (i.e., has an :py:meth:`~object.__call__` method).
  */
 export class PyCallable extends PyProxy {
   /** @private */
@@ -2958,10 +2956,8 @@ export class PyBufferView {
    */
   f_contiguous: boolean;
 
-  /** @private */
   _released: boolean;
 
-  /** @private */
   _view_ptr: number;
 
   /** @private */
