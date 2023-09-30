@@ -48,7 +48,7 @@ Base.member_properties = member_properties
 
 
 def ts_should_destructure_arg(sig, param):
-    return param.name == "options" and sig.name != "destroy"
+    return param.name == "options"
 
 
 def ts_post_convert(converter, node, doclet):

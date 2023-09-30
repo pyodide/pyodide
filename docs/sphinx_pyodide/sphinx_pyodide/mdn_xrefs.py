@@ -13,6 +13,8 @@ DATA = {
         "Reflect.ownKeys": "$global/",
         "Array.from": "$global/",
         "Atomics.wait": "$global/",
+        "getDirectory": "API/StorageManager/",
+        "showDirectoryPicker": "API/Window/",
     },
     "js:class": {
         "Array": "$global/",
