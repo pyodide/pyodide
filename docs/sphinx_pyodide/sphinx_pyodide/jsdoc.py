@@ -21,12 +21,18 @@ from sphinx_js.renderers import (
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 from sphinx_js.typedoc import Base, Converter
 
-COMMENT_DICT: dict[str, typedoc.Comment] = {}
+# Custom tags are a great way of conveniently passing information from the
+# source code to this file. No custom tags will be seen by this code unless they
+# are registered in src/js/tsdoc.json
+#
+# Modifier tags act like a flag, block tags have content.
 
 
 def has_tag(doclet, tag):
-    comment = COMMENT_DICT[str(doclet.path)]
-    return ("@" + tag) in comment.modifierTags
+    """Detects whether the doclet comes from a node that has the given modifier
+    tag.
+    """
+    return ("@" + tag) in doclet.modifier_tags
 
 
 def member_properties(self):
@@ -47,7 +53,6 @@ def ts_should_destructure_arg(sig, param):
 
 def ts_post_convert(converter, node, doclet):
     doclet.exported_from = None
-    COMMENT_DICT[str(doclet.path)] = node.comment
     doclet.name = doclet.name.replace("Symbol․Symbol․", "Symbol․")
 
     if has_tag(doclet, "hidetype"):
@@ -257,7 +262,7 @@ class PyodideAnalyzer:
 
         for key, value in items.items():
             for obj in sorted(value, key=attrgetter("name")):
-                kind = COMMENT_DICT[str(obj.path)].get_tag_one("dockind")
+                kind = obj.block_tags.get("dockind", [None])[0]
                 if kind:
                     obj.kind = kind[0].text
                 elif isinstance(obj, Class):
