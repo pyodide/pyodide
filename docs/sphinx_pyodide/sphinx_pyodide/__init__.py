@@ -1,7 +1,5 @@
 from .jsdoc import (
-    PyodideAnalyzer,
-    get_jsdoc_content_directive,
-    get_jsdoc_summary_directive,
+    patch_sphinx_js,
     ts_post_convert,
     ts_should_destructure_arg,
     ts_xref_formatter,
@@ -9,10 +7,6 @@ from .jsdoc import (
 from .lexers import HtmlPyodideLexer, PyodideLexer
 from .mdn_xrefs import add_mdn_xrefs
 from .packages import get_packages_summary_directive
-
-
-def wrap_analyzer(app):
-    app._sphinxjs_analyzer = PyodideAnalyzer(app._sphinxjs_analyzer)
 
 
 def fix_pyodide_ffi_path():
@@ -55,12 +49,10 @@ def remove_property_prefix():
 def setup(app):
     fix_pyodide_ffi_path()
     remove_property_prefix()
+    patch_sphinx_js()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
-    app.connect("builder-inited", wrap_analyzer)
-    app.add_directive("js-doc-summary", get_jsdoc_summary_directive(app))
-    app.add_directive("js-doc-content", get_jsdoc_content_directive(app))
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
     app.connect("builder-inited", add_mdn_xrefs)
     app.config.ts_post_convert = ts_post_convert

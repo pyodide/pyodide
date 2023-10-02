@@ -1,5 +1,5 @@
 ```{eval-rst}
-    :orphan:
+:orphan:
 ```
 
 # Micropip API
