@@ -7,9 +7,8 @@ def test_linear_regression(selenium):
 
     dataset = datasets.TrumpApproval()
 
-    model = (
-        preprocessing.StandardScaler() |
-        linear_model.LinearRegression(intercept_lr=.1)
+    model = preprocessing.StandardScaler() | linear_model.LinearRegression(
+        intercept_lr=0.1
     )
     metric = metrics.MAE()
 
