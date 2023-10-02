@@ -18,14 +18,30 @@ def patch_sphinx_js():
     TsAnalyzer._get_toplevel_objects = _get_toplevel_objects
 
 
-def has_tag(doclet, tag):
-    """Detects whether the doclet comes from a node that has the given modifier
-    tag.
-    """
-    return ("@" + tag) in doclet.modifier_tags
+def ts_should_destructure_arg(sig, param):
+    """Destructure all parameters named 'options'"""
+    return param.name == "options"
+
+
+def ts_xref_formatter(_config, xref):
+    """Format cross references info sphinx roles"""
+    from sphinx_pyodide.mdn_xrefs import JSDATA
+
+    name = xref.name
+    if name == "PyodideInterface":
+        return ":ref:`PyodideInterface <js-api-pyodide>`"
+    if name in JSDATA:
+        return f":js:data:`{name}`"
+    if name in FFI_FIELDS:
+        return f":js:class:`~pyodide.ffi.{name}`"
+    if name in ["ConcatArray", "IterableIterator", "unknown", "U"]:
+        return f"``{name}``"
+    return f":js:class:`{name}`"
 
 
 def member_properties(self):
+    """Monkey patch for node.member_properties that hides all external nodes by
+    marking them as private."""
     return dict(
         is_abstract=self.flags.isAbstract,
         is_optional=self.flags.isOptional,
@@ -34,16 +50,22 @@ def member_properties(self):
     )
 
 
-def ts_should_destructure_arg(sig, param):
-    return param.name == "options"
+def has_tag(doclet, tag):
+    """Detects whether the doclet comes from a node that has the given modifier
+    tag.
+    """
+    return ("@" + tag) in doclet.modifier_tags
 
 
+# We hide the PyXXXMethods from the documentation and add their children to the
+# documented PyXXX class. We'll stick them here in ts_post_convert and read them
+# out later
 PYPROXY_METHODS = {}
 
 
 def ts_post_convert(converter, node, doclet):
+    # hide exported_from
     doclet.exported_from = None
-    doclet.name = doclet.name.replace("Symbol․Symbol․", "Symbol․")
 
     if has_tag(doclet, "hidetype"):
         doclet.type = ""
@@ -66,42 +88,52 @@ def ts_post_convert(converter, node, doclet):
 
 
 def fix_set_stdin(converter, node, doclet):
+    """The type of stdin is given as StdinFunc which is opaque. Replace it with
+    the definition of StdinFunc.
+
+    TODO: Find a better way!
+    """
     assert isinstance(node, Callable)
     options = node.signatures[0].parameters[0]
     assert isinstance(options.type, ReflectionType)
     for param in options.type.declaration.children:
         if param.name == "stdin":
             break
+    else:
+        raise RuntimeError("Stdin param not found")
     target = converter.index[param.type.target]
     for docparam in doclet.params:
-        if docparam.name == "stdin":
+        if docparam.name == "options.stdin":
             break
+    else:
+        raise RuntimeError("Stdin param not found")
     docparam.type = target.type.render_name(converter)
 
 
+NATIVE_FS_DOCLET = None
+
+
 def fix_native_fs(converter, node, doclet):
+    """mountNativeFS has NativeFS as it's return type. This is a bit opaque, so
+    we resolve the reference to the reference target which is
+    Promise<{ syncfs: () => Promise<void>; }>
+
+    TODO: find a better way.
+    """
     assert isinstance(node, Callable)
     ty = node.signatures[0].type
+    if not ty.typeArguments[0].type == "reference":
+        return
     target = converter.index[ty.typeArguments[0].target]
     ty.typeArguments[0] = target.type
-    doclet.returns[0].type = ty.render_name(converter)
+    return_type = ty.render_name(converter)
+    doclet.returns[0].type = return_type
 
 
-# locate the ffi fields
+# locate the ffi fields. We use this to redirect the documentation items to be
+# documented under pyodide.ffi and to adjust the xrefs to point appropriately to
+# `pyodide.ffi.xxx`
 FFI_FIELDS: set[str] = set()
-
-
-def locate_ffi_fields(ffi_module):
-    for child in ffi_module.children:
-        if child.name == "ffi":
-            break
-    fields = child.type.declaration.children
-    FFI_FIELDS.update(x.name for x in fields)
-
-
-def children_dict(root):
-    return {node.name: node for node in root.children}
-
 
 orig_convert_all_nodes = Converter.convert_all_nodes
 
@@ -112,22 +144,40 @@ def convert_all_nodes(self, root):
     return orig_convert_all_nodes(self, root)
 
 
-def ts_xref_formatter(self, xref):
-    from sphinx_pyodide.mdn_xrefs import JSDATA
+def children_dict(root):
+    return {node.name: node for node in root.children}
 
-    name = xref.name
-    if name == "PyodideInterface":
-        return ":ref:`PyodideInterface <js-api-pyodide>`"
-    if name in JSDATA:
-        result = f":js:data:`{name}`"
-    elif name in FFI_FIELDS:
-        result = f":js:class:`~pyodide.ffi.{name}`"
-    else:
-        result = f":js:class:`{name}`"
-    return result
+
+def locate_ffi_fields(ffi_module):
+    for child in ffi_module.children:
+        if child.name == "ffi":
+            break
+    fields = child.type.declaration.children
+    FFI_FIELDS.update(x.name for x in fields)
+
+
+def _get_toplevel_objects(
+    self: TsAnalyzer, ir_objects: list[ir.TopLevel]
+) -> Iterator[tuple[ir.TopLevel, str | None, str | None]]:
+    """Monkeypatch: yield object, module, kind for each triple we want to
+    document.
+    """
+    for obj in ir_objects:
+        if obj.name == "PyodideAPI":
+            yield from _get_toplevel_objects(self, obj.members)
+            continue
+        if doclet_is_private(obj):
+            continue
+        mod = get_obj_mod(obj)
+        set_kind(obj)
+        if obj.deppath == "./js/pyproxy.gen" and isinstance(obj, Class):
+            fix_pyproxy_class(obj)
+
+        yield obj, mod, obj.kind
 
 
 def doclet_is_private(doclet: ir.TopLevel) -> bool:
+    """Should we render this object?"""
     if getattr(doclet, "is_private", False):
         return True
     key = doclet.path.segments
@@ -153,10 +203,8 @@ def doclet_is_private(doclet: ir.TopLevel) -> bool:
     return False
 
 
-def get_obj_mod(doclet: ir.TopLevel) -> str | None:
-    """Search through the doclets generated by JsDoc and categorize them by
-    summary section. Skip docs labeled as "@private".
-    """
+def get_obj_mod(doclet: ir.TopLevel) -> str:
+    """Categorize objects by what section they should go into"""
     key = doclet.path.segments
     key = [x for x in key if "/" not in x]
     filename = key[0]
@@ -175,6 +223,7 @@ def get_obj_mod(doclet: ir.TopLevel) -> str | None:
 
 
 def set_kind(obj: ir.TopLevel) -> None:
+    """If there is a @dockind tag, change obj.kind to reflect this"""
     k = obj.block_tags.get("dockind", [None])[0]
     if not k:
         return
@@ -187,26 +236,14 @@ def set_kind(obj: ir.TopLevel) -> None:
 
 
 def fix_pyproxy_class(cls: ir.Class) -> None:
+    """
+    1. Filter supers to remove PyXxxMethods
+    2. For each PyXxxMethods in supers, add PyXxxMethods.children to
+       cls.children
+    """
     methods_supers = [x for x in cls.supers if x.segments[-1] in PYPROXY_METHODS]
     cls.supers = [x for x in cls.supers if x.segments[-1] not in PYPROXY_METHODS]
     for x in cls.supers:
         x.segments = [x.segments[-1]]
     for x in methods_supers:
         cls.members.extend(PYPROXY_METHODS[x.segments[-1]])
-
-
-def _get_toplevel_objects(
-    self: TsAnalyzer, ir_objects: list[ir.TopLevel]
-) -> Iterator[tuple[ir.TopLevel, str | None, str | None]]:
-    for obj in ir_objects:
-        if obj.name == "PyodideAPI":
-            yield from _get_toplevel_objects(self, obj.members)
-            continue
-        if doclet_is_private(obj):
-            continue
-        mod = get_obj_mod(obj)
-        set_kind(obj)
-        if obj.deppath == "./js/pyproxy.gen" and isinstance(obj, Class):
-            fix_pyproxy_class(obj)
-
-        yield obj, mod, obj.kind
