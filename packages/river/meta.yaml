@@ -16,6 +16,7 @@ requirements:
   run:
     - numpy
     - pandas
+    - pytest
     - scipy
 
 about:
