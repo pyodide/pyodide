@@ -1,12 +1,9 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["river"])
 def test_linear_regression(selenium):
-    from river import datasets
-    from river import evaluate
-    from river import linear_model
-    from river import metrics
-    from river import preprocessing
+    from river import datasets, evaluate, linear_model, metrics, preprocessing
 
     dataset = datasets.TrumpApproval()
 
