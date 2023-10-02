@@ -12,6 +12,12 @@ from sphinx_js.typedoc import Base, Callable, Converter, ReflectionType
 # Modifier tags act like a flag, block tags have content.
 
 
+def patch_sphinx_js():
+    Base.member_properties = member_properties
+    Converter.convert_all_nodes = convert_all_nodes
+    TsAnalyzer._get_toplevel_objects = _get_toplevel_objects
+
+
 def has_tag(doclet, tag):
     """Detects whether the doclet comes from a node that has the given modifier
     tag.
@@ -26,9 +32,6 @@ def member_properties(self):
         is_static=self.flags.isStatic,
         is_private=self.flags.isPrivate or self.flags.isExternal,
     )
-
-
-Base.member_properties = member_properties
 
 
 def ts_should_destructure_arg(sig, param):
@@ -84,9 +87,6 @@ def fix_native_fs(converter, node, doclet):
     doclet.returns[0].type = ty.render_name(converter)
 
 
-orig_convert_all_nodes = Converter.convert_all_nodes
-
-
 # locate the ffi fields
 FFI_FIELDS: set[str] = set()
 
@@ -103,13 +103,13 @@ def children_dict(root):
     return {node.name: node for node in root.children}
 
 
+orig_convert_all_nodes = Converter.convert_all_nodes
+
+
 def convert_all_nodes(self, root):
     children = children_dict(root)
     locate_ffi_fields(children["js/ffi"])
     return orig_convert_all_nodes(self, root)
-
-
-Converter.convert_all_nodes = convert_all_nodes
 
 
 def ts_xref_formatter(self, xref):
@@ -210,6 +210,3 @@ def _get_toplevel_objects(
             fix_pyproxy_class(obj)
 
         yield obj, mod, obj.kind
-
-
-TsAnalyzer._get_toplevel_objects = _get_toplevel_objects

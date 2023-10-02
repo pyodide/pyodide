@@ -1,4 +1,5 @@
 from .jsdoc import (
+    patch_sphinx_js,
     ts_post_convert,
     ts_should_destructure_arg,
     ts_xref_formatter,
@@ -48,10 +49,10 @@ def remove_property_prefix():
 def setup(app):
     fix_pyodide_ffi_path()
     remove_property_prefix()
+    patch_sphinx_js()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
-    # app.connect("builder-inited", wrap_analyzer)
     app.add_directive("pyodide-package-list", get_packages_summary_directive(app))
     app.connect("builder-inited", add_mdn_xrefs)
     app.config.ts_post_convert = ts_post_convert
