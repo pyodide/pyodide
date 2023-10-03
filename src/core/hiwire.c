@@ -11,6 +11,10 @@
 #define ERROR_REF (0)
 #define ERROR_NUM (-1)
 
+#ifdef DEBUG_F
+int tracerefs = 0;
+#endif
+
 // For when the return value would be Option<JsRef>
 // we use the largest possible immortal reference so that `get_value` on it will
 // always raise an error.
@@ -25,7 +29,8 @@ const JsRef Js_novalue = ((JsRef)(2147483644));
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
 // C definition:
-#define HIWIRE_INIT_CONST(js_value) const JsRef Js_##js_value;
+#define HIWIRE_INIT_CONST(js_value)                                            \
+  EMSCRIPTEN_KEEPALIVE const JsRef Js_##js_value;
 HIWIRE_INIT_CONSTS();
 
 #undef HIWIRE_INIT_CONST
@@ -933,7 +938,7 @@ EM_JS_REF(JsRef, JsString_InternFromCString, (const char* str), {
   return Hiwire.intern_object(jsstring);
 })
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 JsString_FromId(Js_Identifier* id)
 {
   if (!id->object) {

@@ -247,7 +247,7 @@ static int dict_flags;
 static int tuple_flags;
 static int list_flags;
 
-int
+EMSCRIPTEN_KEEPALIVE int
 pyproxy_getflags(PyObject* pyobj)
 {
   // Fast paths for some common cases
@@ -309,7 +309,7 @@ finally:
 //  logic is very boilerplatey, so there isn't much surprising code hidden
 //  somewhere else.
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_repr(PyObject* pyobj)
 {
   PyObject* repr_py = NULL;
@@ -337,13 +337,13 @@ finally:
  *
  * `type(x).__name__`
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_type(PyObject* ptrobj)
 {
   return hiwire_string_utf8(Py_TYPE(ptrobj)->tp_name);
 }
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = NULL;
@@ -397,7 +397,7 @@ proxy_cache_set,
 })
 // clang-format on
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_getattr(PyObject* pyobj, JsRef idkey, JsRef proxyCache)
 {
   bool success = false;
@@ -457,7 +457,7 @@ finally:
   return idresult;
 };
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_setattr(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
   bool success = false;
@@ -477,7 +477,7 @@ finally:
   return success ? 0 : -1;
 }
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_delattr(PyObject* pyobj, JsRef idkey)
 {
   bool success = false;
@@ -493,7 +493,7 @@ finally:
   return success ? 0 : -1;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_getitem(PyObject* pyobj, JsRef idkey)
 {
   bool success = false;
@@ -522,7 +522,7 @@ finally:
   return result;
 };
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_setitem(PyObject* pyobj, JsRef idkey, JsRef idval)
 {
   bool success = false;
@@ -542,7 +542,7 @@ finally:
   return success ? 0 : -1;
 }
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_delitem(PyObject* pyobj, JsRef idkey)
 {
   bool success = false;
@@ -558,7 +558,7 @@ finally:
   return success ? 0 : -1;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_slice_assign(PyObject* pyobj,
                       Py_ssize_t start,
                       Py_ssize_t stop,
@@ -594,7 +594,7 @@ finally:
   return jsresult;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_pop(PyObject* pyobj, bool pop_start)
 {
   bool success = false;
@@ -629,7 +629,7 @@ finally:
   return jsresult;
 }
 
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_contains(PyObject* pyobj, JsRef idkey)
 {
   PyObject* pykey = NULL;
@@ -644,7 +644,7 @@ finally:
   return result;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_ownKeys(PyObject* pyobj)
 {
   bool success = false;
@@ -705,7 +705,7 @@ finally:
  *
  *   Returns: The return value translated to JavaScript.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_apply(PyObject* callable,
                JsRef jsargs,
                size_t numposargs,
@@ -765,7 +765,7 @@ finally:
   return idresult;
 }
 
-bool
+EMSCRIPTEN_KEEPALIVE bool
 _iscoroutinefunction(PyObject* f)
 {
   _Py_IDENTIFIER(_is_coroutine_marker);
@@ -795,7 +795,7 @@ _iscoroutinefunction(PyObject* f)
   return ret;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_iter_next(PyObject* iterator)
 {
   PyObject* item = PyIter_Next(iterator);
@@ -807,7 +807,7 @@ _pyproxy_iter_next(PyObject* iterator)
   return result;
 }
 
-PySendResult
+EMSCRIPTEN_KEEPALIVE PySendResult
 _pyproxyGen_Send(PyObject* receiver, JsRef jsval, JsRef* result)
 {
   bool success = false;
@@ -833,7 +833,7 @@ finally:
   return status;
 }
 
-PySendResult
+EMSCRIPTEN_KEEPALIVE PySendResult
 _pyproxyGen_return(PyObject* receiver, JsRef jsval, JsRef* result)
 {
   bool success = false;
@@ -869,7 +869,7 @@ finally:
   return status;
 }
 
-PySendResult
+EMSCRIPTEN_KEEPALIVE PySendResult
 _pyproxyGen_throw(PyObject* receiver, JsRef jsval, JsRef* result)
 {
   bool success = false;
@@ -906,7 +906,7 @@ finally:
   return status;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxyGen_asend(PyObject* receiver, JsRef jsval)
 {
   PyObject* v = NULL;
@@ -964,7 +964,7 @@ finally:
   return jsresult;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxyGen_athrow(PyObject* receiver, JsRef jsval)
 {
   PyObject* v = NULL;
@@ -995,7 +995,7 @@ finally:
   return jsresult;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxy_aiter_next(PyObject* aiterator)
 {
   PyTypeObject* t;
@@ -1153,7 +1153,7 @@ FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
  * :param reject_handle: The reject javascript method for a promise
  * :return: 0 on success, -1 on failure
  */
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_ensure_future(PyObject* pyobject,
                        JsRef resolve_handle,
                        JsRef reject_handle)
@@ -1238,7 +1238,7 @@ size_t buffer_struct_size = sizeof(buffer_struct);
  * We also put the various other metadata about the buffer that we want to share
  * into buffer_struct.
  */
-int
+EMSCRIPTEN_KEEPALIVE int
 _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
 {
   Py_buffer view;
