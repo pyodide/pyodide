@@ -20,21 +20,14 @@ import { makeWarnOnce } from "./util";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFileURL: string) {
-  let lockfile;
-  if (IN_NODE) {
-    await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    lockfile = JSON.parse(package_string);
-  } else {
-    let response = await fetch(lockFileURL);
-    lockfile = await response.json();
-  }
+async function initializePackageIndex(lockFilePromise: Promise<any>) {
+  const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
+
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -64,7 +57,9 @@ async function initializePackageIndex(lockFileURL: string) {
   await loadPackage(API.config.packages, { messageCallback() {} });
 }
 
-API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
+if (API.lockFilePromise) {
+  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+}
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this

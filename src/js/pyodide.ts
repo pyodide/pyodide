@@ -2,7 +2,13 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
+import {
+  loadScript,
+  initNodeModules,
+  pathSep,
+  resolvePath,
+  loadLockFile,
+} from "./compat";
 
 import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
@@ -355,6 +361,7 @@ export async function loadPyodide(
 
   const API: any = { config };
   Module.API = API;
+  API.lockFilePromise = loadLockFile(config.lockFileURL);
 
   preloadWasm(Module, indexURL);
   initializeFileSystem(Module, config);
