@@ -16,7 +16,7 @@ requirements:
   run:
     - numpy
     - pandas
-    - pytest
+    - pytest # can remove in 0.20
     - scipy
 
 about:
