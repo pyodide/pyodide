@@ -17,7 +17,6 @@
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/assert": "^1.5.6",
-    "@types/emscripten": "^1.39.5",
     "@types/expect": "^24.3.0",
     "@types/mocha": "^9.1.0",
     "@types/node": "^17.0.45",

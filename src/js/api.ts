@@ -1,20 +1,17 @@
 declare var Module: any;
 declare var Hiwire: any;
-declare var API: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
+import { PyBufferView, PyBuffer, PyProxy } from "./pyproxy.gen";
 import { PythonError } from "./error_handling.gen";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
-import { makeWarnOnce } from "./util";
-
-API.loadBinaryFile = loadBinaryFile;
+import { makeWarnOnce } from "./pyodide_util";
 
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
@@ -181,7 +178,7 @@ export class PyodideAPI {
     let packages: Set<string> = new Set();
     for (let name of imports) {
       if (packageNames.has(name)) {
-        packages.add(packageNames.get(name));
+        packages.add(packageNames.get(name)!);
       }
     }
     if (packages.size) {

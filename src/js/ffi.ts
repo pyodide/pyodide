@@ -15,10 +15,11 @@ export type {
   PyCallable,
   PyBuffer,
   PyBufferView,
-  TypedArray,
   PySequence,
   PyMutableSequence,
 } from "./pyproxy.gen";
+
+export type { TypedArray };
 
 export type { PythonError } from "./error_handling.gen";
 

@@ -13,7 +13,11 @@
     "types": ["node"],
     "experimentalDecorators": true,
     "lib": ["ES2018", "DOM"],
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "baseUrl": "..",
+    "paths": {
+      "*": ["*", "js/*", "core/*"]
+    }
   },
   "include": ["*.ts", "*.json"],
   "exclude": ["test/**/*"]
