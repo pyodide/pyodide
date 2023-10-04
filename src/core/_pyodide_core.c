@@ -39,6 +39,7 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
+EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
