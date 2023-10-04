@@ -41,7 +41,7 @@ EM_JS(void, console_error_obj, (JsRef obj), {
  * are fairly strong guarantees about the ABI stability, but even so writing
  * HEAP32[err/4 + 1] is a bit opaque.
  */
-void
+EMSCRIPTEN_KEEPALIVE void
 set_error(PyObject* err)
 {
   PyErr_SetObject((PyObject*)Py_TYPE(err), err);
@@ -246,7 +246,7 @@ EM_JS(void, log_python_error, (JsRef jserror), {
 /**
  * Convert the current Python error to a javascript error and throw it.
  */
-void _Py_NO_RETURN
+EMSCRIPTEN_KEEPALIVE void _Py_NO_RETURN
 pythonexc2js()
 {
   JsRef jserror = wrap_exception();

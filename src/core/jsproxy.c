@@ -4305,7 +4305,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   return JsProxy_create_with_type(type_flags, object, this);
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsRef object)
 {
   return JsProxy_create_with_this(object, NULL);
