@@ -6,6 +6,8 @@ import { type InFuncType } from "./streams";
 import { type PackageData } from "./load-package";
 
 declare global {
+  export var Module: Module;
+  export var API: API;
   export type TypedArray =
     | Int8Array
     | Uint8Array
@@ -16,15 +18,35 @@ declare global {
     | Uint8ClampedArray
     | Float32Array
     | Float64Array;
+}
 
+// Emscripten runtime methods
+
+// These should be declared with EM_JS_DEPS so that when linking libpyodide it's
+// not necessary to put them in `-s EXPORTED_RUNTIME_METHODS`.
+declare global {
   export const stringToNewUTF8: (str: string) => number;
   export const UTF8ToString: (ptr: number) => string;
-
-  export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
-  export const _free: (a: number) => void;
-  export const _dump_traceback: () => void;
   export const FS: FS;
+  export const stackAlloc: (sz: number) => number;
+  export const stackSave: () => number;
+  export const stackRestore: (ptr: number) => void;
+  export const HEAPU32: Uint32Array;
+}
 
+// Library functions that are used in JS. To link with dce, these all need to be
+// passed to -sEXPORTED_FUNCTIONS.
+// TODO: Figure out how to avoid needing to do this.
+declare global {
+  // also need:
+  // _hiwire_new, _hiwire_intern, _hiwire_num_refs, _hiwire_get,
+  // _hiwire_incref, _hiwire_decref, and _hiwire_pop
+  //
+  // _PyUnicode_New, __PyLong_FromByteArray, _PyLong_FromDouble,
+  // _PyFloat_FromDouble, _PyList_New, _PyDict_New, _PySet_New, _PySet_Add
+  export const _free: (a: number) => void;
+  export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
+  export const _PyRun_SimpleString: (ptr: number) => number;
   export const _PyErr_Occurred: () => number;
   export const _PyErr_Print: () => void;
   export const _Py_IncRef: (ptr: number) => void;
@@ -34,11 +56,24 @@ declare global {
   export const _PyObject_Size: (ptr: number) => number;
   export const _PyBuffer_Release: (ptr: number) => number;
   export const _PyMem_Free: (ptr: number) => number;
+  export const _PyGILState_Check: () => number;
+  export const __PyErr_CheckSignals: () => number;
+}
 
+// Our own functions we use from JavaScript. These all need to be labeled with
+// EMSCRIPTEN_KEEPALIVE
+declare global {
+  // also: _JsString_FromId, _wrap_exception, _PyUnicode_Data, __js2python_none, __js2python_true, __js2python_false, __js2python_pyproxy,
+  export const _check_gil: () => void;
+  export const _dump_traceback: () => void;
   export const _pythonexc2js: () => void;
+  export const _restore_sys_last_exception: (err: number) => boolean;
+  export const _set_error: (hwidx: number) => void;
 
   export const _JsProxy_create: (hwidx: number) => number;
-  export const _set_error: (hwidx: number) => void;
+  export const _JsProxy_Check: (ptr: number) => number;
+
+  export const _python2js: (pyobj: number) => number;
   export const _python2js_custom: (
     obj: number,
     depth: number,
@@ -46,8 +81,8 @@ declare global {
     dict_converter: number,
     default_converter: number,
   ) => number;
-  export const _pyproxy_getflags: (ptr: number) => number;
 
+  export const _pyproxy_getflags: (ptr: number) => number;
   export const __pyproxy_type: (ptr: number) => number;
   export const __pyproxy_repr: (ptr: number) => number;
   export const __pyproxy_getitem: (obj: number, item: number) => number;
@@ -115,8 +150,6 @@ declare global {
     e: number,
   ) => number;
   export const __iscoroutinefunction: (a: number) => number;
-  export var Module: Module;
-  export var API: API;
 }
 
 export type FSNode = {

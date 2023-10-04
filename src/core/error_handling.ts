@@ -236,7 +236,7 @@ Module.handle_js_error = function (e: any) {
   let restored_error = false;
   if (e instanceof PythonError) {
     // Try to restore the original Python exception.
-    restored_error = Module._restore_sys_last_exception(e.__error_address);
+    restored_error = _restore_sys_last_exception(e.__error_address);
   }
   let stack: any;
   let weirdCatch;

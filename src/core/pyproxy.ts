@@ -17,12 +17,6 @@
 declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
-declare var HEAPU32: Uint32Array;
-
-declare function _check_gil(): void;
-declare function stackSave(): number;
-declare function stackRestore(ptr: number): void;
-declare function stackAlloc(size: number): number;
 
 import "lib";
 import { warnOnce } from "pyodide_util";
@@ -103,8 +97,8 @@ if (globalThis.FinalizationRegistry) {
   // TODO: after 0.18.0, fix selenium issues with this code.
   // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
   //   try {
-  //     Module._PyBuffer_Release(ptr);
-  //     Module._PyMem_Free(ptr);
+  //     _PyBuffer_Release(ptr);
+  //     _PyMem_Free(ptr);
   //   } catch (e) {
   //     API.fatal_error(e);
   //   }
@@ -857,7 +851,7 @@ export class PyLengthMethods {
       API.fatal_error(e);
     }
     if (length === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return length;
   }
@@ -1047,7 +1041,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
     Module.finalizationRegistry.unregister(token);
     _Py_DecRef(iterptr);
   }
-  if (Module._PyErr_Occurred()) {
+  if (_PyErr_Occurred()) {
     _pythonexc2js();
   }
 }
@@ -1150,7 +1144,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
     }
   } finally {
     Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
+    _Py_DecRef(iterptr);
   }
   if (_PyErr_Occurred()) {
     _pythonexc2js();

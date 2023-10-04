@@ -18,7 +18,7 @@ EM_JS(void, throw_no_gil, (), {
   throw new API.NoGilError("Attempted to use PyProxy when Python GIL not held");
 });
 
-void
+EMSCRIPTEN_KEEPALIVE void
 check_gil()
 {
   if (!PyGILState_Check()) {
@@ -942,7 +942,7 @@ finally:
   return jsresult;
 }
 
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _pyproxyGen_areturn(PyObject* receiver)
 {
   PyObject* v = NULL;
