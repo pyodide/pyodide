@@ -1,14 +1,11 @@
 export {};
-import {type PyProxy} from "./pyproxy.gen"
-import {type PyodideInterface} from "./api"
-import {type ConfigType} from "./pyodide"
-import {type InFuncType} from "./streams"
-
-
-
+import { type PyProxy } from "./pyproxy.gen";
+import { type PyodideInterface } from "./api";
+import { type ConfigType } from "./pyodide";
+import { type InFuncType } from "./streams";
 
 declare global {
-    export type TypedArray =
+  export type TypedArray =
     | Int8Array
     | Uint8Array
     | Int16Array
@@ -19,214 +16,261 @@ declare global {
     | Float32Array
     | Float64Array;
 
-    export const stringToNewUTF8: (str: string) => number;
-    export const UTF8ToString: (ptr: number) => string;
+  export const stringToNewUTF8: (str: string) => number;
+  export const UTF8ToString: (ptr: number) => string;
 
+  export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
+  export const _free: (a: number) => void;
+  export const _dump_traceback: () => void;
+  export const FS: FS;
 
-    export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
-    export const _free: (a: number) => void;
-    export const _dump_traceback: () => void;
-    export const FS: FS;
+  export const _PyErr_Occurred: () => number;
+  export const _PyErr_Print: () => void;
+  export const _Py_IncRef: (ptr: number) => void;
+  export const _Py_DecRef: (ptr: number) => void;
+  export const _PyObject_GetIter: (ptr: number) => number;
+  export const _PyObject_GetAIter: (ptr: number) => number;
+  export const _PyObject_Size: (ptr: number) => number;
+  export const _PyBuffer_Release: (ptr: number) => number;
+  export const _PyMem_Free: (ptr: number) => number;
 
-    export const _PyErr_Occurred: () => number;
-    export const _PyErr_Print: () => void;
-    export const _Py_IncRef: (ptr: number) => void;
-    export const _Py_DecRef: (ptr: number) => void;
-    export const _PyObject_GetIter: (ptr: number) => number;
-    export const _PyObject_GetAIter: (ptr: number) => number;
-    export const _PyObject_Size: (ptr: number) => number;
-    export const _PyBuffer_Release: (ptr: number) => number;
-    export const _PyMem_Free: (ptr: number) => number;
+  export const _pythonexc2js: () => void;
 
-    export const _pythonexc2js: () => void;
+  export const _JsProxy_create: (hwidx: number) => number;
+  export const _set_error: (hwidx: number) => void;
+  export const _python2js_custom: (
+    obj: number,
+    depth: number,
+    proxies: number,
+    dict_converter: number,
+    default_converter: number,
+  ) => number;
+  export const _pyproxy_getflags: (ptr: number) => number;
 
-    export const _JsProxy_create: (hwidx: number) => number;
-    export const _set_error: (hwidx: number) => void;
-    export const _python2js_custom: (obj: number, depth: number, proxies: number, dict_converter: number, default_converter: number) => number;
-    export const _pyproxy_getflags: (ptr: number) => number;
-
-    export const __pyproxy_type: (ptr: number) => number;
-    export const __pyproxy_repr: (ptr: number) => number;
-    export const __pyproxy_getitem: (obj: number, item: number) => number;
-    export const __pyproxy_setitem: (ptr: number, item: number, value: number) => number;
-    export const __pyproxy_delitem: (ptr: number, item: number) => number;
-    export const __pyproxy_contains: (ptr: number, item: number) => number;
-    export const __pyproxy_GetIter: (ptr: number) => number;
-    export const __pyproxy_GetAIter: (ptr: number) => number;
-    export const __pyproxy_aiter_next: (ptr: number) => number;
-    export const __pyproxy_iter_next: (ptr: number) => number;
-    export const __pyproxyGen_Send: (ptr: number, idarg: number, res_ptr: number) => number;
-    export const __pyproxyGen_return: (ptr: number, idarg: number, res_ptr: number) => number;
-    export const __pyproxyGen_throw: (ptr: number, idarg: number, res_ptr: number) => number;
-    export const __pyproxyGen_asend: (ptr: number, idarg: number) => number;
-    export const __pyproxyGen_areturn: (ptr: number) => number;
-    export const __pyproxyGen_athrow: (ptr: number, idarg: number) => number;
-    export const __pyproxy_getattr: (ptr: number, attr: number, cache: number) => number;
-    export const __pyproxy_setattr: (ptr: number, attr: number, value: number) => number;
-    export const __pyproxy_delattr: (ptr: number, attr: number) => number;
-    export const __pyproxy_hasattr: (ptr: number, attr: number) => number;
-    export const __pyproxy_slice_assign: (ptr: number, start: number, stop: number, val: number) => number;
-    export const __pyproxy_pop: (ptr: number, popstart: boolean) => number;
-    export const __pyproxy_ownKeys: (ptr: number) => number;
-    export const __pyproxy_ensure_future: (ptr: number, resolve: number, reject: number) => number;
-    export const _buffer_struct_size: number;
-    export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;
-    export const __pyproxy_apply: (a : number, b: number, c: number, d: number, e: number) => number;
-    export const __iscoroutinefunction: (a: number) => number;
-    export var Module: Module;
-    export var API: API;
+  export const __pyproxy_type: (ptr: number) => number;
+  export const __pyproxy_repr: (ptr: number) => number;
+  export const __pyproxy_getitem: (obj: number, item: number) => number;
+  export const __pyproxy_setitem: (
+    ptr: number,
+    item: number,
+    value: number,
+  ) => number;
+  export const __pyproxy_delitem: (ptr: number, item: number) => number;
+  export const __pyproxy_contains: (ptr: number, item: number) => number;
+  export const __pyproxy_GetIter: (ptr: number) => number;
+  export const __pyproxy_GetAIter: (ptr: number) => number;
+  export const __pyproxy_aiter_next: (ptr: number) => number;
+  export const __pyproxy_iter_next: (ptr: number) => number;
+  export const __pyproxyGen_Send: (
+    ptr: number,
+    idarg: number,
+    res_ptr: number,
+  ) => number;
+  export const __pyproxyGen_return: (
+    ptr: number,
+    idarg: number,
+    res_ptr: number,
+  ) => number;
+  export const __pyproxyGen_throw: (
+    ptr: number,
+    idarg: number,
+    res_ptr: number,
+  ) => number;
+  export const __pyproxyGen_asend: (ptr: number, idarg: number) => number;
+  export const __pyproxyGen_areturn: (ptr: number) => number;
+  export const __pyproxyGen_athrow: (ptr: number, idarg: number) => number;
+  export const __pyproxy_getattr: (
+    ptr: number,
+    attr: number,
+    cache: number,
+  ) => number;
+  export const __pyproxy_setattr: (
+    ptr: number,
+    attr: number,
+    value: number,
+  ) => number;
+  export const __pyproxy_delattr: (ptr: number, attr: number) => number;
+  export const __pyproxy_hasattr: (ptr: number, attr: number) => number;
+  export const __pyproxy_slice_assign: (
+    ptr: number,
+    start: number,
+    stop: number,
+    val: number,
+  ) => number;
+  export const __pyproxy_pop: (ptr: number, popstart: boolean) => number;
+  export const __pyproxy_ownKeys: (ptr: number) => number;
+  export const __pyproxy_ensure_future: (
+    ptr: number,
+    resolve: number,
+    reject: number,
+  ) => number;
+  export const _buffer_struct_size: number;
+  export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;
+  export const __pyproxy_apply: (
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+  ) => number;
+  export const __iscoroutinefunction: (a: number) => number;
+  export var Module: Module;
+  export var API: API;
 }
 
 export type FSNode = {
-    timestamp: number;
-    rdev: number;
-    contents: Uint8Array;
-  };
-  
-  export type FSStream = {
-    tty?: boolean;
-    seekable?: boolean;
-    stream_ops: FSStreamOps;
-    node: FSNode;
-  };
-  
-  export type FSStreamOps = FSStreamOpsGen<FSStream>;
-  
-  export type FSStreamOpsGen<T> = {
-    open: (a: T) => void;
-    close: (a: T) => void;
-    fsync: (a: T) => void;
-    read: (
-      a: T,
-      b: Uint8Array,
-      offset: number,
-      length: number,
-      pos: number,
-    ) => number;
-    write: (
-      a: T,
-      b: Uint8Array,
-      offset: number,
-      length: number,
-      pos: number,
-    ) => number;
-  };
-  
+  timestamp: number;
+  rdev: number;
+  contents: Uint8Array;
+};
+
+export type FSStream = {
+  tty?: boolean;
+  seekable?: boolean;
+  stream_ops: FSStreamOps;
+  node: FSNode;
+};
+
+export type FSStreamOps = FSStreamOpsGen<FSStream>;
+
+export type FSStreamOpsGen<T> = {
+  open: (a: T) => void;
+  close: (a: T) => void;
+  fsync: (a: T) => void;
+  read: (
+    a: T,
+    b: Uint8Array,
+    offset: number,
+    length: number,
+    pos: number,
+  ) => number;
+  write: (
+    a: T,
+    b: Uint8Array,
+    offset: number,
+    length: number,
+    pos: number,
+  ) => number;
+};
+
 export interface FS {
-    unlink: (path: string) => void;
-    mkdirTree: (path: string, mode?: number) => void;
-    chdir: (path: string) => void;
-    symlink: (target: string, src: string) => FSNode;
-    createDevice: ((
-      parent: string,
-      name: string,
-      input?: (() => number | null) | null,
-      output?: ((code: number) => void) | null,
-    ) => FSNode) & {
-      major: number;
-    };
-    closeStream: (fd: number) => void;
-    open: (path: string, flags: string | number, mode?: number) => FSStream;
-    makedev: (major: number, minor: number) => number;
-    mkdev: (path: string, dev: number) => FSNode;
-    filesystems: any;
-    stat: (path: string, dontFollow?: boolean) => any;
-    readdir: (node: FSNode) => string[];
-    isDir: (mode: number) => boolean;
-    lookupPath: (path: string) => { node: FSNode };
-    isFile: (mode: number) => boolean;
-    writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
-    chmod: (path: string, mode: number) => void;
-    utime: (path: string, atime: number, mtime: number) => void;
-    rmdir: (path: string) => void;
-    mount: (type: any, opts: any, mountpoint: string) => any;
-    write: (
-      stream: FSStream,
-      buffer: any,
-      offset: number,
-      length: number,
-      position?: number,
-    ) => number;
-    close: (stream: FSStream) => void;
-    ErrnoError: { new (errno: number): Error };
-    registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  unlink: (path: string) => void;
+  mkdirTree: (path: string, mode?: number) => void;
+  chdir: (path: string) => void;
+  symlink: (target: string, src: string) => FSNode;
+  createDevice: ((
+    parent: string,
+    name: string,
+    input?: (() => number | null) | null,
+    output?: ((code: number) => void) | null,
+  ) => FSNode) & {
+    major: number;
+  };
+  closeStream: (fd: number) => void;
+  open: (path: string, flags: string | number, mode?: number) => FSStream;
+  makedev: (major: number, minor: number) => number;
+  mkdev: (path: string, dev: number) => FSNode;
+  filesystems: any;
+  stat: (path: string, dontFollow?: boolean) => any;
+  readdir: (node: FSNode) => string[];
+  isDir: (mode: number) => boolean;
+  lookupPath: (path: string) => { node: FSNode };
+  isFile: (mode: number) => boolean;
+  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
+  chmod: (path: string, mode: number) => void;
+  utime: (path: string, atime: number, mtime: number) => void;
+  rmdir: (path: string) => void;
+  mount: (type: any, opts: any, mountpoint: string) => any;
+  write: (
+    stream: FSStream,
+    buffer: any,
+    offset: number,
+    length: number,
+    position?: number,
+  ) => number;
+  close: (stream: FSStream) => void;
+  ErrnoError: { new (errno: number): Error };
+  registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
 }
-  
+
 export interface Module {
-    noImageDecoding: boolean;
-    noAudioDecoding: boolean;
-    noWasmDecoding: boolean;
-    quit: (status: number, toThrow: Error) => void;
-    preRun: { (): void }[];
-    print: (a: string) => void;
-    printErr: (a: string) => void;
-    ENV: { [key: string]: string };
-    PATH: any;
-    TTY: any;
-    FS: FS;
-    canvas?: HTMLCanvasElement;
-    addRunDependency: (id: string) => void;
-    removeRunDependency: (id: string) => void;
-    reportUndefinedSymbols: () => void;
-    ERRNO_CODES: { [k: string]: number };
-    instantiateWasm?: (
-      imports: { [key: string]: any },
-      successCallback: (
-        instance: WebAssembly.Instance,
-        module: WebAssembly.Module,
-      ) => void,
-    ) => void;
+  noImageDecoding: boolean;
+  noAudioDecoding: boolean;
+  noWasmDecoding: boolean;
+  quit: (status: number, toThrow: Error) => void;
+  preRun: { (): void }[];
+  print: (a: string) => void;
+  printErr: (a: string) => void;
+  ENV: { [key: string]: string };
+  PATH: any;
+  TTY: any;
+  FS: FS;
+  canvas?: HTMLCanvasElement;
+  addRunDependency: (id: string) => void;
+  removeRunDependency: (id: string) => void;
+  reportUndefinedSymbols: () => void;
+  ERRNO_CODES: { [k: string]: number };
+  instantiateWasm?: (
+    imports: { [key: string]: any },
+    successCallback: (
+      instance: WebAssembly.Instance,
+      module: WebAssembly.Module,
+    ) => void,
+  ) => void;
 }
 
 export interface API {
-    fatal_error: (e: any) => never;
-    lockfile_info: any;
-    lockfile_packages: any;
-    isPyProxy: (e: any) => e is PyProxy;
-    debug_ffi: boolean;
-    maybe_fatal_error: (e: any) => void;
-    public_api: PyodideInterface;
-    config: ConfigType;
-    packageIndexReady: Promise<void>;
-    bootstrapFinalizedPromise: Promise<void>;
-    setCdnUrl: (url: string) => void;
-    typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
-    initializeStreams: (stdin?: InFuncType | undefined, stdout?: ((a: string) => void) | undefined, stderr?: ((a: string) => void) | undefined) => void;
+  fatal_error: (e: any) => never;
+  lockfile_info: any;
+  lockfile_packages: any;
+  isPyProxy: (e: any) => e is PyProxy;
+  debug_ffi: boolean;
+  maybe_fatal_error: (e: any) => void;
+  public_api: PyodideInterface;
+  config: ConfigType;
+  packageIndexReady: Promise<void>;
+  bootstrapFinalizedPromise: Promise<void>;
+  setCdnUrl: (url: string) => void;
+  typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
+  initializeStreams: (
+    stdin?: InFuncType | undefined,
+    stdout?: ((a: string) => void) | undefined,
+    stderr?: ((a: string) => void) | undefined,
+  ) => void;
 
-    getTypeTag: (o: any) => string;
-    inTestHoist?: boolean;
-    on_fatal?: (e: any) => void;
-    _skip_unwind_fatal_error?: boolean;
-    capture_stderr: () => void;
-    restore_stderr: () => string;
-    fatal_loading_error: (...args: string[]) => never;
-    PythonError: any;
-    NoGilError: any;
-    errorConstructors: Map<string, ErrorConstructor>;
-    deserializeError: (name: string, message: string, stack: string) => Error;
+  getTypeTag: (o: any) => string;
+  inTestHoist?: boolean;
+  on_fatal?: (e: any) => void;
+  _skip_unwind_fatal_error?: boolean;
+  capture_stderr: () => void;
+  restore_stderr: () => string;
+  fatal_loading_error: (...args: string[]) => never;
+  PythonError: any;
+  NoGilError: any;
+  errorConstructors: Map<string, ErrorConstructor>;
+  deserializeError: (name: string, message: string, stack: string) => Error;
 
-    package_loader: any;
-    importlib: any;
-    _import_name_to_package_name: Map<string, string>;
-    lockfile_unvendored_stdlibs: string[];
-    lockfile_unvendored_stdlibs_and_test: string[];
-    repodata_packages: any;
-    repodata_info: any;
+  package_loader: any;
+  importlib: any;
+  _import_name_to_package_name: Map<string, string>;
+  lockfile_unvendored_stdlibs: string[];
+  lockfile_unvendored_stdlibs_and_test: string[];
+  repodata_packages: any;
+  repodata_info: any;
 
-    _pyodide: any
-    pyodide_py: any
-    pyodide_code: any;
-    pyodide_ffi: any;
-    globals: PyProxy;
-    rawRun: (code: string) => [number, string]
-    runPythonInternal: (code: string) => any;
-    runPythonInternal_dict: any;
-    saveState: () => any;
-    restoreState: (state: any) => void;
+  _pyodide: any;
+  pyodide_py: any;
+  pyodide_code: any;
+  pyodide_ffi: any;
+  globals: PyProxy;
+  rawRun: (code: string) => [number, string];
+  runPythonInternal: (code: string) => any;
+  runPythonInternal_dict: any;
+  saveState: () => any;
+  restoreState: (state: any) => void;
 
-    defaultLdLibraryPath: string[];
+  defaultLdLibraryPath: string[];
 
-    makePublicAPI: () => PyodideInterface;
-    _Comlink: any;
-
+  makePublicAPI: () => PyodideInterface;
+  _Comlink: any;
 }
