@@ -43,13 +43,6 @@ PyObject*
 PyInit__pyodide_core(void)
 {
   EM_ASM({
-    // Emscripten doesn't make UTF8ToString or wasmTable available on Module by
-    // default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-    // Emscripten has a bug where it accidentally exposes an empty object as
-    // Module.ERRNO_CODES
-    Module.ERRNO_CODES = ERRNO_CODES;
     // sourmash needs open64 to mean the same thing as open.
     // Emscripten 3.1.44 seems to have removed it??
     wasmImports["open64"] = wasmImports["open"];
