@@ -3,6 +3,7 @@ import { type PyProxy } from "./pyproxy.gen";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
+import { type PackageData } from "./load-package";
 
 declare global {
   export type TypedArray =
@@ -270,6 +271,17 @@ export interface API {
   restoreState: (state: any) => void;
 
   defaultLdLibraryPath: string[];
+  sitepackages: string;
+  loadDynlib: (
+    lib: string,
+    global: boolean,
+    searchDirs?: string[] | undefined,
+    readFileFunc?: (path: string) => Uint8Array,
+  ) => Promise<void>;
+  loadDynlibsFromPackage: (
+    pkg: PackageData,
+    dynlibPaths: string[],
+  ) => Promise<void>;
 
   makePublicAPI: () => PyodideInterface;
   _Comlink: any;
