@@ -3,7 +3,7 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { FS, Module } from "./lib";
+import { Module } from "./types";
 
 /**
  * The Emscripten Module.

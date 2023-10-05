@@ -11,8 +11,10 @@ import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
-import { makeWarnOnce } from "./pyodide_util";
-import { TypedArray } from "./lib";
+import { TypedArray } from "./types";
+
+// Exported for micropip
+API.loadBinaryFile = loadBinaryFile;
 
 API.loadBinaryFile = loadBinaryFile;
 
