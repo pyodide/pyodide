@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+### Packages
+
+- Added river version 0.19.0 {pr}`4197`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
@@ -42,7 +46,6 @@ _September 25, 2023_
 - Upgraded sourmash to 4.8.4 {pr}`4154`
 - Upgraded scikit-learn to 1.3.1 {pr}`4161`
 - Upgraded micropip to 0.5.0 {pr}`4167`
-- Added river version 0.19.0 {pr}`4197`
 
 ## Version 0.24.0
 
