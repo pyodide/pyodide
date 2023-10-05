@@ -33,6 +33,11 @@ jobs:
     steps:
       - checkout
 
+      - run:
+          name: install no-ctypes branch of pytest-pyodide
+          command: |
+            pip install git+https://github.com/hoodmane/pytest-pyodide@no-ctypes
+
       - restore_cache:
           keys:
             - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
