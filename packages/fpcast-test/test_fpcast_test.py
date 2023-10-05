@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["fpcast-test"])
 def test_fpcasts(selenium):
     import fpcast_test
