@@ -33,11 +33,6 @@ jobs:
     steps:
       - checkout
 
-      - run:
-          name: install no-ctypes branch of pytest-pyodide
-          command: |
-            pip install git+https://github.com/hoodmane/pytest-pyodide@no-ctypes
-
       - restore_cache:
           keys:
             - -core-v20220915-{{ checksum "cpython/Makefile" }}-{{ checksum "Makefile.envs" }}
@@ -305,6 +300,7 @@ jobs:
             mkdir test-results
             pip install -r requirements.txt
             pip install -e ./pyodide-build
+            pip install git+https://github.com/hoodmane/pytest-pyodide@no-ctypes
             npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
