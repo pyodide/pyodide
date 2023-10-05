@@ -1,4 +1,4 @@
-import { Module } from "./lib";
+import { Module } from "./types";
 
 /**
  * @private
