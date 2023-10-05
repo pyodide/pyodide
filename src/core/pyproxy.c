@@ -1216,7 +1216,7 @@ typedef struct
   int f_contiguous;
 } buffer_struct;
 
-size_t buffer_struct_size = sizeof(buffer_struct);
+EMSCRIPTEN_KEEPALIVE size_t buffer_struct_size = sizeof(buffer_struct);
 
 /**
  * This is the C part of the getBuffer method.

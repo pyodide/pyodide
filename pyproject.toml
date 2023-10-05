@@ -118,5 +118,8 @@ testpaths = [
     "packages",
 ]
 asyncio_mode = "strict"
+markers = [
+    "requires_dynamic_linking",
+]
 
 [tool.pyodide]

@@ -13,6 +13,8 @@ import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { makeWarnOnce } from "./pyodide_util";
 
+API.loadBinaryFile = loadBinaryFile;
+
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */

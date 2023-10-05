@@ -42,8 +42,11 @@ declare global {
   // _hiwire_new, _hiwire_intern, _hiwire_num_refs, _hiwire_get,
   // _hiwire_incref, _hiwire_decref, and _hiwire_pop
   //
-  // _PyUnicode_New, __PyLong_FromByteArray, _PyLong_FromDouble,
-  // _PyFloat_FromDouble, _PyList_New, _PyDict_New, _PySet_New, _PySet_Add
+  // _PyUnicode_New,
+  // __PyLong_FromByteArray, _PyLong_FromDouble, _PyFloat_FromDouble,
+  // _PyList_New, _PyDict_New, _PyDict_SetItem, _PySet_New, _PySet_Add
+  // _PyEval_SaveThread, _PyEval_RestoreThread,
+  //   _PyErr_CheckSignals, _PyErr_SetString
   export const _free: (a: number) => void;
   export const __PyTraceback_Add: (a: number, b: number, c: number) => void;
   export const _PyRun_SimpleString: (ptr: number) => number;
@@ -63,7 +66,8 @@ declare global {
 // Our own functions we use from JavaScript. These all need to be labeled with
 // EMSCRIPTEN_KEEPALIVE
 declare global {
-  // also: _JsString_FromId, _wrap_exception, _PyUnicode_Data, __js2python_none, __js2python_true, __js2python_false, __js2python_pyproxy,
+  // also: _JsString_FromId, _wrap_exception, _PyUnicode_Data, __js2python_none,
+  // __js2python_true, __js2python_false, __js2python_pyproxy, _JsBuffer_CopyIntoMemoryView
   export const _check_gil: () => void;
   export const _dump_traceback: () => void;
   export const _pythonexc2js: () => void;
@@ -291,6 +295,10 @@ export interface API {
   lockfile_unvendored_stdlibs_and_test: string[];
   repodata_packages: any;
   repodata_info: any;
+  loadBinaryFile: (
+    path: string,
+    file_sub_resource_hash?: string | undefined,
+  ) => Promise<Uint8Array>;
 
   _pyodide: any;
   pyodide_py: any;
