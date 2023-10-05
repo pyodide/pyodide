@@ -5,19 +5,20 @@ import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { type PackageData } from "./load-package";
 
+export type TypedArray =
+| Int8Array
+| Uint8Array
+| Int16Array
+| Uint16Array
+| Int32Array
+| Uint32Array
+| Uint8ClampedArray
+| Float32Array
+| Float64Array;
+
 declare global {
   export var Module: Module;
   export var API: API;
-  export type TypedArray =
-    | Int8Array
-    | Uint8Array
-    | Int16Array
-    | Uint16Array
-    | Int32Array
-    | Uint32Array
-    | Uint8ClampedArray
-    | Float32Array
-    | Float64Array;
 }
 
 // Emscripten runtime methods

@@ -18,7 +18,7 @@ declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
 
-import "lib";
+import {TypedArray} from "lib";
 import { warnOnce } from "pyodide_util";
 
 // pyodide-skip
