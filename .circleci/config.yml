@@ -25,7 +25,7 @@ jobs:
     parameters:
       disable_dylink:
         description: The packages to be built.
-        type: boolean
+        type: integer
         default: 0
     <<: *defaults
     environment:
