@@ -19,7 +19,7 @@ export type {
   PyMutableSequence,
 } from "./pyproxy.gen";
 
-export type { TypedArray };
+export type { TypedArray } from "./lib";
 
 export type { PythonError } from "./error_handling.gen";
 

@@ -12,6 +12,7 @@ import { version } from "./version";
 import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { makeWarnOnce } from "./pyodide_util";
+import { TypedArray } from "./lib";
 
 API.loadBinaryFile = loadBinaryFile;
 
