@@ -31,7 +31,6 @@ from .vendor._pypabuild import (
     _ProjectBuilder,
 )
 
-
 AVOIDED_REQUIREMENTS = [
     # We don't want to install cmake Python package inside the isolated env as it will shadow
     # the pywasmcross cmake wrapper.
@@ -41,8 +40,8 @@ AVOIDED_REQUIREMENTS = [
 
 
 def _gen_runner(
-    cross_build_env: dict[str, str],
-    isolated_build_env: _DefaultIsolatedEnv,
+    cross_build_env: Mapping[str, str],
+    isolated_build_env: DefaultIsolatedEnv,
 ) -> Callable[[Sequence[str], str | None, Mapping[str, str] | None], None]:
     """
     This returns a slightly modified version of default subprocess runner that pypa/build uses.
@@ -111,7 +110,8 @@ def remove_avoided_requirements(
 def install_reqs(env: DefaultIsolatedEnv, reqs: set[str]) -> None:
     env.install(
         remove_avoided_requirements(
-            reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS,
+            reqs,
+            get_unisolated_packages() + AVOIDED_REQUIREMENTS,
         )
     )
 
@@ -166,7 +166,7 @@ def _build_in_isolated_env(
                         distribution,
                     ),
                 )
-                
+
             return builder.build(distribution, outdir, config_settings)
 
 
@@ -221,9 +221,7 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
     from .templates import meson_cross_file_tmpl
 
     meson_cross_file = symlink_dir / "emscripten.meson.cross"
-    meson_cross_file.write_text(
-        meson_cross_file_tmpl.format(**env)
-    )
+    meson_cross_file.write_text(meson_cross_file_tmpl.format(**env))
 
     return env
 

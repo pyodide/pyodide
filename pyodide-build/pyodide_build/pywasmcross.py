@@ -47,7 +47,9 @@ if IS_COMPILER_INVOCATION:
             ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
-    os.environ["PATH"] = os.environ["BUILD_ENV_SCRIPTS_DIR"] + ":" + PYWASMCROSS_ARGS.pop("PATH")
+    os.environ["PATH"] = (
+        os.environ["BUILD_ENV_SCRIPTS_DIR"] + ":" + PYWASMCROSS_ARGS.pop("PATH")
+    )
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
@@ -577,7 +579,7 @@ def handle_command_generate_args(  # noqa: C901
     elif cmd == "meson":
         if line[:2] != ["meson", "setup"]:
             return line
-        
+
         line[:2] = [
             "meson",
             "setup",
