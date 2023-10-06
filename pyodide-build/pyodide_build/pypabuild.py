@@ -68,8 +68,6 @@ def _gen_runner(
         # Some build dependencies like cmake, meson installs binaries to this directory
         # and we should add it to the PATH so that they can be found.
         env["BUILD_ENV_SCRIPTS_DIR"] = isolated_build_env._scripts_dir
-
-        # TODO: maybe it is okay to switxh env to cross_build_env completely?
         env["PATH"] = f"{cross_build_env['COMPILER_WRAPPER_DIR']}:{env['PATH']}"
         # For debugging: Uncomment the following line to print the build command
         # print("Build backend call:", cmd)

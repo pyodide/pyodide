@@ -578,8 +578,6 @@ def handle_command_generate_args(  # noqa: C901
         if line[:2] != ["meson", "setup"]:
             return line
         
-        print("meson setup", file=sys.stderr)
-        print(os.environ, file=sys.stderr)
         line[:2] = [
             "meson",
             "setup",
