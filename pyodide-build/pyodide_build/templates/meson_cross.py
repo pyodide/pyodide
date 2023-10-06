@@ -1,8 +1,8 @@
 meson_cross_file_tmpl = """
 [binaries]
-c = 'emcc'
-cpp = 'em++'
-ar = 'emar'
+c = '{CC}'
+cpp = '{CXX}'
+ar = '{AR}'
 fortran = '{GFORTRAN}'
 
 cmake = '{CMAKE}'
