@@ -11,13 +11,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from build import BuildBackendException, ConfigSettingsType
-from build.__main__ import (
-    _STYLES,
-    _DefaultIsolatedEnv,
-    _error,
-    _handle_build_error,
-    _ProjectBuilder,
-)
 from build.env import DefaultIsolatedEnv
 from packaging.requirements import Requirement
 
@@ -30,6 +23,13 @@ from .build_env import (
     platform,
 )
 from .io import _BuildSpecExports
+from .vendor._pypabuild import (
+    _STYLES,
+    _DefaultIsolatedEnv,
+    _error,
+    _handle_build_error,
+    _ProjectBuilder,
+)
 
 
 def runner(

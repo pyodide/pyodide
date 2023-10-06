@@ -114,10 +114,8 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * This provides APIs to set a canvas for rendering graphics.
-   *
-   * For example, you need to set a canvas if you want to use the
-   * SDL library. See :ref:`using-sdl` for more information.
+   * See :ref:`js-api-pyodide-canvas`.
+   * @hidetype
    */
   static canvas: CanvasInterface = canvas;
 
@@ -472,8 +470,8 @@ export class PyodideAPI {
    * @param path The absolute path in the Emscripten file system to mount the
    * native directory. If the directory does not exist, it will be created. If it
    * does exist, it must be empty.
-   * @param fileSystemHandle A handle returned by ``navigator.storage.getDirectory()``
-   * or ``window.showDirectoryPicker()``.
+   * @param fileSystemHandle A handle returned by :js:func:`navigator.storage.getDirectory() <getDirectory>`
+   * or :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
    */
   static async mountNativeFS(
     path: string,
@@ -583,7 +581,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PyBuffer() {
@@ -599,7 +597,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
 
@@ -616,7 +614,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PythonError() {

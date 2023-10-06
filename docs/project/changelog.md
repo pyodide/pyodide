@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+### Packages
+
+- Added river version 0.19.0 {pr}`4197`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
