@@ -28,6 +28,7 @@ SYMLINKS = {
     "gfortran",
     "cargo",
     "cmake",
+    "meson",
 }
 IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
@@ -46,7 +47,7 @@ if IS_COMPILER_INVOCATION:
             ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
-    os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
+    os.environ["PATH"] = os.environ["BUILD_ENV_SCRIPTS_DIR"] + ":" + PYWASMCROSS_ARGS.pop("PATH")
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
@@ -571,6 +572,19 @@ def handle_command_generate_args(  # noqa: C901
             # CMakeCache.txt will contain invalid paths to the compiler when re-running,
             # so we need to tell CMake to ignore the existing cache and build from scratch.
             "--fresh",
+        ]
+        return line
+    elif cmd == "meson":
+        if line[:2] != ["meson", "setup"]:
+            return line
+        
+        print("meson setup", file=sys.stderr)
+        print(os.environ, file=sys.stderr)
+        line[:2] = [
+            "meson",
+            "setup",
+            "--cross-file",
+            str(INVOKED_PATH.parent / "emscripten.meson.cross"),
         ]
         return line
     elif cmd == "ranlib":
