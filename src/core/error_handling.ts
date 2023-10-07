@@ -1,5 +1,5 @@
 import ErrorStackParser from "error-stack-parser";
-import "lib";
+import "types";
 
 declare var Module: any;
 declare var Hiwire: any;
