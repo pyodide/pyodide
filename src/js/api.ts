@@ -16,6 +16,7 @@ import { TypedArray } from "./types";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
+// Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
 /**
