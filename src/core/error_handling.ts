@@ -1,7 +1,8 @@
 import ErrorStackParser from "error-stack-parser";
+import "types";
+
 declare var Module: any;
 declare var Hiwire: any;
-declare var API: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -74,14 +75,16 @@ let fatal_error_occurred = false;
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
-API.fatal_error = function (e: any) {
+API.fatal_error = function (e: any): never {
   if (e && e.pyodide_fatal_error) {
+    // @ts-ignore
     return;
   }
 
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
+    // @ts-ignore
     return;
   }
   if (e instanceof NoGilError) {
@@ -113,7 +116,7 @@ API.fatal_error = function (e: any) {
   }
   try {
     if (!isexit) {
-      Module._dump_traceback();
+      _dump_traceback();
     }
     let reason = isexit ? "exited" : "fatally failed";
     let msg = `Pyodide already ${reason} and can no longer be used.`;
@@ -166,7 +169,6 @@ API.maybe_fatal_error = function (e: any) {
 let stderr_chars: number[] = [];
 API.capture_stderr = function () {
   stderr_chars = [];
-  const FS = Module.FS;
   FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
     stderr_chars.push(e),
   );
@@ -176,7 +178,6 @@ API.capture_stderr = function () {
 };
 
 API.restore_stderr = function () {
-  const FS = Module.FS;
   FS.closeStream(2 /* stderr */);
   FS.unlink("/dev/capture_stderr");
   // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
@@ -186,10 +187,10 @@ API.restore_stderr = function () {
 
 API.fatal_loading_error = function (...args: string[]) {
   let message = args.join(" ");
-  if (Module._PyErr_Occurred()) {
+  if (_PyErr_Occurred()) {
     API.capture_stderr();
     // Prints traceback to stderr
-    Module._PyErr_Print();
+    _PyErr_Print();
     const captured_stderr = API.restore_stderr();
     message += "\n" + captured_stderr;
   }
@@ -233,9 +234,9 @@ Module.handle_js_error = function (e: any) {
     return;
   }
   let restored_error = false;
-  if (e instanceof API.PythonError) {
+  if (e instanceof PythonError) {
     // Try to restore the original Python exception.
-    restored_error = Module._restore_sys_last_exception(e.__error_address);
+    restored_error = _restore_sys_last_exception(e.__error_address);
   }
   let stack: any;
   let weirdCatch;
@@ -250,9 +251,9 @@ Module.handle_js_error = function (e: any) {
   if (!restored_error) {
     // Wrap the JavaScript error
     let eidx = Hiwire.new_value(e);
-    let err = Module._JsProxy_create(eidx);
-    Module._set_error(err);
-    Module._Py_DecRef(err);
+    let err = _JsProxy_create(eidx);
+    _set_error(err);
+    _Py_DecRef(err);
     Hiwire.decref(eidx);
   }
   if (weirdCatch) {
@@ -269,11 +270,11 @@ Module.handle_js_error = function (e: any) {
     if (isPyodideFrame(frame)) {
       break;
     }
-    const funcnameAddr = Module.stringToNewUTF8(frame.functionName || "???");
-    const fileNameAddr = Module.stringToNewUTF8(frame.fileName || "???.js");
-    Module.__PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
-    Module._free(funcnameAddr);
-    Module._free(fileNameAddr);
+    const funcnameAddr = stringToNewUTF8(frame.functionName || "???");
+    const fileNameAddr = stringToNewUTF8(frame.fileName || "???.js");
+    __PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
+    _free(funcnameAddr);
+    _free(fileNameAddr);
   }
 };
 

@@ -17,15 +17,9 @@
 declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
-declare var API: any;
-declare var HEAPU32: Uint32Array;
 
-declare function _check_gil(): void;
-declare function stackSave(): number;
-declare function stackRestore(ptr: number): void;
-declare function stackAlloc(size: number): number;
-
-import { warnOnce } from "./util";
+import { TypedArray } from "types";
+import { warnOnce } from "pyodide_util";
 
 // pyodide-skip
 
@@ -88,7 +82,7 @@ if (globalThis.FinalizationRegistry) {
       }
       try {
         Py_ENTER();
-        Module._Py_DecRef(ptr);
+        _Py_DecRef(ptr);
         Py_EXIT();
       } catch (e) {
         // I'm not really sure what happens if an error occurs inside of a
@@ -103,8 +97,8 @@ if (globalThis.FinalizationRegistry) {
   // TODO: after 0.18.0, fix selenium issues with this code.
   // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
   //   try {
-  //     Module._PyBuffer_Release(ptr);
-  //     Module._PyMem_Free(ptr);
+  //     _PyBuffer_Release(ptr);
+  //     _PyMem_Free(ptr);
   //   } catch (e) {
   //     API.fatal_error(e);
   //   }
@@ -213,10 +207,9 @@ function pyproxy_new(
     // register by default
     gcRegister = true;
   }
-  const flags =
-    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptr);
+  const flags = flags_arg !== undefined ? flags_arg : _pyproxy_getflags(ptr);
   if (flags === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   const is_sequence = flags & IS_SEQUENCE;
   const cls = Module.getPyProxyClass(flags);
@@ -263,7 +256,7 @@ function pyproxy_new(
       destroyed_msg: undefined,
       gcRegistered: false,
     };
-    Module._Py_IncRef(ptr);
+    _Py_IncRef(ptr);
   }
 
   props = Object.assign(
@@ -470,7 +463,7 @@ Module.pyproxy_destroy = function (
 
   try {
     Py_ENTER();
-    Module._Py_DecRef(ptr);
+    _Py_DecRef(ptr);
     trace_pyproxy_dealloc(proxy);
     Py_EXIT();
   } catch (e) {
@@ -499,7 +492,7 @@ Module.callPyObjectKwargs = function (
   let idresult;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_apply(
+    idresult = __pyproxy_apply(
       ptrobj,
       idargs,
       num_pos_args,
@@ -515,13 +508,13 @@ Module.callPyObjectKwargs = function (
     Hiwire.decref(idkwnames);
   }
   if (idresult === 0) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
-    let is_coroutine = Module.__iscoroutinefunction(ptrobj);
+    let is_coroutine = __iscoroutinefunction(ptrobj);
     Py_EXIT();
     if (is_coroutine) {
       result._ensure_future();
@@ -581,20 +574,20 @@ export class PyProxy {
    */
   get type(): string {
     let ptrobj = _getPtr(this);
-    return Hiwire.pop_value(Module.__pyproxy_type(ptrobj));
+    return Hiwire.pop_value(__pyproxy_type(ptrobj));
   }
   toString(): string {
     let ptrobj = _getPtr(this);
     let jsref_repr;
     try {
       Py_ENTER();
-      jsref_repr = Module.__pyproxy_repr(ptrobj);
+      jsref_repr = __pyproxy_repr(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (jsref_repr === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return Hiwire.pop_value(jsref_repr);
   }
@@ -700,7 +693,7 @@ export class PyProxy {
     }
     try {
       Py_ENTER();
-      idresult = Module._python2js_custom(
+      idresult = _python2js_custom(
         ptrobj,
         depth,
         proxies_id,
@@ -716,7 +709,7 @@ export class PyProxy {
       Hiwire.decref(default_converter_id);
     }
     if (idresult === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return Hiwire.pop_value(idresult);
   }
@@ -852,13 +845,13 @@ export class PyLengthMethods {
     let length;
     try {
       Py_ENTER();
-      length = Module._PyObject_Size(ptrobj);
+      length = _PyObject_Size(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (length === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return length;
   }
@@ -892,7 +885,7 @@ export class PyGetItemMethods {
     let idresult;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxy_getitem(ptrobj, idkey);
+      idresult = __pyproxy_getitem(ptrobj, idkey);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -900,8 +893,8 @@ export class PyGetItemMethods {
       Hiwire.decref(idkey);
     }
     if (idresult === 0) {
-      if (Module._PyErr_Occurred()) {
-        Module._pythonexc2js();
+      if (_PyErr_Occurred()) {
+        _pythonexc2js();
       } else {
         return undefined;
       }
@@ -938,7 +931,7 @@ export class PySetItemMethods {
     let errcode;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
+      errcode = __pyproxy_setitem(ptrobj, idkey, idval);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -947,7 +940,7 @@ export class PySetItemMethods {
       Hiwire.decref(idval);
     }
     if (errcode === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
   }
   /**
@@ -961,7 +954,7 @@ export class PySetItemMethods {
     let errcode;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_delitem(ptrobj, idkey);
+      errcode = __pyproxy_delitem(ptrobj, idkey);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -969,7 +962,7 @@ export class PySetItemMethods {
       Hiwire.decref(idkey);
     }
     if (errcode === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
   }
 }
@@ -1002,7 +995,7 @@ export class PyContainsMethods {
     let result;
     try {
       Py_ENTER();
-      result = Module.__pyproxy_contains(ptrobj, idkey);
+      result = __pyproxy_contains(ptrobj, idkey);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1010,7 +1003,7 @@ export class PyContainsMethods {
       Hiwire.decref(idkey);
     }
     if (result === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return result === 1;
   }
@@ -1035,7 +1028,7 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
     while (true) {
       Py_ENTER();
-      const item = Module.__pyproxy_iter_next(iterptr);
+      const item = __pyproxy_iter_next(iterptr);
       if (item === 0) {
         break;
       }
@@ -1046,10 +1039,10 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
     API.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
+    _Py_DecRef(iterptr);
   }
-  if (Module._PyErr_Occurred()) {
-    Module._pythonexc2js();
+  if (_PyErr_Occurred()) {
+    _pythonexc2js();
   }
 }
 
@@ -1089,13 +1082,13 @@ export class PyIterableMethods {
     let iterptr;
     try {
       Py_ENTER();
-      iterptr = Module._PyObject_GetIter(ptrobj);
+      iterptr = _PyObject_GetIter(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (iterptr === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
 
     let result = iter_helper(iterptr, token);
@@ -1125,7 +1118,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
       let item, p;
       try {
         Py_ENTER();
-        item = Module.__pyproxy_aiter_next(iterptr);
+        item = __pyproxy_aiter_next(iterptr);
         Py_EXIT();
         if (item === 0) {
           break;
@@ -1151,10 +1144,10 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
     }
   } finally {
     Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
+    _Py_DecRef(iterptr);
   }
-  if (Module._PyErr_Occurred()) {
-    Module._pythonexc2js();
+  if (_PyErr_Occurred()) {
+    _pythonexc2js();
   }
 }
 
@@ -1187,13 +1180,13 @@ export class PyAsyncIterableMethods {
     let iterptr;
     try {
       Py_ENTER();
-      iterptr = Module._PyObject_GetAIter(ptrobj);
+      iterptr = _PyObject_GetAIter(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (iterptr === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
 
     let result = aiter_helper(iterptr, token);
@@ -1249,7 +1242,7 @@ export class PyIteratorMethods {
     let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
+      status = __pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1259,7 +1252,7 @@ export class PyIteratorMethods {
     let idresult = DEREF_U32(res_ptr, 0);
     stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
     done = status === PYGEN_RETURN;
@@ -1302,7 +1295,7 @@ export class PyGeneratorMethods {
     let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
+      status = __pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1312,7 +1305,7 @@ export class PyGeneratorMethods {
     let idresult = DEREF_U32(res_ptr, 0);
     stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
     done = status === PYGEN_RETURN;
@@ -1345,7 +1338,7 @@ export class PyGeneratorMethods {
     let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_return(_getPtr(this), idarg, res_ptr);
+      status = __pyproxyGen_return(_getPtr(this), idarg, res_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1355,7 +1348,7 @@ export class PyGeneratorMethods {
     let idresult = DEREF_U32(res_ptr, 0);
     stackRestore(stackTop);
     if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     let value = Hiwire.pop_value(idresult);
     done = status === PYGEN_RETURN;
@@ -1400,7 +1393,7 @@ export class PyAsyncIteratorMethods {
     let idresult;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_asend(_getPtr(this), idarg);
+      idresult = __pyproxyGen_asend(_getPtr(this), idarg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1408,7 +1401,7 @@ export class PyAsyncIteratorMethods {
       Hiwire.decref(idarg);
     }
     if (idresult === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     const p = Hiwire.pop_value(idresult);
     let value;
@@ -1463,7 +1456,7 @@ export class PyAsyncGeneratorMethods {
     let idresult;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_athrow(_getPtr(this), idarg);
+      idresult = __pyproxyGen_athrow(_getPtr(this), idarg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1471,7 +1464,7 @@ export class PyAsyncGeneratorMethods {
       Hiwire.decref(idarg);
     }
     if (idresult === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     const p = Hiwire.pop_value(idresult);
     let value;
@@ -1511,13 +1504,13 @@ export class PyAsyncGeneratorMethods {
     let idresult;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_areturn(_getPtr(this));
+      idresult = __pyproxyGen_areturn(_getPtr(this));
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (idresult === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     const p = Hiwire.pop_value(idresult);
     let value;
@@ -2006,7 +1999,7 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
   let result;
   try {
     Py_ENTER();
-    result = Module.__pyproxy_hasattr(ptrobj, idkey);
+    result = __pyproxy_hasattr(ptrobj, idkey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2014,7 +2007,7 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
     Hiwire.decref(idkey);
   }
   if (result === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   return result !== 0;
 }
@@ -2029,7 +2022,7 @@ function python_getattr(jsobj: PyProxy, jskey: any) {
   let cacheId = shared.cache.cacheId;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_getattr(shared.ptr, idkey, cacheId);
+    idresult = __pyproxy_getattr(shared.ptr, idkey, cacheId);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2037,8 +2030,8 @@ function python_getattr(jsobj: PyProxy, jskey: any) {
     Hiwire.decref(idkey);
   }
   if (idresult === 0) {
-    if (Module._PyErr_Occurred()) {
-      Module._pythonexc2js();
+    if (_PyErr_Occurred()) {
+      _pythonexc2js();
     }
   }
   return idresult;
@@ -2051,7 +2044,7 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let errcode;
   try {
     Py_ENTER();
-    errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
+    errcode = __pyproxy_setattr(ptrobj, idkey, idval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2060,7 +2053,7 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
     Hiwire.decref(idval);
   }
   if (errcode === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
 }
 
@@ -2070,7 +2063,7 @@ function python_delattr(jsobj: PyProxy, jskey: any) {
   let errcode;
   try {
     Py_ENTER();
-    errcode = Module.__pyproxy_delattr(ptrobj, idkey);
+    errcode = __pyproxy_delattr(ptrobj, idkey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2078,7 +2071,7 @@ function python_delattr(jsobj: PyProxy, jskey: any) {
     Hiwire.decref(idkey);
   }
   if (errcode === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
 }
 
@@ -2093,7 +2086,7 @@ function python_slice_assign(
   let res;
   try {
     Py_ENTER();
-    res = Module.__pyproxy_slice_assign(ptrobj, start, stop, idval);
+    res = __pyproxy_slice_assign(ptrobj, start, stop, idval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
@@ -2101,7 +2094,7 @@ function python_slice_assign(
     Hiwire.decref(idval);
   }
   if (res === 0) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   return Hiwire.pop_value(res);
 }
@@ -2111,13 +2104,13 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   let res;
   try {
     Py_ENTER();
-    res = Module.__pyproxy_pop(ptrobj, pop_start);
+    res = __pyproxy_pop(ptrobj, pop_start);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
   if (res === 0) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   return Hiwire.pop_value(res);
 }
@@ -2232,13 +2225,13 @@ const PyProxyHandlers = {
     let idresult;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxy_ownKeys(ptrobj);
+      idresult = __pyproxy_ownKeys(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (idresult === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     let result = Hiwire.pop_value(idresult);
     result.push(...Reflect.ownKeys(jsobj));
@@ -2368,7 +2361,7 @@ export class PyAwaitableMethods {
     let errcode;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_ensure_future(
+      errcode = __pyproxy_ensure_future(
         ptr,
         resolve_handle_id,
         reject_handle_id,
@@ -2381,7 +2374,7 @@ export class PyAwaitableMethods {
       Hiwire.decref(resolve_handle_id);
     }
     if (errcode === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     shared.promise = promise;
     // @ts-ignore
@@ -2669,20 +2662,18 @@ export class PyBufferMethods {
       }
     }
     let orig_stack_ptr = stackSave();
-    let buffer_struct_ptr = stackAlloc(
-      DEREF_U32(Module._buffer_struct_size, 0),
-    );
+    let buffer_struct_ptr = stackAlloc(DEREF_U32(_buffer_struct_size, 0));
     let this_ptr = _getPtr(this);
     let errcode;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
+      errcode = __pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (errcode === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
 
     // This has to match the fields in buffer_struct
@@ -2700,7 +2691,7 @@ export class PyBufferMethods {
     let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
     let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
 
-    let format = Module.UTF8ToString(format_ptr);
+    let format = UTF8ToString(format_ptr);
     stackRestore(orig_stack_ptr);
 
     let success = false;
@@ -2771,8 +2762,8 @@ export class PyBufferMethods {
       if (!success) {
         try {
           Py_ENTER();
-          Module._PyBuffer_Release(view_ptr);
-          Module._PyMem_Free(view_ptr);
+          _PyBuffer_Release(view_ptr);
+          _PyMem_Free(view_ptr);
           Py_EXIT();
         } catch (e) {
           API.fatal_error(e);
@@ -2781,17 +2772,6 @@ export class PyBufferMethods {
     }
   }
 }
-
-export type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Uint8ClampedArray
-  | Float32Array
-  | Float64Array;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is a :py:class:`dict`.
@@ -2975,8 +2955,8 @@ export class PyBufferView {
     // Module.bufferFinalizationRegistry.unregister(this);
     try {
       Py_ENTER();
-      Module._PyBuffer_Release(this._view_ptr);
-      Module._PyMem_Free(this._view_ptr);
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);

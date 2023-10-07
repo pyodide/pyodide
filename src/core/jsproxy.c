@@ -881,7 +881,7 @@ JsProxy_GetAsyncIter(PyObject* self)
  * are raising. closing tells us whether ``close`` was called, if so we raise
  * an error if there is a yield in a finally block.
  */
-void
+EMSCRIPTEN_KEEPALIVE void
 _agen_handle_result_js_c(PyObject* set_result,
                          PyObject* set_exception,
                          int status,
@@ -4311,7 +4311,7 @@ JsProxy_create(JsRef object)
   return JsProxy_create_with_this(object, NULL);
 }
 
-bool
+EMSCRIPTEN_KEEPALIVE bool
 JsProxy_Check(PyObject* x)
 {
   return PyObject_TypeCheck(x, &JsProxyType);
