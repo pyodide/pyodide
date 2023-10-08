@@ -560,7 +560,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register)
  * Do a translation from Python to JavaScript. Convert immutable types with
  * equivalent JavaScript immutable types, but all other types are proxied.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js(PyObject* x)
 {
   return python2js_inner(x, NULL, false, true);
@@ -690,7 +690,7 @@ python2js_custom__create_jscontext,
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
  * python2js_with_depth which converts dicts to Map (the default)
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js_custom(PyObject* x,
                  int depth,
                  JsRef proxies,

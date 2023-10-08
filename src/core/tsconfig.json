@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "baseUrl": "..",
+    "paths": {
+      "*": ["*", "js/*"]
+    }
+  }
+}

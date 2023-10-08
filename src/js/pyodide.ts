@@ -9,7 +9,8 @@ import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { PyProxy, PyDict } from "./pyproxy.gen";
-export type { PyodideInterface };
+import type { TypedArray } from "./types";
+export type { PyodideInterface, TypedArray };
 
 export type {
   PyProxy,
@@ -22,7 +23,6 @@ export type {
   PyProxyIterator,
   PyProxyAwaitable,
   PyProxyCallable,
-  TypedArray,
   PyBuffer as PyProxyBuffer,
   PyBufferView as PyBuffer,
 } from "./pyproxy.gen";

@@ -1,7 +1,7 @@
 import { IN_NODE } from "./compat.js";
 import "./constants";
 
-import type { FSStream, FSStreamOpsGen } from "./module";
+import type { FSStream, FSStreamOpsGen } from "./types";
 const fs: any = IN_NODE ? require("fs") : undefined;
 const tty: any = IN_NODE ? require("tty") : undefined;
 

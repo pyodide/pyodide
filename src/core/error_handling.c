@@ -119,7 +119,7 @@ store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
  * JavaScript errors have no Python stack info. Also, JavaScript has much weaker
  * support for catching errors by type.
  */
-bool
+EMSCRIPTEN_KEEPALIVE bool
 restore_sys_last_exception(void* value)
 {
   bool success = false;
@@ -185,7 +185,7 @@ finally:
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 wrap_exception()
 {
   bool success = false;
