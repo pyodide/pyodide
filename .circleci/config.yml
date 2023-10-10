@@ -323,7 +323,7 @@ jobs:
         default: ""
     resource_class: macos.x86.medium.gen2
     macos:
-      xcode: 14.3.1
+      xcode: 15.0.0
 
     working_directory: ~/repo
     steps:
