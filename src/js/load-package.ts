@@ -21,6 +21,7 @@ import { makeWarnOnce } from "./util";
  * @private
  */
 async function initializePackageIndex(lockFilePromise: Promise<any>) {
+  await initNodeModules();
   const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
