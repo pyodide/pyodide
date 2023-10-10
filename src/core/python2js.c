@@ -560,7 +560,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register)
  * Do a translation from Python to JavaScript. Convert immutable types with
  * equivalent JavaScript immutable types, but all other types are proxied.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js(PyObject* x)
 {
   return python2js_inner(x, NULL, false, true);
@@ -620,7 +620,7 @@ EM_JS_REF(JsRef, _JsArray_PostProcess_helper, (JsRef jscontext, JsRef array), {
 // clang-format off
 EM_JS_REF(
 JsRef,
-python2js__default_converter,
+python2js__default_converter_js,
 (JsRef jscontext, PyObject* object),
 {
   let context = Hiwire.get_value(jscontext);
@@ -634,6 +634,12 @@ python2js__default_converter,
   return Hiwire.new_value(result);
 })
 // clang-format on
+
+JsRef
+python2js__default_converter(JsRef jscontext, PyObject* object)
+{
+  return python2js__default_converter_js(jscontext, object);
+}
 
 static JsRef
 _JsArray_PostProcess(ConversionContext context, JsRef array)
@@ -684,7 +690,7 @@ python2js_custom__create_jscontext,
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
  * python2js_with_depth which converts dicts to Map (the default)
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js_custom(PyObject* x,
                  int depth,
                  JsRef proxies,

@@ -5,9 +5,9 @@ Backward compatibility of the API is not guaranteed at this point.
 ## Globals
 
 ```{eval-rst}
-.. js-doc-summary:: globalThis
+.. js:autosummary:: globalThis
 
-.. js-doc-content:: globalThis
+.. js:automodule:: globalThis
 ```
 
 (js-api-pyodide)=
@@ -15,9 +15,9 @@ Backward compatibility of the API is not guaranteed at this point.
 ## pyodide
 
 ```{eval-rst}
-.. js-doc-summary:: pyodide
+.. js:autosummary:: pyodide
 
-.. js-doc-content:: pyodide
+.. js:automodule:: pyodide
 ```
 
 (js-api-pyodide-ffi)=
@@ -31,9 +31,9 @@ import type { PyProxy } from "pyodide/ffi";
 ```
 
 ```{eval-rst}
-.. js-doc-summary:: pyodide.ffi
+.. js:autosummary:: pyodide.ffi
 
-.. js-doc-content:: pyodide.ffi
+.. js:automodule:: pyodide.ffi
 ```
 
 (js-api-pyodide-canvas)=
@@ -46,7 +46,7 @@ For example, you need to set a canvas if you want to use the SDL library. See
 {ref}`using-sdl` for more information.
 
 ```{eval-rst}
-.. js-doc-summary:: pyodide.canvas
+.. js:autosummary:: pyodide.canvas
 
-.. js-doc-content:: pyodide.canvas
+.. js:automodule:: pyodide.canvas
 ```

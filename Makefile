@@ -68,6 +68,9 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
 	# Add a null byte to terminate the string
 	echo ', 0};' >> src/core/pyodide_pre.gen.c
+	echo "#include <emscripten.h>" >> src/core/pyodide_pre.gen.c
+	echo "void pyodide_js_init(void) EM_IMPORT(pyodide_js_init);" >> src/core/pyodide_pre.gen.c
+	echo "EMSCRIPTEN_KEEPALIVE void pyodide_export(void) { pyodide_js_init(); }" >> src/core/pyodide_pre.gen.c
 
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
