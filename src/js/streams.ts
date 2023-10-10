@@ -384,19 +384,18 @@ function _setStdwrite(
   options: StdwriteOpts & Partial<Writer>,
   setOps: (ops: Writer) => void,
   getDefaults: () => StdwriteOpts & Partial<Writer>,
-): void {
-  const raw = options.raw;
-  const write = options.write;
-  const isatty = options.isatty;
-  const batched = options.batched;
-  const numset = +!!raw + +!!batched + +!!write;
-  if (numset > 1) {
+) {
+  let { raw, isatty, batched, write } = options as StdwriteOpts &
+    Partial<Writer>;
+  let nset = +!!raw + +!!batched + +!!write;
+  if (nset === 0) {
+    options = getDefaults();
+    ({ raw, isatty, batched, write } = options);
+  }
+  if (nset > 1) {
     throw new TypeError(
       "At most one of 'raw', 'batched', and 'write' must be passed",
     );
-  }
-  if (numset === 0) {
-    return _setStdwrite(getDefaults(), setOps, getDefaults);
   }
   if (!raw && !write && isatty) {
     throw new TypeError(

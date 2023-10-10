@@ -16,9 +16,6 @@ import { TypedArray } from "./types";
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
-// Exported for micropip
-API.loadBinaryFile = loadBinaryFile;
-
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
