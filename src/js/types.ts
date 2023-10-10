@@ -260,8 +260,6 @@ export interface Module {
 
 export interface API {
   fatal_error: (e: any) => never;
-  lockfile_info: any;
-  lockfile_packages: any;
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
@@ -313,6 +311,9 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
 
+  lockfile_info: any;
+  lockfile_packages: any;
+  lockFilePromise: Promise<any>;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadDynlib: (
