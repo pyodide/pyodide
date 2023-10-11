@@ -341,3 +341,4 @@ def setup(app):
     ensure_typedoc_on_path()
     write_console_html(app)
     prune_docs()
+    Path("../src/js/generated/pyproxy.ts").unlink(missing_ok=True)
