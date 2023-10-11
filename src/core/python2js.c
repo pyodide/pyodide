@@ -3,8 +3,8 @@
 
 #include "docstring.h"
 #include "hiwire.h"
-#include "jslib.h"
 #include "js2python.h"
+#include "jslib.h"
 #include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"

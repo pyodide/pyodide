@@ -2,7 +2,6 @@
 #define JSLIB_H
 #include "hiwire.h"
 
-
 #define JS_NULL __builtin_wasm_ref_null_extern()
 
 int Jsv_is_null(JsVal);
