@@ -17,7 +17,6 @@
 declare var Tests: any;
 declare var Module: any;
 declare var Hiwire: any;
-declare var errorToken: any;
 
 import { TypedArray } from "types";
 import { warnOnce } from "pyodide_util";
@@ -50,10 +49,6 @@ declare var IS_GENERATOR: number;
 declare var IS_ASYNC_GENERATOR: number;
 declare var IS_SEQUENCE: number;
 declare var IS_MUTABLE_SEQUENCE: number;
-
-declare var PYGEN_NEXT: number;
-declare var PYGEN_RETURN: number;
-declare var PYGEN_ERROR: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
@@ -498,7 +493,7 @@ Module.callPyObjectKwargs = function (
     API.maybe_fatal_error(e);
     return;
   }
-  if (result === errorToken) {
+  if (result === null) {
     _pythonexc2js();
   }
   // Automatically schedule coroutines
@@ -576,7 +571,7 @@ export class PyProxy {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === errorToken) {
+    if (result === null) {
       _pythonexc2js();
     }
     return result;
@@ -1963,7 +1958,7 @@ function python_getattr(jsobj: PyProxy, key: any) {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (result === errorToken) {
+  if (result === null) {
     if (_PyErr_Occurred()) {
       _pythonexc2js();
     }

@@ -59,6 +59,3 @@ const errNoRet = () => {
     "Assertion error: control reached end of function without return",
   );
 };
-// For signaling errors as a JsVal
-const errorToken = { thisIsAnErrorSignal: "yes" };
-API.errorToken = errorToken;

@@ -44,6 +44,10 @@ _Py_IDENTIFIER(athrow);
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
 
+EM_JS(int, pyproxy_Check_val, (JsVal val), {
+  return API.isPyProxy(val);
+});
+
 EM_JS(int, pyproxy_Check, (JsRef x), {
   if (x == 0) {
     return false;
@@ -313,22 +317,16 @@ finally:
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_repr(PyObject* pyobj)
 {
-  PyObject* repr_py = NULL;
-  JsRef repr_ref = NULL;
-  JsVal repr_val = JsVal_error_token;
+  PyObject* pyrepr = NULL;
+  JsVal jsrepr = JS_NULL;
 
-  repr_py = PyObject_Repr(pyobj);
-  FAIL_IF_NULL(repr_py);
-  repr_ref = python2js(repr_py);
-  if (repr_ref == NULL) {
-    repr_ref = Js_error;
-  }
-  repr_val = hiwire_get(repr_ref);
-  hiwire_decref(repr_ref);
+  pyrepr = PyObject_Repr(pyobj);
+  FAIL_IF_NULL(pyrepr);
+  jsrepr = python2js_val(pyrepr);
 
 finally:
-  Py_CLEAR(repr_py);
-  return repr_val;
+  Py_CLEAR(pyrepr);
+  return jsrepr;
 }
 
 /**
@@ -408,8 +406,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   PyObject* pykey = NULL;
   PyObject* pydescr = NULL;
   PyObject* pyresult = NULL;
-  JsRef idresult = NULL;
-  JsVal result = JsVal_error_token;
+  JsVal result = JS_NULL;
 
   pykey = js2python_val(key);
   FAIL_IF_NULL(pykey);
@@ -438,14 +435,12 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     pyresult = pydescr;
     Py_INCREF(pydescr);
   }
-  idresult = python2js(pyresult);
-  FAIL_IF_NULL(idresult);
-  result = hiwire_get(idresult);
-  if (pyproxy_Check(idresult)) {
+  result = python2js_val(pyresult);
+  if (pyproxy_Check_val(result)) {
     // If a getter returns a different object every time, this could potentially
     // fill up the cache with a lot of junk. If this is a problem, the user will
     // have to manually destroy the attributes.
-    proxy_cache_set(proxyCache, pydescr, hiwire_get(idresult));
+    proxy_cache_set(proxyCache, pydescr, result);
   }
 
 success:
@@ -454,7 +449,6 @@ finally:
   Py_CLEAR(pykey);
   Py_CLEAR(pydescr);
   Py_CLEAR(pyresult);
-  hiwire_CLEAR(idresult);
   if (!success) {
     if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
       PyErr_Clear();
@@ -722,8 +716,7 @@ _pyproxy_apply(PyObject* callable,
             // method
   PyObject* pykwnames = NULL;
   PyObject* pyresult = NULL;
-  JsRef idresult = NULL;
-  JsVal result;
+  JsVal result = JS_NULL;
 
   // Put both arguments and keyword arguments into pyargs
   for (Py_ssize_t i = 0; i < total_args; ++i) {
@@ -750,15 +743,10 @@ _pyproxy_apply(PyObject* callable,
   size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
   pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
   FAIL_IF_NULL(pyresult);
-  idresult = python2js(pyresult);
-  FAIL_IF_NULL(idresult);
-  result = hiwire_get(idresult);
+  result = python2js_val(pyresult);
 
   success = true;
 finally:
-  if (!success) {
-    result = JsVal_error_token;
-  }
   // If we failed to convert one of the arguments, then pyargs is partially
   // uninitialized. Only clear the part that actually has stuff in it.
   for (Py_ssize_t i = 0; i < last_converted_arg; i++) {
@@ -766,7 +754,6 @@ finally:
   }
   Py_CLEAR(pyresult);
   Py_CLEAR(pykwnames);
-  hiwire_CLEAR(idresult);
   return result;
 }
 
