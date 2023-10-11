@@ -242,6 +242,11 @@ def write_console_html(app):
     output_path = Path(app.outdir) / "console.html"
     output_path.write_text("".join(console_html_lines))
 
+    def remove_console_html():
+        Path("../dist/console.html").unlink(missing_ok=True)
+
+    atexit.register(remove_console_html)
+
 
 def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
@@ -257,17 +262,6 @@ def ensure_typedoc_on_path():
     raise Exception(
         "Before building the Pyodide docs you must run 'npm install' in 'src/js'."
     )
-
-
-def create_generated_typescript_files(app):
-    shutil.copy("../src/core/pyproxy.ts", "../src/js/pyproxy.gen.ts")
-    shutil.copy("../src/core/error_handling.ts", "../src/js/error_handling.gen.ts")
-    app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
-
-    def remove_pyproxy_gen_ts():
-        Path("../src/js/pyproxy.gen.ts").unlink(missing_ok=True)
-
-    atexit.register(remove_pyproxy_gen_ts)
 
 
 def prune_webloop_docs():
@@ -334,12 +328,12 @@ def setup(app):
     sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
+    app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
     app.connect("source-read", global_replace)
 
     set_announcement_message()
     apply_patches()
     calculate_pyodide_version(app)
     ensure_typedoc_on_path()
-    create_generated_typescript_files(app)
     write_console_html(app)
     prune_docs()

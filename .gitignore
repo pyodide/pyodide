@@ -2,6 +2,7 @@
 *.o
 *.pyc
 *.gen.*
+src/js/generated
 src/js/*.out.*
 
 *.egg-info/
