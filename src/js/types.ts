@@ -287,18 +287,6 @@ export interface API {
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
 
-  package_loader: any;
-  importlib: any;
-  _import_name_to_package_name: Map<string, string>;
-  lockfile_unvendored_stdlibs: string[];
-  lockfile_unvendored_stdlibs_and_test: string[];
-  repodata_packages: any;
-  repodata_info: any;
-  loadBinaryFile: (
-    path: string,
-    file_sub_resource_hash?: string | undefined,
-  ) => Promise<Uint8Array>;
-
   _pyodide: any;
   pyodide_py: any;
   pyodide_code: any;
@@ -310,11 +298,22 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
 
+  package_loader: any;
+  importlib: any;
+  _import_name_to_package_name: Map<string, string>;
+  lockFilePromise: Promise<any>;
+  lockfile_unvendored_stdlibs: string[];
+  lockfile_unvendored_stdlibs_and_test: string[];
   lockfile_info: any;
   lockfile_packages: any;
-  lockFilePromise: Promise<any>;
+  repodata_packages: any;
+  repodata_info: any;
   defaultLdLibraryPath: string[];
   sitepackages: string;
+  loadBinaryFile: (
+    path: string,
+    file_sub_resource_hash?: string | undefined,
+  ) => Promise<Uint8Array>;
   loadDynlib: (
     lib: string,
     global: boolean,
