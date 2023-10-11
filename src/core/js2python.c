@@ -69,14 +69,11 @@ EM_JS_REF(PyObject*, js2python_val, (JsVal value), {
   return _JsProxy_create_val(value);
 })
 
-
 EMSCRIPTEN_KEEPALIVE PyObject*
 js2python(JsRef id)
 {
   return js2python_val(hiwire_get(id));
 }
-
-
 
 /**
  * Convert a JavaScript object to Python to a given depth. This is the

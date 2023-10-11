@@ -60,5 +60,5 @@ const errNoRet = () => {
   );
 };
 // For signaling errors as a JsVal
-const errorToken = {thisIsAnErrorSignal: "yes"};
-API.errorToken = errorToken; 
+const errorToken = { thisIsAnErrorSignal: "yes" };
+API.errorToken = errorToken;
