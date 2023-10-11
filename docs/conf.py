@@ -257,6 +257,7 @@ def ensure_typedoc_on_path():
         return
     if IN_READTHEDOCS:
         subprocess.run(["npm", "ci"], cwd="../src/js")
+        Path("../node_modules").symlink_to("../src/js/node_modules")
     if shutil.which("typedoc"):
         return
     raise Exception(
