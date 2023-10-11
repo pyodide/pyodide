@@ -19,6 +19,6 @@
       "*": ["*", "js/*", "core/*"]
     }
   },
-  "include": ["*.ts", "*.json"],
-  "exclude": ["test/**/*"]
+  "include": ["**/*.ts", "*.json"],
+  "exclude": ["test*/**/*"]
 }

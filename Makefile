@@ -128,7 +128,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
+dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts src/js/error_handling.gen.ts node_modules/.installed
 	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
 dist/package.json : src/js/package.json
@@ -149,7 +149,7 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/j
 src/js/error_handling.gen.ts : src/core/error_handling.ts
 	cp $< $@
 
-src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
+src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
