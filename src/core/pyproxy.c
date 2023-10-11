@@ -44,9 +44,7 @@ _Py_IDENTIFIER(athrow);
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
 
-EM_JS(int, pyproxy_Check_val, (JsVal val), {
-  return API.isPyProxy(val);
-});
+EM_JS(int, pyproxy_Check_val, (JsVal val), { return API.isPyProxy(val); });
 
 EM_JS(int, pyproxy_Check, (JsRef x), {
   if (x == 0) {
