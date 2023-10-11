@@ -1,4 +1,4 @@
-import ErrorStackParser from "error-stack-parser";
+import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
 import "types";
 
 declare var Module: any;

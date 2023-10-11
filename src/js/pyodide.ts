@@ -14,7 +14,7 @@ import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyDict } from "./pyproxy.gen";
+import type { PyProxy, PyDict } from "generated/pyproxy";
 import type { TypedArray } from "./types";
 export type { PyodideInterface, TypedArray };
 
@@ -31,7 +31,7 @@ export type {
   PyProxyCallable,
   PyBuffer as PyProxyBuffer,
   PyBufferView as PyBuffer,
-} from "./pyproxy.gen";
+} from "generated/pyproxy";
 
 export { version };
 
