@@ -328,7 +328,10 @@ def setup(app):
     sys.path = extra_sys_path_dirs + sys.path
     app.add_config_value("global_replacements", {}, True)
     app.add_config_value("CDN_URL", "", True)
-    app.config.js_source_path = [str(x) for x in Path("../src/js").glob("*.ts")]
+    files = []
+    for dir in ["core", "js"]:
+        files += [str(x) for x in (Path("../src") / dir).glob("*.ts")]
+    app.config.js_source_path = files
     app.connect("source-read", global_replace)
 
     set_announcement_message()
