@@ -10,7 +10,7 @@ import {
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy } from "pyproxy";
+import { PyProxy } from "generated/pyproxy";
 import { makeWarnOnce } from "./pyodide_util";
 
 /**

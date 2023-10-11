@@ -5,11 +5,10 @@ import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { PyBufferView, PyBuffer, PyProxy } from "pyproxy";
-import { PythonError } from "error_handling";
+import { PyBufferView, PyBuffer, PyProxy } from "generated/pyproxy";
+import { PythonError } from "../core/error_handling";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
-import "error_handling";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { TypedArray } from "./types";
 

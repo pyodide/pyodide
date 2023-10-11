@@ -1,5 +1,5 @@
 export {};
-import { type PyProxy } from "pyproxy";
+import { type PyProxy } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";

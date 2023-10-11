@@ -16,7 +16,8 @@
     "resolveJsonModule": true,
     "baseUrl": "..",
     "paths": {
-      "*": ["*", "js/*", "js/generated", "core/*"]
+      "generated/*": ["js/generated/*", "core/*"],
+      "*": ["*", "js/*"]
     }
   },
   "include": ["../**/*.ts", "*.json"],
