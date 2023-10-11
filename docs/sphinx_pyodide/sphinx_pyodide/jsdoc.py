@@ -81,7 +81,7 @@ def ts_post_convert(converter, node, doclet):
     if node.name == "mountNativeFS":
         fix_native_fs(converter, node, doclet)
 
-    if doclet.deppath == "./js/pyproxy.gen" and doclet.path.segments[-1].endswith(
+    if doclet.deppath == "./core/pyproxy" and doclet.path.segments[-1].endswith(
         "Methods"
     ):
         PYPROXY_METHODS[doclet.name] = doclet.members
@@ -170,7 +170,7 @@ def _get_toplevel_objects(
             continue
         mod = get_obj_mod(obj)
         set_kind(obj)
-        if obj.deppath == "./js/pyproxy.gen" and isinstance(obj, Class):
+        if obj.deppath == "./core/pyproxy" and isinstance(obj, Class):
             fix_pyproxy_class(obj)
 
         yield obj, mod, obj.kind
@@ -196,7 +196,7 @@ def doclet_is_private(doclet: ir.TopLevel) -> bool:
     if filename in ["module.", "compat.", "types."]:
         return True
 
-    if filename == "pyproxy.gen." and toplevelname.endswith("Methods"):
+    if filename == "pyproxy." and toplevelname.endswith("Methods"):
         # Don't document methods classes. We moved them to the
         # corresponding PyProxy subclass.
         return True

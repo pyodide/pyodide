@@ -1,24 +1,25 @@
 {
   "$schema": "http://json.schemastore.org/tsconfig",
-  "rootDir": "../../",
   "compilerOptions": {
+    "rootDir": "..",
     "outDir": "../../dist",
     "esModuleInterop": true,
-    "target": "ES2018",
-    "module": "ES2020",
+    "target": "ES2020",
+    "module": "ES2022",
     "moduleResolution": "node",
     "composite": true,
     "strict": true,
     "noUnusedLocals": false,
     "types": ["node"],
     "experimentalDecorators": true,
-    "lib": ["ES2018", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "resolveJsonModule": true,
     "baseUrl": "..",
     "paths": {
-      "*": ["*", "js/*", "core/*"]
+      "generated/*": ["js/generated/*", "core/*"],
+      "*": ["*", "js/*"]
     }
   },
-  "include": ["*.ts", "*.json"],
-  "exclude": ["test/**/*"]
+  "include": ["../**/*.ts", "*.json"],
+  "exclude": ["../**/*test*/**/*"]
 }

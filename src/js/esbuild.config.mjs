@@ -24,7 +24,7 @@ const outputs = [
   },
   {
     input: "api",
-    output: "src/js/_pyodide.out.js",
+    output: "src/js/generated/_pyodide.out.js",
     format: "iife",
   },
 ];
