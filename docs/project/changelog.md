@@ -19,6 +19,7 @@ myst:
 ### Packages
 
 - Added river version 0.19.0 {pr}`4197`
+- Upgraded numpy to 1.26.0 {pr} `4217`
 
 ### Load time & size optimizations
 
