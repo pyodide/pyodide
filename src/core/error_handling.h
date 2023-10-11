@@ -185,6 +185,13 @@ console_error_obj(JsRef obj);
     }                                                                          \
   } while (0)
 
+#define FAIL_IF_JS_NULL(ref)                                                   \
+  do {                                                                         \
+    if (unlikely(Jsv_is_null(ref))) {                                          \
+      FAIL();                                                                  \
+    }                                                                          \
+  } while (0)
+
 #define FAIL_IF_MINUS_ONE(num)                                                 \
   do {                                                                         \
     if (unlikely((num) == -1)) {                                               \

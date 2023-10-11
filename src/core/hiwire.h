@@ -22,6 +22,7 @@ extern const JsRef Js_null;
 extern const JsRef Js_error;
 
 #define JsVal_error_token hiwire_get(Js_error)
+#define JS_NULL __builtin_wasm_ref_null_extern()
 
 // For when the return value would be Option<JsRef>
 extern const JsRef Js_novalue;
