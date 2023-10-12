@@ -293,9 +293,11 @@ def pyodide_tags() -> Iterator[Tag]:
     # Accept both "pyodide_abiver_wasm32" and "emscripten_ver_wasm32" (rust packages)
     platforms = [platform(), emscripten_platform()]
     python_version = (int(PYMAJOR), int(PYMINOR))
+
     def tags():
         yield from cpython_tags(platforms=platforms, python_version=python_version)
         yield from compatible_tags(platforms=platforms, python_version=python_version)
+
     for tag in tags():
         if tag.abi == "cp311" or tag.platform == "any":
             yield tag
