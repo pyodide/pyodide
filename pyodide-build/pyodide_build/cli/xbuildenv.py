@@ -2,6 +2,7 @@ from pathlib import Path
 
 import typer
 
+from .. import __version__
 from ..create_xbuildenv import create
 from ..install_xbuildenv import install
 from ..logger import logger
@@ -18,7 +19,7 @@ def callback():
 
 @app.command("install")
 def _install(
-    path: Path = typer.Option(".pyodide-xbuildenv", help="path to xbuildenv directory"),
+    path: Path = typer.Option(".pyodide-xbuildenv-{__version__}", help="path to xbuildenv directory"),
     download: bool = typer.Option(False, help="download xbuildenv before installing"),
     url: str = typer.Option(None, help="URL to download xbuildenv from"),
 ) -> None:
@@ -38,7 +39,7 @@ def _install(
 @app.command("create")
 def _create(
     path: Path = typer.Argument(
-        ".pyodide-xbuildenv", help="path to xbuildenv directory"
+        ".pyodide-xbuildenv-{__version__}", help="path to xbuildenv directory"
     ),
     root: Path = typer.Option(
         None, help="path to pyodide root directory, if not given, will be inferred"
