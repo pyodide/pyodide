@@ -242,6 +242,21 @@ the `patches` key:
 find patches/ -type f | sed 's/^/    - /g'
 ```
 
+### Upgrading a package
+
+To upgrade a package's version to the latest one available on PyPI, do
+
+```
+pyodide skeleton pypi <package-name> --update
+```
+
+Because this does not handle package dependencies, you have to manually check
+whether the `requirements` section of the `meta.yaml` file needs to be updated
+for updated dependencies.
+
+Upgrading a package's version may lead to new build issues that need to be resolved
+(see above) and any patches need to be checked and potentially migrated (see below).
+
 ### Migrating Patches
 
 When you want to upgrade the version of a package, you will need to migrate the
