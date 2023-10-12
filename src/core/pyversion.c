@@ -29,14 +29,15 @@ py_version_micro()
 #define STRINGIFY(s) #s
 #define STR(s) STRINGIFY(s)
 
-
-int __syscall_uname(intptr_t buf) {
+int
+__syscall_uname(intptr_t buf)
+{
   if (!buf) {
     return -EFAULT;
   }
   const char* full_version = STR(PYODIDE_ABI);
 
-  struct utsname *utsname = (struct utsname *)buf;
+  struct utsname* utsname = (struct utsname*)buf;
 
   strcpy(utsname->sysname, "Pyodide");
   strcpy(utsname->nodename, "pyodide");
