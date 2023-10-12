@@ -42,9 +42,8 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-EM_JS_REF(PyObject*, js2python_immutable_js, (JsRef id), {
-  let value = Hiwire.get_value(id);
-  let result = Module.js2python_convertImmutable(value, id);
+EM_JS_REF(PyObject*, js2python_immutable_val, (JsVal value), {
+  let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
     // clang-format on
@@ -56,7 +55,7 @@ EM_JS_REF(PyObject*, js2python_immutable_js, (JsRef id), {
 EMSCRIPTEN_KEEPALIVE PyObject*
 js2python_immutable(JsRef id)
 {
-  return js2python_immutable_js(id);
+  return js2python_immutable_val(hiwire_get(id));
 }
 
 EM_JS_REF(PyObject*, js2python_val, (JsVal value), {

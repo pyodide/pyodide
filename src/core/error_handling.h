@@ -112,6 +112,18 @@ console_error_obj(JsRef obj);
     errNoRet();                                                                \
   })
 
+#define EM_JS_VAL(ret, func_name, args, body...)                               \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
+    try    /* intentionally no braces, body already has them */                \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
+        Module.handle_js_error(e);                                             \
+        return null;                                                              \
+    }                                                                          \
+    errNoRet();                                                                \
+  })
+
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
   EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
     try    /* intentionally no braces, body already has them */                \

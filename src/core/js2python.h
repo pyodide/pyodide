@@ -24,6 +24,9 @@ PyObject*
 js2python_immutable(JsRef x);
 
 PyObject*
+js2python_immutable_val(JsVal x);
+
+PyObject*
 js2python_convert(JsRef x, int depth, JsRef defaultConverter);
 
 /** Initialize any global variables used by this module. */
