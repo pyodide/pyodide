@@ -294,13 +294,8 @@ def pyodide_tags() -> Iterator[Tag]:
     platforms = [platform(), emscripten_platform()]
     python_version = (int(PYMAJOR), int(PYMINOR))
 
-    def tags():
-        yield from cpython_tags(platforms=platforms, python_version=python_version)
-        yield from compatible_tags(platforms=platforms, python_version=python_version)
-
-    for tag in tags():
-        if tag.abi == "cp311" or tag.platform == "any":
-            yield tag
+    yield from cpython_tags(platforms=platforms, python_version=python_version)
+    yield from compatible_tags(platforms=platforms, python_version=python_version)
 
 
 def replace_so_abi_tags(wheel_dir: Path) -> None:
