@@ -276,6 +276,7 @@ def ensure_wheel_platform(path: Path) -> Path:
     if "emscripten" not in path.name:
         return path
 
+    pyversion = f"cp{sys.version_info.major}{sys.version_info.minor}"
     result = subprocess.run(
         [
             sys.executable,
@@ -283,6 +284,10 @@ def ensure_wheel_platform(path: Path) -> Path:
             "wheel",
             "tags",
             "--remove",
+            "--python-tag",
+            pyversion,
+            "--abi-tag",
+            pyversion,
             "--platform-tag",
             "pyodide",
             str(path),
