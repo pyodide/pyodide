@@ -250,11 +250,11 @@ To upgrade a package's version to the latest one available on PyPI, do
 pyodide skeleton pypi <package-name> --update
 ```
 
-Because this does not handle package dependencies, you have to manually check 
-whether the `requirements` section of the `meta.yaml` file needs to be updated 
+Because this does not handle package dependencies, you have to manually check
+whether the `requirements` section of the `meta.yaml` file needs to be updated
 for updated dependencies.
 
-Upgrading a package's version may lead to new buid issues that need to be resolved 
+Upgrading a package's version may lead to new buid issues that need to be resolved
 (see above) and any patches need to be checked and potentially migrated (see below).
 
 ### Migrating Patches
