@@ -36,6 +36,7 @@ from .common import (
     _environment_substitute_str,
     _get_sha256_checksum,
     chdir,
+    ensure_wheel_platform,
     exit_with_stdio,
     find_matching_wheels,
     find_missing_executables,
@@ -505,6 +506,7 @@ def package_wheel(
         raise Exception(
             f"Unexpected number of wheels {len(rest) + 1} when building {pkg_name}"
         )
+    wheel = ensure_wheel_platform(wheel)
     logger.info(f"Unpacking wheel to {str(wheel)}")
 
     name, ver, _ = wheel.name.split("-", 2)
