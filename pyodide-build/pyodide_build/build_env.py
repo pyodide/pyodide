@@ -296,6 +296,8 @@ def pyodide_tags() -> Iterator[Tag]:
 
     yield from cpython_tags(platforms=platforms, python_version=python_version)
     yield from compatible_tags(platforms=platforms, python_version=python_version)
+    # Following line can be removed once packaging 22.0 is released and we update to it.
+    yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 
 
 def replace_so_abi_tags(wheel_dir: Path) -> None:
