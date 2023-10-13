@@ -273,13 +273,16 @@ def get_unisolated_packages() -> list[str]:
 
 
 def platform() -> str:
-    abiversion = get_build_flag("PYODIDE_ABI")
-    return f"pyodide_{abiversion}_wasm32"
+    return f"pyodide_{pyodide_abi()}_wasm32"
 
 
 def emscripten_platform() -> str:
     emver = emscripten_version().replace(".", "_")
     return f"emscripten_{emver}_wasm32"
+
+
+def pyodide_abi() -> str:
+    return get_build_flag("PYODIDE_ABI")
 
 
 def pyodide_tags() -> Iterator[Tag]:
