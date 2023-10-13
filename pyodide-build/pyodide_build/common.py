@@ -276,6 +276,8 @@ def ensure_wheel_platform(path: Path) -> Path:
     if "emscripten" not in path.name:
         return path
 
+    from .build_env import platform
+
     pyversion = f"cp{sys.version_info.major}{sys.version_info.minor}"
     result = subprocess.run(
         [
@@ -289,7 +291,7 @@ def ensure_wheel_platform(path: Path) -> Path:
             "--abi-tag",
             pyversion,
             "--platform-tag",
-            "pyodide",
+            platform(),
             str(path),
         ],
         check=False,
