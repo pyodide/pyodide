@@ -24,7 +24,7 @@ jobs:
   build-core:
     parameters:
       disable_dylink:
-        description: The packages to be built.
+        description: Should we disable dynamic linking? 0 means no, 1 means yes.
         type: integer
         default: 0
     <<: *defaults

@@ -6,7 +6,7 @@ Subject: [PATCH] JSDCE: Add support for destructuring declarations (#20402)
 Rather than let x = 10, these look like let {x: y, ..} = ... or
 let [x, y] = ...
 
-Fixes #20393
+Fixes https://github.com/emscripten-core/emscripten/issues/20393
 ---
  test/optimizer/JSDCE-objectPattern-output.js | 16 ++++++++++
  test/optimizer/JSDCE-objectPattern.js        | 28 +++++++++++++++++
