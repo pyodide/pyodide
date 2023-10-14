@@ -37,7 +37,6 @@ myst:
   env variables if provided by user.
   {pr}`4223`
 
-
 ## Version 0.24.1
 
 _September 25, 2023_
