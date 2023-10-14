@@ -175,7 +175,7 @@ def get_build_environment_vars() -> dict[str, str]:
         env["CMAKE_TOOLCHAIN_FILE"] = str(
             tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
         )
-    
+
     if "PYO3_CONFIG_FILE" not in env:
         env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
