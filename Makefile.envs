@@ -155,6 +155,71 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 
+ifeq ($(DISABLE_DYLINK), 1)
+
+	EXPORTS= _main\
+			\
+			,_free \
+			\
+			,_hiwire_new \
+			,_hiwire_intern \
+			,_hiwire_num_refs \
+			,_hiwire_get \
+			,_hiwire_incref \
+			,_hiwire_decref \
+			,_hiwire_pop \
+			\
+			,_PyBuffer_Release \
+			,_Py_DecRef \
+			,_PyDict_New \
+			,_PyDict_SetItem \
+			,__PyErr_CheckSignals \
+			,_PyErr_CheckSignals \
+			,_PyErr_Clear \
+			,_PyErr_Occurred \
+			,_PyErr_Print \
+			,_PyErr_SetString \
+			,_PyEval_SaveThread \
+			,_PyEval_RestoreThread \
+			,_PyFloat_FromDouble \
+			,_PyGILState_Check \
+			,_Py_IncRef \
+			,_PyList_New \
+			,_PyList_SetItem \
+			,__PyLong_FromByteArray \
+			,_PyLong_FromDouble \
+			,_PyMem_Free \
+			,_PyObject_GetAIter \
+			,_PyObject_GetIter \
+			,_PyObject_Size \
+			,_PyRun_SimpleString \
+			,_PySet_Add \
+			,_PySet_New \
+			,__PyTraceback_Add \
+			,_PyUnicode_Data \
+			,_PyUnicode_New \
+
+	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+		-s MODULARIZE=1 \
+		-s EXPORT_NAME="'_createPyodideModule'" \
+		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8' \
+		-s LZ4=1 \
+		-s USE_ZLIB \
+		-s USE_BZIP2 \
+		-s FORCE_FILESYSTEM=1 \
+		-s TOTAL_MEMORY=20971520 \
+		-s ALLOW_MEMORY_GROWTH=1 \
+		-s STACK_SIZE=5MB \
+		-sWASM_BIGINT \
+		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
+		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
+		-lffi \
+		-lhiwire \
+		-lidbfs.js \
+		-lnodefs.js \
+
+endif
+
 export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
 
 export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE) -I$(PYTHONINCLUDE)

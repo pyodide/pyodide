@@ -107,6 +107,7 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.run_js(f"""pyodide.FS.unlink("{mount_dir}/test_idbfs/__init__.py")""")
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(
     node="Not available", firefox="Not available", safari="Not available"
 )

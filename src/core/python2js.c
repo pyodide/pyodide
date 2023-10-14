@@ -486,7 +486,7 @@ EM_JS(JsRef, _python2js_cache_lookup, (JsRef cacheid, PyObject* pyparent), {
  * This checks if the object x is already in the cache and if so returns it from
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _python2js(ConversionContext context, PyObject* x)
 {
   JsRef id = _python2js_cache_lookup(context.cache, x); /* borrowed */
@@ -583,7 +583,7 @@ _JsMap_Set(ConversionContext context, JsRef map, JsRef key, JsRef value)
  * Do a conversion from Python to JavaScript, converting lists, dicts, and sets
  * down to depth "depth".
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 {
   return python2js_custom(x, depth, proxies, NULL, NULL);

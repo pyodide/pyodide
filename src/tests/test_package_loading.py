@@ -265,6 +265,7 @@ def test_load_package_mixed_case(selenium_standalone, jinja2):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_test_unvendoring(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
@@ -337,6 +338,7 @@ def test_install_archive(selenium):
         (test_dir / "test_pkg.tar.gz").unlink(missing_ok=True)
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_bad_so_file(selenium):
     # If we load a bad so file, we should catch the error, ignore it (and log a
     # warning)
@@ -533,6 +535,7 @@ def test_init_loaded_packages(monkeypatch, tmp_path):
 @pytest.mark.xfail_browsers(node="Some fetch trouble")
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
+@pytest.mark.requires_dynamic_linking
 def test_custom_lockfile(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     lock = selenium.run_js(

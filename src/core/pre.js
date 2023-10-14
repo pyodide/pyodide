@@ -59,3 +59,5 @@ const errNoRet = () => {
     "Assertion error: control reached end of function without return",
   );
 };
+
+Module.reportUndefinedSymbols = () => {};
