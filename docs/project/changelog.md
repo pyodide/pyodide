@@ -19,7 +19,7 @@ myst:
 ### Packages
 
 - Added river version 0.19.0 {pr}`4197`
-- Upgraded numpy to 1.26.0 {pr} `4217`
+- Upgraded numpy to 1.26.1 {pr} `4217`
 
 - Added `sisl` version 0.14.2 {pr}`4210`
 
