@@ -7,7 +7,7 @@ package:
     - numpy
 source:
   url: https://files.pythonhosted.org/packages/78/23/f78fd8311e0f710fe1d065d50b92ce0057fe877b8ed7fd41b28ad6865bfc/numpy-1.26.1.tar.gz
-  sha256: 6965888d65d2848e8768824ca8288db0a81263c1efccec881cb35a0d805fcd2f
+  sha256: c8c6c72d4a9f831f328efb1312642a1cafafaa88981d9ab76368d50d07d93cbe
 
 build:
   backend-flags: --disable-optimization
