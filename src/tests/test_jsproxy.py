@@ -1518,6 +1518,7 @@ def test_html_array(selenium):
         "(x) => Object.create({[Symbol.toStringTag] : 'NodeList'}, Object.getOwnPropertyDescriptors(x))",
     ],
 )
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_array_sequence_methods(selenium, sequence_converter):
     from pytest import raises

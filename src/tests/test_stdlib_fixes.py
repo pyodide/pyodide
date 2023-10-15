@@ -71,6 +71,7 @@ def test_multiprocessing(selenium):
         process.start()
 
 
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_ctypes_util_find_library(selenium):
     import os

@@ -21,11 +21,22 @@ myst:
 - Added river version 0.19.0 {pr}`4197`
 - Upgraded numpy to 1.26.0 {pr} `4217`
 
+- Added `sisl` version 0.14.2 {pr}`4210`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
   which reduces the time to load Pyodide.
   {pr}`4147`
+
+### Build system
+
+- {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
+  {pr}`4223`
+
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
+  env variables if provided by user.
+  {pr}`4223`
 
 ## Version 0.24.1
 
