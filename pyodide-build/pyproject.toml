@@ -76,12 +76,12 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["pyodide_build.tests"]
+exclude = ["pyodide_build.tests*"]
 namespaces = true
 
 [tool.setuptools.package-data]
 "pyodide_build.tools" = ["*.ini"]
-"pyodide_build.tools.cmake.modules.platform" = ["*.cmake"]
+"pyodide_build.tools.cmake.Modules.Platform" = ["*.cmake"]
 
 [tool.setuptools.dynamic]
 version = {attr = "pyodide_build.__version__"}

@@ -28,6 +28,15 @@ myst:
   which reduces the time to load Pyodide.
   {pr}`4147`
 
+### Build system
+
+- {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
+  {pr}`4223`
+
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
+  env variables if provided by user.
+  {pr}`4223`
+
 ## Version 0.24.1
 
 _September 25, 2023_
