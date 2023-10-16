@@ -4,6 +4,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jslib.h"
 #include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
@@ -564,6 +565,16 @@ EMSCRIPTEN_KEEPALIVE JsRef
 python2js(PyObject* x)
 {
   return python2js_inner(x, NULL, false, true);
+}
+
+EMSCRIPTEN_KEEPALIVE JsVal
+python2js_val(PyObject* x)
+{
+  JsRef result = python2js(x);
+  if (result == NULL) {
+    return JS_NULL;
+  }
+  return hiwire_pop(result);
 }
 
 // taking function pointers to EM_JS functions leads to linker errors.

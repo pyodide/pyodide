@@ -16,6 +16,9 @@
 JsRef
 python2js(PyObject* x);
 
+JsVal
+python2js_val(PyObject* x);
+
 /**
  * Like python2js except in the handling of PyProxy creation.
  *

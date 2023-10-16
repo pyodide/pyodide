@@ -4311,6 +4311,15 @@ JsProxy_create(JsRef object)
   return JsProxy_create_with_this(object, NULL);
 }
 
+EMSCRIPTEN_KEEPALIVE PyObject*
+JsProxy_create_val(JsVal object)
+{
+  JsRef ref = hiwire_new(object);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
 EMSCRIPTEN_KEEPALIVE bool
 JsProxy_Check(PyObject* x)
 {
