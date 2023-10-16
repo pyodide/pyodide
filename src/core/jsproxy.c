@@ -362,7 +362,7 @@ EM_JS(int, normalizeReservedWords, (int word), {
   // clang-format on
 });
 
-EM_JS_REF(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
+EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
   const result = jsobj[jskey];
   // clang-format off
@@ -370,7 +370,7 @@ EM_JS_REF(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
     // clang-format on
     return null;
   }
-  return result;
+  return nullToUndefined(result);
 });
 
 /**

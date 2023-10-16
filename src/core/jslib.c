@@ -19,11 +19,18 @@ Jsv_from_ref(JsRef ref)
   return hiwire_get(ref);
 }
 
-EM_JS(JsVal, JsvUTF8ToString, (const char* ptr), { return UTF8ToString(ptr); })
+// clang-format off
+EM_JS(JsVal, JsvUTF8ToString, (const char* ptr), {
+  return UTF8ToString(ptr);
+})
 
-EM_JS(JsVal, JsvArray_New, (), { return []; });
+EM_JS(JsVal, JsvArray_New, (), {
+  return [];
+});
 
-EM_JS(JsVal, JsvArray_Get_js, (JsVal array, int idx), { return array[idx]; })
+EM_JS(JsVal, JsvArray_Get_js, (JsVal array, int idx), {
+  return nullToUndefined(array[idx]);
+})
 
 JsVal
 JsvArray_Get(JsVal array, int idx)
@@ -31,16 +38,21 @@ JsvArray_Get(JsVal array, int idx)
   return JsvArray_Get_js(array, idx);
 }
 
-EM_JS(void, JsvArray_Push, (JsVal array, JsVal obj), { array.push(obj); });
+EM_JS(void, JsvArray_Push, (JsVal array, JsVal obj), {
+  array.push(obj);
+});
 
-EM_JS(JsVal, JsvObject_New, (), { return {} });
+EM_JS(JsVal, JsvObject_New, (), {
+  return {};
+});
+// clang-format on
 
 EM_JS_NUM(int, JsvObject_SetAttr, (JsVal obj, JsVal attr, JsVal value), {
   obj[attr] = value;
 });
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
-  return obj[meth](... args);
+  return nullToUndefined(obj[meth](... args));
 })
 
 JsVal
@@ -60,13 +72,17 @@ EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
 });
 
 EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
-  return func.apply(this_, args);
+  return nullToUndefined(func.apply(this_, args));
 });
 
+// clang-format off
 EM_JS_VAL(JsVal,
-          JsvFunction_Construct,
-          (JsVal func, JsVal args),
-          { return Reflect.construct(func, args) });
+JsvFunction_Construct,
+(JsVal func, JsVal args),
+{
+  return nullToUndefined(Reflect.construct(func, args));
+});
+// clang-format on
 
 EM_JS_BOOL(bool, JsvPromise_Check, (JsVal obj), {
   // clang-format off
