@@ -1332,6 +1332,48 @@ def test_negative_length(selenium, n):
         a[-1]
 
 
+@run_in_pyodide
+def test_jsarray_reversed(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+    it1 = reversed(l)
+    it2 = reversed(a)
+    it3 = reversed(b)
+
+    for _ in range(len(l)):
+        v = next(it1)
+        assert next(it2) == v
+        assert next(it3) == v
+
+    import pytest
+
+    with pytest.raises(StopIteration):
+        next(it1)
+    with pytest.raises(StopIteration):
+        next(it2)
+    with pytest.raises(StopIteration):
+        next(it3)
+
+
+@run_in_pyodide
+def test_jsarray_reverse(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, 0, 3, 1]
+    a = run_js(repr(l))
+    b = run_js(f"new Int8Array({repr(l)})")
+
+    l.reverse()
+    a.reverse()
+    b.reverse()
+
+    assert a.to_py() == l
+    assert b.to_bytes() == bytes(l)
+
+
 @std_hypothesis_settings
 @given(l=st.lists(st.integers()), slice=st.slices(50))
 @example(l=[0, 1], slice=slice(None, None, -1))
@@ -1684,48 +1726,6 @@ def test_jsarray_count(selenium):
         }
         """
     )(a)
-
-
-@run_in_pyodide
-def test_jsarray_reversed(selenium):
-    from pyodide.code import run_js
-
-    l = [5, 7, 9, -1, 3, 5]
-    a = run_js(repr(l))
-    b = run_js(f"new Int8Array({repr(l)})")
-    it1 = reversed(l)
-    it2 = reversed(a)
-    it3 = reversed(b)
-
-    for _ in range(len(l)):
-        v = next(it1)
-        assert next(it2) == v
-        assert next(it3) == v
-
-    import pytest
-
-    with pytest.raises(StopIteration):
-        next(it1)
-    with pytest.raises(StopIteration):
-        next(it2)
-    with pytest.raises(StopIteration):
-        next(it3)
-
-
-@run_in_pyodide
-def test_jsarray_reverse(selenium):
-    from pyodide.code import run_js
-
-    l = [5, 7, 9, 0, 3, 1]
-    a = run_js(repr(l))
-    b = run_js(f"new Int8Array({repr(l)})")
-
-    l.reverse()
-    a.reverse()
-    b.reverse()
-
-    assert a.to_py() == l
-    assert b.to_bytes() == bytes(l)
 
 
 @run_in_pyodide
