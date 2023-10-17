@@ -17,11 +17,11 @@ export type {
   PyBufferView,
   PySequence,
   PyMutableSequence,
-} from "./pyproxy.gen";
+} from "generated/pyproxy";
 
 export type { TypedArray } from "./types";
 
-export type { PythonError } from "./error_handling.gen";
+export type { PythonError } from "../core/error_handling";
 
 import {
   PyProxy,
@@ -42,9 +42,9 @@ import {
   PyBufferView,
   PySequence,
   PyMutableSequence,
-} from "./pyproxy.gen";
+} from "generated/pyproxy";
 
-import { PythonError } from "./error_handling.gen";
+import { PythonError } from "../core/error_handling";
 
 /**
  * See :ref:`js-api-pyodide-ffi`

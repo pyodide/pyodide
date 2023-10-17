@@ -1,5 +1,5 @@
 export {};
-import { type PyProxy } from "./pyproxy.gen";
+import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
@@ -88,49 +88,42 @@ declare global {
   ) => number;
 
   export const _pyproxy_getflags: (ptr: number) => number;
-  export const __pyproxy_type: (ptr: number) => number;
-  export const __pyproxy_repr: (ptr: number) => number;
-  export const __pyproxy_getitem: (obj: number, item: number) => number;
-  export const __pyproxy_setitem: (
-    ptr: number,
-    item: number,
-    value: number,
-  ) => number;
-  export const __pyproxy_delitem: (ptr: number, item: number) => number;
-  export const __pyproxy_contains: (ptr: number, item: number) => number;
+  export const __pyproxy_type: (ptr: number) => string;
+  export const __pyproxy_repr: (ptr: number) => string;
+  export const __pyproxy_getitem: (obj: number, key: any) => any;
+  export const __pyproxy_setitem: (ptr: number, key: any, value: any) => number;
+  export const __pyproxy_delitem: (ptr: number, key: any) => number;
+  export const __pyproxy_contains: (ptr: number, key: any) => number;
   export const __pyproxy_GetIter: (ptr: number) => number;
   export const __pyproxy_GetAIter: (ptr: number) => number;
-  export const __pyproxy_aiter_next: (ptr: number) => number;
-  export const __pyproxy_iter_next: (ptr: number) => number;
+  export const __pyproxy_aiter_next: (ptr: number) => any;
+  export const __pyproxy_iter_next: (ptr: number) => any;
   export const __pyproxyGen_Send: (
     ptr: number,
-    idarg: number,
-    res_ptr: number,
-  ) => number;
+    arg: any,
+  ) => IteratorResult<any>;
   export const __pyproxyGen_return: (
     ptr: number,
-    idarg: number,
-    res_ptr: number,
-  ) => number;
+    arg: any,
+  ) => IteratorResult<any>;
   export const __pyproxyGen_throw: (
     ptr: number,
-    idarg: number,
-    res_ptr: number,
-  ) => number;
-  export const __pyproxyGen_asend: (ptr: number, idarg: number) => number;
-  export const __pyproxyGen_areturn: (ptr: number) => number;
-  export const __pyproxyGen_athrow: (ptr: number, idarg: number) => number;
+    arg: any,
+  ) => IteratorResult<any>;
+  export const __pyproxyGen_asend: (ptr: number, idarg: number) => PyAwaitable;
+  export const __pyproxyGen_areturn: (ptr: number) => PyAwaitable;
+  export const __pyproxyGen_athrow: (ptr: number, idarg: number) => PyAwaitable;
   export const __pyproxy_getattr: (
     ptr: number,
-    attr: number,
-    cache: number,
-  ) => number;
+    attr: string,
+    cache: Map<string, any>,
+  ) => any;
   export const __pyproxy_setattr: (
     ptr: number,
-    attr: number,
-    value: number,
+    attr: string,
+    value: any,
   ) => number;
-  export const __pyproxy_delattr: (ptr: number, attr: number) => number;
+  export const __pyproxy_delattr: (ptr: number, attr: string) => number;
   export const __pyproxy_hasattr: (ptr: number, attr: number) => number;
   export const __pyproxy_slice_assign: (
     ptr: number,
@@ -139,7 +132,7 @@ declare global {
     val: number,
   ) => number;
   export const __pyproxy_pop: (ptr: number, popstart: boolean) => number;
-  export const __pyproxy_ownKeys: (ptr: number) => number;
+  export const __pyproxy_ownKeys: (ptr: number) => (string | symbol)[];
   export const __pyproxy_ensure_future: (
     ptr: number,
     resolve: number,
@@ -148,12 +141,12 @@ declare global {
   export const _buffer_struct_size: number;
   export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;
   export const __pyproxy_apply: (
-    a: number,
-    b: number,
-    c: number,
-    d: number,
-    e: number,
-  ) => number;
+    ptr: number,
+    jsargs: any[],
+    num_pos_args: number,
+    kwargs_names: string[],
+    num_kwargs: number,
+  ) => any;
   export const __iscoroutinefunction: (a: number) => number;
 }
 
@@ -260,8 +253,6 @@ export interface Module {
 
 export interface API {
   fatal_error: (e: any) => never;
-  lockfile_info: any;
-  lockfile_packages: any;
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
@@ -289,18 +280,6 @@ export interface API {
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
 
-  package_loader: any;
-  importlib: any;
-  _import_name_to_package_name: Map<string, string>;
-  lockfile_unvendored_stdlibs: string[];
-  lockfile_unvendored_stdlibs_and_test: string[];
-  repodata_packages: any;
-  repodata_info: any;
-  loadBinaryFile: (
-    path: string,
-    file_sub_resource_hash?: string | undefined,
-  ) => Promise<Uint8Array>;
-
   _pyodide: any;
   pyodide_py: any;
   pyodide_code: any;
@@ -312,8 +291,22 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
 
+  package_loader: any;
+  importlib: any;
+  _import_name_to_package_name: Map<string, string>;
+  lockFilePromise: Promise<any>;
+  lockfile_unvendored_stdlibs: string[];
+  lockfile_unvendored_stdlibs_and_test: string[];
+  lockfile_info: any;
+  lockfile_packages: any;
+  repodata_packages: any;
+  repodata_info: any;
   defaultLdLibraryPath: string[];
   sitepackages: string;
+  loadBinaryFile: (
+    path: string,
+    file_sub_resource_hash?: string | undefined,
+  ) => Promise<Uint8Array>;
   loadDynlib: (
     lib: string,
     global: boolean,

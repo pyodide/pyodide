@@ -62,6 +62,8 @@ BUILD_VARS: set[str] = {
     "SYSCONFIG_NAME",
     "TARGETINSTALLDIR",
     "WASM_LIBRARY_DIR",
+    "CMAKE_TOOLCHAIN_FILE",
+    "PYO3_CONFIG_FILE",
 }
 
 
@@ -169,10 +171,13 @@ def get_build_environment_vars() -> dict[str, str]:
 
     tools_dir = Path(__file__).parent / "tools"
 
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+    if "CMAKE_TOOLCHAIN_FILE" not in env:
+        env["CMAKE_TOOLCHAIN_FILE"] = str(
+            tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+        )
+
+    if "PYO3_CONFIG_FILE" not in env:
+        env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
 
     hostsitepackages = env["HOSTSITEPACKAGES"]
     pythonpath = [

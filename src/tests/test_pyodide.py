@@ -1247,6 +1247,7 @@ def test_sys_path0(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_fullstdlib(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
@@ -1733,6 +1734,7 @@ def test_runpython_filename(selenium, run_python):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide
 def test_hiwire_invalid_ref(selenium):
     import pytest

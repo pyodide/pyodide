@@ -50,10 +50,6 @@ declare var IS_ASYNC_GENERATOR: number;
 declare var IS_SEQUENCE: number;
 declare var IS_MUTABLE_SEQUENCE: number;
 
-declare var PYGEN_NEXT: number;
-declare var PYGEN_RETURN: number;
-declare var PYGEN_ERROR: number;
-
 declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
@@ -127,7 +123,7 @@ Module.disable_pyproxy_allocation_tracing = function () {
 };
 Module.disable_pyproxy_allocation_tracing();
 
-type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
+type PyProxyCache = { map: Map<string, any>; refcnt: number; leaked?: boolean };
 type PyProxyShared = {
   ptr: number;
   cache: PyProxyCache;
@@ -242,10 +238,7 @@ function pyproxy_new(
     // Not an alias so we have to make `shared`.
     if (!cache) {
       // In this case it's not a copy.
-      // The cache needs to be accessed primarily from the C function
-      // _pyproxy_getattr so we make a hiwire id.
-      let cacheId = Hiwire.new_value(new Map());
-      cache = { cacheId, refcnt: 0 };
+      cache = { map: new Map(), refcnt: 0 };
     }
     cache.refcnt++;
     shared = {
@@ -398,11 +391,9 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    let cache_map = Hiwire.pop_value(cache.cacheId);
-    for (let proxy_id of cache_map.values()) {
-      const cache_entry = Hiwire.pop_value(proxy_id);
+    for (let proxy of cache.map.values()) {
       if (!cache.leaked) {
-        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg, true);
+        Module.pyproxy_destroy(proxy, pyproxy_cache_destroyed_msg, true);
       }
     }
   }
@@ -476,7 +467,7 @@ Module.pyproxy_destroy = function (
 
 Module.callPyObjectKwargs = function (
   ptrobj: number,
-  jsargs: any,
+  jsargs: any[],
   kwargs: any,
 ) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
@@ -487,30 +478,24 @@ Module.callPyObjectKwargs = function (
   let num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  let idargs = Hiwire.new_value(jsargs);
-  let idkwnames = Hiwire.new_value(kwargs_names);
-  let idresult;
+  let result;
   try {
     Py_ENTER();
-    idresult = __pyproxy_apply(
+    result = __pyproxy_apply(
       ptrobj,
-      idargs,
+      jsargs,
       num_pos_args,
-      idkwnames,
+      kwargs_names,
       num_kwargs,
     );
     Py_EXIT();
   } catch (e) {
     API.maybe_fatal_error(e);
     return;
-  } finally {
-    Hiwire.decref(idargs);
-    Hiwire.decref(idkwnames);
   }
-  if (idresult === 0) {
+  if (result === null) {
     _pythonexc2js();
   }
-  let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
@@ -574,22 +559,22 @@ export class PyProxy {
    */
   get type(): string {
     let ptrobj = _getPtr(this);
-    return Hiwire.pop_value(__pyproxy_type(ptrobj));
+    return __pyproxy_type(ptrobj);
   }
   toString(): string {
     let ptrobj = _getPtr(this);
-    let jsref_repr;
+    let result;
     try {
       Py_ENTER();
-      jsref_repr = __pyproxy_repr(ptrobj);
+      result = __pyproxy_repr(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (jsref_repr === 0) {
+    if (result === null) {
       _pythonexc2js();
     }
-    return Hiwire.pop_value(jsref_repr);
+    return result;
   }
   /**
    * Destroy the :js:class:`~pyodide.ffi.PyProxy`. This will release the memory. Any further attempt
@@ -880,26 +865,23 @@ export class PyGetItemMethods {
    * @returns The corresponding value.
    */
   get(key: any): any {
-    let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
-    let idresult;
+    const ptrobj = _getPtr(this);
+    let result;
     try {
       Py_ENTER();
-      idresult = __pyproxy_getitem(ptrobj, idkey);
+      result = __pyproxy_getitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
-    if (idresult === 0) {
+    if (result === null) {
       if (_PyErr_Occurred()) {
         _pythonexc2js();
       } else {
         return undefined;
       }
     }
-    return Hiwire.pop_value(idresult);
+    return result;
   }
 }
 
@@ -926,18 +908,13 @@ export class PySetItemMethods {
    */
   set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
-    let idval = Hiwire.new_value(value);
     let errcode;
     try {
       Py_ENTER();
-      errcode = __pyproxy_setitem(ptrobj, idkey, idval);
+      errcode = __pyproxy_setitem(ptrobj, key, value);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-      Hiwire.decref(idval);
     }
     if (errcode === -1) {
       _pythonexc2js();
@@ -950,16 +927,13 @@ export class PySetItemMethods {
    */
   delete(key: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
     let errcode;
     try {
       Py_ENTER();
-      errcode = __pyproxy_delitem(ptrobj, idkey);
+      errcode = __pyproxy_delitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
     if (errcode === -1) {
       _pythonexc2js();
@@ -991,16 +965,13 @@ export class PyContainsMethods {
    */
   has(key: any): boolean {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
     let result;
     try {
       Py_ENTER();
-      result = __pyproxy_contains(ptrobj, idkey);
+      result = __pyproxy_contains(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
     if (result === -1) {
       _pythonexc2js();
@@ -1029,11 +1000,11 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
     while (true) {
       Py_ENTER();
       const item = __pyproxy_iter_next(iterptr);
-      if (item === 0) {
+      if (item === null) {
         break;
       }
       Py_EXIT();
-      yield Hiwire.pop_value(item);
+      yield item;
     }
   } catch (e) {
     API.fatal_error(e);
@@ -1115,15 +1086,14 @@ export class PyIterableMethods {
 async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
   try {
     while (true) {
-      let item, p;
+      let p;
       try {
         Py_ENTER();
-        item = __pyproxy_aiter_next(iterptr);
+        p = __pyproxy_aiter_next(iterptr);
         Py_EXIT();
-        if (item === 0) {
+        if (p === null) {
           break;
         }
-        p = Hiwire.pop_value(item);
       } catch (e) {
         API.fatal_error(e);
       }
@@ -1235,28 +1205,19 @@ export class PyIteratorMethods {
   next(arg: any = undefined): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Hiwire.new_value(arg);
-    let status;
+    let result;
     let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
-      status = __pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_Send(_getPtr(this), arg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
+    if (result === null) {
       _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 }
 
@@ -1288,28 +1249,18 @@ export class PyGeneratorMethods {
    * true, value : result_value}``.
    */
   throw(exc: any): IteratorResult<any, any> {
-    let idarg = Hiwire.new_value(exc);
-    let status;
-    let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
+    let result;
     try {
       Py_ENTER();
-      status = __pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_throw(_getPtr(this), exc);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
+    if (result === null) {
       _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 
   /**
@@ -1331,28 +1282,18 @@ export class PyGeneratorMethods {
   return(v: any): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Hiwire.new_value(v);
-    let status;
-    let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
+    let result: IteratorResult<any, any>;
     try {
       Py_ENTER();
-      status = __pyproxyGen_return(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_return(_getPtr(this), v);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
+    if (result === null) {
       _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 }
 
@@ -1389,21 +1330,17 @@ export class PyAsyncIteratorMethods {
    * ``{done : true }``.
    */
   async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
-    let idarg = Hiwire.new_value(arg);
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = __pyproxyGen_asend(_getPtr(this), idarg);
+      p = __pyproxyGen_asend(_getPtr(this), arg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    if (idresult === 0) {
+    if (p === null) {
       _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -1452,21 +1389,17 @@ export class PyAsyncGeneratorMethods {
    * true, value : result_value}``.
    */
   async throw(exc: any): Promise<IteratorResult<any, any>> {
-    let idarg = Hiwire.new_value(exc);
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = __pyproxyGen_athrow(_getPtr(this), idarg);
+      p = __pyproxyGen_athrow(_getPtr(this), exc);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    if (idresult === 0) {
+    if (p === null) {
       _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -1501,18 +1434,17 @@ export class PyAsyncGeneratorMethods {
    * exception, ``return`` returns ``{done : true, value : result_value}``.
    */
   async return(v: any): Promise<IteratorResult<any, any>> {
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = __pyproxyGen_areturn(_getPtr(this));
+      p = __pyproxyGen_areturn(_getPtr(this));
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (idresult === 0) {
+    if (p === null) {
       _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -2014,43 +1946,36 @@ function python_hasattr(jsobj: PyProxy, jskey: any) {
 
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
-// Js_undefined).
-function python_getattr(jsobj: PyProxy, jskey: any) {
+// undefined).
+function python_getattr(jsobj: PyProxy, key: any) {
   const { shared } = _getAttrs(jsobj);
-  let idkey = Hiwire.new_value(jskey);
-  let idresult;
-  let cacheId = shared.cache.cacheId;
+  let cache = shared.cache.map;
+  let result;
   try {
     Py_ENTER();
-    idresult = __pyproxy_getattr(shared.ptr, idkey, cacheId);
+    result = __pyproxy_getattr(shared.ptr, key, cache);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
-  if (idresult === 0) {
+  if (result === null) {
     if (_PyErr_Occurred()) {
       _pythonexc2js();
     }
+    return undefined;
   }
-  return idresult;
+  return result;
 }
 
 function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
-  let idval = Hiwire.new_value(jsval);
   let errcode;
   try {
     Py_ENTER();
-    errcode = __pyproxy_setattr(ptrobj, idkey, idval);
+    errcode = __pyproxy_setattr(ptrobj, jskey, jsval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-    Hiwire.decref(idval);
   }
   if (errcode === -1) {
     _pythonexc2js();
@@ -2059,16 +1984,13 @@ function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
 
 function python_delattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
   let errcode;
   try {
     Py_ENTER();
-    errcode = __pyproxy_delattr(ptrobj, idkey);
+    errcode = __pyproxy_delattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
   if (errcode === -1) {
     _pythonexc2js();
@@ -2181,10 +2103,7 @@ const PyProxyHandlers = {
       jskey = jskey.slice(1);
     }
     // 2. The result of getattr
-    let idresult = python_getattr(jsobj, jskey);
-    if (idresult !== 0) {
-      return Hiwire.pop_value(idresult);
-    }
+    return python_getattr(jsobj, jskey);
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
@@ -2222,18 +2141,17 @@ const PyProxyHandlers = {
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);
-    let idresult;
+    let result;
     try {
       Py_ENTER();
-      idresult = __pyproxy_ownKeys(ptrobj);
+      result = __pyproxy_ownKeys(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (idresult === 0) {
+    if (result === null) {
       _pythonexc2js();
     }
-    let result = Hiwire.pop_value(idresult);
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },

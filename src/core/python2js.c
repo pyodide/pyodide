@@ -4,6 +4,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jslib.h"
 #include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
@@ -486,7 +487,7 @@ EM_JS(JsRef, _python2js_cache_lookup, (JsRef cacheid, PyObject* pyparent), {
  * This checks if the object x is already in the cache and if so returns it from
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 _python2js(ConversionContext context, PyObject* x)
 {
   JsRef id = _python2js_cache_lookup(context.cache, x); /* borrowed */
@@ -566,6 +567,16 @@ python2js(PyObject* x)
   return python2js_inner(x, NULL, false, true);
 }
 
+EMSCRIPTEN_KEEPALIVE JsVal
+python2js_val(PyObject* x)
+{
+  JsRef result = python2js(x);
+  if (result == NULL) {
+    return JS_NULL;
+  }
+  return hiwire_pop(result);
+}
+
 // taking function pointers to EM_JS functions leads to linker errors.
 static JsRef
 _JsMap_New(ConversionContext context)
@@ -583,7 +594,7 @@ _JsMap_Set(ConversionContext context, JsRef map, JsRef key, JsRef value)
  * Do a conversion from Python to JavaScript, converting lists, dicts, and sets
  * down to depth "depth".
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsRef
 python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 {
   return python2js_custom(x, depth, proxies, NULL, NULL);

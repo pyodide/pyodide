@@ -9,6 +9,7 @@
 #define hiwire_incref wrapped_hiwire_incref
 
 typedef HwRef JsRef;
+typedef __externref_t JsVal;
 
 // Error handling will want to see JsRef.
 #include "error_handling.h"
