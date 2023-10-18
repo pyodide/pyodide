@@ -1049,6 +1049,8 @@ class InternalError(Exception):
 
 
 class JsDomElement(JsProxy):
+    id: str
+
     @property
     def tagName(self) -> str:
         return ""
@@ -1064,6 +1066,10 @@ class JsDomElement(JsProxy):
         pass
 
     def removeEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+        pass
+
+    @property
+    def style(self) -> Any:
         pass
 
 
