@@ -24,6 +24,8 @@ myst:
 
 - Added `frozenlist` {pr}`4231`
 
+- Added `zengl` version 1.16.0 {pr}`4208`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
