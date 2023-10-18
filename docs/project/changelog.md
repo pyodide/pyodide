@@ -18,9 +18,11 @@ myst:
 
 ### Packages
 
-- Added river version 0.19.0 {pr}`4197`
+- Added `river` version 0.19.0 {pr}`4197`
 
 - Added `sisl` version 0.14.2 {pr}`4210`
+
+- Added `frozenlist` {pr}`4231`
 
 ### Load time & size optimizations
 
