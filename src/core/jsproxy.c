@@ -1058,10 +1058,8 @@ _agen_handle_result_js,
   // Call back into C to create the response.
   p.then(({done, value}) => {
     __agen_handle_result_js_c(set_result, set_exception, done, value, closing);
-    Hiwire.decref(id);
   }, (err) => {
     __agen_handle_result_js_c(set_result, set_exception, -1, err, closing);
-    Hiwire.decref(id);
   }).finally(() => {
     _Py_DecRef(set_result);
     _Py_DecRef(set_exception);
