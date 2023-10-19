@@ -1198,7 +1198,7 @@ def test_tojs7(selenium):
         let total_refs = pyodide._module.hiwire.num_keys();
         let res = respy.toJs();
         respy.destroy();
-        pyodide.runPython("del a, b");
+        pyodide.runPython("del a, b; import gc; gc.collect()");
         let new_total_refs = pyodide._module.hiwire.num_keys();
         assert(() => new_total_refs === total_refs );
         assert(() => res[0][0] === "b");
