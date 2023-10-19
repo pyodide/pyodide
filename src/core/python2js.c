@@ -183,7 +183,7 @@ EM_JS(void, __remove_stringref, (PyObject * unicode), {
   API.stringRefSet.delete(unicode);
 })
 
-void
+EMSCRIPTEN_KEEPALIVE void
 _pyodide_free_js_string(PyObject* unicode, JsRef js_string)
 {
   hiwire_decref(js_string);
@@ -192,12 +192,22 @@ _pyodide_free_js_string(PyObject* unicode, JsRef js_string)
   }
 }
 
-void
+EMSCRIPTEN_KEEPALIVE void
 clear_stringref(PyObject* unicode)
 {
   JsRef js_string = PyUnicode_GetJsString(unicode);
   PyUnicode_SetJsString(unicode, NULL);
   hiwire_decref(js_string);
+}
+
+EMSCRIPTEN_KEEPALIVE void
+set_js_string(PyObject* x, JsRef result)
+{
+  if (track_stringrefs) {
+    __add_stringref(x);
+  }
+  PyUnicode_SetJsString(x, result);
+  hiwire_incref(result);
 }
 
 static JsRef
@@ -225,11 +235,7 @@ _python2js_unicode(PyObject* x)
     default:
       assert(false /* invalid Unicode kind */);
   }
-  if (track_stringrefs) {
-    __add_stringref(x);
-  }
-  PyUnicode_SetJsString(x, result);
-  hiwire_incref(result);
+  set_js_string(x, result);
   return result;
 }
 
