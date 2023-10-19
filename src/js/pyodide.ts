@@ -2,14 +2,21 @@
  * The main bootstrap code for loading pyodide.
  */
 import ErrorStackParser from "error-stack-parser";
-import { loadScript, initNodeModules, pathSep, resolvePath } from "./compat";
+import {
+  loadScript,
+  initNodeModules,
+  pathSep,
+  resolvePath,
+  loadLockFile,
+} from "./compat";
 
 import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyDict } from "./pyproxy.gen";
-export type { PyodideInterface };
+import type { PyProxy, PyDict } from "generated/pyproxy";
+import type { TypedArray } from "./types";
+export type { PyodideInterface, TypedArray };
 
 export type {
   PyProxy,
@@ -22,10 +29,9 @@ export type {
   PyProxyIterator,
   PyProxyAwaitable,
   PyProxyCallable,
-  TypedArray,
   PyBuffer as PyProxyBuffer,
   PyBufferView as PyBuffer,
-} from "./pyproxy.gen";
+} from "generated/pyproxy";
 
 export { version };
 
@@ -355,6 +361,7 @@ export async function loadPyodide(
 
   const API: any = { config };
   Module.API = API;
+  API.lockFilePromise = loadLockFile(config.lockFileURL);
 
   preloadWasm(Module, indexURL);
   initializeFileSystem(Module, config);

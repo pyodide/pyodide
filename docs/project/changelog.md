@@ -16,18 +16,15 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error
-  happened in out-of-tree build.
+### Packages
 
-- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
-  {pr}`4163`
+- Added `river` version 0.19.0 {pr}`4197`
 
-- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
-  {pr}`4136`
+- Added `sisl` version 0.14.2 {pr}`4210`
 
-- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
-  the gil is not held.
-  {pr}`4164`
+- Added `frozenlist` {pr}`4231`
+
+- Added `zengl` version 1.16.0 {pr}`4208`
 
 ### Load time & size optimizations
 
@@ -35,12 +32,35 @@ myst:
   which reduces the time to load Pyodide.
   {pr}`4147`
 
+### Build system
+
+- {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
+  {pr}`4223`
+
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
+  env variables if provided by user.
+  {pr}`4223`
+
+## Version 0.24.1
+
+_September 25, 2023_
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
+- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
+  the gil is not held.
+  {pr}`4164`
+
 ### Packages
 
 - Upgraded scipy to 1.11.2 {pr}`4156`
 - Upgraded sourmash to 4.8.4 {pr}`4154`
-
 - Upgraded scikit-learn to 1.3.1 {pr}`4161`
+- Upgraded micropip to 0.5.0 {pr}`4167`
 
 ## Version 0.24.0
 

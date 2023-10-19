@@ -11,38 +11,38 @@
 #include "pyproxy.h"
 
 // PyUnicodeDATA is a macro, we need to access it from JavaScript
-void*
+EMSCRIPTEN_KEEPALIVE void*
 PyUnicode_Data(PyObject* obj)
 {
   return PyUnicode_DATA(obj);
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_none()
 {
   Py_RETURN_NONE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_true()
 {
   Py_RETURN_TRUE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_false()
 {
   Py_RETURN_FALSE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_pyproxy(PyObject* val)
 {
   Py_INCREF(val);
   return val;
 }
 
-EM_JS_REF(PyObject*, js2python_immutable, (JsRef id), {
+EM_JS_REF(PyObject*, js2python_immutable_js, (JsRef id), {
   let value = Hiwire.get_value(id);
   let result = Module.js2python_convertImmutable(value, id);
   // clang-format off
@@ -53,16 +53,27 @@ EM_JS_REF(PyObject*, js2python_immutable, (JsRef id), {
   return 0;
 });
 
-EM_JS_REF(PyObject*, js2python, (JsRef id), {
-  let value = Hiwire.get_value(id);
-  let result = Module.js2python_convertImmutable(value, id);
+EMSCRIPTEN_KEEPALIVE PyObject*
+js2python_immutable(JsRef id)
+{
+  return js2python_immutable_js(id);
+}
+
+EM_JS_REF(PyObject*, js2python_val, (JsVal value), {
+  let result = Module.js2python_convertImmutable(value, undefined);
   // clang-format off
   if (result !== undefined) {
     // clang-format on
     return result;
   }
-  return _JsProxy_create(id);
+  return _JsProxy_create_val(value);
 })
+
+EMSCRIPTEN_KEEPALIVE PyObject*
+js2python(JsRef id)
+{
+  return js2python_val(hiwire_get(id));
+}
 
 /**
  * Convert a JavaScript object to Python to a given depth. This is the

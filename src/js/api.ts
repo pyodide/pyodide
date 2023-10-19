@@ -1,19 +1,18 @@
 declare var Module: any;
 declare var Hiwire: any;
-declare var API: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { PyBufferView, PyBuffer, TypedArray, PyProxy } from "./pyproxy.gen";
-import { PythonError } from "./error_handling.gen";
+import { PyBufferView, PyBuffer, PyProxy } from "generated/pyproxy";
+import { PythonError } from "../core/error_handling";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
-import "./error_handling.gen.js";
 import { setStdin, setStdout, setStderr } from "./streams";
-import { makeWarnOnce } from "./util";
+import { TypedArray } from "./types";
 
+// Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
 /**
@@ -22,8 +21,8 @@ API.loadBinaryFile = loadBinaryFile;
 API.rawRun = function rawRun(code: string): [number, string] {
   const code_ptr = Module.stringToNewUTF8(code);
   Module.API.capture_stderr();
-  let errcode = Module._PyRun_SimpleString(code_ptr);
-  Module._free(code_ptr);
+  let errcode = _PyRun_SimpleString(code_ptr);
+  _free(code_ptr);
   const captured_stderr = Module.API.restore_stderr().trim();
   return [errcode, captured_stderr];
 };
@@ -114,10 +113,8 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * This provides APIs to set a canvas for rendering graphics.
-   *
-   * For example, you need to set a canvas if you want to use the
-   * SDL library. See :ref:`using-sdl` for more information.
+   * See :ref:`js-api-pyodide-canvas`.
+   * @hidetype
    */
   static canvas: CanvasInterface = canvas;
 
@@ -183,7 +180,7 @@ export class PyodideAPI {
     let packages: Set<string> = new Set();
     for (let name of imports) {
       if (packageNames.has(name)) {
-        packages.add(packageNames.get(name));
+        packages.add(packageNames.get(name)!);
       }
     }
     if (packages.size) {
@@ -374,22 +371,22 @@ export class PyodideAPI {
         });
       } catch (e) {
         if (e instanceof Module._PropagatePythonError) {
-          Module._pythonexc2js();
+          _pythonexc2js();
         }
         throw e;
       }
-      if (Module._JsProxy_Check(py_result)) {
+      if (_JsProxy_Check(py_result)) {
         // Oops, just created a JsProxy. Return the original object.
         return obj;
         // return Module.pyproxy_new(py_result);
       }
-      result = Module._python2js(py_result);
+      result = _python2js(py_result);
       if (result === 0) {
-        Module._pythonexc2js();
+        _pythonexc2js();
       }
     } finally {
       Hiwire.decref(obj_id);
-      Module._Py_DecRef(py_result);
+      _Py_DecRef(py_result);
     }
     return Hiwire.pop_value(result);
   }
@@ -472,8 +469,8 @@ export class PyodideAPI {
    * @param path The absolute path in the Emscripten file system to mount the
    * native directory. If the directory does not exist, it will be created. If it
    * does exist, it must be empty.
-   * @param fileSystemHandle A handle returned by ``navigator.storage.getDirectory()``
-   * or ``window.showDirectoryPicker()``.
+   * @param fileSystemHandle A handle returned by :js:func:`navigator.storage.getDirectory() <getDirectory>`
+   * or :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
    */
   static async mountNativeFS(
     path: string,
@@ -548,10 +545,10 @@ export class PyodideAPI {
    * during execution of C code.
    */
   static checkInterrupt() {
-    if (Module._PyGILState_Check()) {
+    if (_PyGILState_Check()) {
       // GIL held, so it's okay to call __PyErr_CheckSignals.
-      if (Module.__PyErr_CheckSignals()) {
-        Module._pythonexc2js();
+      if (__PyErr_CheckSignals()) {
+        _pythonexc2js();
       }
       return;
     } else {
@@ -583,7 +580,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PyBuffer() {
@@ -599,7 +596,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
 
@@ -616,7 +613,7 @@ export class PyodideAPI {
    *
    * @hidetype
    * @alias
-   * @doc_kind class
+   * @dockind class
    * @deprecated
    */
   static get PythonError() {

@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from typing import Any
+from typing import Any, Literal, overload
 
 from _pyodide._core_docs import _JsProxyMetaClass
 from pyodide.ffi import (
@@ -87,10 +87,29 @@ class JSON(_JsObject):
 class document(_JsObject):
     body: JsDomElement
     children: list[JsDomElement]
+    @overload
+    @staticmethod
+    def createElement(tagName: Literal["canvas"]) -> JsCanvasElement: ...
+    @overload
     @staticmethod
     def createElement(tagName: str) -> JsDomElement: ...
     @staticmethod
     def appendChild(child: JsDomElement) -> None: ...
+
+class JsCanvasElement(JsDomElement):
+    width: int | float
+    height: int | float
+    def getContext(
+        self,
+        ctxType: str,
+        *,
+        powerPreference: str = "",
+        premultipliedAlpha: bool = False,
+        antialias: bool = False,
+        alpha: bool = False,
+        depth: bool = False,
+        stencil: bool = False
+    ) -> Any: ...
 
 class ArrayBuffer(_JsObject):
     @staticmethod

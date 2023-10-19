@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "baseUrl": "..",
+    "target": "ES2020",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "paths": {
+      "*": ["*", "js/*"]
+    }
+  }
+}

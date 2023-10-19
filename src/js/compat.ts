@@ -254,3 +254,14 @@ function browserBase16ToBase64(b16: string): string {
 export const base16ToBase64 = IN_NODE
   ? nodeBase16ToBase64
   : browserBase16ToBase64;
+
+export async function loadLockFile(lockFileURL: string): Promise<any> {
+  if (IN_NODE) {
+    await initNodeModules();
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    return JSON.parse(package_string);
+  } else {
+    let response = await fetch(lockFileURL);
+    return await response.json();
+  }
+}

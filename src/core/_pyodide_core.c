@@ -39,17 +39,20 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
+void
+pyodide_export(void);
+int
+py_version_major(void);
+// Force _pyodide_core.o and _pyodide_pre.gen.o to be included by using a symbol
+// from each of them.
+void* pyodide_export_ = pyodide_export;
+void* py_version_major_ = py_version_major;
+
+EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
   EM_ASM({
-    // Emscripten doesn't make UTF8ToString or wasmTable available on Module by
-    // default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-    // Emscripten has a bug where it accidentally exposes an empty object as
-    // Module.ERRNO_CODES
-    Module.ERRNO_CODES = ERRNO_CODES;
     // sourmash needs open64 to mean the same thing as open.
     // Emscripten 3.1.44 seems to have removed it??
     wasmImports["open64"] = wasmImports["open"];

@@ -18,6 +18,9 @@ PyObject*
 js2python(JsRef x);
 
 PyObject*
+js2python_val(JsVal x);
+
+PyObject*
 js2python_immutable(JsRef x);
 
 PyObject*

@@ -14,11 +14,15 @@ FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
+HIWIREBUILD=$(ROOT)/build/hiwire
+HIWIREREPO=https://github.com/hoodmane/hiwire
+HIWIRE_COMMIT=49f3450e34f3f50d4b8296e782dc321bb2e3264e
+
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a
+all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(INSTALL)/lib/libhiwire.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
@@ -35,7 +39,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 
 	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
-	PYTHONPATH=$(PYBUILDDIR) python adjust_sysconfig.py
+	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
@@ -83,6 +87,20 @@ $(INSTALL)/lib/libffi.a :
 	cp $(FFIBUILD)/target/include/*.h $(BUILD)/Include/
 	mkdir -p $(INSTALL)/lib
 	cp $(FFIBUILD)/target/lib/libffi.a $(INSTALL)/lib/
+
+$(INSTALL)/lib/libhiwire.a :
+	rm -rf $(HIWIREBUILD)
+	mkdir $(HIWIREBUILD)
+	(\
+		cd $(HIWIREBUILD) \
+		&& git init \
+		&& git fetch --depth 1 $(HIWIREREPO) $(HIWIRE_COMMIT) \
+		&& git checkout FETCH_HEAD \
+		&& . $(PYODIDE_ROOT)/emsdk/emsdk/emsdk_env.sh \
+		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
+	)
+	cp -r $(HIWIREBUILD)/dist/lib $(INSTALL)/
+	cp -r $(HIWIREBUILD)/dist/include $(INSTALL)/include/hiwire
 
 $(BUILD)/Makefile: $(BUILD)/.patched
 	# --enable-big-digits=30 :

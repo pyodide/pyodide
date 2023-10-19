@@ -571,12 +571,12 @@ An example of a case where you would not want to use the
 {js:func}`~pyodide.ffi.PyProxy.toJs` method is when the buffer is bitmapped
 image data. If for instance you have a 3d buffer shaped 1920 x 1080 x 4, then
 {js:func}`~pyodide.ffi.PyProxy.toJs` will be extremely slow. In this case you
-could use {js:func}`~pyodide.ffi.PyProxy.getBuffer`. On the other hand, if you
+could use {js:func}`~pyodide.ffi.PyBuffer.getBuffer`. On the other hand, if you
 have a 3d buffer shaped 1920 x 4 x 1080, the performance of
 {js:func}`~pyodide.ffi.PyProxy.toJs` will most likely be satisfactory.
 Typically, the innermost dimension won't matter for performance.
 
-The {js:func}`~pyodide.ffi.PyProxy.getBuffer` method can be used to retrieve a reference to
+The {js:func}`~pyodide.ffi.PyBuffer.getBuffer` method can be used to retrieve a reference to
 a JavaScript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a JavaScript ndarray library if one is present. For instance, if

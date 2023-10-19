@@ -118,7 +118,7 @@ JS_FILE(js2python_init, () => {
       const { props, shared } = Module.PyProxy_getAttrs(value);
       if (props.roundtrip) {
         if (id === undefined) {
-          id = Hiwire.new_value(value);
+          return _JsProxy_create_val(value);
         }
         return _JsProxy_create(id);
       } else {

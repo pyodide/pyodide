@@ -890,7 +890,7 @@ JsProxy_GetAsyncIter(PyObject* self)
  * are raising. closing tells us whether ``close`` was called, if so we raise
  * an error if there is a yield in a finally block.
  */
-void
+EMSCRIPTEN_KEEPALIVE void
 _agen_handle_result_js_c(PyObject* set_result,
                          PyObject* set_exception,
                          int status,
@@ -3452,7 +3452,7 @@ static PyMethodDef JsBuffer_assign_MethodDef = {
  * itemsize - the appropriate itemsize for jsbuffer, from get_buffer_datatype
  */
 // Used in js2python, intentionally not static
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 JsBuffer_CopyIntoMemoryView(JsRef jsbuffer,
                             Py_ssize_t byteLength,
                             char* format,
@@ -4318,13 +4318,22 @@ JsProxy_create_with_this(JsRef object, JsRef this)
   return JsProxy_create_with_type(type_flags, object, this);
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsRef object)
 {
   return JsProxy_create_with_this(object, NULL);
 }
 
-bool
+EMSCRIPTEN_KEEPALIVE PyObject*
+JsProxy_create_val(JsVal object)
+{
+  JsRef ref = hiwire_new(object);
+  PyObject* result = JsProxy_create(ref);
+  hiwire_decref(ref);
+  return result;
+}
+
+EMSCRIPTEN_KEEPALIVE bool
 JsProxy_Check(PyObject* x)
 {
   return PyObject_TypeCheck(x, &JsProxyType);
