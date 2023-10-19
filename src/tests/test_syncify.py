@@ -1,6 +1,7 @@
 import pytest
 
 
+@pytest.mark.xfail_browsers(node="Scopes don't work as needed")
 def test_syncify_not_supported(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
