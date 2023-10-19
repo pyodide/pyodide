@@ -116,6 +116,7 @@ def test_syncify_no_suspender(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_syncify_getset(selenium):
     selenium.run_js(
@@ -149,6 +150,7 @@ def test_syncify_getset(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail(reason="Will fix in a followup")
 def test_syncify_ctypes():
     selenium.run_js(  # type: ignore[name-defined] # noqa: F821
@@ -176,6 +178,7 @@ def test_syncify_ctypes():
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_cpp_exceptions_and_syncify(selenium):
     assert (

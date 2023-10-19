@@ -297,7 +297,7 @@ EM_JS_REF(JsRef,
 // Either syncifyHandler will get filled in by stack_switching/suspenders.mjs or
 // stack switching is not available so syncify will always return an error in
 // JsProxy.c and syncifyHandler will never be called.
-JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
+EMSCRIPTEN_KEEPALIVE JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
 
 EM_JS(void, hiwire_syncify_handle_error, (void), {
   if (!Module.syncify_error) {
