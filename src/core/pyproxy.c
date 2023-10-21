@@ -1032,13 +1032,9 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
-  JsRef result_js = NULL;
-  JsRef output = NULL;
-  result_js = python2js(result);
-  output = hiwire_call_OneArg(self->resolve_handle, result_js);
-
-  hiwire_CLEAR(result_js);
-  hiwire_CLEAR(output);
+  JsVal result_js = python2js_val(result);
+  JsvFunction_Call_OneArg(hiwire_get(self->resolve_handle), result_js);
+  // TODO: Should we really be just ignoring errors here??
   return 0;
 }
 
@@ -1050,17 +1046,14 @@ int
 FutureDoneCallback_call_reject(FutureDoneCallback* self)
 {
   bool success = false;
-  JsRef excval = NULL;
-  JsRef result = NULL;
   // wrap_exception looks up the current exception and wraps it in a Js error.
-  excval = wrap_exception();
-  FAIL_IF_NULL(excval);
-  result = hiwire_call_OneArg(self->reject_handle, excval);
+  JsVal excval = wrap_exception();
+  FAIL_IF_JS_NULL(excval);
+  JsvFunction_Call_OneArg(hiwire_get(self->reject_handle), excval);
+  // TODO: Should we really be just ignoring errors here??
 
   success = true;
 finally:
-  hiwire_CLEAR(excval);
-  hiwire_CLEAR(result);
   return success ? 0 : -1;
 }
 

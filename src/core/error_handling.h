@@ -30,7 +30,7 @@ extern PyObject* conversion_error;
  * result. Usually we use pythonexc2js instead, but for futures and for some
  * internal error messages it's useful to have this separate.
  */
-JsRef
+JsVal
 wrap_exception();
 
 /**
