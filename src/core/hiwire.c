@@ -235,37 +235,11 @@ EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
   throw Hiwire.pop_value(iderr);
 });
 
-static JsRef
-convert_va_args(va_list args)
-{
-  JsRef idargs = JsArray_New();
-  while (true) {
-    JsRef idarg = va_arg(args, JsRef);
-    if (idarg == NULL) {
-      break;
-    }
-    JsArray_Push_unchecked(idargs, idarg);
-  }
-  va_end(args);
-  return idargs;
-}
-
 EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
   let jsfunc = Hiwire.get_value(idfunc);
   let jsargs = Hiwire.get_value(idargs);
   return Hiwire.new_value(jsfunc(... jsargs));
 });
-
-JsRef
-hiwire_call_va(JsRef idobj, ...)
-{
-  va_list args;
-  va_start(args, idobj);
-  JsRef idargs = convert_va_args(args);
-  JsRef idresult = hiwire_call(idobj, idargs);
-  hiwire_decref(idargs);
-  return idresult;
-}
 
 EM_JS_REF(JsRef, hiwire_call_OneArg, (JsRef idfunc, JsRef idarg), {
   let jsfunc = Hiwire.get_value(idfunc);
@@ -375,28 +349,6 @@ hiwire_CallMethodId(JsRef idobj, Js_Identifier* name_id, JsRef idargs)
     return NULL;
   }
   return hiwire_CallMethod(idobj, name_ref, idargs);
-}
-
-JsRef
-hiwire_CallMethodString_va(JsRef idobj, const char* ptrname, ...)
-{
-  va_list args;
-  va_start(args, ptrname);
-  JsRef idargs = convert_va_args(args);
-  JsRef idresult = hiwire_CallMethodString(idobj, ptrname, idargs);
-  hiwire_decref(idargs);
-  return idresult;
-}
-
-JsRef
-hiwire_CallMethodId_va(JsRef idobj, Js_Identifier* name, ...)
-{
-  va_list args;
-  va_start(args, name);
-  JsRef idargs = convert_va_args(args);
-  JsRef idresult = hiwire_CallMethodId(idobj, name, idargs);
-  hiwire_decref(idargs);
-  return idresult;
 }
 
 JsRef
@@ -727,12 +679,6 @@ EM_JS_NUM(errcode, JsArray_Push, (JsRef idarr, JsRef idval), {
   Hiwire.get_value(idarr).push(Hiwire.get_value(idval));
 });
 
-EM_JS(int, JsArray_Push_unchecked, (JsRef idarr, JsRef idval), {
-  const arr = Hiwire.get_value(idarr);
-  arr.push(Hiwire.get_value(idval));
-  return arr.length - 1;
-});
-
 EM_JS_NUM(errcode, JsArray_Extend, (JsRef idarr, JsRef idvals), {
   Hiwire.get_value(idarr).push(... Hiwire.get_value(idvals));
 });
@@ -819,12 +765,6 @@ JsArray_slice_assign,
 EM_JS_NUM(errcode, JsArray_Clear, (JsRef idobj), {
   let obj = Hiwire.get_value(idobj);
   obj.splice(0, obj.length);
-})
-
-EM_JS_NUM(JsRef, JsArray_ShallowCopy, (JsRef idobj), {
-  const obj = Hiwire.get_value(idobj);
-  const res = ("slice" in obj) ? obj.slice() : Array.from(obj);
-  return Hiwire.new_value(res);
 })
 
 // ==================== JsObject API  ====================

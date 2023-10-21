@@ -13,6 +13,12 @@ JsVal
 Jsv_from_ref(JsRef ref);
 
 JsVal
+JsvInt(int x);
+
+bool
+Jsv_to_bool(JsVal x);
+
+JsVal
 JsvUTF8ToString(const char*);
 
 JsVal
@@ -22,6 +28,11 @@ JsVal
 JsvArray_Get(JsVal, int);
 
 int JsvArray_Push(JsVal, JsVal);
+
+void JsvArray_Extend(JsVal, JsVal);
+
+JsVal
+JsvArray_ShallowCopy(JsVal obj);
 
 JsVal
 JsvObject_New();
@@ -34,6 +45,15 @@ JsvObject_CallMethod(JsVal obj, JsVal meth, JsVal args);
 
 JsVal
 JsvObject_CallMethodId(JsVal obj, Js_Identifier* meth_id, JsVal args);
+
+JsVal
+JsvObject_CallMethodId_OneArg(JsVal obj, Js_Identifier* meth_id, JsVal arg);
+
+JsVal
+JsvObject_CallMethodId_TwoArgs(JsVal obj,
+                               Js_Identifier* meth_id,
+                               JsVal arg1,
+                               JsVal arg2);
 
 bool
 JsvFunction_Check(JsVal obj);

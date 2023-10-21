@@ -1533,10 +1533,9 @@ JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 }
 
 static int
-JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
+JsArray_extend_by_python_iterable(JsVal jsarray, PyObject* iterable)
 {
   PyObject* it = NULL;
-  JsRef jsval = NULL;
   bool success = false;
 
   if (PyList_CheckExact(iterable) || PyTuple_CheckExact(iterable)) {
@@ -1557,10 +1556,9 @@ JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
     /* populate the end of self with iterable's items */
     PyObject** src = PySequence_Fast_ITEMS(iterable);
     for (int i = 0; i < n; i++) {
-      jsval = python2js(src[i]);
-      FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
-      hiwire_CLEAR(jsval);
+      JsVal jsval = python2js_val(src[i]);
+      FAIL_IF_JS_NULL(jsval);
+      JsvArray_Push(jsarray, jsval);
     }
   } else {
     Py_INCREF(iterable);
@@ -1581,21 +1579,19 @@ JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
         }
         break;
       }
-      JsRef jsval = python2js(item);
-      FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
-      hiwire_CLEAR(jsval);
+      JsVal jsval = python2js_val(item);
+      FAIL_IF_JS_NULL(jsval);
+      JsvArray_Push(jsarray, jsval);
     }
   }
   success = true;
 finally:
-  hiwire_CLEAR(jsval);
   Py_CLEAR(it);
   return success ? 0 : -1;
 }
 
-EM_JS(void, destroy_jsarray_entries, (JsRef idarray), {
-  for (let v of Hiwire.get_value(idarray)) {
+EM_JS(void, destroy_jsarray_entries, (JsVal array), {
+  for (let v of array) {
     // clang-format off
     try {
       if(typeof v.destroy === "function"){
@@ -1611,20 +1607,17 @@ EM_JS(void, destroy_jsarray_entries, (JsRef idarray), {
 static PyObject*
 JsArray_extend_meth(PyObject* o, PyObject* iterable)
 {
-  JsRef temp = NULL;
   bool success = false;
 
-  temp = JsArray_New();
-  FAIL_IF_NULL(temp);
+  JsVal temp = JsvArray_New();
   // Make sure that if anything goes wrong the original array stays unmodified
   FAIL_IF_MINUS_ONE(JsArray_extend_by_python_iterable(temp, iterable));
-  FAIL_IF_MINUS_ONE(JsArray_Extend(JsProxy_REF(o), temp));
+  JsvArray_Extend(JsProxy_VAL(o), temp);
   success = true;
 finally:
   if (!success) {
     destroy_jsarray_entries(temp);
   }
-  hiwire_CLEAR(temp);
   if (success) {
     Py_RETURN_NONE;
   } else {
@@ -1641,21 +1634,19 @@ static PyMethodDef JsArray_extend_MethodDef = {
 static PyObject*
 JsArray_sq_concat(PyObject* self, PyObject* other)
 {
-  JsRef jsresult = NULL;
   PyObject* pyresult = NULL;
   bool success = true;
 
-  jsresult = JsArray_ShallowCopy(JsProxy_REF(self));
-  FAIL_IF_NULL(jsresult);
-  pyresult = js2python(jsresult);
+  JsVal jsresult = JsvArray_ShallowCopy(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(
-    JsArray_extend_by_python_iterable(JsProxy_REF(pyresult), other));
+    JsArray_extend_by_python_iterable(JsProxy_VAL(pyresult), other));
 finally:
   if (!success) {
     Py_CLEAR(pyresult);
   }
-  hiwire_CLEAR(jsresult);
   return pyresult;
 }
 
@@ -1710,17 +1701,16 @@ finally:
 }
 
 static PyObject*
-JsArray_append(PyObject* o, PyObject* arg)
+JsArray_append(PyObject* self, PyObject* arg)
 {
-  JsProxy* self = (JsProxy*)o;
   bool success = false;
-  JsRef jsarg = NULL;
-  jsarg = python2js(arg);
-  FAIL_IF_NULL(jsarg);
-  FAIL_IF_MINUS_ONE(JsArray_Push(self->js, jsarg));
+
+  JsVal jsarg = python2js_val(arg);
+  FAIL_IF_JS_NULL(jsarg);
+  JsvArray_Push(JsProxy_VAL(self), jsarg);
+
   success = true;
 finally:
-  hiwire_CLEAR(jsarg);
   if (success) {
     Py_RETURN_NONE;
   } else {
@@ -2043,35 +2033,30 @@ finally:
  * Controlled by HAS_SET.
  */
 static int
-JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
+JsProxy_ass_subscript(PyObject* self, PyObject* pyidx, PyObject* pyvalue)
 {
-  JsProxy* self = (JsProxy*)o;
   bool success = false;
-  JsRef ididx = NULL;
-  JsRef idvalue = NULL;
-  JsRef jsresult = NULL;
-  ididx = python2js(pyidx);
+
+  JsVal idx = python2js_val(pyidx);
+  FAIL_IF_JS_NULL(idx);
   if (pyvalue == NULL) {
-    jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
-    FAIL_IF_NULL(jsresult);
-    if (!hiwire_to_bool(jsresult)) {
+    JsVal result =
+      JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_delete, idx);
+    FAIL_IF_JS_NULL(result);
+    if (!Jsv_to_bool(result)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
       FAIL();
     }
   } else {
-    idvalue = python2js(pyvalue);
-    FAIL_IF_NULL(idvalue);
-    jsresult =
-      hiwire_CallMethodId_va(self->js, &JsId_set, ididx, idvalue, NULL);
-    FAIL_IF_NULL(jsresult);
+    JsVal value = python2js_val(pyvalue);
+    FAIL_IF_JS_NULL(value);
+    FAIL_IF_JS_NULL(
+      JsvObject_CallMethodId_TwoArgs(JsProxy_VAL(self), &JsId_set, idx, value));
   }
   success = true;
 finally:
-  hiwire_CLEAR(jsresult);
-  hiwire_CLEAR(idvalue);
-  hiwire_CLEAR(ididx);
   return success ? 0 : -1;
 }
 
@@ -2679,29 +2664,26 @@ static PyMethodDef JsProxy_catch_MethodDef = {
 static PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
-  JsRef proxy = NULL;
-  JsRef promise_id = NULL;
-  JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
+  JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(promise);
   // Finally method is called no matter what so we can use
   // `create_once_callable`.
-  proxy = create_once_callable(onfinally);
-  FAIL_IF_NULL(proxy);
-  result_promise =
-    hiwire_CallMethodId_va(promise_id, &JsId_finally, proxy, NULL);
-  if (result_promise == NULL) {
+  JsVal proxy = create_once_callable(onfinally);
+  FAIL_IF_JS_NULL(proxy);
+  JsVal result_promise =
+    JsvObject_CallMethodId_OneArg(promise, &JsId_finally, proxy);
+  if (Jsv_is_null(result_promise)) {
     Py_DECREF(onfinally);
     FAIL();
   }
-  result = JsProxy_create(result_promise);
+
+  JsRef result_promise_ref = hiwire_new(result_promise);
+  result = JsProxy_create(result_promise_ref);
+  hiwire_CLEAR(result_promise_ref);
 
 finally:
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(proxy);
-  hiwire_CLEAR(result_promise);
   return result;
 }
 

@@ -1313,7 +1313,7 @@ EM_JS_REF(JsVal, pyproxy_new, (PyObject * ptrobj), {
  * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
  * also exposed in the pyodide Python module.
  */
-EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
+EM_JS_REF(JsVal, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
   function wrapper(... args)
@@ -1337,13 +1337,13 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     _Py_DecRef(obj);
   };
   Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
-  return Hiwire.new_value(wrapper);
+  return wrapper;
 });
 
 static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
-  JsRef ref = create_once_callable(obj);
+  JsRef ref = hiwire_new(create_once_callable(obj));
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;

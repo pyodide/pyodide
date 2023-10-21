@@ -45,11 +45,8 @@ _python2js(ConversionContext context, PyObject* x);
 
 EM_JS(void,
       _python2js_addto_postprocess_list,
-      (JsRef idlist, JsRef idparent, JsRef idkey, PyObject* value),
+      (JsVal idlist, JsVal idparent, JsVal idkey, PyObject* value),
       {
-        const list = Hiwire.get_value(idlist);
-        const parent = Hiwire.get_value(idparent);
-        const key = Hiwire.get_value(idkey);
         list.push([ parent, key, value ]);
       });
 
@@ -206,11 +203,10 @@ _python2js_sequence(ConversionContext context, PyObject* x)
   bool success = false;
   PyObject* pyitem = NULL;
   JsRef jsitem = NULL;
-  // result:
-  JsRef jsarray = NULL;
 
-  jsarray = JsArray_New();
-  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsarray));
+  JsVal jsarray = JsvArray_New();
+  JsRef jsarray_ref = hiwire_new(jsarray);
+  FAIL_IF_MINUS_ONE(_python2js_add_to_cache(context.cache, x, jsarray_ref));
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
@@ -219,12 +215,11 @@ _python2js_sequence(ConversionContext context, PyObject* x)
     jsitem = _python2js(context, pyitem);
     FAIL_IF_NULL(jsitem);
     if (jsitem == Js_novalue) {
-      JsRef index = hiwire_int(JsArray_Push_unchecked(jsarray, Js_null));
+      JsVal index = JsvInt(JsvArray_Push(jsarray, JS_NULL));
       _python2js_addto_postprocess_list(
-        context.jspostprocess_list, jsarray, index, pyitem);
-      hiwire_CLEAR(index);
+        hiwire_get(context.jspostprocess_list), jsarray, index, pyitem);
     } else {
-      JsArray_Push_unchecked(jsarray, jsitem);
+      JsvArray_Push(jsarray, hiwire_get(jsitem));
     }
     Py_CLEAR(pyitem);
     hiwire_CLEAR(jsitem);
@@ -233,10 +228,7 @@ _python2js_sequence(ConversionContext context, PyObject* x)
 finally:
   Py_CLEAR(pyitem);
   hiwire_CLEAR(jsitem);
-  if (!success) {
-    hiwire_CLEAR(jsarray);
-  }
-  return jsarray;
+  return success ? hiwire_new(jsarray) : NULL;
 }
 
 /**
@@ -268,8 +260,10 @@ _python2js_dict(ConversionContext context, PyObject* x)
     jsval = _python2js(context, pyval);
     FAIL_IF_NULL(jsval);
     if (jsval == Js_novalue) {
-      _python2js_addto_postprocess_list(
-        context.jspostprocess_list, jsdict, jskey, pyval);
+      _python2js_addto_postprocess_list(hiwire_get(context.jspostprocess_list),
+                                        hiwire_get(jsdict),
+                                        hiwire_get(jskey),
+                                        pyval);
     } else {
       FAIL_IF_MINUS_ONE(
         context.dict_add_keyvalue(context, jsdict, jskey, jsval));

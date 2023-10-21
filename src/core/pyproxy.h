@@ -53,7 +53,7 @@ destroy_proxy(JsVal proxy, Js_Identifier* msg);
  * decremented. The Proxy also has a "destroy" API that can decrement the
  * reference count without calling the function.
  */
-JsRef
+JsVal
 create_once_callable(PyObject* obj);
 
 /**
