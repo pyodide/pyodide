@@ -38,8 +38,8 @@ JsvArray_Get(JsVal array, int idx)
   return JsvArray_Get_js(array, idx);
 }
 
-EM_JS(void, JsvArray_Push, (JsVal array, JsVal obj), {
-  array.push(obj);
+EM_JS(int, JsvArray_Push, (JsVal array, JsVal obj), {
+  return array.push(obj);
 });
 
 EM_JS(JsVal, JsvObject_New, (), {

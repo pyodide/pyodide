@@ -425,9 +425,9 @@ _python2js_deep(ConversionContext context, PyObject* x)
     return python2js__default_converter(context.jscontext, x);
   }
   if (context.proxies) {
-    JsRef proxy = pyproxy_new(x);
-    JsArray_Push_unchecked(context.proxies, proxy);
-    return proxy;
+    JsVal proxy = pyproxy_new(x);
+    JsvArray_Push(hiwire_get(context.proxies), proxy);
+    return hiwire_new(proxy);
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
 finally:
@@ -501,7 +501,7 @@ _python2js(ConversionContext context, PyObject* x)
     if (context.default_converter) {
       return python2js__default_converter(context.jscontext, x);
     }
-    return python2js_track_proxies(x, context.proxies, true);
+    return python2js_track_proxies(x, hiwire_get(context.proxies), true);
   } else {
     context.depth--;
     return _python2js_deep(context, x);
@@ -516,20 +516,20 @@ finally:
  *
  */
 JsRef
-python2js_inner(PyObject* x, JsRef proxies, bool track_proxies, bool gc_register)
+python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-  if (track_proxies && proxies == NULL) {
+  if (track_proxies && Jsv_is_null(proxies)) {
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
   }
-  JsRef proxy = pyproxy_new_ex(x, false, false, gc_register);
-  FAIL_IF_NULL(proxy);
+  JsVal proxy = pyproxy_new_ex(x, false, false, gc_register);
+  FAIL_IF_JS_NULL(proxy);
   if (track_proxies) {
-    JsArray_Push_unchecked(proxies, proxy);
+    JsvArray_Push(proxies, proxy);
   }
-  return proxy;
+  return hiwire_new(proxy);
 finally:
   if (PyErr_Occurred()) {
     if (!PyErr_ExceptionMatches(conversion_error)) {
@@ -552,7 +552,7 @@ finally:
  * of creating a proxy.
  */
 JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register)
+python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register)
 {
   return python2js_inner(x, proxies, true, gc_register);
 }
@@ -564,7 +564,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register)
 EMSCRIPTEN_KEEPALIVE JsRef
 python2js(PyObject* x)
 {
-  return python2js_inner(x, NULL, false, true);
+  return python2js_inner(x, JS_NULL, false, true);
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal

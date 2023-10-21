@@ -14,7 +14,7 @@
  *
  */
 int
-JsProxy_compute_typeflags(JsRef obj);
+JsProxy_compute_typeflags(JsVal obj);
 
 PyObject*
 JsProxy_create_with_type(int type_flags, JsRef object, JsRef this);

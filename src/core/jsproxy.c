@@ -315,18 +315,6 @@ JsProxy_js_id_private(PyObject* mod, PyObject* obj)
   return PyLong_FromLong((int)idval);
 }
 
-void
-setReservedError(char* action, char* word)
-{
-  PyErr_Format(PyExc_AttributeError,
-               "The string '%s' is a Python reserved word. To %s an attribute "
-               "on a JS object called '%s' use '%s_'.",
-               word,
-               action,
-               word,
-               word);
-}
-
 EM_JS(bool, isReservedWord, (int word), {
   if (!Module.pythonReservedWords) {
     Module.pythonReservedWords = new Set([
@@ -613,15 +601,14 @@ finally:
 PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
-  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
+  JsVal proxies;
   if (arg) {
-    proxies = JsArray_New();
-    FAIL_IF_NULL(proxies);
+    proxies = JsvArray_New();
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
@@ -629,10 +616,9 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   FAIL_IF_NULL(next_res);
   ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
-  if (proxies) {
+  if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
-  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return ret;
@@ -1120,13 +1106,13 @@ finally:
 static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
-  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   PyObject* result = NULL;
+
+  JsVal proxies;
   if (arg != NULL) {
-    proxies = JsArray_New();
-    FAIL_IF_NULL(proxies);
+    proxies = JsvArray_New();
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
@@ -1135,10 +1121,9 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   result = _agen_handle_result(next_res, false);
 
 finally:
-  if (proxies) {
+  if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
-  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return result;
@@ -1879,7 +1864,7 @@ JsArray_index(PyObject* o, PyObject* args)
     stop = length;
   }
 
-  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
+  JsRef jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     for (int i = start; i < stop; i++) {
@@ -1939,7 +1924,7 @@ static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
+  JsRef jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     int result = 0;
@@ -3004,7 +2989,7 @@ JsVal
 JsMethod_ConvertArgs(PyObject* const* pyargs,
                      Py_ssize_t nargs,
                      PyObject* kwnames,
-                     JsRef proxies)
+                     JsVal proxies)
 {
   JsVal jsargs = JS_NULL;
   JsRef idarg = NULL;
@@ -3169,14 +3154,13 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool success = false;
-  JsRef proxies = NULL;
   JsVal jsresult = JS_NULL;
   bool destroy_args = true;
   PyObject* pyresult = NULL;
+  JsVal proxies = JsvArray_New();
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
-  proxies = JsArray_New();
   JsVal jsargs =
     JsMethod_ConvertArgs(pyargs, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
@@ -3194,9 +3178,9 @@ JsMethod_Vectorcall(PyObject* self,
     !is_promise && !is_generator && JsvAsyncGenerator_Check(jsresult);
   destroy_args = (!is_promise) && (!is_generator) && (!is_async_generator);
   if (is_generator) {
-    jsresult = wrap_generator(jsresult, hiwire_get(proxies));
+    jsresult = wrap_generator(jsresult, proxies);
   } else if (is_async_generator) {
-    jsresult = wrap_async_generator(jsresult, hiwire_get(proxies));
+    jsresult = wrap_async_generator(jsresult, proxies);
   }
   FAIL_IF_JS_NULL(jsresult);
   if (is_promise) {
@@ -3205,8 +3189,7 @@ JsMethod_Vectorcall(PyObject* self,
     // Instead we return a Future. When the promise is ready, we resolve the
     // Future with the result from the Promise and destroy the arguments and
     // result.
-    pyresult = wrap_promise(
-      jsresult, get_async_js_call_done_callback(hiwire_get(proxies)));
+    pyresult = wrap_promise(jsresult, get_async_js_call_done_callback(proxies));
   } else {
     pyresult = js2python_val(jsresult);
   }
@@ -3221,13 +3204,12 @@ finally:
     // arguments and return value now.
     if (!Jsv_is_null(jsresult) && pyproxy_Check(jsresult)) {
       // TODO: don't destroy proxies with roundtrip = true?
-      JsvArray_Push(hiwire_get(proxies), jsresult);
+      JsvArray_Push(proxies, jsresult);
     }
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   } else {
     gc_register_proxies(proxies);
   }
-  hiwire_CLEAR(proxies);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -3248,13 +3230,12 @@ JsMethod_Construct(PyObject* self,
                    PyObject* kwnames)
 {
   bool success = false;
-  JsRef proxies = NULL;
   PyObject* pyresult = NULL;
+  JsVal proxies = JsvArray_New();
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
-  proxies = JsArray_New();
   JsVal jsargs = JsMethod_ConvertArgs(pyargs, nargs, kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
   JsVal jsresult = JsvFunction_Construct(JsProxy_VAL(self), jsargs);
@@ -3269,7 +3250,6 @@ finally:
                    "This borrowed proxy was automatically destroyed. Try using "
                    "create_proxy or create_once_callable.");
   destroy_proxies(proxies, &msg);
-  hiwire_CLEAR(proxies);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -4237,8 +4217,7 @@ finally:
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
-EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
-  let obj = Hiwire.get_value(idobj);
+EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj), {
   let type_flags = 0;
   // clang-format off
   if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
@@ -4359,7 +4338,7 @@ finally:
 PyObject*
 JsProxy_create_objmap(JsRef object, bool objmap)
 {
-  int typeflags = JsProxy_compute_typeflags(object);
+  int typeflags = JsProxy_compute_typeflags(hiwire_get(object));
   if (typeflags == 0 && objmap) {
     typeflags |= IS_OBJECT_MAP;
   }
@@ -4380,7 +4359,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
   } else {
-    type_flags = JsProxy_compute_typeflags(object);
+    type_flags = JsProxy_compute_typeflags(hiwire_get(object));
     if (type_flags == -1) {
       fail_test();
       PyErr_SetString(internal_error,

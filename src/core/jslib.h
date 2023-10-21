@@ -21,7 +21,7 @@ JsvArray_New();
 JsVal
 JsvArray_Get(JsVal, int);
 
-void JsvArray_Push(JsVal, JsVal);
+int JsvArray_Push(JsVal, JsVal);
 
 JsVal
 JsvObject_New();

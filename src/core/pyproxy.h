@@ -10,10 +10,10 @@
 // This implements the JavaScript Proxy handler interface as defined here:
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
-JsRef
+JsVal
 pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip, bool register);
 
-JsRef
+JsVal
 pyproxy_new(PyObject* obj);
 
 /**
@@ -36,10 +36,10 @@ pyproxy_AsPyObject(JsRef x);
  * Destroy a list of PyProxies.
  */
 void
-destroy_proxies(JsRef proxies_id, Js_Identifier* msg);
+destroy_proxies(JsVal proxies, Js_Identifier* msg);
 
 void
-gc_register_proxies(JsRef proxies_id);
+gc_register_proxies(JsVal proxies);
 
 /**
  * Destroy a PyProxy.

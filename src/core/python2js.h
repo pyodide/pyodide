@@ -27,7 +27,7 @@ python2js_val(PyObject* x);
  * the proxy to the array if one is created.
  */
 JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register);
+python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register);
 
 /**
  * Convert a Python object to a JavaScript object, copying standard collections
