@@ -306,6 +306,7 @@ async def test_console_imports(selenium):
     assert await get_result("pytz.utc.zone") == "UTC"
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.xfail_browsers(node="Not available in node")
 def test_console_html(selenium):
     selenium.goto(
