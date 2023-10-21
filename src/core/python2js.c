@@ -227,6 +227,7 @@ _python2js_sequence(ConversionContext context, PyObject* x)
   success = true;
 finally:
   Py_CLEAR(pyitem);
+  hiwire_CLEAR(jsarray_ref);
   hiwire_CLEAR(jsitem);
   return success ? hiwire_new(jsarray) : NULL;
 }

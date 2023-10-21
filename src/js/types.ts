@@ -82,7 +82,7 @@ declare global {
   export const _python2js_custom: (
     obj: number,
     depth: number,
-    proxies: number,
+    proxies: PyProxy[] | null,
     dict_converter: number,
     default_converter: number,
   ) => number;

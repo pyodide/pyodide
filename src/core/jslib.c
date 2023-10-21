@@ -55,25 +55,25 @@ EM_JS_BOOL(bool, JsvArray_Check, (JsVal obj), {
   return false;
 });
 
-EM_JS_VAL(JsVal, JsvArray_Get, (JsVal array, int idx), {
-  return nullToUndefined(array[idx]);
+EM_JS_VAL(JsVal, JsvArray_Get, (JsVal arr, int idx), {
+  return nullToUndefined(arr[idx]);
 });
 
-EM_JS_NUM(errcode, JsvArray_Set, (JsVal array, int idx, JsVal val), {
-  obj[idx] = val;
+EM_JS_NUM(errcode, JsvArray_Set, (JsVal arr, int idx, JsVal val), {
+  arr[idx] = val;
 });
 
-EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal array, int idx), {
+EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal arr, int idx), {
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
-  if (idx < 0 || idx >= obj.length) {
+  if (idx < 0 || idx >= arr.length) {
     return ERROR_NUM;
   }
-  return array.splice(idx, 1)[0];
+  return arr.splice(idx, 1)[0];
 });
 
-EM_JS(int, JsvArray_Push, (JsVal array, JsVal obj), {
-  return array.push(obj);
+EM_JS(int, JsvArray_Push, (JsVal arr, JsVal obj), {
+  return arr.push(obj);
 });
 
 // clang-format off
@@ -82,8 +82,8 @@ EM_JS(void, JsvArray_Extend, (JsVal arr, JsVal vals), {
 });
 // clang-format on
 
-EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal obj), {
-  return ("slice" in obj) ? obj.slice() : Array.from(obj);
+EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
+  return ("slice" in arr) ? arr.slice() : Array.from(arr);
 })
 
 // clang-format off

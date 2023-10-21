@@ -252,7 +252,7 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_call(selenium):
+def test_jsproxy_call1(selenium):
     assert (
         selenium.run_js(
             """
@@ -270,6 +270,13 @@ def test_jsproxy_call(selenium):
         )
         == list(range(10))
     )
+
+@run_in_pyodide
+def test_jsproxy_call2(selenium):
+    from pyodide.code import run_js
+
+    f = run_js("(function(){ return arguments.length; })")
+    assert [f(*range(n)) for n in range(10)] == list(range(10))
 
 
 def test_jsproxy_call_kwargs(selenium):
