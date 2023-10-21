@@ -30,6 +30,7 @@ SYMLINKS = {
     "cargo",
     "cmake",
     "meson",
+    "install_name_tool",
 }
 IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
@@ -593,6 +594,11 @@ def handle_command_generate_args(  # noqa: C901
             print(os.environ, file=sys.stderr)
 
         return line
+    elif cmd == "install_name_tool":
+        # In MacOS, meson tries to run install_name_tool to fix the rpath of the shared library
+        # assuming that it is a ELF file. We need to skip this step.
+        # See: https://github.com/mesonbuild/meson/issues/8027
+        return ["echo", *line]
     elif cmd == "ranlib":
         line[0] = "emranlib"
         return line
