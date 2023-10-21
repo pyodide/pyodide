@@ -71,6 +71,12 @@ JsvArray_slice_assign(JsVal idobj,
 JsVal
 JsvObject_New();
 
+JsVal JsvObject_Entries(JsVal);
+
+JsVal JsvObject_Keys(JsVal);
+
+JsVal JsvObject_Values(JsVal);
+
 int
 JsvObject_SetAttr(JsVal obj, JsVal attr, JsVal value);
 

@@ -1196,16 +1196,13 @@ static PyMethodDef JsGenerator_aclose_MethodDef = {
  * Object.entries(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_entries(PyObject* o, PyObject* _args)
+JsProxy_object_entries(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Entries(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Entries(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_entries_MethodDef = {
@@ -1219,16 +1216,13 @@ static PyMethodDef JsProxy_object_entries_MethodDef = {
  * Object.keys(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_keys(PyObject* o, PyObject* _args)
+JsProxy_object_keys(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Keys(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Keys(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_keys_MethodDef = {
@@ -1242,16 +1236,13 @@ static PyMethodDef JsProxy_object_keys_MethodDef = {
  * Object.entries(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_values(PyObject* o, PyObject* _args)
+JsProxy_object_values(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Values(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Values(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_values_MethodDef = {

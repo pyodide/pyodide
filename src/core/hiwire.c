@@ -620,29 +620,6 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   return Hiwire.new_value(jssub);
 });
 
-// ==================== JsObject API  ====================
-
-// clang-format off
-EM_JS_REF(JsRef, JsObject_New, (), {
-  return Hiwire.new_value({});
-});
-// clang-format on
-
-EM_JS_REF(JsRef, JsObject_Entries, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.entries(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Keys, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.keys(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.values(jsobj));
-});
-
 // ==================== JsString API  ====================
 
 EM_JS_REF(JsRef, JsString_InternFromCString, (const char* str), {

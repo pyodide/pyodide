@@ -107,7 +107,7 @@ EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
 })
 
 // clang-format off
-EM_JS_REF(JsVal,
+EM_JS_VAL(JsVal,
 JsvArray_slice,
 (JsVal obj, int length, int start, int stop, int step),
 {
@@ -154,11 +154,23 @@ JsvArray_slice_assign,
 EM_JS(JsVal, JsvObject_New, (), {
   return {};
 });
-// clang-format on
 
 EM_JS_NUM(int, JsvObject_SetAttr, (JsVal obj, JsVal attr, JsVal value), {
   obj[attr] = value;
 });
+
+EM_JS_VAL(JsVal, JsvObject_Entries, (JsVal obj), {
+  return Object.entries(obj);
+});
+
+EM_JS_VAL(JsVal, JsvObject_Keys, (JsVal obj), {
+  return Object.keys(obj);
+});
+
+EM_JS_VAL(JsVal, JsvObject_Values, (JsVal obj), {
+  return Object.values(obj);
+});
+
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
   return nullToUndefined(obj[meth](... args));
@@ -193,6 +205,7 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
   JsvArray_Push(args, arg2);
   return JsvObject_CallMethodId(obj, name_id, args);
 }
+
 
 // ==================== JsvFunction API  ====================
 

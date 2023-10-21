@@ -374,34 +374,6 @@ hiwire_get_buffer_info(JsRef idobj,
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
 
-// ==================== JsObject API  ====================
-
-/**
- * Create a new JavaScript object.
- *
- * Returns: New reference
- */
-JsRef
-JsObject_New();
-
-/**
- * Returns `Object.entries(obj)`
- */
-JsRef
-JsObject_Entries(JsRef idobj);
-
-/**
- * Returns `Object.keys(obj)`
- */
-JsRef
-JsObject_Keys(JsRef idobj);
-
-/**
- * Returns `Object.values(obj)`
- */
-JsRef
-JsObject_Values(JsRef idobj);
-
 // ==================== JsString API  ====================
 
 JsRef
