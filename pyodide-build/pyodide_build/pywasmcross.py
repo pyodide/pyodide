@@ -21,6 +21,7 @@ SYMLINKS = {
     "cc",
     "c++",
     "ld",
+    "lld",
     "ar",
     "gcc",
     "ranlib",
@@ -555,11 +556,12 @@ def handle_command_generate_args(  # noqa: C901
         return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
+    elif cmd in ("cc", "gcc", "ld", "lld"):
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
+        
     elif cmd == "cmake":
         # If it is a build/install command, or running a script, we don't do anything.
         if "--build" in line or "--install" in line or "-P" in line:
@@ -580,12 +582,16 @@ def handle_command_generate_args(  # noqa: C901
         if line[:2] != ["meson", "setup"]:
             return line
 
-        line[:2] = [
-            "meson",
-            "setup",
-            "--cross-file",
-            str(INVOKED_PATH.parent / "emscripten.meson.cross"),
-        ]
+        try:
+            line[:2] = [
+                "meson",
+                "setup",
+                "--cross-file",
+                os.environ["MESON_CROSS_FILE"],
+            ]
+        except:
+            print(os.environ, file=sys.stderr)
+
         return line
     elif cmd == "ranlib":
         line[0] = "emranlib"

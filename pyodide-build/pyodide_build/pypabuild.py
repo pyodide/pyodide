@@ -36,6 +36,8 @@ AVOIDED_REQUIREMENTS = [
     # the pywasmcross cmake wrapper.
     # TODO: Find a way to make scikit-build use the pywasmcross cmake wrapper.
     "cmake",
+    # mesonpy installs patchelf in linux platform but we don't want it.
+    "patchelf",
 ]
 
 
@@ -69,7 +71,7 @@ def _gen_runner(
         env["BUILD_ENV_SCRIPTS_DIR"] = isolated_build_env._scripts_dir
         env["PATH"] = f"{cross_build_env['COMPILER_WRAPPER_DIR']}:{env['PATH']}"
         # For debugging: Uncomment the following line to print the build command
-        # print("Build backend call:", cmd)
+        # print("Build backend call:", cmd, file=sys.stderr)
         sp.check_call(cmd, cwd=cwd, env=env)
 
     return _runner
@@ -150,12 +152,11 @@ def _build_in_isolated_env(
 
         with common.replace_env(build_env):
             if not installed_requires_for_build:
-                install_reqs(
-                    env,
-                    builder.get_requires_for_build(
-                        distribution,
-                    ),
+                build_reqs = builder.get_requires_for_build(
+                    distribution,
+                    config_settings,
                 )
+                install_reqs(env, build_reqs)
 
             return builder.build(distribution, outdir, config_settings)
 
@@ -204,9 +205,12 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
         symlink_path.symlink_to(pywasmcross_exe)
         if symlink == "c++":
             var = "CXX"
+        elif symlink == "gfortran":
+            var = "FC"  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
         else:
             var = symlink.upper()
         env[var] = str(symlink_path)
+
 
     from .templates import meson_cross_file_tmpl
 
