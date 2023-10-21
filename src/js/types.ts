@@ -124,19 +124,19 @@ declare global {
     value: any,
   ) => number;
   export const __pyproxy_delattr: (ptr: number, attr: string) => number;
-  export const __pyproxy_hasattr: (ptr: number, attr: number) => number;
+  export const __pyproxy_hasattr: (ptr: number, attr: string) => number;
   export const __pyproxy_slice_assign: (
     ptr: number,
     start: number,
     stop: number,
     val: number,
-  ) => number;
-  export const __pyproxy_pop: (ptr: number, popstart: boolean) => number;
+  ) => any[];
+  export const __pyproxy_pop: (ptr: number, popstart: boolean) => any;
   export const __pyproxy_ownKeys: (ptr: number) => (string | symbol)[];
   export const __pyproxy_ensure_future: (
     ptr: number,
-    resolve: number,
-    reject: number,
+    resolve: (res: any) => void,
+    reject: (exc: any) => void,
   ) => number;
   export const _buffer_struct_size: number;
   export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;

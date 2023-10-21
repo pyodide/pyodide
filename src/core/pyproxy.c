@@ -48,15 +48,7 @@ _Py_IDENTIFIER(athrow);
 // Use raw EM_JS for the next five commands. We intend to signal a fatal error
 // if a JavaScript error is thrown.
 
-EM_JS(int, pyproxy_Check_val, (JsVal val), { return API.isPyProxy(val); });
-
-EM_JS(int, pyproxy_Check, (JsRef x), {
-  if (x == 0) {
-    return false;
-  }
-  let val = Hiwire.get_value(x);
-  return API.isPyProxy(val);
-});
+EM_JS(int, pyproxy_Check, (JsVal val), { return API.isPyProxy(val); });
 
 EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
   if (x == 0) {
@@ -87,8 +79,7 @@ EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
   }
 });
 
-EM_JS(void, destroy_proxy, (JsRef proxy_id, Js_Identifier* msg_ptr), {
-  const px = Module.hiwire.get_value(proxy_id);
+EM_JS(void, destroy_proxy, (JsVal px, Js_Identifier* msg_ptr), {
   const { shared, props } = Module.PyProxy_getAttrsQuiet(px);
   if (!shared.ptr) {
     // already destroyed
@@ -351,12 +342,12 @@ _pyproxy_type(PyObject* ptrobj)
 }
 
 EMSCRIPTEN_KEEPALIVE int
-_pyproxy_hasattr(PyObject* pyobj, JsRef idkey)
+_pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
 {
   PyObject* pykey = NULL;
   int result = -1;
 
-  pykey = js2python(idkey);
+  pykey = js2python_val(jskey);
   FAIL_IF_NULL(pykey);
   result = PyObject_HasAttr(pyobj, pykey);
 
@@ -438,7 +429,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     Py_INCREF(pydescr);
   }
   result = python2js_val(pyresult);
-  if (pyproxy_Check_val(result)) {
+  if (pyproxy_Check(result)) {
     // If a getter returns a different object every time, this could potentially
     // fill up the cache with a lot of junk. If this is a problem, the user will
     // have to manually destroy the attributes.
@@ -560,19 +551,18 @@ finally:
   return success ? 0 : -1;
 }
 
-EMSCRIPTEN_KEEPALIVE JsRef
+EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_slice_assign(PyObject* pyobj,
                       Py_ssize_t start,
                       Py_ssize_t stop,
-                      JsRef idval)
+                      JsVal val)
 {
   PyObject* pyval = NULL;
   PyObject* pyresult = NULL;
-  JsRef jsresult = NULL;
+  JsVal jsresult = JS_NULL;
   JsRef proxies = NULL;
-  bool success = false;
 
-  pyval = js2python(idval);
+  pyval = js2python_val(val);
 
   Py_ssize_t len = PySequence_Length(pyobj);
   if (len <= stop) {
@@ -583,26 +573,21 @@ _pyproxy_slice_assign(PyObject* pyobj,
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
   proxies = JsArray_New();
   FAIL_IF_NULL(proxies);
-  jsresult = python2js_with_depth(pyresult, 1, proxies);
+  jsresult = Jsv_pop_ref(python2js_with_depth(pyresult, 1, proxies));
 
-  success = true;
 finally:
-  if (!success) {
-    hiwire_CLEAR(jsresult);
-  }
   Py_CLEAR(pyresult);
   Py_CLEAR(pyval);
   hiwire_CLEAR(proxies);
   return jsresult;
 }
 
-EMSCRIPTEN_KEEPALIVE JsRef
+EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_pop(PyObject* pyobj, bool pop_start)
 {
-  bool success = false;
   PyObject* idx = NULL;
   PyObject* pyresult = NULL;
-  JsRef jsresult = NULL;
+  JsVal jsresult = JS_NULL;
   if (pop_start) {
     idx = PyLong_FromLong(0);
     FAIL_IF_NULL(idx);
@@ -611,23 +596,19 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
     pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
   }
   if (pyresult != NULL) {
-    jsresult = python2js(pyresult);
-    FAIL_IF_NULL(jsresult);
+    jsresult = python2js_val(pyresult);
+    FAIL_IF_JS_NULL(jsresult);
   } else {
     if (PyErr_ExceptionMatches(PyExc_IndexError)) {
       PyErr_Clear();
-      jsresult = Js_undefined;
+      jsresult = hiwire_get(Js_undefined);
     } else {
       FAIL();
     }
   }
-  success = true;
 finally:
   Py_CLEAR(idx);
   Py_CLEAR(pyresult);
-  if (!success) {
-    hiwire_CLEAR(jsresult);
-  }
   return jsresult;
 }
 
@@ -709,7 +690,6 @@ _pyproxy_apply(PyObject* callable,
                JsVal jskwnames,
                size_t numkwargs)
 {
-  bool success = false;
   size_t total_args = numposargs + numkwargs;
   size_t last_converted_arg = total_args;
   PyObject* pyargs_array[total_args + 1];
@@ -747,7 +727,6 @@ _pyproxy_apply(PyObject* callable,
   FAIL_IF_NULL(pyresult);
   result = python2js_val(pyresult);
 
-  success = true;
 finally:
   // If we failed to convert one of the arguments, then pyargs is partially
   // uninitialized. Only clear the part that actually has stuff in it.
@@ -1136,13 +1115,13 @@ static PyTypeObject FutureDoneCallbackType = {
 // clang-format on
 
 static PyObject*
-FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
+FutureDoneCallback_cnew(JsVal resolve_handle, JsVal reject_handle)
 {
   FutureDoneCallback* self =
     (FutureDoneCallback*)FutureDoneCallbackType.tp_alloc(
       &FutureDoneCallbackType, 0);
-  self->resolve_handle = hiwire_incref(resolve_handle);
-  self->reject_handle = hiwire_incref(reject_handle);
+  self->resolve_handle = hiwire_new(resolve_handle);
+  self->reject_handle = hiwire_new(reject_handle);
   return (PyObject*)self;
 }
 
@@ -1158,8 +1137,8 @@ FutureDoneCallback_cnew(JsRef resolve_handle, JsRef reject_handle)
  */
 EMSCRIPTEN_KEEPALIVE int
 _pyproxy_ensure_future(PyObject* pyobject,
-                       JsRef resolve_handle,
-                       JsRef reject_handle)
+                       JsVal resolve_handle,
+                       JsVal reject_handle)
 {
   bool success = false;
   PyObject* future = NULL;
@@ -1400,8 +1379,8 @@ create_once_callable_py(PyObject* _mod, PyObject* obj)
  * The return values are intended to be attached to a promise e.g.,
  * some_promise.then(onResolved, onRejected).
  */
-EM_JS_REF(JsRef, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception, JsRef done_callback_id
+EM_JS_VAL(JsVal, create_promise_handles, (
+  PyObject* handle_result, PyObject* handle_exception, JsVal done_callback
 ), {
   // At some point it would be nice to use FinalizationRegistry with these, but
   // it's a bit tricky.
@@ -1411,9 +1390,8 @@ EM_JS_REF(JsRef, create_promise_handles, (
   if (handle_exception) {
     _Py_IncRef(handle_exception);
   }
-  let done_callback = (x) => {};
-  if(done_callback_id){
-    done_callback = Hiwire.get_value(done_callback_id);
+  if(!done_callback){
+    done_callback = (x) => {};
   }
   let used = false;
   function checkUsed(){
@@ -1455,9 +1433,7 @@ EM_JS_REF(JsRef, create_promise_handles, (
   }
   onFulfilled.destroy = destroy;
   onRejected.destroy = destroy;
-  return Hiwire.new_value(
-    [onFulfilled, onRejected]
-  );
+  return [onFulfilled, onRejected];
 })
 // clang-format on
 

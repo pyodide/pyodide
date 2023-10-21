@@ -1994,16 +1994,13 @@ export class PyMutableSequenceMethods {
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, idkey);
+    result = __pyproxy_hasattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
   if (result === -1) {
     _pythonexc2js();
@@ -2069,26 +2066,23 @@ function python_slice_assign(
   start: number,
   stop: number,
   val: any,
-): void {
+): any[] {
   let ptrobj = _getPtr(jsobj);
-  let idval = Hiwire.new_value(val);
   let res;
   try {
     Py_ENTER();
-    res = __pyproxy_slice_assign(ptrobj, start, stop, idval);
+    res = __pyproxy_slice_assign(ptrobj, start, stop, val);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idval);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
-function python_pop(jsobj: any, pop_start: boolean): void {
+function python_pop(jsobj: any, pop_start: boolean): any {
   let ptrobj = _getPtr(jsobj);
   let res;
   try {
@@ -2098,10 +2092,10 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
 function filteredHasKey(
@@ -2335,28 +2329,19 @@ export class PyAwaitableMethods {
       // Destroyed and promise wasn't resolved. Raise error!
       _getAttrs(this);
     }
-    let resolveHandle;
-    let rejectHandle;
+    let resolveHandle: (v: any) => void;
+    let rejectHandle: (e: any) => void;
     let promise = new Promise((resolve, reject) => {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Hiwire.new_value(resolveHandle);
-    let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
     try {
       Py_ENTER();
-      errcode = __pyproxy_ensure_future(
-        ptr,
-        resolve_handle_id,
-        reject_handle_id,
-      );
+      errcode = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(reject_handle_id);
-      Hiwire.decref(resolve_handle_id);
     }
     if (errcode === -1) {
       _pythonexc2js();

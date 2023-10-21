@@ -111,15 +111,6 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new JavaScript string, given a pointer to a null-terminated buffer
- * containing UTF8. The string data itself is copied.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_string_utf8(const char* ptr);
-
-/**
  * Create a new JavaScript boolean value.
  * Return value is true if boolean != 0, false if boolean == 0.
  *
@@ -487,34 +478,6 @@ JsArray_Clear(JsRef idobj);
  */
 JsRef
 JsObject_New();
-
-/**
- * Get an object member by string.
- *
- *
- * Returns: New reference
- */
-JsRef
-JsObject_GetString(JsRef idobj, const char* ptrname);
-
-/**
- * Set an object member by string.
- */
-errcode WARN_UNUSED
-JsObject_SetString(JsRef idobj, const char* ptrname, JsRef idval);
-
-/**
- * Delete an object member by string.
- */
-errcode WARN_UNUSED
-JsObject_DeleteString(JsRef idobj, const char* ptrname);
-
-/**
- * Get the methods on an object, both on itself and what it inherits.
- *
- */
-JsRef
-JsObject_Dir(JsRef idobj);
 
 /**
  * Returns `Object.entries(obj)`

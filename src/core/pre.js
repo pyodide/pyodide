@@ -62,3 +62,5 @@ const errNoRet = () => {
 };
 
 Module.reportUndefinedSymbols = () => {};
+
+const nullToUndefined = (x) => (x === null ? undefined : x);

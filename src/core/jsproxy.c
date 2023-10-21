@@ -34,6 +34,7 @@
 #include "docstring.h"
 #include "hiwire.h"
 #include "js2python.h"
+#include "jslib.h"
 #include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
@@ -188,10 +189,11 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
                    sizeof(struct ExceptionFields),
                "size conflict between JsProxy and PyExc_BaseException");
 
-#define JsProxy_REF(x) (((JsProxy*)x)->js)
+#define JsProxy_REF(x) ((JsProxy*)x)->js
+#define JsProxy_VAL(x) hiwire_get(JsProxy_REF(x))
 #define JsProxy_DICT(x) (((JsProxy*)x)->dict)
 
-#define JsMethod_THIS(x) (((JsProxy*)x)->tf.mf.this_)
+#define JsMethod_THIS(x) ((JsProxy*)x)->tf.mf.this_
 #define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
 
 #define JsException_ARGS(x) (((JsProxy*)x)->tf.ef.args)
@@ -224,10 +226,10 @@ JsProxy_clear(PyObject* self)
     return -1;
   }
   if ((flags & IS_CALLABLE) && (JsMethod_THIS(self) != NULL)) {
-    if (pyproxy_Check(JsMethod_THIS(self))) {
-      destroy_proxy(JsMethod_THIS(self), NULL);
+    JsVal this = hiwire_pop(JsMethod_THIS(self));
+    if (pyproxy_Check(this)) {
+      destroy_proxy(this, NULL);
     }
-    hiwire_CLEAR(JsMethod_THIS(self));
   }
 #ifdef DEBUG_F
   extern bool tracerefs;
@@ -313,6 +315,64 @@ JsProxy_js_id_private(PyObject* mod, PyObject* obj)
   return PyLong_FromLong((int)idval);
 }
 
+void
+setReservedError(char* action, char* word)
+{
+  PyErr_Format(PyExc_AttributeError,
+               "The string '%s' is a Python reserved word. To %s an attribute "
+               "on a JS object called '%s' use '%s_'.",
+               word,
+               action,
+               word,
+               word);
+}
+
+EM_JS(bool, isReservedWord, (int word), {
+  if (!Module.pythonReservedWords) {
+    Module.pythonReservedWords = new Set([
+      "False",  "await", "else",     "import", "pass",   "None",    "break",
+      "except", "in",    "raise",    "True",   "class",  "finally", "is",
+      "return", "and",   "continue", "for",    "lambda", "try",     "as",
+      "def",    "from",  "nonlocal", "while",  "assert", "del",     "global",
+      "not",    "with",  "async",    "elif",   "if",     "or",      "yield",
+    ])
+  }
+  return Module.pythonReservedWords.has(word);
+})
+
+/**
+ * action: a javascript string, one of get, set, or delete. For error reporting.
+ * word: a javascript string, the property being accessed
+ */
+EM_JS(int, normalizeReservedWords, (int word), {
+  // clang-format off
+  // 1. if word is not a reserved word followed by 0 or more underscores, return
+  //    it unchanged.
+  const noTrailing_ = word.replace(/_*$/, "");
+  if (!isReservedWord(noTrailing_)) {
+    return word;
+  }
+  // 2. If there is at least one trailing underscore, return the word with a
+  //    single underscore removed.
+  if (noTrailing_ !== word) {
+    return word.slice(0, -1);
+  }
+  // 3. If the word is exactly a reserved word, return it unchanged
+  return word;
+  // clang-format on
+});
+
+EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
+  const jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  const result = jsobj[jskey];
+  // clang-format off
+  if (result === undefined && !(jskey in jsobj)) {
+    // clang-format on
+    return null;
+  }
+  return nullToUndefined(result);
+});
+
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
@@ -328,7 +388,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   PyErr_Clear();
 
   bool success = false;
-  JsRef idresult = 0;
+  JsVal jsresult = JS_NULL;
   // result:
   PyObject* pyresult = NULL;
 
@@ -344,27 +404,43 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  idresult = JsObject_GetString(JsProxy_REF(self), key);
-  if (idresult == NULL) {
+  jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
+  if (Jsv_is_null(jsresult)) {
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
   }
 
-  if (!pyproxy_Check(idresult) && hiwire_is_function(idresult)) {
+  if (!pyproxy_Check(jsresult) && JsvFunction_Check(jsresult)) {
+    JsRef idresult = hiwire_new(jsresult);
     pyresult = JsProxy_create_with_this(idresult, JsProxy_REF(self));
+    hiwire_decref(idresult);
   } else {
-    pyresult = js2python(idresult);
+    pyresult = js2python_val(jsresult);
   }
   FAIL_IF_NULL(pyresult);
 
   success = true;
 finally:
-  hiwire_decref(idresult);
   if (!success) {
     Py_CLEAR(pyresult);
   }
   return pyresult;
 }
+
+// clang-format off
+EM_JS_NUM(errcode,
+JsProxy_SetAttr_js,
+(JsVal jsobj, const char* ptrkey, JsVal jsval),
+{
+  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  jsobj[jskey] = jsval;
+});
+// clang-format on
+
+EM_JS_NUM(errcode, JsProxy_DelAttr_js, (JsVal jsobj, const char* ptrkey), {
+  let jskey = normalizeReservedWords(UTF8ToString(ptrkey));
+  delete jsobj[jskey];
+});
 
 /**
  * setattr / delttr overload. TODO: Raise an error if the attribute exists on
@@ -374,7 +450,6 @@ static int
 JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 {
   bool success = false;
-  JsRef idvalue = NULL;
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
@@ -390,15 +465,14 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    FAIL_IF_MINUS_ONE(JsObject_DeleteString(JsProxy_REF(self), key));
+    FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), key));
   } else {
-    idvalue = python2js(pyvalue);
-    FAIL_IF_MINUS_ONE(JsObject_SetString(JsProxy_REF(self), key, idvalue));
+    JsVal jsvalue = python2js_val(pyvalue);
+    FAIL_IF_MINUS_ONE(JsProxy_SetAttr_js(JsProxy_VAL(self), key, jsvalue));
   }
 
   success = true;
 finally:
-  hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }
 
@@ -472,9 +546,9 @@ JsProxy_GetIter(PyObject* self)
 
 // clang-format off
 EM_JS_NUM(
-int,
+JsVal,
 handle_next_result_js,
-(JsRef resid, JsRef* result_ptr, char** msg),
+(JsRef resid, int* done, char** msg),
 {
   let errmsg;
   const res = Hiwire.get_value(resid);
@@ -489,21 +563,20 @@ handle_next_result_js,
   }
   if (errmsg) {
     DEREF_U32(msg, 0) = stringToNewUTF8(errmsg);
-    return -1;
+    DEREF_U32(done, 0) = -1;
   }
-  let result_id = Hiwire.new_value(res.value);
-  DEREF_U32(result_ptr, 0) = result_id;
-  return res.done;
+  DEREF_U32(done, 0) = res.done;
+  return res.value;
 });
 
 PySendResult
 handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
-  JsRef idresult = NULL;
   *result = NULL;
+  int done;
 
-  int done = handle_next_result_js(next_res, &idresult, &msg);
+  JsVal jsresult = handle_next_result_js(next_res, &done, &msg);
   // done:
   //   1 ==> finished
   //   0 ==> not finished
@@ -517,20 +590,21 @@ handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
-  *result = js2python_immutable(idresult);
+  *result = js2python_immutable_val(jsresult);
   if (!*result) {
+    JsRef idresult = hiwire_new(jsresult);
     *result = JsProxy_create_objmap(idresult, obj_map_hereditary);
+    hiwire_decref(idresult);
   }
   FAIL_IF_NULL(*result);
-  if(pyproxy_Check(idresult)) {
+  if(pyproxy_Check(jsresult)) {
     Js_static_string(msg, "This borrowed proxy was automatically destroyed at the end"
                           " of a generator");
-    destroy_proxy(idresult, &msg);
+    destroy_proxy(jsresult, &msg);
   }
 
   res = done ? PYGEN_RETURN : PYGEN_NEXT;
 finally:
-  hiwire_CLEAR(idresult);
   return res;
 }
 
@@ -885,7 +959,7 @@ EMSCRIPTEN_KEEPALIVE void
 _agen_handle_result_js_c(PyObject* set_result,
                          PyObject* set_exception,
                          int status,
-                         JsRef jsvalue,
+                         JsVal jsvalue,
                          bool closing)
 {
   PyObject* pyvalue = NULL;
@@ -897,7 +971,7 @@ _agen_handle_result_js_c(PyObject* set_result,
     goto return_error;
   }
 
-  pyvalue = js2python(jsvalue);
+  pyvalue = js2python_val(jsvalue);
   if (pyvalue == NULL) {
     // hopefully this won't happen...
     PyErr_SetString(PyExc_RuntimeError, "Unable to get result");
@@ -983,13 +1057,9 @@ _agen_handle_result_js,
   _Py_IncRef(set_exception);
   // Call back into C to create the response.
   p.then(({done, value}) => {
-    let id = Hiwire.new_value(value);
-    __agen_handle_result_js_c(set_result, set_exception, done, id, closing);
-    Hiwire.decref(id);
+    __agen_handle_result_js_c(set_result, set_exception, done, value, closing);
   }, (err) => {
-    let id = Hiwire.new_value(err);
-    __agen_handle_result_js_c(set_result, set_exception, -1, id, closing);
-    Hiwire.decref(id);
+    __agen_handle_result_js_c(set_result, set_exception, -1, err, closing);
   }).finally(() => {
     _Py_DecRef(set_result);
     _Py_DecRef(set_exception);
@@ -2319,6 +2389,25 @@ static PyMethodDef JsMap_setdefault_MethodDef = {
   METH_FASTCALL | METH_KEYWORDS,
 };
 
+EM_JS_REF(JsVal, JsProxy_Dir_js, (JsVal jsobj), {
+  let result = [];
+  do {
+    // clang-format off
+    const names = Object.getOwnPropertyNames(jsobj);
+    result.push(...names.filter(
+      s => {
+        let c = s.charCodeAt(0);
+        return c < 48 || c > 57; /* Filter out integer array indices */
+      }
+    )
+    // If the word is a reserved word followed by 0 or more underscores, add an
+    // extra underscore to reverse the transformation applied by normalizeReservedWords.
+    .map(word => isReservedWord(word.replace(/_*$/, "")) ? word + "_" : word));
+    // clang-format on
+  } while (jsobj = Object.getPrototypeOf(jsobj));
+  return result;
+});
+
 /**
  * Overload of `dir(proxy)`. Walks the prototype chain of the object and adds
  * the ownPropertyNames of each prototype.
@@ -2330,7 +2419,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   PyObject* object__dir__ = NULL;
   PyObject* keys = NULL;
   PyObject* result_set = NULL;
-  JsRef iddir = NULL;
+  JsVal jsdir = JS_NULL;
   PyObject* pydir = NULL;
   PyObject* keys_str = NULL;
   PyObject* null_or_pynone = NULL;
@@ -2348,8 +2437,8 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(result_set);
 
   // Now get attributes of js object
-  iddir = JsObject_Dir(JsProxy_REF(self));
-  pydir = js2python(iddir);
+  jsdir = JsProxy_Dir_js(JsProxy_VAL(self));
+  pydir = js2python_val(jsdir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
@@ -2370,7 +2459,6 @@ finally:
   Py_CLEAR(object__dir__);
   Py_CLEAR(keys);
   Py_CLEAR(result_set);
-  hiwire_decref(iddir);
   Py_CLEAR(pydir);
   Py_CLEAR(keys_str);
   Py_CLEAR(null_or_pynone);
@@ -2410,8 +2498,8 @@ JsProxy_toPy(PyObject* self,
   }
   PyObject* result =
     js2python_convert(JsProxy_REF(self), depth, default_converter_js);
-  if (pyproxy_Check(default_converter_js)) {
-    destroy_proxy(default_converter_js, NULL);
+  if (pyproxy_Check(Jsv_from_ref(default_converter_js))) {
+    destroy_proxy(Jsv_from_ref(default_converter_js), NULL);
   }
   hiwire_decref(default_converter_js);
   return result;
@@ -2445,15 +2533,12 @@ JsProxy_Bool(PyObject* o)
  * done_callback is called.
  */
 static PyObject*
-wrap_promise(JsRef promise, JsRef done_callback)
+wrap_promise(JsVal promise, JsVal done_callback)
 {
   bool success = false;
   PyObject* loop = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
-  JsRef promise_id = NULL;
-  JsRef promise_handles = NULL;
-  JsRef promise_result = NULL;
 
   PyObject* result = NULL;
 
@@ -2468,22 +2553,18 @@ wrap_promise(JsRef promise, JsRef done_callback)
   set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
   FAIL_IF_NULL(set_exception);
 
-  promise_id = hiwire_resolve_promise(promise);
-  FAIL_IF_NULL(promise_id);
-  promise_handles =
+  promise = JsvPromise_Resolve(promise);
+  FAIL_IF_JS_NULL(promise);
+  JsVal promise_handles =
     create_promise_handles(set_result, set_exception, done_callback);
-  FAIL_IF_NULL(promise_handles);
-  promise_result = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
-  FAIL_IF_NULL(promise_result);
+  FAIL_IF_JS_NULL(promise_handles);
+  FAIL_IF_JS_NULL(JsvObject_CallMethodId(promise, &JsId_then, promise_handles));
 
   success = true;
 finally:
   Py_CLEAR(loop);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(promise_handles);
-  hiwire_CLEAR(promise_result);
   if (!success) {
     Py_CLEAR(result);
   }
@@ -2510,7 +2591,7 @@ JsProxy_Await(JsProxy* self)
   PyObject* fut = NULL;
   PyObject* result = NULL;
 
-  fut = wrap_promise(self->js, NULL);
+  fut = wrap_promise(JsProxy_VAL(self), JS_NULL);
   FAIL_IF_NULL(fut);
   result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
@@ -2538,9 +2619,6 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
     return NULL;
   }
 
-  JsRef promise_id = NULL;
-  JsRef promise_handles = NULL;
-  JsRef result_promise = NULL;
   PyObject* result = NULL;
 
   if (Py_IsNone(onfulfilled)) {
@@ -2549,23 +2627,22 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   if (Py_IsNone(onrejected)) {
     Py_CLEAR(onrejected);
   }
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
-  promise_handles = create_promise_handles(onfulfilled, onrejected, NULL);
-  FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
-  if (result_promise == NULL) {
+  JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(promise);
+  JsVal promise_handles =
+    create_promise_handles(onfulfilled, onrejected, JS_NULL);
+  FAIL_IF_JS_NULL(promise_handles);
+  JsVal result_promise =
+    JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
+  if (Jsv_is_null(result_promise)) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
     FAIL();
   }
-  result = JsProxy_create(result_promise);
+  result = JsProxy_create_val(result_promise);
 
 finally:
   // don't clear onfulfilled, onrejected, they are borrowed from arguments.
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(promise_handles);
-  hiwire_CLEAR(result_promise);
   return result;
 }
 
@@ -2581,28 +2658,23 @@ static PyMethodDef JsProxy_then_MethodDef = {
 static PyObject*
 JsProxy_catch(JsProxy* self, PyObject* onrejected)
 {
-  JsRef promise_id = NULL;
-  JsRef promise_handles = NULL;
-  JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
+  JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(promise);
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
-  promise_handles = create_promise_handles(NULL, onrejected, NULL);
-  FAIL_IF_NULL(promise_handles);
-  result_promise = hiwire_CallMethodId(promise_id, &JsId_then, promise_handles);
-  if (result_promise == NULL) {
+  JsVal promise_handles = create_promise_handles(NULL, onrejected, JS_NULL);
+  FAIL_IF_JS_NULL(promise_handles);
+  JsVal result_promise =
+    JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
+  if (Jsv_is_null(result_promise)) {
     Py_DECREF(onrejected);
     FAIL();
   }
-  result = JsProxy_create(result_promise);
+  result = JsProxy_create_val(result_promise);
 
 finally:
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(promise_handles);
-  hiwire_CLEAR(result_promise);
   return result;
 }
 
@@ -2928,23 +3000,21 @@ JsProxy_cinit(PyObject* obj, JsRef idobj)
  * the argument is a PyProxy created with `create_proxy` it won't be recorded
  * for destruction).
  */
-JsRef
-JsMethod_ConvertArgs(PyObject* const* args,
+JsVal
+JsMethod_ConvertArgs(PyObject* const* pyargs,
                      Py_ssize_t nargs,
                      PyObject* kwnames,
                      JsRef proxies)
 {
-  bool success = false;
-  JsRef idargs = NULL;
+  JsVal jsargs = JS_NULL;
   JsRef idarg = NULL;
-  JsRef idkwargs = NULL;
+  JsVal kwargs;
 
-  idargs = JsArray_New();
-  FAIL_IF_NULL(idargs);
+  jsargs = JsvArray_New();
   for (Py_ssize_t i = 0; i < nargs; ++i) {
-    idarg = python2js_track_proxies(args[i], proxies, false);
+    idarg = python2js_track_proxies(pyargs[i], proxies, false);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idarg));
+    JsvArray_Push(jsargs, hiwire_get(idarg));
     hiwire_CLEAR(idarg);
   }
 
@@ -2959,32 +3029,26 @@ JsMethod_ConvertArgs(PyObject* const* args,
     }
   }
   if (!has_kwargs) {
-    goto success;
+    goto finally;
   }
 
   // store kwargs into an object which we'll use as the last argument.
-  idkwargs = JsObject_New();
-  FAIL_IF_NULL(idkwargs);
+  kwargs = JsvObject_New();
+  FAIL_IF_JS_NULL(kwargs);
   Py_ssize_t nkwargs = PyTuple_Size(kwnames);
   for (Py_ssize_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
-    PyObject* name = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
-    const char* name_utf8 = PyUnicode_AsUTF8(name);
-    idarg = python2js_track_proxies(args[k], proxies, false);
+    PyObject* pyname = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
+    JsVal jsname = python2js_val(pyname);
+    idarg = python2js_track_proxies(pyargs[k], proxies, false);
     FAIL_IF_NULL(idarg);
-    FAIL_IF_MINUS_ONE(JsObject_SetString(idkwargs, name_utf8, idarg));
+    FAIL_IF_MINUS_ONE(JsvObject_SetAttr(kwargs, jsname, hiwire_get(idarg)));
     hiwire_CLEAR(idarg);
   }
-  FAIL_IF_MINUS_ONE(JsArray_Push(idargs, idkwargs));
+  JsvArray_Push(jsargs, kwargs);
 
-success:
-  success = true;
 finally:
   hiwire_CLEAR(idarg);
-  hiwire_CLEAR(idkwargs);
-  if (!success) {
-    hiwire_CLEAR(idargs);
-  }
-  return idargs;
+  return jsargs;
 }
 
 /**
@@ -2992,9 +3056,9 @@ finally:
  * is an Array of proxies to destroy, it returns a JsRef to a function that
  * destroys them and the result of the Promise.
  */
-EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
-  let proxies = Hiwire.get_value(proxies_id);
-  return Hiwire.new_value(function(result) {
+EM_JS_VAL(JsVal, get_async_js_call_done_callback, (JsVal proxies), {
+  return function(result)
+  {
     let msg = "This borrowed proxy was automatically destroyed " +
               "at the end of an asynchronous function call. Try " +
               "using create_proxy or create_once_callable.";
@@ -3004,13 +3068,12 @@ EM_JS_REF(JsRef, get_async_js_call_done_callback, (JsRef proxies_id), {
     if (API.isPyProxy(result)) {
       Module.pyproxy_destroy(result, msg, false);
     }
-  });
+  };
 });
 
 // clang-format off
-EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
-  const proxies = new Set(Hiwire.get_value(proxiesid));
-  const gen = Hiwire.get_value(genid);
+EM_JS_VAL(JsVal, wrap_generator, (JsVal gen, JsVal proxies), {
+  proxies = new Set(proxies);
   const msg =
     "This borrowed proxy was automatically destroyed " +
     "when a generator completed execution. Try " +
@@ -3039,7 +3102,7 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
       return res;
     };
   }
-  return Hiwire.new_value({
+  return {
     get [Symbol.toStringTag]() {
       return "Generator";
     },
@@ -3049,12 +3112,11 @@ EM_JS_REF(JsRef, wrap_generator, (JsRef genid, JsRef proxiesid), {
     next: wrap("next"),
     throw: wrap("throw"),
     return: wrap("return"),
-  });
+  };
 });
 
-EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
-  const proxies = new Set(Hiwire.get_value(proxiesid));
-  const gen = Hiwire.get_value(genid);
+EM_JS_VAL(JsVal, wrap_async_generator, (JsVal gen, JsVal proxies), {
+  proxies = new Set(proxies);
   const msg =
     "This borrowed proxy was automatically destroyed " +
     "when an asynchronous generator completed execution. Try " +
@@ -3083,7 +3145,7 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
       return res;
     };
   }
-  return Hiwire.new_value({
+  return {
     get [Symbol.toStringTag]() {
       return "AsyncGenerator";
     },
@@ -3093,7 +3155,7 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
     next: wrap("next"),
     throw: wrap("throw"),
     return: wrap("return"),
-  });
+  };
 });
 // clang-format on
 
@@ -3102,58 +3164,51 @@ EM_JS_REF(JsRef, wrap_async_generator, (JsRef genid, JsRef proxiesid), {
  */
 static PyObject*
 JsMethod_Vectorcall(PyObject* self,
-                    PyObject* const* args,
+                    PyObject* const* pyargs,
                     size_t nargsf,
                     PyObject* kwnames)
 {
   bool success = false;
   JsRef proxies = NULL;
-  JsRef idargs = NULL;
-  JsRef idresult = NULL;
+  JsVal jsresult = JS_NULL;
   bool destroy_args = true;
-  JsRef async_done_callback = NULL;
   PyObject* pyresult = NULL;
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   proxies = JsArray_New();
-  idargs =
-    JsMethod_ConvertArgs(args, PyVectorcall_NARGS(nargsf), kwnames, proxies);
-  FAIL_IF_NULL(idargs);
-  idresult = hiwire_call_bound(JsProxy_REF(self), JsMethod_THIS(self), idargs);
-  FAIL_IF_NULL(idresult);
+  JsVal jsargs =
+    JsMethod_ConvertArgs(pyargs, PyVectorcall_NARGS(nargsf), kwnames, proxies);
+  FAIL_IF_JS_NULL(jsargs);
+  jsresult = JsvFunction_CallBound(
+    JsProxy_VAL(self), Jsv_from_ref(JsMethod_THIS(self)), jsargs);
+  FAIL_IF_JS_NULL(jsresult);
   // various cases where we want to extend the lifetime of the arguments:
   // 1. if the return value is a promise we extend arguments lifetime until the
   //    promise resolves.
   // 2. If the return value is a sync or async generator we extend the lifetime
   //    of the arguments until the generator returns.
-  bool is_promise = hiwire_is_promise(idresult);
-  bool is_generator = !is_promise && hiwire_is_generator(idresult);
+  bool is_promise = JsvPromise_Check(jsresult);
+  bool is_generator = !is_promise && JsvGenerator_Check(jsresult);
   bool is_async_generator =
-    !is_promise && !is_generator && hiwire_is_async_generator(idresult);
+    !is_promise && !is_generator && JsvAsyncGenerator_Check(jsresult);
   destroy_args = (!is_promise) && (!is_generator) && (!is_async_generator);
   if (is_generator) {
-    JsRef temp = wrap_generator(idresult, proxies);
-    FAIL_IF_NULL(temp);
-    hiwire_decref(idresult);
-    idresult = temp;
+    jsresult = wrap_generator(jsresult, hiwire_get(proxies));
   } else if (is_async_generator) {
-    JsRef temp = wrap_async_generator(idresult, proxies);
-    FAIL_IF_NULL(temp);
-    hiwire_decref(idresult);
-    idresult = temp;
+    jsresult = wrap_async_generator(jsresult, hiwire_get(proxies));
   }
+  FAIL_IF_JS_NULL(jsresult);
   if (is_promise) {
     // Since we will destroy the result of the Promise when it resolves we deny
     // the user access to the Promise (which would destroyed proxy exceptions).
     // Instead we return a Future. When the promise is ready, we resolve the
     // Future with the result from the Promise and destroy the arguments and
     // result.
-    async_done_callback = get_async_js_call_done_callback(proxies);
-    FAIL_IF_NULL(async_done_callback);
-    pyresult = wrap_promise(idresult, async_done_callback);
+    pyresult = wrap_promise(
+      jsresult, get_async_js_call_done_callback(hiwire_get(proxies)));
   } else {
-    pyresult = js2python(idresult);
+    pyresult = js2python_val(jsresult);
   }
   FAIL_IF_NULL(pyresult);
 
@@ -3164,18 +3219,15 @@ finally:
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
-    if (idresult != NULL && pyproxy_Check(idresult)) {
+    if (!Jsv_is_null(jsresult) && pyproxy_Check(jsresult)) {
       // TODO: don't destroy proxies with roundtrip = true?
-      JsArray_Push_unchecked(proxies, idresult);
+      JsvArray_Push(hiwire_get(proxies), jsresult);
     }
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   } else {
     gc_register_proxies(proxies);
   }
   hiwire_CLEAR(proxies);
-  hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idresult);
-  hiwire_CLEAR(async_done_callback);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -3191,25 +3243,23 @@ finally:
  */
 static PyObject*
 JsMethod_Construct(PyObject* self,
-                   PyObject* const* args,
+                   PyObject* const* pyargs,
                    Py_ssize_t nargs,
                    PyObject* kwnames)
 {
   bool success = false;
   JsRef proxies = NULL;
-  JsRef idargs = NULL;
-  JsRef idresult = NULL;
   PyObject* pyresult = NULL;
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
   proxies = JsArray_New();
-  idargs = JsMethod_ConvertArgs(args, nargs, kwnames, proxies);
-  FAIL_IF_NULL(idargs);
-  idresult = hiwire_construct(JsProxy_REF(self), idargs);
-  FAIL_IF_NULL(idresult);
-  pyresult = js2python(idresult);
+  JsVal jsargs = JsMethod_ConvertArgs(pyargs, nargs, kwnames, proxies);
+  FAIL_IF_JS_NULL(jsargs);
+  JsVal jsresult = JsvFunction_Construct(JsProxy_VAL(self), jsargs);
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;
@@ -3220,8 +3270,6 @@ finally:
                    "create_proxy or create_once_callable.");
   destroy_proxies(proxies, &msg);
   hiwire_CLEAR(proxies);
-  hiwire_CLEAR(idargs);
-  hiwire_CLEAR(idresult);
   if (!success) {
     Py_CLEAR(pyresult);
   }
