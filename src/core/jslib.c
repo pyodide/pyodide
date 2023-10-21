@@ -28,25 +28,108 @@ EM_JS(JsVal, JsvUTF8ToString, (const char* ptr), {
   return UTF8ToString(ptr);
 })
 
+
+// ==================== JsvArray API  ====================
+
 EM_JS(JsVal, JsvArray_New, (), {
   return [];
 });
 
-EM_JS(JsVal, JsvArray_Get, (JsVal array, int idx), {
+EM_JS_BOOL(bool, JsvArray_Check, (JsVal obj), {
+  if (Array.isArray(obj)) {
+    return true;
+  }
+  let typeTag = getTypeTag(obj);
+  // We want to treat some standard array-like objects as Array.
+  // clang-format off
+  if(typeTag === "[object HTMLCollection]" || typeTag === "[object NodeList]"){
+    // clang-format on
+    return true;
+  }
+  // What if it's a TypedArray?
+  // clang-format off
+  if (ArrayBuffer.isView(obj) && obj.constructor.name !== "DataView") {
+    // clang-format on
+    return true;
+  }
+  return false;
+});
+
+EM_JS_VAL(JsVal, JsvArray_Get, (JsVal array, int idx), {
   return nullToUndefined(array[idx]);
-})
+});
+
+EM_JS_NUM(errcode, JsvArray_Set, (JsVal array, int idx, JsVal val), {
+  obj[idx] = val;
+});
+
+EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal array, int idx), {
+  // Weird edge case: allow deleting an empty entry, but we raise a key error if
+  // access is attempted.
+  if (idx < 0 || idx >= obj.length) {
+    return ERROR_NUM;
+  }
+  return array.splice(idx, 1)[0];
+});
 
 EM_JS(int, JsvArray_Push, (JsVal array, JsVal obj), {
   return array.push(obj);
 });
 
+// clang-format off
 EM_JS(void, JsvArray_Extend, (JsVal arr, JsVal vals), {
-  arr.push(... vals);
+  arr.push(...vals);
 });
+// clang-format on
 
 EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal obj), {
   return ("slice" in obj) ? obj.slice() : Array.from(obj);
 })
+
+// clang-format off
+EM_JS_REF(JsVal,
+JsvArray_slice,
+(JsVal obj, int length, int start, int stop, int step),
+{
+  let result;
+  if (step === 1) {
+    result = obj.slice(start, stop);
+  } else {
+    result = Array.from({ length }, (_, i) => obj[start + i * step]);
+  }
+  return result;
+});
+
+
+EM_JS_NUM(errcode,
+JsvArray_slice_assign,
+(JsVal obj, int slicelength, int start, int stop, int step, int values_length, PyObject **values),
+{
+  let jsvalues = [];
+  for(let i = 0; i < values_length; i++){
+    const ref = _python2js_val(DEREF_U32(values, i));
+    if(ref === null){
+      return -1;
+    }
+    jsvalues.push(ref);
+  }
+  if (step === 1) {
+    obj.splice(start, slicelength, ...jsvalues);
+  } else {
+    if(values !== 0) {
+      for(const i = 0; i < slicelength; i ++){
+        obj.splice(start + i * step, 1, jsvalues[i]);
+      }
+    } else {
+      for(const i = slicelength - 1; i >= 0; i --){
+        obj.splice(start + i * step, 1);
+      }
+    }
+  }
+});
+
+// ==================== JsvObject API  ====================
+
 
 EM_JS(JsVal, JsvObject_New, (), {
   return {};
@@ -91,6 +174,8 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
   return JsvObject_CallMethodId(obj, name_id, args);
 }
 
+// ==================== JsvFunction API  ====================
+
 EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
   // clang-format off
   return typeof obj === 'function';
@@ -110,6 +195,8 @@ JsvFunction_Construct,
 });
 // clang-format on
 
+// ==================== JsvPromise API  ====================
+
 EM_JS_BOOL(bool, JsvPromise_Check, (JsVal obj), {
   // clang-format off
   return Hiwire.isPromise(obj);
@@ -121,6 +208,8 @@ EM_JS_VAL(JsVal, JsvPromise_Resolve, (JsVal obj), {
   return Promise.resolve(obj);
   // clang-format on
 });
+
+// ==================== Miscellaneous  ====================
 
 EM_JS_BOOL(bool, JsvGenerator_Check, (JsVal obj), {
   // clang-format off

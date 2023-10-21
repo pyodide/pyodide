@@ -514,7 +514,7 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-  if (track_proxies && Jsv_is_null(proxies)) {
+  if (track_proxies && JsvNull_Check(proxies)) {
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
   }
@@ -589,7 +589,7 @@ _JsMap_Set(ConversionContext context, JsRef map, JsRef key, JsRef value)
  * down to depth "depth".
  */
 EMSCRIPTEN_KEEPALIVE JsRef
-python2js_with_depth(PyObject* x, int depth, JsRef proxies)
+python2js_with_depth(PyObject* x, int depth, JsVal proxies)
 {
   return python2js_custom(x, depth, proxies, NULL, NULL);
 }
@@ -597,7 +597,7 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies)
 static JsRef
 _JsArray_New(ConversionContext context)
 {
-  return JsArray_New();
+  return hiwire_new(JsvArray_New());
 }
 
 EM_JS_NUM(int,
@@ -698,7 +698,7 @@ python2js_custom__create_jscontext,
 EMSCRIPTEN_KEEPALIVE JsRef
 python2js_custom(PyObject* x,
                  int depth,
-                 JsRef proxies,
+                 JsVal proxies,
                  JsRef dict_converter,
                  JsRef default_converter)
 {
@@ -706,14 +706,10 @@ python2js_custom(PyObject* x,
   if (cache == NULL) {
     return NULL;
   }
-  JsRef postprocess_list = JsArray_New();
-  if (postprocess_list == NULL) {
-    hiwire_CLEAR(cache);
-    return NULL;
-  }
+  JsRef postprocess_list = hiwire_new(JsvArray_New());
   ConversionContext context = { .cache = cache,
                                 .depth = depth,
-                                .proxies = proxies,
+                                .proxies = hiwire_new(proxies),
                                 .jscontext = NULL,
                                 .default_converter = false,
                                 .jspostprocess_list = postprocess_list };
@@ -737,9 +733,8 @@ python2js_custom(PyObject* x,
   JsRef result = _python2js(context, x);
   _python2js_handle_postprocess_list(context.jspostprocess_list, context.cache);
   hiwire_CLEAR(context.jspostprocess_list);
-  if (context.jscontext) {
-    hiwire_CLEAR(context.jscontext);
-  }
+  hiwire_CLEAR(context.jscontext);
+  hiwire_CLEAR(context.proxies);
   // Destroy the cache. Because the cache has raw JsRefs inside, we need to
   // manually dealloc them.
   _python2js_destroy_cache(cache);
@@ -812,28 +807,28 @@ to_js(PyObject* self,
     Py_INCREF(obj);
     return obj;
   }
-  JsRef proxies = NULL;
   JsRef js_dict_converter = NULL;
   JsRef js_default_converter = NULL;
   JsRef js_result = NULL;
   PyObject* py_result = NULL;
 
+  JsVal proxies;
   if (!create_proxies) {
-    proxies = NULL;
+    proxies = JS_NULL;
   } else if (pyproxies) {
     if (!JsProxy_Check(pyproxies)) {
       PyErr_SetString(PyExc_TypeError,
-                      "Expected a JsProxy for the pyproxies argument");
+                      "Expected a JsArray for the pyproxies argument");
       FAIL();
     }
-    proxies = JsProxy_AsJs(pyproxies);
-    if (!JsArray_Check(proxies)) {
+    proxies = JsProxy_Val(pyproxies);
+    if (!JsvArray_Check(proxies)) {
       PyErr_SetString(PyExc_TypeError,
-                      "Expected a Js Array for the pyproxies argument");
+                      "Expected a JsArray for the pyproxies argument");
       FAIL();
     }
   } else {
-    proxies = JsArray_New();
+    proxies = JsvArray_New();
   }
   if (py_dict_converter) {
     js_dict_converter = python2js(py_dict_converter);
@@ -857,7 +852,6 @@ finally:
   if (pyproxy_Check(Jsv_from_ref(js_default_converter))) {
     destroy_proxy(hiwire_get(js_default_converter), NULL);
   }
-  hiwire_CLEAR(proxies);
   hiwire_CLEAR(js_dict_converter);
   hiwire_CLEAR(js_default_converter);
   hiwire_CLEAR(js_result);
@@ -871,8 +865,8 @@ finally:
 //    method, that will get called (is this a good thing??)
 // 3. destroy_proxies won't destroy proxies with roundtrip set to true, this
 // will.
-EM_JS_NUM(errcode, destroy_proxies_js, (JsRef proxies_id), {
-  for (let proxy of Hiwire.get_value(proxies_id)) {
+EM_JS_NUM(errcode, destroy_proxies_js, (JsVal proxies_id), {
+  for (const proxy of proxies_id) {
     proxy.destroy();
   }
 })
@@ -886,10 +880,9 @@ destroy_proxies_(PyObject* self, PyObject* arg)
     return NULL;
   }
   bool success = false;
-  JsRef proxies = NULL;
 
-  proxies = JsProxy_AsJs(arg);
-  if (!JsArray_Check(proxies)) {
+  JsVal proxies = JsProxy_Val(arg);
+  if (!JsvArray_Check(proxies)) {
     PyErr_SetString(PyExc_TypeError,
                     "Expected a Js Array for the pyproxies argument");
     FAIL();
@@ -898,7 +891,6 @@ destroy_proxies_(PyObject* self, PyObject* arg)
 
   success = true;
 finally:
-  hiwire_CLEAR(proxies);
   if (success) {
     Py_RETURN_NONE;
   } else {

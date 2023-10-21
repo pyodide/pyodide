@@ -4,7 +4,7 @@
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
 
-int Jsv_is_null(JsVal);
+int JsvNull_Check(JsVal);
 
 JsVal
 Jsv_pop_ref(JsRef ref);
@@ -24,8 +24,17 @@ JsvUTF8ToString(const char*);
 JsVal
 JsvArray_New();
 
+bool
+JsvArray_Check(JsVal obj);
+
 JsVal
 JsvArray_Get(JsVal, int);
+
+errcode
+JsvArray_Set(JsVal, int, JsVal);
+
+JsVal
+JsvArray_Delete(JsVal, int);
 
 int JsvArray_Push(JsVal, JsVal);
 
@@ -33,6 +42,18 @@ void JsvArray_Extend(JsVal, JsVal);
 
 JsVal
 JsvArray_ShallowCopy(JsVal obj);
+
+JsVal
+JsvArray_slice(JsVal obj, int length, int start, int stop, int step);
+
+errcode
+JsvArray_slice_assign(JsVal idobj,
+                      int slicelength,
+                      int start,
+                      int stop,
+                      int step,
+                      int values_length,
+                      PyObject** values);
 
 JsVal
 JsvObject_New();

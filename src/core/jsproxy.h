@@ -59,6 +59,9 @@ JsProxy_Check(PyObject* x);
 JsRef
 JsProxy_AsJs(PyObject* x);
 
+JsVal
+JsProxy_Val(PyObject* x);
+
 /** Initialize global state for JsProxy functionality. */
 int
 JsProxy_init(PyObject* core_module);

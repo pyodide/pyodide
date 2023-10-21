@@ -50,11 +50,7 @@ _Py_IDENTIFIER(athrow);
 
 EM_JS(int, pyproxy_Check, (JsVal val), { return API.isPyProxy(val); });
 
-EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
-  if (x == 0) {
-    return 0;
-  }
-  let val = Hiwire.get_value(x);
+EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
   if (!API.isPyProxy(val)) {
     return 0;
   }
@@ -411,7 +407,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
   FAIL_IF_NULL(pydescr);
   JsVal cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
-  if (!Jsv_is_null(cached_proxy)) {
+  if (!JsvNull_Check(cached_proxy)) {
     result = cached_proxy;
     goto success;
   }
@@ -558,7 +554,6 @@ _pyproxy_slice_assign(PyObject* pyobj,
   PyObject* pyval = NULL;
   PyObject* pyresult = NULL;
   JsVal jsresult = JS_NULL;
-  JsRef proxies = NULL;
 
   pyval = js2python_val(val);
 
@@ -569,14 +564,12 @@ _pyproxy_slice_assign(PyObject* pyobj,
   pyresult = PySequence_GetSlice(pyobj, start, stop);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
-  proxies = JsArray_New();
-  FAIL_IF_NULL(proxies);
+  JsVal proxies = JsvArray_New();
   jsresult = Jsv_pop_ref(python2js_with_depth(pyresult, 1, proxies));
 
 finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pyval);
-  hiwire_CLEAR(proxies);
   return jsresult;
 }
 
@@ -1242,8 +1235,8 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
     // case, shape, strides and suboffsets MUST be NULL."
     // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
     result.largest_ptr += view.itemsize;
-    result.shape = JsArray_New();
-    result.strides = JsArray_New();
+    result.shape = hiwire_new(JsvArray_New());
+    result.strides = hiwire_new(JsvArray_New());
     result.c_contiguous = true;
     result.f_contiguous = true;
     goto success;

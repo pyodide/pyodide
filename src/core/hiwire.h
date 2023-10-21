@@ -374,54 +374,6 @@ hiwire_get_buffer_info(JsRef idobj,
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
 
-// ==================== JsArray API  ====================
-
-bool
-JsArray_Check(JsRef idobj);
-
-/**
- * Create a new JavaScript Array.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_New();
-
-/**
- * Get an object member by integer.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_Get(JsRef idobj, int idx);
-
-/**
- * Set an object member by integer.
- */
-errcode WARN_UNUSED
-JsArray_Set(JsRef idobj, int idx, JsRef idval);
-
-errcode WARN_UNUSED
-JsArray_Delete(JsRef idobj, int idx);
-
-JsRef
-JsArray_Splice(JsRef idobj, int idx);
-
-JsRef
-JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
-
-errcode
-JsArray_slice_assign(JsRef idobj,
-                     int slicelength,
-                     int start,
-                     int stop,
-                     int step,
-                     int values_length,
-                     PyObject** values);
-
-errcode
-JsArray_Clear(JsRef idobj);
-
 // ==================== JsObject API  ====================
 
 /**

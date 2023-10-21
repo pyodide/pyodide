@@ -30,7 +30,7 @@ pyproxy_Check(JsVal x);
  * is not NULL or a valid JsRef.
  */
 PyObject*
-pyproxy_AsPyObject(JsRef x);
+pyproxy_AsPyObject(JsVal x);
 
 /**
  * Destroy a list of PyProxies.

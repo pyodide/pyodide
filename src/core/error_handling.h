@@ -199,7 +199,7 @@ console_error_obj(JsRef obj);
 
 #define FAIL_IF_JS_NULL(ref)                                                   \
   do {                                                                         \
-    if (unlikely(Jsv_is_null(ref))) {                                          \
+    if (unlikely(JsvNull_Check(ref))) {                                        \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

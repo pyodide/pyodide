@@ -1374,6 +1374,30 @@ def test_jsarray_reverse(selenium):
     assert b.to_bytes() == bytes(l)
 
 
+@run_in_pyodide
+def test_array_empty_slot(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    a = run_js("[1,,2]")
+    with pytest.raises(IndexError):
+        a[1]
+
+    assert a.to_py() == [1, None, 2]
+    del a[1]
+    assert a.to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_array_pop(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("[1, 2, 3]")
+    assert a.pop() == 3
+    assert a.pop(0) == 1
+
+
 @std_hypothesis_settings
 @given(l=st.lists(st.integers()), slice=st.slices(50))
 @example(l=[0, 1], slice=slice(None, None, -1))
