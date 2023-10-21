@@ -294,6 +294,32 @@ EM_JS_REF(JsRef,
 });
 // clang-format on
 
+// Either syncifyHandler will get filled in by stack_switching/suspenders.mjs or
+// stack switching is not available so syncify will always return an error in
+// JsProxy.c and syncifyHandler will never be called.
+EMSCRIPTEN_KEEPALIVE JsRef (*syncifyHandler)(JsRef idpromise) = NULL;
+
+EM_JS(void, hiwire_syncify_handle_error, (void), {
+  if (!Module.syncify_error) {
+    // In this case we tried to syncify in a context where there is no
+    // suspender. JsProxy.c checks for this case and sets the error flag
+    // appropriately.
+    return;
+  }
+  Module.handle_js_error(Module.syncify_error);
+  delete Module.syncify_error;
+})
+
+JsRef
+hiwire_syncify(JsRef idpromise)
+{
+  JsRef result = syncifyHandler(idpromise);
+  if (result == 0) {
+    hiwire_syncify_handle_error();
+  }
+  return result;
+}
+
 EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format off
   let obj = Hiwire.get_value(obj_id);

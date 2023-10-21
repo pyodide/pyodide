@@ -169,6 +169,12 @@ hiwire_call_va(JsRef idobj, ...);
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
+/**
+ * Use stack switching to get the result of the promise synchronously.
+ */
+JsRef
+hiwire_syncify(JsRef idpromise);
+
 bool
 hiwire_HasMethod(JsRef obj, JsRef name);
 

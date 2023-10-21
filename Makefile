@@ -25,7 +25,7 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js
+src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
 # file so that when linked, Emscripten will include it. We use the same pathway
 # that EM_JS uses, but EM_JS is itself unsuitable. Why? Because the C
@@ -57,6 +57,7 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js
 	echo '()<::>{' >> tmp.dat                       # zero argument argspec and start body
 	cat src/js/generated/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
 	echo '}' >> tmp.dat                             # Close function body
+	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
 	cat src/core/pre.js >> tmp.dat                  # Execute pre.js too
 	echo "pyodide_js_init();" >> tmp.dat            # Then execute the function.
 
@@ -132,6 +133,9 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
+
+src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
+	node src/core/stack_switching/esbuild.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -224,10 +228,11 @@ benchmark: all
 
 clean:
 	rm -fr dist/*
-	rm -fr src/*/*.o
-	rm -fr src/*/*.gen.*
-	rm -fr src/js/generated
 	rm -fr node_modules
+	find src -name '*.o' -delete
+	find src -name '*.gen.*' -delete
+	find src -name '*.out.*' -delete
+	rm -fr src/js/generated
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
