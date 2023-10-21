@@ -211,12 +211,6 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             var = symlink.upper()
         env[var] = str(symlink_path)
 
-
-    from .templates import meson_cross_file_tmpl
-
-    meson_cross_file = symlink_dir / "emscripten.meson.cross"
-    meson_cross_file.write_text(meson_cross_file_tmpl.format(**env))
-
     return env
 
 

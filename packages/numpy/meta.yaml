@@ -12,7 +12,7 @@ source:
 build:
   backend-flags: |
     setup-args=-Dallow-noblas=true
-    setup-args=--cross-file=/src/pyodide-build/pyodide_build/tools/emscripten.meson.cross
+    setup-args=--cross-file=${MESON_CROSS_FILE}
   cflags: |
     -Wno-return-type
   cross-build-env: true

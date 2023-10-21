@@ -561,7 +561,7 @@ def handle_command_generate_args(  # noqa: C901
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
-        
+
     elif cmd == "cmake":
         # If it is a build/install command, or running a script, we don't do anything.
         if "--build" in line or "--install" in line or "-P" in line:

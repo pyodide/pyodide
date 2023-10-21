@@ -179,7 +179,7 @@ def get_build_environment_vars() -> dict[str, str]:
 
     if "PYO3_CONFIG_FILE" not in env:
         env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
-    
+
     if "MESON_CROSS_FILE" not in env:
         env["MESON_CROSS_FILE"] = str(tools_dir / "emscripten.meson.cross")
 

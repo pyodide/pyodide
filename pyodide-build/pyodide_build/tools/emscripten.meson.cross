@@ -1,4 +1,4 @@
-# [binaries] section is ommited intentionally so that we can override the compiler using environment variables
+# compilar paths are omitted intentionally so we can override the compiler using environment variables
 [binaries]
 exe_wrapper = 'node'
 
