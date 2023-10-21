@@ -229,11 +229,11 @@ finally:
 }
 
 #ifdef DEBUG_F
-EM_JS(void, log_python_error, (JsRef jserror), {
+EM_JS(void, log_python_error, (JsVal jserror), {
   // If a js error occurs in here, it's a weird edge case. This will probably
   // never happen, but for maximum paranoia let's double check.
   try {
-    let msg = Hiwire.get_value(jserror).message;
+    let msg = jserror.message;
     console.warn("Python exception:\n" + msg + "\n");
   } catch (e) {
     API.fatal_error(e);

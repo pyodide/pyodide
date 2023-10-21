@@ -60,7 +60,7 @@ EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
 EM_JS(void, destroy_proxies, (JsVal proxies, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
-    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
+    msg = _JsvString_FromId(msg_ptr);
   }
   for (let px of proxies) {
     Module.pyproxy_destroy(px, msg, false);
@@ -85,7 +85,7 @@ EM_JS(void, destroy_proxy, (JsVal px, Js_Identifier* msg_ptr), {
   }
   let msg = undefined;
   if (msg_ptr) {
-    msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
+    msg = _JsvString_FromId(msg_ptr);
   }
   Module.pyproxy_destroy(px, msg, false);
 });

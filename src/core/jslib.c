@@ -53,7 +53,7 @@ JsrString_FromId(Js_Identifier* id)
   return id->object;
 }
 
-JsVal
+EMSCRIPTEN_KEEPALIVE JsVal
 JsvString_FromId(Js_Identifier* id)
 {
   return Jsv_from_ref(JsrString_FromId(id));
@@ -246,7 +246,7 @@ EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
 });
 
 EM_JS_VAL(JsVal, JsvFunction_Call_OneArg, (JsVal func, JsVal arg), {
-  return nullToUndefined(func.apply(this_, [arg]));
+  return nullToUndefined(func.apply(null, [arg]));
 });
 
 // clang-format off
