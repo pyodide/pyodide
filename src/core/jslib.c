@@ -202,7 +202,7 @@ EM_JS_VAL(JsVal, JsvObject_CallMethod_OneArg, (JsVal obj, JsVal meth, JsVal arg)
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_TwoArgs, (JsVal obj, JsVal meth, JsVal arg1, JsVal arg2), {
-  return nullToUndefined(obj[meth](arg));
+  return nullToUndefined(obj[meth](arg1, arg2));
 })
 
 JsVal
