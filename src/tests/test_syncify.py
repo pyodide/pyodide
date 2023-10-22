@@ -93,6 +93,30 @@ def test_syncify_error(selenium):
 
 
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_null(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("pytest");
+        await pyodide.runPythonSyncifying(`
+            def temp():
+                from pyodide.code import run_js
+
+                asyncNull = run_js(
+                    '''
+                    (async function asyncThrow(){
+                        await sleep(50);
+                        return null;
+                    })
+                    '''
+                )
+                assert asyncNull().syncify() is None
+            temp()
+        `);
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_syncify_no_suspender(selenium):
     selenium.run_js(
         """

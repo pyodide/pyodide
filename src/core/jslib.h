@@ -135,6 +135,9 @@ JsvPromise_Check(JsVal obj);
 JsVal
 JsvPromise_Resolve(JsVal obj);
 
+JsVal
+JsvPromise_Syncify(JsVal promise);
+
 bool
 JsvGenerator_Check(JsVal obj);
 

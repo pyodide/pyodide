@@ -2881,20 +2881,18 @@ JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
 PyObject*
 JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
 {
-  JsRef jsresult = NULL;
   PyObject* result = NULL;
 
-  jsresult = hiwire_syncify(self->js);
-  if (jsresult == NULL) {
+  JsVal jsresult = JsvPromise_Syncify(JsProxy_VAL(self));
+  if (JsvNull_Check(jsresult)) {
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_RuntimeError, "No suspender");
     }
     FAIL();
   }
-  result = js2python(jsresult);
+  result = js2python_val(jsresult);
 
 finally:
-  hiwire_CLEAR(jsresult);
   return result;
 }
 

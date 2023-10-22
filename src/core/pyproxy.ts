@@ -525,7 +525,7 @@ Module.callPyObjectKwargs = function (
  * Pretty much everything is the same as callPyObjectKwargs except we use the
  * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
  * causes the VM to invent a suspender and call a wrapper module which stores it
- * into suspenderGlobal (for later use by hiwire_syncify). Then it calls
+ * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
  * _pyproxy_apply with the same arguments we gave to `promisingApply`.
  */
 async function callPyObjectKwargsSuspending(
