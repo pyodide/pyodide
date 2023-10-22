@@ -4,6 +4,7 @@ exe_wrapper = 'node'
 
 [properties]
 needs_exe_wrapper = true
+skip_sanity_check = true
 longdouble_format = 'IEEE_QUAD_LE' # for numpy
 
 [host_machine]
