@@ -1081,20 +1081,19 @@ def test_memoryview_conversion(selenium):
 def test_python2js_with_depth(selenium):
     selenium.run_js(
         """
-        let x = pyodide.runPython(`
+        const x = pyodide.runPython(`
             class Test: pass
             [Test(), [Test(), [Test(), [Test()]]]]
         `);
-        let Module = pyodide._module;
-        let proxies = [];
-        let proxies_id = Module.hiwire.new_value(proxies);
+        const Module = pyodide._module;
+        const proxies = [];
 
-        let result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies_id));
+        const result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies));
         Module.hiwire.decref(proxies_id);
 
         assert(() => proxies.length === 4);
 
-        let result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
+        const result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
         const sortFunc = (x, y) => Module.PyProxy_getPtr(x) < Module.PyProxy_getPtr(y);
         proxies.sort(sortFunc);
         result_proxies.sort(sortFunc);
@@ -1102,7 +1101,7 @@ def test_python2js_with_depth(selenium):
             assert(() => proxies[i] == result_proxies[i]);
         }
         x.destroy();
-        for(let px of proxies){
+        for(const px of proxies){
             px.destroy();
         }
         """
