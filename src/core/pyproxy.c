@@ -50,30 +50,24 @@ _Py_IDENTIFIER(athrow);
 
 EM_JS(int, pyproxy_Check, (JsVal val), { return API.isPyProxy(val); });
 
-EM_JS(PyObject*, pyproxy_AsPyObject, (JsRef x), {
-  if (x == 0) {
-    return 0;
-  }
-  let val = Hiwire.get_value(x);
+EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
   if (!API.isPyProxy(val)) {
     return 0;
   }
   return Module.PyProxy_getPtr(val);
 });
 
-EM_JS(void, destroy_proxies, (JsRef proxies_id, Js_Identifier* msg_ptr), {
+EM_JS(void, destroy_proxies, (JsVal proxies, Js_Identifier* msg_ptr), {
   let msg = undefined;
   if (msg_ptr) {
     msg = Hiwire.get_value(_JsString_FromId(msg_ptr));
   }
-  let proxies = Hiwire.get_value(proxies_id);
   for (let px of proxies) {
     Module.pyproxy_destroy(px, msg, false);
   }
 });
 
-EM_JS(void, gc_register_proxies, (JsRef proxies_id), {
-  let proxies = Hiwire.get_value(proxies_id);
+EM_JS(void, gc_register_proxies, (JsVal proxies), {
   for (let px of proxies) {
     Module.gc_register_proxy(Module.PyProxy_getAttrs(px).shared);
   }
@@ -413,7 +407,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   int is_method = _PyObject_GetMethod(pyobj, pykey, &pydescr);
   FAIL_IF_NULL(pydescr);
   JsVal cached_proxy = proxy_cache_get(proxyCache, pydescr); /* borrowed */
-  if (!Jsv_is_null(cached_proxy)) {
+  if (!JsvNull_Check(cached_proxy)) {
     result = cached_proxy;
     goto success;
   }
@@ -560,7 +554,6 @@ _pyproxy_slice_assign(PyObject* pyobj,
   PyObject* pyval = NULL;
   PyObject* pyresult = NULL;
   JsVal jsresult = JS_NULL;
-  JsRef proxies = NULL;
 
   pyval = js2python_val(val);
 
@@ -571,14 +564,12 @@ _pyproxy_slice_assign(PyObject* pyobj,
   pyresult = PySequence_GetSlice(pyobj, start, stop);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
-  proxies = JsArray_New();
-  FAIL_IF_NULL(proxies);
-  jsresult = Jsv_pop_ref(python2js_with_depth(pyresult, 1, proxies));
+  JsVal proxies = JsvArray_New();
+  jsresult = JsRef_pop(python2js_with_depth(pyresult, 1, proxies));
 
 finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pyval);
-  hiwire_CLEAR(proxies);
   return jsresult;
 }
 
@@ -1244,8 +1235,8 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
     // case, shape, strides and suboffsets MUST be NULL."
     // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
     result.largest_ptr += view.itemsize;
-    result.shape = JsArray_New();
-    result.strides = JsArray_New();
+    result.shape = hiwire_new(JsvArray_New());
+    result.strides = hiwire_new(JsvArray_New());
     result.c_contiguous = true;
     result.f_contiguous = true;
     goto success;
@@ -1294,21 +1285,19 @@ success:
 }
 
 // clang-format off
-EM_JS_REF(JsRef,
+EM_JS_REF(JsVal,
 pyproxy_new_ex,
 (PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
 {
-  return Hiwire.new_value(
-    Module.pyproxy_new(ptrobj, {
+  return Module.pyproxy_new(ptrobj, {
       props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
       gcRegister,
-    })
-  );
+    });
 });
 // clang-format on
 
-EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
-  return Hiwire.new_value(Module.pyproxy_new(ptrobj));
+EM_JS_REF(JsVal, pyproxy_new, (PyObject * ptrobj), {
+  return Module.pyproxy_new(ptrobj);
 });
 
 /**
@@ -1317,7 +1306,7 @@ EM_JS_REF(JsRef, pyproxy_new, (PyObject * ptrobj), {
  * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
  * also exposed in the pyodide Python module.
  */
-EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
+EM_JS_REF(JsVal, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
   function wrapper(... args)
@@ -1341,13 +1330,13 @@ EM_JS_REF(JsRef, create_once_callable, (PyObject * obj), {
     _Py_DecRef(obj);
   };
   Module.finalizationRegistry.register(wrapper, [ obj, undefined ], wrapper);
-  return Hiwire.new_value(wrapper);
+  return wrapper;
 });
 
 static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
-  JsRef ref = create_once_callable(obj);
+  JsRef ref = hiwire_new(create_once_callable(obj));
   PyObject* result = JsProxy_create(ref);
   hiwire_decref(ref);
   return result;
@@ -1455,11 +1444,7 @@ create_proxy(PyObject* self,
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
-
-  JsRef ref = pyproxy_new_ex(obj, capture_this, roundtrip, true);
-  PyObject* result = JsProxy_create(ref);
-  hiwire_decref(ref);
-  return result;
+  return JsProxy_create_val(pyproxy_new_ex(obj, capture_this, roundtrip, true));
 }
 
 static PyMethodDef methods[] = {

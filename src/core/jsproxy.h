@@ -14,7 +14,7 @@
  *
  */
 int
-JsProxy_compute_typeflags(JsRef obj);
+JsProxy_compute_typeflags(JsVal obj);
 
 PyObject*
 JsProxy_create_with_type(int type_flags, JsRef object, JsRef this);
@@ -58,6 +58,9 @@ JsProxy_Check(PyObject* x);
  */
 JsRef
 JsProxy_AsJs(PyObject* x);
+
+JsVal
+JsProxy_Val(PyObject* x);
 
 /** Initialize global state for JsProxy functionality. */
 int

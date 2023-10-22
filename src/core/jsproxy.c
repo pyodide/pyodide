@@ -315,18 +315,6 @@ JsProxy_js_id_private(PyObject* mod, PyObject* obj)
   return PyLong_FromLong((int)idval);
 }
 
-void
-setReservedError(char* action, char* word)
-{
-  PyErr_Format(PyExc_AttributeError,
-               "The string '%s' is a Python reserved word. To %s an attribute "
-               "on a JS object called '%s' use '%s_'.",
-               word,
-               action,
-               word,
-               word);
-}
-
 EM_JS(bool, isReservedWord, (int word), {
   if (!Module.pythonReservedWords) {
     Module.pythonReservedWords = new Set([
@@ -394,7 +382,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-  if (strcmp(key, "keys") == 0 && JsArray_Check(JsProxy_REF(self))) {
+  if (strcmp(key, "keys") == 0 && JsvArray_Check(JsProxy_VAL(self))) {
     // Sometimes Python APIs test for the existence of a "keys" function
     // to decide whether something should be treated like a dict.
     // This mixes badly with the javascript Array.keys API, so pretend that it
@@ -405,7 +393,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   }
 
   jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
-  if (Jsv_is_null(jsresult)) {
+  if (JsvNull_Check(jsresult)) {
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
   }
@@ -613,15 +601,14 @@ finally:
 PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
-  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
+  JsVal proxies;
   if (arg) {
-    proxies = JsArray_New();
-    FAIL_IF_NULL(proxies);
+    proxies = JsvArray_New();
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
@@ -629,10 +616,9 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   FAIL_IF_NULL(next_res);
   ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
-  if (proxies) {
+  if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
-  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return ret;
@@ -1120,13 +1106,13 @@ finally:
 static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
-  JsRef proxies = NULL;
   JsRef jsarg = Js_undefined;
   JsRef next_res = NULL;
   PyObject* result = NULL;
+
+  JsVal proxies;
   if (arg != NULL) {
-    proxies = JsArray_New();
-    FAIL_IF_NULL(proxies);
+    proxies = JsvArray_New();
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
@@ -1135,10 +1121,9 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   result = _agen_handle_result(next_res, false);
 
 finally:
-  if (proxies) {
+  if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
-  hiwire_CLEAR(proxies);
   hiwire_CLEAR(jsarg);
   hiwire_CLEAR(next_res);
   return result;
@@ -1291,11 +1276,10 @@ JsProxy_item_array(PyObject* o, Py_ssize_t i)
 {
   PyObject* pyresult = NULL;
   JsProxy* self = (JsProxy*)o;
-  JsRef jsresult = JsArray_Get(self->js, i);
-  FAIL_IF_NULL(jsresult);
-  pyresult = js2python(jsresult);
+  JsVal jsresult = JsvArray_Get(JsProxy_VAL(self), i);
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
 finally:
-  hiwire_CLEAR(jsresult);
   return pyresult;
 }
 
@@ -1306,7 +1290,6 @@ static PyObject*
 JsArray_subscript(PyObject* o, PyObject* item)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsresult = NULL;
   PyObject* pyresult = NULL;
 
   if (PyIndex_Check(item)) {
@@ -1318,14 +1301,14 @@ JsArray_subscript(PyObject* o, PyObject* item)
       FAIL_IF_MINUS_ONE(length);
       i += length;
     }
-    jsresult = JsArray_Get(self->js, i);
-    if (jsresult == NULL) {
+    JsVal jsresult = JsvArray_Get(JsProxy_VAL(self), i);
+    if (JsvNull_Check(jsresult)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
       FAIL();
     }
-    pyresult = js2python(jsresult);
+    pyresult = js2python_val(jsresult);
     goto success;
   }
   if (PySlice_Check(item)) {
@@ -1335,13 +1318,15 @@ JsArray_subscript(PyObject* o, PyObject* item)
     FAIL_IF_MINUS_ONE(length);
     // PySlice_AdjustIndices is "Always successful" per the docs.
     Py_ssize_t slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
+    JsVal jsresult;
     if (slicelength <= 0) {
-      jsresult = JsArray_New();
+      jsresult = JsvArray_New();
     } else {
-      jsresult = JsArray_slice(self->js, slicelength, start, stop, step);
+      jsresult =
+        JsvArray_slice(JsProxy_VAL(self), slicelength, start, stop, step);
     }
-    FAIL_IF_NULL(jsresult);
-    pyresult = js2python(jsresult);
+    FAIL_IF_JS_NULL(jsresult);
+    pyresult = js2python_val(jsresult);
     goto success;
   }
   PyErr_Format(PyExc_TypeError,
@@ -1349,21 +1334,18 @@ JsArray_subscript(PyObject* o, PyObject* item)
                Py_TYPE(item)->tp_name);
 success:
 finally:
-  hiwire_CLEAR(jsresult);
   return pyresult;
 }
 
 PyObject*
 JsArray_sq_item(PyObject* o, Py_ssize_t i)
 {
-  JsRef jsresult = NULL;
   PyObject* pyresult = NULL;
 
-  jsresult = JsArray_Get(JsProxy_REF(o), i);
-  FAIL_IF_NULL(jsresult);
-  pyresult = js2python(jsresult);
+  JsVal jsresult = JsvArray_Get(JsProxy_VAL(o), i);
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
 finally:
-  hiwire_CLEAR(jsresult);
   return pyresult;
 }
 
@@ -1371,23 +1353,21 @@ Py_ssize_t
 JsArray_sq_ass_item(PyObject* o, Py_ssize_t i, PyObject* pyval)
 {
   bool success = false;
-  JsRef jsval = NULL;
 
   if (pyval == NULL) {
     // Delete
-    jsval = JsArray_Splice(JsProxy_REF(o), i);
-    FAIL_IF_NULL(jsval);
+    JsVal jsval = JsvArray_Delete(JsProxy_VAL(o), i);
+    FAIL_IF_JS_NULL(jsval);
     success = true;
     goto finally;
   }
 
-  jsval = python2js(pyval);
-  FAIL_IF_NULL(jsval);
-  FAIL_IF_MINUS_ONE(JsArray_Set(JsProxy_REF(o), i, jsval));
+  JsVal jsval = python2js_val(pyval);
+  FAIL_IF_JS_NULL(jsval);
+  FAIL_IF_MINUS_ONE(JsvArray_Set(JsProxy_VAL(o), i, jsval));
 
   success = true;
 finally:
-  hiwire_CLEAR(jsval);
   return success ? 0 : -1;
 }
 
@@ -1439,7 +1419,6 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 {
   JsProxy* self = (JsProxy*)o;
   bool success = false;
-  JsRef idvalue = NULL;
   PyObject* seq = NULL;
   Py_ssize_t i;
   if (PySlice_Check(item)) {
@@ -1475,7 +1454,8 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
         start = stop + step * (slicelength - 1) - 1;
         step = -step;
       }
-      JsArray_slice_assign(self->js, slicelength, start, stop, step, 0, NULL);
+      JsvArray_slice_assign(
+        JsProxy_VAL(self), slicelength, start, stop, step, 0, NULL);
     } else {
       if (step != 1 && !slicelength) {
         // At this point, assigning to an extended slice of length 0 must be a
@@ -1483,13 +1463,13 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
         success = true;
         goto finally;
       }
-      JsArray_slice_assign(self->js,
-                           slicelength,
-                           start,
-                           stop,
-                           step,
-                           PySequence_Fast_GET_SIZE(seq),
-                           PySequence_Fast_ITEMS(seq));
+      JsvArray_slice_assign(JsProxy_VAL(self),
+                            slicelength,
+                            start,
+                            stop,
+                            step,
+                            PySequence_Fast_GET_SIZE(seq),
+                            PySequence_Fast_ITEMS(seq));
     }
     success = true;
     goto finally;
@@ -1510,21 +1490,20 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
   }
 
   if (pyvalue == NULL) {
-    if (JsArray_Delete(self->js, i)) {
+    if (JsvNull_Check(JsvArray_Delete(JsProxy_VAL(self), i))) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_IndexError, item);
       }
       FAIL();
     }
   } else {
-    idvalue = python2js(pyvalue);
-    FAIL_IF_NULL(idvalue);
-    FAIL_IF_MINUS_ONE(JsArray_Set(self->js, i, idvalue));
+    JsVal jsvalue = python2js_val(pyvalue);
+    FAIL_IF_JS_NULL(jsvalue);
+    FAIL_IF_MINUS_ONE(JsvArray_Set(JsProxy_VAL(self), i, jsvalue));
   }
   success = true;
 finally:
   Py_CLEAR(seq);
-  hiwire_CLEAR(idvalue);
   return success ? 0 : -1;
 }
 
@@ -1548,10 +1527,9 @@ JsTypedArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
 }
 
 static int
-JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
+JsArray_extend_by_python_iterable(JsVal jsarray, PyObject* iterable)
 {
   PyObject* it = NULL;
-  JsRef jsval = NULL;
   bool success = false;
 
   if (PyList_CheckExact(iterable) || PyTuple_CheckExact(iterable)) {
@@ -1572,10 +1550,9 @@ JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
     /* populate the end of self with iterable's items */
     PyObject** src = PySequence_Fast_ITEMS(iterable);
     for (int i = 0; i < n; i++) {
-      jsval = python2js(src[i]);
-      FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
-      hiwire_CLEAR(jsval);
+      JsVal jsval = python2js_val(src[i]);
+      FAIL_IF_JS_NULL(jsval);
+      JsvArray_Push(jsarray, jsval);
     }
   } else {
     Py_INCREF(iterable);
@@ -1596,21 +1573,19 @@ JsArray_extend_by_python_iterable(JsRef jsarray, PyObject* iterable)
         }
         break;
       }
-      JsRef jsval = python2js(item);
-      FAIL_IF_NULL(jsval);
-      FAIL_IF_MINUS_ONE(JsArray_Push(jsarray, jsval));
-      hiwire_CLEAR(jsval);
+      JsVal jsval = python2js_val(item);
+      FAIL_IF_JS_NULL(jsval);
+      JsvArray_Push(jsarray, jsval);
     }
   }
   success = true;
 finally:
-  hiwire_CLEAR(jsval);
   Py_CLEAR(it);
   return success ? 0 : -1;
 }
 
-EM_JS(void, destroy_jsarray_entries, (JsRef idarray), {
-  for (let v of Hiwire.get_value(idarray)) {
+EM_JS(void, destroy_jsarray_entries, (JsVal array), {
+  for (let v of array) {
     // clang-format off
     try {
       if(typeof v.destroy === "function"){
@@ -1626,20 +1601,17 @@ EM_JS(void, destroy_jsarray_entries, (JsRef idarray), {
 static PyObject*
 JsArray_extend_meth(PyObject* o, PyObject* iterable)
 {
-  JsRef temp = NULL;
   bool success = false;
 
-  temp = JsArray_New();
-  FAIL_IF_NULL(temp);
+  JsVal temp = JsvArray_New();
   // Make sure that if anything goes wrong the original array stays unmodified
   FAIL_IF_MINUS_ONE(JsArray_extend_by_python_iterable(temp, iterable));
-  FAIL_IF_MINUS_ONE(JsArray_Extend(JsProxy_REF(o), temp));
+  JsvArray_Extend(JsProxy_VAL(o), temp);
   success = true;
 finally:
   if (!success) {
     destroy_jsarray_entries(temp);
   }
-  hiwire_CLEAR(temp);
   if (success) {
     Py_RETURN_NONE;
   } else {
@@ -1656,21 +1628,19 @@ static PyMethodDef JsArray_extend_MethodDef = {
 static PyObject*
 JsArray_sq_concat(PyObject* self, PyObject* other)
 {
-  JsRef jsresult = NULL;
   PyObject* pyresult = NULL;
   bool success = true;
 
-  jsresult = JsArray_ShallowCopy(JsProxy_REF(self));
-  FAIL_IF_NULL(jsresult);
-  pyresult = js2python(jsresult);
+  JsVal jsresult = JsvArray_ShallowCopy(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(
-    JsArray_extend_by_python_iterable(JsProxy_REF(pyresult), other));
+    JsArray_extend_by_python_iterable(JsProxy_VAL(pyresult), other));
 finally:
   if (!success) {
     Py_CLEAR(pyresult);
   }
-  hiwire_CLEAR(jsresult);
   return pyresult;
 }
 
@@ -1725,17 +1695,16 @@ finally:
 }
 
 static PyObject*
-JsArray_append(PyObject* o, PyObject* arg)
+JsArray_append(PyObject* self, PyObject* arg)
 {
-  JsProxy* self = (JsProxy*)o;
   bool success = false;
-  JsRef jsarg = NULL;
-  jsarg = python2js(arg);
-  FAIL_IF_NULL(jsarg);
-  FAIL_IF_MINUS_ONE(JsArray_Push(self->js, jsarg));
+
+  JsVal jsarg = python2js_val(arg);
+  FAIL_IF_JS_NULL(jsarg);
+  JsvArray_Push(JsProxy_VAL(self), jsarg);
+
   success = true;
 finally:
-  hiwire_CLEAR(jsarg);
   if (success) {
     Py_RETURN_NONE;
   } else {
@@ -1767,7 +1736,6 @@ static PyObject*
 JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsresult = NULL;
   PyObject* pyresult = NULL;
   PyObject* iobj = NULL;
   Py_ssize_t index = -1;
@@ -1799,9 +1767,9 @@ JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
     FAIL();
   }
 
-  jsresult = JsArray_Splice(self->js, index);
-  FAIL_IF_NULL(jsresult);
-  pyresult = js2python(jsresult);
+  JsVal jsresult = JsvArray_Delete(JsProxy_VAL(self), index);
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python_val(jsresult);
 
 finally:
   Py_CLEAR(iobj);
@@ -1879,17 +1847,16 @@ JsArray_index(PyObject* o, PyObject* args)
     stop = length;
   }
 
-  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
+  JsRef jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     for (int i = start; i < stop; i++) {
-      JsRef jsobj = JsArray_Get(self->js, i);
+      JsVal jsobj = JsvArray_Get(JsProxy_VAL(self), i);
       // We know `value` is not a `JsProxy`: if it were we would have taken the
       // other branch. Thus, if `jsobj` is not a `PyProxy`,
       // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
       // up, only perform the check if the object is a `PyProxy`.
       PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
-      hiwire_decref(jsobj);
       if (pyobj == NULL) {
         continue;
       }
@@ -1939,7 +1906,7 @@ static PyObject*
 JsArray_count(PyObject* o, PyObject* value)
 {
   JsProxy* self = (JsProxy*)o;
-  JsRef jsvalue = python2js_track_proxies(value, NULL, true);
+  JsRef jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (jsvalue == NULL) {
     PyErr_Clear();
     int result = 0;
@@ -1948,13 +1915,12 @@ JsArray_count(PyObject* o, PyObject* value)
       return NULL;
     }
     for (int i = 0; i < stop; i++) {
-      JsRef jsobj = JsArray_Get(self->js, i);
+      JsVal jsobj = JsvArray_Get(JsProxy_VAL(self), i);
       // We know `value` is not a `JsProxy`: if it were we would have taken the
       // other branch. Thus, if `jsobj` is not a `PyProxy`,
       // `PyObject_RichCompareBool` is guaranteed to return false. As a speed
       // up, only perform the check if the object is a `PyProxy`.
       PyObject* pyobj = pyproxy_AsPyObject(jsobj); /* borrowed! */
-      hiwire_decref(jsobj);
       if (pyobj == NULL) {
         continue;
       }
@@ -2058,35 +2024,30 @@ finally:
  * Controlled by HAS_SET.
  */
 static int
-JsProxy_ass_subscript(PyObject* o, PyObject* pyidx, PyObject* pyvalue)
+JsProxy_ass_subscript(PyObject* self, PyObject* pyidx, PyObject* pyvalue)
 {
-  JsProxy* self = (JsProxy*)o;
   bool success = false;
-  JsRef ididx = NULL;
-  JsRef idvalue = NULL;
-  JsRef jsresult = NULL;
-  ididx = python2js(pyidx);
+
+  JsVal idx = python2js_val(pyidx);
+  FAIL_IF_JS_NULL(idx);
   if (pyvalue == NULL) {
-    jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_delete, ididx);
-    FAIL_IF_NULL(jsresult);
-    if (!hiwire_to_bool(jsresult)) {
+    JsVal result =
+      JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_delete, idx);
+    FAIL_IF_JS_NULL(result);
+    if (!Jsv_to_bool(result)) {
       if (!PyErr_Occurred()) {
         PyErr_SetObject(PyExc_KeyError, pyidx);
       }
       FAIL();
     }
   } else {
-    idvalue = python2js(pyvalue);
-    FAIL_IF_NULL(idvalue);
-    jsresult =
-      hiwire_CallMethodId_va(self->js, &JsId_set, ididx, idvalue, NULL);
-    FAIL_IF_NULL(jsresult);
+    JsVal value = python2js_val(pyvalue);
+    FAIL_IF_JS_NULL(value);
+    FAIL_IF_JS_NULL(
+      JsvObject_CallMethodId_TwoArgs(JsProxy_VAL(self), &JsId_set, idx, value));
   }
   success = true;
 finally:
-  hiwire_CLEAR(jsresult);
-  hiwire_CLEAR(idvalue);
-  hiwire_CLEAR(ididx);
   return success ? 0 : -1;
 }
 
@@ -2442,7 +2403,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
-  if (JsArray_Check(JsProxy_REF(self))) {
+  if (JsvArray_Check(JsProxy_VAL(self))) {
     // See comment about Array.keys in GetAttr
     keys_str = PyUnicode_FromString("keys");
     FAIL_IF_NULL(keys_str);
@@ -2498,8 +2459,8 @@ JsProxy_toPy(PyObject* self,
   }
   PyObject* result =
     js2python_convert(JsProxy_REF(self), depth, default_converter_js);
-  if (pyproxy_Check(Jsv_from_ref(default_converter_js))) {
-    destroy_proxy(Jsv_from_ref(default_converter_js), NULL);
+  if (pyproxy_Check(JsRef_toVal(default_converter_js))) {
+    destroy_proxy(JsRef_toVal(default_converter_js), NULL);
   }
   hiwire_decref(default_converter_js);
   return result;
@@ -2511,6 +2472,31 @@ static PyMethodDef JsProxy_toPy_MethodDef = {
   METH_FASTCALL | METH_KEYWORDS,
 };
 
+EM_JS_BOOL(bool, JsProxy_Bool_js, (JsVal val), {
+  // clang-format off
+  if (!val) {
+    return false;
+  }
+  // We want to return false on container types with size 0.
+  if (val.size === 0) {
+    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
+      // HTMLSelectElement and HTMLInputElement can have size 0 but we still
+      // want to return true.
+      return true;
+    }
+    // I think other things with a size are container types.
+    return false;
+  }
+  if (val.length === 0 && JsvArray_Check(val)) {
+    return false;
+  }
+  if (val.byteLength === 0) {
+    return false;
+  }
+  return true;
+  // clang-format on
+});
+
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
  * the object is falsey in JavaScript, or if it has a `size` field equal to 0,
@@ -2521,10 +2507,9 @@ static PyMethodDef JsProxy_toPy_MethodDef = {
  * be falsey.
  */
 static int
-JsProxy_Bool(PyObject* o)
+JsProxy_Bool(PyObject* self)
 {
-  JsProxy* self = (JsProxy*)o;
-  return hiwire_get_bool(self->js) ? 1 : 0;
+  return JsProxy_Bool_js(JsProxy_VAL(self));
 }
 
 /**
@@ -2634,7 +2619,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
-  if (Jsv_is_null(result_promise)) {
+  if (JsvNull_Check(result_promise)) {
     Py_CLEAR(onfulfilled);
     Py_CLEAR(onrejected);
     FAIL();
@@ -2668,7 +2653,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
-  if (Jsv_is_null(result_promise)) {
+  if (JsvNull_Check(result_promise)) {
     Py_DECREF(onrejected);
     FAIL();
   }
@@ -2694,29 +2679,26 @@ static PyMethodDef JsProxy_catch_MethodDef = {
 static PyObject*
 JsProxy_finally(JsProxy* self, PyObject* onfinally)
 {
-  JsRef proxy = NULL;
-  JsRef promise_id = NULL;
-  JsRef result_promise = NULL;
   PyObject* result = NULL;
 
-  promise_id = hiwire_resolve_promise(self->js);
-  FAIL_IF_NULL(promise_id);
+  JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(promise);
   // Finally method is called no matter what so we can use
   // `create_once_callable`.
-  proxy = create_once_callable(onfinally);
-  FAIL_IF_NULL(proxy);
-  result_promise =
-    hiwire_CallMethodId_va(promise_id, &JsId_finally, proxy, NULL);
-  if (result_promise == NULL) {
+  JsVal proxy = create_once_callable(onfinally);
+  FAIL_IF_JS_NULL(proxy);
+  JsVal result_promise =
+    JsvObject_CallMethodId_OneArg(promise, &JsId_finally, proxy);
+  if (JsvNull_Check(result_promise)) {
     Py_DECREF(onfinally);
     FAIL();
   }
-  result = JsProxy_create(result_promise);
+
+  JsRef result_promise_ref = hiwire_new(result_promise);
+  result = JsProxy_create(result_promise_ref);
+  hiwire_CLEAR(result_promise_ref);
 
 finally:
-  hiwire_CLEAR(promise_id);
-  hiwire_CLEAR(proxy);
-  hiwire_CLEAR(result_promise);
   return result;
 }
 
@@ -3004,7 +2986,7 @@ JsVal
 JsMethod_ConvertArgs(PyObject* const* pyargs,
                      Py_ssize_t nargs,
                      PyObject* kwnames,
-                     JsRef proxies)
+                     JsVal proxies)
 {
   JsVal jsargs = JS_NULL;
   JsRef idarg = NULL;
@@ -3169,19 +3151,18 @@ JsMethod_Vectorcall(PyObject* self,
                     PyObject* kwnames)
 {
   bool success = false;
-  JsRef proxies = NULL;
   JsVal jsresult = JS_NULL;
   bool destroy_args = true;
   PyObject* pyresult = NULL;
+  JsVal proxies = JsvArray_New();
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
-  proxies = JsArray_New();
   JsVal jsargs =
     JsMethod_ConvertArgs(pyargs, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
   jsresult = JsvFunction_CallBound(
-    JsProxy_VAL(self), Jsv_from_ref(JsMethod_THIS(self)), jsargs);
+    JsProxy_VAL(self), JsRef_toVal(JsMethod_THIS(self)), jsargs);
   FAIL_IF_JS_NULL(jsresult);
   // various cases where we want to extend the lifetime of the arguments:
   // 1. if the return value is a promise we extend arguments lifetime until the
@@ -3194,9 +3175,9 @@ JsMethod_Vectorcall(PyObject* self,
     !is_promise && !is_generator && JsvAsyncGenerator_Check(jsresult);
   destroy_args = (!is_promise) && (!is_generator) && (!is_async_generator);
   if (is_generator) {
-    jsresult = wrap_generator(jsresult, hiwire_get(proxies));
+    jsresult = wrap_generator(jsresult, proxies);
   } else if (is_async_generator) {
-    jsresult = wrap_async_generator(jsresult, hiwire_get(proxies));
+    jsresult = wrap_async_generator(jsresult, proxies);
   }
   FAIL_IF_JS_NULL(jsresult);
   if (is_promise) {
@@ -3205,8 +3186,7 @@ JsMethod_Vectorcall(PyObject* self,
     // Instead we return a Future. When the promise is ready, we resolve the
     // Future with the result from the Promise and destroy the arguments and
     // result.
-    pyresult = wrap_promise(
-      jsresult, get_async_js_call_done_callback(hiwire_get(proxies)));
+    pyresult = wrap_promise(jsresult, get_async_js_call_done_callback(proxies));
   } else {
     pyresult = js2python_val(jsresult);
   }
@@ -3219,15 +3199,14 @@ finally:
     // If we succeeded and the result was a promise then we destroy the
     // arguments in async_done_callback instead of here. Otherwise, destroy the
     // arguments and return value now.
-    if (!Jsv_is_null(jsresult) && pyproxy_Check(jsresult)) {
+    if (!JsvNull_Check(jsresult) && pyproxy_Check(jsresult)) {
       // TODO: don't destroy proxies with roundtrip = true?
-      JsvArray_Push(hiwire_get(proxies), jsresult);
+      JsvArray_Push(proxies, jsresult);
     }
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   } else {
     gc_register_proxies(proxies);
   }
-  hiwire_CLEAR(proxies);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -3248,13 +3227,12 @@ JsMethod_Construct(PyObject* self,
                    PyObject* kwnames)
 {
   bool success = false;
-  JsRef proxies = NULL;
   PyObject* pyresult = NULL;
+  JsVal proxies = JsvArray_New();
 
   // Recursion error?
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" in JsMethod_Construct"));
 
-  proxies = JsArray_New();
   JsVal jsargs = JsMethod_ConvertArgs(pyargs, nargs, kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
   JsVal jsresult = JsvFunction_Construct(JsProxy_VAL(self), jsargs);
@@ -3269,7 +3247,6 @@ finally:
                    "This borrowed proxy was automatically destroyed. Try using "
                    "create_proxy or create_once_callable.");
   destroy_proxies(proxies, &msg);
-  hiwire_CLEAR(proxies);
   if (!success) {
     Py_CLEAR(pyresult);
   }
@@ -4237,8 +4214,7 @@ finally:
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
-EM_JS_NUM(int, JsProxy_compute_typeflags, (JsRef idobj), {
-  let obj = Hiwire.get_value(idobj);
+EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj), {
   let type_flags = 0;
   // clang-format off
   if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
@@ -4359,7 +4335,7 @@ finally:
 PyObject*
 JsProxy_create_objmap(JsRef object, bool objmap)
 {
-  int typeflags = JsProxy_compute_typeflags(object);
+  int typeflags = JsProxy_compute_typeflags(hiwire_get(object));
   if (typeflags == 0 && objmap) {
     typeflags |= IS_OBJECT_MAP;
   }
@@ -4380,7 +4356,7 @@ JsProxy_create_with_this(JsRef object, JsRef this)
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
   } else {
-    type_flags = JsProxy_compute_typeflags(object);
+    type_flags = JsProxy_compute_typeflags(hiwire_get(object));
     if (type_flags == -1) {
       fail_test();
       PyErr_SetString(internal_error,
@@ -4417,6 +4393,12 @@ JsProxy_AsJs(PyObject* x)
 {
   JsProxy* js_proxy = (JsProxy*)x;
   return hiwire_incref(js_proxy->js);
+}
+
+JsVal
+JsProxy_Val(PyObject* x)
+{
+  return JsProxy_VAL(x);
 }
 
 static PyMethodDef methods[] = {

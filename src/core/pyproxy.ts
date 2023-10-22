@@ -727,15 +727,15 @@ export class PyProxy {
   } = {}): any {
     let ptrobj = _getPtr(this);
     let idresult;
-    let proxies_id;
+    let proxies;
     let dict_converter_id = 0;
     let default_converter_id = 0;
     if (!create_pyproxies) {
-      proxies_id = 0;
+      proxies = null;
     } else if (pyproxies) {
-      proxies_id = Hiwire.new_value(pyproxies);
+      proxies = pyproxies;
     } else {
-      proxies_id = Hiwire.new_value([]);
+      proxies = [];
     }
     if (dict_converter) {
       dict_converter_id = Hiwire.new_value(dict_converter);
@@ -748,7 +748,7 @@ export class PyProxy {
       idresult = _python2js_custom(
         ptrobj,
         depth,
-        proxies_id,
+        proxies,
         dict_converter_id,
         default_converter_id,
       );
@@ -756,7 +756,6 @@ export class PyProxy {
     } catch (e) {
       API.fatal_error(e);
     } finally {
-      Hiwire.decref(proxies_id);
       Hiwire.decref(dict_converter_id);
       Hiwire.decref(default_converter_id);
     }

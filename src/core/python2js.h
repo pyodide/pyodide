@@ -27,7 +27,7 @@ python2js_val(PyObject* x);
  * the proxy to the array if one is created.
  */
 JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register);
+python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register);
 
 /**
  * Convert a Python object to a JavaScript object, copying standard collections
@@ -41,7 +41,7 @@ python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register);
  *         exception.
  */
 JsRef
-python2js_with_depth(PyObject* x, int depth, JsRef proxies);
+python2js_with_depth(PyObject* x, int depth, JsVal proxies);
 
 /**
  * dict_converter should be a JavaScript function that converts an Iterable of
@@ -51,7 +51,7 @@ python2js_with_depth(PyObject* x, int depth, JsRef proxies);
 JsRef
 python2js_custom(PyObject* x,
                  int depth,
-                 JsRef proxies,
+                 JsVal proxies,
                  JsRef dict_converter,
                  JsRef default_converter);
 

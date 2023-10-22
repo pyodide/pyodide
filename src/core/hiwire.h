@@ -147,16 +147,6 @@ hiwire_call(JsRef idobj, JsRef idargs);
 JsRef
 hiwire_call_OneArg(JsRef idobj, JsRef idarg);
 
-/**
- * Call a function
- *
- * Arguments are specified as a NULL-terminated variable arguments list of
- * JsRefs.
- *
- */
-JsRef
-hiwire_call_va(JsRef idobj, ...);
-
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
@@ -187,22 +177,11 @@ hiwire_CallMethodString(JsRef obj, const char* name, JsRef args);
 JsRef
 hiwire_CallMethodString_OneArg(JsRef obj, const char* name, JsRef arg);
 
-/**
- * name is the method name, as null-terminated UTF8.
- * Arguments are specified as a NULL-terminated variable arguments list of
- * JsRefs.
- */
-JsRef
-hiwire_CallMethodString_va(JsRef obj, const char* name, ...);
-
 JsRef
 hiwire_CallMethod(JsRef obj, JsRef name, JsRef args);
 
 JsRef
 hiwire_CallMethod_OneArg(JsRef obj, JsRef name, JsRef arg);
-
-JsRef
-hiwire_CallMethod_va(JsRef obj, JsRef name, ...);
 
 /**
  * name is the method name, as a Js_Identifier
@@ -210,14 +189,6 @@ hiwire_CallMethod_va(JsRef obj, JsRef name, ...);
  */
 JsRef
 hiwire_CallMethodId(JsRef obj, Js_Identifier* name, JsRef args);
-
-/**
- * name is the method name, as a Js_Identifier
- * Arguments are specified as a NULL-terminated variable arguments list of
- * JsRefs.
- */
-JsRef
-hiwire_CallMethodId_va(JsRef obj, Js_Identifier* name, ...);
 
 JsRef
 hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
@@ -402,72 +373,6 @@ hiwire_get_buffer_info(JsRef idobj,
  */
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
-
-// ==================== JsArray API  ====================
-
-bool
-JsArray_Check(JsRef idobj);
-
-/**
- * Create a new JavaScript Array.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_New();
-
-/**
- * Push a value to the end of a JavaScript array.
- */
-errcode WARN_UNUSED
-JsArray_Push(JsRef idobj, JsRef idval);
-
-/**
- * Same as JsArray_Push but panics on failure
- */
-int
-JsArray_Push_unchecked(JsRef idobj, JsRef idval);
-
-errcode
-JsArray_Extend(JsRef idobj, JsRef idvals);
-
-JsRef
-JsArray_ShallowCopy(JsRef idobj);
-
-/**
- * Get an object member by integer.
- *
- * Returns: New reference
- */
-JsRef
-JsArray_Get(JsRef idobj, int idx);
-
-/**
- * Set an object member by integer.
- */
-errcode WARN_UNUSED
-JsArray_Set(JsRef idobj, int idx, JsRef idval);
-
-errcode WARN_UNUSED
-JsArray_Delete(JsRef idobj, int idx);
-
-JsRef
-JsArray_Splice(JsRef idobj, int idx);
-
-JsRef
-JsArray_slice(JsRef idobj, int slicelength, int start, int stop, int step);
-
-errcode
-JsArray_slice_assign(JsRef idobj,
-                     int slicelength,
-                     int start,
-                     int stop,
-                     int step,
-                     int values_length,
-                     PyObject** values);
-
-errcode
-JsArray_Clear(JsRef idobj);
 
 // ==================== JsObject API  ====================
 
