@@ -15,7 +15,7 @@ build:
     setup-args=-Dallow-noblas=true
     setup-args=--cross-file=${MESON_CROSS_FILE}
   # numpy creates numpy/distutils/__pycache__ directory during the build.
-  # It breaks our test becuase there is a .pyc in the directory.
+  # It breaks our test because there is a .pyc in the directory.
   post: |
     cd $WHEELDIR
     rm -rf numpy/distutils/__pycache__
