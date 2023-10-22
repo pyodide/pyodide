@@ -56,7 +56,7 @@ JsrString_FromId(Js_Identifier* id)
 EMSCRIPTEN_KEEPALIVE JsVal
 JsvString_FromId(Js_Identifier* id)
 {
-  return Jsv_from_ref(JsrString_FromId(id));
+  return JsRef_toVal(JsrString_FromId(id));
 }
 
 
