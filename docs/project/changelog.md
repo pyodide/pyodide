@@ -16,11 +16,18 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
 ### Packages
 
-- Added river version 0.19.0 {pr}`4197`
+- Added `river` version 0.19.0 {pr}`4197`
 
 - Added `sisl` version 0.14.2 {pr}`4210`
+
+- Added `frozenlist` {pr}`4231`
+
+- Added `zengl` version 1.16.0 {pr}`4208`
 
 ### Load time & size optimizations
 

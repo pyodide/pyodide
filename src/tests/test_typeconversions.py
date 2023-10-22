@@ -806,10 +806,26 @@ def test_pythonexc2js(selenium):
         selenium.run_js('return pyodide.runPython("5 / 0")')
 
 
-def test_js2python(selenium):
-    selenium.run_js(
+@run_in_pyodide
+def test_js2python_null(selenium):
+    from pyodide.code import run_js
+
+    assert run_js("null") is None
+    assert run_js("[null]")[0] is None
+    assert run_js("() => null")() is None
+    assert run_js("({a: null})").a is None
+    assert run_js("new Map([['a', null]])")["a"] is None
+    assert run_js("[null, null, null]").to_py() == [None, None, None]
+    assert run_js("new Map([['a', null]])").to_py() == {"a": None}
+
+
+@run_in_pyodide
+def test_js2python_basic(selenium):
+    from pyodide.code import run_js
+
+    t = run_js(
         """
-        self.test_objects = {
+        ({
             jsstring_ucs1 : "pyodidé",
             jsstring_ucs2 : "碘化物",
             jsstring_ucs4 : "🐍",
@@ -825,40 +841,33 @@ def test_js2python(selenium):
             jsbytes : new Uint8Array([1, 2, 3]),
             jsfloats : new Float32Array([1, 2, 3]),
             jsobject : new TextDecoder(),
-        };
+        });
         """
     )
-    selenium.run("from js import test_objects as t")
-    assert selenium.run('t.jsstring_ucs1 == "pyodidé"')
-    assert selenium.run('t.jsstring_ucs2 == "碘化物"')
-    assert selenium.run('t.jsstring_ucs4 == "🐍"')
-    assert selenium.run("t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)")
-    assert selenium.run("t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)")
-    assert selenium.run("t.jsundefined is None")
-    assert selenium.run("t.jsnull is None")
-    assert selenium.run("t.jstrue is True")
-    assert selenium.run("t.jsfalse is False")
-    assert selenium.run("t.jspython is open")
-    assert selenium.run(
-        """
-        jsbytes = t.jsbytes.to_py()
-        ((jsbytes.tolist() == [1, 2, 3])
-         and (jsbytes.tobytes() == b"\x01\x02\x03"))
-        """
-    )
-    assert selenium.run(
-        """
-        jsfloats = t.jsfloats.to_py()
-        import struct
-        expected = struct.pack("fff", 1, 2, 3)
-        (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
-        """
-    )
-    assert selenium.run('str(t.jsobject) == "[object TextDecoder]"')
-    assert selenium.run("bool(t.jsobject) == True")
-    assert selenium.run("bool(t.jsarray0) == False")
-    assert selenium.run("bool(t.jsarray1) == True")
-    selenium.run_js("test_objects.jspython.destroy()")
+    assert t.jsstring_ucs1 == "pyodidé"
+    assert t.jsstring_ucs2 == "碘化物"
+    assert t.jsstring_ucs4 == "🐍"
+    assert t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)
+    assert t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)
+    assert t.jsundefined is None
+    assert t.jsnull is None
+    assert t.jstrue is True
+    assert t.jsfalse is False
+    assert t.jspython is open
+
+    jsbytes = t.jsbytes.to_py()
+    assert (jsbytes.tolist() == [1, 2, 3]) and (jsbytes.tobytes() == b"\x01\x02\x03")
+
+    jsfloats = t.jsfloats.to_py()
+    import struct
+
+    expected = struct.pack("fff", 1, 2, 3)
+    assert (jsfloats.tolist() == [1, 2, 3]) and (jsfloats.tobytes() == expected)
+    assert str(t.jsobject) == "[object TextDecoder]"
+    assert bool(t.jsobject) is True
+    assert bool(t.jsarray0) is False
+    assert bool(t.jsarray1) is True
+    run_js("(t) => t.jspython.destroy()")(t)
 
 
 @pytest.mark.parametrize(

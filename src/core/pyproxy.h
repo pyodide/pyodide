@@ -22,7 +22,7 @@ pyproxy_new(PyObject* obj);
  * Fatally fails if x is not NULL or a valid JsRef.
  */
 int
-pyproxy_Check(JsRef x);
+pyproxy_Check(JsVal x);
 
 /**
  * If x is a PyProxy, return a borrowed version of the wrapped PyObject. Returns
@@ -45,7 +45,7 @@ gc_register_proxies(JsRef proxies_id);
  * Destroy a PyProxy.
  */
 void
-destroy_proxy(JsRef proxy, Js_Identifier* msg);
+destroy_proxy(JsVal proxy, Js_Identifier* msg);
 
 /**
  * Wrap a Python callable in a JavaScript function that can be called once.
@@ -63,10 +63,10 @@ create_once_callable(PyObject* obj);
  * "destroy" API that can decrement the reference counts without calling the
  * function. Intended for use with `promise.then`.
  */
-JsRef
+JsVal
 create_promise_handles(PyObject* onfulfilled,
                        PyObject* onrejected,
-                       JsRef done_callback_id);
+                       JsVal done_callback_id);
 
 int
 pyproxy_init(PyObject* core);

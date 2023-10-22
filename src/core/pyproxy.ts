@@ -163,6 +163,14 @@ type PyProxyAttrs = {
 };
 
 const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
+function pyproxy_getflags(ptrobj: number) {
+  Py_ENTER();
+  try {
+    return _pyproxy_getflags(ptrobj);
+  } finally {
+    Py_EXIT();
+  }
+}
 
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
@@ -203,7 +211,7 @@ function pyproxy_new(
     // register by default
     gcRegister = true;
   }
-  const flags = flags_arg !== undefined ? flags_arg : _pyproxy_getflags(ptr);
+  const flags = flags_arg !== undefined ? flags_arg : pyproxy_getflags(ptr);
   if (flags === -1) {
     _pythonexc2js();
   }
@@ -507,6 +515,65 @@ Module.callPyObjectKwargs = function (
   }
   return result;
 };
+
+/**
+ * A version of callPyObjectKwargs that supports the JSPI.
+ *
+ * It returns a promise. Inside Python, JS promises can be syncified, which
+ * switches the stack to synchronously wait for them to be resolved.
+ *
+ * Pretty much everything is the same as callPyObjectKwargs except we use the
+ * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
+ * causes the VM to invent a suspender and call a wrapper module which stores it
+ * into suspenderGlobal (for later use by hiwire_syncify). Then it calls
+ * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ */
+async function callPyObjectKwargsSuspending(
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any,
+) {
+  if (!Module.jspiSupported) {
+    throw new Error(
+      "WebAssembly stack switching not supported in this JavaScript runtime",
+    );
+  }
+  // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+  // which only is used when the keyword arguments come from the user.
+  let num_pos_args = jsargs.length;
+  let kwargs_names = Object.keys(kwargs);
+  let kwargs_values = Object.values(kwargs);
+  let num_kwargs = kwargs_names.length;
+  jsargs.push(...kwargs_values);
+
+  let result;
+  try {
+    Py_ENTER();
+    result = await Module.promisingApply(
+      ptrobj,
+      jsargs,
+      num_pos_args,
+      kwargs_names,
+      num_kwargs,
+    );
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
+  }
+  if (result === null) {
+    _pythonexc2js();
+  }
+  // Automatically schedule coroutines
+  if (result && result.type === "coroutine" && result._ensure_future) {
+    Py_ENTER();
+    let is_coroutine = __iscoroutinefunction(ptrobj);
+    Py_EXIT();
+    if (is_coroutine) {
+      result._ensure_future();
+    }
+  }
+  return result;
+}
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
@@ -1927,16 +1994,13 @@ export class PyMutableSequenceMethods {
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, idkey);
+    result = __pyproxy_hasattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
   if (result === -1) {
     _pythonexc2js();
@@ -2002,26 +2066,23 @@ function python_slice_assign(
   start: number,
   stop: number,
   val: any,
-): void {
+): any[] {
   let ptrobj = _getPtr(jsobj);
-  let idval = Hiwire.new_value(val);
   let res;
   try {
     Py_ENTER();
-    res = __pyproxy_slice_assign(ptrobj, start, stop, idval);
+    res = __pyproxy_slice_assign(ptrobj, start, stop, val);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idval);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
-function python_pop(jsobj: any, pop_start: boolean): void {
+function python_pop(jsobj: any, pop_start: boolean): any {
   let ptrobj = _getPtr(jsobj);
   let res;
   try {
@@ -2031,10 +2092,10 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
 function filteredHasKey(
@@ -2268,28 +2329,19 @@ export class PyAwaitableMethods {
       // Destroyed and promise wasn't resolved. Raise error!
       _getAttrs(this);
     }
-    let resolveHandle;
-    let rejectHandle;
+    let resolveHandle: (v: any) => void;
+    let rejectHandle: (e: any) => void;
     let promise = new Promise((resolve, reject) => {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Hiwire.new_value(resolveHandle);
-    let reject_handle_id = Hiwire.new_value(rejectHandle);
     let errcode;
     try {
       Py_ENTER();
-      errcode = __pyproxy_ensure_future(
-        ptr,
-        resolve_handle_id,
-        reject_handle_id,
-      );
+      errcode = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(reject_handle_id);
-      Hiwire.decref(resolve_handle_id);
     }
     if (errcode === -1) {
       _pythonexc2js();
@@ -2426,6 +2478,10 @@ export class PyCallableMethods {
       throw new TypeError("kwargs argument is not an object");
     }
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
+  }
+
+  callSyncifying(...jsargs: any) {
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
   }
 
   /**
