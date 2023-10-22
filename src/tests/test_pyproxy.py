@@ -65,6 +65,23 @@ def test_pyproxy_class(selenium):
     }.difference(selenium.run_js("return f_props")) == set()
 
 
+@run_in_pyodide
+def test_pyproxy_tostring(selenium):
+    from pathlib import Path
+
+    from pyodide.code import run_js
+    from pyodide_js._api import setPyProxyToStringMethod
+
+    pyproxy_to_string = run_js("(e) => e.toString()")
+
+    p = Path("a/b/c")
+    assert pyproxy_to_string(p) == str(p)
+    setPyProxyToStringMethod(True)
+    assert pyproxy_to_string(p) == repr(p)
+    setPyProxyToStringMethod(False)
+    assert pyproxy_to_string(p) == str(p)
+
+
 def test_del_builtin(selenium):
     msg = "NameError"
     with pytest.raises(selenium.JavascriptException, match=msg):

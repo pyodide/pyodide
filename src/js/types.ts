@@ -279,6 +279,7 @@ export interface API {
   NoGilError: any;
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
+  setPyProxyToStringMethod: (useRepr: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
