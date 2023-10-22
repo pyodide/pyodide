@@ -19,7 +19,6 @@ JsRef_pop(JsRef ref);
 JsVal
 JsRef_toVal(JsRef ref);
 
-
 // ==================== Primitive Conversions ====================
 
 JsVal
@@ -67,7 +66,6 @@ JsvArray_slice_assign(JsVal idobj,
                       int values_length,
                       PyObject** values);
 
-
 // ==================== JsvObject API  ====================
 
 JsVal
@@ -90,7 +88,6 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
                                Js_Identifier* meth_id,
                                JsVal arg1,
                                JsVal arg2);
-
 
 // ==================== JsvFunction API  ====================
 

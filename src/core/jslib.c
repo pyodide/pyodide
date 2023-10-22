@@ -23,7 +23,8 @@ JsRef_toVal(JsRef ref)
 }
 
 JsRef
-JsRef_new(JsVal v) {
+JsRef_new(JsVal v)
+{
   if (JsvNull_Check(v)) {
     return NULL;
   }
