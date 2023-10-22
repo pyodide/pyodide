@@ -1087,12 +1087,8 @@ def test_python2js_with_depth(selenium):
         `);
         const Module = pyodide._module;
         const proxies = [];
-
         const result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies));
-        Module.hiwire.decref(proxies_id);
-
         assert(() => proxies.length === 4);
-
         const result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
         const sortFunc = (x, y) => Module.PyProxy_getPtr(x) < Module.PyProxy_getPtr(y);
         proxies.sort(sortFunc);
