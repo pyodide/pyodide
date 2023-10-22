@@ -628,6 +628,10 @@ export class PyProxy {
     let ptrobj = _getPtr(this);
     return __pyproxy_type(ptrobj);
   }
+  /**
+   * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
+   * :js:func:`loadPyodide` in which case it will return `repr(o)`)
+   */
   toString(): string {
     let ptrobj = _getPtr(this);
     let result;
