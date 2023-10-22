@@ -301,13 +301,20 @@ finally:
 //  logic is very boilerplatey, so there isn't much surprising code hidden
 //  somewhere else.
 
+EMSCRIPTEN_KEEPALIVE
+bool compat_to_string_repr = false;
+
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_repr(PyObject* pyobj)
 {
   PyObject* pyrepr = NULL;
   JsVal jsrepr = JS_NULL;
 
-  pyrepr = PyObject_Repr(pyobj);
+  if (compat_to_string_repr) {
+    pyrepr = PyObject_Repr(pyobj);
+  } else {
+    pyrepr = PyObject_Str(pyobj);
+  }
   FAIL_IF_NULL(pyrepr);
   jsrepr = python2js_val(pyrepr);
 
