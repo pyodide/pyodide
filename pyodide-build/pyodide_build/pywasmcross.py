@@ -584,15 +584,13 @@ def handle_command_generate_args(  # noqa: C901
         if line[:2] != ["meson", "setup"]:
             return line
 
-        try:
+        if "MESON_CROSS_FILE" in os.environ:
             line[:2] = [
                 "meson",
                 "setup",
                 "--cross-file",
                 os.environ["MESON_CROSS_FILE"],
             ]
-        except:
-            print(os.environ, file=sys.stderr)
 
         return line
     elif cmd in ("install_name_tool", "otool"):
