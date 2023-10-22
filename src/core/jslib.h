@@ -2,15 +2,25 @@
 #define JSLIB_H
 #include "hiwire.h"
 
+// ==================== JS_NULL ====================
+
 #define JS_NULL __builtin_wasm_ref_null_extern()
 
 int JsvNull_Check(JsVal);
 
-JsVal
-Jsv_pop_ref(JsRef ref);
+// ==================== Conversions between JsRef and JsVal ====================
+
+JsRef
+JsRef_new(JsVal v);
 
 JsVal
-Jsv_from_ref(JsRef ref);
+JsRef_pop(JsRef ref);
+
+JsVal
+JsRef_toVal(JsRef ref);
+
+
+// ==================== Primitive Conversions ====================
 
 JsVal
 JsvInt(int x);
@@ -20,6 +30,8 @@ Jsv_to_bool(JsVal x);
 
 JsVal
 JsvUTF8ToString(const char*);
+
+// ==================== JsvArray API  ====================
 
 JsVal
 JsvArray_New();
@@ -55,6 +67,9 @@ JsvArray_slice_assign(JsVal idobj,
                       int values_length,
                       PyObject** values);
 
+
+// ==================== JsvObject API  ====================
+
 JsVal
 JsvObject_New();
 
@@ -76,6 +91,9 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
                                JsVal arg1,
                                JsVal arg2);
 
+
+// ==================== JsvFunction API  ====================
+
 bool
 JsvFunction_Check(JsVal obj);
 
@@ -84,6 +102,8 @@ JsvFunction_CallBound(JsVal func, JsVal this, JsVal args);
 
 JsVal
 JsvFunction_Construct(JsVal func, JsVal args);
+
+// ==================== Miscellaneous  ====================
 
 bool
 JsvPromise_Check(JsVal obj);

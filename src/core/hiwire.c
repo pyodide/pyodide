@@ -463,32 +463,6 @@ hiwire_get_length(JsRef idobj)
   return -1;
 }
 
-EM_JS_BOOL(bool, hiwire_get_bool, (JsRef idobj), {
-  let val = Hiwire.get_value(idobj);
-  // clang-format off
-  if (!val) {
-    return false;
-  }
-  // We want to return false on container types with size 0.
-  if (val.size === 0) {
-    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
-      // HTMLSelectElement and HTMLInputElement can have size 0 but we still
-      // want to return true.
-      return true;
-    }
-    // I think other things with a size are container types.
-    return false;
-  }
-  if (val.length === 0 && JsArray_Check(idobj)) {
-    return false;
-  }
-  if (val.byteLength === 0) {
-    return false;
-  }
-  return true;
-  // clang-format on
-});
-
 EM_JS_BOOL(bool, hiwire_is_generator, (JsRef idobj), {
   // clang-format off
   return getTypeTag(Hiwire.get_value(idobj)) === "[object Generator]";

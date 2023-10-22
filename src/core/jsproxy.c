@@ -2459,8 +2459,8 @@ JsProxy_toPy(PyObject* self,
   }
   PyObject* result =
     js2python_convert(JsProxy_REF(self), depth, default_converter_js);
-  if (pyproxy_Check(Jsv_from_ref(default_converter_js))) {
-    destroy_proxy(Jsv_from_ref(default_converter_js), NULL);
+  if (pyproxy_Check(JsRef_toVal(default_converter_js))) {
+    destroy_proxy(JsRef_toVal(default_converter_js), NULL);
   }
   hiwire_decref(default_converter_js);
   return result;
@@ -2472,6 +2472,31 @@ static PyMethodDef JsProxy_toPy_MethodDef = {
   METH_FASTCALL | METH_KEYWORDS,
 };
 
+EM_JS_BOOL(bool, JsProxy_Bool_js, (JsVal val), {
+  // clang-format off
+  if (!val) {
+    return false;
+  }
+  // We want to return false on container types with size 0.
+  if (val.size === 0) {
+    if(/HTML[A-Za-z]*Element/.test(getTypeTag(val))){
+      // HTMLSelectElement and HTMLInputElement can have size 0 but we still
+      // want to return true.
+      return true;
+    }
+    // I think other things with a size are container types.
+    return false;
+  }
+  if (val.length === 0 && JsvArray_Check(val)) {
+    return false;
+  }
+  if (val.byteLength === 0) {
+    return false;
+  }
+  return true;
+  // clang-format on
+});
+
 /**
  * Overload for bool(proxy), implemented for every JsProxy. Return `False` if
  * the object is falsey in JavaScript, or if it has a `size` field equal to 0,
@@ -2482,10 +2507,9 @@ static PyMethodDef JsProxy_toPy_MethodDef = {
  * be falsey.
  */
 static int
-JsProxy_Bool(PyObject* o)
+JsProxy_Bool(PyObject* self)
 {
-  JsProxy* self = (JsProxy*)o;
-  return hiwire_get_bool(self->js) ? 1 : 0;
+  return JsProxy_Bool_js(JsProxy_VAL(self));
 }
 
 /**
@@ -3138,7 +3162,7 @@ JsMethod_Vectorcall(PyObject* self,
     JsMethod_ConvertArgs(pyargs, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
   jsresult = JsvFunction_CallBound(
-    JsProxy_VAL(self), Jsv_from_ref(JsMethod_THIS(self)), jsargs);
+    JsProxy_VAL(self), JsRef_toVal(JsMethod_THIS(self)), jsargs);
   FAIL_IF_JS_NULL(jsresult);
   // various cases where we want to extend the lifetime of the arguments:
   // 1. if the return value is a promise we extend arguments lifetime until the

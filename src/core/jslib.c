@@ -1,8 +1,11 @@
 #include "jslib.h"
 #include "error_handling.h"
+#include "jsmemops.h"
+
+// ==================== Conversions between JsRef and JsVal ====================
 
 JsVal
-Jsv_pop_ref(JsRef ref)
+JsRef_pop(JsRef ref)
 {
   if (ref == NULL) {
     return JS_NULL;
@@ -11,13 +14,23 @@ Jsv_pop_ref(JsRef ref)
 }
 
 JsVal
-Jsv_from_ref(JsRef ref)
+JsRef_toVal(JsRef ref)
 {
   if (ref == NULL) {
     return JS_NULL;
   }
   return hiwire_get(ref);
 }
+
+JsRef
+JsRef_new(JsVal v) {
+  if (JsvNull_Check(v)) {
+    return NULL;
+  }
+  return hiwire_new(v);
+}
+
+// ==================== Primitive Conversions ====================
 
 EM_JS(JsVal, JsvInt, (int x), { return x; })
 
@@ -56,7 +69,13 @@ EM_JS_BOOL(bool, JsvArray_Check, (JsVal obj), {
 });
 
 EM_JS_VAL(JsVal, JsvArray_Get, (JsVal arr, int idx), {
-  return nullToUndefined(arr[idx]);
+  const result = arr[idx];
+  // clang-format off
+  if (result === undefined && !(idx in arr)) {
+    // clang-format on
+    return null;
+  }
+  return nullToUndefined(result);
 });
 
 EM_JS_NUM(errcode, JsvArray_Set, (JsVal arr, int idx, JsVal val), {
@@ -67,16 +86,16 @@ EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal arr, int idx), {
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
   if (idx < 0 || idx >= arr.length) {
-    return ERROR_NUM;
+    return null;
   }
   return arr.splice(idx, 1)[0];
 });
 
+// clang-format off
 EM_JS(int, JsvArray_Push, (JsVal arr, JsVal obj), {
   return arr.push(obj);
 });
 
-// clang-format off
 EM_JS(void, JsvArray_Extend, (JsVal arr, JsVal vals), {
   arr.push(...vals);
 });
@@ -117,11 +136,11 @@ JsvArray_slice_assign,
     obj.splice(start, slicelength, ...jsvalues);
   } else {
     if(values !== 0) {
-      for(const i = 0; i < slicelength; i ++){
+      for(let i = 0; i < slicelength; i ++){
         obj.splice(start + i * step, 1, jsvalues[i]);
       }
     } else {
-      for(const i = slicelength - 1; i >= 0; i --){
+      for(let i = slicelength - 1; i >= 0; i --){
         obj.splice(start + i * step, 1);
       }
     }

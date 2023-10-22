@@ -43,12 +43,13 @@ typedef struct ConversionContext_s
 JsRef
 _python2js(ConversionContext context, PyObject* x);
 
+// clang-format off
 EM_JS(void,
-      _python2js_addto_postprocess_list,
-      (JsVal idlist, JsVal idparent, JsVal idkey, PyObject* value),
-      {
-        list.push([ parent, key, value ]);
-      });
+_python2js_addto_postprocess_list,
+(JsVal list, JsVal parent, JsVal key, PyObject* value), {
+  list.push([ parent, key, value ]);
+});
+// clang-format on
 
 EM_JS(void, _python2js_handle_postprocess_list, (JsRef idlist, JsRef idcache), {
   const list = Hiwire.get_value(idlist);
@@ -710,7 +711,7 @@ python2js_custom(PyObject* x,
   JsRef postprocess_list = hiwire_new(JsvArray_New());
   ConversionContext context = { .cache = cache,
                                 .depth = depth,
-                                .proxies = hiwire_new(proxies),
+                                .proxies = JsRef_new(proxies),
                                 .jscontext = NULL,
                                 .default_converter = false,
                                 .jspostprocess_list = postprocess_list };
@@ -847,10 +848,10 @@ to_js(PyObject* self,
     py_result = js2python(js_result);
   }
 finally:
-  if (pyproxy_Check(Jsv_from_ref(js_dict_converter))) {
+  if (pyproxy_Check(JsRef_toVal(js_dict_converter))) {
     destroy_proxy(hiwire_get(js_dict_converter), NULL);
   }
-  if (pyproxy_Check(Jsv_from_ref(js_default_converter))) {
+  if (pyproxy_Check(JsRef_toVal(js_default_converter))) {
     destroy_proxy(hiwire_get(js_default_converter), NULL);
   }
   hiwire_CLEAR(js_dict_converter);

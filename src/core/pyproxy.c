@@ -565,7 +565,7 @@ _pyproxy_slice_assign(PyObject* pyobj,
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
   JsVal proxies = JsvArray_New();
-  jsresult = Jsv_pop_ref(python2js_with_depth(pyresult, 1, proxies));
+  jsresult = JsRef_pop(python2js_with_depth(pyresult, 1, proxies));
 
 finally:
   Py_CLEAR(pyresult);
