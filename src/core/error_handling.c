@@ -206,6 +206,7 @@ wrap_exception()
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
   JsVal jserror = new_error(typestr_utf8, pystr_utf8, value);
+  FAIL_IF_JS_NULL(jserror);
 
   success = true;
 finally:
