@@ -536,10 +536,9 @@ JsProxy_GetIter(PyObject* self)
 EM_JS_NUM(
 JsVal,
 handle_next_result_js,
-(JsRef resid, int* done, char** msg),
+(JsVal res, int* done, char** msg),
 {
   let errmsg;
-  const res = Hiwire.get_value(resid);
   if(typeof res !== "object") {
     errmsg = `Result should have type "object" not "${typeof res}"`;
   } else if(typeof res.done === "undefined") {
@@ -558,7 +557,7 @@ handle_next_result_js,
 });
 
 PySendResult
-handle_next_result(JsRef next_res, PyObject** result, bool obj_map_hereditary){
+handle_next_result(JsVal next_res, PyObject** result, bool obj_map_hereditary){
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
   *result = NULL;
@@ -602,7 +601,6 @@ PySendResult
 JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
 {
   JsRef jsarg = Js_undefined;
-  JsRef next_res = NULL;
   *result = NULL;
   PySendResult ret = PYGEN_ERROR;
 
@@ -612,15 +610,15 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
-  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
-  FAIL_IF_NULL(next_res);
+  JsVal next_res = JsvObject_CallMethodId_OneArg(
+    JsProxy_VAL(self), &JsId_next, hiwire_get(jsarg));
+  FAIL_IF_JS_NULL(next_res);
   ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
 finally:
   if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(jsarg);
-  hiwire_CLEAR(next_res);
   return ret;
 }
 
@@ -760,7 +758,7 @@ JsException_init(PyBaseExceptionObject* self, PyObject* args, PyObject* kwds)
  * whichever of these two calls we make (or set the error flag and return NULL
  * if something goes wrong).
  */
-JsRef
+JsVal
 process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
 {
   if (Py_IsNone(tb)) {
@@ -768,7 +766,7 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
   } else if (tb != NULL && !PyTraceBack_Check(tb)) {
     PyErr_SetString(PyExc_TypeError,
                     "throw() third argument must be a traceback object");
-    return NULL;
+    return JS_NULL;
   }
 
   Py_INCREF(typ);
@@ -807,23 +805,22 @@ process_throw_args(PyObject* self, PyObject* typ, PyObject* val, PyObject* tb)
   }
 
   PyErr_Restore(typ, val, tb);
-  JsRef res = NULL;
+  JsVal res;
   if (PyErr_ExceptionMatches(PyExc_GeneratorExit)) {
     PyErr_Clear();
-    res = hiwire_CallMethodId_NoArgs(JsProxy_REF(self), &JsId_return);
+    res = JsvObject_CallMethodId_NoArgs(JsProxy_VAL(self), &JsId_return);
   } else {
-    JsRef exc;
+    JsVal exc;
     if (PyErr_ExceptionMatches(JsException)) {
       PyErr_Fetch(&typ, &val, &tb);
-      exc = JsProxy_REF(val);
+      exc = JsProxy_VAL(val);
       Py_CLEAR(typ);
       Py_CLEAR(val);
       Py_CLEAR(tb);
     } else {
       exc = wrap_exception(); // cannot fail.
     }
-    res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_throw, exc);
-    hiwire_CLEAR(exc);
+    res = JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_throw, exc);
   }
   return res;
 
@@ -832,7 +829,7 @@ failed_throw:
   Py_DECREF(typ);
   Py_XDECREF(val);
   Py_XDECREF(tb);
-  return NULL;
+  return JS_NULL;
 }
 
 static PyObject*
@@ -841,11 +838,9 @@ JsGenerator_throw_inner(PyObject* self,
                         PyObject* val,
                         PyObject* tb)
 {
-  JsRef throw_res = NULL;
   PyObject* result = NULL;
-  throw_res = process_throw_args(self, typ, val, tb);
-  FAIL_IF_NULL(throw_res);
-  console_error_obj(throw_res);
+  JsVal throw_res = process_throw_args(self, typ, val, tb);
+  FAIL_IF_JS_NULL(throw_res);
   PySendResult ret = handle_next_result(throw_res, &result, false);
   if (ret == PYGEN_RETURN) {
     if (Py_IsNone(result)) {
@@ -856,7 +851,6 @@ JsGenerator_throw_inner(PyObject* self,
     Py_CLEAR(result);
   }
 finally:
-  hiwire_CLEAR(throw_res);
   return result;
 }
 
@@ -1019,9 +1013,8 @@ finally:
 EM_JS_NUM(
 int,
 _agen_handle_result_js,
-(JsRef promiseid, char** msg, PyObject* set_result, PyObject* set_exception, bool closing),
+(JsVal p, char** msg, PyObject* set_result, PyObject* set_exception, bool closing),
 {
-  let p = Hiwire.get_value(promiseid);
   // First check that p is a proper promise, if not return the error message for
   // the type error.
   let errmsg;
@@ -1062,7 +1055,7 @@ _agen_handle_result_js,
  * anext_js.
  */
 PyObject*
-_agen_handle_result(JsRef promise, bool closing)
+_agen_handle_result(JsVal promise, bool closing)
 {
   bool success = false;
   PyObject* loop = NULL;
@@ -1107,7 +1100,6 @@ static PyObject*
 JsGenerator_asend(PyObject* self, PyObject* arg)
 {
   JsRef jsarg = Js_undefined;
-  JsRef next_res = NULL;
   PyObject* result = NULL;
 
   JsVal proxies;
@@ -1116,8 +1108,9 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_NULL(jsarg);
   }
-  next_res = hiwire_CallMethodId_OneArg(JsProxy_REF(self), &JsId_next, jsarg);
-  FAIL_IF_NULL(next_res);
+  JsVal next_res = JsvObject_CallMethodId_OneArg(
+    JsProxy_VAL(self), &JsId_next, hiwire_get(jsarg));
+  FAIL_IF_JS_NULL(next_res);
   result = _agen_handle_result(next_res, false);
 
 finally:
@@ -1125,7 +1118,6 @@ finally:
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
   }
   hiwire_CLEAR(jsarg);
-  hiwire_CLEAR(next_res);
   return result;
 }
 
@@ -1152,15 +1144,13 @@ JsGenerator_athrow(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
     return NULL;
   }
 
-  JsRef throw_res = NULL;
   PyObject* result = NULL;
 
-  throw_res = process_throw_args(self, typ, val, tb);
-  FAIL_IF_NULL(throw_res);
+  JsVal throw_res = process_throw_args(self, typ, val, tb);
+  FAIL_IF_JS_NULL(throw_res);
   result = _agen_handle_result(throw_res, false);
 
 finally:
-  hiwire_CLEAR(throw_res);
   return result;
 }
 
@@ -1173,15 +1163,13 @@ static PyMethodDef JsGenerator_athrow_MethodDef = {
 static PyObject*
 JsGenerator_aclose(PyObject* self, PyObject* ignored)
 {
-  JsRef throw_res = NULL;
   PyObject* result = NULL;
 
-  throw_res = process_throw_args(self, PyExc_GeneratorExit, NULL, NULL);
-  FAIL_IF_NULL(throw_res);
+  JsVal throw_res = process_throw_args(self, PyExc_GeneratorExit, NULL, NULL);
+  FAIL_IF_JS_NULL(throw_res);
   result = _agen_handle_result(throw_res, true);
 
 finally:
-  hiwire_CLEAR(throw_res);
   return result;
 }
 
@@ -1196,16 +1184,13 @@ static PyMethodDef JsGenerator_aclose_MethodDef = {
  * Object.entries(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_entries(PyObject* o, PyObject* _args)
+JsProxy_object_entries(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Entries(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Entries(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_entries_MethodDef = {
@@ -1219,16 +1204,13 @@ static PyMethodDef JsProxy_object_entries_MethodDef = {
  * Object.keys(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_keys(PyObject* o, PyObject* _args)
+JsProxy_object_keys(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Keys(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Keys(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_keys_MethodDef = {
@@ -1242,16 +1224,13 @@ static PyMethodDef JsProxy_object_keys_MethodDef = {
  * Object.entries(obj) as a new JsProxy.
  */
 static PyObject*
-JsProxy_object_values(PyObject* o, PyObject* _args)
+JsProxy_object_values(PyObject* self, PyObject* _args)
 {
-  JsProxy* self = (JsProxy*)o;
-  JsRef result_id = JsObject_Values(self->js);
-  if (result_id == NULL) {
-    return NULL;
-  }
-  PyObject* result = JsProxy_create(result_id);
-  hiwire_decref(result_id);
-  return result;
+  JsVal jsresult = JsvObject_Values(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return JsProxy_create_val(jsresult);
+finally:
+  return NULL;
 }
 
 static PyMethodDef JsProxy_object_values_MethodDef = {
@@ -2060,17 +2039,15 @@ finally:
 static int
 JsProxy_includes(JsProxy* self, PyObject* obj)
 {
-  JsRef jsresult = NULL;
   int result = -1;
-  JsRef jsobj = python2js(obj);
-  FAIL_IF_NULL(jsobj);
-  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_includes, jsobj);
-  FAIL_IF_NULL(jsresult);
-  result = hiwire_to_bool(jsresult);
+  JsVal jsobj = python2js_val(obj);
+  FAIL_IF_JS_NULL(jsobj);
+  JsVal jsresult =
+    JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_includes, jsobj);
+  FAIL_IF_JS_NULL(jsresult);
+  result = Jsv_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsresult);
-  hiwire_CLEAR(jsobj);
   return result;
 }
 
@@ -2082,17 +2059,15 @@ finally:
 static int
 JsProxy_has(JsProxy* self, PyObject* obj)
 {
-  JsRef jsresult = NULL;
   int result = -1;
-  JsRef jsobj = python2js(obj);
-  FAIL_IF_NULL(jsobj);
-  jsresult = hiwire_CallMethodId_OneArg(self->js, &JsId_has, jsobj);
-  FAIL_IF_NULL(jsresult);
-  result = hiwire_to_bool(jsresult);
+  JsVal jsobj = python2js_val(obj);
+  FAIL_IF_JS_NULL(jsobj);
+  JsVal jsresult =
+    JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_has, jsobj);
+  FAIL_IF_JS_NULL(jsresult);
+  result = Jsv_to_bool(jsresult);
 
 finally:
-  hiwire_CLEAR(jsresult);
-  hiwire_CLEAR(jsobj);
   return result;
 }
 

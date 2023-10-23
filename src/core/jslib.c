@@ -37,10 +37,27 @@ EM_JS(JsVal, JsvInt, (int x), { return x; })
 
 EM_JS(bool, Jsv_to_bool, (JsVal x), { return !!x; })
 
+// ==================== Strings API  ====================
+
 // clang-format off
 EM_JS(JsVal, JsvUTF8ToString, (const char* ptr), {
   return UTF8ToString(ptr);
 })
+
+EMSCRIPTEN_KEEPALIVE JsRef
+JsrString_FromId(Js_Identifier* id)
+{
+  if (!id->object) {
+    id->object = hiwire_intern(JsvUTF8ToString(id->string));
+  }
+  return id->object;
+}
+
+EMSCRIPTEN_KEEPALIVE JsVal
+JsvString_FromId(Js_Identifier* id)
+{
+  return JsRef_toVal(JsrString_FromId(id));
+}
 
 
 // ==================== JsvArray API  ====================
@@ -107,7 +124,7 @@ EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
 })
 
 // clang-format off
-EM_JS_REF(JsVal,
+EM_JS_VAL(JsVal,
 JsvArray_slice,
 (JsVal obj, int length, int start, int stop, int step),
 {
@@ -154,32 +171,56 @@ JsvArray_slice_assign,
 EM_JS(JsVal, JsvObject_New, (), {
   return {};
 });
-// clang-format on
 
 EM_JS_NUM(int, JsvObject_SetAttr, (JsVal obj, JsVal attr, JsVal value), {
   obj[attr] = value;
 });
 
+EM_JS_VAL(JsVal, JsvObject_Entries, (JsVal obj), {
+  return Object.entries(obj);
+});
+
+EM_JS_VAL(JsVal, JsvObject_Keys, (JsVal obj), {
+  return Object.keys(obj);
+});
+
+EM_JS_VAL(JsVal, JsvObject_Values, (JsVal obj), {
+  return Object.values(obj);
+});
+
+
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
   return nullToUndefined(obj[meth](... args));
+})
+
+EM_JS_VAL(JsVal, JsvObject_CallMethod_NoArgs, (JsVal obj, JsVal meth), {
+  return nullToUndefined(obj[meth]());
+})
+
+EM_JS_VAL(JsVal, JsvObject_CallMethod_OneArg, (JsVal obj, JsVal meth, JsVal arg), {
+  return nullToUndefined(obj[meth](arg));
+})
+
+EM_JS_VAL(JsVal, JsvObject_CallMethod_TwoArgs, (JsVal obj, JsVal meth, JsVal arg1, JsVal arg2), {
+  return nullToUndefined(obj[meth](arg1, arg2));
 })
 
 JsVal
 JsvObject_CallMethodId(JsVal obj, Js_Identifier* name_id, JsVal args)
 {
-  JsRef name_ref = JsString_FromId(name_id);
-  if (name_ref == NULL) {
-    return JS_NULL;
-  }
-  return JsvObject_CallMethod(obj, hiwire_get(name_ref), args);
+  return JsvObject_CallMethod(obj, JsvString_FromId(name_id), args);
+}
+
+JsVal
+JsvObject_CallMethodId_NoArgs(JsVal obj, Js_Identifier* name_id)
+{
+  return JsvObject_CallMethod_NoArgs(obj, JsvString_FromId(name_id));
 }
 
 JsVal
 JsvObject_CallMethodId_OneArg(JsVal obj, Js_Identifier* name_id, JsVal arg)
 {
-  JsVal args = JsvArray_New();
-  JsvArray_Push(args, arg);
-  return JsvObject_CallMethodId(obj, name_id, args);
+  return JsvObject_CallMethod_OneArg(obj, JsvString_FromId(name_id), arg);
 }
 
 JsVal
@@ -188,11 +229,9 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
                                JsVal arg1,
                                JsVal arg2)
 {
-  JsVal args = JsvArray_New();
-  JsvArray_Push(args, arg1);
-  JsvArray_Push(args, arg2);
-  return JsvObject_CallMethodId(obj, name_id, args);
+  return JsvObject_CallMethod_TwoArgs(obj, JsvString_FromId(name_id), arg1, arg2);
 }
+
 
 // ==================== JsvFunction API  ====================
 
@@ -204,6 +243,10 @@ EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
 
 EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
   return nullToUndefined(func.apply(this_, args));
+});
+
+EM_JS_VAL(JsVal, JsvFunction_Call_OneArg, (JsVal func, JsVal arg), {
+  return nullToUndefined(func.apply(null, [arg]));
 });
 
 // clang-format off
@@ -242,3 +285,5 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
   return getTypeTag(obj) === "[object AsyncGenerator]";
   // clang-format on
 });
+
+EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })

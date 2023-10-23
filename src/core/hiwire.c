@@ -159,8 +159,7 @@ EM_JS_MACROS(void, hiwire_invalid_ref, (int type, JsRef ref), {
     // check.
     if (_PyErr_Occurred()) {
       // This will lead to a more helpful error message.
-      let exc = _wrap_exception();
-      let e = Hiwire.pop_value(exc);
+      const e = _wrap_exception();
       console.error(
         "Pyodide internal error: Argument to hiwire_get is falsy. This was " +
         "probably because the Python error indicator was set when get_value was " +
@@ -191,20 +190,6 @@ EM_JS_MACROS(void, hiwire_invalid_ref, (int type, JsRef ref), {
 });
 // clang-format on
 
-JsRef
-hiwire_from_bool(bool boolean)
-{
-  return boolean ? Js_true : Js_false;
-}
-
-// clang-format off
-EM_JS(bool, hiwire_to_bool, (JsRef val), {
-  return !!Hiwire.get_value(val);
-});
-// clang-format on
-
-// clang-format on
-
 // clang-format off
 EM_JS_REF(JsRef, hiwire_int, (int val), {
   return Hiwire.new_stack(val);
@@ -229,16 +214,6 @@ hiwire_int_from_digits, (const unsigned int* digits, size_t ndigits), {
 
 EM_JS_REF(JsRef, hiwire_double, (double val), {
   return Hiwire.new_stack(val);
-});
-
-EM_JS(void _Py_NO_RETURN, hiwire_throw_error, (JsRef iderr), {
-  throw Hiwire.pop_value(iderr);
-});
-
-EM_JS_REF(JsRef, hiwire_call, (JsRef idfunc, JsRef idargs), {
-  let jsfunc = Hiwire.get_value(idfunc);
-  let jsargs = Hiwire.get_value(idargs);
-  return Hiwire.new_value(jsfunc(... jsargs));
 });
 
 EM_JS_REF(JsRef, hiwire_call_OneArg, (JsRef idfunc, JsRef idarg), {
@@ -297,12 +272,6 @@ EM_JS_BOOL(bool, hiwire_HasMethod, (JsRef obj_id, JsRef name), {
   // clang-format on
 })
 
-bool
-hiwire_HasMethodId(JsRef obj, Js_Identifier* name)
-{
-  return hiwire_HasMethod(obj, JsString_FromId(name));
-}
-
 // clang-format off
 EM_JS_REF(JsRef,
           hiwire_CallMethodString,
@@ -340,36 +309,6 @@ hiwire_CallMethod_OneArg,
   return Hiwire.new_value(jsobj[jsname](jsarg));
 });
 // clang-format on
-
-JsRef
-hiwire_CallMethodId(JsRef idobj, Js_Identifier* name_id, JsRef idargs)
-{
-  JsRef name_ref = JsString_FromId(name_id);
-  if (name_ref == NULL) {
-    return NULL;
-  }
-  return hiwire_CallMethod(idobj, name_ref, idargs);
-}
-
-JsRef
-hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name)
-{
-  JsRef name_ref = JsString_FromId(name);
-  if (name_ref == NULL) {
-    return NULL;
-  }
-  return hiwire_CallMethod_NoArgs(obj, name_ref);
-}
-
-JsRef
-hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg)
-{
-  JsRef name_ref = JsString_FromId(name);
-  if (name_ref == NULL) {
-    return NULL;
-  }
-  return hiwire_CallMethod_OneArg(obj, name_ref, arg);
-}
 
 EM_JS_REF(JsRef, hiwire_construct, (JsRef idobj, JsRef idargs), {
   let jsobj = Hiwire.get_value(idobj);
@@ -619,45 +558,6 @@ EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jssub = jsarr.subarray(start, end);
   return Hiwire.new_value(jssub);
 });
-
-// ==================== JsObject API  ====================
-
-// clang-format off
-EM_JS_REF(JsRef, JsObject_New, (), {
-  return Hiwire.new_value({});
-});
-// clang-format on
-
-EM_JS_REF(JsRef, JsObject_Entries, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.entries(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Keys, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.keys(jsobj));
-});
-
-EM_JS_REF(JsRef, JsObject_Values, (JsRef idobj), {
-  let jsobj = Hiwire.get_value(idobj);
-  return Hiwire.new_value(Object.values(jsobj));
-});
-
-// ==================== JsString API  ====================
-
-EM_JS_REF(JsRef, JsString_InternFromCString, (const char* str), {
-  let jsstring = UTF8ToString(str);
-  return Hiwire.intern_object(jsstring);
-})
-
-EMSCRIPTEN_KEEPALIVE JsRef
-JsString_FromId(Js_Identifier* id)
-{
-  if (!id->object) {
-    id->object = JsString_InternFromCString(id->string);
-  }
-  return id->object;
-}
 
 // ==================== JsMap API  ====================
 

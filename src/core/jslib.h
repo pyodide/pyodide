@@ -30,6 +30,12 @@ Jsv_to_bool(JsVal x);
 JsVal
 JsvUTF8ToString(const char*);
 
+JsRef
+JsrString_FromId(Js_Identifier* id);
+
+JsVal
+JsvString_FromId(Js_Identifier* id);
+
 // ==================== JsvArray API  ====================
 
 JsVal
@@ -71,6 +77,12 @@ JsvArray_slice_assign(JsVal idobj,
 JsVal
 JsvObject_New();
 
+JsVal JsvObject_Entries(JsVal);
+
+JsVal JsvObject_Keys(JsVal);
+
+JsVal JsvObject_Values(JsVal);
+
 int
 JsvObject_SetAttr(JsVal obj, JsVal attr, JsVal value);
 
@@ -78,7 +90,19 @@ JsVal
 JsvObject_CallMethod(JsVal obj, JsVal meth, JsVal args);
 
 JsVal
+JsvObject_CallMethod_NoArgs(JsVal obj, JsVal meth);
+
+JsVal
+JsvObject_CallMethod_OneArg(JsVal obj, JsVal meth, JsVal arg);
+
+JsVal
+JsvObject_CallMethod_TwoArgs(JsVal obj, JsVal meth, JsVal arg1, JsVal arg2);
+
+JsVal
 JsvObject_CallMethodId(JsVal obj, Js_Identifier* meth_id, JsVal args);
+
+JsVal
+JsvObject_CallMethodId_NoArgs(JsVal obj, Js_Identifier* name_id);
 
 JsVal
 JsvObject_CallMethodId_OneArg(JsVal obj, Js_Identifier* meth_id, JsVal arg);
@@ -93,6 +117,9 @@ JsvObject_CallMethodId_TwoArgs(JsVal obj,
 
 bool
 JsvFunction_Check(JsVal obj);
+
+JsVal
+JsvFunction_Call_OneArg(JsVal func, JsVal arg);
 
 JsVal
 JsvFunction_CallBound(JsVal func, JsVal this, JsVal args);
@@ -113,4 +140,8 @@ JsvGenerator_Check(JsVal obj);
 
 bool
 JsvAsyncGenerator_Check(JsVal obj);
+
+void _Py_NO_RETURN
+JsvError_Throw(JsVal e);
+
 #endif

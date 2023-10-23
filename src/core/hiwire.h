@@ -111,37 +111,6 @@ JsRef
 hiwire_double(double val);
 
 /**
- * Create a new JavaScript boolean value.
- * Return value is true if boolean != 0, false if boolean == 0.
- *
- * Returns: "New" reference
- */
-JsRef
-hiwire_from_bool(bool boolean);
-
-/**
- * Convert value to C boolean
- */
-bool
-hiwire_to_bool(JsRef value);
-
-/**
- * Throw a javascript Error object.
- * Steals a reference to the argument.
- */
-void _Py_NO_RETURN
-hiwire_throw_error(JsRef iderr);
-
-/**
- * Call a js function
- *
- * idargs is a hiwire Array containing the arguments.
- *
- */
-JsRef
-hiwire_call(JsRef idobj, JsRef idargs);
-
-/**
  * Call a js function with one argument
  */
 JsRef
@@ -158,9 +127,6 @@ hiwire_syncify(JsRef idpromise);
 
 bool
 hiwire_HasMethod(JsRef obj, JsRef name);
-
-bool
-hiwire_HasMethodId(JsRef obj, Js_Identifier* name);
 
 /**
  * name is the method name, as null-terminated UTF8.
@@ -182,19 +148,6 @@ hiwire_CallMethod(JsRef obj, JsRef name, JsRef args);
 
 JsRef
 hiwire_CallMethod_OneArg(JsRef obj, JsRef name, JsRef arg);
-
-/**
- * name is the method name, as a Js_Identifier
- * args is a hiwire Array containing the arguments.
- */
-JsRef
-hiwire_CallMethodId(JsRef obj, Js_Identifier* name, JsRef args);
-
-JsRef
-hiwire_CallMethodId_NoArgs(JsRef obj, Js_Identifier* name);
-
-JsRef
-hiwire_CallMethodId_OneArg(JsRef obj, Js_Identifier* name, JsRef arg);
 
 /**
  * Calls the constructor of a class object.
@@ -373,42 +326,6 @@ hiwire_get_buffer_info(JsRef idobj,
  */
 JsRef
 hiwire_subarray(JsRef idarr, int start, int end);
-
-// ==================== JsObject API  ====================
-
-/**
- * Create a new JavaScript object.
- *
- * Returns: New reference
- */
-JsRef
-JsObject_New();
-
-/**
- * Returns `Object.entries(obj)`
- */
-JsRef
-JsObject_Entries(JsRef idobj);
-
-/**
- * Returns `Object.keys(obj)`
- */
-JsRef
-JsObject_Keys(JsRef idobj);
-
-/**
- * Returns `Object.values(obj)`
- */
-JsRef
-JsObject_Values(JsRef idobj);
-
-// ==================== JsString API  ====================
-
-JsRef
-JsString_InternFromCString(const char* str);
-
-JsRef
-JsString_FromId(Js_Identifier* id);
 
 // ==================== JsMap API  ====================
 
