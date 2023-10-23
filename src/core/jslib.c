@@ -305,7 +305,50 @@ JsvPromise_Syncify(JsVal promise)
   return result;
 }
 
-// Buffers
+// ==================== Buffers ====================
+
+// clang-format off
+EM_JS_NUM(errcode, jslib_init_buffers, (), {
+  const dtypes_str = ["b", "B", "h", "H", "i", "I", "f", "d"].join(
+    String.fromCharCode(0)
+  );
+  const dtypes_ptr = stringToNewUTF8(dtypes_str);
+  const dtypes_map = Object.fromEntries(
+    Object.entries(dtypes_str).map(([idx, val]) => [val, dtypes_ptr + +idx])
+  );
+
+  const buffer_datatype_map = new Map([
+    ["Int8Array", [dtypes_map["b"], 1, true]],
+    ["Uint8Array", [dtypes_map["B"], 1, true]],
+    ["Uint8ClampedArray", [dtypes_map["B"], 1, true]],
+    ["Int16Array", [dtypes_map["h"], 2, true]],
+    ["Uint16Array", [dtypes_map["H"], 2, true]],
+    ["Int32Array", [dtypes_map["i"], 4, true]],
+    ["Uint32Array", [dtypes_map["I"], 4, true]],
+    ["Float32Array", [dtypes_map["f"], 4, true]],
+    ["Float64Array", [dtypes_map["d"], 8, true]],
+    // These last two default to Uint8. They have checked : false to allow use
+    // with other types.
+    ["DataView", [dtypes_map["B"], 1, false]],
+    ["ArrayBuffer", [dtypes_map["B"], 1, false]],
+  ]);
+
+  /**
+   * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
+   * triple: [char* format_ptr, int itemsize, bool checked] If argument is
+   * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
+   * the flag checked to false in that case so we allow assignment to/from
+   * anything.
+   *
+   * This is the API for use from JavaScript, there's also an EM_JS
+   * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+   * in jsproxy.c for buffers.
+   */
+  Module.get_buffer_datatype = function (jsobj) {
+    return buffer_datatype_map.get(jsobj.constructor.name) || [0, 0, false];
+  };
+});
+// clang-format on
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
   Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
@@ -351,41 +394,10 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
 
-EM_JS_NUM(errcode, jslib_init, (), {
-  const dtypes_str =
-    [ "b", "B", "h", "H", "i", "I", "f", "d" ].join(String.fromCharCode(0));
-  const dtypes_ptr = stringToNewUTF8(dtypes_str);
-  const dtypes_map = Object.fromEntries(Object.entries(dtypes_str).map(([idx, val]) => [val, dtypes_ptr + (+idx)]));
+// clang-format off
+errcode
+jslib_init(void) {
+  return jslib_init_buffers();
+}
 
-  const buffer_datatype_map = new Map([
-    [ "Int8Array", [ dtypes_map["b"], 1, true ] ],
-    [ "Uint8Array", [ dtypes_map["B"], 1, true ] ],
-    [ "Uint8ClampedArray", [ dtypes_map["B"], 1, true ] ],
-    [ "Int16Array", [ dtypes_map["h"], 2, true ] ],
-    [ "Uint16Array", [ dtypes_map["H"], 2, true ] ],
-    [ "Int32Array", [ dtypes_map["i"], 4, true ] ],
-    [ "Uint32Array", [ dtypes_map["I"], 4, true ] ],
-    [ "Float32Array", [ dtypes_map["f"], 4, true ] ],
-    [ "Float64Array", [ dtypes_map["d"], 8, true ] ],
-    // These last two default to Uint8. They have checked : false to allow use
-    // with other types.
-    [ "DataView", [ dtypes_map["B"], 1, false ] ],
-    [ "ArrayBuffer", [ dtypes_map["B"], 1, false ] ],
-  ]);
-
-  /**
-   * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
-   * triple: [char* format_ptr, int itemsize, bool checked] If argument is
-   * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
-   * the flag checked to false in that case so we allow assignment to/from
-   * anything.
-   *
-   * This is the API for use from JavaScript, there's also an EM_JS
-   * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
-   * in jsproxy.c for buffers.
-   */
-  Module.get_buffer_datatype = function(jsobj)
-  {
-    return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
-  }
-})
+// clang-format on
