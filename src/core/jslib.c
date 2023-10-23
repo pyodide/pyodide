@@ -39,6 +39,10 @@ EM_JS(bool, Jsv_to_bool, (JsVal x), { return !!x; })
 
 EM_JS(JsVal, Jsv_typeof, (JsVal x), { return typeof x; })
 
+EM_JS_REF(char*, Jsv_constructorName, (JsVal obj), {
+  return stringToNewUTF8(obj.constructor.name);
+});
+
 // ==================== Strings API  ====================
 
 // clang-format off
@@ -394,10 +398,20 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
 
-// clang-format off
 errcode
-jslib_init(void) {
+jslib_init(void)
+{
   return jslib_init_buffers();
 }
 
+#define MAKE_OPERATOR(name, op)                                                \
+  EM_JS_BOOL(bool, Jsv_##name, (JsVal a, JsVal b), { return !!(a op b); })
+
+MAKE_OPERATOR(less_than, <);
+MAKE_OPERATOR(less_than_equal, <=);
+// clang-format off
+MAKE_OPERATOR(equal, ===);
+MAKE_OPERATOR(not_equal, !==);
 // clang-format on
+MAKE_OPERATOR(greater_than, >);
+MAKE_OPERATOR(greater_than_equal, >=);

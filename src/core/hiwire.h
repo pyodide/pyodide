@@ -183,50 +183,6 @@ JsRef
 hiwire_resolve_promise(JsRef idobj);
 
 /**
- * Gets `value.constructor.name`.
- *
- * Returns: New reference to JavaScript string
- */
-char*
-hiwire_constructor_name(JsRef idobj);
-
-/**
- * Returns non-zero if a < b.
- */
-bool
-hiwire_less_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a <= b.
- */
-bool
-hiwire_less_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a == b.
- */
-bool
-hiwire_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a != b.
- */
-bool
-hiwire_not_equal(JsRef idx, JsRef idb);
-
-/**
- * Returns non-zero if a > b.
- */
-bool
-hiwire_greater_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a >= b.
- */
-bool
-hiwire_greater_than_equal(JsRef ida, JsRef idb);
-
-/**
  * Get a subarray from a TypedArray
  */
 JsRef

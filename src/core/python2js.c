@@ -845,7 +845,7 @@ to_js(PyObject* self,
     // Oops, just created a PyProxy. Wrap it I guess?
     py_result = JsProxy_create(js_result);
   } else {
-    py_result = js2python(js_result);
+    py_result = js2python(hiwire_get(js_result));
   }
 finally:
   if (pyproxy_Check(JsRef_toVal(js_dict_converter))) {

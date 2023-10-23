@@ -272,7 +272,7 @@ JsProxy_Repr(PyObject* self)
                  "because it has no 'toString' method");
     return NULL;
   }
-  return js2python_val(repr);
+  return js2python(repr);
 }
 
 /**
@@ -281,7 +281,7 @@ JsProxy_Repr(PyObject* self)
 static PyObject*
 JsProxy_typeof(PyObject* self, void* _unused)
 {
-  return js2python_val(Jsv_typeof(JsProxy_VAL(self)));
+  return js2python(Jsv_typeof(JsProxy_VAL(self)));
 }
 
 static PyObject*
@@ -398,7 +398,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     pyresult = JsProxy_create_with_this(idresult, JsProxy_REF(self));
     hiwire_decref(idresult);
   } else {
-    pyresult = js2python_val(jsresult);
+    pyresult = js2python(jsresult);
   }
   FAIL_IF_NULL(pyresult);
 
@@ -474,31 +474,29 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 
   int result;
-  JsRef ida = python2js(a);
-  JsRef idb = python2js(b);
+  JsVal jsa = python2js_val(a);
+  JsVal jsb = python2js_val(b);
   switch (op) {
     case Py_LT:
-      result = hiwire_less_than(ida, idb);
+      result = Jsv_less_than(jsa, jsb);
       break;
     case Py_LE:
-      result = hiwire_less_than_equal(ida, idb);
+      result = Jsv_less_than_equal(jsa, jsb);
       break;
     case Py_EQ:
-      result = hiwire_equal(ida, idb);
+      result = Jsv_equal(jsa, jsb);
       break;
     case Py_NE:
-      result = hiwire_not_equal(ida, idb);
+      result = Jsv_not_equal(jsa, jsb);
       break;
     case Py_GT:
-      result = hiwire_greater_than(ida, idb);
+      result = Jsv_greater_than(jsa, jsb);
       break;
     case Py_GE:
-      result = hiwire_greater_than_equal(ida, idb);
+      result = Jsv_greater_than_equal(jsa, jsb);
       break;
   }
 
-  hiwire_decref(ida);
-  hiwire_decref(idb);
   if (result) {
     Py_RETURN_TRUE;
   } else {
@@ -519,7 +517,7 @@ JsProxy_GetIter(PyObject* self)
 {
   JsVal iter = JsProxy_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python_val(iter);
+  return js2python(iter);
 finally:
   return NULL;
 }
@@ -569,7 +567,7 @@ handle_next_result(JsVal next_res, PyObject** result, bool obj_map_hereditary){
   FAIL_IF_MINUS_ONE(done);
   // If there was no "value", "idresult" will be jsundefined
   // so pyvalue will be set to Py_None.
-  *result = js2python_immutable_val(jsresult);
+  *result = js2python_immutable(jsresult);
   if (!*result) {
     *result = JsProxy_create_objmap_val(jsresult, obj_map_hereditary);
   }
@@ -724,7 +722,7 @@ JsException_new(PyTypeObject* subtype, PyObject* args, PyObject* kwds)
   }
   JsVal result = JsException_new_helper(name, message, stack);
   FAIL_IF_JS_NULL(result);
-  return js2python_val(result);
+  return js2python(result);
 finally:
   return NULL;
 }
@@ -905,7 +903,7 @@ JsProxy_GetAsyncIter(PyObject* self)
 {
   JsVal iter = JsProxy_GetAsyncIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python_val(iter);
+  return js2python(iter);
 finally:
   return NULL;
 }
@@ -938,7 +936,7 @@ _agen_handle_result_js_c(PyObject* set_result,
     goto return_error;
   }
 
-  pyvalue = js2python_val(jsvalue);
+  pyvalue = js2python(jsvalue);
   if (pyvalue == NULL) {
     // hopefully this won't happen...
     PyErr_SetString(PyExc_RuntimeError, "Unable to get result");
@@ -1322,7 +1320,7 @@ JsProxy_item_array(PyObject* o, Py_ssize_t i)
   JsProxy* self = (JsProxy*)o;
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(self), i);
   FAIL_IF_JS_NULL(jsresult);
-  pyresult = js2python_val(jsresult);
+  pyresult = js2python(jsresult);
 finally:
   return pyresult;
 }
@@ -1352,7 +1350,7 @@ JsArray_subscript(PyObject* o, PyObject* item)
       }
       FAIL();
     }
-    pyresult = js2python_val(jsresult);
+    pyresult = js2python(jsresult);
     goto success;
   }
   if (PySlice_Check(item)) {
@@ -1370,7 +1368,7 @@ JsArray_subscript(PyObject* o, PyObject* item)
         JsvArray_slice(JsProxy_VAL(self), slicelength, start, stop, step);
     }
     FAIL_IF_JS_NULL(jsresult);
-    pyresult = js2python_val(jsresult);
+    pyresult = js2python(jsresult);
     goto success;
   }
   PyErr_Format(PyExc_TypeError,
@@ -1388,7 +1386,7 @@ JsArray_sq_item(PyObject* o, Py_ssize_t i)
 
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(o), i);
   FAIL_IF_JS_NULL(jsresult);
-  pyresult = js2python_val(jsresult);
+  pyresult = js2python(jsresult);
 finally:
   return pyresult;
 }
@@ -1677,7 +1675,7 @@ JsArray_sq_concat(PyObject* self, PyObject* other)
 
   JsVal jsresult = JsvArray_ShallowCopy(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(jsresult);
-  pyresult = js2python_val(jsresult);
+  pyresult = js2python(jsresult);
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(
     JsArray_extend_by_python_iterable(JsProxy_VAL(pyresult), other));
@@ -1711,7 +1709,7 @@ JsArray_sq_repeat(PyObject* o, Py_ssize_t count)
 {
   JsVal jsresult = JsArray_repeat_js(JsProxy_Val(o), count);
   FAIL_IF_JS_NULL(jsresult);
-  return js2python_val(jsresult);
+  return js2python(jsresult);
 
 finally:
   return NULL;
@@ -1808,7 +1806,7 @@ JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
 
   JsVal jsresult = JsvArray_Delete(JsProxy_VAL(self), index);
   FAIL_IF_JS_NULL(jsresult);
-  pyresult = js2python_val(jsresult);
+  pyresult = js2python(jsresult);
 
 finally:
   Py_CLEAR(iobj);
@@ -1857,7 +1855,7 @@ JsArray_reversed(PyObject* self, PyObject* ignored)
 {
   JsVal iter = JsArray_reversed_iterator(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python_val(iter);
+  return js2python(iter);
 finally:
   return NULL;
 }
@@ -2057,7 +2055,7 @@ JsProxy_subscript(PyObject* self, PyObject* pyidx)
     }
     FAIL();
   }
-  return js2python_val(result);
+  return js2python(result);
 finally:
   return NULL;
 }
@@ -2160,7 +2158,7 @@ JsMap_GetIter(PyObject* self)
 {
   JsVal iter = JsMap_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python_val(iter);
+  return js2python(iter);
 finally:
   return NULL;
 }
@@ -2435,7 +2433,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
 
   // Now get attributes of js object
   jsdir = JsProxy_Dir_js(JsProxy_VAL(self));
-  pydir = js2python_val(jsdir);
+  pydir = js2python(jsdir);
   FAIL_IF_NULL(pydir);
   // Merge and sort
   FAIL_IF_MINUS_ONE(_PySet_Update(result_set, pydir));
@@ -2489,16 +2487,15 @@ JsProxy_toPy(PyObject* self,
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
-  JsRef default_converter_js = NULL;
+  JsVal default_converter_js = hiwire_get(Js_undefined);
   if (default_converter != NULL) {
-    default_converter_js = python2js(default_converter);
+    default_converter_js = python2js_val(default_converter);
   }
   PyObject* result =
-    js2python_convert(JsProxy_REF(self), depth, default_converter_js);
-  if (pyproxy_Check(JsRef_toVal(default_converter_js))) {
-    destroy_proxy(JsRef_toVal(default_converter_js), NULL);
+    js2python_convert(JsProxy_VAL(self), depth, default_converter_js);
+  if (pyproxy_Check(default_converter_js)) {
+    destroy_proxy(default_converter_js, NULL);
   }
-  hiwire_decref(default_converter_js);
   return result;
 }
 
@@ -2781,7 +2778,7 @@ JsObjMap_GetIter(PyObject* self)
 {
   JsVal iter = JsObjMap_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python_val(iter);
+  return js2python(iter);
 finally:
   return NULL;
 }
@@ -2827,7 +2824,7 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
     }
     FAIL();
   }
-  pyresult = js2python_immutable_val(result);
+  pyresult = js2python_immutable(result);
   if (pyresult == NULL) {
     pyresult = JsProxy_create_objmap_val(result, JsObjMap_HEREDITARY(self));
   }
@@ -2928,7 +2925,7 @@ JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
     }
     FAIL();
   }
-  result = js2python_val(jsresult);
+  result = js2python(jsresult);
 
 finally:
   return result;
@@ -3195,7 +3192,7 @@ JsMethod_Vectorcall(PyObject* self,
     // result.
     pyresult = wrap_promise(jsresult, get_async_js_call_done_callback(proxies));
   } else {
-    pyresult = js2python_val(jsresult);
+    pyresult = js2python(jsresult);
   }
   FAIL_IF_NULL(pyresult);
 
@@ -3244,7 +3241,7 @@ JsMethod_Construct(PyObject* self,
   FAIL_IF_JS_NULL(jsargs);
   JsVal jsresult = JsvFunction_Construct(JsProxy_VAL(self), jsargs);
   FAIL_IF_JS_NULL(jsresult);
-  pyresult = js2python_val(jsresult);
+  pyresult = js2python(jsresult);
   FAIL_IF_NULL(pyresult);
 
   success = true;
@@ -3602,7 +3599,7 @@ JsBuffer_ToString(JsVal jsbuffer, char* encoding)
                  encoding ? encoding : "utf8");
   }
   FAIL_IF_JS_NULL(jsresult);
-  result = js2python_val(jsresult);
+  result = js2python(jsresult);
   FAIL_IF_NULL(result);
 
 finally:
@@ -3753,7 +3750,7 @@ JsBuffer_cinit(PyObject* obj)
                     &JsBuffer_ITEMSIZE(self),
                     &JsBuffer_CHECK_ASSIGNMENTS(self));
   if (JsBuffer_FORMAT(self) == NULL) {
-    char* typename = hiwire_constructor_name(JsProxy_REF(self));
+    char* typename = Jsv_constructorName(JsProxy_VAL(self));
     PyErr_Format(
       PyExc_RuntimeError,
       "Unknown typed array type '%s'. This is a problem with Pyodide, please "

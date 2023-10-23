@@ -42,7 +42,7 @@ _js2python_pyproxy(PyObject* val)
   return val;
 }
 
-EM_JS_REF(PyObject*, js2python_immutable_val, (JsVal value), {
+EM_JS_REF(PyObject*, js2python_immutable_js, (JsVal value), {
   let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
@@ -53,13 +53,13 @@ EM_JS_REF(PyObject*, js2python_immutable_val, (JsVal value), {
 });
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-js2python_immutable(JsRef id)
+js2python_immutable(JsVal val)
 {
-  return js2python_immutable_val(hiwire_get(id));
+  return js2python_immutable_js(val);
 }
 
-EM_JS_REF(PyObject*, js2python_val, (JsVal value), {
-  let result = Module.js2python_convertImmutable(value, undefined);
+EM_JS_REF(PyObject*, js2python_js, (JsVal value), {
+  let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
     // clang-format on
@@ -69,9 +69,9 @@ EM_JS_REF(PyObject*, js2python_val, (JsVal value), {
 })
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-js2python(JsRef id)
+js2python(JsVal val)
 {
-  return js2python_val(hiwire_get(id));
+  return js2python_js(val);
 }
 
 /**
@@ -79,11 +79,8 @@ js2python(JsRef id)
  * implementation of `toJs`.
  */
 // clang-format off
-EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth, JsRef default_converter), {
-  let defaultConverter = default_converter
-    ? Module.hiwire.get_value(default_converter)
-    : undefined;
-  return Module.js2python_convert(id, { depth, defaultConverter });
+EM_JS_REF(PyObject*, js2python_convert, (JsVal v, int depth, JsVal defaultConverter), {
+  return Module.js2python_convert(v, { depth, defaultConverter });
 });
 // clang-format on
 

@@ -30,6 +30,9 @@ Jsv_to_bool(JsVal x);
 JsVal
 Jsv_typeof(JsVal x);
 
+char*
+Jsv_constructorName(JsVal obj);
+
 JsVal
 JsvUTF8ToString(const char*);
 
@@ -171,5 +174,41 @@ JsvAsyncGenerator_Check(JsVal obj);
 
 void _Py_NO_RETURN
 JsvError_Throw(JsVal e);
+
+/**
+ * Returns non-zero if a < b.
+ */
+bool
+Jsv_less_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a <= b.
+ */
+bool
+Jsv_less_than_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a == b.
+ */
+bool
+Jsv_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a != b.
+ */
+bool
+Jsv_not_equal(JsVal x, JsVal b);
+
+/**
+ * Returns non-zero if a > b.
+ */
+bool
+Jsv_greater_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a >= b.
+ */
+bool
+Jsv_greater_than_equal(JsVal a, JsVal b);
 
 #endif

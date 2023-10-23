@@ -73,12 +73,12 @@ declare global {
   export const _dump_traceback: () => void;
   export const _pythonexc2js: () => void;
   export const _restore_sys_last_exception: (err: number) => boolean;
-  export const _set_error: (hwidx: number) => void;
+  export const _set_error: (pyerr: number) => void;
 
-  export const _JsProxy_create: (hwidx: number) => number;
+  export const _JsProxy_create_val: (obj: any) => number;
   export const _JsProxy_Check: (ptr: number) => number;
 
-  export const _python2js: (pyobj: number) => number;
+  export const _python2js_val: (pyobj: number) => any;
   export const _python2js_custom: (
     obj: number,
     depth: number,
