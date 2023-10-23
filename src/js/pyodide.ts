@@ -402,7 +402,7 @@ export async function loadPyodide(
     throw Module.exited.toThrow;
   }
   if (options.pyproxyToStringRepr) {
-    API.setPyProxyToStringMethod("repr");
+    API.setPyProxyToStringMethod(true);
   }
 
   if (API.version !== version) {
