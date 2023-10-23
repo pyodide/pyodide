@@ -315,6 +315,12 @@ export async function loadPyodide(
      */
     packages?: string[];
     /**
+     * Opt into the old behavior where PyProxy.toString calls `repr` and not
+     * `str`.
+     * @deprecated
+     */
+    pyproxyToStringRepr?: boolean;
+    /**
      * @ignore
      */
     _node_mounts?: string[];
@@ -394,6 +400,9 @@ export async function loadPyodide(
   // Handle early exit
   if (Module.exited) {
     throw Module.exited.toThrow;
+  }
+  if (options.pyproxyToStringRepr) {
+    API.setPyProxyToStringMethod(true);
   }
 
   if (API.version !== version) {
