@@ -22,6 +22,9 @@ JsProxy_create_with_type(int type_flags, JsRef object, JsRef this);
 PyObject*
 JsProxy_create_objmap(JsRef object, bool objmap);
 
+PyObject*
+JsProxy_create_objmap_val(JsVal object, bool objmap);
+
 /**
  * Make a new JsProxy.
  * @param object The JavaScript object.

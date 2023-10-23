@@ -37,6 +37,8 @@ EM_JS(JsVal, JsvInt, (int x), { return x; })
 
 EM_JS(bool, Jsv_to_bool, (JsVal x), { return !!x; })
 
+EM_JS(JsVal, Jsv_typeof, (JsVal x), { return typeof x; })
+
 // ==================== Strings API  ====================
 
 // clang-format off
@@ -188,6 +190,11 @@ EM_JS_VAL(JsVal, JsvObject_Values, (JsVal obj), {
   return Object.values(obj);
 });
 
+EM_JS_VAL(JsVal,
+JsvObject_toString, (JsVal obj), {
+  return obj.toString();
+});
+
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
   return nullToUndefined(obj[meth](... args));
@@ -262,7 +269,7 @@ JsvFunction_Construct,
 
 EM_JS_BOOL(bool, JsvPromise_Check, (JsVal obj), {
   // clang-format off
-  return Hiwire.isPromise(obj);
+  return isPromise(obj);
   // clang-format on
 });
 
@@ -298,6 +305,36 @@ JsvPromise_Syncify(JsVal promise)
   return result;
 }
 
+// Buffers
+
+EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
+  Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
+});
+
+EM_JS_NUM(errcode, JsvBuffer_assignFromPtr, (JsVal buf, void* ptr), {
+  bufferAsUint8Array(buf).set(
+    Module.HEAPU8.subarray(ptr, ptr + buf.byteLength));
+});
+
+EM_JS_NUM(errcode, JsvBuffer_readFromFile, (JsVal buf, int fd), {
+  let uint8_buf = bufferAsUint8Array(buf);
+  let stream = Module.FS.streams[fd];
+  Module.FS.read(stream, uint8_buf, 0, uint8_buf.byteLength);
+});
+
+EM_JS_NUM(errcode, JsvBuffer_writeToFile, (JsVal buf, int fd), {
+  let uint8_buf = bufferAsUint8Array(buf);
+  let stream = Module.FS.streams[fd];
+  Module.FS.write(stream, uint8_buf, 0, uint8_buf.byteLength);
+});
+
+EM_JS_NUM(errcode, JsvBuffer_intoFile, (JsVal buf, int fd), {
+  let uint8_buf = bufferAsUint8Array(buf);
+  let stream = Module.FS.streams[fd];
+  // set canOwn param to true, leave position undefined.
+  Module.FS.write(stream, uint8_buf, 0, uint8_buf.byteLength, undefined, true);
+});
+
 // ==================== Miscellaneous  ====================
 
 EM_JS_BOOL(bool, JsvGenerator_Check, (JsVal obj), {
@@ -313,3 +350,42 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 });
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
+
+EM_JS_NUM(errcode, jslib_init, (), {
+  const dtypes_str =
+    [ "b", "B", "h", "H", "i", "I", "f", "d" ].join(String.fromCharCode(0));
+  const dtypes_ptr = stringToNewUTF8(dtypes_str);
+  const dtypes_map = Object.fromEntries(Object.entries(dtypes_str).map(([idx, val]) => [val, dtypes_ptr + (+idx)]));
+
+  const buffer_datatype_map = new Map([
+    [ "Int8Array", [ dtypes_map["b"], 1, true ] ],
+    [ "Uint8Array", [ dtypes_map["B"], 1, true ] ],
+    [ "Uint8ClampedArray", [ dtypes_map["B"], 1, true ] ],
+    [ "Int16Array", [ dtypes_map["h"], 2, true ] ],
+    [ "Uint16Array", [ dtypes_map["H"], 2, true ] ],
+    [ "Int32Array", [ dtypes_map["i"], 4, true ] ],
+    [ "Uint32Array", [ dtypes_map["I"], 4, true ] ],
+    [ "Float32Array", [ dtypes_map["f"], 4, true ] ],
+    [ "Float64Array", [ dtypes_map["d"], 8, true ] ],
+    // These last two default to Uint8. They have checked : false to allow use
+    // with other types.
+    [ "DataView", [ dtypes_map["B"], 1, false ] ],
+    [ "ArrayBuffer", [ dtypes_map["B"], 1, false ] ],
+  ]);
+
+  /**
+   * This gets the dtype of a ArrayBuffer or ArrayBuffer view. We return a
+   * triple: [char* format_ptr, int itemsize, bool checked] If argument is
+   * untyped (a DataView or ArrayBuffer) then we say it's a Uint8, but we set
+   * the flag checked to false in that case so we allow assignment to/from
+   * anything.
+   *
+   * This is the API for use from JavaScript, there's also an EM_JS
+   * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+   * in jsproxy.c for buffers.
+   */
+  Module.get_buffer_datatype = function(jsobj)
+  {
+    return buffer_datatype_map.get(jsobj.constructor.name) || [ 0, 0, false ];
+  }
+})

@@ -28,6 +28,9 @@ bool
 Jsv_to_bool(JsVal x);
 
 JsVal
+Jsv_typeof(JsVal x);
+
+JsVal
 JsvUTF8ToString(const char*);
 
 JsRef
@@ -83,6 +86,9 @@ JsVal JsvObject_Keys(JsVal);
 
 JsVal JsvObject_Values(JsVal);
 
+JsVal
+JsvObject_toString(JsVal obj);
+
 int
 JsvObject_SetAttr(JsVal obj, JsVal attr, JsVal value);
 
@@ -127,7 +133,7 @@ JsvFunction_CallBound(JsVal func, JsVal this, JsVal args);
 JsVal
 JsvFunction_Construct(JsVal func, JsVal args);
 
-// ==================== Miscellaneous  ====================
+// ==================== Promises  ====================
 
 bool
 JsvPromise_Check(JsVal obj);
@@ -137,6 +143,25 @@ JsvPromise_Resolve(JsVal obj);
 
 JsVal
 JsvPromise_Syncify(JsVal promise);
+
+// ==================== Buffers  ====================
+
+errcode
+JsvBuffer_assignToPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_assignFromPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_readFromFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_writeToFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_intoFile(JsVal buf, int fd);
+
+// ==================== Miscellaneous  ====================
 
 bool
 JsvGenerator_Check(JsVal obj);

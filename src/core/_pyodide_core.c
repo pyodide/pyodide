@@ -61,7 +61,6 @@ PyInit__pyodide_core(void)
   bool success = false;
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
-  JsRef _pyodide_proxy = NULL;
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
@@ -75,6 +74,7 @@ PyInit__pyodide_core(void)
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(hiwire);
+  TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
@@ -89,7 +89,7 @@ PyInit__pyodide_core(void)
   }
 
   // Enable JavaScript access to the _pyodide module.
-  _pyodide_proxy = python2js(_pyodide);
+  JsRef _pyodide_proxy = python2js(_pyodide);
   if (_pyodide_proxy == NULL) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
