@@ -126,6 +126,7 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | Python                             | JavaScript                        |
 | ---------------------------------- | --------------------------------- |
 | `str(proxy)`                       | `x.toString()`                    |
+| `repr(proxy)`                      | `x.toString()`                    |
 | `proxy.foo`                        | `x.foo`                           |
 | `proxy.foo = bar`                  | `x.foo = bar`                     |
 | `del proxy.foo`                    | `delete x.foo`                    |
@@ -235,6 +236,7 @@ operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 
 | JavaScript                          | Python              |
 | ----------------------------------- | ------------------- |
+| `proxy.toString()`                  | `str(x)`            |
 | `foo in proxy`                      | `hasattr(x, 'foo')` |
 | `proxy.foo`                         | `x.foo`             |
 | `proxy.foo = bar`                   | `x.foo = bar`       |
