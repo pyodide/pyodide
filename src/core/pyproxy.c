@@ -316,7 +316,7 @@ _pyproxy_repr(PyObject* pyobj)
     pyrepr = PyObject_Str(pyobj);
   }
   FAIL_IF_NULL(pyrepr);
-  jsrepr = python2js_val(pyrepr);
+  jsrepr = python2js(pyrepr);
 
 finally:
   Py_CLEAR(pyrepr);
@@ -429,7 +429,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
     pyresult = pydescr;
     Py_INCREF(pydescr);
   }
-  result = python2js_val(pyresult);
+  result = python2js(pyresult);
   if (pyproxy_Check(result)) {
     // If a getter returns a different object every time, this could potentially
     // fill up the cache with a lot of junk. If this is a problem, the user will
@@ -499,7 +499,7 @@ _pyproxy_getitem(PyObject* pyobj, JsVal jskey)
   FAIL_IF_NULL(pykey);
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
-  result = python2js_val(pyresult);
+  result = python2js(pyresult);
   FAIL_IF_JS_NULL(result);
 
   success = true;
@@ -572,7 +572,7 @@ _pyproxy_slice_assign(PyObject* pyobj,
   FAIL_IF_NULL(pyresult);
   FAIL_IF_MINUS_ONE(PySequence_SetSlice(pyobj, start, stop, pyval));
   JsVal proxies = JsvArray_New();
-  jsresult = JsRef_pop(python2js_with_depth(pyresult, 1, proxies));
+  jsresult = python2js_with_depth(pyresult, 1, proxies);
 
 finally:
   Py_CLEAR(pyresult);
@@ -594,7 +594,7 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
     pyresult = _PyObject_CallMethodIdNoArgs(pyobj, &PyId_pop);
   }
   if (pyresult != NULL) {
-    jsresult = python2js_val(pyresult);
+    jsresult = python2js(pyresult);
     FAIL_IF_JS_NULL(jsresult);
   } else {
     if (PyErr_ExceptionMatches(PyExc_IndexError)) {
@@ -639,7 +639,7 @@ _pyproxy_ownKeys(PyObject* pyobj)
   FAIL_IF_MINUS_ONE(n);
   for (Py_ssize_t i = 0; i < n; ++i) {
     PyObject* pyentry = PyList_GetItem(pydir, i); /* borrowed */
-    JsVal entry = python2js_val(pyentry);
+    JsVal entry = python2js(pyentry);
     FAIL_IF_JS_NULL(entry);
     JsvArray_Push(dir, entry);
   }
@@ -723,7 +723,7 @@ _pyproxy_apply(PyObject* callable,
   size_t nargs_with_flag = numposargs | PY_VECTORCALL_ARGUMENTS_OFFSET;
   pyresult = _PyObject_Vectorcall(callable, pyargs, nargs_with_flag, pykwnames);
   FAIL_IF_NULL(pyresult);
-  result = python2js_val(pyresult);
+  result = python2js(pyresult);
 
 finally:
   // If we failed to convert one of the arguments, then pyargs is partially
@@ -773,7 +773,7 @@ _pyproxy_iter_next(PyObject* iterator)
   if (item == NULL) {
     return JS_NULL;
   }
-  JsVal result = python2js_val(item);
+  JsVal result = python2js(item);
   Py_CLEAR(item);
   return result;
 }
@@ -795,7 +795,7 @@ _pyproxyGen_Send(PyObject* receiver, JsVal jsval)
   if (status == PYGEN_ERROR) {
     FAIL();
   }
-  JsVal result = python2js_val(retval);
+  JsVal result = python2js(retval);
   FAIL_IF_JS_NULL(result);
 
   success = true;
@@ -836,7 +836,7 @@ _pyproxyGen_return(PyObject* receiver, JsVal jsval)
   } else {
     status = PYGEN_NEXT;
   }
-  result = python2js_val(pyresult);
+  result = python2js(pyresult);
   FAIL_IF_JS_NULL(result);
   success = true;
 finally:
@@ -874,7 +874,7 @@ _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
   } else {
     status = PYGEN_NEXT;
   }
-  result = python2js_val(pyresult);
+  result = python2js(pyresult);
   FAIL_IF_JS_NULL(result);
   success = true;
 finally:
@@ -912,7 +912,7 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
   }
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js_val(pyresult);
+  jsresult = python2js(pyresult);
   FAIL_IF_JS_NULL(jsresult);
 
 finally:
@@ -934,7 +934,7 @@ _pyproxyGen_areturn(PyObject* receiver)
     _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, PyExc_GeneratorExit);
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js_val(pyresult);
+  jsresult = python2js(pyresult);
   FAIL_IF_JS_NULL(jsresult);
 
 finally:
@@ -965,7 +965,7 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
   pyresult = _PyObject_CallMethodIdOneArg(receiver, &PyId_athrow, v);
   FAIL_IF_NULL(pyresult);
 
-  jsresult = python2js_val(pyresult);
+  jsresult = python2js(pyresult);
   FAIL_IF_JS_NULL(jsresult);
 
 finally:
@@ -992,7 +992,7 @@ _pyproxy_aiter_next(PyObject* aiterator)
   if (awaitable == NULL) {
     return JS_NULL;
   }
-  JsVal result = python2js_val(awaitable);
+  JsVal result = python2js(awaitable);
   Py_CLEAR(awaitable);
   return result;
 }
@@ -1039,7 +1039,7 @@ FutureDoneCallback_dealloc(FutureDoneCallback* self)
 int
 FutureDoneCallback_call_resolve(FutureDoneCallback* self, PyObject* result)
 {
-  JsVal result_js = python2js_val(result);
+  JsVal result_js = python2js(result);
   JsvFunction_Call_OneArg(hiwire_get(self->resolve_handle), result_js);
   // TODO: Should we really be just ignoring errors here??
   return 0;
@@ -1284,7 +1284,7 @@ success:
 }
 
 // clang-format off
-EM_JS_REF(JsVal,
+EM_JS_VAL(JsVal,
 pyproxy_new_ex,
 (PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
 {
@@ -1295,7 +1295,7 @@ pyproxy_new_ex,
 });
 // clang-format on
 
-EM_JS_REF(JsVal, pyproxy_new, (PyObject * ptrobj), {
+EM_JS_VAL(JsVal, pyproxy_new, (PyObject * ptrobj), {
   return Module.pyproxy_new(ptrobj);
 });
 
@@ -1305,7 +1305,7 @@ EM_JS_REF(JsVal, pyproxy_new, (PyObject * ptrobj), {
  * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
  * also exposed in the pyodide Python module.
  */
-EM_JS_REF(JsVal, create_once_callable, (PyObject * obj), {
+EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
   function wrapper(... args)
