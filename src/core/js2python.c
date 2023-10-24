@@ -65,7 +65,7 @@ EM_JS_REF(PyObject*, js2python_js, (JsVal value), {
     // clang-format on
     return result;
   }
-  return _JsProxy_create_val(value);
+  return _JsProxy_create(value);
 })
 
 EMSCRIPTEN_KEEPALIVE PyObject*

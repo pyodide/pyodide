@@ -74,6 +74,15 @@ hiwire_init()
 }
 
 HwRef
+hiwire_new_deduplicate(__externref_t v)
+{
+  HwRef id = hiwire_new(v);
+  HwRef result = hiwire_incref_deduplicate(id);
+  hiwire_decref(id);
+  return result;
+}
+
+HwRef
 wrapped_hiwire_incref(HwRef ref)
 {
   hiwire_incref(ref);

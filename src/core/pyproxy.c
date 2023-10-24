@@ -1336,7 +1336,7 @@ static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
   JsVal v = create_once_callable(obj);
-  return JsProxy_create_val(v);
+  return JsProxy_create(v);
 }
 
 // clang-format off
@@ -1441,7 +1441,7 @@ create_proxy(PyObject* self,
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
-  return JsProxy_create_val(pyproxy_new_ex(obj, capture_this, roundtrip, true));
+  return JsProxy_create(pyproxy_new_ex(obj, capture_this, roundtrip, true));
 }
 
 static PyMethodDef methods[] = {

@@ -80,6 +80,9 @@ hiwire_incref(JsRef idval);
 JsRef
 hiwire_incref_deduplicate(JsRef idval);
 
+HwRef
+hiwire_new_deduplicate(JsVal v);
+
 /**
  * Decrease the reference count on an object.
  */
