@@ -4391,13 +4391,6 @@ JsProxy_Check(PyObject* x)
   return PyObject_TypeCheck(x, &JsProxyType);
 }
 
-JsRef
-JsProxy_AsJs(PyObject* x)
-{
-  JsProxy* js_proxy = (JsProxy*)x;
-  return hiwire_incref(js_proxy->js);
-}
-
 JsVal
 JsProxy_Val(PyObject* x)
 {

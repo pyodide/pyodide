@@ -48,14 +48,6 @@ JsProxy_create(JsVal v);
 bool
 JsProxy_Check(PyObject* x);
 
-/**
- * Grab the underlying JavaScript object from the JsProxy.
- * @param x The JsProxy object. Will fatally fail if it isn't a JsProxy.
- * @return The JavaScript object.
- */
-JsRef
-JsProxy_AsJs(PyObject* x);
-
 JsVal
 JsProxy_Val(PyObject* x);
 
