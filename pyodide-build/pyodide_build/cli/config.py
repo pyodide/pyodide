@@ -16,7 +16,7 @@ PYODIDE_CONFIGS = {
     "cflags": "SIDE_MODULE_CFLAGS",
     "cxxflags": "SIDE_MODULE_CXXFLAGS",
     "ldflags": "SIDE_MODULE_LDFLAGS",
-    # "meson_cross_file": "MESON_CROSS_FILE",
+    "meson_cross_file": "MESON_CROSS_FILE",
 }
 
 
