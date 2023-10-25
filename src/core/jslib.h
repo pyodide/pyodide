@@ -28,6 +28,12 @@ bool
 Jsv_to_bool(JsVal x);
 
 JsVal
+Jsv_typeof(JsVal x);
+
+char*
+Jsv_constructorName(JsVal obj);
+
+JsVal
 JsvUTF8ToString(const char*);
 
 JsRef
@@ -83,6 +89,9 @@ JsVal JsvObject_Keys(JsVal);
 
 JsVal JsvObject_Values(JsVal);
 
+JsVal
+JsvObject_toString(JsVal obj);
+
 int
 JsvObject_SetAttr(JsVal obj, JsVal attr, JsVal value);
 
@@ -127,13 +136,35 @@ JsvFunction_CallBound(JsVal func, JsVal this, JsVal args);
 JsVal
 JsvFunction_Construct(JsVal func, JsVal args);
 
-// ==================== Miscellaneous  ====================
+// ==================== Promises  ====================
 
 bool
 JsvPromise_Check(JsVal obj);
 
 JsVal
 JsvPromise_Resolve(JsVal obj);
+
+JsVal
+JsvPromise_Syncify(JsVal promise);
+
+// ==================== Buffers  ====================
+
+errcode
+JsvBuffer_assignToPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_assignFromPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_readFromFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_writeToFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_intoFile(JsVal buf, int fd);
+
+// ==================== Miscellaneous  ====================
 
 bool
 JsvGenerator_Check(JsVal obj);
@@ -143,5 +174,41 @@ JsvAsyncGenerator_Check(JsVal obj);
 
 void _Py_NO_RETURN
 JsvError_Throw(JsVal e);
+
+/**
+ * Returns non-zero if a < b.
+ */
+bool
+Jsv_less_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a <= b.
+ */
+bool
+Jsv_less_than_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a == b.
+ */
+bool
+Jsv_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a != b.
+ */
+bool
+Jsv_not_equal(JsVal x, JsVal b);
+
+/**
+ * Returns non-zero if a > b.
+ */
+bool
+Jsv_greater_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a >= b.
+ */
+bool
+Jsv_greater_than_equal(JsVal a, JsVal b);
 
 #endif

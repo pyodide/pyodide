@@ -2,7 +2,6 @@ import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-
 import "types";
 
 declare var Module: any;
-declare var Hiwire: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -262,11 +261,9 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let eidx = Hiwire.new_value(e);
-    let err = _JsProxy_create(eidx);
+    let err = _JsProxy_create_val(e);
     _set_error(err);
     _Py_DecRef(err);
-    Hiwire.decref(eidx);
   }
   if (weirdCatch) {
     // In this case we have no stack frames so we can quit

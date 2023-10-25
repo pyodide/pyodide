@@ -119,12 +119,6 @@ hiwire_call_OneArg(JsRef idobj, JsRef idarg);
 JsRef
 hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
 
-/**
- * Use stack switching to get the result of the promise synchronously.
- */
-JsRef
-hiwire_syncify(JsRef idpromise);
-
 bool
 hiwire_HasMethod(JsRef obj, JsRef name);
 
@@ -160,13 +154,6 @@ JsRef
 hiwire_construct(JsRef idobj, JsRef idargs);
 
 /**
- * Test if the object has a `size` or `length` member which is a number. As a
- * special case, if the object is a function the `length` field is ignored.
- */
-bool
-hiwire_has_length(JsRef idobj);
-
-/**
  * Returns the value of the `size` or `length` member on a JavaScript object.
  * Prefers the `size` member if present and a number to the `length` field. If
  * both `size` and `length` are missing or not a number, returns `-1` to
@@ -182,34 +169,10 @@ bool
 hiwire_get_bool(JsRef idobj);
 
 /**
- * Check if the object is a function.
- */
-bool
-hiwire_is_function(JsRef idobj);
-
-bool
-hiwire_is_generator(JsRef idobj);
-
-bool
-hiwire_is_async_generator(JsRef idobj);
-
-/**
  * Check if the object is a comlink proxy.
  */
 bool
 hiwire_is_comlink_proxy(JsRef idobj);
-
-/**
- * Check if the object is an error.
- */
-bool
-hiwire_is_error(JsRef idobj);
-
-/**
- * Returns true if the object is a promise.
- */
-bool
-hiwire_is_promise(JsRef idobj);
 
 /**
  * Returns Promise.resolve(obj)
@@ -218,108 +181,6 @@ hiwire_is_promise(JsRef idobj);
  */
 JsRef
 hiwire_resolve_promise(JsRef idobj);
-
-/**
- * Gets the string representation of an object by calling `toString`.
- *
- * Returns: New reference to JavaScript string
- */
-JsRef
-hiwire_to_string(JsRef idobj);
-
-/**
- * Gets the `typeof` string for a value.
- *
- * Returns: New reference to JavaScript string
- */
-JsRef
-hiwire_typeof(JsRef idobj);
-
-/**
- * Gets `value.constructor.name`.
- *
- * Returns: New reference to JavaScript string
- */
-char*
-hiwire_constructor_name(JsRef idobj);
-
-/**
- * Returns non-zero if a < b.
- */
-bool
-hiwire_less_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a <= b.
- */
-bool
-hiwire_less_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a == b.
- */
-bool
-hiwire_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a != b.
- */
-bool
-hiwire_not_equal(JsRef idx, JsRef idb);
-
-/**
- * Returns non-zero if a > b.
- */
-bool
-hiwire_greater_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a >= b.
- */
-bool
-hiwire_greater_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns the reversed iterator associated with an array.
- */
-JsRef
-hiwire_reversed_iterator(JsRef idobj);
-
-/**
- * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
- * the memory at ptr.
- */
-errcode WARN_UNUSED
-hiwire_assign_to_ptr(JsRef idobj, void* ptr);
-
-/**
- * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
- */
-errcode WARN_UNUSED
-hiwire_assign_from_ptr(JsRef idobj, void* ptr);
-
-errcode
-hiwire_write_to_file(JsRef idobj, int fd);
-
-errcode
-hiwire_read_from_file(JsRef idobj, int fd);
-
-/**
- * Convert a buffer into a file in a copy-free manner using "canOwn" parameter.
- * Cannot directly use the buffer anymore after using this.
- */
-errcode
-hiwire_into_file(JsRef idobj, int fd);
-
-/**
- * Get a data type identifier for a given typedarray.
- */
-void
-hiwire_get_buffer_info(JsRef idobj,
-                       Py_ssize_t* byteLength_ptr,
-                       char** format_ptr,
-                       Py_ssize_t* size_ptr,
-                       bool* check_assignments);
 
 /**
  * Get a subarray from a TypedArray

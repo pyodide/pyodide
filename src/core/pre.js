@@ -64,3 +64,30 @@ const errNoRet = () => {
 Module.reportUndefinedSymbols = () => {};
 
 const nullToUndefined = (x) => (x === null ? undefined : x);
+
+// This is factored out for testing purposes.
+function isPromise(obj) {
+  try {
+    // clang-format off
+    return !!obj && typeof obj.then === "function";
+    // clang-format on
+  } catch (e) {
+    return false;
+  }
+}
+API.isPromise = isPromise;
+
+/**
+ * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
+ *
+ * This respects slices: if the ArrayBuffer view is restricted to a slice of
+ * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
+ */
+function bufferAsUint8Array(arg) {
+  if (ArrayBuffer.isView(arg)) {
+    return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
+  } else {
+    return new Uint8Array(arg);
+  }
+}
+API.typedArrayAsUint8Array = bufferAsUint8Array;
