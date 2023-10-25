@@ -80,7 +80,7 @@ exclude = ["pyodide_build.tests*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-"pyodide_build.tools" = ["*.ini"]
+"pyodide_build.tools" = ["*.ini", "*.cross"]
 "pyodide_build.tools.cmake.Modules.Platform" = ["*.cmake"]
 
 [tool.setuptools.dynamic]

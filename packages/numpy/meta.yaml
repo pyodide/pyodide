@@ -1,16 +1,24 @@
 package:
   name: numpy
-  version: 1.25.2
+  version: 1.26.1
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/a0/41/8f53eff8e969dd8576ddfb45e7ed315407d27c7518ae49418be8ed532b07/numpy-1.25.2.tar.gz
-  sha256: fd608e19c8d7c55021dffd43bfe5492fab8cc105cc8986f813f8c3c048b38760
+  url: https://files.pythonhosted.org/packages/78/23/f78fd8311e0f710fe1d065d50b92ce0057fe877b8ed7fd41b28ad6865bfc/numpy-1.26.1.tar.gz
+  sha256: c8c6c72d4a9f831f328efb1312642a1cafafaa88981d9ab76368d50d07d93cbe
 
 build:
-  backend-flags: --disable-optimization
+  # numpy uses vendored meson, so we need to pass the cross file manually
+  backend-flags: |
+    setup-args=-Dallow-noblas=true
+    setup-args=--cross-file=${MESON_CROSS_FILE}
+  # numpy creates numpy/distutils/__pycache__ directory during the build.
+  # It breaks our test because there is a .pyc in the directory.
+  post: |
+    cd $WHEELDIR
+    rm -rf numpy/distutils/__pycache__
   cflags: |
     -Wno-return-type
   cross-build-env: true
