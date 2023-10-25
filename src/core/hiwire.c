@@ -238,28 +238,6 @@ EM_JS(JsRef, hiwire_typeof, (JsRef idobj), {
   return Hiwire.new_value(typeof Hiwire.get_value(idobj));
 });
 
-EM_JS_REF(char*, hiwire_constructor_name, (JsRef idobj), {
-  return stringToNewUTF8(Hiwire.get_value(idobj).constructor.name);
-});
-
-#define MAKE_OPERATOR(name, op)                                                \
-  EM_JS_BOOL(bool, hiwire_##name, (JsRef ida, JsRef idb), {                    \
-    return !!(Hiwire.get_value(ida) op Hiwire.get_value(idb));                 \
-  })
-
-MAKE_OPERATOR(less_than, <);
-MAKE_OPERATOR(less_than_equal, <=);
-// clang-format off
-MAKE_OPERATOR(equal, ===);
-MAKE_OPERATOR(not_equal, !==);
-// clang-format on
-MAKE_OPERATOR(greater_than, >);
-MAKE_OPERATOR(greater_than_equal, >=);
-
-// clang-format off
-
-// clang-format on
-
 EM_JS_REF(JsRef, hiwire_subarray, (JsRef idarr, int start, int end), {
   let jsarr = Hiwire.get_value(idarr);
   let jssub = jsarr.subarray(start, end);

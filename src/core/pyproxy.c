@@ -348,7 +348,7 @@ _pyproxy_hasattr(PyObject* pyobj, JsVal jskey)
   PyObject* pykey = NULL;
   int result = -1;
 
-  pykey = js2python_val(jskey);
+  pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
   result = PyObject_HasAttr(pyobj, pykey);
 
@@ -402,7 +402,7 @@ _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
   PyObject* pyresult = NULL;
   JsVal result = JS_NULL;
 
-  pykey = js2python_val(key);
+  pykey = js2python(key);
   FAIL_IF_NULL(pykey);
   // If it's a method, we use the descriptor pointer as the cache key rather
   // than the actual bound method. This allows us to reuse bound methods from
@@ -458,9 +458,9 @@ _pyproxy_setattr(PyObject* pyobj, JsVal key, JsVal value)
   PyObject* pykey = NULL;
   PyObject* pyval = NULL;
 
-  pykey = js2python_val(key);
+  pykey = js2python(key);
   FAIL_IF_NULL(pykey);
-  pyval = js2python_val(value);
+  pyval = js2python(value);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetAttr(pyobj, pykey, pyval));
 
@@ -477,7 +477,7 @@ _pyproxy_delattr(PyObject* pyobj, JsVal idkey)
   bool success = false;
   PyObject* pykey = NULL;
 
-  pykey = js2python_val(idkey);
+  pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
   FAIL_IF_MINUS_ONE(PyObject_DelAttr(pyobj, pykey));
 
@@ -495,7 +495,7 @@ _pyproxy_getitem(PyObject* pyobj, JsVal jskey)
   PyObject* pyresult = NULL;
   JsVal result;
 
-  pykey = js2python_val(jskey);
+  pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
@@ -523,9 +523,9 @@ _pyproxy_setitem(PyObject* pyobj, JsVal jskey, JsVal jsval)
   PyObject* pykey = NULL;
   PyObject* pyval = NULL;
 
-  pykey = js2python_val(jskey);
+  pykey = js2python(jskey);
   FAIL_IF_NULL(pykey);
-  pyval = js2python_val(jsval);
+  pyval = js2python(jsval);
   FAIL_IF_NULL(pyval);
   FAIL_IF_MINUS_ONE(PyObject_SetItem(pyobj, pykey, pyval));
 
@@ -542,7 +542,7 @@ _pyproxy_delitem(PyObject* pyobj, JsVal idkey)
   bool success = false;
   PyObject* pykey = NULL;
 
-  pykey = js2python_val(idkey);
+  pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
   FAIL_IF_MINUS_ONE(PyObject_DelItem(pyobj, pykey));
 
@@ -562,7 +562,7 @@ _pyproxy_slice_assign(PyObject* pyobj,
   PyObject* pyresult = NULL;
   JsVal jsresult = JS_NULL;
 
-  pyval = js2python_val(val);
+  pyval = js2python(val);
 
   Py_ssize_t len = PySequence_Length(pyobj);
   if (len <= stop) {
@@ -616,7 +616,7 @@ _pyproxy_contains(PyObject* pyobj, JsVal idkey)
   PyObject* pykey = NULL;
   int result = -1;
 
-  pykey = js2python_val(idkey);
+  pykey = js2python(idkey);
   FAIL_IF_NULL(pykey);
   result = PySequence_Contains(pyobj, pykey);
 
@@ -702,7 +702,7 @@ _pyproxy_apply(PyObject* callable,
   for (Py_ssize_t i = 0; i < total_args; ++i) {
     JsVal jsitem = JsvArray_Get(jsargs, i);
     // pyitem is moved into pyargs so we don't need to clear it later.
-    PyObject* pyitem = js2python_val(jsitem);
+    PyObject* pyitem = js2python(jsitem);
     if (pyitem == NULL) {
       last_converted_arg = i;
       FAIL();
@@ -715,7 +715,7 @@ _pyproxy_apply(PyObject* callable,
     for (Py_ssize_t i = 0; i < numkwargs; i++) {
       JsVal jsitem = JsvArray_Get(jskwnames, i);
       // pyitem is moved into pykwargs so we don't need to clear it later.
-      PyObject* pyitem = js2python_val(jsitem);
+      PyObject* pyitem = js2python(jsitem);
       PyTuple_SET_ITEM(pykwnames, i, pyitem);
     }
   }
@@ -789,7 +789,7 @@ _pyproxyGen_Send(PyObject* receiver, JsVal jsval)
   PyObject* v = NULL;
   PyObject* retval = NULL;
 
-  v = js2python_val(jsval);
+  v = js2python(jsval);
   FAIL_IF_NULL(v);
   PySendResult status = PyIter_Send(receiver, v, &retval);
   if (status == PYGEN_ERROR) {
@@ -857,7 +857,7 @@ _pyproxyGen_throw(PyObject* receiver, JsVal jsval)
 
   JsVal result;
 
-  pyvalue = js2python_val(jsval);
+  pyvalue = js2python(jsval);
   FAIL_IF_NULL(pyvalue);
   if (!PyExceptionInstance_Check(pyvalue)) {
     /* Not something you can raise.  throw() fails. */
@@ -894,7 +894,7 @@ _pyproxyGen_asend(PyObject* receiver, JsVal jsval)
   PyObject* pyresult = NULL;
   JsVal jsresult = JS_NULL;
 
-  v = js2python_val(jsval);
+  v = js2python(jsval);
   FAIL_IF_NULL(v);
   asend = _PyObject_GetAttrId(receiver, &PyId_asend);
   if (asend) {
@@ -952,7 +952,7 @@ _pyproxyGen_athrow(PyObject* receiver, JsVal jsval)
   PyObject* pyresult = NULL;
   JsVal jsresult = JS_NULL;
 
-  v = js2python_val(jsval);
+  v = js2python(jsval);
   FAIL_IF_NULL(v);
   if (!PyExceptionInstance_Check(v)) {
     /* Not something you can raise.  throw() fails. */
@@ -1162,9 +1162,8 @@ size_t py_buffer_shape_offset = offsetof(Py_buffer, shape);
 /**
  * Convert a C array of Py_ssize_t to JavaScript.
  */
-EM_JS(JsRef, array_to_js, (Py_ssize_t * array, int len), {
-  return Hiwire.new_value(
-    Array.from(HEAP32.subarray(array / 4, array / 4 + len)));
+EM_JS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
+  return Array.from(HEAP32.subarray(array / 4, array / 4 + len));
 })
 
 // The order of these fields has to match the code in getBuffer
@@ -1244,7 +1243,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
 
   // Because we requested PyBUF_RECORDS_RO I think we can assume that
   // view.shape != NULL.
-  result.shape = array_to_js(view.shape, view.ndim);
+  result.shape = hiwire_new(array_to_js(view.shape, view.ndim));
 
   if (view.strides == NULL) {
     // In this case we are a C contiguous buffer
@@ -1252,7 +1251,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
     Py_ssize_t strides[view.ndim];
     PyBuffer_FillContiguousStrides(
       view.ndim, view.shape, strides, view.itemsize, 'C');
-    result.strides = array_to_js(strides, view.ndim);
+    result.strides = hiwire_new(array_to_js(strides, view.ndim));
     goto success;
   }
 
@@ -1271,7 +1270,7 @@ _pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
     result.largest_ptr += view.itemsize;
   }
 
-  result.strides = array_to_js(view.strides, view.ndim);
+  result.strides = hiwire_new(array_to_js(view.strides, view.ndim));
   result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
   result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
 
@@ -1336,10 +1335,8 @@ EM_JS_REF(JsVal, create_once_callable, (PyObject * obj), {
 static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
-  JsRef ref = hiwire_new(create_once_callable(obj));
-  PyObject* result = JsProxy_create(ref);
-  hiwire_decref(ref);
-  return result;
+  JsVal v = create_once_callable(obj);
+  return JsProxy_create_val(v);
 }
 
 // clang-format off
