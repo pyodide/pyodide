@@ -79,8 +79,8 @@ JS_FILE(js2python_init, () => {
    * we throw a PropagateError to propagate the error out to C. This causes
    * special handling in the EM_JS wrapper.
    */
-  function js2python_convertImmutable(value, id) {
-    let result = js2python_convertImmutableInner(value, id);
+  function js2python_convertImmutable(value) {
+    let result = js2python_convertImmutableInner(value);
     if (result === 0) {
       throw new PropagateError();
     }
@@ -96,7 +96,7 @@ JS_FILE(js2python_init, () => {
    * If we return 0 it means we tried to convert but an error occurred, if we
    * return undefined, no conversion was attempted.
    */
-  function js2python_convertImmutableInner(value, id) {
+  function js2python_convertImmutableInner(value) {
     let type = typeof value;
     if (type === "string") {
       return js2python_string(value);
@@ -117,10 +117,7 @@ JS_FILE(js2python_init, () => {
     } else if (API.isPyProxy(value)) {
       const { props, shared } = Module.PyProxy_getAttrs(value);
       if (props.roundtrip) {
-        if (id === undefined) {
-          return _JsProxy_create_val(value);
-        }
-        return _JsProxy_create(id);
+        return _JsProxy_create_val(value);
       } else {
         return __js2python_pyproxy(shared.ptr);
       }
@@ -133,25 +130,20 @@ JS_FILE(js2python_init, () => {
     if (list === 0) {
       return 0;
     }
-    let entryid = 0;
     let item = 0;
     try {
       context.cache.set(obj, list);
       for (let i = 0; i < obj.length; i++) {
-        entryid = Hiwire.new_value(obj[i]);
-        item = js2python_convert_with_context(entryid, context);
+        item = js2python_convert_with_context(obj[i], context);
         // PyList_SetItem steals a reference to item no matter what
         _Py_IncRef(item);
         if (_PyList_SetItem(list, i, item) === -1) {
           throw new PropagateError();
         }
-        Hiwire.decref(entryid);
-        entryid = 0;
         _Py_DecRef(item);
         item = 0;
       }
     } catch (e) {
-      Hiwire.decref(entryid);
       _Py_DecRef(item);
       _Py_DecRef(list);
       throw e;
@@ -166,7 +158,6 @@ JS_FILE(js2python_init, () => {
       return 0;
     }
     let key_py = 0;
-    let value_id = 0;
     let value_py = 0;
     try {
       context.cache.set(obj, dict);
@@ -179,22 +170,18 @@ JS_FILE(js2python_init, () => {
             `Cannot use key of type ${key_type} as a key to a Python dict`,
           );
         }
-        value_id = Hiwire.new_value(value_js);
-        value_py = js2python_convert_with_context(value_id, context);
+        value_py = js2python_convert_with_context(value_js, context);
 
         if (_PyDict_SetItem(dict, key_py, value_py) === -1) {
           throw new PropagateError();
         }
         _Py_DecRef(key_py);
         key_py = 0;
-        Hiwire.decref(value_id);
-        value_id = 0;
         _Py_DecRef(value_py);
         value_py = 0;
       }
     } catch (e) {
       _Py_DecRef(key_py);
-      Hiwire.decref(value_id);
       _Py_DecRef(value_py);
       _Py_DecRef(dict);
       throw e;
@@ -255,7 +242,7 @@ JS_FILE(js2python_init, () => {
    * should only be used on values for which js2python_convertImmutable
    * returned `undefined`.
    */
-  function js2python_convertOther(id, value, context) {
+  function js2python_convertOther(value, context) {
     let typeTag = getTypeTag(value);
     if (
       Array.isArray(value) ||
@@ -281,7 +268,7 @@ JS_FILE(js2python_init, () => {
     if (typeTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
       return _JsBuffer_CopyIntoMemoryView(
-        id,
+        value,
         value.byteLength,
         format_utf8,
         itemsize,
@@ -293,15 +280,13 @@ JS_FILE(js2python_init, () => {
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert_with_context(id, context) {
-    let value = Hiwire.get_value(id);
-    let result;
-    result = js2python_convertImmutable(value, id);
+  function js2python_convert_with_context(value, context) {
+    let result = js2python_convertImmutable(value);
     if (result !== undefined) {
       return result;
     }
     if (context.depth === 0) {
-      return _JsProxy_create(id);
+      return _JsProxy_create_val(value);
     }
     result = context.cache.get(value);
     if (result !== undefined) {
@@ -309,12 +294,12 @@ JS_FILE(js2python_init, () => {
     }
     context.depth--;
     try {
-      result = js2python_convertOther(id, value, context);
+      result = js2python_convertOther(value, context);
       if (result !== undefined) {
         return result;
       }
       if (context.defaultConverter === undefined) {
-        return _JsProxy_create(id);
+        return _JsProxy_create_val(value);
       }
       let result_js = context.defaultConverter(
         value,
@@ -328,10 +313,7 @@ JS_FILE(js2python_init, () => {
       if (result !== undefined) {
         return result;
       }
-      let result_id = Module.hiwire.new_value(result_js);
-      result = _JsProxy_create(result_id);
-      Module.hiwire.decref(result_id);
-      return result;
+      return _JsProxy_create_val(result_js);
     } finally {
       context.depth++;
     }
@@ -340,22 +322,14 @@ JS_FILE(js2python_init, () => {
   /**
    * Convert a JavaScript object to Python to a given depth.
    */
-  function js2python_convert(id, { depth, defaultConverter }) {
+  function js2python_convert(val, { depth, defaultConverter }) {
     let context = {
       cache: new Map(),
       depth,
       defaultConverter,
       // arguments for defaultConverter
-      converter(x) {
-        let id = Module.hiwire.new_value(x);
-        try {
-          return Module.pyproxy_new(
-            js2python_convert_with_context(id, context),
-          );
-        } finally {
-          Module.hiwire.decref(id);
-        }
-      },
+      converter: (x) =>
+        Module.pyproxy_new(js2python_convert_with_context(x, context)),
       cacheConversion(input, output) {
         if (API.isPyProxy(output)) {
           context.cache.set(input, Module.PyProxy_getPtr(output));
@@ -364,7 +338,7 @@ JS_FILE(js2python_init, () => {
         }
       },
     };
-    return js2python_convert_with_context(id, context);
+    return js2python_convert_with_context(val, context);
   }
 
   Module.js2python_convert = js2python_convert;

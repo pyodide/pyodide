@@ -21,6 +21,7 @@ SYMLINKS = {
     "cc",
     "c++",
     "ld",
+    "lld",
     "ar",
     "gcc",
     "ranlib",
@@ -28,6 +29,9 @@ SYMLINKS = {
     "gfortran",
     "cargo",
     "cmake",
+    "meson",
+    "install_name_tool",
+    "otool",
 }
 IS_COMPILER_INVOCATION = INVOKED_PATH.name in SYMLINKS
 
@@ -46,7 +50,9 @@ if IS_COMPILER_INVOCATION:
             ) from None
 
     sys.path = PYWASMCROSS_ARGS.pop("PYTHONPATH")
-    os.environ["PATH"] = PYWASMCROSS_ARGS.pop("PATH")
+    os.environ["PATH"] = (
+        os.environ["BUILD_ENV_SCRIPTS_DIR"] + ":" + PYWASMCROSS_ARGS.pop("PATH")
+    )
     # restore __name__ so that relative imports work as we expect
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
@@ -552,11 +558,12 @@ def handle_command_generate_args(  # noqa: C901
         return line
     elif cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
-    elif cmd == "cc" or cmd == "gcc" or cmd == "ld":
+    elif cmd in ("cc", "gcc", "ld", "lld"):
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
+
     elif cmd == "cmake":
         # If it is a build/install command, or running a script, we don't do anything.
         if "--build" in line or "--install" in line or "-P" in line:
@@ -573,6 +580,24 @@ def handle_command_generate_args(  # noqa: C901
             "--fresh",
         ]
         return line
+    elif cmd == "meson":
+        if line[:2] != ["meson", "setup"]:
+            return line
+
+        if "MESON_CROSS_FILE" in os.environ:
+            line[:2] = [
+                "meson",
+                "setup",
+                "--cross-file",
+                os.environ["MESON_CROSS_FILE"],
+            ]
+
+        return line
+    elif cmd in ("install_name_tool", "otool"):
+        # In MacOS, meson tries to run install_name_tool to fix the rpath of the shared library
+        # assuming that it is a ELF file. We need to skip this step.
+        # See: https://github.com/mesonbuild/meson/issues/8027
+        return ["echo", *line]
     elif cmd == "ranlib":
         line[0] = "emranlib"
         return line

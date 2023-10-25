@@ -13,10 +13,10 @@ import {
  */
 function setSyncifyHandler() {
   const suspending_f = new WebAssembly.Function(
-    { parameters: ["externref", "i32"], results: ["i32"] },
+    { parameters: ["externref", "externref"], results: ["externref"] },
     async (x) => {
       try {
-        return Hiwire.new_value(await Hiwire.get_value(x));
+        return nullToUndefined(await x);
       } catch (e) {
         if (e && e.pyodide_fatal_error) {
           throw e;
@@ -24,8 +24,9 @@ function setSyncifyHandler() {
         // Error handling is tricky here. We need to wait until after
         // unswitching the stack to set the Python error flag. Just store the
         // error for the moment. We move this into the error flag in
-        // hiwire_syncify_handle_error in hiwire.c
+        // JsvPromise_Syncify_HandleError in jslib.c
         Module.syncify_error = e;
+        return null;
       }
     },
     { suspending: "first" },
@@ -39,7 +40,7 @@ function setSyncifyHandler() {
       c: validSuspender,
     },
   });
-  // Assign to the function pointer so that hiwire_syncify calls our wrapper
+  // Assign to the function pointer so that JsvPromise_syncify calls our wrapper
   // function
   HEAP32[_syncifyHandler / 4] = addFunction(instance.exports.o);
 }
