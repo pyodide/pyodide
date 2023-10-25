@@ -59,6 +59,7 @@ const config = ({ input, output, format, name: globalName }) => ({
     "crypto",
     "fs",
     "fs/promises",
+    "node-fetch",
     "path",
     "tty",
     "url",
