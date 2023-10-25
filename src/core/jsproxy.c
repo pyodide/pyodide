@@ -1224,21 +1224,26 @@ static PyMethodDef JsProxy_object_values_MethodDef = {
   METH_NOARGS,
 };
 
+#define ERR_NO_LENGTH -2
+#define ERR_NEGATIVE_LENGTH -3
+#define ERR_LENGTH_TOO_BIG -4
+
 EM_JS_NUM(int, get_length_helper, (JsVal val), {
   // clang-format off
   let result;
+  // Maybe we should allow it to return a BigInt?
   if (typeof val.size === "number") {
     result = val.size;
   } else if (typeof val.length === "number") {
     result = val.length;
   } else {
-    return -2;
+    return ERR_NO_LENGTH;
   }
   if(result < 0){
-    return -3;
+    return ERR_NEGATIVE_LENGTH;
   }
   if(result > INT_MAX){
-    return -4;
+    return ERR_LENGTH_TOO_BIG;
   }
   return result;
   // clang-format on
@@ -1265,18 +1270,19 @@ get_length(JsVal obj)
     return result;
   }
   // Something went wrong. Case work:
-  // * -1: Either `val.size` or `val.length` was a getter which managed to raise
-  //    an error. Rude. (Also we don't defend against this in hiwire_has_length)
-  // * -2: Doesn't have a length or size, or they aren't of type "number".
-  //   But `hiwire_has_length` returned true? So it must have changed somehow.
-  // * -3: Length was >= 2^{31}
-  // * -4: Length was negative
-  if (result == -2) {
-    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
-  }
-  if (result == -1 || result == -2) {
+  // * Either `val.size` or `val.length` was a getter which managed to raise an
+  //   error. Propagate this JS error.
+  if (result == -1) {
     return -1;
   }
+
+  // Doesn't have a length or size, or the typeof the returned value is not
+  // number
+  if (result == ERR_NO_LENGTH) {
+    PyErr_SetString(PyExc_TypeError, "object does not have a valid length");
+    return -1;
+  }
+
 
   char* length_as_string_alloc = get_length_string(obj);
   char* length_as_string = length_as_string_alloc;
@@ -1284,11 +1290,11 @@ get_length(JsVal obj)
     // Really screwed up.
     length_as_string = "";
   }
-  if (result == -3) {
+  if (result == ERR_NEGATIVE_LENGTH) {
     PyErr_Format(
       PyExc_ValueError, "length%s of object is negative", length_as_string);
   }
-  if (result == -4) {
+  if (result == ERR_LENGTH_TOO_BIG) {
     PyErr_Format(PyExc_OverflowError,
                  "length%s of object is larger than INT_MAX (%d)",
                  length_as_string,
