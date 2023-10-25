@@ -1283,7 +1283,6 @@ get_length(JsVal obj)
     return -1;
   }
 
-
   char* length_as_string_alloc = get_length_string(obj);
   char* length_as_string = length_as_string_alloc;
   if (length_as_string == NULL) {
