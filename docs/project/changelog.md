@@ -19,6 +19,15 @@ myst:
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 
+- {{ Fix }} `jsarray.pop` now works correctly. It previously returned the wrong
+  value and leaked memory.
+  {pr}`4236`
+
+- {{ Breaking }} `PyProxy.toString` now calls `str` instead of `repr`. For now
+  you can opt into the old behavior by passing `pyproxyToStringRepr: true` to
+  `loadPyodide`, but this may be removed in the future.
+  {pr}`4247`
+
 ### Packages
 
 - Added `river` version 0.19.0 {pr}`4197`

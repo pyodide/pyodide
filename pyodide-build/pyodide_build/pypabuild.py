@@ -1,9 +1,10 @@
 import json
 import os
 import shutil
+import subprocess as sp
 import sys
 import traceback
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
@@ -33,8 +34,47 @@ from .vendor._pypabuild import (
 AVOIDED_REQUIREMENTS = [
     # We don't want to install cmake Python package inside the isolated env as it will shadow
     # the pywasmcross cmake wrapper.
+    # TODO: Find a way to make scikit-build use the pywasmcross cmake wrapper.
     "cmake",
+    # mesonpy installs patchelf in linux platform but we don't want it.
+    "patchelf",
 ]
+
+
+def _gen_runner(
+    cross_build_env: Mapping[str, str],
+    isolated_build_env: DefaultIsolatedEnv,
+) -> Callable[[Sequence[str], str | None, Mapping[str, str] | None], None]:
+    """
+    This returns a slightly modified version of default subprocess runner that pypa/build uses.
+    pypa/build prepends the virtual environment's bin directory to the PATH environment variable.
+    This is problematic because it shadows the pywasmcross compiler wrappers for cmake, meson, etc.
+
+    This function prepends the compiler wrapper directory to the PATH again so that our compiler wrappers
+    are searched first.
+
+    Parameters
+    ----------
+    cross_build_env
+        The cross build environment for pywasmcross.
+    isolated_build_env
+        The isolated build environment created by pypa/build.
+    """
+
+    def _runner(cmd, cwd=None, extra_environ=None):
+        env = os.environ.copy()
+        if extra_environ:
+            env.update(extra_environ)
+
+        # Some build dependencies like cmake, meson installs binaries to this directory
+        # and we should add it to the PATH so that they can be found.
+        env["BUILD_ENV_SCRIPTS_DIR"] = isolated_build_env._scripts_dir
+        env["PATH"] = f"{cross_build_env['COMPILER_WRAPPER_DIR']}:{env['PATH']}"
+        # For debugging: Uncomment the following line to print the build command
+        # print("Build backend call:", " ".join(str(x) for x in cmd), file=sys.stderr)
+        sp.check_call(cmd, cwd=cwd, env=env)
+
+    return _runner
 
 
 def symlink_unisolated_packages(env: DefaultIsolatedEnv) -> None:
@@ -72,7 +112,8 @@ def remove_avoided_requirements(
 def install_reqs(env: DefaultIsolatedEnv, reqs: set[str]) -> None:
     env.install(
         remove_avoided_requirements(
-            reqs, get_unisolated_packages() + AVOIDED_REQUIREMENTS
+            reqs,
+            get_unisolated_packages() + AVOIDED_REQUIREMENTS,
         )
     )
 
@@ -92,6 +133,7 @@ def _build_in_isolated_env(
         builder = _ProjectBuilder.from_isolated_env(
             env,
             srcdir,
+            runner=_gen_runner(build_env, env),
         )
 
         # first install the build dependencies
@@ -110,12 +152,12 @@ def _build_in_isolated_env(
 
         with common.replace_env(build_env):
             if not installed_requires_for_build:
-                install_reqs(
-                    env,
-                    builder.get_requires_for_build(
-                        distribution,
-                    ),
+                build_reqs = builder.get_requires_for_build(
+                    distribution,
+                    config_settings,
                 )
+                install_reqs(env, build_reqs)
+
             return builder.build(distribution, outdir, config_settings)
 
 
@@ -163,6 +205,8 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
         symlink_path.symlink_to(pywasmcross_exe)
         if symlink == "c++":
             var = "CXX"
+        elif symlink == "gfortran":
+            var = "FC"  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
         else:
             var = symlink.upper()
         env[var] = str(symlink_path)
@@ -216,10 +260,11 @@ def get_build_env(
         env["PYWASMCROSS_ARGS"] = pywasmcross_env
         (symlink_dir / "pywasmcross_env.json").write_text(pywasmcross_env)
 
-        env["PATH"] = f"{symlink_dir}:{env['PATH']}"
         env["_PYTHON_HOST_PLATFORM"] = platform()
         env["_PYTHON_SYSCONFIGDATA_NAME"] = get_build_flag("SYSCONFIG_NAME")
         env["PYTHONPATH"] = str(sysconfig_dir)
+        env["COMPILER_WRAPPER_DIR"] = str(symlink_dir)
+
         yield env
 
 

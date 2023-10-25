@@ -37,6 +37,10 @@ API.runPythonInternal = function (code: string): any {
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
 };
 
+API.setPyProxyToStringMethod = function (useRepr: boolean): void {
+  Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
+};
+
 /** @private */
 export type NativeFS = {
   syncfs: () => Promise<void>;

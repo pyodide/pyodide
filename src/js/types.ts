@@ -82,7 +82,7 @@ declare global {
   export const _python2js_custom: (
     obj: number,
     depth: number,
-    proxies: number,
+    proxies: PyProxy[] | null,
     dict_converter: number,
     default_converter: number,
   ) => number;
@@ -279,6 +279,7 @@ export interface API {
   NoGilError: any;
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
+  setPyProxyToStringMethod: (useRepr: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;

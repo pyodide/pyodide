@@ -105,7 +105,7 @@ def test_jsproxy_document(selenium):
 @pytest.mark.parametrize(
     "js,result",
     [
-        ("{}", False),
+        ("{}", True),
         ("{a:1}", True),
         ("[]", False),
         ("[1]", True),
@@ -113,8 +113,8 @@ def test_jsproxy_document(selenium):
         ("new Map([[0, 0]])", True),
         ("new Set()", False),
         ("new Set([0])", True),
-        ("class T {}; T", True),
-        ("class T {}; new T()", True),
+        ("class T {}", True),
+        ("new (class T {})", True),
         ("new Uint8Array(0)", False),
         ("new Uint8Array(1)", True),
         ("new ArrayBuffer(0)", False),
@@ -125,7 +125,7 @@ def test_jsproxy_document(selenium):
 def test_jsproxy_bool(selenium, js, result):
     from pyodide.code import run_js
 
-    assert bool(run_js(js)) == result
+    assert bool(run_js(f"({js})")) == result
 
 
 @pytest.mark.xfail_browsers(node="No document in node")
@@ -252,7 +252,7 @@ def test_jsproxy_implicit_iter(selenium):
     ) == [1, 2, 3]
 
 
-def test_jsproxy_call(selenium):
+def test_jsproxy_call1(selenium):
     assert (
         selenium.run_js(
             """
@@ -270,6 +270,14 @@ def test_jsproxy_call(selenium):
         )
         == list(range(10))
     )
+
+
+@run_in_pyodide
+def test_jsproxy_call2(selenium):
+    from pyodide.code import run_js
+
+    f = run_js("(function(){ return arguments.length; })")
+    assert [f(*range(n)) for n in range(10)] == list(range(10))
 
 
 def test_jsproxy_call_kwargs(selenium):
@@ -908,7 +916,7 @@ def test_mixins_errors_1(selenium):
             set(){ return false; },
             delete(){ return false; },
         };
-        await pyodide.runPythonAsync(`
+        pyodide.runPython(`
             from unittest import TestCase
             raises = TestCase().assertRaises
             from js import a, b
@@ -1372,6 +1380,30 @@ def test_jsarray_reverse(selenium):
 
     assert a.to_py() == l
     assert b.to_bytes() == bytes(l)
+
+
+@run_in_pyodide
+def test_array_empty_slot(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+
+    a = run_js("[1,,2]")
+    with pytest.raises(IndexError):
+        a[1]
+
+    assert a.to_py() == [1, None, 2]
+    del a[1]
+    assert a.to_py() == [1, 2]
+
+
+@run_in_pyodide
+def test_array_pop(selenium):
+    from pyodide.code import run_js
+
+    a = run_js("[1, 2, 3]")
+    assert a.pop() == 3
+    assert a.pop(0) == 1
 
 
 @std_hypothesis_settings
