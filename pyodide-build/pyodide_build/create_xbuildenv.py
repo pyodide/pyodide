@@ -114,16 +114,6 @@ def create(
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(
-        ["npm", "i", "node-fetch@2"],
-        cwd=xbuildenv_root,
-        capture_output=True,
-        encoding="utf8",
-    )
-    if res.returncode != 0:
-        logger.error("Failed to install node-fetch:")
-        exit_with_stdio(res)
-
-    res = subprocess.run(
         ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",

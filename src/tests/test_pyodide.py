@@ -1484,16 +1484,12 @@ def test_relative_index_url(selenium, tmp_path):
     version_result = subprocess.run(
         ["node", "-v"], capture_output=True, encoding="utf8"
     )
-    extra_node_args = []
-    if version_result.stdout.startswith("v14"):
-        extra_node_args.append("--experimental-wasm-bigint")
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
     result = subprocess.run(
         [
             "node",
-            *extra_node_args,
             "-e",
             rf"""
             const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
@@ -1536,8 +1532,6 @@ def test_index_url_calculation_source_map(selenium):
     node_options = ["--enable-source-maps"]
 
     result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
-    if result.stdout.startswith("v14"):
-        node_options.append("--experimental-wasm-bigint")
 
     DIST_DIR = str(Path.cwd() / "dist")
 

@@ -37,6 +37,13 @@ export async function initNodeModules() {
     nodeFetch = fetch;
   } else {
     // @ts-ignore
+    console.warn(`
+      "fetch" is not defined, maybe you're using node < 18?
+      From Pyodide >= 0.25.0, node >= 18 is required.
+      Older versions of Pyodide may work, but it is not guaranteed or supported.
+      Falling back to "node-fetch".
+    `);
+    // @ts-ignore
     nodeFetch = (await import("node-fetch")).default;
   }
   // @ts-ignore
