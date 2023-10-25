@@ -255,7 +255,7 @@ JS_FILE(js2python_init, () => {
    * should only be used on values for which js2python_convertImmutable
    * returned `undefined`.
    */
-  function js2python_convertOther(id, value, context) {
+  function js2python_convertOther(value, context) {
     let typeTag = getTypeTag(value);
     if (
       Array.isArray(value) ||
@@ -281,7 +281,7 @@ JS_FILE(js2python_init, () => {
     if (typeTag === "[object ArrayBuffer]" || ArrayBuffer.isView(value)) {
       let [format_utf8, itemsize] = Module.get_buffer_datatype(value);
       return _JsBuffer_CopyIntoMemoryView(
-        id,
+        value,
         value.byteLength,
         format_utf8,
         itemsize,
@@ -309,7 +309,7 @@ JS_FILE(js2python_init, () => {
     }
     context.depth--;
     try {
-      result = js2python_convertOther(id, value, context);
+      result = js2python_convertOther(value, context);
       if (result !== undefined) {
         return result;
       }

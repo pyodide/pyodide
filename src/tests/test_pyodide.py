@@ -326,22 +326,16 @@ def test_hiwire_is_promise(selenium):
         "new Map()",
         "new Set()",
     ]:
-        assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise({s}) === false;"
-        )
+        assert selenium.run_js(f"return pyodide._api.isPromise({s}) === false;")
 
     if not selenium.browser == "node":
-        assert selenium.run_js(
-            "return pyodide._module.hiwire.isPromise(document.all) === false;"
-        )
+        assert selenium.run_js("return pyodide._api.isPromise(document.all) === false;")
 
-    assert selenium.run_js(
-        "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"
-    )
+    assert selenium.run_js("return pyodide._api.isPromise(Promise.resolve()) === true;")
 
     assert selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(new Promise((resolve, reject) => {}));
+        return pyodide._api.isPromise(new Promise((resolve, reject) => {}));
         """
     )
 
@@ -349,7 +343,7 @@ def test_hiwire_is_promise(selenium):
         """
         let d = pyodide.runPython("{}");
         try {
-            return pyodide._module.hiwire.isPromise(d);
+            return pyodide._api.isPromise(d);
         } finally {
             d.destroy();
         }
