@@ -45,6 +45,9 @@
       "import": "./pyodide.mjs",
       "types": "./pyodide.d.ts"
     },
+    "./ffi": {
+      "types": "./ffi.d.ts"
+    },
     "./pyodide.asm.wasm": "./pyodide.asm.wasm",
     "./pyodide.asm.js": "./pyodide.asm.js",
     "./python_stdlib.zip": "./python_stdlib.zip",
