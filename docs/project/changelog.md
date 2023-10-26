@@ -28,6 +28,9 @@ myst:
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
 
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` doesn't work with NodeNext.
+  {pr}`4256`
+
 ### Packages
 
 - Added `river` version 0.19.0 {pr}`4197`
