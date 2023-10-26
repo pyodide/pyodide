@@ -64,6 +64,11 @@ def test_scipy_pytest(selenium):
     runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
     runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
+    runtest("fft.tests.test_multithreading", "test_threaded_same")
+    runtest("optimize.tests.test_zeros", "gh3089_8394")
+    runtest("sparse.linalg._dsolve.tests", "spilu_nnz0")
+    runtest("special.tests.test_cython_special", "test_cython_api and erfinv")
+    runtest("stats.tests.test_continuous_basic", "studentized_range-args96-isf")
 
 
 @pytest.mark.driver_timeout(40)
