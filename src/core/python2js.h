@@ -13,11 +13,8 @@
  * Do a shallow conversion from python to JavaScript. Convert immutable types
  * with equivalent JavaScript immutable types, but all other types are proxied.
  */
-JsRef
-python2js(PyObject* x);
-
 JsVal
-python2js_val(PyObject* x);
+python2js(PyObject* x);
 
 /**
  * Like python2js except in the handling of PyProxy creation.
@@ -26,7 +23,7 @@ python2js_val(PyObject* x);
  * Otherwise, proxies should be an Array and python2js_track_proxies will add
  * the proxy to the array if one is created.
  */
-JsRef
+JsVal
 python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register);
 
 /**
@@ -40,7 +37,7 @@ python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register);
  * \return The JavaScript object -- might be an Error object in the case of an
  *         exception.
  */
-JsRef
+JsVal
 python2js_with_depth(PyObject* x, int depth, JsVal proxies);
 
 /**
@@ -48,12 +45,12 @@ python2js_with_depth(PyObject* x, int depth, JsVal proxies);
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
  * python2js_with_depth which converts dicts to Map (the default)
  */
-JsRef
+JsVal
 python2js_custom(PyObject* x,
                  int depth,
                  JsVal proxies,
-                 JsRef dict_converter,
-                 JsRef default_converter);
+                 JsVal dict_converter,
+                 JsVal default_converter);
 
 int
 python2js_init(PyObject* core);
