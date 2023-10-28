@@ -1587,6 +1587,23 @@ def test_dict_converter_cache2(selenium):
     )
 
 
+@run_in_pyodide
+def test_dict_and_default_converter(selenium):
+    from pyodide.ffi import to_js
+    from js import Object
+
+    def default_converter(_obj, c, _):
+        return c({"a": 2})
+
+    class A:
+        pass
+
+    res = to_js(
+        A, dict_converter=Object.fromEntries, default_converter=default_converter
+    )
+    assert res.a == 2
+
+
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
 @run_in_pyodide
 def test_very_large_length(selenium, n):
