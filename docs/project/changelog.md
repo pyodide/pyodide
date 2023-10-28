@@ -28,6 +28,11 @@ myst:
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
 
+- {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
+  throws an error, that error is propogated instead of being turned into an
+  `AttributeError`.
+  {4254}
+
 ### Packages
 
 - Added `river` version 0.19.0 {pr}`4197`
