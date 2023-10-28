@@ -29,7 +29,7 @@ myst:
   {pr}`4247`
 
 - {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
-  throws an error, that error is propogated instead of being turned into an
+  throws an error, that error is propagated instead of being turned into an
   `AttributeError`.
   {4254}
 
