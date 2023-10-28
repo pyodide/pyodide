@@ -51,6 +51,8 @@ myst:
 
 - Added `zengl` version 1.16.0 {pr}`4208`
 
+- Added `msgspec` version 0.18.4 {pr}`4265`
+
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
