@@ -86,9 +86,10 @@ def test_jsproxy_getattr(selenium):
 
 @run_in_pyodide
 def test_jsproxy_getattr_errors(selenium):
+    import pytest
+
     from pyodide.code import run_js
     from pyodide.ffi import JsException
-    import pytest
 
     o = run_js("({get a() { throw new Error('oops'); } })")
     with pytest.raises(AttributeError):
