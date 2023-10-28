@@ -1589,8 +1589,8 @@ def test_dict_converter_cache2(selenium):
 
 @run_in_pyodide
 def test_dict_and_default_converter(selenium):
-    from pyodide.ffi import to_js
     from js import Object
+    from pyodide.ffi import to_js
 
     def default_converter(_obj, c, _):
         return c({"a": 2})
