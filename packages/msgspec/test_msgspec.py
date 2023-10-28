@@ -8,6 +8,7 @@ def test_msgspec(selenium_standalone):
 
     class User(msgspec.Struct):
         """A new type describing a User"""
+
         name: str
         groups: set[str] = set()
         email: str | None = None
@@ -18,7 +19,7 @@ def test_msgspec(selenium_standalone):
     # set order is undefined
     assert msg in [
         b'{"name":"alice","groups":["admin","engineering"],"email":null}',
-        b'{"name":"alice","groups":["engineering","admin"],"email":null}'
+        b'{"name":"alice","groups":["engineering","admin"],"email":null}',
     ]
 
     msgspec.json.decode(msg, type=User)
