@@ -1260,12 +1260,19 @@ def to_js(
     >>> js_object.hasOwnProperty("height")
     False
     
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_)
+    >>> js_object = pyodide.ffi.to_js({'age': 20, 'name': 'john'}, dict_converter=Map.new)
+    >>> js_object.keys(), js_object.values()
+    KeysView([object Map]) ValuesView([object Map])
+    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
+    [('age', 20), ('name', 'john')]
+    
+    
+    >>> js_object = pyodide.ffi.to_js({'age': 20, 'name': 'john'}, dict_converter=Array.new)
     >>> [item for item in js_object]
     [age,20, name,john]
     >>> js_object.toString()
     age,20,name,john
-    
+
     >>> class Bird: pass
     >>> converter = lambda value, cache, _: Object.new(size=1, color='red') if isinstance(value, Bird) else None
     >>> js_nest = to_js([Bird(), Bird()], default_converter=converter)
