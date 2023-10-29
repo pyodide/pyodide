@@ -1259,13 +1259,13 @@ def to_js(
     True
     >>> js_object.hasOwnProperty("height")
     False
-    
+
     >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Map.new)
     >>> js_object.keys(), js_object.values()
     KeysView([object Map]) ValuesView([object Map])
     >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
     [('age', 20), ('name', 'john')]
-    
+
     >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.new)
     >>> [item for item in js_object]
     [age,20, name,john]
