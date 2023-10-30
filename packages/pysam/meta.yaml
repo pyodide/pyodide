@@ -16,7 +16,6 @@ requirements:
 build:
   cflags: |
     -I$(WASM_LIBRARY_DIR)/include
-    -I/Users/sweaver/Programming/hivtrace/pyodide2/cpython/installs/python-3.11.3/include/python3.11
     -fPIC
   cross-script: |
     pwd
