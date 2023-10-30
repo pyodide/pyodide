@@ -26,7 +26,7 @@ const FETCH_NOT_FOUND_MSG = `\
 From Pyodide >= 0.25.0, node >= 18 is required. \
 Older versions of Node.js may work, but it is not guaranteed or supported. \
 Falling back to "node-fetch".\
-`
+`;
 
 /**
  * If we're in node, it's most convenient to import various node modules on
