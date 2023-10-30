@@ -678,12 +678,9 @@ def handle_command(
     is_link_cmd = get_library_output(line) is not None
 
     if line[0] == "gfortran":
-        if "-dumpversion" in line:
-            sys.exit(subprocess.run(line).returncode)
         tmp = replay_f2c(line)
-        if tmp is None:
-            sys.exit(0)
-        line = tmp
+        if tmp is not None:
+            line = tmp
 
     new_args = handle_command_generate_args(line, build_args, is_link_cmd)
 
