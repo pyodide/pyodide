@@ -5,8 +5,11 @@
 // ==================== JS_NULL ====================
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
-
 int JsvNull_Check(JsVal);
+
+extern JsRef Jsr_NoValue;
+#define JSV_NO_VALUE hiwire_get(Jsr_NoValue)
+int JsvNoValue_Check(JsVal);
 
 // ==================== Conversions between JsRef and JsVal ====================
 
@@ -22,7 +25,13 @@ JsRef_toVal(JsRef ref);
 // ==================== Primitive Conversions ====================
 
 JsVal
-JsvInt(int x);
+JsvNum_fromInt(int x);
+
+JsVal
+JsvNum_fromDouble(double x);
+
+JsVal
+JsvNum_fromDigits(const unsigned int* digits, size_t ndigits);
 
 bool
 Jsv_to_bool(JsVal x);
@@ -210,5 +219,23 @@ Jsv_greater_than(JsVal a, JsVal b);
  */
 bool
 Jsv_greater_than_equal(JsVal a, JsVal b);
+
+JsVal
+JsvMap_New(void);
+
+errcode
+JsvMap_Set(JsVal map, JsVal key, JsVal val);
+
+/**
+ * Create a new Set.
+ */
+JsVal
+JsvSet_New(void);
+
+/**
+ * Does set.add(key).
+ */
+errcode WARN_UNUSED
+JsvSet_Add(JsVal mapid, JsVal keyid);
 
 #endif

@@ -7,9 +7,9 @@ import {
 } from "./runtime_wasm.mjs";
 
 /**
- * Set the syncifyHandler used by hiwire_syncify.
+ * Set the syncifyHandler used by JsvPromise_syncify.
  *
- * syncifyHandler does the work of hiwire_syncify (defined in hiwire).
+ * syncifyHandler does the work of JsvPromise_syncify (defined in jslib.c).
  */
 function setSyncifyHandler() {
   const suspending_f = new WebAssembly.Function(
@@ -152,10 +152,10 @@ let validSuspender;
  *
  * - the syncifyHandler which uses suspenderGlobal to suspend execution, then
  *   awaits a promise, then resumes execution and returns the promise result
- *   (used by hiwire_syncify)
+ *   (used by JsvPromise_syncify)
  *
  * If the creation of these fails because JSPI is missing, then we set it up so
- * that callKwargsSyncifying and hiwire_syncify will always raise errors and
+ * that callKwargsSyncifying and JsvPromise_syncify will always raise errors and
  * everything else can work as normal.
  */
 export function initSuspenders() {

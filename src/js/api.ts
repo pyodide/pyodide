@@ -1,5 +1,4 @@
 declare var Module: any;
-declare var Hiwire: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
@@ -396,7 +395,7 @@ export class PyodideAPI {
         return obj;
         // return Module.pyproxy_new(py_result);
       }
-      result = _python2js_val(py_result);
+      result = _python2js(py_result);
       if (result === null) {
         _pythonexc2js();
       }

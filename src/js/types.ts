@@ -78,14 +78,22 @@ declare global {
   export const _JsProxy_create_val: (obj: any) => number;
   export const _JsProxy_Check: (ptr: number) => number;
 
-  export const _python2js_val: (pyobj: number) => any;
+  export const _python2js: (pyobj: number) => any;
   export const _python2js_custom: (
     obj: number,
     depth: number,
     proxies: PyProxy[] | null,
-    dict_converter: number,
-    default_converter: number,
-  ) => number;
+    dict_converter:
+      | null
+      | ((array: Iterable<[key: string, value: any]>) => any),
+    default_converter:
+      | null
+      | ((
+          obj: PyProxy,
+          convert: (obj: PyProxy) => any,
+          cacheConversion: (obj: PyProxy, result: any) => void,
+        ) => any),
+  ) => any;
 
   export const _pyproxy_getflags: (ptr: number) => number;
   export const __pyproxy_type: (ptr: number) => string;
