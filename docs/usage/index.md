@@ -85,6 +85,7 @@ If you're not sure whether you need web workers or service workers, here's an [o
 
 ```{warning}
 Starting with Pyodide 0.25.0, Node.js < 18 is no longer officially supported.
+Older versions of Node.js might still work, but they are not tested or guaranteed to work.
 ```
 
 ```{note}
