@@ -1474,9 +1474,7 @@ def test_args_OO(selenium_standalone_noload):
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    version_result = subprocess.run(
-        ["node", "-v"], capture_output=True, encoding="utf8"
-    )
+    subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
