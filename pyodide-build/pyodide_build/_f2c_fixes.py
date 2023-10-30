@@ -487,7 +487,14 @@ def scipy_fix_cfile(path: str) -> None:
 
     for lib in ["lapack", "blas"]:
         if path.endswith(f"cython_{lib}.c"):
-            header_path = Path(path).with_name(f"_{lib}_subroutines.h")
+            header_name = f"_{lib}_subroutines.h"
+            header_dir = Path(path).parent
+            while not (header_path := header_dir / header_name).exists():
+                # meson copies the source files into a subdirectory of the build
+                header_dir = header_dir.parent
+                if header_dir == Path("/"):
+                    raise RuntimeError(f"Could not find header file {header_name}")
+            
             header_text = header_path.read_text()
             header_text = header_text.replace("void F_FUNC", "int F_FUNC")
             header_path.write_text(header_text)

@@ -165,7 +165,6 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
         found_source = True
 
     if not found_source:
-        print(f"f2c: source not found, skipping: {new_args_str}")
         return None
     return new_args
 
@@ -328,8 +327,15 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         '-fno-strict-overflow',  # warning: argument unused during compilation
         "-mno-sse2", # warning: argument unused during compilation
         "-mno-avx2", # warning: argument unused during compilation
+        "-std=legacy", # fortran flag that clang does not support
     ]:
         return None
+
+    if arg.startswith((
+        "-J",  # fortran flag that clang does not support
+    )):
+        return None
+
     # fmt: on
     return arg
 
