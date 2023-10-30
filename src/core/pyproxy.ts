@@ -730,10 +730,8 @@ export class PyProxy {
     ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
-    let idresult;
+    let result;
     let proxies;
-    let dict_converter_id = 0;
-    let default_converter_id = 0;
     if (!create_pyproxies) {
       proxies = null;
     } else if (pyproxies) {
@@ -741,32 +739,23 @@ export class PyProxy {
     } else {
       proxies = [];
     }
-    if (dict_converter) {
-      dict_converter_id = Hiwire.new_value(dict_converter);
-    }
-    if (default_converter) {
-      default_converter_id = Hiwire.new_value(default_converter);
-    }
     try {
       Py_ENTER();
-      idresult = _python2js_custom(
+      result = _python2js_custom(
         ptrobj,
         depth,
         proxies,
-        dict_converter_id,
-        default_converter_id,
+        dict_converter || null,
+        default_converter || null,
       );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(dict_converter_id);
-      Hiwire.decref(default_converter_id);
     }
-    if (idresult === 0) {
+    if (result === null) {
       _pythonexc2js();
     }
-    return Hiwire.pop_value(idresult);
+    return result;
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.

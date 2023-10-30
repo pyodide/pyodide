@@ -47,7 +47,7 @@ console_error(char* msg);
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
 void
-console_error_obj(JsRef obj);
+console_error_obj(JsVal obj);
 
 /**
  * EM_JS Wrappers

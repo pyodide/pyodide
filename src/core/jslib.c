@@ -33,15 +33,44 @@ JsRef_new(JsVal v)
 
 // ==================== Primitive Conversions ====================
 
-EM_JS(JsVal, JsvInt, (int x), { return x; })
+// clang-format off
+EM_JS(JsVal, JsvNum_fromInt, (int x), {
+  return x;
+})
 
-EM_JS(bool, Jsv_to_bool, (JsVal x), { return !!x; })
+EM_JS(JsVal, JsvNum_fromDouble, (double val), {
+  return val;
+});
 
-EM_JS(JsVal, Jsv_typeof, (JsVal x), { return typeof x; })
+EM_JS_UNCHECKED(JsVal,
+JsvNum_fromDigits,
+(const unsigned int* digits, size_t ndigits),
+{
+  let result = BigInt(0);
+  for (let i = 0; i < ndigits; i++) {
+    result += BigInt(DEREF_U32(digits, i)) << BigInt(32 * i);
+  }
+  result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
+            << BigInt(1 + 32 * (ndigits - 1));
+  if (-Number.MAX_SAFE_INTEGER < result &&
+      result < Number.MAX_SAFE_INTEGER) {
+    result = Number(result);
+  }
+  return result;
+});
+
+EM_JS(bool, Jsv_to_bool, (JsVal x), {
+  return !!x;
+})
+
+EM_JS(JsVal, Jsv_typeof, (JsVal x), {
+  return typeof x;
+})
 
 EM_JS_REF(char*, Jsv_constructorName, (JsVal obj), {
   return stringToNewUTF8(obj.constructor.name);
 });
+// clang-format on
 
 // ==================== Strings API  ====================
 
@@ -150,7 +179,7 @@ JsvArray_slice_assign,
 {
   let jsvalues = [];
   for(let i = 0; i < values_length; i++){
-    const ref = _python2js_val(DEREF_U32(values, i));
+    const ref = _python2js(DEREF_U32(values, i));
     if(ref === null){
       return -1;
     }
@@ -345,7 +374,7 @@ EM_JS_NUM(errcode, jslib_init_buffers, (), {
    * anything.
    *
    * This is the API for use from JavaScript, there's also an EM_JS
-   * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+   * get_buffer_datatype wrapper for use from C. Used in js2python and
    * in jsproxy.c for buffers.
    */
   Module.get_buffer_datatype = function (jsobj) {
@@ -398,10 +427,33 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
 
+EM_JS(JsVal, jslib_init_novalue_js, (), {
+  Module.Jsv_NoValue = { noValueMarker : 1 };
+  return Module.Jsv_NoValue;
+})
+
+JsRef Jsr_NoValue = NULL;
+
+void
+jslib_init_novalue()
+{
+  Jsr_NoValue = hiwire_intern(jslib_init_novalue_js());
+}
+
+// clang-format off
+EM_JS(int, JsvNoValue_Check, (JsVal v), {
+  return v === Module.Jsv_NoValue;
+});
+// clang-format on
+
 errcode
 jslib_init(void)
 {
-  return jslib_init_buffers();
+  FAIL_IF_MINUS_ONE(jslib_init_buffers());
+  jslib_init_novalue();
+  return 0;
+finally:
+  return -1;
 }
 
 #define MAKE_OPERATOR(name, op)                                                \
@@ -415,3 +467,27 @@ MAKE_OPERATOR(not_equal, !==);
 // clang-format on
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
+
+// ==================== JsMap API  ====================
+
+// clang-format off
+EM_JS_VAL(JsVal, JsvMap_New, (), {
+  return new Map();
+})
+// clang-format on
+
+EM_JS_NUM(errcode, JsvMap_Set, (JsVal map, JsVal key, JsVal val), {
+  map.set(key, val);
+})
+
+// ==================== JsSet API  ====================
+
+// clang-format off
+EM_JS_VAL(JsVal, JsvSet_New, (), {
+  return new Set();
+})
+
+EM_JS_NUM(errcode, JsvSet_Add, (JsVal set, JsVal val), {
+  set.add(val);
+})
+// clang-format on

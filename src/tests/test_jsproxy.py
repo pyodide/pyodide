@@ -84,6 +84,20 @@ def test_jsproxy_getattr(selenium):
     )
 
 
+@run_in_pyodide
+def test_jsproxy_getattr_errors(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    o = run_js("({get a() { throw new Error('oops'); } })")
+    with pytest.raises(AttributeError):
+        o.x
+    with pytest.raises(JsException):
+        o.a
+
+
 @pytest.mark.xfail_browsers(node="No document in node")
 @run_in_pyodide
 def test_jsproxy_document(selenium):

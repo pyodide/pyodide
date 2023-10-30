@@ -1087,7 +1087,7 @@ def test_python2js_with_depth(selenium):
         `);
         const Module = pyodide._module;
         const proxies = [];
-        const result = Module.hiwire.pop_value(Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies));
+        const result = Module._python2js_with_depth(Module.PyProxy_getPtr(x), -1, proxies);
         assert(() => proxies.length === 4);
         const result_proxies = [result[0], result[1][0], result[1][1][0], result[1][1][1][0]];
         const sortFunc = (x, y) => Module.PyProxy_getPtr(x) < Module.PyProxy_getPtr(y);
@@ -1565,13 +1565,24 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
 
-def test_dict_converter_cache(selenium):
+def test_dict_converter_cache1(selenium):
     selenium.run_js(
         """
         let d1 = pyodide.runPython('d={0: {1: 2}}; d[1]=d[0]; d');
         let d = d1.toJs({dict_converter: Object.fromEntries});
         d1.destroy();
         assert(() => d[0] === d[1]);
+        """
+    )
+
+
+@pytest.mark.xfail(reason="TODO: Fix me")
+def test_dict_converter_cache2(selenium):
+    selenium.run_js(
+        """
+        let d1 = pyodide.runPython('d={0: {1: 2}}; d[1]=d[0]; d[2] = d; d');
+        let d = d1.toJs({dict_converter: Object.fromEntries});
+        assert(() => d[2] === d);
         """
     )
 
