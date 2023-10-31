@@ -5,8 +5,11 @@
 // ==================== JS_NULL ====================
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
-
 int JsvNull_Check(JsVal);
+
+extern JsRef Jsr_NoValue;
+#define JSV_NO_VALUE hiwire_get(Jsr_NoValue)
+int JsvNoValue_Check(JsVal);
 
 // ==================== Conversions between JsRef and JsVal ====================
 
@@ -22,10 +25,22 @@ JsRef_toVal(JsRef ref);
 // ==================== Primitive Conversions ====================
 
 JsVal
-JsvInt(int x);
+JsvNum_fromInt(int x);
+
+JsVal
+JsvNum_fromDouble(double x);
+
+JsVal
+JsvNum_fromDigits(const unsigned int* digits, size_t ndigits);
 
 bool
 Jsv_to_bool(JsVal x);
+
+JsVal
+Jsv_typeof(JsVal x);
+
+char*
+Jsv_constructorName(JsVal obj);
 
 JsVal
 JsvUTF8ToString(const char*);
@@ -83,6 +98,9 @@ JsVal JsvObject_Keys(JsVal);
 
 JsVal JsvObject_Values(JsVal);
 
+JsVal
+JsvObject_toString(JsVal obj);
+
 int
 JsvObject_SetAttr(JsVal obj, JsVal attr, JsVal value);
 
@@ -127,13 +145,35 @@ JsvFunction_CallBound(JsVal func, JsVal this, JsVal args);
 JsVal
 JsvFunction_Construct(JsVal func, JsVal args);
 
-// ==================== Miscellaneous  ====================
+// ==================== Promises  ====================
 
 bool
 JsvPromise_Check(JsVal obj);
 
 JsVal
 JsvPromise_Resolve(JsVal obj);
+
+JsVal
+JsvPromise_Syncify(JsVal promise);
+
+// ==================== Buffers  ====================
+
+errcode
+JsvBuffer_assignToPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_assignFromPtr(JsVal buf, void* ptr);
+
+errcode
+JsvBuffer_readFromFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_writeToFile(JsVal buf, int fd);
+
+errcode
+JsvBuffer_intoFile(JsVal buf, int fd);
+
+// ==================== Miscellaneous  ====================
 
 bool
 JsvGenerator_Check(JsVal obj);
@@ -143,5 +183,59 @@ JsvAsyncGenerator_Check(JsVal obj);
 
 void _Py_NO_RETURN
 JsvError_Throw(JsVal e);
+
+/**
+ * Returns non-zero if a < b.
+ */
+bool
+Jsv_less_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a <= b.
+ */
+bool
+Jsv_less_than_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a == b.
+ */
+bool
+Jsv_equal(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a != b.
+ */
+bool
+Jsv_not_equal(JsVal x, JsVal b);
+
+/**
+ * Returns non-zero if a > b.
+ */
+bool
+Jsv_greater_than(JsVal a, JsVal b);
+
+/**
+ * Returns non-zero if a >= b.
+ */
+bool
+Jsv_greater_than_equal(JsVal a, JsVal b);
+
+JsVal
+JsvMap_New(void);
+
+errcode
+JsvMap_Set(JsVal map, JsVal key, JsVal val);
+
+/**
+ * Create a new Set.
+ */
+JsVal
+JsvSet_New(void);
+
+/**
+ * Does set.add(key).
+ */
+errcode WARN_UNUSED
+JsvSet_Add(JsVal mapid, JsVal keyid);
 
 #endif

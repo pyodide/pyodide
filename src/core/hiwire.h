@@ -6,7 +6,6 @@
 #include "stdalign.h"
 #include "types.h"
 #define WARN_UNUSED __attribute__((warn_unused_result))
-#define hiwire_incref wrapped_hiwire_incref
 
 typedef HwRef JsRef;
 typedef __externref_t JsVal;
@@ -21,9 +20,6 @@ extern const JsRef Js_undefined;
 extern const JsRef Js_true;
 extern const JsRef Js_false;
 extern const JsRef Js_null;
-
-// For when the return value would be Option<JsRef>
-extern const JsRef Js_novalue;
 
 // A mechanism for handling static JavaScript strings from C
 // This is copied from the Python mechanism for handling static Python strings
@@ -59,19 +55,11 @@ int
 hiwire_init();
 
 /**
- * Convert an array of int32s to a Number or BigInt depending on whether it is
- * less than MAX_SAFE_INTEGER or not. The representation is assumed to be signed
- * and little endian.
- */
-JsRef
-hiwire_int_from_digits(const unsigned int* bytes, size_t nbytes);
-
-/**
  * Increase the reference count on an object.
  *
  * Returns: The new reference
  */
-JsRef
+void
 hiwire_incref(JsRef idval);
 
 /**
@@ -88,271 +76,13 @@ hiwire_incref(JsRef idval);
 JsRef
 hiwire_incref_deduplicate(JsRef idval);
 
+HwRef
+hiwire_new_deduplicate(JsVal v);
+
 /**
  * Decrease the reference count on an object.
  */
 void
 hiwire_decref(JsRef idval);
-
-/**
- * Create a new JavaScript integer with the given value.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_int(int val);
-
-/**
- * Create a new JavaScript float with the given value.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_double(double val);
-
-/**
- * Call a js function with one argument
- */
-JsRef
-hiwire_call_OneArg(JsRef idobj, JsRef idarg);
-
-JsRef
-hiwire_call_bound(JsRef idfunc, JsRef idthis, JsRef idargs);
-
-/**
- * Use stack switching to get the result of the promise synchronously.
- */
-JsRef
-hiwire_syncify(JsRef idpromise);
-
-bool
-hiwire_HasMethod(JsRef obj, JsRef name);
-
-/**
- * name is the method name, as null-terminated UTF8.
- * args is an Array containing the arguments.
- *
- */
-JsRef
-hiwire_CallMethodString(JsRef obj, const char* name, JsRef args);
-
-/**
- * name is the method name, as null-terminated UTF8.
- * arg is the argument
- */
-JsRef
-hiwire_CallMethodString_OneArg(JsRef obj, const char* name, JsRef arg);
-
-JsRef
-hiwire_CallMethod(JsRef obj, JsRef name, JsRef args);
-
-JsRef
-hiwire_CallMethod_OneArg(JsRef obj, JsRef name, JsRef arg);
-
-/**
- * Calls the constructor of a class object.
- *
- * idargs is a hiwire Array containing the arguments.
- *
- * Returns: New reference
- */
-JsRef
-hiwire_construct(JsRef idobj, JsRef idargs);
-
-/**
- * Test if the object has a `size` or `length` member which is a number. As a
- * special case, if the object is a function the `length` field is ignored.
- */
-bool
-hiwire_has_length(JsRef idobj);
-
-/**
- * Returns the value of the `size` or `length` member on a JavaScript object.
- * Prefers the `size` member if present and a number to the `length` field. If
- * both `size` and `length` are missing or not a number, returns `-1` to
- * indicate error.
- */
-int
-hiwire_get_length(JsRef idobj);
-
-/**
- * Returns the boolean value of a JavaScript object.
- */
-bool
-hiwire_get_bool(JsRef idobj);
-
-/**
- * Check if the object is a function.
- */
-bool
-hiwire_is_function(JsRef idobj);
-
-bool
-hiwire_is_generator(JsRef idobj);
-
-bool
-hiwire_is_async_generator(JsRef idobj);
-
-/**
- * Check if the object is a comlink proxy.
- */
-bool
-hiwire_is_comlink_proxy(JsRef idobj);
-
-/**
- * Check if the object is an error.
- */
-bool
-hiwire_is_error(JsRef idobj);
-
-/**
- * Returns true if the object is a promise.
- */
-bool
-hiwire_is_promise(JsRef idobj);
-
-/**
- * Returns Promise.resolve(obj)
- *
- * Returns: New reference to JavaScript promise
- */
-JsRef
-hiwire_resolve_promise(JsRef idobj);
-
-/**
- * Gets the string representation of an object by calling `toString`.
- *
- * Returns: New reference to JavaScript string
- */
-JsRef
-hiwire_to_string(JsRef idobj);
-
-/**
- * Gets the `typeof` string for a value.
- *
- * Returns: New reference to JavaScript string
- */
-JsRef
-hiwire_typeof(JsRef idobj);
-
-/**
- * Gets `value.constructor.name`.
- *
- * Returns: New reference to JavaScript string
- */
-char*
-hiwire_constructor_name(JsRef idobj);
-
-/**
- * Returns non-zero if a < b.
- */
-bool
-hiwire_less_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a <= b.
- */
-bool
-hiwire_less_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a == b.
- */
-bool
-hiwire_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a != b.
- */
-bool
-hiwire_not_equal(JsRef idx, JsRef idb);
-
-/**
- * Returns non-zero if a > b.
- */
-bool
-hiwire_greater_than(JsRef ida, JsRef idb);
-
-/**
- * Returns non-zero if a >= b.
- */
-bool
-hiwire_greater_than_equal(JsRef ida, JsRef idb);
-
-/**
- * Returns the reversed iterator associated with an array.
- */
-JsRef
-hiwire_reversed_iterator(JsRef idobj);
-
-/**
- * Copies the buffer contents of a given ArrayBuffer view or ArrayBuffer into
- * the memory at ptr.
- */
-errcode WARN_UNUSED
-hiwire_assign_to_ptr(JsRef idobj, void* ptr);
-
-/**
- * Copies the memory at ptr into a given ArrayBuffer view or ArrayBuffer.
- */
-errcode WARN_UNUSED
-hiwire_assign_from_ptr(JsRef idobj, void* ptr);
-
-errcode
-hiwire_write_to_file(JsRef idobj, int fd);
-
-errcode
-hiwire_read_from_file(JsRef idobj, int fd);
-
-/**
- * Convert a buffer into a file in a copy-free manner using "canOwn" parameter.
- * Cannot directly use the buffer anymore after using this.
- */
-errcode
-hiwire_into_file(JsRef idobj, int fd);
-
-/**
- * Get a data type identifier for a given typedarray.
- */
-void
-hiwire_get_buffer_info(JsRef idobj,
-                       Py_ssize_t* byteLength_ptr,
-                       char** format_ptr,
-                       Py_ssize_t* size_ptr,
-                       bool* check_assignments);
-
-/**
- * Get a subarray from a TypedArray
- */
-JsRef
-hiwire_subarray(JsRef idarr, int start, int end);
-
-// ==================== JsMap API  ====================
-
-/**
- * Create a new Map.
- */
-JsRef
-JsMap_New();
-
-/**
- * Does map.set(key, value).
- */
-errcode WARN_UNUSED
-JsMap_Set(JsRef mapid, JsRef keyid, JsRef valueid);
-
-// ==================== JsSet API  ====================
-
-/**
- * Create a new Set.
- */
-JsRef
-JsSet_New();
-
-/**
- * Does set.add(key).
- */
-errcode WARN_UNUSED
-JsSet_Add(JsRef mapid, JsRef keyid);
 
 #endif /* HIWIRE_H */

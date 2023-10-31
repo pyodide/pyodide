@@ -40,16 +40,16 @@ function restore_state(state) {
 }
 
 /**
- * Set the syncifyHandler used by hiwire_syncify.
+ * Set the syncifyHandler used by JsvPromise_syncify.
  *
- * syncifyHandler does the work of hiwire_syncify (defined in hiwire).
+ * syncifyHandler does the work of JsvPromise_syncify (defined in jslib.c).
  */
 function setSyncifyHandler() {
   const suspending_f = new WebAssembly.Function(
-    { parameters: ["externref", "i32"], results: ["i32"] },
+    { parameters: ["externref", "externref"], results: ["externref"] },
     async (x) => {
       try {
-        return Hiwire.new_value(await Hiwire.get_value(x));
+        return nullToUndefined(await x);
       } catch (e) {
         if (e && e.pyodide_fatal_error) {
           throw e;
@@ -57,8 +57,9 @@ function setSyncifyHandler() {
         // Error handling is tricky here. We need to wait until after
         // unswitching the stack to set the Python error flag. Just store the
         // error for the moment. We move this into the error flag in
-        // hiwire_syncify_handle_error in hiwire.c
+        // JsvPromise_Syncify_HandleError in jslib.c
         Module.syncify_error = e;
+        return null;
       }
     },
     { suspending: "first" },
@@ -74,7 +75,7 @@ function setSyncifyHandler() {
       restore: restore_state,
     },
   });
-  // Assign to the function pointer so that hiwire_syncify calls our wrapper
+  // Assign to the function pointer so that JsvPromise_syncify calls our wrapper
   // function
   HEAP32[_syncifyHandler / 4] = addFunction(instance.exports.o);
 }
@@ -88,7 +89,7 @@ export function promisingApply(...args) {
   Module.stackStop = Module.___stack_pointer.value;
   // Subtle cframe shenanigans...
   Module.origCframe = _get_cframe();
-  const cframe = Module.stackAlloc(HEAP32[_size_of_cframe / 4]);
+  const cframe = stackAlloc(HEAP32[_size_of_cframe / 4]);
   _set_new_cframe(cframe);
   return promisingApplyHandler(...args);
 }
@@ -192,10 +193,10 @@ let validSuspender;
  *
  * - the syncifyHandler which uses suspenderGlobal to suspend execution, then
  *   awaits a promise, then resumes execution and returns the promise result
- *   (used by hiwire_syncify)
+ *   (used by JsvPromise_syncify)
  *
  * If the creation of these fails because JSPI is missing, then we set it up so
- * that callKwargsSyncifying and hiwire_syncify will always raise errors and
+ * that callKwargsSyncifying and JsvPromise_syncify will always raise errors and
  * everything else can work as normal.
  */
 export function initSuspenders() {

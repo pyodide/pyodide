@@ -23,6 +23,24 @@ myst:
   value and leaked memory.
   {pr}`4236`
 
+- {{ Breaking }} `PyProxy.toString` now calls `str` instead of `repr`. For now
+  you can opt into the old behavior by passing `pyproxyToStringRepr: true` to
+  `loadPyodide`, but this may be removed in the future.
+  {pr}`4247`
+
+- {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
+  throws an error, that error is propagated instead of being turned into an
+  `AttributeError`.
+  {pr}`4254`
+
+### Pyodide CLI
+
+- {{ Enhancement }} `pyodide config` command now show additional config variables:
+  `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`, `rust_toolchain`, `cflags`
+  `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
+  build to set the same variables as in-tree build.
+  {pr}`4241`
+
 ### Packages
 
 - Added `river` version 0.19.0 {pr}`4197`
@@ -32,6 +50,8 @@ myst:
 - Added `frozenlist` {pr}`4231`
 
 - Added `zengl` version 1.16.0 {pr}`4208`
+
+- Added `msgspec` version 0.18.4 {pr}`4265`
 
 ### Load time & size optimizations
 

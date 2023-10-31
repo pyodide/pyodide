@@ -300,7 +300,7 @@ def test_monkeypatch_eval_code(selenium):
         )
 
 
-def test_hiwire_is_promise(selenium):
+def test_promise_check(selenium):
     for s in [
         "0",
         "1",
@@ -326,22 +326,16 @@ def test_hiwire_is_promise(selenium):
         "new Map()",
         "new Set()",
     ]:
-        assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise({s}) === false;"
-        )
+        assert selenium.run_js(f"return pyodide._api.isPromise({s}) === false;")
 
     if not selenium.browser == "node":
-        assert selenium.run_js(
-            "return pyodide._module.hiwire.isPromise(document.all) === false;"
-        )
+        assert selenium.run_js("return pyodide._api.isPromise(document.all) === false;")
 
-    assert selenium.run_js(
-        "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"
-    )
+    assert selenium.run_js("return pyodide._api.isPromise(Promise.resolve()) === true;")
 
     assert selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(new Promise((resolve, reject) => {}));
+        return pyodide._api.isPromise(new Promise((resolve, reject) => {}));
         """
     )
 
@@ -349,7 +343,7 @@ def test_hiwire_is_promise(selenium):
         """
         let d = pyodide.runPython("{}");
         try {
-            return pyodide._module.hiwire.isPromise(d);
+            return pyodide._api.isPromise(d);
         } finally {
             d.destroy();
         }
@@ -1109,7 +1103,6 @@ def test_weird_throws(selenium):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
 def test_weird_fatals(selenium_standalone, to_throw):
     expected_message = {

@@ -30,9 +30,11 @@ EM_JS(void, console_error, (char* msg), {
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-EM_JS(void, console_error_obj, (JsRef obj), {
-  console.error(Hiwire.get_value(obj));
+// clang-format off
+EM_JS(void, console_error_obj, (JsVal obj), {
+  console.error(obj);
 });
+// clang-format on
 
 /**
  * Set Python error indicator from JavaScript.
@@ -262,14 +264,19 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
   Py_UNREACHABLE();
 }
 
+// clang-format off
+EM_JS(void, raw_call_js, (JsVal func), {
+  func();
+});
+// clang-format on
+
 /**
  * This is for testing fatal errors in test_pyodide
  */
 PyObject*
 raw_call(PyObject* mod, PyObject* jsproxy)
 {
-  JsRef func = JsProxy_AsJs(jsproxy);
-  EM_ASM(Hiwire.get_value($0)(), func);
+  raw_call_js(JsProxy_Val(jsproxy));
   Py_RETURN_NONE;
 }
 
