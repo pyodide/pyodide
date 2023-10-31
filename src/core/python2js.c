@@ -462,7 +462,9 @@ _python2js(ConversionContext *context, PyObject* x)
     return python2js_track_proxies(x, hiwire_get(context->proxies), true);
   } else {
     context->depth--;
-    return _python2js_deep(context, x);
+    JsVal result = _python2js_deep(context, x);
+    context->depth++;
+    return result;
   }
 finally:
   return JS_NULL;
