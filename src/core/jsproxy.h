@@ -17,13 +17,10 @@ int
 JsProxy_compute_typeflags(JsVal obj);
 
 PyObject*
-JsProxy_create_with_type(int type_flags, JsRef object, JsRef this);
+JsProxy_create_with_type(int type_flags, JsVal object, JsVal this);
 
 PyObject*
-JsProxy_create_objmap(JsRef object, bool objmap);
-
-PyObject*
-JsProxy_create_objmap_val(JsVal object, bool objmap);
+JsProxy_create_objmap(JsVal object, bool objmap);
 
 /**
  * Make a new JsProxy.
@@ -33,7 +30,7 @@ JsProxy_create_objmap_val(JsVal object, bool objmap);
  * @return The Python object wrapping the JavaScript object.
  */
 PyObject*
-JsProxy_create_with_this(JsRef object, JsRef this);
+JsProxy_create_with_this(JsVal object, JsVal this);
 
 /**
  * Make a new JsProxy.
@@ -41,10 +38,7 @@ JsProxy_create_with_this(JsRef object, JsRef this);
  * @return The Python object wrapping the JavaScript object.
  */
 PyObject*
-JsProxy_create(JsRef v);
-
-PyObject*
-JsProxy_create_val(JsVal object);
+JsProxy_create(JsVal v);
 
 /**
  * Check if a Python object is a JsProxy.
@@ -53,14 +47,6 @@ JsProxy_create_val(JsVal object);
  */
 bool
 JsProxy_Check(PyObject* x);
-
-/**
- * Grab the underlying JavaScript object from the JsProxy.
- * @param x The JsProxy object. Will fatally fail if it isn't a JsProxy.
- * @return The JavaScript object.
- */
-JsRef
-JsProxy_AsJs(PyObject* x);
 
 JsVal
 JsProxy_Val(PyObject* x);

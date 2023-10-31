@@ -1177,9 +1177,9 @@ def test_tojs6(selenium):
             b = [a, a, a, a, a]
             [b, b, b, b, b]
         `);
-        let total_refs = pyodide._module.hiwire.num_keys();
+        let total_refs = pyodide._module._hiwire_num_refs();
         let res = respy.toJs();
-        let new_total_refs = pyodide._module.hiwire.num_keys();
+        let new_total_refs = pyodide._module._hiwire_num_refs();
         respy.destroy();
         assert(() => total_refs === new_total_refs);
         assert(() => res[0] === res[1]);
@@ -1199,9 +1199,9 @@ def test_tojs7(selenium):
             a.append(b)
             a
         `);
-        let total_refs = pyodide._module.hiwire.num_keys();
+        let total_refs = pyodide._module._hiwire_num_refs();
         let res = respy.toJs();
-        let new_total_refs = pyodide._module.hiwire.num_keys();
+        let new_total_refs = pyodide._module._hiwire_num_refs();
         respy.destroy();
         assert(() => total_refs === new_total_refs);
         assert(() => res[0][0] === "b");

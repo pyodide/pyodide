@@ -261,7 +261,7 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let err = _JsProxy_create_val(e);
+    let err = _JsProxy_create(e);
     _set_error(err);
     _Py_DecRef(err);
   }

@@ -6,7 +6,6 @@
 #include "stdalign.h"
 #include "types.h"
 #define WARN_UNUSED __attribute__((warn_unused_result))
-#define hiwire_incref wrapped_hiwire_incref
 
 typedef HwRef JsRef;
 typedef __externref_t JsVal;
@@ -21,9 +20,6 @@ extern const JsRef Js_undefined;
 extern const JsRef Js_true;
 extern const JsRef Js_false;
 extern const JsRef Js_null;
-
-// For when the return value would be Option<JsRef>
-extern const JsRef Js_novalue;
 
 // A mechanism for handling static JavaScript strings from C
 // This is copied from the Python mechanism for handling static Python strings
@@ -63,7 +59,7 @@ hiwire_init();
  *
  * Returns: The new reference
  */
-JsRef
+void
 hiwire_incref(JsRef idval);
 
 /**
@@ -79,6 +75,9 @@ hiwire_incref(JsRef idval);
  */
 JsRef
 hiwire_incref_deduplicate(JsRef idval);
+
+HwRef
+hiwire_new_deduplicate(JsVal v);
 
 /**
  * Decrease the reference count on an object.

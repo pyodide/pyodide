@@ -309,15 +309,14 @@ def test_pyproxy_get_buffer(selenium):
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
                     let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
-                    console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
                     if(v1.toString() !== v2){
                         throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
                     }
                 }
             }
             z.release();
+            pyodide.runPython(`print("${x}", getrefcount(${x}))`);
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
-            pyodide.runPython(`del ${x}`);
         }
         """
     )

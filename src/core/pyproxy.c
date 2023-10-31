@@ -1166,29 +1166,51 @@ EM_JS(JsVal, array_to_js, (Py_ssize_t * array, int len), {
   return Array.from(HEAP32.subarray(array / 4, array / 4 + len));
 })
 
-// The order of these fields has to match the code in getBuffer
-typedef struct
+// A macro to help us keep track of the fields we want to produce for the buffer
+// info. We want to return a JavaScript object with these fields.
+// You might write similar macros if you were not allowed to use structs...
+
+// _pyproxy_get_buffer_result takes this set of arguments (with an extra
+// sentinel to deal with the trailing comma problem). We declare a variable for
+// each of these fields in _pyproxy_get_buffer and then the RESULT macro
+// generates the call to _pyproxy_get_buffer_result which builds the JS object.
+// This object is then destructured and used in pyproxy.ts.
+// clang-format off
+#define FIELDS(x)                                                               \
+  FIELD(x)(void*, start_ptr)                                                    \
+  FIELD(x)(void*, smallest_ptr)                                                 \
+  FIELD(x)(void*, largest_ptr)                                                  \
+  FIELD(x)(int, readonly)                                                       \
+  FIELD(x)(char*, format)                                                       \
+  FIELD(x)(int, itemsize)                                                       \
+  FIELD(x)(JsVal, shape)                                                        \
+  FIELD(x)(JsVal, strides)                                                      \
+  FIELD(x)(Py_buffer*, view)                                                    \
+  FIELD(x)(int, c_contiguous)                                                   \
+  FIELD(x)(int, f_contiguous)                                                   \
+
+#define FIELD(x) FIELD_ ## x
+
+#define FIELD_argspec(a, b) a b,
+#define FIELD_comma_separated(a, b) b,
+#define FIELD_declarations(a, b) a b;
+
+// We have to add an extra sentinel argument because C doesn't like trailing
+// commas
+#define ARGSPEC FIELDS(argspec)         int sentinel
+#define ARGS    FIELDS(comma_separated) 0
+
+EM_JS_MACROS(
+JsVal,
+_pyproxy_get_buffer_result,
+(ARGSPEC),
 {
-  // where is the first entry buffer[0]...[0] (ndim times)?
-  void* start_ptr;
-  // Where is the earliest location in buffer? (If all strides are positive,
-  // this equals start_ptr)
-  void* smallest_ptr;
-  // What is the last location in the buffer (plus one)
-  void* largest_ptr;
+  format = UTF8ToString(format);
+  return { FIELDS(comma_separated) };
+})
+// clang-format on
 
-  int readonly;
-  char* format;
-  int itemsize;
-  JsRef shape;
-  JsRef strides;
-
-  Py_buffer* view;
-  int c_contiguous;
-  int f_contiguous;
-} buffer_struct;
-
-EMSCRIPTEN_KEEPALIVE size_t buffer_struct_size = sizeof(buffer_struct);
+#define RESULT _pyproxy_get_buffer_result(ARGS)
 
 /**
  * This is the C part of the getBuffer method.
@@ -1207,81 +1229,89 @@ EMSCRIPTEN_KEEPALIVE size_t buffer_struct_size = sizeof(buffer_struct);
  * memory). If strides are positive, these are the same but if some strides are
  * negative they will be different.
  *
- * We also put the various other metadata about the buffer that we want to share
- * into buffer_struct.
+ * We put all the metadata about the buffer that we want to share into a JS
+ * object and return it. Syncing up the C variables with the eventual JS array
+ * we want to make is accomplished with the FIELDS macros.
  */
-EMSCRIPTEN_KEEPALIVE int
-_pyproxy_get_buffer(buffer_struct* target, PyObject* ptrobj)
+EMSCRIPTEN_KEEPALIVE JsVal
+_pyproxy_get_buffer(PyObject* ptrobj)
 {
-  Py_buffer view;
+  Py_buffer v;
   // PyBUF_RECORDS_RO requires that suboffsets be NULL but otherwise is the most
   // permissive possible request.
-  if (PyObject_GetBuffer(ptrobj, &view, PyBUF_RECORDS_RO) == -1) {
+  if (PyObject_GetBuffer(ptrobj, &v, PyBUF_RECORDS_RO) == -1) {
     // Buffer cannot be represented without suboffsets. The bf_getbuffer method
     // should have set a PyExc_BufferError saying something to this effect.
-    return -1;
+    return JS_NULL;
   }
 
-  buffer_struct result = { 0 };
-  result.start_ptr = result.smallest_ptr = result.largest_ptr = view.buf;
-  result.readonly = view.readonly;
+  // The following declares a bunch of local variables. We need to fill them in
+  // and use return RESULT; to return a JS object with this info.
+  FIELDS(declarations);
 
-  result.format = view.format;
-  result.itemsize = view.itemsize;
+  start_ptr = smallest_ptr = largest_ptr = v.buf;
 
-  if (view.ndim == 0) {
+  readonly = v.readonly;
+  format = v.format;
+  itemsize = v.itemsize;
+
+  view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
+  *view = v;
+
+  if (v.ndim == 0) {
     // "If ndim is 0, buf points to a single item representing a scalar. In this
     // case, shape, strides and suboffsets MUST be NULL."
     // https://docs.python.org/3/c-api/buffer.html#c.Py_buffer.ndim
-    result.largest_ptr += view.itemsize;
-    result.shape = hiwire_new(JsvArray_New());
-    result.strides = hiwire_new(JsvArray_New());
-    result.c_contiguous = true;
-    result.f_contiguous = true;
-    goto success;
+    // all zero-dimensional arrays are both c_contiguous and f_contiguous.
+    largest_ptr += v.itemsize;
+    shape = JsvArray_New();
+    strides = JsvArray_New();
+    c_contiguous = true;
+    f_contiguous = true;
+    return RESULT;
   }
 
   // Because we requested PyBUF_RECORDS_RO I think we can assume that
-  // view.shape != NULL.
-  result.shape = hiwire_new(array_to_js(view.shape, view.ndim));
+  // v.shape != NULL.
+  shape = array_to_js(v.shape, v.ndim);
 
-  if (view.strides == NULL) {
+  if (v.strides == NULL) {
     // In this case we are a C contiguous buffer
-    result.largest_ptr += view.len;
-    Py_ssize_t strides[view.ndim];
-    PyBuffer_FillContiguousStrides(
-      view.ndim, view.shape, strides, view.itemsize, 'C');
-    result.strides = hiwire_new(array_to_js(strides, view.ndim));
-    goto success;
+    largest_ptr += v.len;
+    Py_ssize_t cstrides[v.ndim];
+    PyBuffer_FillContiguousStrides(v.ndim, v.shape, cstrides, v.itemsize, 'C');
+    c_contiguous = true;
+    // 1d c_contiguous arrays are also f_contiguous
+    f_contiguous = (v.ndim == 1);
+    strides = array_to_js(cstrides, v.ndim);
+    return RESULT;
   }
 
-  if (view.len != 0) {
+  if (v.len != 0) {
     // Have to be careful to ensure that we handle negative strides correctly.
-    for (int i = 0; i < view.ndim; i++) {
-      // view.strides[i] != 0
-      if (view.strides[i] > 0) {
+    for (int i = 0; i < v.ndim; i++) {
+      // v.strides[i] != 0
+      if (v.strides[i] > 0) {
         // add positive strides to largest_ptr
-        result.largest_ptr += view.strides[i] * (view.shape[i] - 1);
+        largest_ptr += v.strides[i] * (v.shape[i] - 1);
       } else {
         // subtract negative strides from smallest_ptr
-        result.smallest_ptr += view.strides[i] * (view.shape[i] - 1);
+        smallest_ptr += v.strides[i] * (v.shape[i] - 1);
       }
     }
-    result.largest_ptr += view.itemsize;
+    largest_ptr += v.itemsize;
   }
 
-  result.strides = hiwire_new(array_to_js(view.strides, view.ndim));
-  result.c_contiguous = PyBuffer_IsContiguous(&view, 'C');
-  result.f_contiguous = PyBuffer_IsContiguous(&view, 'F');
-
-success:
-  // The result.view memory will be freed when (if?) the user calls
-  // Py_Buffer.release().
-  result.view = (Py_buffer*)PyMem_Malloc(sizeof(Py_buffer));
-  *result.view = view;
-  *target = result;
-  return 0;
+  strides = array_to_js(v.strides, v.ndim);
+  c_contiguous = PyBuffer_IsContiguous(&v, 'C');
+  f_contiguous = PyBuffer_IsContiguous(&v, 'F');
+  return RESULT;
 }
+#undef FIELDS
+#undef FIELD
+#undef ARGSPEC
+#undef ARGS
+#undef RESULT
 
 // clang-format off
 EM_JS_VAL(JsVal,
@@ -1289,9 +1319,9 @@ pyproxy_new_ex,
 (PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
 {
   return Module.pyproxy_new(ptrobj, {
-      props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
-      gcRegister,
-    });
+    props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
+    gcRegister,
+  });
 });
 // clang-format on
 
@@ -1336,7 +1366,7 @@ static PyObject*
 create_once_callable_py(PyObject* _mod, PyObject* obj)
 {
   JsVal v = create_once_callable(obj);
-  return JsProxy_create_val(v);
+  return JsProxy_create(v);
 }
 
 // clang-format off
@@ -1441,7 +1471,7 @@ create_proxy(PyObject* self,
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
-  return JsProxy_create_val(pyproxy_new_ex(obj, capture_this, roundtrip, true));
+  return JsProxy_create(pyproxy_new_ex(obj, capture_this, roundtrip, true));
 }
 
 static PyMethodDef methods[] = {

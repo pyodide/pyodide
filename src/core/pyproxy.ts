@@ -16,7 +16,6 @@
 
 declare var Tests: any;
 declare var Module: any;
-declare var Hiwire: any;
 
 import { TypedArray } from "types";
 import { warnOnce } from "pyodide_util";
@@ -2627,38 +2626,32 @@ export class PyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let orig_stack_ptr = stackSave();
-    let buffer_struct_ptr = stackAlloc(DEREF_U32(_buffer_struct_size, 0));
     let this_ptr = _getPtr(this);
-    let errcode;
+    let result;
     try {
       Py_ENTER();
-      errcode = __pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
+      result = __pyproxy_get_buffer(this_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (result === null) {
       _pythonexc2js();
     }
 
-    // This has to match the fields in buffer_struct
-    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
-    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
-    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
-
-    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
-    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
-    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
-    let shape = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
-    let strides = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
-
-    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
-    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
-    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
-
-    let format = UTF8ToString(format_ptr);
-    stackRestore(orig_stack_ptr);
+    const {
+      start_ptr,
+      smallest_ptr,
+      largest_ptr,
+      readonly,
+      format,
+      itemsize,
+      shape,
+      strides,
+      view,
+      c_contiguous,
+      f_contiguous,
+    } = result;
 
     let success = false;
     try {
@@ -2680,24 +2673,24 @@ export class PyBufferMethods {
             "to little endian.",
         );
       }
-      let numBytes = maxByteOffset - minByteOffset;
+      let numBytes = largest_ptr - smallest_ptr;
       if (
         numBytes !== 0 &&
-        (startByteOffset % alignment !== 0 ||
-          minByteOffset % alignment !== 0 ||
-          maxByteOffset % alignment !== 0)
+        (start_ptr % alignment !== 0 ||
+          smallest_ptr % alignment !== 0 ||
+          largest_ptr % alignment !== 0)
       ) {
         throw new Error(
           `Buffer does not have valid alignment for a ${ArrayType.name}`,
         );
       }
       let numEntries = numBytes / alignment;
-      let offset = (startByteOffset - minByteOffset) / alignment;
+      let offset = (start_ptr - smallest_ptr) / alignment;
       let data;
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, smallest_ptr, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;
@@ -2718,7 +2711,7 @@ export class PyBufferMethods {
           data,
           c_contiguous,
           f_contiguous,
-          _view_ptr: view_ptr,
+          _view_ptr: view,
           _released: false,
         }),
       );
@@ -2728,8 +2721,8 @@ export class PyBufferMethods {
       if (!success) {
         try {
           Py_ENTER();
-          _PyBuffer_Release(view_ptr);
-          _PyMem_Free(view_ptr);
+          _PyBuffer_Release(view);
+          _PyMem_Free(view);
           Py_EXIT();
         } catch (e) {
           API.fatal_error(e);

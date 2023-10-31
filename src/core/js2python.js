@@ -117,7 +117,7 @@ JS_FILE(js2python_init, () => {
     } else if (API.isPyProxy(value)) {
       const { props, shared } = Module.PyProxy_getAttrs(value);
       if (props.roundtrip) {
-        return _JsProxy_create_val(value);
+        return _JsProxy_create(value);
       } else {
         return __js2python_pyproxy(shared.ptr);
       }
@@ -286,7 +286,7 @@ JS_FILE(js2python_init, () => {
       return result;
     }
     if (context.depth === 0) {
-      return _JsProxy_create_val(value);
+      return _JsProxy_create(value);
     }
     result = context.cache.get(value);
     if (result !== undefined) {
@@ -299,7 +299,7 @@ JS_FILE(js2python_init, () => {
         return result;
       }
       if (context.defaultConverter === undefined) {
-        return _JsProxy_create_val(value);
+        return _JsProxy_create(value);
       }
       let result_js = context.defaultConverter(
         value,
@@ -313,7 +313,7 @@ JS_FILE(js2python_init, () => {
       if (result !== undefined) {
         return result;
       }
-      return _JsProxy_create_val(result_js);
+      return _JsProxy_create(result_js);
     } finally {
       context.depth++;
     }

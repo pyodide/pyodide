@@ -1,24 +1,12 @@
 #define PY_SSIZE_T_CLEAN
-#include "Python.h"
-
 #include "error_handling.h"
 #include <emscripten.h>
 
 #include "hiwire.h"
-#include "jsmemops.h"
-#undef hiwire_incref
-
-#define ERROR_REF (0)
-#define ERROR_NUM (-1)
 
 #ifdef DEBUG_F
 int tracerefs = 0;
 #endif
-
-// For when the return value would be Option<JsRef>
-// we use the largest possible immortal reference so that `get_value` on it will
-// always raise an error.
-const JsRef Js_novalue = ((JsRef)(2147483644));
 
 #define HIWIRE_INIT_CONSTS()                                                   \
   HIWIRE_INIT_CONST(undefined)                                                 \
@@ -40,30 +28,7 @@ HIWIRE_INIT_CONSTS();
 
 EM_JS_NUM(int, hiwire_init_js, (void), {
   HIWIRE_INIT_CONSTS();
-  // clang-format off
-  Hiwire.new_value = _hiwire_new;
-  Hiwire.new_stack = _hiwire_new;
-  Hiwire.intern_object = _hiwire_intern;
   Hiwire.num_keys = _hiwire_num_refs;
-  Hiwire.stack_length = () => 0;
-  Hiwire.get_value = _hiwire_get;
-  Hiwire.incref = (x) =>
-  {
-    _hiwire_incref(x);
-    return x;
-  };
-  Hiwire.decref = _hiwire_decref;
-  Hiwire.pop_value = _hiwire_pop;
-  // clang-format on
-
-  Module.iterObject = function * (object)
-  {
-    for (let k in object) {
-      if (Object.prototype.hasOwnProperty.call(object, k)) {
-        yield k;
-      }
-    }
-  };
   return 0;
 });
 
@@ -74,10 +39,12 @@ hiwire_init()
 }
 
 HwRef
-wrapped_hiwire_incref(HwRef ref)
+hiwire_new_deduplicate(__externref_t v)
 {
-  hiwire_incref(ref);
-  return ref;
+  HwRef id = hiwire_new(v);
+  HwRef result = hiwire_incref_deduplicate(id);
+  hiwire_decref(id);
+  return result;
 }
 
 // Called by libhiwire if an invalid ID is dereferenced.
