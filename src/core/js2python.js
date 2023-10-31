@@ -206,8 +206,8 @@ JS_FILE(js2python_init, () => {
             `Cannot use key of type ${key_type} as a key to a Python set`,
           );
         }
-        let errcode = _PySet_Add(set, key_py);
-        if (errcode === -1) {
+        const err = _PySet_Add(set, key_py);
+        if (err === -1) {
           throw new PropagateError();
         }
         _Py_DecRef(key_py);

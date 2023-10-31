@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "error_handling.h"
 #include "jslib.h"
 #include "python2js.h"
 #include <emscripten.h>
@@ -79,7 +80,6 @@ PyInit__pyodide_core(void)
   }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
-  TRY_INIT(hiwire);
   TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT(js2python);

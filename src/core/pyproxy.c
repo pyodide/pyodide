@@ -4,7 +4,6 @@
 #include <emscripten.h>
 
 #include "docstring.h"
-#include "hiwire.h"
 #include "js2python.h"
 #include "jslib.h"
 #include "jsmemops.h" // for pyproxy.js
@@ -599,7 +598,7 @@ _pyproxy_pop(PyObject* pyobj, bool pop_start)
   } else {
     if (PyErr_ExceptionMatches(PyExc_IndexError)) {
       PyErr_Clear();
-      jsresult = hiwire_get(Js_undefined);
+      jsresult = Jsv_undefined;
     } else {
       FAIL();
     }
@@ -1079,14 +1078,14 @@ FutureDoneCallback_call(FutureDoneCallback* self,
     return NULL;
   }
   PyObject* result = _PyObject_CallMethodIdNoArgs(fut, &PyId_result);
-  int errcode;
+  int err;
   if (result != NULL) {
-    errcode = FutureDoneCallback_call_resolve(self, result);
+    err = FutureDoneCallback_call_resolve(self, result);
     Py_DECREF(result);
   } else {
-    errcode = FutureDoneCallback_call_reject(self);
+    err = FutureDoneCallback_call_reject(self);
   }
-  if (errcode == 0) {
+  if (err == 0) {
     Py_RETURN_NONE;
   } else {
     return NULL;
