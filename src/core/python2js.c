@@ -30,18 +30,18 @@ typedef struct ConversionContext_s
   int depth;
   JsRef proxies;
   JsRef jscontext;
-  JsVal (*dict_new)(struct ConversionContext_s context);
-  int (*dict_add_keyvalue)(struct ConversionContext_s context,
+  JsVal (*dict_new)(struct ConversionContext_s* context);
+  int (*dict_add_keyvalue)(struct ConversionContext_s* context,
                            JsVal target,
                            JsVal key,
                            JsVal value);
-  JsVal (*dict_postprocess)(struct ConversionContext_s context, JsVal dict);
+  JsVal (*dict_postprocess)(struct ConversionContext_s* context, JsVal dict);
   JsRef jspostprocess_list;
   bool default_converter;
 } ConversionContext;
 
 JsVal
-_python2js(ConversionContext context, PyObject* x);
+_python2js(ConversionContext* context, PyObject* x);
 
 // clang-format off
 EM_JS(void,
@@ -196,14 +196,14 @@ _python2js_unicode(PyObject* x)
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsVal
-_python2js_sequence(ConversionContext context, PyObject* x)
+_python2js_sequence(ConversionContext* context, PyObject* x)
 {
   bool success = false;
   PyObject* pyitem = NULL;
 
   JsVal jsarray = JsvArray_New();
   FAIL_IF_MINUS_ONE(
-    _python2js_add_to_cache(hiwire_get(context.cache), x, jsarray));
+    _python2js_add_to_cache(hiwire_get(context->cache), x, jsarray));
   Py_ssize_t length = PySequence_Size(x);
   FAIL_IF_MINUS_ONE(length);
   for (Py_ssize_t i = 0; i < length; ++i) {
@@ -214,7 +214,7 @@ _python2js_sequence(ConversionContext context, PyObject* x)
     if (JsvNoValue_Check(jsitem)) {
       JsVal index = JsvNum_fromInt(JsvArray_Push(jsarray, JS_NULL));
       _python2js_addto_postprocess_list(
-        hiwire_get(context.jspostprocess_list), jsarray, index, pyitem);
+        hiwire_get(context->jspostprocess_list), jsarray, index, pyitem);
     } else {
       JsvArray_Push(jsarray, jsitem);
     }
@@ -231,14 +231,14 @@ finally:
  * returns NULL, we must assume that the cache has been corrupted and bail out.
  */
 static JsVal
-_python2js_dict(ConversionContext context, PyObject* x)
+_python2js_dict(ConversionContext* context, PyObject* x)
 {
   bool success = false;
 
-  JsVal jsdict = context.dict_new(context);
+  JsVal jsdict = context->dict_new(context);
   FAIL_IF_JS_NULL(jsdict);
   FAIL_IF_MINUS_ONE(
-    _python2js_add_to_cache(hiwire_get(context.cache), x, JSV_NO_VALUE));
+    _python2js_add_to_cache(hiwire_get(context->cache), x, JSV_NO_VALUE));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
@@ -253,18 +253,18 @@ _python2js_dict(ConversionContext context, PyObject* x)
     FAIL_IF_JS_NULL(jsval);
     if (JsvNoValue_Check(jsval)) {
       _python2js_addto_postprocess_list(
-        hiwire_get(context.jspostprocess_list), jsdict, jskey, pyval);
+        hiwire_get(context->jspostprocess_list), jsdict, jskey, pyval);
     } else {
       FAIL_IF_MINUS_ONE(
-        context.dict_add_keyvalue(context, jsdict, jskey, jsval));
+        context->dict_add_keyvalue(context, jsdict, jskey, jsval));
     }
   }
-  if (context.dict_postprocess) {
-    jsdict = context.dict_postprocess(context, jsdict);
+  if (context->dict_postprocess) {
+    jsdict = context->dict_postprocess(context, jsdict);
     FAIL_IF_JS_NULL(jsdict);
   }
   FAIL_IF_MINUS_ONE(
-    _python2js_add_to_cache(hiwire_get(context.cache), x, jsdict));
+    _python2js_add_to_cache(hiwire_get(context->cache), x, jsdict));
   success = true;
 finally:
   return success ? jsdict : JS_NULL;
@@ -281,7 +281,7 @@ finally:
  * can't convert).
  */
 static JsVal
-_python2js_set(ConversionContext context, PyObject* x)
+_python2js_set(ConversionContext* context, PyObject* x)
 {
   bool success = false;
   PyObject* iter = NULL;
@@ -306,7 +306,7 @@ _python2js_set(ConversionContext context, PyObject* x)
   // Because we only convert immutable keys, we can do this here.
   // Otherwise, we'd fail on the set that contains itself.
   FAIL_IF_MINUS_ONE(
-    _python2js_add_to_cache(hiwire_get(context.cache), x, jsset));
+    _python2js_add_to_cache(hiwire_get(context->cache), x, jsset));
   success = true;
 finally:
   Py_CLEAR(pykey);
@@ -375,7 +375,7 @@ python2js__default_converter(JsVal jscontext, PyObject* object);
  * we want to convert at least the outermost layer.
  */
 static JsVal
-_python2js_deep(ConversionContext context, PyObject* x)
+_python2js_deep(ConversionContext* context, PyObject* x)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
@@ -391,12 +391,12 @@ _python2js_deep(ConversionContext context, PyObject* x)
   if (PyObject_CheckBuffer(x)) {
     return _python2js_buffer(x);
   }
-  if (context.default_converter) {
-    return python2js__default_converter(hiwire_get(context.jscontext), x);
+  if (context->default_converter) {
+    return python2js__default_converter(hiwire_get(context->jscontext), x);
   }
-  if (context.proxies) {
+  if (context->proxies) {
     JsVal proxy = pyproxy_new(x);
-    JsvArray_Push(hiwire_get(context.proxies), proxy);
+    JsvArray_Push(hiwire_get(context->proxies), proxy);
     return proxy;
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
@@ -446,22 +446,22 @@ EM_JS(JsVal, _python2js_cache_lookup, (JsVal cache, PyObject* pyparent), {
  * the cache. It leaves any real work to python2js or _python2js_deep.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
-_python2js(ConversionContext context, PyObject* x)
+_python2js(ConversionContext *context, PyObject* x)
 {
-  JsVal val = _python2js_cache_lookup(hiwire_get(context.cache), x);
+  JsVal val = _python2js_cache_lookup(hiwire_get(context->cache), x);
   if (!JsvNull_Check(val)) {
     return val;
   }
   FAIL_IF_ERR_OCCURRED();
-  if (context.depth == 0) {
+  if (context->depth == 0) {
     RETURN_IF_HAS_VALUE(_python2js_immutable(x));
     RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-    if (context.default_converter) {
-      return python2js__default_converter(hiwire_get(context.jscontext), x);
+    if (context->default_converter) {
+      return python2js__default_converter(hiwire_get(context->jscontext), x);
     }
-    return python2js_track_proxies(x, hiwire_get(context.proxies), true);
+    return python2js_track_proxies(x, hiwire_get(context->proxies), true);
   } else {
-    context.depth--;
+    context->depth--;
     return _python2js_deep(context, x);
   }
 finally:
@@ -527,13 +527,13 @@ python2js(PyObject* x)
 
 // taking function pointers to EM_JS functions leads to linker errors.
 static JsVal
-_JsMap_New(ConversionContext context)
+_JsMap_New(ConversionContext *context)
 {
   return JsvMap_New();
 }
 
 static int
-_JsMap_Set(ConversionContext context, JsVal map, JsVal key, JsVal value)
+_JsMap_Set(ConversionContext *context, JsVal map, JsVal key, JsVal value)
 {
   return JsvMap_Set(map, key, value);
 }
@@ -549,7 +549,7 @@ python2js_with_depth(PyObject* x, int depth, JsVal proxies)
 }
 
 static JsVal
-_JsArray_New(ConversionContext context)
+_JsArray_New(ConversionContext *context)
 {
   return JsvArray_New();
 }
@@ -564,7 +564,7 @@ _JsArray_PushEntry_helper,
 // clang-format on
 
 static int
-_JsArray_PushEntry(ConversionContext context,
+_JsArray_PushEntry(ConversionContext* context,
                    JsVal array,
                    JsVal key,
                    JsVal value)
@@ -580,13 +580,13 @@ EM_JS_VAL(JsVal, _JsArray_PostProcess_helper, (JsVal jscontext, JsVal array), {
 EM_JS_VAL(
 JsVal,
 python2js__default_converter_js,
-(JsVal context, PyObject* object),
+(JsVal jscontext, PyObject* object),
 {
   let proxy = Module.pyproxy_new(object);
-  let result = context.default_converter(
+  let result = jscontext.default_converter(
     proxy,
-    context.converter,
-    context.cacheConversion
+    jscontext.converter,
+    jscontext.cacheConversion
   );
   proxy.destroy();
   return result;
@@ -600,16 +600,16 @@ python2js__default_converter(JsVal jscontext, PyObject* object)
 }
 
 static JsVal
-_JsArray_PostProcess(ConversionContext context, JsVal array)
+_JsArray_PostProcess(ConversionContext* context, JsVal array)
 {
-  return _JsArray_PostProcess_helper(hiwire_get(context.jscontext), array);
+  return _JsArray_PostProcess_helper(hiwire_get(context->jscontext), array);
 }
 
 // clang-format off
 EM_JS_VAL(
 JsVal,
 python2js_custom__create_jscontext,
-(ConversionContext* context,
+(ConversionContext *context,
   JsVal cache,
   JsVal dict_converter,
   JsVal default_converter),
@@ -635,7 +635,6 @@ python2js_custom__create_jscontext,
       }
       let ptr = Module.PyProxy_getPtr(x);
       return __python2js(context, ptr);
-
     };
   }
   return jscontext;
@@ -679,7 +678,7 @@ python2js_custom(PyObject* x,
     context.jscontext = hiwire_new(python2js_custom__create_jscontext(
       &context, cache, dict_converter, default_converter));
   }
-  JsVal result = _python2js(context, x);
+  JsVal result = _python2js(&context, x);
   _python2js_handle_postprocess_list(hiwire_get(context.jspostprocess_list),
                                      hiwire_get(context.cache));
   hiwire_CLEAR(context.jspostprocess_list);
