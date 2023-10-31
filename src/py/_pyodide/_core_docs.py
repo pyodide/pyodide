@@ -1307,7 +1307,8 @@ def to_js(
 
         class Pair:
             def __init__(self, first, second):
-                self.first, self.second = first, second
+                self.first = first
+                self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
     :js:class:`Array`:
