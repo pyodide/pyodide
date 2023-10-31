@@ -194,7 +194,7 @@ _Static_assert(sizeof(PyBaseExceptionObject) ==
 #define JsProxy_DICT(x) (((JsProxy*)x)->dict)
 
 #define JsMethod_THIS_REF(x) ((JsProxy*)x)->tf.mf.this_
-#define JsMethod_THIS(x) JsRef_toVal(((JsProxy*)x)->tf.mf.this_)
+#define JsMethod_THIS(x) JsRef_toVal(JsMethod_THIS_REF(x))
 #define JsMethod_VECTORCALL(x) (((JsProxy*)x)->tf.mf.vectorcall)
 
 #define JsException_ARGS(x) (((JsProxy*)x)->tf.ef.args)
