@@ -33,6 +33,10 @@ myst:
   `AttributeError`.
   {pr}`4254`
 
+- {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
+  and `defaultConverter` arguments.
+  {pr}`4263`
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:
