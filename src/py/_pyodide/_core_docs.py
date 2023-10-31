@@ -1259,7 +1259,7 @@ def to_js(
     True
     >>> js_object.hasOwnProperty("height")
     False
-    
+
     >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_)
     >>> [item for item in js_object]
     [age,20, name,john]
