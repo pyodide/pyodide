@@ -83,6 +83,11 @@ If you're not sure whether you need web workers or service workers, here's an [o
 
 ## Node.js
 
+```{warning}
+Starting with Pyodide 0.25.0, Node.js < 18 is no longer officially supported.
+Older versions of Node.js might still work, but they are not tested or guaranteed to work.
+```
+
 ```{note}
 The following instructions have been tested with Node.js 18.5.0. To use
 Pyodide with older versions of Node, you might need to use  additional command line
@@ -138,40 +143,6 @@ undefined
 > await pyodide.runPythonAsync("1+1");
 2
 ```
-
-### Node.js versions <0.17
-
-- `Node.js` versions 14.x and 16.x: to use certain features of Pyodide you
-  need to manually install `node-fetch`, e.g. by doing `npm install node-fetch`.
-
-- `Node.js v14.x`: you need to pass the option `--experimental-wasm-bigint`
-  when starting Node. Note that this flag is not documented by `node --help`
-  and moreover, if you pass `--experimental-wasm-bigint` to node >14 it is an
-  error:
-
-```
-$ node -v
-v14.20.0
-
-$ node --experimental-wasm-bigint hello_python.js
-warning: no blob constructor, cannot create blobs with mimetypes
-warning: no BlobBuilder
-Loading distutils
-Loaded distutils
-Python says that 1+1= 2
-```
-
-If you wish to suppress the blob constructor warnings which appear in node <18,
-the following code works in node >= v14.18 (do this before
-calling `loadPyodide`):
-
-```js
-globalThis.Blob = require("node:buffer").Blob;
-```
-
-However, in versions of node < v16.17, this will print an `ExperimentalWarning`.
-If you also don't want the `ExperimentalWarning`, you can use
-[cross-blob](https://www.npmjs.com/package/cross-blob) to polyfill `Blob`.
 
 ```{eval-rst}
 .. toctree::

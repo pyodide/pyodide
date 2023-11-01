@@ -387,7 +387,7 @@ JsvPromise_Syncify(JsVal promise)
 // ==================== Buffers ====================
 
 // clang-format off
-EM_JS_NUM(errcode, jslib_init_buffers, (), {
+EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
   const dtypes_str = ["b", "B", "h", "H", "i", "I", "f", "d"].join(
     String.fromCharCode(0)
   );
@@ -428,6 +428,12 @@ EM_JS_NUM(errcode, jslib_init_buffers, (), {
   };
 });
 // clang-format on
+
+// DCE has trouble with forward declared EM_JS functions...
+errcode
+jslib_init_buffers(void) {
+  return jslib_init_buffers_js();
+}
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
   Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
