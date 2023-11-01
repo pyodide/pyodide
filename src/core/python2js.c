@@ -379,14 +379,14 @@ _python2js_deep(ConversionContext* context, PyObject* x)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
-  if (PyList_Check(x) || PyTuple_Check(x)) {
-    return _python2js_sequence(context, x);
-  }
   if (PyDict_Check(x)) {
     return _python2js_dict(context, x);
   }
   if (PySet_Check(x)) {
     return _python2js_set(context, x);
+  }
+  if (PySequence_Check(x)) {
+    return _python2js_sequence(context, x);
   }
   if (PyObject_CheckBuffer(x)) {
     return _python2js_buffer(x);
