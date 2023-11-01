@@ -61,7 +61,7 @@ class TestInTree:
     def test_get_build_environment_vars(self, reset_env_vars, reset_cache):
         build_vars = build_env.get_build_environment_vars()
         extra_vars = set(
-            ["PYODIDE", "PKG_CONFIG_PATH", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
+            ["PYODIDE", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
         )
 
         for var in build_vars:
@@ -98,18 +98,18 @@ class TestInTree:
 
         monkeypatch.setenv("HOME", "/home/user")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
-        monkeypatch.setenv("PKG_CONFIG_PATH", "/x/y/z:/c/d/e")
+        monkeypatch.setenv("PKG_CONFIG_LIBDIR", "/x/y/z:/c/d/e")
 
         build_env.get_build_environment_vars.cache_clear()
 
         e_host = build_env.get_build_environment_vars()
         assert e_host.get("HOME") == os.environ.get("HOME")
         assert e_host.get("PATH") == os.environ.get("PATH")
-        assert e_host["PKG_CONFIG_PATH"].endswith("/x/y/z:/c/d/e")
+        assert e_host["PKG_CONFIG_LIBDIR"].endswith("/x/y/z:/c/d/e")
 
         assert e_host.get("HOME") != e.get("HOME")
         assert e_host.get("PATH") != e.get("PATH")
-        assert e_host.get("PKG_CONFIG_PATH") != e.get("PKG_CONFIG_PATH")
+        assert e_host.get("PKG_CONFIG_LIBDIR") != e.get("PKG_CONFIG_LIBDIR")
 
         build_env.get_build_environment_vars.cache_clear()
 
