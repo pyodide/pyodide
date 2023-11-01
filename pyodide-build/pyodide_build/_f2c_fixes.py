@@ -494,7 +494,7 @@ def scipy_fix_cfile(path: str) -> None:
                 header_dir = header_dir.parent
                 if header_dir == Path("/"):
                     raise RuntimeError(f"Could not find header file {header_name}")
-            
+
             header_text = header_path.read_text()
             header_text = header_text.replace("void F_FUNC", "int F_FUNC")
             header_path.write_text(header_text)
