@@ -6,11 +6,12 @@ dependencies:
   - nodejs
   - ccache
   - f2c
-  - pkg-config
   - swig
   - make
   - cmake
-  - pkg-config
+  # pkg-config in conda-forge has a bug that it overwrites PKG_CONFIG_LIBDIR set by user.
+  # there was a fix (https://github.com/conda-forge/pkg-config-feedstock/pull/31), but it is not released.
+  # - pkg-config
   - texinfo
   - autoconf
   - automake
