@@ -8,7 +8,6 @@
 #include <endian.h>
 #include <stdint.h>
 
-#include "hiwire.h"
 #include "jslib.h"
 #include "jsmemops.h"
 

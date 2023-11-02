@@ -2,7 +2,7 @@
 #include "Python.h"
 
 #include "docstring.h"
-#include "hiwire.h"
+#include "error_handling.h"
 #include "js2python.h"
 #include "jslib.h"
 #include "jsmemops.h"
@@ -238,7 +238,7 @@ _python2js_dict(ConversionContext* context, PyObject* x)
   JsVal jsdict = context->dict_new(context);
   FAIL_IF_JS_NULL(jsdict);
   FAIL_IF_MINUS_ONE(
-    _python2js_add_to_cache(hiwire_get(context->cache), x, JSV_NO_VALUE));
+    _python2js_add_to_cache(hiwire_get(context->cache), x, Jsv_novalue));
   PyObject *pykey, *pyval;
   Py_ssize_t pos = 0;
   while (PyDict_Next(x, &pos, &pykey, &pyval)) {
@@ -337,11 +337,11 @@ static inline JsVal
 _python2js_immutable(PyObject* x)
 {
   if (Py_IsNone(x)) {
-    return hiwire_get(Js_undefined);
+    return Jsv_undefined;
   } else if (Py_IsTrue(x)) {
-    return hiwire_get(Js_true);
+    return Jsv_true;
   } else if (Py_IsFalse(x)) {
-    return hiwire_get(Js_false);
+    return Jsv_false;
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
@@ -349,7 +349,7 @@ _python2js_immutable(PyObject* x)
   } else if (PyUnicode_Check(x)) {
     return _python2js_unicode(x);
   }
-  return JSV_NO_VALUE;
+  return Jsv_novalue;
 }
 
 /**
@@ -364,7 +364,7 @@ _python2js_proxy(PyObject* x)
   if (JsProxy_Check(x)) {
     return JsProxy_Val(x);
   }
-  return JSV_NO_VALUE;
+  return Jsv_novalue;
 }
 
 JsVal

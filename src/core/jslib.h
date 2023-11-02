@@ -1,14 +1,55 @@
 #ifndef JSLIB_H
 #define JSLIB_H
-#include "hiwire.h"
+#include "hiwire/hiwire.h"
+
+#include "types.h"
+
+#define WARN_UNUSED __attribute__((warn_unused_result))
+#define errcode int WARN_UNUSED
+
+typedef HwRef JsRef;
+typedef __externref_t JsVal;
+
+JsRef hiwire_new_deduplicate(JsVal);
+
+typedef struct Js_Identifier
+{
+  const char* string;
+  JsRef object;
+} Js_Identifier;
+
+#define Js_static_string_init(value)                                           \
+  {                                                                            \
+    .string = value, .object = NULL                                            \
+  }
+#define Js_static_string(varname, value)                                       \
+  static Js_Identifier varname = Js_static_string_init(value)
+#define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)
+
+#define hiwire_CLEAR(x)                                                        \
+  do {                                                                         \
+    hiwire_decref(x);                                                          \
+    x = NULL;                                                                  \
+  } while (0)
+
+// Special JsRefs for singleton constants.
+// (These must be even because the least significance bit is set to 0 for
+// singleton constants.)
+extern const JsRef Jsr_undefined;
+extern const JsRef Jsr_true;
+extern const JsRef Jsr_false;
+extern const JsRef Jsr_novalue;
 
 // ==================== JS_NULL ====================
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
 int JsvNull_Check(JsVal);
 
-extern JsRef Jsr_NoValue;
-#define JSV_NO_VALUE hiwire_get(Jsr_NoValue)
+#define Jsv_undefined hiwire_get(Jsr_undefined)
+#define Jsv_true hiwire_get(Jsr_true)
+#define Jsv_false hiwire_get(Jsr_false)
+#define Jsv_novalue hiwire_get(Jsr_novalue)
+
 int JsvNoValue_Check(JsVal);
 
 // ==================== Conversions between JsRef and JsVal ====================

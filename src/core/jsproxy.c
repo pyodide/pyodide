@@ -32,7 +32,7 @@
 #include "Python.h"
 
 #include "docstring.h"
-#include "hiwire.h"
+#include "error_handling.h"
 #include "js2python.h"
 #include "jslib.h"
 #include "jsmemops.h"
@@ -297,18 +297,6 @@ JsProxy_js_id(PyObject* self, void* _unused)
   result = PyLong_FromLong(result_c);
 finally:
   return result;
-}
-
-static PyObject*
-JsProxy_js_id_private(PyObject* mod, PyObject* obj)
-{
-  if (!JsProxy_Check(obj)) {
-    PyErr_SetString(PyExc_TypeError, "Expected argument to be a JsProxy");
-    return NULL;
-  }
-
-  JsRef idval = JsProxy_REF(obj);
-  return PyLong_FromLong((int)idval);
 }
 
 EM_JS(bool, isReservedWord, (int word), {
@@ -593,7 +581,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   PySendResult ret = PYGEN_ERROR;
 
   JsVal proxies = JsvArray_New();
-  JsVal jsarg = hiwire_get(Js_undefined);
+  JsVal jsarg = Jsv_undefined;
   if (arg) {
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_JS_NULL(jsarg);
@@ -1088,7 +1076,7 @@ JsGenerator_asend(PyObject* self, PyObject* arg)
   PyObject* result = NULL;
 
   JsVal proxies = JsvArray_New();
-  JsVal jsarg = hiwire_get(Js_undefined);
+  JsVal jsarg = Jsv_undefined;
   if (arg != NULL) {
     jsarg = python2js_track_proxies(arg, proxies, true);
     FAIL_IF_JS_NULL(jsarg);
@@ -1497,8 +1485,8 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
         start = stop + step * (slicelength - 1) - 1;
         step = -step;
       }
-      JsvArray_slice_assign(
-        JsProxy_VAL(self), slicelength, start, stop, step, 0, NULL);
+      FAIL_IF_MINUS_ONE(JsvArray_slice_assign(
+        JsProxy_VAL(self), slicelength, start, stop, step, 0, NULL));
     } else {
       if (step != 1 && !slicelength) {
         // At this point, assigning to an extended slice of length 0 must be a
@@ -1506,13 +1494,13 @@ JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
         success = true;
         goto finally;
       }
-      JsvArray_slice_assign(JsProxy_VAL(self),
-                            slicelength,
-                            start,
-                            stop,
-                            step,
-                            PySequence_Fast_GET_SIZE(seq),
-                            PySequence_Fast_ITEMS(seq));
+      FAIL_IF_MINUS_ONE(JsvArray_slice_assign(JsProxy_VAL(self),
+                                              slicelength,
+                                              start,
+                                              stop,
+                                              step,
+                                              PySequence_Fast_GET_SIZE(seq),
+                                              PySequence_Fast_ITEMS(seq)));
     }
     success = true;
     goto finally;
@@ -2488,7 +2476,7 @@ JsProxy_toPy(PyObject* self,
         args, nargs, kwnames, &_parser, &depth, &default_converter)) {
     return NULL;
   }
-  JsVal default_converter_js = hiwire_get(Js_undefined);
+  JsVal default_converter_js = Jsv_undefined;
   if (default_converter != NULL) {
     default_converter_js = python2js(default_converter);
   }
@@ -4397,15 +4385,6 @@ JsProxy_Val(PyObject* x)
   return JsProxy_VAL(x);
 }
 
-static PyMethodDef methods[] = {
-  {
-    "hiwire_id",
-    JsProxy_js_id_private,
-    METH_O,
-  },
-  { NULL } /* Sentinel */
-};
-
 int
 JsProxy_init_docstrings()
 {
@@ -4549,7 +4528,6 @@ JsProxy_init(PyObject* core_module)
   FAIL_IF_NULL(Mapping);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
-  FAIL_IF_MINUS_ONE(PyModule_AddFunctions(core_module, methods));
 
   flag_dict = PyDict_New();
   FAIL_IF_NULL(flag_dict);

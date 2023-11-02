@@ -1,42 +1,6 @@
-#define PY_SSIZE_T_CLEAN
+#include "hiwire/hiwire.h"
 #include "error_handling.h"
 #include <emscripten.h>
-
-#include "hiwire.h"
-
-#ifdef DEBUG_F
-int tracerefs = 0;
-#endif
-
-#define HIWIRE_INIT_CONSTS()                                                   \
-  HIWIRE_INIT_CONST(undefined)                                                 \
-  HIWIRE_INIT_CONST(null)                                                      \
-  HIWIRE_INIT_CONST(true)                                                      \
-  HIWIRE_INIT_CONST(false)
-
-// we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
-// definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
-// C definition:
-#define HIWIRE_INIT_CONST(js_value)                                            \
-  EMSCRIPTEN_KEEPALIVE const JsRef Js_##js_value;
-HIWIRE_INIT_CONSTS();
-
-#undef HIWIRE_INIT_CONST
-
-#define HIWIRE_INIT_CONST(js_value)                                            \
-  HEAP32[_Js_##js_value / 4] = _hiwire_intern(js_value);
-
-EM_JS_NUM(int, hiwire_init_js, (void), {
-  HIWIRE_INIT_CONSTS();
-  Hiwire.num_keys = _hiwire_num_refs;
-  return 0;
-});
-
-int
-hiwire_init()
-{
-  return hiwire_init_js();
-}
 
 HwRef
 hiwire_new_deduplicate(__externref_t v)

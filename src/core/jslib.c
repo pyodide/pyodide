@@ -2,6 +2,52 @@
 #include "error_handling.h"
 #include "jsmemops.h"
 
+#undef true
+#undef false
+
+#define JS_BUILTIN(val) JS_CONST(val, val)
+#define JS_INIT_CONSTS()                                                       \
+  JS_BUILTIN(undefined)                                                        \
+  JS_BUILTIN(true)                                                             \
+  JS_BUILTIN(false)                                                            \
+  JS_CONST(novalue, { noValueMarker : 1 })
+
+// we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
+// definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
+// C definition:
+#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE const JsRef Jsr_##name;
+JS_INIT_CONSTS();
+
+#undef JS_CONST
+
+#define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
+
+EM_JS_NUM(int, jslib_init_js, (void), {
+  JS_INIT_CONSTS();
+  Module.novalue = _hiwire_get(HEAP32[_Jsr_novalue / 4]);
+  Hiwire.num_keys = _hiwire_num_refs;
+  return 0;
+});
+
+errcode
+jslib_init_buffers(void);
+
+errcode
+jslib_init(void)
+{
+  FAIL_IF_MINUS_ONE(jslib_init_buffers());
+  FAIL_IF_MINUS_ONE(jslib_init_js());
+  return 0;
+finally:
+  return -1;
+}
+
+// clang-format off
+EM_JS(int, JsvNoValue_Check, (JsVal v), {
+  return v === Module.novalue;
+});
+// clang-format on
+
 // ==================== Conversions between JsRef and JsVal ====================
 
 JsVal
@@ -341,7 +387,7 @@ JsvPromise_Syncify(JsVal promise)
 // ==================== Buffers ====================
 
 // clang-format off
-EM_JS_NUM(errcode, jslib_init_buffers, (), {
+EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
   const dtypes_str = ["b", "B", "h", "H", "i", "I", "f", "d"].join(
     String.fromCharCode(0)
   );
@@ -382,6 +428,13 @@ EM_JS_NUM(errcode, jslib_init_buffers, (), {
   };
 });
 // clang-format on
+
+// DCE has trouble with forward declared EM_JS functions...
+errcode
+jslib_init_buffers(void)
+{
+  return jslib_init_buffers_js();
+}
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
   Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
@@ -426,35 +479,6 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 });
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
-
-EM_JS(JsVal, jslib_init_novalue_js, (), {
-  Module.Jsv_NoValue = { noValueMarker : 1 };
-  return Module.Jsv_NoValue;
-})
-
-JsRef Jsr_NoValue = NULL;
-
-void
-jslib_init_novalue()
-{
-  Jsr_NoValue = hiwire_intern(jslib_init_novalue_js());
-}
-
-// clang-format off
-EM_JS(int, JsvNoValue_Check, (JsVal v), {
-  return v === Module.Jsv_NoValue;
-});
-// clang-format on
-
-errcode
-jslib_init(void)
-{
-  FAIL_IF_MINUS_ONE(jslib_init_buffers());
-  jslib_init_novalue();
-  return 0;
-finally:
-  return -1;
-}
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_BOOL(bool, Jsv_##name, (JsVal a, JsVal b), { return !!(a op b); })

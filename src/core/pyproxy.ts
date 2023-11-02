@@ -966,15 +966,15 @@ export class PySetItemMethods {
    */
   set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_setitem(ptrobj, key, value);
+      err = __pyproxy_setitem(ptrobj, key, value);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
   }
@@ -985,15 +985,15 @@ export class PySetItemMethods {
    */
   delete(key: any) {
     let ptrobj = _getPtr(this);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_delitem(ptrobj, key);
+      err = __pyproxy_delitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
   }
@@ -2024,30 +2024,30 @@ function python_getattr(jsobj: PyProxy, key: any) {
 
 function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = __pyproxy_setattr(ptrobj, jskey, jsval);
+    err = __pyproxy_setattr(ptrobj, jskey, jsval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
-  if (errcode === -1) {
+  if (err === -1) {
     _pythonexc2js();
   }
 }
 
 function python_delattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = __pyproxy_delattr(ptrobj, jskey);
+    err = __pyproxy_delattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
-  if (errcode === -1) {
+  if (err === -1) {
     _pythonexc2js();
   }
 }
@@ -2326,15 +2326,15 @@ export class PyAwaitableMethods {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
+      err = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
     shared.promise = promise;

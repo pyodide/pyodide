@@ -4,10 +4,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 // clang-format on
+#include "jslib.h"
 #include <emscripten.h>
-
-typedef int errcode;
-#include "hiwire.h"
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
