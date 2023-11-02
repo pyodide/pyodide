@@ -5,6 +5,39 @@ import {
   ImportSection,
   TypeSection,
 } from "./runtime_wasm.mjs";
+import { StackState } from "./stack_state.mjs";
+
+/**
+ * Record the current Python thread state and the wasm call stack and argument
+ * stack state. This is called by the hiwire_syncify wasm module just prior to
+ * suspending the thread. `hiwire_syncify` uses `externref` for the return value
+ * so we don't need to wrap this in a hiwire ID.
+ */
+function save_state() {
+  const stackState = new StackState();
+  const threadState = _captureThreadState();
+  const origCframe = Module.origCframe;
+  _restore_cframe(origCframe);
+  return {
+    threadState,
+    stackState,
+    suspender: suspenderGlobal.value,
+    origCframe,
+  };
+}
+
+/**
+ * Restore the Python thread state and the wasm argument stack state. This is
+ * called by the hiwire_syncify wasm module upon resuming the thread. The
+ * argument is the return value from save_state.
+ */
+function restore_state(state) {
+  state.stackState.restore();
+  Module.origCframe = state.origCframe;
+  _restoreThreadState(state.threadState);
+  suspenderGlobal.value = state.suspender;
+  Module.validSuspender.value = true;
+}
 
 /**
  * Set the syncifyHandler used by JsvPromise_syncify.
@@ -38,6 +71,8 @@ function setSyncifyHandler() {
       s: suspenderGlobal,
       i: suspending_f,
       c: validSuspender,
+      save: save_state,
+      restore: restore_state,
     },
   });
   // Assign to the function pointer so that JsvPromise_syncify calls our wrapper
@@ -50,6 +85,12 @@ export function promisingApply(...args) {
   // validSuspender is a flag so that we can ask for permission before trying to
   // suspend.
   validSuspender.value = true;
+  // Record the current stack position. Used in stack_state.mjs
+  Module.stackStop = stackSave();
+  // Subtle cframe shenanigans...
+  Module.origCframe = _get_cframe();
+  const cframe = stackAlloc(HEAP32[_size_of_cframe / 4]);
+  _set_new_cframe(cframe);
   return promisingApplyHandler(...args);
 }
 

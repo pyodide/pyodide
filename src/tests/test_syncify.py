@@ -245,3 +245,142 @@ def test_cpp_exceptions_and_syncify(selenium):
         )
         == "result was: 9"
     )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_two_way_transfer(selenium):
+    res = selenium.run_js(
+        """
+        pyodide.runPython(`
+            l = []
+            def f(n, t):
+                from js import sleep
+                for i in range(5):
+                    sleep(t).syncify()
+                    l.append([n, i])
+        `);
+        f = pyodide.globals.get("f");
+        await Promise.all([f.callSyncifying("a", 15), f.callSyncifying("b", 25)])
+        f.destroy();
+        const l = pyodide.globals.get("l");
+        const res = l.toJs();
+        l.destroy();
+        return res;
+        """
+    )
+    assert res == [
+        ["a", 0],
+        ["b", 0],
+        ["a", 1],
+        ["a", 2],
+        ["b", 1],
+        ["a", 3],
+        ["b", 2],
+        ["a", 4],
+        ["b", 3],
+        ["b", 4],
+    ]
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_sync_async_mix(selenium):
+    res = selenium.run_js(
+        """
+        pyodide.runPython(
+        `
+            from js import sleep
+            l = [];
+            async def a(t):
+                await sleep(t)
+                l.append(["a", t])
+
+            def b(t):
+                sleep(t).syncify()
+                l.append(["b", t])
+        `);
+        const a = pyodide.globals.get("a");
+        const b = pyodide.globals.get("b");
+        const l = pyodide.globals.get("l");
+
+        await Promise.all([
+            b.callSyncifying(300),
+            b.callSyncifying(200),
+            b.callSyncifying(250),
+            a(220),
+            a(150),
+            a(270)
+        ]);
+        const res = l.toJs();
+        for(let p of [a, b, l]) {
+            p.destroy();
+        }
+        return res;
+        """
+    )
+    assert res == [
+        ["a", 150],
+        ["b", 200],
+        ["a", 220],
+        ["b", 250],
+        ["a", 270],
+        ["b", 300],
+    ]
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_nested_syncify(selenium):
+    res = selenium.run_js(
+        """
+        async function f1() {
+            await sleep(30);
+            return await g1.callSyncifying();
+        }
+        async function f2() {
+            await sleep(30);
+            return await g2.callSyncifying();
+        }
+        async function getStuff() {
+            await sleep(30);
+            return "gotStuff";
+        }
+        pyodide.globals.set("f1", f1);
+        pyodide.globals.set("f2", f2);
+        pyodide.globals.set("getStuff", getStuff);
+
+        pyodide.runPython(`
+            from js import sleep
+            def g():
+                sleep(25).syncify()
+                return f1().syncify()
+
+            def g1():
+                sleep(25).syncify()
+                return f2().syncify()
+
+            def g2():
+                sleep(25).syncify()
+                return getStuff().syncify()
+        `);
+        const l = pyodide.runPython("l = []; l")
+        const g = pyodide.globals.get("g");
+        const g1 = pyodide.globals.get("g1");
+        const g2 = pyodide.globals.get("g2");
+        const p = [];
+        p.push(g.callSyncifying().then((res) => l.append(res)));
+        p.push(pyodide.runPythonSyncifying(`
+            from js import sleep
+            for i in range(20):
+                sleep(9).syncify()
+                l.append(i)
+        `));
+        await Promise.all(p);
+        const res = l.toJs();
+        for(let p of [l, g, g1, g2]) {
+            p.destroy()
+        }
+        return res;
+        """
+    )
+    assert "gotStuff" in res
+    del res[res.index("gotStuff")]
+    assert res == list(range(20))
