@@ -54,7 +54,7 @@ const stackStates = [];
 export class StackState {
   constructor() {
     /** current stack pointer */
-    this.start = Module.___stack_pointer.value;
+    this.start = stackSave();
     /**
      * The value the stack pointer had when we entered Python. This is how far
      * up the stack the current continuation cares about. This was recorded just
@@ -109,7 +109,7 @@ export class StackState {
     }
     // Restore stack pointers
     Module.stackStop = this.stop;
-    Module.___stack_pointer.value = this.start;
+    stackRestore(this.start);
     return total;
   }
 

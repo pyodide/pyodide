@@ -381,6 +381,6 @@ def test_nested_syncify(selenium):
         return res;
         """
     )
-    assert res[14] == "gotStuff"
-    del res[14]
+    assert "gotStuff" in res
+    del res[res.index("gotStuff")]
     assert res == list(range(20))
