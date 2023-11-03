@@ -331,12 +331,12 @@ export interface API {
     dynlibPaths: string[],
   ) => Promise<void>;
 
-  makePublicAPI: () => PyodideInterface;
   _Comlink: any;
 
   dsodir: string;
   sys: PyProxy;
   os: PyProxy;
 
-  finalizeBootstrap: () => void;
+  finalizeBootstrap: () => PyodideInterface;
+  version: string;
 }

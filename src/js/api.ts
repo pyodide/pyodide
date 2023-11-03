@@ -660,7 +660,7 @@ export class PyodideAPI {
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */
-API.makePublicAPI = function () {
+function makePublicAPI(): PyodideInterface {
   // Create a copy of PyodideAPI that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
   let d = Object.getOwnPropertyDescriptors(PyodideAPI);
@@ -674,7 +674,7 @@ API.makePublicAPI = function () {
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   return pyodideAPI;
-};
+}
 
 /**
  * A proxy around globals that falls back to checking for a builtin if has or
@@ -715,7 +715,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (): PyodideAPI {
+API.finalizeBootstrap = function (): PyodideInterface {
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     API.fatal_loading_error(
@@ -762,7 +762,7 @@ API.finalizeBootstrap = function (): PyodideAPI {
   importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
   importhook.register_js_module("js", API.config.jsglobals);
 
-  let pyodide = API.makePublicAPI();
+  let pyodide = makePublicAPI();
   importhook.register_js_module("pyodide_js", pyodide);
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
