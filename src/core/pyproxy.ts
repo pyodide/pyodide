@@ -16,7 +16,6 @@
 
 declare var Tests: any;
 declare var Module: any;
-declare var Hiwire: any;
 
 import { TypedArray } from "types";
 import { warnOnce } from "pyodide_util";
@@ -525,7 +524,7 @@ Module.callPyObjectKwargs = function (
  * Pretty much everything is the same as callPyObjectKwargs except we use the
  * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
  * causes the VM to invent a suspender and call a wrapper module which stores it
- * into suspenderGlobal (for later use by hiwire_syncify). Then it calls
+ * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
  * _pyproxy_apply with the same arguments we gave to `promisingApply`.
  */
 async function callPyObjectKwargsSuspending(
@@ -628,6 +627,10 @@ export class PyProxy {
     let ptrobj = _getPtr(this);
     return __pyproxy_type(ptrobj);
   }
+  /**
+   * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
+   * :js:func:`loadPyodide` in which case it will return `repr(o)`)
+   */
   toString(): string {
     let ptrobj = _getPtr(this);
     let result;
@@ -726,44 +729,32 @@ export class PyProxy {
     ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
-    let idresult;
-    let proxies_id;
-    let dict_converter_id = 0;
-    let default_converter_id = 0;
+    let result;
+    let proxies;
     if (!create_pyproxies) {
-      proxies_id = 0;
+      proxies = null;
     } else if (pyproxies) {
-      proxies_id = Hiwire.new_value(pyproxies);
+      proxies = pyproxies;
     } else {
-      proxies_id = Hiwire.new_value([]);
-    }
-    if (dict_converter) {
-      dict_converter_id = Hiwire.new_value(dict_converter);
-    }
-    if (default_converter) {
-      default_converter_id = Hiwire.new_value(default_converter);
+      proxies = [];
     }
     try {
       Py_ENTER();
-      idresult = _python2js_custom(
+      result = _python2js_custom(
         ptrobj,
         depth,
-        proxies_id,
-        dict_converter_id,
-        default_converter_id,
+        proxies,
+        dict_converter || null,
+        default_converter || null,
       );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(proxies_id);
-      Hiwire.decref(dict_converter_id);
-      Hiwire.decref(default_converter_id);
     }
-    if (idresult === 0) {
+    if (result === null) {
       _pythonexc2js();
     }
-    return Hiwire.pop_value(idresult);
+    return result;
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.
@@ -975,15 +966,15 @@ export class PySetItemMethods {
    */
   set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_setitem(ptrobj, key, value);
+      err = __pyproxy_setitem(ptrobj, key, value);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
   }
@@ -994,15 +985,15 @@ export class PySetItemMethods {
    */
   delete(key: any) {
     let ptrobj = _getPtr(this);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_delitem(ptrobj, key);
+      err = __pyproxy_delitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
   }
@@ -1994,16 +1985,13 @@ export class PyMutableSequenceMethods {
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     Py_ENTER();
-    result = __pyproxy_hasattr(ptrobj, idkey);
+    result = __pyproxy_hasattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
   if (result === -1) {
     _pythonexc2js();
@@ -2036,30 +2024,30 @@ function python_getattr(jsobj: PyProxy, key: any) {
 
 function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = __pyproxy_setattr(ptrobj, jskey, jsval);
+    err = __pyproxy_setattr(ptrobj, jskey, jsval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
-  if (errcode === -1) {
+  if (err === -1) {
     _pythonexc2js();
   }
 }
 
 function python_delattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = __pyproxy_delattr(ptrobj, jskey);
+    err = __pyproxy_delattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
-  if (errcode === -1) {
+  if (err === -1) {
     _pythonexc2js();
   }
 }
@@ -2069,26 +2057,23 @@ function python_slice_assign(
   start: number,
   stop: number,
   val: any,
-): void {
+): any[] {
   let ptrobj = _getPtr(jsobj);
-  let idval = Hiwire.new_value(val);
   let res;
   try {
     Py_ENTER();
-    res = __pyproxy_slice_assign(ptrobj, start, stop, idval);
+    res = __pyproxy_slice_assign(ptrobj, start, stop, val);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idval);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
-function python_pop(jsobj: any, pop_start: boolean): void {
+function python_pop(jsobj: any, pop_start: boolean): any {
   let ptrobj = _getPtr(jsobj);
   let res;
   try {
@@ -2098,10 +2083,10 @@ function python_pop(jsobj: any, pop_start: boolean): void {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === 0) {
+  if (res === null) {
     _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
 function filteredHasKey(
@@ -2335,30 +2320,21 @@ export class PyAwaitableMethods {
       // Destroyed and promise wasn't resolved. Raise error!
       _getAttrs(this);
     }
-    let resolveHandle;
-    let rejectHandle;
+    let resolveHandle: (v: any) => void;
+    let rejectHandle: (e: any) => void;
     let promise = new Promise((resolve, reject) => {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Hiwire.new_value(resolveHandle);
-    let reject_handle_id = Hiwire.new_value(rejectHandle);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = __pyproxy_ensure_future(
-        ptr,
-        resolve_handle_id,
-        reject_handle_id,
-      );
+      err = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(reject_handle_id);
-      Hiwire.decref(resolve_handle_id);
     }
-    if (errcode === -1) {
+    if (err === -1) {
       _pythonexc2js();
     }
     shared.promise = promise;
@@ -2650,38 +2626,32 @@ export class PyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let orig_stack_ptr = stackSave();
-    let buffer_struct_ptr = stackAlloc(DEREF_U32(_buffer_struct_size, 0));
     let this_ptr = _getPtr(this);
-    let errcode;
+    let result;
     try {
       Py_ENTER();
-      errcode = __pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
+      result = __pyproxy_get_buffer(this_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
+    if (result === null) {
       _pythonexc2js();
     }
 
-    // This has to match the fields in buffer_struct
-    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
-    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
-    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
-
-    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
-    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
-    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
-    let shape = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
-    let strides = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
-
-    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
-    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
-    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
-
-    let format = UTF8ToString(format_ptr);
-    stackRestore(orig_stack_ptr);
+    const {
+      start_ptr,
+      smallest_ptr,
+      largest_ptr,
+      readonly,
+      format,
+      itemsize,
+      shape,
+      strides,
+      view,
+      c_contiguous,
+      f_contiguous,
+    } = result;
 
     let success = false;
     try {
@@ -2703,24 +2673,24 @@ export class PyBufferMethods {
             "to little endian.",
         );
       }
-      let numBytes = maxByteOffset - minByteOffset;
+      let numBytes = largest_ptr - smallest_ptr;
       if (
         numBytes !== 0 &&
-        (startByteOffset % alignment !== 0 ||
-          minByteOffset % alignment !== 0 ||
-          maxByteOffset % alignment !== 0)
+        (start_ptr % alignment !== 0 ||
+          smallest_ptr % alignment !== 0 ||
+          largest_ptr % alignment !== 0)
       ) {
         throw new Error(
           `Buffer does not have valid alignment for a ${ArrayType.name}`,
         );
       }
       let numEntries = numBytes / alignment;
-      let offset = (startByteOffset - minByteOffset) / alignment;
+      let offset = (start_ptr - smallest_ptr) / alignment;
       let data;
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, smallest_ptr, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;
@@ -2741,7 +2711,7 @@ export class PyBufferMethods {
           data,
           c_contiguous,
           f_contiguous,
-          _view_ptr: view_ptr,
+          _view_ptr: view,
           _released: false,
         }),
       );
@@ -2751,8 +2721,8 @@ export class PyBufferMethods {
       if (!success) {
         try {
           Py_ENTER();
-          _PyBuffer_Release(view_ptr);
-          _PyMem_Free(view_ptr);
+          _PyBuffer_Release(view);
+          _PyMem_Free(view);
           Py_EXIT();
         } catch (e) {
           API.fatal_error(e);

@@ -4,10 +4,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 // clang-format on
+#include "jslib.h"
 #include <emscripten.h>
-
-typedef int errcode;
-#include "hiwire.h"
 #define likely(x) __builtin_expect((x), 1)
 #define unlikely(x) __builtin_expect((x), 0)
 
@@ -30,7 +28,7 @@ extern PyObject* conversion_error;
  * result. Usually we use pythonexc2js instead, but for futures and for some
  * internal error messages it's useful to have this separate.
  */
-JsRef
+JsVal
 wrap_exception();
 
 /**
@@ -47,7 +45,7 @@ console_error(char* msg);
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
 void
-console_error_obj(JsRef obj);
+console_error_obj(JsVal obj);
 
 /**
  * EM_JS Wrappers
@@ -92,7 +90,7 @@ console_error_obj(JsRef obj);
 #endif
 
 // Need an extra layer to expand LOG_EM_JS_ERROR.
-#define EM_JS_MACROS(ret, func_name, args, body...)                             \
+#define EM_JS_MACROS(ret, func_name, args, body...)                            \
   EM_JS(ret, func_name, args, body)
 
 #define EM_JS_UNCHECKED(ret, func_name, args, body...)                         \
@@ -101,7 +99,7 @@ console_error_obj(JsRef obj);
 #define WARN_UNUSED __attribute__((warn_unused_result))
 
 #define EM_JS_REF(ret, func_name, args, body...)                               \
-  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                             \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -112,8 +110,20 @@ console_error_obj(JsRef obj);
     errNoRet();                                                                \
   })
 
+#define EM_JS_VAL(ret, func_name, args, body...)                               \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                             \
+    try    /* intentionally no braces, body already has them */                \
+      body /* <== body of func */                                              \
+    catch (e) {                                                                \
+        LOG_EM_JS_ERROR(func_name, e);                                         \
+        Module.handle_js_error(e);                                             \
+        return null;                                                           \
+    }                                                                          \
+    errNoRet();                                                                \
+  })
+
 #define EM_JS_NUM(ret, func_name, args, body...)                               \
-  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                             \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -126,7 +136,7 @@ console_error_obj(JsRef obj);
 
 // If there is a Js error, catch it and return false.
 #define EM_JS_BOOL(ret, func_name, args, body...)                              \
-  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                              \
+  EM_JS_MACROS(ret WARN_UNUSED, func_name, args, {                             \
     try    /* intentionally no braces, body already has them */                \
       body /* <== body of func */                                              \
     catch (e) {                                                                \
@@ -187,7 +197,7 @@ console_error_obj(JsRef obj);
 
 #define FAIL_IF_JS_NULL(ref)                                                   \
   do {                                                                         \
-    if (unlikely(Jsv_is_null(ref))) {                                          \
+    if (unlikely(JsvNull_Check(ref))) {                                        \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

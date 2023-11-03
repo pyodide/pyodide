@@ -1,5 +1,4 @@
 declare var Module: any;
-declare var Hiwire: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
@@ -35,6 +34,10 @@ API.rawRun = function rawRun(code: string): [number, string] {
 API.runPythonInternal = function (code: string): any {
   // API.runPythonInternal_dict is initialized in finalizeBootstrap
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
+};
+
+API.setPyProxyToStringMethod = function (useRepr: boolean): void {
+  Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
 /** @private */
@@ -373,36 +376,33 @@ export class PyodideAPI {
     if (!obj || API.isPyProxy(obj)) {
       return obj;
     }
-    let obj_id = 0;
     let py_result = 0;
     let result = 0;
     try {
-      obj_id = Hiwire.new_value(obj);
-      try {
-        py_result = Module.js2python_convert(obj_id, {
-          depth,
-          defaultConverter,
-        });
-      } catch (e) {
-        if (e instanceof Module._PropagatePythonError) {
-          _pythonexc2js();
-        }
-        throw e;
+      py_result = Module.js2python_convert(obj, {
+        depth,
+        defaultConverter,
+      });
+    } catch (e) {
+      if (e instanceof Module._PropagatePythonError) {
+        _pythonexc2js();
       }
+      throw e;
+    }
+    try {
       if (_JsProxy_Check(py_result)) {
         // Oops, just created a JsProxy. Return the original object.
         return obj;
         // return Module.pyproxy_new(py_result);
       }
       result = _python2js(py_result);
-      if (result === 0) {
+      if (result === null) {
         _pythonexc2js();
       }
     } finally {
-      Hiwire.decref(obj_id);
       _Py_DecRef(py_result);
     }
-    return Hiwire.pop_value(result);
+    return result;
   }
 
   /**

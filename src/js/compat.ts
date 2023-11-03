@@ -21,6 +21,13 @@ declare var globalThis: {
   fetch?: any;
 };
 
+const FETCH_NOT_FOUND_MSG = `\
+"fetch" is not defined, maybe you're using node < 18? \
+From Pyodide >= 0.25.0, node >= 18 is required. \
+Older versions of Node.js may work, but it is not guaranteed or supported. \
+Falling back to "node-fetch".\
+`;
+
 /**
  * If we're in node, it's most convenient to import various node modules on
  * initialization. Otherwise, this does nothing.
@@ -36,6 +43,8 @@ export async function initNodeModules() {
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
+    // @ts-ignore
+    console.warn(FETCH_NOT_FOUND_MSG);
     // @ts-ignore
     nodeFetch = (await import("node-fetch")).default;
   }
