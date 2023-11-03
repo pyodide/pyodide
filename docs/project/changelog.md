@@ -28,7 +28,7 @@ myst:
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
 
-- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` doesn't work with NodeNext.
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
   {pr}`4256`
 
 ### Packages
