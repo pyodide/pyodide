@@ -6,7 +6,7 @@
  */
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "hiwire.h"
+#include "jslib.h"
 
 /**
  * Convert a JavaScript object to a Python object.

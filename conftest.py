@@ -251,7 +251,6 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         a.get_result()
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
-    assert browser.run_js("return pyodide._module.hiwire.stack_length()") == 0
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys

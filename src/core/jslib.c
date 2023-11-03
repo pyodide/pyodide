@@ -2,6 +2,52 @@
 #include "error_handling.h"
 #include "jsmemops.h"
 
+#undef true
+#undef false
+
+#define JS_BUILTIN(val) JS_CONST(val, val)
+#define JS_INIT_CONSTS()                                                       \
+  JS_BUILTIN(undefined)                                                        \
+  JS_BUILTIN(true)                                                             \
+  JS_BUILTIN(false)                                                            \
+  JS_CONST(novalue, { noValueMarker : 1 })
+
+// we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
+// definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
+// C definition:
+#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE const JsRef Jsr_##name;
+JS_INIT_CONSTS();
+
+#undef JS_CONST
+
+#define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
+
+EM_JS_NUM(int, jslib_init_js, (void), {
+  JS_INIT_CONSTS();
+  Module.novalue = _hiwire_get(HEAP32[_Jsr_novalue / 4]);
+  Hiwire.num_keys = _hiwire_num_refs;
+  return 0;
+});
+
+errcode
+jslib_init_buffers(void);
+
+errcode
+jslib_init(void)
+{
+  FAIL_IF_MINUS_ONE(jslib_init_buffers());
+  FAIL_IF_MINUS_ONE(jslib_init_js());
+  return 0;
+finally:
+  return -1;
+}
+
+// clang-format off
+EM_JS(int, JsvNoValue_Check, (JsVal v), {
+  return v === Module.novalue;
+});
+// clang-format on
+
 // ==================== Conversions between JsRef and JsVal ====================
 
 JsVal
@@ -33,15 +79,44 @@ JsRef_new(JsVal v)
 
 // ==================== Primitive Conversions ====================
 
-EM_JS(JsVal, JsvInt, (int x), { return x; })
+// clang-format off
+EM_JS(JsVal, JsvNum_fromInt, (int x), {
+  return x;
+})
 
-EM_JS(bool, Jsv_to_bool, (JsVal x), { return !!x; })
+EM_JS(JsVal, JsvNum_fromDouble, (double val), {
+  return val;
+});
 
-EM_JS(JsVal, Jsv_typeof, (JsVal x), { return typeof x; })
+EM_JS_UNCHECKED(JsVal,
+JsvNum_fromDigits,
+(const unsigned int* digits, size_t ndigits),
+{
+  let result = BigInt(0);
+  for (let i = 0; i < ndigits; i++) {
+    result += BigInt(DEREF_U32(digits, i)) << BigInt(32 * i);
+  }
+  result += BigInt(DEREF_U32(digits, ndigits - 1) & 0x80000000)
+            << BigInt(1 + 32 * (ndigits - 1));
+  if (-Number.MAX_SAFE_INTEGER < result &&
+      result < Number.MAX_SAFE_INTEGER) {
+    result = Number(result);
+  }
+  return result;
+});
+
+EM_JS(bool, Jsv_to_bool, (JsVal x), {
+  return !!x;
+})
+
+EM_JS(JsVal, Jsv_typeof, (JsVal x), {
+  return typeof x;
+})
 
 EM_JS_REF(char*, Jsv_constructorName, (JsVal obj), {
   return stringToNewUTF8(obj.constructor.name);
 });
+// clang-format on
 
 // ==================== Strings API  ====================
 
@@ -150,7 +225,7 @@ JsvArray_slice_assign,
 {
   let jsvalues = [];
   for(let i = 0; i < values_length; i++){
-    const ref = _python2js_val(DEREF_U32(values, i));
+    const ref = _python2js(DEREF_U32(values, i));
     if(ref === null){
       return -1;
     }
@@ -312,7 +387,7 @@ JsvPromise_Syncify(JsVal promise)
 // ==================== Buffers ====================
 
 // clang-format off
-EM_JS_NUM(errcode, jslib_init_buffers, (), {
+EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
   const dtypes_str = ["b", "B", "h", "H", "i", "I", "f", "d"].join(
     String.fromCharCode(0)
   );
@@ -345,7 +420,7 @@ EM_JS_NUM(errcode, jslib_init_buffers, (), {
    * anything.
    *
    * This is the API for use from JavaScript, there's also an EM_JS
-   * hiwire_get_buffer_datatype wrapper for use from C. Used in js2python and
+   * get_buffer_datatype wrapper for use from C. Used in js2python and
    * in jsproxy.c for buffers.
    */
   Module.get_buffer_datatype = function (jsobj) {
@@ -353,6 +428,13 @@ EM_JS_NUM(errcode, jslib_init_buffers, (), {
   };
 });
 // clang-format on
+
+// DCE has trouble with forward declared EM_JS functions...
+errcode
+jslib_init_buffers(void)
+{
+  return jslib_init_buffers_js();
+}
 
 EM_JS_NUM(errcode, JsvBuffer_assignToPtr, (JsVal buf, void* ptr), {
   Module.HEAPU8.set(bufferAsUint8Array(buf), ptr);
@@ -398,12 +480,6 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
 
 EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
 
-errcode
-jslib_init(void)
-{
-  return jslib_init_buffers();
-}
-
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_BOOL(bool, Jsv_##name, (JsVal a, JsVal b), { return !!(a op b); })
 
@@ -415,3 +491,27 @@ MAKE_OPERATOR(not_equal, !==);
 // clang-format on
 MAKE_OPERATOR(greater_than, >);
 MAKE_OPERATOR(greater_than_equal, >=);
+
+// ==================== JsMap API  ====================
+
+// clang-format off
+EM_JS_VAL(JsVal, JsvMap_New, (), {
+  return new Map();
+})
+// clang-format on
+
+EM_JS_NUM(errcode, JsvMap_Set, (JsVal map, JsVal key, JsVal val), {
+  map.set(key, val);
+})
+
+// ==================== JsSet API  ====================
+
+// clang-format off
+EM_JS_VAL(JsVal, JsvSet_New, (), {
+  return new Set();
+})
+
+EM_JS_NUM(errcode, JsvSet_Add, (JsVal set, JsVal val), {
+  set.add(val);
+})
+// clang-format on

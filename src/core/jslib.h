@@ -1,12 +1,56 @@
 #ifndef JSLIB_H
 #define JSLIB_H
-#include "hiwire.h"
+#include "hiwire/hiwire.h"
+
+#include "types.h"
+
+#define WARN_UNUSED __attribute__((warn_unused_result))
+#define errcode int WARN_UNUSED
+
+typedef HwRef JsRef;
+typedef __externref_t JsVal;
+
+JsRef hiwire_new_deduplicate(JsVal);
+
+typedef struct Js_Identifier
+{
+  const char* string;
+  JsRef object;
+} Js_Identifier;
+
+#define Js_static_string_init(value)                                           \
+  {                                                                            \
+    .string = value, .object = NULL                                            \
+  }
+#define Js_static_string(varname, value)                                       \
+  static Js_Identifier varname = Js_static_string_init(value)
+#define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)
+
+#define hiwire_CLEAR(x)                                                        \
+  do {                                                                         \
+    hiwire_decref(x);                                                          \
+    x = NULL;                                                                  \
+  } while (0)
+
+// Special JsRefs for singleton constants.
+// (These must be even because the least significance bit is set to 0 for
+// singleton constants.)
+extern const JsRef Jsr_undefined;
+extern const JsRef Jsr_true;
+extern const JsRef Jsr_false;
+extern const JsRef Jsr_novalue;
 
 // ==================== JS_NULL ====================
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
-
 int JsvNull_Check(JsVal);
+
+#define Jsv_undefined hiwire_get(Jsr_undefined)
+#define Jsv_true hiwire_get(Jsr_true)
+#define Jsv_false hiwire_get(Jsr_false)
+#define Jsv_novalue hiwire_get(Jsr_novalue)
+
+int JsvNoValue_Check(JsVal);
 
 // ==================== Conversions between JsRef and JsVal ====================
 
@@ -22,7 +66,13 @@ JsRef_toVal(JsRef ref);
 // ==================== Primitive Conversions ====================
 
 JsVal
-JsvInt(int x);
+JsvNum_fromInt(int x);
+
+JsVal
+JsvNum_fromDouble(double x);
+
+JsVal
+JsvNum_fromDigits(const unsigned int* digits, size_t ndigits);
 
 bool
 Jsv_to_bool(JsVal x);
@@ -210,5 +260,23 @@ Jsv_greater_than(JsVal a, JsVal b);
  */
 bool
 Jsv_greater_than_equal(JsVal a, JsVal b);
+
+JsVal
+JsvMap_New(void);
+
+errcode
+JsvMap_Set(JsVal map, JsVal key, JsVal val);
+
+/**
+ * Create a new Set.
+ */
+JsVal
+JsvSet_New(void);
+
+/**
+ * Does set.add(key).
+ */
+errcode WARN_UNUSED
+JsvSet_Add(JsVal mapid, JsVal keyid);
 
 #endif
