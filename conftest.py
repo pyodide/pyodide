@@ -19,6 +19,13 @@ import pytest_pyodide.runner
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
+pytest_pyodide.runner.CHROME_FLAGS.extend(
+    [
+        "--enable-features=WebAssemblyExperimentalJSPI",
+        "--enable-experimental-webassembly-features",
+    ]
+)
+pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
@@ -33,7 +40,6 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.package_loader.sub_resource_hash;
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
     pyodide.pyimport("pyodide.http").destroy();
@@ -245,7 +251,6 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         a.get_result()
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
-    assert browser.run_js("return pyodide._module.hiwire.stack_length()") == 0
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys

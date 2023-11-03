@@ -20,7 +20,7 @@ dependencies = [
     "packaging",
     "wheel",
     "tomli",
-    "build==0.7.0",
+    "build>=1.0.0",
     "virtualenv",
     "pydantic>=1.10.2,<2",
     "pyodide-cli~=0.2.1",
@@ -59,7 +59,7 @@ xbuildenv = "pyodide_build.cli.xbuildenv:app"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "pytest-pyodide==0.52.2",
+    "pytest-pyodide==0.53.0",
 ]
 deploy = [
     "boto3",
@@ -76,12 +76,12 @@ include-package-data = false
 
 [tool.setuptools.packages.find]
 where = ["."]
-exclude = ["pyodide_build.tests"]
+exclude = ["pyodide_build.tests*"]
 namespaces = true
 
 [tool.setuptools.package-data]
-"pyodide_build.tools" = ["*.ini"]
-"pyodide_build.tools.cmake.modules.platform" = ["*.cmake"]
+"pyodide_build.tools" = ["*.ini", "*.cross"]
+"pyodide_build.tools.cmake.Modules.Platform" = ["*.cmake"]
 
 [tool.setuptools.dynamic]
 version = {attr = "pyodide_build.__version__"}

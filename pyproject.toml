@@ -108,8 +108,8 @@ norecursedirs = [
 ]
 addopts = '''
 --doctest-modules
---ignore="packages/matplotlib/src"
 --ignore-glob="**/dist/"
+--ignore-glob="packages/**/extras/"
 --tb=short
 --dist-dir=dist'''
 testpaths = [
@@ -118,5 +118,8 @@ testpaths = [
     "packages",
 ]
 asyncio_mode = "strict"
+markers = [
+    "requires_dynamic_linking",
+]
 
 [tool.pyodide]

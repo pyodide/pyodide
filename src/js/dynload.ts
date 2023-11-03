@@ -1,11 +1,10 @@
 /* Handle dynamic library loading. */
 
 declare var Module: any;
-declare var API: any;
 declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
-import { memoize } from "./util";
+import { memoize } from "./pyodide_util";
 import { PackageData } from "./load-package";
 
 type ReadFileType = (path: string) => Uint8Array;

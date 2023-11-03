@@ -3,7 +3,7 @@ package:
   version: "1.0"
   tag:
     - pyodide.test
-
+    - library
 source:
   path: src
 

@@ -93,4 +93,11 @@ def get_tests() -> list[tuple[str, dict[str, Any]]]:
 def pytest_generate_tests(metafunc):
     if "main_test" in metafunc.fixturenames:
         tests = get_tests()
-        metafunc.parametrize("main_test", tests, ids=[t[0] for t in tests])
+        metafunc.parametrize(
+            "main_test",
+            [
+                pytest.param(t, marks=pytest.mark.requires_dynamic_linking)
+                for t in tests
+            ],
+            ids=[t[0] for t in tests],
+        )

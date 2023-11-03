@@ -2,8 +2,9 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.24.0.dev0";
+API.version = "0.25.0.dev0";
 Module.hiwire = Hiwire;
+
 function getTypeTag(x) {
   try {
     return Object.prototype.toString.call(x);
@@ -53,3 +54,48 @@ function hasMethod(obj, prop) {
 
 const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr;
 API.pyproxyIsAlive = pyproxyIsAlive;
+
+const errNoRet = () => {
+  throw new Error(
+    "Assertion error: control reached end of function without return",
+  );
+};
+
+Module.reportUndefinedSymbols = () => {};
+
+const nullToUndefined = (x) => (x === null ? undefined : x);
+
+// This is factored out for testing purposes.
+function isPromise(obj) {
+  try {
+    // clang-format off
+    return !!obj && typeof obj.then === "function";
+    // clang-format on
+  } catch (e) {
+    return false;
+  }
+}
+API.isPromise = isPromise;
+
+/**
+ * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
+ *
+ * This respects slices: if the ArrayBuffer view is restricted to a slice of
+ * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
+ */
+function bufferAsUint8Array(arg) {
+  if (ArrayBuffer.isView(arg)) {
+    return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
+  } else {
+    return new Uint8Array(arg);
+  }
+}
+API.typedArrayAsUint8Array = bufferAsUint8Array;
+
+Module.iterObject = function* (object) {
+  for (let k in object) {
+    if (Object.prototype.hasOwnProperty.call(object, k)) {
+      yield k;
+    }
+  }
+};

@@ -6,11 +6,12 @@ import {
   loadBinaryFile,
   initNodeModules,
   resolvePath,
+  base16ToBase64,
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy } from "./pyproxy.gen";
-import { makeWarnOnce } from "./util";
+import { PyProxy } from "generated/pyproxy";
+import { makeWarnOnce } from "./pyodide_util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -19,21 +20,15 @@ import { makeWarnOnce } from "./util";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFileURL: string) {
-  let lockfile;
-  if (IN_NODE) {
-    await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    lockfile = JSON.parse(package_string);
-  } else {
-    let response = await fetch(lockFileURL);
-    lockfile = await response.json();
-  }
+async function initializePackageIndex(lockFilePromise: Promise<any>) {
+  await initNodeModules();
+  const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
+
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -60,9 +55,12 @@ async function initializePackageIndex(lockFileURL: string) {
     API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
+  await loadPackage(API.config.packages, { messageCallback() {} });
 }
 
-API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
+if (API.lockFilePromise) {
+  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+}
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -244,9 +242,8 @@ async function downloadPackage(
     }
     file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, installBaseUrl);
-    file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.lockfile_packages[name].sha256,
-    );
+    file_sub_resource_hash =
+      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
   } else {
     uri = channel;
     file_sub_resource_hash = undefined;
@@ -342,14 +339,16 @@ async function downloadAndInstall(
 
   try {
     const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
-    const installPromisDependencies = pkg.depends.map((dependency) => {
+    const installPromiseDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
         : Promise.resolve();
     });
+    // Can't install until bootstrap is finalized.
+    await API.bootstrapFinalizedPromise;
 
     // wait until all dependencies are installed
-    await Promise.all(installPromisDependencies);
+    await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
     loaded.add(pkg.name);
@@ -404,7 +403,6 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
- * @param errorCallbackDeprecated @ignore
  * @async
  */
 export async function loadPackage(
@@ -416,16 +414,7 @@ export async function loadPackage(
   } = {
     checkIntegrity: true,
   },
-  errorCallbackDeprecated?: (message: string) => void,
 ) {
-  if (typeof options === "function") {
-    cbDeprecationWarnOnce();
-    options = {
-      messageCallback: options,
-      errorCallback: errorCallbackDeprecated,
-    };
-  }
-
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {

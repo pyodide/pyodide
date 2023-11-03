@@ -252,7 +252,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         --------
 
         Here are a couple examples of converter functions. In addition to the
-        normal conversions, convert :js:class:`Date`` to :py:class:`~datetime.datetime`:
+        normal conversions, convert :js:class:`Date` to :py:class:`~datetime.datetime`:
 
         .. code-block:: python
 
@@ -1049,6 +1049,8 @@ class InternalError(Exception):
 
 
 class JsDomElement(JsProxy):
+    id: str
+
     @property
     def tagName(self) -> str:
         return ""
@@ -1064,6 +1066,10 @@ class JsDomElement(JsProxy):
         pass
 
     def removeEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+        pass
+
+    @property
+    def style(self) -> Any:
         pass
 
 

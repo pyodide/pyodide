@@ -44,7 +44,7 @@ def new_recipe_pypi(
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages."
-        "If not specified, the default is `<cwd>/packages`.",
+        "If not specified, the default is ``<cwd>/packages``.",
     ),
 ) -> None:
     """

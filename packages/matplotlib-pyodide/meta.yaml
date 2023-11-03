@@ -1,11 +1,11 @@
 package:
   name: matplotlib-pyodide
-  version: 0.1.1
+  version: 0.2.0
   top-level:
     - matplotlib_pyodide
 source:
-  url: https://files.pythonhosted.org/packages/c9/d3/62f67e5bbaadab2ee777bfd609c288ea5818a4d75e8693a236dc211ecc0f/matplotlib_pyodide-0.1.1-py3-none-any.whl
-  sha256: b5bc28caaa56f189a9f13cf42e66fc277662d9e0a863622e5582a9b82b8ccc14
+  url: https://files.pythonhosted.org/packages/d9/b1/c10dd6f133628343a2fe74a74d60c03e7c0a87724736be40e82c0247b8ce/matplotlib_pyodide-0.2.0-py3-none-any.whl
+  sha256: 4079865801941c02f2d09eab7740762f02c272889cac906c16c67b1531eb3271
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide

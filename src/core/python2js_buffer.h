@@ -7,7 +7,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 // clang-format on
-#include "hiwire.h"
+#include "jslib.h"
 
 /** Convert a Python buffer object to a JavaScript object.
  *
@@ -15,7 +15,7 @@
  *  \return The JavaScript object -- might be an Error object in the case of an
  *     exception.
  */
-JsRef
+JsVal
 _python2js_buffer(PyObject* x);
 
 errcode WARN_UNUSED

@@ -1,7 +1,7 @@
-import ErrorStackParser from "error-stack-parser";
+import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
+import "types";
+
 declare var Module: any;
-declare var Hiwire: any;
-declare var API: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -55,7 +55,19 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-function convertCppException(e: number) {
+// As a fallback for when Wasm EH is not available, use an empty function.
+// The fallback ensures instanceof always returns false.
+const wasmException = (WebAssembly as any).Exception || function () {};
+const isWasmException = (e: any) => e instanceof wasmException;
+
+function convertCppException(e: any) {
+  if (isWasmException(e)) {
+    if (e.is(Module.jsWrapperTag)) {
+      e = e.getArg(Module.jsWrapperTag, 0);
+    } else {
+      return e;
+    }
+  }
   let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg, e);
 }
@@ -74,20 +86,22 @@ let fatal_error_occurred = false;
  * @argument e {Error} The cause of the fatal error.
  * @private
  */
-API.fatal_error = function (e: any) {
+API.fatal_error = function (e: any): never {
   if (e && e.pyodide_fatal_error) {
+    // @ts-ignore
     return;
   }
 
   if (fatal_error_occurred) {
     console.error("Recursive call to fatal_error. Inner error was:");
     console.error(e);
+    // @ts-ignore
     return;
   }
   if (e instanceof NoGilError) {
     throw e;
   }
-  if (typeof e === "number") {
+  if (typeof e === "number" || isWasmException(e)) {
     // Hopefully a C++ exception?
     e = convertCppException(e);
   } else {
@@ -113,7 +127,7 @@ API.fatal_error = function (e: any) {
   }
   try {
     if (!isexit) {
-      Module._dump_traceback();
+      _dump_traceback();
     }
     let reason = isexit ? "exited" : "fatally failed";
     let msg = `Pyodide already ${reason} and can no longer be used.`;
@@ -156,17 +170,16 @@ API.maybe_fatal_error = function (e: any) {
   // This might cause problems in the future, so we need to find a way to fix it.
   // See: 1) https://github.com/emscripten-core/emscripten/issues/16071
   //      2) https://github.com/kitao/pyxel/issues/418
-  if (e && e == "unwind") {
+  if (API._skip_unwind_fatal_error && e === "unwind") {
     return;
   }
 
-  return API.fatal_error(e);
+  API.fatal_error(e);
 };
 
 let stderr_chars: number[] = [];
 API.capture_stderr = function () {
   stderr_chars = [];
-  const FS = Module.FS;
   FS.createDevice("/dev", "capture_stderr", null, (e: number) =>
     stderr_chars.push(e),
   );
@@ -176,7 +189,6 @@ API.capture_stderr = function () {
 };
 
 API.restore_stderr = function () {
-  const FS = Module.FS;
   FS.closeStream(2 /* stderr */);
   FS.unlink("/dev/capture_stderr");
   // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
@@ -186,10 +198,10 @@ API.restore_stderr = function () {
 
 API.fatal_loading_error = function (...args: string[]) {
   let message = args.join(" ");
-  if (Module._PyErr_Occurred()) {
+  if (_PyErr_Occurred()) {
     API.capture_stderr();
     // Prints traceback to stderr
-    Module._PyErr_Print();
+    _PyErr_Print();
     const captured_stderr = API.restore_stderr();
     message += "\n" + captured_stderr;
   }
@@ -233,9 +245,9 @@ Module.handle_js_error = function (e: any) {
     return;
   }
   let restored_error = false;
-  if (e instanceof API.PythonError) {
+  if (e instanceof PythonError) {
     // Try to restore the original Python exception.
-    restored_error = Module._restore_sys_last_exception(e.__error_address);
+    restored_error = _restore_sys_last_exception(e.__error_address);
   }
   let stack: any;
   let weirdCatch;
@@ -249,11 +261,9 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let eidx = Hiwire.new_value(e);
-    let err = Module._JsProxy_create(eidx);
-    Module._set_error(err);
-    Module._Py_DecRef(err);
-    Hiwire.decref(eidx);
+    let err = _JsProxy_create(e);
+    _set_error(err);
+    _Py_DecRef(err);
   }
   if (weirdCatch) {
     // In this case we have no stack frames so we can quit
@@ -269,18 +279,18 @@ Module.handle_js_error = function (e: any) {
     if (isPyodideFrame(frame)) {
       break;
     }
-    const funcnameAddr = Module.stringToNewUTF8(frame.functionName || "???");
-    const fileNameAddr = Module.stringToNewUTF8(frame.fileName || "???.js");
-    Module.__PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
-    Module._free(funcnameAddr);
-    Module._free(fileNameAddr);
+    const funcnameAddr = stringToNewUTF8(frame.functionName || "???");
+    const fileNameAddr = stringToNewUTF8(frame.fileName || "???.js");
+    __PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
+    _free(funcnameAddr);
+    _free(fileNameAddr);
   }
 };
 
 /**
  * A JavaScript error caused by a Python exception.
  *
- * In order to reduce the risk of large memory leaks, the :py:exc:`PythonError`
+ * In order to reduce the risk of large memory leaks, the :js:class:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
  * the actual Python exception that caused this error as
  * :py:data:`sys.last_value`.

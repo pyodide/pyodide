@@ -300,7 +300,7 @@ def test_monkeypatch_eval_code(selenium):
         )
 
 
-def test_hiwire_is_promise(selenium):
+def test_promise_check(selenium):
     for s in [
         "0",
         "1",
@@ -326,22 +326,16 @@ def test_hiwire_is_promise(selenium):
         "new Map()",
         "new Set()",
     ]:
-        assert selenium.run_js(
-            f"return pyodide._module.hiwire.isPromise({s}) === false;"
-        )
+        assert selenium.run_js(f"return pyodide._api.isPromise({s}) === false;")
 
     if not selenium.browser == "node":
-        assert selenium.run_js(
-            "return pyodide._module.hiwire.isPromise(document.all) === false;"
-        )
+        assert selenium.run_js("return pyodide._api.isPromise(document.all) === false;")
 
-    assert selenium.run_js(
-        "return pyodide._module.hiwire.isPromise(Promise.resolve()) === true;"
-    )
+    assert selenium.run_js("return pyodide._api.isPromise(Promise.resolve()) === true;")
 
     assert selenium.run_js(
         """
-        return pyodide._module.hiwire.isPromise(new Promise((resolve, reject) => {}));
+        return pyodide._api.isPromise(new Promise((resolve, reject) => {}));
         """
     )
 
@@ -349,7 +343,7 @@ def test_hiwire_is_promise(selenium):
         """
         let d = pyodide.runPython("{}");
         try {
-            return pyodide._module.hiwire.isPromise(d);
+            return pyodide._api.isPromise(d);
         } finally {
             d.destroy();
         }
@@ -419,6 +413,15 @@ def test_run_python_last_exc(selenium):
 
 
 def test_check_interrupt(selenium):
+    # First make sure checkInterrupt works when interrupt buffer is undefined.
+    # It should just do nothing in this case.
+    selenium.run_js(
+        """
+        pyodide.setInterruptBuffer(undefined);
+        pyodide.checkInterrupt();
+        """
+    )
+
     assert selenium.run_js(
         """
         let buffer = new Uint8Array(1);
@@ -459,6 +462,43 @@ def test_check_interrupt(selenium):
         console.log({err_code, err_occurred});
         pyodide._module._PyErr_Clear();
         return buffer[0] === 0 && err_code === -1 && err_occurred !== 0;
+        """
+    )
+
+
+def test_check_interrupt_no_gil(selenium):
+    """Check interrupt has a special case for GIL not held.
+    Make sure that it works.
+    """
+    selenium.run_js(
+        """
+        // release GIL
+        const tstate = pyodide._module._PyEval_SaveThread();
+
+        try {
+            // check that checkInterrupt works when interrupt buffer not defined
+            // it should do nothing.
+            pyodide.setInterruptBuffer(undefined);
+            pyodide.checkInterrupt();
+            ib = new Int32Array(1);
+            pyodide.setInterruptBuffer(ib);
+            pyodide.checkInterrupt();
+
+            ib[0] = 2;
+            let err;
+            try {
+                pyodide.checkInterrupt();
+            } catch(e) {
+                err = e;
+            }
+            assert(() => err instanceof pyodide.FS.ErrnoError);
+            assert(() => err.errno === pyodide.ERRNO_CODES.EINTR);
+            assert(() => ib[0] === 2);
+            ib[0] = 0;
+        } finally {
+            // acquire GIL
+            pyodide._module._PyEval_RestoreThread(tstate)
+        }
         """
     )
 
@@ -1063,7 +1103,6 @@ def test_weird_throws(selenium):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
 def test_weird_fatals(selenium_standalone, to_throw):
     expected_message = {
@@ -1201,6 +1240,7 @@ def test_sys_path0(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_fullstdlib(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
@@ -1274,20 +1314,6 @@ def test_raises_jsexception(selenium):
 @pytest.mark.xfail_browsers(node="Some problem with the logs in node")
 def test_deprecations(selenium_standalone):
     selenium = selenium_standalone
-    selenium.run_js(
-        """
-        p = [];
-        let cb = (x) => console.log('!!! ' + x);
-        await pyodide.loadPackage("micropip", cb);
-        pyodide.loadPackage("micropip", cb);
-        pyodide.loadPackagesFromImports("import micropip", cb);
-        pyodide.loadPackagesFromImports("import micropip", cb);
-        """
-    )
-    dep_msg = "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to {} is deprecated and will be removed in v0.24."
-    assert selenium.logs.count(dep_msg.format("loadPackage")) == 1
-    assert selenium.logs.count(dep_msg.format("loadPackageFromImports")) == 1
-    assert selenium.logs.count("!!! No new packages to load") == 3
     selenium.run_js(
         """
         let a = pyodide.PyBuffer;
@@ -1448,19 +1474,13 @@ def test_args_OO(selenium_standalone_noload):
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    version_result = subprocess.run(
-        ["node", "-v"], capture_output=True, encoding="utf8"
-    )
-    extra_node_args = []
-    if version_result.stdout.startswith("v14"):
-        extra_node_args.append("--experimental-wasm-bigint")
+    subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
     result = subprocess.run(
         [
             "node",
-            *extra_node_args,
             "-e",
             rf"""
             const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
@@ -1503,8 +1523,6 @@ def test_index_url_calculation_source_map(selenium):
     node_options = ["--enable-source-maps"]
 
     result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
-    if result.stdout.startswith("v14"):
-        node_options.append("--experimental-wasm-bigint")
 
     DIST_DIR = str(Path.cwd() / "dist")
 
@@ -1699,3 +1717,56 @@ def test_runpython_filename(selenium, run_python):
     assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
         expected.splitlines()[2:]
     )
+
+
+@pytest.mark.requires_dynamic_linking
+@run_in_pyodide
+def test_hiwire_invalid_ref(selenium):
+    import pytest
+
+    import pyodide_js
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    _hiwire_get = pyodide_js._module._hiwire_get
+    _hiwire_incref = pyodide_js._module._hiwire_incref
+    _hiwire_decref = pyodide_js._module._hiwire_decref
+    _api = pyodide_js._api
+
+    _hiwire_incref(0)
+    assert not _api.fail_test
+    _hiwire_decref(0)
+    assert not _api.fail_test
+    expected = r"Pyodide internal error: Argument to hiwire_get is falsy \(but error indicator is not set\)\."
+    with pytest.raises(JsException, match=expected):
+        _hiwire_get(0)
+    assert _api.fail_test
+    _api.fail_test = False
+
+    with pytest.raises(AssertionError, match="This is a message"):
+        run_js(
+            """
+            const msgptr = pyodide._module.stringToNewUTF8("This is a message");
+            const AssertionError = pyodide._module.HEAP32[pyodide._module._PyExc_AssertionError/4];
+            pyodide._module._PyErr_SetString(AssertionError, msgptr);
+            pyodide._module._free(msgptr);
+            try {
+                pyodide._module._hiwire_get(0);
+            } finally {
+                pyodide._module._PyErr_Clear();
+            }
+            """
+        )
+    msg = "hiwire_{} on invalid reference 77. This is most likely due to use after free. It may also be due to memory corruption."
+    with pytest.raises(JsException, match=msg.format("get")):
+        _hiwire_get(77)
+    assert _api.fail_test
+    _api.fail_test = False
+    with pytest.raises(JsException, match=msg.format("incref")):
+        _hiwire_incref(77)
+    assert _api.fail_test
+    _api.fail_test = False
+    with pytest.raises(JsException, match=msg.format("decref")):
+        _hiwire_decref(77)
+    assert _api.fail_test
+    _api.fail_test = False

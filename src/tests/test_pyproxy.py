@@ -65,6 +65,23 @@ def test_pyproxy_class(selenium):
     }.difference(selenium.run_js("return f_props")) == set()
 
 
+@run_in_pyodide
+def test_pyproxy_tostring(selenium):
+    from pathlib import Path
+
+    from pyodide.code import run_js
+    from pyodide_js._api import setPyProxyToStringMethod
+
+    pyproxy_to_string = run_js("(e) => e.toString()")
+
+    p = Path("a/b/c")
+    assert pyproxy_to_string(p) == str(p)
+    setPyProxyToStringMethod(True)
+    assert pyproxy_to_string(p) == repr(p)
+    setPyProxyToStringMethod(False)
+    assert pyproxy_to_string(p) == str(p)
+
+
 def test_del_builtin(selenium):
     msg = "NameError"
     with pytest.raises(selenium.JavascriptException, match=msg):
@@ -292,15 +309,14 @@ def test_pyproxy_get_buffer(selenium):
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
                     let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
-                    console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
                     if(v1.toString() !== v2){
                         throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
                     }
                 }
             }
             z.release();
+            pyodide.runPython(`print("${x}", getrefcount(${x}))`);
             pyodide.runPython(`assert getrefcount(${x}) == 2`);
-            pyodide.runPython(`del ${x}`);
         }
         """
     )
@@ -926,30 +942,33 @@ def test_nogil(selenium):
             Temp()
         `);
         // release GIL
-        const tstate = pyodide._module._PyEval_SaveThread()
+        const tstate = pyodide._module._PyEval_SaveThread();
 
-        assertThrows(() => t.x, "NoGilError", "");
         try {
-            t.x;
-        } catch(e){
-            assert(() => e instanceof pyodide._api.NoGilError);
-        }
-        assertThrows(() => t.x = 2, "NoGilError", "");
-        assertThrows(() => delete t.x, "NoGilError", "");
-        assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
-        assertThrows(() => t(), "NoGilError", "");
-        assertThrows(() => t.get(1), "NoGilError", "");
-        assertThrows(() => t.set(1, 2), "NoGilError", "");
-        assertThrows(() => t.delete(1), "NoGilError", "");
-        assertThrows(() => t.has(1), "NoGilError", "");
-        assertThrows(() => t.length, "NoGilError", "");
-        assertThrows(() => t.toString(), "NoGilError", "");
-        assertThrows(() => Array.from(t), "NoGilError", "");
-        await assertThrowsAsync(async () => await t, "NoGilError", "");
-        assertThrows(() => t.destroy(), "NoGilError", "");
+            assertThrows(() => t.x, "NoGilError", "");
+            try {
+                t.x;
+            } catch(e){
+                assert(() => e instanceof pyodide._api.NoGilError);
+            }
+            assertThrows(() => t.x = 2, "NoGilError", "");
+            assertThrows(() => delete t.x, "NoGilError", "");
+            assertThrows(() => Object.getOwnPropertyNames(t), "NoGilError", "");
+            assertThrows(() => t(), "NoGilError", "");
+            assertThrows(() => t.get(1), "NoGilError", "");
+            assertThrows(() => t.set(1, 2), "NoGilError", "");
+            assertThrows(() => t.delete(1), "NoGilError", "");
+            assertThrows(() => t.has(1), "NoGilError", "");
+            assertThrows(() => t.length, "NoGilError", "");
+            assertThrows(() => t.toString(), "NoGilError", "");
+            assertThrows(() => Array.from(t), "NoGilError", "");
+            await assertThrowsAsync(async () => await t, "NoGilError", "");
+            assertThrows(() => t.destroy(), "NoGilError", "");
+        } finally {
+            // acquire GIL
+            pyodide._module._PyEval_RestoreThread(tstate)
 
-        // acquire GIL
-        pyodide._module._PyEval_RestoreThread(tstate)
+        }
         """
     )
 

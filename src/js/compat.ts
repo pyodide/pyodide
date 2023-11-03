@@ -21,6 +21,13 @@ declare var globalThis: {
   fetch?: any;
 };
 
+const FETCH_NOT_FOUND_MSG = `\
+"fetch" is not defined, maybe you're using node < 18? \
+From Pyodide >= 0.25.0, node >= 18 is required. \
+Older versions of Node.js may work, but it is not guaranteed or supported. \
+Falling back to "node-fetch".\
+`;
+
 /**
  * If we're in node, it's most convenient to import various node modules on
  * initialization. Otherwise, this does nothing.
@@ -36,6 +43,8 @@ export async function initNodeModules() {
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
+    // @ts-ignore
+    console.warn(FETCH_NOT_FOUND_MSG);
     // @ts-ignore
     nodeFetch = (await import("node-fetch")).default;
   }
@@ -232,5 +241,36 @@ async function nodeLoadScript(url: string) {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.
     await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
+  }
+}
+
+// consider dropping this this once we drop support for node 14?
+function nodeBase16ToBase64(b16: string): string {
+  return Buffer.from(b16, "hex").toString("base64");
+}
+
+function browserBase16ToBase64(b16: string): string {
+  return btoa(
+    b16
+      .match(/\w{2}/g)!
+      .map(function (a) {
+        return String.fromCharCode(parseInt(a, 16));
+      })
+      .join(""),
+  );
+}
+
+export const base16ToBase64 = IN_NODE
+  ? nodeBase16ToBase64
+  : browserBase16ToBase64;
+
+export async function loadLockFile(lockFileURL: string): Promise<any> {
+  if (IN_NODE) {
+    await initNodeModules();
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    return JSON.parse(package_string);
+  } else {
+    let response = await fetch(lockFileURL);
+    return await response.json();
   }
 }
