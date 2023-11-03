@@ -244,7 +244,7 @@ export interface Module {
   API: API;
   postRun: ((a: Module) => void) | ((a: Module) => void)[];
   locateFile: (file: string) => string;
-  exited?: {toThrow: any};
+  exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
