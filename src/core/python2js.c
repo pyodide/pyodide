@@ -196,20 +196,19 @@ clear_stringref(PyObject* unicode)
 }
 
 EMSCRIPTEN_KEEPALIVE void
-set_js_string(PyObject* x, JsRef result)
+set_js_string(PyObject* x, JsVal result)
 {
   if (track_stringrefs) {
     __add_stringref(x);
   }
-  PyUnicode_SetJsString(x, result);
-  hiwire_incref(result);
+  PyUnicode_SetJsString(x, hiwire_new(result));
 }
 
 static JsVal
 _python2js_unicode(PyObject* x)
 {
   JsVal result = JsRef_toVal(PyUnicode_GetJsString(x));
-  if (JsvNull_Check(result)) {
+  if (!JsvNull_Check(result)) {
     return result;
   }
 
@@ -229,7 +228,7 @@ _python2js_unicode(PyObject* x)
     default:
       assert(false /* invalid Unicode kind */);
   }
-  set_js_string(x, hiwire_new(result));
+  set_js_string(x, result);
   return result;
 }
 

@@ -11,6 +11,11 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { TypedArray } from "./types";
 
+// Fill in public_api as an empty object so we get better error messages on
+// fatal error
+// @ts-ignore
+API.public_api = {};
+
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
 
