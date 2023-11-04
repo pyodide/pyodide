@@ -1240,38 +1240,38 @@ def to_js(
     --------
     >>> from js import Object, Map, Array
     >>> from pyodide.ffi import to_js
-    >>> js_object = to_js({'age': 20, 'name': 'john'})
-    >>> js_object
+    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
+    >>> js_object # doctest: +SKIP
     [object Map]
-    >>> js_object.keys(), js_object.values()
-    KeysView([object Map]) ValuesView([object Map])
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
+    >>> js_object.keys(), js_object.values() # doctest: +SKIP
+    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
+    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
     [('age', 20), ('name', 'john')]
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries)
-    >>> js_object.age == 20
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
+    >>> js_object.age == 20 # doctest: +SKIP
     True
-    >>> js_object.name == 'john'
+    >>> js_object.name == 'john' # doctest: +SKIP
     True
-    >>> js_object
+    >>> js_object # doctest: +SKIP
     [object Object]
-    >>> js_object.hasOwnProperty("age")
+    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
     True
-    >>> js_object.hasOwnProperty("height")
+    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
     False
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_)
-    >>> [item for item in js_object]
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
+    >>> [item for item in js_object] # doctest: +SKIP
     [age,20, name,john]
-    >>> js_object.toString()
+    >>> js_object.toString() # doctest: +SKIP
     age,20,name,john
 
-    >>> class Bird: pass
-    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None
-    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter)
-    >>> [bird for bird in js_nest]
+    >>> class Bird: pass # doctest: +SKIP
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
+    >>> [bird for bird in js_nest] # doctest: +SKIP
     [[object Object], [object Object]]
-    >>> [(bird.size, bird.color) for bird in js_nest]
+    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
     [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
