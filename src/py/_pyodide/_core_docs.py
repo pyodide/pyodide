@@ -1238,8 +1238,8 @@ def to_js(
 
     Examples
     --------
-    >>> from js import Object, Map, Array
-    >>> from pyodide.ffi import to_js
+    >>> from js import Object, Map, Array # doctest: +SKIP
+    >>> from pyodide.ffi import to_js # doctest: +SKIP
     >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
     >>> js_object # doctest: +SKIP
     [object Map]
