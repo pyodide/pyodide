@@ -25,6 +25,7 @@ build:
   script: |
     cd htslib
     emconfigure ./configure CFLAGS="-s USE_ZLIB=1 -s USE_BZIP2=1 -fPIC" --disable-lzma
+    export HTSLIB_MODE="separate"
     #export HTSLIB_CONFIGURE_OPTIONS="--disable-libcurl CFLAGS=-L../../../../packages/zlib/build/zlib-1.3.0/include LDFLAGS=-L../../../../packages/zlib/build/zlib-1.3.0/lib/' -fPIC"
 about:
   home: https://github.com/pysam-developers/pysam
