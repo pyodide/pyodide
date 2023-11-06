@@ -75,7 +75,7 @@ declare global {
   export const _restore_sys_last_exception: (err: number) => boolean;
   export const _set_error: (pyerr: number) => void;
 
-  export const _JsProxy_create_val: (obj: any) => number;
+  export const _JsProxy_create: (obj: any) => number;
   export const _JsProxy_Check: (ptr: number) => number;
 
   export const _python2js: (pyobj: number) => any;
@@ -146,8 +146,7 @@ declare global {
     resolve: (res: any) => void,
     reject: (exc: any) => void,
   ) => number;
-  export const _buffer_struct_size: number;
-  export const __pyproxy_get_buffer: (ptr: number, this_: number) => number;
+  export const __pyproxy_get_buffer: (this_: number) => any;
   export const __pyproxy_apply: (
     ptr: number,
     jsargs: any[],

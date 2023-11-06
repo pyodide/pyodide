@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
+  of Node.js might still work, but they are not tested or guaranteed to work.
+  {pr}`4269`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 
@@ -28,10 +32,17 @@ myst:
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
 
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
+  {pr}`4256`
+
 - {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
   throws an error, that error is propagated instead of being turned into an
   `AttributeError`.
   {pr}`4254`
+
+- {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
+  and `defaultConverter` arguments.
+  {pr}`4263`
 
 ### Pyodide CLI
 

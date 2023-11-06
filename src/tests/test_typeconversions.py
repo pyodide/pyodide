@@ -1177,9 +1177,9 @@ def test_tojs6(selenium):
             b = [a, a, a, a, a]
             [b, b, b, b, b]
         `);
-        let total_refs = pyodide._module.hiwire.num_keys();
+        let total_refs = pyodide._module._hiwire_num_refs();
         let res = respy.toJs();
-        let new_total_refs = pyodide._module.hiwire.num_keys();
+        let new_total_refs = pyodide._module._hiwire_num_refs();
         respy.destroy();
         assert(() => total_refs === new_total_refs);
         assert(() => res[0] === res[1]);
@@ -1199,9 +1199,9 @@ def test_tojs7(selenium):
             a.append(b)
             a
         `);
-        let total_refs = pyodide._module.hiwire.num_keys();
+        let total_refs = pyodide._module._hiwire_num_refs();
         let res = respy.toJs();
-        let new_total_refs = pyodide._module.hiwire.num_keys();
+        let new_total_refs = pyodide._module._hiwire_num_refs();
         respy.destroy();
         assert(() => total_refs === new_total_refs);
         assert(() => res[0][0] === "b");
@@ -1585,6 +1585,23 @@ def test_dict_converter_cache2(selenium):
         assert(() => d[2] === d);
         """
     )
+
+
+@run_in_pyodide
+def test_dict_and_default_converter(selenium):
+    from js import Object
+    from pyodide.ffi import to_js
+
+    def default_converter(_obj, c, _):
+        return c({"a": 2})
+
+    class A:
+        pass
+
+    res = to_js(
+        A, dict_converter=Object.fromEntries, default_converter=default_converter
+    )
+    assert res.a == 2
 
 
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])

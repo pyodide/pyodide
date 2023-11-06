@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "error_handling.h"
 #include "jslib.h"
 #include "python2js.h"
 #include <emscripten.h>
@@ -43,10 +44,13 @@ void
 pyodide_export(void);
 int
 py_version_major(void);
-// Force _pyodide_core.o and _pyodide_pre.gen.o to be included by using a symbol
-// from each of them.
+void
+set_new_cframe(void* frame);
+// Force _pyodide_core.o, _pyodide_pre.gen.o, and pystate.o to be included by
+// using a symbol from each of them.
 void* pyodide_export_ = pyodide_export;
 void* py_version_major_ = py_version_major;
+void* set_new_cframe_ = set_new_cframe;
 
 // clang-format off
 EM_JS(void, set_pyodide_module, (JsVal mod), {
@@ -79,7 +83,6 @@ PyInit__pyodide_core(void)
   }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
-  TRY_INIT(hiwire);
   TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT(js2python);

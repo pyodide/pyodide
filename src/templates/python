@@ -2,6 +2,8 @@
 ":" /* << "EOF"
 This file is a bash/node polyglot. This is needed for a few reasons:
 
+TODO: We don't support node < 18 anymore, so maybe we can remove this?
+
 1. In node 14 we must pass `--experimental-wasm-bigint`. In node >14 we cannot
 pass --experimental-wasm-bigint
 
@@ -33,17 +35,14 @@ which node > /dev/null  || { \
 
 ARGS=$(node -e "$(cat <<"EOF"
 const major_version = Number(process.version.split(".")[0].slice(1));
-if(major_version < 14) {
-    console.error("Need node version >= 14. Got node version", process.version);
+if(major_version < 18) {
+    console.error("Need node version >= 18. Got node version", process.version);
     process.exit(1);
 }
-if(major_version === 14){
-    process.stdout.write("--experimental-wasm-bigint");
-} else {
-    // If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
-    // number of arguments. `ARGS=--` is not empty but does nothing.
-    process.stdout.write("--");
-}
+
+// If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
+// number of arguments. `ARGS=--` is not empty but does nothing.
+process.stdout.write("--");
 EOF
 )")
 
