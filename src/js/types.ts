@@ -238,8 +238,13 @@ export interface Module {
   noWasmDecoding: boolean;
   quit: (status: number, toThrow: Error) => void;
   preRun: { (): void }[];
-  print: (a: string) => void;
-  printErr: (a: string) => void;
+  print?: (a: string) => void;
+  printErr?: (a: string) => void;
+  arguments: string[];
+  API: API;
+  postRun: ((a: Module) => void) | ((a: Module) => void)[];
+  locateFile: (file: string) => string;
+  exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
@@ -326,6 +331,12 @@ export interface API {
     dynlibPaths: string[],
   ) => Promise<void>;
 
-  makePublicAPI: () => PyodideInterface;
   _Comlink: any;
+
+  dsodir: string;
+  sys: PyProxy;
+  os: PyProxy;
+
+  finalizeBootstrap: () => PyodideInterface;
+  version: string;
 }
