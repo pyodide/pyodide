@@ -3,30 +3,8 @@ From: Gyeongjae Choi <def6488@gmail.com>
 Date: Mon, 30 Oct 2023 14:35:04 +0000
 Subject: [PATCH 8/10] Remove test modules that fails to build
 
-These modules were not included in the build results when using setuptools, but are newly added when using meson.
-
-However, we are getting some errors when building these modules.
-These modules are test-only modules, so we remove them for now.
-
-Duplicate symbol error (_test_odeint_banded):
-
-wasm-ld: error: duplicate symbol: jac_
->>> defined in scipy/integrate/_test_odeint_banded.cpython-311-wasm32-emscripten.so.p/meson-generated_..__test_odeint_banded-f2pywrappers.f.o
->>> defined in scipy/integrate/_test_odeint_banded.cpython-311-wasm32-emscripten.so.p/tests_banded5x5.f.o
-
-f2c error (_test_fortran):
-
-FAILED: scipy/io/_test_fortran.cpython-311-wasm32-emscripten.so.p/_test_fortran.f.o 
-/tmp/tmpp0og42ut/gfortran -Iscipy/io/_test_fortran.cpython-311-wasm32-emscripten.so.p -Iscipy/io -I../../scipy/io -I../../../../../../../tmp/build-env-j2te9ria/lib/python3.11/site-packages/numpy/core/include -I../../../../../../../tmp/build-env-j2te9ria/lib/python3.11/site-packages/numpy/f2py/src -Iscipy/lib_fortranobject.a.p -I/src/packages/.libs/include -I/src/cpython/installs/python-3.11.3/include/python3.11 -I/usr/local/include/python3.11 -fvisibility=hidden -fdiagnostics-color=always -DNDEBUG -D_FILE_OFFSET_BITS=64 -Wall -std=legacy -O3 -Wno-conversion -fPIC -Wno-argument-mismatch -Wno-conversion -Wno-maybe-uninitialized -Wno-unused-dummy-argument -Wno-unused-label -Wno-unused-variable -Wno-tabs -Jscipy/io/_test_fortran.cpython-311-wasm32-emscripten.so.p -o scipy/io/_test_fortran.cpython-311-wasm32-emscripten.so.p/_test_fortran.f.o -c ../../scipy/io/_test_fortran.f
-   read_unformatted_double:
-Error on line 3: syntax error
-Error on line 4: syntax error
-Error on line 5: syntax error
-Error processing entries before line 6: Declaration error for m: attempt to use undefined variable
-Error processing entries before line 6: Declaration error for n: attempt to use undefined variable
-Error processing entries before line 6: Declaration error for k: attempt to use undefined variable
-Error processing entries before line 6: Declaration error for a: attempt to use undefined variable
-
+These are tests and they have both void vs int return value problems and implicit
+function argument cast problems. Not worth fixing for tests.
 
 ---
  scipy/integrate/meson.build | 18 ------------------
