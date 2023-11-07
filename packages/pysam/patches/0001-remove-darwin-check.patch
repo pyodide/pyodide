@@ -3,6 +3,15 @@ From: Steven Weaver <sweaver@temple.edu>
 Date: Sun, 29 Oct 2023 11:38:47 -0600
 Subject: [PATCH] remove darwin check
 
+This patch removes the platform check for Darwin (macOS) systems in `setup.py` during the build extension process.
+
+Rationale:
+- Pysam's setup process includes specific checks and configurations for macOS that are not applicable when cross-compiling for WebAssembly using Emscripten.
+- The check for `sys.platform == 'darwin'` is replaced with `None` to bypass macOS-specific configurations, as these are irrelevant and potentially problematic in a cross-compilation context.
+- This ensures that the build process does not attempt to apply macOS-specific build settings that are incompatible with the target WebAssembly environment.
+
+This modification is necessary to avoid build errors and misconfigurations when compiling Pysam for an Emscripten environment rather than a native macOS environment.
+
 ---
  setup.py | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

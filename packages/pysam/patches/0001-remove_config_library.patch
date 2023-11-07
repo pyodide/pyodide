@@ -3,6 +3,22 @@ From: Steven Weaver <sweaver@temple.edu>
 Date: Wed, 25 Oct 2023 19:06:33 -0600
 Subject: [PATCH] remove_config_library
 
+This patch eliminates the `configure_library` function from `setup.py`.
+
+Key modifications:
+- Removed reliance on the configure script execution within the Python
+  setup process. This decision follows the advice to handle
+  configuration preemptively on the host system, which is better suited
+  to address the custom feature detection implemented in the htslib
+  configure script.
+
+By avoiding reconfiguration during the Python setup, this change helps
+to circumvent issues where the htslib configure script's feature
+detection does not interact well with emscripten's compilation
+environment. Consequently, this patch leads to a more predictable build
+process by relying on the host system's pre-configuration and patches
+directly applied to the build script for pysam.
+
 ---
  setup.py | 21 ---------------------
  1 file changed, 21 deletions(-)

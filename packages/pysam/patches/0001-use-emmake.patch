@@ -3,6 +3,18 @@ From: Steven Weaver <sweaver@temple.edu>
 Date: Sat, 28 Oct 2023 22:03:10 -0600
 Subject: [PATCH] use emmake
 
+This patch transitions the build process in `setup.py` to use `emmake`,
+a utility provided by Emscripten that wraps make commands to ensure that
+the correct flags are passed to the Emscripten compiler.
+
+Changes introduced:
+- The `run_make` and `run_make_print_config` functions are modified to
+  invoke `emmake` before the system's `make` command.
+- This adjustment ensures that the `make` utility operates with the
+  appropriate environment variables and configurations required for
+  Emscripten to compile C and C++ to WebAssembly.
+
+
 ---
  setup.py | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
