@@ -17,10 +17,6 @@ build:
   cflags: |
     -I$(WASM_LIBRARY_DIR)/include
     -fPIC
-  cross-script: |
-    pwd
-    echo PYTHONPATH: $PYTHONPATH
-    echo _PYTHON_HOST_PLATFORM: $_PYTHON_HOST_PLATFORM
   script: |
     cd htslib
     emconfigure ./configure CFLAGS="-s USE_ZLIB=1 -s USE_BZIP2=1 -fPIC" --disable-lzma
