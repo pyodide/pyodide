@@ -2,6 +2,7 @@
  * The main bootstrap code for loading pyodide.
  */
 import {
+  calculateDirname,
   loadScript,
   initNodeModules,
   resolvePath,
