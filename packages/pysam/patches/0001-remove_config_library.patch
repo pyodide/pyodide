@@ -1,0 +1,60 @@
+From 0348efc8e8725d618d50d99ae9ffa91fc717b392 Mon Sep 17 00:00:00 2001
+From: Steven Weaver <sweaver@temple.edu>
+Date: Wed, 25 Oct 2023 19:06:33 -0600
+Subject: [PATCH] remove_config_library
+
+This patch eliminates the `configure_library` function from `setup.py`.
+
+Key modifications:
+- Removed reliance on the configure script execution within the Python
+  setup process. This decision follows the advice to handle
+  configuration preemptively on the host system, which is better suited
+  to address the custom feature detection implemented in the htslib
+  configure script.
+
+By avoiding reconfiguration during the Python setup, this change helps
+to circumvent issues where the htslib configure script's feature
+detection does not interact well with emscripten's compilation
+environment. Consequently, this patch leads to a more predictable build
+process by relying on the host system's pre-configuration and patches
+directly applied to the build script for pysam.
+
+---
+ setup.py | 21 ---------------------
+ 1 file changed, 21 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index a4bf36d..22f3cb3 100644
+--- a/setup.py
++++ b/setup.py
+@@ -192,27 +192,6 @@ def set_compiler_envvars():
+ 
+ 
+ def configure_library(library_dir, env_options=None, options=[]):
+-
+-    configure_script = os.path.join(library_dir, "configure")
+-
+-    on_rtd = os.environ.get("READTHEDOCS") == "True"
+-    # RTD has no bzip2 development libraries installed:
+-    if on_rtd:
+-        env_options = "--disable-bz2"
+-
+-    if not os.path.exists(configure_script):
+-        raise ValueError(
+-            "configure script {} does not exist".format(configure_script))
+-
+-    with changedir(library_dir), set_compiler_envvars():
+-        if env_options is not None:
+-            if run_configure(env_options):
+-                return env_options
+-
+-        for option in options:
+-            if run_configure(option):
+-                return option
+-
+     return None
+ 
+ 
+-- 
+2.39.3 (Apple Git-145)
+

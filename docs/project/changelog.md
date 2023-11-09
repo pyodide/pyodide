@@ -54,6 +54,8 @@ myst:
 
 ### Packages
 
+- Added `pysam` version 0.22.0 {pr}`4268`
+
 - Added `river` version 0.19.0 {pr}`4197`
 
 - Added `sisl` version 0.14.2 {pr}`4210`
