@@ -18,10 +18,11 @@ export const IN_NODE_ESM = IN_NODE && !IN_NODE_COMMONJS;
 
 export const IN_DENO = typeof Deno !== "undefined"; // just in case...
 
-export const IN_BROWSER = !IN_NODE && !IN_DENO && typeof window !== "undefined";
+export const IN_BROWSER = !IN_NODE && !IN_DENO;
 
 export const IN_BROWSER_MAIN_THREAD =
   IN_BROWSER &&
+  typeof window !== "undefined" &&
   typeof document !== "undefined" &&
   typeof document.createElement !== "undefined" &&
   typeof sessionStorage !== "undefined";
