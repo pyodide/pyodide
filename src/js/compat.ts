@@ -283,13 +283,6 @@ export async function calculateDirname(): Promise<string> {
     return __dirname;
   }
 
-  if (IN_NODE_ESM) {
-    const nodePath = await import("path");
-    const nodeUrl = await import("url");
-
-    return nodeUrl.fileURLToPath(nodePath.dirname(import.meta.url));
-  }
-
   let err: Error;
   try {
     throw new Error();
@@ -297,6 +290,16 @@ export async function calculateDirname(): Promise<string> {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
+
+  if (IN_NODE_ESM) {
+    const nodePath = await import("path");
+    const nodeUrl = await import("url");
+
+    // FIXME: We would like to use import.meta.url here,
+    // but mocha seems to mess with compiling typescript files to ES6.
+    return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
+  }
+
   const indexOfLastSlash = fileName.lastIndexOf(pathSep);
   if (indexOfLastSlash === -1) {
     throw new Error(
