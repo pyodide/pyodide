@@ -20,6 +20,9 @@ myst:
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
 
+- {{ Fix }} Fixed default indexURL calculation in Node.js environment.
+  {pr}`4288`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 

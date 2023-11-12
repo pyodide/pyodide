@@ -1,11 +1,10 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import ErrorStackParser from "error-stack-parser";
 import {
+  calculateDirname,
   loadScript,
   initNodeModules,
-  pathSep,
   resolvePath,
   loadLockFile,
 } from "./compat";
@@ -35,44 +34,6 @@ export type {
 export { version };
 
 declare function _createPyodideModule(Module: any): Promise<void>;
-
-/**
- *  If indexURL isn't provided, throw an error and catch it and then parse our
- *  file name out from the stack trace.
- *
- *  Question: But getting the URL from error stack trace is well... really
- *  hacky. Can't we use
- *  [`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
- *  or
- *  [`import.meta.url`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta)
- *  instead?
- *
- *  Answer: `document.currentScript` works for the browser main thread.
- *  `import.meta` works for es6 modules. In a classic webworker, I think there
- *  is no approach that works. Also we would need some third approach for node
- *  when loading a commonjs module using `require`. On the other hand, this
- *  stack trace approach works for every case without any feature detection
- *  code.
- */
-function calculateIndexURL(): string {
-  if (typeof __dirname === "string") {
-    return __dirname;
-  }
-  let err: Error;
-  try {
-    throw new Error();
-  } catch (e) {
-    err = e as Error;
-  }
-  let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
-  if (indexOfLastSlash === -1) {
-    throw new Error(
-      "Could not extract indexURL path from pyodide module location",
-    );
-  }
-  return fileName.slice(0, indexOfLastSlash);
-}
 
 /**
  * See documentation for loadPyodide.
@@ -226,7 +187,7 @@ export async function loadPyodide(
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
-  let indexURL = options.indexURL || calculateIndexURL();
+  let indexURL = options.indexURL || (await calculateDirname());
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
