@@ -51,15 +51,8 @@ myst:
 
 ### Packages
 
-- Added `river` version 0.19.0 {pr}`4197`
-
-- Added `sisl` version 0.14.2 {pr}`4210`
-
-- Added `frozenlist` {pr}`4231`
-
-- Added `zengl` version 1.16.0 {pr}`4208`
-
-- Added `msgspec` version 0.18.4 {pr}`4265`
+- New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
+  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`
 
 ### Load time & size optimizations
 
