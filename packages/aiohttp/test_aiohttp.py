@@ -1,5 +1,6 @@
 from pytest_pyodide import run_in_pyodide
 from pathlib import Path
+from typing import cast
 import pytest
 
 @run_in_pyodide(packages=["aiohttp"])
@@ -23,5 +24,6 @@ async def aiohttp_test_helper(selenium, patch, base_url, lock_data):
 
 def test_aiohttp(selenium):
     patch = (Path(__file__).parent / "aiohttp_patch.py").read_text()
-    lock_data = (Path(pytest.pyodide_dist_dir) / "pyodide-lock.json").read_text()
+    dist_dir = cast(str, pytest.pyodide_dist_dir)
+    lock_data = (Path(dist_dir) / "pyodide-lock.json").read_text()
     aiohttp_test_helper(selenium, patch, selenium.base_url, lock_data)
