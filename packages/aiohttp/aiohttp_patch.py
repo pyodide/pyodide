@@ -1,15 +1,19 @@
 """Used in test_aiohttp.py"""
 
-from multidict import CIMultiDict, istr
-from aiohttp import payload, InvalidURL, hdrs, ClientSession, ClientTimeout
-from aiohttp.client_reqrep import _merge_ssl_params
-from aiohttp.helpers import TimeoutHandle, strip_auth_from_url, get_env_proxy_for_url
+from collections.abc import Iterable
 from contextlib import suppress
-from typing import Any, Optional, Iterable
+from typing import Any
+
+from aiohttp import ClientSession, ClientTimeout, InvalidURL, hdrs, payload
+from aiohttp.client_reqrep import _merge_ssl_params
+from aiohttp.helpers import TimeoutHandle, get_env_proxy_for_url, strip_auth_from_url
+from multidict import CIMultiDict, istr
 from yarl import URL
+
 
 class Content:
     __slots__ = ("_jsresp", "_exception")
+
     def __init__(self, _jsresp):
         self._jsresp = _jsresp
         self._exception = None
@@ -27,35 +31,36 @@ class Content:
     def set_exception(self, exc: BaseException) -> None:
         self._exception = exc
 
+
 async def _request(
     self,
     method: str,
     str_or_url,
     *,
-    params = None,
+    params=None,
     data: Any = None,
     json: Any = None,
-    cookies = None,
-    headers = None,
-    skip_auto_headers: Optional[Iterable[str]] = None,
-    auth = None,
+    cookies=None,
+    headers=None,
+    skip_auto_headers: Iterable[str] | None = None,
+    auth=None,
     allow_redirects: bool = True,
     max_redirects: int = 10,
-    compress: Optional[str] = None,
-    chunked: Optional[bool] = None,
+    compress: str | None = None,
+    chunked: bool | None = None,
     expect100: bool = False,
-    raise_for_status = None,
+    raise_for_status=None,
     read_until_eof: bool = True,
-    proxy = None,
-    proxy_auth = None,
-    timeout = None,
-    verify_ssl: Optional[bool] = None,
-    fingerprint: Optional[bytes] = None,
-    ssl_context = None,
-    ssl = None,
-    proxy_headers = None,
-    trace_request_ctx = None,
-    read_bufsize: Optional[int] = None,
+    proxy=None,
+    proxy_auth=None,
+    timeout=None,
+    verify_ssl: bool | None = None,
+    fingerprint: bytes | None = None,
+    ssl_context=None,
+    ssl=None,
+    proxy_headers=None,
+    trace_request_ctx=None,
+    read_bufsize: int | None = None,
 ):
     # NOTE: timeout clamps existing connect and read timeouts.  We cannot
     # set the default to None because we need to detect if the user wants
@@ -67,14 +72,10 @@ async def _request(
     ssl = _merge_ssl_params(ssl, verify_ssl, ssl_context, fingerprint)
 
     if data is not None and json is not None:
-        raise ValueError(
-            "data and json parameters can not be used at the same time"
-        )
+        raise ValueError("data and json parameters can not be used at the same time")
     elif json is not None:
         data = payload.JsonPayload(json, dumps=self._json_serialize)
 
-
-    redirects = 0
     history = []
     version = self._version
     params = params or {}
@@ -122,8 +123,7 @@ async def _request(
             url, auth_from_url = strip_auth_from_url(url)
             if auth and auth_from_url:
                 raise ValueError(
-                    "Cannot combine AUTH argument with "
-                    "credentials encoded in URL"
+                    "Cannot combine AUTH argument with " "credentials encoded in URL"
                 )
 
             if auth is None:
@@ -140,13 +140,6 @@ async def _request(
                 )
 
             all_cookies = self._cookie_jar.filter_cookies(url)
-
-            if cookies is not None:
-                tmp_cookie_jar = CookieJar()
-                tmp_cookie_jar.update_cookies(cookies)
-                req_cookies = tmp_cookie_jar.filter_cookies(url)
-                if req_cookies:
-                    all_cookies.load(req_cookies)
 
             if proxy is not None:
                 proxy = URL(proxy)
@@ -189,12 +182,18 @@ async def _request(
                 loop=req.loop,
                 session=req._session,
             )
-            from js import fetch, Headers
+            from js import Headers, fetch
             from pyodide.ffi import to_js
+
             body = None
             if req.body:
                 body = to_js(req.body._value)
-            jsresp = await fetch(str(req.url), method=req.method, headers=Headers.new(headers.items()), body=body)
+            jsresp = await fetch(
+                str(req.url),
+                method=req.method,
+                headers=Headers.new(headers.items()),
+                body=body,
+            )
             resp.version = version
             resp.status = jsresp.status
             resp.reason = jsresp.statusText
@@ -202,7 +201,6 @@ async def _request(
             resp._headers = CIMultiDict(jsresp.headers)
             resp._raw_headers = tuple(tuple(e) for e in jsresp.headers)
             resp.content = Content(jsresp)
-
 
         # check response status
         if raise_for_status is None:
@@ -242,5 +240,6 @@ async def _request(
                 method, url.update_query(params), headers, e
             )
         raise
+
 
 ClientSession._request = _request
