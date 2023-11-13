@@ -1,7 +1,7 @@
-From 4c71c808cc65ed6003b1e29d583c71586ebb36e1 Mon Sep 17 00:00:00 2001
+From 19171eafd8a07b9df74014b757e51ece237a2943 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Wed, 25 Jan 2023 15:54:16 +0900
-Subject: [PATCH 8/9] Move test directories
+Subject: [PATCH 7/8] Move test directories
 
 ---
  Makefile.pre.in | 6 +++---
@@ -32,5 +32,5 @@ index b356f6293e..68c55a356a 100644
  TEST_MODULES=@TEST_MODULES@
  libinstall:	all $(srcdir)/Modules/xxmodule.c
 -- 
-2.29.2.windows.2
+2.25.1
 

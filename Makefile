@@ -25,7 +25,7 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js
+src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
 # file so that when linked, Emscripten will include it. We use the same pathway
 # that EM_JS uses, but EM_JS is itself unsuitable. Why? Because the C
@@ -57,6 +57,7 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js
 	echo '()<::>{' >> tmp.dat                       # zero argument argspec and start body
 	cat src/js/generated/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
 	echo '}' >> tmp.dat                             # Close function body
+	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
 	cat src/core/pre.js >> tmp.dat                  # Execute pre.js too
 	echo "pyodide_js_init();" >> tmp.dat            # Then execute the function.
 
@@ -84,9 +85,12 @@ dist/libpyodide.a: \
 	src/core/jsproxy.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
+	src/core/jslib.o \
+	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o
+	src/core/pyversion.o \
+	src/core/stack_switching/pystate.o
 	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
@@ -131,6 +135,9 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
 
+src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
+	node src/core/stack_switching/esbuild.config.mjs
+
 dist/package.json : src/js/package.json
 	cp $< $@
 
@@ -138,10 +145,8 @@ dist/package.json : src/js/package.json
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts
-	rm -f node_modules
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
-	ln -sfn src/js/node_modules/ node_modules
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
@@ -224,10 +229,11 @@ benchmark: all
 
 clean:
 	rm -fr dist/*
-	rm -fr src/*/*.o
-	rm -fr src/*/*.gen.*
-	rm -fr src/js/generated
 	rm -fr node_modules
+	find src -name '*.o' -delete
+	find src -name '*.gen.*' -delete
+	find src -name '*.out.*' -delete
+	rm -fr src/js/generated
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
@@ -237,6 +243,10 @@ clean-python: clean
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
+
+src/core/jslib_asm.o: src/core/jslib_asm.s
+	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS)
+
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/

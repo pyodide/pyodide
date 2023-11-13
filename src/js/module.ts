@@ -10,7 +10,7 @@ import { Module } from "./types";
  *
  * @private
  */
-export function createModule(): any {
+export function createModule(): Module {
   let Module: any = {};
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
@@ -20,7 +20,7 @@ export function createModule(): any {
     Module.exited = { status, toThrow };
     throw toThrow;
   };
-  return Module;
+  return Module as Module;
 }
 
 /**

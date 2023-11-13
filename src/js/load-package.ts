@@ -1,7 +1,7 @@
 import "./constants";
 
+import { IN_NODE } from "./environments";
 import {
-  IN_NODE,
   nodeFsPromisesMod,
   loadBinaryFile,
   initNodeModules,

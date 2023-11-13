@@ -1,0 +1,16 @@
+package:
+  name: zengl
+  version: 1.16.0
+  top-level:
+    - zengl
+    - _zengl
+
+source:
+  url: https://files.pythonhosted.org/packages/d9/cd/c30359142f5ff049e224fbd07ff219c13532b764b9e0b33de95251953bf7/zengl-1.16.0.tar.gz
+  sha256: 2f13badccdf66297778c08ea1ab295f04a9889988d25510217835297709ceace
+
+about:
+  home: https://github.com/szabolcsdombi/zengl/
+  PyPI: https://pypi.org/project/zengl
+  summary: Self-Contained OpenGL Rendering Pipelines for Python
+  license: MIT

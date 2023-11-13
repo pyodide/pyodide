@@ -1,11 +1,15 @@
 declare var Module: any;
-declare var Hiwire: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { loadPackage, loadedPackages } from "./load-package";
-import { PyBufferView, PyBuffer, PyProxy } from "generated/pyproxy";
+import {
+  PyBufferView,
+  PyBuffer,
+  type PyProxy,
+  type PyDict,
+} from "generated/pyproxy";
 import { PythonError } from "../core/error_handling";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
@@ -35,6 +39,10 @@ API.rawRun = function rawRun(code: string): [number, string] {
 API.runPythonInternal = function (code: string): any {
   // API.runPythonInternal_dict is initialized in finalizeBootstrap
   return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
+};
+
+API.setPyProxyToStringMethod = function (useRepr: boolean): void {
+  Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
 /** @private */
@@ -282,6 +290,20 @@ export class PyodideAPI {
     return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
+  static async runPythonSyncifying(
+    code: string,
+    options: { globals?: PyProxy; locals?: PyProxy } = {},
+  ): Promise<any> {
+    if (!options.globals) {
+      options.globals = API.globals;
+    }
+    return API.pyodide_code.eval_code.callSyncifying(
+      code,
+      options.globals,
+      options.locals,
+    );
+  }
+
   /**
    * Registers the JavaScript object ``module`` as a JavaScript module named
    * ``name``. This module can then be imported from Python using the standard
@@ -359,36 +381,33 @@ export class PyodideAPI {
     if (!obj || API.isPyProxy(obj)) {
       return obj;
     }
-    let obj_id = 0;
     let py_result = 0;
     let result = 0;
     try {
-      obj_id = Hiwire.new_value(obj);
-      try {
-        py_result = Module.js2python_convert(obj_id, {
-          depth,
-          defaultConverter,
-        });
-      } catch (e) {
-        if (e instanceof Module._PropagatePythonError) {
-          _pythonexc2js();
-        }
-        throw e;
+      py_result = Module.js2python_convert(obj, {
+        depth,
+        defaultConverter,
+      });
+    } catch (e) {
+      if (e instanceof Module._PropagatePythonError) {
+        _pythonexc2js();
       }
+      throw e;
+    }
+    try {
       if (_JsProxy_Check(py_result)) {
         // Oops, just created a JsProxy. Return the original object.
         return obj;
         // return Module.pyproxy_new(py_result);
       }
       result = _python2js(py_result);
-      if (result === 0) {
+      if (result === null) {
         _pythonexc2js();
       }
     } finally {
-      Hiwire.decref(obj_id);
       _Py_DecRef(py_result);
     }
-    return Hiwire.pop_value(result);
+    return result;
   }
 
   /**
@@ -641,7 +660,7 @@ export class PyodideAPI {
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */
-API.makePublicAPI = function () {
+function makePublicAPI(): PyodideInterface {
   // Create a copy of PyodideAPI that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
   let d = Object.getOwnPropertyDescriptors(PyodideAPI);
@@ -655,4 +674,118 @@ API.makePublicAPI = function () {
   pyodideAPI._module = Module;
   pyodideAPI._api = API;
   return pyodideAPI;
+}
+
+/**
+ * A proxy around globals that falls back to checking for a builtin if has or
+ * get fails to find a global with the given key. Note that this proxy is
+ * transparent to js2python: it won't notice that this wrapper exists at all and
+ * will translate this proxy to the globals dictionary.
+ * @private
+ */
+function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
+  return new Proxy(globals_dict, {
+    get(target, symbol) {
+      if (symbol === "get") {
+        return (key: any) => {
+          let result = target.get(key);
+          if (result === undefined) {
+            result = builtins_dict.get(key);
+          }
+          return result;
+        };
+      }
+      if (symbol === "has") {
+        return (key: any) => target.has(key) || builtins_dict.has(key);
+      }
+      return Reflect.get(target, symbol);
+    },
+  });
+}
+
+let bootstrapFinalized: () => void;
+API.bootstrapFinalizedPromise = new Promise<void>(
+  (r) => (bootstrapFinalized = r),
+);
+
+/**
+ * This function is called after the emscripten module is finished initializing,
+ * so eval_code is newly available.
+ * It finishes the bootstrap so that once it is complete, it is possible to use
+ * the core `pyodide` apis. (But package loading is not ready quite yet.)
+ * @private
+ */
+API.finalizeBootstrap = function (): PyodideInterface {
+  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
+  if (err) {
+    API.fatal_loading_error(
+      "Failed to import _pyodide_core\n",
+      captured_stderr,
+    );
+  }
+
+  // First make internal dict so that we can use runPythonInternal.
+  // runPythonInternal uses a separate namespace, so we don't pollute the main
+  // environment with variables from our setup.
+  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
+  API.importlib = API.runPythonInternal("import importlib; importlib");
+  let import_module = API.importlib.import_module;
+
+  API.sys = import_module("sys");
+  API.sys.path.insert(0, API.config.env.HOME);
+  API.os = import_module("os");
+
+  // Set up globals
+  let globals = API.runPythonInternal(
+    "import __main__; __main__.__dict__",
+  ) as PyDict;
+  let builtins = API.runPythonInternal(
+    "import builtins; builtins.__dict__",
+  ) as PyDict;
+  API.globals = wrapPythonGlobals(globals, builtins);
+
+  // Set up key Javascript modules.
+  let importhook = API._pyodide._importhook;
+  function jsFinderHook(o: object) {
+    if ("__all__" in o) {
+      return;
+    }
+    Object.defineProperty(o, "__all__", {
+      get: () =>
+        pyodide.toPy(
+          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+        ),
+      enumerable: false,
+      configurable: true,
+    });
+  }
+  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+  importhook.register_js_module("js", API.config.jsglobals);
+
+  let pyodide = makePublicAPI();
+  importhook.register_js_module("pyodide_js", pyodide);
+
+  // import pyodide_py. We want to ensure that as much stuff as possible is
+  // already set up before importing pyodide_py to simplify development of
+  // pyodide_py code (Otherwise it's very hard to keep track of which things
+  // aren't set up yet.)
+  API.pyodide_py = import_module("pyodide");
+  API.pyodide_code = import_module("pyodide.code");
+  API.pyodide_ffi = import_module("pyodide.ffi");
+  API.package_loader = import_module("pyodide._package_loader");
+
+  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
+  API.dsodir = API.package_loader.DSO_DIR.__str__();
+  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
+
+  API.os.environ.__setitem__(
+    "LD_LIBRARY_PATH",
+    API.defaultLdLibraryPath.join(":"),
+  );
+
+  // copy some last constants onto public API.
+  pyodide.pyodide_py = API.pyodide_py;
+  pyodide.globals = API.globals;
+  bootstrapFinalized!();
+  return pyodide;
 };

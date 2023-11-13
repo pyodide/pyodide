@@ -3,7 +3,7 @@
 *.pyc
 *.gen.*
 src/js/generated
-src/js/*.out.*
+*.out.*
 
 *.egg-info/
 
@@ -23,7 +23,7 @@ ccache
 cpython/downloads
 cpython/installs
 cpython/build.log
-dist/
+dist*/
 docs/_build/
 emsdk/emsdk
 geckodriver.log

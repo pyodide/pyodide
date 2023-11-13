@@ -16,15 +16,73 @@ myst:
 
 ## Unreleased
 
+- {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
+  of Node.js might still work, but they are not tested or guaranteed to work.
+  {pr}`4269`
+
+- {{ Fix }} Fixed default indexURL calculation in Node.js environment.
+  {pr}`4288`
+
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
+- {{ Fix }} `jsarray.pop` now works correctly. It previously returned the wrong
+  value and leaked memory.
+  {pr}`4236`
+
+- {{ Breaking }} `PyProxy.toString` now calls `str` instead of `repr`. For now
+  you can opt into the old behavior by passing `pyproxyToStringRepr: true` to
+  `loadPyodide`, but this may be removed in the future.
+  {pr}`4247`
+
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
+  {pr}`4256`
+
+- {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
+  throws an error, that error is propagated instead of being turned into an
+  `AttributeError`.
+  {pr}`4254`
+
+- {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
+  and `defaultConverter` arguments.
+  {pr}`4263`
+
+### Pyodide CLI
+
+- {{ Enhancement }} `pyodide config` command now show additional config variables:
+  `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`, `rust_toolchain`, `cflags`
+  `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
+  build to set the same variables as in-tree build.
+  {pr}`4241`
+
 ### Packages
 
-- Added river version 0.19.0 {pr}`4197`
+- Added `pysam` version 0.22.0 {pr}`4268`
+
+- Added `river` version 0.19.0 {pr}`4197`
+
+- Added `sisl` version 0.14.2 {pr}`4210`
+
+- Added `frozenlist` {pr}`4231`
+
+- Added `zengl` version 1.16.0 {pr}`4208`
+
+- Added `msgspec` version 0.18.4 {pr}`4265`
 
 ### Load time & size optimizations
 
 - {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
   which reduces the time to load Pyodide.
   {pr}`4147`
+
+### Build system
+
+- {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
+  {pr}`4223`
+
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
+  env variables if provided by user.
+  {pr}`4223`
 
 ## Version 0.24.1
 

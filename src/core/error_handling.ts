@@ -2,7 +2,6 @@ import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-
 import "types";
 
 declare var Module: any;
-declare var Hiwire: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -56,7 +55,19 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-function convertCppException(e: number) {
+// As a fallback for when Wasm EH is not available, use an empty function.
+// The fallback ensures instanceof always returns false.
+const wasmException = (WebAssembly as any).Exception || function () {};
+const isWasmException = (e: any) => e instanceof wasmException;
+
+function convertCppException(e: any) {
+  if (isWasmException(e)) {
+    if (e.is(Module.jsWrapperTag)) {
+      e = e.getArg(Module.jsWrapperTag, 0);
+    } else {
+      return e;
+    }
+  }
   let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg, e);
 }
@@ -90,7 +101,7 @@ API.fatal_error = function (e: any): never {
   if (e instanceof NoGilError) {
     throw e;
   }
-  if (typeof e === "number") {
+  if (typeof e === "number" || isWasmException(e)) {
     // Hopefully a C++ exception?
     e = convertCppException(e);
   } else {
@@ -250,11 +261,9 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let eidx = Hiwire.new_value(e);
-    let err = _JsProxy_create(eidx);
+    let err = _JsProxy_create(e);
     _set_error(err);
     _Py_DecRef(err);
-    Hiwire.decref(eidx);
   }
   if (weirdCatch) {
     // In this case we have no stack frames so we can quit

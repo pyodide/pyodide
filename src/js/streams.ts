@@ -1,4 +1,4 @@
-import { IN_NODE } from "./compat.js";
+import { IN_NODE } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
