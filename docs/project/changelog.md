@@ -20,6 +20,9 @@ myst:
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
 
+- {{ Fix }} Fixed default indexURL calculation in Node.js environment.
+  {pr}`4288`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 
@@ -31,6 +34,9 @@ myst:
   you can opt into the old behavior by passing `pyproxyToStringRepr: true` to
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
+
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
+  {pr}`4256`
 
 - {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
   throws an error, that error is propagated instead of being turned into an
@@ -52,7 +58,7 @@ myst:
 ### Packages
 
 - New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
-  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`
+  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`
 
 ### Load time & size optimizations
 

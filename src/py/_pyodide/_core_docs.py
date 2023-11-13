@@ -1238,6 +1238,41 @@ def to_js(
 
     Examples
     --------
+    >>> from js import Object, Map, Array # doctest: +SKIP
+    >>> from pyodide.ffi import to_js # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
+    >>> js_object # doctest: +SKIP
+    [object Map]
+    >>> js_object.keys(), js_object.values() # doctest: +SKIP
+    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
+    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
+    [('age', 20), ('name', 'john')]
+
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
+    >>> js_object.age == 20 # doctest: +SKIP
+    True
+    >>> js_object.name == 'john' # doctest: +SKIP
+    True
+    >>> js_object # doctest: +SKIP
+    [object Object]
+    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
+    True
+    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
+    False
+
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
+    >>> [item for item in js_object] # doctest: +SKIP
+    [age,20, name,john]
+    >>> js_object.toString() # doctest: +SKIP
+    age,20,name,john
+
+    >>> class Bird: pass # doctest: +SKIP
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
+    >>> [bird for bird in js_nest] # doctest: +SKIP
+    [[object Object], [object Object]]
+    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
+    [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
     argument.
@@ -1272,7 +1307,8 @@ def to_js(
 
         class Pair:
             def __init__(self, first, second):
-                self.first = first self.second = second
+                self.first = first
+                self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
     :js:class:`Array`:
@@ -1284,8 +1320,10 @@ def to_js(
         def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
-            result = Array.new() cache(value, result);
-            result.push(convert(value.first)) result.push(convert(value.second))
+            result = Array.new()
+            cache(value, result)
+            result.push(convert(value.first))
+            result.push(convert(value.second))
             return result
 
     Note that we have to cache the conversion of ``value`` before converting

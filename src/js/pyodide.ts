@@ -1,11 +1,10 @@
 /**
  * The main bootstrap code for loading pyodide.
  */
-import ErrorStackParser from "error-stack-parser";
 import {
+  calculateDirname,
   loadScript,
   initNodeModules,
-  pathSep,
   resolvePath,
   loadLockFile,
 } from "./compat";
@@ -14,8 +13,7 @@ import { createModule, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { PyProxy, PyDict } from "generated/pyproxy";
-import type { TypedArray } from "./types";
+import type { TypedArray, API, Module } from "./types";
 export type { PyodideInterface, TypedArray };
 
 export type {
@@ -35,145 +33,7 @@ export type {
 
 export { version };
 
-/**
- * A proxy around globals that falls back to checking for a builtin if has or
- * get fails to find a global with the given key. Note that this proxy is
- * transparent to js2python: it won't notice that this wrapper exists at all and
- * will translate this proxy to the globals dictionary.
- * @private
- */
-function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
-  return new Proxy(globals_dict, {
-    get(target, symbol) {
-      if (symbol === "get") {
-        return (key: any) => {
-          let result = target.get(key);
-          if (result === undefined) {
-            result = builtins_dict.get(key);
-          }
-          return result;
-        };
-      }
-      if (symbol === "has") {
-        return (key: any) => target.has(key) || builtins_dict.has(key);
-      }
-      return Reflect.get(target, symbol);
-    },
-  });
-}
-
-/**
- * This function is called after the emscripten module is finished initializing,
- * so eval_code is newly available.
- * It finishes the bootstrap so that once it is complete, it is possible to use
- * the core `pyodide` apis. (But package loading is not ready quite yet.)
- * @private
- */
-function finalizeBootstrap(API: any, config: ConfigType) {
-  // First make internal dict so that we can use runPythonInternal.
-  // runPythonInternal uses a separate namespace, so we don't pollute the main
-  // environment with variables from our setup.
-  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
-  API.importlib = API.runPythonInternal("import importlib; importlib");
-  let import_module = API.importlib.import_module;
-
-  API.sys = import_module("sys");
-  API.sys.path.insert(0, config.env.HOME);
-  API.os = import_module("os");
-
-  // Set up globals
-  let globals = API.runPythonInternal(
-    "import __main__; __main__.__dict__",
-  ) as PyDict;
-  let builtins = API.runPythonInternal(
-    "import builtins; builtins.__dict__",
-  ) as PyDict;
-  API.globals = wrapPythonGlobals(globals, builtins);
-
-  // Set up key Javascript modules.
-  let importhook = API._pyodide._importhook;
-  function jsFinderHook(o: object) {
-    if ("__all__" in o) {
-      return;
-    }
-    Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-        ),
-      enumerable: false,
-      configurable: true,
-    });
-  }
-  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-  importhook.register_js_module("js", config.jsglobals);
-
-  let pyodide = API.makePublicAPI();
-  importhook.register_js_module("pyodide_js", pyodide);
-
-  // import pyodide_py. We want to ensure that as much stuff as possible is
-  // already set up before importing pyodide_py to simplify development of
-  // pyodide_py code (Otherwise it's very hard to keep track of which things
-  // aren't set up yet.)
-  API.pyodide_py = import_module("pyodide");
-  API.pyodide_code = import_module("pyodide.code");
-  API.pyodide_ffi = import_module("pyodide.ffi");
-  API.package_loader = import_module("pyodide._package_loader");
-
-  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
-  API.dsodir = API.package_loader.DSO_DIR.__str__();
-  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
-
-  API.os.environ.__setitem__(
-    "LD_LIBRARY_PATH",
-    API.defaultLdLibraryPath.join(":"),
-  );
-
-  // copy some last constants onto public API.
-  pyodide.pyodide_py = API.pyodide_py;
-  pyodide.globals = API.globals;
-  return pyodide;
-}
-
 declare function _createPyodideModule(Module: any): Promise<void>;
-
-/**
- *  If indexURL isn't provided, throw an error and catch it and then parse our
- *  file name out from the stack trace.
- *
- *  Question: But getting the URL from error stack trace is well... really
- *  hacky. Can't we use
- *  [`document.currentScript`](https://developer.mozilla.org/en-US/docs/Web/API/Document/currentScript)
- *  or
- *  [`import.meta.url`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import.meta)
- *  instead?
- *
- *  Answer: `document.currentScript` works for the browser main thread.
- *  `import.meta` works for es6 modules. In a classic webworker, I think there
- *  is no approach that works. Also we would need some third approach for node
- *  when loading a commonjs module using `require`. On the other hand, this
- *  stack trace approach works for every case without any feature detection
- *  code.
- */
-function calculateIndexURL(): string {
-  if (typeof __dirname === "string") {
-    return __dirname;
-  }
-  let err: Error;
-  try {
-    throw new Error();
-  } catch (e) {
-    err = e as Error;
-  }
-  let fileName = ErrorStackParser.parse(err)[0].fileName!;
-  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
-  if (indexOfLastSlash === -1) {
-    throw new Error(
-      "Could not extract indexURL path from pyodide module location",
-    );
-  }
-  return fileName.slice(0, indexOfLastSlash);
-}
 
 /**
  * See documentation for loadPyodide.
@@ -327,7 +187,7 @@ export async function loadPyodide(
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
-  let indexURL = options.indexURL || calculateIndexURL();
+  let indexURL = options.indexURL || (await calculateDirname());
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
@@ -365,7 +225,7 @@ export async function loadPyodide(
   Module.printErr = config.stderr;
   Module.arguments = config.args;
 
-  const API: any = { config };
+  const API = { config } as API;
   Module.API = API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
 
@@ -373,10 +233,6 @@ export async function loadPyodide(
   initializeFileSystem(Module, config);
 
   const moduleLoaded = new Promise((r) => (Module.postRun = r));
-  let bootstrapFinalized: () => void;
-  API.bootstrapFinalizedPromise = new Promise<void>(
-    (r) => (bootstrapFinalized = r),
-  );
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
@@ -418,16 +274,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
-  if (err) {
-    Module.API.fatal_loading_error(
-      "Failed to import _pyodide_core\n",
-      captured_stderr,
-    );
-  }
-
-  const pyodide = finalizeBootstrap(API, config);
-  bootstrapFinalized!();
+  const pyodide = API.finalizeBootstrap();
 
   // runPython works starting here.
   if (!pyodide.version.includes("dev")) {

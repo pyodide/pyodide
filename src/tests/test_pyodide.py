@@ -1550,6 +1550,40 @@ def test_index_url_calculation_source_map(selenium):
     assert f"indexURL: {DIST_DIR}" in result.stdout
 
 
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+@pytest.mark.parametrize(
+    "filename, import_stmt",
+    [
+        ("index.js", "const { loadPyodide } = require('%s/pyodide.js')"),  # commonjs
+        ("index.mjs", "import { loadPyodide } from '%s/pyodide.mjs'"),  # esm
+    ],
+)
+def test_default_index_url_calculation_node(selenium, tmp_path, filename, import_stmt):
+    Path(tmp_path / filename).write_text(
+        (import_stmt % DIST_PATH)
+        + "\n"
+        + """
+        async function main() {
+            const py = await loadPyodide();
+            console.log("indexURL:", py._module.API.config.indexURL);
+        }
+        main();
+        """
+    )
+
+    result = subprocess.run(
+        [
+            "node",
+            filename,
+        ],
+        capture_output=True,
+        encoding="utf8",
+        cwd=tmp_path,
+    )
+
+    assert f"indexURL: {DIST_PATH}" in result.stdout
+
+
 @pytest.mark.xfail_browsers(
     node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
 )
