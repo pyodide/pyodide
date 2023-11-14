@@ -96,10 +96,7 @@ try {
     );
 
     // inject webpackIgnore comments
-    content = content.replace(
-      "import(",
-      "import(/* webpackIgnore */",
-    );
+    content = content.replace("import(", "import(/* webpackIgnore */");
 
     writeFileSync(outfile, content);
   }
