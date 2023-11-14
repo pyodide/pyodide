@@ -95,6 +95,12 @@ try {
       `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
     );
 
+    // inject webpackIgnore comments
+    content = content.replace(
+      "import(",
+      "import(/* webpackIgnore */",
+    );
+
     writeFileSync(outfile, content);
   }
 } catch ({ message }) {
