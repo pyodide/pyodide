@@ -20,6 +20,9 @@ myst:
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
 
+- {{ Fix }} Fixed default indexURL calculation in Node.js environment.
+  {pr}`4288`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 
@@ -54,6 +57,8 @@ myst:
 
 ### Packages
 
+- Added `pysam` version 0.22.0 {pr}`4268`
+
 - Added `river` version 0.19.0 {pr}`4197`
 
 - Added `sisl` version 0.14.2 {pr}`4210`
@@ -63,6 +68,8 @@ myst:
 - Added `zengl` version 1.16.0 {pr}`4208`
 
 - Added `msgspec` version 0.18.4 {pr}`4265`
+
+- Upgraded `contourpy` to 1.2.0 {pr}`4291`
 
 ### Load time & size optimizations
 
