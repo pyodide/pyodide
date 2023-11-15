@@ -60,7 +60,9 @@ class TestInTree:
 
     def test_get_build_environment_vars(self, reset_env_vars, reset_cache):
         build_vars = build_env.get_build_environment_vars()
-        extra_vars = set(["PYODIDE", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"])
+        extra_vars = set(
+            ["PYODIDE", "PKG_CONFIG_LIBDIR", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
+        )
 
         for var in build_vars:
             assert var in build_env.BUILD_VARS | extra_vars, f"Unknown {var}"

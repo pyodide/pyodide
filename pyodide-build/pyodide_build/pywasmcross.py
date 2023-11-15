@@ -62,7 +62,7 @@ import re
 import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
-from typing import Literal, NoReturn
+from typing import Literal
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -664,7 +664,7 @@ def handle_command_generate_args(  # noqa: C901
 def handle_command(
     line: list[str],
     build_args: BuildArgs,
-) -> NoReturn:
+) -> int:
     """Handle a compilation command. Exit with an appropriate exit code when done.
 
     Parameters
@@ -689,9 +689,8 @@ def handle_command(
 
         scipy_fixes(new_args)
 
-    returncode = subprocess.run(new_args).returncode
-
-    sys.exit(returncode)
+    result = subprocess.run(new_args)
+    return result.returncode
 
 
 def compiler_main():
