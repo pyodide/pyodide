@@ -96,14 +96,7 @@ try {
     );
 
     // inject webpackIgnore comments
-<<<<<<< Updated upstream
-    content = content.replace("import(", "import(/* webpackIgnore */");
-=======
-    content = content.replaceAll(
-      "import(",
-      "import(/* webpackIgnore */",
-    );
->>>>>>> Stashed changes
+    content = content.replaceAll("import(", "import(/* webpackIgnore */");
 
     writeFileSync(outfile, content);
   }
