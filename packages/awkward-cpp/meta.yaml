@@ -1,6 +1,6 @@
 package:
   name: awkward-cpp
-  version: 22
+  version: "26"
   top-level:
     - awkward_cpp
 
