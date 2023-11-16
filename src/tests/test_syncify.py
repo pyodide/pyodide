@@ -28,7 +28,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
-        // Disable direct instantation of WebAssembly.Modules
+        // Disable direct instantiation of WebAssembly.Modules
         // Note: only will work with newer runtimes that have WebAssembly.Function
         WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
