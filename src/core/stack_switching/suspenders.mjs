@@ -200,19 +200,8 @@ let validSuspender;
  * everything else can work as normal.
  */
 export function initSuspenders() {
-  // This is what wasm-feature-detect uses to feature detect JSPI. It is not
-  // 100% clear based on the text of the JSPI proposal that this will actually
-  // work in the future, but if it breaks we can replace it with something else
-  // that does work.
-  Module.jspiSupported = "Suspender" in WebAssembly;
-
-  if (Module.jspiSupported) {
-    validSuspender = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
-    promisingApplyHandler = createPromising(wasmExports._pyproxy_apply);
-    Module.validSuspender = validSuspender;
-    setSyncifyHandler();
-  } else {
-    // Browser doesn't support JSPI.
-    Module.validSuspender = { value: 0 };
-  }
+  validSuspender = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
+  promisingApplyHandler = createPromising(wasmExports._pyproxy_apply);
+  Module.validSuspender = validSuspender;
+  setSyncifyHandler();
 }

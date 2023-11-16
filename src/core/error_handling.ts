@@ -223,7 +223,11 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (funcName.startsWith("Object.")) {
     funcName = funcName.slice("Object.".length);
   }
-  if (funcName in API.public_api && funcName !== "PythonError") {
+  if (
+    API.public_api &&
+    funcName in API.public_api &&
+    funcName !== "PythonError"
+  ) {
     frame.functionName = funcName;
     return false;
   }
