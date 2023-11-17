@@ -62,7 +62,7 @@ import re
 import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
-from typing import Literal, NoReturn
+from typing import Literal
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -165,7 +165,6 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
         found_source = True
 
     if not found_source:
-        print(f"f2c: source not found, skipping: {new_args_str}")
         return None
     return new_args
 
@@ -328,8 +327,15 @@ def replay_genargs_handle_argument(arg: str) -> str | None:
         '-fno-strict-overflow',  # warning: argument unused during compilation
         "-mno-sse2", # warning: argument unused during compilation
         "-mno-avx2", # warning: argument unused during compilation
+        "-std=legacy", # fortran flag that clang does not support
     ]:
         return None
+
+    if arg.startswith((
+        "-J",  # fortran flag that clang does not support
+    )):
+        return None
+
     # fmt: on
     return arg
 
@@ -658,7 +664,7 @@ def handle_command_generate_args(  # noqa: C901
 def handle_command(
     line: list[str],
     build_args: BuildArgs,
-) -> NoReturn:
+) -> int:
     """Handle a compilation command. Exit with an appropriate exit code when done.
 
     Parameters
@@ -672,11 +678,12 @@ def handle_command(
     is_link_cmd = get_library_output(line) is not None
 
     if line[0] == "gfortran":
-        if "-dumpversion" in line:
-            sys.exit(subprocess.run(line).returncode)
         tmp = replay_f2c(line)
         if tmp is None:
-            sys.exit(0)
+            # No source file, it's a query for information about the compiler. Pretend we're
+            # gfortran by letting gfortran handle it
+            return subprocess.run(line).returncode
+
         line = tmp
 
     new_args = handle_command_generate_args(line, build_args, is_link_cmd)
@@ -686,9 +693,8 @@ def handle_command(
 
         scipy_fixes(new_args)
 
-    returncode = subprocess.run(new_args).returncode
-
-    sys.exit(returncode)
+    result = subprocess.run(new_args)
+    return result.returncode
 
 
 def compiler_main():

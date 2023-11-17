@@ -23,6 +23,9 @@ myst:
 - {{ Fix }} Fixed default indexURL calculation in Node.js environment.
   {pr}`4288`
 
+- {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
+  {pr}`4294`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 
@@ -59,6 +62,8 @@ myst:
 
 - New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
   `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`
+
+- Upgraded `contourpy` to 1.2.0 {pr}`4291`
 
 ### Load time & size optimizations
 

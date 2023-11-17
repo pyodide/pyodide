@@ -38,8 +38,7 @@ build:
         -o libopenblas.so
 
     cp libopenblas.so dist
-    mkdir -p ${WASM_LIBRARY_DIR}/lib
-    cp dist/libopenblas.so ${WASM_LIBRARY_DIR}/lib
+    emmake make install PREFIX=${WASM_LIBRARY_DIR}
 
 requirements:
   host:

@@ -8,6 +8,7 @@
     "module": "ES2022",
     "moduleResolution": "node",
     "composite": true,
+    "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "strict": true,
     "noUnusedLocals": false,
     "types": ["node"],
