@@ -2,12 +2,35 @@ import pytest
 
 
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
-def test_syncify_not_supported(selenium_standalone_noload):
+def test_syncify_not_supported1(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
         // Ensure that it's not supported by deleting WebAssembly.Suspender
         delete WebAssembly.Suspender;
+        let pyodide = await loadPyodide({});
+        await assertThrowsAsync(
+          async () => await pyodide.runPythonSyncifying("1+1"),
+          "Error",
+          "WebAssembly stack switching not supported in this JavaScript runtime"
+        );
+        await assertThrows(
+          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          "PythonError",
+          "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
+        );
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(node="Scopes don't work as needed")
+def test_syncify_not_supported2(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        // Disable direct instantiation of WebAssembly.Modules
+        // Note: only will work with newer runtimes that have WebAssembly.Function
+        WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide.runPythonSyncifying("1+1"),

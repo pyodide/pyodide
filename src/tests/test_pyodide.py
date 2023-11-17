@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, ROOT_PATH, strip_assertions_stderr
@@ -1599,13 +1598,9 @@ def test_csp(selenium_standalone_noload):
         target_path.unlink()
 
 
-def test_static_import(
-    request, runtime, web_server_main, playwright_browsers, tmp_path
-):
-    # the xfail_browsers mark won't work without using a selenium fixture
-    # so we manually xfail the node test
-    if runtime == "node":
-        pytest.xfail("static import test is browser-only")
+@pytest.mark.xfail_browsers(node="static import test is browser-only")
+def test_static_import(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
@@ -1623,10 +1618,10 @@ def test_static_import(
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
     (tmp_path / "module_static_import_test.html").write_text(test_html)
 
-    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
-        request, runtime, web_server, playwright_browsers
-    ) as selenium:
-        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+    with spawn_web_server(tmp_path) as web_server:
+        server_hostname, server_port, _ = web_server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        selenium.goto(f"{base_url}/module_static_import_test.html")
         selenium.javascript_setup()
         selenium.load_pyodide()
         selenium.run_js(

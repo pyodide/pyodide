@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.25.0-dev.0",
+  "version": "0.25.0-alpha.1",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -79,6 +79,7 @@
     "ws": false
   },
   "scripts": {
+    "build": "tsc --noEmit && node esbuild.config.mjs",
     "test": "npm-run-all test:*",
     "test:unit": "cross-env TEST_NODE=1 ts-mocha --node-option=experimental-loader=./test/loader.mjs --node-option=experimental-wasm-stack-switching -p tsconfig.test.json test/unit/**/*.test.*",
     "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
