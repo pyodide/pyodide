@@ -92,6 +92,7 @@ class _JsProxyMetaClass(type):
 # So we raise an error unless this private token is passed as an argument.
 _instantiate_token = object()
 
+
 class JsProxy(metaclass=_JsProxyMetaClass):
     """A proxy to make a JavaScript object behave like a Python object
 
@@ -165,7 +166,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
         >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
         >>> values = js_obj.object_values()
-        >>> list(values) 
+        >>> list(values)
         [1, 2, 3]
         """
         raise NotImplementedError
@@ -194,7 +195,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
         >>> o = run_js("({x : {y: 2}})")
-        
+
         Normally you have to access the properties of ``o`` as attributes:
 
         >>> o.x.y
@@ -213,7 +214,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         >>> o.as_object_map()["x"]["y"]
         Traceback (most recent call last):
         TypeError: 'pyodide.ffi.JsProxy' object is not subscriptable
-        
+
         When ``hereditary`` is ``True``, the inner object is also subscriptable:
 
         >>> o.as_object_map(hereditary=True)["x"]["y"]
@@ -428,14 +429,14 @@ class JsBuffer(JsProxy):
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'wb') as fh:
         ...    x.to_file(fh)
-        
+
         This is equivalent to
-        
+
         >>> with open('file.bin', 'wb') as fh:
         ...    data = x.to_bytes()
         ...    fh.write(data)
         10
-        
+
         but the latter copies the data twice whereas the former only copies the
         data once.
         """
@@ -454,7 +455,7 @@ class JsBuffer(JsProxy):
         >>> from pathlib import Path
         >>> Path("file.bin").write_text("abc\\x00123ttt")
         10
-        >>> from js import Uint8Array 
+        >>> from js import Uint8Array
         >>> # the JsProxy need to be pre-allocated
         >>> x = Uint8Array.new(10)
         >>> with open('file.bin', 'rb') as fh:
@@ -466,7 +467,7 @@ class JsBuffer(JsProxy):
         >>> with open('file.bin', 'rb') as fh:
         ...    chunk = fh.read(x.byteLength)
         ...    x.assign(chunk)
-    
+
         but the latter copies the data twice whereas the former only copies the
         data once.
         """
