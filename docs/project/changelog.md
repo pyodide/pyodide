@@ -23,6 +23,9 @@ myst:
 - {{ Fix }} Fixed default indexURL calculation in Node.js environment.
   {pr}`4288`
 
+- {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
+  {pr}`4294`
+
 - {{ Enhancement }} Added experimental support for stack switching.
   {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
 

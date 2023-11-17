@@ -133,7 +133,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	touch node_modules/.installed
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
-	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
+	cd src/js && npm run build && cd -
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
 	node src/core/stack_switching/esbuild.config.mjs
