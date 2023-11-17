@@ -679,8 +679,12 @@ def handle_command(
 
     if line[0] == "gfortran":
         tmp = replay_f2c(line)
-        if tmp is not None:
-            line = tmp
+        if tmp is None:
+            # No source file, it's a query for information about the compiler. Pretend we're
+            # gfortran by letting gfortran handle it
+            return subprocess.run(line).returncode
+
+        line = tmp
 
     new_args = handle_command_generate_args(line, build_args, is_link_cmd)
 

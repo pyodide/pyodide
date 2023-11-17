@@ -60,6 +60,8 @@ class TestInTree:
 
     def test_get_build_environment_vars(self, reset_env_vars, reset_cache):
         build_vars = build_env.get_build_environment_vars()
+
+        # extra variables that does not come from Makefile.envs but are added by build_env.py
         extra_vars = set(
             ["PYODIDE", "MESON_CROSS_FILE", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
         )
