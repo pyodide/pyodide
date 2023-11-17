@@ -12,6 +12,7 @@ import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
 import { makeWarnOnce } from "./pyodide_util";
+import { canonicalizePackageName, uriToPackageName } from "./packaging_utils";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -38,7 +39,7 @@ async function initializePackageIndex(lockFilePromise: Promise<any>) {
   API.repodata_packages = lockfile.packages;
 
   // compute the inverted index for imports to package names
-  API._import_name_to_package_name = new Map();
+  API._import_name_to_package_name = new Map<string, string>();
   for (let name of Object.keys(API.lockfile_packages)) {
     const pkg = API.lockfile_packages[name];
 
@@ -77,16 +78,6 @@ API.setCdnUrl = function (url: string) {
 // Dependency resolution
 //
 const DEFAULT_CHANNEL = "default channel";
-// Regexp for validating package name and URI
-const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
-
-function _uri_to_package_name(package_uri: string): string | undefined {
-  let match = package_uri_regexp.exec(package_uri);
-  if (match) {
-    let wheel_name = match[1].toLowerCase();
-    return wheel_name.split("-").slice(0, -4).join("-");
-  }
-}
 
 type PackageLoadMetadata = {
   name: string;
@@ -176,7 +167,7 @@ function recursiveDependencies(
 ): Map<string, PackageLoadMetadata> {
   const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
-    const pkgname = _uri_to_package_name(name);
+    const pkgname = uriToPackageName(name);
     if (pkgname === undefined) {
       addPackageToLoad(name, toLoad);
       continue;
