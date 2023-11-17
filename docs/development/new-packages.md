@@ -150,9 +150,12 @@ and see if there are any errors.
 
 If the build succeeds you can try to load the package:
 
-1. Serve the dist directory with `python -m http.server --directory ./dist`
-2. Open `localhost:<port>/console.html` and try to import the package
-3. You can test the package in the repl
+1. Serve the dist directory with `python -m http.server --directory ./dist`.
+   If you use docker, you can execute this either outside of the docker container or
+   make sure to forward a port by setting the environment variable
+   PYODIDE_SYSTEM_PORT or starting docker with `./run_docker -p <port>`.
+2. Open `localhost:<port>/console.html` and try to import the package.
+3. You can test the package in the repl.
 
 ### Fixing build issues
 
@@ -238,6 +241,21 @@ the `patches` key:
 ```sh
 find patches/ -type f | sed 's/^/    - /g'
 ```
+
+### Upgrading a package
+
+To upgrade a package's version to the latest one available on PyPI, do
+
+```
+pyodide skeleton pypi <package-name> --update
+```
+
+Because this does not handle package dependencies, you have to manually check
+whether the `requirements` section of the `meta.yaml` file needs to be updated
+for updated dependencies.
+
+Upgrading a package's version may lead to new build issues that need to be resolved
+(see above) and any patches need to be checked and potentially migrated (see below).
 
 ### Migrating Patches
 

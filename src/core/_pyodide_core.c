@@ -1,13 +1,18 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "hiwire.h"
+#include "error_handling.h"
+#include "jslib.h"
 #include "python2js.h"
 #include <emscripten.h>
 #include <stdbool.h>
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
-    PyErr_Format(PyExc_ImportError, args);                                     \
+    if (PyErr_Occurred()) {                                                    \
+      _PyErr_FormatFromCause(PyExc_ImportError, args);                         \
+    } else {                                                                   \
+      PyErr_Format(PyExc_ImportError, args);                                   \
+    }                                                                          \
     FAIL();                                                                    \
   } while (0)
 
@@ -39,17 +44,29 @@ static struct PyModuleDef core_module_def = {
   .m_size = -1,
 };
 
+void
+pyodide_export(void);
+int
+py_version_major(void);
+void
+set_new_cframe(void* frame);
+// Force _pyodide_core.o, _pyodide_pre.gen.o, and pystate.o to be included by
+// using a symbol from each of them.
+void* pyodide_export_ = pyodide_export;
+void* py_version_major_ = py_version_major;
+void* set_new_cframe_ = set_new_cframe;
+
+// clang-format off
+EM_JS(void, set_pyodide_module, (JsVal mod), {
+  API._pyodide = mod;
+})
+// clang-format on
+
+EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
   EM_ASM({
-    // Emscripten doesn't make UTF8ToString or wasmTable available on Module by
-    // default...
-    Module.UTF8ToString = UTF8ToString;
-    Module.wasmTable = wasmTable;
-    // Emscripten has a bug where it accidentally exposes an empty object as
-    // Module.ERRNO_CODES
-    Module.ERRNO_CODES = ERRNO_CODES;
     // sourmash needs open64 to mean the same thing as open.
     // Emscripten 3.1.44 seems to have removed it??
     wasmImports["open64"] = wasmImports["open"];
@@ -58,7 +75,6 @@ PyInit__pyodide_core(void)
   bool success = false;
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
-  JsRef _pyodide_proxy = NULL;
 
   _pyodide = PyImport_ImportModule("_pyodide");
   if (_pyodide == NULL) {
@@ -71,7 +87,7 @@ PyInit__pyodide_core(void)
   }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
-  TRY_INIT(hiwire);
+  TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
@@ -86,11 +102,11 @@ PyInit__pyodide_core(void)
   }
 
   // Enable JavaScript access to the _pyodide module.
-  _pyodide_proxy = python2js(_pyodide);
-  if (_pyodide_proxy == NULL) {
+  JsVal _pyodide_proxy = python2js(_pyodide);
+  if (JsvNull_Check(_pyodide_proxy)) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  EM_ASM({ API._pyodide = Hiwire.pop_value($0); }, _pyodide_proxy);
+  set_pyodide_module(_pyodide_proxy);
 
   success = true;
 finally:

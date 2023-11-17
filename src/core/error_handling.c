@@ -3,6 +3,7 @@
 #include "Python.h"
 // clang-format on
 #include "error_handling.h"
+#include "jslib.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
 #include <emscripten.h>
@@ -29,9 +30,11 @@ EM_JS(void, console_error, (char* msg), {
 
 // Right now this is dead code (probably), please don't remove it.
 // Intended for debugging purposes.
-EM_JS(void, console_error_obj, (JsRef obj), {
-  console.error(Hiwire.get_value(obj));
+// clang-format off
+EM_JS(void, console_error_obj, (JsVal obj), {
+  console.error(obj);
 });
+// clang-format on
 
 /**
  * Set Python error indicator from JavaScript.
@@ -41,7 +44,7 @@ EM_JS(void, console_error_obj, (JsRef obj), {
  * are fairly strong guarantees about the ABI stability, but even so writing
  * HEAP32[err/4 + 1] is a bit opaque.
  */
-void
+EMSCRIPTEN_KEEPALIVE void
 set_error(PyObject* err)
 {
   PyErr_SetObject((PyObject*)Py_TYPE(err), err);
@@ -54,13 +57,12 @@ set_error(PyObject* err)
  * err - The error object
  */
 // clang-format off
-EM_JS_REF(
-JsRef,
+EM_JS(
+JsVal,
 new_error,
 (const char* type, const char* msg, PyObject* err),
 {
-  return Hiwire.new_value(
-    new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err));
+  return new API.PythonError(UTF8ToString(type), UTF8ToString(msg), err);
 });
 // clang-format on
 
@@ -119,7 +121,7 @@ store_sys_last_exception(PyObject* type, PyObject* value, PyObject* traceback)
  * JavaScript errors have no Python stack info. Also, JavaScript has much weaker
  * support for catching errors by type.
  */
-bool
+EMSCRIPTEN_KEEPALIVE bool
 restore_sys_last_exception(void* value)
 {
   bool success = false;
@@ -185,7 +187,7 @@ finally:
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
  */
-JsRef
+EMSCRIPTEN_KEEPALIVE JsVal
 wrap_exception()
 {
   bool success = false;
@@ -194,7 +196,6 @@ wrap_exception()
   PyObject* traceback = NULL;
   PyObject* typestr = NULL;
   PyObject* pystr = NULL;
-  JsRef jserror = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
 
@@ -206,8 +207,8 @@ wrap_exception()
   FAIL_IF_NULL(pystr);
   const char* pystr_utf8 = PyUnicode_AsUTF8(pystr);
   FAIL_IF_NULL(pystr_utf8);
-  jserror = new_error(typestr_utf8, pystr_utf8, value);
-  FAIL_IF_NULL(jserror);
+  JsVal jserror = new_error(typestr_utf8, pystr_utf8, value);
+  FAIL_IF_JS_NULL(jserror);
 
   success = true;
 finally:
@@ -231,11 +232,11 @@ finally:
 }
 
 #ifdef DEBUG_F
-EM_JS(void, log_python_error, (JsRef jserror), {
+EM_JS(void, log_python_error, (JsVal jserror), {
   // If a js error occurs in here, it's a weird edge case. This will probably
   // never happen, but for maximum paranoia let's double check.
   try {
-    let msg = Hiwire.get_value(jserror).message;
+    let msg = jserror.message;
     console.warn("Python exception:\n" + msg + "\n");
   } catch (e) {
     API.fatal_error(e);
@@ -246,15 +247,14 @@ EM_JS(void, log_python_error, (JsRef jserror), {
 /**
  * Convert the current Python error to a javascript error and throw it.
  */
-void _Py_NO_RETURN
+EMSCRIPTEN_KEEPALIVE void _Py_NO_RETURN
 pythonexc2js()
 {
-  JsRef jserror = wrap_exception();
+  JsVal jserror = wrap_exception();
 #ifdef DEBUG_F
   log_python_error(jserror);
 #endif
-  // hiwire_throw_error steals jserror
-  hiwire_throw_error(jserror);
+  JsvError_Throw(jserror);
 }
 
 PyObject*
@@ -264,14 +264,19 @@ trigger_fatal_error(PyObject* mod, PyObject* _args)
   Py_UNREACHABLE();
 }
 
+// clang-format off
+EM_JS(void, raw_call_js, (JsVal func), {
+  func();
+});
+// clang-format on
+
 /**
  * This is for testing fatal errors in test_pyodide
  */
 PyObject*
 raw_call(PyObject* mod, PyObject* jsproxy)
 {
-  JsRef func = JsProxy_AsJs(jsproxy);
-  EM_ASM(Hiwire.get_value($0)(), func);
+  raw_call_js(JsProxy_Val(jsproxy));
   Py_RETURN_NONE;
 }
 

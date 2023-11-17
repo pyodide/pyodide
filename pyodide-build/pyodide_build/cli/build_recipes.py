@@ -10,12 +10,12 @@ from ..logger import logger
 
 def recipe(
     packages: list[str] = typer.Argument(
-        ..., help="Packages to build, or * for all packages in recipe directory"
+        ..., help="Packages to build, or ``*`` for all packages in recipe directory"
     ),
     recipe_dir: str = typer.Option(
         None,
         help="The directory containing the recipe of packages. "
-        "If not specified, the default is `./packages`",
+        "If not specified, the default is ``./packages``",
     ),
     no_deps: bool = typer.Option(
         False, help="If true, do not build dependencies of the specified packages. "
@@ -28,13 +28,13 @@ def recipe(
     install_dir: str = typer.Option(
         None,
         help="Path to install built packages and pyodide-lock.json. "
-        "If not specified, the default is `./dist`.",
+        "If not specified, the default is ``./dist``.",
     ),
     metadata_files: bool = typer.Option(
         False,
         help="If true, extract the METADATA file from the built wheels "
-        "to a matching *.whl.metadata file. "
-        "If false, no *.whl.metadata file is produced.",
+        "to a matching ``*.whl.metadata`` file. "
+        "If false, no ``*.whl.metadata`` file is produced.",
     ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"

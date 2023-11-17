@@ -18,4 +18,4 @@ build:
   os: ubuntu-20.04
   tools:
     python: "3.11"
-    nodejs: "14"
+    nodejs: "20"

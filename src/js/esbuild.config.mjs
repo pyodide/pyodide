@@ -24,7 +24,7 @@ const outputs = [
   },
   {
     input: "api",
-    output: "src/js/_pyodide.out.js",
+    output: "src/js/generated/_pyodide.out.js",
     format: "iife",
   },
 ];
@@ -94,6 +94,9 @@ try {
       "//# sourceMappingURL",
       `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
     );
+
+    // inject webpackIgnore comments
+    content = content.replaceAll("import(", "import(/* webpackIgnore */");
 
     writeFileSync(outfile, content);
   }

@@ -1,12 +1,11 @@
-// Detect if we're in node
-declare var process: any;
-
-export const IN_NODE =
-  typeof process === "object" &&
-  typeof process.versions === "object" &&
-  typeof process.versions.node === "string" &&
-  typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+import ErrorStackParser from "error-stack-parser";
+import {
+  IN_NODE,
+  IN_NODE_ESM,
+  IN_BROWSER_MAIN_THREAD,
+  IN_BROWSER_WEB_WORKER,
+  IN_NODE_COMMONJS,
+} from "./environments";
 
 let nodeUrlMod: any;
 let nodeFetch: any;
@@ -20,6 +19,13 @@ declare var globalThis: {
   document?: any;
   fetch?: any;
 };
+
+const FETCH_NOT_FOUND_MSG = `\
+"fetch" is not defined, maybe you're using node < 18? \
+From Pyodide >= 0.25.0, node >= 18 is required. \
+Older versions of Node.js may work, but it is not guaranteed or supported. \
+Falling back to "node-fetch".\
+`;
 
 /**
  * If we're in node, it's most convenient to import various node modules on
@@ -36,6 +42,8 @@ export async function initNodeModules() {
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
+    // @ts-ignore
+    console.warn(FETCH_NOT_FOUND_MSG);
     // @ts-ignore
     nodeFetch = (await import("node-fetch")).default;
   }
@@ -191,10 +199,10 @@ export async function loadBinaryFile(
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (globalThis.document) {
+if (IN_BROWSER_MAIN_THREAD) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (globalThis.importScripts) {
+} else if (IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
     try {
@@ -254,3 +262,49 @@ function browserBase16ToBase64(b16: string): string {
 export const base16ToBase64 = IN_NODE
   ? nodeBase16ToBase64
   : browserBase16ToBase64;
+
+export async function loadLockFile(lockFileURL: string): Promise<any> {
+  if (IN_NODE) {
+    await initNodeModules();
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    return JSON.parse(package_string);
+  } else {
+    let response = await fetch(lockFileURL);
+    return await response.json();
+  }
+}
+
+/**
+ * Calculate the directory name of the current module.
+ * This is used to guess the indexURL when it is not provided.
+ */
+export async function calculateDirname(): Promise<string> {
+  if (IN_NODE_COMMONJS) {
+    return __dirname;
+  }
+
+  let err: Error;
+  try {
+    throw new Error();
+  } catch (e) {
+    err = e as Error;
+  }
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
+
+  if (IN_NODE_ESM) {
+    const nodePath = await import("path");
+    const nodeUrl = await import("url");
+
+    // FIXME: We would like to use import.meta.url here,
+    // but mocha seems to mess with compiling typescript files to ES6.
+    return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
+  }
+
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
+  if (indexOfLastSlash === -1) {
+    throw new Error(
+      "Could not extract indexURL path from pyodide module location",
+    );
+  }
+  return fileName.slice(0, indexOfLastSlash);
+}

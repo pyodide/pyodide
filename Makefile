@@ -9,6 +9,7 @@ CXX=em++
 
 
 all: check \
+	check-emcc \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
@@ -24,15 +25,15 @@ all: check \
 	dist/module_webworker_dev.js
 	echo -e "\nSUCCESS!"
 
-src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
-# Our goal here is to inject src/js/_pyodide.out.js into an archive file so that
-# when linked, Emscripten will include it. We use the same pathway that EM_JS
-# uses, but EM_JS is itself unsuitable. Why? Because the C preprocessor /
-# compiler modified strings and there is no "raw" strings feature. In
-# particular, it seems to choke on regex in the JavaScript code. Our bundle
-# includes vendored npm packages which we have no control over, so it is not
-# simple to rewrite the code to restrict it to syntax that is legal inside of
-# EM_JS.
+src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
+# Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
+# file so that when linked, Emscripten will include it. We use the same pathway
+# that EM_JS uses, but EM_JS is itself unsuitable. Why? Because the C
+# preprocessor / compiler modified strings and there is no "raw" strings
+# feature. In particular, it seems to choke on regex in the JavaScript code. Our
+# bundle includes vendored npm packages which we have no control over, so it is
+# not simple to rewrite the code to restrict it to syntax that is legal inside
+# of EM_JS.
 #
 # To get around this problem, we use an array initializer instead of a string
 # initializer. We write a string file and then convert it to a .c file with xxd
@@ -53,11 +54,12 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 # the init function.
 	# First the data file
 	rm -f tmp.dat
-	echo '()<::>{' >> tmp.dat             # zero argument argspec and start body
-	cat src/js/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
-	echo '}' >> tmp.dat                   # Close function body
-	cat src/core/pre.js >> tmp.dat        # Execute pre.js too
-	echo "pyodide_js_init();" >> tmp.dat  # Then execute the function.
+	echo '()<::>{' >> tmp.dat                       # zero argument argspec and start body
+	cat src/js/generated/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
+	echo '}' >> tmp.dat                             # Close function body
+	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
+	cat src/core/pre.js >> tmp.dat                  # Execute pre.js too
+	echo "pyodide_js_init();" >> tmp.dat            # Then execute the function.
 
 	# Now generate the C file. Define a string __em_js__pyodide_js_init with
 	# contents from tmp.dat
@@ -67,6 +69,9 @@ src/core/pyodide_pre.o: src/js/_pyodide.out.js src/core/pre.js
 	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
 	# Add a null byte to terminate the string
 	echo ', 0};' >> src/core/pyodide_pre.gen.c
+	echo "#include <emscripten.h>" >> src/core/pyodide_pre.gen.c
+	echo "void pyodide_js_init(void) EM_IMPORT(pyodide_js_init);" >> src/core/pyodide_pre.gen.c
+	echo "EMSCRIPTEN_KEEPALIVE void pyodide_export(void) { pyodide_js_init(); }" >> src/core/pyodide_pre.gen.c
 
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
@@ -80,9 +85,12 @@ dist/libpyodide.a: \
 	src/core/jsproxy.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
+	src/core/jslib.o \
+	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o
+	src/core/pyversion.o \
+	src/core/stack_switching/pystate.o
 	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
@@ -124,8 +132,11 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch node_modules/.installed
 
-dist/pyodide.js src/js/_pyodide.out.js: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts node_modules/.installed
-	cd src/js && npm run tsc && node esbuild.config.mjs && cd -
+dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
+	cd src/js && npm run build && cd -
+
+src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
+	node src/core/stack_switching/esbuild.config.mjs
 
 dist/package.json : src/js/package.json
 	cp $< $@
@@ -134,18 +145,14 @@ dist/package.json : src/js/package.json
 npm-link: dist/package.json
 	cd src/test-js && npm ci && npm link ../../dist
 
-dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/pyproxy.gen.ts src/js/error_handling.gen.ts
+dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	npx dts-bundle-generator src/js/{pyodide,ffi}.ts --export-referenced-types false --project src/js/tsconfig.json
 	mv src/js/{pyodide,ffi}.d.ts dist
 	python3 tools/fixup-type-definitions.py dist/pyodide.d.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
 
 
-
-src/js/error_handling.gen.ts : src/core/error_handling.ts
-	cp $< $@
-
-src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
+src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 	# We can't input pyproxy.js directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
@@ -160,6 +167,7 @@ src/js/pyproxy.gen.ts : src/core/pyproxy.* src/core/*.h
 	# and documentation generation. The result of processing the type
 	# declarations with the macro processor is a type error, so we snip them
 	# out.
+	mkdir -p src/js/generated
 	rm -f $@
 	echo "// This file is generated by applying the C preprocessor to core/pyproxy.ts" >> $@
 	echo "// It uses the macros defined in core/pyproxy.c" >> $@
@@ -221,9 +229,11 @@ benchmark: all
 
 clean:
 	rm -fr dist/*
-	rm -fr src/*/*.o
-	rm -fr src/*/*.gen.*
 	rm -fr node_modules
+	find src -name '*.o' -delete
+	find src -name '*.gen.*' -delete
+	find src -name '*.out.*' -delete
+	rm -fr src/js/generated
 	make -C packages clean
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
@@ -233,6 +243,10 @@ clean-python: clean
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
+
+src/core/jslib_asm.o: src/core/jslib_asm.s
+	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS)
+
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
@@ -267,6 +281,10 @@ FORCE:
 
 check:
 	./tools/dependency-check.sh
+
+
+check-emcc: emsdk/emsdk/.complete
+	python3 tools/check_ccache.py
 
 
 debug :

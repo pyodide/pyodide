@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 import requests
 import typer
 
-from ..build_env import check_emscripten_version, init_environment
+from ..build_env import check_emscripten_version, get_pyodide_root, init_environment
 from ..io import _BuildSpecExports, _ExportTypes
 from ..logger import logger
 from ..out_of_tree import build
@@ -152,7 +152,7 @@ def main(
         help="Which symbols should be exported when linking .so files?",
     ),
     build_dependencies: bool = typer.Option(
-        False, help="Fetch non-pyodide dependencies from pypi and build them too."
+        False, help="Fetch dependencies from pypi and build them too."
     ),
     output_lockfile: str = typer.Option(
         "",
@@ -160,8 +160,12 @@ def main(
     ),
     skip_dependency: list[str] = typer.Option(
         [],
-        help="Skip building or resolving a single dependency. "
+        help="Skip building or resolving a single dependency, or a pyodide-lock.json file. "
         "Use multiple times or provide a comma separated list to skip multiple dependencies.",
+    ),
+    skip_built_in_packages: bool = typer.Option(
+        True,
+        help="Don't build dependencies that are built into the pyodide distribution.",
     ),
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
@@ -181,6 +185,10 @@ def main(
     outpath = Path(output_directory).resolve()
     outpath.mkdir(exist_ok=True)
     extras: list[str] = []
+
+    if skip_built_in_packages:
+        package_lock_json = get_pyodide_root() / "dist" / "pyodide-lock.json"
+        skip_dependency.append(str(package_lock_json.absolute()))
 
     if len(requirements_txt) > 0:
         # a requirements.txt - build it (and optionally deps)

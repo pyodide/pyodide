@@ -1,7 +1,7 @@
-import { IN_NODE } from "./compat.js";
+import { IN_NODE } from "./environments.js";
 import "./constants";
 
-import type { FSStream, FSStreamOpsGen } from "./module";
+import type { FSStream, FSStreamOpsGen } from "./types";
 const fs: any = IN_NODE ? require("fs") : undefined;
 const tty: any = IN_NODE ? require("tty") : undefined;
 
@@ -323,8 +323,7 @@ type StdinOptions = {
  *
  *    If a string is returned, it is encoded into a buffer using
  *    :js:class:`TextEncoder`. By default, an EOF is appended after each string
- *    or buffer returned. If this behavior is not desired, pass `autoEOF:
- *    false`.
+ *    or buffer returned. If this behavior is not desired, pass `autoEOF: false`.
  *
  * @param options.stdin A stdin handler
  * @param options.read A read handler

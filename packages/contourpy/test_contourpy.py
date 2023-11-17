@@ -11,10 +11,12 @@ from pytest_pyodide import run_in_pyodide
         ("serial", "SeparateCode"),
         ("serial", "ChunkCombinedCode"),
         ("serial", "ChunkCombinedOffset"),
+        ("serial", "ChunkCombinedNan"),
         ("threaded", "Separate"),
         ("threaded", "SeparateCode"),
         ("threaded", "ChunkCombinedCode"),
         ("threaded", "ChunkCombinedOffset"),
+        ("threaded", "ChunkCombinedNan"),
     ],
 )
 @run_in_pyodide(packages=["contourpy", "numpy"])
@@ -77,6 +79,13 @@ def test_line(selenium, name, line_type):
         assert_array_almost_equal(points[:5], expect0)
         assert_array_almost_equal(points[5:], expect1)
         assert_array_equal(offsets, [0, 5, 7])
+    elif cont_gen.line_type == LineType.ChunkCombinedNan:
+        assert len(lines[0]) == 1  # Single chunk.
+        points = lines[0][0]
+        assert points.shape == (8, 2)
+        assert_array_almost_equal(points[:5], expect0)
+        assert np.all(np.isnan(points[5, :]))
+        assert_array_almost_equal(points[6:], expect1)
     else:
         raise RuntimeError(f"Unexpected line_type {line_type}")
 

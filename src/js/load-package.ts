@@ -1,7 +1,7 @@
 import "./constants";
 
+import { IN_NODE } from "./environments";
 import {
-  IN_NODE,
   nodeFsPromisesMod,
   loadBinaryFile,
   initNodeModules,
@@ -10,8 +10,8 @@ import {
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy } from "./pyproxy.gen";
-import { makeWarnOnce } from "./util";
+import { PyProxy } from "generated/pyproxy";
+import { makeWarnOnce } from "./pyodide_util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -20,21 +20,15 @@ import { makeWarnOnce } from "./util";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFileURL: string) {
-  let lockfile;
-  if (IN_NODE) {
-    await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    lockfile = JSON.parse(package_string);
-  } else {
-    let response = await fetch(lockFileURL);
-    lockfile = await response.json();
-  }
+async function initializePackageIndex(lockFilePromise: Promise<any>) {
+  await initNodeModules();
+  const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
+
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -64,7 +58,9 @@ async function initializePackageIndex(lockFileURL: string) {
   await loadPackage(API.config.packages, { messageCallback() {} });
 }
 
-API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
+if (API.lockFilePromise) {
+  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+}
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this

@@ -22,7 +22,14 @@ orbs:
 
 jobs:
   build-core:
+    parameters:
+      disable_dylink:
+        description: Should we disable dynamic linking? 0 means no, 1 means yes.
+        type: integer
+        default: 0
     <<: *defaults
+    environment:
+      - DISABLE_DYLINK: << parameters.disable_dylink >>
     steps:
       - checkout
 
@@ -248,7 +255,6 @@ jobs:
           command: |
             pip install -r requirements.txt
             pip install -e ./pyodide-build
-            npm install -g node-fetch@2
 
       - run:
           name: Py-compile packages
@@ -293,7 +299,6 @@ jobs:
             mkdir test-results
             pip install -r requirements.txt
             pip install -e ./pyodide-build
-            npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
@@ -321,9 +326,9 @@ jobs:
         description: pytest-cache-dir.
         type: string
         default: ""
-    resource_class: medium
+    resource_class: macos.x86.medium.gen2
     macos:
-      xcode: 14.3.1
+      xcode: 15.0.0
 
     working_directory: ~/repo
     steps:
@@ -377,7 +382,6 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
 
   test-js:
@@ -387,13 +391,20 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: test
+          name: test-types
           command: |
             cd src/test-js
             npm ci
             npm link ../../dist
             npm run test-types
             npm test
+
+      - run:
+          name: test-unit
+          command: |
+            cd src/js
+            npm run test:unit
+
       # - run:
       #     name: check if Pyodide works with Webpack
       #     command: |
@@ -452,7 +463,6 @@ jobs:
           command: |
             pip3 install numpy matplotlib pandas
             pip install -r requirements.txt
-            npm install -g node-fetch@2
       - run:
           name: benchmark
           command: |
@@ -583,6 +593,13 @@ workflows:
             tags:
               only: /.*/
 
+      - build-core:
+          name: "build-core-nodylink"
+          disable_dylink: 1
+          filters:
+            tags:
+              only: /.*/
+
       - build-packages:
           name: build-libraries
           packages: "tag:library"
@@ -661,6 +678,33 @@ workflows:
                 paths:
                   - ./packages/.artifacts
                   - ./dist
+
+      - test-main:
+          name: test-core-chrome-nodylink
+          test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          requires:
+            - build-core-nodylink
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-core-firefox-nodylink
+          test-params: --runtime=firefox-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          requires:
+            - build-core-nodylink
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-core-node-nodylink
+          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-build/pyodide_build/tests
+          requires:
+            - build-core-nodylink
+          filters:
+            tags:
+              only: /.*/
 
       - test-main:
           name: test-core-chrome

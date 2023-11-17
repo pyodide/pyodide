@@ -7,13 +7,13 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 // clang-format on
-#include "hiwire.h"
+#include "jslib.h"
 
 /**
  * Do a shallow conversion from python to JavaScript. Convert immutable types
  * with equivalent JavaScript immutable types, but all other types are proxied.
  */
-JsRef
+JsVal
 python2js(PyObject* x);
 
 /**
@@ -23,8 +23,8 @@ python2js(PyObject* x);
  * Otherwise, proxies should be an Array and python2js_track_proxies will add
  * the proxy to the array if one is created.
  */
-JsRef
-python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register);
+JsVal
+python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register);
 
 /**
  * Convert a Python object to a JavaScript object, copying standard collections
@@ -37,20 +37,20 @@ python2js_track_proxies(PyObject* x, JsRef proxies, bool gc_register);
  * \return The JavaScript object -- might be an Error object in the case of an
  *         exception.
  */
-JsRef
-python2js_with_depth(PyObject* x, int depth, JsRef proxies);
+JsVal
+python2js_with_depth(PyObject* x, int depth, JsVal proxies);
 
 /**
  * dict_converter should be a JavaScript function that converts an Iterable of
  * pairs into the desired JavaScript object. If dict_converter is NULL, we use
  * python2js_with_depth which converts dicts to Map (the default)
  */
-JsRef
+JsVal
 python2js_custom(PyObject* x,
                  int depth,
-                 JsRef proxies,
-                 JsRef dict_converter,
-                 JsRef default_converter);
+                 JsVal proxies,
+                 JsVal dict_converter,
+                 JsVal default_converter);
 
 int
 python2js_init(PyObject* core);
