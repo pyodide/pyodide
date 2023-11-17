@@ -26,7 +26,7 @@ def should_quiet(source: str, /) -> bool:
 
     Examples
     --------
-    >>> should_quiet('1 + 1') # doctest: +RUN_IN_PYODIDE
+    >>> should_quiet('1 + 1')
     False
     >>> should_quiet('1 + 1 ;')
     True
