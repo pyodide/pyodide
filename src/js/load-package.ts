@@ -162,6 +162,7 @@ function addPackageToLoad(
     depends: pkg_info.depends,
     installPromise: undefined,
     done: createDonePromise(),
+    packageData: pkg_info,
   });
 
   // If the package is already loaded, we don't add dependencies, but warn
@@ -421,7 +422,7 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
  * @async
- * @returns The loaded package metadata.
+ * @returns The loaded package data.
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
@@ -433,7 +434,7 @@ export async function loadPackage(
     checkIntegrity: true,
   },
 ): Promise<Array<PackageData>> {
-  const loadedMetadata = new Set<PackageData>();
+  const loadedPackageData = new Set<PackageData>();
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {
@@ -490,7 +491,7 @@ export async function loadPackage(
       toLoad.get(name)!.installPromise = downloadAndInstall(
         name,
         toLoad,
-        loadedMetadata,
+        loadedPackageData,
         failed,
         options.checkIntegrity,
       );
@@ -501,8 +502,8 @@ export async function loadPackage(
     );
 
     Module.reportUndefinedSymbols();
-    if (loadedMetadata.size > 0) {
-      const successNames = Array.from(loadedMetadata)
+    if (loadedPackageData.size > 0) {
+      const successNames = Array.from(loadedPackageData)
         .map((pkg) => pkg.name)
         .join(", ");
       messageCallback(`Loaded ${successNames}`);
@@ -522,7 +523,7 @@ export async function loadPackage(
     API.importlib.invalidate_caches();
   } finally {
     releaseLock();
-    return Array.from(loadedMetadata);
+    return Array.from(loadedPackageData);
   }
 }
 
