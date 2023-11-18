@@ -94,15 +94,27 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
+  packageData?: PackageData;
 };
+
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
 
 // Package data inside pyodide-lock.json
 export type PackageData = {
+  name: string;
+  version: string;
   file_name: string;
-  shared_library: boolean;
-  depends: string[];
-  imports: string[];
   install_dir: string;
+  sha256: string;
+  package_type: PackageType;
+  imports: string[];
+  depends: string[];
+  unvendored_tests: boolean;
+  shared_library: boolean; // This field is deprecated
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -286,11 +298,16 @@ async function installPackage(
   let pkg: PackageData = API.lockfile_packages[name];
   if (!pkg) {
     pkg = {
+      name: "",
+      version: "",
       file_name: ".whl",
-      shared_library: false,
-      depends: [],
-      imports: [] as string[],
       install_dir: "site",
+      sha256: "",
+      package_type: "cpython_module",
+      imports: [] as string[],
+      depends: [],
+      unvendored_tests: false,
+      shared_library: false,
     };
   }
   const filename = pkg.file_name;
@@ -318,7 +335,7 @@ async function installPackage(
  * Downloads can be done in parallel, but installs must be done for dependencies first.
  * @param name The name of the package
  * @param toLoad The map of package names to PackageLoadMetadata
- * @param loaded The set of loaded package names, this will be updated by this function.
+ * @param loaded The set of loaded package metadata, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
@@ -327,7 +344,7 @@ async function installPackage(
 async function downloadAndInstall(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
-  loaded: Set<string>,
+  loaded: Set<PackageData>,
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
@@ -351,7 +368,7 @@ async function downloadAndInstall(
     await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
-    loaded.add(pkg.name);
+    if (pkg.packageData !== undefined) loaded.add(pkg.packageData);
     loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(name, err);
@@ -404,6 +421,7 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
  * @async
+ * @returns The loaded package metadata.
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
@@ -414,7 +432,8 @@ export async function loadPackage(
   } = {
     checkIntegrity: true,
   },
-) {
+): Promise<Array<PackageData>> {
+  const loadedMetadata = new Set<PackageData>();
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {
@@ -450,11 +469,10 @@ export async function loadPackage(
 
   if (toLoad.size === 0) {
     messageCallback("No new packages to load");
-    return;
+    return [];
   }
 
   const packageNames = [...toLoad.keys()].join(", ");
-  const loaded = new Set<string>();
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
@@ -472,7 +490,7 @@ export async function loadPackage(
       toLoad.get(name)!.installPromise = downloadAndInstall(
         name,
         toLoad,
-        loaded,
+        loadedMetadata,
         failed,
         options.checkIntegrity,
       );
@@ -483,8 +501,10 @@ export async function loadPackage(
     );
 
     Module.reportUndefinedSymbols();
-    if (loaded.size > 0) {
-      const successNames = Array.from(loaded).join(", ");
+    if (loadedMetadata.size > 0) {
+      const successNames = Array.from(loadedMetadata)
+        .map((pkg) => pkg.name)
+        .join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
 
@@ -502,6 +522,7 @@ export async function loadPackage(
     API.importlib.invalidate_caches();
   } finally {
     releaseLock();
+    return Array.from(loadedMetadata);
   }
 }
 

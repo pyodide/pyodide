@@ -263,6 +263,13 @@ export interface Module {
   ) => void;
 }
 
+type LockfileInfo = {
+  arch: "wasm32" | "wasm64";
+  platform: string;
+  version: string;
+  python: string;
+};
+
 export interface API {
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
@@ -310,8 +317,8 @@ export interface API {
   lockFilePromise: Promise<any>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
-  lockfile_info: any;
-  lockfile_packages: any;
+  lockfile_info: LockfileInfo;
+  lockfile_packages: Record<string, PackageData>;
   repodata_packages: any;
   repodata_info: any;
   defaultLdLibraryPath: string[];
