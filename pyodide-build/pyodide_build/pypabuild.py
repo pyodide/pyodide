@@ -161,9 +161,13 @@ def _build_in_isolated_env(
             return builder.build(distribution, outdir, config_settings)
 
 
-def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
+def parse_backend_flags(backend_flags: str | list[str]) -> ConfigSettingsType:
     config_settings: dict[str, str | list[str]] = {}
-    for arg in backend_flags.split():
+
+    if isinstance(backend_flags, str):
+        backend_flags = backend_flags.split()
+
+    for arg in backend_flags:
         setting, _, value = arg.partition("=")
         if setting not in config_settings:
             config_settings[setting] = value
@@ -272,10 +276,9 @@ def build(
     srcdir: Path,
     outdir: Path,
     build_env: Mapping[str, str],
-    backend_flags: str,
+    config_settings: ConfigSettingsType,
 ) -> str:
     distribution = "wheel"
-    config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
