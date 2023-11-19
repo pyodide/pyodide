@@ -136,7 +136,7 @@ def test_invalid_package_name(selenium):
 )
 def test_load_packages_multiple(selenium_standalone, packages):
     selenium = selenium_standalone
-    selenium.load_package(packages)
+    loaded_packages = selenium.load_package(packages)
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
@@ -146,6 +146,9 @@ def test_load_packages_multiple(selenium_standalone, packages):
         selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
         or selenium.logs.count(f"Loaded {packages[1]}, {packages[0]}") == 1
     )
+    assert [x.name for x in loaded_packages] == [packages[0], packages[1]] or [
+        x.name for x in loaded_packages
+    ] == [packages[1], packages[0]]
 
 
 @pytest.mark.parametrize(
@@ -154,7 +157,9 @@ def test_load_packages_multiple(selenium_standalone, packages):
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
-    selenium.run_js(f"return Promise.all([{promises}])")
+    loaded_packages = [
+        x[0].name for x in selenium.run_js(f"return Promise.all([{promises}])")
+    ]
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
@@ -162,6 +167,11 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # ('pyparsing' and 'matplotlib')
     assert selenium.logs.count(f"Loaded {packages[0]}") == 1
     assert selenium.logs.count(f"Loaded {packages[1]}") == 1
+
+    assert loaded_packages == [packages[0], packages[1]] or loaded_packages == [
+        packages[1],
+        packages[0],
+    ]
 
 
 def test_load_handle_failure(selenium_standalone):
