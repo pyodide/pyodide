@@ -91,7 +91,7 @@ repos:
         name: mypy-tests
         args: [--ignore-missing-imports]
         files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
-        exclude: (^packages/.*/setup.py|/src)
+        exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$)
         additional_dependencies: *mypy-deps
 
 ci:

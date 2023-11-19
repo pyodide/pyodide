@@ -27,8 +27,7 @@ source:
     - patches/0004-gemm_-no-const.patch
     - patches/0005-make-int-return-values.patch
     - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0007-skip-fortran-fails-to-link.patch
-    - patches/0008-Remove-meson-requirements.patch
+    - patches/0008-Remove-test-modules-that-fails-to-build.patch
     - patches/0009-Fix-fitpack.patch
     - patches/0010-Fix-gees-calls.patch
 
@@ -49,13 +48,8 @@ build:
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     set -x
-    export PKG_CONFIG_LIBDIR=$WASM_PKG_CONFIG_PATH
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
-
-    # setup.py has been renamed to _setup.py in scipy 1.11.2 to discourage its
-    # usage but we still need it until we manage to build with meson
-    mv _setup.py setup.py
 
     sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
     sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h

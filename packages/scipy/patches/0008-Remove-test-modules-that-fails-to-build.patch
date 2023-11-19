@@ -1,0 +1,72 @@
+From 63c07f9b51dcdc9bd097293171e032dbb265d54c Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Mon, 30 Oct 2023 14:35:04 +0000
+Subject: [PATCH 8/10] Remove test modules that fails to build
+
+These are tests and they have both void vs int return value problems and implicit
+function argument cast problems. Not worth fixing for tests.
+
+---
+ scipy/integrate/meson.build | 18 ------------------
+ scipy/io/meson.build        | 19 -------------------
+ 2 files changed, 37 deletions(-)
+
+diff --git a/scipy/integrate/meson.build b/scipy/integrate/meson.build
+index 0e17ad9b6..0b7133c59 100644
+--- a/scipy/integrate/meson.build
++++ b/scipy/integrate/meson.build
+@@ -181,24 +181,6 @@ py3.extension_module('_test_multivariate',
+   subdir: 'scipy/integrate'
+ )
+ 
+-_test_odeint_banded_module = custom_target('_test_odeint_banded_module',
+-  output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
+-  input: 'tests/banded5x5.pyf',
+-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+-)
+-
+-py3.extension_module('_test_odeint_banded',
+-  ['tests/banded5x5.f', _test_odeint_banded_module],
+-  c_args: numpy_nodepr_api,
+-  link_with: [lsoda_lib, mach_lib],
+-  fortran_args: _fflag_Wno_unused_dummy_argument,
+-  link_args: version_link_args,
+-  dependencies: [lapack, fortranobject_dep],
+-  install: true,
+-  link_language: 'fortran',
+-  subdir: 'scipy/integrate'
+-)
+-
+ subdir('_ivp')
+ subdir('tests')
+ 
+diff --git a/scipy/io/meson.build b/scipy/io/meson.build
+index afe8c391d..226c030ae 100644
+--- a/scipy/io/meson.build
++++ b/scipy/io/meson.build
+@@ -1,22 +1,3 @@
+-_test_fortran_module = custom_target('_test_fortran_module',
+-  output: ['_test_fortranmodule.c'],
+-  input: '_test_fortran.pyf',
+-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+-)
+-
+-_test_fortran = py3.extension_module('_test_fortran',
+-  [
+-    _test_fortran_module,
+-    '_test_fortran.f'
+-  ],
+-  c_args: [numpy_nodepr_api, Wno_unused_variable],
+-  fortran_args: fortran_ignore_warnings,
+-  link_args: version_link_args,
+-  dependencies: [lapack, fortranobject_dep],
+-  install: true,
+-  link_language: 'fortran',
+-  subdir: 'scipy/io'
+-)
+ 
+ py3.install_sources([
+     '__init__.py',
+-- 
+2.42.0
+

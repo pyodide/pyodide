@@ -1,15 +1,15 @@
-  # build
-  cmake
-  ruamel.yaml
-  # lint
-  pre-commit
-  # testing
-  build==1.0.3
-  sphinx-click
-  hypothesis
-  pytest
-  pytest-asyncio
-  pytest-cov
-  pytest-httpserver
-  pytest-benchmark
-  pytest-pyodide==0.54.0
+# build
+cmake
+ruamel.yaml
+# lint
+pre-commit
+# testing
+build==1.0.3
+sphinx-click
+hypothesis
+pytest
+pytest-asyncio
+pytest-cov
+pytest-httpserver
+pytest-benchmark
+pytest-pyodide==0.55.1

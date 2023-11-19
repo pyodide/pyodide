@@ -27,8 +27,10 @@ __all__ = [
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
-    The download of binary files is not supported. To download binary
-    files use :func:`pyodide.http.pyfetch` which is asynchronous.
+    The download of binary files is not supported. To download binary files use
+    :func:`pyodide.http.pyfetch` which is asynchronous.
+
+    It will not work in Node unless you include an polyfill for :js:class:`XMLHttpRequest`.
 
     Parameters
     ----------
@@ -41,15 +43,14 @@ def open_url(url: str) -> StringIO:
 
     Examples
     --------
-    >>> from pyodide.http import open_url
-    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
+    >>> None # doctest: +RUN_IN_PYODIDE
+    >>> import pytest; pytest.skip("TODO: Figure out how to skip this only in node")
+    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide-lock.json"
     >>> url_contents = open_url(url)
-    >>> url_contents.read()
-    {
-      "info": {
-          ... # long output truncated
-        }
-    }
+    >>> import json
+    >>> result = json.load(url_contents)
+    >>> sorted(list(result["info"].items()))
+    [('arch', 'wasm32'), ('platform', 'emscripten_3_1_45'), ('python', '3.11.3'), ('version', '0.24.1')]
     """
 
     req = XMLHttpRequest.new()
@@ -289,7 +290,7 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
 
     Examples
     --------
-    >>> from pyodide.http import pyfetch
+    >>> import pytest; pytest.skip("Can't use top level await in doctests")
     >>> res = await pyfetch("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json")
     >>> res.ok
     True
