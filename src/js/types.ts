@@ -270,6 +270,11 @@ type LockfileInfo = {
   python: string;
 };
 
+type Lockfile = {
+  info: LockfileInfo;
+  packages: Record<string, PackageData>;
+};
+
 export interface API {
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
@@ -314,13 +319,13 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<any>;
+  lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, PackageData>;
-  repodata_packages: any;
-  repodata_info: any;
+  repodata_packages: Record<string, PackageData>;
+  repodata_info: LockfileInfo;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (

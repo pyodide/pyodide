@@ -108,13 +108,20 @@ export type PackageData = {
   name: string;
   version: string;
   file_name: string;
-  install_dir: string;
-  sha256: string;
+  /** @experimental */
   package_type: PackageType;
+  /** @hidden */
+  install_dir: string;
+  /** @hidden */
+  sha256: string;
+  /** @hidden */
   imports: string[];
+  /** @hidden */
   depends: string[];
+  /** @hidden */
   unvendored_tests: boolean;
-  shared_library: boolean; // This field is deprecated
+  /** @deprecated @hidden */
+  shared_library: boolean;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -304,7 +311,7 @@ async function installPackage(
       file_name: ".whl",
       install_dir: "site",
       sha256: "",
-      package_type: "cpython_module",
+      package_type: "package",
       imports: [] as string[],
       depends: [],
       unvendored_tests: false,
@@ -369,7 +376,9 @@ async function downloadAndInstall(
     await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
-    if (pkg.packageData !== undefined) loaded.add(pkg.packageData);
+    if (pkg.packageData) {
+      loaded.add(pkg.packageData);
+    }
     loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(name, err);
@@ -503,8 +512,8 @@ export async function loadPackage(
 
     Module.reportUndefinedSymbols();
     if (loadedPackageData.size > 0) {
-      const successNames = Array.from(loadedPackageData)
-        .map((pkg) => pkg.name)
+      const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
+        .sort()
         .join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
