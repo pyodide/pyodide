@@ -131,6 +131,14 @@ def test_invalid_package_name(selenium):
         selenium.load_package("tcp://some_url")
 
 
+def test_load_package_return(selenium_standalone):
+    selenium = selenium_standalone
+    package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
+
+    assert package.name == "pyparsing"
+    assert package.package_type == "shared_library"
+
+
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
