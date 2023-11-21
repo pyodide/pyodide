@@ -40,7 +40,7 @@ async function initializePackageIndex(lockFilePromise: Promise<any>) {
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.lockfile_packages)) {
-    const pkg = API.lockfile_packages[name];
+    const pkg = API.lockfile_packages[name] as InternalPackageData;
 
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
@@ -110,18 +110,13 @@ export type PackageData = {
   file_name: string;
   /** @experimental */
   package_type: PackageType;
-  /** @hidden */
+};
+
+type InternalPackageData = PackageData & {
   install_dir: string;
-  /** @hidden */
   sha256: string;
-  /** @hidden */
   imports: string[];
-  /** @hidden */
   depends: string[];
-  /** @hidden */
-  unvendored_tests: boolean;
-  /** @deprecated @hidden */
-  shared_library: boolean;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -158,7 +153,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info: PackageData = API.lockfile_packages[name];
+  const pkg_info = API.lockfile_packages[name] as InternalPackageData;
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -263,7 +258,10 @@ async function downloadPackage(
     file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash =
-      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
+      "sha256-" +
+      base16ToBase64(
+        (API.lockfile_packages[name] as InternalPackageData).sha256,
+      );
   } else {
     uri = channel;
     file_sub_resource_hash = undefined;
@@ -303,7 +301,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg: PackageData = API.lockfile_packages[name];
+  let pkg = API.lockfile_packages[name] as InternalPackageData;
   if (!pkg) {
     pkg = {
       name: "",
@@ -314,8 +312,6 @@ async function installPackage(
       package_type: "package",
       imports: [] as string[],
       depends: [],
-      unvendored_tests: false,
-      shared_library: false,
     };
   }
   const filename = pkg.file_name;
