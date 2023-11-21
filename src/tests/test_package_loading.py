@@ -135,8 +135,8 @@ def test_load_package_return(selenium_standalone):
     selenium = selenium_standalone
     package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
 
-    assert package.name == "pyparsing"
-    assert package.package_type == "shared_library"
+    assert package[0]["name"] == "pyparsing"
+    assert package[0]["package_type"] == "shared_library"
 
 
 @pytest.mark.parametrize(
@@ -163,7 +163,7 @@ def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
     loaded_packages = [
-        x[0].name for x in selenium.run_js(f"return await Promise.all([{promises}])")
+        x[0]["name"] for x in selenium.run_js(f"return await Promise.all([{promises}])")
     ]
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
