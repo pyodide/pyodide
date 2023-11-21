@@ -136,7 +136,7 @@ def test_load_package_return(selenium_standalone):
     package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
 
     assert package[0]["name"] == "pyparsing"
-    assert package[0]["package_type"] == "shared_library"
+    assert package[0]["package_type"] == "package"
 
 
 @pytest.mark.parametrize(
