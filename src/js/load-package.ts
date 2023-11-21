@@ -112,11 +112,13 @@ export type PackageData = {
   package_type: PackageType;
 };
 
-type InternalPackageData = PackageData & {
+export type InternalPackageData = PackageData & {
   install_dir: string;
   sha256: string;
   imports: string[];
   depends: string[];
+  /** @deprecated */
+  shared_library: boolean;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -312,6 +314,7 @@ async function installPackage(
       package_type: "package",
       imports: [] as string[],
       depends: [],
+      shared_library: false,
     };
   }
   const filename = pkg.file_name;

@@ -3,7 +3,7 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import { type PackageData } from "./load-package";
+import { type PackageData, type InternalPackageData } from "./load-package";
 
 export type TypedArray =
   | Int8Array
@@ -339,7 +339,7 @@ export interface API {
     readFileFunc?: (path: string) => Uint8Array,
   ) => Promise<void>;
   loadDynlibsFromPackage: (
-    pkg: PackageData,
+    pkg: InternalPackageData,
     dynlibPaths: string[],
   ) => Promise<void>;
 

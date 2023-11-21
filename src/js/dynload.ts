@@ -5,7 +5,7 @@ declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
 import { memoize } from "./pyodide_util";
-import { PackageData } from "./load-package";
+import { InternalPackageData } from "./load-package";
 
 type ReadFileType = (path: string) => Uint8Array;
 
@@ -155,7 +155,7 @@ export async function loadDynlib(
  * @private
  */
 export async function loadDynlibsFromPackage(
-  pkg: PackageData,
+  pkg: InternalPackageData,
   dynlibPaths: string[],
 ) {
   // assume that shared libraries of a package are located in <package-name>.libs directory,
