@@ -192,7 +192,7 @@ export class PyodideAPI {
       }
     }
     if (packages.size) {
-      return loadPackage(Array.from(packages), options);
+      return await loadPackage(Array.from(packages), options);
     }
     return [];
   }

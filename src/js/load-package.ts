@@ -40,7 +40,7 @@ async function initializePackageIndex(lockFilePromise: Promise<any>) {
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map();
   for (let name of Object.keys(API.lockfile_packages)) {
-    const pkg = API.lockfile_packages[name] as InternalPackageData;
+    const pkg = API.lockfile_packages[name];
 
     for (let import_name of pkg.imports) {
       API._import_name_to_package_name.set(import_name, name);
@@ -94,7 +94,7 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData?: PackageData;
+  packageData?: InternalPackageData;
 };
 
 export type PackageType =
@@ -155,7 +155,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info = API.lockfile_packages[name] as InternalPackageData;
+  const pkg_info = API.lockfile_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -260,10 +260,7 @@ async function downloadPackage(
     file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash =
-      "sha256-" +
-      base16ToBase64(
-        (API.lockfile_packages[name] as InternalPackageData).sha256,
-      );
+      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
   } else {
     uri = channel;
     file_sub_resource_hash = undefined;
@@ -303,7 +300,7 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg = API.lockfile_packages[name] as InternalPackageData;
+  let pkg = API.lockfile_packages[name];
   if (!pkg) {
     pkg = {
       name: "",
@@ -351,7 +348,7 @@ async function installPackage(
 async function downloadAndInstall(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
-  loaded: Set<PackageData>,
+  loaded: Set<InternalPackageData>,
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
@@ -395,6 +392,15 @@ const cbDeprecationWarnOnce = makeWarnOnce(
     "is deprecated and will be removed in v0.24. Instead use:\n" +
     "   { messageCallback : callbackFunc }",
 );
+
+function filterPackageData({
+  name,
+  version,
+  file_name,
+  package_type,
+}: InternalPackageData): PackageData {
+  return { name, version, file_name, package_type };
+}
 
 /**
  * Load packages from the Pyodide distribution or Python wheels by URL.
@@ -442,7 +448,7 @@ export async function loadPackage(
     checkIntegrity: true,
   },
 ): Promise<Array<PackageData>> {
-  const loadedPackageData = new Set<PackageData>();
+  const loadedPackageData = new Set<InternalPackageData>();
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {
@@ -529,9 +535,9 @@ export async function loadPackage(
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
     API.importlib.invalidate_caches();
+    return Array.from(loadedPackageData, filterPackageData);
   } finally {
     releaseLock();
-    return Array.from(loadedPackageData);
   }
 }
 
