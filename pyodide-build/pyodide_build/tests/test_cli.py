@@ -455,7 +455,7 @@ def test_build1(selenium, tmp_path, monkeypatch):
     assert result.exit_code == 0
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
-    assert results["backend_flags"] == "x y z"
+    assert results["backend_flags"] == {'x': '', 'y': '', 'z': ''}
 
 
 def test_build2_replace_so_abi_tags(selenium, tmp_path, monkeypatch):
