@@ -53,7 +53,9 @@ def test_generate_lockfile(tmp_path):
     )
     hashes = {}
     for pkg in pkg_map.values():
-        pkg.file_name = pkg.file_name or pkg.name + ".whl"
+        if not pkg.file_name:
+            # Non python package (e.g. shared library)
+            pkg.file_name = pkg.name + ".zip" 
         # Write dummy package file for SHA-256 hash verification
         with zipfile.ZipFile(tmp_path / pkg.file_name, "w") as whlzip:
             whlzip.writestr(pkg.file_name, data=pkg.file_name)
