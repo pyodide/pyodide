@@ -107,12 +107,16 @@ export type PackageType =
 export type PackageData = {
   name: string;
   version: string;
-  file_name: string;
+  fileName: string;
   /** @experimental */
-  package_type: PackageType;
+  packageType: PackageType;
 };
 
-export type InternalPackageData = PackageData & {
+export type InternalPackageData = {
+  name: string;
+  version: string;
+  file_name: string;
+  package_type: PackageType;
   install_dir: string;
   sha256: string;
   imports: string[];
@@ -399,7 +403,7 @@ function filterPackageData({
   file_name,
   package_type,
 }: InternalPackageData): PackageData {
-  return { name, version, file_name, package_type };
+  return { name, version, fileName: file_name, packageType: package_type };
 }
 
 /**
