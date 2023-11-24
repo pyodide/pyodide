@@ -120,7 +120,7 @@ To build on MacOS with Homebrew, you need:
 - System command line tools
   `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
-- `brew install coreutils cmake autoconf automaker libtool`
+- `brew install coreutils cmake autoconf automake libtool libffi ccache`
 - It is also recommended installing the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
   and [re-defining them temporarily as `patch` and
