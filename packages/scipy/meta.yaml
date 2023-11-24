@@ -36,7 +36,10 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
     -Wno-return-type
     -DUNDERSCORE_G77
-  cxxflags: -fexceptions
+    -fvisibility=default
+  cxxflags: |
+    -fexceptions
+    -fvisibility=default
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
