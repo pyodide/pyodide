@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
+  containing the loaded package's metadata.
+  {pr}`4306`
+
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
