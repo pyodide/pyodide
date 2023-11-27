@@ -2,70 +2,15 @@
 
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
-import { loadBinaryFile } from "./compat";
-
-type FSNode = any;
-type FSStream = any;
-
-export interface FS {
-  unlink: (path: string) => void;
-  mkdirTree: (path: string, mode?: number) => void;
-  chdir: (path: string) => void;
-  symlink: (target: string, src: string) => FSNode;
-  createDevice: (
-    parent: string,
-    name: string,
-    input?: (() => number | null) | null,
-    output?: ((code: number) => void) | null,
-  ) => FSNode;
-  closeStream: (fd: number) => void;
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
-  makedev: (major: number, minor: number) => number;
-  mkdev: (path: string, dev: number) => FSNode;
-  filesystems: any;
-  stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (node: FSNode) => string[];
-  isDir: (mode: number) => boolean;
-  lookupPath: (path: string) => FSNode;
-  isFile: (mode: number) => boolean;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
-  chmod: (path: string, mode: number) => void;
-  utime: (path: string, atime: number, mtime: number) => void;
-  rmdir: (path: string) => void;
-  mount: (type: any, opts: any, mountpoint: string) => any;
-  write: (
-    stream: FSStream,
-    buffer: any,
-    offset: number,
-    length: number,
-    position?: number,
-  ) => number;
-  close: (stream: FSStream) => void;
-}
-
-export interface Module {
-  noImageDecoding: boolean;
-  noAudioDecoding: boolean;
-  noWasmDecoding: boolean;
-  quit: (status: number, toThrow: Error) => void;
-  preRun: { (): void }[];
-  print: (a: string) => void;
-  printErr: (a: string) => void;
-  ENV: { [key: string]: string };
-  PATH: any;
-  TTY: any;
-  FS: FS;
-  canvas?: HTMLCanvasElement;
-  addRunDependency: (id: string) => void;
-  removeRunDependency: (id: string) => void;
-}
+import { loadBinaryFile, getBinaryResponse } from "./compat";
+import { Module } from "./types";
 
 /**
  * The Emscripten Module.
  *
  * @private
  */
-export function createModule(): any {
+export function createModule(): Module {
   let Module: any = {};
   Module.noImageDecoding = true;
   Module.noAudioDecoding = true;
@@ -75,7 +20,7 @@ export function createModule(): any {
     Module.exited = { status, toThrow };
     throw toThrow;
   };
-  return Module;
+  return Module as Module;
 }
 
 /**
@@ -180,4 +125,48 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
   setEnvironment(Module, config.env);
   mountLocalDirectories(Module, config._node_mounts);
   Module.preRun.push(() => initializeNativeFS(Module));
+}
+
+export function preloadWasm(Module: Module, indexURL: string) {
+  if (SOURCEMAP) {
+    // According to the docs:
+    //
+    // "Sanitizers or source map is currently not supported if overriding
+    // WebAssembly instantiation with Module.instantiateWasm."
+    // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
+    return;
+  }
+  const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  Module.instantiateWasm = function (
+    imports: { [key: string]: any },
+    successCallback: (
+      instance: WebAssembly.Instance,
+      module: WebAssembly.Module,
+    ) => void,
+  ) {
+    (async function () {
+      try {
+        let res: WebAssembly.WebAssemblyInstantiatedSource;
+        if (response) {
+          res = await WebAssembly.instantiateStreaming(response, imports);
+        } else {
+          res = await WebAssembly.instantiate(await binary, imports);
+        }
+        const { instance, module } = res;
+        // When overriding instantiateWasm, in asan builds, we also need
+        // to take care of creating the WasmOffsetConverter
+        // @ts-ignore
+        if (typeof WasmOffsetConverter != "undefined") {
+          // @ts-ignore
+          wasmOffsetConverter = new WasmOffsetConverter(wasmBinary, module);
+        }
+        successCallback(instance, module);
+      } catch (e) {
+        console.warn("wasm instantiation failed!");
+        console.warn(e);
+      }
+    })();
+
+    return {}; // Compiling asynchronously, no exports.
+  };
 }

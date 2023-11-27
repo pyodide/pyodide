@@ -39,7 +39,9 @@ Vco = TypeVar("Vco", covariant=True)  # Any type covariant containers.
 VTco = TypeVar("VTco", covariant=True)  # Value type covariant containers.
 Tcontra = TypeVar("Tcontra", contravariant=True)  # Ditto contravariant.
 
-if "IN_PYTEST" not in os.environ:
+if "IN_PYTEST" in os.environ:
+    __name__ = _save_name
+else:
     __name__ = "pyodide.ffi"
 
 _js_flags: dict[str, int] = {}
@@ -132,7 +134,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         Examples
         --------
-        >>> from pyodide.code import run_js
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
         >>> js_obj = run_js("({first: 'aa', second: 22})")
         >>> entries = js_obj.object_entries()
         >>> [(key, val) for key, val in entries]
@@ -147,10 +149,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         Examples
         --------
-        >>> from pyodide.code import run_js
-        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
-        >>> keys = js_obj.object_keys() # doctest: +SKIP
-        >>> list(keys) # doctest: +SKIP
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
+        >>> keys = js_obj.object_keys()
+        >>> list(keys)
         ['first', 'second', 'third']
         """
         raise NotImplementedError
@@ -161,10 +163,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         Examples
         --------
-        >>> from pyodide.code import run_js
-        >>> js_obj = run_js("({first: 1, second: 2, third: 3})") # doctest: +SKIP
-        >>> values = js_obj.object_values() # doctest: +SKIP
-        >>> list(values) # doctest: +SKIP
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> js_obj = run_js("({first: 1, second: 2, third: 3})")
+        >>> values = js_obj.object_values()
+        >>> list(values)
         [1, 2, 3]
         """
         raise NotImplementedError
@@ -191,25 +193,32 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         Examples
         --------
 
-        .. code-block:: python
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> o = run_js("({x : {y: 2}})")
 
-            from pyodide.code import run_js
+        Normally you have to access the properties of ``o`` as attributes:
 
-            o = run_js("({x : {y: 2}})")
-            # You have to access the properties of o as attributes
-            assert o.x.y == 2
-            with pytest.raises(TypeError):
-                o["x"] # is not subscriptable
+        >>> o.x.y
+        2
+        >>> o["x"] # is not subscriptable
+        Traceback (most recent call last):
+        TypeError: 'pyodide.ffi.JsProxy' object is not subscriptable
 
-            # as_object_map allows us to access the property with getitem
-            assert o.as_object_map()["x"].y == 2
+        ``as_object_map`` allows us to access the property with ``getitem``:
 
-            with pytest.raises(TypeError):
-                # The inner object is not subscriptable because hereditary is False.
-                o.as_object_map()["x"]["y"]
+        >>> o.as_object_map()["x"].y
+        2
 
-            # When hereditary is True, the inner object is also subscriptable
-            assert o.as_object_map(hereditary=True)["x"]["y"] == 2
+        The inner object is not subscriptable because ``hereditary`` is ``False``:
+
+        >>> o.as_object_map()["x"]["y"]
+        Traceback (most recent call last):
+        TypeError: 'pyodide.ffi.JsProxy' object is not subscriptable
+
+        When ``hereditary`` is ``True``, the inner object is also subscriptable:
+
+        >>> o.as_object_map(hereditary=True)["x"]["y"]
+        2
 
         """
         raise NotImplementedError
@@ -252,7 +261,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         --------
 
         Here are a couple examples of converter functions. In addition to the
-        normal conversions, convert :js:class:`Date`` to :py:class:`~datetime.datetime`:
+        normal conversions, convert :js:class:`Date` to :py:class:`~datetime.datetime`:
 
         .. code-block:: python
 
@@ -413,18 +422,26 @@ class JsBuffer(JsProxy):
 
         Example
         -------
-        >>> import pytest; pytest.skip()
-        >>> from js import Uint8Array
+        >>> from js import Uint8Array # doctest: +RUN_IN_PYODIDE
+        >>> from pathlib import Path
+        >>> Path("file.bin").write_text("abc\\x00123ttt")
+        10
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'wb') as fh:
         ...    x.to_file(fh)
-        which is equivalent to,
+
+        This is equivalent to
+
         >>> with open('file.bin', 'wb') as fh:
         ...    data = x.to_bytes()
         ...    fh.write(data)
+        10
+
         but the latter copies the data twice whereas the former only copies the
         data once.
         """
+
+        pass
 
     def from_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Reads from a file into a buffer.
@@ -434,20 +451,27 @@ class JsBuffer(JsProxy):
 
         Example
         -------
-        >>> import pytest; pytest.skip()
+        >>> None # doctest: +RUN_IN_PYODIDE
+        >>> from pathlib import Path
+        >>> Path("file.bin").write_text("abc\\x00123ttt")
+        10
         >>> from js import Uint8Array
         >>> # the JsProxy need to be pre-allocated
-        >>> x = Uint8Array.new(range(10))
+        >>> x = Uint8Array.new(10)
         >>> with open('file.bin', 'rb') as fh:
-        ...    x.read_file(fh)
+        ...    x.from_file(fh)
+
         which is equivalent to
+
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'rb') as fh:
-        ...    chunk = fh.read(size=x.byteLength)
+        ...    chunk = fh.read(x.byteLength)
         ...    x.assign(chunk)
+
         but the latter copies the data twice whereas the former only copies the
         data once.
         """
+        pass
 
     def _into_file(self, file: IO[bytes] | IO[str], /) -> None:
         """Will write the entire contents of a buffer into a file using
@@ -462,15 +486,21 @@ class JsBuffer(JsProxy):
 
         Example
         -------
-        >>> import pytest; pytest.skip()
-        >>> from js import Uint8Array
+        >>> from js import Uint8Array # doctest: +RUN_IN_PYODIDE
+        >>> from pathlib import Path
+        >>> Path("file.bin").write_text("abc\\x00123ttt")
+        10
         >>> x = Uint8Array.new(range(10))
         >>> with open('file.bin', 'wb') as fh:
         ...    x._into_file(fh)
+
         which is similar to
+
         >>> with open('file.bin', 'wb') as fh:
         ...    data = x.to_bytes()
         ...    fh.write(data)
+        10
+
         but the latter copies the data once whereas the former doesn't copy the
         data.
         """
@@ -1049,6 +1079,8 @@ class InternalError(Exception):
 
 
 class JsDomElement(JsProxy):
+    id: str
+
     @property
     def tagName(self) -> str:
         return ""
@@ -1064,6 +1096,10 @@ class JsDomElement(JsProxy):
         pass
 
     def removeEventListener(self, event: str, listener: Callable[[Any], None]) -> None:
+        pass
+
+    @property
+    def style(self) -> Any:
         pass
 
 
@@ -1232,6 +1268,41 @@ def to_js(
 
     Examples
     --------
+    >>> from js import Object, Map, Array # doctest: +SKIP
+    >>> from pyodide.ffi import to_js # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
+    >>> js_object # doctest: +SKIP
+    [object Map]
+    >>> js_object.keys(), js_object.values() # doctest: +SKIP
+    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
+    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
+    [('age', 20), ('name', 'john')]
+
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
+    >>> js_object.age == 20 # doctest: +SKIP
+    True
+    >>> js_object.name == 'john' # doctest: +SKIP
+    True
+    >>> js_object # doctest: +SKIP
+    [object Object]
+    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
+    True
+    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
+    False
+
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
+    >>> [item for item in js_object] # doctest: +SKIP
+    [age,20, name,john]
+    >>> js_object.toString() # doctest: +SKIP
+    age,20,name,john
+
+    >>> class Bird: pass # doctest: +SKIP
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
+    >>> [bird for bird in js_nest] # doctest: +SKIP
+    [[object Object], [object Object]]
+    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
+    [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
     argument.
@@ -1266,7 +1337,8 @@ def to_js(
 
         class Pair:
             def __init__(self, first, second):
-                self.first = first self.second = second
+                self.first = first
+                self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
     :js:class:`Array`:
@@ -1278,8 +1350,10 @@ def to_js(
         def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
-            result = Array.new() cache(value, result);
-            result.push(convert(value.first)) result.push(convert(value.second))
+            result = Array.new()
+            cache(value, result)
+            result.push(convert(value.first))
+            result.push(convert(value.second))
             return result
 
     Note that we have to cache the conversion of ``value`` before converting

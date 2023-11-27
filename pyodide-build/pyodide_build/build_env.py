@@ -35,7 +35,6 @@ BUILD_VARS: set[str] = {
     "HOSTSITEPACKAGES",
     "NUMPY_LIB",
     "PATH",
-    "PKG_CONFIG_PATH",
     "PLATFORM_TRIPLET",
     "PIP_CONSTRAINT",
     "PYMAJOR",
@@ -62,6 +61,10 @@ BUILD_VARS: set[str] = {
     "SYSCONFIG_NAME",
     "TARGETINSTALLDIR",
     "WASM_LIBRARY_DIR",
+    "CMAKE_TOOLCHAIN_FILE",
+    "PYO3_CONFIG_FILE",
+    "MESON_CROSS_FILE",
+    "PKG_CONFIG_LIBDIR",
 }
 
 
@@ -169,10 +172,16 @@ def get_build_environment_vars() -> dict[str, str]:
 
     tools_dir = Path(__file__).parent / "tools"
 
-    env["CMAKE_TOOLCHAIN_FILE"] = str(
-        tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-    )
-    env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+    if "CMAKE_TOOLCHAIN_FILE" not in env:
+        env["CMAKE_TOOLCHAIN_FILE"] = str(
+            tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
+        )
+
+    if "PYO3_CONFIG_FILE" not in env:
+        env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
+
+    if "MESON_CROSS_FILE" not in env:
+        env["MESON_CROSS_FILE"] = str(tools_dir / "emscripten.meson.cross")
 
     hostsitepackages = env["HOSTSITEPACKAGES"]
     pythonpath = [

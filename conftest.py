@@ -5,6 +5,7 @@ import os
 import pathlib
 import re
 import sys
+from collections.abc import Sequence
 
 import pytest
 
@@ -15,9 +16,19 @@ sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 import pytest_pyodide.runner
+
+# importing this fixture has a side effect of making the safari webdriver reused during the session
+from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
+pytest_pyodide.runner.CHROME_FLAGS.extend(
+    [
+        "--enable-features=WebAssemblyExperimentalJSPI",
+        "--enable-experimental-webassembly-features",
+    ]
+)
+pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 
 # There are a bunch of global objects that occasionally enter the hiwire cache
 # but never leave. The refcount checks get angry about them if they aren't preloaded.
@@ -32,11 +43,15 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.package_loader.sub_resource_hash;
     pyodide.runPython("");
     pyodide.pyimport("pyodide.ffi.wrappers").destroy();
     pyodide.pyimport("pyodide.http").destroy();
+    pyodide.pyimport("pyodide_js._api")
 """
+
+only_node = pytest.mark.xfail_browsers(
+    chrome="node only", firefox="node only", safari="node only"
+)
 
 
 def pytest_addoption(parser):
@@ -139,16 +154,7 @@ def pytest_collection_modifyitems(config, items):
         cache = config.cache
         prev_test_result = cache.get("cache/lasttestresult", {})
 
-    skipped_docstrings = [
-        "_pyodide._base.CodeRunner",
-        "pyodide.http.open_url",
-        "pyodide.http.pyfetch",
-    ]
-
     for item in items:
-        if isinstance(item, pytest.DoctestItem) and item.name in skipped_docstrings:
-            item.add_marker(pytest.mark.skip(reason="skipped docstring"))
-            continue
         if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
             item.add_marker(pytest.mark.skip(reason="previously passed"))
             continue
@@ -250,3 +256,18 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
+
+
+def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
+    """Strip additional messages on stderr included when ASSERTIONS=1"""
+    res = []
+    for msg in messages:
+        if msg.strip() in [
+            "sigaction: signal type not supported: this is a no-op.",
+            "Calling stub instead of siginterrupt()",
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
+        ]:
+            continue
+        res.append(msg)
+    return res

@@ -1,3 +1,7 @@
+import pytest
+
+
+@pytest.mark.requires_dynamic_linking
 def test_uncaught_cpp_exceptions(selenium):
     assert (
         selenium.run_js(
@@ -30,6 +34,7 @@ def test_uncaught_cpp_exceptions(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_cpp_exception_catching(selenium):
     assert (
         selenium.run_js(
@@ -56,6 +61,7 @@ def test_cpp_exception_catching(selenium):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_sjlj(selenium):
     assert (
         (

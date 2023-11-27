@@ -1,19 +1,17 @@
-declare var Module: any;
-declare var Tests: any;
-declare var API: any;
-declare var DEBUG: boolean;
+import "./constants";
 
+import { IN_NODE } from "./environments";
 import {
-  IN_NODE,
   nodeFsPromisesMod,
   loadBinaryFile,
   initNodeModules,
   resolvePath,
+  base16ToBase64,
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
-import { PyProxy } from "./pyproxy.gen";
-import { makeWarnOnce } from "./util";
+import { PyProxy } from "generated/pyproxy";
+import { makeWarnOnce } from "./pyodide_util";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -22,21 +20,15 @@ import { makeWarnOnce } from "./util";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFileURL: string) {
-  let lockfile;
-  if (IN_NODE) {
-    await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
-    lockfile = JSON.parse(package_string);
-  } else {
-    let response = await fetch(lockFileURL);
-    lockfile = await response.json();
-  }
+async function initializePackageIndex(lockFilePromise: Promise<any>) {
+  await initNodeModules();
+  const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
     );
   }
+
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -63,9 +55,12 @@ async function initializePackageIndex(lockFileURL: string) {
     API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
+  await loadPackage(API.config.packages, { messageCallback() {} });
 }
 
-API.packageIndexReady = initializePackageIndex(API.config.lockFileURL);
+if (API.lockFilePromise) {
+  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+}
 
 /**
  * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -99,15 +94,35 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
+  packageData?: InternalPackageData;
 };
+
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
 
 // Package data inside pyodide-lock.json
 export type PackageData = {
+  name: string;
+  version: string;
+  fileName: string;
+  /** @experimental */
+  packageType: PackageType;
+};
+
+export type InternalPackageData = {
+  name: string;
+  version: string;
   file_name: string;
-  shared_library: boolean;
-  depends: string[];
-  imports: string[];
+  package_type: PackageType;
   install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+  /** @deprecated */
+  shared_library: boolean;
 };
 
 interface ResolvablePromise extends Promise<void> {
@@ -144,7 +159,7 @@ function addPackageToLoad(
   if (toLoad.has(name)) {
     return;
   }
-  const pkg_info: PackageData = API.lockfile_packages[name];
+  const pkg_info = API.lockfile_packages[name];
   if (!pkg_info) {
     throw new Error(`No known package with name '${name}'`);
   }
@@ -155,6 +170,7 @@ function addPackageToLoad(
     depends: pkg_info.depends,
     installPromise: undefined,
     done: createDonePromise(),
+    packageData: pkg_info,
   });
 
   // If the package is already loaded, we don't add dependencies, but warn
@@ -247,9 +263,8 @@ async function downloadPackage(
     }
     file_name = API.lockfile_packages[name].file_name;
     uri = resolvePath(file_name, installBaseUrl);
-    file_sub_resource_hash = API.package_loader.sub_resource_hash(
-      API.lockfile_packages[name].sha256,
-    );
+    file_sub_resource_hash =
+      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
   } else {
     uri = channel;
     file_sub_resource_hash = undefined;
@@ -289,14 +304,18 @@ async function installPackage(
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg: PackageData = API.lockfile_packages[name];
+  let pkg = API.lockfile_packages[name];
   if (!pkg) {
     pkg = {
+      name: "",
+      version: "",
       file_name: ".whl",
-      shared_library: false,
-      depends: [],
-      imports: [] as string[],
       install_dir: "site",
+      sha256: "",
+      package_type: "package",
+      imports: [] as string[],
+      depends: [],
+      shared_library: false,
     };
   }
   const filename = pkg.file_name;
@@ -324,7 +343,7 @@ async function installPackage(
  * Downloads can be done in parallel, but installs must be done for dependencies first.
  * @param name The name of the package
  * @param toLoad The map of package names to PackageLoadMetadata
- * @param loaded The set of loaded package names, this will be updated by this function.
+ * @param loaded The set of loaded package metadata, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
  * @param checkIntegrity Whether to check the integrity of the downloaded
  * package.
@@ -333,7 +352,7 @@ async function installPackage(
 async function downloadAndInstall(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
-  loaded: Set<string>,
+  loaded: Set<InternalPackageData>,
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
@@ -345,17 +364,21 @@ async function downloadAndInstall(
 
   try {
     const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
-    const installPromisDependencies = pkg.depends.map((dependency) => {
+    const installPromiseDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
         : Promise.resolve();
     });
+    // Can't install until bootstrap is finalized.
+    await API.bootstrapFinalizedPromise;
 
     // wait until all dependencies are installed
-    await Promise.all(installPromisDependencies);
+    await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
-    loaded.add(pkg.name);
+    if (pkg.packageData) {
+      loaded.add(pkg.packageData);
+    }
     loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(name, err);
@@ -373,6 +396,15 @@ const cbDeprecationWarnOnce = makeWarnOnce(
     "is deprecated and will be removed in v0.24. Instead use:\n" +
     "   { messageCallback : callbackFunc }",
 );
+
+function filterPackageData({
+  name,
+  version,
+  file_name,
+  package_type,
+}: InternalPackageData): PackageData {
+  return { name, version, fileName: file_name, packageType: package_type };
+}
 
 /**
  * Load packages from the Pyodide distribution or Python wheels by URL.
@@ -407,8 +439,8 @@ const cbDeprecationWarnOnce = makeWarnOnce(
  *    (optional)
  * @param options.checkIntegrity If true, check the integrity of the downloaded
  *    packages (default: true)
- * @param errorCallbackDeprecated @ignore
  * @async
+ * @returns The loaded package data.
  */
 export async function loadPackage(
   names: string | PyProxy | Array<string>,
@@ -419,16 +451,8 @@ export async function loadPackage(
   } = {
     checkIntegrity: true,
   },
-  errorCallbackDeprecated?: (message: string) => void,
-) {
-  if (typeof options === "function") {
-    cbDeprecationWarnOnce();
-    options = {
-      messageCallback: options,
-      errorCallback: errorCallbackDeprecated,
-    };
-  }
-
+): Promise<Array<PackageData>> {
+  const loadedPackageData = new Set<InternalPackageData>();
   const messageCallback = options.messageCallback || console.log;
   const errorCallback = options.errorCallback || console.error;
   if (names instanceof PyProxy) {
@@ -464,11 +488,10 @@ export async function loadPackage(
 
   if (toLoad.size === 0) {
     messageCallback("No new packages to load");
-    return;
+    return [];
   }
 
   const packageNames = [...toLoad.keys()].join(", ");
-  const loaded = new Set<string>();
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
@@ -486,7 +509,7 @@ export async function loadPackage(
       toLoad.get(name)!.installPromise = downloadAndInstall(
         name,
         toLoad,
-        loaded,
+        loadedPackageData,
         failed,
         options.checkIntegrity,
       );
@@ -497,8 +520,10 @@ export async function loadPackage(
     );
 
     Module.reportUndefinedSymbols();
-    if (loaded.size > 0) {
-      const successNames = Array.from(loaded).join(", ");
+    if (loadedPackageData.size > 0) {
+      const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
+        .sort()
+        .join(", ");
       messageCallback(`Loaded ${successNames}`);
     }
 
@@ -514,6 +539,7 @@ export async function loadPackage(
     // We have to invalidate Python's import caches, or it won't
     // see the new files.
     API.importlib.invalidate_caches();
+    return Array.from(loadedPackageData, filterPackageData);
   } finally {
     releaseLock();
   }

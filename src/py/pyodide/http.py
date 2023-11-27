@@ -27,8 +27,10 @@ __all__ = [
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
-    The download of binary files is not supported. To download binary
-    files use :func:`pyodide.http.pyfetch` which is asynchronous.
+    The download of binary files is not supported. To download binary files use
+    :func:`pyodide.http.pyfetch` which is asynchronous.
+
+    It will not work in Node unless you include an polyfill for :js:class:`XMLHttpRequest`.
 
     Parameters
     ----------
@@ -41,15 +43,14 @@ def open_url(url: str) -> StringIO:
 
     Examples
     --------
-    >>> from pyodide.http import open_url
-    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json"
+    >>> None # doctest: +RUN_IN_PYODIDE
+    >>> import pytest; pytest.skip("TODO: Figure out how to skip this only in node")
+    >>> url = "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide-lock.json"
     >>> url_contents = open_url(url)
-    >>> url_contents.read()
-    {
-      "info": {
-          ... # long output truncated
-        }
-    }
+    >>> import json
+    >>> result = json.load(url_contents)
+    >>> sorted(list(result["info"].items()))
+    [('arch', 'wasm32'), ('platform', 'emscripten_3_1_45'), ('python', '3.11.3'), ('version', '0.24.1')]
     """
 
     req = XMLHttpRequest.new()
@@ -141,6 +142,22 @@ class FetchResponse:
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
 
+    def raise_for_status(self) -> None:
+        """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
+        http_error_msg = ""
+        if 400 <= self.status < 500:
+            http_error_msg = (
+                f"{self.status} Client Error: {self.status_text} for url: {self.url}"
+            )
+
+        if 500 <= self.status < 600:
+            http_error_msg = (
+                f"{self.status} Server Error: {self.status_text} for url: {self.url}"
+            )
+
+        if http_error_msg:
+            raise OSError(http_error_msg)
+
     def clone(self) -> "FetchResponse":
         """Return an identical copy of the :py:class:`FetchResponse`.
 
@@ -159,10 +176,22 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
-    async def string(self) -> str:
+    async def text(self) -> str:
         """Return the response body as a string"""
         self._raise_if_failed()
         return await self.js_response.text()
+
+    async def string(self) -> str:
+        """Return the response body as a string
+
+        Does the same thing as :py:meth:`FetchResponse.text`.
+
+
+        .. deprecated:: 0.24.0
+
+            Use :py:meth:`FetchResponse.text` instead.
+        """
+        return await self.text()
 
     async def json(self, **kwargs: Any) -> Any:
         """Treat the response body as a JSON string and use
@@ -261,7 +290,7 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
 
     Examples
     --------
-    >>> from pyodide.http import pyfetch
+    >>> import pytest; pytest.skip("Can't use top level await in doctests")
     >>> res = await pyfetch("https://cdn.jsdelivr.net/pyodide/v0.23.4/full/repodata.json")
     >>> res.ok
     True

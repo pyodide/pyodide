@@ -126,6 +126,7 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | Python                             | JavaScript                        |
 | ---------------------------------- | --------------------------------- |
 | `str(proxy)`                       | `x.toString()`                    |
+| `repr(proxy)`                      | `x.toString()`                    |
 | `proxy.foo`                        | `x.foo`                           |
 | `proxy.foo = bar`                  | `x.foo = bar`                     |
 | `del proxy.foo`                    | `delete x.foo`                    |
@@ -235,6 +236,7 @@ operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 
 | JavaScript                          | Python              |
 | ----------------------------------- | ------------------- |
+| `proxy.toString()`                  | `str(x)`            |
 | `foo in proxy`                      | `hasattr(x, 'foo')` |
 | `proxy.foo`                         | `x.foo`             |
 | `proxy.foo = bar`                   | `x.foo = bar`       |
@@ -464,7 +466,7 @@ JavaScript, or it must be created with {py:func}`~pyodide.ffi.create_proxy` or
 once use {py:func}`~pyodide.ffi.create_once_callable`:
 
 ```py
-from pyodide import create_once_callable
+from pyodide.ffi import create_once_callable
 from js import setTimeout
 def my_callback():
     print("hi")
@@ -474,11 +476,11 @@ setTimeout(create_once_callable(my_callback), 1000)
 If it's going to be called many times use {py:func}`~pyodide.ffi.create_proxy`:
 
 ```py
-from pyodide import create_proxy
+from pyodide.ffi import create_proxy
 from js import document
 def my_callback():
     print("hi")
-proxy = pyodide.create_proxy(my_callback)
+proxy = create_proxy(my_callback)
 document.body.addEventListener("click", proxy)
 # ...
 # make sure to hold on to proxy
@@ -571,12 +573,12 @@ An example of a case where you would not want to use the
 {js:func}`~pyodide.ffi.PyProxy.toJs` method is when the buffer is bitmapped
 image data. If for instance you have a 3d buffer shaped 1920 x 1080 x 4, then
 {js:func}`~pyodide.ffi.PyProxy.toJs` will be extremely slow. In this case you
-could use {js:func}`~pyodide.ffi.PyProxy.getBuffer`. On the other hand, if you
+could use {js:func}`~pyodide.ffi.PyBuffer.getBuffer`. On the other hand, if you
 have a 3d buffer shaped 1920 x 4 x 1080, the performance of
 {js:func}`~pyodide.ffi.PyProxy.toJs` will most likely be satisfactory.
 Typically, the innermost dimension won't matter for performance.
 
-The {js:func}`~pyodide.ffi.PyProxy.getBuffer` method can be used to retrieve a reference to
+The {js:func}`~pyodide.ffi.PyBuffer.getBuffer` method can be used to retrieve a reference to
 a JavaScript typed array that points to the data backing the Python object,
 combined with other metadata about the buffer format. The metadata is suitable
 for use with a JavaScript ndarray library if one is present. For instance, if

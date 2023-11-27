@@ -3,6 +3,7 @@ myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
     Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
     Fix: "<span class='badge badge-danger'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
@@ -15,31 +16,163 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Adds `check_wasm_magic_number` function to validate `.so`
-  files for WebAssembly (WASM) compatibility.
-  {pr}`4018`
+- {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
+  containing the loaded package's metadata.
+  {pr}`4306`
 
-- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
-{pr}`4012`, {pr}`4011`
+- {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
+  of Node.js might still work, but they are not tested or guaranteed to work.
+  {pr}`4269`
 
-- {{ Enhancement }} Make it possible to use the @example JSDoc directive.
-  {pr}`4009`
+- {{ Fix }} Fixed default indexURL calculation in Node.js environment.
+  {pr}`4288`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.39
-  {pr}`3665`, {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`
+- {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
+  {pr}`4294`
 
-- {{ Update }} The docker image now has node v20 instead of node v14.
-  {pr}`3819`
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
+- {{ Fix }} `jsarray.pop` now works correctly. It previously returned the wrong
+  value and leaked memory.
+  {pr}`4236`
+
+- {{ Breaking }} `PyProxy.toString` now calls `str` instead of `repr`. For now
+  you can opt into the old behavior by passing `pyproxyToStringRepr: true` to
+  `loadPyodide`, but this may be removed in the future.
+  {pr}`4247`
+
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
+  {pr}`4256`
+
+- {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
+  throws an error, that error is propagated instead of being turned into an
+  `AttributeError`.
+  {pr}`4254`
+
+- {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
+  and `defaultConverter` arguments.
+  {pr}`4263`
+
+### Pyodide CLI
+
+- {{ Enhancement }} `pyodide config` command now show additional config variables:
+  `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`, `rust_toolchain`, `cflags`
+  `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
+  build to set the same variables as in-tree build.
+  {pr}`4241`
+
+### Packages
+
+- New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
+  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`
+
+- Upgraded `contourpy` to 1.2.0 {pr}`4291`
+
+### Load time & size optimizations
+
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
+  which reduces the time to load Pyodide.
+  {pr}`4147`
+
+### Build system
+
+- {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
+  {pr}`4223`
+
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
+  env variables if provided by user.
+  {pr}`4223`
+
+## Version 0.24.1
+
+_September 25, 2023_
+
+- {{ Fix }} Fixed `LONG_BIT definition appears wrong for platform` error happened in out-of-tree build.
+  {pr}`4136`
+
+- {{ Fix }} Fixed an Emscripten bug that broke some matplotlib functionality.
+  {pr}`4163`
+
+- {{ Fix }} `pyodide.checkInterrupt` works when there is no interrupt buffer and
+  the gil is not held.
+  {pr}`4164`
+
+### Packages
+
+- Upgraded scipy to 1.11.2 {pr}`4156`
+- Upgraded sourmash to 4.8.4 {pr}`4154`
+- Upgraded scikit-learn to 1.3.1 {pr}`4161`
+- Upgraded micropip to 0.5.0 {pr}`4167`
+
+## Version 0.24.0
+
+_September 13, 2023_
+
+### General
 
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
-- {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
-  present also on `Task`s as well as `Future`s.
-  {pr}`3748`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+  {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
+  {pr}`4056`, {pr}`4073`, {pr}`4094`
+
+### JavaScript API
+
+- {{ Performance }} Added a `packages` optional argument to `loadPyodide`.
+  Passing packages here saves time by downloading them during the Pyodide
+  bootstrap.
+  {pr}`4100`
+
+- {{ Enhancement }} `runPython` and `runPythonAsync` now accept a `filename`
+  optional argument which is passed as the `filename` argument to `eval_code`
+  (resp. `eval_code_async`). Also, if a `filename` is passed to `eval_code`
+  which does not start with `<` and end with `>`, Pyodide now uses the
+  `linecache` module to ensure that source lines can appear in tracebacks.
+  {pr}`3993`
+
+- {{ Performance }} For performance reasons, don't render extra information in
+  PyProxy destroyed message by default. By using `pyodide.setDebug(true)`, you
+  can opt into worse performance and better error messages.
+  {pr}`4027`
+
+- {{ Enhancement }} It is now possible to pass environment variables to
+  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
+  `{env: {HOME: whatever_directory}}`.
+  {pr}`3870`
+
+- {{ Enhancement }} The `setStdin`, `setStdout` and `setStderr` APIs have been
+  improved with extra control and better performance.
+  {pr}`4035`
+
+### Python API
 
 - {{ Enhancement }} Added `headers` property to `pyodide.http.FetchResponse`.
   {pr}`2078`
+
+- {{ Enhancement }} Added `FetchResponse.text()` as a synonym to
+  `FetchResponse.string()` for better compatibility with other requests APIs.
+  {pr}`4052`
+
+- {{ Breaking }} Changed the `FetchResponse` body getter methods to no longer
+  throw an `OSError` exception for 400 and above response status codes. Added
+  `FetchResponse.raise_for_status` to raise an `OSError` for error status codes.
+  {pr}`3986` {pr}`4053`
+
+### Python / JavaScript Foreign Function Interface
+
+- {{ Performance }} Improved performance of PyProxy creation.
+  {pr}`4096`
+
+- {{ Fix }} Fixed adding getters/setters to a `PyProxy` with
+  `Object.defineProperty` and improved compliance with JavaScript rules around
+  Proxy traps.
+  {pr}`4033`
+
+- {{ Enhancement }} The promise methods `then`, `catch` and `finally_` are now
+  present also on `Task`s as well as `Future`s.
+  {pr}`3748`
 
 - {{ Enhancement }} Added methods to a `PyProxy` of a `list` to make these work
   as drop-in replacements for JavaScript Arrays.
@@ -51,40 +184,51 @@ myst:
   new array with the result values from the iterable appended.
   {pr}`3904`
 
-- {{ Enhancement }} It is now possible to pass environment variables to
-  `loadPyodide` via the `env` argument. `homedir` is deprecated in favor of
-  `{env: {HOME: whatever_directory}}`.
-  {pr}`3870`
+### Deployment
 
 - {{ API }} Changed the name of the default lockfile from `repodata.json` to
   `pyodide-lock.json`
   {pr}`3824`
 
-- {{ Breaking }} Changed the FetchResponse body getter methods to no longer
-  throw an OSError exception for 400 and above response status codes
-  {pr}`3986`
+### Build System
+
+- {{ Update }} The docker image now has node v20 instead of node v14.
+  {pr}`3819`
+
+- {{ Enhancement }} Added `check_wasm_magic_number` function to validate `.so`
+  files for WebAssembly (WASM) compatibility.
+  {pr}`4018`
+
+- {{ Enhancement }} In pyodide build, automatically skip building package
+  dependencies that are already included in the pyodide distribution.
+  {pr}`4058`
 
 ### Packages
 
-- OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
-  {pr}`3331`.
 - New packages: sourmash {pr}`3635`, screed {pr}`3635`, bitstring {pr}`3635`,
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
-  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`,
-  Cartopy {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`.
-- Upgraded libmpfr to 4.2.0 {pr}`3756`.
-- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
-- Upgraded scikit-image to 0.21 {pr}`3874`
-- Upgraded scikit-learn to 1.3.0 {pr}`3976`
-- Upgraded pyodide-http to 0.2.1
-- Upgraded typing-extensions to 4.7.1 {pr}`4026`
+  simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`, Cartopy
+  {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`, CoolProp
+  {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`, orjson {pr}`4036`.
 
-### CLI
+- Upgraded numpy to 1.25.2 {pr}`4125`
+
+- Upgraded scipy to 1.11.1 {pr}`3794`, {pr}`3996`
+
+- OpenBLAS has been added and scipy now uses OpenBLAS rather than CLAPACK
+  {pr}`3331`.
+
+### Pyodide CLI
 
 - {{ Enhancement }} `pyodide build-recipes` now accepts a `--metadata-files`
   option to install `*.whl.metadata` files as specified in
   [PEP 658](https://peps.python.org/pep-0658/).
   {pr}`3981`
+
+### Misc
+
+- {{ Enhancement }} Add an example for `loadPyodide` and `pyodide.runPython
+{pr}`4012`, {pr}`4011`
 
 ## Version 0.23.4
 

@@ -1,11 +1,11 @@
 package:
   name: pycryptodome
-  version: "3.17"
+  version: 3.18.0
   top-level:
     - Crypto
 source:
-  url: https://files.pythonhosted.org/packages/b8/2e/cf9cfd1ae6429381d3d9c14c8df79d91ae163929972f245a76058ea9d37d/pycryptodome-3.17.tar.gz
-  sha256: bce2e2d8e82fcf972005652371a3e8731956a0c1fbb719cc897943b3695ad91b
+  url: https://files.pythonhosted.org/packages/b9/05/0e7547c445bbbc96c538d870e6c5c5a69a9fa5df0a9df3e27cb126527196/pycryptodome-3.18.0.tar.gz
+  sha256: c9adee653fc882d98956e33ca2c1fb582e23a8af7ac82fee75bd6113c55a0413
 build:
   exports: requested
 about:

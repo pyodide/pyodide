@@ -2,7 +2,8 @@
 *.o
 *.pyc
 *.gen.*
-src/js/*.out.*
+src/js/generated
+*.out.*
 
 *.egg-info/
 
@@ -16,13 +17,14 @@ __pycache__
 .pytest_cache/
 .vscode
 .venv*
+tsconfig.tsbuildinfo
 
 build
 ccache
 cpython/downloads
 cpython/installs
 cpython/build.log
-dist/
+dist*/
 docs/_build/
 emsdk/emsdk
 geckodriver.log

@@ -5,7 +5,7 @@ declare var Module: any;
  *
  * As of now, Emscripten uses Module.canvas to get the canvas element.
  * This might change in the future, so we abstract it here.
- * @private
+ * @hidden
  */
 export interface CanvasInterface {
   setCanvas2D(canvas: HTMLCanvasElement): void;
@@ -17,7 +17,7 @@ export interface CanvasInterface {
 // We define methods here to make sphinx-js generate documentation for them.
 
 /**
- * @param canvas The HTML5 canvas element to use for 2D rendering. For now,
+ * Set the HTML5 canvas element to use for 2D rendering. For now,
  * Emscripten only supports one canvas element, so setCanvas2D and setCanvas3D
  * are the same.
  */
@@ -31,8 +31,7 @@ export const setCanvas2D = (canvas: HTMLCanvasElement) => {
   Module.canvas = canvas;
 };
 /**
- *
- * @returns The HTML5 canvas element used for 2D rendering. For now,
+ * Get the HTML5 canvas element used for 2D rendering. For now,
  * Emscripten only supports one canvas element, so getCanvas2D and getCanvas3D
  * are the same.
  */
@@ -40,7 +39,7 @@ export const getCanvas2D = (): HTMLCanvasElement | undefined => {
   return Module.canvas;
 };
 /**
- * @param canvas The HTML5 canvas element to use for 3D rendering. For now,
+ * Set the HTML5 canvas element to use for 3D rendering. For now,
  * Emscripten only supports one canvas element, so setCanvas2D and setCanvas3D
  * are the same.
  */
@@ -48,8 +47,7 @@ export const setCanvas3D = (canvas: HTMLCanvasElement) => {
   setCanvas2D(canvas);
 };
 /**
- *
- * @returns The HTML5 canvas element used for 3D rendering. For now,
+ * Get the HTML5 canvas element used for 3D rendering. For now,
  * Emscripten only supports one canvas element, so getCanvas2D and getCanvas3D
  * are the same.
  */

@@ -16,16 +16,9 @@
 
 declare var Tests: any;
 declare var Module: any;
-declare var Hiwire: any;
-declare var API: any;
-declare var HEAPU32: Uint32Array;
 
-declare function _check_gil(): void;
-declare function stackSave(): number;
-declare function stackRestore(ptr: number): void;
-declare function stackAlloc(size: number): number;
-
-import { warnOnce } from "./util";
+import { TypedArray } from "types";
+import { warnOnce } from "pyodide_util";
 
 // pyodide-skip
 
@@ -56,10 +49,6 @@ declare var IS_ASYNC_GENERATOR: number;
 declare var IS_SEQUENCE: number;
 declare var IS_MUTABLE_SEQUENCE: number;
 
-declare var PYGEN_NEXT: number;
-declare var PYGEN_RETURN: number;
-declare var PYGEN_ERROR: number;
-
 declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
@@ -79,14 +68,16 @@ declare var globalThis: any;
 
 if (globalThis.FinalizationRegistry) {
   Module.finalizationRegistry = new FinalizationRegistry(
-    ([ptr, cache]: [ptr: number, cache: PyProxyCache]) => {
+    ({ ptr, cache }: PyProxyShared) => {
       if (cache) {
+        // If we leak a proxy, we must transitively leak everything in its cache
+        // too =(
         cache.leaked = true;
         pyproxy_decref_cache(cache);
       }
       try {
         Py_ENTER();
-        Module._Py_DecRef(ptr);
+        _Py_DecRef(ptr);
         Py_EXIT();
       } catch (e) {
         // I'm not really sure what happens if an error occurs inside of a
@@ -101,8 +92,8 @@ if (globalThis.FinalizationRegistry) {
   // TODO: after 0.18.0, fix selenium issues with this code.
   // Module.bufferFinalizationRegistry = new FinalizationRegistry((ptr) => {
   //   try {
-  //     Module._PyBuffer_Release(ptr);
-  //     Module._PyMem_Free(ptr);
+  //     _PyBuffer_Release(ptr);
+  //     _PyMem_Free(ptr);
   //   } catch (e) {
   //     API.fatal_error(e);
   //   }
@@ -131,7 +122,15 @@ Module.disable_pyproxy_allocation_tracing = function () {
 };
 Module.disable_pyproxy_allocation_tracing();
 
-type PyProxyCache = { cacheId: number; refcnt: number; leaked?: boolean };
+type PyProxyCache = { map: Map<string, any>; refcnt: number; leaked?: boolean };
+type PyProxyShared = {
+  ptr: number;
+  cache: PyProxyCache;
+  flags: number;
+  promise: Promise<any> | undefined;
+  destroyed_msg: string | undefined;
+  gcRegistered: boolean;
+};
 type PyProxyProps = {
   /**
    * captureThis tracks whether this should be passed as the first argument to
@@ -155,38 +154,65 @@ type PyProxyProps = {
   roundtrip: boolean;
 };
 
+type PyProxyAttrs = {
+  // shared between aliases but not between copies
+  shared: PyProxyShared;
+  // properties that may be different between aliases
+  props: PyProxyProps;
+};
+
+const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
+function pyproxy_getflags(ptrobj: number) {
+  Py_ENTER();
+  try {
+    return _pyproxy_getflags(ptrobj);
+  } finally {
+    Py_EXIT();
+  }
+}
+
 /**
  * Create a new PyProxy wrapping ptrobj which is a PyObject*.
  *
- * The argument cache is only needed to implement the PyProxy.copy API, it
- * allows the copy of the PyProxy to share its attribute cache with the original
- * version. In all other cases, pyproxy_new should be called with one argument.
+ * Two proxies are **aliases** if they share `shared` (they may have different
+ * props). Aliases are created by `bind` and `captureThis`. Aliases share the
+ * same lifetime: `destroy` destroys both of them, they are only registered with
+ * the garbage collector once, they only own a single refcount.  An **alias** is
+ * created by passing the shared option.
+ *
+ * Two proxies are **copies** if they share `shared.cache`. Two copies share
+ * attribute caches but they otherwise have independent lifetimes. The attribute
+ * caches are refcounted so that they can be cleaned up when all copies are
+ * destroyed. A **copy** is made by passing the `cache` argument.
  *
  * In the case that the Python object is callable, PyProxy inherits from
  * Function so that PyProxy objects can be callable. In that case we MUST expose
  * certain properties inherited from Function, but we do our best to remove as
  * many as possible.
- * @private
  */
 function pyproxy_new(
-  ptrobj: number,
+  ptr: number,
   {
     flags: flags_arg,
     cache,
     props,
-    $$,
+    shared,
+    gcRegister,
   }: {
     flags?: number;
     cache?: PyProxyCache;
-    $$?: any;
-    roundtrip?: boolean;
+    shared?: PyProxyShared;
     props?: any;
+    gcRegister?: boolean;
   } = {},
 ): PyProxy {
-  const flags =
-    flags_arg !== undefined ? flags_arg : Module._pyproxy_getflags(ptrobj);
+  if (gcRegister === undefined) {
+    // register by default
+    gcRegister = true;
+  }
+  const flags = flags_arg !== undefined ? flags_arg : pyproxy_getflags(ptr);
   if (flags === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   const is_sequence = flags & IS_SEQUENCE;
   const cls = Module.getPyProxyClass(flags);
@@ -214,50 +240,82 @@ function pyproxy_new(
     target = Object.create(cls.prototype);
   }
 
-  const isAlias = !!$$;
-
-  if (!isAlias) {
+  const isAlias = !!shared;
+  if (!shared) {
+    // Not an alias so we have to make `shared`.
     if (!cache) {
-      // The cache needs to be accessed primarily from the C function
-      // _pyproxy_getattr so we make a hiwire id.
-      let cacheId = Hiwire.new_value(new Map());
-      cache = { cacheId, refcnt: 0 };
+      // In this case it's not a copy.
+      cache = { map: new Map(), refcnt: 0 };
     }
     cache.refcnt++;
-    $$ = { ptr: ptrobj, type: "PyProxy", cache, flags };
-    Module.finalizationRegistry.register($$, [ptrobj, cache], $$);
-    Module._Py_IncRef(ptrobj);
+    shared = {
+      ptr,
+      cache,
+      flags,
+      promise: undefined,
+      destroyed_msg: undefined,
+      gcRegistered: false,
+    };
+    _Py_IncRef(ptr);
   }
 
-  Object.defineProperty(target, "$$", { value: $$ });
   props = Object.assign(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
   );
-  Object.defineProperty(target, "$$props", { value: props });
-
   let proxy = new Proxy(
     target,
     is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
   );
+  if (!isAlias && gcRegister) {
+    // we need to register only once for a set of aliases. we can't register the
+    // proxy directly since that isn't shared between aliases. The aliases all
+    // share $$ so we can register that. They also need access to the data in
+    // $$, but we can't use $$ itself as the held object since that would keep
+    // $$ from being gc'd ever. So we make a copy. To prevent double free, we
+    // have to be careful to unregister when we destroy.
+    gc_register_proxy(shared);
+  }
   if (!isAlias) {
     trace_pyproxy_alloc(proxy);
   }
+  const attrs = { shared, props };
+  target[pyproxyAttrsSymbol] = attrs;
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
 
-function _getPtr(jsobj: any) {
-  let ptr: number = jsobj.$$.ptr;
-  if (ptr === 0) {
-    throw new Error(jsobj.$$.destroyed_msg);
+function gc_register_proxy(shared: PyProxyShared) {
+  const shared_copy = Object.assign({}, shared);
+  shared.gcRegistered = true;
+  Module.finalizationRegistry.register(shared, shared_copy, shared);
+}
+Module.gc_register_proxy = gc_register_proxy;
+
+function _getAttrsQuiet(jsobj: any): PyProxyAttrs {
+  return jsobj[pyproxyAttrsSymbol];
+}
+Module.PyProxy_getAttrsQuiet = _getAttrsQuiet;
+function _getAttrs(jsobj: any): PyProxyAttrs {
+  const attrs = _getAttrsQuiet(jsobj);
+  if (!attrs.shared.ptr) {
+    throw new Error(attrs.shared.destroyed_msg);
   }
-  return ptr;
+  return attrs;
+}
+Module.PyProxy_getAttrs = _getAttrs;
+
+function _getPtr(jsobj: any) {
+  return _getAttrs(jsobj).shared.ptr;
+}
+
+function _getFlags(jsobj: any): number {
+  return Object.getPrototypeOf(jsobj).$$flags;
 }
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
   const { captureThis, boundArgs, boundThis, isBound } =
-    proxyobj.$$props as PyProxyProps;
+    _getAttrs(proxyobj).props;
   if (captureThis) {
     if (isBound) {
       return [boundThis].concat(boundArgs, jsargs);
@@ -278,7 +336,6 @@ let pyproxyClassMap = new Map();
  * pyproxy_getflags. Multiple PyProxies with the same set of feature flags
  * will share the same prototype, so the memory footprint of each individual
  * PyProxy is minimal.
- * @private
  */
 Module.getPyProxyClass = function (flags: number) {
   const FLAG_TYPE_PAIRS: [number, any][] = [
@@ -341,14 +398,41 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
   }
   cache.refcnt--;
   if (cache.refcnt === 0) {
-    let cache_map = Hiwire.pop_value(cache.cacheId);
-    for (let proxy_id of cache_map.values()) {
-      const cache_entry = Hiwire.pop_value(proxy_id);
+    for (let proxy of cache.map.values()) {
       if (!cache.leaked) {
-        Module.pyproxy_destroy(cache_entry, pyproxy_cache_destroyed_msg, true);
+        Module.pyproxy_destroy(proxy, pyproxy_cache_destroyed_msg, true);
       }
     }
   }
+}
+
+function generateDestroyedMessage(
+  proxy: PyProxy,
+  destroyed_msg: string,
+): string {
+  destroyed_msg = destroyed_msg || "Object has already been destroyed";
+  if (API.debug_ffi) {
+    let proxy_type = proxy.type;
+    let proxy_repr;
+    try {
+      proxy_repr = proxy.toString();
+    } catch (e) {
+      if ((e as any).pyodide_fatal_error) {
+        throw e;
+      }
+    }
+    destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
+    if (proxy_repr) {
+      destroyed_msg += `had repr "${proxy_repr}"`;
+    } else {
+      destroyed_msg += "an error was raised when trying to generate its repr";
+    }
+  } else {
+    destroyed_msg +=
+      "\n" +
+      "For more information about the cause of this error, use `pyodide.setDebug(true)`";
+  }
+  return destroyed_msg;
 }
 
 Module.pyproxy_destroy = function (
@@ -356,39 +440,28 @@ Module.pyproxy_destroy = function (
   destroyed_msg: string,
   destroy_roundtrip: boolean,
 ) {
-  if (proxy.$$.ptr === 0) {
+  const { shared, props } = _getAttrsQuiet(proxy);
+  if (!shared.ptr) {
+    // already destroyed
     return;
   }
-  if (!destroy_roundtrip && proxy.$$props.roundtrip) {
+  if (!destroy_roundtrip && props.roundtrip) {
     return;
   }
-  let ptrobj = _getPtr(proxy);
-  Module.finalizationRegistry.unregister(proxy.$$);
-  destroyed_msg = destroyed_msg || "Object has already been destroyed";
-  let proxy_type = proxy.type;
-  let proxy_repr;
-  try {
-    proxy_repr = proxy.toString();
-  } catch (e) {
-    if ((e as any).pyodide_fatal_error) {
-      throw e;
-    }
-  }
+  shared.destroyed_msg = generateDestroyedMessage(proxy, destroyed_msg);
   // Maybe the destructor will call JavaScript code that will somehow try
   // to use this proxy. Mark it deleted before decrementing reference count
   // just in case!
-  proxy.$$.ptr = 0;
-  destroyed_msg += "\n" + `The object was of type "${proxy_type}" and `;
-  if (proxy_repr) {
-    destroyed_msg += `had repr "${proxy_repr}"`;
-  } else {
-    destroyed_msg += "an error was raised when trying to generate its repr";
+  const ptr = shared.ptr;
+  shared.ptr = 0;
+  if (shared.gcRegistered) {
+    Module.finalizationRegistry.unregister(shared);
   }
-  proxy.$$.destroyed_msg = destroyed_msg;
-  pyproxy_decref_cache(proxy.$$.cache);
+  pyproxy_decref_cache(shared.cache);
+
   try {
     Py_ENTER();
-    Module._Py_DecRef(ptrobj);
+    _Py_DecRef(ptr);
     trace_pyproxy_dealloc(proxy);
     Py_EXIT();
   } catch (e) {
@@ -401,7 +474,7 @@ Module.pyproxy_destroy = function (
 
 Module.callPyObjectKwargs = function (
   ptrobj: number,
-  jsargs: any,
+  jsargs: any[],
   kwargs: any,
 ) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
@@ -412,38 +485,28 @@ Module.callPyObjectKwargs = function (
   let num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
-  let idargs = Hiwire.new_value(jsargs);
-  let idkwnames = Hiwire.new_value(kwargs_names);
-  let idresult;
+  let result;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_apply(
+    result = __pyproxy_apply(
       ptrobj,
-      idargs,
+      jsargs,
       num_pos_args,
-      idkwnames,
+      kwargs_names,
       num_kwargs,
     );
     Py_EXIT();
   } catch (e) {
-    if (API._skip_unwind_fatal_error) {
-      API.maybe_fatal_error(e);
-    } else {
-      API.fatal_error(e);
-    }
+    API.maybe_fatal_error(e);
     return;
-  } finally {
-    Hiwire.decref(idargs);
-    Hiwire.decref(idkwnames);
   }
-  if (idresult === 0) {
-    Module._pythonexc2js();
+  if (result === null) {
+    _pythonexc2js();
   }
-  let result = Hiwire.pop_value(idresult);
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
-    let is_coroutine = Module.__iscoroutinefunction(ptrobj);
+    let is_coroutine = __iscoroutinefunction(ptrobj);
     Py_EXIT();
     if (is_coroutine) {
       result._ensure_future();
@@ -451,6 +514,65 @@ Module.callPyObjectKwargs = function (
   }
   return result;
 };
+
+/**
+ * A version of callPyObjectKwargs that supports the JSPI.
+ *
+ * It returns a promise. Inside Python, JS promises can be syncified, which
+ * switches the stack to synchronously wait for them to be resolved.
+ *
+ * Pretty much everything is the same as callPyObjectKwargs except we use the
+ * special JSPI-friendly promisingApply wrapper of `__pyproxy_apply`. This
+ * causes the VM to invent a suspender and call a wrapper module which stores it
+ * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
+ * _pyproxy_apply with the same arguments we gave to `promisingApply`.
+ */
+async function callPyObjectKwargsSuspending(
+  ptrobj: number,
+  jsargs: any,
+  kwargs: any,
+) {
+  if (!Module.jspiSupported) {
+    throw new Error(
+      "WebAssembly stack switching not supported in this JavaScript runtime",
+    );
+  }
+  // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
+  // which only is used when the keyword arguments come from the user.
+  let num_pos_args = jsargs.length;
+  let kwargs_names = Object.keys(kwargs);
+  let kwargs_values = Object.values(kwargs);
+  let num_kwargs = kwargs_names.length;
+  jsargs.push(...kwargs_values);
+
+  let result;
+  try {
+    Py_ENTER();
+    result = await Module.promisingApply(
+      ptrobj,
+      jsargs,
+      num_pos_args,
+      kwargs_names,
+      num_kwargs,
+    );
+    Py_EXIT();
+  } catch (e) {
+    API.fatal_error(e);
+  }
+  if (result === null) {
+    _pythonexc2js();
+  }
+  // Automatically schedule coroutines
+  if (result && result.type === "coroutine" && result._ensure_future) {
+    Py_ENTER();
+    let is_coroutine = __iscoroutinefunction(ptrobj);
+    Py_EXIT();
+    if (is_coroutine) {
+      result._ensure_future();
+    }
+  }
+  return result;
+}
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
@@ -466,14 +588,6 @@ export interface PyProxy {
  */
 export class PyProxy {
   /** @private */
-  $$: {
-    ptr: number;
-    cache: PyProxyCache;
-    destroyed_msg?: string;
-  };
-  /** @private */
-  $$props: PyProxyProps;
-  /** @private */
   $$flags: number;
 
   /** @private */
@@ -484,14 +598,13 @@ export class PyProxy {
   }
 
   /**
-   * @private
    * @hideconstructor
    */
   constructor() {
     throw new TypeError("PyProxy is not a constructor");
   }
 
-  /** @private */
+  /** @hidden */
   get [Symbol.toStringTag]() {
     return "PyProxy";
   }
@@ -512,22 +625,26 @@ export class PyProxy {
    */
   get type(): string {
     let ptrobj = _getPtr(this);
-    return Hiwire.pop_value(Module.__pyproxy_type(ptrobj));
+    return __pyproxy_type(ptrobj);
   }
+  /**
+   * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
+   * :js:func:`loadPyodide` in which case it will return `repr(o)`)
+   */
   toString(): string {
     let ptrobj = _getPtr(this);
-    let jsref_repr;
+    let result;
     try {
       Py_ENTER();
-      jsref_repr = Module.__pyproxy_repr(ptrobj);
+      result = __pyproxy_repr(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (jsref_repr === 0) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    return Hiwire.pop_value(jsref_repr);
+    return result;
   }
   /**
    * Destroy the :js:class:`~pyodide.ffi.PyProxy`. This will release the memory. Any further attempt
@@ -553,11 +670,11 @@ export class PyProxy {
    * Useful if the :js:class:`~pyodide.ffi.PyProxy` is destroyed somewhere else.
    */
   copy(): PyProxy {
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, {
-      flags: this.$$flags,
-      cache: this.$$.cache,
-      props: this.$$props,
+    let attrs = _getAttrs(this);
+    return pyproxy_new(attrs.shared.ptr, {
+      flags: _getFlags(this),
+      cache: attrs.shared.cache,
+      props: attrs.props,
     });
   }
   /**
@@ -612,44 +729,32 @@ export class PyProxy {
     ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
-    let idresult;
-    let proxies_id;
-    let dict_converter_id = 0;
-    let default_converter_id = 0;
+    let result;
+    let proxies;
     if (!create_pyproxies) {
-      proxies_id = 0;
+      proxies = null;
     } else if (pyproxies) {
-      proxies_id = Hiwire.new_value(pyproxies);
+      proxies = pyproxies;
     } else {
-      proxies_id = Hiwire.new_value([]);
-    }
-    if (dict_converter) {
-      dict_converter_id = Hiwire.new_value(dict_converter);
-    }
-    if (default_converter) {
-      default_converter_id = Hiwire.new_value(default_converter);
+      proxies = [];
     }
     try {
       Py_ENTER();
-      idresult = Module._python2js_custom(
+      result = _python2js_custom(
         ptrobj,
         depth,
-        proxies_id,
-        dict_converter_id,
-        default_converter_id,
+        proxies,
+        dict_converter || null,
+        default_converter || null,
       );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(proxies_id);
-      Hiwire.decref(dict_converter_id);
-      Hiwire.decref(default_converter_id);
     }
-    if (idresult === 0) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    return Hiwire.pop_value(idresult);
+    return result;
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.
@@ -659,7 +764,7 @@ export class PyProxy {
     "supportsLength() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithLength` instead.",
   )
   supportsLength(): this is PyProxyWithLength {
-    return !!(this.$$flags & HAS_LENGTH);
+    return !!(_getFlags(this) & HAS_LENGTH);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithGet`.
@@ -669,7 +774,7 @@ export class PyProxy {
     "supportsGet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithGet` instead.",
   )
   supportsGet(): this is PyProxyWithGet {
-    return !!(this.$$flags & HAS_GET);
+    return !!(_getFlags(this) & HAS_GET);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithSet`.
@@ -679,7 +784,7 @@ export class PyProxy {
     "supportsSet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithSet` instead.",
   )
   supportsSet(): this is PyProxyWithSet {
-    return !!(this.$$flags & HAS_SET);
+    return !!(_getFlags(this) & HAS_SET);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithHas`.
@@ -689,7 +794,7 @@ export class PyProxy {
     "supportsHas() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithHas` instead.",
   )
   supportsHas(): this is PyProxyWithHas {
-    return !!(this.$$flags & HAS_CONTAINS);
+    return !!(_getFlags(this) & HAS_CONTAINS);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
@@ -700,7 +805,7 @@ export class PyProxy {
     "isIterable() is deprecated. Use `instanceof pyodide.ffi.PyIterable` instead.",
   )
   isIterable(): this is PyIterable {
-    return !!(this.$$flags & (IS_ITERABLE | IS_ITERATOR));
+    return !!(_getFlags(this) & (IS_ITERABLE | IS_ITERATOR));
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
@@ -711,7 +816,7 @@ export class PyProxy {
     "isIterator() is deprecated. Use `instanceof pyodide.ffi.PyIterator` instead.",
   )
   isIterator(): this is PyIterator {
-    return !!(this.$$flags & IS_ITERATOR);
+    return !!(_getFlags(this) & IS_ITERATOR);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
@@ -721,7 +826,7 @@ export class PyProxy {
     "isAwaitable() is deprecated. Use `instanceof pyodide.ffi.PyAwaitable` instead.",
   )
   isAwaitable(): this is PyAwaitable {
-    return !!(this.$$flags & IS_AWAITABLE);
+    return !!(_getFlags(this) & IS_AWAITABLE);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
@@ -731,7 +836,7 @@ export class PyProxy {
     "isBuffer() is deprecated. Use `instanceof pyodide.ffi.PyBuffer` instead.",
   )
   isBuffer(): this is PyBuffer {
-    return !!(this.$$flags & IS_BUFFER);
+    return !!(_getFlags(this) & IS_BUFFER);
   }
   /**
    * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
@@ -741,7 +846,7 @@ export class PyProxy {
     "isCallable() is deprecated. Use `instanceof pyodide.ffi.PyCallable` instead.",
   )
   isCallable(): this is PyCallable {
-    return !!(this.$$flags & IS_CALLABLE);
+    return !!(_getFlags(this) & IS_CALLABLE);
   }
 }
 
@@ -766,7 +871,7 @@ globalThis.PyProxyFunction = PyProxyFunction;
 export class PyProxyWithLength extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_LENGTH);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_LENGTH);
   }
 }
 
@@ -783,13 +888,13 @@ export class PyLengthMethods {
     let length;
     try {
       Py_ENTER();
-      length = Module._PyObject_Size(ptrobj);
+      length = _PyObject_Size(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (length === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return length;
   }
@@ -802,7 +907,7 @@ export class PyLengthMethods {
 export class PyProxyWithGet extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_GET);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_GET);
   }
 }
 
@@ -818,26 +923,23 @@ export class PyGetItemMethods {
    * @returns The corresponding value.
    */
   get(key: any): any {
-    let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
-    let idresult;
+    const ptrobj = _getPtr(this);
+    let result;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxy_getitem(ptrobj, idkey);
+      result = __pyproxy_getitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
-    if (idresult === 0) {
-      if (Module._PyErr_Occurred()) {
-        Module._pythonexc2js();
+    if (result === null) {
+      if (_PyErr_Occurred()) {
+        _pythonexc2js();
       } else {
         return undefined;
       }
     }
-    return Hiwire.pop_value(idresult);
+    return result;
   }
 }
 
@@ -848,7 +950,7 @@ export class PyGetItemMethods {
 export class PyProxyWithSet extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_SET);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_SET);
   }
 }
 
@@ -864,21 +966,16 @@ export class PySetItemMethods {
    */
   set(key: any, value: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
-    let idval = Hiwire.new_value(value);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_setitem(ptrobj, idkey, idval);
+      err = __pyproxy_setitem(ptrobj, key, value);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
-      Hiwire.decref(idval);
     }
-    if (errcode === -1) {
-      Module._pythonexc2js();
+    if (err === -1) {
+      _pythonexc2js();
     }
   }
   /**
@@ -888,19 +985,16 @@ export class PySetItemMethods {
    */
   delete(key: any) {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_delitem(ptrobj, idkey);
+      err = __pyproxy_delitem(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
-    if (errcode === -1) {
-      Module._pythonexc2js();
+    if (err === -1) {
+      _pythonexc2js();
     }
   }
 }
@@ -912,7 +1006,7 @@ export class PySetItemMethods {
 export class PyProxyWithHas extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & HAS_CONTAINS);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & HAS_CONTAINS);
   }
 }
 
@@ -929,19 +1023,16 @@ export class PyContainsMethods {
    */
   has(key: any): boolean {
     let ptrobj = _getPtr(this);
-    let idkey = Hiwire.new_value(key);
     let result;
     try {
       Py_ENTER();
-      result = Module.__pyproxy_contains(ptrobj, idkey);
+      result = __pyproxy_contains(ptrobj, key);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idkey);
     }
     if (result === -1) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
     return result === 1;
   }
@@ -961,27 +1052,26 @@ export class PyContainsMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
   try {
     while (true) {
       Py_ENTER();
-      const item = Module.__pyproxy_iter_next(iterptr);
-      if (item === 0) {
+      const item = __pyproxy_iter_next(iterptr);
+      if (item === null) {
         break;
       }
       Py_EXIT();
-      yield Hiwire.pop_value(item);
+      yield item;
     }
   } catch (e) {
     API.fatal_error(e);
   } finally {
     Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
+    _Py_DecRef(iterptr);
   }
-  if (Module._PyErr_Occurred()) {
-    Module._pythonexc2js();
+  if (_PyErr_Occurred()) {
+    _pythonexc2js();
   }
 }
 
@@ -992,7 +1082,9 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
 export class PyIterable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & (IS_ITERABLE | IS_ITERATOR));
+    return (
+      API.isPyProxy(obj) && !!(_getFlags(obj) & (IS_ITERABLE | IS_ITERATOR))
+    );
   }
 }
 
@@ -1019,13 +1111,13 @@ export class PyIterableMethods {
     let iterptr;
     try {
       Py_ENTER();
-      iterptr = Module._PyObject_GetIter(ptrobj);
+      iterptr = _PyObject_GetIter(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (iterptr === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
 
     let result = iter_helper(iterptr, token);
@@ -1048,20 +1140,18 @@ export class PyIterableMethods {
  * Quote from:
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
- * @private
  */
 async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
   try {
     while (true) {
-      let item, p;
+      let p;
       try {
         Py_ENTER();
-        item = Module.__pyproxy_aiter_next(iterptr);
+        p = __pyproxy_aiter_next(iterptr);
         Py_EXIT();
-        if (item === 0) {
+        if (p === null) {
           break;
         }
-        p = Hiwire.pop_value(item);
       } catch (e) {
         API.fatal_error(e);
       }
@@ -1082,10 +1172,10 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
     }
   } finally {
     Module.finalizationRegistry.unregister(token);
-    Module._Py_DecRef(iterptr);
+    _Py_DecRef(iterptr);
   }
-  if (Module._PyErr_Occurred()) {
-    Module._pythonexc2js();
+  if (_PyErr_Occurred()) {
+    _pythonexc2js();
   }
 }
 
@@ -1098,7 +1188,7 @@ export class PyAsyncIterable extends PyProxy {
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
     return (
       API.isPyProxy(obj) &&
-      !!(obj.$$flags & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
+      !!(_getFlags(obj) & (IS_ASYNC_ITERABLE | IS_ASYNC_ITERATOR))
     );
   }
 }
@@ -1118,13 +1208,13 @@ export class PyAsyncIterableMethods {
     let iterptr;
     try {
       Py_ENTER();
-      iterptr = Module._PyObject_GetAIter(ptrobj);
+      iterptr = _PyObject_GetAIter(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
     if (iterptr === 0) {
-      Module._pythonexc2js();
+      _pythonexc2js();
     }
 
     let result = aiter_helper(iterptr, token);
@@ -1140,7 +1230,7 @@ export class PyAsyncIterableMethods {
 export class PyIterator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ITERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ITERATOR);
   }
 }
 
@@ -1173,28 +1263,19 @@ export class PyIteratorMethods {
   next(arg: any = undefined): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Hiwire.new_value(arg);
-    let status;
+    let result;
     let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_Send(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_Send(_getPtr(this), arg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 }
 
@@ -1205,7 +1286,7 @@ export class PyIteratorMethods {
 export class PyGenerator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_GENERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_GENERATOR);
   }
 }
 
@@ -1226,28 +1307,18 @@ export class PyGeneratorMethods {
    * true, value : result_value}``.
    */
   throw(exc: any): IteratorResult<any, any> {
-    let idarg = Hiwire.new_value(exc);
-    let status;
-    let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
+    let result;
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_throw(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_throw(_getPtr(this), exc);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 
   /**
@@ -1269,28 +1340,18 @@ export class PyGeneratorMethods {
   return(v: any): IteratorResult<any, any> {
     // Note: arg is optional, if arg is not supplied, it will be undefined
     // which gets converted to "Py_None". This is as intended.
-    let idarg = Hiwire.new_value(v);
-    let status;
-    let done;
-    let stackTop = stackSave();
-    let res_ptr = stackAlloc(4);
+    let result: IteratorResult<any, any>;
     try {
       Py_ENTER();
-      status = Module.__pyproxyGen_return(_getPtr(this), idarg, res_ptr);
+      result = __pyproxyGen_return(_getPtr(this), v);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    let idresult = DEREF_U32(res_ptr, 0);
-    stackRestore(stackTop);
-    if (status === PYGEN_ERROR) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    let value = Hiwire.pop_value(idresult);
-    done = status === PYGEN_RETURN;
-    return { done, value };
+    return result;
   }
 }
 
@@ -1301,7 +1362,7 @@ export class PyGeneratorMethods {
 export class PyAsyncIterator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_ITERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_ITERATOR);
   }
 }
 
@@ -1327,21 +1388,17 @@ export class PyAsyncIteratorMethods {
    * ``{done : true }``.
    */
   async next(arg: any = undefined): Promise<IteratorResult<any, any>> {
-    let idarg = Hiwire.new_value(arg);
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_asend(_getPtr(this), idarg);
+      p = __pyproxyGen_asend(_getPtr(this), arg);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    if (idresult === 0) {
-      Module._pythonexc2js();
+    if (p === null) {
+      _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -1369,7 +1426,7 @@ export class PyAsyncIteratorMethods {
 export class PyAsyncGenerator extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_ASYNC_GENERATOR);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_ASYNC_GENERATOR);
   }
 }
 
@@ -1390,21 +1447,17 @@ export class PyAsyncGeneratorMethods {
    * true, value : result_value}``.
    */
   async throw(exc: any): Promise<IteratorResult<any, any>> {
-    let idarg = Hiwire.new_value(exc);
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_athrow(_getPtr(this), idarg);
+      p = __pyproxyGen_athrow(_getPtr(this), exc);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(idarg);
     }
-    if (idresult === 0) {
-      Module._pythonexc2js();
+    if (p === null) {
+      _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -1439,18 +1492,17 @@ export class PyAsyncGeneratorMethods {
    * exception, ``return`` returns ``{done : true, value : result_value}``.
    */
   async return(v: any): Promise<IteratorResult<any, any>> {
-    let idresult;
+    let p;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxyGen_areturn(_getPtr(this));
+      p = __pyproxyGen_areturn(_getPtr(this));
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (idresult === 0) {
-      Module._pythonexc2js();
+    if (p === null) {
+      _pythonexc2js();
     }
-    const p = Hiwire.pop_value(idresult);
     let value;
     try {
       value = await p;
@@ -1477,7 +1529,7 @@ export class PyAsyncGeneratorMethods {
 export class PySequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
 
@@ -1499,6 +1551,7 @@ function defaultCompareFunc(a: any, b: any): number {
 // Missing:
 // flatMap, flat,
 export class PySequenceMethods {
+  /** @hidden */
   get [Symbol.isConcatSpreadable]() {
     return true;
   }
@@ -1571,10 +1624,11 @@ export class PySequenceMethods {
    * return value is added as a single element in the new array.
    * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
    */
-  map(
-    callbackfn: (elt: any, index: number, array: any) => void,
+  map<U>(
+    callbackfn: (elt: any, index: number, array: any) => U,
     thisArg?: any,
-  ) {
+  ): U[] {
+    // @ts-ignore
     return Array.prototype.map.call(this, callbackfn, thisArg);
   }
   /**
@@ -1760,7 +1814,7 @@ export class PySequenceMethods {
 export class PyMutableSequence extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_SEQUENCE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_SEQUENCE);
   }
 }
 
@@ -1768,22 +1822,23 @@ export interface PyMutableSequence extends PyMutableSequenceMethods {}
 
 export class PyMutableSequenceMethods {
   /**
-   * The :js:meth:`Array.reverse` method reverses a ``MutableSequence`` in
+   * The :js:meth:`Array.reverse` method reverses a :js:class:`PyMutableSequence` in
    * place.
-   * @returns A reference to the same ``MutableSequence``
+   * @returns A reference to the same :js:class:`PyMutableSequence`
    */
-  reverse() {
+  reverse(): PyMutableSequence {
     // @ts-ignore
     this.$reverse();
+    // @ts-ignore
     return this;
   }
   /**
    * The :js:meth:`Array.sort` method sorts the elements of a
-   * ``MutableSequence`` in place.
+   * :js:class:`PyMutableSequence` in place.
    * @param compareFn A function that defines the sort order.
-   * @returns A reference to the same ``MutableSequence``
+   * @returns A reference to the same :js:class:`PyMutableSequence`
    */
-  sort(compareFn?: (a: any, b: any) => number) {
+  sort(compareFn?: (a: any, b: any) => number): PyMutableSequence {
     // Copy the behavior of sort described here:
     // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#creating_displaying_and_sorting_an_array
     // Yes JS sort is weird.
@@ -1823,17 +1878,18 @@ export class PyMutableSequenceMethods {
       cmp_to_key.destroy();
       functools.destroy();
     }
+    // @ts-ignore
     return this;
   }
   /**
    * The :js:meth:`Array.splice` method changes the contents of a
-   * ``MutableSequence`` by removing or replacing existing elements and/or
+   * :js:class:`PyMutableSequence` by removing or replacing existing elements and/or
    * adding new elements in place.
    * @param start Zero-based index at which to start changing the
-   * ``MutableSequence``.
+   * :js:class:`PyMutableSequence`.
    * @param deleteCount An integer indicating the number of elements in the
-   * ``MutableSequence`` to remove from ``start``.
-   * @param items The elements to add to the ``MutableSequence``, beginning from
+   * :js:class:`PyMutableSequence` to remove from ``start``.
+   * @param items The elements to add to the :js:class:`PyMutableSequence`, beginning from
    * ``start``.
    * @returns An array containing the deleted elements.
    */
@@ -1846,8 +1902,8 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.push` method adds the specified elements to the end of
-   * a ``MutableSequence``.
-   * @param elts The element(s) to add to the end of the ``MutableSequence``.
+   * a :js:class:`PyMutableSequence`.
+   * @param elts The element(s) to add to the end of the :js:class:`PyMutableSequence`.
    * @returns The new length property of the object upon which the method was
    * called.
    */
@@ -1861,27 +1917,27 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.pop` method removes the last element from a
-   * ``MutableSequence``.
-   * @returns The removed element from the ``MutableSequence``; undefined if the
-   * ``MutableSequence`` is empty.
+   * :js:class:`PyMutableSequence`.
+   * @returns The removed element from the :js:class:`PyMutableSequence`; undefined if the
+   * :js:class:`PyMutableSequence` is empty.
    */
   pop() {
     return python_pop(this, false);
   }
   /**
    * The :js:meth:`Array.shift` method removes the first element from a
-   * ``MutableSequence``.
-   * @returns The removed element from the ``MutableSequence``; undefined if the
-   * ``MutableSequence`` is empty.
+   * :js:class:`PyMutableSequence`.
+   * @returns The removed element from the :js:class:`PyMutableSequence`; undefined if the
+   * :js:class:`PyMutableSequence` is empty.
    */
   shift() {
     return python_pop(this, true);
   }
   /**
    * The :js:meth:`Array.unshift` method adds the specified elements to the
-   * beginning of a ``MutableSequence``.
-   * @param elts The elements to add to the front of the ``MutableSequence``.
-   * @returns The new length of the ``MutableSequence``.
+   * beginning of a :js:class:`PyMutableSequence`.
+   * @param elts The elements to add to the front of the :js:class:`PyMutableSequence`.
+   * @returns The new length of the :js:class:`PyMutableSequence`.
    */
   unshift(...elts: any[]) {
     elts.forEach((elt, idx) => {
@@ -1893,12 +1949,12 @@ export class PyMutableSequenceMethods {
   }
   /**
    * The :js:meth:`Array.copyWithin` method shallow copies part of a
-   * ``MutableSequence`` to another location in the same ``MutableSequence``
+   * :js:class:`PyMutableSequence` to another location in the same :js:class:`PyMutableSequence`
    * without modifying its length.
    * @param target Zero-based index at which to copy the sequence to.
    * @param start Zero-based index at which to start copying elements from.
    * @param end Zero-based index at which to end copying elements from.
-   * @returns The modified ``MutableSequence``.
+   * @returns The modified :js:class:`PyMutableSequence`.
    */
   copyWithin(target: number, start?: number, end?: number): any;
   copyWithin(...args: number[]): any {
@@ -1929,83 +1985,70 @@ export class PyMutableSequenceMethods {
 // invariants, and to deal with the mro
 function python_hasattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
   let result;
   try {
     Py_ENTER();
-    result = Module.__pyproxy_hasattr(ptrobj, idkey);
+    result = __pyproxy_hasattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
   if (result === -1) {
-    Module._pythonexc2js();
+    _pythonexc2js();
   }
   return result !== 0;
 }
 
 // Returns a JsRef in order to allow us to differentiate between "not found"
 // (in which case we return 0) and "found 'None'" (in which case we return
-// Js_undefined).
-function python_getattr(jsobj: PyProxy, jskey: any) {
-  let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
-  let idresult;
-  let cacheId = jsobj.$$.cache.cacheId;
+// undefined).
+function python_getattr(jsobj: PyProxy, key: any) {
+  const { shared } = _getAttrs(jsobj);
+  let cache = shared.cache.map;
+  let result;
   try {
     Py_ENTER();
-    idresult = Module.__pyproxy_getattr(ptrobj, idkey, cacheId);
+    result = __pyproxy_getattr(shared.ptr, key, cache);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
-  if (idresult === 0) {
-    if (Module._PyErr_Occurred()) {
-      Module._pythonexc2js();
+  if (result === null) {
+    if (_PyErr_Occurred()) {
+      _pythonexc2js();
     }
+    return undefined;
   }
-  return idresult;
+  return result;
 }
 
 function python_setattr(jsobj: PyProxy, jskey: any, jsval: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
-  let idval = Hiwire.new_value(jsval);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = Module.__pyproxy_setattr(ptrobj, idkey, idval);
+    err = __pyproxy_setattr(ptrobj, jskey, jsval);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
-    Hiwire.decref(idval);
   }
-  if (errcode === -1) {
-    Module._pythonexc2js();
+  if (err === -1) {
+    _pythonexc2js();
   }
 }
 
 function python_delattr(jsobj: PyProxy, jskey: any) {
   let ptrobj = _getPtr(jsobj);
-  let idkey = Hiwire.new_value(jskey);
-  let errcode;
+  let err;
   try {
     Py_ENTER();
-    errcode = Module.__pyproxy_delattr(ptrobj, idkey);
+    err = __pyproxy_delattr(ptrobj, jskey);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idkey);
   }
-  if (errcode === -1) {
-    Module._pythonexc2js();
+  if (err === -1) {
+    _pythonexc2js();
   }
 }
 
@@ -2014,39 +2057,36 @@ function python_slice_assign(
   start: number,
   stop: number,
   val: any,
-): void {
+): any[] {
   let ptrobj = _getPtr(jsobj);
-  let idval = Hiwire.new_value(val);
   let res;
   try {
     Py_ENTER();
-    res = Module.__pyproxy_slice_assign(ptrobj, start, stop, idval);
+    res = __pyproxy_slice_assign(ptrobj, start, stop, val);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
-  } finally {
-    Hiwire.decref(idval);
   }
-  if (res === 0) {
-    Module._pythonexc2js();
+  if (res === null) {
+    _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
-function python_pop(jsobj: any, pop_start: boolean): void {
+function python_pop(jsobj: any, pop_start: boolean): any {
   let ptrobj = _getPtr(jsobj);
   let res;
   try {
     Py_ENTER();
-    res = Module.__pyproxy_pop(ptrobj, pop_start);
+    res = __pyproxy_pop(ptrobj, pop_start);
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === 0) {
-    Module._pythonexc2js();
+  if (res === null) {
+    _pythonexc2js();
   }
-  return Hiwire.pop_value(res);
+  return res;
 }
 
 function filteredHasKey(
@@ -2105,7 +2145,6 @@ const PyProxyHandlers = {
     // Preference order:
     // 1. stuff from JavaScript
     // 2. the result of Python getattr
-
     // python_getattr will crash if given a Symbol.
     if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
@@ -2116,18 +2155,15 @@ const PyProxyHandlers = {
       jskey = jskey.slice(1);
     }
     // 2. The result of getattr
-    let idresult = python_getattr(jsobj, jskey);
-    if (idresult !== 0) {
-      return Hiwire.pop_value(idresult);
-    }
+    return python_getattr(jsobj, jskey);
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot set read only field '${String(jskey)}'`);
+    if (descr && !descr.writable && !descr.set) {
+      return false;
     }
     // python_setattr will crash if given a Symbol.
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.set(jsobj, jskey, jsval);
     }
     if (jskey.startsWith("$")) {
@@ -2138,34 +2174,36 @@ const PyProxyHandlers = {
   },
   deleteProperty(jsobj: PyProxy, jskey: string | symbol): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
-    if (descr && !descr.writable) {
-      throw new TypeError(`Cannot delete read only field '${String(jskey)}'`);
+    if (descr && !descr.configurable) {
+      // Must return "false" if "jskey" is a nonconfigurable own property.
+      // Otherwise JavaScript will throw a TypeError.
+      // Strict mode JS will throw an error here saying that the property cannot
+      // be deleted. It's good to leave everything alone so that the behavior is
+      // consistent with the error message.
+      return false;
     }
-    if (typeof jskey === "symbol") {
+    if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.deleteProperty(jsobj, jskey);
     }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
     python_delattr(jsobj, jskey);
-    // Must return "false" if "jskey" is a nonconfigurable own property.
-    // Otherwise JavaScript will throw a TypeError.
-    return !descr || !!descr.configurable;
+    return true;
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     let ptrobj = _getPtr(jsobj);
-    let idresult;
+    let result;
     try {
       Py_ENTER();
-      idresult = Module.__pyproxy_ownKeys(ptrobj);
+      result = __pyproxy_ownKeys(ptrobj);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (idresult === 0) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
-    let result = Hiwire.pop_value(idresult);
     result.push(...Reflect.ownKeys(jsobj));
     return result;
   },
@@ -2253,7 +2291,7 @@ const PyProxySequenceHandlers = {
 export class PyAwaitable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyProxy {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_AWAITABLE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_AWAITABLE);
   }
 }
 
@@ -2263,7 +2301,6 @@ export type PyProxyAwaitable = PyAwaitable;
 
 /**
  * The Promise / JavaScript awaitable API.
- * @private
  */
 export class PyAwaitableMethods {
   $$: any;
@@ -2274,37 +2311,33 @@ export class PyAwaitableMethods {
    * @private
    */
   _ensure_future(): Promise<any> {
-    if (this.$$.promise) {
-      return this.$$.promise;
+    const { shared } = _getAttrsQuiet(this);
+    if (shared.promise) {
+      return shared.promise;
     }
-    let ptrobj = _getPtr(this);
-    let resolveHandle;
-    let rejectHandle;
+    const ptr = shared.ptr;
+    if (!ptr) {
+      // Destroyed and promise wasn't resolved. Raise error!
+      _getAttrs(this);
+    }
+    let resolveHandle: (v: any) => void;
+    let rejectHandle: (e: any) => void;
     let promise = new Promise((resolve, reject) => {
       resolveHandle = resolve;
       rejectHandle = reject;
     });
-    let resolve_handle_id = Hiwire.new_value(resolveHandle);
-    let reject_handle_id = Hiwire.new_value(rejectHandle);
-    let errcode;
+    let err;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_ensure_future(
-        ptrobj,
-        resolve_handle_id,
-        reject_handle_id,
-      );
+      err = __pyproxy_ensure_future(ptr, resolveHandle!, rejectHandle!);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
-    } finally {
-      Hiwire.decref(reject_handle_id);
-      Hiwire.decref(resolve_handle_id);
     }
-    if (errcode === -1) {
-      Module._pythonexc2js();
+    if (err === -1) {
+      _pythonexc2js();
     }
-    this.$$.promise = promise;
+    shared.promise = promise;
     // @ts-ignore
     this.destroy();
     return promise;
@@ -2363,12 +2396,12 @@ export class PyAwaitableMethods {
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is
- * :std:term:`callable` (i.e., has an :py:meth:`~operator.__call__` method).
+ * :std:term:`callable` (i.e., has an :py:meth:`~object.__call__` method).
  */
 export class PyCallable extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyCallable {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_CALLABLE);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_CALLABLE);
   }
 }
 
@@ -2438,6 +2471,10 @@ export class PyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
+  callSyncifying(...jsargs: any) {
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+  }
+
   /**
    * The ``bind()`` method creates a new function that, when called, has its
    * ``this`` keyword set to the provided value, with a given sequence of
@@ -2457,25 +2494,23 @@ export class PyCallableMethods {
    * @returns
    */
   bind(thisArg: any, ...jsargs: any) {
-    const self = this as unknown as PyProxy;
-    const {
-      boundArgs: boundArgsOld,
-      boundThis: boundThisOld,
-      isBound,
-    } = self.$$props;
+    let { shared, props } = _getAttrs(this);
+    const { boundArgs: boundArgsOld, boundThis: boundThisOld, isBound } = props;
     let boundThis = thisArg;
     if (isBound) {
       boundThis = boundThisOld;
     }
     let boundArgs = boundArgsOld.concat(jsargs);
-    const props: PyProxyProps = Object.assign({}, self.$$props, {
+    props = Object.assign({}, props, {
       boundArgs,
       isBound: true,
       boundThis,
     });
-    const $$ = self.$$;
-    let ptrobj = _getPtr(this);
-    return pyproxy_new(ptrobj, { $$, flags: self.$$flags, props });
+    return pyproxy_new(shared.ptr, {
+      shared,
+      flags: _getFlags(this),
+      props,
+    });
   }
 
   /**
@@ -2508,13 +2543,13 @@ export class PyCallableMethods {
    *
    */
   captureThis(): PyProxy {
-    const self = this as unknown as PyProxy;
-    const props: PyProxyProps = Object.assign({}, self.$$props, {
+    let { props, shared } = _getAttrs(this);
+    props = Object.assign({}, props, {
       captureThis: true,
     });
-    return pyproxy_new(_getPtr(this), {
-      $$: self.$$,
-      flags: self.$$flags,
+    return pyproxy_new(shared.ptr, {
+      shared,
+      flags: _getFlags(this),
       props,
     });
   }
@@ -2552,7 +2587,7 @@ let type_to_array_map: Map<string, any> = new Map([
 export class PyBuffer extends PyProxy {
   /** @private */
   static [Symbol.hasInstance](obj: any): obj is PyBuffer {
-    return API.isPyProxy(obj) && !!(obj.$$flags & IS_BUFFER);
+    return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_BUFFER);
   }
 }
 
@@ -2591,40 +2626,32 @@ export class PyBufferMethods {
         throw new Error(`Unknown type ${type}`);
       }
     }
-    let orig_stack_ptr = stackSave();
-    let buffer_struct_ptr = stackAlloc(
-      DEREF_U32(Module._buffer_struct_size, 0),
-    );
     let this_ptr = _getPtr(this);
-    let errcode;
+    let result;
     try {
       Py_ENTER();
-      errcode = Module.__pyproxy_get_buffer(buffer_struct_ptr, this_ptr);
+      result = __pyproxy_get_buffer(this_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (errcode === -1) {
-      Module._pythonexc2js();
+    if (result === null) {
+      _pythonexc2js();
     }
 
-    // This has to match the fields in buffer_struct
-    let startByteOffset = DEREF_U32(buffer_struct_ptr, 0);
-    let minByteOffset = DEREF_U32(buffer_struct_ptr, 1);
-    let maxByteOffset = DEREF_U32(buffer_struct_ptr, 2);
-
-    let readonly = !!DEREF_U32(buffer_struct_ptr, 3);
-    let format_ptr = DEREF_U32(buffer_struct_ptr, 4);
-    let itemsize = DEREF_U32(buffer_struct_ptr, 5);
-    let shape = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 6));
-    let strides = Hiwire.pop_value(DEREF_U32(buffer_struct_ptr, 7));
-
-    let view_ptr = DEREF_U32(buffer_struct_ptr, 8);
-    let c_contiguous = !!DEREF_U32(buffer_struct_ptr, 9);
-    let f_contiguous = !!DEREF_U32(buffer_struct_ptr, 10);
-
-    let format = Module.UTF8ToString(format_ptr);
-    stackRestore(orig_stack_ptr);
+    const {
+      start_ptr,
+      smallest_ptr,
+      largest_ptr,
+      readonly,
+      format,
+      itemsize,
+      shape,
+      strides,
+      view,
+      c_contiguous,
+      f_contiguous,
+    } = result;
 
     let success = false;
     try {
@@ -2646,24 +2673,24 @@ export class PyBufferMethods {
             "to little endian.",
         );
       }
-      let numBytes = maxByteOffset - minByteOffset;
+      let numBytes = largest_ptr - smallest_ptr;
       if (
         numBytes !== 0 &&
-        (startByteOffset % alignment !== 0 ||
-          minByteOffset % alignment !== 0 ||
-          maxByteOffset % alignment !== 0)
+        (start_ptr % alignment !== 0 ||
+          smallest_ptr % alignment !== 0 ||
+          largest_ptr % alignment !== 0)
       ) {
         throw new Error(
           `Buffer does not have valid alignment for a ${ArrayType.name}`,
         );
       }
       let numEntries = numBytes / alignment;
-      let offset = (startByteOffset - minByteOffset) / alignment;
+      let offset = (start_ptr - smallest_ptr) / alignment;
       let data;
       if (numBytes === 0) {
         data = new ArrayType();
       } else {
-        data = new ArrayType(HEAPU32.buffer, minByteOffset, numEntries);
+        data = new ArrayType(HEAPU32.buffer, smallest_ptr, numEntries);
       }
       for (let i of strides.keys()) {
         strides[i] /= alignment;
@@ -2684,7 +2711,7 @@ export class PyBufferMethods {
           data,
           c_contiguous,
           f_contiguous,
-          _view_ptr: view_ptr,
+          _view_ptr: view,
           _released: false,
         }),
       );
@@ -2694,8 +2721,8 @@ export class PyBufferMethods {
       if (!success) {
         try {
           Py_ENTER();
-          Module._PyBuffer_Release(view_ptr);
-          Module._PyMem_Free(view_ptr);
+          _PyBuffer_Release(view);
+          _PyMem_Free(view);
           Py_EXIT();
         } catch (e) {
           API.fatal_error(e);
@@ -2704,17 +2731,6 @@ export class PyBufferMethods {
     }
   }
 }
-
-export type TypedArray =
-  | Int8Array
-  | Uint8Array
-  | Int16Array
-  | Uint16Array
-  | Int32Array
-  | Uint32Array
-  | Uint8ClampedArray
-  | Float32Array
-  | Float64Array;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object is a :py:class:`dict`.
@@ -2879,10 +2895,8 @@ export class PyBufferView {
    */
   f_contiguous: boolean;
 
-  /** @private */
   _released: boolean;
 
-  /** @private */
   _view_ptr: number;
 
   /** @private */
@@ -2900,8 +2914,8 @@ export class PyBufferView {
     // Module.bufferFinalizationRegistry.unregister(this);
     try {
       Py_ENTER();
-      Module._PyBuffer_Release(this._view_ptr);
-      Module._PyMem_Free(this._view_ptr);
+      _PyBuffer_Release(this._view_ptr);
+      _PyMem_Free(this._view_ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);

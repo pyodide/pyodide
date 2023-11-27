@@ -1,12 +1,11 @@
-// Detect if we're in node
-declare var process: any;
-
-export const IN_NODE =
-  typeof process === "object" &&
-  typeof process.versions === "object" &&
-  typeof process.versions.node === "string" &&
-  typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+import ErrorStackParser from "error-stack-parser";
+import {
+  IN_NODE,
+  IN_NODE_ESM,
+  IN_BROWSER_MAIN_THREAD,
+  IN_BROWSER_WEB_WORKER,
+  IN_NODE_COMMONJS,
+} from "./environments";
 
 let nodeUrlMod: any;
 let nodeFetch: any;
@@ -20,6 +19,13 @@ declare var globalThis: {
   document?: any;
   fetch?: any;
 };
+
+const FETCH_NOT_FOUND_MSG = `\
+"fetch" is not defined, maybe you're using node < 18? \
+From Pyodide >= 0.25.0, node >= 18 is required. \
+Older versions of Node.js may work, but it is not guaranteed or supported. \
+Falling back to "node-fetch".\
+`;
 
 /**
  * If we're in node, it's most convenient to import various node modules on
@@ -36,6 +42,8 @@ export async function initNodeModules() {
   if (globalThis.fetch) {
     nodeFetch = fetch;
   } else {
+    // @ts-ignore
+    console.warn(FETCH_NOT_FOUND_MSG);
     // @ts-ignore
     nodeFetch = (await import("node-fetch")).default;
   }
@@ -111,25 +119,29 @@ if (!IN_NODE) {
  * @returns An ArrayBuffer containing the binary data
  * @private
  */
-async function node_loadBinaryFile(
+function node_getBinaryResponse(
   path: string,
   _file_sub_resource_hash?: string | undefined, // Ignoring sub resource hash. See issue-2431.
-): Promise<Uint8Array> {
+):
+  | { response: Promise<Response>; binary?: undefined }
+  | { binary: Promise<Uint8Array> } {
   if (path.startsWith("file://")) {
     // handle file:// with filesystem operations rather than with fetch.
     path = path.slice("file://".length);
   }
   if (path.includes("://")) {
     // If it has a protocol, make a fetch request
-    let response = await nodeFetch(path);
-    if (!response.ok) {
-      throw new Error(`Failed to load '${path}': request failed.`);
-    }
-    return new Uint8Array(await response.arrayBuffer());
+    return { response: nodeFetch(path) };
   } else {
     // Otherwise get it from the file system
-    const data = await nodeFsPromisesMod.readFile(path);
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    return {
+      binary: nodeFsPromisesMod
+        .readFile(path)
+        .then(
+          (data: Buffer) =>
+            new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
+        ),
+    };
   }
 }
 
@@ -142,30 +154,41 @@ async function node_loadBinaryFile(
  * @returns A Uint8Array containing the binary data
  * @private
  */
-async function browser_loadBinaryFile(
+function browser_getBinaryResponse(
   path: string,
   subResourceHash: string | undefined,
-): Promise<Uint8Array> {
-  // @ts-ignore
-  const url = new URL(path, location);
+): { response: Promise<Response>; binary?: undefined } {
+  const url = new URL(path, location as unknown as URL);
   let options = subResourceHash ? { integrity: subResourceHash } : {};
-  // @ts-ignore
-  let response = await fetch(url, options);
-  if (!response.ok) {
-    throw new Error(`Failed to load '${url}': request failed.`);
-  }
-  return new Uint8Array(await response.arrayBuffer());
+  return { response: fetch(url, options) };
 }
 
 /** @private */
-export let loadBinaryFile: (
+export let getBinaryResponse: (
   path: string,
   file_sub_resource_hash?: string | undefined,
-) => Promise<Uint8Array>;
+) =>
+  | { response: Promise<Response>; binary?: undefined }
+  | { response?: undefined; binary: Promise<Uint8Array> };
 if (IN_NODE) {
-  loadBinaryFile = node_loadBinaryFile;
+  getBinaryResponse = node_getBinaryResponse;
 } else {
-  loadBinaryFile = browser_loadBinaryFile;
+  getBinaryResponse = browser_getBinaryResponse;
+}
+
+export async function loadBinaryFile(
+  path: string,
+  file_sub_resource_hash?: string | undefined,
+): Promise<Uint8Array> {
+  const { response, binary } = getBinaryResponse(path, file_sub_resource_hash);
+  if (binary) {
+    return binary;
+  }
+  const r = await response;
+  if (!r.ok) {
+    throw new Error(`Failed to load '${path}': request failed.`);
+  }
+  return new Uint8Array(await r.arrayBuffer());
 }
 
 /**
@@ -176,10 +199,10 @@ if (IN_NODE) {
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (globalThis.document) {
+if (IN_BROWSER_MAIN_THREAD) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (globalThis.importScripts) {
+} else if (IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
     try {
@@ -218,4 +241,70 @@ async function nodeLoadScript(url: string) {
     // system.
     await import(/* webpackIgnore: true */ nodeUrlMod.pathToFileURL(url).href);
   }
+}
+
+// consider dropping this this once we drop support for node 14?
+function nodeBase16ToBase64(b16: string): string {
+  return Buffer.from(b16, "hex").toString("base64");
+}
+
+function browserBase16ToBase64(b16: string): string {
+  return btoa(
+    b16
+      .match(/\w{2}/g)!
+      .map(function (a) {
+        return String.fromCharCode(parseInt(a, 16));
+      })
+      .join(""),
+  );
+}
+
+export const base16ToBase64 = IN_NODE
+  ? nodeBase16ToBase64
+  : browserBase16ToBase64;
+
+export async function loadLockFile(lockFileURL: string): Promise<any> {
+  if (IN_NODE) {
+    await initNodeModules();
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    return JSON.parse(package_string);
+  } else {
+    let response = await fetch(lockFileURL);
+    return await response.json();
+  }
+}
+
+/**
+ * Calculate the directory name of the current module.
+ * This is used to guess the indexURL when it is not provided.
+ */
+export async function calculateDirname(): Promise<string> {
+  if (IN_NODE_COMMONJS) {
+    return __dirname;
+  }
+
+  let err: Error;
+  try {
+    throw new Error();
+  } catch (e) {
+    err = e as Error;
+  }
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
+
+  if (IN_NODE_ESM) {
+    const nodePath = await import("path");
+    const nodeUrl = await import("url");
+
+    // FIXME: We would like to use import.meta.url here,
+    // but mocha seems to mess with compiling typescript files to ES6.
+    return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
+  }
+
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
+  if (indexOfLastSlash === -1) {
+    throw new Error(
+      "Could not extract indexURL path from pyodide module location",
+    );
+  }
+  return fileName.slice(0, indexOfLastSlash);
 }

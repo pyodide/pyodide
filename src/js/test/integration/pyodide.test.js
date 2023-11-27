@@ -11,9 +11,16 @@ describe("Pyodide", () => {
   describe("micropip", () => {
     before(async () => {
       const factory = async () => {
-        await pyodide.loadPackage(["micropip"]);
+        return pyodide.loadPackage(["micropip"]);
       };
-      await chai.assert.isFulfilled(page.evaluate(factory));
+      const installedPackages = await chai.assert.isFulfilled(
+        page.evaluate(factory),
+      );
+      chai.assert.isNotEmpty(installedPackages);
+      chai.assert.include(
+        installedPackages.map((pkg) => pkg.name),
+        "micropip",
+      );
     });
 
     it("install", async () => {

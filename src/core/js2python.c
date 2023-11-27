@@ -11,40 +11,39 @@
 #include "pyproxy.h"
 
 // PyUnicodeDATA is a macro, we need to access it from JavaScript
-void*
+EMSCRIPTEN_KEEPALIVE void*
 PyUnicode_Data(PyObject* obj)
 {
   return PyUnicode_DATA(obj);
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_none()
 {
   Py_RETURN_NONE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_true()
 {
   Py_RETURN_TRUE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_false()
 {
   Py_RETURN_FALSE;
 }
 
-PyObject*
+EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_pyproxy(PyObject* val)
 {
   Py_INCREF(val);
   return val;
 }
 
-EM_JS_REF(PyObject*, js2python_immutable, (JsRef id), {
-  let value = Hiwire.get_value(id);
-  let result = Module.js2python_convertImmutable(value, id);
+EM_JS_REF(PyObject*, js2python_immutable_js, (JsVal value), {
+  let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
     // clang-format on
@@ -53,27 +52,35 @@ EM_JS_REF(PyObject*, js2python_immutable, (JsRef id), {
   return 0;
 });
 
-EM_JS_REF(PyObject*, js2python, (JsRef id), {
-  let value = Hiwire.get_value(id);
-  let result = Module.js2python_convertImmutable(value, id);
+EMSCRIPTEN_KEEPALIVE PyObject*
+js2python_immutable(JsVal val)
+{
+  return js2python_immutable_js(val);
+}
+
+EM_JS_REF(PyObject*, js2python_js, (JsVal value), {
+  let result = Module.js2python_convertImmutable(value);
   // clang-format off
   if (result !== undefined) {
     // clang-format on
     return result;
   }
-  return _JsProxy_create(id);
+  return _JsProxy_create(value);
 })
+
+EMSCRIPTEN_KEEPALIVE PyObject*
+js2python(JsVal val)
+{
+  return js2python_js(val);
+}
 
 /**
  * Convert a JavaScript object to Python to a given depth. This is the
  * implementation of `toJs`.
  */
 // clang-format off
-EM_JS_REF(PyObject*, js2python_convert, (JsRef id, int depth, JsRef default_converter), {
-  let defaultConverter = default_converter
-    ? Module.hiwire.get_value(default_converter)
-    : undefined;
-  return Module.js2python_convert(id, { depth, defaultConverter });
+EM_JS_REF(PyObject*, js2python_convert, (JsVal v, int depth, JsVal defaultConverter), {
+  return Module.js2python_convert(v, { depth, defaultConverter });
 });
 // clang-format on
 
