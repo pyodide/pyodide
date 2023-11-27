@@ -1,11 +1,11 @@
 package:
   name: pygame-ce
-  version: 2.1.4
+  version: 2.3.2
   top-level:
     - pygame
 source:
-  url: https://files.pythonhosted.org/packages/22/93/9e7640f46c46702641bfecd9ce0cbfb7d7366d7b638b77630006d273a45a/pygame-ce-2.1.4.tar.gz
-  sha256: 17244d4ef049e053bbd14e801f1a4c2ec0a65c069a3cf6793b66c622e15077bc
+  url: https://files.pythonhosted.org/packages/fc/29/b09e2fdc293db184c2c101feab812c5bd1137f97a030732a739cb7084661/pygame-ce-2.3.2.tar.gz
+  sha256: 3c54833eb0c3888872aa06a97d8ad4962b28432a3094f809abaf3c0d8f72523d
 build:
   script: |
     embuilder build sdl2 sdl2_ttf sdl2_mixer sdl2_image --pic
