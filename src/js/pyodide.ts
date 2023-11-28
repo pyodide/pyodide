@@ -14,6 +14,7 @@ import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { TypedArray, API, Module } from "./types";
+import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 
 export type {
@@ -31,7 +32,7 @@ export type {
   PyBufferView as PyBuffer,
 } from "generated/pyproxy";
 
-export { version };
+export { version, type PackageData };
 
 declare function _createPyodideModule(Module: any): Promise<void>;
 

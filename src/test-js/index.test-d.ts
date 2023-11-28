@@ -1,5 +1,5 @@
 import { expectType, expectAssignable } from "tsd";
-import { version, loadPyodide } from "pyodide";
+import { version, loadPyodide, PackageData } from "pyodide";
 
 import {
   PyProxy,
@@ -58,33 +58,37 @@ async function main() {
   expectType<Promise<any>>(pyodide.runPythonAsync("1+1"));
   expectType<Promise<any>>(pyodide.runPythonAsync("1+1", { globals: px }));
 
-  expectType<Promise<void>>(pyodide.loadPackagesFromImports("import some_pkg"));
-  expectType<Promise<void>>(
+  expectType<Promise<Array<PackageData>>>(
+    pyodide.loadPackagesFromImports("import some_pkg"),
+  );
+  expectType<Promise<Array<PackageData>>>(
     pyodide.loadPackagesFromImports("import some_pkg", {
       messageCallback: (x: any) => console.log(x),
     }),
   );
-  expectType<Promise<void>>(
+  expectType<Promise<Array<PackageData>>>(
     pyodide.loadPackagesFromImports("import some_pkg", {
       messageCallback: (x: any) => console.log(x),
       errorCallback: (x: any) => console.warn(x),
     }),
   );
 
-  expectType<Promise<void>>(pyodide.loadPackage("blah"));
-  expectType<Promise<void>>(pyodide.loadPackage(["blah", "blah2"]));
-  expectType<Promise<void>>(
+  expectType<Promise<Array<PackageData>>>(pyodide.loadPackage("blah"));
+  expectType<Promise<Array<PackageData>>>(
+    pyodide.loadPackage(["blah", "blah2"]),
+  );
+  expectType<Promise<Array<PackageData>>>(
     pyodide.loadPackage("blah", {
       messageCallback: (x: any) => console.log(x),
     }),
   );
-  expectType<Promise<void>>(
+  expectType<Promise<Array<PackageData>>>(
     pyodide.loadPackage(["blah", "blah2"], {
       messageCallback: (x: any) => console.log(x),
       errorCallback: (x: any) => console.warn(x),
     }),
   );
-  expectType<Promise<void>>(pyodide.loadPackage(px));
+  expectType<Promise<Array<PackageData>>>(pyodide.loadPackage(px));
 
   expectType<PyProxy>(pyodide.pyodide_py);
   expectType<void>(pyodide.registerJsModule("blah", { a: 7 }));

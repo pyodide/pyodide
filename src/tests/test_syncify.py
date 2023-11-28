@@ -23,7 +23,9 @@ def test_syncify_not_supported1(selenium_standalone_noload):
     )
 
 
-@pytest.mark.xfail_browsers(node="Scopes don't work as needed")
+@pytest.mark.xfail_browsers(
+    node="Scopes don't work as needed", safari="Doesn't have WebAssembly.Function?"
+)
 def test_syncify_not_supported2(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
