@@ -45,7 +45,7 @@ build:
     # WASM version of pygame uses a single module 'pygame_static',
     # and pygame_static calls PyInit_* functions from other modules.
     # This is okay when all these modules are bundled in a single module: libpython.
-    # But since we don't do that, we need to make load these modules globally, so that
+    # But since we don't do that, we need to load these modules globally, so that
     # pygame_static can see the symbols.
     STATIC_OBJ=$(find . -name static.o)
     echo $STATIC_OBJ
