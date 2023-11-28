@@ -11,7 +11,7 @@ const canonicalizeNameRegex = /[-_.]+/g;
  * @returns The normalized package name.
  */
 export function canonicalizePackageName(name: string): string {
-    return name.replace(canonicalizeNameRegex, '-').toLowerCase();
+  return name.replace(canonicalizeNameRegex, "-").toLowerCase();
 }
 
 // Regexp for validating package name and URI

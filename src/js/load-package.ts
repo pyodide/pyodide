@@ -11,8 +11,8 @@ import {
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
-import { makeWarnOnce } from "./pyodide_util";
-import { canonicalizePackageName, uriToPackageName } from "./packaging_utils";
+import { makeWarnOnce } from "./pyodide-util";
+import { canonicalizePackageName, uriToPackageName } from "./packaging-utils";
 
 /**
  * Initialize the packages index. This is called as early as possible in
