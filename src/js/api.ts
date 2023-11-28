@@ -3,7 +3,7 @@ import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { loadPackage, loadedPackages } from "./load-package";
+import { PackageData, loadPackage, loadedPackages } from "./load-package";
 import {
   PyBufferView,
   PyBuffer,
@@ -172,7 +172,7 @@ export class PyodideAPI {
     } = {
       checkIntegrity: true,
     },
-  ) {
+  ): Promise<Array<PackageData>> {
     let pyimports = API.pyodide_code.find_imports(code);
     let imports;
     try {
@@ -181,7 +181,7 @@ export class PyodideAPI {
       pyimports.destroy();
     }
     if (imports.length === 0) {
-      return;
+      return [];
     }
 
     let packageNames = API._import_name_to_package_name;
@@ -192,8 +192,9 @@ export class PyodideAPI {
       }
     }
     if (packages.size) {
-      await loadPackage(Array.from(packages), options);
+      return await loadPackage(Array.from(packages), options);
     }
+    return [];
   }
 
   /**
