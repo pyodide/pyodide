@@ -81,6 +81,7 @@ const DEFAULT_CHANNEL = "default channel";
 
 type PackageLoadMetadata = {
   name: string;
+  normalizedName: string;
   channel: string;
   depends: string[];
   done: ResolvablePromise;
@@ -146,34 +147,35 @@ function addPackageToLoad(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
 ) {
-  name = name.toLowerCase();
-  if (toLoad.has(name)) {
+  const normalizedName = canonicalizePackageName(name.toLowerCase());
+  if (toLoad.has(normalizedName)) {
     return;
   }
-  const pkg_info = API.lockfile_packages[name];
-  if (!pkg_info) {
+  const pkgInfo = API.lockfile_packages[normalizedName];
+  if (!pkgInfo) {
     throw new Error(`No known package with name '${name}'`);
   }
 
-  toLoad.set(name, {
-    name: name,
+  toLoad.set(normalizedName, {
+    name,
+    normalizedName,
     channel: DEFAULT_CHANNEL,
-    depends: pkg_info.depends,
+    depends: pkgInfo.depends,
     installPromise: undefined,
     done: createDonePromise(),
-    packageData: pkg_info,
+    packageData: pkgInfo,
   });
 
   // If the package is already loaded, we don't add dependencies, but warn
   // the user later. This is especially important if the loaded package is
   // from a custom url, in which case adding dependencies is wrong.
-  if (loadedPackages[name] !== undefined) {
+  if (loadedPackages[normalizedName] !== undefined) {
     return;
   }
 
-  for (let dep_name of pkg_info.depends) {
-    addPackageToLoad(dep_name, toLoad);
-  }
+  pkgInfo.depends.forEach(dependency => {
+    addPackageToLoad(dependency, toLoad);
+  })
 }
 
 /**
@@ -206,6 +208,7 @@ function recursiveDependencies(
     }
     toLoad.set(pkgname, {
       name: pkgname,
+      normalizedName: pkgname,
       channel: channel, // name is url in this case
       depends: [],
       installPromise: undefined,
@@ -332,7 +335,7 @@ async function installPackage(
 /**
  * Download and install the package.
  * Downloads can be done in parallel, but installs must be done for dependencies first.
- * @param name The name of the package
+ * @param normalizedName The normalized name of the package
  * @param toLoad The map of package names to PackageLoadMetadata
  * @param loaded The set of loaded package metadata, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
@@ -341,17 +344,17 @@ async function installPackage(
  * @private
  */
 async function downloadAndInstall(
-  name: string,
+  normalizedName: string,
   toLoad: Map<string, PackageLoadMetadata>,
   loaded: Set<InternalPackageData>,
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
-  if (loadedPackages[name] !== undefined) {
+  if (loadedPackages[normalizedName] !== undefined) {
     return;
   }
 
-  const pkg = toLoad.get(name)!;
+  const pkg = toLoad.get(normalizedName)!;
 
   try {
     const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
@@ -370,9 +373,9 @@ async function downloadAndInstall(
     if (pkg.packageData) {
       loaded.add(pkg.packageData);
     }
-    loadedPackages[pkg.name] = pkg.channel;
+    loadedPackages[normalizedName] = pkg.channel;
   } catch (err: any) {
-    failed.set(name, err);
+    failed.set(pkg.name, err);
     // We don't throw error when loading a package fails, but just report it.
     // pkg.done.reject(err);
   } finally {
@@ -381,12 +384,6 @@ async function downloadAndInstall(
 }
 
 const acquirePackageLock = createLock();
-
-const cbDeprecationWarnOnce = makeWarnOnce(
-  "Passing a messageCallback (resp. errorCallback) as the second (resp. third) argument to loadPackage " +
-    "is deprecated and will be removed in v0.24. Instead use:\n" +
-    "   { messageCallback : callbackFunc }",
-);
 
 function filterPackageData({
   name,
@@ -455,50 +452,50 @@ export async function loadPackage(
 
   const toLoad = recursiveDependencies(names, errorCallback);
 
-  for (const [pkg, pkg_metadata] of toLoad) {
-    const loaded = loadedPackages[pkg];
+  Object.values(toLoad).forEach(({ name, normalizedName, channel }) => {
+    const loaded = loadedPackages[normalizedName];
     if (loaded === undefined) {
-      continue;
+      return;
     }
-    toLoad.delete(pkg);
-    // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-    // dependency, which was previously overridden.
+
+    toLoad.delete(normalizedName);
+
     if (
-      loaded === pkg_metadata.channel ||
-      pkg_metadata.channel === DEFAULT_CHANNEL
+      loaded === channel ||
+      channel === DEFAULT_CHANNEL
     ) {
-      messageCallback(`${pkg} already loaded from ${loaded}`);
+      messageCallback(`${name} already loaded from ${loaded}`);
     } else {
       errorCallback(
-        `URI mismatch, attempting to load package ${pkg} from ${pkg_metadata.channel} ` +
+        `URI mismatch, attempting to load package ${name} from ${channel} ` +
           `while it is already loaded from ${loaded}. To override a dependency, ` +
           `load the custom package first.`,
       );
     }
-  }
+  });
 
   if (toLoad.size === 0) {
     messageCallback("No new packages to load");
     return [];
   }
 
-  const packageNames = [...toLoad.keys()].join(", ");
+  const packageNames = Object.values(toLoad).map(({ name }) => name);
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    for (const [name] of toLoad) {
-      if (loadedPackages[name]) {
+    for (const [normalizedName] of toLoad) {
+      if (loadedPackages[normalizedName]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
-        toLoad.delete(name);
+        toLoad.delete(normalizedName);
         continue;
       }
 
       // TODO: add support for prefetching modules by awaiting on a promise right
       // here which resolves in loadPyodide when the bootstrap is done.
-      toLoad.get(name)!.installPromise = downloadAndInstall(
-        name,
+      toLoad.get(normalizedName)!.installPromise = downloadAndInstall(
+        normalizedName,
         toLoad,
         loadedPackageData,
         failed,
@@ -507,7 +504,7 @@ export async function loadPackage(
     }
 
     await Promise.all(
-      Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
+      Object.values(toLoad).map(({ installPromise }) => installPromise),
     );
 
     Module.reportUndefinedSymbols();

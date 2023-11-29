@@ -7,7 +7,7 @@ const canonicalizeNameRegex = /[-_.]+/g;
 
 /**
  * Normalize a package name. Port of Python's packaging.utils.canonicalize_name.
- * @param package_name The package name to normalize.
+ * @param name The package name to normalize.
  * @returns The normalized package name.
  */
 export function canonicalizePackageName(name: string): string {
@@ -26,7 +26,8 @@ const packageUriRegex = /^.*?([^\/]*)\.whl$/;
 export function uriToPackageName(packageUri: string): string | undefined {
   let match = packageUriRegex.exec(packageUri);
   if (match) {
-    let wheel_name = match[1].toLowerCase();
-    return wheel_name.split("-").slice(0, -4).join("-");
+    const wheelName = match[1].toLowerCase();
+    const pkgName = wheelName.split("-").slice(0, -4).join("-");
+    return canonicalizePackageName(pkgName);
   }
 }
