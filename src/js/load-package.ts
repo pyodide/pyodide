@@ -452,10 +452,10 @@ export async function loadPackage(
 
   const toLoad = recursiveDependencies(names, errorCallback);
 
-  Object.values(toLoad).forEach(({ name, normalizedName, channel }) => {
+  for (const [_, { name, normalizedName, channel }] of toLoad) {
     const loaded = loadedPackages[normalizedName];
     if (loaded === undefined) {
-      return;
+      continue;
     }
 
     toLoad.delete(normalizedName);
@@ -472,14 +472,14 @@ export async function loadPackage(
           `load the custom package first.`,
       );
     }
-  });
+  }
 
   if (toLoad.size === 0) {
     messageCallback("No new packages to load");
     return [];
   }
 
-  const packageNames = Object.values(toLoad).map(({ name }) => name);
+  const packageNames = Array.from(toLoad.values(), ({ name }) => name).join(", ");
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
