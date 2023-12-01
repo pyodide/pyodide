@@ -585,12 +585,12 @@ def test_custom_lockfile(selenium_standalone_noload):
     "load_name, normalized_name, real_name",
     [
         # TODO: find a better way to test this without relying on the core packages set
-        ("fpcast-test", "fpcast_test", "fpcast-test"),
-        ("fpcast_test", "fpcast_test", "fpcast-test"),
-        ("Jinja2", "jinja2", "jinja2"),
-        ("jinja2", "jinja2", "jinja2"),
-        ("pydoc_data", "pydoc_data", "pydoc_data"),
-        ("pydoc-data", "pydoc_data", "pydoc_data"),
+        ("fpcast-test", "fpcast-test", "fpcast-test"),
+        ("fpcast_test", "fpcast-test", "fpcast-test"),
+        ("Jinja2", "jinja2", "Jinja2"),
+        ("jinja2", "jinja2", "Jinja2"),
+        ("pydoc_data", "pydoc-data", "pydoc_data"),
+        ("pydoc-data", "pydoc-data", "pydoc_data"),
     ],
 )
 def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):

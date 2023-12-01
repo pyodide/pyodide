@@ -147,7 +147,7 @@ function addPackageToLoad(
   name: string,
   toLoad: Map<string, PackageLoadMetadata>,
 ) {
-  const normalizedName = canonicalizePackageName(name.toLowerCase());
+  const normalizedName = canonicalizePackageName(name);
   if (toLoad.has(normalizedName)) {
     return;
   }
@@ -157,7 +157,7 @@ function addPackageToLoad(
   }
 
   toLoad.set(normalizedName, {
-    name,
+    name: pkgInfo.name,
     normalizedName,
     channel: DEFAULT_CHANNEL,
     depends: pkgInfo.depends,
@@ -173,9 +173,9 @@ function addPackageToLoad(
     return;
   }
 
-  pkgInfo.depends.forEach(dependency => {
-    addPackageToLoad(dependency, toLoad);
-  })
+  for (let depName of pkgInfo.depends) {
+    addPackageToLoad(depName, toLoad);
+  }
 }
 
 /**
@@ -226,7 +226,7 @@ function recursiveDependencies(
  * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
  * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
  * `channel`.
- * @param name The name of the package
+ * @param pkg The package to download
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
  * @param checkIntegrity Whether to check the integrity of the downloaded
@@ -235,8 +235,7 @@ function recursiveDependencies(
  * @private
  */
 async function downloadPackage(
-  name: string,
-  channel: string,
+  pkg: PackageLoadMetadata,
   checkIntegrity: boolean = true,
 ): Promise<Uint8Array> {
   let installBaseUrl: string;
@@ -250,38 +249,39 @@ async function downloadPackage(
     installBaseUrl = API.config.indexURL;
   }
 
-  let file_name, uri, file_sub_resource_hash;
-  if (channel === DEFAULT_CHANNEL) {
-    if (!(name in API.lockfile_packages)) {
+  let fileName, uri, fileSubResourceHash;
+  if (pkg.channel === DEFAULT_CHANNEL) {
+    if (!(pkg.normalizedName in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
-    file_name = API.lockfile_packages[name].file_name;
-    uri = resolvePath(file_name, installBaseUrl);
-    file_sub_resource_hash =
-      "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
+    const lockfilePackage = API.lockfile_packages[pkg.normalizedName];
+    fileName = lockfilePackage.file_name;
+
+    uri = resolvePath(fileName, installBaseUrl);
+    fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
   } else {
-    uri = channel;
-    file_sub_resource_hash = undefined;
+    uri = pkg.channel;
+    fileSubResourceHash = undefined;
   }
 
   if (!checkIntegrity) {
-    file_sub_resource_hash = undefined;
+    fileSubResourceHash = undefined;
   }
   try {
-    return await loadBinaryFile(uri, file_sub_resource_hash);
+    return await loadBinaryFile(uri, fileSubResourceHash);
   } catch (e) {
-    if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
+    if (!IN_NODE || pkg.channel !== DEFAULT_CHANNEL) {
       throw e;
     }
   }
   console.log(
-    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`,
+    `Didn't find package ${fileName} locally, attempting to load from ${cdnURL}`,
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await loadBinaryFile(cdnURL + file_name);
+  let binary = await loadBinaryFile(cdnURL + fileName);
   console.log(
-    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`,
+    `Package ${fileName} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`,
   );
   await nodeFsPromisesMod.writeFile(uri, binary);
   return binary;
@@ -289,16 +289,16 @@ async function downloadPackage(
 
 /**
  * Install the package into the file system.
- * @param name The name of the package
+ * @param normalizedName The normalized name of the package
  * @param buffer The binary data returned by downloadPackage
  * @private
  */
 async function installPackage(
-  name: string,
+  normalizedName: string,
   buffer: Uint8Array,
   channel: string,
 ) {
-  let pkg = API.lockfile_packages[name];
+  let pkg = API.lockfile_packages[normalizedName];
   if (!pkg) {
     pkg = {
       name: "",
@@ -335,7 +335,7 @@ async function installPackage(
 /**
  * Download and install the package.
  * Downloads can be done in parallel, but installs must be done for dependencies first.
- * @param normalizedName The normalized name of the package
+ * @param pkg The package to load
  * @param toLoad The map of package names to PackageLoadMetadata
  * @param loaded The set of loaded package metadata, this will be updated by this function.
  * @param failed The map of <failed package name, error message>, this will be updated by this function.
@@ -344,20 +344,18 @@ async function installPackage(
  * @private
  */
 async function downloadAndInstall(
-  normalizedName: string,
+  pkg: PackageLoadMetadata,
   toLoad: Map<string, PackageLoadMetadata>,
   loaded: Set<InternalPackageData>,
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
-  if (loadedPackages[normalizedName] !== undefined) {
+  if (loadedPackages[pkg.normalizedName] !== undefined) {
     return;
   }
 
-  const pkg = toLoad.get(normalizedName)!;
-
   try {
-    const buffer = await downloadPackage(pkg.name, pkg.channel, checkIntegrity);
+    const buffer = await downloadPackage(pkg, checkIntegrity);
     const installPromiseDependencies = pkg.depends.map((dependency) => {
       return toLoad.has(dependency)
         ? toLoad.get(dependency)!.done
@@ -369,11 +367,11 @@ async function downloadAndInstall(
     // wait until all dependencies are installed
     await Promise.all(installPromiseDependencies);
 
-    await installPackage(pkg.name, buffer, pkg.channel);
+    await installPackage(pkg.normalizedName, buffer, pkg.channel);
     if (pkg.packageData) {
       loaded.add(pkg.packageData);
     }
-    loadedPackages[normalizedName] = pkg.channel;
+    loadedPackages[pkg.normalizedName] = pkg.channel;
   } catch (err: any) {
     failed.set(pkg.name, err);
     // We don't throw error when loading a package fails, but just report it.
@@ -459,11 +457,9 @@ export async function loadPackage(
     }
 
     toLoad.delete(normalizedName);
-
-    if (
-      loaded === channel ||
-      channel === DEFAULT_CHANNEL
-    ) {
+    // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+    // dependency, which was previously overridden.
+    if (loaded === channel || channel === DEFAULT_CHANNEL) {
       messageCallback(`${name} already loaded from ${loaded}`);
     } else {
       errorCallback(
@@ -479,12 +475,14 @@ export async function loadPackage(
     return [];
   }
 
-  const packageNames = Array.from(toLoad.values(), ({ name }) => name).join(", ");
+  const packageNames = Array.from(toLoad.values(), ({ name }) => name).join(
+    ", ",
+  );
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    for (const [normalizedName] of toLoad) {
+    for (const [normalizedName, pkg] of toLoad) {
       if (loadedPackages[normalizedName]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
@@ -494,8 +492,9 @@ export async function loadPackage(
 
       // TODO: add support for prefetching modules by awaiting on a promise right
       // here which resolves in loadPyodide when the bootstrap is done.
-      toLoad.get(normalizedName)!.installPromise = downloadAndInstall(
-        normalizedName,
+
+      pkg.installPromise = downloadAndInstall(
+        pkg,
         toLoad,
         loadedPackageData,
         failed,
@@ -504,7 +503,7 @@ export async function loadPackage(
     }
 
     await Promise.all(
-      Object.values(toLoad).map(({ installPromise }) => installPromise),
+      Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
     );
 
     Module.reportUndefinedSymbols();
