@@ -169,7 +169,7 @@ function addPackageToLoad(
   // If the package is already loaded, we don't add dependencies, but warn
   // the user later. This is especially important if the loaded package is
   // from a custom url, in which case adding dependencies is wrong.
-  if (loadedPackages[normalizedName] !== undefined) {
+  if (loadedPackages[pkgInfo.name] !== undefined) {
     return;
   }
 
@@ -350,7 +350,7 @@ async function downloadAndInstall(
   failed: Map<string, Error>,
   checkIntegrity: boolean = true,
 ) {
-  if (loadedPackages[pkg.normalizedName] !== undefined) {
+  if (loadedPackages[pkg.name] !== undefined) {
     return;
   }
 
@@ -371,7 +371,7 @@ async function downloadAndInstall(
     if (pkg.packageData) {
       loaded.add(pkg.packageData);
     }
-    loadedPackages[pkg.normalizedName] = pkg.channel;
+    loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(pkg.name, err);
     // We don't throw error when loading a package fails, but just report it.
@@ -451,7 +451,7 @@ export async function loadPackage(
   const toLoad = recursiveDependencies(names, errorCallback);
 
   for (const [_, { name, normalizedName, channel }] of toLoad) {
-    const loaded = loadedPackages[normalizedName];
+    const loaded = loadedPackages[name];
     if (loaded === undefined) {
       continue;
     }
@@ -482,11 +482,11 @@ export async function loadPackage(
   const releaseLock = await acquirePackageLock();
   try {
     messageCallback(`Loading ${packageNames}`);
-    for (const [normalizedName, pkg] of toLoad) {
-      if (loadedPackages[normalizedName]) {
+    for (const [_, pkg] of toLoad) {
+      if (loadedPackages[pkg.name]) {
         // Handle the race condition where the package was loaded between when
         // we did dependency resolution and when we acquired the lock.
-        toLoad.delete(normalizedName);
+        toLoad.delete(pkg.normalizedName);
         continue;
       }
 

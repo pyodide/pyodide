@@ -607,7 +607,7 @@ def test_normalized_name(selenium_standalone, load_name, normalized_name, real_n
         )
 
         const loaded = Object.keys(pyodide.loadedPackages);
-        assert(() => loaded.includes("{normalized_name}"));
+        assert(() => loaded.includes("{real_name}"));
 
         const loadStartMsgs = msgs.filter((msg) => msg.startsWith("Loading"));
         const loadEndMsgs = msgs.filter((msg) => msg.startsWith("Loaded"));
