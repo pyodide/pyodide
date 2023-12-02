@@ -62,6 +62,10 @@ myst:
   build to set the same variables as in-tree build.
   {pr}`4241`
 
+- {{ Enhancement }} `pyodide build` command now accepts `--config-setting` (`-C`) option
+  to pass flags to the build backend, just like `python -m build` command.
+  {pr}`4308`
+
 ### Packages
 
 - New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
