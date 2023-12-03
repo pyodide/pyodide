@@ -128,7 +128,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         return "object"
 
-    def object_entries(self) -> "JsProxy":
+    def object_entries(self) -> "JsArray[JsArray[Any]]":
         """
         The JavaScript API ``Object.entries(object)``
 
@@ -143,7 +143,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         raise NotImplementedError
 
-    def object_keys(self) -> "JsProxy":
+    def object_keys(self) -> "JsArray[str]":
         """
         The JavaScript API ``Object.keys(object)``
 
@@ -157,7 +157,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         raise NotImplementedError
 
-    def object_values(self) -> "JsProxy":
+    def object_values(self) -> "JsArray[Any]":
         """
         The JavaScript API ``Object.values(object)``
 
