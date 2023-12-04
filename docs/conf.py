@@ -169,7 +169,7 @@ def patch_inspect():
     import inspect
 
     if not hasattr(inspect, "getargspec"):
-        inspect.getargspec = inspect.getfullargspec  # type: ignore[assignment]
+        inspect.getargspec = inspect.getfullargspec  # type: ignore[attr-defined]
 
 
 def prevent_parens_after_js_class_xrefs():
