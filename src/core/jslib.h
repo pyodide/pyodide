@@ -113,6 +113,9 @@ int JsvArray_Push(JsVal, JsVal);
 
 void JsvArray_Extend(JsVal, JsVal);
 
+errcode
+JsvArray_Insert(JsVal arr, int idx, JsVal value);
+
 JsVal
 JsvArray_ShallowCopy(JsVal obj);
 
