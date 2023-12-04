@@ -385,7 +385,7 @@ class JsPromise(JsProxy, Generic[T]):
     )
     def then(
         self,
-        onfulfilled: Any = None,
+        onfulfilled: Any,
         onrejected: Any = None,
     ) -> Any:
         """The :js:meth:`Promise.then` API, wrapped to manage the lifetimes of the
