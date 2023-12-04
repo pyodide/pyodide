@@ -50,6 +50,9 @@ myst:
   and `defaultConverter` arguments.
   {pr}`4263`
 
+- {{ Enhancement }} The `pyodide-py` package on `pypi` now includes `py.typed`
+  markers so mypy will use the types.
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:
