@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
+  containing the loaded package's metadata.
+  {pr}`4306`
+
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
@@ -50,6 +54,10 @@ myst:
   and `defaultConverter` arguments.
   {pr}`4263`
 
+- {{ Enhancement }} The `pyodide-py` package on `pypi` now includes `py.typed`
+  markers so mypy will use the types.
+  {pr}`4321`
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:
@@ -57,6 +65,10 @@ myst:
   `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
   build to set the same variables as in-tree build.
   {pr}`4241`
+
+- {{ Enhancement }} `pyodide build` command now accepts `--config-setting` (`-C`) option
+  to pass flags to the build backend, just like `python -m build` command.
+  {pr}`4308`
 
 ### Packages
 

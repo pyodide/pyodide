@@ -4,7 +4,7 @@ import pytest
 @pytest.mark.driver_timeout(40)
 def test_pyb2d(selenium_standalone, request):
     selenium = selenium_standalone
-    selenium.load_package("pyb2d")
+    selenium.load_package("b2d")
 
     selenium.run(
         """

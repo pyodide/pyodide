@@ -32,6 +32,7 @@ _save_name = __name__
 __name__ = ""
 
 T = TypeVar("T")
+S = TypeVar("S")
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
 Tco = TypeVar("Tco", covariant=True)  # Any type covariant containers.
@@ -128,7 +129,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         return "object"
 
-    def object_entries(self) -> "JsProxy":
+    def object_entries(self) -> "JsArray[JsArray[Any]]":
         """
         The JavaScript API ``Object.entries(object)``
 
@@ -143,7 +144,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         raise NotImplementedError
 
-    def object_keys(self) -> "JsProxy":
+    def object_keys(self) -> "JsArray[str]":
         """
         The JavaScript API ``Object.keys(object)``
 
@@ -157,7 +158,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         raise NotImplementedError
 
-    def object_values(self) -> "JsProxy":
+    def object_values(self) -> "JsArray[Any]":
         """
         The JavaScript API ``Object.values(object)``
 
@@ -339,7 +340,7 @@ class JsDoubleProxy(JsProxy):
         raise NotImplementedError
 
 
-class JsPromise(JsProxy):
+class JsPromise(JsProxy, Generic[T]):
     """A :py:class:`~pyodide.ffi.JsProxy` of a :js:class:`Promise` or some other `thenable
     <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables>`_
     JavaScript object.
@@ -349,27 +350,74 @@ class JsPromise(JsProxy):
 
     _js_type_flags = ["IS_AWAITABLE"]
 
+    @overload
     def then(
-        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
-    ) -> "JsPromise":
+        self, onfulfilled: None, onrejected: Callable[[BaseException], Awaitable[S]], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self, onfulfilled: None, onrejected: Callable[[BaseException], S], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], Awaitable[S]],
+        onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
+        /,
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], S],
+        onrejected: Callable[[BaseException], S] | None = None,
+        /,
+    ) -> "JsPromise[S]":
+        ...
+
+    @docs_argspec(
+        "(self, onfulfilled: Callable[[T], Awaitable[S] | S] | None, onrejected: Callable[[BaseException], Awaitable[S] | S] | None = None, /) -> 'JsPromise[S]'"
+    )
+    def then(
+        self,
+        onfulfilled: Any,
+        onrejected: Any = None,
+    ) -> Any:
         """The :js:meth:`Promise.then` API, wrapped to manage the lifetimes of the
         handlers.
-
         Pyodide will automatically release the references to the handlers
         when the promise resolves.
         """
-        raise NotImplementedError
+        pass
 
-    def catch(self, onrejected: Callable[[Any], Any], /) -> "JsPromise":
+    @overload
+    def catch(
+        self, onrejected: Callable[[BaseException], Awaitable[S]], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def catch(self, onrejected: Callable[[BaseException], S], /) -> "JsPromise[S]":
+        ...
+
+    @docs_argspec(
+        "(self, onrejected: Callable[[BaseException], Awaitable[S] | S], /) -> 'JsPromise[S]'"
+    )
+    def catch(self, onrejected: Any, /) -> Any:
         """The :js:meth:`Promise.catch` API, wrapped to manage the lifetimes of the
         handler.
 
         Pyodide will automatically release the references to the handler
         when the promise resolves.
         """
-        raise NotImplementedError
+        pass
 
-    def finally_(self, onfinally: Callable[[], Any], /) -> "JsPromise":
+    def finally_(self, onfinally: Callable[[], None], /) -> "JsPromise[T]":
         """The :js:meth:`Promise.finally` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -377,7 +425,7 @@ class JsPromise(JsProxy):
         when the promise resolves. Note the trailing underscore in the name;
         this is needed because ``finally`` is a reserved keyword in Python.
         """
-        raise NotImplementedError
+        return self
 
 
 class JsBuffer(JsProxy):
