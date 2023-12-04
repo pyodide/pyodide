@@ -52,6 +52,7 @@ myst:
 
 - {{ Enhancement }} The `pyodide-py` package on `pypi` now includes `py.typed`
   markers so mypy will use the types.
+  {pr}`4321`
 
 ### Pyodide CLI
 
