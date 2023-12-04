@@ -1,5 +1,6 @@
 import os
 import sys
+from abc import ABCMeta
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -10,12 +11,13 @@ from collections.abc import (
     KeysView,
     Mapping,
     MutableMapping,
+    MutableSequence,
     Sequence,
     ValuesView,
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, TypeVar, overload
+from typing import IO, Any, Generic, Protocol, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -85,6 +87,10 @@ class _JsProxyMetaClass(type):
             subclass_flags = _binor_reduce(_js_flags[f] for f in subclass_flags)
 
         return any(cls_flag & subclass_flags == cls_flag for cls_flag in cls_flags)
+
+
+class _ABCMeta(_JsProxyMetaClass, ABCMeta):
+    pass
 
 
 # We want to raise an error if someone tries to instantiate JsProxy directly
@@ -790,15 +796,31 @@ class JsCallable(JsProxy):
         pass
 
 
-class JsArray(JsIterable[T], Generic[T]):
+class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta):
     """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
 
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
-    def __getitem__(self, idx: int | slice) -> T:
+    @overload
+    def __getitem__(self, idx: int) -> T:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> "JsArray[T]":
+        ...
+
+    def __getitem__(self, idx):
         raise NotImplementedError
 
-    def __setitem__(self, idx: int | slice, value: T) -> None:
+    @overload
+    def __setitem__(self, idx: int, value: T) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, idx: slice, value: Iterable[T]) -> None:
+        ...
+
+    def __setitem__(self, idx, value):
         pass
 
     def __delitem__(self, idx: int | slice) -> None:
@@ -872,8 +894,7 @@ class JsTypedArray(JsBuffer, JsArray[int]):
     buffer: JsBuffer
 
 
-@Mapping.register
-class JsMap(JsIterable[KT], Generic[KT, VTco]):
+class JsMap(JsIterable[KT], Generic[KT, VTco], Mapping[KT, VTco], metaclass=_ABCMeta):
     """A JavaScript Map
 
     To be considered a map, a JavaScript object must have a ``get`` method, it
@@ -889,7 +910,7 @@ class JsMap(JsIterable[KT], Generic[KT, VTco]):
     def __len__(self) -> int:
         return 0
 
-    def __contains__(self, idx: KT) -> bool:
+    def __contains__(self, idx: object) -> bool:
         raise NotImplementedError
 
     def keys(self) -> KeysView[KT]:
@@ -918,8 +939,17 @@ class JsMap(JsIterable[KT], Generic[KT, VTco]):
         raise NotImplementedError
 
 
-@MutableMapping.register
-class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
+class _SupportsKeysAndGetItem(Protocol[KT, VTco]):
+    def keys(self) -> Iterable[KT]:
+        ...
+
+    def __getitem__(self, __key: KT) -> VTco:
+        ...
+
+
+class JsMutableMap(
+    JsMap[KT, VT], Generic[KT, VT], MutableMapping[KT, VT], metaclass=_ABCMeta
+):
     """A JavaScript mutable map
 
     To be considered a mutable map, a JavaScript object must have a ``get``
@@ -964,7 +994,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
         """Empty out the map entirely."""
 
     @overload
-    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
+    def update(self, __m: _SupportsKeysAndGetItem[KT, VT], **kwargs: VT) -> None:
         ...
 
     @overload
