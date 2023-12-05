@@ -887,9 +887,22 @@ class JsArray(JsIterable[T], Generic[T]):
         raise NotImplementedError
 
     def reverse(self) -> None:
-        """Reverse the array in place.
+        """Reverse the array in place."""
+        raise NotImplementedError
 
-        Present only if the wrapped Javascript object is an array.
+    def insert(self, index: int, value: T) -> None:
+        """Insert an item at a given position.
+
+        The first argument is the index of the element before which to insert,
+        so ``a.insert(0, x)`` inserts at the front of the list, and
+        ``a.insert(len(a), x)`` is equivalent to ``a.append(x)``.
+        """
+        raise NotImplementedError
+
+    def remove(self, value: T) -> None:
+        """Remove the first item from the list whose value is equal to ``x``.
+
+        It raises a :py:exc:`ValueError` if there is no such item.
         """
 
     def to_py(

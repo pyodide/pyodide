@@ -58,6 +58,9 @@ myst:
   markers so mypy will use the types.
   {pr}`4321`
 
+- {{ Enhancement }} Added `JsArray.remove` and `JsArray.insert` methods.
+  {pr}`4326`
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:
