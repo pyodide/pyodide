@@ -85,7 +85,7 @@ repos:
           - resolvelib
           - rich
           - auditwheel_emscripten
-          - pyodide-lock==0.1.0a1
+          - pyodide-lock==0.1.0a4
           - micropip
       - id: mypy
         name: mypy-tests

@@ -49,8 +49,8 @@ def test_wrapt(selenium):
         def test_argspec(self):
             # Test preservation of function argument specification.
 
-            function1o_argspec = inspect.getargspec(function1o)
-            function1d_argspec = inspect.getargspec(function1d)
+            function1o_argspec = inspect.getfullargspec(function1o)
+            function1d_argspec = inspect.getfullargspec(function1d)
             self.assertEqual(function1o_argspec, function1d_argspec)
 
         def test_isinstance(self):

@@ -776,10 +776,12 @@ def test_docstrings_a():
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide.ffi import JsPromise
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
-    assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
-        jsproxy.then.__doc__
+    assert (
+        c_docstring
+        == "then(onfulfilled, onrejected=None)\n--\n\n"
+        + dedent_docstring(jsproxy.then.__doc__)
     )
 
 
@@ -788,9 +790,9 @@ def test_docstrings_b(selenium):
     from _pyodide.docstring import dedent_docstring
     from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
-    sig_then_should_equal = "(onfulfilled, onrejected)"
+    sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")

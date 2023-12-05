@@ -30,7 +30,7 @@ dependencies = [
     "types-requests",
     "typer",
     "auditwheel-emscripten~=0.0.9",
-    "pyodide-lock==0.1.0a1",
+    "pyodide-lock==0.1.0a4",
     "resolvelib",
     "rich",
     "loky",
