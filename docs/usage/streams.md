@@ -42,7 +42,7 @@ zero-argument function which should return one of:
    appended if it does not already end in one).
 2. An array buffer or Uint8Array containing utf8 encoded characters
 3. A number between 0 and 255 which indicates one byte of input
-4. `undefined` which indicates EOF.
+4. `undefined` or `null` which indicates EOF.
 
 `isatty` is a boolean which
 indicates whether `sys.stdin.isatty()` should return `true` or `false`.
