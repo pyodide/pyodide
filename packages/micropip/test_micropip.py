@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from pytest_pyodide import run_in_pyodide, spawn_web_server
+
 from conftest import package_is_built
 
 cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
@@ -247,7 +248,6 @@ def test_emfs(selenium_standalone_micropip):
 
 
 def test_install_non_normalized_package(selenium_standalone_micropip):
-
     if not package_is_built("ruamel.yaml"):
         pytest.skip("ruamel.yaml not built")
 
