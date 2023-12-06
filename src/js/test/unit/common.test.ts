@@ -2,7 +2,7 @@ import * as chai from "chai";
 import {
   canonicalizePackageName,
   uriToPackageName,
-} from "../../packaging_utils";
+} from "../../packaging-utils";
 
 describe("canonicalizePackageName", () => {
   it("should return lower case", () => {
