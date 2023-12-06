@@ -248,7 +248,7 @@ def test_emfs(selenium_standalone_micropip):
 
 
 def test_install_non_normalized_package(selenium_standalone_micropip):
-    if not package_is_built("ruamel.yaml"):
+    if not package_is_built("ruamel-yaml"):
         pytest.skip("ruamel.yaml not built")
 
     selenium = selenium_standalone_micropip
