@@ -1525,7 +1525,7 @@ def test_array_slice_assign_2(selenium):
         l[:] = 1  # type: ignore[call-overload]
 
     with pytest.raises(TypeError) as exc_info_3b:
-        jsl[:] = 1
+        jsl[:] = 1  # type: ignore[call-overload]
 
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
@@ -1772,6 +1772,47 @@ def test_jsarray_count(selenium):
         }
         """
     )(a)
+
+
+@run_in_pyodide
+def test_jsarray_remove(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    l.remove(5)
+    a.remove(5)
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove(78)
+    assert a.to_py() == l
+    l.append([])  # type:ignore[arg-type]
+    p = create_proxy([], roundtrip=False)
+    a.append(p)
+    assert a.to_py() == l
+    l.remove([])  # type:ignore[arg-type]
+    a.remove([])
+    p.destroy()
+    assert a.to_py() == l
+    a.push([])
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove([])
+
+
+@run_in_pyodide
+def test_jsarray_insert(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    l.insert(3, 66)
+    a.insert(3, 66)
+    assert a.to_py() == l
+    l.insert(-1, 97)
+    a.insert(-1, 97)
+    assert a.to_py() == l
 
 
 @run_in_pyodide
