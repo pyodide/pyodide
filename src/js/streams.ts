@@ -567,7 +567,7 @@ class LegacyReader {
     if (typeof val === "number") {
       return val;
     }
-    if (!val) {
+    if (val === undefined || val === null) {
       return undefined;
     }
     if (ArrayBuffer.isView(val)) {

@@ -61,6 +61,9 @@ myst:
 - {{ Enhancement }} Added `JsArray.remove` and `JsArray.insert` methods.
   {pr}`4326`
 
+- {{ Fix }} `pyodide.setStdin` now does not consider an empty string as EOF.
+  {pr}`4327`
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:
