@@ -53,7 +53,12 @@ def test_generate_lockfile(tmp_path):
     )
     hashes = {}
     for pkg in pkg_map.values():
-        pkg.file_name = pkg.file_name or pkg.name + ".whl"
+        if not pkg.file_name:
+            match pkg.package_type:
+                case "package":
+                    pkg.file_name = pkg.name + f"-{pkg.version}-py3-none-any.whl"
+                case _:
+                    pkg.file_name = pkg.name + ".zip"
         # Write dummy package file for SHA-256 hash verification
         with zipfile.ZipFile(tmp_path / pkg.file_name, "w") as whlzip:
             whlzip.writestr(pkg.file_name, data=pkg.file_name)
@@ -76,7 +81,7 @@ def test_generate_lockfile(tmp_path):
     assert package_data.packages["pkg_1"] == PackageSpec(
         name="pkg_1",
         version="1.0.0",
-        file_name="pkg_1.whl",
+        file_name="pkg_1-1.0.0-py3-none-any.whl",
         depends=["pkg_1_1", "pkg_3", "libtest_shared"],
         imports=["pkg_1"],
         package_type="package",

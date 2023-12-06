@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, ROOT_PATH, strip_assertions_stderr
@@ -300,7 +299,7 @@ def test_monkeypatch_eval_code(selenium):
         )
 
 
-def test_hiwire_is_promise(selenium):
+def test_promise_check(selenium):
     for s in [
         "0",
         "1",
@@ -777,10 +776,12 @@ def test_docstrings_a():
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide.ffi import JsPromise
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
-    assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
-        jsproxy.then.__doc__
+    assert (
+        c_docstring
+        == "then(onfulfilled, onrejected=None)\n--\n\n"
+        + dedent_docstring(jsproxy.then.__doc__)
     )
 
 
@@ -789,9 +790,9 @@ def test_docstrings_b(selenium):
     from _pyodide.docstring import dedent_docstring
     from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
-    sig_then_should_equal = "(onfulfilled, onrejected)"
+    sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
@@ -1103,7 +1104,6 @@ def test_weird_throws(selenium):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize("to_throw", ["Object.create(null);", "'Some message'", "null"])
 def test_weird_fatals(selenium_standalone, to_throw):
     expected_message = {
@@ -1475,19 +1475,13 @@ def test_args_OO(selenium_standalone_noload):
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    version_result = subprocess.run(
-        ["node", "-v"], capture_output=True, encoding="utf8"
-    )
-    extra_node_args = []
-    if version_result.stdout.startswith("v14"):
-        extra_node_args.append("--experimental-wasm-bigint")
+    subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
     result = subprocess.run(
         [
             "node",
-            *extra_node_args,
             "-e",
             rf"""
             const loadPyodide = require("{tmp_dir / "pyodide.js"}").loadPyodide;
@@ -1530,8 +1524,6 @@ def test_index_url_calculation_source_map(selenium):
     node_options = ["--enable-source-maps"]
 
     result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
-    if result.stdout.startswith("v14"):
-        node_options.append("--experimental-wasm-bigint")
 
     DIST_DIR = str(Path.cwd() / "dist")
 
@@ -1559,6 +1551,40 @@ def test_index_url_calculation_source_map(selenium):
     assert f"indexURL: {DIST_DIR}" in result.stdout
 
 
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+@pytest.mark.parametrize(
+    "filename, import_stmt",
+    [
+        ("index.js", "const { loadPyodide } = require('%s/pyodide.js')"),  # commonjs
+        ("index.mjs", "import { loadPyodide } from '%s/pyodide.mjs'"),  # esm
+    ],
+)
+def test_default_index_url_calculation_node(selenium, tmp_path, filename, import_stmt):
+    Path(tmp_path / filename).write_text(
+        (import_stmt % DIST_PATH)
+        + "\n"
+        + """
+        async function main() {
+            const py = await loadPyodide();
+            console.log("indexURL:", py._module.API.config.indexURL);
+        }
+        main();
+        """
+    )
+
+    result = subprocess.run(
+        [
+            "node",
+            filename,
+        ],
+        capture_output=True,
+        encoding="utf8",
+        cwd=tmp_path,
+    )
+
+    assert f"indexURL: {DIST_PATH}" in result.stdout
+
+
 @pytest.mark.xfail_browsers(
     node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
 )
@@ -1574,13 +1600,9 @@ def test_csp(selenium_standalone_noload):
         target_path.unlink()
 
 
-def test_static_import(
-    request, runtime, web_server_main, playwright_browsers, tmp_path
-):
-    # the xfail_browsers mark won't work without using a selenium fixture
-    # so we manually xfail the node test
-    if runtime == "node":
-        pytest.xfail("static import test is browser-only")
+@pytest.mark.xfail_browsers(node="static import test is browser-only")
+def test_static_import(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
@@ -1598,10 +1620,10 @@ def test_static_import(
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
     (tmp_path / "module_static_import_test.html").write_text(test_html)
 
-    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
-        request, runtime, web_server, playwright_browsers
-    ) as selenium:
-        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+    with spawn_web_server(tmp_path) as web_server:
+        server_hostname, server_port, _ = web_server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        selenium.goto(f"{base_url}/module_static_import_test.html")
         selenium.javascript_setup()
         selenium.load_pyodide()
         selenium.run_js(

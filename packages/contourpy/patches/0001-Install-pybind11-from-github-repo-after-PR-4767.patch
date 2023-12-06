@@ -1,0 +1,29 @@
+From d5e101ce4575125727cfa5fc2a9cbb829637beab Mon Sep 17 00:00:00 2001
+From: Ian Thomas <ianthomas23@gmail.com>
+Date: Sun, 12 Nov 2023 14:34:25 +0000
+Subject: [PATCH] Install pybind11 from github repo after PR 4767
+
+To use pybind11 with clang >= 17 we need pybind11 PR #4767. This isn't in a
+pybind11 release yet, so here installing pybind11 direct from the github commit
+that includes the PR. This patch can be removed after the next pybind11 release.
+
+---
+ pyproject.toml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index bbd535e..5d00911 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -3,7 +3,7 @@ build-backend = "mesonpy"
+ requires = [
+     "meson >= 1.2.0",
+     "meson-python >= 0.13.1",
+-    "pybind11 >= 2.10.4",
++    "pybind11@git+https://github.com/pybind/pybind11@17b614303f2176398ba3bbcec3c237628447bde5",
+ ]
+
+ [project]
+--
+2.40.1
+

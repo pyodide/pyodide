@@ -255,7 +255,6 @@ jobs:
           command: |
             pip install -r requirements.txt
             pip install -e ./pyodide-build
-            npm install -g node-fetch@2
 
       - run:
           name: Py-compile packages
@@ -300,7 +299,6 @@ jobs:
             mkdir test-results
             pip install -r requirements.txt
             pip install -e ./pyodide-build
-            npm install -g node-fetch@2
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
@@ -384,7 +382,6 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            npm install -g node-fetch@2
             pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
 
   test-js:
@@ -466,7 +463,6 @@ jobs:
           command: |
             pip3 install numpy matplotlib pandas
             pip install -r requirements.txt
-            npm install -g node-fetch@2
       - run:
           name: benchmark
           command: |

@@ -81,10 +81,13 @@ if (px.supportsSet()) {
   expectType<(x: any, y: any) => void>(px.set);
 }
 
-if (px.isAwaitable()) {
-  expectType<PyProxyAwaitable>(px);
-  expectType<any>(await px);
+async function f() {
+  if (px.isAwaitable()) {
+    expectType<PyProxyAwaitable>(px);
+    expectType<any>(await px);
+  }
 }
+f();
 
 if (px.isBuffer()) {
   expectType<PyProxyBuffer>(px);

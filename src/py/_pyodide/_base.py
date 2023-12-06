@@ -215,19 +215,18 @@ class CodeRunner:
 
     Examples
     --------
-    >>> from pyodide.code import CodeRunner
     >>> source = "1 + 1"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile()
-    <_pyodide._base.CodeRunner object at 0x113de58>
+    >>> code_runner.compile() # doctest: +ELLIPSIS
+    <_pyodide._base.CodeRunner object at 0x...>
     >>> code_runner.run()
     2
     >>> my_globals = {"x": 20}
     >>> my_locals = {"y": 5}
     >>> source = "x + y"
     >>> code_runner = CodeRunner(source)
-    >>> code_runner.compile()
-    <_pyodide._base.CodeRunner object at 0x1166bb0>
+    >>> code_runner.compile() # doctest: +ELLIPSIS
+    <_pyodide._base.CodeRunner object at 0x...>
     >>> code_runner.run(globals=my_globals, locals=my_locals)
     25
     """
@@ -464,7 +463,6 @@ def eval_code(
 
     Examples
     --------
-    >>> from pyodide.code import eval_code
     >>> source = "1 + 1"
     >>> eval_code(source)
     2
@@ -483,9 +481,13 @@ def eval_code(
     >>> eval_code(source, return_mode="last_expr")
     >>> eval_code(source, return_mode="none")
     >>> source = "print(pyodide)" # Pretend this is open('example_of_filename.py', 'r').read()
-    >>> eval_code(source, filename="example_of_filename.py") # doctest: +SKIP
-    # Trackback will show where in the file the error happened
-    # ...File "example_of_filename.py", line 1, in <module>...NameError: name 'pyodide' is not defined
+    >>> eval_code(source, filename="example_of_filename.py")
+    Traceback (most recent call last):
+        ...
+        File "example_of_filename.py", line 1, in <module>
+            print(pyodide)
+                  ^^^^^^^
+    NameError: name 'pyodide' is not defined
     """
     return (
         CodeRunner(
@@ -596,7 +598,6 @@ def find_imports(source: str) -> list[str]:
 
     Examples
     --------
-    >>> from pyodide.code import find_imports
     >>> source = "import numpy as np; import scipy.stats"
     >>> find_imports(source)
     ['numpy', 'scipy']

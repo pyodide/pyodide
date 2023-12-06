@@ -223,7 +223,11 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   if (funcName.startsWith("Object.")) {
     funcName = funcName.slice("Object.".length);
   }
-  if (funcName in API.public_api && funcName !== "PythonError") {
+  if (
+    API.public_api &&
+    funcName in API.public_api &&
+    funcName !== "PythonError"
+  ) {
     frame.functionName = funcName;
     return false;
   }
@@ -261,7 +265,7 @@ Module.handle_js_error = function (e: any) {
   }
   if (!restored_error) {
     // Wrap the JavaScript error
-    let err = _JsProxy_create_val(e);
+    let err = _JsProxy_create(e);
     _set_error(err);
     _Py_DecRef(err);
   }

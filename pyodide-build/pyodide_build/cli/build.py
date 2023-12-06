@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 import requests
 import typer
+from build import ConfigSettingsType
 
 from ..build_env import check_emscripten_version, get_pyodide_root, init_environment
 from ..io import _BuildSpecExports, _ExportTypes
@@ -18,6 +19,7 @@ from ..out_of_tree.pypi import (
     build_wheels_from_pypi_requirements,
     fetch_pypi_package,
 )
+from ..pypabuild import parse_backend_flags
 
 
 def convert_exports(exports: str) -> _BuildSpecExports:
@@ -38,15 +40,10 @@ def convert_exports(exports: str) -> _BuildSpecExports:
 def pypi(
     package: str,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
-        envvar="PYODIDE_BUILD_EXPORTS",
-        help="Which symbols should be exported when linking .so files?",
-    ),
-    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
+    exports: str,
+    config_settings: ConfigSettingsType,
 ) -> Path:
     """Fetch a wheel from pypi, or build from source if none available."""
-    backend_flags = ctx.args
     with tempfile.TemporaryDirectory() as tmpdir:
         srcdir = Path(tmpdir)
 
@@ -60,7 +57,10 @@ def pypi(
             return dest_file
 
         built_wheel = build.run(
-            srcdir, output_directory, convert_exports(exports), backend_flags
+            srcdir,
+            output_directory,
+            convert_exports(exports),
+            config_settings,
         )
         return built_wheel
 
@@ -80,15 +80,10 @@ def download_url(url: str, output_directory: Path) -> str:
 def url(
     package_url: str,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
-        envvar="PYODIDE_BUILD_EXPORTS",
-        help="Which symbols should be exported when linking .so files?",
-    ),
-    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
+    exports: str,
+    config_settings: ConfigSettingsType,
 ) -> Path:
     """Fetch a wheel or build sdist from url."""
-    backend_flags = ctx.args
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
         filename = download_url(package_url, tmppath)
@@ -103,7 +98,7 @@ def url(
             # unzipped into subfolder
             builddir = files[0]
         wheel_path = build.run(
-            builddir, output_directory, convert_exports(exports), backend_flags
+            builddir, output_directory, convert_exports(exports), config_settings
         )
         return wheel_path
 
@@ -111,24 +106,21 @@ def url(
 def source(
     source_location: Path,
     output_directory: Path,
-    exports: str = typer.Option(
-        "requested",
-        envvar="PYODIDE_BUILD_EXPORTS",
-        help="Which symbols should be exported when linking .so files?",
-    ),
-    ctx: typer.Context = typer.Context,  # type: ignore[assignment]
+    exports: str,
+    config_settings: ConfigSettingsType,
 ) -> Path:
     """Use pypa/build to build a Python package from source"""
-    backend_flags = ctx.args
     built_wheel = build.run(
-        source_location, output_directory, convert_exports(exports), backend_flags
+        source_location, output_directory, convert_exports(exports), config_settings
     )
     return built_wheel
 
 
 # simple 'pyodide build' command
 def main(
-    source_location: "Optional[str]" = typer.Argument(
+    source_location: Optional[  # noqa: typer does not accept list[str] | None yet.
+        str
+    ] = typer.Argument(
         "",
         help="Build source, can be source folder, pypi version specification, "
         "or url to a source dist archive or wheel file. If this is blank, it "
@@ -170,6 +162,18 @@ def main(
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
     ),
+    config_setting: Optional[  # noqa: typer does not accept list[str] | None yet.
+        list[str]
+    ] = typer.Option(
+        None,
+        "--config-setting",
+        "-C",
+        help=(
+            "Settings to pass to the backend. "
+            "Works same as the --config-setting option of pypa/build."
+        ),
+        metavar="KEY[=VALUE]",
+    ),
     ctx: typer.Context = typer.Context,  # type: ignore[assignment]
 ) -> None:
     """Use pypa/build to build a Python package from source, pypi or url."""
@@ -185,6 +189,10 @@ def main(
     outpath = Path(output_directory).resolve()
     outpath.mkdir(exist_ok=True)
     extras: list[str] = []
+
+    # For backward compatibility, in addition to the `--config-setting` arguments, we also support
+    # passing config settings as positional arguments.
+    config_settings = parse_backend_flags((config_setting or []) + ctx.args)
 
     if skip_built_in_packages:
         package_lock_json = get_pyodide_root() / "dist" / "pyodide-lock.json"
@@ -223,7 +231,7 @@ def main(
                 # TODO: should we really use same "exports" value for all of our
                 # dependencies? Not sure this makes sense...
                 convert_exports(exports),
-                ctx.args,
+                config_settings,
                 output_lockfile=output_lockfile,
             )
         except BaseException as e:
@@ -239,15 +247,17 @@ def main(
             source_location = source_location[0 : source_location.find("[")]
     if not source_location:
         # build the current folder
-        wheel = source(Path.cwd(), outpath, exports, ctx)
+        wheel = source(Path.cwd(), outpath, exports, config_settings)
     elif source_location.find("://") != -1:
-        wheel = url(source_location, outpath, exports, ctx)
+        wheel = url(source_location, outpath, exports, config_settings)
     elif Path(source_location).is_dir():
         # a folder, build it
-        wheel = source(Path(source_location).resolve(), outpath, exports, ctx)
+        wheel = source(
+            Path(source_location).resolve(), outpath, exports, config_settings
+        )
     elif source_location.find("/") == -1:
         # try fetch or build from pypi
-        wheel = pypi(source_location, outpath, exports, ctx)
+        wheel = pypi(source_location, outpath, exports, config_settings)
     else:
         raise RuntimeError(f"Couldn't determine source type for {source_location}")
     # now build deps for wheel
@@ -260,7 +270,7 @@ def main(
                 # TODO: should we really use same "exports" value for all of our
                 # dependencies? Not sure this makes sense...
                 convert_exports(exports),
-                ctx.args,
+                config_settings,
                 output_lockfile=output_lockfile,
                 compression_level=compression_level,
             )

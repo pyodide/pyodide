@@ -91,3 +91,11 @@ function bufferAsUint8Array(arg) {
   }
 }
 API.typedArrayAsUint8Array = bufferAsUint8Array;
+
+Module.iterObject = function* (object) {
+  for (let k in object) {
+    if (Object.prototype.hasOwnProperty.call(object, k)) {
+      yield k;
+    }
+  }
+};
