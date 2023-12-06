@@ -5,6 +5,10 @@
 #undef true
 #undef false
 
+#ifdef DEBUG_F
+bool tracerefs;
+#endif
+
 #define JS_BUILTIN(val) JS_CONST(val, val)
 #define JS_INIT_CONSTS()                                                       \
   JS_BUILTIN(undefined)                                                        \
@@ -199,6 +203,10 @@ EM_JS(void, JsvArray_Extend, (JsVal arr, JsVal vals), {
   arr.push(...vals);
 });
 // clang-format on
+
+EM_JS_NUM(errcode, JsvArray_Insert, (JsVal arr, int idx, JsVal value), {
+  arr.splice(idx, 0, value);
+});
 
 EM_JS_NUM(JsVal, JsvArray_ShallowCopy, (JsVal arr), {
   return ("slice" in arr) ? arr.slice() : Array.from(arr);

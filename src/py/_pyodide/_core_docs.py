@@ -1,5 +1,6 @@
 import os
 import sys
+from abc import ABCMeta
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -10,12 +11,13 @@ from collections.abc import (
     KeysView,
     Mapping,
     MutableMapping,
+    MutableSequence,
     Sequence,
     ValuesView,
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, TypeVar, overload
+from typing import IO, Any, Generic, Protocol, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -32,6 +34,7 @@ _save_name = __name__
 __name__ = ""
 
 T = TypeVar("T")
+S = TypeVar("S")
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
 Tco = TypeVar("Tco", covariant=True)  # Any type covariant containers.
@@ -87,6 +90,10 @@ class _JsProxyMetaClass(type):
         return any(cls_flag & subclass_flags == cls_flag for cls_flag in cls_flags)
 
 
+class _ABCMeta(_JsProxyMetaClass, ABCMeta):
+    pass
+
+
 # We want to raise an error if someone tries to instantiate JsProxy directly
 # since it doesn't mean anything. But we have a few reasons to do so internally.
 # So we raise an error unless this private token is passed as an argument.
@@ -128,7 +135,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         return "object"
 
-    def object_entries(self) -> "JsProxy":
+    def object_entries(self) -> "JsArray[JsArray[Any]]":
         """
         The JavaScript API ``Object.entries(object)``
 
@@ -143,7 +150,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
         raise NotImplementedError
 
-    def object_keys(self) -> "JsProxy":
+    def object_keys(self) -> "JsArray[str]":
         """
         The JavaScript API ``Object.keys(object)``
 
@@ -157,7 +164,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         raise NotImplementedError
 
-    def object_values(self) -> "JsProxy":
+    def object_values(self) -> "JsArray[Any]":
         """
         The JavaScript API ``Object.values(object)``
 
@@ -339,7 +346,7 @@ class JsDoubleProxy(JsProxy):
         raise NotImplementedError
 
 
-class JsPromise(JsProxy):
+class JsPromise(JsProxy, Generic[T]):
     """A :py:class:`~pyodide.ffi.JsProxy` of a :js:class:`Promise` or some other `thenable
     <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise#thenables>`_
     JavaScript object.
@@ -349,27 +356,74 @@ class JsPromise(JsProxy):
 
     _js_type_flags = ["IS_AWAITABLE"]
 
+    @overload
     def then(
-        self, onfulfilled: Callable[[Any], Any], onrejected: Callable[[Any], Any]
-    ) -> "JsPromise":
+        self, onfulfilled: None, onrejected: Callable[[BaseException], Awaitable[S]], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self, onfulfilled: None, onrejected: Callable[[BaseException], S], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], Awaitable[S]],
+        onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
+        /,
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def then(
+        self,
+        onfulfilled: Callable[[T], S],
+        onrejected: Callable[[BaseException], S] | None = None,
+        /,
+    ) -> "JsPromise[S]":
+        ...
+
+    @docs_argspec(
+        "(self, onfulfilled: Callable[[T], Awaitable[S] | S] | None, onrejected: Callable[[BaseException], Awaitable[S] | S] | None = None, /) -> 'JsPromise[S]'"
+    )
+    def then(
+        self,
+        onfulfilled: Any,
+        onrejected: Any = None,
+    ) -> Any:
         """The :js:meth:`Promise.then` API, wrapped to manage the lifetimes of the
         handlers.
-
         Pyodide will automatically release the references to the handlers
         when the promise resolves.
         """
-        raise NotImplementedError
+        pass
 
-    def catch(self, onrejected: Callable[[Any], Any], /) -> "JsPromise":
+    @overload
+    def catch(
+        self, onrejected: Callable[[BaseException], Awaitable[S]], /
+    ) -> "JsPromise[S]":
+        ...
+
+    @overload
+    def catch(self, onrejected: Callable[[BaseException], S], /) -> "JsPromise[S]":
+        ...
+
+    @docs_argspec(
+        "(self, onrejected: Callable[[BaseException], Awaitable[S] | S], /) -> 'JsPromise[S]'"
+    )
+    def catch(self, onrejected: Any, /) -> Any:
         """The :js:meth:`Promise.catch` API, wrapped to manage the lifetimes of the
         handler.
 
         Pyodide will automatically release the references to the handler
         when the promise resolves.
         """
-        raise NotImplementedError
+        pass
 
-    def finally_(self, onfinally: Callable[[], Any], /) -> "JsPromise":
+    def finally_(self, onfinally: Callable[[], None], /) -> "JsPromise[T]":
         """The :js:meth:`Promise.finally` API, wrapped to manage the lifetimes of
         the handler.
 
@@ -377,7 +431,7 @@ class JsPromise(JsProxy):
         when the promise resolves. Note the trailing underscore in the name;
         this is needed because ``finally`` is a reserved keyword in Python.
         """
-        raise NotImplementedError
+        return self
 
 
 class JsBuffer(JsProxy):
@@ -790,15 +844,31 @@ class JsCallable(JsProxy):
         pass
 
 
-class JsArray(JsIterable[T], Generic[T]):
+class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta):
     """A JsProxy of an :js:class:`Array`, :js:class:`NodeList`, or :js:class:`TypedArray`"""
 
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
-    def __getitem__(self, idx: int | slice) -> T:
+    @overload
+    def __getitem__(self, idx: int) -> T:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> "JsArray[T]":
+        ...
+
+    def __getitem__(self, idx):
         raise NotImplementedError
 
-    def __setitem__(self, idx: int | slice, value: T) -> None:
+    @overload
+    def __setitem__(self, idx: int, value: T) -> None:
+        ...
+
+    @overload
+    def __setitem__(self, idx: slice, value: Iterable[T]) -> None:
+        ...
+
+    def __setitem__(self, idx, value):
         pass
 
     def __delitem__(self, idx: int | slice) -> None:
@@ -839,9 +909,22 @@ class JsArray(JsIterable[T], Generic[T]):
         raise NotImplementedError
 
     def reverse(self) -> None:
-        """Reverse the array in place.
+        """Reverse the array in place."""
+        raise NotImplementedError
 
-        Present only if the wrapped Javascript object is an array.
+    def insert(self, index: int, value: T) -> None:
+        """Insert an item at a given position.
+
+        The first argument is the index of the element before which to insert,
+        so ``a.insert(0, x)`` inserts at the front of the list, and
+        ``a.insert(len(a), x)`` is equivalent to ``a.append(x)``.
+        """
+        raise NotImplementedError
+
+    def remove(self, value: T) -> None:
+        """Remove the first item from the list whose value is equal to ``x``.
+
+        It raises a :py:exc:`ValueError` if there is no such item.
         """
 
     def to_py(
@@ -872,8 +955,7 @@ class JsTypedArray(JsBuffer, JsArray[int]):
     buffer: JsBuffer
 
 
-@Mapping.register
-class JsMap(JsIterable[KT], Generic[KT, VTco]):
+class JsMap(JsIterable[KT], Generic[KT, VTco], Mapping[KT, VTco], metaclass=_ABCMeta):
     """A JavaScript Map
 
     To be considered a map, a JavaScript object must have a ``get`` method, it
@@ -889,7 +971,7 @@ class JsMap(JsIterable[KT], Generic[KT, VTco]):
     def __len__(self) -> int:
         return 0
 
-    def __contains__(self, idx: KT) -> bool:
+    def __contains__(self, idx: object) -> bool:
         raise NotImplementedError
 
     def keys(self) -> KeysView[KT]:
@@ -918,8 +1000,17 @@ class JsMap(JsIterable[KT], Generic[KT, VTco]):
         raise NotImplementedError
 
 
-@MutableMapping.register
-class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
+class _SupportsKeysAndGetItem(Protocol[KT, VTco]):
+    def keys(self) -> Iterable[KT]:
+        ...
+
+    def __getitem__(self, __key: KT) -> VTco:
+        ...
+
+
+class JsMutableMap(
+    JsMap[KT, VT], Generic[KT, VT], MutableMapping[KT, VT], metaclass=_ABCMeta
+):
     """A JavaScript mutable map
 
     To be considered a mutable map, a JavaScript object must have a ``get``
@@ -964,7 +1055,7 @@ class JsMutableMap(JsMap[KT, VT], Generic[KT, VT]):
         """Empty out the map entirely."""
 
     @overload
-    def update(self, __m: Mapping[KT, VT], **kwargs: VT) -> None:
+    def update(self, __m: _SupportsKeysAndGetItem[KT, VT], **kwargs: VT) -> None:
         ...
 
     @overload

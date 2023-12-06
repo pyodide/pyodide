@@ -50,7 +50,7 @@ _Py_IDENTIFIER(athrow);
 EM_JS(int, pyproxy_Check, (JsVal val), { return API.isPyProxy(val); });
 
 EM_JS(PyObject*, pyproxy_AsPyObject, (JsVal val), {
-  if (!API.isPyProxy(val)) {
+  if (!API.isPyProxy(val) || !pyproxyIsAlive(val)) {
     return 0;
   }
   return Module.PyProxy_getPtr(val);
