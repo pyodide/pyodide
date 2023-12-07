@@ -12,6 +12,9 @@ requirements:
     - idna
     - urllib3
     - certifi
+test:
+  imports:
+    - requests
 about:
   home: https://requests.readthedocs.io
   PyPI: https://pypi.org/project/requests
