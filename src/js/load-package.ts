@@ -80,11 +80,21 @@ const DEFAULT_CHANNEL = "default channel";
 // Regexp for validating package name and URI
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
-function _uri_to_package_name(package_uri: string): string | undefined {
+type ParsedPackageData = {
+  distribution: string;
+  version: string;
+};
+
+function _uri_to_package_data(
+  package_uri: string,
+): ParsedPackageData | undefined {
   let match = package_uri_regexp.exec(package_uri);
   if (match) {
-    let wheel_name = match[1].toLowerCase();
-    return wheel_name.split("-").slice(0, -4).join("-");
+    let wheelName = match[1].toLowerCase().split("-");
+    return {
+      distribution: wheelName.slice(0, -4).join("-"),
+      version: wheelName[1],
+    };
   }
 }
 
@@ -94,7 +104,7 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData?: InternalPackageData;
+  packageData: InternalPackageData;
 };
 
 export type PackageType =
@@ -197,12 +207,13 @@ function recursiveDependencies(
 ): Map<string, PackageLoadMetadata> {
   const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
-    const pkgname = _uri_to_package_name(name);
-    if (pkgname === undefined) {
+    const parsedPackageData = _uri_to_package_data(name);
+    if (parsedPackageData === undefined) {
       addPackageToLoad(name, toLoad);
       continue;
     }
 
+    const { distribution: pkgname, version } = parsedPackageData;
     const channel = name;
 
     if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
@@ -219,6 +230,17 @@ function recursiveDependencies(
       depends: [],
       installPromise: undefined,
       done: createDonePromise(),
+      packageData: {
+        name: pkgname,
+        version: version,
+        file_name: name,
+        install_dir: "site",
+        sha256: "",
+        package_type: "package",
+        imports: [],
+        depends: [],
+        shared_library: false,
+      },
     });
   }
   return toLoad;
@@ -376,9 +398,8 @@ async function downloadAndInstall(
     await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.name, buffer, pkg.channel);
-    if (pkg.packageData) {
-      loaded.add(pkg.packageData);
-    }
+
+    loaded.add(pkg.packageData);
     loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(name, err);
