@@ -36,7 +36,7 @@ To contribute code, see the following steps,
    git remote add upstream https://github.com/pyodide/pyodide.git
    ```
 4. While the build will happen inside Docker you still need a development
-   environment with Python 3.10 and ideally Node.js. These can be installed
+   environment with Python 3.11 and ideally Node.js. These can be installed
    for instance with,
    ```
    conda env create -f environment.yml
