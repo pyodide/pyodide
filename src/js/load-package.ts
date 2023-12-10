@@ -81,8 +81,9 @@ const DEFAULT_CHANNEL = "default channel";
 const package_uri_regexp = /^.*?([^\/]*)\.whl$/;
 
 type ParsedPackageData = {
-  distribution: string;
+  name: string;
   version: string;
+  file_name: string;
 };
 
 function _uri_to_package_data(
@@ -92,8 +93,9 @@ function _uri_to_package_data(
   if (match) {
     let wheelName = match[1].toLowerCase().split("-");
     return {
-      distribution: wheelName.slice(0, -4).join("-"),
+      name: wheelName[0],
       version: wheelName[1],
+      file_name: wheelName.join("-") + ".whl",
     };
   }
 }
@@ -213,7 +215,7 @@ function recursiveDependencies(
       continue;
     }
 
-    const { distribution: pkgname, version } = parsedPackageData;
+    const { name: pkgname, version, file_name } = parsedPackageData;
     const channel = name;
 
     if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
@@ -233,7 +235,7 @@ function recursiveDependencies(
       packageData: {
         name: pkgname,
         version: version,
-        file_name: name,
+        file_name,
         install_dir: "site",
         sha256: "",
         package_type: "package",
