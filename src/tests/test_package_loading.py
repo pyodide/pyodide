@@ -97,6 +97,65 @@ def test_load_relative_url(
         )
 
 
+def test_load_absolute_url_package_json(
+    request, runtime, web_server_main, playwright_browsers, tmp_path
+):
+    """Check that URLs are supported in repodata.json"""
+    baseurl = f"http://{web_server_main[0]}:{web_server_main[1]}"
+    try:
+        with spawn_web_server(tmp_path), selenium_common(
+            request,
+            runtime,
+            web_server_main,
+            load_pyodide=False,
+            browsers=playwright_browsers,
+            script_type="classic",
+        ) as selenium, set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request.node)
+        ):
+            lockfile = json.loads((DIST_PATH / "pyodide-lock.json").read_text())
+            new_lockfile_path = DIST_PATH / "pyodide-lock2.json"
+
+            pytz_path = DIST_PATH / get_pytz_wheel_name()
+            pytz2_path = DIST_PATH / get_pytz_wheel_name().replace("pytz", "pytz2")
+            shutil.copy(pytz_path, pytz2_path)
+
+            for name, package in lockfile["packages"].items():
+                if name == "pytz":
+                    package[
+                        "url"
+                    ] = f"{baseurl}/{package['file_name'].replace('pytz', 'pytz2')}"
+                else:
+                    package["url"] = f"{baseurl}/{package['file_name']}"
+
+            (new_lockfile_path).write_text(json.dumps(lockfile))
+
+            if selenium.browser != "node":
+                selenium.goto(f"{baseurl}/test.html")
+
+            # Equivalent to selenium.load_pyodide() but with custom
+            # see pytest-pyodide/pytest_pyodide/runner.py
+            selenium.run_js(
+                f"""
+                let pyodide = await loadPyodide({{ fullStdLib: false, jsglobals : self,
+                                                   lockFileURL: "{baseurl}/pyodide-lock2.json" }});
+                self.pyodide = pyodide;
+                globalThis.pyodide = pyodide;
+                """
+            )
+            selenium.initialize_pyodide()
+            if selenium.browser == "node":
+                selenium.run_js(f"process.chdir('{DIST_PATH}')")
+            selenium.load_package("pytz")
+            selenium.run("import pytz")
+            assert selenium.run(
+                "from pyodide_js import loadedPackages; loadedPackages"
+            ) == {"pytz": "default channel"}
+    finally:
+        new_lockfile_path.unlink(missing_ok=True)
+        pytz2_path.unlink(missing_ok=True)
+
+
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 

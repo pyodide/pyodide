@@ -229,9 +229,22 @@ function recursiveDependencies(
 //
 
 /**
- * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
- * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
- * `channel`.
+ * Download a package.
+ *
+ * In the browser:
+ *  - If `channel` is not `DEFAULT_CHANNEL`, download the package from the URL
+ *    specified by `channel`.
+ *  - If `channel` is `DEFAULT_CHANNEL`:
+ *    - if package->url field is specified, download it from there
+ *    - otherwise construct the wheel URL as indexURL / package->file_name
+ *
+ * In Node:
+ *  - If `channel` is not `DEFAULT_CHANNEL`, same logic as in the browser (i.e. no caching)
+ *  - If `channel` is `DEFAULT_CHANNEL`:
+ *    - If the package is already in packageCacheDir / package->file_name, use that
+ *    - Use package->url is defined or indexURL / package->file_name to
+ *    download the wheel and copy it into packageCacheDir
+ *
  * @param name The name of the package
  * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
  * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
@@ -256,39 +269,46 @@ async function downloadPackage(
     installBaseUrl = API.config.indexURL;
   }
 
-  let file_name, uri, file_sub_resource_hash;
+  let file_name, remote_url, uri, file_sub_resource_hash;
   if (channel === DEFAULT_CHANNEL) {
     if (!(name in API.lockfile_packages)) {
       throw new Error(`Internal error: no entry for package named ${name}`);
     }
     file_name = API.lockfile_packages[name].file_name;
+    remote_url = API.lockfile_packages[name].url;
     uri = resolvePath(file_name, installBaseUrl);
     file_sub_resource_hash =
       "sha256-" + base16ToBase64(API.lockfile_packages[name].sha256);
   } else {
+    // in this case channel is the URL
     uri = channel;
+    remote_url = channel;
     file_sub_resource_hash = undefined;
   }
 
   if (!checkIntegrity) {
     file_sub_resource_hash = undefined;
   }
+  if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
+    // Use url field if it's defined. Caching in Node is not yet supported in this case.
+    return await loadBinaryFile(remote_url || uri, file_sub_resource_hash);
+  }
+
+  // IN_NODE try loading from the local file system first
   try {
     return await loadBinaryFile(uri, file_sub_resource_hash);
   } catch (e) {
-    if (!IN_NODE || channel !== DEFAULT_CHANNEL) {
-      throw e;
-    }
+    // pass
   }
   console.log(
-    `Didn't find package ${file_name} locally, attempting to load from ${cdnURL}`,
+    `Didn't find package ${file_name} locally, attempting to load from ${
+      remote_url || cdnURL
+    }`,
   );
   // If we are IN_NODE, download the package from the cdn, then stash it into
   // the node_modules directory for future use.
-  let binary = await loadBinaryFile(cdnURL + file_name);
-  console.log(
-    `Package ${file_name} loaded from ${cdnURL}, caching the wheel in node_modules for future use.`,
-  );
+  let binary = await loadBinaryFile(remote_url || cdnURL + file_name);
+  console.log(`Caching ${file_name} in node_modules for future use.`);
   await nodeFsPromisesMod.writeFile(uri, binary);
   return binary;
 }
