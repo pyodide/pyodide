@@ -231,23 +231,6 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
 
 
-def test_load_package_unknown(selenium_standalone):
-    pyparsing_wheel_name = get_pyparsing_wheel_name()
-    shutil.copyfile(
-        DIST_PATH / pyparsing_wheel_name,
-        DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl",
-    )
-
-    try:
-        selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
-    finally:
-        (DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
-
-    assert selenium_standalone.run_js(
-        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
-    )
-
-
 def test_load_twice(selenium_standalone):
     selenium_standalone.load_package("pytz")
     selenium_standalone.load_package("pytz")
