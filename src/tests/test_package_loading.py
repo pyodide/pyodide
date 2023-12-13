@@ -143,12 +143,12 @@ def test_load_package_return(selenium_standalone):
 
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
-def test_load_package_return_from_uri(
+def test_load_package_return_from_url(
     selenium_standalone, web_server_secondary, active_server
 ):
     selenium = selenium_standalone
     if active_server == "secondary":
-        url, port = web_server_secondary
+        url, port, _ = web_server_secondary
     elif active_server == "main":
         url = selenium.server_hostname
         port = selenium.server_port
