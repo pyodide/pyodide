@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug that micropip would fail to install packages from pyodide-lock.json
+  if the package's name differs from its normalized name.
+  {pr}`4319`
+
 - {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
   containing the loaded package's metadata.
   {pr}`4306`
@@ -60,6 +64,9 @@ myst:
 
 - {{ Enhancement }} Added `JsArray.remove` and `JsArray.insert` methods.
   {pr}`4326`
+
+- {{ Fix }} `pyodide.setStdin` now does not consider an empty string as EOF.
+  {pr}`4327`
 
 ### Pyodide CLI
 

@@ -16,6 +16,7 @@ def test_custom_stdin1(selenium_standalone_noload):
         "pyodidé",
         "碘化物",
         "🐍",
+        "",
     ]
     outstrings: list[str] = sum(
         ((s.removesuffix("\n") + "\n").splitlines(keepends=True) for s in strings), []
