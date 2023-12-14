@@ -1158,23 +1158,6 @@ def test_restore_error(selenium):
     )
 
 
-def test_home_directory(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        const homedir = "/home/custom_home";
-        const pyodide = await loadPyodide({
-            homedir,
-        });
-        return pyodide.runPython(`
-            import os
-            os.getcwd() == "${homedir}"
-        `)
-        """
-    )
-    assert "The homedir argument to loadPyodide is deprecated" in selenium.logs
-
-
 def test_env(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     hashval = selenium.run_js(
