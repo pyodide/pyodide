@@ -18,7 +18,7 @@ declare var Tests: any;
 declare var Module: any;
 
 import { TypedArray } from "types";
-import { warnOnce } from "pyodide_util";
+import { warnOnce } from "pyodide-util";
 
 // pyodide-skip
 

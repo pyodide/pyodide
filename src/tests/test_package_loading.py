@@ -588,3 +588,40 @@ def test_custom_lockfile(selenium_standalone_noload):
         )
     finally:
         custom_lockfile.unlink()
+
+
+@pytest.mark.parametrize(
+    "load_name, normalized_name, real_name",
+    [
+        # TODO: find a better way to test this without relying on the core packages set
+        ("fpcast-test", "fpcast-test", "fpcast-test"),
+        ("fpcast_test", "fpcast-test", "fpcast-test"),
+        ("Jinja2", "jinja2", "Jinja2"),
+        ("jinja2", "jinja2", "Jinja2"),
+        ("pydoc_data", "pydoc-data", "pydoc_data"),
+        ("pydoc-data", "pydoc-data", "pydoc_data"),
+    ],
+)
+def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        f"""
+        const msgs = [];
+        await pyodide.loadPackage(
+            "{load_name}",
+            {{
+                messageCallback: (msg) => msgs.push(msg),
+            }}
+        )
+
+        const loaded = Object.keys(pyodide.loadedPackages);
+        assert(() => loaded.includes("{real_name}"));
+
+        const loadStartMsgs = msgs.filter((msg) => msg.startsWith("Loading"));
+        const loadEndMsgs = msgs.filter((msg) => msg.startsWith("Loaded"));
+
+        assert(() => loadStartMsgs.some((msg) => msg.includes("{real_name}")));
+        assert(() => loadEndMsgs.some((msg) => msg.includes("{real_name}")));
+        """
+    )
