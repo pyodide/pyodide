@@ -253,7 +253,7 @@ def test_install_non_normalized_package(selenium_standalone_micropip):
 
     selenium = selenium_standalone_micropip
 
-    selenium.run(
+    selenium.run_async(
         """
         import micropip
         await micropip.install("ruamel.yaml")

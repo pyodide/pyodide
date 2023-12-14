@@ -1,7 +1,7 @@
 import * as chai from "chai";
 import {
   canonicalizePackageName,
-  uriToPackageName,
+  uriToPackageData,
 } from "../../packaging-utils";
 
 describe("canonicalizePackageName", () => {
@@ -22,29 +22,50 @@ describe("canonicalizePackageName", () => {
   });
 });
 
-describe("uriToPackageName", () => {
-  it("should return the URI unchanged if URI is a wheel URI", () => {
-    const testcases = [
+describe("uriToPackageData", () => {
+  it("should return the correct package data if a correct wheel URI is given", () => {
+    const testcases: [
+      string,
+      { name: string; version: string; fileName: string },
+    ][] = [
       [
         "https://files.pythonhosted.org/packages/70/8e/0e2d847013cb52cd35b38c009bb167a1a26b2ce6cd6965bf26b47bc0bf44/requests-2.31.0-py3-none-any.whl",
-        "requests",
+        {
+          name: "requests",
+          version: "2.31.0",
+          fileName: "requests-2.31.0-py3-none-any.whl",
+        },
       ],
-      ["https://example.com/srtrain-2.3.0-py3-none-any.whl", "srtrain"],
+      [
+        "https://example.com/srtrain-2.3.0-py3-none-any.whl",
+        {
+          name: "srtrain",
+          version: "2.3.0",
+          fileName: "srtrain-2.3.0-py3-none-any.whl",
+        },
+      ],
       [
         "https://test.net/numpy-1.25.2-cp311-cp311-emscripten_3_1_45_wasm32.whl",
-        "numpy",
+        {
+          name: "numpy",
+          version: "1.25.2",
+          fileName: "numpy-1.25.2-cp311-cp311-emscripten_3_1_45_wasm32.whl",
+        },
       ],
     ];
 
     testcases.forEach((tc) => {
       const [url, expected] = tc;
-      chai.assert.equal(uriToPackageName(url), expected);
+      const pkgData = uriToPackageData(url);
+      chai.assert.equal(pkgData?.name, expected.name);
+      chai.assert.equal(pkgData?.version, expected.version);
+      chai.assert.equal(pkgData?.fileName, expected.fileName);
     });
   });
 
   it("should return undefined if URI is not a valid wheel URI", () => {
-    chai.assert.equal(uriToPackageName("requests"), undefined);
-    chai.assert.equal(uriToPackageName("pyodide-lock"), undefined);
-    chai.assert.equal(uriToPackageName("pytest_benchmark"), undefined);
+    chai.assert.equal(uriToPackageData("requests"), undefined);
+    chai.assert.equal(uriToPackageData("pyodide-lock"), undefined);
+    chai.assert.equal(uriToPackageData("pytest_benchmark"), undefined);
   });
 });

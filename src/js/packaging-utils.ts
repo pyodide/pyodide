@@ -31,7 +31,9 @@ const packageUriRegex = /^.*?([^\/]*)\.whl$/;
  * @returns The package name.
  * @private
  */
-export function uriToPackageName(packageUri: string): ParsedPackageData | undefined {
+export function uriToPackageData(
+  packageUri: string,
+): ParsedPackageData | undefined {
   const match = packageUriRegex.exec(packageUri);
   if (match) {
     let wheelName = match[1].toLowerCase().split("-");
