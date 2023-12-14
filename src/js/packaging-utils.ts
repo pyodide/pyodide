@@ -15,6 +15,12 @@ export function canonicalizePackageName(name: string): string {
   return name.replace(canonicalizeNameRegex, "-").toLowerCase();
 }
 
+type ParsedPackageData = {
+  name: string;
+  version: string;
+  fileName: string;
+};
+
 // Regexp for validating package name and URI
 const packageUriRegex = /^.*?([^\/]*)\.whl$/;
 
@@ -25,11 +31,14 @@ const packageUriRegex = /^.*?([^\/]*)\.whl$/;
  * @returns The package name.
  * @private
  */
-export function uriToPackageName(packageUri: string): string | undefined {
-  let match = packageUriRegex.exec(packageUri);
+export function uriToPackageName(packageUri: string): ParsedPackageData | undefined {
+  const match = packageUriRegex.exec(packageUri);
   if (match) {
-    const wheelName = match[1].toLowerCase();
-    const pkgName = wheelName.split("-").slice(0, -4).join("-");
-    return canonicalizePackageName(pkgName);
+    let wheelName = match[1].toLowerCase().split("-");
+    return {
+      name: wheelName[0],
+      version: wheelName[1],
+      fileName: wheelName.join("-") + ".whl",
+    };
   }
 }

@@ -11,8 +11,7 @@ import {
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
-import { makeWarnOnce } from "./pyodide-util";
-import { canonicalizePackageName, uriToPackageName } from "./packaging-utils";
+import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -86,7 +85,7 @@ type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData?: InternalPackageData;
+  packageData: InternalPackageData;
 };
 
 export type PackageType =
@@ -190,12 +189,13 @@ function recursiveDependencies(
 ): Map<string, PackageLoadMetadata> {
   const toLoad: Map<string, PackageLoadMetadata> = new Map();
   for (let name of names) {
-    const pkgname = uriToPackageName(name);
-    if (pkgname === undefined) {
+    const parsedPackageData = uriToPackageData(name);
+    if (parsedPackageData === undefined) {
       addPackageToLoad(name, toLoad);
       continue;
     }
 
+    const { name: pkgname, version, fileName } = parsedPackageData;
     const channel = name;
 
     if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
@@ -213,6 +213,17 @@ function recursiveDependencies(
       depends: [],
       installPromise: undefined,
       done: createDonePromise(),
+      packageData: {
+        name: pkgname,
+        version: version,
+        file_name: fileName,
+        install_dir: "site",
+        sha256: "",
+        package_type: "package",
+        imports: [],
+        depends: [],
+        shared_library: false,
+      },
     });
   }
   return toLoad;
@@ -368,9 +379,8 @@ async function downloadAndInstall(
     await Promise.all(installPromiseDependencies);
 
     await installPackage(pkg.normalizedName, buffer, pkg.channel);
-    if (pkg.packageData) {
-      loaded.add(pkg.packageData);
-    }
+
+    loaded.add(pkg.packageData);
     loadedPackages[pkg.name] = pkg.channel;
   } catch (err: any) {
     failed.set(pkg.name, err);
