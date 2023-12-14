@@ -19,6 +19,7 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -637,6 +638,8 @@ def generate_packagedata(
 ) -> dict[str, PackageLockSpec]:
     packages: dict[str, PackageLockSpec] = {}
     for name, pkg in pkg_map.items():
+        normalized_name = canonicalize_name(name)
+
         if not pkg.file_name or pkg.package_type == "static_library":
             continue
         if not Path(output_dir, pkg.file_name).exists():
@@ -666,10 +669,10 @@ def generate_packagedata(
                 pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
             )
 
-        packages[name.lower()] = pkg_entry
+        packages[normalized_name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            packages[name.lower()].unvendored_tests = True
+            packages[normalized_name.lower()].unvendored_tests = True
 
             # Create the test package if necessary
             pkg_entry = PackageLockSpec(
@@ -682,7 +685,7 @@ def generate_packagedata(
 
             update_package_sha256(pkg_entry, output_dir / pkg.unvendored_tests.name)
 
-            packages[name.lower() + "-tests"] = pkg_entry
+            packages[normalized_name.lower() + "-tests"] = pkg_entry
 
     # sort packages by name
     packages = dict(sorted(packages.items()))
