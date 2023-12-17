@@ -10,14 +10,14 @@ build:
 package:
   name: awkward-cpp
   top-level:
-  - awkward_cpp
-  version: '27'
+    - awkward_cpp
+  version: "27"
 requirements:
   run:
-  - numpy
+    - numpy
 source:
   sha256: 3c196518bfcce709766d63878041317a4914b62f8083e1a3e03b4fd6ea6f3c8d
   url: https://files.pythonhosted.org/packages/dc/4c/1da5e387a2ec963dfc1004af1a2e404488097f1cea3279a0d79fa11f9333/awkward-cpp-27.tar.gz
 test:
   imports:
-  - awkward_cpp
+    - awkward_cpp
