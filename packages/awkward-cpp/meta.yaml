@@ -1,27 +1,23 @@
-package:
-  name: awkward-cpp
-  version: "26"
-  top-level:
-    - awkward_cpp
-
-source:
-  url: https://files.pythonhosted.org/packages/14/b3/08bea6c701ba178d012ccb5ec7f05c34e1be466c8f57fbf6085c7f347752/awkward-cpp-26.tar.gz
-  sha256: a37c08f89126b637d4733454a1bf3f28b18d9f7947d21dc6ba12037d883b1c66
-
-build:
-  script: |
-    export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
-  exports: whole_archive
-
-requirements:
-  run:
-    - numpy
-
-test:
-  imports:
-    - awkward_cpp
-
 about:
   home: https://pypi.org/project/awkward-cpp/
-  summary: CPU kernels and compiled extensions for Awkward Array
   license: BSD-3-Clause
+  summary: CPU kernels and compiled extensions for Awkward Array
+build:
+  exports: whole_archive
+  script: 'export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
+
+    '
+package:
+  name: awkward-cpp
+  top-level:
+  - awkward_cpp
+  version: '27'
+requirements:
+  run:
+  - numpy
+source:
+  sha256: 3c196518bfcce709766d63878041317a4914b62f8083e1a3e03b4fd6ea6f3c8d
+  url: https://files.pythonhosted.org/packages/dc/4c/1da5e387a2ec963dfc1004af1a2e404488097f1cea3279a0d79fa11f9333/awkward-cpp-27.tar.gz
+test:
+  imports:
+  - awkward_cpp
