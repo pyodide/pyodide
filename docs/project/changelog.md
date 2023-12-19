@@ -68,6 +68,20 @@ myst:
 - {{ Fix }} `pyodide.setStdin` now does not consider an empty string as EOF.
   {pr}`4327`
 
+- {{ Breaking }} `loadPyodide` does not accept `homedir` option anymore, use
+  `env: {HOME: "/the/home/directory"}` instead. This have been deprecated since
+  Pyodide 0.24.
+  {pr}`4342`
+
+- {{ Breaking }} Type exports of `PyProxy` subtypes have been moved from
+  `pyodide` to `pyodide/ffi` and many of them have changed names.
+  {pr}`4342`
+
+- {{ Breaking }} The methods for checking `PyProxy` capabilities (e.g.,
+  `supportsHas`, `isCallable`) are now removed. Use e.g.,
+  `instanceof pyodide.ffi.PyCallable` instead.
+  {pr}`4342`
+
 ### Pyodide CLI
 
 - {{ Enhancement }} `pyodide config` command now show additional config variables:

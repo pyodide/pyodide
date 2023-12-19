@@ -756,98 +756,6 @@ export class PyProxy {
     }
     return result;
   }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithLength`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithLength`` instead.
-   */
-  @warnOnce(
-    "supportsLength() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithLength` instead.",
-  )
-  supportsLength(): this is PyProxyWithLength {
-    return !!(_getFlags(this) & HAS_LENGTH);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithGet`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithGet`` instead.
-   */
-  @warnOnce(
-    "supportsGet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithGet` instead.",
-  )
-  supportsGet(): this is PyProxyWithGet {
-    return !!(_getFlags(this) & HAS_GET);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithSet`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithSet`` instead.
-   */
-  @warnOnce(
-    "supportsSet() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithSet` instead.",
-  )
-  supportsSet(): this is PyProxyWithSet {
-    return !!(_getFlags(this) & HAS_SET);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyProxyWithHas`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyProxyWithHas`` instead.
-   */
-  @warnOnce(
-    "supportsHas() is deprecated. Use `instanceof pyodide.ffi.PyProxyWithHas` instead.",
-  )
-  supportsHas(): this is PyProxyWithHas {
-    return !!(_getFlags(this) & HAS_CONTAINS);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
-   * :js:class:`~pyodide.ffi.PyIterable`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyIterable`` instead.
-   */
-  @warnOnce(
-    "isIterable() is deprecated. Use `instanceof pyodide.ffi.PyIterable` instead.",
-  )
-  isIterable(): this is PyIterable {
-    return !!(_getFlags(this) & (IS_ITERABLE | IS_ITERATOR));
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a
-   * :js:class:`~pyodide.ffi.PyIterator`
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyIterator`` instead.
-   */
-  @warnOnce(
-    "isIterator() is deprecated. Use `instanceof pyodide.ffi.PyIterator` instead.",
-  )
-  isIterator(): this is PyIterator {
-    return !!(_getFlags(this) & IS_ITERATOR);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyAwaitable`
-   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyAwaitable <pyodide.ffi.PyAwaitable>` instead.
-   */
-  @warnOnce(
-    "isAwaitable() is deprecated. Use `instanceof pyodide.ffi.PyAwaitable` instead.",
-  )
-  isAwaitable(): this is PyAwaitable {
-    return !!(_getFlags(this) & IS_AWAITABLE);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyBuffer`.
-   * @deprecated Use ``obj instanceof pyodide.ffi.PyBuffer`` instead.
-   */
-  @warnOnce(
-    "isBuffer() is deprecated. Use `instanceof pyodide.ffi.PyBuffer` instead.",
-  )
-  isBuffer(): this is PyBuffer {
-    return !!(_getFlags(this) & IS_BUFFER);
-  }
-  /**
-   * Check whether the :js:class:`~pyodide.ffi.PyProxy` is a :js:class:`~pyodide.ffi.PyCallable`.
-   * @deprecated ``obj instanceof pyodide.ffi.PyCallable`` instead.
-   */
-  @warnOnce(
-    "isCallable() is deprecated. Use `instanceof pyodide.ffi.PyCallable` instead.",
-  )
-  isCallable(): this is PyCallable {
-    return !!(_getFlags(this) & IS_CALLABLE);
-  }
 }
 
 const PyProxyProto = PyProxy.prototype;
@@ -1090,9 +998,6 @@ export class PyIterable extends PyProxy {
 
 export interface PyIterable extends PyIterableMethods {}
 
-/** @deprecated Use :js:class:`pyodide.ffi.PyIterable` instead. */
-export type PyProxyIterable = PyIterable;
-
 // Controlled by IS_ITERABLE, appears for any object with __iter__ or tp_iter,
 // unless they are iterators. See: https://docs.python.org/3/c-api/iter.html
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols
@@ -1235,9 +1140,6 @@ export class PyIterator extends PyProxy {
 }
 
 export interface PyIterator extends PyIteratorMethods {}
-
-/** @deprecated Use :js:class:`pyodide.ffi.PyIterator` instead. */
-export type PyProxyIterator = PyIterator;
 
 // Controlled by IS_ITERATOR, appears for any object with a __next__ or
 // tp_iternext method.
@@ -2296,8 +2198,6 @@ export class PyAwaitable extends PyProxy {
 }
 
 export interface PyAwaitable extends Promise<any> {}
-/** @deprecated Use :js:class:`pyodide.ffi.PyAwaitable` instead. */
-export type PyProxyAwaitable = PyAwaitable;
 
 /**
  * The Promise / JavaScript awaitable API.
@@ -2404,11 +2304,6 @@ export class PyCallable extends PyProxy {
     return API.isPyProxy(obj) && !!(_getFlags(obj) & IS_CALLABLE);
   }
 }
-
-/**
- * @deprecated Use :js:class:`pyodide.ffi.PyCallable` instead.
- */
-export type PyProxyCallable = PyCallable;
 
 export interface PyCallable extends PyCallableMethods {
   (...args: any[]): any;
@@ -2749,9 +2644,6 @@ export interface PyDict
     PyProxyWithHas,
     PyProxyWithLength,
     PyIterable {}
-
-/** @deprecated Use :js:class:`pyodide.ffi.PyDict` instead. */
-export type PyProxyDict = PyDict;
 
 /**
  * A class to allow access to Python data buffers from JavaScript. These are
