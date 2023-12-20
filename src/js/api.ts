@@ -4,13 +4,7 @@ import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { PackageData, loadPackage, loadedPackages } from "./load-package";
-import {
-  PyBufferView,
-  PyBuffer,
-  type PyProxy,
-  type PyDict,
-} from "generated/pyproxy";
-import { PythonError } from "../core/error_handling";
+import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
@@ -580,68 +574,6 @@ export class PyodideAPI {
         throw new Module.FS.ErrnoError(cDefs.EINTR);
       }
     }
-  }
-
-  /**
-   * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
-   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyProxy <pyodide.ffi.PyProxy>` instead.
-   * @param jsobj Object to test.
-   */
-  static isPyProxy(jsobj: any): jsobj is PyProxy {
-    console.warn(
-      "pyodide.isPyProxy() is deprecated. Use `instanceof pyodide.ffi.PyProxy` instead.",
-    );
-    this.isPyProxy = API.isPyProxy;
-    return API.isPyProxy(jsobj);
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBufferView`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PyBuffer() {
-    console.warn(
-      "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead.",
-    );
-    Object.defineProperty(this, "PyBuffer", { value: PyBufferView });
-    return PyBufferView;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-
-  static get PyProxyBuffer() {
-    console.warn(
-      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead.",
-    );
-    Object.defineProperty(this, "PyProxyBuffer", { value: PyBuffer });
-    return PyBuffer;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PythonError`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PythonError() {
-    console.warn(
-      "pyodide.PythonError is deprecated. Use `pyodide.ffi.PythonError` instead.",
-    );
-    Object.defineProperty(this, "PythonError", { value: PythonError });
-    return PythonError;
   }
 
   /**
