@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added built in packages for urllib3 and requests.
+  {pr}`4332`
+
+
 - {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
   containing the loaded package's metadata.
   {pr}`4306`
