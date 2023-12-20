@@ -50,16 +50,16 @@ Instead, it is better to load individual modules as needed using
 ### Synchronous HTTP requests support
 
 Packages for `urllib3` and `requests` are included in pyodide. These function
-*roughly* the same as on other operating systems with some limitations. 
+_roughly_ the same as on other operating systems with some limitations.
 
-Firstly, streaming download of files only works in very specific 
-circumstances, which are that pyodide has to be running in a web-worker, 
+Firstly, streaming download of files only works in very specific
+circumstances, which are that pyodide has to be running in a web-worker,
 and it has to be on a cross-origin isolated website. If either of these
 conditions are not met, it will do a non-streaming request, i.e. download
 the full request body before it returns from the initial request call.
 
 Secondly, all network calls are done via the browser. This means you are
-subject to the same limitations as any JavaScript network call. This means 
+subject to the same limitations as any JavaScript network call. This means
 you have very little or no control over certificates, timeouts, proxies and
 other network related settings. You also are constrained by browser policies
 relating to cross-origin requests, sometimes things will be blocked by CORS
