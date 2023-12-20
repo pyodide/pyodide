@@ -1,5 +1,6 @@
-from pytest_pyodide import run_in_pyodide
 import pytest
+from pytest_pyodide import run_in_pyodide
+
 
 # Absolutely totally basic test that urllib3 works at all.
 #
@@ -12,6 +13,7 @@ import pytest
 @run_in_pyodide(packages=["urllib3"])
 def test_requests_basic(selenium_standalone):
     import urllib3
+
     import js
 
     our_url = str(js.window.location)

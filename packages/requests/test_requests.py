@@ -1,5 +1,5 @@
-from pytest_pyodide import run_in_pyodide
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 # absolutely totally basic test that requests works
 #
@@ -11,6 +11,7 @@ import pytest
 @run_in_pyodide(packages=["requests"])
 def test_requests_basic(selenium_standalone):
     import requests
+
     import js
 
     our_url = js.window.location
