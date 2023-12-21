@@ -1,0 +1,17 @@
+package:
+  name: urllib3
+  version: 2.1.0
+  top-level:
+    - urllib3
+source:
+  url: https://github.com/urllib3/urllib3/archive/5d7979d3f03451c04c80995b8f35cb45ba37c003.zip
+  sha256: 0f8241f8f4f61a8bb4acae44fe5b20aa37754e953b5621bbb4c5b63d203ba599
+test:
+  imports:
+    - urllib3
+    - urllib3.contrib.emscripten
+about:
+  home: ""
+  PyPI: https://pypi.org/project/urllib3
+  summary: HTTP library with thread-safe connection pooling, file post, and more.
+  license: ""

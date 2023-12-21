@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Added built in packages for urllib3 and requests.
+  {pr}`4332`
+
 - {{ Fix }} Fixed a bug that micropip would fail to install packages from pyodide-lock.json
   if the package's name differs from its normalized name.
   {pr}`4319`
