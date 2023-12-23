@@ -49,13 +49,11 @@ If you are using an older browser, some features may not work properly.
 Currently, Pyodide is being tested against the following browser versions,
 so we recommend using a browser version at least equal to or higher than these.
 
-| Browser | Version                   | Release date    |
-| ------- | ------------------------- | --------------- |
-| Firefox | 112                       | 11 April 2023 |
-| Chrome  | 112                       | 29 March 2023 |
-| Safari | 16.4                       | 27 March 2023 |
-
-
+| Browser | Version | Release date  |
+| ------- | ------- | ------------- |
+| Firefox | 112     | 11 April 2023 |
+| Chrome  | 112     | 29 March 2023 |
+| Safari  | 16.4    | 27 March 2023 |
 
 ## Web Workers
 
