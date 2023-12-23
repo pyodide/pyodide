@@ -105,3 +105,9 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} $ENV{SIDE_MODULE_CFLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{SIDE_MODULE_CXXFLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} $ENV{SIDE_MODULE_LDFLAGS}")
+
+# By default, we don't want to add version to the shared library.
+# See: https://github.com/pyodide/pyodide/issues/4335
+if(NOT DEFINED CMAKE_PLATFORM_NO_VERSIONED_SONAME)
+  set(CMAKE_PLATFORM_NO_VERSIONED_SONAME 1)
+endif()
