@@ -352,6 +352,11 @@ jobs:
             python -m pip install -r requirements.txt
             pip install -e ./pyodide-build
       - run:
+          name: show safari version
+          command: |
+            safari_version=$(defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString)
+            echo "Safari Version: $safari_version"
+      - run:
           name: test safari
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
