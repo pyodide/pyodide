@@ -1,0 +1,41 @@
+package:
+  name: web3
+  version: 6.12.0
+  top-level:
+    - ens
+    - ethpm
+    - web3
+source:
+  url: https://files.pythonhosted.org/packages/51/f1/691406e9b214f57e80ba4893e8ed43a1cc64ad0336216e27f6438c16599e/web3-6.12.0-py3-none-any.whl
+  sha256: dab4ae262b6421296aa4b0f4a7f8d377727ff4c0fbaffbe7fe0fdcd221343ec1
+
+requirements:
+  run:
+    - python
+    - aiohttp
+    - eth-abi
+    - eth-account
+    - eth-hash[pycryptodome]
+    - eth-typing
+    - eth-utils
+    - hexbytes
+    - jsonschema
+    - lru-dict
+    - protobuf
+    - pywin32
+    - requests
+    - typing-extensions
+    - websockets
+    - pyunormalize
+
+test:
+  imports:
+    - web3
+    - ens
+    - ethpm
+    
+about:
+  home: https://github.com/ethereum/web3.py
+  PyPI: https://pypi.org/project/web3
+  summary: web3.py
+  license: MIT
