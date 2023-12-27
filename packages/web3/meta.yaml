@@ -33,7 +33,7 @@ test:
     - web3
     - ens
     - ethpm
-    
+
 about:
   home: https://github.com/ethereum/web3.py
   PyPI: https://pypi.org/project/web3
