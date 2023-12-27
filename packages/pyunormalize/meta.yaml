@@ -1,0 +1,15 @@
+package:
+  name: pyunormalize
+  version: 15.1.0
+  top-level:
+    - pyunormalize
+source:
+  url: https://files.pythonhosted.org/packages/dc/5b/ddc89263363422c0d52fdc0a4d88a126621d5cb60359cd45679d3c0447fc/pyunormalize-15.1.0.tar.gz
+  sha256: cf4a87451a0f1cb76911aa97f432f4579e1f564a2f0c84ce488c73a73901b6c1
+about:
+  home: https://github.com/mlodewijck/pyunormalize
+  PyPI: https://pypi.org/project/pyunormalize
+  summary:
+    Unicode normalization forms (NFC, NFKC, NFD, NFKD). A library independent
+    from the Python core Unicode database.
+  license: MIT
