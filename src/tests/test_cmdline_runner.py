@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.build_env import emscripten_version, get_pyodide_root
+from pyodide_build.build_env import get_pyodide_root, pyodide_abi
 from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
@@ -108,7 +108,7 @@ def test_dash_m(selenium):
     )
     assert result.returncode == 0
     assert result.stderr == ""
-    assert result.stdout.strip() == f"Emscripten-{emscripten_version()}-wasm32-32bit"
+    assert result.stdout.strip() == f"Pyodide-{pyodide_abi()}-wasm32-32bit"
 
 
 @only_node
@@ -407,7 +407,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """
