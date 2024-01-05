@@ -33,10 +33,9 @@ build:
       --disable-utilities \
       --disable-testsets \
       CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
-      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
-      LDFLAGS="-L${WASM_LIBRARY_DIR}/lib";
+      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include"
 
-    emmake make -j ${PYODIDE_JOBS:-3};
-    emmake make -j ${PYODIDE_JOBS:-3} install;
+    emmake make -j ${PYODIDE_JOBS:-3} LDFLAGS="-avoid-version -L${WASM_LIBRARY_DIR}/lib"
+    emmake make -j ${PYODIDE_JOBS:-3} install
 
     cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}

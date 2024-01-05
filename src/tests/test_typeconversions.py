@@ -1759,7 +1759,7 @@ def test_array_slice_assign_2(selenium):
         l[:] = 1  # type: ignore[call-overload]
 
     with pytest.raises(TypeError) as exc_info_3b:
-        jsl[:] = 1
+        jsl[:] = 1  # type: ignore[call-overload]
 
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
