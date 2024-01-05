@@ -238,6 +238,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return False
 
+    def close(self) -> None:
+        """Ignore request to close WebLoop"""
+        pass
+
     def _check_closed(self):
         """Used in create_task.
 

@@ -35,8 +35,8 @@ myst:
   Pyodide 0.24.
   {pr}`4342`
 
-- {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
-  containing the loaded package's metadata.
+- {{ Enhancement }} `pyodide.loadPackage` now returns an object with metadata
+  about the loaded packages.
   {pr}`4306`
 
 - {{ Fix }} Fixed default indexURL calculation in Node.js environment.
@@ -48,9 +48,13 @@ myst:
   markers so mypy will use the types.
   {pr}`4321`
 
-- {{ Fix }} Fixed a bug that micropip would fail to install packages from pyodide-lock.json
-  if the package's name differs from its normalized name.
+- {{ Fix }} Fixed a bug that micropip would fail to install packages from
+  pyodide-lock.json if the package's name differs from its normalized name.
   {pr}`4319`
+
+- {{ Enhancement }} Added a no-op `WebLoop.close` method so that attempts to
+  close the event loop will not raise an exception.
+  {pr}`4329`
 
 ### Python / JavaScript Foreign Function Interface
 
@@ -68,7 +72,8 @@ myst:
   `AttributeError`.
   {pr}`4254`
 
-- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the
+  `NodeNext` typescript target.
   {pr}`4256`
 
 - {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
@@ -89,20 +94,22 @@ myst:
 
 ### Pyodide CLI
 
-- {{ Enhancement }} `pyodide config` command now show additional config variables:
-  `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`, `rust_toolchain`, `cflags`
-  `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
-  build to set the same variables as in-tree build.
+- {{ Enhancement }} `pyodide config` command now show additional config
+  variables: `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`,
+  `rust_toolchain`, `cflags` `cxxflags`, `ldflags`, `meson_cross_file`. These
+  variables can be used in out-of-tree build to set the same variables as
+  in-tree build.
   {pr}`4241`
 
-- {{ Enhancement }} `pyodide build` command now accepts `--config-setting` (`-C`) option
-  to pass flags to the build backend, just like `python -m build` command.
+- {{ Enhancement }} `pyodide build` command now accepts `--config-setting`
+  (`-C`) option to pass flags to the build backend, just like `python -m build`
+  command.
   {pr}`4308`
 
 ### Load time & size optimizations
 
-- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
-  which reduces the time to load Pyodide.
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed
+  packages, which reduces the time to load Pyodide.
   {pr}`4147`
 
 ### Build system
@@ -110,8 +117,8 @@ myst:
 - {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
   {pr}`4223`
 
-- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
-  env variables if provided by user.
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and
+  `PYO3_CONFIG_FILE` env variables if provided by user.
   {pr}`4223`
 
 - {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
