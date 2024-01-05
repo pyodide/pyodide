@@ -18,7 +18,8 @@ myst:
 
 ### General
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46 {pr}`4359`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
+  {pr}`4359`, {pr}`4362`
 
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
   of Node.js might still work, but they are not tested or guaranteed to work.
