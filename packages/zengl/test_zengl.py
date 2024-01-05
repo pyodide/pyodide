@@ -9,7 +9,6 @@ def test_render_with_webgl2(selenium):
     import zengl
 
     import js
-    import pyodide_js
 
     canvas = js.document.createElement("canvas")
     canvas.id = "canvas"
