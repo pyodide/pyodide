@@ -285,6 +285,30 @@ export class PyodideAPI {
     return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
+  /**
+   * Runs a Python code string like :js:func:`pyodide.runPython` but with stack
+   * switching enabled. Code executed in this way can use
+   * :py:meth:`PyodideFuture.syncify` to block until a :py:class:`Future` or
+   * :js:class:`Promise` is resolved. Only works in runtimes with JS Promise
+   * Integration enabled.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   * @param options
+   * @param options.globals An optional Python dictionary to use as the globals.
+   * Defaults to :js:attr:`pyodide.globals`.
+   * @param options.locals An optional Python dictionary to use as the locals.
+   *        Defaults to the same as ``globals``.
+   * @param options.filename An optional string to use as the filename. Defaults
+   *        to "<exec>". If the filename does not start with "<" and end with
+   *        ">", the source code will be added to the Python linecache and
+   *        tracebacks will show source lines.
+   * @returns The result of the Python code translated to JavaScript.
+   */
   static async runPythonSyncifying(
     code: string,
     options: { globals?: PyProxy; locals?: PyProxy } = {},

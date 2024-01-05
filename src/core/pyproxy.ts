@@ -2366,6 +2366,19 @@ export class PyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
+  /**
+   * Call the function with stack switching enabled. Functions called this way
+   * can use :py:meth:`PyodideFuture.syncify` to block until a
+   * :py:class:`Future` or :js:class:`Promise` is resolved. Only works in
+   * runtimes with JS Promise integration.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   */
   callSyncifying(...jsargs: any) {
     return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
   }
