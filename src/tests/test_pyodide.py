@@ -1158,23 +1158,6 @@ def test_restore_error(selenium):
     )
 
 
-def test_home_directory(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        const homedir = "/home/custom_home";
-        const pyodide = await loadPyodide({
-            homedir,
-        });
-        return pyodide.runPython(`
-            import os
-            os.getcwd() == "${homedir}"
-        `)
-        """
-    )
-    assert "The homedir argument to loadPyodide is deprecated" in selenium.logs
-
-
 def test_env(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     hashval = selenium.run_js(
@@ -1310,79 +1293,6 @@ def test_raises_jsexception(selenium):
 
     with pytest.raises(JsException, match="Error: hi"):
         raise_jsexception(selenium)
-
-
-@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
-def test_deprecations(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
-        """
-        let a = pyodide.PyBuffer;
-        let b = pyodide.PyBuffer;
-        assert(() => a === b);
-        """
-    )
-    assert (
-        selenium.logs.count(
-            "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead."
-        )
-        == 1
-    )
-    selenium.run_js(
-        """
-        let a = pyodide.PyProxyBuffer;
-        let b = pyodide.PyProxyBuffer;
-        assert(() => a === b);
-        """
-    )
-    assert (
-        selenium.logs.count(
-            "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead."
-        )
-        == 1
-    )
-    selenium.run_js(
-        """
-        assert(() => pyodide.isPyProxy(pyodide.globals));
-        assert(() => pyodide.isPyProxy(pyodide.globals));
-        assert(() => !pyodide.isPyProxy({}));
-        """
-    )
-    selenium.run_js(
-        """
-        assert(() => !pyodide.globals.isAwaitable());
-        assert(() => !pyodide.globals.isAwaitable());
-        assert(() => !pyodide.globals.isBuffer());
-        assert(() => !pyodide.globals.isBuffer());
-        assert(() => !pyodide.globals.isCallable());
-        assert(() => !pyodide.globals.isCallable());
-        assert(() => pyodide.globals.isIterable());
-        assert(() => pyodide.globals.isIterable());
-        assert(() => !pyodide.globals.isIterator());
-        assert(() => !pyodide.globals.isIterator());
-        assert(() => pyodide.globals.supportsGet());
-        assert(() => pyodide.globals.supportsGet());
-        assert(() => pyodide.globals.supportsSet());
-        assert(() => pyodide.globals.supportsSet());
-        assert(() => pyodide.globals.supportsHas());
-        assert(() => pyodide.globals.supportsHas());
-        """
-    )
-    for name in [
-        "isPyProxy",
-        "isAwaitable",
-        "isBuffer",
-        "isCallable",
-        "isIterable",
-        "isIterator",
-        "supportsGet",
-        "supportsSet",
-        "supportsHas",
-    ]:
-        assert (
-            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
-            == 1
-        )
 
 
 @run_in_pyodide(packages=["pytest"])

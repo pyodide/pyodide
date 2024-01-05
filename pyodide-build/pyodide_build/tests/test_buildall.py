@@ -71,14 +71,14 @@ def test_generate_lockfile(tmp_path):
     assert package_data.info.platform.startswith("emscripten")
 
     assert set(package_data.packages) == {
-        "pkg_1",
-        "pkg_1_1",
-        "pkg_2",
-        "pkg_3",
-        "pkg_3_1",
-        "libtest_shared",
+        "pkg-1",
+        "pkg-1-1",
+        "pkg-2",
+        "pkg-3",
+        "pkg-3-1",
+        "libtest-shared",
     }
-    assert package_data.packages["pkg_1"] == PackageSpec(
+    assert package_data.packages["pkg-1"] == PackageSpec(
         name="pkg_1",
         version="1.0.0",
         file_name="pkg_1-1.0.0-py3-none-any.whl",
@@ -89,9 +89,9 @@ def test_generate_lockfile(tmp_path):
         sha256=hashes["pkg_1"],
     )
 
-    assert package_data.packages["libtest_shared"].package_type == "shared_library"
+    assert package_data.packages["libtest-shared"].package_type == "shared_library"
 
-    sharedlib_imports = package_data.packages["libtest_shared"].imports
+    sharedlib_imports = package_data.packages["libtest-shared"].imports
     assert not sharedlib_imports, (
         "shared libraries should not have any imports, but got " f"{sharedlib_imports}"
     )

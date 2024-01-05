@@ -17,21 +17,6 @@ import type { TypedArray, API, Module } from "./types";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 
-export type {
-  PyProxy,
-  PyProxyWithLength,
-  PyProxyWithGet,
-  PyProxyWithSet,
-  PyProxyWithHas,
-  PyProxyDict,
-  PyProxyIterable,
-  PyProxyIterator,
-  PyProxyAwaitable,
-  PyProxyCallable,
-  PyBuffer as PyProxyBuffer,
-  PyBufferView as PyBuffer,
-} from "generated/pyproxy";
-
 export { version, type PackageData };
 
 declare function _createPyodideModule(Module: any): Promise<void>;
@@ -44,7 +29,6 @@ export type ConfigType = {
   indexURL: string;
   packageCacheDir: string;
   lockFileURL: string;
-  homedir: string;
   fullStdLib?: boolean;
   stdLibURL?: string;
   stdin?: () => string;
@@ -67,7 +51,6 @@ export type ConfigType = {
  * async function main() {
  *   const pyodide = await loadPyodide({
  *     fullStdLib: true,
- *     homedir: "/pyodide",
  *     stdout: (msg) => console.log(`Pyodide: ${msg}`),
  *   });
  *   console.log("Loaded Pyodide");
@@ -102,12 +85,6 @@ export async function loadPyodide(
      * Default: ```${indexURL}/pyodide-lock.json```
      */
     lockFileURL?: string;
-
-    /**
-     * The home directory which Pyodide will use inside virtual file system.
-     * This is deprecated, use ``{env: {HOME : some_dir}}`` instead.
-     */
-    homedir?: string;
     /**
      * Load the full Python standard library. Setting this to false excludes
      * unvendored modules from the standard library.
@@ -207,16 +184,6 @@ export async function loadPyodide(
     packages: [],
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  if (options.homedir) {
-    console.warn(
-      "The homedir argument to loadPyodide is deprecated. " +
-        "Use 'env: { HOME: value }' instead of 'homedir: value'.",
-    );
-    if (options.env && options.env.HOME) {
-      throw new Error("Set both env.HOME and homedir arguments");
-    }
-    config.env.HOME = config.homedir;
-  }
   if (!config.env.HOME) {
     config.env.HOME = "/home/pyodide";
   }

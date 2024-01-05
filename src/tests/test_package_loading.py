@@ -42,6 +42,8 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
         pyparsing_wheel_name = get_pyparsing_wheel_name()
         selenium.load_package(f"http://{url}:{port}/{pyparsing_wheel_name}")
         assert "Skipping unknown package" not in selenium.logs
+        assert "Loading pyparsing" in selenium.logs
+        assert "Loaded pyparsing" in selenium.logs
 
         # check that all resources were loaded from the active server
         txt = fh_main.read()
@@ -139,6 +141,30 @@ def test_load_package_return(selenium_standalone):
     assert package[0]["packageType"] == "package"
 
 
+@pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
+@pytest.mark.parametrize("active_server", ["main", "secondary"])
+def test_load_package_return_from_url(
+    selenium_standalone, web_server_secondary, active_server
+):
+    selenium = selenium_standalone
+    if active_server == "secondary":
+        url, port, _ = web_server_secondary
+    elif active_server == "main":
+        url = selenium.server_hostname
+        port = selenium.server_port
+    else:
+        raise AssertionError()
+
+    pyparsing_wheel_name = get_pyparsing_wheel_name()
+    package = selenium.run_js(
+        f"return await pyodide.loadPackage('http://{url}:{port}/{pyparsing_wheel_name}')"
+    )
+
+    assert package[0]["name"] == "pyparsing"
+    assert package[0]["packageType"] == "package"
+    assert package[0]["fileName"] == pyparsing_wheel_name
+
+
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
@@ -203,23 +229,6 @@ def test_load_failure_retry(selenium_standalone):
     selenium.load_package("pytz")
     selenium.run("import pytz")
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
-
-
-def test_load_package_unknown(selenium_standalone):
-    pyparsing_wheel_name = get_pyparsing_wheel_name()
-    shutil.copyfile(
-        DIST_PATH / pyparsing_wheel_name,
-        DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl",
-    )
-
-    try:
-        selenium_standalone.load_package("./pyparsing-custom-3.0.6-py3-none-any.whl")
-    finally:
-        (DIST_PATH / "pyparsing-custom-3.0.6-py3-none-any.whl").unlink()
-
-    assert selenium_standalone.run_js(
-        "return pyodide.loadedPackages.hasOwnProperty('pyparsing-custom')"
-    )
 
 
 def test_load_twice(selenium_standalone):
@@ -579,3 +588,40 @@ def test_custom_lockfile(selenium_standalone_noload):
         )
     finally:
         custom_lockfile.unlink()
+
+
+@pytest.mark.parametrize(
+    "load_name, normalized_name, real_name",
+    [
+        # TODO: find a better way to test this without relying on the core packages set
+        ("fpcast-test", "fpcast-test", "fpcast-test"),
+        ("fpcast_test", "fpcast-test", "fpcast-test"),
+        ("Jinja2", "jinja2", "Jinja2"),
+        ("jinja2", "jinja2", "Jinja2"),
+        ("pydoc_data", "pydoc-data", "pydoc_data"),
+        ("pydoc-data", "pydoc-data", "pydoc_data"),
+    ],
+)
+def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        f"""
+        const msgs = [];
+        await pyodide.loadPackage(
+            "{load_name}",
+            {{
+                messageCallback: (msg) => msgs.push(msg),
+            }}
+        )
+
+        const loaded = Object.keys(pyodide.loadedPackages);
+        assert(() => loaded.includes("{real_name}"));
+
+        const loadStartMsgs = msgs.filter((msg) => msg.startsWith("Loading"));
+        const loadEndMsgs = msgs.filter((msg) => msg.startsWith("Loaded"));
+
+        assert(() => loadStartMsgs.some((msg) => msg.includes("{real_name}")));
+        assert(() => loadEndMsgs.some((msg) => msg.includes("{real_name}")));
+        """
+    )

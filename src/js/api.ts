@@ -4,13 +4,7 @@ import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { PackageData, loadPackage, loadedPackages } from "./load-package";
-import {
-  PyBufferView,
-  PyBuffer,
-  type PyProxy,
-  type PyDict,
-} from "generated/pyproxy";
-import { PythonError } from "../core/error_handling";
+import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
@@ -313,6 +307,28 @@ export class PyodideAPI {
    * module from :py:data:`sys.modules`. This calls
    * :func:`~pyodide.ffi.register_js_module`.
    *
+   * Any attributes of the JavaScript objects which are themselves objects will
+   * be treated as submodules:
+   * ```pyodide
+   * pyodide.registerJsModule("mymodule", { submodule: { value: 7 } });
+   * pyodide.runPython(`
+   *     from mymodule.submodule import value
+   *     assert value == 7
+   * `);
+   * ```
+   * If you wish to prevent this, try the following instead:
+   * ```pyodide
+   * const sys = pyodide.pyimport("sys");
+   * sys.modules.set("mymodule", { obj: { value: 7 } });
+   * pyodide.runPython(`
+   *     from mymodule import obj
+   *     assert obj.value == 7
+   *     # attempting to treat obj as a submodule raises ModuleNotFoundError:
+   *     # "No module named 'mymodule.obj'; 'mymodule' is not a package"
+   *     from mymodule.obj import value
+   * `);
+   * ```
+   *
    * @param name Name of the JavaScript module to add
    * @param module JavaScript object backing the module
    */
@@ -580,68 +596,6 @@ export class PyodideAPI {
         throw new Module.FS.ErrnoError(cDefs.EINTR);
       }
     }
-  }
-
-  /**
-   * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
-   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyProxy <pyodide.ffi.PyProxy>` instead.
-   * @param jsobj Object to test.
-   */
-  static isPyProxy(jsobj: any): jsobj is PyProxy {
-    console.warn(
-      "pyodide.isPyProxy() is deprecated. Use `instanceof pyodide.ffi.PyProxy` instead.",
-    );
-    this.isPyProxy = API.isPyProxy;
-    return API.isPyProxy(jsobj);
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBufferView`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PyBuffer() {
-    console.warn(
-      "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead.",
-    );
-    Object.defineProperty(this, "PyBuffer", { value: PyBufferView });
-    return PyBufferView;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-
-  static get PyProxyBuffer() {
-    console.warn(
-      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead.",
-    );
-    Object.defineProperty(this, "PyProxyBuffer", { value: PyBuffer });
-    return PyBuffer;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PythonError`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PythonError() {
-    console.warn(
-      "pyodide.PythonError is deprecated. Use `pyodide.ffi.PythonError` instead.",
-    );
-    Object.defineProperty(this, "PythonError", { value: PythonError });
-    return PythonError;
   }
 
   /**

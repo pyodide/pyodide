@@ -59,7 +59,7 @@ xbuildenv = "pyodide_build.cli.xbuildenv:app"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "pytest-pyodide==0.55.1",
+    "pytest-pyodide==0.56.2",
 ]
 deploy = [
     "boto3",

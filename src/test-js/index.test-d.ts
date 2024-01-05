@@ -17,8 +17,6 @@ import {
   TypedArray,
 } from "pyodide/ffi";
 
-import "./test-deprecated";
-
 // TODO: check that these are exported only as types not as values
 // Currently tsd doesn't do this:
 // ✖   Module "pyodide/ffi" declares TypedArray locally, but it is not exported.
@@ -44,7 +42,6 @@ async function main() {
   expectType<PyProxy>(pyodide.globals);
 
   let x: any;
-  expectType<boolean>(pyodide.isPyProxy(x));
   if (x instanceof pyodide.ffi.PyProxy) {
     expectType<PyProxy>(x);
   } else {

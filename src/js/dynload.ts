@@ -4,7 +4,7 @@ declare var Module: any;
 declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
-import { memoize } from "./pyodide_util";
+import { memoize } from "./pyodide-util";
 import { InternalPackageData } from "./load-package";
 
 type ReadFileType = (path: string) => Uint8Array;
