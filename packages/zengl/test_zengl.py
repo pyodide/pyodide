@@ -9,7 +9,6 @@ def test_render_with_webgl2(selenium):
     import zengl
 
     import js
-    import pyodide_js
 
     canvas = js.document.createElement("canvas")
     canvas.id = "canvas"
@@ -32,7 +31,4 @@ def test_render_with_webgl2(selenium):
     js.document.body.appendChild(canvas)
 
     if gl:
-        setup_gl = js.eval(zengl.setup_gl)
-        setup_gl(pyodide_js._module, gl)
-
         zengl.context()

@@ -131,6 +131,7 @@ myst:
 - New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
   `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`,
   `requests`, `urllib3` {pr}`4332`
+- Upgraded zengl to 2.2.0 {pr}`4364`
 
 ## Version 0.24.1
 
