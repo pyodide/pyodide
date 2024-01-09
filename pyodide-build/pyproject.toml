@@ -66,9 +66,6 @@ deploy = [
     "moto",
 ]
 
-[project.scripts]
-pyodide-build = "pyodide_build.__main__:main"
-
 [tool.setuptools]
 package-dir = {"" = "."}
 license-files = ["LICENSE"]

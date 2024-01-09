@@ -137,21 +137,18 @@ class Package(BasePackage):
     def build(self, build_args: BuildArgs) -> None:
         p = subprocess.run(
             [
-                sys.executable,
-                "-m",
-                "pyodide_build",
-                "buildpkg",
-                str(self.pkgdir / "meta.yaml"),
+                "pyodide",
+                "build-recipes",
+                self.name,
+                "--recipe-dir",
+                str(self.pkgdir.parent),
                 f"--cflags={build_args.cflags}",
                 f"--cxxflags={build_args.cxxflags}",
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
                 f"--host-install-dir={build_args.host_install_dir}",
-                # Either this package has been updated and this doesn't
-                # matter, or this package is dependent on a package that has
-                # been updated and should be rebuilt even though its own
-                # files haven't been updated.
                 "--force-rebuild",
+                "--no-deps",
             ],
             check=False,
             stdout=subprocess.DEVNULL,
