@@ -941,6 +941,6 @@ workflows:
             - build-test-pyc-packages
           filters:
             branches:
-              only: main
+              only: jupyterlite-dse
           context:
             - s3-deployment
