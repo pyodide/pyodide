@@ -1,0 +1,13 @@
+package:
+  name: ipywidgets
+  version: 8.1.1
+  top-level:
+    - ipywidgets
+source:
+  url: https://files.pythonhosted.org/packages/4a/0e/57ed498fafbc60419a9332d872e929879ceba2d73cb11d284d7112472b3e/ipywidgets-8.1.1-py3-none-any.whl
+  sha256: 2b88d728656aea3bbfd05d32c747cfd0078f9d7e159cf982433b58ad717eed7f
+about:
+  home: http://jupyter.org
+  PyPI: https://pypi.org/project/ipywidgets
+  summary: Jupyter interactive widgets
+  license: BSD 3-Clause License

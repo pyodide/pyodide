@@ -1,0 +1,15 @@
+package:
+  name: fastapi
+  version: 0.108.0
+  top-level:
+    - fastapi
+source:
+  url: https://files.pythonhosted.org/packages/d4/e0/d5d6482e992a1892f3a9a62f6a9154944ae5b276e7da1cf92faa02e3a107/fastapi-0.108.0-py3-none-any.whl
+  sha256: 8c7bc6d315da963ee4cdb605557827071a9a7f95aeb8fcdd3bde48cdc8764dd7
+about:
+  home: ""
+  PyPI: https://pypi.org/project/fastapi
+  summary:
+    FastAPI framework, high performance, easy to learn, fast to code, ready
+    for production
+  license: ""

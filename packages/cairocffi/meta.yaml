@@ -1,0 +1,13 @@
+package:
+  name: cairocffi
+  version: 1.6.1
+  top-level:
+    - cairocffi
+source:
+  url: https://files.pythonhosted.org/packages/17/be/a5d2c16317c6a890502725970589ae7f06cfc66b2e6916ba0a86973403c8/cairocffi-1.6.1-py3-none-any.whl
+  sha256: aa78ee52b9069d7475eeac457389b6275aa92111895d78fbaa2202a52dac112e
+about:
+  home: null
+  PyPI: https://pypi.org/project/cairocffi
+  summary: cffi-based cairo bindings for Python
+  license: null

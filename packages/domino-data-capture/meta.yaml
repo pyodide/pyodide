@@ -1,0 +1,13 @@
+package:
+  name: domino-data-capture
+  version: 0.1.2
+  top-level:
+    - domino_data_capture
+source:
+  url: https://files.pythonhosted.org/packages/dd/fe/cda6241d7e27a94b7f238bbf1ec02981b75580f2ed3d80ed2ecab479c130/domino_data_capture-0.1.2-py3-none-any.whl
+  sha256: 33708f3f1727d2675c99650e11bd4d3182fc6e962e87379ecc9457253f50d6fa
+about:
+  home: https://github.com/cerebrotech/dmm-data-ingest-client
+  PyPI: https://pypi.org/project/domino-data-capture
+  summary: Domino Prediction Client to log prediction data
+  license: Apache Software License 2.0

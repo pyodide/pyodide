@@ -1,0 +1,13 @@
+package:
+  name: scrapy
+  version: 2.11.0
+  top-level:
+    - scrapy
+source:
+  url: https://files.pythonhosted.org/packages/08/66/22ed9609df4b6d94a66512572a11b35943a6cb36dc268f88ebfbede60be1/Scrapy-2.11.0-py2.py3-none-any.whl
+  sha256: a7f36544d1f5ceb13cff9b7bc904bd7c0fc43a3af0fbe5aa2034fd937cf092d1
+about:
+  home: https://scrapy.org
+  PyPI: https://pypi.org/project/scrapy
+  summary: A high-level Web Crawling and Web Scraping framework
+  license: BSD

@@ -1,0 +1,13 @@
+package:
+  name: seaborn
+  version: 0.13.1
+  top-level:
+    - seaborn
+source:
+  url: https://files.pythonhosted.org/packages/2d/46/cf3fce41ffc543b6e94dadbe6b647559d591df446ec716e72c3b4ce71b34/seaborn-0.13.1-py3-none-any.whl
+  sha256: 6baa69b6d1169ae59037971491c450c0b73332b42bd4b23570b62a546bc61cb8
+about:
+  home: null
+  PyPI: https://pypi.org/project/seaborn
+  summary: Statistical data visualization
+  license: null
