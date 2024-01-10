@@ -1,6 +1,9 @@
 package:
   name: dominodatalab
   version: 1.2.4
+  tag:
+    - core
+    - min-scipy-stack
   top-level:
     - domino
 source:
