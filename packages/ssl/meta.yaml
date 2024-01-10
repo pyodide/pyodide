@@ -1,8 +1,7 @@
 package:
   name: ssl
   version: 1.0.0 # Nonsense
-  tag:
-    - always
+  tag: core
   top-level:
     - ssl
     - _ssl
@@ -19,7 +18,6 @@ build:
     emcc Modules/_ssl.o -o $DISTDIR/_ssl.so $SIDE_MODULE_LDFLAGS $(pkg-config --libs --dont-define-prefix openssl)
 
     cp Lib/ssl.py $DISTDIR
-
 requirements:
   host:
     - openssl

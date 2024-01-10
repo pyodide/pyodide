@@ -3,6 +3,7 @@ package:
   version: 4.12.2
   top-level:
     - bs4
+  tag: core
 requirements:
   run:
     - soupsieve
