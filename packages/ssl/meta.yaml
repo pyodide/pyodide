@@ -1,10 +1,11 @@
 package:
   name: ssl
   version: 1.0.0 # Nonsense
-  tag: core
   top-level:
     - ssl
     - _ssl
+  tag:
+    - core
 source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
