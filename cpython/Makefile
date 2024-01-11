@@ -136,7 +136,6 @@ $(BUILD)/Modules/Setup.local: Setup.local
 $(BUILD)/$(LIB): $(BUILD)/Makefile $(BUILD)/pyconfig.h $(BUILD)/Modules/Setup.local $(INSTALL)/lib/libffi.a
 	cp Setup.local $(BUILD)/Modules/
 	( \
-		cat pyconfig.defs.h >> $(BUILD)/pyconfig.h; \
 		cd $(BUILD); \
 		make regen-frozen; \
 		emmake make CROSS_COMPILE=yes $(LIB) -j $${PYODIDE_JOBS:-3} \
