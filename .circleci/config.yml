@@ -11,6 +11,7 @@ defaults: &defaults
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
+      PYTEST_XDIST_AUTO_NUM_WORKERS: 3
       # Make sure the ccache dir is consistent between core and package builds
       # (it's not the case otherwise)
       CCACHE_DIR: /root/.ccache/
