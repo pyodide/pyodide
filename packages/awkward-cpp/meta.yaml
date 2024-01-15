@@ -1,12 +1,11 @@
 package:
   name: awkward-cpp
-  version: '28'
+  version: "28"
   top-level:
-  - awkward_cpp
+    - awkward_cpp
 
 source:
-  url: 
-    https://files.pythonhosted.org/packages/0e/fb/8e7db64da16a40558e3103a6d9bda0e84953a6f60041f28831b7d75cf224/awkward-cpp-28.tar.gz
+  url: https://files.pythonhosted.org/packages/0e/fb/8e7db64da16a40558e3103a6d9bda0e84953a6f60041f28831b7d75cf224/awkward-cpp-28.tar.gz
   sha256: 304ebbf900c577368fd3c491a4ddfe6a5790bdec76a2b06bdcc4728176264592
 
 build:
@@ -16,11 +15,11 @@ build:
 
 requirements:
   run:
-  - numpy
+    - numpy
 
 test:
   imports:
-  - awkward_cpp
+    - awkward_cpp
 
 about:
   home: https://pypi.org/project/awkward-cpp/
