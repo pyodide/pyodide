@@ -154,7 +154,7 @@ export function createPromising(wasm_func) {
   if (promisingFunctionMap.has(wasm_func)) {
     return promisingFunctionMap.get(wasm_func);
   }
-  const type = WebAssembly.Function.type(wasm_func);
+  const type = wasmFunctionType(wasm_func);
   const module = getPromisingModule(type);
   const instance = new WebAssembly.Instance(module, {
     e: { i: wasm_func, s: suspenderGlobal },

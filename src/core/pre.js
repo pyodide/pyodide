@@ -99,3 +99,13 @@ Module.iterObject = function* (object) {
     }
   }
 };
+
+function wasmFunctionType(wasm_func) {
+  if (!WebAssembly.Function) {
+    throw new Error("No type reflection");
+  }
+  if (WebAssembly.Function.type) {
+    return WebAssembly.Function.type(wasm_func);
+  }
+  return wasm_func.type();
+}
