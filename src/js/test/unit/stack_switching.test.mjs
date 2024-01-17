@@ -52,6 +52,18 @@ function uleb128Encode(n, target) {
 }
 globalThis.uleb128Encode = uleb128Encode;
 
+// Normally comes from pre.js
+function wasmFunctionType(wasm_func) {
+  if (!WebAssembly.Function) {
+    throw new Error("No type reflection");
+  }
+  if (WebAssembly.Function.type) {
+    return WebAssembly.Function.type(wasm_func);
+  }
+  return wasm_func.type();
+}
+globalThis.wasmFunctionType = wasmFunctionType;
+
 function uleb128Decode(target, position) {
   let result = 0;
   let p = 1;
