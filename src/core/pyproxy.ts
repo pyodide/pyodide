@@ -2366,8 +2366,52 @@ export class PyCallableMethods {
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
+  /**
+   * Call the function with stack switching enabled. Functions called this way
+   * can use
+   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
+   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
+   * resolved. Only works in runtimes with JS Promise integration.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   */
   callSyncifying(...jsargs: any) {
     return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+  }
+
+  /**
+   * Call the function with stack switching enabled. The last argument must be
+   * an object with the keyword arguments. Functions called this way can use
+   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
+   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
+   * resolved. Only works in runtimes with JS Promise integration.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   */
+  callSyncifyingKwargs(...jsargs: any) {
+    if (jsargs.length === 0) {
+      throw new TypeError(
+        "callKwargs requires at least one argument (the key word argument object)",
+      );
+    }
+    let kwargs = jsargs.pop();
+    if (
+      kwargs.constructor !== undefined &&
+      kwargs.constructor.name !== "Object"
+    ) {
+      throw new TypeError("kwargs argument is not an object");
+    }
+    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
   }
 
   /**

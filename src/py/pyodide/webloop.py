@@ -168,6 +168,16 @@ class PyodideFuture(Future[T]):
         return result
 
     def syncify(self):
+        """Block until the future is resolved. Only works if JS Promise
+        integration is enabled in the runtime and the current Python call stack
+        was entered via :js:func:`pyodide.runPythonSyncifying` or
+        :js:func:`~PyCallable.callSyncifying`.
+
+        .. admonition:: Experimental
+           :class: warning
+
+           This feature is not yet stable.
+        """
         from .ffi import create_proxy
 
         p = create_proxy(self)
