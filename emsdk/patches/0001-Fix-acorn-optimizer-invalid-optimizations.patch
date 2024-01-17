@@ -1,7 +1,22 @@
-diff --git a/tools/acorn-optimizer.js b/tools/acorn-optimizer.js
+From b07076f83eb1d3e8248ceb67e4d3387653e434b3 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 16 Jan 2024 16:34:59 -0800
+Subject: [PATCH] Fix acorn optimizer invalid optimizations
+
+---
+ ...acorn-optimizer.js => acorn-optimizer.mjs} | 101 +++++++++++++-----
+ tools/building.py                             |   2 +-
+ tools/js_optimizer.py                         |   2 +-
+ 3 files changed, 78 insertions(+), 27 deletions(-)
+ rename tools/{acorn-optimizer.js => acorn-optimizer.mjs} (95%)
+
+diff --git a/tools/acorn-optimizer.js b/tools/acorn-optimizer.mjs
+similarity index 95%
+rename from tools/acorn-optimizer.js
+rename to tools/acorn-optimizer.mjs
 index 5274f3114..c62e29f06 100755
 --- a/tools/acorn-optimizer.js
-+++ b/tools/acorn-optimizer.js
++++ b/tools/acorn-optimizer.mjs
 @@ -1,10 +1,8 @@
  #!/usr/bin/env node
  
@@ -215,3 +230,32 @@ index 5274f3114..c62e29f06 100755
      preserveParens: closureFriendly,
      onComment: closureFriendly ? sourceComments : undefined,
      sourceType: exportES6 ? 'module' : 'script',
+diff --git a/tools/building.py b/tools/building.py
+index 23ea25182..10747ef00 100644
+--- a/tools/building.py
++++ b/tools/building.py
+@@ -327,7 +327,7 @@ def js_optimizer(filename, passes):
+ 
+ # run JS optimizer on some JS, ignoring asm.js contents if any - just run on it all
+ def acorn_optimizer(filename, passes, extra_info=None, return_output=False):
+-  optimizer = path_from_root('tools/acorn-optimizer.js')
++  optimizer = path_from_root('tools/acorn-optimizer.mjs')
+   original_filename = filename
+   if extra_info is not None:
+     temp_files = shared.get_temp_files()
+diff --git a/tools/js_optimizer.py b/tools/js_optimizer.py
+index d5dd1ed85..158fed6ca 100755
+--- a/tools/js_optimizer.py
++++ b/tools/js_optimizer.py
+@@ -22,7 +22,7 @@ from tools import building, config, shared, utils
+ temp_files = shared.get_temp_files()
+ 
+ 
+-ACORN_OPTIMIZER = path_from_root('tools/acorn-optimizer.js')
++ACORN_OPTIMIZER = path_from_root('tools/acorn-optimizer.mjs')
+ 
+ NUM_CHUNKS_PER_CORE = 3
+ MIN_CHUNK_SIZE = int(os.environ.get('EMCC_JSOPT_MIN_CHUNK_SIZE') or 512 * 1024) # configuring this is just for debugging purposes
+-- 
+2.25.1
+
