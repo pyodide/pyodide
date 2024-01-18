@@ -7,7 +7,6 @@ from typing import Any
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.fixture import selenium_standalone_noload_common
 from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, ROOT_PATH, strip_assertions_stderr
@@ -777,10 +776,12 @@ def test_docstrings_a():
     from _pyodide.docstring import dedent_docstring, get_cmeth_docstring
     from pyodide.ffi import JsPromise
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     c_docstring = get_cmeth_docstring(jsproxy.then)
-    assert c_docstring == "then(onfulfilled, onrejected)\n--\n\n" + dedent_docstring(
-        jsproxy.then.__doc__
+    assert (
+        c_docstring
+        == "then(onfulfilled, onrejected=None)\n--\n\n"
+        + dedent_docstring(jsproxy.then.__doc__)
     )
 
 
@@ -789,9 +790,9 @@ def test_docstrings_b(selenium):
     from _pyodide.docstring import dedent_docstring
     from pyodide.ffi import JsPromise, create_once_callable
 
-    jsproxy = JsPromise(_instantiate_token)
+    jsproxy: JsPromise[Any] = JsPromise(_instantiate_token)
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
-    sig_then_should_equal = "(onfulfilled, onrejected)"
+    sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
     sig_once_should_equal = "(obj, /)"
     selenium.run_js("self.a = Promise.resolve();")
@@ -1157,23 +1158,6 @@ def test_restore_error(selenium):
     )
 
 
-def test_home_directory(selenium_standalone_noload):
-    selenium = selenium_standalone_noload
-    selenium.run_js(
-        """
-        const homedir = "/home/custom_home";
-        const pyodide = await loadPyodide({
-            homedir,
-        });
-        return pyodide.runPython(`
-            import os
-            os.getcwd() == "${homedir}"
-        `)
-        """
-    )
-    assert "The homedir argument to loadPyodide is deprecated" in selenium.logs
-
-
 def test_env(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     hashval = selenium.run_js(
@@ -1309,79 +1293,6 @@ def test_raises_jsexception(selenium):
 
     with pytest.raises(JsException, match="Error: hi"):
         raise_jsexception(selenium)
-
-
-@pytest.mark.xfail_browsers(node="Some problem with the logs in node")
-def test_deprecations(selenium_standalone):
-    selenium = selenium_standalone
-    selenium.run_js(
-        """
-        let a = pyodide.PyBuffer;
-        let b = pyodide.PyBuffer;
-        assert(() => a === b);
-        """
-    )
-    assert (
-        selenium.logs.count(
-            "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead."
-        )
-        == 1
-    )
-    selenium.run_js(
-        """
-        let a = pyodide.PyProxyBuffer;
-        let b = pyodide.PyProxyBuffer;
-        assert(() => a === b);
-        """
-    )
-    assert (
-        selenium.logs.count(
-            "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead."
-        )
-        == 1
-    )
-    selenium.run_js(
-        """
-        assert(() => pyodide.isPyProxy(pyodide.globals));
-        assert(() => pyodide.isPyProxy(pyodide.globals));
-        assert(() => !pyodide.isPyProxy({}));
-        """
-    )
-    selenium.run_js(
-        """
-        assert(() => !pyodide.globals.isAwaitable());
-        assert(() => !pyodide.globals.isAwaitable());
-        assert(() => !pyodide.globals.isBuffer());
-        assert(() => !pyodide.globals.isBuffer());
-        assert(() => !pyodide.globals.isCallable());
-        assert(() => !pyodide.globals.isCallable());
-        assert(() => pyodide.globals.isIterable());
-        assert(() => pyodide.globals.isIterable());
-        assert(() => !pyodide.globals.isIterator());
-        assert(() => !pyodide.globals.isIterator());
-        assert(() => pyodide.globals.supportsGet());
-        assert(() => pyodide.globals.supportsGet());
-        assert(() => pyodide.globals.supportsSet());
-        assert(() => pyodide.globals.supportsSet());
-        assert(() => pyodide.globals.supportsHas());
-        assert(() => pyodide.globals.supportsHas());
-        """
-    )
-    for name in [
-        "isPyProxy",
-        "isAwaitable",
-        "isBuffer",
-        "isCallable",
-        "isIterable",
-        "isIterator",
-        "supportsGet",
-        "supportsSet",
-        "supportsHas",
-    ]:
-        assert (
-            sum(f"{name}() is deprecated. Use" in s for s in selenium.logs.split("\n"))
-            == 1
-        )
 
 
 @run_in_pyodide(packages=["pytest"])
@@ -1550,6 +1461,40 @@ def test_index_url_calculation_source_map(selenium):
     assert f"indexURL: {DIST_DIR}" in result.stdout
 
 
+@pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
+@pytest.mark.parametrize(
+    "filename, import_stmt",
+    [
+        ("index.js", "const { loadPyodide } = require('%s/pyodide.js')"),  # commonjs
+        ("index.mjs", "import { loadPyodide } from '%s/pyodide.mjs'"),  # esm
+    ],
+)
+def test_default_index_url_calculation_node(selenium, tmp_path, filename, import_stmt):
+    Path(tmp_path / filename).write_text(
+        (import_stmt % DIST_PATH)
+        + "\n"
+        + """
+        async function main() {
+            const py = await loadPyodide();
+            console.log("indexURL:", py._module.API.config.indexURL);
+        }
+        main();
+        """
+    )
+
+    result = subprocess.run(
+        [
+            "node",
+            filename,
+        ],
+        capture_output=True,
+        encoding="utf8",
+        cwd=tmp_path,
+    )
+
+    assert f"indexURL: {DIST_PATH}" in result.stdout
+
+
 @pytest.mark.xfail_browsers(
     node="Browser only", safari="Safari doesn't support wasm-unsafe-eval"
 )
@@ -1565,13 +1510,9 @@ def test_csp(selenium_standalone_noload):
         target_path.unlink()
 
 
-def test_static_import(
-    request, runtime, web_server_main, playwright_browsers, tmp_path
-):
-    # the xfail_browsers mark won't work without using a selenium fixture
-    # so we manually xfail the node test
-    if runtime == "node":
-        pytest.xfail("static import test is browser-only")
+@pytest.mark.xfail_browsers(node="static import test is browser-only")
+def test_static_import(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
     shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
@@ -1589,10 +1530,10 @@ def test_static_import(
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
     (tmp_path / "module_static_import_test.html").write_text(test_html)
 
-    with spawn_web_server(tmp_path) as web_server, selenium_standalone_noload_common(
-        request, runtime, web_server, playwright_browsers
-    ) as selenium:
-        selenium.goto(f"{selenium.base_url}/module_static_import_test.html")
+    with spawn_web_server(tmp_path) as web_server:
+        server_hostname, server_port, _ = web_server
+        base_url = f"http://{server_hostname}:{server_port}/"
+        selenium.goto(f"{base_url}/module_static_import_test.html")
         selenium.javascript_setup()
         selenium.load_pyodide()
         selenium.run_js(

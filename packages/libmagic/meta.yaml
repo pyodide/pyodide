@@ -23,5 +23,5 @@ build:
       CFLAGS="${SIDE_MODULE_CFLAGS}"
     cd src
     emmake make -j ${PYODIDE_JOBS:-3} libmagic.la \
-      LDFLAGS="-Xcompiler '${SIDE_MODULE_LDFLAGS}'"
-    cp .libs/libmagic.so.1.0.0 ${DISTDIR}/libmagic.so
+      LDFLAGS="-avoid-version -Xcompiler '${SIDE_MODULE_LDFLAGS}'"
+    cp .libs/libmagic.so ${DISTDIR}/libmagic.so

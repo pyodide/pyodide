@@ -178,6 +178,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -e ./pyodide-build
+          # FIXME: pytest-pyodide hangs in playwright==1.40, chromium
+          pip install "playwright<1.40"
           python -m playwright install
 
       - name: run core tests

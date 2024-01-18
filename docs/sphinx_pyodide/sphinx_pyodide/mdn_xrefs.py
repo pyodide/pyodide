@@ -19,6 +19,7 @@ DATA = {
     "js:class": {
         "Array": "$global/",
         "NodeList": "API/",
+        "XMLHttpRequest": "API/",
         "HTMLCollection": "API/",
         "HTMLCanvasElement": "API/",
         "Generator": "$global/",

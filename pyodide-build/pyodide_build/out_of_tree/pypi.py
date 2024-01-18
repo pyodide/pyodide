@@ -18,6 +18,7 @@ from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
+from build import ConfigSettingsType
 from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
@@ -234,7 +235,7 @@ def get_metadata_for_wheel(url):
 
 
 class PyPIProvider(APBase):
-    BUILD_FLAGS: list[str] = []
+    BUILD_FLAGS: ConfigSettingsType = {}
     BUILD_SKIP: list[str] = []
     BUILD_EXPORTS: _BuildSpecExports = []
 
@@ -378,7 +379,7 @@ def build_wheels_from_pypi_requirements(
     build_dependencies: bool,
     skip_dependency: list[str],
     exports: _BuildSpecExports,
-    build_flags: list[str],
+    config_settings: ConfigSettingsType,
     output_lockfile: str | None,
 ) -> None:
     """
@@ -387,7 +388,7 @@ def build_wheels_from_pypi_requirements(
     """
     _parse_skip_list(skip_dependency)
     PyPIProvider.BUILD_EXPORTS = exports
-    PyPIProvider.BUILD_FLAGS = build_flags
+    PyPIProvider.BUILD_FLAGS = config_settings
     _resolve_and_build(
         reqs,
         target_folder,
@@ -402,7 +403,7 @@ def build_dependencies_for_wheel(
     extras: list[str],
     skip_dependency: list[str],
     exports: _BuildSpecExports,
-    build_flags: list[str],
+    config_settings: ConfigSettingsType,
     output_lockfile: str | None,
     compression_level: int = 6,
 ) -> None:
@@ -417,7 +418,7 @@ def build_dependencies_for_wheel(
     _parse_skip_list(skip_dependency)
 
     PyPIProvider.BUILD_EXPORTS = exports
-    PyPIProvider.BUILD_FLAGS = build_flags
+    PyPIProvider.BUILD_FLAGS = config_settings
     with ZipFile(wheel) as z:
         for n in z.namelist():
             if n.endswith(".dist-info/METADATA"):

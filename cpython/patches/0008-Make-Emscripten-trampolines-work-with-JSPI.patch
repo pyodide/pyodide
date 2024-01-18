@@ -270,7 +270,7 @@ index 0000000000..d2d24a6e0a
 +  if (n !== undefined) {
 +    return n;
 +  }
-+  n = WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
++  n = wasmFunctionType(wasmTable.get(func)).parameters.length;
 +  _PyEM_CountFuncParams.cache.set(func, n);
 +  return n;
 +}

@@ -35,7 +35,6 @@ BUILD_VARS: set[str] = {
     "HOSTSITEPACKAGES",
     "NUMPY_LIB",
     "PATH",
-    "PKG_CONFIG_PATH",
     "PLATFORM_TRIPLET",
     "PIP_CONSTRAINT",
     "PYMAJOR",
@@ -65,6 +64,7 @@ BUILD_VARS: set[str] = {
     "CMAKE_TOOLCHAIN_FILE",
     "PYO3_CONFIG_FILE",
     "MESON_CROSS_FILE",
+    "PKG_CONFIG_LIBDIR",
 }
 
 

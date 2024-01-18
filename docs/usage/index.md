@@ -41,34 +41,19 @@ To avoid confusion, note that:
 
 ### Supported browsers
 
-Pyodide works in any modern web browser with WebAssembly support.
+Webassembly support in browsers is evolving very rapidly,
+and we recommend using the latest browsers whenever possible
+to take full advantage of Pyodide and its webassembly features.
+If you are using an older browser, some features may not work properly.
 
-**Tier 1** browsers are tested as part of the test suite with continuous integration,
+Currently, Pyodide is being tested against the following browser versions,
+so we recommend using a browser version at least equal to or higher than these.
 
-| Browser | Minimal supported version | Release date    |
-| ------- | ------------------------- | --------------- |
-| Firefox | 70.0                      | 22 October 2019 |
-| Chrome  | 71.0                      | 4 December 2018 |
-
-Chrome 89 and 90 have bugs in the webassembly compiler which makes using Pyodide
-with them unstable. Known problems occur in numpy and have been observed
-occasionally in other packages. See {issue}`1384`.
-
-```{note}
-Latest browser versions generally provide more reliable WebAssembly support
-and will run Pyodide faster, so their use is recommended.
-```
-
-**Tier 2** browsers are known to work, but they are not systematically tested in
-Pyodide,
-
-| Browser | Minimal supported version | Release date      |
-| ------- | ------------------------- | ----------------- |
-| Safari  | 14.0                      | 15 September 2020 |
-| Edge    | 80                        | 26 February 2020  |
-
-Other browsers with WebAssembly support might also work however they are not
-officially supported.
+| Browser | Version | Release date  |
+| ------- | ------- | ------------- |
+| Firefox | 112     | 11 April 2023 |
+| Chrome  | 112     | 29 March 2023 |
+| Safari  | 16.4    | 27 March 2023 |
 
 ## Web Workers
 

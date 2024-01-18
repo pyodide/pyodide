@@ -16,6 +16,9 @@ sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 import pytest_pyodide.runner
+
+# importing this fixture has a side effect of making the safari webdriver reused during the session
+from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
@@ -151,16 +154,7 @@ def pytest_collection_modifyitems(config, items):
         cache = config.cache
         prev_test_result = cache.get("cache/lasttestresult", {})
 
-    skipped_docstrings = [
-        "_pyodide._base.CodeRunner",
-        "pyodide.http.open_url",
-        "pyodide.http.pyfetch",
-    ]
-
     for item in items:
-        if isinstance(item, pytest.DoctestItem) and item.name in skipped_docstrings:
-            item.add_marker(pytest.mark.skip(reason="skipped docstring"))
-            continue
         if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
             item.add_marker(pytest.mark.skip(reason="previously passed"))
             continue

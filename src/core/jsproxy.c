@@ -1307,10 +1307,9 @@ JsProxy_length(PyObject* self)
 }
 
 static PyObject*
-JsProxy_item_array(PyObject* o, Py_ssize_t i)
+JsProxy_item_array(PyObject* self, Py_ssize_t i)
 {
   PyObject* pyresult = NULL;
-  JsProxy* self = (JsProxy*)o;
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(self), i);
   FAIL_IF_JS_NULL(jsresult);
   pyresult = js2python(jsresult);
@@ -1322,9 +1321,8 @@ finally:
  * __getitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static PyObject*
-JsArray_subscript(PyObject* o, PyObject* item)
+JsArray_subscript(PyObject* self, PyObject* item)
 {
-  JsProxy* self = (JsProxy*)o;
   PyObject* pyresult = NULL;
 
   if (PyIndex_Check(item)) {
@@ -1450,9 +1448,8 @@ JsNodeList_subscript(PyObject* o, PyObject* item)
  * __setitem__ and __delitem__ for proxies of Js Arrays, controlled by IS_ARRAY
  */
 static int
-JsArray_ass_subscript(PyObject* o, PyObject* item, PyObject* pyvalue)
+JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
 {
-  JsProxy* self = (JsProxy*)o;
   bool success = false;
   PyObject* seq = NULL;
   Py_ssize_t i;
@@ -1763,9 +1760,8 @@ valid_index(Py_ssize_t i, Py_ssize_t limit)
 }
 
 static PyObject*
-JsArray_pop(PyObject* o, PyObject* const* args, Py_ssize_t nargs)
+JsArray_pop(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
 {
-  JsProxy* self = (JsProxy*)o;
   PyObject* pyresult = NULL;
   PyObject* iobj = NULL;
   Py_ssize_t index = -1;
@@ -1815,32 +1811,31 @@ static PyMethodDef JsArray_pop_MethodDef = {
 EM_JS(JsVal, JsArray_reversed_iterator, (JsVal array), {
   return new ReversedIterator(array);
 }
-class ReversedIterator
-{
-  constructor(array)
-  {
+// clang-format off
+class ReversedIterator {
+  constructor(array) {
     this._array = array;
     this._i = array.length - 1;
-}
+  }
 
-__length_hint__()
-{
-  return this._array.length;
-}
+  __length_hint__() {
+    return this._array.length;
+  }
 
-[Symbol.toStringTag]() { return "ReverseIterator"; }
+  [Symbol.toStringTag]() {
+    return "ReverseIterator";
+  }
 
-next()
-{
-  const i = this._i;
-  const a = this._array;
-  const done = i < 0;
-  const value = done ? undefined : a[i];
-  this._i--;
-  return { done, value };
+  next() {
+    const i = this._i;
+    const a = this._array;
+    const done = i < 0;
+    const value = done ? undefined : a[i];
+    this._i--;
+    return { done, value };
+  }
 }
-}
-;
+// clang-format on
 )
 
 static PyObject*
@@ -1873,19 +1868,15 @@ JsArray_index_js,
 })
 // clang-format on
 
-static PyObject*
-JsArray_index(PyObject* self, PyObject* args)
+static Py_ssize_t
+JsArray_index_helper(PyObject* self,
+                     PyObject* value,
+                     Py_ssize_t start,
+                     Py_ssize_t stop)
 {
-  PyObject* value;
-  Py_ssize_t start = 0;
-  Py_ssize_t stop = PY_SSIZE_T_MAX;
-  if (!PyArg_ParseTuple(args, "O|nn:index", &value, &start, &stop)) {
-    return NULL;
-  }
-
-  int length = JsProxy_length(self);
+  Py_ssize_t length = JsProxy_length(self);
   if (length == -1) {
-    return NULL;
+    return -1;
   }
   if (start < 0) {
     start += length;
@@ -1904,7 +1895,7 @@ JsArray_index(PyObject* self, PyObject* args)
   JsVal jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (JsvNull_Check(jsvalue)) {
     PyErr_Clear();
-    for (int i = start; i < stop; i++) {
+    for (Py_ssize_t i = start; i < stop; i++) {
       JsVal jsobj = JsvArray_Get(JsProxy_VAL(self), i);
       // We know `value` is not a `JsProxy`: if it were we would have taken the
       // other branch. Thus, if `jsobj` is not a `PyProxy`,
@@ -1916,20 +1907,38 @@ JsArray_index(PyObject* self, PyObject* args)
       }
       int cmp = PyObject_RichCompareBool(pyobj, value, Py_EQ);
       if (cmp > 0)
-        return PyLong_FromSsize_t(i);
+        return i;
       else if (cmp < 0)
-        return NULL;
+        goto error;
     }
+    goto error;
   } else {
     int result = JsArray_index_js(JsProxy_VAL(self), jsvalue, start, stop);
-    if (result != -1) {
-      return PyLong_FromSsize_t(result);
+    if (result == -1) {
+      goto error;
     }
+    return result;
   }
-  if (!PyErr_Occurred()) {
-    PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+error:
+  PyErr_Format(PyExc_ValueError, "%R is not in list", value);
+  return -1;
+}
+
+static PyObject*
+JsArray_index(PyObject* self, PyObject* args)
+{
+  PyObject* value;
+  Py_ssize_t start = 0;
+  Py_ssize_t stop = PY_SSIZE_T_MAX;
+  if (!PyArg_ParseTuple(args, "O|nn:index", &value, &start, &stop)) {
+    return NULL;
   }
-  return NULL;
+
+  Py_ssize_t result = JsArray_index_helper(self, value, start, stop);
+  if (result == -1) {
+    return NULL;
+  }
+  return PyLong_FromSsize_t(result);
 }
 
 static PyMethodDef JsArray_index_MethodDef = {
@@ -1954,14 +1963,13 @@ JsArray_count_js,
 // clang-format on
 
 static PyObject*
-JsArray_count(PyObject* o, PyObject* value)
+JsArray_count(PyObject* self, PyObject* value)
 {
-  JsProxy* self = (JsProxy*)o;
   JsVal jsvalue = python2js_track_proxies(value, JS_NULL, true);
   if (JsvNull_Check(jsvalue)) {
     PyErr_Clear();
     int result = 0;
-    Py_ssize_t stop = JsProxy_length(o);
+    Py_ssize_t stop = JsProxy_length(self);
     if (stop == -1) {
       return NULL;
     }
@@ -2013,6 +2021,45 @@ static PyMethodDef JsArray_reverse_MethodDef = {
   "reverse",
   (PyCFunction)JsArray_reverse,
   METH_NOARGS,
+};
+
+static PyObject*
+JsArray_insert(PyObject* self, PyObject* args)
+{
+  Py_ssize_t index;
+  PyObject* pyvalue;
+  if (!PyArg_ParseTuple(args, "nO:insert", &index, &pyvalue)) {
+    return NULL;
+  }
+  JsVal jsvalue = python2js(pyvalue);
+  FAIL_IF_JS_NULL(jsvalue);
+  FAIL_IF_MINUS_ONE(JsvArray_Insert(JsProxy_VAL(self), index, jsvalue));
+  Py_RETURN_NONE;
+finally:
+  return NULL;
+}
+
+static PyMethodDef JsArray_insert_MethodDef = {
+  "insert",
+  (PyCFunction)JsArray_insert,
+  METH_VARARGS,
+};
+
+static PyObject*
+JsArray_remove(PyObject* self, PyObject* arg)
+{
+  int index = JsArray_index_helper(self, arg, 0, PY_SSIZE_T_MAX);
+  FAIL_IF_MINUS_ONE(index);
+  JsvArray_Delete(JsProxy_VAL(self), index);
+  Py_RETURN_NONE;
+finally:
+  return NULL;
+}
+
+static PyMethodDef JsArray_remove_MethodDef = {
+  "remove",
+  (PyCFunction)JsArray_remove,
+  METH_O,
 };
 
 // A helper method for jsproxy_subscript.
@@ -3598,9 +3645,8 @@ finally:
 }
 
 static PyObject*
-JsBuffer_tomemoryview(PyObject* buffer, PyObject* _ignored)
+JsBuffer_tomemoryview(PyObject* self, PyObject* _ignored)
 {
-  JsProxy* self = (JsProxy*)buffer;
   return JsBuffer_CopyIntoMemoryView(JsProxy_VAL(self),
                                      JsBuffer_BYTE_LENGTH(self),
                                      JsBuffer_FORMAT(self),
@@ -3728,10 +3774,9 @@ JsBuffer_get_info, (JsVal jsobj,
 // clang-format on
 
 int
-JsBuffer_cinit(PyObject* obj)
+JsBuffer_cinit(PyObject* self)
 {
   bool success = false;
-  JsProxy* self = (JsProxy*)obj;
   // TODO: should logic here be any different if we're on wasm heap?
   // format string is borrowed from get_buffer_datatype, DO NOT DEALLOCATE!
   JsBuffer_get_info(JsProxy_VAL(self),
@@ -3997,6 +4042,8 @@ skip_container_slots:
     methods[cur_method++] = JsArray_count_MethodDef;
     methods[cur_method++] = JsArray_reversed_MethodDef;
     methods[cur_method++] = JsArray_reverse_MethodDef;
+    methods[cur_method++] = JsArray_insert_MethodDef;
+    methods[cur_method++] = JsArray_remove_MethodDef;
   }
   if (flags & IS_TYPEDARRAY) {
     slots[cur_slot++] = (PyType_Slot){ .slot = Py_mp_subscript,

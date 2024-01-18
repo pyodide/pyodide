@@ -84,7 +84,7 @@ def test_subprocess_with_shared_env_logging(capfd, tmp_path):
         ]
 
 
-def test_prepare_source(monkeypatch):
+def test_prepare_source(monkeypatch, tmp_path):
     class subprocess_result:
         returncode = 0
         stdout = ""
@@ -95,18 +95,15 @@ def test_prepare_source(monkeypatch):
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "move", lambda *args, **kwargs: True)
 
-    test_pkgs = []
-
-    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "packaging/meta.yaml"))
-    test_pkgs.append(MetaConfig.from_yaml(RECIPE_DIR / "micropip/meta.yaml"))
-
-    for pkg in test_pkgs:
-        pkg.source.patches = []
+    test_pkgs = [
+        MetaConfig.from_yaml(RECIPE_DIR / "packaging/meta.yaml"),
+        MetaConfig.from_yaml(RECIPE_DIR / "micropip/meta.yaml"),
+    ]
 
     for pkg in test_pkgs:
         source_dir_name = pkg.package.name + "-" + pkg.package.version
         pkg_root = Path(pkg.package.name)
-        buildpath = pkg_root / "build"
+        buildpath = tmp_path / pkg_root / "build"
         src_metadata = pkg.source
         srcpath = buildpath / source_dir_name
         buildpkg.prepare_source(buildpath, srcpath, src_metadata)

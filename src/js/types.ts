@@ -3,7 +3,7 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import { type PackageData } from "./load-package";
+import { type PackageData, type InternalPackageData } from "./load-package";
 
 export type TypedArray =
   | Int8Array
@@ -238,8 +238,13 @@ export interface Module {
   noWasmDecoding: boolean;
   quit: (status: number, toThrow: Error) => void;
   preRun: { (): void }[];
-  print: (a: string) => void;
-  printErr: (a: string) => void;
+  print?: (a: string) => void;
+  printErr?: (a: string) => void;
+  arguments: string[];
+  API: API;
+  postRun: ((a: Module) => void) | ((a: Module) => void)[];
+  locateFile: (file: string) => string;
+  exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
@@ -257,6 +262,18 @@ export interface Module {
     ) => void,
   ) => void;
 }
+
+type LockfileInfo = {
+  arch: "wasm32" | "wasm64";
+  platform: string;
+  version: string;
+  python: string;
+};
+
+type Lockfile = {
+  info: LockfileInfo;
+  packages: Record<string, PackageData>;
+};
 
 export interface API {
   fatal_error: (e: any) => never;
@@ -302,13 +319,13 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<any>;
+  lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
-  lockfile_info: any;
-  lockfile_packages: any;
-  repodata_packages: any;
-  repodata_info: any;
+  lockfile_info: LockfileInfo;
+  lockfile_packages: Record<string, InternalPackageData>;
+  repodata_packages: Record<string, InternalPackageData>;
+  repodata_info: LockfileInfo;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
@@ -322,10 +339,16 @@ export interface API {
     readFileFunc?: (path: string) => Uint8Array,
   ) => Promise<void>;
   loadDynlibsFromPackage: (
-    pkg: PackageData,
+    pkg: InternalPackageData,
     dynlibPaths: string[],
   ) => Promise<void>;
 
-  makePublicAPI: () => PyodideInterface;
   _Comlink: any;
+
+  dsodir: string;
+  sys: PyProxy;
+  os: PyProxy;
+
+  finalizeBootstrap: () => PyodideInterface;
+  version: string;
 }

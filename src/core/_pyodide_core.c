@@ -8,7 +8,11 @@
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
-    PyErr_Format(PyExc_ImportError, args);                                     \
+    if (PyErr_Occurred()) {                                                    \
+      _PyErr_FormatFromCause(PyExc_ImportError, args);                         \
+    } else {                                                                   \
+      PyErr_Format(PyExc_ImportError, args);                                   \
+    }                                                                          \
     FAIL();                                                                    \
   } while (0)
 
@@ -44,10 +48,13 @@ void
 pyodide_export(void);
 int
 py_version_major(void);
-// Force _pyodide_core.o and _pyodide_pre.gen.o to be included by using a symbol
-// from each of them.
+void
+set_new_cframe(void* frame);
+// Force _pyodide_core.o, _pyodide_pre.gen.o, and pystate.o to be included by
+// using a symbol from each of them.
 void* pyodide_export_ = pyodide_export;
 void* py_version_major_ = py_version_major;
+void* set_new_cframe_ = set_new_cframe;
 
 // clang-format off
 EM_JS(void, set_pyodide_module, (JsVal mod), {

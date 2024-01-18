@@ -1,4 +1,4 @@
-import { IN_NODE } from "./compat.js";
+import { IN_NODE } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
@@ -450,7 +450,7 @@ function _getStderrDefaults(): StdwriteOpts & Partial<Writer> {
  * works as expected.
  *
  * @param options.batched A batched handler is called with a string whenever a
- * newline character is written is written or stdout is flushed. In the former
+ * newline character is written or stdout is flushed. In the former
  * case, the received line will end with a newline, in the latter case it will
  * not.
  * @param options.raw A raw handler is called with the handler is called with a
@@ -567,7 +567,7 @@ class LegacyReader {
     if (typeof val === "number") {
       return val;
     }
-    if (!val) {
+    if (val === undefined || val === null) {
       return undefined;
     }
     if (ArrayBuffer.isView(val)) {

@@ -1,12 +1,11 @@
-// Detect if we're in node
-declare var process: any;
-
-export const IN_NODE =
-  typeof process === "object" &&
-  typeof process.versions === "object" &&
-  typeof process.versions.node === "string" &&
-  typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+import ErrorStackParser from "error-stack-parser";
+import {
+  IN_NODE,
+  IN_NODE_ESM,
+  IN_BROWSER_MAIN_THREAD,
+  IN_BROWSER_WEB_WORKER,
+  IN_NODE_COMMONJS,
+} from "./environments";
 
 let nodeUrlMod: any;
 let nodeFetch: any;
@@ -200,10 +199,10 @@ export async function loadBinaryFile(
  */
 export let loadScript: (url: string) => Promise<void>;
 
-if (globalThis.document) {
+if (IN_BROWSER_MAIN_THREAD) {
   // browser
   loadScript = async (url) => await import(/* webpackIgnore: true */ url);
-} else if (globalThis.importScripts) {
+} else if (IN_BROWSER_WEB_WORKER) {
   // webworker
   loadScript = async (url) => {
     try {
@@ -273,4 +272,39 @@ export async function loadLockFile(lockFileURL: string): Promise<any> {
     let response = await fetch(lockFileURL);
     return await response.json();
   }
+}
+
+/**
+ * Calculate the directory name of the current module.
+ * This is used to guess the indexURL when it is not provided.
+ */
+export async function calculateDirname(): Promise<string> {
+  if (IN_NODE_COMMONJS) {
+    return __dirname;
+  }
+
+  let err: Error;
+  try {
+    throw new Error();
+  } catch (e) {
+    err = e as Error;
+  }
+  let fileName = ErrorStackParser.parse(err)[0].fileName!;
+
+  if (IN_NODE_ESM) {
+    const nodePath = await import("path");
+    const nodeUrl = await import("url");
+
+    // FIXME: We would like to use import.meta.url here,
+    // but mocha seems to mess with compiling typescript files to ES6.
+    return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
+  }
+
+  const indexOfLastSlash = fileName.lastIndexOf(pathSep);
+  if (indexOfLastSlash === -1) {
+    throw new Error(
+      "Could not extract indexURL path from pyodide module location",
+    );
+  }
+  return fileName.slice(0, indexOfLastSlash);
 }

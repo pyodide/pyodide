@@ -19,8 +19,10 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
+from pyodide_lock.utils import update_package_sha256
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
@@ -636,6 +638,8 @@ def generate_packagedata(
 ) -> dict[str, PackageLockSpec]:
     packages: dict[str, PackageLockSpec] = {}
     for name, pkg in pkg_map.items():
+        normalized_name = canonicalize_name(name)
+
         if not pkg.file_name or pkg.package_type == "static_library":
             continue
         if not Path(output_dir, pkg.file_name).exists():
@@ -647,7 +651,8 @@ def generate_packagedata(
             install_dir=pkg.install_dir,
             package_type=pkg.package_type,
         )
-        pkg_entry.update_sha256(output_dir / pkg.file_name)
+
+        update_package_sha256(pkg_entry, output_dir / pkg.file_name)
 
         pkg_type = pkg.package_type
         if pkg_type in ("shared_library", "cpython_module"):
@@ -664,10 +669,10 @@ def generate_packagedata(
                 pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
             )
 
-        packages[name.lower()] = pkg_entry
+        packages[normalized_name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            packages[name.lower()].unvendored_tests = True
+            packages[normalized_name.lower()].unvendored_tests = True
 
             # Create the test package if necessary
             pkg_entry = PackageLockSpec(
@@ -677,9 +682,10 @@ def generate_packagedata(
                 file_name=pkg.unvendored_tests.name,
                 install_dir=pkg.install_dir,
             )
-            pkg_entry.update_sha256(output_dir / pkg.unvendored_tests.name)
 
-            packages[name.lower() + "-tests"] = pkg_entry
+            update_package_sha256(pkg_entry, output_dir / pkg.unvendored_tests.name)
+
+            packages[normalized_name.lower() + "-tests"] = pkg_entry
 
     # sort packages by name
     packages = dict(sorted(packages.items()))
@@ -703,7 +709,9 @@ def generate_lockfile(
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
-    return PyodideLockSpec(info=info, packages=packages)
+    lock_spec = PyodideLockSpec(info=info, packages=packages)
+    lock_spec.check_wheel_filenames()
+    return lock_spec
 
 
 def copy_packages_to_dist_dir(

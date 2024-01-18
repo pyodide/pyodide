@@ -17,6 +17,7 @@ __pycache__
 .pytest_cache/
 .vscode
 .venv*
+tsconfig.tsbuildinfo
 
 build
 ccache

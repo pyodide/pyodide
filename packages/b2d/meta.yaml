@@ -1,6 +1,6 @@
 package:
-  name: pyb2d
-  version: 0.7.2
+  name: b2d
+  version: 0.7.4
   top-level:
     - b2d
 
