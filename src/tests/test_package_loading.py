@@ -602,6 +602,7 @@ def test_custom_lockfile(selenium_standalone_noload):
         ("pydoc-data", "pydoc-data", "pydoc_data"),
     ],
 )
+@pytest.mark.requires_dynamic_linking  # only required for fpcast-test
 def test_normalized_name(selenium_standalone, load_name, normalized_name, real_name):
     selenium = selenium_standalone
 
