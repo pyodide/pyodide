@@ -8,9 +8,8 @@ This section contains a collection of examples using Pyodide, contributed by the
 
 - [Black formatter](../examples/black.html){.external} - by [@ryanking13](https://github.com/ryanking13)
 
-
 <!-- Contribution Guide -->
-<!-- 
+<!--
 We welcome contributions to this section.
 If you have an example you would like to share, please submit a pull request in the Pyodide repository.
 

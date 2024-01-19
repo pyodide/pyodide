@@ -1,21 +1,20 @@
 <!doctype html>
 <html>
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
     <style>
-        pre {
-            background-color: #f7f7f7;
-            padding: 10px;
-        }
+      pre {
+        background-color: #f7f7f7;
+        padding: 10px;
+      }
     </style>
-</head>
+  </head>
 
-<body>
+  <body>
     <h1>Using black formatter in Pyodide</h1>
     <div>
-        <textarea id="codeblock" rows="45" cols="80" spellcheck="false">
+      <textarea id="codeblock" rows="45" cols="80" spellcheck="false">
 from pyodide import hello, Pyodide
 
 x = {  'a':37,'b':42,
@@ -56,44 +55,44 @@ regular_formatting = [
     3,  4,  5,
     6,  7,  8,
 ]
-        </textarea>
+        </textarea
+      >
     </div>
     <div>
-        <button id="formatButton" onclick="format()" disabled>
-            Loading Pyodide...
-        </button>
+      <button id="formatButton" onclick="format()" disabled>
+        Loading Pyodide...
+      </button>
     </div>
 
     <script type="text/javascript">
-        let formatStr = () => { };
-        const format = () => {
-            const code = document.getElementById('codeblock').value;
-            const formattedCode = formatStr(code);
-            document.getElementById('codeblock').value = formattedCode;
-        }
+      let formatStr = () => {};
+      const format = () => {
+        const code = document.getElementById("codeblock").value;
+        const formattedCode = formatStr(code);
+        document.getElementById("codeblock").value = formattedCode;
+      };
 
-        async function init() {
-            const pyodide = await loadPyodide({
-                packages: ['micropip'],
-            });
+      async function init() {
+        const pyodide = await loadPyodide({
+          packages: ["micropip"],
+        });
 
-            const micropip = pyodide.pyimport('micropip');
-            await micropip.install('black');
-            formatStr = pyodide.runPython(`
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install("black");
+        formatStr = pyodide.runPython(`
                 import black
                 def format_str(code):
                     return black.format_str(code, mode=black.FileMode())
-                
+
                 format_str
             `);
 
-            const button = document.getElementById('formatButton');
-            button.disabled = false;
-            button.innerText = 'Format Me!';
-        }
+        const button = document.getElementById("formatButton");
+        button.disabled = false;
+        button.innerText = "Format Me!";
+      }
 
-        init();
+      init();
     </script>
-</body>
-
+  </body>
 </html>
