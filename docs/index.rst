@@ -50,6 +50,7 @@ Using Pyodide
    usage/streams.md
    usage/api-reference.md
    usage/faq.md
+   usage/examples.md
 
 Development
 ^^^^^^^^^^^
