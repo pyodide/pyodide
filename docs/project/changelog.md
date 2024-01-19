@@ -16,6 +16,11 @@ myst:
 
 ## Unreleased
 
+### Build System
+
+- {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
+  This entrypoint was deprecated since 0.22.0.
+
 ### General
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
