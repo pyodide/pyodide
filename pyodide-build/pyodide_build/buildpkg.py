@@ -4,7 +4,6 @@
 Builds a Pyodide package.
 """
 
-import argparse
 import cgi
 import fnmatch
 import json
@@ -18,7 +17,6 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from textwrap import dedent
 from types import TracebackType
 from typing import Any, TextIO, cast
 from urllib import request
@@ -875,91 +873,3 @@ def build_package(
             logger.success(msg)
         else:
             logger.error(msg)
-
-
-def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.description = (
-        "Build a pyodide package.\n\n"
-        "Note: this is a private endpoint that should not be used "
-        "outside of the Pyodide Makefile."
-    )
-    parser.add_argument(
-        "package", type=str, nargs=1, help="Path to meta.yaml package description"
-    )
-    parser.add_argument(
-        "--cflags",
-        type=str,
-        nargs="?",
-        default=get_build_flag("SIDE_MODULE_CFLAGS"),
-        help="Extra compiling flags",
-    )
-    parser.add_argument(
-        "--cxxflags",
-        type=str,
-        nargs="?",
-        default=get_build_flag("SIDE_MODULE_CXXFLAGS"),
-        help="Extra C++ specific compiling flags",
-    )
-    parser.add_argument(
-        "--ldflags",
-        type=str,
-        nargs="?",
-        default=get_build_flag("SIDE_MODULE_LDFLAGS"),
-        help="Extra linking flags",
-    )
-    parser.add_argument(
-        "--target-install-dir",
-        type=str,
-        nargs="?",
-        default=get_build_flag("TARGETINSTALLDIR"),
-        help="The path to the target Python installation",
-    )
-    parser.add_argument(
-        "--host-install-dir",
-        type=str,
-        nargs="?",
-        default=get_build_flag("HOSTINSTALLDIR"),
-        help=(
-            "Directory for installing built host packages. Defaults to setup.py "
-            "default. Set to 'skip' to skip installation. Installation is "
-            "needed if you want to build other packages that depend on this one."
-        ),
-    )
-    parser.add_argument(
-        "--force-rebuild",
-        action="store_true",
-        help=(
-            "Force rebuild of package regardless of whether it appears to have been updated"
-        ),
-    )
-    parser.add_argument(
-        "--continue",
-        dest="continue_",
-        action="store_true",
-        help=(
-            dedent(
-                """
-                Continue a build from the middle. For debugging. Implies "--force-rebuild".
-                """
-            ).strip()
-        ),
-    )
-    return parser
-
-
-def main(args: argparse.Namespace) -> None:
-    build_args = BuildArgs(
-        pkgname="",
-        cflags=args.cflags,
-        cxxflags=args.cxxflags,
-        ldflags=args.ldflags,
-        target_install_dir=args.target_install_dir,
-        host_install_dir=args.host_install_dir,
-    )
-    build_package(args.package[0], build_args, args.force_rebuild, args.continue_)
-
-
-if __name__ == "__main__":
-    parser = make_parser(argparse.ArgumentParser())
-    args = parser.parse_args()
-    main(args)
