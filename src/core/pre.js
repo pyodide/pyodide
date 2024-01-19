@@ -2,7 +2,7 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.25.0.dev0";
+API.version = "0.26.0.dev0";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
@@ -99,3 +99,13 @@ Module.iterObject = function* (object) {
     }
   }
 };
+
+function wasmFunctionType(wasm_func) {
+  if (!WebAssembly.Function) {
+    throw new Error("No type reflection");
+  }
+  if (WebAssembly.Function.type) {
+    return WebAssembly.Function.type(wasm_func);
+  }
+  return wasm_func.type();
+}
