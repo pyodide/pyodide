@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import Any
 
 from _pyodide._base import (
@@ -26,7 +26,6 @@ def run_js(code: str, /) -> Any:
     return eval_(code)
 
 
-@lru_cache
 def _relaxed_call_sig(func):
     from inspect import Parameter, signature
 
@@ -56,13 +55,36 @@ def _relaxed_call_sig(func):
     return new_sig
 
 
+@lru_cache
+def _relaxed_call_sig_cached(func):
+    return _relaxed_call_sig(func)
+
+
+def relaxed_wrap(func):
+    """Decorator which creates a function that ignores extra arguments
+
+    If extra positional or keyword arguments are provided they will be
+    discarded.
+    """
+    sig = _relaxed_call_sig_cached(func)
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        bound = sig.bind(*args, **kwargs)
+        bound.arguments.pop("__var_positional", None)
+        bound.arguments.pop("__var_keyword", None)
+        return func(*bound.args, **bound.kwargs)
+
+    return wrapper
+
+
 def relaxed_call(func, *args, **kwargs):
     """Call the function ignoring extra arguments
 
     If extra positional or keyword arguments are provided they will be
     discarded.
     """
-    sig = _relaxed_call_sig(func)
+    sig = _relaxed_call_sig_cached(func)
     if sig is None:
         func(*args, **kwargs)
     bound = sig.bind(*args, **kwargs)
@@ -78,5 +100,6 @@ __all__ = [
     "find_imports",
     "should_quiet",
     "run_js",
+    "relaxed_wrap",
     "relaxed_call",
 ]
