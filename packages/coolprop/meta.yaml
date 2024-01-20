@@ -1,12 +1,12 @@
 package:
   name: coolprop
-  version: 6.4.3
+  version: 6.6.0
   top-level:
     - CoolProp
 
 source:
-  url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.4.3/source/CoolProp_sources.zip
-  sha256: 7d43ef778e5e245720261311fe86c8a1492a7dc49c0155408344117a81465f7d
+  url: https://files.pythonhosted.org/packages/13/88/35c88960cf20cf483f1e2127ad999fce4528451ad37173064cdcb3834ebf/CoolProp-6.6.0.tar.gz
+  sha256: cf6fad704b3ae00f4df309cfd1e2ee48d155886b569a73f2cc38a57eda463082
   extract_dir: source
 
   extras:
