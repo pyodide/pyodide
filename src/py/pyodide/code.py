@@ -47,7 +47,7 @@ def _relaxed_call_sig(func: Callable[..., Any]) -> Signature | None:
         new_params.insert(idx, Parameter("__var_positional", Parameter.VAR_POSITIONAL))
 
     for param in new_params:
-        if param.kind == Parameter.KEYWORD_ONLY:
+        if param.kind == Parameter.VAR_KEYWORD:
             break
     else:
         new_params.append(Parameter("__var_keyword", Parameter.VAR_KEYWORD))
@@ -104,6 +104,10 @@ def relaxed_call(func: Callable[..., RetType], *args: Any, **kwargs: Any) -> Ret
         return func(*args, **kwargs)
     return _do_call(func, sig, args, kwargs)
 
+def f(a, *args, b=7):
+    return [a, args, b]
+
+relaxed_call(f, 1, b=7, c=9) == [1, (), 7]
 
 __all__ = [
     "CodeRunner",
