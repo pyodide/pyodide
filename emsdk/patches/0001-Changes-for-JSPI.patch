@@ -30,7 +30,7 @@ index 736f73c66..fd769f7cc 100644
 @@ -73,6 +73,7 @@ var LibraryDylink = {
  #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
    $createInvokeFunction__internal: true,
-   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
+   $createInvokeFunction__deps: ['$dynCall', 'setThrew', 'stackSave', 'stackRestore'],
 +  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
    $createInvokeFunction: (sig) => {
      return function() {
