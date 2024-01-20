@@ -1,5 +1,7 @@
+from collections.abc import Callable
 from functools import lru_cache, wraps
-from typing import Any
+from inspect import Parameter, Signature, signature
+from typing import Any, ParamSpec, TypeVar
 
 from _pyodide._base import (
     CodeRunner,
@@ -26,9 +28,7 @@ def run_js(code: str, /) -> Any:
     return eval_(code)
 
 
-def _relaxed_call_sig(func):
-    from inspect import Parameter, signature
-
+def _relaxed_call_sig(func: Callable[..., Any]) -> Signature | None:
     try:
         sig = signature(func)
     except (TypeError, ValueError):
@@ -56,29 +56,44 @@ def _relaxed_call_sig(func):
 
 
 @lru_cache
-def _relaxed_call_sig_cached(func):
+def _relaxed_call_sig_cached(func: Callable[..., Any]) -> Signature | None:
     return _relaxed_call_sig(func)
 
 
-def relaxed_wrap(func):
+def _do_call(
+    func: Callable[..., Any], sig: Signature, args: Any, kwargs: dict[str, Any]
+) -> Any:
+    bound = sig.bind(*args, **kwargs)
+    bound.arguments.pop("__var_positional", None)
+    bound.arguments.pop("__var_keyword", None)
+    return func(*bound.args, **bound.kwargs)
+
+
+Param = ParamSpec("Param")
+Param2 = ParamSpec("Param2")
+RetType = TypeVar("RetType")
+
+
+def relaxed_wrap(func: Callable[Param, RetType]) -> Callable[..., RetType]:
     """Decorator which creates a function that ignores extra arguments
 
     If extra positional or keyword arguments are provided they will be
     discarded.
     """
-    sig = _relaxed_call_sig_cached(func)
+    sig = _relaxed_call_sig(func)
+    if sig is None:
+        raise TypeError("Cannot wrap function")
+    else:
+        sig2 = sig
 
     @wraps(func)
-    def wrapper(*args, **kwargs):
-        bound = sig.bind(*args, **kwargs)
-        bound.arguments.pop("__var_positional", None)
-        bound.arguments.pop("__var_keyword", None)
-        return func(*bound.args, **bound.kwargs)
+    def wrapper(*args: Param.args, **kwargs: Param.kwargs) -> RetType:
+        return _do_call(func, sig2, args, kwargs)
 
     return wrapper
 
 
-def relaxed_call(func, *args, **kwargs):
+def relaxed_call(func: Callable[..., RetType], *args: Any, **kwargs: Any) -> RetType:
     """Call the function ignoring extra arguments
 
     If extra positional or keyword arguments are provided they will be
@@ -86,11 +101,8 @@ def relaxed_call(func, *args, **kwargs):
     """
     sig = _relaxed_call_sig_cached(func)
     if sig is None:
-        func(*args, **kwargs)
-    bound = sig.bind(*args, **kwargs)
-    bound.arguments.pop("__var_positional", None)
-    bound.arguments.pop("__var_keyword", None)
-    return func(*bound.args, **bound.kwargs)
+        return func(*args, **kwargs)
+    return _do_call(func, sig, args, kwargs)
 
 
 __all__ = [
