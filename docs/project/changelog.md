@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Packages
+
+- Upgraded CoolProp to 6.6.0 {pr}`4397`.
+
 ## Version 0.25.0
 
 _January 18, 2023_
