@@ -16,10 +16,13 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
+  {pr}`4362`
+
 ### General
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.47
-  {pr}`4359`, {pr}`4362`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
+  {pr}`4359`
 
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
   of Node.js might still work, but they are not tested or guaranteed to work.
@@ -131,7 +134,8 @@ myst:
 
 - New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
   `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`,
-  `requests`, `urllib3` {pr}`4332`
+  `requests`, `urllib3` {pr}`4332`, `nh3` {pr}`4387`
+- Upgraded zengl to 2.2.0 {pr}`4364`
 
 ## Version 0.24.1
 

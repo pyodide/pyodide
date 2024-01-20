@@ -197,16 +197,16 @@ export class PyodideAPI {
    * expression (and the code doesn't end with a semicolon), the value of the
    * expression is returned.
    *
-   * @param code Python code to evaluate
+   * @param code The Python code to run
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    *        Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
-   * @param options.filename An optional string to use as the filename. Defaults
-   *        to "<exec>". If the filename does not start with "<" and end with ">",
-   *        the source code will be added to the Python linecache and tracebacks
-   *        will show source lines.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -262,16 +262,16 @@ export class PyodideAPI {
    *    import any python packages referenced via ``import`` statements in your
    *    code. This function will no longer do it for you.
    *
-   * @param code Python code to evaluate
+   * @param code The Python code to run
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    * Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
-   * @param options.filename An optional string to use as the filename. Defaults
-   *        to "<exec>". If the filename does not start with "<" and end with ">",
-   *        the source code will be added to the Python linecache and tracebacks
-   *        will show source lines.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript.
    * @async
    */
@@ -285,18 +285,39 @@ export class PyodideAPI {
     return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
+  /**
+   * Runs a Python code string like :js:func:`pyodide.runPython` but with stack
+   * switching enabled. Code executed in this way can use
+   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
+   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
+   * resolved. Only works in runtimes with JS Promise Integration enabled.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   * @param code The Python code to run
+   * @param options
+   * @param options.globals An optional Python dictionary to use as the globals.
+   * Defaults to :js:attr:`pyodide.globals`.
+   * @param options.locals An optional Python dictionary to use as the locals.
+   *        Defaults to the same as ``globals``.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @returns The result of the Python code translated to JavaScript.
+   */
   static async runPythonSyncifying(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy } = {},
+    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return API.pyodide_code.eval_code.callSyncifying(
-      code,
-      options.globals,
-      options.locals,
-    );
+    return API.pyodide_code.eval_code.callSyncifyingKwargs(code, options);
   }
 
   /**
