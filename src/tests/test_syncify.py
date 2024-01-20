@@ -21,19 +21,22 @@ def test_syncify_create_task(selenium):
 
 
 @pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
-def test_syncify_ensure_future(selenium):
+def test_syncify_error_in_python_task(selenium):
     selenium.run_js(
         """
+        await pyodide.loadPackage("pytest");
         await pyodide.runPythonSyncifying(`
             import asyncio
 
-            async def test():
+            async def async_raise():
                 await asyncio.sleep(0.1)
-                return 7
+                raise ValueError("Hi there")
 
-            future = asyncio.ensure_future(test())
-            assert future.syncify() == 7
-            del test, future
+            task = asyncio.create_task(async_raise())
+            import pytest
+            with pytest.raises(ValueError, match="Hi there"):
+                task.syncify()
+            del async_raise, task
         `);
         """
     )
