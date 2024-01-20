@@ -621,3 +621,11 @@ def find_imports(source: str) -> list[str]:
                 continue
             imports.add(module_name.split(".")[0])
     return list(sorted(imports))
+
+
+def pyimport_impl(a: str) -> Any:
+    [stem, *fromlist] = a.rsplit(".", 1)
+    res = __import__(stem, fromlist=fromlist)
+    if fromlist:
+        res = getattr(res, fromlist[0])
+    return res
