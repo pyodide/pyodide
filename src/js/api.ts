@@ -474,8 +474,12 @@ export class PyodideAPI {
    * @param mod_name The name of the module to import
    * @returns A PyProxy for the imported module
    */
-  static pyimport(mod_name: string): PyProxy {
-    return API.pyodide_base.pyimport_impl(mod_name);
+  static pyimport(mod_name: string, fromlist?: string[]): any {
+    const result = API.pyodide_base.pyimport_impl(mod_name, fromlist);
+    if (!fromlist) {
+      return result;
+    }
+    return Object.fromEntries(fromlist.map((val, idx) => [val, result[idx]]));
   }
 
   /**
