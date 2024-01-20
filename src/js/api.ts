@@ -474,8 +474,12 @@ export class PyodideAPI {
    * @param mod_name The name of the module to import
    * @returns A PyProxy for the imported module
    */
-  static pyimport(mod_name: string): PyProxy {
-    return API.importlib.import_module(mod_name);
+  static pyimport(mod_name: string, fromlist?: string[]): any {
+    const result = API.pyodide_base.pyimport_impl(mod_name, fromlist);
+    if (!fromlist) {
+      return result;
+    }
+    return Object.fromEntries(fromlist.map((val, idx) => [val, result[idx]]));
   }
 
   /**
@@ -749,6 +753,7 @@ API.finalizeBootstrap = function (): PyodideInterface {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
+  API.pyodide_base = import_module("_pyodide._base");
 
   API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
   API.dsodir = API.package_loader.DSO_DIR.__str__();

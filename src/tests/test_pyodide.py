@@ -41,7 +41,15 @@ def test_ffi_import_star():
     exec("from pyodide.ffi import *", {})
 
 
-def test_pyimport(selenium):
+def test_pyimport1():
+    from _pyodide._base import pyimport_impl
+
+    assert pyimport_impl("pyodide").__name__ == "pyodide"
+    assert pyimport_impl("pyodide.console").__name__ == "pyodide.console"
+    assert pyimport_impl("pyodide.console.BANNER").startswith("Python ")
+
+
+def test_pyimport2(selenium):
     selenium.run_js(
         """
         let platform = pyodide.pyimport("platform");
