@@ -259,7 +259,11 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   );
 
   if (API.lockfile_info.version !== version) {
-    throw new Error("Lock file version doesn't match Pyodide version");
+    throw new Error(
+      "Lock file version doesn't match Pyodide version.\n" +
+        `   lockfile version: ${API.lockfile_info.version}\n` +
+        `   pyodide  version: ${version}`,
+    );
   }
   API.package_loader.init_loaded_packages();
   if (config.fullStdLib) {
