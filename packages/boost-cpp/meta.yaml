@@ -17,7 +17,7 @@ build:
     # Without this, boost outputs WASM modules not static library archives as an output.
     # I don't understand why... the jam file used by boost is quite hard to understand.
     printf "using clang : emscripten : emcc : <archiver>emar <ranlib>emranlib <linker>emlink ;" | tee -a ./project-config.jam
-    
+
     ./b2 variant=release toolset=clang-emscripten link=static threading=single \
       --with-date_time --with-filesystem \
       --with-system --with-regex --with-chrono --with-random --with-program_options --disable-icu \
