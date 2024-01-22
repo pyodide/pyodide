@@ -664,7 +664,12 @@ def _build_package_inner(
     build_metadata = pkg.build
     name = pkg.package.name
     version = pkg.package.version
-    build_dir = pkg_root / "build"
+    build_tmp = os.environ.get("PYODIDE_BUILD_TMP")
+    if build_tmp:
+        build_dir = Path(build_tmp) / name / "build"
+        build_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        build_dir = pkg_root / "build"
     dist_dir = pkg_root / "dist"
     src_dir_name: str = f"{name}-{version}"
     srcpath = build_dir / src_dir_name
@@ -694,10 +699,6 @@ def _build_package_inner(
             "Cannot find source for rebuild. Expected to find the source "
             f"directory at the path {srcpath}, but that path does not exist."
         )
-
-    import os
-    import subprocess
-    import sys
 
     try:
         stdout_fileno = sys.stdout.fileno()
