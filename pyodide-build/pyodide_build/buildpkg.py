@@ -860,9 +860,11 @@ def build_package(
             continue_=continue_,
         )
 
-    except Exception:
+    except (Exception, KeyboardInterrupt):
         success = False
         raise
+    except SystemExit as e:
+        success = e.code == 0
     finally:
         t1 = datetime.now()
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
