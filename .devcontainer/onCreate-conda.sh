@@ -14,9 +14,8 @@ echo "conda activate pyodide-env" >> ~/.bashrc
 # conda run -n pyodide-env make -C cpython clean
 
 # https://pyodide.org/en/stable/development/building-from-sources.html#using-docker
-export EMSDK_NUM_CORE=12
-export EMCC_CORES=12
-export PYODIDE_JOBS=12
+export EMSDK_NUM_CORE=12 EMCC_CORES=12 PYODIDE_JOBS=12
+echo "export EMSDK_NUM_CORE=12 EMCC_CORES=12 PYODIDE_JOBS=12" >> ~/.bashrc
 
 conda run -n pyodide-env --live-stream pip install -r requirements.txt
 
