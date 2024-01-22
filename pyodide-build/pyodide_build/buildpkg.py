@@ -865,6 +865,7 @@ def build_package(
         raise
     except SystemExit as e:
         success = e.code == 0
+        raise
     finally:
         t1 = datetime.now()
         datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
