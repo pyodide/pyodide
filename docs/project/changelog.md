@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} Added apis to discard extra arguments when calling Python
+  functions.
+  {pr}`4392`
+
 ## Version 0.25.0
 
 _January 18, 2023_
