@@ -105,12 +105,6 @@ def relaxed_call(func: Callable[..., RetType], *args: Any, **kwargs: Any) -> Ret
     return _do_call(func, sig, args, kwargs)
 
 
-def f(a, *args, b=7):
-    return [a, args, b]
-
-
-relaxed_call(f, 1, b=7, c=9) == [1, (), 7]
-
 __all__ = [
     "CodeRunner",
     "eval_code",
