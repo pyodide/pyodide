@@ -22,5 +22,8 @@ conda run -n pyodide-env --live-stream pip install -r requirements.txt
 
 # https://pyodide.org/en/stable/development/new-packages.html#prerequisites
 conda run -n pyodide-env --live-stream pip install -e ./pyodide-build
-conda run -n pyodide-env --live-stream make -C emsdk
-conda run -n pyodide-env --live-stream make -C cpython
+
+# Building emsdk and cpython takes a few minutes to run, so we do not run it here.
+#
+# conda run -n pyodide-env --live-stream make -C emsdk
+# conda run -n pyodide-env --live-stream make -C cpython
