@@ -10,8 +10,6 @@ source:
   extract_dir: CoolProp-6.6.0
 
   extras:
-    - - extras/setup.py
-      - ./setup.py
     - - extras/pyproject.toml
       - ./pyproject.toml
 
