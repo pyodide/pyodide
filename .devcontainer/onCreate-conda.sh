@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Do not keep running on errors
 set -ex
 
