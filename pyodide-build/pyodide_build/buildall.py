@@ -5,6 +5,7 @@ Build all of the packages in a given directory.
 """
 
 import dataclasses
+import os
 import shutil
 import subprocess
 import sys
@@ -78,8 +79,14 @@ class BasePackage:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
+    def build_path(self) -> Path:
+        build_tmp = os.environ.get("PYODIDE_BUILD_TMP")
+        if build_tmp:
+            return Path(build_tmp) / self.name / "build"
+        return self.pkgdir / "build"
+
     def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
+        return needs_rebuild(self.pkgdir, self.build_path(), self.meta.source)
 
     def build(self, build_args: BuildArgs) -> None:
         raise NotImplementedError()
