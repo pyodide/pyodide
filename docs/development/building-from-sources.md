@@ -60,6 +60,20 @@ You can edit the files in the shared `pyodide` source folder on your host
 machine (outside of Docker), and then repeatedly run `make` inside the Docker
 environment to test your changes.
 
+### Using the "Docker" dev container
+
+We provide a dev container configuration that is equivalent to the use of
+`./run_docker` script. It can be used in [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers) and
+on [GitHub Codespaces](https://docs.github.com/en/codespaces/overview).
+When prompted, select "Docker".
+
+### Using the "Conda" dev container
+
+We provide another dev container configuration that corresponds to
+the "Linux with conda" method described below. When [Visual Studio Code](https://code.visualstudio.com/docs/devcontainers/containers) or
+[GitHub Codespaces](https://docs.github.com/en/codespaces/overview)
+prompts for the dev container configuration, select "Conda".
+
 ## Using `make`
 
 Make sure the prerequisites for
@@ -185,8 +199,8 @@ The following environment variables additionally impact the build:
   with a trailing `/`. Default: `./` to load Pyodide packages from the same
   base URL path as where `pyodide.js` is located. Example:
   `{{PYODIDE_CDN_URL}}`
-- `EXTRA_CFLAGS` : Add extra compilation flags.
-- `EXTRA_LDFLAGS` : Add extra linker flags.
+- `EXTRA_CFLAGS`: Add extra compilation flags.
+- `EXTRA_LDFLAGS`: Add extra linker flags.
 
 Setting `EXTRA_CFLAGS="-D DEBUG_F"` provides detailed diagnostic information
 whenever error branches are taken inside the Pyodide core code. These error
