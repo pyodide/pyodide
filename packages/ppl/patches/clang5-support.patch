@@ -1,0 +1,37 @@
+From: Roberto Bagnara <bagnara@cs.unipr.it>
+Date: Sun, 11 Feb 2018 08:11:09 +0000 (+0100)
+Subject: Added missing "template" and "typename" keywords.
+X-Git-Url: http://www.cs.unipr.it/git/gitweb.cgi?p=ppl%2Fppl.git;a=commitdiff_plain;h=c39f6a07b51f89e365b05ba4147aa2aa448febd7;hp=3a5e1e20a94cffb830182f22132b153d6691b7c5
+
+Added missing "template" and "typename" keywords.
+(Thanks to Dmitrii Pasechnik.)
+---
+
+diff --git a/src/Determinate_inlines.hh b/src/Determinate_inlines.hh
+index 2749953..5b47275 100644
+--- a/src/Determinate_inlines.hh
++++ b/src/Determinate_inlines.hh
+@@ -289,8 +289,8 @@ operator()(Determinate& x, const Determinate& y) const {
+ 
+ template <typename PSET>
+ template <typename Binary_Operator_Assign>
+-inline
+-Determinate<PSET>::Binary_Operator_Assign_Lifter<Binary_Operator_Assign>
++inline typename
++Determinate<PSET>::template Binary_Operator_Assign_Lifter<Binary_Operator_Assign>
+ Determinate<PSET>::lift_op_assign(Binary_Operator_Assign op_assign) {
+   return Binary_Operator_Assign_Lifter<Binary_Operator_Assign>(op_assign);
+ }
+diff --git a/src/OR_Matrix_inlines.hh b/src/OR_Matrix_inlines.hh
+index b20b697..8124b7f 100644
+--- a/src/OR_Matrix_inlines.hh
++++ b/src/OR_Matrix_inlines.hh
+@@ -97,7 +97,7 @@ OR_Matrix<T>::Pseudo_Row<U>::Pseudo_Row(const Pseudo_Row<V>& y)
+ 
+ template <typename T>
+ template <typename U>
+-inline OR_Matrix<T>::Pseudo_Row<U>&
++inline typename OR_Matrix<T>::template Pseudo_Row<U>&
+ OR_Matrix<T>::Pseudo_Row<U>::operator=(const Pseudo_Row& y) {
+   first = y.first;
+ #if PPL_OR_MATRIX_EXTRA_DEBUG
