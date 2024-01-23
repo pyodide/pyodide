@@ -2347,7 +2347,7 @@ export class PyCallableMethods {
     return Module.callPyObject(_getPtr(this), jsargs);
   }
   /**
-   * Call the function with key word arguments. The last argument must be an
+   * Call the function with keyword arguments. The last argument must be an
    * object with the keyword arguments.
    */
   callKwargs(...jsargs: any) {
@@ -2364,6 +2364,38 @@ export class PyCallableMethods {
       throw new TypeError("kwargs argument is not an object");
     }
     return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
+  }
+
+  /**
+   * Call the function in a "relaxed" manner. Any extra arguments will be
+   * ignored. This matches the behavior of JavaScript functions more accurately.
+   *
+   * Any extra arguments will be ignored. This matches the behavior of
+   * JavaScript functions more accurately. Missing arguments are **NOT** filled
+   * with `None`. If too few arguments are passed, this will still raise a
+   * TypeError.
+   *
+   * This uses :py:func:`pyodide.code.relaxed_call`.
+   */
+  callRelaxed(...jsargs: any) {
+    return API.pyodide_code.relaxed_call(this, ...jsargs);
+  }
+
+  /**
+   * Call the function with keyword arguments in a "relaxed" manner. The last
+   * argument must be an object with the keyword arguments. Any extra arguments
+   * will be ignored. This matches the behavior of JavaScript functions more
+   * accurately.
+   *
+   * Missing arguments are **NOT** filled with `None`. If too few arguments are
+   * passed, this will still raise a TypeError. Also, if the same argument is
+   * passed as both a keyword argument and a positional argument, it will raise
+   * an error.
+   *
+   * This uses :py:func:`pyodide.code.relaxed_call`.
+   */
+  callKwargsRelaxed(...jsargs: any) {
+    return API.pyodide_code.relaxed_call.callKwargs(this, ...jsargs);
   }
 
   /**
