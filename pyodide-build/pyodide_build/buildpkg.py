@@ -664,7 +664,7 @@ def _build_package_inner(
     build_metadata = pkg.build
     name = pkg.package.name
     version = pkg.package.version
-    build_tmp = os.environ.get("PYODIDE_BUILD_TMP")
+    build_tmp = os.environ.get("PYODIDE_RECIPE_BUILD_DIR")
     if build_tmp:
         build_dir = Path(build_tmp) / name / "build"
         build_dir.mkdir(parents=True, exist_ok=True)

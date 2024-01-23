@@ -80,7 +80,7 @@ class BasePackage:
         return f"{type(self).__name__}({self.name})"
 
     def build_path(self) -> Path:
-        build_tmp = os.environ.get("PYODIDE_BUILD_TMP")
+        build_tmp = os.environ.get("PYODIDE_RECIPE_BUILD_DIR")
         if build_tmp:
             return Path(build_tmp) / self.name / "build"
         return self.pkgdir / "build"
