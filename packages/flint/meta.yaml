@@ -1,0 +1,27 @@
+package:
+  name: flint
+  version: 3.0.1
+  tag:
+    - library
+source:
+  url: https://github.com/flintlib/flint/releases/download/v3.0.1/flint-3.0.1.tar.gz
+  sha256: 7b311a00503a863881eb8177dbeb84322f29399f3d7d72f3b1a4c9ba1d5794b4
+  patches:
+    - patches/0001-Makefile.in-fix-handling-of-DESTDIR.patch
+requirements:
+  host:
+    - libgmp
+    - libmpfr
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-dependency-tracking \
+        --disable-shared \
+        --prefix=${WASM_LIBRARY_DIR} \
+        --with-gmp=${WASM_LIBRARY_DIR} \
+        --with-mpfr=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
