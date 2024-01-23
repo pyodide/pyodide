@@ -1,13 +1,11 @@
 package:
   name: boost-cpp
-  version: 1.80.0
+  version: 1.84.0
   tag:
     - library
 source:
-  url: https://boostorg.jfrog.io/artifactory/main/release/1.80.0/source/boost_1_80_0.tar.gz
-  sha256: 4b2136f98bdd1f5857f1c3dea9ac2018effe65286cf251534b6ae20cc45e1847
-  patches:
-    - patches/0001-config-libcpp15.patch
+  url: https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.tar.gz
+  sha256: 4d27e9efed0f6f152dc28db6430b9d3dfb40c0345da7342eaa5a987dde57bd95
 
 build:
   type: static_library
@@ -15,7 +13,12 @@ build:
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
     ./bootstrap.sh --prefix=${INSTALL_DIR}
 
-    ./b2 variant=release toolset=emscripten link=static threading=single \
+    # https://github.com/emscripten-core/emscripten/issues/17052
+    # Without this, boost outputs WASM modules not static library archives as an output.
+    # I don't understand why... the jam file used by boost is quite hard to understand.
+    printf "using clang : emscripten : emcc : <archiver>emar <ranlib>emranlib <linker>emlink ;" | tee -a ./project-config.jam
+
+    ./b2 variant=release toolset=clang-emscripten link=static threading=single \
       --with-date_time --with-filesystem \
       --with-system --with-regex --with-chrono --with-random --with-program_options --disable-icu \
       cxxflags="$SIDE_MODULE_CXXFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1" \

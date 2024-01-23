@@ -23,7 +23,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 
 
 update_struct_info:
-	rm ../src/js/generated_struct_info32.json
+	rm -f ../src/js/generated_struct_info32.json
 	cd ../src/js && wget "https://raw.githubusercontent.com/emscripten-core/emscripten/$(PYODIDE_EMSCRIPTEN_VERSION)/src/generated_struct_info32.json"
 
 
