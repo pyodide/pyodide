@@ -641,126 +641,6 @@ def needs_rebuild(
     return False
 
 
-def _build_package_inner(
-    pkg_root: Path,
-    pkg: MetaConfig,
-    build_args: BuildArgs,
-    *,
-    force_rebuild: bool = False,
-    continue_: bool = False,
-) -> None:
-    """
-    Build the package.
-
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
-    pkg
-        The package metadata parsed from the meta.yaml file in pkg_root
-
-    build_args
-        The extra build arguments passed to the build script.
-    """
-    source_metadata = pkg.source
-    build_metadata = pkg.build
-    name = pkg.package.name
-    version = pkg.package.version
-    build_dir = pkg_root / "build"
-    dist_dir = pkg_root / "dist"
-    src_dir_name: str = f"{name}-{version}"
-    srcpath = build_dir / src_dir_name
-    src_dist_dir = srcpath / "dist"
-    # Python produces output .whl or .so files in src_dist_dir.
-    # We copy them to dist_dir later
-
-    url = source_metadata.url
-    finished_wheel = url and url.endswith(".whl")
-    post = build_metadata.post
-    package_type = build_metadata.package_type
-
-    # These are validated in io.check_package_config
-    # If any of these assertions fail, the code path through here might get a
-    # bit weird
-    if finished_wheel:
-        assert not build_metadata.script
-        assert package_type == "package"
-    if post:
-        assert package_type == "package"
-
-    if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
-        return
-
-    if continue_ and not srcpath.exists():
-        raise OSError(
-            "Cannot find source for rebuild. Expected to find the source "
-            f"directory at the path {srcpath}, but that path does not exist."
-        )
-
-    import os
-    import subprocess
-    import sys
-
-    try:
-        stdout_fileno = sys.stdout.fileno()
-        stderr_fileno = sys.stderr.fileno()
-
-        tee = subprocess.Popen(["tee", pkg_root / "build.log"], stdin=subprocess.PIPE)
-
-        # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
-        # of any child processes we spawn)
-        os.dup2(tee.stdin.fileno(), stdout_fileno)  # type: ignore[union-attr]
-        os.dup2(tee.stdin.fileno(), stderr_fileno)  # type: ignore[union-attr]
-    except OSError:
-        # This normally happens when testing
-        logger.warning("stdout/stderr does not have a fileno, not logging to file")
-
-    with chdir(pkg_root), get_bash_runner() as bash_runner:
-        bash_runner.env["PKGDIR"] = str(pkg_root)
-        bash_runner.env["PKG_VERSION"] = version
-        bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
-        bash_runner.env["DISTDIR"] = str(src_dist_dir)
-        if not continue_:
-            prepare_source(build_dir, srcpath, source_metadata)
-            patch(pkg_root, srcpath, source_metadata)
-
-        src_dist_dir.mkdir(exist_ok=True, parents=True)
-        if pkg.is_rust_package():
-            bash_runner.run(
-                RUST_BUILD_PRELUDE,
-                script_name="rust build prelude",
-                cwd=srcpath,
-            )
-        bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
-
-        if package_type == "static_library":
-            # Nothing needs to be done for a static library
-            pass
-        elif package_type in ("shared_library", "cpython_module"):
-            # If shared library, we copy .so files to dist_dir
-            # and create a zip archive of the .so files
-            shutil.rmtree(dist_dir, ignore_errors=True)
-            dist_dir.mkdir(parents=True)
-            make_zip_archive(dist_dir / f"{src_dir_name}.zip", src_dist_dir)
-        else:  # wheel
-            if not finished_wheel:
-                compile(
-                    name,
-                    srcpath,
-                    build_metadata,
-                    bash_runner,
-                    target_install_dir=build_args.target_install_dir,
-                )
-
-            package_wheel(
-                name, srcpath, build_metadata, bash_runner, build_args.host_install_dir
-            )
-            shutil.rmtree(dist_dir, ignore_errors=True)
-            shutil.copytree(src_dist_dir, dist_dir)
-
-        create_packaged_token(build_dir)
-
-
 def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
     """
     Load the package configuration from the given directory.
@@ -810,71 +690,231 @@ def _check_executables(pkg: MetaConfig) -> None:
         raise RuntimeError(error_msg)
 
 
-def build_package(
-    package: str | Path,
-    build_args: BuildArgs,
-    force_rebuild: bool = False,
-    continue_: bool = False,
-) -> None:
+class RecipeBuilder:
     """
-    Build the package. The main entrypoint in this module.
-
-    Parameters
-    ----------
-    package
-        The path to the package configuration file or the directory containing
-        the package configuration file.
-
-    build_args
-        The extra build arguments passed to the build script.
-
-    force_rebuild
-        If True, the package will be rebuilt even if it is already up-to-date.
-
-    continue_
-        If True, continue a build from the middle. For debugging. Implies "--force-rebuild".
+    A class to build a Pyodide meta.yaml recipe.
     """
 
-    force_rebuild = force_rebuild or continue_
+    def __init__(self, recipe: str | Path, build_args: BuildArgs):
+        """
+        Parameters
+        ----------
+        recipe
+            The path to the meta.yaml file or the directory containing
+            the meta.yaml file.
+        build_args
+            The extra build arguments passed to the build script.
+        """
+        recipe = Path(recipe).resolve()
+        self.pkg_root, self.pkg = _load_package_config(meta_file)
 
-    meta_file = Path(package).resolve()
-    pkg_root, pkg = _load_package_config(meta_file)
+        self.name = self.pkg.package.name
+        self.version = self.pkg.package.version
+        self.source_metadata = self.pkg.source
+        self.build_metadata = self.pkg.build
 
-    _check_executables(pkg)
+        self.pkg.build.cflags += f" {build_args.cflags}"
+        self.pkg.build.cxxflags += f" {build_args.cxxflags}"
+        self.pkg.build.ldflags += f" {build_args.ldflags}"
 
-    pkg.build.cflags += f" {build_args.cflags}"
-    pkg.build.cxxflags += f" {build_args.cxxflags}"
-    pkg.build.ldflags += f" {build_args.ldflags}"
+    def build(self, *, force_rebuild: bool = False, continue_: bool = False) -> None:
+        """
+        Build the package.
 
-    name = pkg.package.name
-    t0 = datetime.now()
-    timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
-    logger.info(f"[{timestamp}] Building package {name}...")
-    success = True
-    try:
-        _build_package_inner(
-            pkg_root,
-            pkg,
-            build_args,
-            force_rebuild=force_rebuild,
-            continue_=continue_,
-        )
+        Parameters
+        ----------
+        force_rebuild
+            If True, the package will be rebuilt even if it is already up-to-date.
+        
+        continue_
+            If True, continue a build from the middle. For debugging. Implies "force_rebuild".
+        """
+        _check_executables(pkg)
 
-    except Exception:
-        success = False
-        raise
-    finally:
-        t1 = datetime.now()
-        datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
-        total_seconds = f"{(t1 - t0).total_seconds():.1f}"
-        status = "Succeeded" if success else "Failed"
-        msg = (
-            f"{datestamp} {status} building package {name} in {total_seconds} seconds."
-        )
-        if success:
-            logger.success(msg)
-        else:
-            logger.error(msg)
+        force_rebuild = force_rebuild or continue_
+        t0 = datetime.now()
+        timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
+        logger.info(f"[{timestamp}] Building package {self.name}...")
+        success = True
+        try:
+            self._build(
+                build_args,
+                force_rebuild=force_rebuild,
+                continue_=continue_,
+            )
+
+        except Exception:
+            success = False
+            raise
+        finally:
+            t1 = datetime.now()
+            datestamp = "[{}]".format(t1.strftime("%Y-%m-%d %H:%M:%S"))
+            total_seconds = f"{(t1 - t0).total_seconds():.1f}"
+            status = "Succeeded" if success else "Failed"
+            msg = (
+                f"{datestamp} {status} building package {name} in {total_seconds} seconds."
+            )
+            if success:
+                logger.success(msg)
+            else:
+                logger.error(msg)
+
+    def _prepare_source(
+        self, buildpath: Path, srcpath: Path
+    ) -> None:
+        """
+        Figure out from the "source" key in the package metadata where to get the source
+        from, then get the source into srcpath (or somewhere else, if it goes somewhere
+        else, returns where it ended up).
+
+        Parameters
+        ----------
+        buildpath
+            The path to the build directory. Generally will be
+            $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
+
+        srcpath
+            The default place we want the source to end up. Will generally be
+            $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
+
+        src_metadata
+            The source section from meta.yaml.
+
+        Returns
+        -------
+            The location where the source ended up. TODO: None, actually?
+        """
+        if buildpath.resolve().is_dir():
+            shutil.rmtree(buildpath)
+        os.makedirs(buildpath)
+
+        if src_metadata.url is not None:
+            download_and_extract(buildpath, srcpath, src_metadata)
+            return
+
+        if src_metadata.path is None:
+            raise ValueError(
+                "Incorrect source provided. Either a url or a path must be provided."
+            )
+
+        srcdir = src_metadata.path.resolve()
+
+        if not srcdir.is_dir():
+            raise ValueError(f"path={srcdir} must point to a directory that exists")
+
+        shutil.copytree(srcdir, srcpath)
+
+    def _redirect_stdout_stderr_to_logfile(self) -> None:
+        """
+        Redirect stdout and stderr to a log file.
+        """
+        try:
+            stdout_fileno = sys.stdout.fileno()
+            stderr_fileno = sys.stderr.fileno()
+
+            tee = subprocess.Popen(["tee", self.pkg_root / "build.log"], stdin=subprocess.PIPE)
+
+            # Cause tee's stdin to get a copy of our stdin/stdout (as well as that
+            # of any child processes we spawn)
+            os.dup2(tee.stdin.fileno(), stdout_fileno)  # type: ignore[union-attr]
+            os.dup2(tee.stdin.fileno(), stderr_fileno)  # type: ignore[union-attr]
+        except OSError:
+            # This normally happens when testing
+            logger.warning("stdout/stderr does not have a fileno, not logging to file")
+
+    @cache
+    def _get_helper_vars(self) -> dict[str, str]:
+        """
+        Get the helper variables for the build script.
+        """
+        return {
+            "PKGDIR": str(self.pkg_root),
+            "PKG_VERSION": self.version,
+            "PKG_BUILD_DIR": str(self.srcpath),
+            "DISTDIR": str(self.src_dist_dir),
+        }
+        
+    def _build(
+        self,
+        *,
+        force_rebuild: bool = False,
+        continue_: bool = False,
+    ) -> None:
+        build_dir = pkg_root / "build"
+        dist_dir = pkg_root / "dist"
+        src_dir_name: str = f"{self.name}-{self.version}"
+        srcpath = build_dir / src_dir_name
+        src_dist_dir = srcpath / "dist"
+        # Python produces output .whl or .so files in src_dist_dir.
+        # We copy them to dist_dir later
+
+        if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
+            return
+
+        if continue_ and not srcpath.exists():
+            raise OSError(
+                "Cannot find source for rebuild. Expected to find the source "
+                f"directory at the path {srcpath}, but that path does not exist."
+            )
+
+        self._redirect_stdout_stderr_to_logfile()
+
+        with chdir(pkg_root), get_bash_runner() as bash_runner:
+            build_runner.env.update(self._get_helper_vars())
+            if not continue_:
+                prepare_source(build_dir, srcpath, source_metadata)
+                patch(pkg_root, srcpath, source_metadata)
+
+            src_dist_dir.mkdir(exist_ok=True, parents=True)
+            if pkg.is_rust_package():
+                bash_runner.run(
+                    RUST_BUILD_PRELUDE,
+                    script_name="rust build prelude",
+                    cwd=srcpath,
+                )
+            bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
+
+            self._finish()
+
+            create_packaged_token(build_dir)
+
+    # TODO: subclass this for different package types?
+    def _finish(self) -> None:
+        """
+        Finish building the package:
+            - Make an archive of the built files
+            - Remove old build files
+        """
+        package_type = self.build_metadata.package_type
+
+        if package_type == "static_library":
+            # Nothing needs to be done for a static library
+            pass
+
+        elif package_type in ("shared_library", "cpython_module"):
+            # If shared library, we copy .so files to dist_dir
+            # and create a zip archive of the .so files
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            dist_dir.mkdir(parents=True)
+            make_zip_archive(dist_dir / f"{src_dir_name}.zip", src_dist_dir)
+
+        else:  # wheel
+            url = self.source_metadata.url
+            finished_wheel = url and url.endswith(".whl")
+            if not finished_wheel:
+                compile(
+                    name,
+                    srcpath,
+                    build_metadata,
+                    bash_runner,
+                    target_install_dir=build_args.target_install_dir,
+                )
+
+            package_wheel(
+                self.name, srcpath, build_metadata, bash_runner, build_args.host_install_dir
+            )
+            shutil.rmtree(dist_dir, ignore_errors=True)
+            shutil.copytree(src_dist_dir, dist_dir)
 
 
 def make_parser(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
