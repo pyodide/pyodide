@@ -17,7 +17,7 @@ myst:
 ## Unreleased
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
-  {pr}`4362`
+  {pr}`4399`
 
 - {{ Enhancement }} Added apis to discard extra arguments when calling Python
   functions.
