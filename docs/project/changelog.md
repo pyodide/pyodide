@@ -16,10 +16,23 @@ myst:
 
 ## Unreleased
 
-### Build System
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
+  {pr}`4399`
 
 - {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
   This entrypoint was deprecated since 0.22.0.
+
+- {{ Enhancement }} Added apis to discard extra arguments when calling Python
+  functions.
+  {pr}`4392`
+
+### Packages
+
+- Upgraded scikit-learn to 1.4.0 {pr}`4409`
+
+## Version 0.25.0
+
+_January 18, 2023_
 
 ### General
 

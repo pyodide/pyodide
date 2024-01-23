@@ -19,13 +19,13 @@ symbol.
  1 file changed, 3 insertions(+)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index d96e6b425..7f63b5c5e 100644
+index 7685f113c..4cfe137b2 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
-@@ -727,6 +727,9 @@ var LibraryDylink = {
+@@ -709,6 +709,9 @@ var LibraryDylink = {
              var resolved;
              stubs[prop] = function() {
-               if (!resolved) resolved = resolveSymbol(prop);
+               resolved ||= resolveSymbol(prop);
 +              if (!resolved) {
 +                throw new Error(`Dynamic linking error: cannot resolve symbol ${prop}`);
 +              }
