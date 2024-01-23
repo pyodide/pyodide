@@ -612,7 +612,7 @@ def needs_rebuild(
         $PYODIDE_ROOT/packages/<PACKAGES>
 
     buildpath
-        The path to the build directory. Generally will be
+        The path to the build directory. By default, it will be
         $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
 
     src_metadata
@@ -643,6 +643,7 @@ def _build_package_inner(
     pkg_root: Path,
     pkg: MetaConfig,
     build_args: BuildArgs,
+    build_dir: Path,
     *,
     force_rebuild: bool = False,
     continue_: bool = False,
@@ -659,20 +660,19 @@ def _build_package_inner(
 
     build_args
         The extra build arguments passed to the build script.
+
+    build_dir
+        The directory where build directories for packages are created.
     """
     source_metadata = pkg.source
     build_metadata = pkg.build
     name = pkg.package.name
     version = pkg.package.version
-    build_tmp = os.environ.get("PYODIDE_RECIPE_BUILD_DIR")
-    if build_tmp:
-        build_dir = Path(build_tmp) / name / "build"
-        build_dir.mkdir(parents=True, exist_ok=True)
-    else:
-        build_dir = pkg_root / "build"
+    build_path = build_dir / name / "build"
+    build_path.mkdir(parents=True, exist_ok=True)
     dist_dir = pkg_root / "dist"
     src_dir_name: str = f"{name}-{version}"
-    srcpath = build_dir / src_dir_name
+    srcpath = build_path / src_dir_name
     src_dist_dir = srcpath / "dist"
     # Python produces output .whl or .so files in src_dist_dir.
     # We copy them to dist_dir later
@@ -691,7 +691,7 @@ def _build_package_inner(
     if post:
         assert package_type == "package"
 
-    if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
+    if not force_rebuild and not needs_rebuild(pkg_root, build_path, source_metadata):
         return
 
     if continue_ and not srcpath.exists():
@@ -720,7 +720,7 @@ def _build_package_inner(
         bash_runner.env["PKG_BUILD_DIR"] = str(srcpath)
         bash_runner.env["DISTDIR"] = str(src_dist_dir)
         if not continue_:
-            prepare_source(build_dir, srcpath, source_metadata)
+            prepare_source(build_path, srcpath, source_metadata)
             patch(pkg_root, srcpath, source_metadata)
 
         src_dist_dir.mkdir(exist_ok=True, parents=True)
@@ -812,6 +812,7 @@ def _check_executables(pkg: MetaConfig) -> None:
 def build_package(
     package: str | Path,
     build_args: BuildArgs,
+    build_dir: str | Path,
     force_rebuild: bool = False,
     continue_: bool = False,
 ) -> None:
@@ -832,11 +833,15 @@ def build_package(
 
     continue_
         If True, continue a build from the middle. For debugging. Implies "--force-rebuild".
+
+    build_dir
+        The directory where build directories for packages are created.
     """
 
     force_rebuild = force_rebuild or continue_
 
     meta_file = Path(package).resolve()
+    build_dir = Path(build_dir)
     pkg_root, pkg = _load_package_config(meta_file)
 
     _check_executables(pkg)
@@ -855,6 +860,7 @@ def build_package(
             pkg_root,
             pkg,
             build_args,
+            build_dir,
             force_rebuild=force_rebuild,
             continue_=continue_,
         )
