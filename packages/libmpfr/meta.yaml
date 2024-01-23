@@ -1,11 +1,11 @@
 package:
   name: libmpfr
-  version: 4.1.0
+  version: 4.2.1
   tag:
     - library
 source:
-  url: https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.0.tar.xz
-  sha256: 06a378df13501248c1b2db5aa977a2c8126ae849a9d9b7be2546fb4a9c26d993
+  url: https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.1.tar.xz
+  sha256: 277807353a6726978996945af13e52829e3abd7a9a5b7fb2793894e18f1fcbb2
 
 requirements:
   host:

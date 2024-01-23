@@ -16,9 +16,10 @@ myst:
 
 ## Unreleased
 
-### Packages
-
 - Upgraded CoolProp to 6.6.0 {pr}`4397`.
+- {{ Enhancement }} Added apis to discard extra arguments when calling Python
+  functions.
+  {pr}`4392`
 
 ## Version 0.25.0
 

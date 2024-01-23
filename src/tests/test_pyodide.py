@@ -194,6 +194,126 @@ def test_eval_code_locals():
     assert res == "Hello"
 
 
+def test_relaxed_call():
+    from pyodide.code import relaxed_call
+
+    assert relaxed_call(int, "7") == 7
+
+    def f1(a, b):
+        return [a, b]
+
+    assert relaxed_call(f1, 1, 2) == [1, 2]
+    assert relaxed_call(f1, 1, 2, 3) == [1, 2]
+    assert relaxed_call(f1, 1, b=7) == [1, 7]
+    assert relaxed_call(f1, a=2, b=7) == [2, 7]
+    assert relaxed_call(f1, 1, b=7, c=9) == [1, 7]
+    assert relaxed_call(f1, 1, 2, 3, c=9) == [1, 2]
+    with pytest.raises(TypeError, match="missing a required argument: 'b'"):
+        relaxed_call(f1, 1)
+    with pytest.raises(TypeError, match="multiple values for argument 'b'"):
+        relaxed_call(f1, 1, 2, b=3)
+
+    def f2(a, b=7):
+        return [a, b]
+
+    assert relaxed_call(f2, 1, 2) == [1, 2]
+    assert relaxed_call(f2, 1, 2, 3) == [1, 2]
+    assert relaxed_call(f2, 1, b=7) == [1, 7]
+    assert relaxed_call(f2, a=2, b=7) == [2, 7]
+    assert relaxed_call(f2, 1, b=7, c=9) == [1, 7]
+    assert relaxed_call(f2, 1, 2, 3, c=9) == [1, 2]
+    assert relaxed_call(f2, 1) == [1, 7]
+    with pytest.raises(TypeError, match="missing a required argument: 'a'"):
+        relaxed_call(f2)
+
+    def f3(a, *args, b=7):
+        return [a, args, b]
+
+    assert relaxed_call(f3, 1, 2) == [1, (2,), 7]
+    assert relaxed_call(f3, 1, 2, 3) == [1, (2, 3), 7]
+    assert relaxed_call(f3, 1, b=7) == [1, (), 7]
+    assert relaxed_call(f3, a=2, b=7) == [2, (), 7]
+    assert relaxed_call(f3, 1, b=7, c=9) == [1, (), 7]
+    assert relaxed_call(f3, 1, 2, 3, c=9) == [1, (2, 3), 7]
+    assert relaxed_call(f3, 1) == [1, (), 7]
+
+    def f4(a, /, *args, b=7):
+        return [a, args, b]
+
+    with pytest.raises(
+        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+    ):
+        relaxed_call(f4, a=2, b=7)
+
+    def f5(a, *args, b=7, **kwargs):
+        return [a, args, b, kwargs]
+
+    assert relaxed_call(f5, 1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
+
+
+def test_relaxed_wrap():
+    from pyodide.code import relaxed_wrap
+
+    with pytest.raises(TypeError, match="Cannot wrap function"):
+        relaxed_wrap(int)
+
+    @relaxed_wrap
+    def f1(a, b):
+        return [a, b]
+
+    assert f1(1, 2) == [1, 2]
+    assert f1(1, 2, 3) == [1, 2]
+    assert f1(1, b=7) == [1, 7]
+    assert f1(a=2, b=7) == [2, 7]
+    assert f1(1, b=7, c=9) == [1, 7]
+    assert f1(1, 2, 3, c=9) == [1, 2]
+    with pytest.raises(TypeError, match="missing a required argument: 'b'"):
+        f1(1)
+    with pytest.raises(TypeError, match="multiple values for argument 'b'"):
+        f1(1, 2, b=3)
+
+    @relaxed_wrap
+    def f2(a, b=7):
+        return [a, b]
+
+    assert f2(1, 2) == [1, 2]
+    assert f2(1, 2, 3) == [1, 2]
+    assert f2(1, b=7) == [1, 7]
+    assert f2(a=2, b=7) == [2, 7]
+    assert f2(1, b=7, c=9) == [1, 7]
+    assert f2(1, 2, 3, c=9) == [1, 2]
+    assert f2(1) == [1, 7]
+    with pytest.raises(TypeError, match="missing a required argument: 'a'"):
+        f2()
+
+    @relaxed_wrap
+    def f3(a, *args, b=7):
+        return [a, args, b]
+
+    assert f3(1, 2) == [1, (2,), 7]
+    assert f3(1, 2, 3) == [1, (2, 3), 7]
+    assert f3(1, b=7) == [1, (), 7]
+    assert f3(a=2, b=7) == [2, (), 7]
+    assert f3(1, b=7, c=9) == [1, (), 7]
+    assert f3(1, 2, 3, c=9) == [1, (2, 3), 7]
+    assert f3(1) == [1, (), 7]
+
+    @relaxed_wrap
+    def f4(a, /, *args, b=7):
+        return [a, args, b]
+
+    with pytest.raises(
+        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+    ):
+        f4(a=2, b=7)
+
+    @relaxed_wrap
+    def f5(a, *args, b=7, **kwargs):
+        return [a, args, b, kwargs]
+
+    assert f5(1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
+
+
 def test_unpack_archive(selenium_standalone):
     selenium = selenium_standalone
     js_error = selenium.run_js(
