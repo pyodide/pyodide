@@ -21,7 +21,7 @@ def recipe(
         None,
         envvar="PYODIDE_RECIPE_BUILD_DIR",
         help="The directory where build directories for packages are created. "
-        "Default: recipe_dir."
+        "Default: recipe_dir.",
     ),
     no_deps: bool = typer.Option(
         False, help="If true, do not build dependencies of the specified packages. "
@@ -113,7 +113,9 @@ def recipe(
         for package in packages:
             package_path = recipe_dir_ / package
             build_path = build_dir_ / package / "build"
-            buildpkg.build_package(package_path, build_args, build_path, force_rebuild, continue_)
+            buildpkg.build_package(
+                package_path, build_args, build_path, force_rebuild, continue_
+            )
 
     else:
         if len(packages) == 1 and "," in packages[0]:
@@ -124,7 +126,12 @@ def recipe(
             targets = ",".join(packages)
 
         pkg_map = buildall.build_packages(
-            recipe_dir_, targets, build_args, build_dir_, n_jobs, force_rebuild,
+            recipe_dir_,
+            targets,
+            build_args,
+            build_dir_,
+            n_jobs,
+            force_rebuild,
         )
 
         if log_dir_:

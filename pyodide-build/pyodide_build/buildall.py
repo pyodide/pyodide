@@ -5,7 +5,6 @@ Build all of the packages in a given directory.
 """
 
 import dataclasses
-import os
 import shutil
 import subprocess
 import sys
@@ -477,7 +476,9 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map: dict[str, BasePackage], build_dir: Path) -> set[str]:
+def generate_needs_build_set(
+    pkg_map: dict[str, BasePackage], build_dir: Path
+) -> set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
