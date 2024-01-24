@@ -112,10 +112,11 @@ def recipe(
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
-            buildpkg.build_package(
+            builder = buildpkg.RecipeBuilder(
                 package_path, build_args, build_dir_, force_rebuild, continue_
             )
-
+            builder.build()
+            
     else:
         if len(packages) == 1 and "," in packages[0]:
             # Handle packages passed with old comma separated syntax.
