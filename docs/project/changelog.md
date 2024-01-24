@@ -26,6 +26,10 @@ myst:
   functions.
   {pr}`4392`
 
+- {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
+  is not available in the Node.js environment.
+  {pr}`4417`
+
 ### Packages
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
