@@ -141,9 +141,10 @@ class BashRunnerWithSharedEnvironment:
 
 
 @contextmanager
-def get_bash_runner() -> Iterator[BashRunnerWithSharedEnvironment]:
+def get_bash_runner(extra_envs: dict[str, str]) -> Iterator[BashRunnerWithSharedEnvironment]:
     PYODIDE_ROOT = get_pyodide_root()
     env = get_build_environment_vars()
+    env.update(extra_envs)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
         # Working in-tree, add emscripten toolchain into PATH and set ccache
@@ -162,7 +163,13 @@ class RecipeBuilder:
     A class to build a Pyodide meta.yaml recipe.
     """
 
-    def __init__(self, recipe: str | Path, build_args: BuildArgs):
+    def __init__(self,
+        recipe: str | Path,
+        build_args: BuildArgs,
+        build_dir: str | Path | None,
+        force_rebuild: bool = False,
+        continue_: bool = False,
+    ):
         """
         Parameters
         ----------
@@ -171,45 +178,56 @@ class RecipeBuilder:
             the meta.yaml file.
         build_args
             The extra build arguments passed to the build script.
-        """
-        recipe = Path(recipe).resolve()
-        self.pkg_root, self.pkg = _load_package_config(meta_file)
-
-        self.name = self.pkg.package.name
-        self.version = self.pkg.package.version
-        self.source_metadata = self.pkg.source
-        self.build_metadata = self.pkg.build
-
-        self.pkg.build.cflags += f" {build_args.cflags}"
-        self.pkg.build.cxxflags += f" {build_args.cxxflags}"
-        self.pkg.build.ldflags += f" {build_args.ldflags}"
-
-    def build(self, *, force_rebuild: bool = False, continue_: bool = False) -> None:
-        """
-        Build the package.
-
-        Parameters
-        ----------
+        build_dir
+            The path to the build directory. By default, it will be
+            <the directory containing the meta.yaml file> / build
         force_rebuild
             If True, the package will be rebuilt even if it is already up-to-date.
-        
         continue_
             If True, continue a build from the middle. For debugging. Implies "force_rebuild".
         """
+        recipe = Path(recipe).resolve()
+        self.pkg_root, self.recipe = _load_package_config(meta_file)
+
+        self.name = self.recipe.package.name
+        self.version = self.recipe.package.version
+        self.fullname = f"{self.name}-{self.version}"
+
+        self.build_dir = Path(build_dir).resolve() if build_dir else self.pkg_root / "build"
+        self.src_extract_dir = self.build_dir / self.fullname # where we extract the source
+
+        # where the built artifacts are put.
+        # For wheels, this is the default location where the built wheels are put by pypa/build.
+        # For shared libraries, users should use this directory to put the built shared libraries (can be accessed by DISTDIR env var)
+        self.src_dist_dir = self.src_extract_dir / "dist" 
+
+        # where Pyodide will look for the built artifacts when building pyodide-lock.json.
+        # after building packages, artifacts in src_dist_dir will be copied to dist_dir
+        self.dist_dir = self.pkg_root / "dist" 
+
+        self.source_metadata = self.recipe.source
+        self.build_metadata = self.recipe.build
+        self.build_metadata.cflags += f" {build_args.cflags}"
+        self.build_metadata.cxxflags += f" {build_args.cxxflags}"
+        self.build_metadata.ldflags += f" {build_args.ldflags}"
+
+        self.force_rebuild = force_rebuild or continue_
+        self.continue_ = continue_
+
+    def build(self) -> None:
+        """
+        Build the package. This is the only public method of this class.
+        """
         _check_executables(pkg)
 
-        force_rebuild = force_rebuild or continue_
         t0 = datetime.now()
         timestamp = t0.strftime("%Y-%m-%d %H:%M:%S")
         logger.info(f"[{timestamp}] Building package {self.name}...")
         success = True
         try:
-            self._build(
-                build_args,
-                force_rebuild=force_rebuild,
-                continue_=continue_,
-            )
+            self._build()
 
+            (self.build_dir / ".packaged").touch()
         except Exception:
             success = False
             raise
@@ -226,50 +244,170 @@ class RecipeBuilder:
             else:
                 logger.error(msg)
 
-    def _prepare_source(
-        self, buildpath: Path, srcpath: Path
-    ) -> None:
-        """
-        Figure out from the "source" key in the package metadata where to get the source
-        from, then get the source into srcpath (or somewhere else, if it goes somewhere
-        else, returns where it ended up).
-
-        Parameters
-        ----------
-        buildpath
-            The path to the build directory. Generally will be
-            $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
-
-        srcpath
-            The default place we want the source to end up. Will generally be
-            $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
-
-        src_metadata
-            The source section from meta.yaml.
-
-        Returns
-        -------
-            The location where the source ended up. TODO: None, actually?
-        """
-        if buildpath.resolve().is_dir():
-            shutil.rmtree(buildpath)
-        os.makedirs(buildpath)
-
-        if src_metadata.url is not None:
-            download_and_extract(buildpath, srcpath, src_metadata)
+    def _build(self) -> None:
+        if not self.force_rebuild and not needs_rebuild(self.pkg_root, self.build_dir, self.source_metadata):
             return
 
-        if src_metadata.path is None:
+        if self.continue_ and not self.src_extract_dir.exists():
+            raise OSError(
+                "Cannot find source for rebuild. Expected to find the source "
+                f"directory at the path {self.src_extract_dir}, but that path does not exist."
+            )
+
+        self._redirect_stdout_stderr_to_logfile()
+
+        with chdir(pkg_root), get_bash_runner(self._get_helper_vars()) as bash_runner:
+            if not self.continue_:
+                self._prepare_source()
+                self._patch()
+
+            if pkg.is_rust_package():
+                bash_runner.run(
+                    RUST_BUILD_PRELUDE,
+                    script_name="rust build prelude",
+                    cwd=self.src_extract_dir,
+                )
+            
+            bash_runner.run(self.build_metadata.script, script_name="build script", cwd=self.src_extract_dir)
+
+            self._finish()
+
+    def _check_executables(self) -> None:
+        """
+        Check that the executables required to build the package are available.
+        """
+        missing_executables = find_missing_executables(self.recipe.requirements.executable)
+        if missing_executables:
+            missing_string = ", ".join(missing_executables)
+            error_msg = (
+                f"The following executables are required to build {self.name}, but missing in the host system: "
+                + missing_string
+            )
+            raise RuntimeError(error_msg)
+
+    def _prepare_source(self) -> None:
+        """
+        Figure out from the "source" key in the package metadata where to get the source
+        from, then get the source into the build directory.
+        """
+
+        # clear the build directory
+        if self.build_dir.resolve().is_dir():
+            shutil.rmtree(self.build_dir)
+
+        self.build_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.source_metadata.url is not None:
+            self._download_and_extract()
+            return
+
+        # Build from local source, mostly for testing purposes.
+        if self.source_metadata.path is None:
             raise ValueError(
                 "Incorrect source provided. Either a url or a path must be provided."
             )
 
-        srcdir = src_metadata.path.resolve()
+        srcdir = self.source_metadata.path.resolve()
 
         if not srcdir.is_dir():
             raise ValueError(f"path={srcdir} must point to a directory that exists")
 
         shutil.copytree(srcdir, srcpath)
+
+    def _download_and_extract(self) -> None:
+        """
+        Download the source from specified in the package metadata,
+        then checksum it, then extract the archive into the build directory.
+        """
+
+        build_env = get_build_environment_vars()
+        url = cast(str, self.source_metadata.url)  # we know it's not None
+        url = _environment_substitute_str(url, build_env)
+
+        max_retry = 3
+        for retry_cnt in range(max_retry):
+            try:
+                response = request.urlopen(url)
+            except urllib.error.URLError as e:
+                if retry_cnt == max_retry - 1:
+                    raise RuntimeError(
+                        f"Failed to download {url} after {max_retry} trials"
+                    ) from e
+
+                continue
+
+            break
+
+        # TODO: replace cgi with something else (will be removed in Python 3.13)
+        _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
+        if "filename" in parameters:
+            tarballname = parameters["filename"]
+        else:
+            tarballname = Path(response.geturl()).name
+
+        self.build_dir.mkdir(parents=True, exist_ok=True)
+        tarballpath = self.build_dir / tarballname
+        tarballpath.write_bytes(response.read())
+
+        checksum = self.source_metadata.sha256
+        if checksum is not None:
+            try:
+                checksum = _environment_substitute_str(checksum, build_env)
+                check_checksum(tarballpath, checksum)
+            except Exception:
+                tarballpath.unlink()
+                raise
+
+        # already built
+        if tarballpath.suffix == ".whl":
+            self.src_extract_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(tarballpath, self.src_extract_dir)
+            return
+
+
+        shutil.unpack_archive(tarballpath, self.build_dir)
+
+        extract_dir_name = self.source_metadata.extract_dir
+        if extract_dir_name is None:
+            extract_dir_name = trim_archive_extension(tarballname)
+
+        shutil.move(self.build_dir / extract_dir_name, self.src_extract_dir)
+
+    def _patch(self) -> None:
+        """
+        Apply patches to the source.
+        """
+        token_path = self.src_extract_dir / ".patched"
+        if token_path.is_file():
+            return
+
+        patches = self.source_metadata.patches
+        extras = self.source_metadata.extras
+        url = cast(str, self.source_metadata.url)
+
+        if not patches and not extras:
+            return
+
+        # We checked these in check_package_config.
+        assert not src_metadata.url.endswith(".whl")
+
+        # Apply all the patches
+        for patch in patches:
+            result = subprocess.run(
+                ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
+                check=False,
+                encoding="utf-8",
+                cwd=srcpath,
+            )
+            if result.returncode != 0:
+                logger.error(f"ERROR: Patch {pkg_root/patch} failed")
+                exit_with_stdio(result)
+
+        # Add any extra files
+        for src, dst in extras:
+            shutil.copyfile(pkg_root / src, srcpath / dst)
+
+        token_path.touch()
 
     def _redirect_stdout_stderr_to_logfile(self) -> None:
         """
@@ -300,50 +438,6 @@ class RecipeBuilder:
             "PKG_BUILD_DIR": str(self.srcpath),
             "DISTDIR": str(self.src_dist_dir),
         }
-        
-    def _build(
-        self,
-        *,
-        force_rebuild: bool = False,
-        continue_: bool = False,
-    ) -> None:
-        build_dir = pkg_root / "build"
-        dist_dir = pkg_root / "dist"
-        src_dir_name: str = f"{self.name}-{self.version}"
-        srcpath = build_dir / src_dir_name
-        src_dist_dir = srcpath / "dist"
-        # Python produces output .whl or .so files in src_dist_dir.
-        # We copy them to dist_dir later
-
-        if not force_rebuild and not needs_rebuild(pkg_root, build_dir, source_metadata):
-            return
-
-        if continue_ and not srcpath.exists():
-            raise OSError(
-                "Cannot find source for rebuild. Expected to find the source "
-                f"directory at the path {srcpath}, but that path does not exist."
-            )
-
-        self._redirect_stdout_stderr_to_logfile()
-
-        with chdir(pkg_root), get_bash_runner() as bash_runner:
-            build_runner.env.update(self._get_helper_vars())
-            if not continue_:
-                prepare_source(build_dir, srcpath, source_metadata)
-                patch(pkg_root, srcpath, source_metadata)
-
-            src_dist_dir.mkdir(exist_ok=True, parents=True)
-            if pkg.is_rust_package():
-                bash_runner.run(
-                    RUST_BUILD_PRELUDE,
-                    script_name="rust build prelude",
-                    cwd=srcpath,
-                )
-            bash_runner.run(build_metadata.script, script_name="build script", cwd=srcpath)
-
-            self._finish()
-
-            create_packaged_token(build_dir)
 
     # TODO: subclass this for different package types?
     def _finish(self) -> None:
@@ -419,185 +513,6 @@ def trim_archive_extension(tarballname: str) -> str:
         if tarballname.endswith(extension):
             return tarballname[: -len(extension)]
     return tarballname
-
-
-def download_and_extract(
-    buildpath: Path, srcpath: Path, src_metadata: _SourceSpec
-) -> None:
-    """
-    Download the source from specified in the meta data, then checksum it, then
-    extract the archive into srcpath.
-
-    Parameters
-    ----------
-
-    buildpath
-        The path to the build directory. Generally will be
-        $(PYOIDE_ROOT)/packages/<package-name>/build/.
-
-    srcpath
-        The place we want the source to end up. Will generally be
-        $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
-
-    src_metadata
-        The source section from meta.yaml.
-    """
-    # We only call this function when the URL is defined
-    build_env = get_build_environment_vars()
-    url = cast(str, src_metadata.url)
-    url = _environment_substitute_str(url, build_env)
-
-    max_retry = 3
-    for retry_cnt in range(max_retry):
-        try:
-            response = request.urlopen(url)
-        except urllib.error.URLError as e:
-            if retry_cnt == max_retry - 1:
-                raise RuntimeError(
-                    f"Failed to download {url} after {max_retry} trials"
-                ) from e
-
-            continue
-
-        break
-
-    _, parameters = cgi.parse_header(response.headers.get("Content-Disposition", ""))
-    if "filename" in parameters:
-        tarballname = parameters["filename"]
-    else:
-        tarballname = Path(response.geturl()).name
-
-    tarballpath = buildpath / tarballname
-    if not tarballpath.is_file():
-        os.makedirs(tarballpath.parent, exist_ok=True)
-        with open(tarballpath, "wb") as f:
-            f.write(response.read())
-        try:
-            checksum = src_metadata.sha256
-            if checksum is not None:
-                checksum = _environment_substitute_str(checksum, build_env)
-                check_checksum(tarballpath, checksum)
-        except Exception:
-            tarballpath.unlink()
-            raise
-
-    if tarballpath.suffix == ".whl":
-        os.makedirs(srcpath / "dist")
-        shutil.copy(tarballpath, srcpath / "dist")
-        return
-
-    if not srcpath.is_dir():
-        shutil.unpack_archive(tarballpath, buildpath)
-
-    extract_dir_name = src_metadata.extract_dir
-    if extract_dir_name is None:
-        extract_dir_name = trim_archive_extension(tarballname)
-
-    shutil.move(buildpath / extract_dir_name, srcpath)
-
-
-def prepare_source(
-    buildpath: Path, srcpath: Path, src_metadata: _SourceSpec, clear_only: bool = False
-) -> None:
-    """
-    Figure out from the "source" key in the package metadata where to get the source
-    from, then get the source into srcpath (or somewhere else, if it goes somewhere
-    else, returns where it ended up).
-
-    Parameters
-    ----------
-    buildpath
-        The path to the build directory. Generally will be
-        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/.
-
-    srcpath
-        The default place we want the source to end up. Will generally be
-        $(PYOIDE_ROOT)/packages/<package-name>/build/<package-name>-<package-version>.
-
-    src_metadata
-        The source section from meta.yaml.
-
-    clear_only
-        Clear the source directory only, do not download or extract the source.
-        Set this to True if the source collected from external source.
-
-    Returns
-    -------
-        The location where the source ended up. TODO: None, actually?
-    """
-    if buildpath.resolve().is_dir():
-        shutil.rmtree(buildpath)
-    os.makedirs(buildpath)
-
-    if clear_only:
-        srcpath.mkdir(parents=True, exist_ok=True)
-        return
-
-    if src_metadata.url is not None:
-        download_and_extract(buildpath, srcpath, src_metadata)
-        return
-
-    if src_metadata.path is None:
-        raise ValueError(
-            "Incorrect source provided. Either a url or a path must be provided."
-        )
-
-    srcdir = src_metadata.path.resolve()
-
-    if not srcdir.is_dir():
-        raise ValueError(f"path={srcdir} must point to a directory that exists")
-
-    shutil.copytree(srcdir, srcpath)
-
-
-def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
-    """
-    Apply patches to the source.
-
-    Parameters
-    ----------
-    pkg_root
-        The path to the root directory for the package. Generally
-        $PYODIDE_ROOT/packages/<PACKAGES>
-
-    srcpath
-        The path to the source. We extract the source into the build directory, so it
-        will be something like
-        $(PYOIDE_ROOT)/packages/<PACKAGE>/build/<PACKAGE>-<VERSION>.
-
-    src_metadata
-        The "source" key from meta.yaml.
-    """
-    if (srcpath / ".patched").is_file():
-        return
-
-    patches = src_metadata.patches
-    extras = src_metadata.extras
-    if not patches and not extras:
-        return
-
-    # We checked these in check_package_config.
-    assert src_metadata.url is not None
-    assert not src_metadata.url.endswith(".whl")
-
-    # Apply all the patches
-    for patch in patches:
-        result = subprocess.run(
-            ["patch", "-p1", "--binary", "--verbose", "-i", pkg_root / patch],
-            check=False,
-            encoding="utf-8",
-            cwd=srcpath,
-        )
-        if result.returncode != 0:
-            logger.error(f"ERROR: Patch {pkg_root/patch} failed")
-            exit_with_stdio(result)
-
-    # Add any extra files
-    for src, dst in extras:
-        shutil.copyfile(pkg_root / src, srcpath / dst)
-
-    with open(srcpath / ".patched", "wb") as fd:
-        fd.write(b"\n")
 
 
 def compile(
@@ -824,10 +739,6 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
-def create_packaged_token(buildpath: Path) -> None:
-    (buildpath / ".packaged").write_text("\n")
-
-
 def needs_rebuild(
     pkg_root: Path, buildpath: Path, source_metadata: _SourceSpec
 ) -> bool:
@@ -897,23 +808,3 @@ def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
         package_dir = meta_file.parent
 
     return package_dir, MetaConfig.from_yaml(meta_file)
-
-
-def _check_executables(pkg: MetaConfig) -> None:
-    """
-    Check that the executables required to build the package are available.
-
-    Parameters
-    ----------
-    pkg : MetaConfig
-        The package configuration.
-
-    """
-    missing_executables = find_missing_executables(pkg.requirements.executable)
-    if missing_executables:
-        missing_string = ", ".join(missing_executables)
-        error_msg = (
-            "The following executables are required but missing in the host system: "
-            + missing_string
-        )
-        raise RuntimeError(error_msg)
