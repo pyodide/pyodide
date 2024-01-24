@@ -23,6 +23,8 @@ build:
         --enable-interfaces=c,c++ \
         --disable-shared \
         --with-gmp="${WASM_LIBRARY_DIR}" \
+        --with-glpk="${WASM_LIBRARY_DIR}" \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make  -j ${PYODIDE_JOBS:-3} check
     emmake make install
