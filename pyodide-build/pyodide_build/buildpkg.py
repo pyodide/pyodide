@@ -348,6 +348,7 @@ class RecipeBuilder:
             raise ValueError(f"path={srcdir} must point to a directory that exists")
 
         shutil.copytree(srcdir, self.src_extract_dir)
+        self.src_dist_dir.mkdir(parents=True, exist_ok=True)
 
     def _download_and_extract(self) -> None:
         """
@@ -397,8 +398,8 @@ class RecipeBuilder:
 
         # already built
         if tarballpath.suffix == ".whl":
-            self.src_extract_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy(tarballpath, self.src_extract_dir)
+            self.src_dist_dir.mkdir(parents=True, exist_ok=True)
+            shutil.copy(tarballpath, self.src_dist_dir)
             return
 
         shutil.unpack_archive(tarballpath, self.build_dir)
@@ -408,6 +409,7 @@ class RecipeBuilder:
             extract_dir_name = trim_archive_extension(tarballname)
 
         shutil.move(self.build_dir / extract_dir_name, self.src_extract_dir)
+        self.src_dist_dir.mkdir(parents=True, exist_ok=True)
 
     def _compile(
         self,
