@@ -1,0 +1,29 @@
+package:
+  name: normaliz
+  version: 3.10.1
+  tag:
+    - library
+source:
+  url: https://github.com/Normaliz/Normaliz/releases/download/v3.10.1/normaliz-3.10.1.tar.gz
+  sha256: 365e1d1e2a338dc4df1947a440e606bb66dd261307e617905e8eca64eaafcf6e
+requirements:
+  host:
+    - libgmp
+    - flint
+    - e_antic
+
+build:
+  type: static_library
+  script: |
+    export ac_cv_lib_flint_fmpz_poly_set_coeff_mpz=yes
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
+        CXXFLAGS="-std=c++11 -fPIC" \
+        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
+        --with-flint --with-e-antic
+        --disable-dependency-tracking \
+        --disable-shared \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
