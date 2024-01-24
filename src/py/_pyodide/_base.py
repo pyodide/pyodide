@@ -623,11 +623,7 @@ def find_imports(source: str) -> list[str]:
     return list(sorted(imports))
 
 
-def pyimport_impl(path: str, fromlist: list[str] | None = None) -> Any:
-    if fromlist:
-        mod = __import__(path, fromlist=fromlist)
-        return [getattr(mod, name) for name in fromlist]
-
+def pyimport_impl(path: str) -> Any:
     [stem, *fromlist] = path.rsplit(".", 1)
     res = __import__(stem, fromlist=fromlist)
     if fromlist:
