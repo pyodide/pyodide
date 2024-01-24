@@ -1163,7 +1163,7 @@ def test_js_stackframes(selenium):
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.asm.js", "pyimport"],
-        ["importlib/__init__.py", "import_module"],
+        ["_pyodide/_base.py", "pyimport_impl"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
