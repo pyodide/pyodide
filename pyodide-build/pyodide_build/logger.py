@@ -9,6 +9,7 @@ from rich.logging import RichHandler
 from rich.theme import Theme
 
 IN_CI = "CI" in os.environ
+IN_PYTEST = "IN_PYTEST" in os.environ
 
 COLOR_THEME = Theme(
     {
@@ -30,7 +31,7 @@ class CIAwareConsole(Console):
     @property
     def is_terminal(self) -> bool:
         """Check if the console is writing to a terminal."""
-        return not IN_CI and super().is_terminal
+        return not IN_CI and not IN_PYTEST and super().is_terminal
 
 
 class StdoutFilter(logging.Filter):
