@@ -198,7 +198,7 @@ class RecipeBuilder:
         self.build_args = build_args
 
         self.build_dir = (
-            Path(build_dir).resolve() if build_dir else self.pkg_root / "build"
+            Path(build_dir).resolve() / self.name / "build" if build_dir else self.pkg_root / "build"
         )
         self.src_extract_dir = (
             self.build_dir / self.fullname
