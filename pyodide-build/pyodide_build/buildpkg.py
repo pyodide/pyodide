@@ -620,7 +620,9 @@ def needs_rebuild(
     """
     packaged_token = buildpath / ".packaged"
     if not packaged_token.is_file():
-        logger.debug(f"{pkg_root} needs rebuild because {packaged_token} does not exist")
+        logger.debug(
+            f"{pkg_root} needs rebuild because {packaged_token} does not exist"
+        )
         return True
 
     package_time = packaged_token.stat().st_mtime
