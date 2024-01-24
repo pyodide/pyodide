@@ -112,9 +112,8 @@ def recipe(
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
-            build_path = build_dir_ / package / "build"
             buildpkg.build_package(
-                package_path, build_args, build_path, force_rebuild, continue_
+                package_path, build_args, build_dir_, force_rebuild, continue_
             )
 
     else:
