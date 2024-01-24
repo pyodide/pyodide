@@ -7,6 +7,7 @@ if PYODIDE_ROOT:
     PYODIDE_ROOT = Path(PYODIDE_ROOT)
 else:
     from pyodide_build import build_env
+
     PYODIDE_ROOT = build_env.search_pyodide_root(os.getcwd())
 
 
