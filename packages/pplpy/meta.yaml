@@ -13,6 +13,7 @@ requirements:
     - gmpy2
   run:
     - gmpy2
+    - cysignals
 build:
   cxxflags: |
     -std=c++11
