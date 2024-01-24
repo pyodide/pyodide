@@ -11,6 +11,8 @@ requirements:
     - libgmp
     - ppl
     - gmpy2
+  run:
+    - gmpy2
 build:
   cxxflags: |
     -std=c++11
