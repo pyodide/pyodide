@@ -620,6 +620,7 @@ def needs_rebuild(
     """
     packaged_token = buildpath / ".packaged"
     if not packaged_token.is_file():
+        logger.debug(f"{pkg_root} needs rebuild because {packaged_token} does not exist")
         return True
 
     package_time = packaged_token.stat().st_mtime
@@ -757,7 +758,7 @@ def _build_package_inner(
             shutil.rmtree(dist_dir, ignore_errors=True)
             shutil.copytree(src_dist_dir, dist_dir)
 
-        create_packaged_token(build_dir)
+        create_packaged_token(build_path)
 
 
 def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
