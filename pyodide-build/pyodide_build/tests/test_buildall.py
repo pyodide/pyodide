@@ -12,6 +12,7 @@ from pyodide_build.pywasmcross import BuildArgs
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
 BUILD_DIR = RECIPE_DIR
 
+
 def test_generate_dependency_graph():
     # beautifulsoup4 has a circular dependency on soupsieve
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"beautifulsoup4"})
@@ -109,7 +110,9 @@ def test_build_dependencies(n_jobs, monkeypatch):
 
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
-    buildall.build_from_graph(pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True)
+    buildall.build_from_graph(
+        pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True
+    )
 
     assert set(build_list) == {
         "pkg_1",
