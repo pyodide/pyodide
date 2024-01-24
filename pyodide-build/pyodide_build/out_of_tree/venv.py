@@ -123,6 +123,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         sys.platform = sys_platform
         sys.implementation._multiarch = multiarch
         platform.system = lambda: sys_platform
+        platform.machine = lambda: "wasm32"
         os.environ["_PYTHON_HOST_PLATFORM"] = host_platform
         os.environ["_PYTHON_SYSCONFIGDATA_NAME"] = f'_sysconfigdata_{{sys.abiflags}}_{{sys.platform}}_{{sys.implementation._multiarch}}'
         sys.path.append("{sysconfigdata_dir}")

@@ -30,7 +30,7 @@ index 736f73c66..fd769f7cc 100644
 @@ -73,6 +73,7 @@ var LibraryDylink = {
  #if !DISABLE_EXCEPTION_CATCHING || SUPPORT_LONGJMP == 'emscripten'
    $createInvokeFunction__internal: true,
-   $createInvokeFunction__deps: ['$dynCall', 'setThrew'],
+   $createInvokeFunction__deps: ['$dynCall', 'setThrew', 'stackSave', 'stackRestore'],
 +  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
    $createInvokeFunction: (sig) => {
      return function() {
@@ -58,7 +58,7 @@ index a069d0e21..0f99ab28a 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index d4041cd26..6f44924cf 100644
+index 46efc1df1..7eb509bb7 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -69,19 +69,18 @@ index d4041cd26..6f44924cf 100644
 +  Module.wrapException = (e) => e;
 +}
 +
- #if BENCHMARK
- Module.realPrint = out;
- out = err = () => {};
-@@ -928,6 +932,9 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
- // Create the wasm instance.
+ #if RELOCATABLE
+ {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
+ #endif
+@@ -926,6 +930,9 @@ function instantiateAsync(binary, binaryFile, imports, callback) {
  // Receives the wasm imports, returns the exports.
  function createWasm() {
+   // prepare imports
 +  if (Module.adjustWasmImports) {
 +    Module.adjustWasmImports(wasmImports);
 +  }
-   // prepare imports
    var info = {
  #if MINIFY_WASM_IMPORTED_MODULES
+     'a': wasmImports,
 -- 
 2.25.1
-

@@ -102,8 +102,7 @@ def test_prepare_source(monkeypatch, tmp_path):
 
     for pkg in test_pkgs:
         source_dir_name = pkg.package.name + "-" + pkg.package.version
-        pkg_root = Path(pkg.package.name)
-        buildpath = tmp_path / pkg_root / "build"
+        buildpath = tmp_path / pkg.package.name / "build"
         src_metadata = pkg.source
         srcpath = buildpath / source_dir_name
         buildpkg.prepare_source(buildpath, srcpath, src_metadata)
@@ -153,11 +152,10 @@ def test_unvendor_tests(tmpdir):
 
 
 def test_needs_rebuild(tmpdir):
-    pkg_root = tmpdir
-    pkg_root = Path(pkg_root)
-    builddir = pkg_root / "build"
+    pkg_root = Path(tmpdir)
+    buildpath = pkg_root / "build"
     meta_yaml = pkg_root / "meta.yaml"
-    packaged = builddir / ".packaged"
+    packaged = buildpath / ".packaged"
 
     patch_file = pkg_root / "patch"
     extra_file = pkg_root / "extra"
@@ -179,7 +177,7 @@ def test_needs_rebuild(tmpdir):
         path=str(src_path),
     )
 
-    builddir.mkdir()
+    buildpath.mkdir()
     meta_yaml.touch()
     patch_file.touch()
     extra_file.touch()
@@ -187,39 +185,39 @@ def test_needs_rebuild(tmpdir):
     src_path_file.touch()
 
     # No .packaged file, rebuild
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is True
 
     # .packaged file exists, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is False
 
     # newer meta.yaml file, rebuild
     packaged.touch()
     time.sleep(0.01)
     meta_yaml.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is True
 
     # newer patch file, rebuild
     packaged.touch()
     time.sleep(0.01)
     patch_file.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is True
 
     # newer extra file, rebuild
     packaged.touch()
     time.sleep(0.01)
     extra_file.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is True
 
     # newer source path, rebuild
     packaged.touch()
     time.sleep(0.01)
     src_path_file.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is True
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is True
 
     # newer .packaged file, no rebuild
     packaged.touch()
-    assert buildpkg.needs_rebuild(pkg_root, builddir, source_metadata) is False
+    assert buildpkg.needs_rebuild(pkg_root, buildpath, source_metadata) is False
 
 
 def test_copy_sharedlib(tmp_path):
