@@ -78,10 +78,13 @@ class BasePackage:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
-    def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
+    def build_path(self, build_dir: Path) -> Path:
+        return build_dir / self.name / "build"
 
-    def build(self, build_args: BuildArgs) -> None:
+    def needs_rebuild(self, build_dir: Path) -> bool:
+        return needs_rebuild(self.pkgdir, self.build_path(build_dir), self.meta.source)
+
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -134,7 +137,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, build_args: BuildArgs) -> None:
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         p = subprocess.run(
             [
                 "pyodide",
@@ -147,6 +150,7 @@ class Package(BasePackage):
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
                 f"--host-install-dir={build_args.host_install_dir}",
+                f"--build-dir={build_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -472,7 +476,9 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
+def generate_needs_build_set(
+    pkg_map: dict[str, BasePackage], build_dir: Path
+) -> set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -484,7 +490,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     needs_build: set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
-        if pkg.needs_rebuild():
+        if pkg.needs_rebuild(build_dir):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
@@ -492,6 +498,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
 def build_from_graph(
     pkg_map: dict[str, BasePackage],
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> None:
@@ -520,7 +527,7 @@ def build_from_graph(
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
     else:
-        needs_build = generate_needs_build_set(pkg_map)
+        needs_build = generate_needs_build_set(pkg_map, build_dir)
 
     # We won't rebuild the complement of the packages that we will build.
     already_built = set(pkg_map.keys()).difference(needs_build)
@@ -589,7 +596,7 @@ def build_from_graph(
 
             success = True
             try:
-                pkg.build(build_args)
+                pkg.build(build_args, build_dir)
             except Exception as e:
                 built_queue.put(e)
                 success = False
@@ -747,6 +754,7 @@ def build_packages(
     packages_dir: Path,
     targets: str,
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
@@ -756,7 +764,7 @@ def build_packages(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
+    build_from_graph(pkg_map, build_args, build_dir, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
