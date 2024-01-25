@@ -8,6 +8,7 @@ source:
   sha256: 0f1e321e55a07f901c86a36a1e4497f6ff9dfe700681d0130a38c36e4eb238c3
   patches:
     - patches/193.patch
+    - patches/0001-src-cysignals-implementation.c-EMSCRIPTEN-Do-not-use.patch
 about:
   home: https://github.com/sagemath/cysignals
   PyPI: https://pypi.org/project/cysignals
