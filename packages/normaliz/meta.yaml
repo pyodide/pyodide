@@ -6,6 +6,10 @@ package:
 source:
   url: https://github.com/Normaliz/Normaliz/releases/download/v3.10.1/normaliz-3.10.1.tar.gz
   sha256: 365e1d1e2a338dc4df1947a440e606bb66dd261307e617905e8eca64eaafcf6e
+  patches:
+    - patches/411.patch
+    - patches/flint3_d-torrance.patch
+    - patches/414.patch
 requirements:
   host:
     - libgmp
@@ -19,9 +23,10 @@ build:
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
-        CXXFLAGS="-std=c++11 -fPIC" \
+        CXXFLAGS="-std=c++17 -fPIC -Wno-invalid-utf8 -Wno-unused-but-set-variable -Wno-deprecated-declarations" \
         LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
-        --with-flint --with-e-antic
+        LIBS="-leantic -lflint -lmpfr -lgmp" \
+        --with-flint --with-e-antic \
         --disable-dependency-tracking \
         --disable-shared \
         --prefix=${WASM_LIBRARY_DIR}
