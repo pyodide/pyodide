@@ -16,7 +16,7 @@ requirements:
 
 build:
   script: |
-    export PROJ_VERSION=8.2.1
+    export PROJ_VERSION=9.3.1
     export PROJ_DIR=${WASM_LIBRARY_DIR}
     export PROJ_INCDIR=${WASM_LIBRARY_DIR}/include
     export PROJ_LIBDIR=${WASM_LIBRARY_DIR}/lib
