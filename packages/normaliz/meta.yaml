@@ -25,10 +25,10 @@ build:
         CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
         CXXFLAGS="-std=c++17 -fPIC -Wno-invalid-utf8 -Wno-unused-but-set-variable -Wno-deprecated-declarations" \
         LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
-        LIBS="-leantic -lflint -lmpfr -lgmp" \
+        LIBS="-leantic -lflint -lmpfr -lgmp++ -lgmp" \
         --with-flint --with-e-antic \
         --disable-dependency-tracking \
         --disable-shared \
-        --prefix=${WASM_LIBRARY_DIR}
+        --prefix=${WASM_LIBRARY_DIR} || (cat config.log; exit 1)
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
