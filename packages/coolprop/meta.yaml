@@ -5,11 +5,13 @@ package:
     - CoolProp
 
 source:
-  url: https://files.pythonhosted.org/packages/13/88/35c88960cf20cf483f1e2127ad999fce4528451ad37173064cdcb3834ebf/CoolProp-6.6.0.tar.gz
-  sha256: cf6fad704b3ae00f4df309cfd1e2ee48d155886b569a73f2cc38a57eda463082
+  url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.6.0/source/CoolProp_sources.zip
+  sha256: ba3077ad24b36617fd7ab24310ce646a65bcbc8fde47f8de128cde2c72124b84
   extract_dir: CoolProp-6.6.0
 
   extras:
+    - - extras/setup.py
+      - ./setup.py
     - - extras/pyproject.toml
       - ./pyproject.toml
 
