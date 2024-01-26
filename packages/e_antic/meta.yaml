@@ -6,6 +6,8 @@ package:
 source:
   url: https://github.com/flatsurf/e-antic/releases/download/2.0.0/e-antic-2.0.0.tar.gz
   sha256: a38d2ab62c1b00fa2ee78f39039cc4d9d8e83de5fa5e2a18529ad34ab8976fe1
+  patches:
+    - patches/0001-Do-not-redefine-fmpz_poly_randtest_irreducible-for-F.patch
 requirements:
   host:
     - libgmp
