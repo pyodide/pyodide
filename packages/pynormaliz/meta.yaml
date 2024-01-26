@@ -15,7 +15,7 @@ build:
   cxxflags: |
     -I$(WASM_LIBRARY_DIR)/include -Wno-unused-but-set-variable -Wno-return-type -Wno-deprecated-declarations
   ldflags: |
-    -L$(WASM_LIBRARY_DIR)/lib
+    -L$(WASM_LIBRARY_DIR)/lib -leanticxx -leantic -lflint -lmpfr -lgmpxx -lgmp
 about:
   home: https://github.com/Normaliz/PyNormaliz
   PyPI: https://pypi.org/project/pynormaliz
