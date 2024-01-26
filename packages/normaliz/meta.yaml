@@ -25,7 +25,7 @@ build:
         CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
         CXXFLAGS="-std=c++17 -fPIC -Wno-invalid-utf8 -Wno-unused-but-set-variable -Wno-deprecated-declarations" \
         LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
-        LIBS="-leantic -lflint -lmpfr -lgmp++ -lgmp" \
+        LIBS="-leantic -lflint -lmpfr -lgmpxx -lgmp" \
         --with-flint --with-e-antic \
         --disable-dependency-tracking \
         --disable-shared \
