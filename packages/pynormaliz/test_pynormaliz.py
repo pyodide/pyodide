@@ -13,7 +13,7 @@ def test_pynormaliz(selenium):
 
 
 @run_in_pyodide(packages=["pynormaliz"])
-def test_pynormaliz(selenium):
+def test_pynormaliz_eantic(selenium):
     import PyNormaliz_cpp
 
     C = PyNormaliz_cpp.NmzCone(
