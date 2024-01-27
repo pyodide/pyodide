@@ -1,5 +1,5 @@
-FROM node:20.1.0-buster-slim AS node-image
-FROM python:3.11.3-slim-buster
+FROM node:20.11-bookworm-slim AS node-image
+FROM python:3.11.7-slim-bookworm
 
 # Requirements for building packages
 RUN apt-get update \
@@ -7,7 +7,7 @@ RUN apt-get update \
         bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
-        build-essential prelink autoconf libtool libltdl-dev \
+        build-essential libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
         ninja-build jq xxd \
   && rm -rf /var/lib/apt/lists/*
