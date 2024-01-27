@@ -65,6 +65,9 @@ deploy = [
     "boto3",
     "moto",
 ]
+conda-skeleton = [
+    "conda-build>=3.28",  # No suitable version on PyPI; install using conda
+]
 
 [tool.setuptools]
 package-dir = {"" = "."}
