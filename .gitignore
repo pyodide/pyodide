@@ -33,6 +33,7 @@ packages/.artifacts
 packages/.build
 packages/.libs
 packages/*/build.log*
+packages/*/feedstock
 packages/build-logs
 dist/
 pyodide-build/**/build.log
