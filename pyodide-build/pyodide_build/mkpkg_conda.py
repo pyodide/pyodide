@@ -1,22 +1,11 @@
 #!/usr/bin/env python3
 
-import contextlib
-import json
-import shutil
 import subprocess
-import tempfile
-import urllib.error
-import urllib.request
 import warnings
-from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Literal, TypedDict
-from urllib import request
 
-from packaging.version import Version
 from ruamel.yaml import YAML
 
-from .common import parse_top_level_import_name
 from .logger import logger
 from .mkpkg import run_prettier
 
@@ -36,27 +25,29 @@ def make_package_conda(
     package_dir = packages_dir / package
     package_dir.mkdir(parents=True, exist_ok=True)
 
-    feedstock_dir = package_dir / f"feedstock"
+    feedstock_dir = package_dir / "feedstock"
     if feedstock_dir.exists():
         logger.info(f"Using existing {feedstock_dir}")
     else:
         feedstock_url = f"https://github.com/conda-forge/{package}-feedstock"
-        subprocess.run(["git", "clone", "--depth", "1", feedstock_url, str(feedstock_dir)])
+        subprocess.run(
+            ["git", "clone", "--depth", "1", feedstock_url, str(feedstock_dir)]
+        )
 
     from conda_build.metadata import MetaData
 
     conda_metadata = MetaData(feedstock_dir)
     # print(conda_metadata)
 
-    top_level = None
-
     yaml_content = {
         "package": {
             "name": package,
             "version": conda_metadata.version(),
         },
-        "source": {"url": conda_metadata.get_value("source/0/url")[0],
-                   "sha256": conda_metadata.get_value("source/0/sha256")},
+        "source": {
+            "url": conda_metadata.get_value("source/0/url")[0],
+            "sha256": conda_metadata.get_value("source/0/sha256"),
+        },
         "about": {
             "home": conda_metadata.get_value("about/home"),
             "summary": conda_metadata.get_value("about/summary"),
