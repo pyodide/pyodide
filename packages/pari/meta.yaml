@@ -1,0 +1,26 @@
+package:
+  name: pari
+  version: 2.15.4
+  tag:
+    - library
+source:
+  url: https://pari.math.u-bordeaux.fr/pub/pari/unix/pari-2.15.4.tar.gz
+  sha256: c3545bfee0c6dfb40b77fb4bbabaf999d82e60069b9f6d28bcb6cf004c8c5c0f
+requirements:
+  host:
+    - libgmp
+
+build:
+  type: static_library
+  script: |
+    export CFLAGS="-fPIC"
+    emconfigure ./Configure \
+        --host=wasm-emscripten \
+        --prefix=${WASM_LIBRARY_DIR} \
+        --with-gmp=${WASM_LIBRARY_DIR} \
+        --static \
+        --mt=pthread \
+        --kernel=gmp --graphic=none
+    cd Oemscripten-wasm
+    emmake make -j ${PYODIDE_JOBS:-3} all
+    emmake make install

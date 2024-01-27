@@ -1,0 +1,20 @@
+package:
+  name: cypari2
+  version: 2.1.4
+  top-level:
+    - cypari2
+source:
+  url: https://files.pythonhosted.org/packages/3c/68/1e6095d5587a7e59a8e9fc74418023e444ab05317e05846ea849394421bd/cypari2-2.1.4.tar.gz
+  sha256: efa4a44d96f693cb1156da1fd6fccc130dafcf9c19af4185cf770bf44d00dbfc
+about:
+  home: https://github.com/sagemath/cypari2
+  PyPI: https://pypi.org/project/cypari2
+  summary: A Python interface to the number theory library PARI/GP
+  license: GNU General Public License, version 2 or later
+requirements:
+  host:
+    - libgmp
+    - pari
+build:
+  script: |
+    export PARI_SHARE="${WASM_LIBRARY_DIR}/share/pari"
