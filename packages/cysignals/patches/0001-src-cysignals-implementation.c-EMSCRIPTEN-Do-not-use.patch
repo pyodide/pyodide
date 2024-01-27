@@ -4,6 +4,8 @@ Date: Wed, 24 Jan 2024 23:24:45 -0800
 Subject: [PATCH] src/cysignals/implementation.c [EMSCRIPTEN]: Do not use
  sigaltstack
 
+This is https://github.com/sagemath/cysignals/pull/197
+
 ---
  src/cysignals/implementation.c | 4 +++-
  1 file changed, 3 insertions(+), 1 deletion(-)

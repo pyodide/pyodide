@@ -9,6 +9,9 @@ Description: upstream: fix: obsoleted compiler directive: discard
 Origin: vendor, Debian
 Author: Jerome Benoit <calculus@rezozer.net>
 Last-Update: 2023-11-04
+
+This is https://github.com/sagemath/cysignals/pull/193
+
 ---
  setup.py | 1 -
  1 file changed, 1 deletion(-)
