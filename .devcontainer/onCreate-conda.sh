@@ -5,8 +5,9 @@ set -ex
 
 # from https://pyodide.org/en/stable/development/building-from-sources.html#using-make:
 # - build-essential
+# we install file because it is used by packages/ppl during configure
 # we install pkg-config with apt because it is commented out in environment.yml
-sudo apt-get update && sudo apt-get install --yes build-essential pkg-config
+sudo apt-get update && sudo apt-get install --yes build-essential file pkg-config
 
 conda env create -n pyodide-env -f environment.yml
 conda init bash

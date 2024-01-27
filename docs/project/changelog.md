@@ -32,6 +32,8 @@ myst:
 
 ### Packages
 
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`
+
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 
 ## Version 0.25.0
