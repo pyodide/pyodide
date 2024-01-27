@@ -125,7 +125,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
-			  --with-build-python=$$(which python3.11) \
+			  --with-build-python=$$(which python$(PYMAJOR).$(PYMINOR)) \
 			  $(MAYBE_WITH_PYDEBUG) \
 	)
 
