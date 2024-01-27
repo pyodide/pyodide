@@ -1,8 +1,8 @@
 package:
   name: typing-extensions
-  version: 4.7.1
+  version: 4.9.0
   top-level:
     - typing_extensions
 source:
-  url: https://files.pythonhosted.org/packages/ec/6b/63cc3df74987c36fe26157ee12e09e8f9db4de771e0f3404263117e75b95/typing_extensions-4.7.1-py3-none-any.whl
-  sha256: 440d5dd3af93b060174bf433bccd69b0babc3b15b1a8dca43789fd7f61514b36
+  url: https://files.pythonhosted.org/packages/b7/f4/6a90020cd2d93349b442bfcb657d0dc91eee65491600b2cb1d388bc98e6b/typing_extensions-4.9.0-py3-none-any.whl
+  sha256: af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd
