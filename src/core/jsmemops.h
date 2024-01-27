@@ -28,7 +28,7 @@
 
 // No BigUint64Array, have to manually split / join lower and upper byte
 //
-#define BIGINT_LOWER(x) (Number((x)&BigInt(0xffffffff)) | 0)
+#define BIGINT_LOWER(x) (Number((x) & BigInt(0xffffffff)) | 0)
 #define BIGINT_UPPER(x) (Number((x) >> BigInt(32)) | 0)
 #define UBIGINT_FROM_PAIR(lower, upper)                                        \
   (BigInt(lower) | (BigInt(upper) << BigInt(32)))

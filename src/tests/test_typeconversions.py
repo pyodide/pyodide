@@ -352,7 +352,6 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
 @run_in_pyodide
 def test_hyp_py2js2py(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.obj = obj
@@ -379,7 +378,6 @@ def test_hyp_py2js2py(selenium, obj):
 @run_in_pyodide
 def test_hyp_py2js2py_2(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.o = obj
@@ -393,7 +391,6 @@ def test_hyp_py2js2py_2(selenium, obj):
 @run_in_pyodide
 def test_big_integer_py2js2py(selenium, a):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.a = a
@@ -412,7 +409,6 @@ def test_big_integer_py2js2py(selenium, a):
 @run_in_pyodide
 def test_hyp_tojs_no_crash(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.x = obj
