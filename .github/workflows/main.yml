@@ -170,7 +170,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: "3.11"
+          python-version: "3.12"
           channels: conda-forge
 
       - name: install test requirements

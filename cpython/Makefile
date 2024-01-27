@@ -44,6 +44,7 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
+	cp $(BUILD)/Modules/_hacl/libHacl_Hash_SHA2.a $(INSTALL)/lib/
 
 
 .PHONY=rebuild

@@ -1,17 +1,17 @@
-From f8970422b395b24ca58cef3dca6954bb07d4974d Mon Sep 17 00:00:00 2001
+From 3228232e38b3aee5023231b518750d8de38a9de7 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Dec 2022 09:09:14 -0800
-Subject: [PATCH 4/8] Allow multiprocessing.connection top level import
+Subject: [PATCH 4/6] Allow multiprocessing.connection top level import
 
 ---
  Lib/multiprocessing/connection.py | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/Lib/multiprocessing/connection.py b/Lib/multiprocessing/connection.py
-index b08144f7a1..6a98829169 100644
+index dbbf106f68..e92edf6c30 100644
 --- a/Lib/multiprocessing/connection.py
 +++ b/Lib/multiprocessing/connection.py
-@@ -18,7 +18,10 @@
+@@ -19,7 +19,10 @@
  import tempfile
  import itertools
  
