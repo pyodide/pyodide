@@ -3,6 +3,8 @@ From: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
 Date: Wed, 24 Jan 2024 21:40:55 -0800
 Subject: [PATCH] pyproject.toml: New
 
+This patch is https://github.com/flintlib/python-flint/pull/108
+
 ---
  pyproject.toml | 5 +++++
  1 file changed, 5 insertions(+)

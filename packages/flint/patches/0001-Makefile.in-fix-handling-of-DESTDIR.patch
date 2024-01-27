@@ -3,6 +3,8 @@ From: Marc Mezzarobba <marc@mezzarobba.net>
 Date: Mon, 13 Nov 2023 10:23:54 +0100
 Subject: [PATCH] Makefile.in: fix handling of $DESTDIR
 
+This patch is taken from https://github.com/sagemath/sage/tree/develop/build/pkgs/flint
+
 ---
  Makefile.in | 54 ++++++++++++++++++++++++++---------------------------
  1 file changed, 27 insertions(+), 27 deletions(-)
