@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import shutil
 import subprocess
 import warnings
 from pathlib import Path
@@ -39,6 +40,13 @@ def make_package_conda(
     conda_metadata = MetaData(feedstock_dir)
     # print(conda_metadata)
 
+    top_level = None
+
+    patches = conda_metadata.get_value("source/0/patches")
+    for patch in patches:
+        (package_dir / patch).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(Path(conda_metadata.path) / patch, package_dir / patch)
+
     yaml_content = {
         "package": {
             "name": package,
@@ -47,6 +55,11 @@ def make_package_conda(
         "source": {
             "url": conda_metadata.get_value("source/0/url")[0],
             "sha256": conda_metadata.get_value("source/0/sha256"),
+            "patches": patches,
+        },
+        "requirements": {
+            "host": conda_metadata.get_value("requirements/host"),
+            "run": conda_metadata.get_value("requirements/run"),
         },
         "about": {
             "home": conda_metadata.get_value("about/home"),
