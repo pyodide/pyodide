@@ -18,7 +18,11 @@ echo "conda activate pyodide-env" >> ~/.bashrc
 # https://pyodide.org/en/stable/development/building-from-sources.html#using-docker
 export EMSDK_NUM_CORE=12 EMCC_CORES=12 PYODIDE_JOBS=12
 echo "export EMSDK_NUM_CORE=12 EMCC_CORES=12 PYODIDE_JOBS=12" >> ~/.bashrc
-echo "export PYODIDE_RECIPE_BUILD_DIR=/tmp/pyodide-build" >> ~/.bashrc
+
+export PYODIDE_RECIPE_BUILD_DIR=/tmp/pyodide-build
+mkdir -p "$PYODIDE_RECIPE_BUILD_DIR"
+echo "export PYODIDE_RECIPE_BUILD_DIR=$PYODIDE_RECIPE_BUILD_DIR" >> ~/.bashrc
+ln -sf "$PYODIDE_RECIPE_BUILD_DIR" packages/.build || echo "Note: Could not create convenience symlink packages/.build"
 
 conda run -n pyodide-env --live-stream pip install -r requirements.txt
 
