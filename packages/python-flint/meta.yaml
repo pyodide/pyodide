@@ -13,6 +13,7 @@ source:
   sha256: 0358f05548d477e23c79dbe15b2449e12e4b3d76af41fb16a4c7d035065b12cd
   patches:
     - patches/108.patch
+    - patches/112.patch
 build:
   cflags: |
     -I$(WASM_LIBRARY_DIR)/include

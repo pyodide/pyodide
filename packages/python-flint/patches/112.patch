@@ -1,0 +1,36 @@
+From 54a049e0a69ec678af1b8374f1b64206bdb40f60 Mon Sep 17 00:00:00 2001
+From: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
+Date: Thu, 25 Jan 2024 10:44:05 -0800
+Subject: [PATCH] pyproject.toml, setup.py: Only use numpy.distutils on win32
+
+This is https://github.com/flintlib/python-flint/pull/112
+
+---
+ pyproject.toml | 2 +-
+ setup.py       | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 657c8df..d29c41d 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,5 +1,5 @@
+ [build-system]
+ requires = ["setuptools",
+-            "numpy",
++            "numpy; sys_platform == 'win32' and python_version < '3.12'",
+             "Cython>=3"]
+ build-backend = "setuptools.build_meta"
+diff --git a/setup.py b/setup.py
+index fa727ab..23b4b82 100644
+--- a/setup.py
++++ b/setup.py
+@@ -6,7 +6,7 @@
+ from Cython.Build import cythonize
+ 
+ 
+-if sys.version_info < (3, 12):
++if sys.platform == 'win32' and sys.version_info < (3, 12):
+     from distutils.core import setup
+     from distutils.extension import Extension
+     from numpy.distutils.system_info import default_include_dirs, default_lib_dirs
