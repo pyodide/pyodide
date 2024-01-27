@@ -36,6 +36,8 @@ myst:
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 
+- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`
+
 ## Version 0.25.0
 
 _January 18, 2023_
