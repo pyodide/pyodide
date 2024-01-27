@@ -5,6 +5,12 @@ X-Git-Url: http://www.cs.unipr.it/git/gitweb.cgi?p=ppl%2Fppl.git;a=commitdiff_pl
 
 Added missing "template" and "typename" keywords.
 (Thanks to Dmitrii Pasechnik.)
+
+
+This version of PPL, 1.2, is unfortunately the latest upstream version - https://repology.org/project/ppl/versions
+For the packages that I'm adding, I am using the patches carried by the SageMath distribution - see https://github.com/sagemath/sage/tree/develop/build/pkgs/ppl
+
+
 ---
 
 diff --git a/src/Determinate_inlines.hh b/src/Determinate_inlines.hh
