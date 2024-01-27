@@ -868,8 +868,11 @@ def build_package(
             continue_=continue_,
         )
 
-    except Exception:
+    except (Exception, KeyboardInterrupt):
         success = False
+        raise
+    except SystemExit as e:
+        success = e.code == 0
         raise
     finally:
         t1 = datetime.now()
