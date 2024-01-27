@@ -12,6 +12,23 @@ from ..logger import logger
 app = typer.Typer()
 
 
+def _recipe_dir(recipe_dir) -> Path:
+    if recipe_dir:
+        return Path(recipe_dir)
+
+    cwd = Path.cwd()
+
+    try:
+        root = build_env.search_pyodide_root(cwd)
+    except FileNotFoundError:
+        root = cwd
+
+    if build_env.in_xbuildenv():
+        root = cwd
+
+    return root / "packages"
+
+
 @app.callback(no_args_is_help=True)
 def callback() -> None:
     """Add a new package build recipe or update an existing recipe"""
@@ -50,22 +67,7 @@ def new_recipe_pypi(
     """
     Create a new package from PyPI.
     """
-
-    if recipe_dir:
-        recipe_dir_ = Path(recipe_dir)
-    else:
-        cwd = Path.cwd()
-
-        try:
-            root = build_env.search_pyodide_root(cwd)
-        except FileNotFoundError:
-            root = cwd
-
-        if build_env.in_xbuildenv():
-            root = cwd
-
-        recipe_dir_ = root / "packages"
-
+    recipe_dir_ = _recipe_dir(recipe_dir)
     if update or update_patched:
         try:
             mkpkg.update_package(
