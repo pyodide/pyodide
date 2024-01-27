@@ -32,7 +32,7 @@ myst:
 
 ### Packages
 
-- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 
