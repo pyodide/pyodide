@@ -1,0 +1,27 @@
+package:
+  name: pplpy
+  version: 0.8.9
+  top-level:
+    - ppl
+source:
+  url: https://files.pythonhosted.org/packages/72/a6/8f5ff229ee82cec9d1e7d2507e6eba492350faf50ae41beb76ef0a7f34a7/pplpy-0.8.9.tar.gz
+  sha256: db7a3b571d6ef053f75137975e947c3a1c1e45a30bab90eaf215b4e5cc15797e
+requirements:
+  host:
+    - libgmp
+    - ppl
+    - gmpy2
+  run:
+    - gmpy2
+    - cysignals
+build:
+  cxxflags: |
+    -std=c++11
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+about:
+  home: https://github.com/sagemath/pplpy
+  PyPI: https://pypi.org/project/pplpy
+  summary: Python PPL wrapper
+  license: GPL v3

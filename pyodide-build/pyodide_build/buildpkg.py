@@ -234,8 +234,11 @@ class RecipeBuilder:
             self._build()
 
             (self.build_dir / ".packaged").touch()
-        except Exception:
+        except (Exception, KeyboardInterrupt):
             success = False
+            raise
+        except SystemExit as e:
+            success = e.code == 0
             raise
         finally:
             t1 = datetime.now()

@@ -16,19 +16,29 @@ myst:
 
 ## Unreleased
 
+- Upgraded CoolProp to 6.6.0 {pr}`4397`.
+
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
   {pr}`4399`
 
 - {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
   This entrypoint was deprecated since 0.22.0.
+  {pr}`4368`
 
 - {{ Enhancement }} Added apis to discard extra arguments when calling Python
   functions.
   {pr}`4392`
 
+- {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
+  {pr}`4395`
+
 ### Packages
 
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`
+
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
+
+- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`
 
 ## Version 0.25.0
 

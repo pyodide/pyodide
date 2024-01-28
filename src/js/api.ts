@@ -451,31 +451,26 @@ export class PyodideAPI {
   /**
    * Imports a module and returns it.
    *
-   * .. admonition:: Warning
-   *    :class: warning
-   *
-   *    This function has a completely different behavior than the old removed pyimport function!
-   *
-   *    ``pyimport`` is roughly equivalent to:
-   *
-   *    .. code-block:: js
-   *
-   *      pyodide.runPython(`import ${pkgname}; ${pkgname}`);
-   *
-   *    except that the global namespace will not change.
-   *
-   *    Example:
-   *
-   *    .. code-block:: js
-   *
-   *      let sysmodule = pyodide.pyimport("sys");
-   *      let recursionLimit = sysmodule.getrecursionlimit();
+   * If `name` has no dot in it, then `pyimport(name)` is approximately
+   * equivalent to:
+   * ```js
+   * pyodide.runPython(`import ${name}; ${name}`)
+   * ```
+   * except that `name` is not introduced into the Python global namespace. If
+   * the name has one or more dots in it, say it is of the form `path.name`
+   * where `name` has no dots but path may have zero or more dots. Then it is
+   * approximately the same as:
+   * ```js
+   * pyodide.runPython(`from ${path} import ${name}; ${name}`);
+   * ```
    *
    * @param mod_name The name of the module to import
-   * @returns A PyProxy for the imported module
+   *
+   * @example
+   * pyodide.pyimport("math.comb")(4, 2) // returns 4 choose 2 = 6
    */
-  static pyimport(mod_name: string): PyProxy {
-    return API.importlib.import_module(mod_name);
+  static pyimport(mod_name: string): any {
+    return API.pyodide_base.pyimport_impl(mod_name);
   }
 
   /**
@@ -749,6 +744,7 @@ API.finalizeBootstrap = function (): PyodideInterface {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
+  API.pyodide_base = import_module("_pyodide._base");
 
   API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
   API.dsodir = API.package_loader.DSO_DIR.__str__();

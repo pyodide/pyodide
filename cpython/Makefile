@@ -26,6 +26,10 @@ all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(INSTALL)/lib/libhiwire.a
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
+	# Generate sysconfigdata. It outputs into a subfolder of build/, and
+	# the subfolder is written to pybuilddir.txt.
+	cd $(BUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
+
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -34,17 +38,12 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 		emmake make PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3} && \
 		cp $(LIB) $(INSTALL)/lib/ \
 	)
-	# Generate sysconfigdata. It outputs into a subfolder of build/, and
-	# the subfolder is written to pybuilddir.txt.
-	_PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 
-	$(eval PYBUILDDIR=`cat pybuilddir.txt`)
+	$(eval PYBUILDDIR=$(BUILD)/`cat $(BUILD)/pybuilddir.txt`)
 	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-	rm -rf $(PYBUILDDIR)
-	rm pybuilddir.txt
 
 
 .PHONY=rebuild
@@ -125,7 +124,7 @@ $(BUILD)/Makefile: $(BUILD)/.patched
 			  --host=wasm32-unknown-emscripten\
 			  --build=$(shell $(BUILD)/config.guess) \
 			  --prefix=$(INSTALL)  \
-			  --with-build-python=$$(which python3.11) \
+			  --with-build-python=$$(which python$(PYMAJOR).$(PYMINOR)) \
 			  $(MAYBE_WITH_PYDEBUG) \
 	)
 
