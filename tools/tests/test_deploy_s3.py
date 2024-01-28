@@ -7,13 +7,13 @@ from pathlib import Path, PurePosixPath
 
 import boto3
 import pytest
-from moto import mock_s3
+from moto import mock_aws
 
 sys.path.append(str(Path(__file__).parents[1]))
 from deploy_s3 import check_s3_object_exists, deploy_to_s3_main
 
 
-@mock_s3
+@mock_aws
 def test_check_s3_object_exists():
     bucket_name = "mybucket"
     s3_client = boto3.client("s3", region_name="us-east-1")
@@ -25,7 +25,7 @@ def test_check_s3_object_exists():
     assert check_s3_object_exists(s3_client, bucket_name, "/a/test2.txt") is False
 
 
-@mock_s3
+@mock_aws
 def test_deploy_to_s3_overwrite(tmp_path, capsys):
     (tmp_path / "a.whl").write_text("a")
     (tmp_path / "b.tar").write_text("b")
@@ -102,7 +102,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
     assert get_object_list() == {"dev/full/c.zip", "dev/full/a.whl"}
 
 
-@mock_s3
+@mock_aws
 def test_deploy_to_s3_mime_type(tmp_path, capsys):
     """Test that we set the correct MIME type for each file extension"""
     for ext in [
