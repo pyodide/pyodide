@@ -16,6 +16,7 @@ build:
         --host none \
         --disable-shared \
         --enable-static \
+        --enable-cxx \
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

@@ -17,6 +17,12 @@ def recipe(
         help="The directory containing the recipe of packages. "
         "If not specified, the default is ``./packages``",
     ),
+    build_dir: str = typer.Option(
+        None,
+        envvar="PYODIDE_RECIPE_BUILD_DIR",
+        help="The directory where build directories for packages are created. "
+        "Default: recipe_dir.",
+    ),
     no_deps: bool = typer.Option(
         False, help="If true, do not build dependencies of the specified packages. "
     ),
@@ -80,6 +86,7 @@ def recipe(
 
     root = Path.cwd()
     recipe_dir_ = root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
+    build_dir_ = recipe_dir_ if not build_dir else Path(build_dir).resolve()
     install_dir_ = root / "dist" if not install_dir else Path(install_dir).resolve()
     log_dir_ = None if not log_dir else Path(log_dir).resolve()
     n_jobs = n_jobs or get_num_cores()
@@ -105,7 +112,9 @@ def recipe(
         # TODO: use multiprocessing?
         for package in packages:
             package_path = recipe_dir_ / package
-            buildpkg.build_package(package_path, build_args, force_rebuild, continue_)
+            buildpkg.build_package(
+                package_path, build_args, build_dir_, force_rebuild, continue_
+            )
 
     else:
         if len(packages) == 1 and "," in packages[0]:
@@ -116,7 +125,12 @@ def recipe(
             targets = ",".join(packages)
 
         pkg_map = buildall.build_packages(
-            recipe_dir_, targets, build_args, n_jobs, force_rebuild
+            recipe_dir_,
+            targets,
+            build_args,
+            build_dir_,
+            n_jobs,
+            force_rebuild,
         )
 
         if log_dir_:
