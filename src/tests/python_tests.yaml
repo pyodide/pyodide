@@ -157,7 +157,8 @@
       - testThreading
 - test_c_locale_coercion
 - test_calendar
-- test_call
+- test_call:
+    xfail: stack overflow
 - test_capi.test_abstract
 - test_capi.test_bytearray
 - test_capi.test_bytes
@@ -670,7 +671,8 @@
 - test_platform:
     skip:
       - test_architecture_via_symlink # fork
-- test_plistlib
+- test_plistlib:
+    xfail: stack overflow
 - test_poll:
     xfail: subprocess
 - test_popen:
