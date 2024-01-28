@@ -29,6 +29,10 @@ myst:
   functions.
   {pr}`4392`
 
+- {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
+  is not available in the Node.js < 18 environment.
+  {pr}`4417`
+
 - {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
   {pr}`4395`
 
