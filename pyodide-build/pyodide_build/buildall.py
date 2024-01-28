@@ -851,6 +851,8 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     if args.host_install_dir is None:
         args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(  # type: ignore[unreachable]
+            build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL")
+        )
 
     return args

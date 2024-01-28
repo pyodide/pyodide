@@ -55,7 +55,7 @@ def stream_redirected(to=os.devnull, stream=None):
         # e.g. in pytest
         yield
         return
-    if type(to) == str:
+    if isinstance(to, str):
         to = open(to, "w")
     with os.fdopen(os.dup(stream_fd), "wb") as copied:
         stream.flush()

@@ -2,7 +2,7 @@
  * JsProxy Class
  *
  * The root JsProxy class is a simple class that wraps a JsRef.  We define
- * overloads for getattr, setattr, delattr, repr, bool, and comparison opertaors
+ * overloads for getattr, setattr, delattr, repr, bool, and comparison operators
  * on the base class.
  *
  * We define a wide variety of subclasses on the fly with different operator

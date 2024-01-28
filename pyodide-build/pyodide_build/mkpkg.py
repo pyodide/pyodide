@@ -207,7 +207,9 @@ def make_package(
     try:
         run_prettier(meta_path)
     except FileNotFoundError:
-        warnings.warn("'npx' executable missing, output has not been prettified.")
+        warnings.warn(
+            "'npx' executable missing, output has not been prettified.", stacklevel=1
+        )
 
     logger.success(f"Output written to {meta_path}")
 

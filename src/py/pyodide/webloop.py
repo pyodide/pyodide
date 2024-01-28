@@ -117,7 +117,7 @@ class PyodideFuture(Future[T]):
             except Exception as result_exception:
                 result.set_exception(result_exception)
                 return
-            result.set_result(r)  # type:ignore[arg-type]
+            result.set_result(r)
 
         def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))

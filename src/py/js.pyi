@@ -108,7 +108,7 @@ class JsCanvasElement(JsDomElement):
         antialias: bool = False,
         alpha: bool = False,
         depth: bool = False,
-        stencil: bool = False
+        stencil: bool = False,
     ) -> Any: ...
 
 class ArrayBuffer(_JsObject):
