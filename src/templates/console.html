@@ -101,31 +101,31 @@
             return result;
           },
         });
-        let namespace = pyodide.globals.get("dict")();
-        pyodide.runPython(
+        let { repr_shorten, BANNER, PyodideConsole } =
+          pyodide.pyimport("pyodide.console");
+        BANNER =
+          `Welcome to the Pyodide ${pyodide.version} terminal emulator 🐍\n` +
+          BANNER;
+        const pyconsole = PyodideConsole(pyodide.globals);
+
+        const namespace = pyodide.globals.get("dict")();
+        const await_fut = pyodide.runPython(
           `
-            import sys
-            from pyodide.ffi import to_js
-            from pyodide.console import PyodideConsole, repr_shorten, BANNER
-            import __main__
-            BANNER = "Welcome to the Pyodide terminal emulator 🐍\\n" + BANNER
-            pyconsole = PyodideConsole(__main__.__dict__)
-            import builtins
-            async def await_fut(fut):
+          import builtins
+          from pyodide.ffi import to_js
+
+          async def await_fut(fut):
               res = await fut
               if res is not None:
-                builtins._ = res
+                  builtins._ = res
               return to_js([res], depth=1)
-            def clear_console():
-              pyconsole.buffer = []
-        `,
+
+          await_fut
+          `,
           { globals: namespace },
         );
-        let repr_shorten = namespace.get("repr_shorten");
-        let banner = namespace.get("BANNER");
-        let await_fut = namespace.get("await_fut");
-        let pyconsole = namespace.get("pyconsole");
-        let clear_console = namespace.get("clear_console");
+        namespace.destroy();
+
         const echo = (msg, ...opts) =>
           term.echo(
             msg
@@ -133,26 +133,25 @@
               .replaceAll("[[", "&lsqb;&lsqb;"),
             ...opts,
           );
-        namespace.destroy();
 
-        let ps1 = ">>> ",
-          ps2 = "... ";
+        const ps1 = ">>> ";
+        const ps2 = "... ";
 
         async function lock() {
           let resolve;
-          let ready = term.ready;
+          const ready = term.ready;
           term.ready = new Promise((res) => (resolve = res));
           await ready;
           return resolve;
         }
 
         async function interpreter(command) {
-          let unlock = await lock();
+          const unlock = await lock();
           term.pause();
           // multiline should be split (useful when pasting)
           for (const c of command.split("\n")) {
             const escaped = c.replaceAll(/\u00a0/g, " ");
-            let fut = pyconsole.push(escaped);
+            const fut = pyconsole.push(escaped);
             term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
             switch (fut.syntax_check) {
               case "syntax-error":
@@ -169,10 +168,10 @@
             // awaits, so if an async function returns a future, it will await
             // the inner future too. This is not what we want so we
             // temporarily put it into a list to protect it.
-            let wrapped = await_fut(fut);
+            const wrapped = await_fut(fut);
             // complete case, get result / error and print it.
             try {
-              let [value] = await wrapped;
+              const [value] = await wrapped;
               if (value !== undefined) {
                 echo(
                   repr_shorten.callKwargs(value, {
@@ -201,7 +200,7 @@
         }
 
         term = $("body").terminal(interpreter, {
-          greetings: banner,
+          greetings: BANNER,
           prompt: ps1,
           completionEscape: false,
           completion: function (command, callback) {
@@ -209,7 +208,7 @@
           },
           keymap: {
             "CTRL+C": async function (event, original) {
-              clear_console();
+              pyconsole.buffer.clear();
               term.enter();
               echo("KeyboardInterrupt");
               term.set_command("");
