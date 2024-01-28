@@ -48,7 +48,8 @@ Documentation = "https://pyodide.org/en/stable/"
 
 [project.entry-points."pyodide.cli"]
 build = "pyodide_build.cli.build:main"
-build-recipes = "pyodide_build.cli.build_recipes:recipe"
+build-recipes = "pyodide_build.cli.build_recipes:build_recipes"
+build-recipes-no-deps = "pyodide_build.cli.build_recipes:build_recipes_no_deps"
 venv = "pyodide_build.cli.venv:main"
 skeleton = "pyodide_build.cli.skeleton:app"
 py-compile = "pyodide_build.cli.py_compile:main"
