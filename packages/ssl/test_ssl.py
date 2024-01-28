@@ -26,9 +26,7 @@ def test_ssl(selenium):
             "test.support.socket_helper.bind_port",
             side_effect=unittest.SkipTest("nope!"),
         ):
-            main(
-                [name], match_tests=match_tests, verbose=True, verbose3=True
-            )
+            main([name], match_tests=match_tests, verbose=True, verbose3=True)
     except SystemExit as e:
         if e.code != 0:
             raise RuntimeError(f"Failed with code: {e.code}") from None
