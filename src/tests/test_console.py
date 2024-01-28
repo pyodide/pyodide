@@ -379,7 +379,6 @@ def test_console_html(selenium):
             return 7
         """
     )
-    import re
 
     assert re.search("<coroutine object f at 0x[a-f0-9]*>", exec_and_get_result("f()"))
 
