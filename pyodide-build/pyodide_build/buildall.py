@@ -559,7 +559,7 @@ def build_from_graph(
         if len(pkg.unbuilt_host_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
-    built_queue: Queue[BasePackage | Exception] = Queue()
+    built_queue: Queue[BasePackage | BaseException] = Queue()
     thread_lock = Lock()
     queue_idx = 1
     building_rust_pkg = False
@@ -627,10 +627,8 @@ def build_from_graph(
                 match built_queue.get():
                     case BaseException() as err:
                         raise err
-                    case a_package:
-                        # MyPy should understand that this is a BasePackage
-                        assert not isinstance(a_package, Exception)
-                        pkg = a_package
+                    case BasePackage() as pkg:
+                        pass
 
                 num_built += 1
 
