@@ -19,7 +19,6 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -27,6 +26,8 @@ from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
+
+from packaging.utils import canonicalize_name
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
@@ -141,7 +142,7 @@ class Package(BasePackage):
         p = subprocess.run(
             [
                 "pyodide",
-                "build-recipes",
+                "build-recipes-no-deps",
                 self.name,
                 "--recipe-dir",
                 str(self.pkgdir.parent),
@@ -156,7 +157,6 @@ class Package(BasePackage):
                 # been updated and should be rebuilt even though its own
                 # files haven't been updated.
                 "--force-rebuild",
-                "--no-deps",
             ],
             check=False,
             stdout=subprocess.DEVNULL,

@@ -243,7 +243,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
             "--continue",
         ],
     )
