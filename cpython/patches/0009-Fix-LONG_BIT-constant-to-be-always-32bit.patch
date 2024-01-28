@@ -1,4 +1,4 @@
-From 929b4f9c1f8867d22cc0d0abcafa9c96c5a28093 Mon Sep 17 00:00:00 2001
+From d873a0a76209b13b86176d674c44a2c073a2faaf Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 12 Jan 2024 00:52:57 +0900
 Subject: [PATCH 9/9] Fix LONG_BIT constant to be always 32bit
@@ -17,10 +17,10 @@ Related: https://github.com/emscripten-core/emscripten/pull/20752
  1 file changed, 1 insertion(+)
 
 diff --git a/Include/pyport.h b/Include/pyport.h
-index 93250f4eb1..cfaa267139 100644
+index b3b8b6f09a..157816de42 100644
 --- a/Include/pyport.h
 +++ b/Include/pyport.h
-@@ -588,6 +588,7 @@ extern char * _getpty(int *, int, mode_t, int);
+@@ -583,6 +583,7 @@ extern char * _getpty(int *, int, mode_t, int);
  #define LONG_MIN (-LONG_MAX-1)
  #endif
  
@@ -29,5 +29,5 @@ index 93250f4eb1..cfaa267139 100644
  #define LONG_BIT (8 * SIZEOF_LONG)
  #endif
 -- 
-2.29.2.windows.2
+2.25.1
 
