@@ -19,14 +19,13 @@ from zipfile import ZipFile
 
 import requests
 from build import ConfigSettingsType
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
+from packaging.version import Version
 from resolvelib import BaseReporter, Resolver
 from resolvelib.providers import AbstractProvider
 from unearth.evaluator import TargetPython
 from unearth.finder import PackageFinder
-
-from packaging.requirements import Requirement
-from packaging.utils import canonicalize_name
-from packaging.version import Version
 
 from .. import build_env
 from ..common import repack_zip_archive

@@ -13,9 +13,8 @@ from pathlib import Path
 from typing import Any, Literal, TypedDict
 from urllib import request
 
-from ruamel.yaml import YAML
-
 from packaging.version import Version
+from ruamel.yaml import YAML
 
 from .common import parse_top_level_import_name
 from .logger import logger
