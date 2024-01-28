@@ -8,14 +8,10 @@ package:
 source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
-  patches:
-    - patches/0005-gh-93839-Move-Lib-ctypes-test-to-Lib-test-test_ctype.patch
-    - patches/0006-gh-93839-Move-Lib-unttest-test-to-Lib-test-test_unit.patch
-    - patches/0007-gh-93839-Use-load_package_tests-for-testmock-GH-9405.patch
-    - patches/0008-Move-test-directories.patch
 build:
   type: cpython_module
   script: |
+    cat $(PYODIDE_ROOT)/cpython/patches/* | patch -p1
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testcapi.so \
