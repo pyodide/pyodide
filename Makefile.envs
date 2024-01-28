@@ -220,6 +220,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-lidbfs.js \
 		-lnodefs.js \
+		-lHacl_Hash_SHA2 \
 
 endif
 
