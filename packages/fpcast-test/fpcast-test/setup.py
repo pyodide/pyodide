@@ -27,6 +27,6 @@ setup(
         "Operating System :: OS Independent",
     ],
     # packages=["fpcast_test"],
-    ext_modules=[Extension("fpcast_test", ["fpcast-test.c"])]
+    ext_modules=[Extension("fpcast_test", ["fpcast-test.c"])],
     # python_requires='>=3.6',
 )

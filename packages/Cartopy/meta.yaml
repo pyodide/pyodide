@@ -3,6 +3,7 @@ package:
   version: 0.21.1
   top-level:
     - cartopy
+  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/e8/11/ed3e364b3910f0951821e6b5a03a03ce425464b72aa3da08d47b78ae17bd/Cartopy-0.21.1.tar.gz
   sha256: 89d5649712c8582231c6e11825a04c85f6f0cee94dbb89e4db23eabca1cc250a

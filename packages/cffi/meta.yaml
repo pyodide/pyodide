@@ -1,5 +1,6 @@
 package:
   name: cffi
+  _disabled: true
   version: 1.15.1
   top-level:
     - cffi

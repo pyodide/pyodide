@@ -3,6 +3,7 @@ package:
   version: 0.22.0
   top-level:
     - pysam
+  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/35/22/3d01778c13f1103401313f1232c1c0596d97aaee21c1d60564640f3049bd/pysam-0.22.0.tar.gz
   sha256: ab7a46973cf0ab8c6ac327f4c3fb67698d7ccbeef8631a716898c6ba01ef3e45

@@ -4,6 +4,7 @@ package:
   top-level:
     - CoolProp
 
+  _disabled: true
 source:
   url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.4.3/source/CoolProp_sources.zip
   sha256: 7d43ef778e5e245720261311fe86c8a1492a7dc49c0155408344117a81465f7d
@@ -29,5 +30,5 @@ test:
 about:
   home: http://www.coolprop.org
   PyPI: https://pypi.org/project/CoolProp
-  summary: "Open-source thermodynamic and transport properties database"
+  summary: Open-source thermodynamic and transport properties database
   license: MIT

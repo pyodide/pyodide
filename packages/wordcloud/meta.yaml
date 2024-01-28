@@ -3,6 +3,7 @@ package:
   version: 1.9.2
   top-level:
     - wordcloud
+  _disabled: true
 requirements:
   run:
     - matplotlib

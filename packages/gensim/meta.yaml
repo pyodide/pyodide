@@ -3,6 +3,7 @@ package:
   version: 4.3.1
   top-level:
     - gensim
+  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/9a/3c/dd4351a2ef3a8fb19e26d6ccb928823fea53375de9d28b221f8cf0e53c8e/gensim-4.3.1.tar.gz
   sha256: 8b5f11c0e6a5308086b48e8f6841223a4fa1a37d513684612b7ee854b533015f

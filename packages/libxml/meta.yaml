@@ -1,5 +1,6 @@
 package:
   name: libxml
+  _disabled: true
   version: 2.9.10
   tag:
     - library
