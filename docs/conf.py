@@ -60,7 +60,7 @@ versionwarning_message = (
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
-micropip_version = micropip.__version__  # type:ignore[attr-defined]
+micropip_version = micropip.__version__
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.11", None),
     "micropip": (f"https://micropip.pyodide.org/en/v{micropip_version}/", None),
