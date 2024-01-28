@@ -12,6 +12,7 @@ from tempfile import TemporaryDirectory
 
 from build import BuildBackendException, ConfigSettingsType
 from build.env import DefaultIsolatedEnv
+
 from packaging.requirements import Requirement
 
 from . import common, pywasmcross

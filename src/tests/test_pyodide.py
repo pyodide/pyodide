@@ -1468,9 +1468,8 @@ def test_module_not_found_hook(selenium_standalone):
 
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.stdoutStrings = [];
             self.stderrStrings = [];
             function stdout(s){
@@ -1491,9 +1490,7 @@ def test_args(selenium_standalone_noload):
             pyodide._module._run_main();
             return stdoutStrings.pop()
             """
-        )
-        == repr([x * x + 1 for x in range(10)])
-    )
+    ) == repr([x * x + 1 for x in range(10)])
 
 
 def test_args_OO(selenium_standalone_noload):

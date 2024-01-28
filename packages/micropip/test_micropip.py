@@ -48,9 +48,8 @@ SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             return await pyodide.runPythonAsync(`
                 import os
                 import micropip
@@ -63,9 +62,7 @@ def test_install_simple(selenium_standalone_micropip):
                 to_js(stemmer.stemWords('go going goes gone'.split()))
             `);
             """
-        )
-        == ["go", "go", "goe", "gone"]
-    )
+    ) == ["go", "go", "goe", "gone"]
 
 
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
@@ -233,7 +230,7 @@ def test_emfs(selenium_standalone_micropip):
 
             resp = await pyfetch(url + wheel_name)
             await resp._into_file(open(wheel_name, "wb"))
-            await micropip.install("emfs:" + wheel_name)
+            await micropip.install("emfs:" + wheel_name)  # type: ignore[attr-defined]
             import snowballstemmer
 
             stemmer = snowballstemmer.stemmer("english")

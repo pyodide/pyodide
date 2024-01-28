@@ -19,7 +19,6 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -27,6 +26,8 @@ from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
+
+from packaging.utils import canonicalize_name
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
@@ -849,6 +850,8 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     if args.host_install_dir is None:
         args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(  # type: ignore[unreachable]
+            build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL")
+        )
 
     return args

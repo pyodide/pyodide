@@ -13,7 +13,7 @@
     // For config options, see https://github.com/devcontainers/features/tree/main/src/conda
     "ghcr.io/devcontainers/features/conda": {
       "version": "latest",
-      "addCondaForge": "true"
-    }
-  }
+      "addCondaForge": "true",
+    },
+  },
 }

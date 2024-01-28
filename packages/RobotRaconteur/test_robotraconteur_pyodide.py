@@ -16,5 +16,5 @@ def test_robotraconteur_exceptions(selenium):
     RRN = RR.RobotRaconteurNode.s
     RRN.SetNodeName("test_node")
     assert RRN.NodeName == "test_node"
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         RRN.SetNodeName("test_node")

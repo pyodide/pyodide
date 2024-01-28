@@ -10,7 +10,7 @@ from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-if sys.version_info < (3, 11, 0):
+if sys.version_info < (3, 11, 0):  # noqa: UP036
     import tomli as tomllib
 else:
     import tomllib

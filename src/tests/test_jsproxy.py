@@ -67,9 +67,8 @@ def test_jsproxy_dir(selenium):
 
 
 def test_jsproxy_getattr(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.a = { x : 2, y : "9", typeof : 7 };
             let pyresult = pyodide.runPython(`
                 from js import a
@@ -79,9 +78,7 @@ def test_jsproxy_getattr(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == [2, "9", "object"]
-    )
+    ) == [2, "9", "object"]
 
 
 @run_in_pyodide
@@ -93,9 +90,9 @@ def test_jsproxy_getattr_errors(selenium):
 
     o = run_js("({get a() { throw new Error('oops'); } })")
     with pytest.raises(AttributeError):
-        o.x
+        o.x  # noqa: B018
     with pytest.raises(JsException):
-        o.a
+        o.a  # noqa: B018
 
 
 @pytest.mark.xfail_browsers(node="No document in node")
@@ -267,9 +264,8 @@ def test_jsproxy_implicit_iter(selenium):
 
 
 def test_jsproxy_call1(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.f = function(){ return arguments.length; };
             let pyresult = pyodide.runPython(
                 `
@@ -281,9 +277,7 @@ def test_jsproxy_call1(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == list(range(10))
-    )
+    ) == list(range(10))
 
 
 @run_in_pyodide
@@ -295,9 +289,8 @@ def test_jsproxy_call2(selenium):
 
 
 def test_jsproxy_call_kwargs(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.kwarg_function = ({ a = 1, b = 1 }) => {
                 return [a, b];
             };
@@ -308,9 +301,7 @@ def test_jsproxy_call_kwargs(selenium):
                 `
             );
             """
-        )
-        == [10, 2]
-    )
+    ) == [10, 2]
 
 
 @pytest.mark.xfail
@@ -2483,7 +2474,7 @@ def test_python_reserved_keywords(selenium):
     )
     assert o.match == 222
     with pytest.raises(AttributeError):
-        o.match_
+        o.match_  # noqa: B018
     assert eval("o.match") == 222
     keys = ["async", "await", "False", "nonlocal", "yield", "try", "assert"]
     for k in keys:
@@ -2565,4 +2556,4 @@ def test_js_proxy_attribute(selenium):
     assert x.b == 7  # Previously this raised AttributeError
     assert x.c is None
     with pytest.raises(AttributeError):
-        x.d
+        x.d  # noqa: B018

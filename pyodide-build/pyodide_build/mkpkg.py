@@ -13,8 +13,9 @@ from pathlib import Path
 from typing import Any, Literal, TypedDict
 from urllib import request
 
-from packaging.version import Version
 from ruamel.yaml import YAML
+
+from packaging.version import Version
 
 from .common import parse_top_level_import_name
 from .logger import logger
@@ -207,7 +208,9 @@ def make_package(
     try:
         run_prettier(meta_path)
     except FileNotFoundError:
-        warnings.warn("'npx' executable missing, output has not been prettified.")
+        warnings.warn(
+            "'npx' executable missing, output has not been prettified.", stacklevel=1
+        )
 
     logger.success(f"Output written to {meta_path}")
 

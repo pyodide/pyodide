@@ -264,7 +264,7 @@ def replay_genargs_handle_linker_opts(arg: str) -> str | None:
             # breaks emscripten see https://github.com/emscripten-core/emscripten/issues/14460
             "--strip-all",
             "-strip-all",
-            # wasm-ld does not regconize some link flags
+            # wasm-ld does not recognize some link flags
             "--sort-common",
             "--as-needed",
         ]:

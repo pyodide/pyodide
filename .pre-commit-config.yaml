@@ -3,7 +3,7 @@ default_language_version:
   python: "3.11"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.4.0"
+    rev: "v4.5.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -17,26 +17,17 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.254"
+    rev: "v0.1.14"
     hooks:
       - id: ruff
         args: [--fix]
-
-  - repo: https://github.com/psf/black
-    rev: "23.1.0"
-    hooks:
-      - id: black
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v15.0.7"
+    rev: "v17.0.6"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
-
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.0.0-alpha.6"
-    hooks:
-      - id: prettier
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: "v1.10.0"
@@ -48,24 +39,24 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: "v0.9.0.2"
+    rev: "v0.9.0.6"
     hooks:
       - id: shellcheck
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.4"
+    rev: "v2.2.6"
     hooks:
       - id: codespell
         args:
           [
             "--ignore-words-list",
-            "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te",
+            "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te,oint",
           ]
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.1.1"
+    rev: "v1.8.0"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -93,6 +84,11 @@ repos:
         files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
         exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$)
         additional_dependencies: *mypy-deps
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: "v4.0.0-alpha.8"
+    hooks:
+      - id: prettier
 
 ci:
   autoupdate_schedule: "quarterly"
