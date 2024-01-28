@@ -1,4 +1,5 @@
 import asyncio
+import re
 import sys
 import time
 
@@ -344,9 +345,9 @@ def test_console_html(selenium):
         return get_result()
 
     welcome_msg = "Welcome to the Pyodide terminal emulator 🐍"
-    assert (
-        selenium.run_js("return term.get_output()")[: len(welcome_msg)] == welcome_msg
-    )
+    output = selenium.run_js("return term.get_output()")
+    cleaned = re.sub("Pyodide [0-9a-z.]*", "Pyodide", output)
+    assert cleaned[: len(welcome_msg)] == welcome_msg
 
     assert exec_and_get_result("1+1") == ">>> 1+1\n2"
     assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
