@@ -19,6 +19,7 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -26,8 +27,6 @@ from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
-
-from packaging.utils import canonicalize_name
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
