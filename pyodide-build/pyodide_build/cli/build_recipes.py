@@ -48,7 +48,7 @@ class Args:
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
 class InstallOptions:
     compression_level: int
-    metadata: bool
+    metadata_files: bool
 
 
 def build_recipes_no_deps(
@@ -206,7 +206,7 @@ def build_recipes(
     install_options: InstallOptions | None = None
     if install:
         install_options = InstallOptions(
-            metadata=metadata_files, compression_level=compression_level
+            metadata_files=metadata_files, compression_level=compression_level
         )
 
     init_environment()
@@ -237,8 +237,7 @@ def build_recipes(
 def build_recipes_impl(
     packages: list[str],
     args: Args,
-    *,
-    log_dir: str | None,
+    log_dir: Path | None,
     install_options: InstallOptions | None,
 ) -> None:
     if len(packages) == 1 and "," in packages[0]:
