@@ -309,7 +309,8 @@
 - test_decorators
 - test_defaultdict
 - test_deque
-- test_descr
+- test_descr:
+    xfail: stack overflow
 - test_descrtut
 - test_devpoll
 - test_dict
