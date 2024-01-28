@@ -51,21 +51,22 @@ def test_cpython_core(main_test, selenium, request):
         selenium.run(
             dedent(
                 f"""
-            import platform
-            from test import libregrtest
+                import platform
+                from test.libregrtest.main import main
 
-            platform.platform(aliased=True)
-            import _testcapi
-            if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
-                # This uses raise() which doesn't work.
-                del _testcapi.raise_SIGINT_then_send_None
+                platform.platform(aliased=True)
+                import _testcapi
+                if hasattr(_testcapi, "raise_SIGINT_then_send_None"):
+                    # This uses raise() which doesn't work.
+                    del _testcapi.raise_SIGINT_then_send_None
 
-            try:
-                libregrtest.main(["{name}"], ignore_tests={ignore_tests}, verbose=True, verbose3=True)
-            except SystemExit as e:
-                if e.code != 0:
-                    raise RuntimeError(f"Failed with code: {{e.code}}")
-            """
+                match_tests = [[pat, False] for pat in {ignore_tests}]
+                try:
+                    main(["{name}"], match_tests=match_tests, verbose=True, verbose3=True)
+                except SystemExit as e:
+                    if e.code != 0:
+                        raise RuntimeError(f"Failed with code: {{e.code}}")
+                """
             )
         )
     except selenium.JavascriptException:
