@@ -36,6 +36,10 @@ myst:
 - {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
   {pr}`4395`
 
+- {{ Breaking }} Tje `--no-deps` option to `pyodide build-recipes` has been
+  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
+  {pr}`3520`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`
