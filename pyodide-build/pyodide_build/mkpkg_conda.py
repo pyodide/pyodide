@@ -40,8 +40,6 @@ def make_package_conda(
     conda_metadata = MetaData(feedstock_dir)
     # print(conda_metadata)
 
-    top_level = None
-
     patches = conda_metadata.get_value("source/0/patches")
     for patch in patches:
         (package_dir / patch).parent.mkdir(parents=True, exist_ok=True)

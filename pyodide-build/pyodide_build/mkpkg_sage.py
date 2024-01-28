@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import shutil
-import subprocess
 import warnings
 from pathlib import Path
 
@@ -18,8 +17,7 @@ def update_package_sage(
     sage_root: Path,
 ) -> None:
     sage_version = (sage_root / "src" / "VERSION.txt").read_text().strip()
-    sage_version = sage_version.replace('.beta', 'b').replace('.rc', 'rc')
-    sage_upstream = sage_root / "upstream"
+    sage_version = sage_version.replace(".beta", "b").replace(".rc", "rc")
 
     yaml = YAML()
     meta_path = root / package / "meta.yaml"

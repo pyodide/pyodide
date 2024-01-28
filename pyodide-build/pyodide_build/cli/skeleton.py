@@ -133,9 +133,10 @@ def new_recipe_sage(
     from ..mkpkg_sage import update_package_sage
 
     recipe_dir_ = _recipe_dir(recipe_dir)
-    for package in ["sagemath-categories",
-                    "sagemath-environment",
-                    "sagemath-objects",
-                    "sagemath-repl",
-                    ]:
+    for package in [
+        "sagemath-categories",
+        "sagemath-environment",
+        "sagemath-objects",
+        "sagemath-repl",
+    ]:
         update_package_sage(recipe_dir_, package, sage_root=recipe_dir_.parent / "sage")
