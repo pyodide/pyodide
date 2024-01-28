@@ -1,0 +1,32 @@
+From ccc6b026ec9519b26dec2e51a6ac7f3477fb31a9 Mon Sep 17 00:00:00 2001
+From: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
+Date: Thu, 25 Jan 2024 23:58:52 -0800
+Subject: [PATCH] src/sage/misc/timing.py: Move import of resource into method
+
+---
+ src/sage/misc/timing.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/sage/misc/timing.py b/src/sage/misc/timing.py
+index 5e5c49b9594..0a2236ffe91 100644
+--- a/sage/misc/timing.py
++++ b/sage/misc/timing.py
+@@ -17,7 +17,6 @@ Timing functions
+ # ****************************************************************************
+ 
+ 
+-import resource
+ import time
+ 
+ 
+@@ -77,6 +76,7 @@ def cputime(t=0, subprocesses=False):
+         subprocesses = True
+ 
+     if not subprocesses:
++        import resource
+         try:
+             t = float(t)
+         except TypeError:
+-- 
+2.42.0
+

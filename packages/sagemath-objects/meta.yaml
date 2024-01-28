@@ -1,0 +1,34 @@
+package:
+  name: sagemath-objects
+  version: "10.2"
+  top-level:
+    - sage
+source:
+  url: https://files.pythonhosted.org/packages/12/34/f5d845f8e099e0aa4a70628a51eb06b0c7df9c812efd49a7dac32b3d66a1/sagemath-objects-10.2.tar.gz
+  sha256: ed6b1342510f609b0b6ca7de3ee3cebf5c007ff2976f4915ac03d6d4b058df6e
+  patches:
+    - patches/0001-src-sage-misc-timing.py-Move-import-of-resource-into.patch
+about:
+  home: ""
+  PyPI: https://pypi.org/project/sagemath_objects
+  summary:
+    "Sage: Open Source Mathematics Software: Sage objects, elements, parents,
+    categories, coercion, metaclasses"
+  license: GNU General Public License (GPL) v2 or later
+requirements:
+  host:
+    - libgmp
+    - libmpfr
+    - libmpc
+    - gmpy2
+  run:
+    - cysignals
+    - gmpy2
+build:
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include
+  cxxflags: |
+    -std=c++11
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib

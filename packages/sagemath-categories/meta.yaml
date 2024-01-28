@@ -1,0 +1,31 @@
+package:
+  name: sagemath-categories
+  version: "10.2"
+  top-level:
+    - sage
+source:
+  url: https://files.pythonhosted.org/packages/04/27/9ede35f17158a454141f0bf69222b9ea468763ac5b233066ef54e213b34f/sagemath-categories-10.2.tar.gz
+  sha256: 4ab706397efdc396e8a2898e45043cf661aa4a60f3a17618eebeb86b6465620a
+about:
+  home: ""
+  PyPI: https://pypi.org/project/sagemath-categories
+  summary: "Sage: Open Source Mathematics Software: Sage categories and basic rings"
+  license: GNU General Public License (GPL) v2 or later
+requirements:
+  host:
+    - libgmp
+    - libmpfr
+    - libmpc
+    - gmpy2
+    - sagemath-objects
+  run:
+    - sagemath-objects
+    - sagemath-repl
+build:
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include
+  cxxflags: |
+    -std=c++11
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib

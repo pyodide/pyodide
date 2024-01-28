@@ -1,0 +1,13 @@
+package:
+  name: sagemath-environment
+  version: "10.2"
+  top-level:
+    - PUT_TOP_LEVEL_IMPORT_NAMES_HERE
+source:
+  url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
+  sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
+about:
+  home: ""
+  PyPI: https://pypi.org/project/sagemath-environment
+  summary: "Sage: Open Source Mathematics Software: System and software environment"
+  license: GNU General Public License (GPL) v2 or later
