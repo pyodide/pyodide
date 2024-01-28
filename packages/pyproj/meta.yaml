@@ -1,11 +1,11 @@
 package:
   name: pyproj
-  version: 3.4.1
+  version: 3.6.1
   top-level:
     - pyproj
 source:
-  url: https://files.pythonhosted.org/packages/c0/fc/fd53e45d2ad5862d32ab8614e70c3c1f52a8e0d8bd243ee6a23b6a481b4a/pyproj-3.4.1.tar.gz
-  sha256: 261eb29b1d55b1eb7f336127344d9b31284d950a9446d1e0d1c2411f7dd8e3ac
+  url: https://files.pythonhosted.org/packages/7d/84/2b39bbf888c753ea48b40d47511548c77aa03445465c35cc4c4e9649b643/pyproj-3.6.1.tar.gz
+  sha256: 44aa7c704c2b7d8fb3d483bbf75af6cb2350d30a63b144279a09b75fead501bf
 
 requirements:
   host:
@@ -16,7 +16,7 @@ requirements:
 
 build:
   script: |
-    export PROJ_VERSION=8.2.1
+    export PROJ_VERSION=9.3.1
     export PROJ_DIR=${WASM_LIBRARY_DIR}
     export PROJ_INCDIR=${WASM_LIBRARY_DIR}/include
     export PROJ_LIBDIR=${WASM_LIBRARY_DIR}/lib
