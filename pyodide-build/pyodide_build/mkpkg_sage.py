@@ -27,7 +27,8 @@ def update_package_sage(
 
     sdist_name = f"{package}-{sage_version}.tar.gz"
     sdist_path = sage_root / "upstream" / sdist_name
-    yaml_content["source"]["url"] = f"file://{sdist_path}"
+    shutil.copyfile(sdist_path, root / package / sdist_name)
+    yaml_content["source"]["url"] = f"file:{sdist_name}"
     yaml_content["source"].pop("md5", None)
     yaml_content["source"]["sha256"] = _get_sha256_checksum(sdist_path)
     yaml_content["package"]["version"] = sage_version
