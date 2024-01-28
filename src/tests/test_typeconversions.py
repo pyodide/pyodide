@@ -164,7 +164,7 @@ def test_number_conversions(selenium_module_scope, n):
     x_js = run_js("(s) => self.x_js = eval(s)")(json.dumps(n))
     run_js("(x_py) => Number(x_py) === x_js")(n)
 
-    if type(x_js) is float:
+    if isinstance(x_js, float):
         assert x_js == float(n)
     else:
         assert x_js == n
@@ -352,7 +352,6 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
 @run_in_pyodide
 def test_hyp_py2js2py(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.obj = obj
@@ -379,7 +378,6 @@ def test_hyp_py2js2py(selenium, obj):
 @run_in_pyodide
 def test_hyp_py2js2py_2(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.o = obj
@@ -393,7 +391,6 @@ def test_hyp_py2js2py_2(selenium, obj):
 @run_in_pyodide
 def test_big_integer_py2js2py(selenium, a):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.a = a
@@ -412,7 +409,6 @@ def test_big_integer_py2js2py(selenium, a):
 @run_in_pyodide
 def test_hyp_tojs_no_crash(selenium, obj):
     import __main__
-
     from pyodide.code import run_js
 
     __main__.x = obj
@@ -475,19 +471,16 @@ def test_python2js1(selenium, py, js):
 def test_python2js2(selenium):
     from pyodide.code import run_js
 
-    assert (
-        list(
-            run_js(
-                """
+    assert list(
+        run_js(
+            """
                 (x) => {
                     x = x.toJs();
                     return [x.constructor.name, x.length, x[0]];
                 }
                 """
-            )(b"bytes")
-        )
-        == ["Uint8Array", 5, 98]
-    )
+        )(b"bytes")
+    ) == ["Uint8Array", 5, 98]
 
 
 @run_in_pyodide
@@ -510,20 +503,17 @@ def test_python2js3(selenium):
 def test_python2js4(selenium):
     from pyodide.code import run_js
 
-    assert (
-        list(
-            run_js(
-                """
+    assert list(
+        run_js(
+            """
                 (proxy) => {
                     let typename = proxy.type;
                     let x = proxy.toJs();
                     return [proxy.type, x.constructor.name, x.get(42)];
                 }
                 """
-            )({42: 64})
-        )
-        == ["dict", "Map", 64]
-    )
+        )({42: 64})
+    ) == ["dict", "Map", 64]
 
 
 @run_in_pyodide
@@ -1018,11 +1008,11 @@ def test_jsproxy_attribute_error(selenium):
     assert point.y == 43
 
     with pytest.raises(AttributeError, match="z"):
-        point.z
+        point.z  # noqa: B018
 
     del point.y
     with pytest.raises(AttributeError, match="y"):
-        point.y
+        point.y  # noqa: B018
 
     assert run_js("(point) => point.y;")(point) is None
 
@@ -1228,33 +1218,27 @@ def test_tojs8(selenium):
 
 
 def test_tojs9(selenium):
-    assert (
-        set(
-            selenium.run_js(
-                """
+    assert set(
+        selenium.run_js(
+            """
                 return Array.from(pyodide.runPython(`
                     from pyodide.ffi import to_js
                     to_js({ 1, "1" })
                 `).values())
                 """
-            )
         )
-        == {1, "1"}
-    )
+    ) == {1, "1"}
 
-    assert (
-        dict(
-            selenium.run_js(
-                """
+    assert dict(
+        selenium.run_js(
+            """
                 return Array.from(pyodide.runPython(`
                     from pyodide.ffi import to_js
                     to_js({ 1 : 7, "1" : 9 })
                 `).entries())
                 """
-            )
         )
-        == {1: 7, "1": 9}
-    )
+    ) == {1: 7, "1": 9}
 
 
 @run_in_pyodide

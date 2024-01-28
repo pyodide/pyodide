@@ -309,6 +309,7 @@ export interface API {
   pyodide_py: any;
   pyodide_code: any;
   pyodide_ffi: any;
+  pyodide_base: any;
   globals: PyProxy;
   rawRun: (code: string) => [number, string];
   runPythonInternal: (code: string) => any;

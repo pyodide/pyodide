@@ -1,6 +1,7 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+
 # Added by C:
 # JsException (from jsproxy.c)
 
@@ -621,3 +622,11 @@ def find_imports(source: str) -> list[str]:
                 continue
             imports.add(module_name.split(".")[0])
     return list(sorted(imports))
+
+
+def pyimport_impl(path: str) -> Any:
+    [stem, *fromlist] = path.rsplit(".", 1)
+    res = __import__(stem, fromlist=fromlist)
+    if fromlist:
+        res = getattr(res, fromlist[0])
+    return res

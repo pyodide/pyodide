@@ -60,7 +60,7 @@ See {issue}`scipy/scipy#15290`.
 
 Some of the challenges that Pyodide faces, such as maintaining a collection of
 build recipes, dependency resolution from PyPI, etc are already solved in either
-Python or JavaScript ecosystems. We should therefore strive to better re-use
+Python or JavaScript ecosystems. We should therefore strive to better reuse
 existing tooling, and seeking synergies with existing initiatives in this space,
 such as conda-forge.
 

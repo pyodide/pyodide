@@ -6,12 +6,21 @@ failure_exit() {
 }
 
 check_python_version() {
+  if [ -z "$PYMAJOR$PYMINOR" ]; then
+    echo >&2 "$0: This script expects that environment variables PYMAJOR and PYMINOR are set; skipping check_python_version"
+    return
+  fi
   if ! command -v python"$PYMAJOR"."$PYMINOR" &> /dev/null; then
     echo >&2 "Must compile with python $PYMAJOR.$PYMINOR."
     exit 1
   fi
 }
+
 check_python_headers() {
+  if [ -z "$PYMAJOR$PYMINOR" ]; then
+    echo >&2 "$0: This script expects that environment variables PYMAJOR and PYMINOR are set; skipping check_python_headers"
+    return
+  fi
   local python_headers_present
   python_headers_present=$(pkg-config --libs python-"$PYMAJOR"."$PYMINOR")
 

@@ -41,7 +41,15 @@ def test_ffi_import_star():
     exec("from pyodide.ffi import *", {})
 
 
-def test_pyimport(selenium):
+def test_pyimport1():
+    from _pyodide._base import pyimport_impl
+
+    assert pyimport_impl("pyodide").__name__ == "pyodide"
+    assert pyimport_impl("pyodide.console").__name__ == "pyodide.console"
+    assert pyimport_impl("pyodide.console.BANNER").startswith("Python ")
+
+
+def test_pyimport2(selenium):
     selenium.run_js(
         """
         let platform = pyodide.pyimport("platform");
@@ -1155,7 +1163,7 @@ def test_js_stackframes(selenium):
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.asm.js", "pyimport"],
-        ["importlib/__init__.py", "import_module"],
+        ["_pyodide/_base.py", "pyimport_impl"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
@@ -1460,9 +1468,8 @@ def test_module_not_found_hook(selenium_standalone):
 
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.stdoutStrings = [];
             self.stderrStrings = [];
             function stdout(s){
@@ -1483,9 +1490,7 @@ def test_args(selenium_standalone_noload):
             pyodide._module._run_main();
             return stdoutStrings.pop()
             """
-        )
-        == repr([x * x + 1 for x in range(10)])
-    )
+    ) == repr([x * x + 1 for x in range(10)])
 
 
 def test_args_OO(selenium_standalone_noload):

@@ -43,6 +43,6 @@ def test_fpcasts(selenium):
     t.kwargs2()
     t.kwargs3()
 
-    t.getset0
-    t.getset1
+    t.getset0  # noqa: B018
+    t.getset1  # noqa: B018
     t.getset1 = 5

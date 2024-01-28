@@ -118,9 +118,7 @@ def source(
 
 # simple 'pyodide build' command
 def main(
-    source_location: Optional[  # noqa: typer does not accept list[str] | None yet.
-        str
-    ] = typer.Argument(
+    source_location: Optional[str] = typer.Argument(  # noqa: UP007 typer does not accept list[str] | None yet.
         "",
         help="Build source, can be source folder, pypi version specification, "
         "or url to a source dist archive or wheel file. If this is blank, it "
@@ -162,9 +160,7 @@ def main(
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
     ),
-    config_setting: Optional[  # noqa: typer does not accept list[str] | None yet.
-        list[str]
-    ] = typer.Option(
+    config_setting: Optional[list[str]] = typer.Option(  # noqa: UP007 typer does not accept list[str] | None yet.
         None,
         "--config-setting",
         "-C",

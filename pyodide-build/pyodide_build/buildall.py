@@ -42,8 +42,9 @@ from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
-    def __init__(self, returncode: int) -> None:
+    def __init__(self, returncode: int, msg: str) -> None:
         self.returncode = returncode
+        self.msg = msg
         super().__init__()
 
 
@@ -78,10 +79,13 @@ class BasePackage:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
-    def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
+    def build_path(self, build_dir: Path) -> Path:
+        return build_dir / self.name / "build"
 
-    def build(self, build_args: BuildArgs) -> None:
+    def needs_rebuild(self, build_dir: Path) -> bool:
+        return needs_rebuild(self.pkgdir, self.build_path(build_dir), self.meta.source)
+
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -134,7 +138,7 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, build_args: BuildArgs) -> None:
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         p = subprocess.run(
             [
                 "pyodide",
@@ -147,6 +151,7 @@ class Package(BasePackage):
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
                 f"--host-install-dir={build_args.host_install_dir}",
+                f"--build-dir={build_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -160,14 +165,15 @@ class Package(BasePackage):
         )
 
         if p.returncode != 0:
-            logger.error(f"Error building {self.name}. Printing build logs.")
+            msg = []
+            msg.append(f"Error building {self.name}. Printing build logs.")
             logfile = self.pkgdir / "build.log"
             if logfile.is_file():
-                logger.error(logfile.read_text(encoding="utf-8"))
+                msg.append(logfile.read_text(encoding="utf-8") + "\n")
             else:
-                logger.error("ERROR: No build log found.")
-            logger.error("ERROR: cancelling buildall")
-            raise BuildError(p.returncode)
+                msg.append("ERROR: No build log found.")
+            msg.append(f"ERROR: cancelling buildall due to error building {self.name}")
+            raise BuildError(p.returncode, "\n".join(msg))
 
 
 class PackageStatus:
@@ -472,7 +478,9 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
+def generate_needs_build_set(
+    pkg_map: dict[str, BasePackage], build_dir: Path
+) -> set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -484,7 +492,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     needs_build: set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
-        if pkg.needs_rebuild():
+        if pkg.needs_rebuild(build_dir):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
 
@@ -492,6 +500,7 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
 def build_from_graph(
     pkg_map: dict[str, BasePackage],
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> None:
@@ -520,7 +529,7 @@ def build_from_graph(
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
     else:
-        needs_build = generate_needs_build_set(pkg_map)
+        needs_build = generate_needs_build_set(pkg_map, build_dir)
 
     # We won't rebuild the complement of the packages that we will build.
     already_built = set(pkg_map.keys()).difference(needs_build)
@@ -549,7 +558,7 @@ def build_from_graph(
         if len(pkg.unbuilt_host_dependencies) == 0:
             build_queue.put((job_priority(pkg), pkg))
 
-    built_queue: Queue[BasePackage | Exception] = Queue()
+    built_queue: Queue[BasePackage | BaseException] = Queue()
     thread_lock = Lock()
     queue_idx = 1
     building_rust_pkg = False
@@ -589,7 +598,7 @@ def build_from_graph(
 
             success = True
             try:
-                pkg.build(build_args)
+                pkg.build(build_args, build_dir)
             except Exception as e:
                 built_queue.put(e)
                 success = False
@@ -611,27 +620,27 @@ def build_from_graph(
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    with Live(progress_formatter, console=console_stdout):
-        while num_built < len(pkg_map):
-            match built_queue.get():
-                case BuildError() as err:
-                    raise SystemExit(err.returncode)
-                case Exception() as err:
-                    raise err
-                case a_package:
-                    # MyPy should understand that this is a BasePackage
-                    assert not isinstance(a_package, Exception)
-                    pkg = a_package
+    try:
+        with Live(progress_formatter, console=console_stdout):
+            while num_built < len(pkg_map):
+                match built_queue.get():
+                    case BaseException() as err:
+                        raise err
+                    case BasePackage() as pkg:
+                        pass
 
-            num_built += 1
+                num_built += 1
 
-            progress_formatter.update_progress_bar()
+                progress_formatter.update_progress_bar()
 
-            for _dependent in pkg.host_dependents:
-                dependent = pkg_map[_dependent]
-                dependent.unbuilt_host_dependencies.remove(pkg.name)
-                if len(dependent.unbuilt_host_dependencies) == 0:
-                    build_queue.put((job_priority(dependent), dependent))
+                for _dependent in pkg.host_dependents:
+                    dependent = pkg_map[_dependent]
+                    dependent.unbuilt_host_dependencies.remove(pkg.name)
+                    if len(dependent.unbuilt_host_dependencies) == 0:
+                        build_queue.put((job_priority(dependent), dependent))
+    except BuildError as err:
+        logger.error(err.msg)
+        sys.exit(err.returncode)
 
 
 def generate_packagedata(
@@ -747,6 +756,7 @@ def build_packages(
     packages_dir: Path,
     targets: str,
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
@@ -756,7 +766,7 @@ def build_packages(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
+    build_from_graph(pkg_map, build_args, build_dir, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -841,6 +851,8 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     if args.host_install_dir is None:
         args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
     if args.compression_level is None:
-        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
+        args.compression_level = int(  # type: ignore[unreachable]
+            build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL")
+        )
 
     return args

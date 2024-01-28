@@ -10,6 +10,7 @@ from pyodide_build import buildall
 from pyodide_build.pywasmcross import BuildArgs
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
+BUILD_DIR = RECIPE_DIR
 
 
 def test_generate_dependency_graph():
@@ -102,14 +103,16 @@ def test_build_dependencies(n_jobs, monkeypatch):
     build_list = []
 
     class MockPackage(buildall.Package):
-        def build(self, args: Any) -> None:
+        def build(self, args: Any, build_dir: Path) -> None:
             build_list.append(self.name)
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
 
     pkg_map = buildall.generate_dependency_graph(RECIPE_DIR, {"pkg_1", "pkg_2"})
 
-    buildall.build_from_graph(pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True)
+    buildall.build_from_graph(
+        pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True
+    )
 
     assert set(build_list) == {
         "pkg_1",
@@ -129,7 +132,7 @@ def test_build_error(n_jobs, monkeypatch):
     """Try building all the dependency graph, without the actual build operations"""
 
     class MockPackage(buildall.Package):
-        def build(self, args: Any) -> None:
+        def build(self, args: Any, build_dir: Path) -> None:
             raise ValueError("Failed build")
 
     monkeypatch.setattr(buildall, "Package", MockPackage)
@@ -138,7 +141,7 @@ def test_build_error(n_jobs, monkeypatch):
 
     with pytest.raises(ValueError, match="Failed build"):
         buildall.build_from_graph(
-            pkg_map, BuildArgs(), n_jobs=n_jobs, force_rebuild=True
+            pkg_map, BuildArgs(), BUILD_DIR, n_jobs=n_jobs, force_rebuild=True
         )
 
 

@@ -1,0 +1,31 @@
+package:
+  name: ppl
+  version: 1.2
+  tag:
+    - library
+source:
+  url: https://www.bugseng.com/products/ppl/download/ftp/releases/1.2/ppl-1.2.tar.xz
+  sha256: 691f0d5a4fb0e206f4e132fc9132c71d6e33cdda168470d40ac3cf62340e9a60
+  patches:
+    - patches/clang5-support.patch
+requirements:
+  host:
+    - libgmp
+    - glpk
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC -Wno-reserved-identifier -Wno-reserved-macro-identifier" \
+        CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
+        CXXFLAGS="-std=c++11 -fPIC -Wno-reserved-identifier -Wno-zero-as-null-pointer-constant -Wno-double-promotion -Wno-unsafe-buffer-usage -Wno-extra-semi-stmt -Wno-shadow -Wno-implicit-fallthrough -Wno-deprecated-literal-operator -Wno-suggest-override -Wno-suggest-destructor-override -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-copy-with-user-provided-copy -Wno-unused-template -Wno-comma -Wno-unreachable-code-return -Wno-deprecated-declarations -Wno-unreachable-code-break -Wno-format-nonliteral -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-weak-vtables -Wno-old-style-cast -Wno-header-hygiene -Wno-undef" \
+        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
+        --disable-dependency-tracking \
+        --enable-coefficients=mpz --disable-fpmath \
+        --enable-interfaces=c,c++ \
+        --disable-shared \
+        --with-gmp="${WASM_LIBRARY_DIR}" \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
