@@ -6,27 +6,23 @@ Builds a Pyodide package.
 
 import cgi
 import fnmatch
-import json
 import os
 import shutil
 import subprocess
 import sys
-import textwrap
 import urllib
 from collections.abc import Iterator
-from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
-from types import TracebackType
-from typing import Any, TextIO, cast
+from typing import Any, cast
 from urllib import request
 
-from . import pypabuild
+from . import common, pypabuild
+from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
 from .build_env import (
     RUST_BUILD_PRELUDE,
     get_build_environment_vars,
     get_build_flag,
-    get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -36,7 +32,6 @@ from .common import (
     chdir,
     exit_with_stdio,
     find_matching_wheels,
-    find_missing_executables,
     make_zip_archive,
     modify_wheel,
 )
@@ -55,109 +50,6 @@ shutil.register_archive_format("whl", _make_whlfile, description="Wheel file")
 shutil.register_unpack_format(
     "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
 )
-
-
-class BashRunnerWithSharedEnvironment:
-    """Run multiple bash scripts with persistent environment.
-
-    Environment is stored to "env" member between runs. This can be updated
-    directly to adjust the environment, or read to get variables.
-    """
-
-    def __init__(self, env: dict[str, str] | None = None) -> None:
-        if env is None:
-            env = dict(os.environ)
-
-        self._reader: TextIO | None
-        self._fd_write: int | None
-        self.env: dict[str, str] = env
-
-    def __enter__(self) -> "BashRunnerWithSharedEnvironment":
-        fd_read, self._fd_write = os.pipe()
-        self._reader = os.fdopen(fd_read, "r")
-        return self
-
-    def run_unchecked(self, cmd: str, **opts: Any) -> subprocess.CompletedProcess[str]:
-        assert self._fd_write is not None
-        assert self._reader is not None
-
-        write_env_pycode = ";".join(
-            [
-                "import os",
-                "import json",
-                f'os.write({self._fd_write}, json.dumps(dict(os.environ)).encode() + b"\\n")',
-            ]
-        )
-        write_env_shell_cmd = f"{sys.executable} -c '{write_env_pycode}'"
-        full_cmd = f"{cmd}\n{write_env_shell_cmd}"
-        result = subprocess.run(
-            ["bash", "-ce", full_cmd],
-            pass_fds=[self._fd_write],
-            env=self.env,
-            encoding="utf8",
-            **opts,
-        )
-        if result.returncode == 0:
-            self.env = json.loads(self._reader.readline())
-        return result
-
-    def run(
-        self,
-        cmd: str | None,
-        *,
-        script_name: str,
-        cwd: Path | str | None = None,
-        **opts: Any,
-    ) -> subprocess.CompletedProcess[str] | None:
-        """Run a bash script. Any keyword arguments are passed on to subprocess.run."""
-        if not cmd:
-            return None
-        if cwd is None:
-            cwd = Path.cwd()
-        cwd = Path(cwd).absolute()
-        logger.info(f"Running {script_name} in {str(cwd)}")
-        opts["cwd"] = cwd
-        result = self.run_unchecked(cmd, **opts)
-        if result.returncode != 0:
-            logger.error(f"ERROR: {script_name} failed")
-            logger.error(textwrap.indent(cmd, "    "))
-            exit_with_stdio(result)
-        return result
-
-    def __exit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        """Free the file descriptors."""
-
-        if self._fd_write:
-            os.close(self._fd_write)
-            self._fd_write = None
-        if self._reader:
-            self._reader.close()
-            self._reader = None
-
-
-@contextmanager
-def get_bash_runner(
-    extra_envs: dict[str, str]
-) -> Iterator[BashRunnerWithSharedEnvironment]:
-    PYODIDE_ROOT = get_pyodide_root()
-    env = get_build_environment_vars()
-    env.update(extra_envs)
-
-    with BashRunnerWithSharedEnvironment(env=env) as b:
-        # Working in-tree, add emscripten toolchain into PATH and set ccache
-        if Path(PYODIDE_ROOT, "pyodide_env.sh").exists():
-            b.run(
-                f"source {PYODIDE_ROOT}/pyodide_env.sh",
-                script_name="source pyodide_env",
-                stderr=subprocess.DEVNULL,
-            )
-
-        yield b
 
 
 class RecipeBuilder:
@@ -190,7 +82,7 @@ class RecipeBuilder:
             If True, continue a build from the middle. For debugging. Implies "force_rebuild".
         """
         recipe = Path(recipe).resolve()
-        self.pkg_root, self.recipe = _load_package_config(recipe)
+        self.pkg_root, self.recipe = self._load_recipe(recipe)
 
         self.name = self.recipe.package.name
         self.version = self.recipe.package.version
@@ -198,7 +90,9 @@ class RecipeBuilder:
         self.build_args = build_args
 
         self.build_dir = (
-            Path(build_dir).resolve() / self.name / "build" if build_dir else self.pkg_root / "build"
+            Path(build_dir).resolve() / self.name / "build"
+            if build_dir
+            else self.pkg_root / "build"
         )
         self.src_extract_dir = (
             self.build_dir / self.fullname
@@ -309,11 +203,39 @@ class RecipeBuilder:
                 shutil.rmtree(self.dist_dir, ignore_errors=True)
                 shutil.copytree(self.src_dist_dir, self.dist_dir)
 
+    def _load_recipe(self, package_dir: Path) -> tuple[Path, MetaConfig]:
+        """
+        Load the package configuration from the given directory.
+
+        Parameters
+        ----------
+        package_dir
+            The directory containing the package configuration, or the path to the
+            package configuration file.
+
+        Returns
+        -------
+        pkg_dir
+            The directory containing the package configuration.
+        pkg
+            The package configuration.
+        """
+        if not package_dir.exists():
+            raise FileNotFoundError(f"Package directory {package_dir} does not exist")
+
+        if package_dir.is_dir():
+            meta_file = package_dir / "meta.yaml"
+        else:
+            meta_file = package_dir
+            package_dir = meta_file.parent
+
+        return package_dir, MetaConfig.from_yaml(meta_file)
+
     def _check_executables(self) -> None:
         """
         Check that the executables required to build the package are available.
         """
-        missing_executables = find_missing_executables(
+        missing_executables = common.find_missing_executables(
             self.recipe.requirements.executable
         )
         if missing_executables:
@@ -710,6 +632,7 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
     return n_moved
 
 
+# TODO: move this to common.py or somewhere else
 def needs_rebuild(
     pkg_root: Path, buildpath: Path, source_metadata: _SourceSpec
 ) -> bool:
@@ -750,32 +673,3 @@ def needs_rebuild(
         if source_file.stat().st_mtime > package_time:
             return True
     return False
-
-
-def _load_package_config(package_dir: Path) -> tuple[Path, MetaConfig]:
-    """
-    Load the package configuration from the given directory.
-
-    Parameters
-    ----------
-    package_dir
-        The directory containing the package configuration, or the path to the
-        package configuration file.
-
-    Returns
-    -------
-    pkg_dir
-        The directory containing the package configuration.
-    pkg
-        The package configuration.
-    """
-    if not package_dir.exists():
-        raise FileNotFoundError(f"Package directory {package_dir} does not exist")
-
-    if package_dir.is_dir():
-        meta_file = package_dir / "meta.yaml"
-    else:
-        meta_file = package_dir
-        package_dir = meta_file.parent
-
-    return package_dir, MetaConfig.from_yaml(meta_file)

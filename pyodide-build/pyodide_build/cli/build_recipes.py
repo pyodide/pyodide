@@ -116,7 +116,7 @@ def recipe(
                 package_path, build_args, build_dir_, force_rebuild, continue_
             )
             builder.build()
-            
+
     else:
         if len(packages) == 1 and "," in packages[0]:
             # Handle packages passed with old comma separated syntax.

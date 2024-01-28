@@ -4,84 +4,65 @@ import time
 from pathlib import Path
 
 import pydantic
+import pytest
 
 from pyodide_build import build_env, buildpkg, common
-from pyodide_build.io import MetaConfig, _SourceSpec
+from pyodide_build.buildpkg import RecipeBuilder
+from pyodide_build.io import _SourceSpec
+from pyodide_build.pywasmcross import BuildArgs
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
 WHEEL_DIR = Path(__file__).parent / "_test_wheels"
 
 
-def test_subprocess_with_shared_env_1():
-    with buildpkg.BashRunnerWithSharedEnvironment() as p:
-        p.env.pop("A", None)
+@pytest.fixture
+def tmp_builder(tmp_path):
+    # Dummy builder to test other functions
+    builder = RecipeBuilder(
+        recipe=RECIPE_DIR / "pkg_1",
+        build_args=BuildArgs(),
+        build_dir=tmp_path,
+        force_rebuild=False,
+        continue_=False,
+    )
 
-        res = p.run_unchecked("A=6; echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == "6\n"
-        assert p.env.get("A", None) is None
-
-        p.run_unchecked("export A=2")
-        assert p.env["A"] == "2"
-
-        res = p.run_unchecked("echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == "2\n"
-
-        res = p.run_unchecked("A=6; echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == "6\n"
-        assert p.env.get("A", None) == "6"
-
-        p.env["A"] = "7"
-        res = p.run_unchecked("echo $A", stdout=subprocess.PIPE)
-        assert res.stdout == "7\n"
-        assert p.env["A"] == "7"
+    yield builder
 
 
-def test_subprocess_with_shared_env_cwd(tmp_path: Path) -> None:
-    src_dir = tmp_path / "build/package_name"
-    src_dir.mkdir(parents=True)
-    script = "touch out.txt"
-    with buildpkg.BashRunnerWithSharedEnvironment() as shared_env:
-        shared_env.run_unchecked(script, cwd=src_dir)
-        assert (src_dir / "out.txt").exists()
+def test_constructor(tmp_path):
+    builder = RecipeBuilder(
+        recipe=RECIPE_DIR / "beautifulsoup4",
+        build_args=BuildArgs(),
+        build_dir=tmp_path,
+        force_rebuild=False,
+        continue_=False,
+    )
+
+    assert builder.name == "beautifulsoup4"
+    assert builder.version == "4.10.0"
+    assert builder.fullname == "beautifulsoup4-4.10.0"
+
+    assert builder.pkg_root == RECIPE_DIR / "beautifulsoup4"
+    assert builder.build_dir == tmp_path / "beautifulsoup4" / "build"
+    assert (
+        builder.src_extract_dir
+        == tmp_path / "beautifulsoup4" / "build" / "beautifulsoup4-4.10.0"
+    )
+    assert (
+        builder.src_dist_dir
+        == tmp_path / "beautifulsoup4" / "build" / "beautifulsoup4-4.10.0" / "dist"
+    )
+    assert builder.dist_dir == RECIPE_DIR / "beautifulsoup4" / "dist"
 
 
-def test_subprocess_with_shared_env_logging(capfd, tmp_path):
-    from pytest import raises
+def test_load_recipe(tmp_builder):
+    root, recipe = tmp_builder._load_recipe(RECIPE_DIR / "pkg_1")
+    assert root == RECIPE_DIR / "pkg_1"
+    assert recipe.package.name == "pkg_1"
 
-    with buildpkg.BashRunnerWithSharedEnvironment() as p:
-        p.run("echo 1000", script_name="a test script")
-        cap = capfd.readouterr()
-        assert [l.strip() for l in cap.out.splitlines()] == [
-            f"Running a test script in {Path.cwd()}",
-            "1000",
-        ]
-        assert cap.err == ""
-
-        dir = tmp_path / "a"
-        dir.mkdir()
-        p.run("echo 1000", script_name="test script", cwd=dir)
-        cap = capfd.readouterr()
-        assert [l.strip() for l in cap.out.splitlines()] == [
-            "Running test script in",
-            str(dir),
-            "1000",
-        ]
-        assert cap.err == ""
-
-        dir = tmp_path / "b"
-        dir.mkdir()
-        with raises(SystemExit) as e:
-            p.run("exit 7", script_name="test2 script", cwd=dir)
-        cap = capfd.readouterr()
-        assert e.value.args[0] == 7
-        assert [l.strip() for l in cap.out.splitlines()] == [
-            "Running test2 script in",
-            str(dir),
-        ]
-        assert [l.strip() for l in cap.err.splitlines()] == [
-            "ERROR: test2 script failed",
-            "exit 7",
-        ]
+    root, recipe = tmp_builder._load_recipe(RECIPE_DIR / "pkg_1" / "meta.yaml")
+    assert root == RECIPE_DIR / "pkg_1"
+    assert recipe.package.name == "pkg_1"
 
 
 def test_prepare_source(monkeypatch, tmp_path):
@@ -96,18 +77,34 @@ def test_prepare_source(monkeypatch, tmp_path):
     monkeypatch.setattr(shutil, "move", lambda *args, **kwargs: True)
 
     test_pkgs = [
-        MetaConfig.from_yaml(RECIPE_DIR / "packaging/meta.yaml"),
-        MetaConfig.from_yaml(RECIPE_DIR / "micropip/meta.yaml"),
+        RECIPE_DIR / "packaging/meta.yaml",
+        RECIPE_DIR / "micropip/meta.yaml",
     ]
 
     for pkg in test_pkgs:
-        source_dir_name = pkg.package.name + "-" + pkg.package.version
-        buildpath = tmp_path / pkg.package.name / "build"
-        src_metadata = pkg.source
-        srcpath = buildpath / source_dir_name
-        buildpkg.prepare_source(buildpath, srcpath, src_metadata)
+        builder = RecipeBuilder(
+            recipe=pkg,
+            build_args=BuildArgs(),
+            build_dir=tmp_path,
+        )
+        builder._prepare_source()
+        assert builder.src_extract_dir.is_dir()
 
-        assert srcpath.is_dir()
+
+def test_check_executables(tmp_path, monkeypatch):
+    builder = RecipeBuilder(
+        recipe=RECIPE_DIR / "pkg_test_executable",
+        build_args=BuildArgs(),
+        build_dir=tmp_path,
+    )
+
+    monkeypatch.setattr(
+        common, "find_missing_executables", lambda executables: ["echo"]
+    )
+    with pytest.raises(
+        RuntimeError, match="The following executables are required to build"
+    ):
+        builder._check_executables()
 
 
 def test_unvendor_tests(tmpdir):
