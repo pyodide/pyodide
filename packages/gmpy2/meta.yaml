@@ -1,5 +1,6 @@
 package:
   name: gmpy2
+  _disabled: true
   version: 2.1.5
   top-level:
     - gmpy2
