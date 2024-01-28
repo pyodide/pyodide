@@ -1,14 +1,14 @@
-from pathlib import Path
 import dataclasses
-
 import sys
+from pathlib import Path
+
 import typer
 
-from ..pywasmcross import BuildArgs
 from .. import build_env, buildall, buildpkg
 from ..build_env import init_environment
 from ..common import get_num_cores
 from ..logger import logger
+from ..pywasmcross import BuildArgs
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -28,14 +28,16 @@ class Args:
         install_dir: Path | str | None = None,
         build_args: BuildArgs,
         force_rebuild: bool,
-        n_jobs: int | None = None
+        n_jobs: int | None = None,
     ):
         root = Path.cwd()
         self.recipe_dir = (
             root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
         )
         self.build_dir = self.recipe_dir if not build_dir else Path(build_dir).resolve()
-        self.install_dir = root / "dist" if not install_dir else Path(install_dir).resolve()
+        self.install_dir = (
+            root / "dist" if not install_dir else Path(install_dir).resolve()
+        )
         self.build_args = build_args
         self.force_rebuild = force_rebuild
         self.n_jobs = n_jobs or get_num_cores()
@@ -109,13 +111,15 @@ def build_recipes_no_deps(
         build_args=build_args,
         build_dir=build_dir,
         recipe_dir=recipe_dir,
-        force_rebuild=force_rebuild
+        force_rebuild=force_rebuild,
     )
 
     return build_recipes_no_deps_impl(packages, args, continue_)
 
 
-def build_recipes_no_deps_impl(packages: list[str], args: Args, continue_: bool) -> None:
+def build_recipes_no_deps_impl(
+    packages: list[str], args: Args, continue_: bool
+) -> None:
     # TODO: use multiprocessing?
     for package in packages:
         package_path = args.recipe_dir / package
@@ -201,7 +205,9 @@ def build_recipes(
 
     install_options: InstallOptions | None = None
     if install:
-        install_options = InstallOptions(metadata=metadata_files, compression_level=compression_level)
+        install_options = InstallOptions(
+            metadata=metadata_files, compression_level=compression_level
+        )
 
     init_environment()
 
@@ -222,13 +228,19 @@ def build_recipes(
         install_dir=install_dir,
         recipe_dir=recipe_dir,
         force_rebuild=force_rebuild,
-        n_jobs=n_jobs
+        n_jobs=n_jobs,
     )
     log_dir_ = Path(log_dir).resolve() if log_dir else None
     build_recipes_impl(packages, args, log_dir_, install_options)
 
 
-def build_recipes_impl(packages: list[str], args: Args, *, log_dir: str | None, install_options: InstallOptions | None) -> None:
+def build_recipes_impl(
+    packages: list[str],
+    args: Args,
+    *,
+    log_dir: str | None,
+    install_options: InstallOptions | None,
+) -> None:
     if len(packages) == 1 and "," in packages[0]:
         # Handle packages passed with old comma separated syntax.
         # This is to support `PYODIDE_PACKAGES="pkg1,pkg2,..." make` syntax.
