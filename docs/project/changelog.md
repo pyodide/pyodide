@@ -16,6 +16,8 @@ myst:
 
 ## Unreleased
 
+- Upgraded CoolProp to 6.6.0 {pr}`4397`.
+
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
   {pr}`4399`
 
