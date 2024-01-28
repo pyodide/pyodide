@@ -36,7 +36,7 @@ myst:
 - {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
   {pr}`4395`
 
-- {{ Breaking }} Tje `--no-deps` option to `pyodide build-recipes` has been
+- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
   replaced with a separate subcommand `pyodide build-recipes-no-deps`.
   {pr}`3520`
 
