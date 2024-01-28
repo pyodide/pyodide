@@ -19,7 +19,6 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -27,6 +26,8 @@ from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
+
+from packaging.utils import canonicalize_name
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
@@ -42,8 +43,9 @@ from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
-    def __init__(self, returncode: int) -> None:
+    def __init__(self, returncode: int, msg: str) -> None:
         self.returncode = returncode
+        self.msg = msg
         super().__init__()
 
 
@@ -164,14 +166,15 @@ class Package(BasePackage):
         )
 
         if p.returncode != 0:
-            logger.error(f"Error building {self.name}. Printing build logs.")
+            msg = []
+            msg.append(f"Error building {self.name}. Printing build logs.")
             logfile = self.pkgdir / "build.log"
             if logfile.is_file():
-                logger.error(logfile.read_text(encoding="utf-8"))
+                msg.append(logfile.read_text(encoding="utf-8") + "\n")
             else:
-                logger.error("ERROR: No build log found.")
-            logger.error("ERROR: cancelling buildall")
-            raise BuildError(p.returncode)
+                msg.append("ERROR: No build log found.")
+            msg.append(f"ERROR: cancelling buildall due to error building {self.name}")
+            raise BuildError(p.returncode, "\n".join(msg))
 
 
 class PackageStatus:
@@ -618,27 +621,29 @@ def build_from_graph(
         Thread(target=builder, args=(n + 1,), daemon=True).start()
 
     num_built = len(already_built)
-    with Live(progress_formatter, console=console_stdout):
-        while num_built < len(pkg_map):
-            match built_queue.get():
-                case BuildError() as err:
-                    raise SystemExit(err.returncode)
-                case Exception() as err:
-                    raise err
-                case a_package:
-                    # MyPy should understand that this is a BasePackage
-                    assert not isinstance(a_package, Exception)
-                    pkg = a_package
+    try:
+        with Live(progress_formatter, console=console_stdout):
+            while num_built < len(pkg_map):
+                match built_queue.get():
+                    case BaseException() as err:
+                        raise err
+                    case a_package:
+                        # MyPy should understand that this is a BasePackage
+                        assert not isinstance(a_package, Exception)
+                        pkg = a_package
 
-            num_built += 1
+                num_built += 1
 
-            progress_formatter.update_progress_bar()
+                progress_formatter.update_progress_bar()
 
-            for _dependent in pkg.host_dependents:
-                dependent = pkg_map[_dependent]
-                dependent.unbuilt_host_dependencies.remove(pkg.name)
-                if len(dependent.unbuilt_host_dependencies) == 0:
-                    build_queue.put((job_priority(dependent), dependent))
+                for _dependent in pkg.host_dependents:
+                    dependent = pkg_map[_dependent]
+                    dependent.unbuilt_host_dependencies.remove(pkg.name)
+                    if len(dependent.unbuilt_host_dependencies) == 0:
+                        build_queue.put((job_priority(dependent), dependent))
+    except BuildError as err:
+        logger.error(err.msg)
+        sys.exit(err.returncode)
 
 
 def generate_packagedata(
