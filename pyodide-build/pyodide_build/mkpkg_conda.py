@@ -47,15 +47,18 @@ def make_package_conda(
         (package_dir / patch).parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(Path(conda_metadata.path) / patch, package_dir / patch)
 
+    source_url = conda_metadata.get_value("source/0/url")
+    if isinstance(source_url, list):
+        source_url = source_url[0]
+
     yaml_content = {
         "package": {
             "name": package,
             "version": conda_metadata.version(),
         },
         "source": {
-            "url": conda_metadata.get_value("source/0/url")[0],
+            "url": source_url,
             "sha256": conda_metadata.get_value("source/0/sha256"),
-            "patches": patches,
         },
         "requirements": {
             "host": conda_metadata.get_value("requirements/host"),
@@ -67,6 +70,8 @@ def make_package_conda(
             "license": conda_metadata.get_value("about/license"),
         },
     }
+    if patches:
+        yaml_content["source"]["patches"] = patches
 
     meta_path = package_dir / "meta.yaml"
     ## if meta_path.exists():
