@@ -117,3 +117,25 @@ def new_recipe_conda(
 
     recipe_dir_ = _recipe_dir(recipe_dir)
     make_package_conda(recipe_dir_, name, version)
+
+
+@app.command("sage")
+def new_recipe_sage(
+    recipe_dir: str = typer.Option(
+        None,
+        help="The directory containing the recipe of packages."
+        "If not specified, the default is ``<cwd>/packages``.",
+    ),
+) -> None:
+    """
+    Update Sage packages
+    """
+    from ..mkpkg_sage import update_package_sage
+
+    recipe_dir_ = _recipe_dir(recipe_dir)
+    for package in ["sagemath-categories",
+                    "sagemath-environment",
+                    "sagemath-objects",
+                    "sagemath-repl",
+                    ]:
+        update_package_sage(recipe_dir_, package, sage_root=recipe_dir_.parent / "sage")
