@@ -1,13 +1,17 @@
 package:
   name: sagemath-environment
-  version: "10.2"
+  version: 10.3b6
   top-level:
-    - PUT_TOP_LEVEL_IMPORT_NAMES_HERE
+    - sage
 source:
-  url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
-  sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
+  url: file:///workspaces/pyodide/sage/upstream/sagemath-environment-10.3b6.tar.gz
+  # url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
+  # sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
+  sha256: cb02d125ddc0504b507904ad48c8e368b6d89580768f815a66f7b67d825e70c9
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-environment
   summary: "Sage: Open Source Mathematics Software: System and software environment"
   license: GNU General Public License (GPL) v2 or later
+build:
+  unvendor-tests: false
