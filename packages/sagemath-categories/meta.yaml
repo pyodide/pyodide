@@ -4,10 +4,10 @@ package:
   top-level:
     - sage
 source:
-  url: file:///workspaces/pyodide/sage/upstream/sagemath-categories-10.3b6.tar.gz
+  url: file:sagemath-categories-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/04/27/9ede35f17158a454141f0bf69222b9ea468763ac5b233066ef54e213b34f/sagemath-categories-10.2.tar.gz
   # sha256: 4ab706397efdc396e8a2898e45043cf661aa4a60f3a17618eebeb86b6465620a
-  sha256: 0a19229833ddb7d398619bfc880218c728eb8d15288ff2909711729bab7d7e0f
+  sha256: 01030608bf4f8c2543595e8b8b4649e123e678f0512f426df91d2fcfeb55ea92
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-categories

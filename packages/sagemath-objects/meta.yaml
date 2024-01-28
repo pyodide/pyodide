@@ -4,12 +4,12 @@ package:
   top-level:
     - sage
 source:
-  url: file:///workspaces/pyodide/sage/upstream/sagemath-objects-10.3b6.tar.gz
+  url: file:sagemath-objects-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/12/34/f5d845f8e099e0aa4a70628a51eb06b0c7df9c812efd49a7dac32b3d66a1/sagemath-objects-10.2.tar.gz
   # sha256: ed6b1342510f609b0b6ca7de3ee3cebf5c007ff2976f4915ac03d6d4b058df6e
   # patches:
   #  - patches/0001-src-sage-misc-timing.py-Move-import-of-resource-into.patch
-  sha256: 2fcfbc6eaff77847af20ab02bc6000c662f5b9d594f78e819740f161ac8b92e0
+  sha256: 5653d6f27d45f4e167aebb48dbd3727bee78b5644e08471e67e72bc477064b5a
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath_objects

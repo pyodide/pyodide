@@ -4,10 +4,10 @@ package:
   top-level:
     - sage
 source:
-  url: file:///workspaces/pyodide/sage/upstream/sagemath-environment-10.3b6.tar.gz
+  url: file:sagemath-environment-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
   # sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
-  sha256: cb02d125ddc0504b507904ad48c8e368b6d89580768f815a66f7b67d825e70c9
+  sha256: 1a2d36100632af172aaa1bc4ceb4c686df1ba5f2dfee8fbe0c39985fba20340e
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-environment

@@ -4,10 +4,10 @@ package:
   top-level:
     - sage
 source:
-  url: file:///workspaces/pyodide/sage/upstream/sagemath-repl-10.3b6.tar.gz
+  url: file:sagemath-repl-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/3a/21/7277ed40c6199451187ed1bf09155c1c68bd0e7567e7fbd392982cdc2d1c/sagemath-repl-10.2.tar.gz
   # sha256: 72c51d313b484ac204230167498a23eb5f41848cb5ba43558646a015cacbad2c
-  sha256: ee9c045b85e16de0fc765b51839f22e88e3f322fb9ae1dc7cf1cd967b4836218
+  sha256: 5b6657a8aa198c5c6f26e5aa284e680641decdad80bf3ace4916e30d47f0d5d8
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-repl
@@ -18,5 +18,6 @@ about:
 requirements:
   run:
     - sagemath-environment
+    - sagemath-objects
 build:
   unvendor-tests: false
