@@ -69,4 +69,4 @@ def test_hashlib_algorithms(selenium):
         assert openssl_algorithm in algorithms_available
 
     for algorithm in algorithms_available:
-        hashlib.new(algorithm).digest_size
+        hashlib.new(algorithm).digest_size  # noqa: B018

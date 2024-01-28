@@ -35,7 +35,14 @@ TARGETS = {"site": SITE_PACKAGES, "stdlib": STD_LIB, "dynlib": DSO_DIR}
 
 
 ZIP_TYPES = {".whl", ".zip"}
-TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
+TAR_TYPES = {
+    ".bz",
+    ".bz2",
+    ".tbz2",
+    ".gz",
+    ".tgz",
+    ".tar",
+}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 # See PEP 3149. I think the situation has since been updated since PEP 3149 does
 # not talk about platform triples. But I could not find any newer pep discussing
@@ -100,9 +107,7 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     canonical_name = canonicalize_name(name)
     if not info_dir_name.startswith(canonical_name):
         raise UnsupportedWheel(
-            ".dist-info directory {!r} does not start with {!r}".format(
-                info_dir, canonical_name
-            )
+            f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
         )
 
     return info_dir
@@ -117,7 +122,10 @@ def make_whlfile(
 if IN_BROWSER:
     shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
     shutil.register_unpack_format(
-        "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
+        "whl",
+        [".whl", ".wheel"],
+        shutil._unpack_zipfile,  # type: ignore[attr-defined]
+        description="Wheel file",
     )
 
 

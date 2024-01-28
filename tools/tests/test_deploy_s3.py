@@ -54,7 +54,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
     assert get_object_list() == {"dev/full/a.whl", "dev/full/b.tar", "dev/full/c.zip"}
 
     # Writing a second time to the same prefix with overwrite=False should fail
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         deploy_to_s3_main(
             tmp_path,
             remote_prefix=PurePosixPath("dev/full/"),

@@ -1,6 +1,7 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+
 # Added by C:
 # JsException (from jsproxy.c)
 
