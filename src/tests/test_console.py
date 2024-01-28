@@ -126,8 +126,6 @@ def test_interactive_console():
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
 
-        import re
-
         err = fut.formatted_error or ""
         err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
         assert [e.strip() for e in err.split("\n")] == [
