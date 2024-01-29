@@ -1,6 +1,5 @@
 package:
   name: cffi
-  _disabled: true
   version: 1.15.1
   top-level:
     - cffi
@@ -12,8 +11,9 @@ source:
   sha256: d400bfb9a37b1351253cb402671cea7e89bdecc294e8016a707f6d1d8ac934f9
   patches:
     - patches/libffi-config.patch
-build:
-  cross-build-env: true
+# TODO: reenable. Has trouble installing native cffi.
+# build:
+#   cross-build-env: true
 about:
   home: http://cffi.readthedocs.org
   PyPI: https://pypi.org/project/cffi
