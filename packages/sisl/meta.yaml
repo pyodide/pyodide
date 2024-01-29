@@ -4,7 +4,6 @@ package:
   top-level:
     - sisl_toolbox
     - sisl
-  _disabled: true
 source:
   url: https://github.com/zerothi/sisl/archive/refs/tags/v0.14.2.zip
   sha256: 8616b8ef253e72efe4ff508017052359325264383eade85af64f5e22e306190b
