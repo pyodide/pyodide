@@ -187,7 +187,7 @@ meta-package. Other supported meta-packages are,
 - "\*" builds all packages
 - You can exclude a package by prefixing it with "!".
 
-micropip and distutils are always automatically included.
+micropip is always automatically included.
 
 ## Environment variables
 

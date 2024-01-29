@@ -28,7 +28,7 @@
 # - multiprocessing: Fails due to no multiprocessing implementation.
 # - fs: Fails due to virtual filesystem issues.
 # - nonsense: This functionality doesn't make sense in this context. Includes
-#   things like `pip`, `distutils`
+#   things like `pip`
 # - crash: The Python interpreter just stopped without a traceback. Will require
 #   further investigation. This usually seems to be caused by calling into a
 #   system function that doesn't behave as one would expect.
