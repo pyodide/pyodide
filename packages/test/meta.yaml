@@ -11,7 +11,7 @@ source:
 build:
   type: cpython_module
   script: |
-    set -x
+    cat $(PYODIDE_ROOT)/cpython/patches/* | patch -p1
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testbuffer.so \

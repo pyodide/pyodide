@@ -5,7 +5,6 @@ package:
     - bokeh
 requirements:
   run:
-    - distutils
     - numpy
     - Jinja2
     - pandas

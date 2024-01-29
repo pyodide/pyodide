@@ -6,7 +6,6 @@ package:
     - sympy
 requirements:
   run:
-    - distutils
     - mpmath
 source:
   sha256: c3588cd4295d0c0f603d0f2ae780587e64e2efeedb3521e46b9bb1d08d184fa5

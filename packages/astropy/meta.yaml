@@ -18,7 +18,6 @@ requirements:
     - packaging
     - numpy
   run:
-    - distutils
     - packaging
     - numpy
     - pyerfa
