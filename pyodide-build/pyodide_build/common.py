@@ -320,7 +320,7 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
     """Extracts the METADATA file from the given wheel and writes it to the
     output path.
 
-    Raises an exception if the METADATA file does not exist.
+    Raises a RuntimeError if the METADATA file does not exist.
 
     For a wheel called "NAME-VERSION-...", the METADATA file is expected to be
     found in a directory inside the wheel archive, whose name starts with NAME
@@ -335,13 +335,13 @@ def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
             wheel.getinfo(metadata_path).filename = output_path.name
             wheel.extract(metadata_path, output_path.parent)
         except KeyError as err:
-            raise Exception(f"METADATA file not found for {pkg_name}") from err
+            raise RuntimeError(f"METADATA file not found for {pkg_name}") from err
 
 
 def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     """Returns the path of the contained .dist-info directory.
 
-    Raises an Exception if the directory is not found, more than
+    Raises a RuntimeError if the directory is not found, more than
     one is found, or it does not match the provided `pkg_name`.
 
     Adapted from:
@@ -353,10 +353,10 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     info_dirs = [subdir for subdir in subdirs if subdir.endswith(".dist-info")]
 
     if len(info_dirs) == 0:
-        raise Exception(f".dist-info directory not found for {pkg_name}")
+        raise RuntimeError(f".dist-info directory not found for {pkg_name}")
 
     if len(info_dirs) > 1:
-        raise Exception(
+        raise RuntimeError(
             f"multiple .dist-info directories found for {pkg_name}: {', '.join(info_dirs)}"
         )
 
@@ -366,7 +366,7 @@ def get_wheel_dist_info_dir(wheel: ZipFile, pkg_name: str) -> str:
     canonical_name = canonicalize_package_name(pkg_name)
 
     if not info_dir_name.startswith(canonical_name):
-        raise Exception(
+        raise RuntimeError(
             f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
         )
 

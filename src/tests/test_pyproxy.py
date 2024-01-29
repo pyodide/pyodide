@@ -101,9 +101,8 @@ def test_del_builtin(selenium):
 
 def test_in_globals(selenium):
     selenium.run("yyyyy = 7")
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             let result = [];
             result.push(pyodide.globals.has("xxxxx"));
             result.push(pyodide.globals.has("yyyyy"));
@@ -111,9 +110,7 @@ def test_in_globals(selenium):
             result.push(pyodide.globals.has("open"));
             return result;
             """
-        )
-        == [False, True, True, True]
-    )
+    ) == [False, True, True, True]
 
 
 def test_pyproxy_copy(selenium):
@@ -604,8 +601,7 @@ def test_pyproxy_mixins32(selenium, configurable, writable):
             assertThrows(() => delete d.x, "TypeError", "%s");
         }
         d.destroy();
-        """
-        % (setText, deleteText)
+        """ % (setText, deleteText)
     )
 
 
