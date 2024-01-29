@@ -98,7 +98,9 @@ class _Compile(Compile):
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
 
-    def __call__(self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True) -> CodeRunner:  # type: ignore[override]
+    def __call__(
+        self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True
+    ) -> CodeRunner:  # type: ignore[override]
         return_mode = self.return_mode
         try:
             if self.quiet_trailing_semicolon and should_quiet(source):
