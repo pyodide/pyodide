@@ -4,7 +4,6 @@ package:
   top-level:
     - igraph
 
-  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/75/a9/3351da0a498502707f548ca48b2c4abc9e2f6e1901ad143c8559a95b0985/igraph-0.10.6.tar.gz
   sha256: 76f7aad294514412f835366a7d9a9c1e7a34c3e6ef0a6c3a1a835234323228e8
