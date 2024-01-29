@@ -616,7 +616,7 @@ class GraphBuilder:
             while num_built < len(self.pkg_map):
                 match self.built_queue.get():
                     case BaseException() as err:
-                        break
+                        raise err
                     case BasePackage() as pkg:
                         pass
 
@@ -629,7 +629,6 @@ class GraphBuilder:
                     dependent.unbuilt_host_dependencies.remove(pkg.name)
                     if len(dependent.unbuilt_host_dependencies) == 0:
                         self.build_queue.put((job_priority(dependent), dependent))
-        raise err
 
 
 def build_from_graph(
