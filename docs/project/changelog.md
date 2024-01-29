@@ -38,7 +38,7 @@ myst:
 
 - {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
   replaced with a separate subcommand `pyodide build-recipes-no-deps`.
-  {pr}`3520`
+  {pr}`4443`
 
 ### Packages
 
