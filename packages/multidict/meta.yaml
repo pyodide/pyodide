@@ -1,12 +1,13 @@
 package:
   name: multidict
-  version: 6.0.4
+  version: 6.0.5
   top-level:
     - multidict
-  _disabled: true
 source:
-  url: https://files.pythonhosted.org/packages/4a/15/bd620f7a6eb9aa5112c4ef93e7031bcd071e0611763d8e17706ef8ba65e0/multidict-6.0.4.tar.gz
-  sha256: 3666906492efb76453c0e7b97f2cf459b0682e7402c0489a95484965dbc1da49
+  # TODO: remove this when multidict makes a release supporting Python 3.12
+  url: https://github.com/hoodmane/multidict/zipball/python-3.12
+  sha256: 2ca53d93f0e9ef93737e75ad0dcb4b374ae65dea85ceb561548a552c6862e653
+  extract_dir: hoodmane-multidict-a2c079f
 about:
   home: https://github.com/aio-libs/multidict
   PyPI: https://pypi.org/project/multidict
