@@ -160,22 +160,76 @@ EM_JS_VAL(JsVal, _python2js_ucs4, (const char* ptr, int len), {
   return jsstr;
 });
 
+bool track_stringrefs = false;
+
+// PyUnicode_SetJsString and PyUnicode_GetJsString are added by
+// 0001-Add-an-extra-field-to-strings-to-intern-js-conversio.patch
+void
+PyUnicode_SetJsString(PyObject* unicode, JsRef js_string);
+
+JsRef
+PyUnicode_GetJsString(PyObject* unicode);
+
+EM_JS(void, __add_stringref, (PyObject * unicode), {
+  API.stringRefSet.add(unicode);
+})
+
+EM_JS(void, __remove_stringref, (PyObject * unicode), {
+  API.stringRefSet.delete(unicode);
+})
+
+EMSCRIPTEN_KEEPALIVE void
+_pyodide_free_js_string(PyObject* unicode, JsRef js_string)
+{
+  hiwire_decref(js_string);
+  if (track_stringrefs) {
+    __remove_stringref(unicode);
+  }
+}
+
+EMSCRIPTEN_KEEPALIVE void
+clear_stringref(PyObject* unicode)
+{
+  JsRef js_string = PyUnicode_GetJsString(unicode);
+  PyUnicode_SetJsString(unicode, NULL);
+  hiwire_decref(js_string);
+}
+
+EMSCRIPTEN_KEEPALIVE void
+set_js_string(PyObject* x, JsVal result)
+{
+  if (track_stringrefs) {
+    __add_stringref(x);
+  }
+  PyUnicode_SetJsString(x, hiwire_new(result));
+}
+
 static JsVal
 _python2js_unicode(PyObject* x)
 {
+  JsVal result = JsRef_toVal(PyUnicode_GetJsString(x));
+  if (!JsvNull_Check(result)) {
+    return result;
+  }
+
   int kind = PyUnicode_KIND(x);
   char* data = (char*)PyUnicode_DATA(x);
   int length = (int)PyUnicode_GET_LENGTH(x);
   switch (kind) {
     case PyUnicode_1BYTE_KIND:
-      return _python2js_ucs1(data, length);
+      result = _python2js_ucs1(data, length);
+      break;
     case PyUnicode_2BYTE_KIND:
-      return _python2js_ucs2(data, length);
+      result = _python2js_ucs2(data, length);
+      break;
     case PyUnicode_4BYTE_KIND:
-      return _python2js_ucs4(data, length);
+      result = _python2js_ucs4(data, length);
+      break;
     default:
       assert(false /* invalid Unicode kind */);
   }
+  set_js_string(x, result);
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

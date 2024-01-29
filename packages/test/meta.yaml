@@ -9,6 +9,7 @@ source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
   patches:
+    - patches/0001-Add-an-extra-field-to-strings-to-intern-js-conversio.patch
     - patches/0005-gh-93839-Move-Lib-ctypes-test-to-Lib-test-test_ctype.patch
     - patches/0006-gh-93839-Move-Lib-unttest-test-to-Lib-test-test_unit.patch
     - patches/0007-gh-93839-Use-load_package_tests-for-testmock-GH-9405.patch

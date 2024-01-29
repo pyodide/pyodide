@@ -375,6 +375,8 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     PyErr_SetString(PyExc_AttributeError, key);
     FAIL();
   }
+  JsVal jskey = python2js(attr);
+  FAIL_IF_JS_NULL(jskey);
 
   jsresult = JsProxy_GetAttr_js(JsProxy_VAL(self), key);
   if (JsvNull_Check(jsresult)) {
@@ -425,7 +427,6 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
 
   const char* key = PyUnicode_AsUTF8(attr);
   FAIL_IF_NULL(key);
-
   if (strncmp(key, "__", 2) == 0) {
     // Avoid creating reference loops between Python and JavaScript with js
     // modules. Such reference loops make it hard to avoid leaking memory.
@@ -435,6 +436,9 @@ JsProxy_SetAttr(PyObject* self, PyObject* attr, PyObject* pyvalue)
       return PyObject_GenericSetAttr(self, attr, pyvalue);
     }
   }
+
+  JsVal jskey = python2js(attr);
+  FAIL_IF_JS_NULL(jskey);
 
   if (pyvalue == NULL) {
     FAIL_IF_MINUS_ONE(JsProxy_DelAttr_js(JsProxy_VAL(self), key));

@@ -19,6 +19,7 @@ JS_FILE(js2python_init, () => {
     if (result === 0) {
       throw new PropagateError();
     }
+    _set_js_string(result, value);
 
     let ptr = _PyUnicode_Data(result);
     if (max_code_point > 0xffff) {

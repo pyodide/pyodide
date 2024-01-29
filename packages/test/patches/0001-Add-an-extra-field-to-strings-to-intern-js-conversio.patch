@@ -1,0 +1,118 @@
+From ca8ed408bb8ad650f299f8af0e87d58eecbbb204 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 9 Sep 2023 15:09:03 -0700
+Subject: [PATCH] Add an extra field to strings to intern js conversions
+
+---
+ Include/cpython/unicodeobject.h        |  1 +
+ Include/internal/pycore_runtime_init.h |  1 +
+ Lib/test/test_unicode.py               |  2 +-
+ Objects/unicodeobject.c                | 20 +++++++++++++++++++-
+ 4 files changed, 22 insertions(+), 2 deletions(-)
+
+diff --git a/Include/cpython/unicodeobject.h b/Include/cpython/unicodeobject.h
+index 84307d1885..a411deaeac 100644
+--- a/Include/cpython/unicodeobject.h
++++ b/Include/cpython/unicodeobject.h
+@@ -146,6 +146,7 @@ typedef struct {
+     PyObject_HEAD
+     Py_ssize_t length;          /* Number of code points in the string */
+     Py_hash_t hash;             /* Hash value; -1 if not set */
++    void *js_string;
+     struct {
+         /*
+            SSTATE_NOT_INTERNED (0)
+diff --git a/Include/internal/pycore_runtime_init.h b/Include/internal/pycore_runtime_init.h
+index 13eae1e4c8..bd1bf7d395 100644
+--- a/Include/internal/pycore_runtime_init.h
++++ b/Include/internal/pycore_runtime_init.h
+@@ -98,6 +98,7 @@ extern "C" {
+         .ob_base = _PyObject_IMMORTAL_INIT(&PyUnicode_Type), \
+         .length = sizeof(LITERAL) - 1, \
+         .hash = -1, \
++        .js_string = NULL, \
+         .state = { \
+             .kind = 1, \
+             .compact = 1, \
+diff --git a/Lib/test/test_unicode.py b/Lib/test/test_unicode.py
+index c265438a86..3d81018650 100644
+--- a/Lib/test/test_unicode.py
++++ b/Lib/test/test_unicode.py
+@@ -2434,7 +2434,7 @@ def test_expandtabs_optimization(self):
+         self.assertIs(s.expandtabs(), s)
+ 
+     def test_raiseMemError(self):
+-        asciifields = "nnbP"
++        asciifields = "nnbPP"
+         compactfields = asciifields + "nPn"
+         ascii_struct_size = support.calcobjsize(asciifields)
+         compact_struct_size = support.calcobjsize(compactfields)
+diff --git a/Objects/unicodeobject.c b/Objects/unicodeobject.c
+index 84d17f000b..5a0d87ecf8 100644
+--- a/Objects/unicodeobject.c
++++ b/Objects/unicodeobject.c
+@@ -152,6 +152,8 @@ extern "C" {
+      _PyASCIIObject_CAST(op)->length)
+ #define _PyUnicode_DATA_ANY(op)                         \
+     (_PyUnicodeObject_CAST(op)->data.any)
++#define _PyUnicode_JS_STRING(op)                        \
++    (_PyASCIIObject_CAST(op)->js_string)
+ 
+ #undef PyUnicode_READY
+ #define PyUnicode_READY(op)                             \
+@@ -508,6 +510,7 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
+ 
+     PyASCIIObject *ascii = _PyASCIIObject_CAST(op);
+     unsigned int kind = ascii->state.kind;
++    CHECK(ascii->js_string == NULL);
+ 
+     if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
+         CHECK(kind == PyUnicode_1BYTE_KIND);
+@@ -1243,6 +1246,7 @@ _PyUnicode_New(Py_ssize_t length)
+     _PyUnicode_LENGTH(unicode) = 0;
+     _PyUnicode_UTF8(unicode) = NULL;
+     _PyUnicode_UTF8_LENGTH(unicode) = 0;
++    _PyUnicode_JS_STRING(unicode) = NULL;
+ 
+     _PyUnicode_WSTR(unicode) = (Py_UNICODE*) PyObject_Malloc(new_size);
+     if (!_PyUnicode_WSTR(unicode)) {
+@@ -1440,6 +1444,7 @@ PyUnicode_New(Py_ssize_t size, Py_UCS4 maxchar)
+     _PyUnicode_STATE(unicode).compact = 1;
+     _PyUnicode_STATE(unicode).ready = 1;
+     _PyUnicode_STATE(unicode).ascii = is_ascii;
++    _PyUnicode_JS_STRING(unicode) = NULL;
+     if (is_ascii) {
+         ((char*)data)[size] = 0;
+         _PyUnicode_WSTR(unicode) = NULL;
+@@ -1952,7 +1957,11 @@ unicode_dealloc(PyObject *unicode)
+     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
+         PyObject_Free(_PyUnicode_DATA_ANY(unicode));
+     }
+-
++    void *js_string = _PyUnicode_JS_STRING(unicode);
++    if (js_string) {
++        void _pyodide_free_js_string(PyObject* unicode, void* js_string);
++        _pyodide_free_js_string(unicode, js_string);
++    }
+     Py_TYPE(unicode)->tp_free(unicode);
+ }
+ 
+@@ -15611,6 +15620,15 @@ PyUnicode_InternFromString(const char *cp)
+     return s;
+ }
+ 
++void
++PyUnicode_SetJsString(PyObject* unicode, void* extra) {
++    _PyUnicode_JS_STRING(unicode) = extra;
++}
++
++void*
++PyUnicode_GetJsString(PyObject* unicode) {
++    return _PyUnicode_JS_STRING(unicode);
++}
+ 
+ void
+ _PyUnicode_ClearInterned(PyInterpreterState *interp)
+-- 
+2.25.1
+

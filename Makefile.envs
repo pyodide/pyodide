@@ -251,7 +251,8 @@ export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 export RUSTFLAGS= \
 	-C link-arg=-sSIDE_MODULE=2 \
 	-C link-arg=-sWASM_BIGINT \
-	-Z link-native-libraries=no
+	-Z link-native-libraries=no \
+	--cfg pyodide_js_string
 
 .output_vars:
 	set
