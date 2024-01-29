@@ -408,7 +408,7 @@ def test_dict_key(selenium):
 
     _list = FrozenList([1, 2])
     with pytest.raises(RuntimeError):
-        {_list: "hello"}
+        {_list: "hello"}  # noqa: B018
     _list.freeze()
     {_list: "hello"}  # noqa: B018
 

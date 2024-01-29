@@ -1,4 +1,5 @@
 import asyncio
+import re
 import sys
 import time
 
@@ -124,8 +125,6 @@ def test_interactive_console():
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
         assert fut.exception() is not None
-
-        import re
 
         err = fut.formatted_error or ""
         err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
@@ -344,9 +343,9 @@ def test_console_html(selenium):
         return get_result()
 
     welcome_msg = "Welcome to the Pyodide terminal emulator 🐍"
-    assert (
-        selenium.run_js("return term.get_output()")[: len(welcome_msg)] == welcome_msg
-    )
+    output = selenium.run_js("return term.get_output()")
+    cleaned = re.sub("Pyodide [0-9a-z.]*", "Pyodide", output)
+    assert cleaned[: len(welcome_msg)] == welcome_msg
 
     assert exec_and_get_result("1+1") == ">>> 1+1\n2"
     assert exec_and_get_result("1 +1") == ">>> 1 +1\n2"
@@ -378,7 +377,6 @@ def test_console_html(selenium):
             return 7
         """
     )
-    import re
 
     assert re.search("<coroutine object f at 0x[a-f0-9]*>", exec_and_get_result("f()"))
 
