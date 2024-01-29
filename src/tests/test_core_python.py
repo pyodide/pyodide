@@ -48,9 +48,10 @@ def test_cpython_core(main_test, selenium, request):
 
     selenium.load_package(["test"])
     try:
-        selenium.run(
+        res = selenium.run(
             dedent(
                 f"""
+                res = None
                 import platform
                 from test.libregrtest.main import main
 
@@ -64,11 +65,16 @@ def test_cpython_core(main_test, selenium, request):
                 try:
                     main(["{name}"], match_tests=match_tests, verbose=True, verbose3=True)
                 except SystemExit as e:
-                    if e.code != 0:
+                    if e.code == 4:
+                        res = e.code
+                    elif e.code != 0:
                         raise RuntimeError(f"Failed with code: {{e.code}}")
+                res
                 """
             )
         )
+        if res == 4:
+            pytest.skip("No tests ran")
     except selenium.JavascriptException:
         print(selenium.logs)
         raise

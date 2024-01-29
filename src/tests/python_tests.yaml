@@ -36,8 +36,10 @@
 # - crash-firefox: Same as crash but only affecting Firefox
 - leakers.test_ctypes
 - leakers.test_selftype
-- regrtestdata.import_from_tests.test_regrtest_a
-- regrtestdata.import_from_tests.test_regrtest_c
+- regrtestdata.import_from_tests.test_regrtest_a:
+    xfail: didn't correctly embed test data
+- regrtestdata.import_from_tests.test_regrtest_c:
+    xfail: didn't correctly embed test data
 - test___all__:
     xfail: multiprocessing
 - test__locale:
@@ -173,7 +175,9 @@
 - test_capi.test_list
 - test_capi.test_long
 - test_capi.test_mem
-- test_capi.test_misc
+- test_capi.test_misc:
+    skip:
+      - "*subinterpreter*" # Should we disable _xxsubinterpreters in Setup.local?
 - test_capi.test_set
 - test_capi.test_structmembers
 - test_capi.test_sys
@@ -286,7 +290,9 @@
 - test_ctypes.test_stringptr
 - test_ctypes.test_strings
 - test_ctypes.test_struct_fields
-- test_ctypes.test_structures
+- test_ctypes.test_structures:
+    skip:
+      - test_array_in_struct_registers # needs https://github.com/libffi/libffi/pull/818
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
 - test_ctypes.test_values
@@ -465,8 +471,11 @@
 - test_importlib.builtin.test_finder
 - test_importlib.builtin.test_loader
 - test_importlib.extension.test_case_sensitivity
-- test_importlib.extension.test_finder
-- test_importlib.extension.test_loader
+- test_importlib.extension.test_finder:
+    skip:
+      - "*FinderTests.test_module"
+- test_importlib.extension.test_loader:
+    xfail: "TODO: why does it fail?"
 - test_importlib.extension.test_path_hook
 - test_importlib.frozen.test_finder
 - test_importlib.frozen.test_loader
@@ -554,13 +563,20 @@
 - test_largefile:
     xfail: segfault-outofmemory ("Array buffer allocation failed")
 - test_launcher
-- test_lib2to3.test_all_fixers
-- test_lib2to3.test_fixers
-- test_lib2to3.test_main
-- test_lib2to3.test_parser
-- test_lib2to3.test_pytree
-- test_lib2to3.test_refactor
-- test_lib2to3.test_util
+- test_lib2to3.test_all_fixers:
+    xfail: removed
+- test_lib2to3.test_fixers:
+    xfail: removed
+- test_lib2to3.test_main:
+    xfail: removed
+- test_lib2to3.test_parser:
+    xfail: removed
+- test_lib2to3.test_pytree:
+    xfail: removed
+- test_lib2to3.test_refactor:
+    xfail: removed
+- test_lib2to3.test_util:
+    xfail: removed
 - test_linecache:
     skip:
       # incompatible with zipimport
@@ -843,12 +859,11 @@
 - test_tabnanny
 - test_tarfile:
     skip:
-      - test_file_mode
+      - test_chains
+      - test_deep_symlink
+      - test_sly_relative*
       - test_extractall*
-      - test_link_size
-      - test_dereference_hardlink
-      - test_add_hardlink
-      - test_add_twice
+      - test_parent_symlink*
 - test_tcl
 - test_telnetlib:
     xfail: 7/19 fail with sockets
@@ -906,6 +921,7 @@
 - test_traceback:
     skip:
       - test_encoded_file # fork
+      - test_import_from* # tries to write to stdlib but it's in a zip
 - test_tracemalloc
 - test_ttk.test_extensions
 - test_ttk.test_style
@@ -1005,7 +1021,11 @@
 - test_zipapp
 - test_zipfile._path.test_complexity
 - test_zipfile._path.test_path
-- test_zipfile.test_core
+- test_zipfile.test_core:
+    skip:
+      # NotADirectoryError: [Errno 54] Not a directory: '/proc/self/fd'
+      - test_many_opens
+
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
