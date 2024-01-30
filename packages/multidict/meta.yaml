@@ -6,7 +6,7 @@ package:
 source:
   # TODO: remove this when multidict makes a release supporting Python 3.12
   url: https://github.com/hoodmane/multidict/zipball/python-3.12
-  sha256: 2ca53d93f0e9ef93737e75ad0dcb4b374ae65dea85ceb561548a552c6862e653
+  sha256: 2718bdb91aa3dd0386aeff6f6e6ff181c9d0700a0099831c3274643144e9053f
   extract_dir: hoodmane-multidict-a2c079f
 about:
   home: https://github.com/aio-libs/multidict
