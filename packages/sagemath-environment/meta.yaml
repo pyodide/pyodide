@@ -7,7 +7,7 @@ source:
   url: file:sagemath-environment-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
   # sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
-  sha256: 1a2d36100632af172aaa1bc4ceb4c686df1ba5f2dfee8fbe0c39985fba20340e
+  sha256: 2bb9663810c90fbf22a3261dae9992004b3dd84d7bcc2571e21adabdbaf3b1ea
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-environment

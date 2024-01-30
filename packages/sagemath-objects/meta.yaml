@@ -9,7 +9,7 @@ source:
   # sha256: ed6b1342510f609b0b6ca7de3ee3cebf5c007ff2976f4915ac03d6d4b058df6e
   # patches:
   #  - patches/0001-src-sage-misc-timing.py-Move-import-of-resource-into.patch
-  sha256: 5653d6f27d45f4e167aebb48dbd3727bee78b5644e08471e67e72bc477064b5a
+  sha256: f60a872251d387a8ad8e65befb4e56d9786142359e3d7c1af491d511f8743e8e
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath_objects

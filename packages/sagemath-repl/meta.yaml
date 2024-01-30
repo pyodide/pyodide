@@ -7,7 +7,7 @@ source:
   url: file:sagemath-repl-10.3b6.tar.gz
   # url: https://files.pythonhosted.org/packages/3a/21/7277ed40c6199451187ed1bf09155c1c68bd0e7567e7fbd392982cdc2d1c/sagemath-repl-10.2.tar.gz
   # sha256: 72c51d313b484ac204230167498a23eb5f41848cb5ba43558646a015cacbad2c
-  sha256: 5b6657a8aa198c5c6f26e5aa284e680641decdad80bf3ace4916e30d47f0d5d8
+  sha256: a8e5609f49410812af057f6eaf10ea2de37d4fa48967d4e4e330372de8d9071f
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-repl
@@ -19,5 +19,6 @@ requirements:
   run:
     - sagemath-environment
     - sagemath-objects
+    - ipython
 build:
   unvendor-tests: false
