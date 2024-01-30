@@ -1,0 +1,28 @@
+package:
+  name: ipython
+  version: 8.20.0
+  top-level:
+    - IPython
+source:
+  url: https://files.pythonhosted.org/packages/c5/d1/187474d64bdefcb6804c1a3a1597d9e94f287e71c06f50f7784d56833fb7/ipython-8.20.0.tar.gz
+  sha256: 2f21bd3fc1d51550c89ee3944ae04bbc7bc79e129ea0937da6e6c68bfdbf117a
+  patches:
+    - patches/0001-IPython-utils-_process_posix.py-import-pexpect-only-.patch
+requirements:
+  run:
+    - asttokens
+    - decorator
+    - executing
+    - prompt_toolkit
+    - pure_eval
+    - Pygments
+    - six
+    - stack_data
+    - traitlets
+    - sqlite3
+    - wcwidth
+about:
+  home: https://ipython.org
+  PyPI: https://pypi.org/project/ipython
+  summary: "IPython: Productive Interactive Computing"
+  license: BSD-3-Clause

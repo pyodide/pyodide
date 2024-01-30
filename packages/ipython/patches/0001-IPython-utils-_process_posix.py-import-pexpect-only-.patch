@@ -1,0 +1,59 @@
+From 8e55af7ed8620698fa63536ceadd874d51c90ec0 Mon Sep 17 00:00:00 2001
+From: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
+Date: Sun, 28 Jan 2024 22:16:36 -0800
+Subject: [PATCH] IPython/utils/_process_posix.py: import pexpect only when
+ needed
+
+---
+ IPython/utils/_process_posix.py | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/IPython/utils/_process_posix.py b/IPython/utils/_process_posix.py
+index 59b5c2389..a429ba105 100644
+--- a/IPython/utils/_process_posix.py
++++ b/IPython/utils/_process_posix.py
+@@ -20,8 +20,6 @@
+ import subprocess as sp
+ import sys
+ 
+-import pexpect
+-
+ # Our own
+ from ._process_common import getoutput, arg_split
+ from IPython.utils.encoding import DEFAULT_ENCODING
+@@ -51,6 +49,7 @@ class ProcessHandler(object):
+     @property
+     def sh(self):
+         if self._sh is None:
++            import pexpect
+             shell_name = os.environ.get("SHELL", "sh")
+             self._sh = pexpect.which(shell_name)
+             if self._sh is None:
+@@ -83,6 +82,7 @@ def getoutput(self, cmd):
+         file descriptors (so the order of the information in this string is the
+         correct order as would be seen if running the command in a terminal).
+         """
++        import pexpect
+         try:
+             return pexpect.run(self.sh, args=['-c', cmd]).replace('\r\n', '\n')
+         except KeyboardInterrupt:
+@@ -104,6 +104,7 @@ def getoutput_pexpect(self, cmd):
+         file descriptors (so the order of the information in this string is the
+         correct order as would be seen if running the command in a terminal).
+         """
++        import pexpect
+         try:
+             return pexpect.run(self.sh, args=['-c', cmd]).replace('\r\n', '\n')
+         except KeyboardInterrupt:
+@@ -121,6 +122,8 @@ def system(self, cmd):
+         -------
+         int : child's exitstatus
+         """
++        import pexpect
++
+         # Get likely encoding for the output.
+         enc = DEFAULT_ENCODING
+         
+-- 
+2.42.0
+
