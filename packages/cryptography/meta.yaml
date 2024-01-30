@@ -7,8 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/3f/ed/a233522ab5201b988a482cbb19ae3b63bef8ad2ad3e11fc5216b7053b2e4/cryptography-42.0.1.tar.gz
   sha256: fd33f53809bb363cf126bebe7a99d97735988d9b0131a2be59fbf83e1259a5b7
   patches:
-    - patches/0001-Tell-cffi-that-time_t-is-64-bits.patch
-    - patches/0002-Tell-rust-lang-libc-that-time_t-is-64-bits.patch
+    - patches/0001-Tell-rust-lang-libc-that-time_t-is-64-bits.patch
 build:
   script: |
     export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)

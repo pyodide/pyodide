@@ -1,7 +1,7 @@
 From aeadf0c7223c0b8c7e209f6b555dfc91de31a34c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 29 Jan 2024 16:34:05 -0800
-Subject: [PATCH 2/2] Tell rust-lang/libc that time_t is 64 bits
+Subject: [PATCH] Tell rust-lang/libc that time_t is 64 bits
 
 See upstream PR:
 https://github.com/rust-lang/libc/pull/3569#event-11634944887
