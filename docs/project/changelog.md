@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- Upgraded Python to v3.11.7
+  {pr}`4431`
+
 - Upgraded CoolProp to 6.6.0 {pr}`4397`.
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
