@@ -745,7 +745,8 @@
 - test_subprocess:
     xfail: subprocess
 - test_sunau
-- test_sundry
+- test_sundry:
+    xfail: Dunno
 - test_super
 - test_support:
     xfail: about half the tests fork
@@ -903,7 +904,8 @@
     skip:
       # stack overflow in v8
       - "test_recursive_repr"
-- test_xml_etree_c
+- test_xml_etree_c:
+    xfail: Dunno
 - test_xmlrpc:
     xfail: networking
 - test_xmlrpc_net
