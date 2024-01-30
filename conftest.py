@@ -191,7 +191,7 @@ def pytest_terminal_summary(terminalreporter):
     cache.set("cache/lasttestresult", test_result)
 
 
-@pytest.hookimpl(hookwrapper=True)
+@pytest.hookimpl(wrapper=True)
 def pytest_runtest_call(item):
     """We want to run extra verification at the start and end of each test to
     check that we haven't leaked memory. According to pytest issue #5044, it's
@@ -211,8 +211,8 @@ def pytest_runtest_call(item):
             break
 
     if not browser or not browser.pyodide_loaded:
-        yield
-        return
+        result = yield
+        return result
 
     trace_pyproxies = pytest.mark.skip_pyproxy_check.mark not in item.own_markers
     trace_hiwire_refs = (
@@ -232,18 +232,24 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_pyproxies:
         browser.enable_pyproxy_tracing()
         init_num_proxies = browser.get_num_proxies()
-    a = yield
+    err = None
     try:
-        # If these guys cause a crash because the test really screwed things up,
-        # we override the error message with the better message returned by
-        # a.result() in the finally block.
-        browser.disable_pyproxy_tracing()
-        browser.restore_state()
+        result = yield
+    except Exception as e:
+        err = e
     finally:
-        # if there was an error in the body of the test, flush it out by calling
-        # get_result (we don't want to override the error message by raising a
-        # different error here.)
-        a.get_result()
+        try:
+            # If these guys cause a crash because the test really screwed things up,
+            # we override the error message with the better message returned by
+            # a.result() in the finally block.
+            browser.disable_pyproxy_tracing()
+            browser.restore_state()
+        finally:
+            try:
+                if err:
+                    raise err
+            finally:
+                del err
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
@@ -253,7 +259,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_hiwire_refs:
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
         assert delta_keys <= 0
-
+    return result
 
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
