@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
-from pkg_resources import parse_version
+from packaging import version
 
 import pyodide_build.mkpkg
 from pyodide_build.io import MetaConfig
@@ -60,7 +60,7 @@ def test_mkpkg_update(tmpdir, old_dist_type, new_dist_type):
     pyodide_build.mkpkg.update_package(base_dir, "idna", None, False, source_fmt)
 
     db = MetaConfig.from_yaml(meta_path)
-    assert parse_version(db.package.version) > parse_version(db_init.package.version)
+    assert version.parse(db.package.version) > version.parse(db_init.package.version)
     assert db.source.url is not None
     if new_dist_type == "wheel":
         assert db.source.url.endswith(".whl")
