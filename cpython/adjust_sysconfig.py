@@ -26,8 +26,6 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         BLDSHARED="cc",
         CXX="c++",
         LDCXXSHARED="c++",
-        installed_base=config_vars["prefix"],
-        platbase=config_vars["prefix"],
     )
 
 
