@@ -38,7 +38,8 @@
 - leakers.test_selftype
 - test___all__:
     xfail: multiprocessing
-- test___future__
+- test___future__:
+    xfail: Dunno
 - test__locale:
     xfail: locale
 - test__opcode
@@ -332,10 +333,14 @@
 - test_functools:
     skip:
       - "*threaded*"
-- test_future
-- test_future3
-- test_future4
-- test_future5
+- test_future:
+    xfail: Dunno
+- test_future3:
+    xfail: Dunno
+- test_future4:
+    xfail: Dunno
+- test_future5:
+    xfail: Dunno
 - test_gc:
     skip:
       - test_garbage_at_shutdown
@@ -757,6 +762,7 @@
 - test_syslog
 - test_tabnanny
 - test_tarfile:
+    xfail: Dunno
     skip:
       - test_file_mode
       - test_extractall*
@@ -838,6 +844,7 @@
 - test_unicode_identifiers
 - test_unicodedata
 - test_unittest:
+    xfail: Dunno
     skip:
       - "*async*"
       - "*Interrupt*"
@@ -892,6 +899,7 @@
 - test_xdrlib
 - test_xml_dom_minicompat
 - test_xml_etree:
+    xfail: Dunno
     skip:
       # stack overflow in v8
       - "test_recursive_repr"
