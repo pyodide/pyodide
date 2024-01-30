@@ -18,9 +18,9 @@
     "baseUrl": "..",
     "paths": {
       "generated/*": ["js/generated/*", "core/*"],
-      "*": ["*", "js/*"],
-    },
+      "*": ["*", "js/*"]
+    }
   },
   "include": ["../**/*.ts", "*.json"],
-  "exclude": ["../**/*test*/**/*"],
+  "exclude": ["../**/*test*/**/*"]
 }
