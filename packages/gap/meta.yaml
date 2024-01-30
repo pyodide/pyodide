@@ -11,7 +11,7 @@ requirements:
   host:
     - libgmp
     - libmpfr
-#    - libmpfi
+    #    - libmpfi
     - libmpc
     - zlib
   run: []
