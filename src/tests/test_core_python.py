@@ -48,7 +48,7 @@ def test_cpython_core(main_test, selenium, request):
 
     selenium.load_package(["test"])
     try:
-        selenium.run(
+        res = selenium.run(
             dedent(
                 f"""
                 import platform
@@ -71,6 +71,8 @@ def test_cpython_core(main_test, selenium, request):
                 """
             )
         )
+        if res == 4:
+            pytest.skip("No tests ran")
     except selenium.JavascriptException:
         print(selenium.logs)
         raise
