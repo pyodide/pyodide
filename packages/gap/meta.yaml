@@ -1,0 +1,33 @@
+package:
+  name: gap
+  version: 4.12.2
+source:
+  url: https://github.com/gap-system/gap/releases/download/v4.12.2/gap-4.12.2.tar.gz
+  sha256: 672308745eb78a222494ee8dd6786edd5bc331456fcc6456ac064bdb28d587a8
+  patches:
+    - patches/0001-Allow-cross-building-packages.patch
+    - patches/0001-Do-not-run-prerequisites.sh.patch
+requirements:
+  host:
+    - libgmp
+    - libmpfr
+#    - libmpfi
+    - libmpc
+    - zlib
+  run: []
+about:
+  home: https://www.gap-system.org/
+  summary:
+    GAP - Groups, Algorithms, Programming, a System for Computational Discrete
+    Algebra
+  license: GPL-2.0-or-later
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
+        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
+        --disable-shared \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
