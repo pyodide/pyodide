@@ -1,7 +1,7 @@
-From c5a5b530159a991c7c5936a75e6448a7916b72d1 Mon Sep 17 00:00:00 2001
+From 406996817ac1b8224da3ef3ee071cb02368a25a2 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 16 Nov 2022 14:02:53 -0800
-Subject: [PATCH 2/8] Patch importlib to allow modifications to
+Subject: [PATCH 2/9] Patch importlib to allow modifications to
  ModuleNotFoundError
 
 ---
@@ -9,10 +9,10 @@ Subject: [PATCH 2/8] Patch importlib to allow modifications to
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/Lib/importlib/_bootstrap.py b/Lib/importlib/_bootstrap.py
-index afb95f4e1d..32fe7a68bf 100644
+index ee93ebc396..aa9f71a295 100644
 --- a/Lib/importlib/_bootstrap.py
 +++ b/Lib/importlib/_bootstrap.py
-@@ -1119,6 +1119,9 @@ def _sanity_check(name, package, level):
+@@ -1117,6 +1117,9 @@ def _sanity_check(name, package, level):
  _ERR_MSG_PREFIX = 'No module named '
  _ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
  
@@ -22,7 +22,7 @@ index afb95f4e1d..32fe7a68bf 100644
  def _find_and_load_unlocked(name, import_):
      path = None
      parent = name.rpartition('.')[0]
-@@ -1139,7 +1142,7 @@ def _find_and_load_unlocked(name, import_):
+@@ -1137,7 +1140,7 @@ def _find_and_load_unlocked(name, import_):
          child = name.rpartition('.')[2]
      spec = _find_spec(name, path)
      if spec is None:

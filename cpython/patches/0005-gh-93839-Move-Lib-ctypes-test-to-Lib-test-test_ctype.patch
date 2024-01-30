@@ -1,7 +1,7 @@
-From b08715ecc79e6398f5480bfb3b1b197f07d8a741 Mon Sep 17 00:00:00 2001
+From cefc59779517e9084ba5ee8ebb2e7f4981912d71 Mon Sep 17 00:00:00 2001
 From: Victor Stinner <vstinner@python.org>
 Date: Tue, 21 Jun 2022 10:24:33 +0200
-Subject: [PATCH 5/8] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
+Subject: [PATCH 5/9] gh-93839: Move Lib/ctypes/test/ to Lib/test/test_ctypes/
  (#94041)
 
 * Move Lib/ctypes/test/ to Lib/test/test_ctypes/
@@ -188,7 +188,7 @@ diff --git a/Lib/ctypes/test/test_arrays.py b/Lib/test/test_ctypes/test_arrays.p
 similarity index 99%
 rename from Lib/ctypes/test/test_arrays.py
 rename to Lib/test/test_ctypes/test_arrays.py
-index 14603b7049..415a5785a9 100644
+index a653877961..78aead26da 100644
 --- a/Lib/ctypes/test/test_arrays.py
 +++ b/Lib/test/test_ctypes/test_arrays.py
 @@ -3,7 +3,7 @@
@@ -204,7 +204,7 @@ diff --git a/Lib/ctypes/test/test_as_parameter.py b/Lib/test/test_ctypes/test_as
 similarity index 99%
 rename from Lib/ctypes/test/test_as_parameter.py
 rename to Lib/test/test_ctypes/test_as_parameter.py
-index 9c39179d2a..e9ec9ad847 100644
+index aaaf6e2ceb..36fec572b1 100644
 --- a/Lib/ctypes/test/test_as_parameter.py
 +++ b/Lib/test/test_ctypes/test_as_parameter.py
 @@ -1,6 +1,6 @@
@@ -255,7 +255,7 @@ diff --git a/Lib/ctypes/test/test_callbacks.py b/Lib/test/test_ctypes/test_callb
 similarity index 99%
 rename from Lib/ctypes/test/test_callbacks.py
 rename to Lib/test/test_ctypes/test_callbacks.py
-index 8f95a24443..b5bef04e14 100644
+index 5c514db511..fbb8feafbf 100644
 --- a/Lib/ctypes/test/test_callbacks.py
 +++ b/Lib/test/test_ctypes/test_callbacks.py
 @@ -3,7 +3,7 @@
@@ -337,7 +337,7 @@ diff --git a/Lib/ctypes/test/test_functions.py b/Lib/test/test_ctypes/test_funct
 similarity index 99%
 rename from Lib/ctypes/test/test_functions.py
 rename to Lib/test/test_ctypes/test_functions.py
-index fc571700ce..a3db003353 100644
+index d1fbc32a41..4110066bda 100644
 --- a/Lib/ctypes/test/test_functions.py
 +++ b/Lib/test/test_ctypes/test_functions.py
 @@ -6,7 +6,7 @@
@@ -433,7 +433,7 @@ diff --git a/Lib/ctypes/test/test_parameters.py b/Lib/test/test_ctypes/test_para
 similarity index 99%
 rename from Lib/ctypes/test/test_parameters.py
 rename to Lib/test/test_ctypes/test_parameters.py
-index 3fdc994e90..662a17e094 100644
+index 59c94e3cc2..00a1953e97 100644
 --- a/Lib/ctypes/test/test_parameters.py
 +++ b/Lib/test/test_ctypes/test_parameters.py
 @@ -1,5 +1,5 @@
@@ -539,7 +539,7 @@ diff --git a/Lib/ctypes/test/test_structures.py b/Lib/test/test_ctypes/test_stru
 similarity index 99%
 rename from Lib/ctypes/test/test_structures.py
 rename to Lib/test/test_ctypes/test_structures.py
-index f95d5a99a3..df39dc7f50 100644
+index 2168aa7df7..a40ce3e866 100644
 --- a/Lib/ctypes/test/test_structures.py
 +++ b/Lib/test/test_ctypes/test_structures.py
 @@ -2,7 +2,7 @@

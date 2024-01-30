@@ -1,7 +1,7 @@
-From 6b7bbe2570f1fd4e2601036eb0c56013b7390bc4 Mon Sep 17 00:00:00 2001
+From 9a8180dcd7733c49c1651a98e32211fb1abbbaad Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
-Subject: [PATCH 8/8] Make Emscripten trampolines work with JSPI
+Subject: [PATCH 8/9] Make Emscripten trampolines work with JSPI
 
 There is a WIP proposal to enable webassembly stack switching which have been
 implemented in v8:
@@ -228,7 +228,7 @@ index 953cf4666d..d344bfa234 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..d2d24a6e0a
+index 0000000000..8d29393bd8
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
 @@ -0,0 +1,74 @@
@@ -329,7 +329,7 @@ index 9248e971d9..05fd28b2df 100644
  
  
 diff --git a/Python/pystate.c b/Python/pystate.c
-index dfca3f5fd7..0dd2e7733e 100644
+index db2ce878af..4284c8655d 100644
 --- a/Python/pystate.c
 +++ b/Python/pystate.c
 @@ -2,6 +2,7 @@
@@ -349,10 +349,10 @@ index dfca3f5fd7..0dd2e7733e 100644
  
  PyStatus
 diff --git a/configure b/configure
-index 9e76287725..630ba49c0b 100755
+index 8d2f3f4cc0..25cc425825 100755
 --- a/configure
 +++ b/configure
-@@ -15083,8 +15083,8 @@ PLATFORM_OBJS=
+@@ -15132,8 +15132,8 @@ PLATFORM_OBJS=
  case $ac_sys_system in #(
    Emscripten) :
  
@@ -364,10 +364,10 @@ index 9e76287725..630ba49c0b 100755
    *) :
       ;;
 diff --git a/configure.ac b/configure.ac
-index c62a565eb6..9b488da03b 100644
+index 52d5c1f7dd..54003f97dc 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4523,8 +4523,8 @@ PLATFORM_OBJS=
+@@ -4535,8 +4535,8 @@ PLATFORM_OBJS=
  
  AS_CASE([$ac_sys_system],
    [Emscripten], [

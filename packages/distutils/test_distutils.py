@@ -6,7 +6,7 @@ def test_distutils(selenium):
     import sys
     import unittest
     import unittest.mock
-    from test import libregrtest  # type:ignore[attr-defined]
+    from test.libregrtest.main import main
 
     name = "test_distutils"
 
@@ -24,10 +24,11 @@ def test_distutils(selenium):
         "test_mkpath_with_custom_mode",
         "test_finalize_options",  # no executable
     ]
+    match_tests = [[pat, False] for pat in ignore_tests]
 
     sys.modules["_osx_support"] = unittest.mock.Mock()
     try:
-        libregrtest.main([name], ignore_tests=ignore_tests, verbose=True, verbose3=True)
+        main([name], match_tests=match_tests, verbose=True, verbose3=True)
     except SystemExit as e:
         if e.code != 0:
             raise RuntimeError(f"Failed with code: {e.code}") from None
