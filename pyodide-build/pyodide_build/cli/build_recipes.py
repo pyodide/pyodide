@@ -31,6 +31,10 @@ class Args:
         n_jobs: int | None = None,
     ):
         root = Path.cwd()
+        try:
+            root = build_env.search_pyodide_root(root)
+        except FileNotFoundError:
+            pass
         self.recipe_dir = (
             root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
         )
