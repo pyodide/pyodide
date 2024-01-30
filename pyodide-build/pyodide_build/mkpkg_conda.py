@@ -10,7 +10,6 @@ from ruamel.yaml import YAML
 from .logger import logger
 from .mkpkg import run_prettier
 
-
 _conda_to_pyodide = {
     "gmp": "libgmp",
     "mpfr": "libmpfr",
@@ -70,10 +69,14 @@ def make_package_conda(
             "patches": patches,
         },
         "requirements": {
-            "host": [conda_requirement_to_pyodide(req)
-                     for req in conda_metadata.get_value("requirements/host")],
-            "run": [conda_requirement_to_pyodide(req)
-                    for req in conda_metadata.get_value("requirements/run")],
+            "host": [
+                conda_requirement_to_pyodide(req)
+                for req in conda_metadata.get_value("requirements/host")
+            ],
+            "run": [
+                conda_requirement_to_pyodide(req)
+                for req in conda_metadata.get_value("requirements/run")
+            ],
         },
         "about": {
             "home": conda_metadata.get_value("about/home"),
