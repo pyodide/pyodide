@@ -18,7 +18,7 @@ index 2322486d0..52e7231d7 100644
  rust-version = "1.63.0"
  
 +[patch.crates-io]
-+libc = { git = 'https://github.com/hoodmane/libc.git', branch = 'emscripten-time_t-64-bit' }
++libc = { git = 'https://github.com/hoodmane/libc.git', branch = 'emscripten-time_t-64-bit-2' }
 +
  [dependencies]
  once_cell = "1"
