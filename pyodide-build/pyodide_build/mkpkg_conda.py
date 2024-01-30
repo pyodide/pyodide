@@ -11,6 +11,20 @@ from .logger import logger
 from .mkpkg import run_prettier
 
 
+_conda_to_pyodide = {
+    "gmp": "libgmp",
+    "mpfr": "libmpfr",
+    "mpfi": "libmpfi",
+    "mpc": "libmpc",
+    "libflint": "flint",
+}
+
+
+def conda_requirement_to_pyodide(requirement: str):
+    conda_package = requirement.split(maxsplit=1)[0]  # drop version specifiers
+    return _conda_to_pyodide.get(conda_package, conda_package)
+
+
 def make_package_conda(
     packages_dir: Path,
     package: str,
@@ -56,8 +70,10 @@ def make_package_conda(
             "patches": patches,
         },
         "requirements": {
-            "host": conda_metadata.get_value("requirements/host"),
-            "run": conda_metadata.get_value("requirements/run"),
+            "host": [conda_requirement_to_pyodide(req)
+                     for req in conda_metadata.get_value("requirements/host")],
+            "run": [conda_requirement_to_pyodide(req)
+                    for req in conda_metadata.get_value("requirements/run")],
         },
         "about": {
             "home": conda_metadata.get_value("about/home"),
