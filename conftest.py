@@ -261,6 +261,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         assert delta_keys <= 0
     return result
 
+
 def package_is_built(package_name):
     return _package_is_built(package_name, pytest.pyodide_dist_dir)
 
