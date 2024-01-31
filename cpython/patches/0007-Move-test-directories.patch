@@ -1,17 +1,17 @@
-From 19171eafd8a07b9df74014b757e51ece237a2943 Mon Sep 17 00:00:00 2001
+From 9b04fdb7888bcfd0a22238f8e47d2f2ab822a32d Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Wed, 25 Jan 2023 15:54:16 +0900
-Subject: [PATCH 7/8] Move test directories
+Subject: [PATCH 7/9] Move test directories
 
 ---
- Makefile.pre.in | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ Makefile.pre.in | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/Makefile.pre.in b/Makefile.pre.in
-index b356f6293e..68c55a356a 100644
+index c61b093fc9..1245cbc602 100644
 --- a/Makefile.pre.in
 +++ b/Makefile.pre.in
-@@ -1932,8 +1932,7 @@ LIBSUBDIRS=	asyncio \
+@@ -1938,8 +1938,7 @@ LIBSUBDIRS=	asyncio \
  		xmlrpc \
  		zoneinfo \
  		__phello__
@@ -21,11 +21,12 @@ index b356f6293e..68c55a356a 100644
  		idlelib/idle_test \
  		lib2to3/tests \
  		lib2to3/tests/data \
-@@ -2009,7 +2008,8 @@ TESTSUBDIRS=	ctypes/test \
- 		test/ziptestdata \
- 		tkinter/test tkinter/test/test_tkinter \
+@@ -2057,8 +2056,8 @@ TESTSUBDIRS=	ctypes/test \
+ 		tkinter/test \
+ 		tkinter/test/test_tkinter \
  		tkinter/test/test_ttk \
--		unittest/test unittest/test/testmock
+-		unittest/test \
+-		unittest/test/testmock
 +		test/test_ctypes \
 +		test/test_unittest test/test_unittest/testmock
  
