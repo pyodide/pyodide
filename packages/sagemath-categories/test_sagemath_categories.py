@@ -1,9 +1,10 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["sagemath-categories"])
 def test_sagemath_categories(selenium):
-    pass
+    import sage.all__sagemath_categories
 
 
 @pytest.mark.driver_timeout(3600)
