@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""Helper for cross-compiling distutils-based Python extensions.
-
-distutils has never had a proper cross-compilation story. This is a hack, which
-miraculously works, to get around that.
-
+"""
 The gist is we compile the package replacing calls to the compiler and linker
 with wrappers that adjusting include paths and flags as necessary for
 cross-compiling and then pass the command long to emscripten.
@@ -81,92 +77,6 @@ class BuildArgs:
     pythoninclude: str = ""
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
     compression_level: int = 6
-
-
-def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
-    """Apply f2c to compilation arguments
-
-    Parameters
-    ----------
-    args
-       input compiler arguments
-    dryrun
-       if False run f2c on detected fortran files
-
-    Returns
-    -------
-    new_args
-       output compiler arguments
-
-
-    Examples
-    --------
-
-    >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
-    ['gcc', 'test.c']
-    """
-
-    from pyodide_build._f2c_fixes import fix_f2c_input, fix_f2c_output
-
-    new_args = ["gcc"]
-    found_source = False
-    for arg in args[1:]:
-        if arg.endswith(".f") or arg.endswith(".F"):
-            filepath = Path(arg).resolve()
-            if not dryrun:
-                fix_f2c_input(arg)
-                if arg.endswith(".F"):
-                    # .F files apparently expect to be run through the C
-                    # preprocessor (they have #ifdef's in them)
-                    # Use gfortran frontend, as gcc frontend might not be
-                    # present on osx
-                    # The file-system might be not case-sensitive,
-                    # so take care to handle this by renaming.
-                    # For preprocessing and further operation the
-                    # expected file-name and extension needs to be preserved.
-                    subprocess.check_call(
-                        [
-                            "gfortran",
-                            "-E",
-                            "-C",
-                            "-P",
-                            filepath,
-                            "-o",
-                            filepath.with_suffix(".f77"),
-                        ]
-                    )
-                    filepath = filepath.with_suffix(".f77")
-                # -R flag is important, it means that Fortran functions that
-                # return real e.g. sdot will be transformed into C functions
-                # that return float. For historic reasons, by default f2c
-                # transform them into functions that return a double. Using -R
-                # allows to match what OpenBLAS has done when they f2ced their
-                # Fortran files, see
-                # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
-                # for more details
-                with (
-                    open(filepath) as input_pipe,
-                    open(filepath.with_suffix(".c"), "w") as output_pipe,
-                ):
-                    subprocess.check_call(
-                        ["f2c", "-R"],
-                        stdin=input_pipe,
-                        stdout=output_pipe,
-                        cwd=filepath.parent,
-                    )
-                fix_f2c_output(arg[:-2] + ".c")
-            new_args.append(arg[:-2] + ".c")
-            found_source = True
-        else:
-            new_args.append(arg)
-
-    new_args_str = " ".join(args)
-    if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
-        found_source = True
-
-    if not found_source:
-        return None
-    return new_args
 
 
 def get_library_output(line: list[str]) -> str | None:
@@ -518,7 +428,7 @@ def get_export_flags(
 
 
 def handle_command_generate_args(  # noqa: C901
-    line: list[str], build_args: BuildArgs, is_link_command: bool
+    line: list[str], build_args: BuildArgs
 ) -> list[str]:
     """
     A helper command for `handle_command` that generates the new arguments for
@@ -534,12 +444,9 @@ def handle_command_generate_args(  # noqa: C901
 
     build_args The arguments that pywasmcross was invoked with
 
-    is_link_command Is this a linker invocation?
-
     Returns
     -------
         An updated argument list suitable for use with emscripten.
-
 
     Examples
     --------
@@ -547,29 +454,25 @@ def handle_command_generate_args(  # noqa: C901
     >>> from collections import namedtuple
     >>> Args = namedtuple('args', ['cflags', 'cxxflags', 'ldflags', 'target_install_dir'])
     >>> args = Args(cflags='', cxxflags='', ldflags='', target_install_dir='')
-    >>> handle_command_generate_args(['gcc', 'test.c'], args, False)
+    >>> handle_command_generate_args(['gcc', 'test.c'], args)
     ['emcc', 'test.c', '-Werror=implicit-function-declaration', '-Werror=mismatched-parameter-types', '-Werror=return-type']
     """
     if "-print-multiarch" in line:
         return ["echo", "wasm32-emscripten"]
-    for arg in line:
-        if arg.startswith("-print-file-name"):
-            return line
     if len(line) == 2 and line[1] == "-v":
         return ["emcc", "-v"]
 
     cmd = line[0]
-    if cmd == "ar":
-        line[0] = "emar"
-        return line
-    elif cmd == "c++" or cmd == "g++":
+    if cmd == "c++" or cmd == "g++":
         new_args = ["em++"]
     elif cmd in ("cc", "gcc", "ld", "lld"):
         new_args = ["emcc"]
         # distutils doesn't use the c++ compiler when compiling c++ <sigh>
         if any(arg.endswith((".cpp", ".cc")) for arg in line):
             new_args = ["em++"]
-
+    elif cmd == "ar":
+        line[0] = "emar"
+        return line
     elif cmd == "cmake":
         # If it is a build/install command, or running a script, we don't do anything.
         if "--build" in line or "--install" in line or "-P" in line:
@@ -610,6 +513,11 @@ def handle_command_generate_args(  # noqa: C901
     elif cmd == "strip":
         line[0] = "emstrip"
         return line
+    elif cmd == "gfortran":
+        from pyodide_build._f2c_fixes import replace_f2c
+        
+        tmp = replay_f2c(line)
+        return line
     else:
         return line
 
@@ -644,7 +552,8 @@ def handle_command_generate_args(  # noqa: C901
 
     # set linker and C flags to error on anything to do with function declarations being wrong.
     # Better to fail at compile or link time.
-    if is_link_command:
+    is_link_cmd = get_library_output(line) is not None
+    if is_link_cmd:
         new_args.append("-Wl,--fatal-warnings")
         new_args.extend(build_args.ldflags.split())
         new_args.extend(get_export_flags(line, build_args.exports))
@@ -674,19 +583,7 @@ def handle_command(
     build_args : BuildArgs
        a container with additional compilation options
     """
-    # some libraries have different names on wasm e.g. png16 = png
-    is_link_cmd = get_library_output(line) is not None
-
-    if line[0] == "gfortran":
-        tmp = replay_f2c(line)
-        if tmp is None:
-            # No source file, it's a query for information about the compiler. Pretend we're
-            # gfortran by letting gfortran handle it
-            return subprocess.run(line).returncode
-
-        line = tmp
-
-    new_args = handle_command_generate_args(line, build_args, is_link_cmd)
+    new_args = handle_command_generate_args(line, build_args)
 
     if build_args.pkgname == "scipy":
         from pyodide_build._f2c_fixes import scipy_fixes
