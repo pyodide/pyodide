@@ -1,0 +1,143 @@
+From 3ed7313487aa4c003a0ac81f8e1b3169e7978100 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Julian=20R=C3=BCth?= <julian.rueth@fsfe.org>
+Date: Wed, 15 Feb 2023 15:22:15 +0100
+Subject: [PATCH 4/5] Do not run get_gmp when cross-compiling
+
+---
+ Configure      |  10 +++--
+ config/get_gmp | 102 -------------------------------------------------
+ 2 files changed, 6 insertions(+), 106 deletions(-)
+ delete mode 100644 config/get_gmp
+
+diff --git a/Configure b/Configure
+index 6468d04..0481968 100755
+--- a/Configure
++++ b/Configure
+@@ -98,10 +98,12 @@ sizeof_long=8
+ ####################### CONFIGURE - LIBRARIES ###############################
+ # Looking for libraries: gmp, X11, fltk, Qt, readline
+ echo Checking for optional libraries and headers...
+-# $_gmp_list
+-if test "$kernlvl1" = "gmp"; then
+-  . ./get_gmp
+-fi
++# Set variables like ./get_gmp would (which does not support cross compilation)
++gmp=yes
++GMPLIBS="-L$PREFIX/lib -lgmp"
++GMPINCLUDE=
++kernlvl1=gmp
++. ./get_pretty
+ # $_graphic_list
+ . ./get_graphic_lib
+ # $_readline_list (includes 'readline')
+diff --git a/config/get_gmp b/config/get_gmp
+deleted file mode 100644
+index 3fd6487..0000000
+--- a/config/get_gmp
++++ /dev/null
+@@ -1,102 +0,0 @@
+-#exported variables
+-_gmp_list="gmp GMPLIBS GMPINCLUDE"
+-gmp=
+-case "$with_gmp" in
+-  yes|"");;
+-  *)
+-  if test -z "$with_gmp_lib"; then
+-    with_gmp_lib="$with_gmp/lib"
+-  fi
+-  if test -z "$with_gmp_include"; then
+-    with_gmp_include="$with_gmp/include"
+-  fi;;
+-esac
+-
+-pth="$with_gmp_include"
+-x=`./locate 'gmp.h' '' $pth`
+-case $x in
+- ?:/*|/*) gmp_include=`dirname $x`
+-   echo ..."Found gmp header in $gmp_include"
+-   GMPINCLUDE="-I$gmp_include"
+-   ;;
+-esac
+-
+-try() { GMPLIBS=$1; cmd="$cmd0 $1"; . log_cmd; }
+-
+-exe=$osname-$arch-gmp$$$exe_suff
+-cmd0="$CC $CFLAGS $extraflag $GMPINCLUDE -o $exe gmp_version.c"
+-
+-if test -n "$with_gmp_lib"; then
+-  gmp=$with_gmp_lib
+-  try "-L$gmp -lgmp"
+-fi
+-if test ! -r $exe; then
+-  try "-lgmp"
+-fi
+-if test ! -r $exe; then
+-  lib=gmp; . ./locatelib
+-  if test -n "$gmp"; then
+-    try "-L$gmp -lgmp"
+-  fi
+-fi
+-
+-if test -r $exe; then
+-  gmp_version=`env LD_LIBRARY_PATH="$LD_LIBRARY_PATH$dir_sep$gmp" $RUNTEST $exe`;
+-fi
+-case "$gmp_version" in
+-  unsupported) gmp=
+-    echo "### Your GMP library ABI is unsupported.";;
+-  "") gmp=
+-    cmd="$CC $CFLAGS $extraflag $GMPINCLUDE -o $exe ansi.c $GMPLIBS"
+-    . log_cmd
+-    if test -r $exe; then
+-      echo "### Your version of GMP is too old for PARI. Please upgrade"
+-    else
+-      echo "### Your GMP library is incompatible with the compiler settings."
+-    fi;;
+-  *) if test -z "$gmp"; then gmp=yes; fi;;
+-esac
+-
+-if test -n "$gmp"; then
+-  cmd="$CC $CFLAGS $extraflag $GMPINCLUDE -o $exe gmp_mismatch.c $GMPLIBS"
+-  . log_cmd
+-  if test ! -r $exe; then
+-    gmp=
+-    echo "### GMP headers mismatch: try both --with-gmp-lib and --with-gmp-include"
+-  fi
+-fi
+-
+-. cleanup_exe
+-
+-if test -z "$gmp"; then
+-  echo "### Building without GNU MP support"
+-else
+-  if test "$fastread" = yes; then
+-    echo "Using GNU MP, version $gmp_version"
+-  else
+-    cat << EOM
+-==========================================================================
+-GNU MP library can be used as an alternate multiprecision kernel, which
+-is faster than PARI's native one as soon as integers larger than 10^100
+-are considered. Unfortunately, with GNU MP, libpari is binary incompatible
+-with the native one. Despite this, you should only answer 'no' to the
+-following question if you plan to use libpari (not only the gp shell)
+-and have stringent backward compatibility requirements.
+-EOM
+-    echo $n "Do you want to use GNU MP library instead of the native kernel? $c"
+-    if test "$with_gmp" = yes; then dflt=y; else dflt=n; fi
+-    rep='y n'; . ./myread
+-    case $ans in
+-      n) gmp=;;
+-    esac
+-  fi
+-fi
+-
+-if test -n "$gmp"; then
+-  kernlvl1=gmp
+-else
+-  kernlvl1=none
+-  GMPINCLUDE=
+-  GMPLIBS=
+-fi
+-. get_pretty
+-- 
+2.39.1
+

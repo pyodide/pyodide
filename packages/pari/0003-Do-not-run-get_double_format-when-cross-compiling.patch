@@ -1,0 +1,88 @@
+From 211fb65f69a20c5e806a58b7ad07d541324de419 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Julian=20R=C3=BCth?= <julian.rueth@fsfe.org>
+Date: Wed, 15 Feb 2023 15:13:02 +0100
+Subject: [PATCH 3/5] Do not run get_double_format when cross compiling
+
+---
+ Configure                |  6 +++--
+ config/get_double_format | 51 ----------------------------------------
+ 2 files changed, 4 insertions(+), 53 deletions(-)
+ delete mode 100644 config/get_double_format
+
+diff --git a/Configure b/Configure
+index be61179..6468d04 100755
+--- a/Configure
++++ b/Configure
+@@ -79,8 +79,10 @@ ASMINLINE=
+ KERNELCFLAGS=
+ 
+ . ./get_mt
+-# doubleformat, sizeof_long
+-. ./get_double_format
++# Set variables as ./get_double_format would (which does not support cross compilation)
++doubleformat=-
++_format='not needed (64bit)'
++sizeof_long=8
+ # asmarch, pretty
+ . ./get_kernel
+ # _dl_list, DLCFLAGS, update CFLAGS
+diff --git a/config/get_double_format b/config/get_double_format
+deleted file mode 100644
+index 3c5a3d7..0000000
+--- a/config/get_double_format
++++ /dev/null
+@@ -1,51 +0,0 @@
+-exe=$osname-$arch-endian$$$exe_suff
+-cmd="$CC $CFLAGS $extraflag endian.c -o $exe"; . log_cmd
+-if test -r $exe; then
+-  doubleformat=`$RUNTEST $exe`;
+-else
+-  echo "***************************************************************"
+-  echo "Cannot compile endian.c. Aborting. PLEASE REPORT!"
+-  exit 1
+-fi
+-. cleanup_exe
+-case "$doubleformat" in
+-  *IEEE*)
+-    echo "***************************************************************"
+-    echo "Your 'double' type does not follow the IEEE754 format. Aborting"
+-    echo "PLEASE REPORT! (dbltor/rtodbl need to be fixed)"; exit 1;;
+-  -) sizeof_long=8;;
+-  *) sizeof_long=4;;
+-esac
+-echo "Given the previous choices, sizeof(long) is $sizeof_long chars."
+-
+-if test "$fastread" != yes; then
+-cat << EOT
+-If your hardware supports different size of longs (e.g SGI/MIPS), and you
+-want to use a different word size than the above. You should probably have
+-specified some exotic compilation flag CFLAG (e.g -o32,-n32).
+-
+-EOT
+-
+-  if test $doubleformat != "-"; then
+-cat << EOT
+-For 32-bit architecture, PARI needs to know the format of your 'double' type.
+-PARI assumes doubles are stored in IEEE754 format [ (sign, exponent, mantissa
+-high) on one word, (mantissa low) on another ]; assuming a
+-  union { double d; ulong l[2]; } x;
+-are the double exponent and sign stored on x.i[0] (0) or on x.i[1] (1) ?
+-
+-Using \$CC \$CFLAGS with
+-  CC    =$CC
+-  CFLAGS=$CFLAGS
+-the answer is: $doubleformat.
+-EOT
+-  fi
+-fi
+-case $doubleformat in
+-  0) _format='l[0], l[1]';;
+-  1) _format='l[1], l[0]';;
+-  -) _format='not needed (64bit)';;
+-esac
+-cat <<EOT
+-The internal word representation of a double is $_format.
+-EOT
+-- 
+2.39.1
+

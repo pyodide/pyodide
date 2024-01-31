@@ -1,26 +1,41 @@
 package:
   name: pari
   version: 2.15.4
-  tag:
-    - library
 source:
-  url: https://pari.math.u-bordeaux.fr/pub/pari/unix/pari-2.15.4.tar.gz
+  url: http://pari.math.u-bordeaux.fr/pub/pari/unix/pari-2.15.4.tar.gz
   sha256: c3545bfee0c6dfb40b77fb4bbabaf999d82e60069b9f6d28bcb6cf004c8c5c0f
+  patches:
+   - 0001-Make-Configure-script-verbose.patch
+   - 0002-Do-not-run-get_cc-when-cross-compiling.patch
+   - 0003-Do-not-run-get_double_format-when-cross-compiling.patch
+   - 0004-Do-not-run-get_gmp-when-cross-compiling.patch
+   # - 0005-Do-not-run-get_readline-when-cross-compiling.patch
+   - patches/get_dlcflags.patch
+   - patches/pari_mainstack.diff
+about:
+  home: http://pari.math.u-bordeaux.fr
+  summary:
+    PARI/GP is a widely used computer algebra system designed for fast computations
+    in number theory
+  license: GPL-2.0-or-later
 requirements:
   host:
     - libgmp
-
 build:
   type: static_library
   script: |
-    export CFLAGS="-fPIC"
+    export CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include"
+    export PREFIX="${WASM_LIBRARY_DIR}"
     emconfigure ./Configure \
         --host=wasm-emscripten \
         --prefix=${WASM_LIBRARY_DIR} \
         --with-gmp=${WASM_LIBRARY_DIR} \
+        --with-gmp-include=${WASM_LIBRARY_DIR}/include \
+        --with-gmp-lib=${WASM_LIBRARY_DIR}/lib \
+        --without-readline \
         --static \
         --mt=pthread \
         --kernel=gmp --graphic=none
     cd Oemscripten-wasm
-    emmake make -j ${PYODIDE_JOBS:-3} all
-    emmake make install
+    emmake make -j ${PYODIDE_JOBS:-3} gp
+    emmake make install install-lib-sta

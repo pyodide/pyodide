@@ -1,0 +1,199 @@
+From 2e1eff4255f2d330776a93cc768f773775408ca9 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Julian=20R=C3=BCth?= <julian.rueth@fsfe.org>
+Date: Wed, 15 Feb 2023 14:31:29 +0100
+Subject: [PATCH 2/5] Do not run get_cc when cross compiling
+
+because it tries to run native executables
+---
+ Configure     |  13 ++++-
+ config/get_cc | 154 --------------------------------------------------
+ 2 files changed, 10 insertions(+), 157 deletions(-)
+ delete mode 100644 config/get_cc
+
+diff --git a/Configure b/Configure
+index d0516ae..be61179 100755
+--- a/Configure
++++ b/Configure
+@@ -68,9 +68,16 @@ EOT
+ exec 5>> $config_log
+ 
+ ####################### CONFIGURE - COMPILATION #############################
+-# $_cc_list (includes 'optimization'), extraflag
+-. ./get_cc
+-#
++# Set variables as ./get_cc would (which does not support cross compilation)
++__gnuc__=clang
++optimization=full
++DBGFLAGS=
++OPTFLAGS=-O2
++exe_suffix=
++suffix=
++ASMINLINE=
++KERNELCFLAGS=
++
+ . ./get_mt
+ # doubleformat, sizeof_long
+ . ./get_double_format
+diff --git a/config/get_cc b/config/get_cc
+deleted file mode 100644
+index 2d61d38..0000000
+--- a/config/get_cc
++++ /dev/null
+@@ -1,154 +0,0 @@
+-# Exported variables
+-_cc_list="__gnuc__ CC CFLAGS optimization DBGFLAGS OPTFLAGS exe_suff suffix ASMINLINE KERNELCFLAGS"
+-
+-# Which optimization ?
+-if test "$fastread" != yes; then
+-  cat << EOT
+-==========================================================================
+-The default is to fully optimize the compilation. You may choose to build
+-  an executable for debugging or profiling instead. Choose among :
+-       full       debugging       profiling         gcov
+-EOT
+-  echo $n ..."Which optimization do you prefer ? $c"
+-  dflt=$optimization; rep='full debugging profiling gcov'; . ./myread
+-  optimization=$ans
+-fi
+-
+-case "$osname" in
+-  os2)   exe_suff=.exe; extraflag="-Zexe";;
+-  emscripten) exe_suff=.js;;
+-  cygwin|mingw) exe_suff=.exe; extraflag="";;
+-# On Darwin, by default, the full library search path is searched for a .dylib
+-# before a .a can be considered, preventing users to install their libraries
+-# in a simple way (e.g. the readline / Editline conflict). Override this.
+-  darwin)  exe_suff=; extraflag=-Wl,-search_paths_first;;
+-  *)       exe_suff=; extraflag="";;
+-esac
+-
+-if test -z "$CC"; then
+-  echo Choosing C compiler ...
+-  if test -n "$gcc"; then CC=$gcc; else CC=$cc; fi
+-fi
+-
+-if test "$fastread" != yes; then
+-  cat << EOT
+-==========================================================================
+-Only ANSI C and C++ compilers are supported.  Choosing the GNU compiler
+-gcc/g++ enables the inlining of kernel routines (about 20% speedup; if you
+-use g++, include the -fpermissive flag). We strongly recommand using gcc all
+-the way through.
+-EOT
+-  echo $n ..."Which C compiler shall I use ? $c"
+-  dflt=$CC; rep=; . ./myread
+-  CC=$ans
+-fi
+-if test -z "$CC"; then cat <<EOT
+-###
+-### Could not find a C compiler. Please install cc/gcc or set \$CC
+-###
+-EOT
+-  exit 1;
+-fi
+-
+-exe=$osname-$arch-ansi$$$exe_suff
+-cmd="$CC $CFLAGS $extraflag -o $exe ansi.c";
+- . log_cmd
+-if test -s $exe; then
+-  $RUNTEST $exe
+-fi
+-if test $? != 0 -o ! -s $exe; then cat << EOT
+-###
+-### C compiler does not work. PARI/GP requires an ANSI C compiler! Aborting.
+-###
+-### Compiler was: $CC $CFLAGS $extraflag
+-EOT
+-  exit 1;
+-fi
+-. cleanup_exe
+-
+-if test "$CC" != "$gcc"; then __gnuc__=; fi
+-if test -z "$__gnuc__"; then
+-  exe=$osname-$arch-gnu$$$exe_suff
+-  cmd="$CC $extraflag -o $exe gnu.c"
+-  . log_cmd
+-  if $RUNTEST $exe; then
+-    # avoid internationalization trouble by setting LANG=C
+-    __gnuc__=`env LANG=C LC_ALL=C LC_MESSAGES=C PATH="$PATH" $CC -v 2>&1 |\
+-      grep ' version ' | tr '\n' , | sed -e 's/ *,$//' |\
+-      sed -e 's/(.*) *\((.*)\)/\1/'`
+-    echo GNU compatible compiler: $__gnuc__
+-  fi
+-  . cleanup_exe
+-fi
+-
+-# Which Flags for Compiler ?
+-cflags=
+-ASMINLINE=
+-if test -n "$__gnuc__"; then
+-  __GNUC__="-D__GNUC__"
+-  warn="-Wall"
+-  OPTFLAGS=-O3
+-  ASMINLINE=yes
+-  OPTFLAGS="$OPTFLAGS $warn"
+-  cmd="$CC $CFLAGS $extraflag -ffp-contract=off -o $exe gnu.c"
+-  . log_cmd
+-  if test -s $exe; then
+-    OPTFLAGS="$OPTFLAGS -ffp-contract=off"
+-  fi
+-  . cleanup_exe
+-  cmd="$CC $CFLAGS $extraflag -fno-strict-aliasing -o $exe gnu.c"
+-  . log_cmd
+-  if test -s $exe; then
+-    OPTFLAGS="$OPTFLAGS -fno-strict-aliasing"
+-  fi
+-  . cleanup_exe
+-  case "$optimization" in
+-    full) KERNELCFLAGS=-funroll-loops;;
+-  esac
+-
+-  DBGFLAGS=${DBGFLAGS:-"-g $warn"}
+-  # Specific optimisations for some architectures
+-  case "$arch" in
+-    sparcv8*) cflags=-mv8;;
+-  esac
+-  # problems on some architectures
+-  case "$osname" in
+-    os2)      cflags="$cflags -Zmt -Zsysv-signals";;
+-    nextstep) cflags="$cflags -traditional-cpp";;
+-  esac
+-
+-  PRFFLAGS="-pg $OPTFLAGS"
+-  GCOVFLAGS="-fprofile-arcs -ftest-coverage"
+-else
+-  DBGFLAGS=${DBGFLAGS:-'-g'}
+-  PRFFLAGS='-pg'
+-  case "$osname-$arch" in
+-    hpux-*) # -Ae is for ANSI C + defines HPUX_SOURCE
+-                  OPTFLAGS=-O; cflags=-Ae;;
+-    aix-*)        OPTFLAGS='-O2 -qtune=auto -qmaxmem=8192'
+-                  cflags='-qlanglvl=ansi';;
+-    osf1-*)       OPTFLAGS='-O4 -migrate -ifo -Olimit 9999';;
+-    sunos-*)      OPTFLAGS=-fast; PRFFLAGS='-pg -Bstatic';;
+-    solaris-*)    OPTFLAGS='-fast -fsimple=1'; PRFFLAGS=-xpg;
+-                case "$arch" in
+-                  sparc*) OPTFLAGS="$OPTFLAGS -xalias_level=any";;
+-                esac;;
+-    concentrix-*) OPTFLAGS=-Ogi;;
+-    *)            OPTFLAGS=-O;;
+-  esac
+-  PRFFLAGS="$PRFFLAGS $OPTFLAGS"
+-fi
+-
+-case "$optimization" in
+-  full)      suffix=;     cflags="$OPTFLAGS $cflags";;
+-  profiling) suffix=.prf; cflags="$PRFFLAGS $cflags";;
+-  debugging) suffix=.dbg; cflags="-DMEMSTEP=1048576 $DBGFLAGS $cflags";;
+-  gcov)      suffix=.gcov; cflags="$GCOVFLAGS $cflags";;
+-esac
+-
+-CFLAGS="$cflags $CFLAGS $CPPFLAGS"
+-if test "$fastread" != yes; then
+-  echo $n ..."With which flags ? $c"
+-  dflt=$CFLAGS; rep=; . ./myread
+-  CFLAGS=$ans
+-fi
+-- 
+2.39.1
+

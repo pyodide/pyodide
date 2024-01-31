@@ -1,0 +1,135 @@
+From 8eef5039d1989638ad2d03a9e22204fe5a7216a0 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Julian=20R=C3=BCth?= <julian.rueth@fsfe.org>
+Date: Wed, 15 Feb 2023 15:22:32 +0100
+Subject: [PATCH 5/5] Do not run get_readline when cross-compiling
+
+---
+ Configure           | 10 ++---
+ config/get_readline | 94 ---------------------------------------------
+ 2 files changed, 5 insertions(+), 99 deletions(-)
+ delete mode 100644 config/get_readline
+
+diff --git a/Configure b/Configure
+index 0481968..e786055 100755
+--- a/Configure
++++ b/Configure
+@@ -106,11 +106,11 @@ kernlvl1=gmp
+ . ./get_pretty
+ # $_graphic_list
+ . ./get_graphic_lib
+-# $_readline_list (includes 'readline')
+-case "$without_readline" in
+-  yes);;
+-  *) . ./get_readline
+-esac
++# Set variables like ./get_readline would (which does not support cross compilation)
++readline=yes
++readline_version=8.1  # probably does not matter
++RLINCLUDE=
++RLLIBS=-lreadline
+ #############################################################################
+ case $kernlvl1 in
+ gmp) libpari_base=pari-gmp;;
+diff --git a/config/get_readline b/config/get_readline
+deleted file mode 100644
+index 2972140..0000000
+--- a/config/get_readline
++++ /dev/null
+@@ -1,94 +0,0 @@
+-#exported variables
+-_readline_list="readline readline_version RLINCLUDE RLLIBS"
+-readline=
+-case "$with_readline" in
+-  yes|"");;
+-  *)
+-  if test -z "$with_readline_lib"; then
+-    with_readline_lib="$with_readline/lib"
+-  fi
+-  if test -z "$with_readline_include"; then
+-    with_readline_include="$with_readline/include"
+-  fi;;
+-esac
+-
+-pth="$with_readline_include"
+-x=`./locate 'readline/readline.h' '' $pth`
+-case $x in
+-  ?:/*|/*) rl_include=`dirname $x`
+-    echo ..."Found readline header in $rl_include"
+-    if (echo $rl_include | grep "readline$" > /dev/null); then
+-      rl_include=`dirname $rl_include`
+-      RLINCLUDE="-I$rl_include"
+-    fi
+-     ;;
+-esac
+-
+-exe=$osname-$arch-rlv$$$exe_suff
+-cmd0="$CC $CFLAGS $extraflag $RLINCLUDE -o $exe rl_version.c"
+-try() { RLLIBS=$1; cmd="$cmd0 $1"; . log_cmd; }
+-
+-if test -n "$with_readline_lib"; then
+-  readline=$with_readline_lib
+-  rl="-L$readline -lreadline"
+-else
+-  rl="-lreadline"
+-fi
+-
+-# try linking without locatelib (without -L except --with-xxx-lib)
+-for tlib in "" tinfow tinfo ncursesw ncurses termcap; do
+-  t=$rl
+-  if test -n "$tlib"; then # need a termcap compatible library?
+-    eval with="\$with_${tlib}_lib"
+-    if test -n "$with"; then
+-      t="$t -L$with -l$tlib"
+-    else
+-      t="$t -l$tlib"
+-    fi
+-  fi
+-  try "$t"
+-  if test -r $exe; then break; fi
+-done
+-
+-readline_version=
+-if test -r $exe; then
+-  readline_version=`env LD_LIBRARY_PATH="$LD_LIBRARY_PATH$dir_sep$readline" $RUNTEST $exe`;
+-fi
+-. cleanup_exe
+-
+-case "$readline_version" in
+-*Editline*|*EditLine*) readline=
+-  echo "###"
+-  echo "### Editline wrapper detected, building without readline support"
+-  echo "###";;
+-"") readline=
+-  echo "###"
+-  echo "### Readline library does not seem to work. Maybe install libncurses?"
+-  echo "###";;
+-*) if test -z "$readline"; then readline=yes; fi;;
+-esac
+-
+-if test -n "$readline"; then
+-  if test "$fastread" != yes; then
+-    cat << EOM
+-==========================================================================
+-GNU readline provides line editing in the gp shell, with history and
+-context-dependent completions. You should really answer 'yes' to the
+-following question, unless you are trying to overcome a problem in
+-the default build.
+-EOM
+-    echo $n "Do you want to use GNU readline library within GP ? $c"
+-    rep='y n'; dflt=y; . ./myread
+-    case $ans in
+-      n) readline=;;
+-    esac
+-  fi
+-fi
+-
+-if test -z "$readline"; then
+-  echo "### Building without GNU readline support"
+-  RLLIBS=
+-  RLINCLUDE=
+-else
+-  echo "Using GNU readline, version $readline_version"
+-fi
+-- 
+2.39.1
+
