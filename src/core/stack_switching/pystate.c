@@ -69,7 +69,8 @@ savePythonState(PyThreadState* tstate)
   ps.datastack_top = tstate->datastack_top;
   ps.datastack_limit = tstate->datastack_limit;
 
-  ps.py_recursion_depth = tstate->py_recursion_limit - tstate->py_recursion_remaining;
+  ps.py_recursion_depth =
+    tstate->py_recursion_limit - tstate->py_recursion_remaining;
   ps.c_recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
 
   ps._top_frame = PyThreadState_GetFrame((PyThreadState*)tstate);
@@ -91,7 +92,8 @@ restorePythonState(PyThreadState* tstate, PythonState ps)
   tstate->datastack_top = ps.datastack_top;
   tstate->datastack_limit = ps.datastack_limit;
 
-  tstate->py_recursion_remaining = tstate->py_recursion_limit - ps.py_recursion_depth;
+  tstate->py_recursion_remaining =
+    tstate->py_recursion_limit - ps.py_recursion_depth;
   tstate->c_recursion_remaining = C_RECURSION_LIMIT - ps.c_recursion_depth;
 
   tstate->trash.delete_nesting = ps.trash_delete_nesting;
