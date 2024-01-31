@@ -15,6 +15,9 @@ requirements:
   host:
     - libgmp
     - pari
+  run:
+    - cysignals
 build:
   script: |
     export PARI_SHARE="${WASM_LIBRARY_DIR}/share/pari"
+    export PATH="$PATH:${WASM_LIBRARY_DIR}/bin"
