@@ -53,16 +53,12 @@ if IS_COMPILER_INVOCATION:
     __name__ = PYWASMCROSS_ARGS.pop("orig__name__")
 
 
-import dataclasses
-import re
-import shutil
 import subprocess
 from collections.abc import Iterable, Iterator
-from typing import Literal
+from typing import Literal, NamedTuple
 
 
-@dataclasses.dataclass(eq=False, order=False, kw_only=True)
-class BuildArgs:
+class BuildArgs(NamedTuple):
     """
     Common arguments for building a package.
     """
@@ -84,6 +80,8 @@ def get_library_output(line: list[str]) -> str | None:
     Check if the command is a linker invocation. If so, return the name of the
     output file.
     """
+    import re
+    
     SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
         if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
@@ -335,6 +333,8 @@ def _calculate_object_exports_readobj_parse(output: str) -> list[str]:
 
 
 def calculate_object_exports_readobj(objects: list[str]) -> list[str] | None:
+    import shutil
+
     readobj_path = shutil.which("llvm-readobj")
     if not readobj_path:
         which_emcc = shutil.which("emcc")
