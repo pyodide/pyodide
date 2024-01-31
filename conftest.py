@@ -2,6 +2,7 @@
 Various common utilities for testing.
 """
 
+import contextlib
 import os
 import pathlib
 import re
@@ -232,24 +233,18 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_pyproxies:
         browser.enable_pyproxy_tracing()
         init_num_proxies = browser.get_num_proxies()
-    err = None
+    err = False
     try:
         result = yield
-    except Exception as e:
-        err = e
+    except Exception:
+        err = True
+        raise
     finally:
-        try:
-            # If these guys cause a crash because the test really screwed things up,
-            # we override the error message with the better message returned by
-            # a.result() in the finally block.
+        # Suppress any errors if an error was raised so we keep the orignal error
+        with (contextlib.suppress(Exception) if err else contextlib.nullcontext()):
             browser.disable_pyproxy_tracing()
             browser.restore_state()
-        finally:
-            try:
-                if err:
-                    raise err
-            finally:
-                del err
+
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
