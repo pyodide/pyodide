@@ -16,7 +16,7 @@ index d0516ae..be61179 100755
 +++ b/Configure
 @@ -68,9 +68,16 @@ EOT
  exec 5>> $config_log
- 
+
  ####################### CONFIGURE - COMPILATION #############################
 -# $_cc_list (includes 'optimization'), extraflag
 -. ./get_cc
@@ -194,6 +194,5 @@ index 2d61d38..0000000
 -  dflt=$CFLAGS; rep=; . ./myread
 -  CFLAGS=$ans
 -fi
--- 
+--
 2.39.1
-
