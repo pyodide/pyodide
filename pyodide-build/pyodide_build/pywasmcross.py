@@ -81,7 +81,7 @@ def get_library_output(line: list[str]) -> str | None:
     output file.
     """
     import re
-    
+
     SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
         if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
@@ -514,8 +514,6 @@ def handle_command_generate_args(  # noqa: C901
         line[0] = "emstrip"
         return line
     elif cmd == "gfortran":
-        from pyodide_build._f2c_fixes import replace_f2c
-        
         tmp = replay_f2c(line)
         return line
     else:
