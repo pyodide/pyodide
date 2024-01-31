@@ -89,7 +89,8 @@ dist/libpyodide.a: \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o
+	src/core/pyversion.o \
+	src/core/stack_switching/pystate.o
 	emar rcs dist/libpyodide.a $(filter %.o,$^)
 
 
