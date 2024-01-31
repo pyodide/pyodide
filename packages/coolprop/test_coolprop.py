@@ -1,3 +1,4 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
