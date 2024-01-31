@@ -240,7 +240,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         err = True
         raise
     finally:
-        # Suppress any errors if an error was raised so we keep the orignal error
+        # Suppress any errors if an error was raised so we keep the original error
         with contextlib.suppress(Exception) if err else contextlib.nullcontext():
             browser.disable_pyproxy_tracing()
             browser.restore_state()
