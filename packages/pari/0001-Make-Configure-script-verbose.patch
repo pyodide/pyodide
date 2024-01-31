@@ -16,9 +16,8 @@ index 0cbbc6b..d0516ae 100755
  # Perl's Configure and GNU autoconfig were of much help in writing these files.
  # $Id$
 +set -v
- 
+
  TOP=`pwd`
  MAKE=${MAKE:-make}
--- 
+--
 2.39.1
-

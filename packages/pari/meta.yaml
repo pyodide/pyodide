@@ -5,13 +5,13 @@ source:
   url: http://pari.math.u-bordeaux.fr/pub/pari/unix/pari-2.15.4.tar.gz
   sha256: c3545bfee0c6dfb40b77fb4bbabaf999d82e60069b9f6d28bcb6cf004c8c5c0f
   patches:
-   - 0001-Make-Configure-script-verbose.patch
-   - 0002-Do-not-run-get_cc-when-cross-compiling.patch
-   - 0003-Do-not-run-get_double_format-when-cross-compiling.patch
-   - 0004-Do-not-run-get_gmp-when-cross-compiling.patch
-   # - 0005-Do-not-run-get_readline-when-cross-compiling.patch
-   - patches/get_dlcflags.patch
-   - patches/pari_mainstack.diff
+    - 0001-Make-Configure-script-verbose.patch
+    - 0002-Do-not-run-get_cc-when-cross-compiling.patch
+    - 0003-Do-not-run-get_double_format-when-cross-compiling.patch
+    - 0004-Do-not-run-get_gmp-when-cross-compiling.patch
+    # - 0005-Do-not-run-get_readline-when-cross-compiling.patch
+    - patches/get_dlcflags.patch
+    - patches/pari_mainstack.diff
 about:
   home: http://pari.math.u-bordeaux.fr
   summary:

@@ -15,7 +15,7 @@ index be61179..6468d04 100755
 +++ b/Configure
 @@ -79,8 +79,10 @@ ASMINLINE=
  KERNELCFLAGS=
- 
+
  . ./get_mt
 -# doubleformat, sizeof_long
 -. ./get_double_format
@@ -83,6 +83,5 @@ index 3c5a3d7..0000000
 -cat <<EOT
 -The internal word representation of a double is $_format.
 -EOT
--- 
+--
 2.39.1
-
