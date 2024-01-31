@@ -4,6 +4,8 @@ Date: Wed, 16 Nov 2022 14:02:53 -0800
 Subject: [PATCH 2/6] Patch importlib to allow modifications to
  ModuleNotFoundError
 
+Upstream PR:
+https://github.com/python/cpython/pull/114813
 ---
  Lib/importlib/_bootstrap.py | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)

@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Dec 2022 09:09:14 -0800
 Subject: [PATCH 4/6] Allow multiprocessing.connection top level import
 
+Upstream PR:
+https://github.com/python/cpython/pull/114808
+
 ---
  Lib/multiprocessing/connection.py | 5 ++++-
  1 file changed, 4 insertions(+), 1 deletion(-)

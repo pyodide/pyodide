@@ -3,6 +3,8 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
 Subject: [PATCH 1/6] Public pymain_run_python
 
+Discussion here:
+https://discuss.python.org/t/unstable-api-for-pymain-run-python-run-python-cli-but-dont-finalize-interpreter/44675
 ---
  Modules/main.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)

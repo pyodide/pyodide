@@ -22,6 +22,10 @@ trampoline.
 
 We cache the function argument counts since when I didn't cache them performance
 was negatively affected.
+
+Upstreamed here:
+https://github.com/python/cpython/pull/106219
+
 ---
  .../internal/pycore_emscripten_trampoline.h   | 67 +++++++++++++++++
  Include/internal/pycore_object.h              | 28 +------
