@@ -207,6 +207,7 @@ def test_gensalt_basic(selenium, monkeypatch):
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_rounds_valid(selenium, rounds, expected_prefix):
     import bcrypt
+
     salt = bcrypt.gensalt(rounds)
 
     assert salt.startswith(expected_prefix)
@@ -243,7 +244,7 @@ def test_gensalt_2a_prefix(selenium):
 @run_in_pyodide(packages=["bcrypt"])
 def test_hashpw_new(selenium, password, salt, hashed):
     import bcrypt
-    
+
     assert bcrypt.hashpw(password, salt) == hashed
 
 
@@ -512,9 +513,7 @@ def test_checkpw_extra_data(selenium):
 def test_kdf(selenium, rounds, password, salt, expected):
     import bcrypt
 
-    derived = bcrypt.kdf(
-        password, salt, len(expected), rounds, ignore_few_rounds=True
-    )
+    derived = bcrypt.kdf(password, salt, len(expected), rounds, ignore_few_rounds=True)
     assert derived == expected
 
 
@@ -579,8 +578,6 @@ def test_2a_wraparound_bug(selenium):
     import bcrypt
 
     assert (
-        bcrypt.hashpw(
-            (b"0123456789" * 26)[:255], b"$2a$04$R1lJ2gkNaoPGdafE.H.16."
-        )
+        bcrypt.hashpw((b"0123456789" * 26)[:255], b"$2a$04$R1lJ2gkNaoPGdafE.H.16.")
         == b"$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi"
     )
