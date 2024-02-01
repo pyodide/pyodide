@@ -80,7 +80,7 @@ def get_library_output(line: list[str]) -> str | None:
     output file.
     """
     import re
-    
+
     SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
         if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
