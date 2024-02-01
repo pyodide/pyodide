@@ -29,6 +29,7 @@ from .build_env import (
     get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
+    BuildArgs
 )
 from .common import (
     _environment_substitute_str,
@@ -42,7 +43,6 @@ from .common import (
 )
 from .io import MetaConfig, _BuildSpec, _SourceSpec
 from .logger import logger
-from .pywasmcross import BuildArgs
 
 
 def _make_whlfile(

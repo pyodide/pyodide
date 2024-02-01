@@ -61,21 +61,17 @@ from collections.abc import Iterable, Iterator
 from typing import Literal, NamedTuple
 
 
-class BuildArgs(NamedTuple):
+class CrossCompileArgs(NamedTuple):
     """
     Common arguments for building a package.
     """
-
     pkgname: str = ""
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
     target_install_dir: str = ""  # The path to the target Python installation
-    host_install_dir: str = ""  # Directory for installing built host packages.
-    builddir: str = ""  # The path to run pypa/build
     pythoninclude: str = ""
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
-    compression_level: int = 6
 
 
 def get_library_output(line: list[str]) -> str | None:
@@ -431,7 +427,7 @@ def get_export_flags(
 
 
 def handle_command_generate_args(  # noqa: C901
-    line: list[str], build_args: BuildArgs
+    line: list[str], build_args: CrossCompileArgs
 ) -> list[str]:
     """
     A helper command for `handle_command` that generates the new arguments for
@@ -516,11 +512,6 @@ def handle_command_generate_args(  # noqa: C901
     elif cmd == "strip":
         line[0] = "emstrip"
         return line
-    elif cmd == "gfortran":
-        from pyodide_build._f2c_fixes import replace_f2c
-        
-        tmp = replay_f2c(line)
-        return line
     else:
         return line
 
@@ -575,7 +566,7 @@ def handle_command_generate_args(  # noqa: C901
 
 def handle_command(
     line: list[str],
-    build_args: BuildArgs,
+    build_args: CrossCompileArgs,
 ) -> int:
     """Handle a compilation command. Exit with an appropriate exit code when done.
 
@@ -588,6 +579,16 @@ def handle_command(
     """
     new_args = handle_command_generate_args(line, build_args)
 
+    if line[0] == "gfortran":
+        from pyodide_build._f2c_fixes import replay_f2c
+        tmp = replay_f2c(line)
+        if tmp is None:
+            # No source file, it's a query for information about the compiler. Pretend we're
+            # gfortran by letting gfortran handle it
+            return subprocess.run(line).returncode
+
+        line = tmp
+
     if build_args.pkgname == "scipy":
         from pyodide_build._f2c_fixes import scipy_fixes
 
@@ -598,7 +599,7 @@ def handle_command(
 
 
 def compiler_main():
-    build_args = BuildArgs(**PYWASMCROSS_ARGS)
+    build_args = CrossCompileArgs(**PYWASMCROSS_ARGS)
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
     args[0] = basename

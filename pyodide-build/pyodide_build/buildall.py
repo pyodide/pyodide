@@ -30,6 +30,7 @@ from rich.table import Table
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
+from .build_env import BuildArgs
 from .common import (
     extract_wheel_metadata_file,
     find_matching_wheels,
@@ -38,7 +39,6 @@ from .common import (
 )
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
-from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
@@ -849,9 +849,5 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
         args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
-    if args.compression_level is None:
-        args.compression_level = int(  # type: ignore[unreachable]
-            build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL")
-        )
 
     return args

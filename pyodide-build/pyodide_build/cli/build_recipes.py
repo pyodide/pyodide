@@ -5,10 +5,9 @@ from pathlib import Path
 import typer
 
 from .. import build_env, buildall, buildpkg
-from ..build_env import init_environment
+from ..build_env import init_environment, BuildArgs
 from ..common import get_num_cores
 from ..logger import logger
-from ..pywasmcross import BuildArgs
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -194,6 +193,7 @@ def build_recipes(
     ),
     compression_level: int = typer.Option(
         6,
+        envvar="PYODIDE_ZIP_COMPRESSION_LEVEL",
         help="Level of zip compression to apply when installing. 0 means no compression.",
     ),
 ) -> None:
