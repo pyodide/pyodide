@@ -58,6 +58,7 @@
 - test_array
 - test_asdl_parser
 - test_ast:
+    xfail-safari: Stack overflow
     skip:
       - test_stdlib_validates # incompatible with zipimport
 - test_asyncgen:

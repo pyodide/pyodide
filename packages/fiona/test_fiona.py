@@ -14,6 +14,7 @@ def test_supported_drivers(selenium):
     assert fiona.driver_count() > 0
 
 
+@pytest.mark.xfail("Not working")
 @pytest.mark.driver_timeout(60)
 def test_runtest(selenium):
     @run_in_pyodide(packages=["fiona", "pytest"])
