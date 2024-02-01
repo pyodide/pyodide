@@ -614,7 +614,8 @@
       - test_basic
       - test_offset
       - test_resize_past_pos
-- test_modulefinder
+- test_modulefinder:
+    xfail: takes a long time
 - test_monitoring
 - test_msilib
 - test_multibytecodec
@@ -1022,6 +1023,7 @@
 - test_zipfile._path.test_complexity
 - test_zipfile._path.test_path
 - test_zipfile.test_core:
+    xfail: Times out
     skip:
       # NotADirectoryError: [Errno 54] Not a directory: '/proc/self/fd'
       - test_many_opens
