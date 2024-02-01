@@ -18,15 +18,46 @@ build:
     # I don't understand why... the jam file used by boost is quite hard to understand.
     printf "using clang : emscripten : emcc : <archiver>emar <ranlib>emranlib <linker>emlink ;" | tee -a ./project-config.jam
 
+    # Boost Container (header-only possible) does not compile possibly due to pthread dependency.
+    # Boost Context (and thus Boost Coroutine, Boost Fiber) only supports certain architectures.
+    # Boost Contract requires Boost Thread.
+    # Boost JSON (header-only possible) uses Boost Container.
+    # Boost MPI actually builds successfully, but I doubt whether it makes any sense.
+    # Boost Type Erasure (header-only possible) / Boost Wave does not compile,
+    #   yielding a "Name clash for '<...>libboost_chrono.a'" error.
     ./b2 variant=release toolset=clang-emscripten link=static threading=single \
-      --with-date_time --with-filesystem \
-      --with-system --with-regex --with-chrono --with-random --with-program_options --disable-icu \
-      cxxflags="$SIDE_MODULE_CXXFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1" \
-      cflags="$SIDE_MODULE_CFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1" \
+      --with-atomic \
+      --with-chrono \
+      --with-cobalt \
+      --with-date_time \
+      --with-exception \
+      --with-filesystem \
+      --with-graph \
+      --with-graph_parallel \
+      --with-headers \
+      --with-iostreams \
+      --with-locale \
+      --with-log \
+      --with-math \
+      --with-nowide \
+      --with-program_options \
+      --with-python \
+      --with-random \
+      --with-regex \
+      --with-serialization \
+      --with-stacktrace \
+      --with-system \
+      --with-test \
+      --with-timer \
+      --with-url \
+      --disable-icu \
+      cxxflags="$SIDE_MODULE_CXXFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1 -DBOOST_LOG_WITHOUT_SYSLOG=1" \
+      cflags="$SIDE_MODULE_CFLAGS -fexceptions -DBOOST_SP_DISABLE_THREADS=1 -DBOOST_LOG_WITHOUT_SYSLOG=1" \
       linkflags="-fpic $SIDE_MODULE_LDFLAGS" \
       --layout=system -j"${PYODIDE_JOBS:-3}" --prefix=${INSTALL_DIR} \
       install
 
 about:
   home: https://www.boost.org/
+  license: BSL-1.0
   summary: Free peer-reviewed portable C++ source libraries.
