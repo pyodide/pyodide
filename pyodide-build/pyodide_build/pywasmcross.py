@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""
+"""Helper for cross-compiling Python binary extensions.
+
+Python has never had a proper cross-compilation story. This is a hack, which
+miraculously works, to get around that.
 The gist is we compile the package replacing calls to the compiler and linker
 with wrappers that adjusting include paths and flags as necessary for
 cross-compiling and then pass the command long to emscripten.
