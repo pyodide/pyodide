@@ -94,13 +94,7 @@ def maybe_skip_test(item, delayed=False):
 
     # Common package import test. Skip it if the package is not built.
     if skip_msg is None and is_common_test and item.name.startswith("test_import"):
-<<<<<<< HEAD
-        if not pytest.pyodide_runtimes:  # type: ignore[attr-defined]
-||||||| ace290e6
-        if not pytest.pyodide_runtimes:
-=======
         if not pytest.pyodide_runtimes:  # type:ignore[attr-defined]
->>>>>>> main
             skip_msg = "Not running browser tests"
 
         else:
@@ -147,13 +141,7 @@ def pytest_configure(config):
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
-<<<<<<< HEAD
-    pytest.pyodide_dist_dir = config.getoption("--dist-dir")  # type: ignore[attr-defined]
-||||||| ace290e6
-    pytest.pyodide_dist_dir = config.getoption("--dist-dir")
-=======
     pytest.pyodide_dist_dir = config.getoption("--dist-dir")  # type:ignore[attr-defined]
->>>>>>> main
 
 
 def pytest_collection_modifyitems(config, items):
