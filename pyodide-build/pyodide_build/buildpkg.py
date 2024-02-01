@@ -322,8 +322,8 @@ def prepare_source(
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-    def ignore(path, names):
-        ignored = []
+    def ignore(path: str, names: list[str]) -> list[str]:
+        ignored: list[str] = []
         if fnmatch.fnmatch(path, "*/dist"):
             # Do not copy dist/*.whl files from a dirty source tree;
             # this can lead to "Exception: Unexpected number of wheels" later.
