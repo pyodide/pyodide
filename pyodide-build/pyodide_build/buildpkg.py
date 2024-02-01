@@ -324,11 +324,10 @@ def prepare_source(
 
     def ignore(path, names):
         ignored = []
-        if fnmatch.fnmatch(path, f'*/dist'):
+        if fnmatch.fnmatch(path, "*/dist"):
             # Do not copy dist/*.whl files from a dirty source tree;
             # this can lead to "Exception: Unexpected number of wheels" later.
-            ignored.extend(name for name in names
-                           if name.endswith(".whl"))
+            ignored.extend(name for name in names if name.endswith(".whl"))
         return ignored
 
     shutil.copytree(srcdir, srcpath, ignore=ignore)
