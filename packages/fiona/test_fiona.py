@@ -1,9 +1,5 @@
-import pathlib
-
 import pytest
 from pytest_pyodide import run_in_pyodide
-
-TEST_DATA_PATH = pathlib.Path(__file__).parent / "test_data"
 
 
 @pytest.mark.driver_timeout(60)
@@ -15,60 +11,36 @@ def test_supported_drivers(selenium):
 
 
 @pytest.mark.driver_timeout(60)
-def test_runtest(selenium):
-    @run_in_pyodide(packages=["fiona", "pytest"])
-    def _run(selenium, data):
-        import zipfile
+@run_in_pyodide(packages=["fiona-tests", "pytest"])
+def test_fiona(selenium_standalone):
+    import site
+    import sys
 
-        with open("tests.zip", "wb") as f:
-            f.write(data)
+    import pytest
 
-        with zipfile.ZipFile("tests.zip", "r") as zf:
-            zf.extractall("tests")
+    sys.path.append(site.getsitepackages()[0] + "/fiona-tests")
 
-        import sys
-
-        sys.path.append("tests")
-
-        import pytest
-
-        def runtest(test_filter, ignore_filters):
-            ignore_filter = []
-            for ignore in ignore_filters:
-                ignore_filter.append("--ignore-glob")
-                ignore_filter.append(ignore)
-
-            ret = pytest.main(
-                [
-                    "--pyargs",
-                    "tests",
-                    "--continue-on-collection-errors",
-                    # "-v",
-                    *ignore_filter,
-                    "-k",
-                    test_filter,
-                ]
-            )
-            assert ret == 0
-
-        runtest(
-            (
-                "not ordering "  # hangs
-                "and not env "  # No module named "boto3"
-                "and not slice "  # GML file format not supported
-                "and not GML "  # GML file format not supported
-                "and not TestNonCountingLayer "  # GPX file format not supported
-                "and not test_schema_default_fields_wrong_type "  # GPX file format not supported
-                "and not http "
-                "and not FlatGeobuf"  # assertion error
-            ),
+    def runtest(test_filter):
+        ret = pytest.main(
             [
-                "tests/test_fio*",  # no CLI tests
-                "tests/test_data_paths.py",  # no CLI tests
-                "tests/test_datetime.py",  # no CLI tests
-                "tests/test_vfs.py",  # No module named "boto3"
-            ],
+                "--pyargs",
+                "tests",
+                "--continue-on-collection-errors",
+                # "-v",
+                "-k",
+                test_filter,
+            ]
         )
+        assert ret == 0
 
-    TEST_DATA = (TEST_DATA_PATH / "fiona-tests-1.8.21.zip").read_bytes()
-    _run(selenium, TEST_DATA)
+    runtest(
+        " not ordering "  # hangs
+        " and not env "  # No module named "boto3"
+        " and not slice "  # GML file format not supported
+        " and not GML "  # GML file format not supported
+        " and not TestNonCountingLayer "  # GPX file format not supported
+        " and not test_schema_default_fields_wrong_type "  # GPX file format not supported
+        " and not http "
+        " and not FlatGeobuf"  # assertion error
+        " and not esri_only_wkt"  # format not supported
+    )
