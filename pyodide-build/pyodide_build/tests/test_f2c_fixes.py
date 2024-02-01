@@ -2,6 +2,7 @@ from pyodide_build._f2c_fixes import (
     replay_f2c,
 )
 
+
 def _args_wrapper(func):
     """Convert function to take as input / return a string instead of a
     list of arguments
@@ -21,6 +22,7 @@ def _args_wrapper(func):
 
 
 f2c_wrap = _args_wrapper(replay_f2c)
+
 
 def test_f2c():
     assert f2c_wrap("gfortran test.f") == "gcc test.c"

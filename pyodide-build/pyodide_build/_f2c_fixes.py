@@ -1,4 +1,5 @@
 import re
+import subprocess
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from textwrap import dedent  # for doctests

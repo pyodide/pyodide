@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 
 from .. import build_env, buildall, buildpkg
-from ..build_env import init_environment, BuildArgs
+from ..build_env import BuildArgs, init_environment
 from ..common import get_num_cores
 from ..logger import logger
 

@@ -74,6 +74,7 @@ class BuildArgs:
     """
     Common arguments for building a package.
     """
+
     pkgname: str = ""
     cflags: str = ""
     cxxflags: str = ""

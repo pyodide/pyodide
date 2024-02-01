@@ -29,8 +29,8 @@ from rich.spinner import Spinner
 from rich.table import Table
 
 from . import build_env, recipe
-from .buildpkg import needs_rebuild
 from .build_env import BuildArgs
+from .buildpkg import needs_rebuild
 from .common import (
     extract_wheel_metadata_file,
     find_matching_wheels,

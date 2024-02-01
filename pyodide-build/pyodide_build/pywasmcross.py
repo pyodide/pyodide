@@ -65,6 +65,7 @@ class CrossCompileArgs(NamedTuple):
     """
     Common arguments for building a package.
     """
+
     pkgname: str = ""
     cflags: str = ""
     cxxflags: str = ""
@@ -581,6 +582,7 @@ def handle_command(
 
     if line[0] == "gfortran":
         from pyodide_build._f2c_fixes import replay_f2c
+
         tmp = replay_f2c(line)
         if tmp is None:
             # No source file, it's a query for information about the compiler. Pretend we're

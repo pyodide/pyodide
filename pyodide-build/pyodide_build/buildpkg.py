@@ -24,12 +24,12 @@ from urllib import request
 from . import pypabuild
 from .build_env import (
     RUST_BUILD_PRELUDE,
+    BuildArgs,
     get_build_environment_vars,
     get_build_flag,
     get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
-    BuildArgs
 )
 from .common import (
     _environment_substitute_str,
