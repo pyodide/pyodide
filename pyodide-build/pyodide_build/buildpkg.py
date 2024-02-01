@@ -322,7 +322,15 @@ def prepare_source(
     if not srcdir.is_dir():
         raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-    shutil.copytree(srcdir, srcpath)
+    def ignore(path, names):
+        ignored = []
+        if fnmatch.fnmatch(path, "*/dist"):
+            # Do not copy dist/*.whl files from a dirty source tree;
+            # this can lead to "Exception: Unexpected number of wheels" later.
+            ignored.extend(name for name in names if name.endswith(".whl"))
+        return ignored
+
+    shutil.copytree(srcdir, srcpath, ignore=ignore)
 
 
 def patch(pkg_root: Path, srcpath: Path, src_metadata: _SourceSpec) -> None:
