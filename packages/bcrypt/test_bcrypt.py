@@ -325,7 +325,7 @@ def test_checkpw_str_password(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.checkpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")  # type: ignore[arg-type]
+        bcrypt.checkpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
 
 @run_in_pyodide(packages=["bcrypt"])
@@ -334,7 +334,7 @@ def test_checkpw_str_salt(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.checkpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")  # type: ignore[arg-type]
+        bcrypt.checkpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
 
 @run_in_pyodide(packages=["bcrypt"])
@@ -343,7 +343,7 @@ def test_hashpw_str_password(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.hashpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")  # type: ignore[arg-type]
+        bcrypt.hashpw("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
 
 @run_in_pyodide(packages=["bcrypt"])
@@ -352,7 +352,7 @@ def test_hashpw_str_salt(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.hashpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")  # type: ignore[arg-type]
+        bcrypt.hashpw(b"password", "$2b$04$cVWp4XaNU8a4v1uMRum2SO")
 
 
 @run_in_pyodide(packages=["bcrypt"])
@@ -523,7 +523,7 @@ def test_kdf_str_password(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.kdf("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10)  # type: ignore[arg-type]
+        bcrypt.kdf("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10)
 
 
 @run_in_pyodide(packages=["bcrypt"])
@@ -532,7 +532,7 @@ def test_kdf_str_salt(selenium):
     import pytest
 
     with pytest.raises(TypeError):
-        bcrypt.kdf(b"password", "salt", 10, 10)  # type: ignore[arg-type]
+        bcrypt.kdf(b"password", "salt", 10, 10)
 
 
 @run_in_pyodide(packages=["bcrypt"])
