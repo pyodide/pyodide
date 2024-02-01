@@ -53,6 +53,11 @@ myst:
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`
 
+- Updated `boost-cpp` config to build Boost.Atomic, Boost.Cobalt, Boost.Exception,
+  Boost.Graph, Boost.GraphParallel, Boost.Headers, Boost.IOStreams, Boost.Locale,
+  Boost.Log, Boost.Math, Boost.NoWide, Boost.Python, Boost.Test, Boost.Timer,
+  and Boost.Url. {pr}`4465`
+
 ## Version 0.25.0
 
 _January 18, 2023_
