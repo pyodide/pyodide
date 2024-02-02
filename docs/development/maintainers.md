@@ -109,7 +109,7 @@ final number. Follow the relevant steps from {ref}`release-instructions`.
 Cherry pick the corresponding documentation commits to the `stable` branch. Use
 `[skip ci]` in the commit message.
 
-### Upgrading pyodide to a new version of CPython
+## Upgrading pyodide to a new version of CPython
 
 Prerequisites -- The desired version of CPython must be available at:
 
