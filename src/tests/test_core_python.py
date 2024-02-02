@@ -51,6 +51,7 @@ def test_cpython_core(main_test, selenium, request):
         res = selenium.run(
             dedent(
                 f"""
+                res = None
                 import platform
                 from test.libregrtest.main import main
 
@@ -65,9 +66,10 @@ def test_cpython_core(main_test, selenium, request):
                     main(["{name}"], match_tests=match_tests, verbose=True, verbose3=True)
                 except SystemExit as e:
                     if e.code == 4:
-                        pass
+                        res = e.code
                     elif e.code != 0:
                         raise RuntimeError(f"Failed with code: {{e.code}}")
+                res
                 """
             )
         )
