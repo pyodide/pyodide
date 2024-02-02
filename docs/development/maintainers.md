@@ -106,10 +106,9 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
    `0.20.X`,
 
    ```sh
-   git fetch upstream
-   git checkout stable
-   git checkout -b 0.20.X
-   git push upstream 0.20.X
+   git fetch upstream stable:stable
+   git branch 0.20.X stable
+   git push -u upstream 0.20.X
    ```
 
 5. Create a tag `X.Y.Z` (without leading `v`) and push
