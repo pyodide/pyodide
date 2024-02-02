@@ -103,6 +103,7 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
 4. (Major release only.) Rename the `stable` branch to a release branch for the
    previous major version. For instance if last release was, `0.20.0`, the
    corresponding release branch would be `0.20.X`:
+
    ```sh
    git fetch upstream stable:stable
    git branch 0.20.X stable
