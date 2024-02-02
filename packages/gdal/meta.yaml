@@ -1,11 +1,11 @@
 package:
   name: gdal
-  version: 3.5.2
+  version: 3.8.3
   tag:
     - library
 source:
-  url: https://github.com/OSGeo/gdal/releases/download/v3.5.2/gdal-3.5.2.tar.gz
-  sha256: fbd696e1b2a858fbd2eb3718db16b14ed9ba82521d3578770d480c74fe1146d2
+  url: https://github.com/OSGeo/gdal/releases/download/v3.8.3/gdal-3.8.3.tar.gz
+  sha256: f7a30387a8239e9da26200f787a02136df2ee6473e86b36d05ad682761a049ea
 requirements:
   host:
     - libtiff
@@ -32,6 +32,7 @@ build:
     # the comment. Until the bug is fixed, this is a temporary workaround to avoid the bug (removing comments).
     # See: https://github.com/llvm/llvm-project/issues/67979
     sed -i -e 's|//.*||' -e 's|/\*.*\*/||' alg/gdalgeoloc.cpp
+    sed -i -e 's|//.*||' -e 's|/\*.*\*/||' frmts/pds/pds4vector.cpp
 
     mkdir -p build
     cd build && emcmake cmake .. \
@@ -75,13 +76,15 @@ build:
       -DGDAL_USE_SQLITE3=ON \
       -DSQLite3_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
       -DSQLite3_LIBRARY=$EMSCRIPTEN_LIB/libsqlite3.a \
+      -DACCEPT_MISSING_SQLITE3_MUTEX_ALLOC=ON \
       \
       -DGDAL_USE_GEOTIFF_INTERNAL=ON \
       -DGDAL_USE_QHULL_INTERNAL=ON \
       -DGDAL_USE_LERC_INTERNAL=ON \
       -DGDAL_USE_JSONC_INTERNAL=ON \
       -DGDAL_USE_PCRE2=OFF \
-      -DBUILD_TESTING=OFF
+      -DBUILD_TESTING=OFF \
+      -DBUILD_PYTHON_BINDINGS=OFF
 
 
     # Note:
