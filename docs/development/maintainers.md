@@ -260,6 +260,11 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    `upgrade_pythoncapi.py --no-compat` to the C extension in `src/code`.
    https://github.com/python/pythoncapi-compat/blob/main/upgrade_pythoncapi.py
 
+   The file most tightly coupled to the CPython version is
+   `src/core/stack_switching/pystate.c`. Consult the following greenlet file to
+   figure out how to fix it:
+   https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
+
 8. In the virtual environment with the new Python version, run
 
    ```sh
