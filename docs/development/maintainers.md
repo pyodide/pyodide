@@ -100,11 +100,9 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
 
 3. Make a PR with the updates from steps 1 and 2. Merge the PR.
 
-4. (Major release only.) Assuming the upstream `stable` branch exists,
-   rename it to a release branch for the previous major version. For instance if
-   last release was, `0.20.0`, the corresponding release branch would be
-   `0.20.X`,
-
+4. (Major release only.) Rename the `stable` branch to a release branch for the
+   previous major version. For instance if last release was, `0.20.0`, the
+   corresponding release branch would be `0.20.X`:
    ```sh
    git fetch upstream stable:stable
    git branch 0.20.X stable
@@ -115,6 +113,8 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
    it to upstream,
 
    ```sh
+   git checkout main
+   git pull upstream
    git tag X.Y.Z
    git push upstream X.Y.Z
    ```
@@ -124,6 +124,7 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
 6. (Major release only). Create a new `stable` branch from this tag,
 
    ```sh
+   git checkout main
    git checkout -B stable
    git push upstream stable --force
    ```
@@ -154,11 +155,11 @@ Anyone with an account on hub.docker.com can follow the following steps:
    If the build succeeds, docker will give you a hash for the built image.
 3. Use `python ./tools/docker_image_tag.py` to find out what the new image tag
    should be. Tag the image with:
-   ```
+   ```sh
    docker image tag <image-hash> <your-docker-username>/pyodide-env:<image-tag>
    ```
 4. Push the image with:
-   ```
+   ```sh
    docker image push <your-docker-username>/pyodide-env:<image-tag>
    ```
 5. Replace the image in `.circleci/config.yml` with your newly created image.
@@ -240,9 +241,9 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    - Resolve conflicts / drop patches that have been upstreamed. If you have
      conflicts, make sure you are using diff3:
 
-   ```sh
-   git config --global merge.conflictstyle diff3
-   ```
+     ```sh
+     git config --global merge.conflictstyle diff3
+     ```
 
    - Generate the new patches:
      ```sh
