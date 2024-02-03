@@ -9,7 +9,6 @@ source:
 
 requirements:
   host:
-    - distutils
     - setuptools
 
 build:

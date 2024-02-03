@@ -1,11 +1,11 @@
 package:
   name: gensim
-  version: 4.3.1
+  version: 4.3.2
   top-level:
     - gensim
 source:
-  url: https://files.pythonhosted.org/packages/9a/3c/dd4351a2ef3a8fb19e26d6ccb928823fea53375de9d28b221f8cf0e53c8e/gensim-4.3.1.tar.gz
-  sha256: 8b5f11c0e6a5308086b48e8f6841223a4fa1a37d513684612b7ee854b533015f
+  url: https://files.pythonhosted.org/packages/77/68/074333a52f6fa82402332054ca0dfa721f7dcfa7eace313f64cdb44bacde/gensim-4.3.2.tar.gz
+  sha256: 99ac6af6ffd40682e70155ed9f92ecbf4384d59fb50af120d343ea5ee1b308ab
   patches:
     - patches/0001-Avoid-signature-mismatch-in-sdot-detection.patch
 

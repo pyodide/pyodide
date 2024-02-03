@@ -1,0 +1,28 @@
+From aeadf0c7223c0b8c7e209f6b555dfc91de31a34c Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 29 Jan 2024 16:34:05 -0800
+Subject: [PATCH] Tell rust-lang/libc that time_t is 64 bits
+
+See upstream PR:
+https://github.com/rust-lang/libc/pull/3569#event-11634944887
+---
+ src/rust/Cargo.toml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/rust/Cargo.toml b/src/rust/Cargo.toml
+index 2322486d0..52e7231d7 100644
+--- a/src/rust/Cargo.toml
++++ b/src/rust/Cargo.toml
+@@ -7,6 +7,9 @@ publish = false
+ # This specifies the MSRV
+ rust-version = "1.63.0"
+ 
++[patch.crates-io]
++libc = { git = 'https://github.com/hoodmane/libc.git', branch = 'emscripten-time_t-64-bit-2' }
++
+ [dependencies]
+ once_cell = "1"
+ cfg-if = "1"
+-- 
+2.25.1
+

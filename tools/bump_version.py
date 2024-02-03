@@ -40,7 +40,7 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        file=ROOT / "src/py/setup.cfg",
+        file=ROOT / "src/py/pyproject.toml",
         pattern=build_version_pattern("version = {python_version}"),
         prerelease=True,
     ),

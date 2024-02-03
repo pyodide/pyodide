@@ -13,7 +13,6 @@ build:
     find $WHEELDIR -name '*.exe' -delete
 requirements:
   run:
-    - distutils
     - pyparsing
 about:
   home: https://github.com/pypa/setuptools
