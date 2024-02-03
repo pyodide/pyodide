@@ -149,7 +149,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
-	-lHacl_Hash_SHA2 \
 	\
 	-lGL \
 	-legl.js \
@@ -221,7 +220,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-lidbfs.js \
 		-lnodefs.js \
-		-lHacl_Hash_SHA2 \
 
 endif
 
