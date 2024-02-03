@@ -80,5 +80,5 @@ build:
 
     cd Lib && \
       tar --exclude=__pycache__ -cf - \
-      test test/testsqlite3/ \
+      test test/test_sqlite3/ \
       | tar -C $DISTDIR -xf -
