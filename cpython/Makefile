@@ -26,6 +26,8 @@ all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(INSTALL)/lib/libhiwire.a
 
 .PHONY=sysconfigdata
 sysconfigdata:
+	# Generate sysconfigdata. It outputs into a subfolder of build/, and
+	# the subfolder is written to pybuilddir.txt.
 	cd $(BUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	$(eval PYBUILDDIR=$(BUILD)/`cat $(BUILD)/pybuilddir.txt`)
 	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
@@ -36,10 +38,6 @@ sysconfigdata:
 
 
 $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) sysconfigdata
-	# Generate sysconfigdata. It outputs into a subfolder of build/, and
-	# the subfolder is written to pybuilddir.txt.
-
-
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \

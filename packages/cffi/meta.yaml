@@ -11,7 +11,6 @@ source:
   sha256: bcb3ef43e58665bbda2fb198698fcae6776483e0c4a631aa5647806c25e02cc0
   patches:
     - patches/0001-Use-libffi-in-emscripten.patch
-# TODO: re-enable. Has trouble installing native cffi.
 build:
   cross-build-env: true
 about:

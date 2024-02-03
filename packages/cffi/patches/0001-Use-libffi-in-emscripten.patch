@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 29 Jan 2024 15:35:52 -0800
 Subject: [PATCH] Use libffi in emscripten
 
+Upstreamed:
+https://github.com/python-cffi/cffi/pull/53
+
 ---
  src/c/_cffi_backend.c | 9 +++++++++
  1 file changed, 9 insertions(+)
