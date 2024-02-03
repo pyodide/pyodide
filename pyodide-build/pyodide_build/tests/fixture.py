@@ -18,7 +18,6 @@ def temp_python_lib(tmp_path_factory):
 
     (path / "test").mkdir()
     (path / "test" / "test_blah.py").touch()
-    (path / "distutils").mkdir()
     (path / "turtle.py").touch()
 
     (path / "module1.py").touch()
