@@ -661,6 +661,30 @@ def handle_command_generate_args(  # noqa: C901
     return new_args
 
 
+def cramjam_fix(line: list[str]) -> None:
+    """TODO: remove this asap.
+
+    clang gives a weird error saying that qsort and memcmp were not declared.
+    This despite the fact that the file in question imported stdlib.h where they
+    are declared. Probably an llvm bug.
+
+    I tried using [patch.crates-io] to deal with this but it didn't work.
+    """
+    if "zstd/lib/dictBuilder/cover.c" not in line:
+        return
+    path = Path("zstd/lib/dictBuilder/cover.c")
+    text = path.read_text()
+    text = (
+        """
+        void qsort(void *base, int nmemb, int size,
+                    int (*compar)(const void *, const void *));
+        int memcmp(const void *s1, const void *s2, int n);
+        """
+        + text
+    )
+    path.write_text(text)
+
+
 def handle_command(
     line: list[str],
     build_args: BuildArgs,
@@ -692,6 +716,9 @@ def handle_command(
         from pyodide_build._f2c_fixes import scipy_fixes
 
         scipy_fixes(new_args)
+
+    if build_args.pkgname == "cramjam":
+        cramjam_fix(line)
 
     result = subprocess.run(new_args)
     return result.returncode
