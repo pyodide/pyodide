@@ -8,6 +8,7 @@ source:
   sha256: f7e233791761b61e3d85598b25db75868d9f1cd35b2bd10eb34ec4755ff2add1
 build:
   script: |
+    # TODO: remove this when updating cramjam
     cd cramjam-python && cargo update -p zstd-sys --precise 2.0.9
 about:
   home: ""
