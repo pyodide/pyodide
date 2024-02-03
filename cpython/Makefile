@@ -65,7 +65,14 @@ clean-all: clean
 $(TARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
-	shasum --algorithm 256 $(TARBALL) | grep -q $(PYTHON_ARCHIVE_SHA256)
+	@GOT_SHASUM=`shasum --algorithm 256 $(TARBALL) | cut -f1 -d' '` \
+		&& (echo $$GOT_SHASUM | grep -q $(PYTHON_ARCHIVE_SHA256)) \
+		|| (\
+			   echo "Got unexpected shasum $$GOT_SHASUM" \
+			&& echo "If you are updating the Python version, set PYTHON_ARCHIVE_SHA256 in Makefile.envs to this." \
+			&& exit 1 \
+		)
+
 
 
 $(BUILD)/.patched: $(TARBALL)
