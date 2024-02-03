@@ -24,12 +24,20 @@ endif
 
 all: $(INSTALL)/lib/$(LIB) $(INSTALL)/lib/libffi.a $(INSTALL)/lib/libhiwire.a
 
-
-$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
+.PHONY=sysconfigdata
+sysconfigdata:
 	# Generate sysconfigdata. It outputs into a subfolder of build/, and
 	# the subfolder is written to pybuilddir.txt.
 	cd $(BUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(BUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
+	$(eval PYBUILDDIR=$(BUILD)/`cat $(BUILD)/pybuilddir.txt`)
+	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
+	mkdir -p $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	mkdir -p $(SYSCONFIGDATA_DIR)
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
+	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 
+
+$(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) sysconfigdata
 	( \
 		cd $(BUILD); \
 		sed -i -e 's/libinstall:.*/libinstall:/' Makefile; \
@@ -39,15 +47,9 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB)
 		cp $(LIB) $(INSTALL)/lib/ \
 	)
 
-	$(eval PYBUILDDIR=$(BUILD)/`cat $(BUILD)/pybuilddir.txt`)
-	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(INSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
-	mkdir -p $(SYSCONFIGDATA_DIR)
-	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
-
 
 .PHONY=rebuild
-rebuild:
+rebuild: sysconfigdata
 	emmake make -C $(BUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(LIB) -j $${PYODIDE_JOBS:-3}
 	cp $(BUILD)/$(LIB) $(INSTALL)/lib/
 
