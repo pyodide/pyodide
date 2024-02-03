@@ -6,6 +6,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/6d/37/69fc31f8bb047b7980c2c49d9abe19249d087c93dfd0991ffcadb3d115a7/cramjam-2.8.1.tar.gz
   sha256: f7e233791761b61e3d85598b25db75868d9f1cd35b2bd10eb34ec4755ff2add1
+  patches:
+    - patches/0001-Use-zstd-sys-2.0.9.patch
 build:
   script: |
     # TODO: remove this when cramjam uses zstd-sys >= 2.0.9

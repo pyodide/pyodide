@@ -1,0 +1,32 @@
+From d85858b67e2756117067e5720908f982eb17a70f Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Sat, 3 Feb 2024 12:58:38 +0900
+Subject: [PATCH] Use zstd-sys 2.0.9
+
+Remove this when there is are new zstd-safe and cramjam release
+
+---
+ libcramjam/Cargo.toml | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/libcramjam/Cargo.toml b/libcramjam/Cargo.toml
+index f90b4c7..8f01824 100644
+--- a/libcramjam/Cargo.toml
++++ b/libcramjam/Cargo.toml
+@@ -20,9 +20,13 @@ flate2 = "^1"
+ libdeflater = "^1"
+ zstd = "0.13.0"
+ zstd-safe = "7.0.0"  # NOTE: This is the same dep version as zstd, as they don't re-export
++zstd-sys = "2.0.9"
+ libc = { version = "0.2", optional = true }
+ xz2 = { version = "0.1.7", features = ["static"] }
+ 
++[patch.crates-io]
++zstd-sys = { path = "./zstd-rs/zstd-safe/zstd-sys" }
++
+ [build-dependencies]
+ cbindgen = "^0.24"
+ 
+-- 
+2.29.2.windows.2
+
