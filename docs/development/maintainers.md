@@ -172,7 +172,7 @@ Anyone with an account on hub.docker.com can follow the following steps:
    the `pyodide` dockerhub account.
 
 It's also possible to update the docker image by pushing your changes to the
-`Dockerfile` to a branch in the `pyodide/pyodide` repo  (not on a fork) and
+`Dockerfile` to a branch in the `pyodide/pyodide` repo (not on a fork) and
 clicking `Run workflow` on
 https://github.com/pyodide/pyodide/actions/workflows/docker_image.yml.
 
