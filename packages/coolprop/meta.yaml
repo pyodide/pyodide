@@ -29,5 +29,5 @@ test:
 about:
   home: http://www.coolprop.org
   PyPI: https://pypi.org/project/CoolProp
-  summary: "Open-source thermodynamic and transport properties database"
+  summary: Open-source thermodynamic and transport properties database
   license: MIT
