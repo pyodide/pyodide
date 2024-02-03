@@ -22,5 +22,3 @@ build:
           .
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-
-    
