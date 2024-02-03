@@ -1,0 +1,31 @@
+package:
+  name: libmpfi
+  version: 1.5.2
+  tag:
+    - library
+source:
+  url: https://github.com/sagemath/sage/releases/download/10.2/mpfi-1.5.2.tar.bz2
+  sha256: c04f52cb306824b91b6d6eacf4f675b91fdee47c30f14d5b346dbfcd2492d274
+requirements:
+  host:
+    - libgmp
+    - libmpfr
+about:
+  home: http://mpfi.gforge.inria.fr/
+  summary: A multiple precision interval arithmetic library based on MPFR
+  license: LGPL 3
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-dependency-tracking \
+        --disable-shared \
+        --with-gmp="${WASM_LIBRARY_DIR}" \
+        --with-mpfr="${WASM_LIBRARY_DIR}" \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+extra:
+  recipe-maintainers:
+    - mkoeppe
