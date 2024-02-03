@@ -5,6 +5,8 @@ Subject: [PATCH] Use zstd-sys 2.0.9
 
 Remove this when there is are new zstd-safe and cramjam release
 
+https://github.com/gyscos/zstd-rs/pull/261
+
 ---
  libcramjam/Cargo.toml | 4 ++++
  1 file changed, 4 insertions(+)
