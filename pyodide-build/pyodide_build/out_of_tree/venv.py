@@ -192,7 +192,7 @@ def create_pyodide_script(venv_bin: Path) -> None:
     pyodide_path.write_text(
         dedent(
             f"""
-            #!/bin/sh
+            #!/usr/bin/env bash
             PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
             """
         )
