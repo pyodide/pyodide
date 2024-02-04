@@ -14,7 +14,7 @@ export SYSCONFIG_NAME=_sysconfigdata_$(CPYTHON_ABI_FLAGS)_emscripten_$(PLATFORM_
 # environment variables. The next line instructs make to use bash to run each
 # command.
 export BASH_ENV := $(PYODIDE_ROOT)/pyodide_env.sh
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 
 version_tmp_1 := $(subst ., ,$(PYVERSION:v%=%))
 # Handle alpha, beta, and release candidate versions
