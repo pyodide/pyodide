@@ -8,7 +8,7 @@ from .fixture import temp_python_lib, temp_python_lib2
 def test_defaultfilterfunc(temp_python_lib):
     filterfunc = default_filterfunc(temp_python_lib, verbose=True)
 
-    ignored = ["test", "distutils", "turtle.py"]
+    ignored = ["test", "turtle.py"]
     assert set(ignored) == filterfunc(str(temp_python_lib), ignored)
 
     assert set() == filterfunc(str(temp_python_lib), ["hello.py", "world.py"])

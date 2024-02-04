@@ -1,5 +1,7 @@
-export PYVERSION ?= 3.11.7
+export PYVERSION ?= 3.12.1
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.52
+
+export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
 
 ifdef CPYTHON_DEBUG
 	export CPYTHON_ABI_FLAGS=d
@@ -29,7 +31,6 @@ export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
 export PYTHON_ARCHIVE_URL=https://www.python.org/ftp/python/$(PYSTABLEVERSION)/Python-$(PYVERSION).tgz
-export PYTHON_ARCHIVE_SHA256=068c05f82262e57641bd93458dfa883128858f5f4997aad7a36fd25b13b29209
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONINSTALL=$(CPYTHONROOT)/installs/python-$(PYVERSION)
@@ -148,6 +149,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
+	-lHacl_Hash_SHA2 \
 	\
 	-lGL \
 	-legl.js \
@@ -219,6 +221,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-lidbfs.js \
 		-lnodefs.js \
+		-lHacl_Hash_SHA2 \
 
 endif
 

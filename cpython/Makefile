@@ -47,6 +47,8 @@ $(INSTALL)/lib/$(LIB): $(BUILD)/$(LIB) sysconfigdata
 		cp $(LIB) $(INSTALL)/lib/ \
 	)
 
+	cp $(BUILD)/Modules/_hacl/libHacl_Hash_SHA2.a $(INSTALL)/lib/
+
 
 .PHONY=rebuild
 rebuild: sysconfigdata

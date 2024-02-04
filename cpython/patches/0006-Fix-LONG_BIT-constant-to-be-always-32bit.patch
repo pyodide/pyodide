@@ -1,7 +1,7 @@
-From d873a0a76209b13b86176d674c44a2c073a2faaf Mon Sep 17 00:00:00 2001
+From b6369c9a0192a617548812203b78862da8a49e52 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 12 Jan 2024 00:52:57 +0900
-Subject: [PATCH 9/9] Fix LONG_BIT constant to be always 32bit
+Subject: [PATCH 6/6] Fix LONG_BIT constant to be always 32bit
 
 Starting from Emscripten 3.1.50, there is an issue where LONG_BIT is
 calculated to 64 for some reason. This is very strange because LONG_MAX
@@ -17,10 +17,10 @@ Related: https://github.com/emscripten-core/emscripten/pull/20752
  1 file changed, 1 insertion(+)
 
 diff --git a/Include/pyport.h b/Include/pyport.h
-index b3b8b6f09a..157816de42 100644
+index 35eca7234c..1c277e2377 100644
 --- a/Include/pyport.h
 +++ b/Include/pyport.h
-@@ -583,6 +583,7 @@ extern char * _getpty(int *, int, mode_t, int);
+@@ -573,6 +573,7 @@ extern char * _getpty(int *, int, mode_t, int);
  #define LONG_MIN (-LONG_MAX-1)
  #endif
  

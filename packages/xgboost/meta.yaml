@@ -1,5 +1,6 @@
 package:
   name: xgboost
+  _disabled: true
   version: 1.6.1
   top-level:
     - xgboost
@@ -22,7 +23,6 @@ requirements:
     - numpy
     - scipy
     - setuptools
-    - distutils
 about:
   home: https://github.com/dmlc/xgboost
   PyPI: https://pypi.org/project/xgboost

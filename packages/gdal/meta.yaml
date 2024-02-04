@@ -102,7 +102,7 @@ build:
     cat link_cmd.txt > ${LINKLIBS}
     cat linked_static_libs.txt >> ${LINKLIBS}
 
-    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make -j ${PYODIDE_JOBS:-16}
     emmake make install
 
     cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}
