@@ -284,7 +284,7 @@ class RecipeBuilder:
                 ignored.extend(name for name in names if name.endswith(".whl"))
             return ignored
 
-        shutil.copytree(srcdir, srcpath, ignore=ignore)
+        shutil.copytree(srcdir, self.src_extract_dir, ignore=ignore)
 
         self.src_dist_dir.mkdir(parents=True, exist_ok=True)
 
