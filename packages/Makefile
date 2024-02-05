@@ -4,7 +4,7 @@ export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
 all:
-	mkdir -p $(HOSTINSTALLDIR) $(WASM_LIBRARY_DIR)
+	mkdir -p $(HOSTINSTALLDIR)
 	PYODIDE_ROOT=$(PYODIDE_ROOT) pyodide build-recipes \
 	"$(PYODIDE_PACKAGES)" \
 	--recipe-dir=./ \

@@ -22,7 +22,6 @@ from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
 from .build_env import (
     RUST_BUILD_PRELUDE,
     get_build_environment_vars,
-    get_build_flag,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -93,9 +92,7 @@ class RecipeBuilder:
         self.build_args = build_args
 
         self.library_install_prefix = (
-            Path(build_dir).resolve()
-            if build_dir
-            else self.pkg_root.parent
+            Path(build_dir).resolve() if build_dir else self.pkg_root.parent
         ) / ".libs"
 
         self.build_dir = (
@@ -534,7 +531,6 @@ class RecipeBuilder:
             "PKG_VERSION": self.version,
             "PKG_BUILD_DIR": str(self.src_extract_dir),
             "DISTDIR": str(self.src_dist_dir),
-
             # TODO: rename this to something more compatible with Makefile or CMake conventions
             "WASM_LIBRARY_DIR": str(self.library_install_prefix),
             # Using PKG_CONFIG_LIBDIR instead of PKG_CONFIG_PATH,
