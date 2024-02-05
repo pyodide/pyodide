@@ -578,7 +578,6 @@ def handle_command(
     build_args : BuildArgs
        a container with additional compilation options
     """
-    new_args = handle_command_generate_args(line, build_args)
 
     if line[0] == "gfortran":
         from pyodide_build._f2c_fixes import replay_f2c
@@ -590,6 +589,8 @@ def handle_command(
             return subprocess.run(line).returncode
 
         line = tmp
+    
+    new_args = handle_command_generate_args(line, build_args)
 
     if build_args.pkgname == "scipy":
         from pyodide_build._f2c_fixes import scipy_fixes
