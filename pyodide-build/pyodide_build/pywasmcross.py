@@ -63,15 +63,18 @@ from typing import Literal, NamedTuple
 
 class CrossCompileArgs(NamedTuple):
     """
-    Common arguments for building a package.
+    Arguments for cross-compiling a package.
     """
 
-    pkgname: str = ""
     cflags: str = ""
     cxxflags: str = ""
     ldflags: str = ""
+
+    # The name of the package being compiled
+    # This is used to apply package-specific fixes, such as scipy
+    pkgname: str = ""
     target_install_dir: str = ""  # The path to the target Python installation
-    pythoninclude: str = ""
+    pythoninclude: str = ""  # path to the cross-compiled Python include directory
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
 
 
