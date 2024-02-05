@@ -111,13 +111,25 @@ static PyObject* asyncio;
 #define IS_MUTABLE_SEQUENCE (1 << 14)
 // clang-format on
 
+// _PyGen_GetCode is static, and PyGen_GetCode is a public wrapper around it
+// which increfs the return value. We wrap the wrapper back into _PyGen_GetCode
+// which returns a borrowed reference so we can use the exact upstream
+// implementation of gen_is_coroutine
+static inline PyCodeObject*
+_PyGen_GetCode(PyGenObject* o)
+{
+  PyCodeObject* code = PyGen_GetCode((PyGenObject*)o);
+  Py_DECREF(code);
+  return code;
+}
+
 // Taken from genobject.c
 // For checking whether an object is awaitable.
 static int
 gen_is_coroutine(PyObject* o)
 {
   if (PyGen_CheckExact(o)) {
-    PyCodeObject* code = (PyCodeObject*)((PyGenObject*)o)->gi_code;
+    PyCodeObject* code = _PyGen_GetCode((PyGenObject*)o);
     if (code->co_flags & CO_ITERABLE_COROUTINE) {
       return 1;
     }

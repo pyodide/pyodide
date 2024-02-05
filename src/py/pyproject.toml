@@ -1,3 +1,33 @@
 [build-system]
-requires = ["setuptools>=42"]
+requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyodide-py"
+version = "0.26.0.dev0"
+authors = [{name = "Pyodide developers"}]
+description = "A Python package providing core interpreter functionality for Pyodide"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/pyodide/pyodide"
+"Bug Tracker" = "https://github.com/pyodide/pyodide/issues"
+Documentation = "https://pyodide.org/en/stable/"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+py-modules = ["webbrowser"]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["."]
+namespaces = false

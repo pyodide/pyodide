@@ -1,9 +1,9 @@
 package:
   name: fiona
-  version: 1.8.22
+  version: 1.9.5
 source:
-  url: https://files.pythonhosted.org/packages/b9/d7/48025179fbbb2e1bab698131246878df36fa9aa5bee0ba1c062cd8f2ef44/Fiona-1.8.22.tar.gz
-  sha256: a82a99ce9b3e7825740157c45c9fb2259d4e92f0a886aaac25f0db40ffe1eea3
+  url: https://files.pythonhosted.org/packages/83/a0/6b870864ceebcd046d2e952b0d18932812ff7a48d3b05670af3f702d9c01/fiona-1.9.5.tar.gz
+  sha256: 99e2604332caa7692855c2ae6ed91e1fffdf9b59449aa8032dd18e070e59a2f7
 test:
   imports:
     - fiona
@@ -31,6 +31,15 @@ build:
     echo ${GDAL_CONFIG}
     echo ${GDAL_DATA}
     echo ${PROJ_LIB}
+    rm tests/test_fio* # CLI tests
+    rm tests/test_data_paths.py # CLI tests
+    rm tests/test_datetime.py # CLI tests
+    rm tests/test_vfs.py # No module named "boto3"
+    rm tests/test_env.py # No module named "boto3"
+
+    mkdir fiona-tests
+    mv tests fiona-tests
+    tar -cf ${DISTDIR}/fiona-tests.tar fiona-tests
 
 about:
   home: http://github.com/Toblerity/Fiona

@@ -275,7 +275,17 @@ class RecipeBuilder:
         if not srcdir.is_dir():
             raise ValueError(f"path={srcdir} must point to a directory that exists")
 
-        shutil.copytree(srcdir, self.src_extract_dir)
+        def ignore(path: str, names: list[str]) -> list[str]:
+            ignored: list[str] = []
+            
+            if fnmatch.fnmatch(path, "*/dist"):
+                # Do not copy dist/*.whl files from a dirty source tree;
+                # this can lead to "Exception: Unexpected number of wheels" later.
+                ignored.extend(name for name in names if name.endswith(".whl"))
+            return ignored
+
+        shutil.copytree(srcdir, srcpath, ignore=ignore)
+
         self.src_dist_dir.mkdir(parents=True, exist_ok=True)
 
     def _download_and_extract(self) -> None:

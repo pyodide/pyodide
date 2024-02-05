@@ -18,7 +18,6 @@ However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
-- distutils
 - ssl
 - lzma
 - sqlite3
