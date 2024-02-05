@@ -589,7 +589,7 @@ def handle_command(
             return subprocess.run(line).returncode
 
         line = tmp
-    
+
     new_args = handle_command_generate_args(line, build_args)
 
     if build_args.pkgname == "scipy":
