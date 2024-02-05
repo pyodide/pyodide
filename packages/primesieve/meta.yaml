@@ -1,6 +1,8 @@
 package:
   name: primesieve
   version: "11.2"
+  tag:
+    - library
 source:
   url: https://github.com/kimwalisch/primesieve/archive/refs/tags/v11.2.tar.gz
   sha256: 86c31bae9c378340b19669eafef8c5e45849adf7b9c92af1d212a2a2bfa0a5db
