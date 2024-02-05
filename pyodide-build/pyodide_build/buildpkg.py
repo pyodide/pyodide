@@ -277,7 +277,7 @@ class RecipeBuilder:
 
         def ignore(path: str, names: list[str]) -> list[str]:
             ignored: list[str] = []
-            
+
             if fnmatch.fnmatch(path, "*/dist"):
                 # Do not copy dist/*.whl files from a dirty source tree;
                 # this can lead to "Exception: Unexpected number of wheels" later.
