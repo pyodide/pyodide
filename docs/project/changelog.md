@@ -16,7 +16,7 @@ myst:
 
 ## Version 0.25.0
 
-_January 18, 2023_
+_January 18, 2024_
 
 ### General
 
