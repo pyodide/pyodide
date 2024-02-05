@@ -92,6 +92,12 @@ class RecipeBuilder:
         self.fullname = f"{self.name}-{self.version}"
         self.build_args = build_args
 
+        self.library_install_prefix = (
+            Path(build_dir).resolve()
+            if build_dir
+            else self.pkg_root.parent
+        ) / ".libs"
+
         self.build_dir = (
             Path(build_dir).resolve() / self.name / "build"
             if build_dir
@@ -435,7 +441,7 @@ class RecipeBuilder:
             bash_runner.run(self.build_metadata.post, script_name="post script")
 
             if self.build_metadata.vendor_sharedlib:
-                lib_dir = Path(get_build_flag("WASM_LIBRARY_DIR"))
+                lib_dir = self.library_install_prefix
                 copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
             python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
@@ -528,6 +534,12 @@ class RecipeBuilder:
             "PKG_VERSION": self.version,
             "PKG_BUILD_DIR": str(self.src_extract_dir),
             "DISTDIR": str(self.src_dist_dir),
+
+            # TODO: rename this to something more compatible with Makefile or CMake conventions
+            "WASM_LIBRARY_DIR": str(self.library_install_prefix),
+            # Using PKG_CONFIG_LIBDIR instead of PKG_CONFIG_PATH,
+            # so pkg-config will not look in the default system directories
+            "PKG_CONFIG_LIBDIR": str(self.library_install_prefix / "lib/pkgconfig"),
         }
 
 
