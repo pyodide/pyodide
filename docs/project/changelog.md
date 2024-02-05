@@ -16,8 +16,8 @@ myst:
 
 ## Unreleased
 
-- Upgraded Python to v3.11.7
-  {pr}`4431`
+- Upgraded Python to v3.12.1
+  {pr}`4431` {pr}`4435`
 
 - Upgraded CoolProp to 6.6.0 {pr}`4397`.
 
@@ -46,7 +46,7 @@ myst:
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
-  `memory_allocator` {pr}`4393`
+  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 

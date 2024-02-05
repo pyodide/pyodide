@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # get the absolute path of the root folder
 # shellcheck disable=SC2164

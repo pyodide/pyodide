@@ -8,7 +8,6 @@ source:
   url: https://files.pythonhosted.org/packages/2e/80/980597b020ec2526c22f510ddc7ad595f13d0fd9f27b5aa75c4841c1fb62/mne-1.5.0-py3-none-any.whl
 requirements:
   run:
-    - distutils
     - numpy
     - scipy
     - setuptools

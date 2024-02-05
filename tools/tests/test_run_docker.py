@@ -1,13 +1,7 @@
-import os
 import subprocess
 from pathlib import Path
 
-if "PYODIDE_ROOT" in os.environ:
-    PYODIDE_ROOT = Path(os.environ["PYODIDE_ROOT"])
-else:
-    from pyodide_build import build_env
-
-    PYODIDE_ROOT = build_env.search_pyodide_root(Path.cwd())
+PYODIDE_ROOT = Path(__file__).parent.parent.parent
 
 
 def test_run_docker_script():

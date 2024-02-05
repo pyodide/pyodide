@@ -28,7 +28,6 @@ REMOVED_FILES = (
 # These files are unvendored from the stdlib and can be loaded with `loadPackage`
 UNVENDORED_FILES = (
     "test/",
-    "distutils/",
     "sqlite3",
     "ssl.py",
     "lzma.py",

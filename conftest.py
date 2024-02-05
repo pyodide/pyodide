@@ -94,7 +94,7 @@ def maybe_skip_test(item, delayed=False):
 
     # Common package import test. Skip it if the package is not built.
     if skip_msg is None and is_common_test and item.name.startswith("test_import"):
-        if not pytest.pyodide_runtimes:
+        if not pytest.pyodide_runtimes:  # type:ignore[attr-defined]
             skip_msg = "Not running browser tests"
 
         else:
@@ -141,7 +141,7 @@ def pytest_configure(config):
 
     config.cwd_relative_nodeid = cwd_relative_nodeid
 
-    pytest.pyodide_dist_dir = config.getoption("--dist-dir")
+    pytest.pyodide_dist_dir = config.getoption("--dist-dir")  # type:ignore[attr-defined]
 
 
 def pytest_collection_modifyitems(config, items):
@@ -258,7 +258,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
 
 
 def package_is_built(package_name):
-    return _package_is_built(package_name, pytest.pyodide_dist_dir)
+    return _package_is_built(package_name, pytest.pyodide_dist_dir)  # type:ignore[attr-defined]
 
 
 def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
