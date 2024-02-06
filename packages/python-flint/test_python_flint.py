@@ -2,6 +2,7 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(firefox="times out")
 @run_in_pyodide(packages=["python-flint"])
 def test_python_flint(selenium):
     from flint import fmpz, fmpz_poly
