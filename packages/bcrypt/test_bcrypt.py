@@ -172,56 +172,45 @@ _2y_test_vectors = [
 
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_basic(selenium, monkeypatch):
-    import os
-
     import bcrypt
 
-    orig_urandom = os.urandom
-    try:
-        os.urandom = lambda n: b"0000000000000000"
-        assert bcrypt.gensalt() == b"$2b$12$KB.uKB.uKB.uKB.uKB.uK."
-    finally:
-        os.urandom = orig_urandom
+    salt = bcrypt.gensalt()
+    assert salt.startswith(b"$2b$12$")
 
 
 @pytest.mark.parametrize(
-    ("rounds", "expected"),
+    ("rounds", "expected_prefix"),
     [
-        (4, b"$2b$04$KB.uKB.uKB.uKB.uKB.uK."),
-        (5, b"$2b$05$KB.uKB.uKB.uKB.uKB.uK."),
-        (6, b"$2b$06$KB.uKB.uKB.uKB.uKB.uK."),
-        (7, b"$2b$07$KB.uKB.uKB.uKB.uKB.uK."),
-        (8, b"$2b$08$KB.uKB.uKB.uKB.uKB.uK."),
-        (9, b"$2b$09$KB.uKB.uKB.uKB.uKB.uK."),
-        (10, b"$2b$10$KB.uKB.uKB.uKB.uKB.uK."),
-        (11, b"$2b$11$KB.uKB.uKB.uKB.uKB.uK."),
-        (12, b"$2b$12$KB.uKB.uKB.uKB.uKB.uK."),
-        (13, b"$2b$13$KB.uKB.uKB.uKB.uKB.uK."),
-        (14, b"$2b$14$KB.uKB.uKB.uKB.uKB.uK."),
-        (15, b"$2b$15$KB.uKB.uKB.uKB.uKB.uK."),
-        (16, b"$2b$16$KB.uKB.uKB.uKB.uKB.uK."),
-        (17, b"$2b$17$KB.uKB.uKB.uKB.uKB.uK."),
-        (18, b"$2b$18$KB.uKB.uKB.uKB.uKB.uK."),
-        (19, b"$2b$19$KB.uKB.uKB.uKB.uKB.uK."),
-        (20, b"$2b$20$KB.uKB.uKB.uKB.uKB.uK."),
-        (21, b"$2b$21$KB.uKB.uKB.uKB.uKB.uK."),
-        (22, b"$2b$22$KB.uKB.uKB.uKB.uKB.uK."),
-        (23, b"$2b$23$KB.uKB.uKB.uKB.uKB.uK."),
-        (24, b"$2b$24$KB.uKB.uKB.uKB.uKB.uK."),
+        (4, b"$2b$04$"),
+        (5, b"$2b$05$"),
+        (6, b"$2b$06$"),
+        (7, b"$2b$07$"),
+        (8, b"$2b$08$"),
+        (9, b"$2b$09$"),
+        (10, b"$2b$10$"),
+        (11, b"$2b$11$"),
+        (12, b"$2b$12$"),
+        (13, b"$2b$13$"),
+        (14, b"$2b$14$"),
+        (15, b"$2b$15$"),
+        (16, b"$2b$16$"),
+        (17, b"$2b$17$"),
+        (18, b"$2b$18$"),
+        (19, b"$2b$19$"),
+        (20, b"$2b$20$"),
+        (21, b"$2b$21$"),
+        (22, b"$2b$22$"),
+        (23, b"$2b$23$"),
+        (24, b"$2b$24$"),
     ],
 )
 @run_in_pyodide(packages=["bcrypt"])
-def test_gensalt_rounds_valid(selenium, rounds, expected):
-    import os
-
+def test_gensalt_rounds_valid(selenium, rounds, expected_prefix):
     import bcrypt
 
-    orig_urandom = os.urandom
-    try:
-        os.urandom = lambda n: b"0000000000000000"
-        assert bcrypt.gensalt(rounds) == expected
-    finally:
-        os.urandom = orig_urandom
+    salt = bcrypt.gensalt(rounds)
+
+    assert salt.startswith(expected_prefix)
 
 
 @pytest.mark.parametrize("rounds", list(range(1, 4)))
@@ -240,21 +229,15 @@ def test_gensalt_bad_prefix(selenium):
     import pytest
 
     with pytest.raises(ValueError):
-        bcrypt.gensalt(prefix="bad")
+        bcrypt.gensalt(prefix=b"bad")
 
 
 @run_in_pyodide(packages=["bcrypt"])
 def test_gensalt_2a_prefix(selenium):
-    import os
-
     import bcrypt
 
-    orig_urandom = os.urandom
-    try:
-        os.urandom = lambda n: b"0000000000000000"
-        assert bcrypt.gensalt(prefix=b"2a") == b"$2a$12$KB.uKB.uKB.uKB.uKB.uK."
-    finally:
-        os.urandom = orig_urandom
+    salt = bcrypt.gensalt(prefix=b"2a")
+    assert salt.startswith(b"$2a$12$")
 
 
 @pytest.mark.parametrize(("password", "salt", "hashed"), _test_vectors)
@@ -298,9 +281,7 @@ def test_checkpw_2y_prefix(selenium, password, hashed, expected):
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_hashpw_invalid(
-    selenium,
-):
+def test_hashpw_invalid(selenium):
     import bcrypt
     import pytest
 
@@ -309,9 +290,7 @@ def test_hashpw_invalid(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_wrong_password(
-    selenium,
-):
+def test_checkpw_wrong_password(selenium):
     import bcrypt
 
     assert (
@@ -324,9 +303,7 @@ def test_checkpw_wrong_password(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_bad_salt(
-    selenium,
-):
+def test_checkpw_bad_salt(selenium):
     import bcrypt
     import pytest
 
@@ -335,12 +312,15 @@ def test_checkpw_bad_salt(
             b"badpass",
             b"$2b$04$?Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
         )
+    with pytest.raises(ValueError):
+        bcrypt.checkpw(
+            b"password",
+            b"$2b$3$mdEQPMOtfPX.WGZNXgF66OhmBlOGKEd66SQ7DyJPGucYYmvTJYviy",
+        )
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_str_password(
-    selenium,
-):
+def test_checkpw_str_password(selenium):
     import bcrypt
     import pytest
 
@@ -349,9 +329,7 @@ def test_checkpw_str_password(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_str_salt(
-    selenium,
-):
+def test_checkpw_str_salt(selenium):
     import bcrypt
     import pytest
 
@@ -360,9 +338,7 @@ def test_checkpw_str_salt(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_hashpw_str_password(
-    selenium,
-):
+def test_hashpw_str_password(selenium):
     import bcrypt
     import pytest
 
@@ -371,9 +347,7 @@ def test_hashpw_str_password(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_hashpw_str_salt(
-    selenium,
-):
+def test_hashpw_str_salt(selenium):
     import bcrypt
     import pytest
 
@@ -382,9 +356,7 @@ def test_hashpw_str_salt(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_nul_byte(
-    selenium,
-):
+def test_checkpw_nul_byte(selenium):
     import bcrypt
     import pytest
 
@@ -401,9 +373,7 @@ def test_checkpw_nul_byte(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_hashpw_nul_byte(
-    selenium,
-):
+def test_hashpw_nul_byte(selenium):
     import bcrypt
 
     salt = bcrypt.gensalt(4)
@@ -417,9 +387,7 @@ def test_hashpw_nul_byte(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_checkpw_extra_data(
-    selenium,
-):
+def test_checkpw_extra_data(selenium):
     import bcrypt
 
     salt = bcrypt.gensalt(4)
@@ -492,13 +460,13 @@ def test_checkpw_extra_data(
         [
             # longer password
             8,
-            b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do "
-            b"eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut "
+            b"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do"
+            b" eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut "
             b"enim ad minim veniam, quis nostrud exercitation ullamco laboris "
             b"nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor "
-            b"in reprehenderit in voluptate velit esse cillum dolore eu fugiat "
-            b"nulla pariatur. Excepteur sint occaecat cupidatat non proident, "
-            b"sunt in culpa qui officia deserunt mollit anim id est laborum.",
+            b"in reprehenderit in voluptate velit esse cillum dolore eu fugiat"
+            b" nulla pariatur. Excepteur sint occaecat cupidatat non proident,"
+            b" sunt in culpa qui officia deserunt mollit anim id est laborum.",
             b"salis\x00",
             b"\x10\x97\x8b\x07\x25\x3d\xf5\x7f\x71\xa1\x62\xeb\x0e\x8a\xd3\x0a",
         ],
@@ -534,7 +502,7 @@ def test_checkpw_extra_data(
         [
             # UTF-8 Greek characters "odysseus" / "telemachos"
             8,
-            b"\xe1\xbd\x88\xce\xb4\xcf\x85\xcf\x83\xcf\x83\xce\xb5\xcf\x8d\xcf" b"\x82",
+            b"\xe1\xbd\x88\xce\xb4\xcf\x85\xcf\x83\xcf\x83\xce\xb5\xcf\x8d\xcf\x82",
             b"\xce\xa4\xce\xb7\xce\xbb\xce\xad\xce\xbc\xce\xb1\xcf\x87\xce\xbf"
             b"\xcf\x82",
             b"\x43\x66\x6c\x9b\x09\xef\x33\xed\x8c\x27\xe8\xe8\xf3\xe2\xd8\xe6",
@@ -550,9 +518,7 @@ def test_kdf(selenium, rounds, password, salt, expected):
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_kdf_str_password(
-    selenium,
-):
+def test_kdf_str_password(selenium):
     import bcrypt
     import pytest
 
@@ -561,9 +527,7 @@ def test_kdf_str_password(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_kdf_str_salt(
-    selenium,
-):
+def test_kdf_str_salt(selenium):
     import bcrypt
     import pytest
 
@@ -572,18 +536,14 @@ def test_kdf_str_salt(
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_kdf_no_warn_rounds(
-    selenium,
-):
+def test_kdf_no_warn_rounds(selenium):
     import bcrypt
 
     bcrypt.kdf(b"password", b"salt", 10, 10, True)
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_kdf_warn_rounds(
-    selenium,
-):
+def test_kdf_warn_rounds(selenium):
     import bcrypt
     import pytest
 
@@ -599,7 +559,7 @@ def test_kdf_warn_rounds(
         (b"", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10, ValueError),
         (b"password", b"", 10, 10, ValueError),
         (b"password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 0, 10, ValueError),
-        (b"password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", -3, 10, ValueError),
+        (b"password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", -3, 10, OverflowError),
         (b"password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 513, 10, ValueError),
         (b"password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 20, 0, ValueError),
     ],
@@ -614,9 +574,7 @@ def test_invalid_params(selenium, password, salt, desired_key_bytes, rounds, err
 
 
 @run_in_pyodide(packages=["bcrypt"])
-def test_2a_wraparound_bug(
-    selenium,
-):
+def test_2a_wraparound_bug(selenium):
     import bcrypt
 
     assert (

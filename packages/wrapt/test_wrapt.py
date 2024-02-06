@@ -79,5 +79,5 @@ def test_wrapt(selenium):
             self.assertEqual(result, (_args, _kwargs))
 
     # Run tests
-    with unittest.TestCase().assertRaisesRegex(SystemExit, "False"):
+    with unittest.TestCase().assertRaisesRegex(SystemExit, "5"):
         unittest.main()

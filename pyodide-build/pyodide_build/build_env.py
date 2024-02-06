@@ -121,7 +121,7 @@ def get_pyodide_root() -> Path:
     return Path(os.environ["PYODIDE_ROOT"])
 
 
-def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
+def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path:
     """
     Recursively search for the root of the Pyodide repository,
     by looking for the pyproject.toml file in the parent directories

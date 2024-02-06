@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- Upgraded Python to v3.12.1
+  {pr}`4431` {pr}`4435`
+
 - Upgraded CoolProp to 6.6.0 {pr}`4397`.
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
@@ -36,9 +39,14 @@ myst:
 - {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
   {pr}`4395`
 
+- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
+  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
+  {pr}`4443`
+
 ### Packages
 
-- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
+  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 
@@ -47,7 +55,7 @@ myst:
 
 ## Version 0.25.0
 
-_January 18, 2023_
+_January 18, 2024_
 
 ### General
 

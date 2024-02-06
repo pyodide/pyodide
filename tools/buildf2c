@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Based on http://hpc.sourceforge.net/buildf2c with curl replaced by wget
 

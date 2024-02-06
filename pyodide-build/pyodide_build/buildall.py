@@ -144,7 +144,7 @@ class Package(BasePackage):
         p = subprocess.run(
             [
                 "pyodide",
-                "build-recipes",
+                "build-recipes-no-deps",
                 self.name,
                 "--recipe-dir",
                 str(self.pkgdir.parent),
@@ -159,7 +159,6 @@ class Package(BasePackage):
                 # been updated and should be rebuilt even though its own
                 # files haven't been updated.
                 "--force-rebuild",
-                "--no-deps",
             ],
             check=False,
             stdout=subprocess.DEVNULL,
