@@ -15,12 +15,11 @@ from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
-from queue import Empty, PriorityQueue, Queue
+from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
-from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
 from pyodide_lock.utils import update_package_sha256
@@ -28,6 +27,8 @@ from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
+
+from packaging.utils import canonicalize_name
 
 from . import build_env, recipe
 from .buildpkg import needs_rebuild
@@ -498,34 +499,53 @@ def generate_needs_build_set(
     return needs_build
 
 
-@dataclasses.dataclass(eq=False, repr=False)
-class GraphBuilder:
+class _GraphBuilder:
+    """A class to manage state for build_from_graph.
+
+    build_from_graph has a bunch of moving parts: a threadpool, a Rich Live
+    session to display progress information to the terminal, and a job graph to
+    keep track of. This class keeps track of all this state.
+
+    The only public class is `run`.
+    """
+
     pkg_map: dict[str, BasePackage]
     build_args: BuildArgs
     build_dir: Path
     needs_build: set[str]
+    build_queue: PriorityQueue[tuple[int, BasePackage]]
+    built_queue: Queue[tuple[BasePackage, BaseException | None]]
+    lock: Lock
+    building_rust_pkg: bool
+    queue_idx: int
+    progress_formatter: ReplProgressFormatter
 
-    build_queue: PriorityQueue[tuple[int, BasePackage]] = dataclasses.field(
-        default_factory=PriorityQueue
-    )
-    built_queue: Queue[BasePackage | BaseException] = dataclasses.field(
-        default_factory=Queue
-    )
-    lock: Lock = dataclasses.field(default_factory=Lock)
-    building_rust_pkg: bool = False
-    queue_idx: int = 1
-    progress_formatter: ReplProgressFormatter = None  # type: ignore[assignment]
-    messages: list[str] = dataclasses.field(default_factory=list)
-
-    def __post_init__(self):
+    def __init__(
+        self,
+        pkg_map: dict[str, BasePackage],
+        build_args: BuildArgs,
+        build_dir: Path,
+        needs_build: set[str],
+    ):
+        self.pkg_map = pkg_map
+        self.build_args = build_args
+        self.build_dir = build_dir
+        self.needs_build = needs_build
+        self.build_queue = PriorityQueue()
+        self.built_queue = Queue()
+        self.lock = Lock()
+        self.building_rust_pkg = False
+        self.queue_idx = 1
         self.progress_formatter = ReplProgressFormatter(len(self.needs_build))
-        for pkg_name in self.needs_build:
-            pkg = self.pkg_map[pkg_name]
-            if len(pkg.unbuilt_host_dependencies) == 0:
-                self.build_queue.put((job_priority(pkg), pkg))
 
     @contextmanager
-    def queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
+    def _queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
+        """
+        yield the queue_index for the current job or None if the job is a Rust
+        job and the rust lock is currently held.
+
+        Set up as a context manager just for the rust packages.
+        """
         is_rust_pkg = pkg.meta.is_rust_package()
         with self.lock:
             queue_idx = self.queue_idx
@@ -548,7 +568,13 @@ class GraphBuilder:
                 self.building_rust_pkg = False
 
     @contextmanager
-    def pkg_status_display(self, n: int, pkg: BasePackage) -> Iterator[None]:
+    def _pkg_status_display(self, n: int, pkg: BasePackage) -> Iterator[None]:
+        """Control the status information for the package.
+
+        Prints the "[{pkg-num}/{total_packages}] (thread n) building {package_name}"
+        message and when done prints "succeeded/failed building package ... in ... seconds"
+        plus updates the progress info in the console.
+        """
         idx = pkg._queue_idx
         assert idx
         pkg_status = self.progress_formatter.add_package(
@@ -568,56 +594,56 @@ class GraphBuilder:
             pkg_status.finish(success, perf_counter() - t0)
             self.progress_formatter.remove_package(pkg_status)
 
-    def build_one(self, n: int, pkg: BasePackage) -> BaseException | None:
+    def _build_one(self, n: int, pkg: BasePackage) -> BaseException | None:
         try:
-            with self.pkg_status_display(n, pkg):
+            with self._pkg_status_display(n, pkg):
                 pkg.build(self.build_args, self.build_dir)
-        except Exception as e:
-            # What about BaseException?
+        except BaseException as e:
             return e
         else:
             return None
 
-    def get_pkg(self) -> BasePackage:
+    def _builder(self, n: int) -> None:
+        """This is the logic that controls a thread in the thread pool."""
         while True:
-            try:
-                return self.build_queue.get(timeout=0.5)[1]
-            except Empty:
-                pass
-
-    def builder(self, n: int) -> None:
-        while True:
-            pkg = self.get_pkg()
-            print(n, "starting", pkg.name)
-            with self.queue_index(pkg) as idx:
+            pkg = self.build_queue.get()[1]
+            with self._queue_index(pkg) as idx:
                 if idx is None:
                     # Rust package and we're already building one.
                     # Release the GIL so new packages get queued
                     sleep(0.01)
                     continue
                 pkg._queue_idx = idx
-                res = self.build_one(n, pkg)
-                print(n, "finished", pkg.name, not bool(res))
+                res = self._build_one(n, pkg)
+                self.built_queue.put((pkg, res))
                 if res:
-                    # Build failed
-                    self.built_queue.put(res)
+                    # Build failed, quit the thread.
+                    # Note that all other threads just keep going for a bit
+                    # longer until we call sys.exit
                     return
-                self.built_queue.put(pkg)
                 # Release the GIL so new packages get queued
                 sleep(0.01)
 
     def run(self, n_jobs: int, already_built: set[str]) -> None:
-        for n in range(0, n_jobs):
-            Thread(target=self.builder, args=(n + 1,), daemon=True).start()
+        """Build the graph with n_jobs threads
+
+        Prepare the queue by locating packages with no deps, set up the cli
+        progress display, start up the threads, and manage build queue.
+        """
+        for pkg_name in self.needs_build:
+            pkg = self.pkg_map[pkg_name]
+            if len(pkg.unbuilt_host_dependencies) == 0:
+                self.build_queue.put((job_priority(pkg), pkg))
 
         num_built = len(already_built)
         with Live(self.progress_formatter, console=console_stdout):
+            for n in range(0, n_jobs):
+                Thread(target=self._builder, args=(n + 1,), daemon=True).start()
+
             while num_built < len(self.pkg_map):
-                match self.built_queue.get():
-                    case BaseException() as err:
-                        raise err
-                    case BasePackage() as pkg:
-                        pass
+                [pkg, err] = self.built_queue.get()
+                if err:
+                    raise err
 
                 num_built += 1
 
@@ -685,7 +711,7 @@ def build_from_graph(
         "Building the following packages: "
         f"[bold]{format_name_list(sorted_needs_build)}[/bold]"
     )
-    build_state = GraphBuilder(pkg_map, build_args, build_dir, set(needs_build))
+    build_state = _GraphBuilder(pkg_map, build_args, build_dir, set(needs_build))
     try:
         build_state.run(n_jobs, already_built)
     except BuildError as err:
