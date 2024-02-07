@@ -151,11 +151,11 @@ You can install it by calling:
   await pyodide.loadPackage("{package_name}") in JavaScript\
 """
 
-PYODIDE_ADDED_NOTE = "_pyodide_added_note"
+PYODIDE_ADDED_NOTE = "_PYODIDE_ADDED_NOTE"
 
 
 def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
-    if getattr(e, PYODIDE_ADDED_NOTE, False):
+    if hasattr(e, PYODIDE_ADDED_NOTE):
         return
     import_name = e.name
     if not import_name:
