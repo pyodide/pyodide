@@ -70,7 +70,7 @@ clean-all: clean
 $(PYTARBALL):
 	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
 	wget -q -O $@ $(PYTHON_ARCHIVE_URL)
-	@GOT_SHASUM=`shasum --algorithm 256 $(TARBALL) | cut -f1 -d' '` \
+	@GOT_SHASUM=`shasum --algorithm 256 $(PYTARBALL) | cut -f1 -d' '` \
 		&& (echo $$GOT_SHASUM | grep -q $(PYTHON_ARCHIVE_SHA256)) \
 		|| (\
 			   echo "Got unexpected shasum $$GOT_SHASUM" \
