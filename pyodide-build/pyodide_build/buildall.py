@@ -507,17 +507,6 @@ class _GraphBuilder:
     The only public class is `run`.
     """
 
-    pkg_map: dict[str, BasePackage]
-    build_args: BuildArgs
-    build_dir: Path
-    needs_build: set[str]
-    build_queue: PriorityQueue[tuple[int, BasePackage]]
-    built_queue: Queue[tuple[BasePackage, BaseException | None]]
-    lock: Lock
-    building_rust_pkg: bool
-    queue_idx: int
-    progress_formatter: ReplProgressFormatter
-
     def __init__(
         self,
         pkg_map: dict[str, BasePackage],
@@ -525,16 +514,18 @@ class _GraphBuilder:
         build_dir: Path,
         needs_build: set[str],
     ):
-        self.pkg_map = pkg_map
-        self.build_args = build_args
-        self.build_dir = build_dir
-        self.needs_build = needs_build
-        self.build_queue = PriorityQueue()
-        self.built_queue = Queue()
-        self.lock = Lock()
-        self.building_rust_pkg = False
-        self.queue_idx = 1
-        self.progress_formatter = ReplProgressFormatter(len(self.needs_build))
+        self.pkg_map: dict[str, BasePackage] = pkg_map
+        self.build_args: BuildArgs = build_args
+        self.build_dir: Path = build_dir
+        self.needs_build: set[str] = needs_build
+        self.build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
+        self.built_queue: Queue[tuple[BasePackage, BaseException | None]] = Queue()
+        self.lock: Lock = Lock()
+        self.building_rust_pkg: bool = False
+        self.queue_idx: int = 1
+        self.progress_formatter: ReplProgressFormatter = ReplProgressFormatter(
+            len(self.needs_build)
+        )
 
     @contextmanager
     def _queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
