@@ -10,9 +10,11 @@
 #include <stdio.h>
 
 static PyObject* tbmod = NULL;
+static PyObject* _pyodide_importhook = NULL;
 
 _Py_IDENTIFIER(__qualname__);
 _Py_IDENTIFIER(format_exception);
+_Py_IDENTIFIER(add_note_to_module_not_found_error);
 
 void
 _Py_DumpTraceback(int fd, PyThreadState* tstate);
@@ -198,6 +200,12 @@ wrap_exception()
   PyObject* pystr = NULL;
   fetch_and_normalize_exception(&type, &value, &traceback);
   store_sys_last_exception(type, value, traceback);
+  if (type == PyExc_ModuleNotFoundError) {
+    PyObject* res = _PyObject_CallMethodIdOneArg(
+      _pyodide_importhook, &PyId_add_note_to_module_not_found_error, value);
+    FAIL_IF_NULL(res);
+    Py_CLEAR(res);
+  }
 
   typestr = _PyObject_GetAttrId(type, &PyId___qualname__);
   FAIL_IF_NULL(typestr);
@@ -298,8 +306,11 @@ error_handling_init(PyObject* core_module)
 {
   bool success = false;
   PyObject* _pyodide_core_docs = NULL;
+
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
   FAIL_IF_NULL(_pyodide_core_docs);
+
+  _pyodide_importhook = PyImport_ImportModule("_pyodide._importhook");
 
   internal_error = PyObject_GetAttrString(_pyodide_core_docs, "InternalError");
   FAIL_IF_NULL(internal_error);
@@ -314,5 +325,6 @@ error_handling_init(PyObject* core_module)
 
   success = true;
 finally:
+  Py_CLEAR(_pyodide_core_docs);
   return success ? 0 : -1;
 }
