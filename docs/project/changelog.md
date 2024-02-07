@@ -43,6 +43,9 @@ myst:
   replaced with a separate subcommand `pyodide build-recipes-no-deps`.
   {pr}`4443`
 
+- {{ Enhancement }} The `build/post` script now runs under the directory
+  where the built wheel is unpacked.
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
