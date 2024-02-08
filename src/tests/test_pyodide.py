@@ -1424,46 +1424,67 @@ def test_raises_jsexception(selenium):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_module_not_found_hook(selenium_standalone):
+def test_module_not_found_note(selenium_standalone):
     import importlib
 
     import pytest
+
+    from _pyodide._importhook import add_note_to_module_not_found_error
+    from pyodide.code import run_js
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = ["micropip", "packaging", "regex"]
 
+    # When error is wrapped, add_note_to_module_not_found_error is called
+    with pytest.raises(ModuleNotFoundError) as e:
+        run_js("(f) => f()")(lambda: importlib.import_module("test"))
+    assert "unvendored from the Python standard library" in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
+
     for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        add_note_to_module_not_found_error(e.value)
+        assert "unvendored from the Python standard library" in e.value.__notes__[0]
+        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "removed from the Python standard library" in e.value.__notes__[0]
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
     for lib in lockfile_packages:
         with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
+            ModuleNotFoundError,
+        ) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "included in the Pyodide distribution" in e.value.__notes__[0]
 
-    with pytest.raises(ModuleNotFoundError, match="No module named"):
+    with pytest.raises(ModuleNotFoundError, match="No module named") as e:
         importlib.import_module("pytest.there_is_no_such_module")
+    add_note_to_module_not_found_error(e.value)
+    assert getattr(e.value, "__notes__", None) is None
 
     # liblzma and openssl are libraries not python packages, so it should just fail.
     for pkg in ["liblzma", "openssl"]:
-        with pytest.raises(ModuleNotFoundError, match="No module named"):
+        with pytest.raises(ModuleNotFoundError, match="No module named") as e:
             importlib.import_module(pkg)
+        add_note_to_module_not_found_error(e.value)
+        assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+    with pytest.raises(ModuleNotFoundError) as e:
         importlib.import_module("_hashlib")
+    add_note_to_module_not_found_error(e.value)
+    add_note_to_module_not_found_error(e.value)
+    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
 
 
 def test_args(selenium_standalone_noload):

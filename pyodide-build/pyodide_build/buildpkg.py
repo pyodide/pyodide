@@ -429,10 +429,9 @@ class RecipeBuilder:
             # update so abi tags after build is complete but before running post script
             # to maximize sanity.
             replace_so_abi_tags(wheel_dir)
-
-            bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
-
-            bash_runner.run(self.build_metadata.post, script_name="post script")
+            bash_runner.run(
+                self.build_metadata.post, script_name="post script", cwd=wheel_dir
+            )
 
             if self.build_metadata.vendor_sharedlib:
                 lib_dir = Path(get_build_flag("WASM_LIBRARY_DIR"))
