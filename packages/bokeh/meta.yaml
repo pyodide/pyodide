@@ -1,10 +1,11 @@
 package:
   name: bokeh
-  version: 3.2.2
+  version: 3.3.4
   top-level:
     - bokeh
 requirements:
   run:
+    - contourpy
     - numpy
     - Jinja2
     - pandas
@@ -15,8 +16,8 @@ requirements:
     - pyyaml
     - xyzservices
 source:
-  sha256: e31670a013e1ff15c3d4d04f587c8162c4cc9fe1af507fd741d295e6c4e1225b
-  url: https://files.pythonhosted.org/packages/84/60/33f23dbb15fcd785d6287bdd6fa8c9d836dacb40e21c14aad41a57a0ec0f/bokeh-3.2.2-py3-none-any.whl
+  sha256: ad7b6f89d0a7c2be01eff1db0ca24e2755ac41de14539db919a62e791809c309
+  url: https://files.pythonhosted.org/packages/39/ba/aefd7aacc9e086e2c7f3bb42e99cb8e2a8f24dcb4bf78519ef25a9102988/bokeh-3.3.4-py3-none-any.whl
 about:
   home: https://github.com/bokeh/bokeh
   PyPI: https://pypi.org/project/bokeh
