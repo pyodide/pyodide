@@ -10,7 +10,7 @@ source:
   sha256: 3d8083eed2d13afc9426f227b24fd1659489ec107c0e86cec2ffdde5c92e790b
 build:
   post: |
-    find $WHEELDIR -name '*.exe' -delete
+    find . -name '*.exe' -delete
 requirements:
   run:
     - pyparsing

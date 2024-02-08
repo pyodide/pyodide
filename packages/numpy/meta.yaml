@@ -17,7 +17,6 @@ build:
   # numpy creates numpy/distutils/__pycache__ directory during the build.
   # It breaks our test because there is a .pyc in the directory.
   post: |
-    cd $WHEELDIR
     rm -rf numpy/distutils/__pycache__
   cflags: |
     -Wno-return-type
