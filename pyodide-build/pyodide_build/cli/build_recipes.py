@@ -168,7 +168,8 @@ def build_recipes(
         False, help="Removed, use `pyodide build-recipes-no-deps` instead."
     ),
     keep_going: bool = typer.Option(
-        False, help="Continue building remaining packages even if there are some build failures"
+        False,
+        help="Continue building remaining packages even if there are some build failures",
     ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
