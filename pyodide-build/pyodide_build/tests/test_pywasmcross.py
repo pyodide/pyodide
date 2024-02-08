@@ -7,8 +7,8 @@ from pyodide_build.pywasmcross import (
     calculate_exports,
     filter_objects,
     get_cmake_compiler_flags,
-    get_library_output,
     handle_command_generate_args,
+    is_link_cmd,
     replay_genargs_handle_dashI,
 )
 
@@ -258,10 +258,7 @@ def test_handle_command_cmake(build_args):
     assert handle_command_generate_args(build_cmd, args) == build_cmd
 
 
-def test_get_library_output():
-    assert get_library_output(["test.so"]) == "test.so"
-    assert get_library_output(["test.so.1.2.3"]) == "test.so.1.2.3"
-    assert (
-        get_library_output(["test", "test.a", "test.o", "test.c", "test.cpp", "test.h"])
-        is None
-    )
+def test_is_link_cmd():
+    assert is_link_cmd(["test.so"])
+    assert is_link_cmd(["test.so.1.2.3"])
+    assert not is_link_cmd(["test", "test.a", "test.o", "test.c", "test.cpp", "test.h"])

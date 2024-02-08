@@ -78,18 +78,18 @@ class CrossCompileArgs(NamedTuple):
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
 
 
-def get_library_output(line: list[str]) -> str | None:
+def is_link_cmd(line: list[str]) -> bool:
     """
-    Check if the command is a linker invocation. If so, return the name of the
-    output file.
+    Check if the command is a linker invocation.
     """
     import re
 
     SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
     for arg in line:
         if not arg.startswith("-") and SHAREDLIB_REGEX.search(arg):
-            return arg
-    return None
+            return True
+
+    return False
 
 
 def replay_genargs_handle_dashl(arg: str, used_libs: set[str]) -> str | None:
@@ -550,8 +550,7 @@ def handle_command_generate_args(  # noqa: C901
 
     # set linker and C flags to error on anything to do with function declarations being wrong.
     # Better to fail at compile or link time.
-    is_link_cmd = get_library_output(line) is not None
-    if is_link_cmd:
+    if is_link_cmd(line):
         new_args.append("-Wl,--fatal-warnings")
         new_args.extend(build_args.ldflags.split())
         new_args.extend(get_export_flags(line, build_args.exports))
