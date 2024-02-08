@@ -606,13 +606,13 @@ def handle_command(
 
 def compiler_main():
     build_args = CrossCompileArgs(
-        pkgname=PYWASMCROSS_ARGS.pop("pkgname"),
-        cflags=PYWASMCROSS_ARGS.pop("cflags"),
-        cxxflags=PYWASMCROSS_ARGS.pop("cxxflags"),
-        ldflags=PYWASMCROSS_ARGS.pop("ldflags"),
-        target_install_dir=PYWASMCROSS_ARGS.pop("target_install_dir"),
-        pythoninclude=PYWASMCROSS_ARGS.pop("pythoninclude"),
-        exports=PYWASMCROSS_ARGS.pop("exports"),
+        pkgname=PYWASMCROSS_ARGS["pkgname"],
+        cflags=PYWASMCROSS_ARGS["cflags"],
+        cxxflags=PYWASMCROSS_ARGS["cxxflags"],
+        ldflags=PYWASMCROSS_ARGS["ldflags"],
+        target_install_dir=PYWASMCROSS_ARGS["target_install_dir"],
+        pythoninclude=PYWASMCROSS_ARGS["pythoninclude"],
+        exports=PYWASMCROSS_ARGS["exports"],
     )
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)
