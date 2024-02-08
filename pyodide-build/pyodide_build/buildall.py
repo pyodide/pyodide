@@ -9,7 +9,8 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
@@ -496,6 +497,154 @@ def generate_needs_build_set(
     return needs_build
 
 
+class _GraphBuilder:
+    """A class to manage state for build_from_graph.
+
+    build_from_graph has a bunch of moving parts: a threadpool, a Rich Live
+    session to display progress information to the terminal, and a job graph to
+    keep track of. This class keeps track of all this state.
+
+    The only public class is `run`.
+    """
+
+    def __init__(
+        self,
+        pkg_map: dict[str, BasePackage],
+        build_args: BuildArgs,
+        build_dir: Path,
+        needs_build: set[str],
+    ):
+        self.pkg_map: dict[str, BasePackage] = pkg_map
+        self.build_args: BuildArgs = build_args
+        self.build_dir: Path = build_dir
+        self.needs_build: set[str] = needs_build
+        self.build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
+        self.built_queue: Queue[tuple[BasePackage, BaseException | None]] = Queue()
+        self.lock: Lock = Lock()
+        self.building_rust_pkg: bool = False
+        self.queue_idx: int = 1
+        self.progress_formatter: ReplProgressFormatter = ReplProgressFormatter(
+            len(self.needs_build)
+        )
+
+    @contextmanager
+    def _queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
+        """
+        yield the queue_index for the current job or None if the job is a Rust
+        job and the rust lock is currently held.
+
+        Set up as a context manager just for the rust packages.
+        """
+        is_rust_pkg = pkg.meta.is_rust_package()
+        with self.lock:
+            queue_idx = self.queue_idx
+            if is_rust_pkg and self.building_rust_pkg:
+                # Don't build multiple rust packages at the same time.
+                # See: https://github.com/pyodide/pyodide/issues/3565
+                # Note that if there are only rust packages left in the queue,
+                # this will keep pushing and popping packages until the current rust package
+                # is built. This is not ideal but presumably the overhead is negligible.
+                self.build_queue.put((job_priority(pkg), pkg))
+                yield None
+                return
+            if is_rust_pkg:
+                self.building_rust_pkg = True
+            self.queue_idx += 1
+        try:
+            yield queue_idx
+        finally:
+            if is_rust_pkg:
+                self.building_rust_pkg = False
+
+    @contextmanager
+    def _pkg_status_display(self, n: int, pkg: BasePackage) -> Iterator[None]:
+        """Control the status information for the package.
+
+        Prints the "[{pkg-num}/{total_packages}] (thread n) building {package_name}"
+        message and when done prints "succeeded/failed building package ... in ... seconds"
+        plus updates the progress info in the console.
+        """
+        idx = pkg._queue_idx
+        assert idx
+        pkg_status = self.progress_formatter.add_package(
+            name=pkg.name,
+            idx=idx,
+            thread=n,
+            total_packages=len(self.needs_build),
+        )
+        t0 = perf_counter()
+        success = True
+        try:
+            yield
+        except BaseException:
+            success = False
+            raise
+        finally:
+            pkg_status.finish(success, perf_counter() - t0)
+            self.progress_formatter.remove_package(pkg_status)
+
+    def _build_one(self, n: int, pkg: BasePackage) -> BaseException | None:
+        try:
+            with self._pkg_status_display(n, pkg):
+                pkg.build(self.build_args, self.build_dir)
+        except BaseException as e:
+            return e
+        else:
+            return None
+
+    def _builder(self, n: int) -> None:
+        """This is the logic that controls a thread in the thread pool."""
+        while True:
+            pkg = self.build_queue.get()[1]
+            with self._queue_index(pkg) as idx:
+                if idx is None:
+                    # Rust package and we're already building one.
+                    # Release the GIL so new packages get queued
+                    sleep(0.01)
+                    continue
+                pkg._queue_idx = idx
+                res = self._build_one(n, pkg)
+                self.built_queue.put((pkg, res))
+                if res:
+                    # Build failed, quit the thread.
+                    # Note that all other threads just keep going for a bit
+                    # longer until we call sys.exit
+                    return
+                # Release the GIL so new packages get queued
+                sleep(0.01)
+
+    def run(self, n_jobs: int, already_built: set[str]) -> None:
+        """Build the graph with n_jobs threads
+
+        Prepare the queue by locating packages with no deps, set up the cli
+        progress display, start up the threads, and manage build queue.
+        """
+        for pkg_name in self.needs_build:
+            pkg = self.pkg_map[pkg_name]
+            if len(pkg.unbuilt_host_dependencies) == 0:
+                self.build_queue.put((job_priority(pkg), pkg))
+
+        num_built = len(already_built)
+        with Live(self.progress_formatter, console=console_stdout):
+            for n in range(0, n_jobs):
+                Thread(target=self._builder, args=(n + 1,), daemon=True).start()
+
+            while num_built < len(self.pkg_map):
+                [pkg, err] = self.built_queue.get()
+                if err:
+                    raise err
+
+                num_built += 1
+
+                self.progress_formatter.update_progress_bar()
+
+                for _dependent in pkg.host_dependents:
+                    dependent = self.pkg_map[_dependent]
+                    dependent.unbuilt_host_dependencies.remove(pkg.name)
+                    if len(dependent.unbuilt_host_dependencies) == 0:
+                        self.build_queue.put((job_priority(dependent), dependent))
+
+
 def build_from_graph(
     pkg_map: dict[str, BasePackage],
     build_args: BuildArgs,
@@ -522,7 +671,6 @@ def build_from_graph(
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
-    build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
     if force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
@@ -547,96 +695,14 @@ def build_from_graph(
         logger.success("All packages already built. Quitting.")
         return
 
+    sorted_needs_build = sorted(needs_build)
     logger.info(
         "Building the following packages: "
-        f"[bold]{format_name_list(sorted(needs_build))}[/bold]"
+        f"[bold]{format_name_list(sorted_needs_build)}[/bold]"
     )
-
-    for pkg_name in needs_build:
-        pkg = pkg_map[pkg_name]
-        if len(pkg.unbuilt_host_dependencies) == 0:
-            build_queue.put((job_priority(pkg), pkg))
-
-    built_queue: Queue[BasePackage | BaseException] = Queue()
-    thread_lock = Lock()
-    queue_idx = 1
-    building_rust_pkg = False
-    progress_formatter = ReplProgressFormatter(len(needs_build))
-
-    def builder(n: int) -> None:
-        nonlocal queue_idx, building_rust_pkg
-        while True:
-            _, pkg = build_queue.get()
-
-            with thread_lock:
-                if pkg.meta.is_rust_package():
-                    # Don't build multiple rust packages at the same time.
-                    # See: https://github.com/pyodide/pyodide/issues/3565
-                    # Note that if there are only rust packages left in the queue,
-                    # this will keep pushing and popping packages until the current rust package
-                    # is built. This is not ideal but presumably the overhead is negligible.
-                    if building_rust_pkg:
-                        build_queue.put((job_priority(pkg), pkg))
-
-                        # Release the GIL so new packages get queued
-                        sleep(0.1)
-                        continue
-
-                    building_rust_pkg = True
-
-                pkg._queue_idx = queue_idx
-                queue_idx += 1
-
-            pkg_status = progress_formatter.add_package(
-                name=pkg.name,
-                idx=pkg._queue_idx,
-                thread=n,
-                total_packages=len(needs_build),
-            )
-            t0 = perf_counter()
-
-            success = True
-            try:
-                pkg.build(build_args, build_dir)
-            except Exception as e:
-                built_queue.put(e)
-                success = False
-                return
-            finally:
-                pkg_status.finish(success, perf_counter() - t0)
-                progress_formatter.remove_package(pkg_status)
-
-            built_queue.put(pkg)
-
-            with thread_lock:
-                if pkg.meta.is_rust_package():
-                    building_rust_pkg = False
-
-            # Release the GIL so new packages get queued
-            sleep(0.01)
-
-    for n in range(0, n_jobs):
-        Thread(target=builder, args=(n + 1,), daemon=True).start()
-
-    num_built = len(already_built)
+    build_state = _GraphBuilder(pkg_map, build_args, build_dir, set(needs_build))
     try:
-        with Live(progress_formatter, console=console_stdout):
-            while num_built < len(pkg_map):
-                match built_queue.get():
-                    case BaseException() as err:
-                        raise err
-                    case BasePackage() as pkg:
-                        pass
-
-                num_built += 1
-
-                progress_formatter.update_progress_bar()
-
-                for _dependent in pkg.host_dependents:
-                    dependent = pkg_map[_dependent]
-                    dependent.unbuilt_host_dependencies.remove(pkg.name)
-                    if len(dependent.unbuilt_host_dependencies) == 0:
-                        build_queue.put((job_priority(dependent), dependent))
+        build_state.run(n_jobs, already_built)
     except BuildError as err:
         logger.error(err.msg)
         sys.exit(err.returncode)
