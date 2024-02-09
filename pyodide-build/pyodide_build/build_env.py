@@ -1,5 +1,6 @@
 # This file contains functions for managing the Pyodide build environment.
 
+import dataclasses
 import functools
 import os
 import re
@@ -66,6 +67,21 @@ BUILD_VARS: set[str] = {
     "MESON_CROSS_FILE",
     "PKG_CONFIG_LIBDIR",
 }
+
+
+@dataclasses.dataclass(eq=False, order=False, kw_only=True)
+class BuildArgs:
+    """
+    Common arguments for building a package.
+    """
+
+    pkgname: str = ""
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
+    target_install_dir: str = ""  # The path to the target Python installation
+    host_install_dir: str = ""  # Directory for installing built host packages.
+    builddir: str = ""  # The path to run pypa/build
 
 
 def init_environment(*, quiet: bool = False) -> None:
