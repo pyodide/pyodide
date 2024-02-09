@@ -40,6 +40,19 @@ AVOIDED_REQUIREMENTS = [
     "patchelf",
 ]
 
+# corresponding env variables for symlinks
+SYMLINK_ENV_VARS = {
+    "cc": "CC",
+    "c++": "CXX",
+    "ld": "LD",
+    "lld": "LLD",
+    "ar": "AR",
+    "gcc": "GCC",
+    "ranlib": "RANLIB",
+    "strip": "STRIP",
+    "gfortran": "FC",  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
+}
+
 
 def _gen_runner(
     cross_build_env: Mapping[str, str],
@@ -207,13 +220,8 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             symlink_path.unlink()
 
         symlink_path.symlink_to(pywasmcross_exe)
-        if symlink == "c++":
-            var = "CXX"
-        elif symlink == "gfortran":
-            var = "FC"  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
-        else:
-            var = symlink.upper()
-        env[var] = str(symlink_path)
+        if symlink in SYMLINK_ENV_VARS:
+            env[SYMLINK_ENV_VARS[symlink]] = str(symlink_path)
 
     return env
 
