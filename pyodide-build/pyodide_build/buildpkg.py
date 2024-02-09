@@ -21,6 +21,7 @@ from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
 from .build_env import (
     RUST_BUILD_PRELUDE,
+    BuildArgs,
     get_build_environment_vars,
     get_build_flag,
     pyodide_tags,
@@ -37,7 +38,6 @@ from .common import (
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
-from .pywasmcross import BuildArgs
 
 
 def _make_whlfile(
