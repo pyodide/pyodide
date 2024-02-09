@@ -10,6 +10,7 @@ requirements:
   run:
     - attrs
     - pyrsistent
+    - referencing
 about:
   home: https://github.com/Julian/jsonschema
   PyPI: https://pypi.org/project/jsonschema

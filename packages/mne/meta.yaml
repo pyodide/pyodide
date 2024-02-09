@@ -12,6 +12,7 @@ requirements:
     - scipy
     - setuptools
     - decorator
+    - lazy-loader
 about:
   home: https://mne.tools/dev/
   PyPI: https://pypi.org/project/mne

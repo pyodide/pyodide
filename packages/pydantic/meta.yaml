@@ -9,6 +9,7 @@ source:
 requirements:
   run:
     - typing-extensions
+    - pydantic_core
 about:
   home: https://github.com/samuelcolvin/pydantic
   PyPI: https://pypi.org/project/pydantic

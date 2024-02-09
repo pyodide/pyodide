@@ -10,6 +10,8 @@ source:
 requirements:
   host:
     - setuptools
+  run:
+    - ssl
 
 build:
   script: |
