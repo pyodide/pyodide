@@ -13,6 +13,7 @@ requirements:
     - numpy
     - pydantic
     - setuptools
+    - annotated-types
 
 test:
   imports:

@@ -11,6 +11,7 @@ requirements:
     - attrs
     - pyrsistent
     - referencing
+    - jsonschema_specifications
 about:
   home: https://github.com/Julian/jsonschema
   PyPI: https://pypi.org/project/jsonschema

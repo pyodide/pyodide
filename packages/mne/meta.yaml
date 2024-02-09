@@ -13,6 +13,7 @@ requirements:
     - setuptools
     - decorator
     - lazy-loader
+    - packaging
 about:
   home: https://mne.tools/dev/
   PyPI: https://pypi.org/project/mne
