@@ -26,7 +26,6 @@ source:
     - patches/0003-fix-fotran-files-minpack.patch
     - patches/0004-gemm_-no-const.patch
     - patches/0005-make-int-return-values.patch
-    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
     - patches/0007-Remove-test-modules-that-fails-to-build.patch
     - patches/0008-Fix-fitpack.patch
     - patches/0009-Fix-gees-calls.patch

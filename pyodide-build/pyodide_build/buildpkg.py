@@ -635,6 +635,9 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                 or fnmatch.fnmatchcase(fpath, "*_test.py")
                 or fpath == "conftest.py"
             ):
+                # Special workaround for scipy
+                if fpath.endswith("_page_trend_test.py"):
+                    continue
                 (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
                 shutil.move(
                     install_prefix / root_rel / fpath,
