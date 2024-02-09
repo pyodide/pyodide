@@ -1,11 +1,11 @@
 package:
   name: cloudpickle
-  version: 2.2.1
+  version: 3.0.0
   top-level:
     - cloudpickle
 source:
-  sha256: 61f594d1f4c295fa5cd9014ceb3a1fc4a70b0de1164b94fbc2d854ccba056f9f
-  url: https://files.pythonhosted.org/packages/15/80/44286939ca215e88fa827b2aeb6fa3fd2b4a7af322485c7170d6f9fd96e0/cloudpickle-2.2.1-py3-none-any.whl
+  sha256: 246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7
+  url: https://files.pythonhosted.org/packages/96/43/dae06432d0c4b1dc9e9149ad37b4ca8384cf6eb7700cd9215b177b914f0a/cloudpickle-3.0.0-py3-none-any.whl
 about:
   home: https://github.com/cloudpipe/cloudpickle
   PyPI: https://pypi.org/project/cloudpickle

@@ -1,13 +1,11 @@
 package:
   name: gsw
-  version: 3.6.16
+  version: 3.6.17
   top-level:
     - gsw
 source:
-  url: https://files.pythonhosted.org/packages/d0/65/f8a32543c436a32220c663cbb2a48b096eb23e951bfa38c72667a6d1a79b/gsw-3.6.16.tar.gz
-  sha256: d24d820c8b43dbf72206cf5e3b0ed800b05aa85ca40afd39c9abd19849714197
-  patches:
-    - patches/0001-Add-consts-to-PyUFuncGenericFunction-declarations.patch
+  url: https://files.pythonhosted.org/packages/00/24/11db47cfc7027cd94f66ab17792d2be4f8d1bcb641fb92fd9fa09cc90ba9/gsw-3.6.17.tar.gz
+  sha256: e13979e1ba29fd41f63c8a3cbb1c47fe50b602d8ce9357b4008b0c2f6e76c665
 
 requirements:
   run:

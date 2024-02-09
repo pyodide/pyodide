@@ -1,11 +1,11 @@
 package:
   name: fsspec
-  version: 2023.6.0
+  version: 2024.2.0
   top-level:
     - fsspec
 source:
-  url: https://files.pythonhosted.org/packages/e3/bd/4c0a4619494188a9db5d77e2100ab7d544a42e76b2447869d8e124e981d8/fsspec-2023.6.0-py3-none-any.whl
-  sha256: 1cbad1faef3e391fba6dc005ae9b5bdcbf43005c9167ce78c915549c352c869a
+  url: https://files.pythonhosted.org/packages/ad/30/2281c062222dc39328843bd1ddd30ff3005ef8e30b2fd09c4d2792766061/fsspec-2024.2.0-py3-none-any.whl
+  sha256: 817f969556fa5916bc682e02ca2045f96ff7f586d45110fcb76022063ad2c7d8
 about:
   home: http://github.com/fsspec/filesystem_spec
   PyPI: https://pypi.org/project/fsspec
