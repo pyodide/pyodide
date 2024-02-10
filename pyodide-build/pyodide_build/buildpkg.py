@@ -639,9 +639,8 @@ def unvendor_tests(
                 or fnmatch.fnmatchcase(fpath, "*_test.py")
                 or fpath == "conftest.py"
             ):
-                for pat in retain_test_patterns:
-                    if fnmatch.fnmatchcase(fpath, pat):
-                        continue
+                if any(fnmatch.fnmatchcase(fpath, pat) for pat in retain_test_patterns):
+                    continue
                 (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
                 shutil.move(
                     install_prefix / root_rel / fpath,

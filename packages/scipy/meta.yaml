@@ -90,6 +90,7 @@ build:
 
   retain-test-patterns:
     - "*_page_trend_test.py"
+    - "*bws_test.py"
 
   cross-build-env: true
   cross-build-files:
