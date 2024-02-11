@@ -1,0 +1,19 @@
+package:
+  name: libsdl2
+  version: 2.23.0
+
+source:
+  url: https://github.com/libsdl-org/SDL/releases/download/release-2.30.0/SDL2-2.30.0.tar.gz
+  sha256: 36e2e41557e0fa4a1519315c0f5958a87ccb27e25c51776beb6f1239526447b0
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        --host=wasm32-unknown-emscripten \
+        CFLAGS="-fPIC" \
+        --disable-shared \
+        --disable-dependency-tracking \
+        --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install

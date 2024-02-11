@@ -1,0 +1,19 @@
+package:
+  name: libsdl2_ttf
+  version: 2.22.0
+
+source:
+  url: https://github.com/libsdl-org/SDL_ttf/releases/download/release-2.22.0/SDL2_ttf-2.22.0.tar.gz
+  sha256: d48cbd1ce475b9e178206bf3b72d56b66d84d44f64ac05803328396234d67723
+
+build:
+  type: static_library
+  script: |
+    mkdir build && cd build && emcmake cmake \
+      -DCMAKE_C_FLAGS="-fPIC" \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DBUILD_SHARED_LIBS=OFF \
+      ../
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install

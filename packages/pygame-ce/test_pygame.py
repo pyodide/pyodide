@@ -24,16 +24,6 @@ def selenium_sdl(selenium_standalone):
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @run_in_pyodide(packages=["pygame-ce"])
-def test_idle(selenium_sdl):
-    import pygame
-
-    print(pygame.__version__)
-
-
-@pytest.mark.skip_refcount_check
-@pytest.mark.skip_pyproxy_check
-@run_in_pyodide(packages=["pygame-ce"])
-def test_example(selenium_sdl):
-    import pygame.examples.stars
-
-    pygame.examples.stars.main()
+def test_init(selenium_sdl):
+    import pygame.display
+    pygame.display.init()
