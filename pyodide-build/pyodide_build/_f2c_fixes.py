@@ -1,4 +1,5 @@
 import re
+import subprocess
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from textwrap import dedent  # for doctests
@@ -513,3 +514,87 @@ def scipy_fixes(args: list[str]) -> None:
     for arg in args:
         if arg.endswith(".c"):
             scipy_fix_cfile(arg)
+
+
+def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
+    """Apply f2c to compilation arguments
+
+    Parameters
+    ----------
+    args
+       input compiler arguments
+    dryrun
+       if False run f2c on detected fortran files
+
+    Returns
+    -------
+    new_args
+       output compiler arguments
+
+
+    Examples
+    --------
+
+    >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
+    ['gcc', 'test.c']
+    """
+
+    new_args = ["gcc"]
+    found_source = False
+    for arg in args[1:]:
+        if arg.endswith(".f") or arg.endswith(".F"):
+            filepath = Path(arg).resolve()
+            if not dryrun:
+                fix_f2c_input(arg)
+                if arg.endswith(".F"):
+                    # .F files apparently expect to be run through the C
+                    # preprocessor (they have #ifdef's in them)
+                    # Use gfortran frontend, as gcc frontend might not be
+                    # present on osx
+                    # The file-system might be not case-sensitive,
+                    # so take care to handle this by renaming.
+                    # For preprocessing and further operation the
+                    # expected file-name and extension needs to be preserved.
+                    subprocess.check_call(
+                        [
+                            "gfortran",
+                            "-E",
+                            "-C",
+                            "-P",
+                            filepath,
+                            "-o",
+                            filepath.with_suffix(".f77"),
+                        ]
+                    )
+                    filepath = filepath.with_suffix(".f77")
+                # -R flag is important, it means that Fortran functions that
+                # return real e.g. sdot will be transformed into C functions
+                # that return float. For historic reasons, by default f2c
+                # transform them into functions that return a double. Using -R
+                # allows to match what OpenBLAS has done when they f2ced their
+                # Fortran files, see
+                # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
+                # for more details
+                with (
+                    open(filepath) as input_pipe,
+                    open(filepath.with_suffix(".c"), "w") as output_pipe,
+                ):
+                    subprocess.check_call(
+                        ["f2c", "-R"],
+                        stdin=input_pipe,
+                        stdout=output_pipe,
+                        cwd=filepath.parent,
+                    )
+                fix_f2c_output(arg[:-2] + ".c")
+            new_args.append(arg[:-2] + ".c")
+            found_source = True
+        else:
+            new_args.append(arg)
+
+    new_args_str = " ".join(args)
+    if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
+        found_source = True
+
+    if not found_source:
+        return None
+    return new_args

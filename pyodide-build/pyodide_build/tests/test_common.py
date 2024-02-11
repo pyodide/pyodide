@@ -151,7 +151,7 @@ def test_extract_wheel_metadata_file(tmp_path):
 
     output_path_empty = tmp_path / f"{input_path_empty.name}.metadata"
 
-    with pytest.raises(Exception):
+    with pytest.raises(RuntimeError):
         extract_wheel_metadata_file(input_path_empty, output_path_empty)
 
 

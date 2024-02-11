@@ -91,7 +91,7 @@ def test_build_recipe(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes)
 
     result = runner.invoke(
         app,
@@ -123,7 +123,7 @@ def test_build_recipe_no_deps(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkgs_to_build = ["pkg_test_graph1", "pkg_test_graph3"]
     result = runner.invoke(
@@ -132,7 +132,6 @@ def test_build_recipe_no_deps(selenium, tmp_path):
             *pkgs_to_build,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -155,7 +154,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkg = "pkg_test_graph1"
     result = runner.invoke(
@@ -164,7 +163,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -176,7 +174,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -190,7 +187,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
             "--force-rebuild",
         ],
     )
@@ -209,7 +205,7 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkg = "pkg_test_graph1"
     result = runner.invoke(
@@ -218,7 +214,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -248,7 +243,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
             "--continue",
         ],
     )
@@ -455,7 +449,7 @@ def test_build1(selenium, tmp_path, monkeypatch):
     assert result.exit_code == 0
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
-    assert results["backend_flags"] == "x y z"
+    assert results["backend_flags"] == {"x": "", "y": "", "z": ""}
 
 
 def test_build2_replace_so_abi_tags(selenium, tmp_path, monkeypatch):
@@ -546,3 +540,78 @@ def test_build_exports(monkeypatch):
         r.output.strip().replace("\n", " ").replace("  ", " ")
         == 'Expected exports to be one of "pyinit", "requested", "whole_archive", or a comma separated list of symbols to export. Got "x".'
     )
+
+
+def test_build_config_settings(monkeypatch):
+    app = typer.Typer()
+
+    app.command(
+        context_settings={
+            "ignore_unknown_options": True,
+            "allow_extra_args": True,
+        }
+    )(build.main)
+
+    config_settings_passed = None
+
+    def run(srcdir, outdir, exports, config_settings):
+        nonlocal config_settings_passed
+        config_settings_passed = config_settings
+
+    monkeypatch.setattr(cli.build, "check_emscripten_version", lambda: None)
+    monkeypatch.setattr(pyodide_build.out_of_tree.build, "run", run)
+
+    # Accept `-C`
+    result = runner.invoke(
+        app,
+        [".", "-C--key1", "-C--key2=value2", "-C=value3", "-Ckey4=value4"],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert config_settings_passed == {
+        "--key1": "",
+        "--key2": "value2",
+        "": "value3",
+        "key4": "value4",
+    }
+
+    result = runner.invoke(
+        app,
+        [
+            ".",
+            "--config-setting",
+            "--key1",
+            "--config-setting=--key2=--value2",
+            "--config-setting=key3",
+            "--config-setting",
+            "--key4=--value4",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert config_settings_passed == {
+        "--key1": "",
+        "--key2": "--value2",
+        "key3": "",
+        "--key4": "--value4",
+    }
+
+    # For backwards compatibility, extra flags are interpreted as config settings
+    result = runner.invoke(
+        app,
+        [
+            ".",
+            "-C--key1=value1",
+            "--config-setting=--key2=value2",
+            "--key3",
+            "--key4=--value4",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert config_settings_passed == {
+        "--key1": "value1",
+        "--key2": "value2",
+        "--key3": "",
+        "--key4": "--value4",
+    }

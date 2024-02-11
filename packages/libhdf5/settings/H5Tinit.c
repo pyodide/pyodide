@@ -1060,7 +1060,7 @@ done:
 /****************************************/
 /* ALIGNMENT and signal-handling status */
 /****************************************/
-/* ALIGNAMENT test is not available */
+/* ALIGNMENT test is not available */
 /* Signal handlers verify test is not available */
 /* Signal() support: no */
 /* setjmp() support: yes */

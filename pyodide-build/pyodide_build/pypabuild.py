@@ -40,6 +40,19 @@ AVOIDED_REQUIREMENTS = [
     "patchelf",
 ]
 
+# corresponding env variables for symlinks
+SYMLINK_ENV_VARS = {
+    "cc": "CC",
+    "c++": "CXX",
+    "ld": "LD",
+    "lld": "LLD",
+    "ar": "AR",
+    "gcc": "GCC",
+    "ranlib": "RANLIB",
+    "strip": "STRIP",
+    "gfortran": "FC",  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
+}
+
 
 def _gen_runner(
     cross_build_env: Mapping[str, str],
@@ -161,9 +174,13 @@ def _build_in_isolated_env(
             return builder.build(distribution, outdir, config_settings)
 
 
-def parse_backend_flags(backend_flags: str) -> ConfigSettingsType:
+def parse_backend_flags(backend_flags: str | list[str]) -> ConfigSettingsType:
     config_settings: dict[str, str | list[str]] = {}
-    for arg in backend_flags.split():
+
+    if isinstance(backend_flags, str):
+        backend_flags = backend_flags.split()
+
+    for arg in backend_flags:
         setting, _, value = arg.partition("=")
         if setting not in config_settings:
             config_settings[setting] = value
@@ -203,13 +220,8 @@ def make_command_wrapper_symlinks(symlink_dir: Path) -> dict[str, str]:
             symlink_path.unlink()
 
         symlink_path.symlink_to(pywasmcross_exe)
-        if symlink == "c++":
-            var = "CXX"
-        elif symlink == "gfortran":
-            var = "FC"  # https://mesonbuild.com/Reference-tables.html#compiler-and-linker-selection-variables
-        else:
-            var = symlink.upper()
-        env[var] = str(symlink_path)
+        if symlink in SYMLINK_ENV_VARS:
+            env[SYMLINK_ENV_VARS[symlink]] = str(symlink_path)
 
     return env
 
@@ -272,10 +284,9 @@ def build(
     srcdir: Path,
     outdir: Path,
     build_env: Mapping[str, str],
-    backend_flags: str,
+    config_settings: ConfigSettingsType,
 ) -> str:
     distribution = "wheel"
-    config_settings = parse_backend_flags(backend_flags)
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(

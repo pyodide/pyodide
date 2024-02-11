@@ -8,8 +8,8 @@ build:
   post: |
     mkdir -p $WASM_LIBRARY_DIR/include/rebound/
     mkdir -p $WASM_LIBRARY_DIR/lib/
-    cp $WHEELDIR/rebound/*.h $WASM_LIBRARY_DIR/include/rebound/
-    cp $WHEELDIR/librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
+    cp rebound/*.h $WASM_LIBRARY_DIR/include/rebound/
+    cp librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
 
 source:
   url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz

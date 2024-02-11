@@ -5,6 +5,8 @@ from tempfile import TemporaryDirectory
 import pytest
 from pytest_pyodide import run_in_pyodide, spawn_web_server
 
+from conftest import package_is_built
+
 cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 
@@ -46,9 +48,8 @@ SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             return await pyodide.runPythonAsync(`
                 import os
                 import micropip
@@ -61,9 +62,7 @@ def test_install_simple(selenium_standalone_micropip):
                 to_js(stemmer.stemWords('go going goes gone'.split()))
             `);
             """
-        )
-        == ["go", "go", "goe", "gone"]
-    )
+    ) == ["go", "go", "goe", "gone"]
 
 
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
@@ -243,3 +242,18 @@ def test_emfs(selenium_standalone_micropip):
             ]
 
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
+
+
+def test_install_non_normalized_package(selenium_standalone_micropip):
+    if not package_is_built("ruamel-yaml"):
+        pytest.skip("ruamel.yaml not built")
+
+    selenium = selenium_standalone_micropip
+
+    selenium.run_async(
+        """
+        import micropip
+        await micropip.install("ruamel.yaml")
+        import ruamel.yaml
+        """
+    )

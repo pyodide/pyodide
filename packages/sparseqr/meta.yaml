@@ -16,7 +16,6 @@ requirements:
     - numpy
     - scipy
     - suitesparse
-    - distutils
   host:
     - suitesparse
 build:

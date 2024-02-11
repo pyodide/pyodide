@@ -123,12 +123,8 @@ def test_blosc(selenium_standalone):
         np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
             "m8[ns]"
         ),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
-            "M8[m]"
-        ),
-        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view(
-            "m8[m]"
-        ),
+        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view("M8[m]"),
+        np.random.randint(-(2**63), -(2**63) + 20, size=1000, dtype="i8").view("m8[m]"),
     ]
 
     codecs = [

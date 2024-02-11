@@ -6,6 +6,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/d9/2e/2848cb5ab5240cb34b967602990450d0fd715f013806929b2f82821cef7f/gmpy2-2.1.5.tar.gz
   sha256: bc297f1fd8c377ae67a4f493fc0f926e5d1b157e5c342e30a4d84dc7b9f95d96
+  patches:
+    - patches/gmpy2-2.1.5-py312.patch
 
 requirements:
   host:

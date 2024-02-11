@@ -360,22 +360,18 @@ def test_await_pyproxy_eval_async(selenium):
         == 2
     )
 
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             let finally_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("1+1");
             let result = await c.finally(() => { finally_occurred = true; });
             c.destroy();
             return [result, finally_occurred];
             """
-        )
-        == [2, True]
-    )
+    ) == [2, True]
 
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             let finally_occurred = false;
             let err_occurred = false;
             let c = pyodide._api.pyodide_code.eval_code_async("raise ValueError('hi')");
@@ -387,9 +383,7 @@ def test_await_pyproxy_eval_async(selenium):
             c.destroy();
             return [finally_occurred, err_occurred];
             """
-        )
-        == [True, True]
-    )
+    ) == [True, True]
 
     assert selenium.run_js(
         """

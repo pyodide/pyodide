@@ -1,6 +1,47 @@
 import pytest
 
 
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_create_task(selenium):
+    selenium.run_js(
+        """
+        await pyodide.runPythonSyncifying(`
+            import asyncio
+
+            async def test():
+                await asyncio.sleep(0.1)
+                return 7
+
+            task = asyncio.create_task(test())
+            assert task.syncify() == 7
+            del test, task
+        `);
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_error_in_python_task(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("pytest");
+        await pyodide.runPythonSyncifying(`
+            import asyncio
+
+            async def async_raise():
+                await asyncio.sleep(0.1)
+                raise ValueError("Hi there")
+
+            task = asyncio.create_task(async_raise())
+            import pytest
+            with pytest.raises(ValueError, match="Hi there"):
+                task.syncify()
+            del async_raise, task
+        `);
+        """
+    )
+
+
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
 def test_syncify_not_supported1(selenium_standalone_noload):
     selenium = selenium_standalone_noload

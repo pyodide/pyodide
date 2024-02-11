@@ -48,8 +48,8 @@ typedef struct
 {
   PyFrameObject* _top_frame;
   _PyCFrame* cframe;
-  int use_tracing;
-  int recursion_depth;
+  int py_recursion_depth;
+  int c_recursion_depth;
   int trash_delete_nesting;
   _PyInterpreterFrame* current_frame;
   _PyStackChunk* datastack_chunk;
@@ -69,13 +69,14 @@ savePythonState(PyThreadState* tstate)
   ps.datastack_top = tstate->datastack_top;
   ps.datastack_limit = tstate->datastack_limit;
 
-  ps.use_tracing = tstate->cframe->use_tracing;
-  ps.recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+  ps.py_recursion_depth =
+    tstate->py_recursion_limit - tstate->py_recursion_remaining;
+  ps.c_recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
 
   ps._top_frame = PyThreadState_GetFrame((PyThreadState*)tstate);
   Py_XDECREF(ps._top_frame);
 
-  ps.trash_delete_nesting = tstate->trash_delete_nesting;
+  ps.trash_delete_nesting = tstate->trash.delete_nesting;
 
   ps.context = tstate->context;
   Py_XINCREF(ps.context);
@@ -91,10 +92,11 @@ restorePythonState(PyThreadState* tstate, PythonState ps)
   tstate->datastack_top = ps.datastack_top;
   tstate->datastack_limit = ps.datastack_limit;
 
-  tstate->cframe->use_tracing = ps.use_tracing;
-  tstate->recursion_remaining = tstate->recursion_limit - ps.recursion_depth;
+  tstate->py_recursion_remaining =
+    tstate->py_recursion_limit - ps.py_recursion_depth;
+  tstate->c_recursion_remaining = C_RECURSION_LIMIT - ps.c_recursion_depth;
 
-  tstate->trash_delete_nesting = ps.trash_delete_nesting;
+  tstate->trash.delete_nesting = ps.trash_delete_nesting;
 
   tstate->context = ps.context;
   Py_XDECREF(ps.context);
@@ -149,7 +151,7 @@ set_new_cframe(_PyCFrame* frame)
   *frame = *tstate->cframe;
   tstate->cframe = frame;
   tstate->cframe->previous = &PyThreadState_GET()->root_cframe;
-  tstate->trash_delete_nesting = 0;
+  tstate->trash.delete_nesting = 0;
   tstate->cframe->current_frame = NULL;
   tstate->datastack_chunk = NULL;
   tstate->datastack_top = NULL;

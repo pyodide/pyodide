@@ -4,13 +4,7 @@ import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
 import { PackageData, loadPackage, loadedPackages } from "./load-package";
-import {
-  PyBufferView,
-  PyBuffer,
-  type PyProxy,
-  type PyDict,
-} from "generated/pyproxy";
-import { PythonError } from "../core/error_handling";
+import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
@@ -203,16 +197,16 @@ export class PyodideAPI {
    * expression (and the code doesn't end with a semicolon), the value of the
    * expression is returned.
    *
-   * @param code Python code to evaluate
+   * @param code The Python code to run
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    *        Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
-   * @param options.filename An optional string to use as the filename. Defaults
-   *        to "<exec>". If the filename does not start with "<" and end with ">",
-   *        the source code will be added to the Python linecache and tracebacks
-   *        will show source lines.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript. See the
    *          documentation for :py:func:`~pyodide.code.eval_code` for more info.
    * @example
@@ -268,16 +262,16 @@ export class PyodideAPI {
    *    import any python packages referenced via ``import`` statements in your
    *    code. This function will no longer do it for you.
    *
-   * @param code Python code to evaluate
+   * @param code The Python code to run
    * @param options
    * @param options.globals An optional Python dictionary to use as the globals.
    * Defaults to :js:attr:`pyodide.globals`.
    * @param options.locals An optional Python dictionary to use as the locals.
    *        Defaults to the same as ``globals``.
-   * @param options.filename An optional string to use as the filename. Defaults
-   *        to "<exec>". If the filename does not start with "<" and end with ">",
-   *        the source code will be added to the Python linecache and tracebacks
-   *        will show source lines.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript.
    * @async
    */
@@ -291,18 +285,39 @@ export class PyodideAPI {
     return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
+  /**
+   * Runs a Python code string like :js:func:`pyodide.runPython` but with stack
+   * switching enabled. Code executed in this way can use
+   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
+   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
+   * resolved. Only works in runtimes with JS Promise Integration enabled.
+   *
+   * .. admonition:: Experimental
+   *    :class: warning
+   *
+   *    This feature is not yet stable.
+   *
+   * @experimental
+   * @param code The Python code to run
+   * @param options
+   * @param options.globals An optional Python dictionary to use as the globals.
+   * Defaults to :js:attr:`pyodide.globals`.
+   * @param options.locals An optional Python dictionary to use as the locals.
+   *        Defaults to the same as ``globals``.
+   * @param options.filename An optional string to use as the file name.
+   *        Defaults to ``"<exec>"``. If a custom file name is given, the
+   *        traceback for any exception that is thrown will show source lines
+   *        (unless the given file name starts with ``<`` and ends with ``>``).
+   * @returns The result of the Python code translated to JavaScript.
+   */
   static async runPythonSyncifying(
     code: string,
-    options: { globals?: PyProxy; locals?: PyProxy } = {},
+    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): Promise<any> {
     if (!options.globals) {
       options.globals = API.globals;
     }
-    return API.pyodide_code.eval_code.callSyncifying(
-      code,
-      options.globals,
-      options.locals,
-    );
+    return API.pyodide_code.eval_code.callSyncifyingKwargs(code, options);
   }
 
   /**
@@ -312,6 +327,28 @@ export class PyodideAPI {
    * imported, this won't have much effect unless you also delete the imported
    * module from :py:data:`sys.modules`. This calls
    * :func:`~pyodide.ffi.register_js_module`.
+   *
+   * Any attributes of the JavaScript objects which are themselves objects will
+   * be treated as submodules:
+   * ```pyodide
+   * pyodide.registerJsModule("mymodule", { submodule: { value: 7 } });
+   * pyodide.runPython(`
+   *     from mymodule.submodule import value
+   *     assert value == 7
+   * `);
+   * ```
+   * If you wish to prevent this, try the following instead:
+   * ```pyodide
+   * const sys = pyodide.pyimport("sys");
+   * sys.modules.set("mymodule", { obj: { value: 7 } });
+   * pyodide.runPython(`
+   *     from mymodule import obj
+   *     assert obj.value == 7
+   *     # attempting to treat obj as a submodule raises ModuleNotFoundError:
+   *     # "No module named 'mymodule.obj'; 'mymodule' is not a package"
+   *     from mymodule.obj import value
+   * `);
+   * ```
    *
    * @param name Name of the JavaScript module to add
    * @param module JavaScript object backing the module
@@ -414,31 +451,26 @@ export class PyodideAPI {
   /**
    * Imports a module and returns it.
    *
-   * .. admonition:: Warning
-   *    :class: warning
-   *
-   *    This function has a completely different behavior than the old removed pyimport function!
-   *
-   *    ``pyimport`` is roughly equivalent to:
-   *
-   *    .. code-block:: js
-   *
-   *      pyodide.runPython(`import ${pkgname}; ${pkgname}`);
-   *
-   *    except that the global namespace will not change.
-   *
-   *    Example:
-   *
-   *    .. code-block:: js
-   *
-   *      let sysmodule = pyodide.pyimport("sys");
-   *      let recursionLimit = sysmodule.getrecursionlimit();
+   * If `name` has no dot in it, then `pyimport(name)` is approximately
+   * equivalent to:
+   * ```js
+   * pyodide.runPython(`import ${name}; ${name}`)
+   * ```
+   * except that `name` is not introduced into the Python global namespace. If
+   * the name has one or more dots in it, say it is of the form `path.name`
+   * where `name` has no dots but path may have zero or more dots. Then it is
+   * approximately the same as:
+   * ```js
+   * pyodide.runPython(`from ${path} import ${name}; ${name}`);
+   * ```
    *
    * @param mod_name The name of the module to import
-   * @returns A PyProxy for the imported module
+   *
+   * @example
+   * pyodide.pyimport("math.comb")(4, 2) // returns 4 choose 2 = 6
    */
-  static pyimport(mod_name: string): PyProxy {
-    return API.importlib.import_module(mod_name);
+  static pyimport(mod_name: string): any {
+    return API.pyodide_base.pyimport_impl(mod_name);
   }
 
   /**
@@ -583,68 +615,6 @@ export class PyodideAPI {
   }
 
   /**
-   * Is ``jsobj`` a :js:class:`~pyodide.ffi.PyProxy`?
-   * @deprecated Use :js:class:`obj instanceof pyodide.ffi.PyProxy <pyodide.ffi.PyProxy>` instead.
-   * @param jsobj Object to test.
-   */
-  static isPyProxy(jsobj: any): jsobj is PyProxy {
-    console.warn(
-      "pyodide.isPyProxy() is deprecated. Use `instanceof pyodide.ffi.PyProxy` instead.",
-    );
-    this.isPyProxy = API.isPyProxy;
-    return API.isPyProxy(jsobj);
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBufferView`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PyBuffer() {
-    console.warn(
-      "pyodide.PyBuffer is deprecated. Use `pyodide.ffi.PyBufferView` instead.",
-    );
-    Object.defineProperty(this, "PyBuffer", { value: PyBufferView });
-    return PyBufferView;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PyBuffer`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-
-  static get PyProxyBuffer() {
-    console.warn(
-      "pyodide.PyProxyBuffer is deprecated. Use `pyodide.ffi.PyBuffer` instead.",
-    );
-    Object.defineProperty(this, "PyProxyBuffer", { value: PyBuffer });
-    return PyBuffer;
-  }
-
-  /**
-   * An alias for :js:class:`pyodide.ffi.PythonError`.
-   *
-   * @hidetype
-   * @alias
-   * @dockind class
-   * @deprecated
-   */
-  static get PythonError() {
-    console.warn(
-      "pyodide.PythonError is deprecated. Use `pyodide.ffi.PythonError` instead.",
-    );
-    Object.defineProperty(this, "PythonError", { value: PythonError });
-    return PythonError;
-  }
-
-  /**
    * Turn on or off debug mode. In debug mode, some error messages are improved
    * at a performance cost.
    * @param debug If true, turn debug mode on. If false, turn debug mode off.
@@ -774,6 +744,7 @@ API.finalizeBootstrap = function (): PyodideInterface {
   API.pyodide_code = import_module("pyodide.code");
   API.pyodide_ffi = import_module("pyodide.ffi");
   API.package_loader = import_module("pyodide._package_loader");
+  API.pyodide_base = import_module("_pyodide._base");
 
   API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
   API.dsodir = API.package_loader.DSO_DIR.__str__();

@@ -67,9 +67,8 @@ def test_jsproxy_dir(selenium):
 
 
 def test_jsproxy_getattr(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.a = { x : 2, y : "9", typeof : 7 };
             let pyresult = pyodide.runPython(`
                 from js import a
@@ -79,9 +78,7 @@ def test_jsproxy_getattr(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == [2, "9", "object"]
-    )
+    ) == [2, "9", "object"]
 
 
 @run_in_pyodide
@@ -93,9 +90,9 @@ def test_jsproxy_getattr_errors(selenium):
 
     o = run_js("({get a() { throw new Error('oops'); } })")
     with pytest.raises(AttributeError):
-        o.x
+        o.x  # noqa: B018
     with pytest.raises(JsException):
-        o.a
+        o.a  # noqa: B018
 
 
 @pytest.mark.xfail_browsers(node="No document in node")
@@ -267,9 +264,8 @@ def test_jsproxy_implicit_iter(selenium):
 
 
 def test_jsproxy_call1(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.f = function(){ return arguments.length; };
             let pyresult = pyodide.runPython(
                 `
@@ -281,9 +277,7 @@ def test_jsproxy_call1(selenium):
             pyresult.destroy();
             return result;
             """
-        )
-        == list(range(10))
-    )
+    ) == list(range(10))
 
 
 @run_in_pyodide
@@ -295,9 +289,8 @@ def test_jsproxy_call2(selenium):
 
 
 def test_jsproxy_call_kwargs(selenium):
-    assert (
-        selenium.run_js(
-            """
+    assert selenium.run_js(
+        """
             self.kwarg_function = ({ a = 1, b = 1 }) => {
                 return [a, b];
             };
@@ -308,9 +301,7 @@ def test_jsproxy_call_kwargs(selenium):
                 `
             );
             """
-        )
-        == [10, 2]
-    )
+    ) == [10, 2]
 
 
 @pytest.mark.xfail
@@ -1525,7 +1516,7 @@ def test_array_slice_assign_2(selenium):
         l[:] = 1  # type: ignore[call-overload]
 
     with pytest.raises(TypeError) as exc_info_3b:
-        jsl[:] = 1
+        jsl[:] = 1  # type: ignore[call-overload]
 
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
@@ -1772,6 +1763,47 @@ def test_jsarray_count(selenium):
         }
         """
     )(a)
+
+
+@run_in_pyodide
+def test_jsarray_remove(selenium):
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import create_proxy
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    l.remove(5)
+    a.remove(5)
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove(78)
+    assert a.to_py() == l
+    l.append([])  # type:ignore[arg-type]
+    p = create_proxy([], roundtrip=False)
+    a.append(p)
+    assert a.to_py() == l
+    l.remove([])  # type:ignore[arg-type]
+    a.remove([])
+    p.destroy()
+    assert a.to_py() == l
+    a.push([])
+    with pytest.raises(ValueError, match="is not in list"):
+        a.remove([])
+
+
+@run_in_pyodide
+def test_jsarray_insert(selenium):
+    from pyodide.code import run_js
+
+    l = [5, 7, 9, -1, 3, 5]
+    a = run_js(repr(l))
+    l.insert(3, 66)
+    a.insert(3, 66)
+    assert a.to_py() == l
+    l.insert(-1, 97)
+    a.insert(-1, 97)
+    assert a.to_py() == l
 
 
 @run_in_pyodide
@@ -2442,7 +2474,7 @@ def test_python_reserved_keywords(selenium):
     )
     assert o.match == 222
     with pytest.raises(AttributeError):
-        o.match_
+        o.match_  # noqa: B018
     assert eval("o.match") == 222
     keys = ["async", "await", "False", "nonlocal", "yield", "try", "assert"]
     for k in keys:
@@ -2524,4 +2556,4 @@ def test_js_proxy_attribute(selenium):
     assert x.b == 7  # Previously this raised AttributeError
     assert x.c is None
     with pytest.raises(AttributeError):
-        x.d
+        x.d  # noqa: B018

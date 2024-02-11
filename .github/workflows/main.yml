@@ -170,7 +170,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: pyodide-env
-          python-version: "3.11"
+          python-version: "3.12"
           channels: conda-forge
 
       - name: install test requirements
@@ -178,6 +178,8 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install -e ./pyodide-build
+          # FIXME: pytest-pyodide hangs in playwright==1.40, chromium
+          pip install "playwright<1.40"
           python -m playwright install
 
       - name: run core tests
