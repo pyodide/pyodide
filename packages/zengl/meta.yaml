@@ -1,14 +1,13 @@
 package:
   name: zengl
-  version: 2.2.0
+  version: 2.4.1
   top-level:
     - zengl
     - _zengl
-    - _zengl_js
 
 source:
-  url: https://files.pythonhosted.org/packages/6a/35/e5a21145ec6b79a56c8e8947f9027d89da5c1c46163aec3edc4ba520a71d/zengl-2.2.0.tar.gz
-  sha256: d1cc530dd5a8035c4be3e2f025bb49c2f4fdb60ace5f7b0dc60139ae471bba23
+  url: https://files.pythonhosted.org/packages/6e/0c/9945be9221e665a098f3207a52c1d42a2a6070c1aba25d8761fa25d00dea/zengl-2.4.1.tar.gz
+  sha256: 30883b2acdc9a04fd2e09acb5a678b9ac73b54d1ad59e157dcff25ac6713e54b
 
 about:
   home: https://github.com/szabolcsdombi/zengl/
