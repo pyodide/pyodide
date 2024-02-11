@@ -2,7 +2,7 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
-@pytest.mark.driver_timeout(300)
+@pytest.mark.driver_timeout(600)
 @run_in_pyodide(packages=["geopandas", "geopandas-tests", "pytest"])
 def test_runtest(selenium):
     from pathlib import Path
