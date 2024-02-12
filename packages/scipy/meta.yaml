@@ -88,7 +88,7 @@ build:
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
 
-  retain-test-patterns:
+  _retain-test-patterns:
     - "*_page_trend_test.py"
     - "*bws_test.py"
 
