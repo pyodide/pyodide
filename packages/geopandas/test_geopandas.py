@@ -58,5 +58,8 @@ def test_runtest(selenium):
             str(test_path / "test_testing.py"),
             str(test_path / "test_merge.py"),
             str(test_path / "test_explore.py"),
+            str(
+                test_path / "test_overlay.py"
+            ),  # geojson test files are not included in the wheel
         ],
     )

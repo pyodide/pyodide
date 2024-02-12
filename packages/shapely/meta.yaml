@@ -1,22 +1,25 @@
 package:
   name: shapely
-  version: 1.8.2
+  version: 2.0.2
   top-level:
     - shapely
 source:
-  url: https://files.pythonhosted.org/packages/93/3c/cda77e57a08c49569de5bd90376c547bcb981420100adcb0f3770ed681b1/Shapely-1.8.2.tar.gz
-  sha256: 572af9d5006fd5e3213e37ee548912b0341fb26724d6dc8a4e3950c10197ebb6
-  patches:
-    - patches/0001-Search-libs-from-auditwheel-repaired-directory.patch
+  url: https://files.pythonhosted.org/packages/01/c0/ef2c5eff1e8381710e211a063d0aa3e7215cea9e6fd8c31e75bf5f93df85/shapely-2.0.2.tar.gz
+  sha256: 1713cc04c171baffc5b259ba8531c58acc2a301707b7f021d88a15ed090649e7
 build:
   vendor-sharedlib: true
   script: |
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
+  cxxflags: |
+    -fexceptions
+  ldflags: |
+    -fexceptions
 requirements:
   run:
     - numpy
   host:
     - geos
+    - numpy
 test:
   imports:
     - shapely
@@ -31,4 +34,3 @@ about:
   PyPI: https://pypi.org/project/shapely
   summary: Geometric objects, predicates, and operations
   license: BSD
-# Note: this package may need to be manually upgraded to the next version
