@@ -23,6 +23,7 @@ requirements:
     - rpds-py
   host:
     - libgsl
+    - numpy
 about:
   home: https://tskit.dev/msprime
   PyPI: https://pypi.org/project/msprime

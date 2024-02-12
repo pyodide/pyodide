@@ -12,6 +12,8 @@ requirements:
     - svgwrite
     - jsonschema
     - rpds-py
+  host:
+    - numpy
 about:
   home: https://tskit.dev/tskit
   PyPI: https://pypi.org/project/tskit
