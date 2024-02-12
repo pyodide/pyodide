@@ -101,8 +101,8 @@ dist/pyodide.asm.js: \
 	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
-    # TODO(ryanking13): Link libgl to a side module not to the main module.
-    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
+   # TODO(ryanking13): Link libgl to a side module not to the main module.
+   # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
 	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
