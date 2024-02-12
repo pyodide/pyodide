@@ -1,11 +1,11 @@
 package:
   name: cmyt
-  version: 1.3.1
+  version: 2.0.0
   top-level:
     - cmyt
 source:
-  url: https://files.pythonhosted.org/packages/2c/12/f85b189cc0768dba10c42ebf051424c9979d7f9059f153221c16e72e963f/cmyt-1.3.1-py3-none-any.whl
-  sha256: 5eede85d3186da1ab029b808ac9fd4faf79766a7e926bae43c2f99db2da5532c
+  url: https://files.pythonhosted.org/packages/ab/22/638eb42617ae88da3654f61273e385bb0215eb85216faec62e716dcf014c/cmyt-2.0.0-py3-none-any.whl
+  sha256: 1b40f396d9b9545be93c2c82d35efcc1260e041db831fa5b009b972153267796
 requirements:
   run:
     - colorspacious

@@ -1,11 +1,11 @@
 package:
   name: astropy
-  version: 5.3.2
+  version: 6.0.0
   top-level:
     - astropy
 source:
-  url: https://files.pythonhosted.org/packages/5d/2a/0bb1e43f5643e47208e53882414f088f13d52b890b9349fa2c1c108d0e31/astropy-5.3.2.tar.gz
-  sha256: 222003dedd4d1ad00cf3b3a02747fd59c4fc93a97ddbe6328952916ad5f1558f
+  url: https://files.pythonhosted.org/packages/29/32/43996ea21f8d5579639721bf2f2a0133cd39b20693e679b859ffdb3971a3/astropy-6.0.0.tar.gz
+  sha256: 03cd801a55305da523cd8d780d76359f57255dcdc59fe0bdd71fd5154fc777d9
 build:
   # The test module is imported from the top level `__init__.py`
   # so it cannot be unvendored
@@ -22,6 +22,7 @@ requirements:
     - numpy
     - pyerfa
     - pyyaml
+    - astropy_iers_data
 test:
   imports:
     - astropy

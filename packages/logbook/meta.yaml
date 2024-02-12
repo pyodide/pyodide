@@ -1,15 +1,17 @@
 package:
   name: logbook
-  version: 1.6.0
+  version: 1.7.0.post0
   top-level:
     - logbook
 source:
-  url: https://files.pythonhosted.org/packages/26/86/aab9956e3a5a320aef2a9be78461544a94e778b30c9a22497fa03e952907/Logbook-1.6.0.tar.gz
-  sha256: a50a0cb1fdd0f58c8cc0ac252bb1683e63caa49872b77c3812cde5d3db73d97f
+  url: https://files.pythonhosted.org/packages/cc/98/c1d93c1d7593f58515333a6217aa4ae647d9ee9c1aa2dfdf77b28b7bb7c7/Logbook-1.7.0.post0.tar.gz
+  sha256: a5e8016701ca3beea6a390b0ba1541037f663543ca508ccd36cfdc841639cdd7
 
 requirements:
   host:
     - setuptools
+  run:
+    - ssl
 
 build:
   script: |

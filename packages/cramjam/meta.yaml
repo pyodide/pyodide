@@ -9,7 +9,9 @@ source:
 build:
   script: |
     # TODO: remove this when updating cramjam
-    cd cramjam-python && cargo update -p zstd-sys --precise 2.0.9
+    cd cramjam-python
+    cargo update -p zstd-sys --precise 2.0.9
+    cargo update -p proc-macro2 --precise 1.0.60
 about:
   home: ""
   PyPI: https://pypi.org/project/cramjam

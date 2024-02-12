@@ -1,11 +1,11 @@
 package:
   name: yarl
-  version: 1.9.2
+  version: 1.9.4
   top-level:
     - yarl
 source:
-  url: https://files.pythonhosted.org/packages/5f/3f/04b3c5e57844fb9c034b09c5cb6d2b43de5d64a093c30529fd233e16cf09/yarl-1.9.2.tar.gz
-  sha256: 04ab9d4b9f587c06d801c2abfe9317b77cdf996c65a90d5e84ecc45010823571
+  url: https://files.pythonhosted.org/packages/e0/ad/bedcdccbcbf91363fd425a948994f3340924145c2bc8ccb296f4a1e52c28/yarl-1.9.4.tar.gz
+  sha256: 566db86717cf8080b99b58b083b773a908ae40f06681e87e589a976faf8246bf
 requirements:
   run:
     - multidict

@@ -1,14 +1,14 @@
 package:
   name: scikit-image
-  version: 0.21.0
+  version: 0.22.0
   top-level:
     - skimage
       # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
 source:
   patches:
     - patches/make-tifffile-optional.patch
-  sha256: b33e823c54e6f11873ea390ee49ef832b82b9f70752c8759efd09d5a4e3d87f0
-  url: https://files.pythonhosted.org/packages/1d/c2/a54d5e6e2d6708e0722a1aaccef4b7cc1e6df6f76c8b4ce98cd6d0c332c3/scikit_image-0.21.0.tar.gz
+  sha256: 018d734df1d2da2719087d15f679d19285fce97cd37695103deadfaef2873236
+  url: https://files.pythonhosted.org/packages/65/c1/a49da20845f0f0e1afbb1c2586d406dc0acb84c26ae293bad6d7e7f718bc/scikit_image-0.22.0.tar.gz
 
 build:
   script: |
