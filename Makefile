@@ -23,7 +23,7 @@ all: check \
 	dist/webworker.js \
 	dist/webworker_dev.js \
 	dist/module_webworker_dev.js
-	echo -e "\nSUCCESS!"
+	@echo -e "\nSUCCESS!"
 
 src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
@@ -99,7 +99,7 @@ dist/pyodide.asm.js: \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
-	date +"[%F %T] Building pyodide.asm.js..."
+	@date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
@@ -122,7 +122,7 @@ dist/pyodide.asm.js: \
 	# Sed nonsense from https://stackoverflow.com/a/13383331
 	sed -i -n -e :a -e '1,4!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
-	date +"[%F %T] done building pyodide.asm.js."
+	@date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -181,12 +181,9 @@ src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 		>> $@
 
 pyodide_build:
-	python -c '0;\
-		from importlib.util import find_spec; \
-		import sys; \
-		sys.exit(not find_spec("pyodide_build"))\
-	' || $(HOSTPYTHON) -m pip install -e ./pyodide-build
-	which pyodide >/dev/null
+	@echo "Ensuring editable pyodide-build is installed"
+	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	@which pyodide >/dev/null
 
 dist/python_stdlib.zip: $(wildcard src/py/**/*) $(CPYTHONLIB)
 	make pyodide_build
@@ -250,22 +247,22 @@ src/core/jslib_asm.o: src/core/jslib_asm.s
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete
-	date +"[%F %T] Building cpython..."
+	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
-	date +"[%F %T] done building cpython..."
+	@date +"[%F %T] done building cpython..."
 
 
 dist/pyodide-lock.json: FORCE
 	make pyodide_build
-	date +"[%F %T] Building packages..."
+	@date +"[%F %T] Building packages..."
 	make -C packages
-	date +"[%F %T] done building packages..."
+	@date +"[%F %T] done building packages..."
 
 
 emsdk/emsdk/.complete:
-	date +"[%F %T] Building emsdk..."
+	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
-	date +"[%F %T] done building emsdk."
+	@date +"[%F %T] done building emsdk."
 
 
 rust:
@@ -278,11 +275,11 @@ FORCE:
 
 
 check:
-	./tools/dependency-check.sh
+	@./tools/dependency-check.sh
 
 
 check-emcc: emsdk/emsdk/.complete
-	python3 tools/check_ccache.py
+	@python3 tools/check_ccache.py
 
 
 debug :
