@@ -49,3 +49,6 @@ about:
   PyPI: https://pypi.org/project/astropy
   summary: Astronomy and astrophysics core library
   license: BSD 3-Clause License
+extra:
+  recipe-maintainers:
+    - jobovy

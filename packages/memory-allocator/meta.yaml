@@ -11,3 +11,6 @@ about:
   PyPI: https://pypi.org/project/memory_allocator
   summary: An extension class to allocate memory easily with cython
   license: GPLv3
+extra:
+  recipe-maintainers:
+    - mkoeppe

@@ -20,3 +20,6 @@ about:
   PyPI: https://pypi.org/project/contourpy
   summary: Python library for calculating contours of 2D quadrilateral grids
   license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - ianthomas23
