@@ -25,3 +25,5 @@ about:
   PyPI: https://pypi.org/project/rebound
   summary: An open-source multi-purpose N-body code
   license: GPL
+recipe-maintainers:
+  - hannorein

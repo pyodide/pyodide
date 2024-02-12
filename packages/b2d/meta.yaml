@@ -18,3 +18,5 @@ test:
   imports:
     - b2d
     - b2d.testbed
+recipe-maintainers:
+  - DerThorsten

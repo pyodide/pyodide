@@ -30,3 +30,5 @@ build:
 about:
   home: https://www.boost.org/
   summary: Free peer-reviewed portable C++ source libraries.
+recipe-maintainers:
+  - johnwason

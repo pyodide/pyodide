@@ -18,3 +18,5 @@ about:
     Fast, correct Python JSON library supporting dataclasses, datetimes, and
     numpy
   license: Apache-2.0 OR MIT
+recipe-maintainers:
+  - spicy-sauce

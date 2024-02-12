@@ -11,3 +11,5 @@ about:
   PyPI: https://pypi.org/project/fsspec
   summary: File-system specification
   license: BSD
+recipe-maintainers:
+  - joemarshall

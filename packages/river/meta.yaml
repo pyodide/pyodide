@@ -29,3 +29,5 @@ test:
   imports:
     - river
     - river.api
+recipe-maintainers:
+  - MaxHalford

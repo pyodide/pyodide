@@ -18,3 +18,5 @@ about:
   PyPI: https://pypi.org/project/fastparquet
   summary: Python support for Parquet file format
   license: Apache License 2.0
+recipe-maintainers:
+  - joemarshall

@@ -108,3 +108,5 @@ build:
     cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}
 
 # Note: this package needs to be manually upgraded to the next version
+recipe-maintainers:
+  - jobovy
