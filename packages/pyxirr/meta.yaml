@@ -15,3 +15,6 @@ requirements:
   executable:
     - rustup
     - cargo
+extra:
+  recipe-maintainers:
+    - Anexen
