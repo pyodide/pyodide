@@ -29,5 +29,6 @@ build:
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-recipe-maintainers:
-  - mkoeppe
+extra:
+  recipe-maintainers:
+    - mkoeppe

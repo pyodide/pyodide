@@ -17,5 +17,6 @@ about:
   PyPI: https://pypi.org/project/boost-histogram
   summary: The Boost::Histogram Python wrapper.
   license: BSD-3-Clause
-recipe-maintainers:
-  - henryiii
+extra:
+  recipe-maintainers:
+    - henryiii

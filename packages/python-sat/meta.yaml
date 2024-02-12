@@ -20,5 +20,6 @@ about:
   PyPI: https://pypi.org/project/python-sat
   summary: A Python library for prototyping with SAT oracles
   license: MIT
-recipe-maintainers:
-  - alexeyignatiev
+extra:
+  recipe-maintainers:
+    - alexeyignatiev

@@ -15,5 +15,6 @@ about:
   PyPI: https://pypi.org/project/zengl
   summary: Self-Contained OpenGL Rendering Pipelines for Python
   license: MIT
-recipe-maintainers:
-  - szabolcsdombi
+extra:
+  recipe-maintainers:
+    - szabolcsdombi

@@ -23,5 +23,6 @@ about:
   PyPI: https://pypi.org/project/reboundx
   summary: A library for including additional forces in REBOUND
   license: GPL
-recipe-maintainers:
-  - hannorein
+extra:
+  recipe-maintainers:
+    - hannorein

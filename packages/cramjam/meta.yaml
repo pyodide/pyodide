@@ -22,5 +22,6 @@ requirements:
 test:
   imports:
     - cramjam
-recipe-maintainers:
-  - joemarshall
+extra:
+  recipe-maintainers:
+    - joemarshall

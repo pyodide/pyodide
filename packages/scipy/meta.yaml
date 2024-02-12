@@ -150,6 +150,7 @@ about:
   PyPI: https://pypi.org/project/scipy
   summary: "SciPy: Scientific Library for Python"
   license: BSD
-recipe-maintainers:
-  - lesteve
-  - steppi
+extra:
+  recipe-maintainers:
+    - lesteve
+    - steppi
