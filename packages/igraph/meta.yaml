@@ -25,3 +25,6 @@ about:
   PyPI: https://pypi.org/project/igraph
   summary: High performance graph data structures and algorithms
   license: GNU General Public License (GPL)
+extra:
+  recipe-maintainers:
+    - ntamas

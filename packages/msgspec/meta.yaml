@@ -11,3 +11,6 @@ about:
   PyPI: https://pypi.org/project/msgspec
   summary: A fast serialization and validation library, with builtin support for JSON, MessagePack, YAML, and TOML.
   license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - bollwyvl

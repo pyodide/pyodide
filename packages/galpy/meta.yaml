@@ -40,3 +40,6 @@ about:
   PyPI: https://pypi.org/project/galpy
   summary: Galactic Dynamics in python
   license: New BSD
+extra:
+  recipe-maintainers:
+    - jobovy
