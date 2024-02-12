@@ -10,6 +10,7 @@ CXX=em++
 
 all: check \
 	check-emcc \
+	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
 	dist/pyodide.d.ts \
@@ -76,7 +77,7 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
 
-dist/libpyodide.a: \
+src/core/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
@@ -91,20 +92,33 @@ dist/libpyodide.a: \
 	src/core/pyodide_pre.o \
 	src/core/pyversion.o \
 	src/core/stack_switching/pystate.o
-	emar rcs dist/libpyodide.a $(filter %.o,$^)
+	emar rcs src/core/libpyodide.a $(filter %.o,$^)
+
+
+$(CPYTHONINSTALL)/include/pyodide/.installed: src/core/*.h
+	mkdir -p $(@D)
+	cp $? $(@D)
+	touch $@
+
+$(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
+	mkdir -p $(@D)
+	cp $< $@
+
+$(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
+	touch $@
 
 
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
-	dist/libpyodide.a
+	$(CPYTHONINSTALL)/.installed-pyodide
 	@date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
    # TODO(ryanking13): Link libgl to a side module not to the main module.
    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
 	embuilder build libgl
-	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
+	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
