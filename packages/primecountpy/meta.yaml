@@ -23,3 +23,5 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
+recipe-maintainers:
+  - mkoeppe
