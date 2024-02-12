@@ -97,11 +97,13 @@ dist/libpyodide.a: \
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
-	libgl \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
 	date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
+    # TODO(ryanking13): Link libgl to a side module not to the main module.
+    # For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
@@ -130,7 +132,7 @@ env:
 node_modules/.installed : src/js/package.json src/js/package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
-	touch node_modules/.installed
+	touch $@
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	cd src/js && npm run build && cd -
@@ -178,11 +180,16 @@ src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
-pyodide_build: ./pyodide-build/pyodide_build/**
-	$(HOSTPYTHON) -m pip install -e ./pyodide-build
+pyodide_build:
+	python -c '0;\
+		from importlib.util import find_spec; \
+		import sys; \
+		sys.exit(not find_spec("pyodide_build"))\
+	' || $(HOSTPYTHON) -m pip install -e ./pyodide-build
 	which pyodide >/dev/null
 
-dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
+dist/python_stdlib.zip: $(wildcard src/py/**/*) $(CPYTHONLIB)
+	make pyodide_build
 	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
@@ -199,23 +206,14 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-.PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
 
-.PHONY: dist/module_webworker_dev.js
 dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
 
-.PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-
-.PHONY: libgl
-libgl:
-	# TODO(ryanking13): Link this to a side module not to the main module.
-	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
-	embuilder build libgl
 
 .PHONY: lint
 lint:
@@ -257,7 +255,8 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE pyodide_build
+dist/pyodide-lock.json: FORCE
+	make pyodide_build
 	date +"[%F %T] Building packages..."
 	make -C packages
 	date +"[%F %T] done building packages..."
