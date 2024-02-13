@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 
+
 def main():
     try:
         import pyodide_build
