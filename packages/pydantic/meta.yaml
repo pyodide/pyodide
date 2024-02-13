@@ -10,6 +10,7 @@ requirements:
   run:
     - typing-extensions
     - pydantic_core
+    - annotated-types
 about:
   home: https://github.com/samuelcolvin/pydantic
   PyPI: https://pypi.org/project/pydantic
