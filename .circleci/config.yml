@@ -109,6 +109,7 @@ jobs:
           command: |
             tar cjf pyodide.tar.gz dist
             tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -118,6 +119,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/pyodide-core.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/pyodide-static-libs.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
