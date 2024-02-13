@@ -26,3 +26,6 @@ about:
   PyPI: https://pypi.org/project/pysam
   summary: Package for reading, manipulating, and writing genomic data
   license: MIT License
+extra:
+  recipe-maintainers:
+    - stevenweaver

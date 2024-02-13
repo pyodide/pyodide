@@ -1,0 +1,20 @@
+package:
+  name: pyxirr
+  version: 0.10.3
+  top-level:
+    - pyxirr
+source:
+  url: https://files.pythonhosted.org/packages/cf/a6/12dcf55acbdbed3c246724fd6fc6673c0ad090f394b0a49fa5a4c6f9184e/pyxirr-0.10.3.tar.gz
+  sha256: 8065865c327afef271dd5cd8561af22f407ccfde352b15860fe5aa0daee0af5d
+about:
+  home: https://github.com/Anexen/pyxirr
+  PyPI: https://pypi.org/project/pyxirr
+  summary: Rust-powered collection of financial functions.
+  license: Unlicense
+requirements:
+  executable:
+    - rustup
+    - cargo
+extra:
+  recipe-maintainers:
+    - Anexen

@@ -3,7 +3,6 @@ import sys
 from typing import Any
 
 import __main__
-
 from _pyodide._importhook import jsfinder
 
 from .ffi import JsProxy

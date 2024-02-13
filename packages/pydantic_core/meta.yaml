@@ -1,0 +1,16 @@
+package:
+  name: pydantic_core
+  version: 2.16.2
+  top-level:
+    - pydantic_core
+source:
+  url: https://files.pythonhosted.org/packages/0d/72/64550ef171432f97d046118a9869ad774925c2f442589d5f6164b8288e85/pydantic_core-2.16.2.tar.gz
+  sha256: 0ba503850d8b8dcc18391f10de896ae51d37fe5fe43dbfb6a35c5c5cad271a06
+requirements:
+  executable:
+    - rustup
+about:
+  home: https://github.com/pydantic/pydantic-core
+  PyPI: https://pypi.org/project/pydantic_core
+  summary: ""
+  license: MIT

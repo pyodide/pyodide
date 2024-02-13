@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ":" /* << "EOF"
 This file is a bash/node polyglot. This is needed for a few reasons:
 

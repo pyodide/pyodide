@@ -1,0 +1,16 @@
+package:
+  name: lazy-loader
+  version: "0.3"
+  top-level:
+    - lazy_loader
+source:
+  url: https://files.pythonhosted.org/packages/a1/c3/65b3814e155836acacf720e5be3b5757130346670ac454fee29d3eda1381/lazy_loader-0.3-py3-none-any.whl
+  sha256: 1e9e76ee8631e264c62ce10006718e80b2cfc74340d17d1031e0f84af7478554
+requirements:
+  run:
+    - packaging
+about:
+  home: https://github.com/scientific-python/lazy_loader
+  PyPI: https://pypi.org/project/lazy-loader
+  summary: lazy_loader
+  license: BSD License

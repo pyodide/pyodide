@@ -1,13 +1,13 @@
 package:
   name: matplotlib-pyodide
-  version: 0.2.0
+  version: 0.2.1
   top-level:
     - matplotlib_pyodide
 source:
-  url: https://files.pythonhosted.org/packages/d9/b1/c10dd6f133628343a2fe74a74d60c03e7c0a87724736be40e82c0247b8ce/matplotlib_pyodide-0.2.0-py3-none-any.whl
-  sha256: 4079865801941c02f2d09eab7740762f02c272889cac906c16c67b1531eb3271
+  url: https://files.pythonhosted.org/packages/55/46/e0a7e76e941d9e78d18082b65ca14ebfe858a3c1095f6598f120e2f3d2b0/matplotlib_pyodide-0.2.1-py3-none-any.whl
+  sha256: 7182cfe0b591f51f160c3e978d69705477ce0da00ebcc4c5328754a9443d921a
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
-  summary: "HTML5 backends for Matplotlib compatible with Pyodide"
-  license: "MPL2"
+  summary: HTML5 backends for Matplotlib compatible with Pyodide
+  license: MPL2

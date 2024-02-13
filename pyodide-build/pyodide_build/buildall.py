@@ -9,7 +9,8 @@ import shutil
 import subprocess
 import sys
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
@@ -19,14 +20,17 @@ from threading import Lock, Thread
 from time import perf_counter, sleep
 from typing import Any
 
+from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
 from pyodide_lock.spec import PackageSpec as PackageLockSpec
+from pyodide_lock.utils import update_package_sha256
 from rich.live import Live
 from rich.progress import BarColumn, Progress, TimeElapsedColumn
 from rich.spinner import Spinner
 from rich.table import Table
 
 from . import build_env, recipe
+from .build_env import BuildArgs
 from .buildpkg import needs_rebuild
 from .common import (
     extract_wheel_metadata_file,
@@ -36,12 +40,12 @@ from .common import (
 )
 from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
-from .pywasmcross import BuildArgs
 
 
 class BuildError(Exception):
-    def __init__(self, returncode: int) -> None:
+    def __init__(self, returncode: int, msg: str) -> None:
         self.returncode = returncode
+        self.msg = msg
         super().__init__()
 
 
@@ -76,10 +80,13 @@ class BasePackage:
     def __repr__(self) -> str:
         return f"{type(self).__name__}({self.name})"
 
-    def needs_rebuild(self) -> bool:
-        return needs_rebuild(self.pkgdir, self.pkgdir / "build", self.meta.source)
+    def build_path(self, build_dir: Path) -> Path:
+        return build_dir / self.name / "build"
 
-    def build(self, build_args: BuildArgs) -> None:
+    def needs_rebuild(self, build_dir: Path) -> bool:
+        return needs_rebuild(self.pkgdir, self.build_path(build_dir), self.meta.source)
+
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         raise NotImplementedError()
 
     def dist_artifact_path(self) -> Path:
@@ -132,19 +139,20 @@ class Package(BasePackage):
             return tests[0]
         return None
 
-    def build(self, build_args: BuildArgs) -> None:
+    def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         p = subprocess.run(
             [
-                sys.executable,
-                "-m",
-                "pyodide_build",
-                "buildpkg",
-                str(self.pkgdir / "meta.yaml"),
+                "pyodide",
+                "build-recipes-no-deps",
+                self.name,
+                "--recipe-dir",
+                str(self.pkgdir.parent),
                 f"--cflags={build_args.cflags}",
                 f"--cxxflags={build_args.cxxflags}",
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
                 f"--host-install-dir={build_args.host_install_dir}",
+                f"--build-dir={build_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
                 # been updated and should be rebuilt even though its own
@@ -157,14 +165,15 @@ class Package(BasePackage):
         )
 
         if p.returncode != 0:
-            logger.error(f"Error building {self.name}. Printing build logs.")
+            msg = []
+            msg.append(f"Error building {self.name}. Printing build logs.")
             logfile = self.pkgdir / "build.log"
             if logfile.is_file():
-                logger.error(logfile.read_text(encoding="utf-8"))
+                msg.append(logfile.read_text(encoding="utf-8") + "\n")
             else:
-                logger.error("ERROR: No build log found.")
-            logger.error("ERROR: cancelling buildall")
-            raise BuildError(p.returncode)
+                msg.append("ERROR: No build log found.")
+            msg.append(f"ERROR: cancelling buildall due to error building {self.name}")
+            raise BuildError(p.returncode, "\n".join(msg))
 
 
 class PackageStatus:
@@ -469,7 +478,9 @@ def mark_package_needs_build(
         mark_package_needs_build(pkg_map, pkg_map[dep], needs_build)
 
 
-def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
+def generate_needs_build_set(
+    pkg_map: dict[str, BasePackage], build_dir: Path
+) -> set[str]:
     """
     Generate the set of packages that need to be rebuilt.
 
@@ -481,14 +492,163 @@ def generate_needs_build_set(pkg_map: dict[str, BasePackage]) -> set[str]:
     needs_build: set[str] = set()
     for pkg in pkg_map.values():
         # Otherwise, rebuild packages that have been updated and their dependents.
-        if pkg.needs_rebuild():
+        if pkg.needs_rebuild(build_dir):
             mark_package_needs_build(pkg_map, pkg, needs_build)
     return needs_build
+
+
+class _GraphBuilder:
+    """A class to manage state for build_from_graph.
+
+    build_from_graph has a bunch of moving parts: a threadpool, a Rich Live
+    session to display progress information to the terminal, and a job graph to
+    keep track of. This class keeps track of all this state.
+
+    The only public class is `run`.
+    """
+
+    def __init__(
+        self,
+        pkg_map: dict[str, BasePackage],
+        build_args: BuildArgs,
+        build_dir: Path,
+        needs_build: set[str],
+    ):
+        self.pkg_map: dict[str, BasePackage] = pkg_map
+        self.build_args: BuildArgs = build_args
+        self.build_dir: Path = build_dir
+        self.needs_build: set[str] = needs_build
+        self.build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
+        self.built_queue: Queue[tuple[BasePackage, BaseException | None]] = Queue()
+        self.lock: Lock = Lock()
+        self.building_rust_pkg: bool = False
+        self.queue_idx: int = 1
+        self.progress_formatter: ReplProgressFormatter = ReplProgressFormatter(
+            len(self.needs_build)
+        )
+
+    @contextmanager
+    def _queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
+        """
+        yield the queue_index for the current job or None if the job is a Rust
+        job and the rust lock is currently held.
+
+        Set up as a context manager just for the rust packages.
+        """
+        is_rust_pkg = pkg.meta.is_rust_package()
+        with self.lock:
+            queue_idx = self.queue_idx
+            if is_rust_pkg and self.building_rust_pkg:
+                # Don't build multiple rust packages at the same time.
+                # See: https://github.com/pyodide/pyodide/issues/3565
+                # Note that if there are only rust packages left in the queue,
+                # this will keep pushing and popping packages until the current rust package
+                # is built. This is not ideal but presumably the overhead is negligible.
+                self.build_queue.put((job_priority(pkg), pkg))
+                yield None
+                return
+            if is_rust_pkg:
+                self.building_rust_pkg = True
+            self.queue_idx += 1
+        try:
+            yield queue_idx
+        finally:
+            if is_rust_pkg:
+                self.building_rust_pkg = False
+
+    @contextmanager
+    def _pkg_status_display(self, n: int, pkg: BasePackage) -> Iterator[None]:
+        """Control the status information for the package.
+
+        Prints the "[{pkg-num}/{total_packages}] (thread n) building {package_name}"
+        message and when done prints "succeeded/failed building package ... in ... seconds"
+        plus updates the progress info in the console.
+        """
+        idx = pkg._queue_idx
+        assert idx
+        pkg_status = self.progress_formatter.add_package(
+            name=pkg.name,
+            idx=idx,
+            thread=n,
+            total_packages=len(self.needs_build),
+        )
+        t0 = perf_counter()
+        success = True
+        try:
+            yield
+        except BaseException:
+            success = False
+            raise
+        finally:
+            pkg_status.finish(success, perf_counter() - t0)
+            self.progress_formatter.remove_package(pkg_status)
+
+    def _build_one(self, n: int, pkg: BasePackage) -> BaseException | None:
+        try:
+            with self._pkg_status_display(n, pkg):
+                pkg.build(self.build_args, self.build_dir)
+        except BaseException as e:
+            return e
+        else:
+            return None
+
+    def _builder(self, n: int) -> None:
+        """This is the logic that controls a thread in the thread pool."""
+        while True:
+            pkg = self.build_queue.get()[1]
+            with self._queue_index(pkg) as idx:
+                if idx is None:
+                    # Rust package and we're already building one.
+                    # Release the GIL so new packages get queued
+                    sleep(0.01)
+                    continue
+                pkg._queue_idx = idx
+                res = self._build_one(n, pkg)
+                self.built_queue.put((pkg, res))
+                if res:
+                    # Build failed, quit the thread.
+                    # Note that all other threads just keep going for a bit
+                    # longer until we call sys.exit
+                    return
+                # Release the GIL so new packages get queued
+                sleep(0.01)
+
+    def run(self, n_jobs: int, already_built: set[str]) -> None:
+        """Build the graph with n_jobs threads
+
+        Prepare the queue by locating packages with no deps, set up the cli
+        progress display, start up the threads, and manage build queue.
+        """
+        for pkg_name in self.needs_build:
+            pkg = self.pkg_map[pkg_name]
+            if len(pkg.unbuilt_host_dependencies) == 0:
+                self.build_queue.put((job_priority(pkg), pkg))
+
+        num_built = len(already_built)
+        with Live(self.progress_formatter, console=console_stdout):
+            for n in range(0, n_jobs):
+                Thread(target=self._builder, args=(n + 1,), daemon=True).start()
+
+            while num_built < len(self.pkg_map):
+                [pkg, err] = self.built_queue.get()
+                if err:
+                    raise err
+
+                num_built += 1
+
+                self.progress_formatter.update_progress_bar()
+
+                for _dependent in pkg.host_dependents:
+                    dependent = self.pkg_map[_dependent]
+                    dependent.unbuilt_host_dependencies.remove(pkg.name)
+                    if len(dependent.unbuilt_host_dependencies) == 0:
+                        self.build_queue.put((job_priority(dependent), dependent))
 
 
 def build_from_graph(
     pkg_map: dict[str, BasePackage],
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> None:
@@ -511,13 +671,12 @@ def build_from_graph(
 
     # Insert packages into build_queue. We *must* do this after counting
     # dependents, because the ordering ought not to change after insertion.
-    build_queue: PriorityQueue[tuple[int, BasePackage]] = PriorityQueue()
 
     if force_rebuild:
         # If "force_rebuild" is set, just rebuild everything
         needs_build = set(pkg_map.keys())
     else:
-        needs_build = generate_needs_build_set(pkg_map)
+        needs_build = generate_needs_build_set(pkg_map, build_dir)
 
     # We won't rebuild the complement of the packages that we will build.
     already_built = set(pkg_map.keys()).difference(needs_build)
@@ -536,99 +695,17 @@ def build_from_graph(
         logger.success("All packages already built. Quitting.")
         return
 
+    sorted_needs_build = sorted(needs_build)
     logger.info(
         "Building the following packages: "
-        f"[bold]{format_name_list(sorted(needs_build))}[/bold]"
+        f"[bold]{format_name_list(sorted_needs_build)}[/bold]"
     )
-
-    for pkg_name in needs_build:
-        pkg = pkg_map[pkg_name]
-        if len(pkg.unbuilt_host_dependencies) == 0:
-            build_queue.put((job_priority(pkg), pkg))
-
-    built_queue: Queue[BasePackage | Exception] = Queue()
-    thread_lock = Lock()
-    queue_idx = 1
-    building_rust_pkg = False
-    progress_formatter = ReplProgressFormatter(len(needs_build))
-
-    def builder(n: int) -> None:
-        nonlocal queue_idx, building_rust_pkg
-        while True:
-            _, pkg = build_queue.get()
-
-            with thread_lock:
-                if pkg.meta.is_rust_package():
-                    # Don't build multiple rust packages at the same time.
-                    # See: https://github.com/pyodide/pyodide/issues/3565
-                    # Note that if there are only rust packages left in the queue,
-                    # this will keep pushing and popping packages until the current rust package
-                    # is built. This is not ideal but presumably the overhead is negligible.
-                    if building_rust_pkg:
-                        build_queue.put((job_priority(pkg), pkg))
-
-                        # Release the GIL so new packages get queued
-                        sleep(0.1)
-                        continue
-
-                    building_rust_pkg = True
-
-                pkg._queue_idx = queue_idx
-                queue_idx += 1
-
-            pkg_status = progress_formatter.add_package(
-                name=pkg.name,
-                idx=pkg._queue_idx,
-                thread=n,
-                total_packages=len(needs_build),
-            )
-            t0 = perf_counter()
-
-            success = True
-            try:
-                pkg.build(build_args)
-            except Exception as e:
-                built_queue.put(e)
-                success = False
-                return
-            finally:
-                pkg_status.finish(success, perf_counter() - t0)
-                progress_formatter.remove_package(pkg_status)
-
-            built_queue.put(pkg)
-
-            with thread_lock:
-                if pkg.meta.is_rust_package():
-                    building_rust_pkg = False
-
-            # Release the GIL so new packages get queued
-            sleep(0.01)
-
-    for n in range(0, n_jobs):
-        Thread(target=builder, args=(n + 1,), daemon=True).start()
-
-    num_built = len(already_built)
-    with Live(progress_formatter, console=console_stdout):
-        while num_built < len(pkg_map):
-            match built_queue.get():
-                case BuildError() as err:
-                    raise SystemExit(err.returncode)
-                case Exception() as err:
-                    raise err
-                case a_package:
-                    # MyPy should understand that this is a BasePackage
-                    assert not isinstance(a_package, Exception)
-                    pkg = a_package
-
-            num_built += 1
-
-            progress_formatter.update_progress_bar()
-
-            for _dependent in pkg.host_dependents:
-                dependent = pkg_map[_dependent]
-                dependent.unbuilt_host_dependencies.remove(pkg.name)
-                if len(dependent.unbuilt_host_dependencies) == 0:
-                    build_queue.put((job_priority(dependent), dependent))
+    build_state = _GraphBuilder(pkg_map, build_args, build_dir, set(needs_build))
+    try:
+        build_state.run(n_jobs, already_built)
+    except BuildError as err:
+        logger.error(err.msg)
+        sys.exit(err.returncode)
 
 
 def generate_packagedata(
@@ -636,6 +713,8 @@ def generate_packagedata(
 ) -> dict[str, PackageLockSpec]:
     packages: dict[str, PackageLockSpec] = {}
     for name, pkg in pkg_map.items():
+        normalized_name = canonicalize_name(name)
+
         if not pkg.file_name or pkg.package_type == "static_library":
             continue
         if not Path(output_dir, pkg.file_name).exists():
@@ -647,7 +726,8 @@ def generate_packagedata(
             install_dir=pkg.install_dir,
             package_type=pkg.package_type,
         )
-        pkg_entry.update_sha256(output_dir / pkg.file_name)
+
+        update_package_sha256(pkg_entry, output_dir / pkg.file_name)
 
         pkg_type = pkg.package_type
         if pkg_type in ("shared_library", "cpython_module"):
@@ -664,10 +744,10 @@ def generate_packagedata(
                 pkg.meta.package.top_level if pkg.meta.package.top_level else [name]
             )
 
-        packages[name.lower()] = pkg_entry
+        packages[normalized_name.lower()] = pkg_entry
 
         if pkg.unvendored_tests:
-            packages[name.lower()].unvendored_tests = True
+            packages[normalized_name.lower()].unvendored_tests = True
 
             # Create the test package if necessary
             pkg_entry = PackageLockSpec(
@@ -677,9 +757,10 @@ def generate_packagedata(
                 file_name=pkg.unvendored_tests.name,
                 install_dir=pkg.install_dir,
             )
-            pkg_entry.update_sha256(output_dir / pkg.unvendored_tests.name)
 
-            packages[name.lower() + "-tests"] = pkg_entry
+            update_package_sha256(pkg_entry, output_dir / pkg.unvendored_tests.name)
+
+            packages[normalized_name.lower() + "-tests"] = pkg_entry
 
     # sort packages by name
     packages = dict(sorted(packages.items()))
@@ -703,7 +784,9 @@ def generate_lockfile(
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
-    return PyodideLockSpec(info=info, packages=packages)
+    lock_spec = PyodideLockSpec(info=info, packages=packages)
+    lock_spec.check_wheel_filenames()
+    return lock_spec
 
 
 def copy_packages_to_dist_dir(
@@ -738,6 +821,7 @@ def build_packages(
     packages_dir: Path,
     targets: str,
     build_args: BuildArgs,
+    build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
 ) -> dict[str, BasePackage]:
@@ -747,7 +831,7 @@ def build_packages(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, build_args, n_jobs, force_rebuild)
+    build_from_graph(pkg_map, build_args, build_dir, n_jobs, force_rebuild)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
@@ -831,7 +915,5 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
     if args.host_install_dir is None:
         args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
-    if args.compression_level is None:
-        args.compression_level = int(build_env.get_build_flag("PYODIDE_ZIP_COMPRESSION_LEVEL"))  # type: ignore[unreachable]
 
     return args

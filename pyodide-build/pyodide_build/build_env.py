@@ -1,5 +1,6 @@
 # This file contains functions for managing the Pyodide build environment.
 
+import dataclasses
 import functools
 import os
 import re
@@ -10,7 +11,7 @@ from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from pathlib import Path
 
-if sys.version_info < (3, 11, 0):
+if sys.version_info < (3, 11, 0):  # noqa: UP036
     import tomli as tomllib
 else:
     import tomllib
@@ -35,7 +36,6 @@ BUILD_VARS: set[str] = {
     "HOSTSITEPACKAGES",
     "NUMPY_LIB",
     "PATH",
-    "PKG_CONFIG_PATH",
     "PLATFORM_TRIPLET",
     "PIP_CONSTRAINT",
     "PYMAJOR",
@@ -65,7 +65,23 @@ BUILD_VARS: set[str] = {
     "CMAKE_TOOLCHAIN_FILE",
     "PYO3_CONFIG_FILE",
     "MESON_CROSS_FILE",
+    "PKG_CONFIG_LIBDIR",
 }
+
+
+@dataclasses.dataclass(eq=False, order=False, kw_only=True)
+class BuildArgs:
+    """
+    Common arguments for building a package.
+    """
+
+    pkgname: str = ""
+    cflags: str = ""
+    cxxflags: str = ""
+    ldflags: str = ""
+    target_install_dir: str = ""  # The path to the target Python installation
+    host_install_dir: str = ""  # Directory for installing built host packages.
+    builddir: str = ""  # The path to run pypa/build
 
 
 def init_environment(*, quiet: bool = False) -> None:
@@ -120,7 +136,7 @@ def get_pyodide_root() -> Path:
     return Path(os.environ["PYODIDE_ROOT"])
 
 
-def search_pyodide_root(curdir: str | Path, *, max_depth: int = 5) -> Path:
+def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path:
     """
     Recursively search for the root of the Pyodide repository,
     by looking for the pyproject.toml file in the parent directories

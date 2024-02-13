@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export CMAKE_ARGS=" \
 -DPYTHON3_INCLUDE_PATH=$PYTHONINCLUDE \

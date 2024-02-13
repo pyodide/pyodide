@@ -1,13 +1,79 @@
 import pytest
 
 
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_create_task(selenium):
+    selenium.run_js(
+        """
+        await pyodide.runPythonSyncifying(`
+            import asyncio
+
+            async def test():
+                await asyncio.sleep(0.1)
+                return 7
+
+            task = asyncio.create_task(test())
+            assert task.syncify() == 7
+            del test, task
+        `);
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+def test_syncify_error_in_python_task(selenium):
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("pytest");
+        await pyodide.runPythonSyncifying(`
+            import asyncio
+
+            async def async_raise():
+                await asyncio.sleep(0.1)
+                raise ValueError("Hi there")
+
+            task = asyncio.create_task(async_raise())
+            import pytest
+            with pytest.raises(ValueError, match="Hi there"):
+                task.syncify()
+            del async_raise, task
+        `);
+        """
+    )
+
+
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
-def test_syncify_not_supported(selenium_standalone_noload):
+def test_syncify_not_supported1(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
         // Ensure that it's not supported by deleting WebAssembly.Suspender
         delete WebAssembly.Suspender;
+        let pyodide = await loadPyodide({});
+        await assertThrowsAsync(
+          async () => await pyodide.runPythonSyncifying("1+1"),
+          "Error",
+          "WebAssembly stack switching not supported in this JavaScript runtime"
+        );
+        await assertThrows(
+          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          "PythonError",
+          "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
+        );
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(
+    node="Scopes don't work as needed", safari="Doesn't have WebAssembly.Function?"
+)
+def test_syncify_not_supported2(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        // Disable direct instantiation of WebAssembly.Modules
+        // Note: only will work with newer runtimes that have WebAssembly.Function
+        WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide.runPythonSyncifying("1+1"),

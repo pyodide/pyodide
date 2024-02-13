@@ -42,5 +42,5 @@ def test_matplotlib(selenium):
     plt.savefig(fd, format="svg")
 
     content = fd.getvalue().decode("utf8")
-    assert len(content) == 128402
+    assert len(content) == 128428
     assert content.startswith("<?xml")

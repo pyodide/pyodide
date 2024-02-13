@@ -17,6 +17,7 @@ __pycache__
 .pytest_cache/
 .vscode
 .venv*
+tsconfig.tsbuildinfo
 
 build
 ccache
@@ -29,6 +30,7 @@ emsdk/emsdk
 geckodriver.log
 node_modules
 packages/.artifacts
+packages/.build
 packages/.libs
 packages/*/build.log*
 packages/build-logs

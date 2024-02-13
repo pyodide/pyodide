@@ -59,7 +59,6 @@ const config = ({ input, output, format, name: globalName }) => ({
     "crypto",
     "fs",
     "fs/promises",
-    "node-fetch",
     "path",
     "tty",
     "url",
@@ -94,6 +93,9 @@ try {
       "//# sourceMappingURL",
       `try{Object.assign(exports,${name})}catch(_){}\nglobalThis.${name}=${name}.${name};\n//# sourceMappingURL`,
     );
+
+    // inject webpackIgnore comments
+    content = content.replaceAll("import(", "import(/* webpackIgnore */");
 
     writeFileSync(outfile, content);
   }

@@ -1,11 +1,11 @@
 package:
   name: cftime
-  version: 1.6.2
+  version: 1.6.3
   top-level:
     - cftime
 source:
-  url: https://files.pythonhosted.org/packages/cd/db/c528f26ee2dbac1dc348189386c2df745770bb22c02542e281d60212cb13/cftime-1.6.2.tar.gz
-  sha256: 8614c00fb8a5046de304fdd86dbd224f99408185d7b245ac6628d0276596e6d2
+  url: https://files.pythonhosted.org/packages/ee/cb/2dcae27c58d3dc773848d273eb4036513eca06ae92733dc2ba4b7a59878f/cftime-1.6.3.tar.gz
+  sha256: d0a6b29f72a13f08e008b9becff247cc75c84acb213332ede18879c5b6aa4dfd
 
 requirements:
   run:

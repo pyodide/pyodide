@@ -8,7 +8,11 @@
 
 #define FATAL_ERROR(args...)                                                   \
   do {                                                                         \
-    PyErr_Format(PyExc_ImportError, args);                                     \
+    if (PyErr_Occurred()) {                                                    \
+      _PyErr_FormatFromCause(PyExc_ImportError, args);                         \
+    } else {                                                                   \
+      PyErr_Format(PyExc_ImportError, args);                                   \
+    }                                                                          \
     FAIL();                                                                    \
   } while (0)
 

@@ -1,11 +1,11 @@
 package:
   name: libproj
-  version: 8.2.1
+  version: 9.3.1
   tag:
     - library
 source:
-  sha256: 76ed3d0c3a348a6693dfae535e5658bbfd47f71cb7ff7eb96d9f12f7e068b1cf
-  url: https://download.osgeo.org/proj/proj-8.2.1.tar.gz
+  sha256: b0f919cb9e1f42f803a3e616c2b63a78e4d81ecfaed80978d570d3a5e29d10bc
+  url: https://download.osgeo.org/proj/proj-9.3.1.tar.gz
   patches:
     - patches/0001-stod-empty-zero.patch
 
