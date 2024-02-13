@@ -23,7 +23,7 @@ all: check \
 	dist/webworker.js \
 	dist/webworker_dev.js \
 	dist/module_webworker_dev.js
-	echo -e "\nSUCCESS!"
+	@echo -e "\nSUCCESS!"
 
 src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
@@ -97,11 +97,13 @@ dist/libpyodide.a: \
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
-	libgl \
 	$(CPYTHONLIB) \
 	dist/libpyodide.a
-	date +"[%F %T] Building pyodide.asm.js..."
+	@date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
+   # TODO(ryanking13): Link libgl to a side module not to the main module.
+   # For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
 	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
@@ -120,7 +122,7 @@ dist/pyodide.asm.js: \
 	# Sed nonsense from https://stackoverflow.com/a/13383331
 	sed -i -n -e :a -e '1,4!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
-	date +"[%F %T] done building pyodide.asm.js."
+	@date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -130,7 +132,7 @@ env:
 node_modules/.installed : src/js/package.json src/js/package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
-	touch node_modules/.installed
+	touch $@
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
 	cd src/js && npm run build && cd -
@@ -178,11 +180,13 @@ src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 		sed 's/^#pragma clang.*//g' \
 		>> $@
 
-pyodide_build: ./pyodide-build/pyodide_build/**
-	$(HOSTPYTHON) -m pip install -e ./pyodide-build
-	which pyodide >/dev/null
+pyodide_build:
+	@echo "Ensuring editable pyodide-build is installed"
+	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	@which pyodide >/dev/null
 
-dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
+dist/python_stdlib.zip: $(wildcard src/py/**/*) $(CPYTHONLIB)
+	make pyodide_build
 	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
@@ -199,23 +203,14 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-.PHONY: dist/webworker.js
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
 
-.PHONY: dist/module_webworker_dev.js
 dist/module_webworker_dev.js: src/templates/module_webworker.js
 	cp $< $@
 
-.PHONY: dist/webworker_dev.js
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
-
-.PHONY: libgl
-libgl:
-	# TODO(ryanking13): Link this to a side module not to the main module.
-	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
-	embuilder build libgl
 
 .PHONY: lint
 lint:
@@ -252,21 +247,22 @@ src/core/jslib_asm.o: src/core/jslib_asm.s
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete
-	date +"[%F %T] Building cpython..."
+	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
-	date +"[%F %T] done building cpython..."
+	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE pyodide_build
-	date +"[%F %T] Building packages..."
+dist/pyodide-lock.json: FORCE
+	make pyodide_build
+	@date +"[%F %T] Building packages..."
 	make -C packages
-	date +"[%F %T] done building packages..."
+	@date +"[%F %T] done building packages..."
 
 
 emsdk/emsdk/.complete:
-	date +"[%F %T] Building emsdk..."
+	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
-	date +"[%F %T] done building emsdk."
+	@date +"[%F %T] done building emsdk."
 
 
 rust:
@@ -279,11 +275,11 @@ FORCE:
 
 
 check:
-	./tools/dependency-check.sh
+	@./tools/dependency-check.sh
 
 
 check-emcc: emsdk/emsdk/.complete
-	python3 tools/check_ccache.py
+	@python3 tools/check_ccache.py
 
 
 debug :
