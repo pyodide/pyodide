@@ -287,6 +287,7 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
     stdout = re.sub(r"^\[notice\].*?\n", "", stdout, flags=re.MULTILINE)
     stdout = re.sub(r"^.*cached.*?\n", "", stdout, flags=re.MULTILINE)
+    stdout = re.sub(r"^.*Downloading.*?\n", "", stdout, flags=re.MULTILINE)
     # Remove version numbers
     stdout = re.sub(r"(?<=[<>=_-])[\d+](\.?_?[\d+])*", "*", stdout)
     stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
