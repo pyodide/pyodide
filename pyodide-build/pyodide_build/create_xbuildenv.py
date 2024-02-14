@@ -1,7 +1,7 @@
 import shutil
-import subprocess
 from pathlib import Path
 
+from .bash_runner import run_with_venv_context
 from .build_env import (
     get_build_flag,
     get_pyodide_root,
@@ -113,7 +113,7 @@ def create(
     _copy_wasm_libs(pyodide_root, xbuildenv_root, skip_missing_files)
 
     (xbuildenv_root / "package.json").write_text("{}")
-    res = subprocess.run(
+    res = run_with_venv_context(
         ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",

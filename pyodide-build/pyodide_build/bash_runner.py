@@ -3,11 +3,18 @@ import os
 import subprocess
 import sys
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Callable, Collection, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
+from os import PathLike
 from pathlib import Path
+from subprocess import CompletedProcess
 from types import TracebackType
-from typing import Any, TextIO
+from typing import IO, Any, TextIO, TypeAlias
+
+StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
+_CMD: TypeAlias = StrOrBytesPath | Sequence[StrOrBytesPath]
+_FILE: TypeAlias = None | int | IO[Any]
+_ENV: TypeAlias = Mapping[bytes, StrOrBytesPath] | Mapping[str, StrOrBytesPath]
 
 from .build_env import (
     get_build_environment_vars,
@@ -119,3 +126,84 @@ def get_bash_runner(
             )
 
         yield b
+
+
+def run_with_venv_context(
+    args: _CMD,
+    bufsize: int = -1,
+    executable: StrOrBytesPath | None = None,
+    stdin: _FILE = None,
+    stdout: _FILE = None,
+    stderr: _FILE = None,
+    preexec_fn: Callable[[], Any] | None = None,
+    close_fds: bool = True,
+    shell: bool = False,
+    cwd: StrOrBytesPath | None = None,
+    env: _ENV | None = None,
+    universal_newlines: bool | None = None,
+    startupinfo: Any = None,
+    creationflags: int = 0,
+    restore_signals: bool = True,
+    start_new_session: bool = False,
+    pass_fds: Collection[int] = (),
+    *,
+    capture_output: bool = False,
+    check: bool = False,
+    encoding: str,
+    errors: str | None = None,
+    input: str | None = None,
+    text: bool | None = None,
+    timeout: float | None = None,
+    user: str | int | None = None,
+    group: str | int | None = None,
+    extra_groups: Iterable[str | int] | None = None,
+    umask: int = -1,
+    pipesize: int = -1,
+    process_group: int | None = None,
+) -> CompletedProcess[str]:
+    kwargs = {
+        "bufsize": bufsize,
+        "executable": executable,
+        "stdin": stdin,
+        "stdout": stdout,
+        "stderr": stderr,
+        "preexec_fn": preexec_fn,
+        "close_fds": close_fds,
+        "shell": shell,
+        "cwd": cwd,
+        "env": env,
+        "universal_newlines": universal_newlines,
+        "startupinfo": startupinfo,
+        "creationflags": creationflags,
+        "restore_signals": restore_signals,
+        "start_new_session": start_new_session,
+        "pass_fds": pass_fds,
+        "capture_output": capture_output,
+        "check": check,
+        "encoding": encoding,
+        "errors": errors,
+        "input": input,
+        "text": text,
+        "timeout": timeout,
+        "user": user,
+        "group": group,
+        "extra_groups": extra_groups,
+        "umask": umask,
+        "pipesize": pipesize,
+        "process_group": process_group,
+    }
+    if sys.prefix == sys.base_prefix:
+        # not in venv run normally
+        return subprocess.run(args, **kwargs)
+    if not env:
+        env = os.environ
+    env2: dict[str, str] = dict(env)  # type:ignore[arg-type]
+    kwargs["env"] = env2
+    if env2.get("VIRTUALENV"):
+        # activated venv, run normally
+        return subprocess.run(args, **kwargs)
+    env2["VIRTUALENV"] = sys.prefix
+    bin_dir = str(Path(sys.prefix) / "bin")
+    orig_path = env2["PATH"]
+    env2["PATH"] = f"{bin_dir}:{orig_path}"
+    return subprocess.run(args, **kwargs)

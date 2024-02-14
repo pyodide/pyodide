@@ -1,6 +1,5 @@
 import json
 import shutil
-import subprocess
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve
@@ -8,6 +7,7 @@ from urllib.request import urlopen, urlretrieve
 from pyodide_lock import PyodideLockSpec
 
 from . import build_env
+from .bash_runner import run_with_venv_context
 from .common import exit_with_stdio
 from .create_pypa_index import create_pypa_index
 from .logger import logger
@@ -50,7 +50,7 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
         ]
     )
     host_site_packages.mkdir(exist_ok=True, parents=True)
-    result = subprocess.run(
+    result = run_with_venv_context(
         [
             "pip",
             "install",
