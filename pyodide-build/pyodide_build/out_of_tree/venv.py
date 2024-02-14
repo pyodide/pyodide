@@ -5,8 +5,12 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..build_env import get_build_flag, get_pyodide_root, in_xbuildenv
-from ..bash_runner import calculate_venv_environment
+from ..build_env import (
+    calculate_venv_environment,
+    get_build_flag,
+    get_pyodide_root,
+    in_xbuildenv,
+)
 from ..common import exit_with_stdio
 from ..logger import logger
 

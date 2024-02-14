@@ -4,9 +4,6 @@ import subprocess
 import sys
 import textwrap
 from collections.abc import (
-    Callable,
-    Collection,
-    Iterable,
     Iterator,
     Mapping,
     Sequence,
@@ -14,7 +11,6 @@ from collections.abc import (
 from contextlib import contextmanager
 from os import PathLike
 from pathlib import Path
-from subprocess import CompletedProcess
 from types import TracebackType
 from typing import IO, Any, TextIO, TypeAlias
 
@@ -133,86 +129,3 @@ def get_bash_runner(
             )
 
         yield b
-
-
-def calculate_venv_environment(env: _ENV | None) -> dict[str, str]:
-    env = os.environ if env is None else env
-    env2: dict[str, str] = env  # type:ignore[assignment]
-    if sys.prefix == sys.base_prefix:
-        return env2
-    if env2.get("VIRTUALENV"):
-        # activated venv, run normally
-        return env2
-    env2 = dict(env2)
-    env2["VIRTUALENV"] = sys.prefix
-    bin_dir = str(Path(sys.prefix) / "bin")
-    orig_path = env2["PATH"]
-    env2["PATH"] = f"{bin_dir}:{orig_path}"
-    return env2
-
-
-def run_with_venv_context(
-    args: _CMD,
-    bufsize: int = -1,
-    executable: StrOrBytesPath | None = None,
-    stdin: _FILE = None,
-    stdout: _FILE = None,
-    stderr: _FILE = None,
-    preexec_fn: Callable[[], Any] | None = None,
-    close_fds: bool = True,
-    shell: bool = False,
-    cwd: StrOrBytesPath | None = None,
-    env: _ENV | None = None,
-    universal_newlines: bool | None = None,
-    startupinfo: Any = None,
-    creationflags: int = 0,
-    restore_signals: bool = True,
-    start_new_session: bool = False,
-    pass_fds: Collection[int] = (),
-    *,
-    capture_output: bool = False,
-    check: bool = False,
-    encoding: str,
-    errors: str | None = None,
-    input: str | None = None,
-    text: bool | None = None,
-    timeout: float | None = None,
-    user: str | int | None = None,
-    group: str | int | None = None,
-    extra_groups: Iterable[str | int] | None = None,
-    umask: int = -1,
-    pipesize: int = -1,
-    process_group: int | None = None,
-) -> CompletedProcess[str]:
-    kwargs = {
-        "bufsize": bufsize,
-        "executable": executable,
-        "stdin": stdin,
-        "stdout": stdout,
-        "stderr": stderr,
-        "preexec_fn": preexec_fn,
-        "close_fds": close_fds,
-        "shell": shell,
-        "cwd": cwd,
-        "universal_newlines": universal_newlines,
-        "startupinfo": startupinfo,
-        "creationflags": creationflags,
-        "restore_signals": restore_signals,
-        "start_new_session": start_new_session,
-        "pass_fds": pass_fds,
-        "capture_output": capture_output,
-        "check": check,
-        "encoding": encoding,
-        "errors": errors,
-        "input": input,
-        "text": text,
-        "timeout": timeout,
-        "user": user,
-        "group": group,
-        "extra_groups": extra_groups,
-        "umask": umask,
-        "pipesize": pipesize,
-        "process_group": process_group,
-    }
-    kwargs["env"] = calculate_venv_environment(env)
-    return subprocess.run(args, **kwargs)

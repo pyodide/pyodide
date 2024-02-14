@@ -6,10 +6,16 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import Iterator
+from collections.abc import (
+    Iterator,
+    Mapping,
+    Sequence,
+)
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
+from os import PathLike
 from pathlib import Path
+from typing import IO, Any, TypeAlias
 
 if sys.version_info < (3, 11, 0):  # noqa: UP036
     import tomli as tomllib
@@ -21,6 +27,12 @@ from packaging.tags import Tag, compatible_tags, cpython_tags
 from .common import exit_with_stdio
 from .logger import logger
 from .recipe import load_all_recipes
+
+StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
+_CMD: TypeAlias = StrOrBytesPath | Sequence[StrOrBytesPath]
+_FILE: TypeAlias = None | int | IO[Any]
+_ENV: TypeAlias = Mapping[bytes, StrOrBytesPath] | Mapping[str, StrOrBytesPath]
+
 
 RUST_BUILD_PRELUDE = """
 rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
@@ -363,3 +375,27 @@ def check_emscripten_version() -> None:
         raise RuntimeError(
             f"Incorrect Emscripten version {installed_version}. Need Emscripten version {needed_version}"
         )
+
+
+def calculate_venv_environment(env: _ENV | None = None) -> dict[str, str]:
+    """Adjust env to reflect the changes to PATH and VIRTUALENV that activating
+    the current virtual environment would do.
+
+    """
+    env = os.environ if env is None else env
+    env2: dict[str, str] = env  # type:ignore[assignment]
+    IN_VENV = (Path(sys.prefix) / "pyvenv.cfg").exists()
+    if not IN_VENV:
+        # not invoked from inside of virtual environment, no action needed
+        return env2
+    if env2.get("VIRTUALENV"):
+        # virtualenv has been activated, no action needed
+        return env2
+    # Update environment variables as if the user had run
+    # `source venv-dir/bin/activate`
+    env2 = dict(env2)
+    env2["VIRTUALENV"] = sys.prefix
+    bin_dir = str(Path(sys.prefix) / "bin")
+    orig_path = env2["PATH"]
+    env2["PATH"] = f"{bin_dir}:{orig_path}"
+    return env2

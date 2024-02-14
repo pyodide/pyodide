@@ -1,8 +1,9 @@
 import shutil
+import subprocess
 from pathlib import Path
 
-from .bash_runner import run_with_venv_context
 from .build_env import (
+    calculate_venv_environment,
     get_build_flag,
     get_pyodide_root,
     get_unisolated_packages,
@@ -113,10 +114,11 @@ def create(
     _copy_wasm_libs(pyodide_root, xbuildenv_root, skip_missing_files)
 
     (xbuildenv_root / "package.json").write_text("{}")
-    res = run_with_venv_context(
+    res = subprocess.run(
         ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",
+        env=calculate_venv_environment(),
     )
     if res.returncode != 0:
         logger.error("Failed to run pip freeze:")
