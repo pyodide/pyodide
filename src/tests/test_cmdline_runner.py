@@ -11,6 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.build_env import emscripten_version, get_pyodide_root
+from pyodide_build.common import xbuildenv_dirname
 from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
 
 only_node = pytest.mark.xfail_browsers(
@@ -446,12 +447,13 @@ def test_pypa_index(tmp_path):
     _download_xbuildenv(version, path)
 
     # We don't need host dependencies for this test so zero them out
-    (path / "xbuildenv/requirements.txt").write_text("")
+    (path / xbuildenv_dirname() / "requirements.txt").write_text("")
 
     install_xbuildenv(version, path)
     pip_opts = [
         "--index-url",
-        "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
+        "file:"
+        + str((path / xbuildenv_dirname() / "pyodide-root/pypa_index").resolve()),
         "--platform=emscripten_3_1_14_wasm32",
         "--only-binary=:all:",
         "--python-version=310",
