@@ -3,21 +3,11 @@ import os
 import subprocess
 import sys
 import textwrap
-from collections.abc import (
-    Iterator,
-    Mapping,
-    Sequence,
-)
+from collections.abc import Iterator
 from contextlib import contextmanager
-from os import PathLike
 from pathlib import Path
 from types import TracebackType
-from typing import IO, Any, TextIO, TypeAlias
-
-StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
-_CMD: TypeAlias = StrOrBytesPath | Sequence[StrOrBytesPath]
-_FILE: TypeAlias = None | int | IO[Any]
-_ENV: TypeAlias = Mapping[bytes, StrOrBytesPath] | Mapping[str, StrOrBytesPath]
+from typing import Any, TextIO
 
 from .build_env import (
     get_build_environment_vars,

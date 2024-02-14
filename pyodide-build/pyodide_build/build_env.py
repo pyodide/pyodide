@@ -9,13 +9,12 @@ import sys
 from collections.abc import (
     Iterator,
     Mapping,
-    Sequence,
 )
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from os import PathLike
 from pathlib import Path
-from typing import IO, Any, TypeAlias
+from typing import TypeAlias
 
 if sys.version_info < (3, 11, 0):  # noqa: UP036
     import tomli as tomllib
@@ -29,8 +28,6 @@ from .logger import logger
 from .recipe import load_all_recipes
 
 StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
-_CMD: TypeAlias = StrOrBytesPath | Sequence[StrOrBytesPath]
-_FILE: TypeAlias = None | int | IO[Any]
 _ENV: TypeAlias = Mapping[bytes, StrOrBytesPath] | Mapping[str, StrOrBytesPath]
 
 
