@@ -1,6 +1,16 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@run_in_pyodide(packages=["sisl-tests", "pytest"])
+def test_load_sisl(selenium):
+    """Loading sisl takes a really long time so this separates it out to reduce
+    the chance that test_nodes times out.
+    """
+    pass
+
+
+@pytest.mark.xfail_browsers(firefox="Too slow")
 @run_in_pyodide(packages=["sisl-tests", "pytest"])
 def test_nodes(selenium):
     import pytest
