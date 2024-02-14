@@ -68,6 +68,7 @@ def test_scipy_pytest(selenium):
                 filter,
             ]
         )
+
     runtest("odr", "explicit")
     runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
@@ -78,17 +79,22 @@ def test_scipy_pytest(selenium):
     # runtest("special.tests.test_cython_special", "test_cython_api and erfinv")
     # runtest("stats.tests.test_continuous_basic", "studentized_range-args96-isf")
 
+
 @pytest.mark.driver_timeout(10)
-@pytest.mark.parametrize("module,filter", [
-    ("odr", "explicit"),
-    ("signal.tests.test_ltisys", "TestImpulse2"),
-    ("stats.tests.test_multivariate", "haar"),
-    ("sparse.linalg._eigen", "test_svds_parameter_k_which"),
-    ("fft.tests.test_multithreading", "test_threaded_same and 2-fft2"),
-    ("optimize.tests.test_zeros", "gh3089_8394"),
-    ("sparse.linalg._dsolve.tests", "spilu_nnz0"),
-    ("special.tests.test_cython_special", "test_cython_api and erfinv"),
-    ("stats.tests.test_continuous_basic", "studentized_range-args96-isf"),])
+@pytest.mark.parametrize(
+    "module,filter",
+    [
+        ("odr", "explicit"),
+        ("signal.tests.test_ltisys", "TestImpulse2"),
+        ("stats.tests.test_multivariate", "haar"),
+        ("sparse.linalg._eigen", "test_svds_parameter_k_which"),
+        ("fft.tests.test_multithreading", "test_threaded_same and 2-fft2"),
+        ("optimize.tests.test_zeros", "gh3089_8394"),
+        ("sparse.linalg._dsolve.tests", "spilu_nnz0"),
+        ("special.tests.test_cython_special", "test_cython_api and erfinv"),
+        ("stats.tests.test_continuous_basic", "studentized_range-args96-isf"),
+    ],
+)
 @run_in_pyodide(packages=["pytest", "scipy-tests"])
 def test_scipy_pytest_parametrized(selenium, module, filter):
     import pytest
@@ -114,8 +120,10 @@ def test_mine(selenium):
     from scipy.sparse import csc_matrix
     from scipy.sparse.linalg._dsolve import spilu
 
-    A = csc_matrix((5,5), dtype='d')
+    A = csc_matrix((5, 5), dtype="d")
     spilu(A)
+
+
 # @pytest.mark.driver_timeout(40)
 # @run_in_pyodide(packages=["pytest", "scipy-tests"])
 # def test_scipy_pytest_fft(selenium):
