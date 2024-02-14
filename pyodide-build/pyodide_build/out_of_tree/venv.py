@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from ..build_env import get_build_flag, get_pyodide_root, in_xbuildenv
+from ..bash_runner import calculate_venv_environment
 from ..common import exit_with_stdio
 from ..logger import logger
 
@@ -181,10 +182,10 @@ def create_pyodide_script(venv_bin: Path) -> None:
 
     # Temporarily restore us to the environment that 'pyodide venv' was
     # invoked in
-    PATH = os.environ["PATH"]
+    env = calculate_venv_environment(os.environ)
+    PATH = env["PATH"]
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-
-    original_pyodide_cli = shutil.which("pyodide")
+    original_pyodide_cli = shutil.which("pyodide", path=PATH)
     if original_pyodide_cli is None:
         raise RuntimeError("ERROR: pyodide cli not found")
 
