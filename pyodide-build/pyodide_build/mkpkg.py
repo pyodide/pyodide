@@ -193,6 +193,7 @@ def make_package(
             "summary": summary,
             "license": license,
         },
+        "extra": {"recipe-maintainers": ["PUT_YOUR_GITHUB_USERNAME_HERE"]},
     }
 
     package_dir = packages_dir / package
@@ -207,7 +208,9 @@ def make_package(
     try:
         run_prettier(meta_path)
     except FileNotFoundError:
-        warnings.warn("'npx' executable missing, output has not been prettified.")
+        warnings.warn(
+            "'npx' executable missing, output has not been prettified.", stacklevel=1
+        )
 
     logger.success(f"Output written to {meta_path}")
 

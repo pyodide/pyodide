@@ -1,14 +1,19 @@
 package:
   name: h5py
-  version: 3.7.0
+  version: 3.10.0
   top-level:
     - h5py
 source:
-  url: https://files.pythonhosted.org/packages/c5/40/7cf58e6230f0e76699f011c6d293dd47755997709a303a4e644823f3a753/h5py-3.7.0.tar.gz
-  sha256: 3fcf37884383c5da64846ab510190720027dca0768def34dd8dcb659dbe5cbf3
+  url: https://files.pythonhosted.org/packages/37/fc/0b1825077a1c4c79a13984c59997e4b36702962df0bca420698f77b70b10/h5py-3.10.0.tar.gz
+  sha256: d93adc48ceeb33347eb24a634fb787efc7ae4644e6ea4ba733d099605045c049
   patches:
     - patches/0001-Fix-incompatible-pointer-type.patch
     - patches/configure.patch
+about:
+  home: ""
+  PyPI: https://pypi.org/project/h5py
+  summary: Read and write HDF5 files from Python
+  license: BSD-3-Clause
 
 requirements:
   run:

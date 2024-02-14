@@ -8,7 +8,6 @@ import {
 } from "./environments";
 
 let nodeUrlMod: any;
-let nodeFetch: any;
 let nodePath: any;
 let nodeVmMod: any;
 /** @private */
@@ -19,13 +18,6 @@ declare var globalThis: {
   document?: any;
   fetch?: any;
 };
-
-const FETCH_NOT_FOUND_MSG = `\
-"fetch" is not defined, maybe you're using node < 18? \
-From Pyodide >= 0.25.0, node >= 18 is required. \
-Older versions of Node.js may work, but it is not guaranteed or supported. \
-Falling back to "node-fetch".\
-`;
 
 /**
  * If we're in node, it's most convenient to import various node modules on
@@ -39,14 +31,7 @@ export async function initNodeModules() {
   // @ts-ignore
   nodeUrlMod = (await import("url")).default;
   nodeFsPromisesMod = await import("fs/promises");
-  if (globalThis.fetch) {
-    nodeFetch = fetch;
-  } else {
-    // @ts-ignore
-    console.warn(FETCH_NOT_FOUND_MSG);
-    // @ts-ignore
-    nodeFetch = (await import("node-fetch")).default;
-  }
+
   // @ts-ignore
   nodeVmMod = (await import("vm")).default;
   nodePath = await import("path");
@@ -131,7 +116,7 @@ function node_getBinaryResponse(
   }
   if (path.includes("://")) {
     // If it has a protocol, make a fetch request
-    return { response: nodeFetch(path) };
+    return { response: fetch(path) };
   } else {
     // Otherwise get it from the file system
     return {
@@ -235,7 +220,7 @@ async function nodeLoadScript(url: string) {
   }
   if (url.includes("://")) {
     // If it's a url, load it with fetch then eval it.
-    nodeVmMod.runInThisContext(await (await nodeFetch(url)).text());
+    nodeVmMod.runInThisContext(await (await fetch(url)).text());
   } else {
     // Otherwise, hopefully it is a relative path we can load from the file
     // system.

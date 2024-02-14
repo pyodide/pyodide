@@ -1,0 +1,35 @@
+From d23eff39a97bc172e6c175d944553411a1514c56 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 29 Jan 2024 15:35:52 -0800
+Subject: [PATCH] Use libffi in emscripten
+
+Upstreamed:
+https://github.com/python-cffi/cffi/pull/53
+
+---
+ src/c/_cffi_backend.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/c/_cffi_backend.c b/src/c/_cffi_backend.c
+index 537271fb..93c9cb29 100644
+--- a/src/c/_cffi_backend.c
++++ b/src/c/_cffi_backend.c
+@@ -112,6 +112,15 @@
+ # define CFFI_CHECK_FFI_PREP_CIF_VAR __builtin_available(macos 10.15, ios 13, watchos 6, tvos 13, *)
+ # define CFFI_CHECK_FFI_PREP_CIF_VAR_MAYBE 1
+ 
++#elif defined(__EMSCRIPTEN__)
++
++# define CFFI_CHECK_FFI_CLOSURE_ALLOC 1
++# define CFFI_CHECK_FFI_CLOSURE_ALLOC_MAYBE 1
++# define CFFI_CHECK_FFI_PREP_CLOSURE_LOC 1
++# define CFFI_CHECK_FFI_PREP_CLOSURE_LOC_MAYBE 1
++# define CFFI_CHECK_FFI_PREP_CIF_VAR 1
++# define CFFI_CHECK_FFI_PREP_CIF_VAR_MAYBE 1
++
+ #else
+ 
+ # define CFFI_CHECK_FFI_CLOSURE_ALLOC 0
+-- 
+2.25.1
+

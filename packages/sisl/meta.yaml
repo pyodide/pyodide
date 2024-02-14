@@ -1,12 +1,12 @@
 package:
   name: sisl
-  version: 0.14.2
+  version: 0.14.3
   top-level:
     - sisl_toolbox
     - sisl
 source:
-  url: https://github.com/zerothi/sisl/archive/refs/tags/v0.14.2.zip
-  sha256: 8616b8ef253e72efe4ff508017052359325264383eade85af64f5e22e306190b
+  url: https://files.pythonhosted.org/packages/8d/03/6f788dd49c4740397e962f2607f811b8e3d80f8e6f47a794a313393267ee/sisl-0.14.3.tar.gz
+  sha256: caeb30b36bff9b45c5730d25da49ebc64452de86bc8799555a9f0606b83dced3
 
 about:
   home: ""

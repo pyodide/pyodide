@@ -13,8 +13,12 @@ requirements:
     - numpy
     - pydantic
     - setuptools
+    - annotated-types
 
 test:
   imports:
     - b2d
     - b2d.testbed
+extra:
+  recipe-maintainers:
+    - DerThorsten

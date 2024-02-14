@@ -16,22 +16,96 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Added a return type `PackageData` to `pyodide.loadPackage`,
-  containing the loaded package's metadata.
-  {pr}`4306`
+- Upgraded Python to v3.12.1
+  {pr}`4431` {pr}`4435`
+
+- Upgraded CoolProp to 6.6.0 {pr}`4397`.
+
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
+  {pr}`4399`
+
+- {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
+  This entrypoint was deprecated since 0.22.0.
+  {pr}`4368`
+
+- {{ Enhancement }} Added apis to discard extra arguments when calling Python
+  functions.
+  {pr}`4392`
+
+- {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
+  is not available in the Node.js < 18 environment.
+  {pr}`4417`
+
+- {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
+  {pr}`4395`
+
+- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
+  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
+  {pr}`4443`
+
+- {{ Enhancement }} The `build/post` script now runs under the directory
+  where the built wheel is unpacked.
+
+### Packages
+
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
+  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
+  `pyxirr` {pr}`4513`
+
+- Upgraded scikit-learn to 1.4.0 {pr}`4409`
+
+- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
+  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
+  `zengl` to 2.4.1 {pr}`4509`
+
+## Version 0.25.0
+
+_January 18, 2024_
+
+### General
+
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
+  {pr}`4359`
 
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
   of Node.js might still work, but they are not tested or guaranteed to work.
   {pr}`4269`
 
+- {{ Enhancement }} Added experimental support for stack switching.
+  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+
+### JavaScript API
+
+- {{ Fix }} `pyodide.setStdin` now does not consider an empty string as EOF.
+  {pr}`4327`
+
+- {{ Breaking }} `loadPyodide` does not accept `homedir` option anymore, use
+  `env: {HOME: "/the/home/directory"}` instead. This have been deprecated since
+  Pyodide 0.24.
+  {pr}`4342`
+
+- {{ Enhancement }} `pyodide.loadPackage` now returns an object with metadata
+  about the loaded packages.
+  {pr}`4306`
+
 - {{ Fix }} Fixed default indexURL calculation in Node.js environment.
   {pr}`4288`
 
-- {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
-  {pr}`4294`
+### Python API
 
-- {{ Enhancement }} Added experimental support for stack switching.
-  {pr}`3957`, {pr}`3964`, {pr}`3987`, {pr}`3990`, {pr}`3210`
+- {{ Enhancement }} The `pyodide-py` package on `pypi` now includes `py.typed`
+  markers so mypy will use the types.
+  {pr}`4321`
+
+- {{ Fix }} Fixed a bug that micropip would fail to install packages from
+  pyodide-lock.json if the package's name differs from its normalized name.
+  {pr}`4319`
+
+- {{ Enhancement }} Added a no-op `WebLoop.close` method so that attempts to
+  close the event loop will not raise an exception.
+  {pr}`4329`
+
+### Python / JavaScript Foreign Function Interface
 
 - {{ Fix }} `jsarray.pop` now works correctly. It previously returned the wrong
   value and leaked memory.
@@ -42,51 +116,49 @@ myst:
   `loadPyodide`, but this may be removed in the future.
   {pr}`4247`
 
-- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the `NodeNext` typescript target.
-  {pr}`4256`
-
 - {{ Fix }} when accessing a `JsProxy` attribute invokes a getter and the getter
   throws an error, that error is propagated instead of being turned into an
   `AttributeError`.
   {pr}`4254`
 
+- {{ Fix }} `import type { PyProxy } from "pyodide/ffi"` now works with the
+  `NodeNext` typescript target.
+  {pr}`4256`
+
 - {{ Fix }} Fixed a bug that occurs when using `toJs` with both `dictConverter`
   and `defaultConverter` arguments.
   {pr}`4263`
 
-- {{ Enhancement }} The `pyodide-py` package on `pypi` now includes `py.typed`
-  markers so mypy will use the types.
-  {pr}`4321`
-
 - {{ Enhancement }} Added `JsArray.remove` and `JsArray.insert` methods.
   {pr}`4326`
 
-- {{ Fix }} `pyodide.setStdin` now does not consider an empty string as EOF.
-  {pr}`4327`
+- {{ Breaking }} Type exports of `PyProxy` subtypes have been moved from
+  `pyodide` to `pyodide/ffi` and many of them have changed names.
+  {pr}`4342`
+
+- {{ Breaking }} The methods for checking `PyProxy` capabilities (e.g.,
+  `supportsHas`, `isCallable`) are now removed. Use e.g.,
+  `instanceof pyodide.ffi.PyCallable` instead.
+  {pr}`4342`
 
 ### Pyodide CLI
 
-- {{ Enhancement }} `pyodide config` command now show additional config variables:
-  `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`, `rust_toolchain`, `cflags`
-  `cxxflags`, `ldflags`, `meson_cross_file`. These variables can be used in out-of-tree
-  build to set the same variables as in-tree build.
+- {{ Enhancement }} `pyodide config` command now show additional config
+  variables: `rustflags`, `cmake_toolchain_file`, `pyo3_config_file`,
+  `rust_toolchain`, `cflags` `cxxflags`, `ldflags`, `meson_cross_file`. These
+  variables can be used in out-of-tree build to set the same variables as
+  in-tree build.
   {pr}`4241`
 
-- {{ Enhancement }} `pyodide build` command now accepts `--config-setting` (`-C`) option
-  to pass flags to the build backend, just like `python -m build` command.
+- {{ Enhancement }} `pyodide build` command now accepts `--config-setting`
+  (`-C`) option to pass flags to the build backend, just like `python -m build`
+  command.
   {pr}`4308`
-
-### Packages
-
-- New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
-  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`
-
-- Upgraded `contourpy` to 1.2.0 {pr}`4291`
 
 ### Load time & size optimizations
 
-- {{ Performance }} Do not use `importlib.metadata` when identifying installed packages,
-  which reduces the time to load Pyodide.
+- {{ Performance }} Do not use `importlib.metadata` when identifying installed
+  packages, which reduces the time to load Pyodide.
   {pr}`4147`
 
 ### Build system
@@ -94,9 +166,19 @@ myst:
 - {{ Fix }} Fixed `Emscripten.cmake` not vendored in pyodide-build since 0.24.0.
   {pr}`4223`
 
-- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and `PYO3_CONFIG_FILE`
-  env variables if provided by user.
+- {{ Fix }} pyodide-build now does not override `CMAKE_CONFIG_FILE` and
+  `PYO3_CONFIG_FILE` env variables if provided by user.
   {pr}`4223`
+
+- {{ Fix }} Fixed a bug that webpack messes up dynamic import of `pyodide.asm.js`.
+  {pr}`4294`
+
+### Packages
+
+- New Packages: `river` {pr}`4197`, `sisl` {pr}`4210`, `frozenlist` {pr}`4231`,
+  `zengl` {pr}`4208`, `msgspec` {pr}`4265`, `aiohttp` {pr}`4282`, `pysam` {pr}`4268`,
+  `requests`, `urllib3` {pr}`4332`, `nh3` {pr}`4387`
+- Upgraded zengl to 2.2.0 {pr}`4364`
 
 ## Version 0.24.1
 

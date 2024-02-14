@@ -1,13 +1,4 @@
-import pytest
 from pytest_pyodide import run_in_pyodide
-
-
-@pytest.mark.driver_timeout(40)
-@run_in_pyodide(packages=["sisl-tests", "pytest"])
-def test_version(selenium):
-    import sisl
-
-    assert sisl.__version__ == "0.14.2"
 
 
 @run_in_pyodide(packages=["sisl-tests", "pytest"])

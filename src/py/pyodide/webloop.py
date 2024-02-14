@@ -117,7 +117,7 @@ class PyodideFuture(Future[T]):
             except Exception as result_exception:
                 result.set_exception(result_exception)
                 return
-            result.set_result(r)  # type:ignore[arg-type]
+            result.set_result(r)
 
         def wrapper(fut: Future[T]) -> None:
             asyncio.ensure_future(callback(fut))
@@ -168,6 +168,16 @@ class PyodideFuture(Future[T]):
         return result
 
     def syncify(self):
+        """Block until the future is resolved. Only works if JS Promise
+        integration is enabled in the runtime and the current Python call stack
+        was entered via :js:func:`pyodide.runPythonSyncifying` or
+        :js:func:`~PyCallable.callSyncifying`.
+
+        .. admonition:: Experimental
+           :class: warning
+
+           This feature is not yet stable.
+        """
         from .ffi import create_proxy
 
         p = create_proxy(self)
@@ -237,6 +247,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         Always returns ``False`` because WebLoop has no lifecycle management.
         """
         return False
+
+    def close(self) -> None:
+        """Ignore request to close WebLoop"""
+        pass
 
     def _check_closed(self):
         """Used in create_task.

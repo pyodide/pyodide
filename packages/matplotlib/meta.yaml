@@ -36,7 +36,6 @@ build:
     -fexceptions
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
-    cd $WHEELDIR
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
     rm -rf sphinxext

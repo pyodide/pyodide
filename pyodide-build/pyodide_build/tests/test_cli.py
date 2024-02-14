@@ -91,7 +91,7 @@ def test_build_recipe(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes)
 
     result = runner.invoke(
         app,
@@ -123,7 +123,7 @@ def test_build_recipe_no_deps(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkgs_to_build = ["pkg_test_graph1", "pkg_test_graph3"]
     result = runner.invoke(
@@ -132,7 +132,6 @@ def test_build_recipe_no_deps(selenium, tmp_path):
             *pkgs_to_build,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -155,7 +154,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkg = "pkg_test_graph1"
     result = runner.invoke(
@@ -164,7 +163,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -176,7 +174,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -190,7 +187,6 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
             "--force-rebuild",
         ],
     )
@@ -209,7 +205,7 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
         shutil.rmtree(build_dir)
 
     app = typer.Typer()
-    app.command()(build_recipes.recipe)
+    app.command()(build_recipes.build_recipes_no_deps)
 
     pkg = "pkg_test_graph1"
     result = runner.invoke(
@@ -218,7 +214,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
         ],
     )
 
@@ -248,7 +243,6 @@ def test_build_recipe_no_deps_continue(selenium, tmp_path):
             pkg,
             "--recipe-dir",
             str(recipe_dir),
-            "--no-deps",
             "--continue",
         ],
     )

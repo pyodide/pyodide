@@ -70,6 +70,6 @@ def test_is_rust_package_2(reqs):
     pkg = MetaConfig(
         package={"name": "a", "version": "0.2"},
         source={"url": "test.tar", "sha256": ""},
-        **reqs
+        **reqs,
     )
     assert not pkg.is_rust_package()
