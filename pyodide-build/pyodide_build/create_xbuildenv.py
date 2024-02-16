@@ -49,7 +49,7 @@ def _copy_wasm_libs(
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
     # TODO: remove libs from the xbuildenv
-    wasm_lib_dir = "packages" / ".libs"
+    wasm_lib_dir = Path("packages") / ".libs"
     to_copy: list[Path] = [
         pythoninclude,
         sysconfig_dir,
