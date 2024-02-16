@@ -13,3 +13,6 @@ about:
   PyPI: https://pypi.org/project/protobuf
   summary: Protocol Buffers are a language-neutral, platform-neutral extensible mechanism for serializing structured data
   license: Custom
+extra:
+  recipe-maintainers:
+    - bartbroere

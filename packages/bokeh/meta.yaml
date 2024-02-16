@@ -23,3 +23,6 @@ about:
   PyPI: https://pypi.org/project/bokeh
   summary: Interactive plots and applications in the browser from Python
   license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - ianthomas23

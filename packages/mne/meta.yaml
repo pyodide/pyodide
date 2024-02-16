@@ -1,17 +1,19 @@
 package:
   name: mne
-  version: 1.5.0
+  version: 1.6.1
   top-level:
     - mne
 source:
-  sha256: 6227a8bd6ac84311a3cd2e017a22f754a3e0b9bec630ce02e78791d650395012
-  url: https://files.pythonhosted.org/packages/2e/80/980597b020ec2526c22f510ddc7ad595f13d0fd9f27b5aa75c4841c1fb62/mne-1.5.0-py3-none-any.whl
+  sha256: 4d36517c1eafd2399d8f1fbd62cf9416d8b2ec98cd65b1dfed2876c4220bf0f9
+  url: https://files.pythonhosted.org/packages/79/34/06151e860d86273afd7b2f2fef560783b4afc9e2601b333f008869fb606c/mne-1.6.1-py3-none-any.whl
 requirements:
   run:
     - numpy
     - scipy
     - setuptools
     - decorator
+    - lazy-loader
+    - packaging
 about:
   home: https://mne.tools/dev/
   PyPI: https://pypi.org/project/mne

@@ -1,11 +1,11 @@
 package:
   name: Pygments
-  version: 2.16.1
+  version: 2.17.2
   top-level:
     - pygments
 source:
-  sha256: 13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692
-  url: https://files.pythonhosted.org/packages/43/88/29adf0b44ba6ac85045e63734ae0997d3c58d8b1a91c914d240828d0d73d/Pygments-2.16.1-py3-none-any.whl
+  sha256: b27c2826c47d0f3219f29554824c30c5e8945175d888647acd804ddd04af846c
+  url: https://files.pythonhosted.org/packages/97/9c/372fef8377a6e340b1704768d20daaded98bf13282b5327beb2e2fe2c7ef/pygments-2.17.2-py3-none-any.whl
 about:
   home: https://pygments.org/
   PyPI: https://pypi.org/project/Pygments

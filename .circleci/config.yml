@@ -98,7 +98,6 @@ jobs:
           name: Clean up workspace
           command: |
             rm -rf cpython/{build,downloads}
-            rm -rf emsdk/emsdk/binaryen
 
       - persist_to_workspace:
           root: .
@@ -110,6 +109,7 @@ jobs:
           command: |
             tar cjf pyodide.tar.gz dist
             tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
           path: /root/repo/dist/
@@ -119,6 +119,9 @@ jobs:
 
       - store_artifacts:
           path: /root/repo/pyodide-core.tar.gz
+
+      - store_artifacts:
+          path: /root/repo/pyodide-static-libs.tar.gz
 
       - store_artifacts:
           path: /root/repo/packages/build-logs
@@ -342,12 +345,12 @@ jobs:
           command: |
             curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
             bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
-            ~/miniforge3/bin/conda create -n pyodide python=3.11 -y
+            ~/miniforge3/bin/conda create -n pyodide python=3.12 -y
       - run:
           name: install dependencies
           command: |
             export PATH="$HOME/miniforge3/bin:$PATH"
-            conda create -n pyodide python=3.11 -y
+            conda create -n pyodide python=3.12 -y
             source activate pyodide
             python -m pip install -r requirements.txt
             pip install -e ./pyodide-build
@@ -502,10 +505,12 @@ jobs:
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
+            cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
+            tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
             /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
               -delete "${CIRCLE_TAG}" \
@@ -581,9 +586,11 @@ jobs:
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
+            cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
+            tar cjf dist/static-libraries.tar.bz2  static-libraries/
 
             cd -
             python3 tools/deploy_s3.py /tmp/ghr/dist/ "xbuildenv/dev" --bucket "pyodide-cache" --cache-control 'max-age=3600, public' --overwrite \
