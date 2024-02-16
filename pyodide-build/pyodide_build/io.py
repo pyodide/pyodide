@@ -151,6 +151,10 @@ class _AboutSpec(BaseModel):
         extra = pydantic.Extra.forbid
 
 
+class _ExtraSpec(BaseModel):
+    recipe_maintainers: list[str] = Field([], alias="recipe-maintainers")
+
+
 class MetaConfig(BaseModel):
     package: _PackageSpec
     source: _SourceSpec = _SourceSpec()
@@ -158,6 +162,7 @@ class MetaConfig(BaseModel):
     requirements: _RequirementsSpec = _RequirementsSpec()
     test: _TestSpec = _TestSpec()
     about: _AboutSpec = _AboutSpec()
+    extra: _ExtraSpec = _ExtraSpec()
 
     class Config:
         extra = pydantic.Extra.forbid

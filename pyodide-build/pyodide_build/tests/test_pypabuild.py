@@ -41,12 +41,13 @@ def test_make_command_wrapper_symlinks(tmp_path):
     assert not wrapper.is_symlink()
     assert wrapper.stat().st_mode & 0o755 == 0o755
 
-    for _, path in env.items():
+    for key, path in env.items():
         symlink_path = symlink_dir / path
 
         assert symlink_path.exists()
         assert symlink_path.is_symlink()
         assert symlink_path.name in pywasmcross.SYMLINKS
+        assert key in pypabuild.SYMLINK_ENV_VARS.values()
 
 
 def test_get_build_env(tmp_path):

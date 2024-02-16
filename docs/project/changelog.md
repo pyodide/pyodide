@@ -43,19 +43,24 @@ myst:
   replaced with a separate subcommand `pyodide build-recipes-no-deps`.
   {pr}`4443`
 
+- {{ Enhancement }} The `build/post` script now runs under the directory
+  where the built wheel is unpacked.
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
-  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`
+  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
+  `pyxirr` {pr}`4513`
 
 - Upgraded scikit-learn to 1.4.0 {pr}`4409`
 
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
-  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`
+  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
+  `zengl` to 2.4.1 {pr}`4509`
 
 ## Version 0.25.0
 
-_January 18, 2023_
+_January 18, 2024_
 
 ### General
 

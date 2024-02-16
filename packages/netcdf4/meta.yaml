@@ -1,11 +1,11 @@
 package:
   name: netcdf4
-  version: 1.6.4
+  version: 1.6.5
   top-level:
     - netCDF4
 source:
-  url: https://files.pythonhosted.org/packages/8f/39/f8c4b2f3a4d78164e9850bb0924e1fd490e0bf8a8366b9b42cd295d7bbee/netCDF4-1.6.4.tar.gz
-  sha256: 66da6542cbc7a6045cd1d979397dfd5a3f6c880c76d52b8f98bb108c82ee8c6e
+  url: https://files.pythonhosted.org/packages/da/f2/b7307966bf174559c80c0bdaaccebe1538efa3aef8e996d18229b01e9760/netCDF4-1.6.5.tar.gz
+  sha256: 824881d0aacfde5bd982d6adedd8574259c85553781e7b83e0ce82b890bfa0ef
 requirements:
   host:
     - libhdf5

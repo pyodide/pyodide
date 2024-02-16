@@ -193,6 +193,7 @@ def make_package(
             "summary": summary,
             "license": license,
         },
+        "extra": {"recipe-maintainers": ["PUT_YOUR_GITHUB_USERNAME_HERE"]},
     }
 
     package_dir = packages_dir / package

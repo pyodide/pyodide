@@ -144,7 +144,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lwebsocket.js \
 	-leventloop.js \
 	-lhiwire \
-	-lHacl_Hash_SHA2 \
 	\
 	-lGL \
 	-legl.js \
@@ -216,7 +215,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-lidbfs.js \
 		-lnodefs.js \
-		-lHacl_Hash_SHA2 \
 
 endif
 
@@ -241,7 +239,7 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 # For RUST
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
-export RUST_TOOLCHAIN=nightly-2023-04-29
+export RUST_TOOLCHAIN=nightly-2024-01-29
 export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
 export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 

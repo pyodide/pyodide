@@ -41,7 +41,7 @@ PYTHON_TARGETS = [
     ),
     Target(
         file=ROOT / "src/py/pyproject.toml",
-        pattern=build_version_pattern("version = {python_version}"),
+        pattern=build_version_pattern('version = "{python_version}"'),
         prerelease=True,
     ),
     Target(

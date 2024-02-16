@@ -1,11 +1,11 @@
 package:
   name: ruamel.yaml
-  version: 0.17.32
+  version: 0.18.6
   top-level:
     - ruamel
 source:
-  url: https://files.pythonhosted.org/packages/d9/0e/2a05efa11ea33513fbdf4a2e2576fe94fd8fa5ad226dbb9c660886390974/ruamel.yaml-0.17.32-py3-none-any.whl
-  sha256: 23cd2ed620231677564646b0c6a89d138b6822a0d78656df7abda5879ec4f447
+  url: https://files.pythonhosted.org/packages/73/67/8ece580cc363331d9a53055130f86b096bf16e38156e33b1d3014fffda6b/ruamel.yaml-0.18.6-py3-none-any.whl
+  sha256: 57b53ba33def16c4f3d807c0ccbc00f8a6081827e81ba2491691b76882d0c636
 test:
   imports:
     - ruamel.yaml

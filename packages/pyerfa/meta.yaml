@@ -1,11 +1,11 @@
 package:
   name: pyerfa
-  version: 2.0.0.3
+  version: 2.0.1.1
   top-level:
     - erfa
 source:
-  url: https://files.pythonhosted.org/packages/a7/51/b1b8770853d82726dfa5d1079de29c32f144e10eb65b3852b1cd2b39f341/pyerfa-2.0.0.3.tar.gz
-  sha256: d77fbbfa58350c194ccb99e5d93aa05d3c2b14d5aad8b662d93c6ad9fff41f39
+  url: https://files.pythonhosted.org/packages/4e/09/aaa59a4b4c22574fbe08e58e181933f19e455aef9b1a21a4eca026cd7d8f/pyerfa-2.0.1.1.tar.gz
+  sha256: dbac74ef8d3d3b0f22ef0ad3bbbdb30b2a9e10570b1fa5a98be34c7be36c9a6b
 requirements:
   host:
     - numpy

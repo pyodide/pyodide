@@ -7,9 +7,9 @@ import pydantic
 import pytest
 
 from pyodide_build import build_env, buildpkg, common
+from pyodide_build.build_env import BuildArgs
 from pyodide_build.buildpkg import RecipeBuilder
 from pyodide_build.io import _SourceSpec
-from pyodide_build.pywasmcross import BuildArgs
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
 WHEEL_DIR = Path(__file__).parent / "_test_wheels"

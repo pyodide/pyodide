@@ -21,6 +21,7 @@ from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
 from .build_env import (
     RUST_BUILD_PRELUDE,
+    BuildArgs,
     get_build_environment_vars,
     pyodide_tags,
     replace_so_abi_tags,
@@ -36,7 +37,6 @@ from .common import (
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
-from .pywasmcross import BuildArgs
 
 
 def _make_whlfile(
@@ -432,10 +432,9 @@ class RecipeBuilder:
             # update so abi tags after build is complete but before running post script
             # to maximize sanity.
             replace_so_abi_tags(wheel_dir)
-
-            bash_runner.env.update({"WHEELDIR": str(wheel_dir)})
-
-            bash_runner.run(self.build_metadata.post, script_name="post script")
+            bash_runner.run(
+                self.build_metadata.post, script_name="post script", cwd=wheel_dir
+            )
 
             if self.build_metadata.vendor_sharedlib:
                 lib_dir = self.library_install_prefix
