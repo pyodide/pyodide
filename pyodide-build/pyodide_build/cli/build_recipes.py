@@ -29,11 +29,8 @@ class Args:
         force_rebuild: bool,
         n_jobs: int | None = None,
     ):
-        root = Path.cwd()
-        try:
-            root = build_env.search_pyodide_root(root)
-        except FileNotFoundError:
-            pass
+        cwd = Path.cwd()
+        root = build_env.search_pyodide_root(cwd) or cwd
         self.recipe_dir = (
             root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
         )
