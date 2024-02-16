@@ -12,6 +12,23 @@ from ..logger import logger
 app = typer.Typer()
 
 
+def _recipe_dir(recipe_dir) -> Path:
+    if recipe_dir:
+        return Path(recipe_dir)
+
+    cwd = Path.cwd()
+
+    try:
+        root = build_env.search_pyodide_root(cwd)
+    except FileNotFoundError:
+        root = cwd
+
+    if build_env.in_xbuildenv():
+        root = cwd
+
+    return root / "packages"
+
+
 @app.callback(no_args_is_help=True)
 def callback() -> None:
     """Add a new package build recipe or update an existing recipe"""
@@ -50,22 +67,7 @@ def new_recipe_pypi(
     """
     Create a new package from PyPI.
     """
-
-    if recipe_dir:
-        recipe_dir_ = Path(recipe_dir)
-    else:
-        cwd = Path.cwd()
-
-        try:
-            root = build_env.search_pyodide_root(cwd)
-        except FileNotFoundError:
-            root = cwd
-
-        if build_env.in_xbuildenv():
-            root = cwd
-
-        recipe_dir_ = root / "packages"
-
+    recipe_dir_ = _recipe_dir(recipe_dir)
     if update or update_patched:
         try:
             mkpkg.update_package(
@@ -85,3 +87,36 @@ def new_recipe_pypi(
             raise
     else:
         mkpkg.make_package(recipe_dir_, name, version, source_fmt=source_format)  # type: ignore[arg-type]
+
+
+@app.command("conda")
+def new_recipe_conda(
+    name: str,
+    update: bool = typer.Option(
+        False,
+        "--update",
+        "-u",
+        help="Update an existing recipe instead of creating a new one",
+    ),
+    update_patched: bool = typer.Option(
+        False,
+        "--update-patched",
+        help="Force update the package even if it contains patches.",
+    ),
+    version: str = typer.Option(
+        None,
+        help="The version of the package, if not specified, latest version will be used.",
+    ),
+    recipe_dir: str = typer.Option(
+        None,
+        help="The directory containing the recipe of packages."
+        "If not specified, the default is ``<cwd>/packages``.",
+    ),
+) -> None:
+    """
+    Create a new package from a conda-forge feedstock.
+    """
+    from ..mkpkg_conda import make_package_conda
+
+    recipe_dir_ = _recipe_dir(recipe_dir)
+    make_package_conda(recipe_dir_, name, version)
