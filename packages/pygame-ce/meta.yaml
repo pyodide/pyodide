@@ -8,23 +8,44 @@ source:
   sha256: 77f541a6113f3449fd18e252a80f8d57896a7f108a4adffb084d3e6920955bda
   patches:
     - patches/0001-support-emsdk-3.1.51.patch
+    - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
+  # extras:
+  #   - [extras/config_emsdk.py, buildconfig/config_emsdk.py]
 build:
   script: |
-    export SDL_CONFIG=${WASM_LIBRARY_DIR}/bin/sdl2-config
+    embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype --pic
+    export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
   cflags: |
     -sRELOCATABLE=1
     -DSDL_NO_COMPAT
     -DBUILD_STATIC
     -ferror-limit=1
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sSDL2_MIXER_FORMATS=mid,mod,mpg,ogg
+    -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
+    -sSDL2_IMAGE_FORMATS=bmp,gif,jpg,png
+    -sUSE_SDL_GFX=2
     -sUSE_FREETYPE=1
-    -I$(WASM_LIBRARY_DIR)/include/SDL2
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -sUSE_GIFLIB=1
+    -sUSE_HARFBUZZ=1
   ldflags: |
     -sRELOCATABLE=1
-    -L$(WASM_LIBRARY_DIR)/lib
-    -lSDL2
-    -lSDL2_image
-    -lSDL2_mixer
-    -lSDL2_ttf
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sSDL2_MIXER_FORMATS=mid,mod,mpg,ogg
+    -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
+    -sSDL2_IMAGE_FORMATS=bmp,gif,jpg,png
+    -sUSE_SDL_GFX=2
+    -sUSE_FREETYPE=1
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -sUSE_GIFLIB=1
+    -sUSE_HARFBUZZ=1
   post: |
     # Remove docs to reduce the size of a wheel
     # (Perhaps also remove typeshed and examples too?)
@@ -33,36 +54,40 @@ build:
     # WASM version of pygame uses a single module 'pygame_static',
     # and pygame_static calls PyInit_* functions from other modules.
     # This is okay when all these modules are bundled in a single module: libpython.
-    # But since we don't do that, we need to load these modules globally, so that
+    # But as we don't do that, we need to load these modules globally, so that
     # pygame_static can see the symbols.
-    STATIC_OBJ=$(find ${PKG_BUILD_DIR} -name static.o)
+    STATIC_OBJS=$(find ${PKG_BUILD_DIR} -name "*.o")
     echo "build dir: " $PKG_BUILD_DIR
-    echo "static objs: " $STATIC_OBJ
+    echo "static objs: " $STATIC_OBJS
 
     SHARED_LIBS=$(find ${WHEELDIR} -name "*.so" ! -name "static*.so")
     echo "shared libs: " $SHARED_LIBS
 
-    emcc \
+    EMCC_DEBUG=1 emcc \
+      -v \
       -shared \
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
-      -L${WASM_LIBRARY_DIR}/lib \
       -lSDL2 \
-      -lSDL2_mixer \
-      -lSDL2_image \
+      -lSDL2_image_bmp-gif-jpg-png \
       -lSDL2_ttf \
-      ${STATIC_OBJ} \
+      -lSDL2_mixer_mid-mod-mpg-ogg \
+      -lSDL2_gfx \
+      -lfreetype \
+      -lharfbuzz \
+      -lpng \
+      -ljpeg \
+      -lgif \
+      -lvorbis \
+      -lmodplug \
+      -lmpg123 \
+      -logg \
+      ${STATIC_OBJS} \
       ${SHARED_LIBS} \
       -o pygame_static.so
 
     # Remove duplicated static.so module
     rm -f ./pygame/static*.so
-requirements:
-  host:
-    - libsdl2
-    - libsdl2_image
-    - libsdl2_mixer
-    - libsdl2_ttf
 about:
   home: https://www.pygame.org
   PyPI: https://pypi.org/project/pygame
