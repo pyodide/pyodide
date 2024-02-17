@@ -1,4 +1,3 @@
-import os
 import shutil
 import subprocess
 import sys
@@ -180,35 +179,21 @@ def create_pip_script(venv_bin):
         pip.symlink_to(venv_bin / "pip")
 
 
-def _calculate_venv_path() -> str:
-    """Make sure that the current executable is the first one on the path."""
-    path = os.environ["PATH"]
-    if shutil.which(Path(sys.executable).name) == sys.executable:
-        return path
-    # We aren't the first entry on the path. Add current executable directory to
-    # the front of path to correct this.
-    bin_dir = str(Path(sys.executable).parent)
-    return f"{bin_dir}:{path}"
-
-
 def create_pyodide_script(venv_bin: Path) -> None:
     """Write pyodide cli script into the virtualenv bin folder"""
     import os
 
     # Temporarily restore us to the environment that 'pyodide venv' was
     # invoked in
-    PATH = _calculate_venv_path()
+    PATH = os.environ["PATH"]
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
-    original_pyodide_cli = shutil.which("pyodide", path=PATH)
-    if original_pyodide_cli is None:
-        raise RuntimeError("ERROR: pyodide cli not found")
 
     pyodide_path = venv_bin / "pyodide"
     pyodide_path.write_text(
         dedent(
             f"""
             #!/usr/bin/env bash
-            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
+            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {sys.executable} -m pyodide_cli "$@"
             """
         )
     )
