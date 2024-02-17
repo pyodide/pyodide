@@ -56,13 +56,10 @@ def new_recipe_pypi(
     else:
         cwd = Path.cwd()
 
-        try:
-            root = build_env.search_pyodide_root(cwd)
-        except FileNotFoundError:
-            root = cwd
-
         if build_env.in_xbuildenv():
             root = cwd
+        else:
+            root = build_env.search_pyodide_root(cwd) or cwd
 
         recipe_dir_ = root / "packages"
 

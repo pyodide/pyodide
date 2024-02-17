@@ -52,8 +52,7 @@ class TestInTree:
         assert build_env.search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
 
         pyproject_file.unlink()
-        with pytest.raises(FileNotFoundError):
-            build_env.search_pyodide_root(tmp_path)
+        assert build_env.search_pyodide_root(tmp_path) is None
 
     def test_in_xbuildenv(self, reset_env_vars, reset_cache):
         assert not build_env.in_xbuildenv()
