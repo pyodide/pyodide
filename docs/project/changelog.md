@@ -58,6 +58,8 @@ myst:
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
   `zengl` to 2.4.1 {pr}`4509`
 
+- Upgraded `OpenBLAS` to 0.26 {pr}`4526`
+
 ## Version 0.25.0
 
 _January 18, 2024_
