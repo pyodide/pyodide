@@ -362,7 +362,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        setTimeout(create_once_callable(run_handle, _may_syncify=True), delay * 1000)
         return h
 
     def _decrement_in_progress(self, *args):

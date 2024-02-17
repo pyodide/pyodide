@@ -2752,7 +2752,7 @@ JsProxy_finally(JsProxy* self, PyObject* onfinally)
   FAIL_IF_JS_NULL(promise);
   // Finally method is called no matter what so we can use
   // `create_once_callable`.
-  JsVal proxy = create_once_callable(onfinally);
+  JsVal proxy = create_once_callable(onfinally, true);
   FAIL_IF_JS_NULL(proxy);
   JsVal result_promise =
     JsvObject_CallMethodId_OneArg(promise, &JsId_finally, proxy);
