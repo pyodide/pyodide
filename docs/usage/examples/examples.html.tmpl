@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <script src="{{ PYODIDE_BASE_URL }}pyodide.js"></script>
+</head>
+
+<body>
+    <h1>TITLE GOES HERE</h1>
+    <script type="text/javascript">
+        async function init() {
+            const pyodide = await loadPyodide();
+            pyodide.runPython(`
+                print("Hello from Python!");
+            `);
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
