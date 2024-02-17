@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 import sys
@@ -6,7 +7,6 @@ from pathlib import Path
 from typing import Any
 
 from ..build_env import (
-    calculate_venv_environment,
     get_build_flag,
     get_pyodide_root,
     in_xbuildenv,
@@ -180,14 +180,24 @@ def create_pip_script(venv_bin):
         pip.symlink_to(venv_bin / "pip")
 
 
+def _calculate_venv_path() -> str:
+    """Make sure that the current executable is the first one on the path."""
+    path = os.environ["PATH"]
+    if shutil.which(Path(sys.executable).name) == sys.executable:
+        return path
+    # We aren't the first entry on the path. Add current executable directory to
+    # the front of path to correct this.
+    bin_dir = str(Path(sys.executable).parent)
+    return f"{bin_dir}:{path}"
+
+
 def create_pyodide_script(venv_bin: Path) -> None:
     """Write pyodide cli script into the virtualenv bin folder"""
     import os
 
     # Temporarily restore us to the environment that 'pyodide venv' was
     # invoked in
-    env = calculate_venv_environment(os.environ)
-    PATH = env["PATH"]
+    PATH = _calculate_venv_path()
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
     original_pyodide_cli = shutil.which("pyodide", path=PATH)
     if original_pyodide_cli is None:

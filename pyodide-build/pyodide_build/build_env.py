@@ -373,26 +373,3 @@ def check_emscripten_version() -> None:
             f"Incorrect Emscripten version {installed_version}. Need Emscripten version {needed_version}"
         )
 
-
-def calculate_venv_environment(env: _ENV | None = None) -> dict[str, str]:
-    """Adjust env to reflect the changes to PATH and VIRTUALENV that activating
-    the current virtual environment would do.
-
-    """
-    env = os.environ if env is None else env
-    env2: dict[str, str] = env  # type:ignore[assignment]
-    IN_VENV = (Path(sys.prefix) / "pyvenv.cfg").exists()
-    if not IN_VENV:
-        # not invoked from inside of virtual environment, no action needed
-        return env2
-    if env2.get("VIRTUALENV"):
-        # virtualenv has been activated, no action needed
-        return env2
-    # Update environment variables as if the user had run
-    # `source venv-dir/bin/activate`
-    env2 = dict(env2)
-    env2["VIRTUALENV"] = sys.prefix
-    bin_dir = str(Path(sys.prefix) / "bin")
-    orig_path = env2["PATH"]
-    env2["PATH"] = f"{bin_dir}:{orig_path}"
-    return env2

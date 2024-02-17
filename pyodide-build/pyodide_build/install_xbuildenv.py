@@ -1,4 +1,5 @@
 import json
+import sys
 import shutil
 import subprocess
 from pathlib import Path
@@ -52,6 +53,8 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
+            sys.executable,
+            "-m",
             "pip",
             "install",
             "--no-user",
@@ -62,7 +65,6 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
         ],
         capture_output=True,
         encoding="utf8",
-        env=build_env.calculate_venv_environment(),
     )
     if result.returncode != 0:
         exit_with_stdio(result)

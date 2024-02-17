@@ -1,9 +1,9 @@
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from .build_env import (
-    calculate_venv_environment,
     get_build_flag,
     get_pyodide_root,
     get_unisolated_packages,
@@ -115,10 +115,9 @@ def create(
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(
-        ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
+        [sys.executable, "-m", "pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",
-        env=calculate_venv_environment(),
     )
     if res.returncode != 0:
         logger.error("Failed to run pip freeze:")
