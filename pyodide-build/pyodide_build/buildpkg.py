@@ -63,7 +63,7 @@ class RecipeBuilder:
         self,
         recipe: str | Path,
         build_args: BuildArgs,
-        build_dir: str | Path | None,
+        build_dir: str | Path | None = None,
         force_rebuild: bool = False,
         continue_: bool = False,
     ):
@@ -91,15 +91,12 @@ class RecipeBuilder:
         self.fullname = f"{self.name}-{self.version}"
         self.build_args = build_args
 
-        self.library_install_prefix = (
-            Path(build_dir).resolve() if build_dir else self.pkg_root.parent
-        ) / ".libs"
-
         self.build_dir = (
-            Path(build_dir).resolve() / self.name / "build"
-            if build_dir
-            else self.pkg_root / "build"
+            Path(build_dir).resolve() if build_dir else self.pkg_root / "build"
         )
+
+        self.library_install_prefix = self.build_dir.parent.parent / ".libs"
+
         self.src_extract_dir = (
             self.build_dir / self.fullname
         )  # where we extract the source

@@ -33,7 +33,7 @@ def test_constructor(tmp_path):
     builder = RecipeBuilder(
         recipe=RECIPE_DIR / "beautifulsoup4",
         build_args=BuildArgs(),
-        build_dir=tmp_path,
+        build_dir=tmp_path / "beautifulsoup4" / "build",
         force_rebuild=False,
         continue_=False,
     )
@@ -112,7 +112,7 @@ def test_get_helper_vars(tmp_path):
     builder = RecipeBuilder(
         recipe=RECIPE_DIR / "pkg_1",
         build_args=BuildArgs(),
-        build_dir=tmp_path,
+        build_dir=tmp_path / "pkg_1" / "build",
     )
 
     helper_vars = builder._get_helper_vars()
