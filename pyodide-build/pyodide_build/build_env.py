@@ -18,7 +18,7 @@ else:
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
-from .common import exit_with_stdio
+from .common import exit_with_stdio, xbuildenv_dirname
 from .logger import logger
 from .recipe import load_all_recipes
 
@@ -122,8 +122,7 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     from . import install_xbuildenv  # avoid circular import
 
     # TODO: Do not hardcode the path
-    # TODO: Add version numbers to the path
-    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
+    xbuildenv_path = Path(xbuildenv_dirname()).resolve()
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:

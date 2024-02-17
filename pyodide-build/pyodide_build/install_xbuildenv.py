@@ -19,13 +19,12 @@ def _download_xbuildenv(
     from shutil import rmtree, unpack_archive
     from tempfile import NamedTemporaryFile
 
-    logger.info("Downloading xbuild environment")
-    rmtree(xbuildenv_path, ignore_errors=True)
-
     xbuildenv_url = (
         url
         or f"https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
     )
+    logger.info(f"Downloading xbuild environment from {xbuildenv_url}")
+    rmtree(xbuildenv_path, ignore_errors=True)
     with NamedTemporaryFile(suffix=".tar") as f:
         urlretrieve(
             xbuildenv_url,
