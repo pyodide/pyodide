@@ -8,6 +8,12 @@ source:
   sha256: 99ac6af6ffd40682e70155ed9f92ecbf4384d59fb50af120d343ea5ee1b308ab
   patches:
     - patches/0001-Avoid-signature-mismatch-in-sdot-detection.patch
+  extras:
+    # The extras file is created by applying cython to patched word2vec_inner.c.
+    # gensim apparently builds from .c files so need to cythonize the .pyx after
+    # patching.
+    # $ cython gensim/models/word2vec_inner.pyx
+    - [extras/word2vec_inner.c, gensim/models/word2vec_inner.c]
 
 requirements:
   run:
@@ -15,12 +21,8 @@ requirements:
     - scipy
     - six
     - smart_open
-build:
-  script: |
-    # gensim apparently builds from .c files so need to cythonize the .pyx after
-    # patching
-    cython gensim/models/word2vec_inner.pyx
-
+  host:
+    - numpy
 about:
   home: http://radimrehurek.com/gensim
   PyPI: https://pypi.org/project/gensim

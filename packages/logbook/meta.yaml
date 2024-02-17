@@ -15,7 +15,8 @@ requirements:
 
 build:
   script: |
-    python -c 'from Cython.Build.Cythonize import main; main(["./logbook/_speedups.pyx"])'
+    # tell logbook to use cython extension
+    export DISABLE_LOGBOOK_CEXT=1
 
 about:
   home: http://logbook.pocoo.org/
