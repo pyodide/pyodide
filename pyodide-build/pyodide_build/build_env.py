@@ -6,15 +6,10 @@ import os
 import re
 import subprocess
 import sys
-from collections.abc import (
-    Iterator,
-    Mapping,
-)
+from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
-from os import PathLike
 from pathlib import Path
-from typing import TypeAlias
 
 if sys.version_info < (3, 11, 0):  # noqa: UP036
     import tomli as tomllib
@@ -26,10 +21,6 @@ from packaging.tags import Tag, compatible_tags, cpython_tags
 from .common import exit_with_stdio
 from .logger import logger
 from .recipe import load_all_recipes
-
-StrOrBytesPath: TypeAlias = str | bytes | PathLike[str] | PathLike[bytes]
-_ENV: TypeAlias = Mapping[bytes, StrOrBytesPath] | Mapping[str, StrOrBytesPath]
-
 
 RUST_BUILD_PRELUDE = """
 rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
@@ -372,4 +363,3 @@ def check_emscripten_version() -> None:
         raise RuntimeError(
             f"Incorrect Emscripten version {installed_version}. Need Emscripten version {needed_version}"
         )
-
