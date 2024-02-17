@@ -1,7 +1,7 @@
 import json
-import sys
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve

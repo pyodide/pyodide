@@ -115,7 +115,14 @@ def create(
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(
-        [sys.executable, "-m", "pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "freeze",
+            "--path",
+            get_build_flag("HOSTSITEPACKAGES"),
+        ],
         capture_output=True,
         encoding="utf8",
     )
