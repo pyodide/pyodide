@@ -1,0 +1,15 @@
+package:
+  name: polling2
+  version: 0.5.0
+  top-level:
+    - polling2
+  tag:
+    - core
+source:
+  url: https://files.pythonhosted.org/packages/a3/de/e5bf2556ebd6db12590788207575c7c75b1de62f5ddc8b4916b668e04e6b/polling2-0.5.0-py2.py3-none-any.whl
+  sha256: ad86d56fbd7502f0856cac2d0109d595c18fa6c7fb12c88cee5e5d16c17286c1
+about:
+  home: http://github.com/ddmee/polling2
+  PyPI: https://pypi.org/project/polling2
+  summary: Updated polling utility with many configurable options
+  license: ""

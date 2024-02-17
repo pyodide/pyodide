@@ -1,0 +1,13 @@
+package:
+  name: pyarrow-hotfix
+  version: "0.6"
+  top-level:
+    - pyarrow_hotfix
+source:
+  url: https://files.pythonhosted.org/packages/e4/f4/9ec2222f5f5f8ea04f66f184caafd991a39c8782e31f5b0266f101cb68ca/pyarrow_hotfix-0.6-py3-none-any.whl
+  sha256: dcc9ae2d220dff0083be6a9aa8e0cdee5182ad358d4931fce825c545e5c89178
+about:
+  home: ""
+  PyPI: https://pypi.org/project/pyarrow-hotfix
+  summary: ""
+  license: Apache License, Version 2.0

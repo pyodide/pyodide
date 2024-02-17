@@ -1,0 +1,14 @@
+package:
+  name: seldon-core
+  version: 1.17.1
+  top-level:
+    - seldon_core
+    - tests
+source:
+  url: https://files.pythonhosted.org/packages/46/0a/261128eeae231b024aa0acf4f633be4c5b1f674e089298be360f338345b8/seldon_core-1.17.1-py3-none-any.whl
+  sha256: 9960d9cdce90d1b6e5ef7292f1a337372605da055597fcdcab1c3edc6dee04ef
+about:
+  home: https://github.com/SeldonIO/seldon-core
+  PyPI: https://pypi.org/project/seldon-core
+  summary: Seldon Core client and microservice wrapper
+  license: Apache 2.0

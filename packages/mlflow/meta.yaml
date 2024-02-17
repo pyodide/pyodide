@@ -1,0 +1,14 @@
+package:
+  name: mlflow
+  version: 2.9.2
+  top-level:
+    - mlflow
+    - pylint_plugins
+source:
+  url: https://files.pythonhosted.org/packages/ae/dc/406977e8cd30d970af90612a49b756d5701465ef93b998b0337fd77bf7c5/mlflow-2.9.2-py3-none-any.whl
+  sha256: 5c1aac70238636bfc798f41925b93c6cce3a8835287311e97b7dbc90d07a8777
+about:
+  home: https://mlflow.org/
+  PyPI: https://pypi.org/project/mlflow
+  summary: "MLflow: A Platform for ML Development and Productionization"
+  license: Apache License 2.0

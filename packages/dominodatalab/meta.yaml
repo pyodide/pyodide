@@ -1,0 +1,15 @@
+package:
+  name: dominodatalab
+  version: 1.2.4
+  top-level:
+    - domino
+  tag:
+    - core
+source:
+  url: https://files.pythonhosted.org/packages/92/0d/6d9ee00ec012bac18817bf9f8a98f3e4121322f1213ea6feada24b2514a3/dominodatalab-1.2.4-py3-none-any.whl
+  sha256: 03ed88e563e73a99f2032dc6c31569b0819be3d6ab751cb96b009f7fc0a2c7e5
+about:
+  home: https://github.com/dominodatalab/python-domino
+  PyPI: https://pypi.org/project/dominodatalab
+  summary: Python bindings for the Domino API
+  license: Apache Software License (Apache 2.0)

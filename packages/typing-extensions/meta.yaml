@@ -3,6 +3,8 @@ package:
   version: 4.9.0
   top-level:
     - typing_extensions
+  tag:
+    - core
 source:
   url: https://files.pythonhosted.org/packages/b7/f4/6a90020cd2d93349b442bfcb657d0dc91eee65491600b2cb1d388bc98e6b/typing_extensions-4.9.0-py3-none-any.whl
   sha256: af72aea155e91adfc61c3ae9e0e342dbc0cba726d6cba4b6c72c1f34e47291cd
