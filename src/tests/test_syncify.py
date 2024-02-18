@@ -395,6 +395,7 @@ def test_nested_syncify(selenium):
     assert res == list(range(20))
 
 
+@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 @run_in_pyodide
 async def test_promise_methods(selenium):
     from asyncio import ensure_future, sleep
