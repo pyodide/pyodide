@@ -574,7 +574,10 @@ async function callPyObjectKwargsSuspending(
   return result;
 }
 
-Module.callPyObjectMaybeSuspending = async function (ptrobj: number, jsargs: any) {
+Module.callPyObjectMaybeSuspending = async function (
+  ptrobj: number,
+  jsargs: any,
+) {
   if (Module.jspiSupported) {
     return await callPyObjectKwargsSuspending(ptrobj, jsargs, {});
   }
