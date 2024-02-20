@@ -9,6 +9,8 @@ source:
   patches:
     - patches/0001-support-emsdk-3.1.51.patch
     - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
+    - patches/0001-freetype-init.patch
+    - patches/0001-Don-t-set-font_initialized.patch
 build:
   script: |
     embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype --pic

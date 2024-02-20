@@ -87,6 +87,8 @@ def test_run_tests(selenium_sdl):
             "and not test_load_non_string_file " # can't access resource on platform
             "and not test_save__to_fileobject_w_namehint_argument " # can't access resource on platform (tga)
             "and not testLoadBytesIO " # can't access resource on platform
+            "and not VisualTests " # cannot block
+            "and not test_load_from_invalid_sized_file_obj " # can't access resource on platform
         ),
         # Following tests are ignored
         [
@@ -103,10 +105,8 @@ def test_run_tests(selenium_sdl):
             test_path / "touch_test.py",  # touch
             test_path / "gfxdraw_test.py",  # doesn't work (FIXME)
             test_path / "event_test.py",  # NotImplementedError: set_timer is not implemented on WASM yet
-            test_path / "mouse_test.py",  # font does not work (FIXME)
-            test_path / "font_test.py",  # font does not work (FIXME)
-            test_path / "freetype_test.py",  # font does not work (FIXME)
-            test_path / "sysfont_test.py",  # font does not work (FIXME)
-            test_path / "ftfont_test.py",  # font does not work (FIXME)
+            test_path / "mouse_test.py",  # freetype does not work (FIXME)
+            test_path / "freetype_test.py",  # freetype does not work (FIXME)
+            test_path / "ftfont_test.py",  # freetype does not work (FIXME)
         ],
     )
