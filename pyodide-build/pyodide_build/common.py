@@ -25,6 +25,12 @@ from packaging.utils import parse_wheel_filename
 from .logger import logger
 
 
+def xbuildenv_dirname() -> str:
+    from . import __version__
+
+    return f".pyodide-xbuildenv-{__version__}"
+
+
 def find_matching_wheels(
     wheel_paths: Iterable[Path], supported_tags: Iterator[Tag]
 ) -> Iterator[Path]:

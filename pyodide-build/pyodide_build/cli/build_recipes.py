@@ -123,8 +123,13 @@ def build_recipes_no_deps_impl(
     # TODO: use multiprocessing?
     for package in packages:
         package_path = args.recipe_dir / package
+        package_build_dir = args.build_dir / package / "build"
         builder = buildpkg.RecipeBuilder(
-            package_path, args.build_args, args.build_dir, args.force_rebuild, continue_
+            package_path,
+            args.build_args,
+            package_build_dir,
+            args.force_rebuild,
+            continue_,
         )
         builder.build()
 

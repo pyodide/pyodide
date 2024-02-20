@@ -7,7 +7,7 @@ from pyodide_lock import PyodideLockSpec
 
 from conftest import ROOT_PATH
 from pyodide_build import build_env
-from pyodide_build.common import chdir
+from pyodide_build.common import chdir, xbuildenv_dirname
 
 
 @pytest.fixture(scope="module")
@@ -122,7 +122,7 @@ def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
 
     assert "PYODIDE_ROOT" not in os.environ
 
-    envpath = Path(tmp_path) / ".pyodide-xbuildenv"
+    envpath = Path(tmp_path) / xbuildenv_dirname()
     result = sp.run(
         [
             "pyodide",
