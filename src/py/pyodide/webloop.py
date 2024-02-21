@@ -8,7 +8,7 @@ from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from .ffi import IN_BROWSER, create_once_callable, JsOnceCallable
+from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
     from js import setTimeout, MessageChannel
@@ -318,7 +318,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return self.call_soon(callback, *args, context=context)
 
-    def _set_timeout_zero_delay(self, callable: JsOnceCallable, delay: float):
+    def _set_timeout_zero_delay(self, callable, delay: float):
         if delay == 0:
             channel = MessageChannel.new()
             channel.port1.onmessage = callable
