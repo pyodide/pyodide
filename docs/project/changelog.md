@@ -52,11 +52,13 @@ myst:
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
   `pyxirr` {pr}`4513`
 
-- Upgraded scikit-learn to 1.4.0 {pr}`4409`
+- Upgraded scikit-learn to 1.4.1.post1 {pr}`4409` and {pr}`4534`
 
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
   `zengl` to 2.4.1 {pr}`4509`
+
+- Upgraded `OpenBLAS` to 0.26 {pr}`4526`
 
 ## Version 0.25.0
 

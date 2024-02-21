@@ -29,11 +29,8 @@ class Args:
         force_rebuild: bool,
         n_jobs: int | None = None,
     ):
-        root = Path.cwd()
-        try:
-            root = build_env.search_pyodide_root(root)
-        except FileNotFoundError:
-            pass
+        cwd = Path.cwd()
+        root = build_env.search_pyodide_root(cwd) or cwd
         self.recipe_dir = (
             root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
         )
@@ -126,8 +123,13 @@ def build_recipes_no_deps_impl(
     # TODO: use multiprocessing?
     for package in packages:
         package_path = args.recipe_dir / package
+        package_build_dir = args.build_dir / package / "build"
         builder = buildpkg.RecipeBuilder(
-            package_path, args.build_args, args.build_dir, args.force_rebuild, continue_
+            package_path,
+            args.build_args,
+            package_build_dir,
+            args.force_rebuild,
+            continue_,
         )
         builder.build()
 

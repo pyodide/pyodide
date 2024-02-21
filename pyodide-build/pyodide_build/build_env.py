@@ -18,7 +18,7 @@ else:
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
-from .common import exit_with_stdio
+from .common import exit_with_stdio, xbuildenv_dirname
 from .logger import logger
 from .recipe import load_all_recipes
 
@@ -99,9 +99,8 @@ def init_environment(*, quiet: bool = False) -> None:
     if "PYODIDE_ROOT" in os.environ:
         return
 
-    try:
-        root = search_pyodide_root(Path.cwd())
-    except FileNotFoundError:  # Not in Pyodide tree
+    root = search_pyodide_root(Path.cwd())
+    if not root:  # Not in Pyodide tree
         root = _init_xbuild_env(quiet=quiet)
 
     os.environ["PYODIDE_ROOT"] = str(root)
@@ -123,8 +122,7 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     from . import install_xbuildenv  # avoid circular import
 
     # TODO: Do not hardcode the path
-    # TODO: Add version numbers to the path
-    xbuildenv_path = Path(".pyodide-xbuildenv").resolve()
+    xbuildenv_path = Path(xbuildenv_dirname()).resolve()
 
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
@@ -137,7 +135,7 @@ def get_pyodide_root() -> Path:
     return Path(os.environ["PYODIDE_ROOT"])
 
 
-def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path:
+def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | None:
     """
     Recursively search for the root of the Pyodide repository,
     by looking for the pyproject.toml file in the parent directories
@@ -162,9 +160,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path:
         if "tool" in configs and "pyodide" in configs["tool"]:
             return base
 
-    raise FileNotFoundError(
-        "Could not find Pyodide root directory. If you are not in the Pyodide directory, set `PYODIDE_ROOT=<pyodide-root-directory>`."
-    )
+    return None
 
 
 def in_xbuildenv() -> bool:
