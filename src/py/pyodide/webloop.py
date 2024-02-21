@@ -8,10 +8,10 @@ from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from .ffi import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable, JsOnceCallable
 
 if IN_BROWSER:
-    from js import setTimeout
+    from js import setTimeout, MessageChannel
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -318,6 +318,14 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return self.call_soon(callback, *args, context=context)
 
+    def _set_timeout_zero_delay(self, callable: JsOnceCallable, delay: float):
+        if delay == 0:
+            channel = MessageChannel.new()
+            channel.port1.onmessage = callable
+            channel.port2.postMessage('')
+        else:
+            setTimeout(callable, delay)
+
     def call_later(  # type: ignore[override]
         self,
         delay: float,
@@ -344,6 +352,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         if delay < 0:
             raise ValueError("Can't schedule in the past")
+
         h = asyncio.Handle(callback, args, self, context=context)
 
         def run_handle():
@@ -362,7 +371,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        self._set_timeout_zero_delay(create_once_callable(run_handle), delay * 1000)
         return h
 
     def _decrement_in_progress(self, *args):
