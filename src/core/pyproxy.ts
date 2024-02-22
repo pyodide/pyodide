@@ -983,8 +983,13 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
     _Py_DecRef(iterptr);
   }
   try {
-    to_destroy.forEach(e => Module.pyproxy_destroy(e, "This borrowed proxy was automatically destroyed when an iterator was exhausted."))
-  } catch(e) {};
+    to_destroy.forEach((e) =>
+      Module.pyproxy_destroy(
+        e,
+        "This borrowed proxy was automatically destroyed when an iterator was exhausted.",
+      ),
+    );
+  } catch (e) {}
   if (_PyErr_Occurred()) {
     _pythonexc2js();
   }
