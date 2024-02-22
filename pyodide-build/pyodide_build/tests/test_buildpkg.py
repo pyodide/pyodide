@@ -33,7 +33,7 @@ def test_constructor(tmp_path):
     builder = RecipeBuilder(
         recipe=RECIPE_DIR / "beautifulsoup4",
         build_args=BuildArgs(),
-        build_dir=tmp_path,
+        build_dir=tmp_path / "beautifulsoup4" / "build",
         force_rebuild=False,
         continue_=False,
     )
@@ -53,6 +53,7 @@ def test_constructor(tmp_path):
         == tmp_path / "beautifulsoup4" / "build" / "beautifulsoup4-4.10.0" / "dist"
     )
     assert builder.dist_dir == RECIPE_DIR / "beautifulsoup4" / "dist"
+    assert builder.library_install_prefix == tmp_path / ".libs"
 
 
 def test_load_recipe(tmp_builder):
@@ -105,6 +106,29 @@ def test_check_executables(tmp_path, monkeypatch):
         RuntimeError, match="The following executables are required to build"
     ):
         builder._check_executables()
+
+
+def test_get_helper_vars(tmp_path):
+    builder = RecipeBuilder(
+        recipe=RECIPE_DIR / "pkg_1",
+        build_args=BuildArgs(),
+        build_dir=tmp_path / "pkg_1" / "build",
+    )
+
+    helper_vars = builder._get_helper_vars()
+
+    assert helper_vars["PKGDIR"] == str(RECIPE_DIR / "pkg_1")
+    assert helper_vars["PKG_VERSION"] == "1.0.0"
+    assert helper_vars["PKG_BUILD_DIR"] == str(
+        tmp_path / "pkg_1" / "build" / "pkg_1-1.0.0"
+    )
+    assert helper_vars["DISTDIR"] == str(
+        tmp_path / "pkg_1" / "build" / "pkg_1-1.0.0" / "dist"
+    )
+    assert helper_vars["WASM_LIBRARY_DIR"] == str(tmp_path / ".libs")
+    assert helper_vars["PKG_CONFIG_LIBDIR"] == str(
+        tmp_path / ".libs" / "lib" / "pkgconfig"
+    )
 
 
 def test_unvendor_tests(tmpdir):
