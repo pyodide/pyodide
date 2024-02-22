@@ -219,10 +219,12 @@ def pytest_runtest_call(item):
     trace_hiwire_refs = (
         trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
     )
-    yield from extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies)
+    yield from extra_checks_test_wrapper(
+        browser, trace_hiwire_refs, trace_pyproxies, item
+    )
 
 
-def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
+def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies, item):
     """Extra conditions for test to pass:
     1. No explicit request for test to fail
     2. No leaked JsRefs
@@ -250,6 +252,19 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
+        if delta_proxies > 0:
+            pxs = browser.run_js(
+                """
+                return Array.from(pyodide._module.pyproxy_alloc_map.entries(), ([x, s]) => [x.type, x.toString(), "Traceback at creation:" + s.replace("Error", "")])
+                """
+            )
+            capman = item.config.pluginmanager.getplugin("capturemanager")
+            with capman.item_capture("call", item):
+                print("\n" + "!" * 40)
+                print("leaked proxies:")
+                for row in pxs:
+                    print(*row)
+
         assert (delta_proxies, delta_keys) == (0, 0) or delta_keys < 0
     if trace_hiwire_refs:
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
