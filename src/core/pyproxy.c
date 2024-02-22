@@ -1384,7 +1384,7 @@ create_once_callable_py(PyObject* _mod,
                         PyObject* kwnames)
 {
   static const char* const _keywords[] = { "", "_may_syncify", 0 };
-  bool may_syncify;
+  bool may_syncify = false;
   PyObject* obj;
   static struct _PyArg_Parser _parser = {
     .format = "O|$p:create_once_callable",
