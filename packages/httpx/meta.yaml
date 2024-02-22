@@ -1,0 +1,23 @@
+package:
+  name: httpx
+  version: 0.27.0
+  top-level:
+    - httpx
+source:
+  url: https://files.pythonhosted.org/packages/41/7b/ddacf6dcebb42466abd03f368782142baa82e08fc0c1f8eaa05b4bae87d5/httpx-0.27.0-py3-none-any.whl
+  sha256: 71d5465162c13681bff01ad59b2cc68dd838ea1f10e51574bac27103f00c91a5
+requirements:
+  run:
+    - certifi
+    - httpcore
+    - anyio
+    - idna
+    - sniffio
+about:
+  home: ""
+  PyPI: https://pypi.org/project/httpx
+  summary: The next generation HTTP client.
+  license: ""
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
