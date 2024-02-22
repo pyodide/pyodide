@@ -766,41 +766,37 @@ def test_run_python_locals(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_once_callable(selenium):
-    selenium.run_js(
-        """
-        self.call7 = function call7(f){
-            return f(7);
-        }
-        pyodide.runPython(`
-            from pyodide.ffi import create_once_callable, JsException
-            from js import call7;
-            from unittest import TestCase
-            raises = TestCase().assertRaisesRegex
-            class Square:
-                def __call__(self, x):
-                    return x*x
+    import sys
 
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
+    from pytest import raises
 
-            f = Square()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_once_callable(f)
-            assert sys.getrefcount(f) == 3
-            assert call7(proxy) == 49
-            assert sys.getrefcount(f) == 2
-            with raises(JsException, "can only be called once"):
-                call7(proxy)
-            destroyed = False
-            del f
-            assert destroyed == True
-            del proxy
-        `);
-        """
-    )
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_once_callable
+
+    destroyed = False
+
+    class Square:
+        def __call__(self, x):
+            return x * x
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Square()
+    assert sys.getrefcount(f) == 2
+    proxy = create_once_callable(f)
+    assert sys.getrefcount(f) == 3
+
+    call7 = run_js("(f) => f(7)")
+    assert call7(proxy) == 49
+    assert sys.getrefcount(f) == 2
+    with raises(JsException, match="can only be called once"):
+        call7(proxy)
+    del f
+    assert destroyed
 
 
 @run_in_pyodide
