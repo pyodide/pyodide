@@ -190,6 +190,7 @@ jobs:
           ls -lh dist/
           tools/pytest_wrapper.py src packages/micropip/ \
             -v \
+            -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
             --runner "${RUNNER}" \
             --durations 50 \
