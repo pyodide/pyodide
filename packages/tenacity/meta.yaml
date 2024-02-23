@@ -1,0 +1,16 @@
+package:
+  name: tenacity
+  version: 8.2.3
+  top-level:
+    - tenacity
+source:
+  url: https://files.pythonhosted.org/packages/f4/f1/990741d5bb2487d529d20a433210ffa136a367751e454214013b441c4575/tenacity-8.2.3-py3-none-any.whl
+  sha256: ce510e327a630c9e1beaf17d42e6ffacc88185044ad85cf74c0a8887c6a0f88c
+about:
+  home: https://github.com/jd/tenacity
+  PyPI: https://pypi.org/project/tenacity
+  summary: Retry code until it succeeds
+  license: Apache 2.0
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

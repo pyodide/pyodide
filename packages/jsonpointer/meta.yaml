@@ -1,0 +1,16 @@
+package:
+  name: jsonpointer
+  version: "2.4"
+  top-level:
+    - jsonpointer
+source:
+  url: https://files.pythonhosted.org/packages/12/f6/0232cc0c617e195f06f810534d00b74d2f348fe71b2118009ad8ad31f878/jsonpointer-2.4-py2.py3-none-any.whl
+  sha256: 15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a
+about:
+  home: https://github.com/stefankoegl/python-json-pointer
+  PyPI: https://pypi.org/project/jsonpointer
+  summary: Identify specific nodes in a JSON document (RFC 6901)
+  license: Modified BSD License
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
