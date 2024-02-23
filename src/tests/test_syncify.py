@@ -190,7 +190,7 @@ def test_syncify_getset(selenium):
 @pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail(reason="Will fix in a followup")
 @run_in_pyodide
-def test_syncify_ctypes():
+def test_syncify_ctypes(selenium):
     from pyodide.code import run_js
 
     test = run_js(
