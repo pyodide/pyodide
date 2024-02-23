@@ -26,7 +26,7 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         delete WebAssembly.Suspender;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide.runPythonAsync("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -51,7 +51,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
         WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide.runPythonAsync("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
