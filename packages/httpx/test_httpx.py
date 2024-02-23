@@ -60,12 +60,13 @@ async def test_httpx(selenium, urls_fixture, httpx_patch, setup_refcnt):
 
         resp = await client.get(urls_fixture["/status_404"])
         with pytest.raises(
-            Exception, match="404 Client Error: NOT FOUND for url: .*/status_404"
+            Exception, match="Client error '404 Not Found' for url '.*/status_404'"
         ):
             resp.raise_for_status()
 
         resp = await client.get(urls_fixture["/status_504"])
         with pytest.raises(
-            Exception, match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504"
+            Exception,
+            match="Server error '504 Gateway Timeout' for url '.*/status_504'",
         ):
             resp.raise_for_status()
