@@ -54,7 +54,7 @@ destroy_proxy(JsVal proxy, Js_Identifier* msg);
  * reference count without calling the function.
  */
 JsVal
-create_once_callable(PyObject* obj);
+create_once_callable(PyObject* obj, bool may_syncify);
 
 /**
  * Wrap a pair of Python callables in a JavaScript function that can be called

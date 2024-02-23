@@ -1346,7 +1346,7 @@ EM_JS_VAL(JsVal, pyproxy_new, (PyObject * ptrobj), {
  * releases it. Useful for the "finally" wrapper on a JsProxy of a promise, and
  * also exposed in the pyodide Python module.
  */
-EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj), {
+EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj, bool may_syncify), {
   _Py_IncRef(obj);
   let alreadyCalled = false;
   function wrapper(... args)
@@ -1355,7 +1355,11 @@ EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj), {
       throw new Error("OnceProxy can only be called once");
     }
     try {
-      return Module.callPyObject(obj, args);
+      if (may_syncify) {
+        return Module.callPyObjectMaybeSuspending(obj, args);
+      } else {
+        return Module.callPyObject(obj, args);
+      }
     } finally {
       wrapper.destroy();
     }
@@ -1374,9 +1378,23 @@ EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj), {
 });
 
 static PyObject*
-create_once_callable_py(PyObject* _mod, PyObject* obj)
+create_once_callable_py(PyObject* _mod,
+                        PyObject* const* args,
+                        Py_ssize_t nargs,
+                        PyObject* kwnames)
 {
-  JsVal v = create_once_callable(obj);
+  static const char* const _keywords[] = { "", "_may_syncify", 0 };
+  bool may_syncify = false;
+  PyObject* obj;
+  static struct _PyArg_Parser _parser = {
+    .format = "O|$p:create_once_callable",
+    .keywords = _keywords,
+  };
+  if (!_PyArg_ParseStackAndKeywords(
+        args, nargs, kwnames, &_parser, &obj, &may_syncify)) {
+    return NULL;
+  }
+  JsVal v = create_once_callable(obj, may_syncify);
   return JsProxy_create(v);
 }
 
@@ -1440,7 +1458,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
     checkUsed();
     try {
       if(handle_result){
-        return Module.callPyObject(handle_result, [res]);
+        return Module.callPyObjectMaybeSuspending(handle_result, [res]);
       }
     } finally {
       done_callback(res);
@@ -1451,7 +1469,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
     checkUsed();
     try {
       if(handle_exception){
-        return Module.callPyObject(handle_exception, [err]);
+        return Module.callPyObjectMaybeSuspending(handle_exception, [err]);
       }
     } finally {
       done_callback(undefined);
@@ -1488,8 +1506,8 @@ create_proxy(PyObject* self,
 static PyMethodDef methods[] = {
   {
     "create_once_callable",
-    create_once_callable_py,
-    METH_O,
+    (PyCFunction)create_once_callable_py,
+    METH_FASTCALL | METH_KEYWORDS,
   },
   {
     "create_proxy",
