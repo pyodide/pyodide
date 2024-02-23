@@ -170,8 +170,9 @@ class PyodideFuture(Future[T]):
     def syncify(self):
         """Block until the future is resolved. Only works if JS Promise
         integration is enabled in the runtime and the current Python call stack
-        was entered via :js:func:`pyodide.runPythonSyncifying` or
-        :js:func:`~PyCallable.callSyncifying`.
+        was entered via :js:func:`pyodide.runPythonAsync`, by calling an async
+        Python function, or via :js:func:`~PyCallable.callSyncifying`.
+
 
         .. admonition:: Experimental
            :class: warning

@@ -55,6 +55,10 @@ only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
 )
 
+requires_jspi = pytest.mark.xfail_browsers(
+    firefox="requires jspi", safari="requires jspi"
+)
+
 
 def pytest_addoption(parser):
     group = parser.getgroup("general")
