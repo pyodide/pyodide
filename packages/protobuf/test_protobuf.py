@@ -11,9 +11,13 @@ def test_protobuf(selenium):
     _message = api_implementation._c_module
     assert _message is not None  # check presence of binary component
 
-    MakeSimpleProtoClass(
+    SampleObject = MakeSimpleProtoClass(
         {
             "field1": FieldDescriptorProto.TYPE_INT64,
             "field2": FieldDescriptorProto.TYPE_INT64,
         }
     )
+
+    sample = SampleObject(field1=1, field2=2)
+
+    assert repr(sample) == "field1: 1\nfield2: 2\n"
