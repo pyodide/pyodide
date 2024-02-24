@@ -4,6 +4,9 @@ for a basic nodejs-based test, see src/js/test/filesystem.test.js
 """
 
 import pytest
+from pytest_pyodide import run_in_pyodide
+
+from conftest import only_chrome
 
 
 @pytest.mark.skip_refcount_check
@@ -22,7 +25,7 @@ def test_idbfs_persist_code(selenium_standalone):
         f"""
         let mountDir = '{mount_dir}';
         pyodide.FS.mkdir(mountDir);
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "{mount_dir}");
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, mountDir);
         """
     )
     # create file in mount
@@ -109,9 +112,7 @@ def test_idbfs_persist_code(selenium_standalone):
 
 
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.xfail_browsers(
-    node="Not available", firefox="Not available", safari="Not available"
-)
+@only_chrome
 def test_nativefs_dir(request, selenium_standalone):
     # Note: Using *real* native file system requires
     # user interaction so it is not available in headless mode.
@@ -254,3 +255,78 @@ def test_nativefs_dir(request, selenium_standalone):
         pyodide.FS.unmount("/mnt/nativefs");
         """
     )
+
+
+@pytest.fixture
+def browser(selenium):
+    return selenium.browser
+
+
+@pytest.fixture
+def runner(request):
+    return request.config.option.runner
+
+
+@run_in_pyodide
+def test_fs_dup(selenium, browser):
+    from os import close, dup
+    from pathlib import Path
+
+    from pyodide.code import run_js
+
+    if browser == "node":
+        fstype = "NODEFS"
+    else:
+        fstype = "IDBFS"
+
+    mount_dir = Path("/mount_test")
+    mount_dir.mkdir(exist_ok=True)
+    run_js(
+        """
+        (fstype, mountDir) =>
+            pyodide.FS.mount(pyodide.FS.filesystems[fstype], {root : "."}, mountDir);
+        """
+    )(fstype, str(mount_dir))
+
+    file = open("/mount_test/a.txt", "w")
+    fd2 = dup(file.fileno())
+    close(fd2)
+    file.write("abcd")
+    file.close()
+
+
+@pytest.mark.requires_dynamic_linking
+@only_chrome
+@run_in_pyodide
+async def test_nativefs_dup(selenium, runner):
+    from os import close, dup
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    # Note: Using *real* native file system requires
+    # user interaction so it is not available in headless mode.
+    # So in this test we use OPFS (Origin Private File System)
+    # which is part of File System Access API but uses indexDB as a backend.
+
+    if runner == "playwright":
+        pytest.xfail("Playwright doesn't support file system access APIs")
+
+    await run_js(
+        """
+        async () => {
+            root = await navigator.storage.getDirectory();
+            testFileHandle = await root.getFileHandle('test_read', { create: true });
+            writable = await testFileHandle.createWritable();
+            await writable.write("hello_read");
+            await writable.close();
+            await pyodide.mountNativeFS("/mnt/nativefs", root);
+        }
+        """
+    )()
+    file = open("/mnt/nativefs/test_read")
+    fd2 = dup(file.fileno())
+    close(fd2)
+    assert file.read() == "hello_read"
+    file.close()
