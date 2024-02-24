@@ -308,7 +308,7 @@ def test_nativefs_errors(selenium):
         assert(() => r2.status === "rejected");
         assert(
           () =>
-            r2.reason.message === "path '/mnt4/nativefs' is already a directory mount point",
+            r2.reason.message === "path '/mnt4/nativefs' is already a file system mount point",
         );
         """
     )
