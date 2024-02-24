@@ -18,6 +18,8 @@ def test_protobuf(selenium):
         }
     )
 
-    sample = SampleObject(field1=1, field2=2)
+    sample = SampleObject()
+    sample.field1 = 1
+    sample.field2 = 2
 
     assert repr(sample) == "field1: 1\nfield2: 2\n"
