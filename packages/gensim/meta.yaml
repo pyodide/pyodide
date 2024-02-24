@@ -4,23 +4,20 @@ package:
   top-level:
     - gensim
 source:
-  url: https://files.pythonhosted.org/packages/77/68/074333a52f6fa82402332054ca0dfa721f7dcfa7eace313f64cdb44bacde/gensim-4.3.2.tar.gz
-  sha256: 99ac6af6ffd40682e70155ed9f92ecbf4384d59fb50af120d343ea5ee1b308ab
+  # Using the GitHub repository as the source instead of PyPI,
+  # so that cython can be applied to the source code.
+  url: https://github.com/piskvorky/gensim/archive/refs/tags/4.3.2.tar.gz
+  sha256: 9c3e471e52ea47f669873ff56c8606b99ad09cf2e31ccf232af5ace212e84167
   patches:
     - patches/0001-Avoid-signature-mismatch-in-sdot-detection.patch
-
 requirements:
   run:
     - numpy
     - scipy
     - six
     - smart_open
-build:
-  script: |
-    # gensim apparently builds from .c files so need to cythonize the .pyx after
-    # patching
-    cython gensim/models/word2vec_inner.pyx
-
+  host:
+    - numpy
 about:
   home: http://radimrehurek.com/gensim
   PyPI: https://pypi.org/project/gensim

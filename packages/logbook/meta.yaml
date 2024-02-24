@@ -12,11 +12,6 @@ requirements:
     - setuptools
   run:
     - ssl
-
-build:
-  script: |
-    python -c 'from Cython.Build.Cythonize import main; main(["./logbook/_speedups.pyx"])'
-
 about:
   home: http://logbook.pocoo.org/
   PyPI: https://pypi.org/project/logbook

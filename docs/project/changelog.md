@@ -46,6 +46,9 @@ myst:
 - {{ Enhancement }} The `build/post` script now runs under the directory
   where the built wheel is unpacked.
 
+- {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
+  {pr}`4546`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,

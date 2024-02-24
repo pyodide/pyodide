@@ -12,14 +12,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 license = {text = "MPL-2.0"}
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "pyyaml",
-    "cython<3.0",
     "ruamel.yaml",
     "packaging",
     "wheel",
-    "tomli",
     "build>=1.0.0",
     "virtualenv",
     "pydantic>=1.10.2,<2",

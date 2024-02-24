@@ -286,6 +286,13 @@ def test_pyproxy_iter_error2(selenium):
     )
 
 
+@run_in_pyodide
+def test_pyproxy_iter_leak(selenium):
+    from js import Map
+
+    Map.new([(1, 2), (3, 4)])
+
+
 def test_pyproxy_get_buffer(selenium):
     selenium.run_js(
         """
