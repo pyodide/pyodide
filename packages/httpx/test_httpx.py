@@ -1,9 +1,11 @@
-from pytest_pyodide import run_in_pyodide
 import pytest
+from pytest_pyodide import run_in_pyodide
+
 
 @pytest.fixture
 def httpx_patch():
     from pathlib import Path
+
     return (Path(__file__).parent / "httpx_patch.py").read_text()
 
 
@@ -35,14 +37,13 @@ def urls_fixture(httpserver):
 @run_in_pyodide(packages=["httpx"])
 async def test_httpx(selenium, urls_fixture, httpx_patch):
     from pathlib import Path
-    Path("httpx_patch.py").write_text(httpx_patch)
-    import httpx_patch
 
-    import pytest
+    Path("httpx_patch.py").write_text(httpx_patch)
     import httpx
+    import httpx_patch
+    import pytest
 
     async with httpx.AsyncClient() as client:
-
         resp = await client.get(urls_fixture["/status_200"])
         resp.raise_for_status()
         assert resp.text == "Some data here!"
@@ -58,4 +59,3 @@ async def test_httpx(selenium, urls_fixture, httpx_patch):
             Exception, match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504"
         ):
             resp.raise_for_status()
-

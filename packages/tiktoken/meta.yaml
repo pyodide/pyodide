@@ -18,4 +18,4 @@ about:
   home: https://github.com/openai/tiktoken
   PyPI: https://pypi.org/project/tiktoken
   summary: tiktoken is a fast BPE tokeniser for use with OpenAI's models
-  license: 'MIT'
+  license: "MIT"
