@@ -3,7 +3,11 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import { type PackageData, type InternalPackageData } from "./load-package";
+import {
+  type PackageData,
+  type InternalPackageData,
+  type PackageLoadMetadata,
+} from "./load-package";
 
 export type TypedArray =
   | Int8Array
@@ -343,7 +347,10 @@ export interface API {
     pkg: InternalPackageData,
     dynlibPaths: string[],
   ) => Promise<void>;
-
+  recursiveDependencies: (
+    names: string[],
+    errorCallback: (err: string) => void,
+  ) => Map<string, PackageLoadMetadata>;
   _Comlink: any;
 
   dsodir: string;
