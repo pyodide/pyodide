@@ -1209,7 +1209,9 @@ class JsDomElement(JsProxy):
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
+def create_once_callable(
+    obj: Callable[..., Any], /, *, _may_syncify: bool = False
+) -> JsOnceCallable:
     """Wrap a Python Callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count

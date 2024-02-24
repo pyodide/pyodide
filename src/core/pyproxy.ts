@@ -574,6 +574,16 @@ async function callPyObjectKwargsSuspending(
   return result;
 }
 
+Module.callPyObjectMaybeSuspending = async function (
+  ptrobj: number,
+  jsargs: any,
+) {
+  if (Module.jspiSupported) {
+    return await callPyObjectKwargsSuspending(ptrobj, jsargs, {});
+  }
+  return Module.callPyObjectKwargs(ptrobj, jsargs, {});
+};
+
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
   return Module.callPyObjectKwargs(ptrobj, jsargs, {});
 };
@@ -962,6 +972,7 @@ export class PyContainsMethods {
  *
  */
 function* iter_helper(iterptr: number, token: {}): Generator<any> {
+  const to_destroy = [];
   try {
     while (true) {
       Py_ENTER();
@@ -971,6 +982,9 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
       }
       Py_EXIT();
       yield item;
+      if (API.isPyProxy(item)) {
+        to_destroy.push(item);
+      }
     }
   } catch (e) {
     API.fatal_error(e);
@@ -978,6 +992,14 @@ function* iter_helper(iterptr: number, token: {}): Generator<any> {
     Module.finalizationRegistry.unregister(token);
     _Py_DecRef(iterptr);
   }
+  try {
+    to_destroy.forEach((e) =>
+      Module.pyproxy_destroy(
+        e,
+        "This borrowed proxy was automatically destroyed when an iterator was exhausted.",
+      ),
+    );
+  } catch (e) {}
   if (_PyErr_Occurred()) {
     _pythonexc2js();
   }

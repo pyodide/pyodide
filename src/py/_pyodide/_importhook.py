@@ -139,9 +139,6 @@ STDLIBS = sys.stdlib_module_names | {"test"}
 UNVENDORED_STDLIBS_AND_TEST: set[str] = set()
 
 
-from importlib import _bootstrap  # type: ignore[attr-defined]
-
-orig_get_module_not_found_error: Any = None
 REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME: dict[str, str] = {}
 
 SEE_PACKAGE_LOADING = (
@@ -154,12 +151,19 @@ You can install it by calling:
   await pyodide.loadPackage("{package_name}") in JavaScript\
 """
 
+PYODIDE_ADDED_NOTE = "_PYODIDE_ADDED_NOTE"
 
-def get_module_not_found_error(import_name):
+
+def add_note_to_module_not_found_error(e: ModuleNotFoundError) -> None:
+    if hasattr(e, PYODIDE_ADDED_NOTE):
+        return
+    import_name = e.name
+    if not import_name:
+        return
     package_name = REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME.get(import_name, "")
 
     if not package_name and import_name not in STDLIBS:
-        return orig_get_module_not_found_error(import_name)
+        return
 
     if package_name in UNVENDORED_STDLIBS_AND_TEST:
         msg = "The module '{package_name}' is unvendored from the Python standard library in the Pyodide distribution."
@@ -174,9 +178,8 @@ def get_module_not_found_error(import_name):
         msg += YOU_CAN_INSTALL_IT_BY
 
     msg += SEE_PACKAGE_LOADING
-    return ModuleNotFoundError(
-        msg.format(import_name=import_name, package_name=package_name)
-    )
+    e.add_note(msg.format(import_name=import_name, package_name=package_name))
+    setattr(e, PYODIDE_ADDED_NOTE, True)
 
 
 def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
@@ -186,10 +189,7 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     Note that this finder must be placed in the end of meta_paths
     in order to prevent any unexpected side effects.
     """
-    global orig_get_module_not_found_error
     global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
     global UNVENDORED_STDLIBS_AND_TEST
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
     UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())
-    orig_get_module_not_found_error = _bootstrap._get_module_not_found_error
-    _bootstrap._get_module_not_found_error = get_module_not_found_error

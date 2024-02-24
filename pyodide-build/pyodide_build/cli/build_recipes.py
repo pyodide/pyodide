@@ -5,10 +5,9 @@ from pathlib import Path
 import typer
 
 from .. import build_env, buildall, buildpkg
-from ..build_env import init_environment
+from ..build_env import BuildArgs, init_environment
 from ..common import get_num_cores
 from ..logger import logger
-from ..pywasmcross import BuildArgs
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -30,7 +29,8 @@ class Args:
         force_rebuild: bool,
         n_jobs: int | None = None,
     ):
-        root = Path.cwd()
+        cwd = Path.cwd()
+        root = build_env.search_pyodide_root(cwd) or cwd
         self.recipe_dir = (
             root / "packages" if not recipe_dir else Path(recipe_dir).resolve()
         )
@@ -123,9 +123,15 @@ def build_recipes_no_deps_impl(
     # TODO: use multiprocessing?
     for package in packages:
         package_path = args.recipe_dir / package
-        buildpkg.build_package(
-            package_path, args.build_args, args.build_dir, args.force_rebuild, continue_
+        package_build_dir = args.build_dir / package / "build"
+        builder = buildpkg.RecipeBuilder(
+            package_path,
+            args.build_args,
+            package_build_dir,
+            args.force_rebuild,
+            continue_,
         )
+        builder.build()
 
 
 def build_recipes(
@@ -190,6 +196,7 @@ def build_recipes(
     ),
     compression_level: int = typer.Option(
         6,
+        envvar="PYODIDE_ZIP_COMPRESSION_LEVEL",
         help="Level of zip compression to apply when installing. 0 means no compression.",
     ),
 ) -> None:

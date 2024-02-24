@@ -766,41 +766,37 @@ def test_run_python_locals(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_once_callable(selenium):
-    selenium.run_js(
-        """
-        self.call7 = function call7(f){
-            return f(7);
-        }
-        pyodide.runPython(`
-            from pyodide.ffi import create_once_callable, JsException
-            from js import call7;
-            from unittest import TestCase
-            raises = TestCase().assertRaisesRegex
-            class Square:
-                def __call__(self, x):
-                    return x*x
+    import sys
 
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
+    from pytest import raises
 
-            f = Square()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_once_callable(f)
-            assert sys.getrefcount(f) == 3
-            assert call7(proxy) == 49
-            assert sys.getrefcount(f) == 2
-            with raises(JsException, "can only be called once"):
-                call7(proxy)
-            destroyed = False
-            del f
-            assert destroyed == True
-            del proxy
-        `);
-        """
-    )
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_once_callable
+
+    destroyed = False
+
+    class Square:
+        def __call__(self, x):
+            return x * x
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Square()
+    assert sys.getrefcount(f) == 2
+    proxy = create_once_callable(f)
+    assert sys.getrefcount(f) == 3
+
+    call7 = run_js("(f) => f(7)")
+    assert call7(proxy) == 49
+    assert sys.getrefcount(f) == 2
+    with raises(JsException, match="can only be called once"):
+        call7(proxy)
+    del f
+    assert destroyed
 
 
 @run_in_pyodide
@@ -922,7 +918,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj, /)"
+    sig_once_should_equal = "(obj, /, *, _may_syncify=False)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
@@ -1424,46 +1420,67 @@ def test_raises_jsexception(selenium):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_module_not_found_hook(selenium_standalone):
+def test_module_not_found_note(selenium_standalone):
     import importlib
 
     import pytest
+
+    from _pyodide._importhook import add_note_to_module_not_found_error
+    from pyodide.code import run_js
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = ["micropip", "packaging", "regex"]
 
+    # When error is wrapped, add_note_to_module_not_found_error is called
+    with pytest.raises(ModuleNotFoundError) as e:
+        run_js("(f) => f()")(lambda: importlib.import_module("test"))
+    assert "unvendored from the Python standard library" in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
+
     for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        add_note_to_module_not_found_error(e.value)
+        assert "unvendored from the Python standard library" in e.value.__notes__[0]
+        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "removed from the Python standard library" in e.value.__notes__[0]
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
     for lib in lockfile_packages:
         with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
+            ModuleNotFoundError,
+        ) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "included in the Pyodide distribution" in e.value.__notes__[0]
 
-    with pytest.raises(ModuleNotFoundError, match="No module named"):
+    with pytest.raises(ModuleNotFoundError, match="No module named") as e:
         importlib.import_module("pytest.there_is_no_such_module")
+    add_note_to_module_not_found_error(e.value)
+    assert getattr(e.value, "__notes__", None) is None
 
     # liblzma and openssl are libraries not python packages, so it should just fail.
     for pkg in ["liblzma", "openssl"]:
-        with pytest.raises(ModuleNotFoundError, match="No module named"):
+        with pytest.raises(ModuleNotFoundError, match="No module named") as e:
             importlib.import_module(pkg)
+        add_note_to_module_not_found_error(e.value)
+        assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+    with pytest.raises(ModuleNotFoundError) as e:
         importlib.import_module("_hashlib")
+    add_note_to_module_not_found_error(e.value)
+    add_note_to_module_not_found_error(e.value)
+    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
 
 
 def test_args(selenium_standalone_noload):

@@ -12,14 +12,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 license = {text = "MPL-2.0"}
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "pyyaml",
-    "cython<3.0",
     "ruamel.yaml",
     "packaging",
     "wheel",
-    "tomli",
     "build>=1.0.0",
     "virtualenv",
     "pydantic>=1.10.2,<2",
@@ -62,6 +60,7 @@ test = [
     # (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
     "pytest<8.0.0",
     "pytest-pyodide==0.56.2",
+    "packaging",
 ]
 deploy = [
     "boto3",

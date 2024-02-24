@@ -6,7 +6,7 @@
     "module": "ES2022",
     "moduleResolution": "node",
     "paths": {
-      "*": ["*", "js/*"],
-    },
-  },
+      "*": ["*", "js/*"]
+    }
+  }
 }

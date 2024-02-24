@@ -1,5 +1,6 @@
 package:
   name: xgboost
+  _disabled: true
   version: 1.6.1
   top-level:
     - xgboost

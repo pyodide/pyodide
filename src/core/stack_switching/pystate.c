@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "emscripten.h"
+#include "error_handling.h"
 #include "internal/pycore_frame.h"
 
 // This file manages the Python stack / thread state when stack switching.
@@ -17,6 +18,100 @@
 //
 // See also https://github.com/python/cpython/pull/32303 which would move more
 // of this logic into upstream CPython
+
+typedef struct
+{
+  PyObject* loop;
+  PyObject* task;
+} AsyncioState;
+
+_Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(_current_tasks);
+_Py_IDENTIFIER(_leave_task);
+_Py_IDENTIFIER(_enter_task);
+
+AsyncioState
+saveAsyncioState()
+{
+  AsyncioState as;
+  PyObject* asyncio_module = NULL;
+  PyObject* _asyncio_module = NULL;
+  PyObject* loop = NULL;
+  PyObject* _current_tasks = NULL;
+  PyObject* task = NULL;
+  PyObject* status = NULL;
+  Py_hash_t hash;
+  bool success = false;
+
+  asyncio_module = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_module);
+  _asyncio_module = PyImport_ImportModule("_asyncio");
+  FAIL_IF_NULL(_asyncio_module);
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_module, &PyId_get_event_loop);
+  FAIL_IF_NULL(loop);
+  _current_tasks = _PyObject_GetAttrId(_asyncio_module, &PyId__current_tasks);
+  FAIL_IF_NULL(_current_tasks);
+  hash = PyObject_Hash(loop);
+  FAIL_IF_MINUS_ONE(hash);
+  task = _PyDict_GetItem_KnownHash(_current_tasks, loop, hash);
+  Py_XINCREF(task);
+  if (task == NULL) {
+    FAIL_IF_ERR_OCCURRED();
+    goto success;
+  }
+  status = _PyObject_CallMethodIdObjArgs(
+    _asyncio_module, &PyId__leave_task, loop, task, NULL);
+  FAIL_IF_NULL(status);
+
+success:
+  success = true;
+finally:
+  if (!success) {
+    // Might want to make this a fatal...
+    PySys_WriteStderr(
+      "Pyodide: Internal error occurred while switching stacks:\n");
+    PyErr_Print();
+  }
+  if (task == NULL) {
+    Py_CLEAR(loop);
+  }
+  Py_CLEAR(asyncio_module);
+  Py_CLEAR(_asyncio_module);
+  Py_CLEAR(_current_tasks);
+  Py_CLEAR(status);
+  as.loop = loop;
+  as.task = task;
+  return as;
+}
+
+void
+restoreAsyncioState(AsyncioState as)
+{
+  if (as.task == NULL) {
+    // We weren't in a task when we switched, so nothing to restore.
+    return;
+  }
+  PyObject* _asyncio_module = NULL;
+  PyObject* status = NULL;
+  bool success = false;
+
+  _asyncio_module = PyImport_ImportModule("_asyncio");
+  FAIL_IF_NULL(_asyncio_module);
+  status = _PyObject_CallMethodIdObjArgs(
+    _asyncio_module, &PyId__enter_task, as.loop, as.task, NULL);
+  FAIL_IF_NULL(status);
+
+  success = true;
+finally:
+  if (!success) {
+    // Might want to make this a fatal...
+    PySys_WriteStderr(
+      "Pyodide: Internal error occurred while unswitching stacks:\n");
+    PyErr_Print();
+  }
+  Py_CLEAR(as.loop);
+  Py_CLEAR(as.task);
+}
 
 typedef struct
 {
@@ -48,8 +143,8 @@ typedef struct
 {
   PyFrameObject* _top_frame;
   _PyCFrame* cframe;
-  int use_tracing;
-  int recursion_depth;
+  int py_recursion_depth;
+  int c_recursion_depth;
   int trash_delete_nesting;
   _PyInterpreterFrame* current_frame;
   _PyStackChunk* datastack_chunk;
@@ -69,13 +164,14 @@ savePythonState(PyThreadState* tstate)
   ps.datastack_top = tstate->datastack_top;
   ps.datastack_limit = tstate->datastack_limit;
 
-  ps.use_tracing = tstate->cframe->use_tracing;
-  ps.recursion_depth = tstate->recursion_limit - tstate->recursion_remaining;
+  ps.py_recursion_depth =
+    tstate->py_recursion_limit - tstate->py_recursion_remaining;
+  ps.c_recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
 
   ps._top_frame = PyThreadState_GetFrame((PyThreadState*)tstate);
   Py_XDECREF(ps._top_frame);
 
-  ps.trash_delete_nesting = tstate->trash_delete_nesting;
+  ps.trash_delete_nesting = tstate->trash.delete_nesting;
 
   ps.context = tstate->context;
   Py_XINCREF(ps.context);
@@ -91,10 +187,11 @@ restorePythonState(PyThreadState* tstate, PythonState ps)
   tstate->datastack_top = ps.datastack_top;
   tstate->datastack_limit = ps.datastack_limit;
 
-  tstate->cframe->use_tracing = ps.use_tracing;
-  tstate->recursion_remaining = tstate->recursion_limit - ps.recursion_depth;
+  tstate->py_recursion_remaining =
+    tstate->py_recursion_limit - ps.py_recursion_depth;
+  tstate->c_recursion_remaining = C_RECURSION_LIMIT - ps.c_recursion_depth;
 
-  tstate->trash_delete_nesting = ps.trash_delete_nesting;
+  tstate->trash.delete_nesting = ps.trash_delete_nesting;
 
   tstate->context = ps.context;
   Py_XDECREF(ps.context);
@@ -102,6 +199,7 @@ restorePythonState(PyThreadState* tstate, PythonState ps)
 
 typedef struct
 {
+  AsyncioState as;
   PythonState ps;
   ExceptionState es;
 } ThreadState;
@@ -111,6 +209,7 @@ captureThreadState()
 {
   PyThreadState* tstate = PyThreadState_Get();
   ThreadState* state = (ThreadState*)malloc(sizeof(ThreadState));
+  state->as = saveAsyncioState();
   state->es = saveExceptionState(tstate);
   state->ps = savePythonState(tstate);
   return state;
@@ -122,7 +221,7 @@ restoreThreadState(ThreadState* state)
   PyThreadState* tstate = PyThreadState_Get();
   restoreExceptionState(tstate, state->es);
   restorePythonState(tstate, state->ps);
-
+  restoreAsyncioState(state->as);
   free(state);
 }
 
@@ -149,7 +248,7 @@ set_new_cframe(_PyCFrame* frame)
   *frame = *tstate->cframe;
   tstate->cframe = frame;
   tstate->cframe->previous = &PyThreadState_GET()->root_cframe;
-  tstate->trash_delete_nesting = 0;
+  tstate->trash.delete_nesting = 0;
   tstate->cframe->current_frame = NULL;
   tstate->datastack_chunk = NULL;
   tstate->datastack_top = NULL;

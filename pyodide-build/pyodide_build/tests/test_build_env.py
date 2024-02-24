@@ -52,8 +52,7 @@ class TestInTree:
         assert build_env.search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path
 
         pyproject_file.unlink()
-        with pytest.raises(FileNotFoundError):
-            build_env.search_pyodide_root(tmp_path)
+        assert build_env.search_pyodide_root(tmp_path) is None
 
     def test_in_xbuildenv(self, reset_env_vars, reset_cache):
         assert not build_env.in_xbuildenv()
@@ -134,7 +133,7 @@ class TestOutOfTree(TestInTree):
 
         assert "PYODIDE_ROOT" in os.environ
         assert os.environ["PYODIDE_ROOT"] == str(
-            xbuildenv / ".pyodide-xbuildenv/xbuildenv/pyodide-root"
+            xbuildenv / common.xbuildenv_dirname() / "xbuildenv/pyodide-root"
         )
 
     def test_get_pyodide_root(self, xbuildenv, reset_env_vars, reset_cache):
@@ -142,14 +141,16 @@ class TestOutOfTree(TestInTree):
 
         assert (
             build_env.get_pyodide_root()
-            == xbuildenv / ".pyodide-xbuildenv/xbuildenv/pyodide-root"
+            == xbuildenv / common.xbuildenv_dirname() / "xbuildenv/pyodide-root"
         )
 
     def test_in_xbuildenv(self, xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
 
     def test_get_make_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
-        xbuildenv_root = xbuildenv / ".pyodide-xbuildenv/xbuildenv/pyodide-root"
+        xbuildenv_root = (
+            xbuildenv / common.xbuildenv_dirname() / "xbuildenv/pyodide-root"
+        )
         make_vars = build_env._get_make_environment_vars()
         assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_root)
 

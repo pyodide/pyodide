@@ -107,8 +107,6 @@ hello_python().then((result) => {
 
 ```
 $ node hello_python.js
-Loading distutils
-Loaded distutils
 Python says that 1+1= 2
 ```
 
@@ -122,8 +120,6 @@ Type ".help" for more information.
 > const { loadPyodide } = require("pyodide");
 undefined
 > let pyodide = await loadPyodide();
-Loading distutils
-Loaded distutils
 undefined
 > await pyodide.runPythonAsync("1+1");
 2

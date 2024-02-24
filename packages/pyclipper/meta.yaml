@@ -1,11 +1,11 @@
 package:
   name: pyclipper
-  version: 1.3.0.post4
+  version: 1.3.0.post5
   top-level:
     - pyclipper
 source:
-  url: https://files.pythonhosted.org/packages/dd/03/09e2415b72b470851588dfc7c9b7b4f410a79ed8e2c6c1fb25dfec789b70/pyclipper-1.3.0.post4.tar.gz
-  sha256: b73b19d2a1b895edcacaf4acb441e13e99b9e5fd53b9c0dfd2e1326e2bf68a7a
+  url: https://files.pythonhosted.org/packages/1b/3d/e5b5ff36b24f3fc9b962a68ce4f6932ab698b8ba860261f402be37b85d17/pyclipper-1.3.0.post5.tar.gz
+  sha256: c0239f928e0bf78a3efc2f2f615a10bfcdb9f33012d46d64c8d1225b4bde7096
 about:
   home: https://github.com/greginvm/pyclipper
   PyPI: https://pypi.org/project/pyclipper

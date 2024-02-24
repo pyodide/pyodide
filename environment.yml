@@ -2,7 +2,7 @@ name: pyodide-env
 channels:
   - conda-forge
 dependencies:
-  - python=3.11
+  - python=3.12
   - nodejs
   - ccache
   - f2c

@@ -205,8 +205,10 @@ def test_py_compile_archive_dir(tmp_path, with_lockfile):
         },
     }
 
+    ver = sys.version_info
+    cpver = f"cp{ver.major}{ver.minor}"
     expected_in = {"test1.zip", "packageB-0.1.0-py3-none-any.whl"}
-    expected_out = {"test1.zip", "packageb-0.1.0-cp311-none-any.whl"}
+    expected_out = {"test1.zip", f"packageb-0.1.0-{cpver}-none-any.whl"}
     if with_lockfile:
         with open(lockfile_path, "w") as fh:
             json.dump(lockfile, fh)
@@ -218,7 +220,7 @@ def test_py_compile_archive_dir(tmp_path, with_lockfile):
     mapping = _py_compile_archive_dir(tmp_path, keep=False)
 
     assert mapping == {
-        "packageB-0.1.0-py3-none-any.whl": "packageb-0.1.0-cp311-none-any.whl",
+        "packageB-0.1.0-py3-none-any.whl": f"packageb-0.1.0-{cpver}-none-any.whl",
         "test1.zip": "test1.zip",
     }
 
@@ -237,7 +239,7 @@ def test_py_compile_archive_dir(tmp_path, with_lockfile):
 
     assert (
         lockfile_new["packages"]["packageB"]["file_name"]
-        == "packageb-0.1.0-cp311-none-any.whl"
+        == f"packageb-0.1.0-{cpver}-none-any.whl"
     )
     assert len(lockfile_new["packages"]["packageA"]["sha256"]) == 64
 
