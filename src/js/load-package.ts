@@ -78,7 +78,7 @@ API.setCdnUrl = function (url: string) {
 //
 const DEFAULT_CHANNEL = "default channel";
 
-type PackageLoadMetadata = {
+export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
   channel: string;
@@ -228,6 +228,7 @@ function recursiveDependencies(
   }
   return toLoad;
 }
+API.recursiveDependencies = recursiveDependencies;
 
 //
 // Dependency download and install
@@ -485,9 +486,9 @@ export async function loadPackage(
     return [];
   }
 
-  const packageNames = Array.from(toLoad.values(), ({ name }) => name).join(
-    ", ",
-  );
+  const packageNames = Array.from(toLoad.values(), ({ name }) => name)
+    .sort()
+    .join(", ");
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
@@ -525,7 +526,7 @@ export async function loadPackage(
     }
 
     if (failed.size > 0) {
-      const failedNames = Array.from(failed.keys()).join(", ");
+      const failedNames = Array.from(failed.keys()).sort().join(", ");
       messageCallback(`Failed to load ${failedNames}`);
       for (const [name, err] of failed) {
         errorCallback(`The following error occurred while loading ${name}:`);
