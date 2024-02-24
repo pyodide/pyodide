@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Improved support for stack switching.
+  {pr}`4532`, {pr}`4547`
+
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
