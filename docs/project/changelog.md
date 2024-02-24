@@ -45,6 +45,10 @@ myst:
 
 - {{ Enhancement }} The `build/post` script now runs under the directory
   where the built wheel is unpacked.
+  {pr}`4481`
+
+- {{ Fix }} `dup` now works correctly in the Node filesystem.
+  {pr}`4554`
 
 - {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
   {pr}`4546`

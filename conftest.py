@@ -54,6 +54,9 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
 )
+only_chrome = pytest.mark.xfail_browsers(
+    node="chrome only", firefox="chrome only", safari="chrome only"
+)
 
 
 def pytest_addoption(parser):
