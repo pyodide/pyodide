@@ -272,11 +272,16 @@ def test_nativefs_errors(selenium):
         );
 
         pyodide.FS.mkdirTree("/mnt2");
-        pyodide.FS.writeFile("/mnt2/nativefs", "contents");
+        pyodide.FS.writeFile("/mnt2/some_file", "contents");
         assertThrowsAsync(
-          async () => await pyodide.mountNativeFS("/mnt2/nativefs", handle),
+          async () => await pyodide.mountNativeFS("/mnt2/some_file", handle),
           "Error",
           "path '/mnt2/nativefs' points to a file not a directory",
+        );
+        // Check we didn't overwrite the file.
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt2/some_file", { encoding: "utf8" }) === "contents",
         );
 
         pyodide.FS.mkdirTree("/mnt3/nativefs");
@@ -285,6 +290,14 @@ def test_nativefs_errors(selenium):
           async () => await pyodide.mountNativeFS("/mnt3/nativefs", handle),
           "Error",
           "directory '/mnt3/nativefs' is not empty",
+        );
+        // Check directory wasn't changed
+        const { node } = pyodide.FS.lookupPath("/mnt3/nativefs/");
+        assert(() => Object.entries(node.contents).length === 1);
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt3/nativefs/a.txt", { encoding: "utf8" }) ===
+            "contents",
         );
 
         const [r1, r2] = await Promise.allSettled([
