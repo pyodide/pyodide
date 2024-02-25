@@ -36,8 +36,6 @@ def test_idbfs_persist_code(selenium_standalone):
             p = pathlib.Path('{mount_dir}/test_idbfs/__init__.py')
             p.parent.mkdir(exist_ok=True, parents=True)
             p.write_text("def test(): return 7")
-            from importlib import invalidate_caches
-            invalidate_caches()
             import sys
             sys.path.append('{mount_dir}')
             from test_idbfs import test
@@ -65,9 +63,7 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.run_js(
         f"""
         pyodide.runPython(`
-            from importlib import invalidate_caches
             import sys
-            invalidate_caches()
             err_type = None
             try:
                 sys.path.append('{mount_dir}')
@@ -98,8 +94,6 @@ def test_idbfs_persist_code(selenium_standalone):
     selenium.run_js(
         f"""
         pyodide.runPython(`
-            from importlib import invalidate_caches
-            invalidate_caches()
             import sys
             sys.path.append('{mount_dir}')
             from test_idbfs import test

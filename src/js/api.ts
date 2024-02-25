@@ -675,24 +675,23 @@ API.finalizeBootstrap = function (): PyodideInterface {
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
   API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
-  API.importlib = API.runPythonInternal("import importlib; importlib");
-  let import_module = API.importlib.import_module;
+  const import_module = API._pyodide._base.pyimport_impl;
 
   API.sys = import_module("sys");
   API.sys.path.insert(0, API.config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
-  let globals = API.runPythonInternal(
+  const globals = API.runPythonInternal(
     "import __main__; __main__.__dict__",
   ) as PyDict;
-  let builtins = API.runPythonInternal(
+  const builtins = API.runPythonInternal(
     "import builtins; builtins.__dict__",
   ) as PyDict;
   API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
-  let importhook = API._pyodide._importhook;
+  const importhook = API._pyodide._importhook;
   function jsFinderHook(o: object) {
     if ("__all__" in o) {
       return;

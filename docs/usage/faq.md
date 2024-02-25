@@ -384,37 +384,6 @@ to change which packages {js:func}`pyodide.loadPackagesFromImports` loads, you
 can monkey patch {py:func}`pyodide.code.find_imports` which takes `code` as an
 argument and returns a list of packages imported.
 
-## Why can't I import a file I just wrote to the file system?
-
-For example:
-
-```py
-from pathlib import Path
-Path("mymodule.py").write_text("""\
-def hello():
-  print("hello world!")
-"""
-)
-from mymodule import hello # may raise "ModuleNotFoundError: No module named 'mymodule'"
-hello()
-```
-
-If you see this error, call {py:func}`importlib.invalidate_caches` before
-importing the module:
-
-```py
-import importlib
-from pathlib import Path
-Path("mymodule.py").write_text("""\
-def hello():
-  print("hello world!")
-"""
-)
-importlib.invalidate_caches() # Make sure Python notices the new .py file
-from mymodule import hello
-hello()
-```
-
 ## Why changes made to IndexedDB don't persist?
 
 Unlike other filesystems, IndexedDB (pyodide.FS.filesystem.IDBFS) is an asynchronous filesystem.

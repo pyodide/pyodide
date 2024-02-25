@@ -323,7 +323,6 @@ export interface API {
   restoreState: (state: any) => void;
 
   package_loader: any;
-  importlib: any;
   _import_name_to_package_name: Map<string, string>;
   lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
