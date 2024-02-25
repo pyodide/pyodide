@@ -22,8 +22,6 @@ myst:
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
-- Upgraded CoolProp to 6.6.0 {pr}`4397`.
-
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
   {pr}`4399`
 
@@ -65,9 +63,12 @@ myst:
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
-  `pyxirr` {pr}`4513`
+  `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
+  `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`
 
-- Upgraded scikit-learn to 1.4.1.post1 {pr}`4409` and {pr}`4534`
+- Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
+
+- Upgraded `CoolProp` to 6.6.0 {pr}`4397`
 
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
