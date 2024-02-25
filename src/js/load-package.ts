@@ -12,6 +12,7 @@ import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
 import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
+import { Lockfile } from "./types";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -20,7 +21,7 @@ import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFilePromise: Promise<any>) {
+async function initializePackageIndex(lockFilePromise: Promise<Lockfile>) {
   await initNodeModules();
   const lockfile = await lockFilePromise;
   if (!lockfile.packages) {

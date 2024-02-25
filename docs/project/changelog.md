@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Improved support for stack switching.
+  {pr}`4532`, {pr}`4547`
+
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
@@ -45,9 +48,18 @@ myst:
 
 - {{ Enhancement }} The `build/post` script now runs under the directory
   where the built wheel is unpacked.
+  {pr}`4481`
+
+- {{ Fix }} `dup` now works correctly in the Node filesystem.
+  {pr}`4554`
 
 - {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
   {pr}`4546`
+
+- {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
+  existing nonempty directory. Also it throws much clearer error messages when
+  it fails.
+  {pr}`4559`
 
 ### Packages
 

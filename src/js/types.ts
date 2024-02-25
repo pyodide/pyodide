@@ -217,6 +217,7 @@ export interface FS {
   stat: (path: string, dontFollow?: boolean) => any;
   readdir: (node: FSNode) => string[];
   isDir: (mode: number) => boolean;
+  isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (path: string) => { node: FSNode };
   isFile: (mode: number) => boolean;
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
@@ -274,9 +275,9 @@ type LockfileInfo = {
   python: string;
 };
 
-type Lockfile = {
+export type Lockfile = {
   info: LockfileInfo;
-  packages: Record<string, PackageData>;
+  packages: Record<string, InternalPackageData>;
 };
 
 export interface API {
