@@ -275,9 +275,9 @@ type LockfileInfo = {
   python: string;
 };
 
-type Lockfile = {
+export type Lockfile = {
   info: LockfileInfo;
-  packages: Record<string, PackageData>;
+  packages: Record<string, InternalPackageData>;
 };
 
 export interface API {
