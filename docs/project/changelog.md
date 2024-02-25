@@ -56,6 +56,11 @@ myst:
 - {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
   {pr}`4546`
 
+- {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
+  existing nonempty directory. Also it throws much clearer error messages when
+  it fails.
+  {pr}`4559`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
