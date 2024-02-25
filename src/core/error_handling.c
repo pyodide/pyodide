@@ -68,8 +68,8 @@ new_error,
 // clang-format on
 
 /**
- * Restore sys.last_exception as the current exception if sys.last_value matches
- * the argument value. Used for reentrant errors.
+ * Restore sys.last_exception as the current exception if sys.last_exc matches
+ * the argument `exc`. Used for reentrant errors.
  * Returns true if it restored the error indicator, false otherwise.
  *
  * If we throw a JavaScript PythonError and it bubbles out to the enclosing
@@ -124,7 +124,7 @@ EM_JS(JsVal, restore_stderr, (void), {
  *
  * We are cautious about leaking the Python stack frame, so we don't increment
  * the reference count on the exception object, we just store a pointer to it.
- * Later we can check if this pointer is equal to sys.last_value and if so
+ * Later we can check if this pointer is equal to sys.last_exc and if so
  * restore the exception (see restore_sys_last_exception).
  *
  * WARNING: dereferencing the error pointer stored on the PythonError is a
