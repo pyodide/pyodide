@@ -5,7 +5,7 @@
 For development of modules to use in Pyodide, the best experience comes from
 using Pyodide in Node and mounting the development directory into Pyodide using
 the NodeFS. In the NodeFS, all changes to your native file system are
-immediately reflected in Pyodide and vice versa. 
+immediately reflected in Pyodide and vice versa.
 
 If your code is browser-only, you can use the Chrome `NativeFS` for development.
 This will not automatically sync up with your native file system, but it is
@@ -35,6 +35,7 @@ be stored in the `IndexedDB`. You will still be prompted for read and write
 access, but you don't have to deal with the folder picker again.
 
 The following code is a good starting point:
+
 ```js
 const { get, set } = await import(
   "https://unpkg.com/idb-keyval@5.0.2/dist/esm/index.js"
@@ -59,13 +60,17 @@ async function mountDirectory(pyodideDirectory, directoryKey) {
   if (permissionStatus !== "granted") {
     throw new Error("readwrite access to directory not granted");
   }
-  const {syncfs} = await pyodide.mountNativeFS(pyodideDirectory, directoryHandle);
+  const { syncfs } = await pyodide.mountNativeFS(
+    pyodideDirectory,
+    directoryHandle,
+  );
   return syncfs;
 }
 ```
+
 See {ref}`nativefs-api` for more information.
 
-## Downloading external archives 
+## Downloading external archives
 
 If you are using Pyodide in the browser, you should download external files and
 save them to the virtual file system. The recommended way to do this is to zip
