@@ -1,0 +1,31 @@
+package:
+  name: e_antic
+  version: 2.0.0
+  tag:
+    - library
+source:
+  url: https://github.com/flatsurf/e-antic/releases/download/2.0.0/e-antic-2.0.0.tar.gz
+  sha256: a38d2ab62c1b00fa2ee78f39039cc4d9d8e83de5fa5e2a18529ad34ab8976fe1
+  patches:
+    - patches/0001-Do-not-redefine-fmpz_poly_randtest_irreducible-for-F.patch
+requirements:
+  host:
+    - libgmp
+    - boost-cpp
+    - flint
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" CXXFLAGS="-fPIC -Wno-enum-constexpr-conversion" \
+        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
+        --disable-dependency-tracking \
+        --disable-shared \
+        --prefix=${WASM_LIBRARY_DIR} \
+        --without-byexample --without-doc --without-benchmark --without-pyeantic
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+extra:
+  recipe-maintainers:
+    - mkoeppe
