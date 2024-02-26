@@ -1,15 +1,15 @@
 package:
   name: sagemath-objects
-  version: 10.3b6
+  version: 10.3rc0
   top-level:
     - sage
 source:
-  url: file:sagemath-objects-10.3b6.tar.gz
+  url: file:sagemath-objects-10.3rc0.tar.gz
   # url: https://files.pythonhosted.org/packages/12/34/f5d845f8e099e0aa4a70628a51eb06b0c7df9c812efd49a7dac32b3d66a1/sagemath-objects-10.2.tar.gz
   # sha256: ed6b1342510f609b0b6ca7de3ee3cebf5c007ff2976f4915ac03d6d4b058df6e
   # patches:
   #  - patches/0001-src-sage-misc-timing.py-Move-import-of-resource-into.patch
-  sha256: f60a872251d387a8ad8e65befb4e56d9786142359e3d7c1af491d511f8743e8e
+  sha256: a5f6d787b276a3f58d57edc812eac04b22464b4cc23faf2ff343ad72443c5336
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath_objects

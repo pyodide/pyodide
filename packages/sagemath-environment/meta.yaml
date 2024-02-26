@@ -1,13 +1,13 @@
 package:
   name: sagemath-environment
-  version: 10.3b6
+  version: 10.3rc0
   top-level:
     - sage
 source:
-  url: file:sagemath-environment-10.3b6.tar.gz
+  url: file:sagemath-environment-10.3rc0.tar.gz
   # url: https://files.pythonhosted.org/packages/b4/88/f7a22654e5bfa260308f7f5ce7d1b143cd2afe6c9aef72185ebaa8e254ad/sagemath-environment-10.2.tar.gz
   # sha256: 3c4f18fcfab81b45e87f2e254af587a812afc646ffed8adf748810aa51e15f94
-  sha256: 2bb9663810c90fbf22a3261dae9992004b3dd84d7bcc2571e21adabdbaf3b1ea
+  sha256: 910bfc141b92f6b9b5925fd408bf1365ce1ec7f47cccc5d20d32f0608775368b
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-environment

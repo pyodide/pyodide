@@ -1,13 +1,13 @@
 package:
   name: sagemath-categories
-  version: 10.3b6
+  version: 10.3rc0
   top-level:
     - sage
 source:
-  url: file:sagemath-categories-10.3b6.tar.gz
+  url: file:sagemath-categories-10.3rc0.tar.gz
   # url: https://files.pythonhosted.org/packages/04/27/9ede35f17158a454141f0bf69222b9ea468763ac5b233066ef54e213b34f/sagemath-categories-10.2.tar.gz
   # sha256: 4ab706397efdc396e8a2898e45043cf661aa4a60f3a17618eebeb86b6465620a
-  sha256: f69e513639066a628c46fe4d9abab628f68d9b80cfe45bcdbf836f01fa691dd5
+  sha256: e05e1389ea2745ff79294802606281bb808cc571cf1d3df45498cf38468463ff
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-categories

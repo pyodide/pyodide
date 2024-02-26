@@ -1,13 +1,13 @@
 package:
   name: sagemath-repl
-  version: 10.3b6
+  version: 10.3rc0
   top-level:
     - sage
 source:
-  url: file:sagemath-repl-10.3b6.tar.gz
+  url: file:sagemath-repl-10.3rc0.tar.gz
   # url: https://files.pythonhosted.org/packages/3a/21/7277ed40c6199451187ed1bf09155c1c68bd0e7567e7fbd392982cdc2d1c/sagemath-repl-10.2.tar.gz
   # sha256: 72c51d313b484ac204230167498a23eb5f41848cb5ba43558646a015cacbad2c
-  sha256: a8e5609f49410812af057f6eaf10ea2de37d4fa48967d4e4e330372de8d9071f
+  sha256: d8b4aaef63c581ab4caa1754cfa562950de1575c20cb1d6eb3a070edf3e0837d
 about:
   home: ""
   PyPI: https://pypi.org/project/sagemath-repl
