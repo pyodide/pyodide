@@ -54,6 +54,9 @@ myst:
 - {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
   {pr}`4546`
 
+- {{ Enhancement }} `asyncio.sleep(0)` now runs the next task a lot faster.
+  {pr}`4568`
+
 - {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
   existing nonempty directory. Also it throws much clearer error messages when
   it fails.
