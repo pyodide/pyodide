@@ -8,6 +8,7 @@ import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
+import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 
 // Exported for micropip
@@ -80,6 +81,8 @@ export class PyodideAPI {
   static setStdout = setStdout;
   /** @hidden */
   static setStderr = setStderr;
+  /** @hidden */
+  static scheduleCallback = scheduleCallback;
 
   /**
    *
