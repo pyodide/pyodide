@@ -63,7 +63,7 @@ myst:
 
 - {{ Enhancement }} Added a new API `pyodide.mountNodeFS` which mounts a host
   directory into the Pyodide file system when running in node.
-  {pr}`2987`
+  {pr}`4561`
 
 ### Packages
 

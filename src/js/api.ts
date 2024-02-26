@@ -9,6 +9,7 @@ import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { TypedArray } from "./types";
+import { IN_NODE } from "./environments";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -547,6 +548,9 @@ export class PyodideAPI {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
+    if (!IN_NODE) {
+      throw new Error("mountNodeFS only works in Node");
+    }
     ensureMountPathExists(emscriptenPath);
     let stat;
     try {
