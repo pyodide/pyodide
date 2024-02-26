@@ -4,11 +4,11 @@
  * @param timeout The delay in milliseconds before the callback is called
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-    if (timeout <= 0) {
-        const channel = new MessageChannel();
-        channel.port1.onmessage = () => callback();
-        channel.port2.postMessage('');
-    } else {
-        setTimeout(callback, timeout);
-    }
+  if (timeout <= 0) {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => callback();
+    channel.port2.postMessage("");
+  } else {
+    setTimeout(callback, timeout);
+  }
 }
