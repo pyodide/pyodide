@@ -1,0 +1,26 @@
+package:
+  name: ipython
+  version: 8.22.1
+  top-level:
+    - IPython
+source:
+  url: https://files.pythonhosted.org/packages/11/3e/956d40991c152010d71b38b1a9763edc8fe5944d360e1c256fae60cb9165/ipython-8.22.1-py3-none-any.whl
+  sha256: 869335e8cded62ffb6fac8928e5287a05433d6462e3ebaac25f4216474dd6bc4
+requirements:
+  run:
+    - asttokens
+    - decorator
+    - executing
+    - prompt_toolkit
+    - pure_eval
+    - Pygments
+    - six
+    - stack_data
+    - traitlets
+    - sqlite3
+    - wcwidth
+about:
+  home: https://ipython.org
+  PyPI: https://pypi.org/project/ipython
+  summary: "IPython: Productive Interactive Computing"
+  license: BSD-3-Clause
