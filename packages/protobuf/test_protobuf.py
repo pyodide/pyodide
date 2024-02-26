@@ -34,7 +34,7 @@ def test_generated_protobuf_code(selenium):
     After generation some small modifications have been made to fit the tests.
     It doesn't create any new globals for example.
     """
-    from copy import deepcopy, copy
+    from copy import copy, deepcopy
 
     from google.protobuf import descriptor_pool as _descriptor_pool
     from google.protobuf import symbol_database as _symbol_database
