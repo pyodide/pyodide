@@ -21,3 +21,6 @@ about:
   PyPI: https://pypi.org/project/pynormaliz
   summary: An interface to Normaliz
   license: "GPL v2+"
+extra:
+  recipe-maintainers:
+    - mkoeppe
