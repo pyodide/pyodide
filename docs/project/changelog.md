@@ -59,6 +59,10 @@ myst:
   it fails.
   {pr}`4559`
 
+- {{ Enhancement }} Added a new API `pyodide.mountNodeFS` which mounts a host
+  directory into the Pyodide file system when running in node.
+  {pr}`4561`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
