@@ -39,3 +39,6 @@ build:
     cd Oemscripten-wasm
     emmake make -j ${PYODIDE_JOBS:-3} gp
     emmake make install install-lib-sta
+extra:
+  recipe-maintainers:
+    - mkoeppe
