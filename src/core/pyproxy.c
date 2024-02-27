@@ -137,6 +137,18 @@ gen_is_coroutine(PyObject* o)
   return 0;
 }
 
+bool
+py_is_awaitable(PyObject* o)
+{
+  if (PyCoro_CheckExact(o) || gen_is_coroutine(o)) {
+    /* 'o' is a coroutine. */
+    return true;
+  }
+
+  PyTypeObject* type = Py_TYPE(o);
+  return !!(type->tp_as_async && type->tp_as_async->am_await);
+}
+
 /**
  * Do introspection on the python object to work out which abstract protocols it
  * supports. Most of these tests are taken from a corresponding abstract Object

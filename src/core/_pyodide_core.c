@@ -92,7 +92,7 @@ PyInit__pyodide_core(void)
   TRY_INIT(js2python);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT(python2js_buffer);
-  TRY_INIT_WITH_CORE_MODULE(JsProxy);
+  TRY_INIT_WITH_CORE_MODULE(jsproxy);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
 
   PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */

@@ -167,26 +167,6 @@ class PyodideFuture(Future[T]):
         self.add_done_callback(wrapper)
         return result
 
-    def syncify(self):
-        """Block until the future is resolved. Only works if JS Promise
-        integration is enabled in the runtime and the current Python call stack
-        was entered via :js:func:`pyodide.runPythonAsync`, by calling an async
-        Python function, or via :js:func:`~PyCallable.callSyncifying`.
-
-
-        .. admonition:: Experimental
-           :class: warning
-
-           This feature is not yet stable.
-        """
-        from .ffi import create_proxy
-
-        p = create_proxy(self)
-        try:
-            return p.syncify()  # type:ignore[attr-defined]
-        finally:
-            p.destroy()
-
 
 class PyodideTask(Task[T], PyodideFuture[T]):
     """Inherits from both :py:class:`~asyncio.Task` and
