@@ -23,6 +23,7 @@ from .build_env import (
     RUST_BUILD_PRELUDE,
     BuildArgs,
     get_build_environment_vars,
+    get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -95,7 +96,7 @@ class RecipeBuilder:
             Path(build_dir).resolve() if build_dir else self.pkg_root / "build"
         )
 
-        self.library_install_prefix = self.build_dir.parent.parent / ".libs"
+        self.library_install_prefix = get_pyodide_root() / "packages/.libs"
 
         self.src_extract_dir = (
             self.build_dir / self.fullname

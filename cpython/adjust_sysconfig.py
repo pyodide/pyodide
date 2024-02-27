@@ -1,6 +1,7 @@
 import os
-import pprint
 from textwrap import dedent
+
+PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
 
 
 def load_sysconfig(sysconfig_name: str):
@@ -9,11 +10,13 @@ def load_sysconfig(sysconfig_name: str):
     return config_vars, _temp.__file__
 
 
-def write_sysconfig(destfile: str, config_vars: dict[str, str]):
+def write_sysconfig(destfile: str, fmted_config_vars: dict[str, str]):
     with open(destfile, "w", encoding="utf8") as f:
         f.write("# system configuration generated and used by the sysconfig module\n")
+        f.write("import os\n")
+        f.write(f'PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT", "{PYODIDE_ROOT}")\n')
         f.write("build_time_vars = ")
-        pprint.pprint(config_vars, stream=f)
+        f.write(fmted_config_vars)
         # at build time, packages that are looking for the Python includes and
         # libraries can get deceived by the values of platbase and
         # installed_base (and possibly others, but we haven't run into trouble
@@ -44,10 +47,26 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         CXX="c++",
         LDCXXSHARED="c++",
     )
+    for [key, val] in config_vars.items():
+        print(key, val)
+        if not isinstance(val, str):
+            continue
+        val = val.replace(f"{PYODIDE_ROOT}", "{PYODIDE_ROOT}")
+        if "PYODIDE_ROOT" in val:
+            val = "--tofstring--" + val
+        config_vars[key] = val
+
+
+def format_sysconfig(config_vars: dict[str, str]) -> str:
+    fmted_config_vars = repr(config_vars)
+    fmted_config_vars = fmted_config_vars.replace("'--tofstring--", "f'")
+    fmted_config_vars = fmted_config_vars.replace('"--tofstring--', 'f"')
+    return fmted_config_vars
 
 
 if __name__ == "__main__":
     sysconfig_name = os.environ["SYSCONFIG_NAME"]
     config_vars, file = load_sysconfig(sysconfig_name)
     adjust_sysconfig(config_vars)
-    write_sysconfig(file, config_vars)
+    fmted_config_vars = format_sysconfig(config_vars)
+    write_sysconfig(file, fmted_config_vars)
