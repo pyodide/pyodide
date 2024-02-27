@@ -11,20 +11,20 @@ def test_syncify_awaitable_types_accept(selenium):
 
     from js import sleep as js_sleep
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     async def test():
         await sleep(0.1)
         return 7
 
-    assert block_for_awaitable(test()) == 7
-    assert block_for_awaitable(create_task(test())) == 7
-    block_for_awaitable(sleep(0.1))
-    block_for_awaitable(js_sleep(100))
-    res = block_for_awaitable(gather(test(), sleep(0.1), js_sleep(100), js_sleep(100)))
+    assert run_sync(test()) == 7
+    assert run_sync(create_task(test())) == 7
+    run_sync(sleep(0.1))
+    run_sync(js_sleep(100))
+    res = run_sync(gather(test(), sleep(0.1), js_sleep(100), js_sleep(100)))
     assert list(res) == [7, None, None, None]
     p = run_js("[sleep(100)]")[0]
-    block_for_awaitable(p)
+    run_sync(p)
 
 
 @requires_jspi
@@ -32,16 +32,16 @@ def test_syncify_awaitable_types_accept(selenium):
 def test_syncify_awaitable_type_errors(selenium):
     import pytest
 
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     with pytest.raises(TypeError):
-        block_for_awaitable(1)  # type:ignore[arg-type]
+        run_sync(1)  # type:ignore[arg-type]
     with pytest.raises(TypeError):
-        block_for_awaitable(None)  # type:ignore[arg-type]
+        run_sync(None)  # type:ignore[arg-type]
     with pytest.raises(TypeError):
-        block_for_awaitable([1, 2, 3])  # type:ignore[arg-type]
+        run_sync([1, 2, 3])  # type:ignore[arg-type]
     with pytest.raises(TypeError):
-        block_for_awaitable(iter([1, 2, 3]))  # type:ignore[arg-type]
+        run_sync(iter([1, 2, 3]))  # type:ignore[arg-type]
 
     def f():
         yield 1
@@ -49,7 +49,7 @@ def test_syncify_awaitable_type_errors(selenium):
         yield 3
 
     with pytest.raises(TypeError):
-        block_for_awaitable(f())
+        run_sync(f())
 
 
 @pytest.mark.skip(reason="FIXME!")
@@ -101,8 +101,8 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         );
         await assertThrows(
           () => pyodide.runPython(`
-            from pyodide.ffi import block_for_awaitable
-            block_for_awaitable(1)
+            from pyodide.ffi import run_sync
+            run_sync(1)
           `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
@@ -129,8 +129,8 @@ def test_syncify_not_supported2(selenium_standalone_noload):
         );
         await assertThrows(
           () => pyodide.runPython(`
-            from pyodide.ffi import block_for_awaitable
-            block_for_awaitable(1)
+            from pyodide.ffi import run_sync
+            run_sync(1)
           `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
@@ -143,7 +143,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
 @run_in_pyodide
 def test_syncify1(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -153,7 +153,7 @@ def test_syncify1(selenium):
         })
         """
     )
-    assert block_for_awaitable(test()) == 7
+    assert run_sync(test()) == 7
 
 
 @requires_jspi
@@ -163,13 +163,13 @@ def test_syncify2(selenium):
 
     import pytest
 
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
     from pyodide_js import loadPackage
 
     with pytest.raises(ModuleNotFoundError):
         importlib.metadata.version("micropip")
 
-    block_for_awaitable(loadPackage("micropip"))
+    run_sync(loadPackage("micropip"))
 
     assert importlib.metadata.version("micropip")
 
@@ -180,7 +180,7 @@ def test_syncify_error(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsException, block_for_awaitable
+    from pyodide.ffi import JsException, run_sync
 
     asyncThrow = run_js(
         """
@@ -191,14 +191,14 @@ def test_syncify_error(selenium):
     )
 
     with pytest.raises(JsException, match="hi"):
-        block_for_awaitable(asyncThrow())
+        run_sync(asyncThrow())
 
 
 @requires_jspi
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     asyncNull = run_js(
         """
@@ -208,7 +208,7 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert block_for_awaitable(asyncNull()) is None
+    assert run_sync(asyncNull()) is None
 
 
 @requires_jspi
@@ -218,7 +218,7 @@ def test_syncify_no_suspender(selenium):
         await pyodide.loadPackage("pytest");
         pyodide.runPython(`
             from pyodide.code import run_js
-            from pyodide.ffi import block_for_awaitable
+            from pyodide.ffi import run_sync
             import pytest
 
             test = run_js(
@@ -230,7 +230,7 @@ def test_syncify_no_suspender(selenium):
                 '''
             )
             with pytest.raises(RuntimeError, match="No suspender"):
-                block_for_awaitable(test())
+                run_sync(test())
             del test
         `);
         """
@@ -242,7 +242,7 @@ def test_syncify_no_suspender(selenium):
 @run_in_pyodide(packages=["fpcast-test"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -255,7 +255,7 @@ def test_syncify_getset(selenium):
     x = []
 
     def wrapper():
-        x.append(block_for_awaitable(test()))
+        x.append(run_sync(test()))
 
     import fpcast_test
 
@@ -272,7 +272,7 @@ def test_syncify_getset(selenium):
 @run_in_pyodide
 def test_syncify_ctypes(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -284,7 +284,7 @@ def test_syncify_ctypes(selenium):
     )
 
     def wrapper():
-        return block_for_awaitable(test())
+        return run_sync(test())
 
     from ctypes import py_object, pythonapi
 
@@ -300,7 +300,7 @@ def test_cpp_exceptions_and_syncify(selenium):
         selenium.run_js(
             """
             ptr = pyodide.runPython(`
-                from pyodide.ffi import block_for_awaitable
+                from pyodide.ffi import run_sync
                 from pyodide.code import run_js
                 temp = run_js(
                     '''
@@ -313,7 +313,7 @@ def test_cpp_exceptions_and_syncify(selenium):
 
                 def f():
                     try:
-                        return block_for_awaitable(temp())
+                        return run_sync(temp())
                     except Exception as e:
                         print(e)
                         return -1
@@ -343,12 +343,12 @@ def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
         pyodide.runPython(`
-            from pyodide.ffi import block_for_awaitable
+            from pyodide.ffi import run_sync
             l = []
             def f(n, t):
                 from js import sleep
                 for i in range(5):
-                    block_for_awaitable(sleep(t))
+                    run_sync(sleep(t))
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
@@ -379,7 +379,7 @@ def test_sync_async_mix(selenium):
     res = selenium.run_js(
         """
         pyodide.runPython(`
-            from pyodide.ffi import block_for_awaitable
+            from pyodide.ffi import run_sync
             from js import sleep
 
             l = [];
@@ -388,7 +388,7 @@ def test_sync_async_mix(selenium):
                 l.append(["a", t])
 
             def b(t):
-                block_for_awaitable(sleep(t))
+                run_sync(sleep(t))
                 l.append(["b", t])
         `);
         const a = pyodide.globals.get("a");
@@ -441,19 +441,19 @@ def test_nested_syncify(selenium):
         pyodide.globals.set("getStuff", getStuff);
 
         pyodide.runPython(`
-            from pyodide.ffi import block_for_awaitable
+            from pyodide.ffi import run_sync
             from js import sleep
             def g():
-                block_for_awaitable(sleep(25))
-                return block_for_awaitable(f1())
+                run_sync(sleep(25))
+                return run_sync(f1())
 
             def g1():
-                block_for_awaitable(sleep(25))
-                return block_for_awaitable(f2())
+                run_sync(sleep(25))
+                return run_sync(f2())
 
             def g2():
-                block_for_awaitable(sleep(25))
-                return block_for_awaitable(getStuff())
+                run_sync(sleep(25))
+                return run_sync(getStuff())
         `);
         const l = pyodide.runPython("l = []; l")
         const g = pyodide.globals.get("g");
@@ -464,7 +464,7 @@ def test_nested_syncify(selenium):
         p.push(pyodide.runPythonAsync(`
             from js import sleep
             for i in range(20):
-                block_for_awaitable(sleep(9))
+                run_sync(sleep(9))
                 l.append(i)
         `));
         await Promise.all(p);
@@ -486,7 +486,7 @@ async def test_promise_methods(selenium):
     from asyncio import sleep
 
     from pyodide.code import run_js
-    from pyodide.ffi import block_for_awaitable
+    from pyodide.ffi import run_sync
 
     async_pass = run_js(
         """
@@ -506,7 +506,7 @@ async def test_promise_methods(selenium):
 
     def f(*args):
         print("will sleep")
-        block_for_awaitable(sleep(0.1))
+        run_sync(sleep(0.1))
         print("have slept")
 
     await async_pass().then(f, f)

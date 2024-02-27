@@ -4508,7 +4508,7 @@ finally:
 }
 
 PyObject*
-block_for_awaitable_not_supported(PyObject* mod, PyObject* Py_UNUSED(arg))
+run_sync_not_supported(PyObject* mod, PyObject* Py_UNUSED(arg))
 {
   PyErr_SetString(
     PyExc_RuntimeError,
@@ -4517,7 +4517,7 @@ block_for_awaitable_not_supported(PyObject* mod, PyObject* Py_UNUSED(arg))
 }
 
 PyObject*
-block_for_awaitable(PyObject* self, PyObject* pyarg)
+run_sync(PyObject* self, PyObject* pyarg)
 {
   if (!py_is_awaitable(pyarg)) {
     PyErr_Format(PyExc_TypeError,
@@ -4550,15 +4550,15 @@ finally:
 
 PyMethodDef methods[] = {
   {
-    "block_for_awaitable",
-    // We select the appropriate choice between block_for_awaitable and
-    // block_for_awaitable_not_supported in jsproxy_init.
+    "run_sync",
+    // We select the appropriate choice between run_sync and
+    // run_sync_not_supported in jsproxy_init.
     (PyCFunction)NULL,
     METH_O,
   },
   { NULL } /* Sentinel */
 };
-static PyMethodDef* block_for_awaitable_MethodDef = &methods[0];
+static PyMethodDef* run_sync_MethodDef = &methods[0];
 
 int
 jsproxy_init(PyObject* core_module)
@@ -4576,10 +4576,10 @@ jsproxy_init(PyObject* core_module)
 
   bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
   if (jspiSupported) {
-    block_for_awaitable_MethodDef->ml_meth = (PyCFunction)block_for_awaitable;
+    run_sync_MethodDef->ml_meth = (PyCFunction)run_sync;
   } else {
-    block_for_awaitable_MethodDef->ml_meth =
-      (PyCFunction)block_for_awaitable_not_supported;
+    run_sync_MethodDef->ml_meth =
+      (PyCFunction)run_sync_not_supported;
   }
 
   FAIL_IF_MINUS_ONE(

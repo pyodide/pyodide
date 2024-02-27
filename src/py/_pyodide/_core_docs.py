@@ -1495,7 +1495,7 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     pass
 
 
-def block_for_awaitable(x: Awaitable[T]) -> T:
+def run_sync(x: Awaitable[T]) -> T:
     """Hi!"""
     raise NotImplementedError
 
@@ -1524,7 +1524,7 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
-    "block_for_awaitable",
+    "run_sync",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
