@@ -5,10 +5,11 @@ import { CanvasInterface, canvas } from "./canvas";
 
 import { PackageData, loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
-import { loadBinaryFile } from "./compat";
+import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { TypedArray } from "./types";
+import { IN_NODE } from "./environments";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -49,6 +50,23 @@ API.saveState = () => API.pyodide_py._state.save_state();
 
 /** @private */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
+
+function ensureMountPathExists(path: string): void {
+  Module.FS.mkdirTree(path);
+  const { node } = Module.FS.lookupPath(path, {
+    follow_mount: false,
+  });
+
+  if (FS.isMountpoint(node)) {
+    throw new Error(`path '${path}' is already a file system mount point`);
+  }
+  if (!FS.isDir(node.mode)) {
+    throw new Error(`path '${path}' points to a file not a directory`);
+  }
+  for (const _ in node.contents) {
+    throw new Error(`directory '${path}' is not empty`);
+  }
+}
 
 /**
  * Why is this a class rather than an object?
@@ -482,12 +500,15 @@ export class PyodideAPI {
 
   /**
    * Mounts a :js:class:`FileSystemDirectoryHandle` into the target directory.
+   * Currently it's only possible to acquire a
+   * :js:class:`FileSystemDirectoryHandle` in Chrome.
    *
    * @param path The absolute path in the Emscripten file system to mount the
-   * native directory. If the directory does not exist, it will be created. If it
-   * does exist, it must be empty.
-   * @param fileSystemHandle A handle returned by :js:func:`navigator.storage.getDirectory() <getDirectory>`
-   * or :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
+   * native directory. If the directory does not exist, it will be created. If
+   * it does exist, it must be empty.
+   * @param fileSystemHandle A handle returned by
+   * :js:func:`navigator.storage.getDirectory() <getDirectory>` or
+   * :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
    */
   static async mountNativeFS(
     path: string,
@@ -500,25 +521,11 @@ export class PyodideAPI {
         `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
       );
     }
-
-    Module.FS.mkdirTree(path);
-    const { node } = Module.FS.lookupPath(path, {
-      follow_mount: false,
-    });
-
-    if (FS.isMountpoint(node)) {
-      throw new Error(`path '${path}' is already a file system mount point`);
-    }
-    if (!FS.isDir(node.mode)) {
-      throw new Error(`path '${path}' points to a file not a directory`);
-    }
-    for (const _ in node.contents) {
-      throw new Error(`directory '${path}' is not empty`);
-    }
+    ensureMountPathExists(path);
 
     Module.FS.mount(
       Module.FS.filesystems.NATIVEFS_ASYNC,
-      { fileSystemHandle: fileSystemHandle },
+      { fileSystemHandle },
       path,
     );
 
@@ -530,6 +537,36 @@ export class PyodideAPI {
       syncfs: async () =>
         new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
     };
+  }
+
+  /**
+   * Mounts a host directory into Pyodide file system. Only works in node.
+   *
+   * @param emscriptenPath The absolute path in the Emscripten file system to
+   * mount the native directory. If the directory does not exist, it will be
+   * created. If it does exist, it must be empty.
+   * @param hostPath The host path to mount. It must be a directory that exists.
+   */
+  static mountNodeFS(emscriptenPath: string, hostPath: string): void {
+    if (!IN_NODE) {
+      throw new Error("mountNodeFS only works in Node");
+    }
+    ensureMountPathExists(emscriptenPath);
+    let stat;
+    try {
+      stat = nodeFSMod.lstatSync(hostPath);
+    } catch (e) {
+      throw new Error(`hostPath '${hostPath}' does not exist`);
+    }
+    if (!stat.isDirectory()) {
+      throw new Error(`hostPath '${hostPath}' is not a directory`);
+    }
+
+    Module.FS.mount(
+      Module.FS.filesystems.NODEFS,
+      { root: hostPath },
+      emscriptenPath,
+    );
   }
 
   /**

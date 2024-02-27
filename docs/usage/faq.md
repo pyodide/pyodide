@@ -4,46 +4,7 @@
 
 ## How can I load external files in Pyodide?
 
-If you are using Pyodide in the browser, you should download external files and
-save them to the virtual file system. The recommended way to do this is to zip
-the files and unpack them into the file system with
-{js:func}`pyodide.unpackArchive`:
-
-```pyodide
-let zipResponse = await fetch("myfiles.zip");
-let zipBinary = await zipResponse.arrayBuffer();
-pyodide.unpackArchive(zipBinary, "zip");
-```
-
-You can also download the files from Python using
-{py:func}`~pyodide.http.pyfetch`, which is a convenient wrapper of JavaScript
-{js:func}`fetch`:
-
-```pyodide
-await pyodide.runPythonAsync(`
-  from pyodide.http import pyfetch
-  response = await pyfetch("https://some_url/myfiles.zip")
-  await response.unpack_archive()
-`)
-```
-
-If you are working in Node.js, you can mount a native folder into the file
-system as follows:
-
-```pyodide
-FS.mkdir("/local_directory");
-FS.mount(NODEFS, { root: "some/local/filepath" }, "/local_directory");
-```
-
-Then you can access the mounted folder from Python via the `/local_directory`
-mount.
-
-```{admonition} Why can't I just use urllib or requests?
-:class: warning
-
-We currently can’t use such packages since sockets are not available in Pyodide.
-See {ref}`http-client-limit` for more information.
-```
+See {accessing_files_quickref}`accessing_files_quickref`.
 
 ## Why can't I load files from the local file system?
 
