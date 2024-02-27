@@ -11,7 +11,7 @@ from typing import Any, TypeVar, overload
 from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
-    from pyodide_js import scheduleCallback
+    from pyodide_js._api import scheduleCallback
 
 T = TypeVar("T")
 S = TypeVar("S")
