@@ -11,7 +11,7 @@ If your code is browser-only, you can use the Chrome `NativeFS` for development.
 This will not automatically sync up with your native file system, but it is
 still quite convenient.
 
-## In node
+## In Node.js
 
 It's recommended to use {js:func}`pyodide.mountNodeFS` to mount the host file
 system so that it is accessible from inside of Pyodide. For example if you have
