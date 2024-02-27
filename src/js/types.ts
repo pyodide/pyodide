@@ -3,7 +3,11 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import { type PackageData, type InternalPackageData } from "./load-package";
+import {
+  type PackageData,
+  type InternalPackageData,
+  type PackageLoadMetadata,
+} from "./load-package";
 
 export type TypedArray =
   | Int8Array
@@ -213,6 +217,7 @@ export interface FS {
   stat: (path: string, dontFollow?: boolean) => any;
   readdir: (node: FSNode) => string[];
   isDir: (mode: number) => boolean;
+  isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (path: string) => { node: FSNode };
   isFile: (mode: number) => boolean;
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
@@ -270,9 +275,9 @@ type LockfileInfo = {
   python: string;
 };
 
-type Lockfile = {
+export type Lockfile = {
   info: LockfileInfo;
-  packages: Record<string, PackageData>;
+  packages: Record<string, InternalPackageData>;
 };
 
 export interface API {
@@ -343,7 +348,10 @@ export interface API {
     pkg: InternalPackageData,
     dynlibPaths: string[],
   ) => Promise<void>;
-
+  recursiveDependencies: (
+    names: string[],
+    errorCallback: (err: string) => void,
+  ) => Map<string, PackageLoadMetadata>;
   _Comlink: any;
 
   dsodir: string;

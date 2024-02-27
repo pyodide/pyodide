@@ -2,8 +2,8 @@ import { IN_NODE } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
-const fs: any = IN_NODE ? require("fs") : undefined;
-const tty: any = IN_NODE ? require("tty") : undefined;
+const fs: any = IN_NODE ? require("node:fs") : undefined;
+const tty: any = IN_NODE ? require("node:tty") : undefined;
 
 function nodeFsync(fd: number): void {
   try {

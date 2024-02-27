@@ -1,0 +1,13 @@
+package:
+  name: executing
+  version: 2.0.1
+  top-level:
+    - executing
+source:
+  url: https://files.pythonhosted.org/packages/80/03/6ea8b1b2a5ab40a7a60dc464d3daa7aa546e0a74d74a9f8ff551ea7905db/executing-2.0.1-py2.py3-none-any.whl
+  sha256: eac49ca94516ccc753f9fb5ce82603156e590b27525a8bc32cce8ae302eb61bc
+about:
+  home: https://github.com/alexmojaki/executing
+  PyPI: https://pypi.org/project/executing
+  summary: Get the currently executing AST node of a frame, and other information
+  license: MIT

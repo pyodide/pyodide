@@ -28,6 +28,7 @@
  * possible by subclassing PyType with a different tp_dealloc method).
  */
 
+#include <stdbool.h>
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
@@ -2940,41 +2941,6 @@ finally:
   return -1;
 }
 
-PyObject*
-JsProxy_syncify_not_supported(JsProxy* self, PyObject* Py_UNUSED(ignored))
-{
-  PyErr_SetString(
-    PyExc_RuntimeError,
-    "WebAssembly stack switching not supported in this JavaScript runtime");
-  return NULL;
-}
-
-PyObject*
-JsProxy_syncify(JsProxy* self, PyObject* Py_UNUSED(ignored))
-{
-  PyObject* result = NULL;
-
-  JsVal jsresult = JsvPromise_Syncify(JsProxy_VAL(self));
-  if (JsvNull_Check(jsresult)) {
-    if (!PyErr_Occurred()) {
-      PyErr_SetString(PyExc_RuntimeError, "No suspender");
-    }
-    FAIL();
-  }
-  result = js2python(jsresult);
-
-finally:
-  return result;
-}
-
-static PyMethodDef JsProxy_syncify_MethodDef = {
-  "syncify",
-  // We select the appropriate choice between JsProxy_syncify and
-  // JsProxy_syncify_not_supported in JsProxy_init.
-  (PyCFunction)NULL,
-  METH_NOARGS,
-};
-
 // clang-format off
 static PyNumberMethods JsProxy_NumberMethods = {
   .nb_bool = JsProxy_Bool
@@ -3986,7 +3952,6 @@ skip_container_slots:
     methods[cur_method++] = JsProxy_then_MethodDef;
     methods[cur_method++] = JsProxy_catch_MethodDef;
     methods[cur_method++] = JsProxy_finally_MethodDef;
-    methods[cur_method++] = JsProxy_syncify_MethodDef;
   }
   if (flags & IS_CALLABLE) {
     tp_flags |= Py_TPFLAGS_HAVE_VECTORCALL;
@@ -4433,11 +4398,10 @@ JsProxy_Val(PyObject* x)
 }
 
 int
-JsProxy_init_docstrings()
+JsProxy_init_docstrings(PyObject* _pyodide_core_docs)
 {
   bool success = false;
 
-  PyObject* _pyodide_core_docs = NULL;
   PyObject* _it = NULL;
   PyObject* JsProxy = NULL;
   PyObject* JsPromise = NULL;
@@ -4447,11 +4411,6 @@ JsProxy_init_docstrings()
   PyObject* JsDoubleProxy = NULL;
   PyObject* JsGenerator = NULL;
 
-  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
-  FAIL_IF_NULL(_pyodide_core_docs);
-  JsProxy_metaclass =
-    PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
-  FAIL_IF_NULL(JsProxy_metaclass);
   _it = PyObject_GetAttrString(_pyodide_core_docs, "_instantiate_token");
   FAIL_IF_NULL(_it);
 
@@ -4521,6 +4480,7 @@ JsProxy_init_docstrings()
 
   success = true;
 finally:
+  Py_CLEAR(_it);
   Py_CLEAR(JsProxy);
   Py_CLEAR(JsPromise);
   Py_CLEAR(JsBuffer);
@@ -4547,21 +4507,82 @@ finally:
   return success ? 0 : -1;
 }
 
+PyObject*
+run_sync_not_supported(PyObject* mod, PyObject* Py_UNUSED(arg))
+{
+  PyErr_SetString(
+    PyExc_RuntimeError,
+    "WebAssembly stack switching not supported in this JavaScript runtime");
+  return NULL;
+}
+
+PyObject*
+run_sync(PyObject* self, PyObject* pyarg)
+{
+  if (!py_is_awaitable(pyarg)) {
+    PyErr_Format(PyExc_TypeError,
+                 "object %.100s is not awaitable",
+                 Py_TYPE(pyarg)->tp_name);
+    return NULL;
+  }
+  PyObject* pyresult = NULL;
+
+  JsVal jsarg = python2js(pyarg);
+  FAIL_IF_JS_NULL(jsarg);
+  JsVal jsresult = JsvPromise_Syncify(jsarg);
+  if (JsvNull_Check(jsresult)) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+    }
+    FAIL();
+  }
+  pyresult = js2python(jsresult);
+
+finally:
+  if (pyproxy_Check(jsarg)) {
+    destroy_proxy(jsarg, NULL);
+  }
+  if (pyproxy_Check(jsresult)) {
+    destroy_proxy(jsresult, NULL);
+  }
+  return pyresult;
+}
+
+PyMethodDef methods[] = {
+  {
+    "run_sync",
+    // We select the appropriate choice between run_sync and
+    // run_sync_not_supported in jsproxy_init.
+    (PyCFunction)NULL,
+    METH_O,
+  },
+  { NULL } /* Sentinel */
+};
+static PyMethodDef* run_sync_MethodDef = &methods[0];
+
 int
-JsProxy_init(PyObject* core_module)
+jsproxy_init(PyObject* core_module)
 {
   bool success = false;
+  PyObject* _pyodide_core_docs = NULL;
+  PyObject* asyncio_module = NULL;
+  PyObject* flag_dict = NULL;
+
+  _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
+  FAIL_IF_NULL(_pyodide_core_docs);
+  JsProxy_metaclass =
+    PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
+  FAIL_IF_NULL(JsProxy_metaclass);
 
   bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
   if (jspiSupported) {
-    JsProxy_syncify_MethodDef.ml_meth = (PyCFunction)JsProxy_syncify;
+    run_sync_MethodDef->ml_meth = (PyCFunction)run_sync;
   } else {
-    JsProxy_syncify_MethodDef.ml_meth =
-      (PyCFunction)JsProxy_syncify_not_supported;
+    run_sync_MethodDef->ml_meth = (PyCFunction)run_sync_not_supported;
   }
 
-  PyObject* asyncio_module = NULL;
-  PyObject* flag_dict = NULL;
+  FAIL_IF_MINUS_ONE(
+    add_methods_and_set_docstrings(core_module, methods, _pyodide_core_docs));
 
   collections_abc = PyImport_ImportModule("collections.abc");
   FAIL_IF_NULL(collections_abc);
@@ -4574,7 +4595,7 @@ JsProxy_init(PyObject* core_module)
   Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
   FAIL_IF_NULL(Mapping);
 
-  FAIL_IF_MINUS_ONE(JsProxy_init_docstrings());
+  FAIL_IF_MINUS_ONE(JsProxy_init_docstrings(_pyodide_core_docs));
 
   flag_dict = PyDict_New();
   FAIL_IF_NULL(flag_dict);
@@ -4627,6 +4648,7 @@ JsProxy_init(PyObject* core_module)
 
   success = true;
 finally:
+  Py_CLEAR(_pyodide_core_docs);
   Py_CLEAR(asyncio_module);
   Py_CLEAR(flag_dict);
   return success ? 0 : -1;

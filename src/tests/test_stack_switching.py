@@ -1,18 +1,89 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import requires_jspi
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+
+@requires_jspi
 @run_in_pyodide
-def test_syncify_create_task(selenium):
-    import asyncio
+def test_syncify_awaitable_types_accept(selenium):
+    from asyncio import create_task, gather, sleep
+
+    from js import sleep as js_sleep
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     async def test():
-        await asyncio.sleep(0.1)
+        await sleep(0.1)
         return 7
 
-    task = asyncio.create_task(test())
-    assert task.syncify() == 7  # type:ignore[attr-defined]
+    assert run_sync(test()) == 7
+    assert run_sync(create_task(test())) == 7
+    run_sync(sleep(0.1))
+    run_sync(js_sleep(100))
+    res = run_sync(gather(test(), sleep(0.1), js_sleep(100), js_sleep(100)))
+    assert list(res) == [7, None, None, None]
+    p = run_js("[sleep(100)]")[0]
+    run_sync(p)
+
+
+@requires_jspi
+@run_in_pyodide
+def test_syncify_awaitable_type_errors(selenium):
+    import pytest
+
+    from pyodide.ffi import run_sync
+
+    with pytest.raises(TypeError):
+        run_sync(1)  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync(None)  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync([1, 2, 3])  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync(iter([1, 2, 3]))  # type:ignore[arg-type]
+
+    def f():
+        yield 1
+        yield 2
+        yield 3
+
+    with pytest.raises(TypeError):
+        run_sync(f())
+
+
+@pytest.mark.skip(reason="FIXME!")
+def test_throw_from_switcher(selenium):
+    """
+    Currently failing:
+
+    Uncaught PythonError: Traceback (most recent call last):
+      File "<exec>", line 9, in b
+    Exception: hi
+
+    The above exception was the direct cause of the following exception:
+
+    SystemError: <function a at 0x9aaea0> returned a result with an exception set
+    """
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            async def a():
+                pass
+
+            def b():
+                raise Exception("hi")
+        `);
+
+        const a = pyodide.globals.get("a");
+        const b = pyodide.globals.get("b");
+
+        await Promise.all([
+            b.callSyncifying(),
+            a(),
+        ]);
+        """
+    )
 
 
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
@@ -24,12 +95,15 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         delete WebAssembly.Suspender;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide.runPythonSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
         await assertThrows(
-          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          () => pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            run_sync(1)
+          `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -49,12 +123,15 @@ def test_syncify_not_supported2(selenium_standalone_noload):
         WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide.runPythonSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
         await assertThrows(
-          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          () => pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            run_sync(1)
+          `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -62,10 +139,11 @@ def test_syncify_not_supported2(selenium_standalone_noload):
     )
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide
 def test_syncify1(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -75,33 +153,34 @@ def test_syncify1(selenium):
         })
         """
     )
-    assert test().syncify() == 7
+    assert run_sync(test()) == 7
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide(packages=["pytest"])
 def test_syncify2(selenium):
     import importlib.metadata
 
     import pytest
 
+    from pyodide.ffi import run_sync
     from pyodide_js import loadPackage
 
     with pytest.raises(ModuleNotFoundError):
         importlib.metadata.version("micropip")
 
-    loadPackage("micropip").syncify()
+    run_sync(loadPackage("micropip"))
 
     assert importlib.metadata.version("micropip")
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide(packages=["pytest"])
 def test_syncify_error(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsException
+    from pyodide.ffi import JsException, run_sync
 
     asyncThrow = run_js(
         """
@@ -112,13 +191,14 @@ def test_syncify_error(selenium):
     )
 
     with pytest.raises(JsException, match="hi"):
-        asyncThrow().syncify()
+        run_sync(asyncThrow())
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     asyncNull = run_js(
         """
@@ -128,16 +208,17 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert asyncNull().syncify() is None
+    assert run_sync(asyncNull()) is None
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 def test_syncify_no_suspender(selenium):
     selenium.run_js(
         """
         await pyodide.loadPackage("pytest");
-        await pyodide.runPython(`
+        pyodide.runPython(`
             from pyodide.code import run_js
+            from pyodide.ffi import run_sync
             import pytest
 
             test = run_js(
@@ -149,7 +230,7 @@ def test_syncify_no_suspender(selenium):
                 '''
             )
             with pytest.raises(RuntimeError, match="No suspender"):
-                test().syncify()
+                run_sync(test())
             del test
         `);
         """
@@ -157,10 +238,11 @@ def test_syncify_no_suspender(selenium):
 
 
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide(packages=["fpcast-test"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -173,7 +255,7 @@ def test_syncify_getset(selenium):
     x = []
 
     def wrapper():
-        x.append(test().syncify())
+        x.append(run_sync(test()))
 
     import fpcast_test
 
@@ -184,41 +266,41 @@ def test_syncify_getset(selenium):
     assert x == [7, 7]
 
 
+@requires_jspi
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.xfail(reason="Will fix in a followup")
-def test_syncify_ctypes():
-    selenium.run_js(  # type: ignore[name-defined] # noqa: F821
+@pytest.mark.skip(reason="Will fix in a followup")
+@run_in_pyodide
+def test_syncify_ctypes(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
+
+    test = run_js(
         """
-        await pyodide.runPythonSyncifying(`
-            from pyodide.code import run_js
-
-            test = run_js(
-                '''
-                (async function test() {
-                    await sleep(1000);
-                    return 7;
-                })
-                '''
-            )
-
-            def wrapper():
-                return test().syncify()
-            from ctypes import pythonapi, py_object
-            pythonapi.PyObject_CallNoArgs.argtypes = [py_object]
-            pythonapi.PyObject_CallNoArgs.restype = py_object
-            assert pythonapi.PyObject_CallNoArgs(wrapper) == 7
-        `);
+        (async function test() {
+            await sleep(1000);
+            return 7;
+        })
         """
     )
 
+    def wrapper():
+        return run_sync(test())
 
+    from ctypes import py_object, pythonapi
+
+    pythonapi.PyObject_CallNoArgs.argtypes = [py_object]
+    pythonapi.PyObject_CallNoArgs.restype = py_object
+    assert pythonapi.PyObject_CallNoArgs(wrapper) == 7
+
+
+@requires_jspi
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
 def test_cpp_exceptions_and_syncify(selenium):
     assert (
         selenium.run_js(
             """
             ptr = pyodide.runPython(`
+                from pyodide.ffi import run_sync
                 from pyodide.code import run_js
                 temp = run_js(
                     '''
@@ -231,7 +313,7 @@ def test_cpp_exceptions_and_syncify(selenium):
 
                 def f():
                     try:
-                        return temp().syncify()
+                        return run_sync(temp())
                     except Exception as e:
                         print(e)
                         return -1
@@ -256,16 +338,17 @@ def test_cpp_exceptions_and_syncify(selenium):
     )
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
         pyodide.runPython(`
+            from pyodide.ffi import run_sync
             l = []
             def f(n, t):
                 from js import sleep
                 for i in range(5):
-                    sleep(t).syncify()
+                    run_sync(sleep(t))
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
@@ -291,20 +374,21 @@ def test_two_way_transfer(selenium):
     ]
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 def test_sync_async_mix(selenium):
     res = selenium.run_js(
         """
-        pyodide.runPython(
-        `
+        pyodide.runPython(`
+            from pyodide.ffi import run_sync
             from js import sleep
+
             l = [];
             async def a(t):
                 await sleep(t)
                 l.append(["a", t])
 
             def b(t):
-                sleep(t).syncify()
+                run_sync(sleep(t))
                 l.append(["b", t])
         `);
         const a = pyodide.globals.get("a");
@@ -336,7 +420,7 @@ def test_sync_async_mix(selenium):
     ]
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 def test_nested_syncify(selenium):
     res = selenium.run_js(
         """
@@ -357,18 +441,19 @@ def test_nested_syncify(selenium):
         pyodide.globals.set("getStuff", getStuff);
 
         pyodide.runPython(`
+            from pyodide.ffi import run_sync
             from js import sleep
             def g():
-                sleep(25).syncify()
-                return f1().syncify()
+                run_sync(sleep(25))
+                return run_sync(f1())
 
             def g1():
-                sleep(25).syncify()
-                return f2().syncify()
+                run_sync(sleep(25))
+                return run_sync(f2())
 
             def g2():
-                sleep(25).syncify()
-                return getStuff().syncify()
+                run_sync(sleep(25))
+                return run_sync(getStuff())
         `);
         const l = pyodide.runPython("l = []; l")
         const g = pyodide.globals.get("g");
@@ -376,10 +461,10 @@ def test_nested_syncify(selenium):
         const g2 = pyodide.globals.get("g2");
         const p = [];
         p.push(g.callSyncifying().then((res) => l.append(res)));
-        p.push(pyodide.runPythonSyncifying(`
+        p.push(pyodide.runPythonAsync(`
             from js import sleep
             for i in range(20):
-                sleep(9).syncify()
+                run_sync(sleep(9))
                 l.append(i)
         `));
         await Promise.all(p);
@@ -395,12 +480,13 @@ def test_nested_syncify(selenium):
     assert res == list(range(20))
 
 
-@pytest.mark.xfail_browsers(safari="No JSPI on Safari", firefox="No JSPI on firefox")
+@requires_jspi
 @run_in_pyodide
 async def test_promise_methods(selenium):
-    from asyncio import ensure_future, sleep
+    from asyncio import sleep
 
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     async_pass = run_js(
         """
@@ -420,7 +506,7 @@ async def test_promise_methods(selenium):
 
     def f(*args):
         print("will sleep")
-        ensure_future(sleep(0.1)).syncify()  # type:ignore[attr-defined]
+        run_sync(sleep(0.1))
         print("have slept")
 
     await async_pass().then(f, f)
