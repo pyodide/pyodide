@@ -4578,8 +4578,7 @@ jsproxy_init(PyObject* core_module)
   if (jspiSupported) {
     run_sync_MethodDef->ml_meth = (PyCFunction)run_sync;
   } else {
-    run_sync_MethodDef->ml_meth =
-      (PyCFunction)run_sync_not_supported;
+    run_sync_MethodDef->ml_meth = (PyCFunction)run_sync_not_supported;
   }
 
   FAIL_IF_MINUS_ONE(
