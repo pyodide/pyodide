@@ -2557,3 +2557,20 @@ def test_js_proxy_attribute(selenium):
     assert x.c is None
     with pytest.raises(AttributeError):
         x.d  # noqa: B018
+
+
+@run_in_pyodide
+async def test_js_proxy_str(selenium):
+    from js import Array
+    from pyodide.ffi import JsException
+    from pyodide.code import run_js
+    import pytest
+
+    assert str(Array) == "function Array() { [native code] }"
+    assert str(run_js("[1,2,3]")) == "1,2,3"
+    assert str(run_js("Object.create(null)")) == "[object Object]"
+    mod = await run_js("import('data:text/javascript,')")
+    assert str(mod) == "[object Module]"
+    px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
+    with pytest.raises(JsException):
+        str(px)
