@@ -1,0 +1,45 @@
+From e569ba10e14b8cf058e1ce191c90bc6ecc44b893 Mon Sep 17 00:00:00 2001
+From: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
+Date: Fri, 26 Jan 2024 11:52:17 -0800
+Subject: [PATCH] Do not redefine fmpz_poly_randtest_irreducible for FLINT 3
+
+---
+ libeantic/e-antic/fmpz_poly_extra.h                  | 2 ++
+ libeantic/src/fmpz_poly_extra/randtest_irreducible.c | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/libeantic/e-antic/fmpz_poly_extra.h b/libeantic/e-antic/fmpz_poly_extra.h
+index 5df47af..c0ecb3c 100644
+--- a/libeantic/e-antic/fmpz_poly_extra.h
++++ b/libeantic/e-antic/fmpz_poly_extra.h
+@@ -36,8 +36,10 @@ extern "C" {
+ /// [`a`, `b`] becomes the interval [0,1]
+ LIBEANTIC_API void _fmpz_poly_scale_0_1_fmpq(fmpz * pol, slong len, fmpq_t a, fmpq_t b);
+ 
++#if __FLINT_RELEASE < 30000
+ /// Set `p` to be a random irreducible polynomial
+ LIBEANTIC_API void fmpz_poly_randtest_irreducible(fmpz_poly_t p, flint_rand_t state, slong len, mp_bitcnt_t bits);
++#endif
+ 
+ /// Set the polynomial `p` from the string `s` using `var` as variable name
+ LIBEANTIC_API int fmpz_poly_set_str_pretty(fmpz_poly_t p, const char * s, const char * var);
+diff --git a/libeantic/src/fmpz_poly_extra/randtest_irreducible.c b/libeantic/src/fmpz_poly_extra/randtest_irreducible.c
+index e1657b8..bc37d6c 100644
+--- a/libeantic/src/fmpz_poly_extra/randtest_irreducible.c
++++ b/libeantic/src/fmpz_poly_extra/randtest_irreducible.c
+@@ -14,6 +14,7 @@
+ 
+ #include "../e-antic/fmpz_poly_extra.h"
+ 
++#if __FLINT_RELEASE < 30000
+ void fmpz_poly_randtest_irreducible(fmpz_poly_t p, flint_rand_t state, slong len, mp_bitcnt_t bits)
+ {
+     slong i;
+@@ -58,3 +59,4 @@ void fmpz_poly_randtest_irreducible(fmpz_poly_t p, flint_rand_t state, slong len
+ #endif
+     fmpz_clear(c);
+ }
++#endif
+-- 
+2.42.0
+
