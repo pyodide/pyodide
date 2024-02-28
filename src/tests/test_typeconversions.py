@@ -513,7 +513,7 @@ def test_python2js4(selenium):
                 }
                 """
         )({42: 64})
-    ) == ["dict", "Map", 64]
+    ) == ["dict", "LiteralMap", 64]
 
 
 @run_in_pyodide
@@ -1114,13 +1114,13 @@ def test_tojs2(selenium):
 
     from pyodide.code import run_js
 
-    o = [(1, 2), (3, 4), [5, 6], {2: 3, 4: 9}]
+    o = [(1, 2), (3, 4), [5, 6], {"a": 1, 2: 3, 4: 9}]
 
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
-    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {}]
+    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1}]
     serialized = run_js("(o) => JSON.stringify(Array.from(o.toJs()[3].entries()))")(o)
-    assert json.loads(serialized) == [[2, 3], [4, 9]]
+    assert json.loads(serialized) == [["a", 1], [2, 3], [4, 9]]
 
 
 def test_tojs4(selenium):

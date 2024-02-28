@@ -26,7 +26,10 @@ const handler = {
     if (k in map) return getOwnPropertyDescriptor(map, k);
   },
   has: (map, k) => map.has(k) || k in map,
-  ownKeys: (map) => [...map.keys(), ...ownKeys(map)],
+  ownKeys: (map) =>
+    [...map.keys(), ...ownKeys(map)].filter((x) =>
+      ["string", "symbol"].includes(typeof x),
+    ),
   set: (map, k, v) => (map.set(k, v), true),
 };
 
