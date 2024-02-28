@@ -13,6 +13,7 @@ def load_sysconfig(sysconfig_name: str):
 def write_sysconfig(destfile: str, fmted_config_vars: dict[str, str]):
     with open(destfile, "w", encoding="utf8") as f:
         f.write("# system configuration generated and used by the sysconfig module\n")
+        # Set PYODIDE_ROOT
         f.write("import os\n")
         f.write(f'PYODIDE_ROOT = os.environ.get("PYODIDE_ROOT", "{PYODIDE_ROOT}")\n')
         f.write("build_time_vars = ")
@@ -48,10 +49,13 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         LDCXXSHARED="c++",
     )
     for [key, val] in config_vars.items():
-        print(key, val)
         if not isinstance(val, str):
             continue
+        # Make sysconfigdata relocatable.
+        # Replace all instances of "/path/to/pyodide" with "{PYODIDE_ROOT}"
         val = val.replace(f"{PYODIDE_ROOT}", "{PYODIDE_ROOT}")
+        # If we made a replacement, then prefix the string with `--tofstring--`
+        # so we can convert it to an fstring below
         if "PYODIDE_ROOT" in val:
             val = "--tofstring--" + val
         config_vars[key] = val
@@ -59,6 +63,8 @@ def adjust_sysconfig(config_vars: dict[str, str]):
 
 def format_sysconfig(config_vars: dict[str, str]) -> str:
     fmted_config_vars = repr(config_vars)
+    # Make any string that begins with `--tofstring--` into an fstring and
+    # remove the prefix.
     fmted_config_vars = fmted_config_vars.replace("'--tofstring--", "f'")
     fmted_config_vars = fmted_config_vars.replace('"--tofstring--', 'f"')
     return fmted_config_vars
