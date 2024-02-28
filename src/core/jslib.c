@@ -279,7 +279,7 @@ EM_JS_VAL(JsVal, JsvObject_Values, (JsVal obj), {
 
 EM_JS_VAL(JsVal,
 JsvObject_toString, (JsVal obj), {
-  if (typeof obj.toString === "function") {
+  if (hasMethod(obj, "toString")) {
     return obj.toString();
   }
   return Object.prototype.toString.call(obj);

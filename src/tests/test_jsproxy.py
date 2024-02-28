@@ -2561,16 +2561,61 @@ def test_js_proxy_attribute(selenium):
 
 @run_in_pyodide
 async def test_js_proxy_str(selenium):
-    from js import Array
-    from pyodide.ffi import JsException
-    from pyodide.code import run_js
     import pytest
+
+    from js import Array
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
 
     assert str(Array) == "function Array() { [native code] }"
     assert str(run_js("[1,2,3]")) == "1,2,3"
     assert str(run_js("Object.create(null)")) == "[object Object]"
     mod = await run_js("import('data:text/javascript,')")
     assert str(mod) == "[object Module]"
+    # accessing toString fails, should fall back to Object.prototype.toString.call
+    x = run_js(
+        """
+        ({
+          get toString() {
+            throw new Error();
+          },
+          [Symbol.toStringTag] : "SomeTag"
+        })
+        """
+    )
+    assert str(x) == "[object SomeTag]"
+    # accessing toString succeeds but toString call throws, let exception propagate
+    x = run_js(
+        """
+        ({
+          toString() {
+            throw new Error("hi!");
+          },
+        })
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # No toString method, so we fall back to Object.prototype.toString.call
+    # which throws, let error propagate
+    x = run_js(
+        """
+        ({
+          get [Symbol.toStringTag]() {
+            throw new Error("hi!");
+          },
+        });
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # accessing toString fails, so fall back to Object.prototype.toString.call
+    # which also throws, let error propagate
     px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
-    with pytest.raises(JsException):
+    with pytest.raises(
+        JsException,
+        match="Cannot perform 'Object.prototype.toString' on a proxy that has been revoked",
+    ):
         str(px)
