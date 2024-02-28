@@ -1286,13 +1286,10 @@ def test_js_id(selenium):
 
 @run_in_pyodide
 def test_object_with_null_constructor(selenium):
-    from unittest import TestCase
-
     from pyodide.code import run_js
 
     o = run_js("Object.create(null)")
-    with TestCase().assertRaises(TypeError):
-        repr(o)
+    assert repr(o) == "[object Object]"
 
 
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
