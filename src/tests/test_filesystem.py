@@ -6,7 +6,7 @@ for a basic nodejs-based test, see src/js/test/filesystem.test.js
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import only_chrome
+from conftest import only_chrome, only_node
 
 
 @pytest.mark.skip_refcount_check
@@ -309,6 +309,51 @@ def test_nativefs_errors(selenium):
         assert(
           () =>
             r2.reason.message === "path '/mnt4/nativefs' is already a file system mount point",
+        );
+        """
+    )
+
+
+@only_node
+def test_mount_nodefs(selenium):
+    selenium.run_js(
+        """
+        pyodide.mountNodeFS("/mnt1/nodefs", ".");
+        assertThrows(
+          () => pyodide.mountNodeFS("/mnt1/nodefs", "."),
+          "Error",
+          "path '/mnt1/nodefs' is already a file system mount point"
+        );
+
+        assertThrows(
+          () =>
+            pyodide.mountNodeFS(
+              "/mnt2/nodefs",
+              "/thispath/does-not/exist/ihope"
+            ),
+          "Error",
+          "hostPath '/thispath/does-not/exist/ihope' does not exist"
+        );
+
+        const os = require("os");
+        const fs = require("fs");
+        const path = require("path");
+        const crypto = require("crypto");
+        const tmpdir = path.join(os.tmpdir(), crypto.randomUUID());
+        fs.mkdirSync(tmpdir);
+        const apath = path.join(tmpdir, "a");
+        fs.writeFileSync(apath, "xyz");
+        pyodide.mountNodeFS("/mnt3/nodefs", tmpdir);
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt3/nodefs/a", { encoding: "utf8" }) ===
+            "xyz"
+        );
+
+        assertThrows(
+          () => pyodide.mountNodeFS("/mnt4/nodefs", apath),
+          "Error",
+          `hostPath '${apath}' is not a directory`
         );
         """
     )

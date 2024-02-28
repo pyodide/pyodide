@@ -8,14 +8,20 @@ CC=emcc
 CXX=em++
 
 
-all: all-but-packages dist/pyodide-lock.json dist/console.html
+all: \
+	all-but-packages \
+	dist/pyodide-lock.json \
+	dist/console.html \
+	dist/pyodide.d.ts \
 
-all-but-packages: check \
+
+all-but-packages: \
+	check \
 	check-emcc \
 	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
-	dist/pyodide.d.ts \
+	 \
 	dist/package.json \
 	dist/python \
 	dist/python_stdlib.zip \
@@ -23,7 +29,8 @@ all-but-packages: check \
 	dist/module_test.html \
 	dist/webworker.js \
 	dist/webworker_dev.js \
-	dist/module_webworker_dev.js
+	dist/module_webworker_dev.js \
+
 
 src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive

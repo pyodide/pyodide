@@ -71,6 +71,9 @@ create_promise_handles(PyObject* onfulfilled,
 int
 pyproxy_init(PyObject* core);
 
+bool
+py_is_awaitable(PyObject* o);
+
 // These are defined as an enum in Python.h but we want to use them in
 // pyproxy.ts.
 #define PYGEN_NEXT 1

@@ -495,9 +495,9 @@ jobs:
           command: |
             python3 -m pip install -e "./pyodide-build[deploy]"
 
-            wget https://github.com/tcnksm/ghr/releases/download/v0.16.0/ghr_v0.16.0_linux_amd64.tar.gz
-            tar xzf ghr_v0.16.0_linux_amd64.tar.gz
-            mv ghr_v0.16.0_linux_amd64/ghr /tmp/ghr-bin
+            wget https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz
+            tar xzf ghr_v0.16.2_linux_amd64.tar.gz
+            mv ghr_v0.16.2_linux_amd64/ghr /tmp/ghr-bin
 
       - run:
           name: Deploy Github Releases
@@ -511,9 +511,14 @@ jobs:
             tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
+
+            # If it has an 'a' in the tag it's an alpha so mark it as a prelease
+            [[ "${CIRCLE_TAG}" =~ a ]] && export MAYBE_PRE_RELEASE=-prerelease
+
             /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
               -delete "${CIRCLE_TAG}" \
+              ${MAYBE_PRE_RELEASE} \
               dist
 
       - run:
