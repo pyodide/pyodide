@@ -175,6 +175,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_PyErr_Clear \
 			,_PyErr_Occurred \
 			,_PyErr_Print \
+			,_PyErr_SetRaisedException \
 			,_PyErr_SetString \
 			,_PyEval_SaveThread \
 			,_PyEval_RestoreThread \

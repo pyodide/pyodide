@@ -276,7 +276,7 @@ def test_nativefs_errors(selenium):
         await assertThrowsAsync(
           async () => await pyodide.mountNativeFS("/mnt2/some_file", handle),
           "Error",
-          "path '/mnt2/nativefs' points to a file not a directory",
+          "path '/mnt2/some_file' points to a file not a directory",
         );
         // Check we didn't overwrite the file.
         assert(
