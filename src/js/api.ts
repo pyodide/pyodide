@@ -10,6 +10,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { TypedArray } from "./types";
 import { IN_NODE } from "./environments";
+import "./literal-map.js";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
