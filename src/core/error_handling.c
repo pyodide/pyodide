@@ -150,6 +150,10 @@ wrap_exception()
   PyErr_SetRaisedException(Py_NewRef(exc));
   // print standard traceback to standard error, clear the error flag, and set
   // sys.last_exc, sys.last_type, etc
+  //
+  // Calls sys.excepthook. We set the excepthook to call
+  // traceback.print_exception, see `set_excepthook()` in
+  // `_pyodide/__init__.py`.
   PyErr_Print();
   JsVal formatted_exception = restore_stderr();
 

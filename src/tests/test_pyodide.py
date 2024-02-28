@@ -1278,7 +1278,7 @@ def test_restore_error(selenium):
                 assert e == sys.last_value
             finally:
                 del err
-            assert sys.getrefcount(sys.last_exc) == 2
+            assert sys.getrefcount(sys.last_exc) == 3
         `);
         """
     )
