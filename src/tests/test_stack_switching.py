@@ -1,7 +1,7 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import requires_jspi, only_chrome
+from conftest import requires_jspi
 
 
 @requires_jspi
@@ -50,40 +50,6 @@ def test_syncify_awaitable_type_errors(selenium):
 
     with pytest.raises(TypeError):
         run_sync(f())
-
-
-@pytest.mark.skip(reason="FIXME!")
-def test_throw_from_switcher(selenium):
-    """
-    Currently failing:
-
-    Uncaught PythonError: Traceback (most recent call last):
-      File "<exec>", line 9, in b
-    Exception: hi
-
-    The above exception was the direct cause of the following exception:
-
-    SystemError: <function a at 0x9aaea0> returned a result with an exception set
-    """
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            async def a():
-                pass
-
-            def b():
-                raise Exception("hi")
-        `);
-
-        const a = pyodide.globals.get("a");
-        const b = pyodide.globals.get("b");
-
-        await Promise.all([
-            b.callSyncifying(),
-            a(),
-        ]);
-        """
-    )
 
 
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
@@ -512,6 +478,7 @@ async def test_promise_methods(selenium):
     await async_pass().then(f, f)
     await async_raise().then(f, f)
     await async_pass().finally_(f)
+
 
 @requires_jspi
 def test_throw_from_switcher(selenium):
