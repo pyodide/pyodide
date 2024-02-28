@@ -1,7 +1,7 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import requires_jspi
+from conftest import requires_jspi, only_chrome
 
 
 @requires_jspi
@@ -427,7 +427,7 @@ async def test_promise_methods(selenium):
     await async_raise().then(f, f)
     await async_pass().finally_(f)
 
-
+@requires_jspi
 def test_throw_from_switcher(selenium):
     """
     This used to fail because because a()'s error status got stolen by b(). This
@@ -467,7 +467,7 @@ def test_throw_from_switcher(selenium):
         const b = pyodide.globals.get("b");
         const p = a.callSyncifying();
         assert(() => b() === 7);
-        assertThrowsAsync(async () => await p, "PythonError", "Exception hi");
+        await assertThrowsAsync(async () => await p, "PythonError", "Exception: hi");
         a.destroy();
         b.destroy();
         """
