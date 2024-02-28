@@ -17,6 +17,3 @@ export function scheduleCallback(callback: () => void, timeout: number = 0) {
     setTimeout(callback, timeout);
   }
 }
-
-/** @private */
-API.scheduleCallback = scheduleCallback;
