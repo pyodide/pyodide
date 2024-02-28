@@ -531,6 +531,7 @@ def test_run_python_last_exc(selenium):
         } catch(e){}
         pyodide.runPython(`
             import sys
+            assert sys.last_exc is x
             assert sys.last_value is x
             assert sys.last_type is type(x)
             assert sys.last_traceback is x.__traceback__
@@ -1273,10 +1274,11 @@ def test_restore_error(selenium):
                 f()
             except Exception as e:
                 assert err == e
+                assert e == sys.last_exc
                 assert e == sys.last_value
             finally:
                 del err
-            assert sys.getrefcount(sys.last_value) == 2
+            assert sys.getrefcount(sys.last_exc) == 3
         `);
         """
     )
