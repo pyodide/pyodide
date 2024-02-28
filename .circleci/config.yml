@@ -517,8 +517,9 @@ jobs:
 
             /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
               -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
-              -delete "${CIRCLE_TAG}" \
+              -delete \
               ${MAYBE_PRE_RELEASE} \
+              "${CIRCLE_TAG}" \
               dist
 
       - run:
