@@ -479,10 +479,10 @@ Module.callPyObjectKwargs = function (
 ) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
-  let num_pos_args = jsargs.length;
-  let kwargs_names = Object.keys(kwargs);
-  let kwargs_values = Object.values(kwargs);
-  let num_kwargs = kwargs_names.length;
+  const num_pos_args = jsargs.length;
+  const kwargs_names = Object.keys(kwargs);
+  const kwargs_values = Object.values(kwargs);
+  const num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
   let result;
@@ -506,7 +506,7 @@ Module.callPyObjectKwargs = function (
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
-    let is_coroutine = __iscoroutinefunction(ptrobj);
+    const is_coroutine = __iscoroutinefunction(ptrobj);
     Py_EXIT();
     if (is_coroutine) {
       result._ensure_future();
@@ -539,33 +539,45 @@ async function callPyObjectKwargsSuspending(
   }
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
-  let num_pos_args = jsargs.length;
-  let kwargs_names = Object.keys(kwargs);
-  let kwargs_values = Object.values(kwargs);
-  let num_kwargs = kwargs_names.length;
+  const num_pos_args = jsargs.length;
+  const kwargs_names = Object.keys(kwargs);
+  const kwargs_values = Object.values(kwargs);
+  const num_kwargs = kwargs_names.length;
   jsargs.push(...kwargs_values);
 
+  const stackTop = stackSave();
+  const exc = stackAlloc(4);
   let result;
   try {
     Py_ENTER();
+    // promisingApply clears the error flag and saves any error into excStatus.
+    // This ensures that tasks that are run between when promisingApply resolves
+    // and when this task resumes here won't incorrectly observe the error flag.
+    // See test_stack_switching.test_throw_from_switcher for a detailed explanation.
     result = await Module.promisingApply(
       ptrobj,
       jsargs,
       num_pos_args,
       kwargs_names,
       num_kwargs,
+      exc,
     );
     Py_EXIT();
   } catch (e) {
     API.fatal_error(e);
   }
   if (result === null) {
-    _pythonexc2js();
+    _PyErr_SetRaisedException(HEAPU32[exc / 4]);
+    try {
+      _pythonexc2js();
+    } finally {
+      stackRestore(stackTop);
+    }
   }
   // Automatically schedule coroutines
   if (result && result.type === "coroutine" && result._ensure_future) {
     Py_ENTER();
-    let is_coroutine = __iscoroutinefunction(ptrobj);
+    const is_coroutine = __iscoroutinefunction(ptrobj);
     Py_EXIT();
     if (is_coroutine) {
       result._ensure_future();

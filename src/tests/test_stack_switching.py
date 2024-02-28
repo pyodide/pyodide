@@ -52,40 +52,6 @@ def test_syncify_awaitable_type_errors(selenium):
         run_sync(f())
 
 
-@pytest.mark.skip(reason="FIXME!")
-def test_throw_from_switcher(selenium):
-    """
-    Currently failing:
-
-    Uncaught PythonError: Traceback (most recent call last):
-      File "<exec>", line 9, in b
-    Exception: hi
-
-    The above exception was the direct cause of the following exception:
-
-    SystemError: <function a at 0x9aaea0> returned a result with an exception set
-    """
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            async def a():
-                pass
-
-            def b():
-                raise Exception("hi")
-        `);
-
-        const a = pyodide.globals.get("a");
-        const b = pyodide.globals.get("b");
-
-        await Promise.all([
-            b.callSyncifying(),
-            a(),
-        ]);
-        """
-    )
-
-
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
 def test_syncify_not_supported1(selenium_standalone_noload):
     selenium = selenium_standalone_noload
@@ -512,3 +478,50 @@ async def test_promise_methods(selenium):
     await async_pass().then(f, f)
     await async_raise().then(f, f)
     await async_pass().finally_(f)
+
+
+@requires_jspi
+def test_throw_from_switcher(selenium):
+    """
+    This used to fail because because a()'s error status got stolen by b(). This
+    happens because the promising function is a separate task from the js code
+    in callPyObjectSuspending, so the sequence of events goes:
+
+    - enter main task,
+        - enter callPyObjectSuspending(a)
+            - enter promisingApply(a)
+            - sets error flag and returns NULL
+        - queue continue callPyObjectSuspending(a) in event loop
+          now looks like [main task, continue callPyObjectSuspending(a)]
+
+        - enter b()
+            - enter Python
+            - returns 7 with error state still set
+        - rejects with "SystemError: <function b at 0x1140f20> returned a result with an exception set"
+    - queue continue main() in event loop
+    - continue callPyObjectSuspending(a)
+        - pythonexc2js called attempting to read error flag set by promisingApply(a), fails with
+          PythonError: TypeError: Pyodide internal error: no exception type or value
+
+    The solution: at the end of `_pyproxy_apply_promising` we move the error
+    flag into errStatus argument. In callPyObjectSuspending when we're ready we
+    move the error back from the errorStatus variable into the error flag before
+    calling `pythonexc2js()`
+    """
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            def a():
+                raise Exception("hi")
+            def b():
+                return 7;
+        `);
+        const a = pyodide.globals.get("a");
+        const b = pyodide.globals.get("b");
+        const p = a.callSyncifying();
+        assert(() => b() === 7);
+        await assertThrowsAsync(async () => await p, "PythonError", "Exception: hi");
+        a.destroy();
+        b.destroy();
+        """
+    )
