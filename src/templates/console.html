@@ -253,6 +253,39 @@
         if (searchParams.has("noblink")) {
           $(".cmd-cursor").addClass("noblink");
         }
+
+        let idbkvPromise;
+        async function getIDBKV() {
+          if (!idbkvPromise) {
+            idbkvPromise = await import(
+              "https://unpkg.com/idb-keyval@5.0.2/dist/esm/index.js"
+            );
+          }
+          return idbkvPromise;
+        }
+
+        async function mountDirectory(pyodideDirectory, directoryKey) {
+          if (pyodide.FS.analyzePath(pyodideDirectory).exists) {
+            return;
+          }
+          const { get, set } = await getIDBKV();
+          const opts = {
+            id: "mountdirid",
+            mode: "readwrite",
+          };
+          let directoryHandle = await get(directoryKey);
+          if (!directoryHandle) {
+            directoryHandle = await showDirectoryPicker(opts);
+            await set(directoryKey, directoryHandle);
+          }
+          const permissionStatus =
+            await directoryHandle.requestPermission(opts);
+          if (permissionStatus !== "granted") {
+            throw new Error("readwrite access to directory not granted");
+          }
+          await pyodide.mountNativeFS(pyodideDirectory, directoryHandle);
+        }
+        globalThis.mountDirectory = mountDirectory;
       }
       window.console_ready = main();
     </script>
