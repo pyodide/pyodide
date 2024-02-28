@@ -52,10 +52,6 @@ API.saveState = () => API.pyodide_py._state.save_state();
 /** @private */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
-// Used in webloop
-/** @private */
-API.scheduleCallback = scheduleCallback;
-
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);
   const { node } = Module.FS.lookupPath(path, {
