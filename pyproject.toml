@@ -31,7 +31,6 @@ module = [
   "matplotlib.*",
   "PIL.*",
   "pyodide_js",
-  "pyodide_js._api",
   "pytest_pyodide",
   "pytest_pyodide.runner",
   "pytest_pyodide.utils",

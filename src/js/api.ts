@@ -8,7 +8,6 @@ import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
-import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE } from "./environments";
 
@@ -51,10 +50,6 @@ API.saveState = () => API.pyodide_py._state.save_state();
 
 /** @private */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
-
-// Used in webloop
-/** @private */
-API.scheduleCallback = scheduleCallback;
 
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);

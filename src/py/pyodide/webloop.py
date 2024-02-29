@@ -11,7 +11,7 @@ from typing import Any, TypeVar, overload
 from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
-    from pyodide_js._api import scheduleCallback
+    from js import setTimeout
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -343,10 +343,7 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        scheduleCallback(
-            create_once_callable(run_handle, _may_syncify=True), delay * 1000
-        )
-
+        setTimeout(create_once_callable(run_handle, _may_syncify=True), delay * 1000)
         return h
 
     def _decrement_in_progress(self, *args):
