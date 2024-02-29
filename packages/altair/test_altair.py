@@ -14,7 +14,7 @@ def test_altair(selenium):
     )
     c = alt.Chart(data).mark_bar().encode(x="a", y="b").to_dict()
 
-    assert c['mark']['type'] == 'bar'
-    assert c['encoding']['x']['field'] == 'a'
-    assert c['encoding']['y']['type'] == 'quantitative'
-    assert 'name' in c['data']
+    assert c["mark"]["type"] == "bar"
+    assert c["encoding"]["x"]["field"] == "a"
+    assert c["encoding"]["y"]["type"] == "quantitative"
+    assert "name" in c["data"]
