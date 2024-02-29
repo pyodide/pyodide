@@ -15,7 +15,7 @@ from .logger import logger
 
 class CrossBuildEnvManager:
     """
-    Manager for the xbuild environment.
+    Manager for the cross build environment.
     """
     def __init__(self, env_dir: str | Path) -> None:
         self.env_dir = Path(env_dir).resolve()
@@ -27,7 +27,10 @@ class CrossBuildEnvManager:
         return self.env_dir / version
 
     @property
-    def _symlink_path(self):
+    def current_version_dir(self):
+        """
+        Returns the path to the symlink that points to the currently used xbuildenv version.
+        """
         return self.env_dir / "xbuildenv"
 
     def list_versions(self, compatible_only: bool = True) -> list[str]:
@@ -36,12 +39,12 @@ class CrossBuildEnvManager:
         """
         versions = []
         for version_dir in self.env_dir.glob("*"):
-            if not version_dir.is_dir() or str(versions) == str(self._symlink_path):
+            if not version_dir.is_dir() or str(version_dir) == str(self.current_version_dir):
                 continue
 
             versions.append(version_dir.name)
 
-        return versions
+        return sorted(versions)
 
     def use_version(self, version: str) -> None:
         """
@@ -57,12 +60,37 @@ class CrossBuildEnvManager:
         logger.info(f"Using Pyodide xbuild environment verison: {version}")
 
         version_path = self._path_for_version(version)
-        symlink_path = self._symlink_path
+        if not version_path.exists():
+            raise ValueError(f"Cannot find xbuildenv version {version}, available versions: {self.list_versions()}")
+        
+        symlink_path = self.current_version_dir
 
         if symlink_path.exists():
-            shutil.rmtree(symlink_path)
+            if symlink_path.is_symlink():
+                # symlink to a directory, expected case
+                symlink_path.unlink()
+            elif symlink_path.is_dir():
+                # real directory, for backwards compatibility
+                shutil.rmtree(symlink_path)
+            else:
+                # file. This should not happen unless the user manually created a file
+                # but we will remove it anyway
+                symlink_path.unlink()
 
         symlink_path.symlink_to(version_path)
+
+    def delete_version(self, version: str) -> None:
+        version_path = self._path_for_version(version)
+
+        # if the target version is the current version, remove the symlink
+        # to prevent symlinking to a non-existent directory
+        if self.current_version_dir.resolve() == version_path:
+            self.current_version_dir.unlink()
+
+        if version_path.is_dir():
+            shutil.rmtree(version_path)
+        else:
+            raise ValueError(f"Cannot find xbuildenv version {version}, available versions: {self.list_versions()}")
 
     def _download(self, url: str, path: Path) -> None:
         logger.info("Downloading Pyodide xbuild environment")
