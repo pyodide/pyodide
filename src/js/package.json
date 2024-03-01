@@ -81,7 +81,7 @@
   "scripts": {
     "build": "tsc --noEmit && node esbuild.config.mjs",
     "test": "npm-run-all test:*",
-    "test:unit": "cross-env TEST_NODE=1 ts-mocha --node-option=experimental-loader=./test/loader.mjs --node-option=experimental-wasm-stack-switching -p tsconfig.test.json test/unit/**/*.test.*",
+    "test:unit": "cross-env TEST_NODE=1 ts-mocha --exit --node-option=experimental-loader=./test/loader.mjs --node-option=experimental-wasm-stack-switching -p tsconfig.test.json test/unit/**/*.test.*",
     "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
     "test:browser": "mocha test/integration/**/*.test.js",
     "tsc": "tsc --noEmit",

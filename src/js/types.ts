@@ -322,6 +322,7 @@ export interface API {
   runPythonInternal_dict: any;
   saveState: () => any;
   restoreState: (state: any) => void;
+  scheduleCallback: (callback: () => void, timeout: number) => void;
 
   package_loader: any;
   importlib: any;
