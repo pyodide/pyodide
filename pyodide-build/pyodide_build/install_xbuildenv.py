@@ -1,6 +1,7 @@
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen, urlretrieve
@@ -51,6 +52,8 @@ def install_xbuildenv(version: str, xbuildenv_path: Path) -> Path:
     host_site_packages.mkdir(exist_ok=True, parents=True)
     result = subprocess.run(
         [
+            sys.executable,
+            "-m",
             "pip",
             "install",
             "--no-user",

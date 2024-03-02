@@ -5,7 +5,11 @@ import textwrap
 from pathlib import Path
 from typing import Any
 
-from ..build_env import get_build_flag, get_pyodide_root, in_xbuildenv
+from ..build_env import (
+    get_build_flag,
+    get_pyodide_root,
+    in_xbuildenv,
+)
 from ..common import exit_with_stdio
 from ..logger import logger
 
@@ -184,16 +188,12 @@ def create_pyodide_script(venv_bin: Path) -> None:
     PATH = os.environ["PATH"]
     PYODIDE_ROOT = os.environ["PYODIDE_ROOT"]
 
-    original_pyodide_cli = shutil.which("pyodide")
-    if original_pyodide_cli is None:
-        raise RuntimeError("ERROR: pyodide cli not found")
-
     pyodide_path = venv_bin / "pyodide"
     pyodide_path.write_text(
         dedent(
             f"""
             #!/usr/bin/env bash
-            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {original_pyodide_cli} "$@"
+            PATH="{PATH}:$PATH" PYODIDE_ROOT='{PYODIDE_ROOT}' exec {sys.executable} -m pyodide_cli "$@"
             """
         )
     )

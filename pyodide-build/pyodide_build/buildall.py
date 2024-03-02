@@ -142,7 +142,9 @@ class Package(BasePackage):
     def build(self, build_args: BuildArgs, build_dir: Path) -> None:
         p = subprocess.run(
             [
-                "pyodide",
+                sys.executable,
+                "-m",
+                "pyodide_cli",
                 "build-recipes-no-deps",
                 self.name,
                 "--recipe-dir",
