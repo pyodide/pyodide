@@ -23,6 +23,7 @@
   debuggers, and automatic installation of
   any imported packages supported by Pyodide's `micropip`.
 - [PyRepl.io](https://pyrepl.io) uses Pyodide for a Python interpreter in your browser. PyRepl is made for creating and sharing code snippets. Embed interactive Python examples in your documentation, blog posts, presentations and more.
+- [marimo](https://github.com/marimo-team/marimo) is a reactive notebok that is compatible with Pyodide with an [online editor](https://marimo.app/) that runs entirely in the browser. These notebooks can also run as standalone applications or embedded in blogs.
 
 ## Workarounds for common WASM and browser limitations
 
