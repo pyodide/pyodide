@@ -323,6 +323,7 @@ export interface API {
   saveState: () => any;
   restoreState: (state: any) => void;
   scheduleCallback: (callback: () => void, timeout: number) => void;
+  detectEnvironment: () => Record<string, boolean>;
 
   package_loader: any;
   importlib: any;

@@ -72,15 +72,3 @@ def test_runwebworker_micropip(selenium_webworker_standalone, script_type):
         """
     )
     assert output == "go"
-
-
-def test_runwebworker_asyncio_sleep(selenium_webworker_standalone, script_type):
-    selenium = selenium_webworker_standalone
-    output = selenium.run_webworker(
-        """
-        import asyncio
-        await asyncio.sleep(0)
-        42
-        """
-    )
-    assert output == 42

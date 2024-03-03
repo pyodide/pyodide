@@ -1,4 +1,8 @@
-import { IN_BROWSER_MAIN_THREAD, IN_NODE, IN_BROWSER_WEB_WORKER } from './environments';
+import {
+  IN_BROWSER_MAIN_THREAD,
+  IN_NODE,
+  IN_BROWSER_WEB_WORKER,
+} from "./environments";
 // Implementation of zero-delay scheduler for immediate callbacks
 // Notes for future reference:
 // - This is a workaround for the throttling of setTimeout in modern browsers
@@ -12,54 +16,60 @@ import { IN_BROWSER_MAIN_THREAD, IN_NODE, IN_BROWSER_WEB_WORKER } from './enviro
 //   - https://github.com/YuzuJS/setImmediate
 //   - https://github.com/zloirock/core-js/blob/master/packages/core-js/internals/task.js
 
-
-const scheduleCallbackImmediateMessagePrefix = "sched$" + Math.random().toString(36).slice(2) + "$";
+const scheduleCallbackImmediateMessagePrefix =
+  "sched$" + Math.random().toString(36).slice(2) + "$";
 const tasks: Record<number, () => void> = {};
 let nextTaskHandle = 0;
 
 function installPostMessageHandler() {
-    if (!IN_BROWSER_MAIN_THREAD) {
-        return;
-    }
+  if (!IN_BROWSER_MAIN_THREAD) {
+    return;
+  }
 
-    const onGlobalMessage = (event: MessageEvent) => {
-        if (typeof event.data === "string" && event.data.indexOf(scheduleCallbackImmediateMessagePrefix) === 0) {
-            const handle = +event.data.slice(scheduleCallbackImmediateMessagePrefix.length);
-            const task = tasks[handle];
-            if (task) {
-                try {
-                    task();
-                } finally {
-                    delete tasks[handle];
-                };
-            }
+  const onGlobalMessage = (event: MessageEvent) => {
+    if (
+      typeof event.data === "string" &&
+      event.data.indexOf(scheduleCallbackImmediateMessagePrefix) === 0
+    ) {
+      const handle = +event.data.slice(
+        scheduleCallbackImmediateMessagePrefix.length,
+      );
+      const task = tasks[handle];
+      if (task) {
+        try {
+          task();
+        } finally {
+          delete tasks[handle];
         }
+      }
     }
+  };
 
-    globalThis.addEventListener("message", onGlobalMessage, false);
+  globalThis.addEventListener("message", onGlobalMessage, false);
 }
 
 installPostMessageHandler();
 
 function scheduleCallbackImmediate(callback: () => void) {
-    if (IN_NODE) {
-        // node has setImmediate, let's use it
-        setImmediate(callback);
-    } else if (IN_BROWSER_MAIN_THREAD) {
-        // use postMessage
-        tasks[nextTaskHandle] = callback;
-        globalThis.postMessage(scheduleCallbackImmediateMessagePrefix + nextTaskHandle, "*");
-        nextTaskHandle++;
-    } else if (IN_BROWSER_WEB_WORKER) {
-        // use MessageChannel
-        const channel = new MessageChannel();
-        channel.port1.onmessage = () => callback();
-        channel.port2.postMessage(null);
-    } else {
-        // fallback to setTimeout
-        setTimeout(callback, 0);
-    }
-
+  if (IN_NODE) {
+    // node has setImmediate, let's use it
+    setImmediate(callback);
+  } else if (IN_BROWSER_MAIN_THREAD) {
+    tasks[nextTaskHandle] = callback;
+    globalThis.postMessage(
+      scheduleCallbackImmediateMessagePrefix + nextTaskHandle,
+      "*",
+    );
+    nextTaskHandle++;
+  } else if (IN_BROWSER_WEB_WORKER) {
+    // use MessageChannel
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => callback();
+    channel.port2.postMessage("");
+  } else {
+    // fallback to setTimeout
+    setTimeout(callback, 0);
+  }
 }
 
 /**

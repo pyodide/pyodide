@@ -10,7 +10,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
-import { IN_NODE } from "./environments";
+import { IN_NODE, detectEnvironment } from "./environments";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -55,6 +55,9 @@ API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 // Used in webloop
 /** @private */
 API.scheduleCallback = scheduleCallback;
+
+/** @private */
+API.detectEnvironment = detectEnvironment;
 
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);
