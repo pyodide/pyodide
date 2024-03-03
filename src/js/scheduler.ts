@@ -3,24 +3,15 @@ import {
   IN_NODE,
   IN_BROWSER_WEB_WORKER,
 } from "./environments";
-// Implementation of zero-delay scheduler for immediate callbacks
-// Notes for future reference:
-// - This is a workaround for the throttling of setTimeout in modern browsers
-// - Promise.resolve().then() is not a good option. As it uses microtask queue unlike setTimeout which uses macrotask queue
-//   - Ref: https://github.com/YuzuJS/setImmediate/pull/56
-// - MessageChannel works for Chrome, Firefox, and Node.js but it has some issues in Safari (slow and messes up the event loop), and Deno
-//   - Ref: https://github.com/pyodide/pyodide/pull/4583
-//   - Ref: https://github.com/zloirock/core-js/issues/624
-//   - Ref: https://github.com/YuzuJS/setImmediate/issues/80
-// - References for the implementation:
-//   - https://github.com/YuzuJS/setImmediate
-//   - https://github.com/zloirock/core-js/blob/master/packages/core-js/internals/task.js
 
 const scheduleCallbackImmediateMessagePrefix =
   "sched$" + Math.random().toString(36).slice(2) + "$";
 const tasks: Record<number, () => void> = {};
 let nextTaskHandle = 0;
 
+/**
+ * Setup global message event listener to handle immediate callbacks
+ */
 function installPostMessageHandler() {
   if (!IN_BROWSER_MAIN_THREAD) {
     return;
@@ -50,6 +41,21 @@ function installPostMessageHandler() {
 
 installPostMessageHandler();
 
+/**
+ * Implementation of zero-delay scheduler for immediate callbacks
+ * Try our best to use the fastest method available, based on the current environment.
+ * This implementation is based on the following references:
+ *   - https://github.com/YuzuJS/setImmediate
+ *   - https://github.com/zloirock/core-js/blob/master/packages/core-js/internals/task.js
+ * General notes:
+ * - Promise.resolve().then() is not a good option. As it uses microtask queue unlike setTimeout which uses macrotask queue
+ *   - Ref: https://github.com/YuzuJS/setImmediate/pull/56
+ * - MessageChannel is faster (2-3x) than postMessage for Chrome, Firefox, and Node.js
+ *   but it has some issues in Safari (slow and messes up the event loop), and Deno.
+ *   - Ref: https://github.com/pyodide/pyodide/pull/4583
+ *   - Ref: https://github.com/zloirock/core-js/issues/624
+ *   - Ref: https://github.com/YuzuJS/setImmediate/issues/80
+ */
 function scheduleCallbackImmediate(callback: () => void) {
   if (IN_NODE) {
     // node has setImmediate, let's use it
@@ -78,7 +84,8 @@ function scheduleCallbackImmediate(callback: () => void) {
  * @param timeout The delay in milliseconds before the callback is called
  */
 export function scheduleCallback(callback: () => void, timeout: number = 0) {
-  if (timeout < 4) {
+  if (timeout <= 2) {
+    // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
     setTimeout(callback, timeout);
