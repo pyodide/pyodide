@@ -40,6 +40,9 @@ export const IN_BROWSER_WEB_WORKER =
   typeof importScripts !== "undefined" &&
   typeof self !== "undefined";
 
+/** @private */
+export const IN_SAFARI = navigator && navigator.userAgent.indexOf("Chrome") == -1 && navigator.userAgent.indexOf("Safari") > -1
+
 /**
  * Detects the current environment and returns a record with the results.
  * This function is useful for debugging and testing purposes.
@@ -53,5 +56,6 @@ export function detectEnvironment(): Record<string, boolean> {
     IN_BROWSER: IN_BROWSER,
     IN_BROWSER_MAIN_THREAD: IN_BROWSER_MAIN_THREAD,
     IN_BROWSER_WEB_WORKER: IN_BROWSER_WEB_WORKER,
+    IN_SAFARI: IN_SAFARI,
   };
 }

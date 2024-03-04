@@ -2,6 +2,7 @@ import {
   IN_BROWSER_MAIN_THREAD,
   IN_NODE,
   IN_BROWSER_WEB_WORKER,
+  IN_SAFARI,
 } from "./environments";
 
 const scheduleCallbackImmediateMessagePrefix =
@@ -67,7 +68,7 @@ function scheduleCallbackImmediate(callback: () => void) {
       "*",
     );
     nextTaskHandle++;
-  } else if (IN_BROWSER_WEB_WORKER) {
+  } else if (IN_BROWSER_WEB_WORKER && !IN_SAFARI) {
     // use MessageChannel
     const channel = new MessageChannel();
     channel.port1.onmessage = () => callback();
