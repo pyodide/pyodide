@@ -528,6 +528,7 @@ def test_webworker_zero_timeout1(selenium_webworker_standalone, script_type):
     assert output == 42
 
 
+@pytest.mark.xfail_browsers(safari="Safari uses setTimeout as a fallback for 0ms delay")
 def test_webworker_zero_timeout2(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
