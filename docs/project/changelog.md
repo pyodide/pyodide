@@ -55,7 +55,7 @@ myst:
   {pr}`4546`
 
 - {{ Enhancement }} `asyncio.sleep(0)` now runs the next task a lot faster.
-  {pr}`4568`
+  {pr}`4590`
 
 - {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
   existing nonempty directory. Also it throws much clearer error messages when
