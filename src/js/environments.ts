@@ -41,7 +41,11 @@ export const IN_BROWSER_WEB_WORKER =
   typeof self !== "undefined";
 
 /** @private */
-export const IN_SAFARI = navigator && navigator.userAgent.indexOf("Chrome") == -1 && navigator.userAgent.indexOf("Safari") > -1
+export const IN_SAFARI =
+  typeof navigator !== "undefined" &&
+  typeof navigator.userAgent !== "undefined" &&
+  navigator.userAgent.indexOf("Chrome") == -1 &&
+  navigator.userAgent.indexOf("Safari") > -1;
 
 /**
  * Detects the current environment and returns a record with the results.
