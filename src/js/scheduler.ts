@@ -69,12 +69,11 @@ function scheduleCallbackImmediate(callback: () => void) {
     );
     nextTaskHandle++;
   } else if (IN_BROWSER_WEB_WORKER && !IN_SAFARI) {
-    // use MessageChannel
     const channel = new MessageChannel();
     channel.port1.onmessage = () => callback();
     channel.port2.postMessage("");
   } else {
-    // fallback to setTimeout
+    // fallback to setTimeout if nothing else is available
     setTimeout(callback, 0);
   }
 }
