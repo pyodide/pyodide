@@ -143,7 +143,7 @@ The following instructions have been tested with Vite 5.1.4.
 ```
 
 If you have installed Pyodide via npm as described above, you can use it in Vite
-dev mode as follows. First, install the [`isomorphic-fetch`][] package:
+as follows. First, install the [`isomorphic-fetch`][] package:
 
 ```
 $ npm install --save isomorphic-fetch@^3
