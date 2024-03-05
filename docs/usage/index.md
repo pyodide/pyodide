@@ -135,3 +135,76 @@ undefined
    webworker.md
    service-worker.md
 ```
+
+## Vite
+
+```{note}
+The following instructions have been tested with Vite 5.1.4.
+```
+
+If you have installed Pyodide via npm as described above, you can use it in Vite
+dev mode as follows. First, install the [`isomorphic-fetch`][] package:
+
+```
+$ npm install --save isomorphic-fetch@^3
+```
+
+Then, exclude Pyodide from [Vite's dependency pre-bundling][optimizedeps] by
+setting `optimizeDeps.exclude` in your `vite.config.js` file:
+
+```js
+import { defineConfig } from "vite";
+
+export default defineConfig({ optimizeDeps: { exclude: ["pyodide"] } });
+```
+
+You can test your setup with this `index.html` file:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+</html>
+```
+
+And this `src/main.js` file:
+
+```js
+import { loadPyodide } from "pyodide";
+
+async function hello_python() {
+  let pyodide = await loadPyodide();
+  return pyodide.runPythonAsync("1+1");
+}
+
+hello_python().then((result) => {
+  console.log("Python says that 1+1 =", result);
+});
+```
+
+This should be sufficient for Vite dev mode:
+
+```
+$ npx vite
+```
+
+For a production build, you must also manually make sure that all Pyodide files
+will be available in `dist/assets`, by first copying them to `public/assets`
+before building:
+
+```
+$ mkdir -p public/assets/
+$ cp node_modules/pyodide/* public/assets/
+$ npx vite build
+```
+
+Then you can view this production build to verify that it works:
+
+```
+$ npx vite preview
+```
+
+[`isomorphic-fetch`]: https://www.npmjs.com/package/isomorphic-fetch
+[optimizedeps]: https://vitejs.dev/guide/dep-pre-bundling.html
