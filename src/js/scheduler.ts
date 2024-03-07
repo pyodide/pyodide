@@ -27,12 +27,14 @@ function installPostMessageHandler() {
         scheduleCallbackImmediateMessagePrefix.length,
       );
       const task = tasks[handle];
-      if (task) {
-        try {
-          task();
-        } finally {
-          delete tasks[handle];
-        }
+      if (!task) {
+        return;
+      }
+
+      try {
+        task();
+      } finally {
+        delete tasks[handle];
       }
     }
   };
