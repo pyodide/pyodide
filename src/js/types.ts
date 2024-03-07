@@ -66,6 +66,7 @@ declare global {
   export const _PyMem_Free: (ptr: number) => number;
   export const _PyGILState_Check: () => number;
   export const __PyErr_CheckSignals: () => number;
+  export const _PyErr_SetRaisedException: (ptr: number) => void;
 }
 
 // Our own functions we use from JavaScript. These all need to be labeled with

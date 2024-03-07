@@ -252,7 +252,8 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
   await API.packageIndexReady;
 
-  let importhook = API._pyodide._importhook;
+  API._pyodide.set_excepthook();
+  const importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
     API._import_name_to_package_name,
     API.lockfile_unvendored_stdlibs_and_test,

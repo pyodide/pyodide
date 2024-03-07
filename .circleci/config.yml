@@ -479,6 +479,18 @@ jobs:
       - store_artifacts:
           path: /root/repo/dist/benchmarks.json
 
+  check-release-version:
+    # Check that the tag matches the version numbers in the repo and fail the
+    # release if not
+    <<: *defaults
+
+    steps:
+      - checkout
+      - run:
+          name: check-release-version
+          command: |
+            ./tools/bump_version.py --check --new-version ${CIRCLE_TAG}
+
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
     # similar as possible to the steps in deploy-dev!
@@ -515,10 +527,17 @@ jobs:
             # If it has an 'a' in the tag it's an alpha so mark it as a prelease
             [[ "${CIRCLE_TAG}" =~ a ]] && export MAYBE_PRE_RELEASE=-prerelease
 
-            /tmp/ghr-bin -t "${GITHUB_TOKEN}" -u "${CIRCLE_PROJECT_USERNAME}" \
-              -r "${CIRCLE_PROJECT_REPONAME}" -c "${CIRCLE_SHA1}" \
-              -delete "${CIRCLE_TAG}" \
+            # Options have to come first, last two lines have to be
+            # ${CIRCLE_TAG} and dist.
+            # TODO: Should we get rid of -delete?
+            /tmp/ghr-bin \
+              -t "${GITHUB_TOKEN}" \
+              -u "${CIRCLE_PROJECT_USERNAME}" \
+              -r "${CIRCLE_PROJECT_REPONAME}" \
+              -c "${CIRCLE_SHA1}" \
+              -delete \
               ${MAYBE_PRE_RELEASE} \
+              "${CIRCLE_TAG}" \
               dist
 
       - run:
@@ -930,8 +949,16 @@ workflows:
             tags:
               only: /.*/
 
+      - check-release-version:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\w+$/
+
       - deploy-release:
           requires:
+            - check-release-version
             - test-core-firefox
             - test-packages-firefox
             - build-pyodide-debug
