@@ -48,7 +48,6 @@ __all__ = [
     "JsProxy",
     "JsDomElement",
     "JsCallable",
-    "JsOnceCallable",
     "JsTypedArray",
     "create_once_callable",
     "create_proxy",
