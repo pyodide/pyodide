@@ -25,14 +25,17 @@ def test_init(selenium_sdl):
     pygame.display.init()
 
 
-# @pytest.mark.skip("disabled to reduce the test time, comment out this line when testing pygame")
 @pytest.mark.driver_timeout(120)
 @run_in_pyodide(packages=["pygame-ce", "pygame-ce-tests", "pytest"])
 def test_run_tests(selenium_sdl):
     from pathlib import Path
+    import os
 
     import pygame
     import pytest
+
+    if "CI" in os.environ:
+        pytest.skip("Skipped in CI (takes too long to run)")
 
     test_path = Path(pygame.__file__).parent / "tests"
 
