@@ -1,7 +1,7 @@
-From 00683380627e3df12f16c2035ba6b4bdc5518c29 Mon Sep 17 00:00:00 2001
+From 9ed70e08329ac2c65ed3fd47fa72c379485ad306 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 18 Dec 2021 11:41:15 -0800
-Subject: [PATCH 04/10] gemm_ no const
+Subject: [PATCH 4/9] gemm_ no const
 
 cgemm, dgemm, sgemm, and zgemm are declared with `const` in slu_cdefs.h, but
 other places don't have the cosnt causing compile errors.
@@ -14,27 +14,27 @@ This patch drops the consts and fixes the problem.
  4 files changed, 12 insertions(+), 12 deletions(-)
 
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
-index 346f9af0a..8af19888f 100644
+index dfc0516ac..92d7d7d6b 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_cdefs.h
-@@ -272,9 +272,9 @@ extern void    ccheck_tempv(int, complex *);
+@@ -262,9 +262,9 @@ extern void    ccheck_tempv(int, singlecomplex *);
  
  /*! \brief BLAS */
  
 -extern int cgemm_(const char*, const char*, const int*, const int*, const int*,
--                  const complex*, const complex*, const int*, const complex*,
--		  const int*, const complex*, complex*, const int*);
+-                  const singlecomplex*, const singlecomplex*, const int*, const singlecomplex*,
+-		  const int*, const singlecomplex*, singlecomplex*, const int*);
 +extern int cgemm_( char*,  char*,  int*,  int*,  int*,
-+                   complex*,  complex*,  int*,  complex*,
-+		   int*,  complex*, complex*,  int*);
- extern int ctrsv_(char*, char*, char*, int*, complex*, int*,
-                   complex*, int*);
++                   singlecomplex*,  singlecomplex*,  int*,  singlecomplex*,
++		   int*,  singlecomplex*, singlecomplex*,  int*);
+ extern int ctrsv_(char*, char*, char*, int*, singlecomplex*, int*,
+                   singlecomplex*, int*);
  extern int ctrsm_(char*, char*, char*, char*, int*, int*,
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
-index fd971f365..e70699aef 100644
+index 3b5aa509f..1305641bd 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_ddefs.h
-@@ -269,9 +269,9 @@ extern void    dcheck_tempv(int, double *);
+@@ -260,9 +260,9 @@ extern void    dcheck_tempv(int, double *);
  
  /*! \brief BLAS */
  
@@ -48,10 +48,10 @@ index fd971f365..e70699aef 100644
                    double*, int*);
  extern int dtrsm_(char*, char*, char*, char*, int*, int*,
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
-index 1b6db977e..fee4bc1d6 100644
+index 9bb6a38e7..b013962a4 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_sdefs.h
-@@ -269,9 +269,9 @@ extern void    scheck_tempv(int, float *);
+@@ -259,9 +259,9 @@ extern void    scheck_tempv(int, float *);
  
  /*! \brief BLAS */
  
@@ -65,10 +65,10 @@ index 1b6db977e..fee4bc1d6 100644
                    float*, int*);
  extern int strsm_(char*, char*, char*, char*, int*, int*,
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
-index abb7d937e..6c572ff2b 100644
+index c6418d584..c5a2692be 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_zdefs.h
-@@ -272,9 +272,9 @@ extern void    zcheck_tempv(int, doublecomplex *);
+@@ -262,9 +262,9 @@ extern void    zcheck_tempv(int, doublecomplex *);
  
  /*! \brief BLAS */
  
