@@ -1,13 +1,12 @@
 package:
   name: pygame-ce
-  version: 2.4.0
+  version: 2.4.1
   top-level:
     - pygame
 source:
-  url: https://files.pythonhosted.org/packages/2e/94/c07e27d2c065ca493967ee1d083a3e74452339836854a56d01e3e8a98f2c/pygame-ce-2.4.0.tar.gz
-  sha256: 77f541a6113f3449fd18e252a80f8d57896a7f108a4adffb084d3e6920955bda
+  url: https://files.pythonhosted.org/packages/dc/b1/64fffc2c8664497ae82b2afb4f5efe0130d38b39f2d25af0288c4261df3e/pygame-ce-2.4.1.tar.gz
+  sha256: 70a84aa1417c633a0fd6754ffa5dc92ee1b9aeb70baaa52c8c8c94a7c6db9cf0
   patches:
-    - patches/0001-support-emsdk-3.1.51.patch
     - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
     - patches/0001-Don-t-set-font_initialized.patch
 build:
