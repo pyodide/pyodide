@@ -8,6 +8,7 @@ source:
   sha256: 70a84aa1417c633a0fd6754ffa5dc92ee1b9aeb70baaa52c8c8c94a7c6db9cf0
   patches:
     - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
+    - patches/0001-freetype-init.patch
     - patches/0001-Don-t-set-font_initialized.patch
 build:
   script: |
