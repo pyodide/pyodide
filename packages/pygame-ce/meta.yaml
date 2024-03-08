@@ -9,7 +9,6 @@ source:
   patches:
     - patches/0001-support-emsdk-3.1.51.patch
     - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
-    - patches/0001-freetype-init.patch
     - patches/0001-Don-t-set-font_initialized.patch
 build:
   script: |
@@ -63,8 +62,7 @@ build:
     SHARED_LIBS=$(find ${WHEELDIR} -name "*.so" ! -name "static*.so")
     echo "shared libs: " $SHARED_LIBS
 
-    EMCC_DEBUG=1 emcc \
-      -v \
+    emcc \
       -shared \
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
