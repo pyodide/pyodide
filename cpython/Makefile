@@ -30,7 +30,7 @@ sysconfigdata:
 	# the subfolder is written to pybuilddir.txt.
 	cd $(PYBUILD) && _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIG_NAME) _PYTHON_PROJECT_BASE=$(PYBUILD) $(HOSTPYTHON) -m sysconfig --generate-posix-vars
 	$(eval PYBUILDDIR=$(PYBUILD)/`cat $(PYBUILD)/pybuilddir.txt`)
-	PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
+	PYODIDE_ROOT=$(PYODIDE_ROOT) PYTHONPATH=$(PYBUILDDIR) python$(PYMAJOR).$(PYMINOR) adjust_sysconfig.py
 	mkdir -p $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	mkdir -p $(SYSCONFIGDATA_DIR)
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
@@ -73,11 +73,11 @@ $(PYTARBALL):
 	@GOT_SHASUM=`shasum --algorithm 256 $(PYTARBALL) | cut -f1 -d' '` \
 		&& (echo $$GOT_SHASUM | grep -q $(PYTHON_ARCHIVE_SHA256)) \
 		|| (\
-			   echo "Got unexpected shasum $$GOT_SHASUM" \
+			   rm $@ \
+			&& echo "Got unexpected shasum $$GOT_SHASUM" \
 			&& echo "If you are updating the Python version, set PYTHON_ARCHIVE_SHA256 in Makefile.envs to this." \
 			&& exit 1 \
 		)
-
 
 
 prepare-source: $(PYBUILD)/.patched

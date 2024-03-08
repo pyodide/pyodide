@@ -1,0 +1,13 @@
+package:
+  name: traitlets
+  version: 5.14.1
+  top-level:
+    - traitlets
+source:
+  url: https://files.pythonhosted.org/packages/45/34/5dc77fdc7bb4bd198317eea5679edf9cc0a186438b5b19dbb9062fb0f4d5/traitlets-5.14.1-py3-none-any.whl
+  sha256: 2e5a030e6eff91737c643231bfcf04a65b0132078dad75e4936700b213652e74
+about:
+  home: ""
+  PyPI: https://pypi.org/project/traitlets
+  summary: Traitlets Python configuration system
+  license: "BSD 3-Clause License"

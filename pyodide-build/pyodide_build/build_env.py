@@ -5,16 +5,11 @@ import functools
 import os
 import re
 import subprocess
-import sys
+import tomllib
 from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from pathlib import Path
-
-if sys.version_info < (3, 11, 0):  # noqa: UP036
-    import tomli as tomllib
-else:
-    import tomllib
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 

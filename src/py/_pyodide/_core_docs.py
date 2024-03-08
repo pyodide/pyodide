@@ -1209,7 +1209,9 @@ class JsDomElement(JsProxy):
 # from pyproxy.c
 
 
-def create_once_callable(obj: Callable[..., Any], /) -> JsOnceCallable:
+def create_once_callable(
+    obj: Callable[..., Any], /, *, _may_syncify: bool = False
+) -> JsOnceCallable:
     """Wrap a Python Callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
@@ -1493,6 +1495,11 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     pass
 
 
+def run_sync(x: Awaitable[T]) -> T:
+    """Hi!"""
+    raise NotImplementedError
+
+
 __name__ = _save_name
 del _save_name
 
@@ -1517,6 +1524,7 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "run_sync",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",

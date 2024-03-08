@@ -31,10 +31,35 @@ export const IN_BROWSER_MAIN_THREAD =
   typeof window !== "undefined" &&
   typeof document !== "undefined" &&
   typeof document.createElement !== "undefined" &&
-  typeof sessionStorage !== "undefined";
+  typeof sessionStorage !== "undefined" &&
+  typeof importScripts === "undefined";
 
 /** @private */
 export const IN_BROWSER_WEB_WORKER =
   IN_BROWSER &&
   typeof importScripts !== "undefined" &&
   typeof self !== "undefined";
+
+/** @private */
+export const IN_SAFARI =
+  typeof navigator !== "undefined" &&
+  typeof navigator.userAgent !== "undefined" &&
+  navigator.userAgent.indexOf("Chrome") == -1 &&
+  navigator.userAgent.indexOf("Safari") > -1;
+
+/**
+ * Detects the current environment and returns a record with the results.
+ * This function is useful for debugging and testing purposes.
+ */
+export function detectEnvironment(): Record<string, boolean> {
+  return {
+    IN_NODE: IN_NODE,
+    IN_NODE_COMMONJS: IN_NODE_COMMONJS,
+    IN_NODE_ESM: IN_NODE_ESM,
+    IN_DENO: IN_DENO,
+    IN_BROWSER: IN_BROWSER,
+    IN_BROWSER_MAIN_THREAD: IN_BROWSER_MAIN_THREAD,
+    IN_BROWSER_WEB_WORKER: IN_BROWSER_WEB_WORKER,
+    IN_SAFARI: IN_SAFARI,
+  };
+}
