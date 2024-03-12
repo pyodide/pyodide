@@ -2558,14 +2558,18 @@ def test_js_proxy_attribute(selenium):
 
 @run_in_pyodide
 async def test_js_proxy_str(selenium):
-    import pytest
     import re
+
+    import pytest
 
     from js import Array
     from pyodide.code import run_js
     from pyodide.ffi import JsException
 
-    assert re.sub(r"\s+", " ", str(Array).replace("\n", " ")) == "function Array() { [native code] }"
+    assert (
+        re.sub(r"\s+", " ", str(Array).replace("\n", " "))
+        == "function Array() { [native code] }"
+    )
     assert str(run_js("[1,2,3]")) == "1,2,3"
     assert str(run_js("Object.create(null)")) == "[object Object]"
     mod = await run_js("import('data:text/javascript,')")
