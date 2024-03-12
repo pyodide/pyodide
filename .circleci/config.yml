@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20240127-chrome114-firefox122-py312
+    - image: pyodide/pyodide-env:20240312-chrome122-firefox122
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
