@@ -1,16 +1,17 @@
 package:
   name: ipython
-  version: 8.22.1
+  version: 8.22.2
   top-level:
     - IPython
 source:
-  url: https://files.pythonhosted.org/packages/11/3e/956d40991c152010d71b38b1a9763edc8fe5944d360e1c256fae60cb9165/ipython-8.22.1-py3-none-any.whl
-  sha256: 869335e8cded62ffb6fac8928e5287a05433d6462e3ebaac25f4216474dd6bc4
+  url: https://files.pythonhosted.org/packages/2f/4c/a960e920f0566d46084b7dd03888c1fec2a86e9f09dddae3bedfaab1d459/ipython-8.22.2-py3-none-any.whl
+  sha256: 3c86f284c8f3d8f2b6c662f885c4889a91df7cd52056fd02b7d8d6195d7f56e9
 requirements:
   run:
     - asttokens
     - decorator
     - executing
+    - matplotlib-inline
     - prompt_toolkit
     - pure_eval
     - Pygments
