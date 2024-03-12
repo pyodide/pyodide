@@ -1,7 +1,7 @@
-From abce2808389410c0b38c0127fab12fa802a1ab91 Mon Sep 17 00:00:00 2001
+From 8853693d7fc00c2e8dbe06aeeea0bd6274805824 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 05/10] make int return values
+Subject: [PATCH 5/9] make int return values
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are
@@ -25,7 +25,6 @@ to be consistent.
  scipy/integrate/_odepackmodule.c              |  8 +--
  scipy/linalg/fblas_l1.pyf.src                 | 62 ++++++++++++++-----
  scipy/odr/__odrpack.c                         |  2 +-
- scipy/optimize/_lsq/setup.py                  |  2 +-
  .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +--
  .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
  .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  3 +
@@ -35,7 +34,7 @@ to be consistent.
  scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +-
  .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 +++---
  .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 ++++----
- 14 files changed, 96 insertions(+), 74 deletions(-)
+ 13 files changed, 95 insertions(+), 73 deletions(-)
 
 diff --git a/scipy/_build_utils/src/wrap_dummy_g77_abi.f b/scipy/_build_utils/src/wrap_dummy_g77_abi.f
 index caf99ac63..73cdebd96 100644
@@ -72,10 +71,10 @@ index caf99ac63..73cdebd96 100644
        COMPLEX            X, Y
        EXTERNAL           CLADIV
 diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
-index 2b2189f0b..17f3f9348 100644
+index 0c8067e65..d08593985 100644
 --- a/scipy/integrate/_odepackmodule.c
 +++ b/scipy/integrate/_odepackmodule.c
-@@ -154,17 +154,17 @@ static PyObject *odepack_error;
+@@ -156,17 +156,17 @@ static PyObject *odepack_error;
      #endif
  #endif
  
@@ -96,7 +95,7 @@ index 2b2189f0b..17f3f9348 100644
  {
    ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
    ydot[2] = 3e7*y[1]*y[1];
-@@ -173,7 +173,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
+@@ -175,7 +175,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
  }
  */
  
@@ -250,42 +249,27 @@ index c806e33fb..c4b822eb9 100644
              F_INT *ldnp, double *beta, double *xplusd, F_INT *ifixb, F_INT *ifixx,
              F_INT *ldifx, F_INT *ideval, double *f, double *fjacb, double *fjacd,
              F_INT *istop),
-diff --git a/scipy/optimize/_lsq/setup.py b/scipy/optimize/_lsq/setup.py
-index 7ce589c0c..6412886e0 100644
---- a/scipy/optimize/_lsq/setup.py
-+++ b/scipy/optimize/_lsq/setup.py
-@@ -3,7 +3,7 @@ def configuration(parent_package='', top_path=None):
-     from numpy.distutils.misc_util import Configuration
-     config = Configuration('_lsq', parent_package, top_path)
-     config.add_extension('givens_elimination',
--                         sources=['givens_elimination.c'])
-+                         sources=['givens_elimination.c'],include_dirs=['../../linalg'])
-     return config
- 
- 
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
-index 09b8a937d..5b725c825 100644
+index c1dc7fcf8..d1903db4a 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
-@@ -23,12 +23,12 @@ at the top-level directory.
+@@ -23,10 +23,10 @@ at the top-level directory.
  #include <stdlib.h>
  #include "slu_cdefs.h"
  
--extern void cswap_(int *, complex [], int *, complex [], int *);
--extern void caxpy_(int *, complex *, complex [], int *, complex [], int *);
--extern void ccopy_(int *, complex [], int *, complex [], int *);
-+extern int cswap_(int *, complex [], int *, complex [], int *);
-+extern int caxpy_(int *, complex *, complex [], int *, complex [], int *);
-+extern int ccopy_(int *, complex [], int *, complex [], int *);
- extern float scasum_(int *, complex *, int *);
- extern float scnrm2_(int *, complex *, int *);
+-extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
 -extern void scopy_(int *, float [], int *, float [], int *);
++extern int cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern int caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
++extern int ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
 +extern int scopy_(int *, float [], int *, float [], int *);
+ extern float scasum_(int *, singlecomplex *, int *);
+ extern float scnrm2_(int *, singlecomplex *, int *);
  extern double dnrm2_(int *, double [], int *);
- extern int icamax_(int *, complex [], int *);
- 
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
-index 6dc0460c1..994224c35 100644
+index 4e2654e8a..d5b955d40 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
 @@ -26,7 +26,7 @@ at the top-level directory.
@@ -312,7 +296,7 @@ index 5afc93b5d..7ac5f80fb 100644
   * Support routines
   */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
-index 7ee2e77ea..d13914e04 100644
+index 1395752d4..7f5538140 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
 @@ -21,6 +21,8 @@ at the top-level directory.
@@ -324,7 +308,7 @@ index 7ee2e77ea..d13914e04 100644
  /*! \brief
   *
   * <pre>
-@@ -378,8 +380,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+@@ -377,8 +379,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
      double    t0;      /* temporary time */
      double    *utime;
  
@@ -333,7 +317,7 @@ index 7ee2e77ea..d13914e04 100644
  
      Bstore = B->Store;
      Xstore = X->Store;
-@@ -579,7 +579,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
+@@ -573,7 +573,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
          } else {
  	    *(unsigned char *)norm = 'I';
          }
@@ -360,7 +344,7 @@ index 67e83bcc7..e5757d5c4 100644
  
  /* Macro definitions */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-index 5c9aa7058..a10f9a52f 100644
+index 83be8c971..047a07ce9 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
 @@ -27,8 +27,9 @@ at the top-level directory.
@@ -368,10 +352,10 @@ index 5c9aa7058..a10f9a52f 100644
  #ifndef SCOMPLEX_INCLUDE
  #define SCOMPLEX_INCLUDE
 -
--typedef struct { float r, i; } complex;
+-typedef struct { float r, i; } singlecomplex;
 +#include"scipy_slu_config.h"
 +// defined in  CLAPACK
-+//typedef struct { float r, i; } complex;
++//typedef struct { float r, i; } singlecomplex;
  
  
  /* Macro definitions */
