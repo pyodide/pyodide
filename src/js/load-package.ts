@@ -534,10 +534,6 @@ export async function loadPackage(
         errorCallback(err.message);
       }
     }
-
-    // We have to invalidate Python's import caches, or it won't
-    // see the new files.
-    API.importlib.invalidate_caches();
     return Array.from(loadedPackageData, filterPackageData);
   } finally {
     releaseLock();
