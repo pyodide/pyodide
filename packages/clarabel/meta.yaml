@@ -11,10 +11,9 @@ about:
   PyPI: https://pypi.org/project/clarabel
   summary: Clarabel Conic Interior Point Solver for Rust / Python
   license: Apache-2.0
-build:
-  script: |
-    rustup default nightly
-    rustup target add wasm32-unknown-emscripten
+requirements:
+  executable:
+    - rustup
 extra:
   recipe-maintainers:
     - phschiele
