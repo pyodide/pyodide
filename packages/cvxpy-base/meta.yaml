@@ -7,7 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/02/96/9b15df4809cc34914a2edb3a3854d71679223f05e33748325a95a2876477/cvxpy-base-1.4.2.tar.gz
   sha256: 7183710573f5f6bf23083e377d193e55b428ec70b1eab745bfc67fa30d4642a7
   patches:
-  - patches/0001-Do-not-build-C-extensions.patch
+    - patches/0001-Do-not-build-C-extensions.patch
 requirements:
   run:
     # Dependencies that are needed to run the package
