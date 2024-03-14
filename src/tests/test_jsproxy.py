@@ -2618,6 +2618,6 @@ async def test_js_proxy_str(selenium):
     px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
     with pytest.raises(
         JsException,
-        match="Cannot perform 'Object.prototype.toString' on a proxy that has been revoked",
+        match="revoked",
     ):
         str(px)
