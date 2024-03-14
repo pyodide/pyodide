@@ -1,44 +1,35 @@
-import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import package_is_built
 
-
+@run_in_pyodide(packages=["clarabel", "scipy", "numpy"])
 def test_clarabel(selenium):
-    if not package_is_built("numpy") or not package_is_built("scipy"):
-        pytest.skip("numpy and scipy required")
+    import clarabel
+    import numpy as np
+    from scipy import sparse
 
-    @run_in_pyodide(packages=["clarabel", "scipy", "numpy"])
-    def test_clarabel_inner(selenium):
-        import clarabel
-        import numpy as np
-        from scipy import sparse
+    # Define problem data
+    P = sparse.csc_matrix([[0.0, 0.0], [0, 0]])
+    P = sparse.triu(P).tocsc()
 
-        # Define problem data
-        P = sparse.csc_matrix([[0.0, 0.0], [0, 0]])
-        P = sparse.triu(P).tocsc()
+    q = np.array([-1.0, -4.0])
 
-        q = np.array([-1.0, -4.0])
+    A = sparse.csc_matrix(
+        [
+            [1.0, -2.0],  # <-- LHS of equality constraint (lower bound)
+            [1.0, 0.0],  # <-- LHS of inequality constraint (upper bound)
+            [0.0, 1.0],  # <-- LHS of inequality constraint (upper bound)
+            [-1.0, 0.0],  # <-- LHS of inequality constraint (lower bound)
+            [0.0, -1.0],
+        ]
+    )  # <-- LHS of inequality constraint (lower bound)
 
-        A = sparse.csc_matrix(
-            [
-                [1.0, -2.0],  # <-- LHS of equality constraint (lower bound)
-                [1.0, 0.0],  # <-- LHS of inequality constraint (upper bound)
-                [0.0, 1.0],  # <-- LHS of inequality constraint (upper bound)
-                [-1.0, 0.0],  # <-- LHS of inequality constraint (lower bound)
-                [0.0, -1.0],
-            ]
-        )  # <-- LHS of inequality constraint (lower bound)
+    b = np.array([0.0, 1.0, 1.0, 1.0, 1.0])
 
-        b = np.array([0.0, 1.0, 1.0, 1.0, 1.0])
+    cones = [clarabel.ZeroConeT(1), clarabel.NonnegativeConeT(4)]
 
-        cones = [clarabel.ZeroConeT(1), clarabel.NonnegativeConeT(4)]
+    settings = clarabel.DefaultSettings()
 
-        settings = clarabel.DefaultSettings()
+    solver = clarabel.DefaultSolver(P, q, A, b, cones, settings)
 
-        solver = clarabel.DefaultSolver(P, q, A, b, cones, settings)
-
-        solution = solver.solve()
-        assert solution.status == clarabel.SolverStatus.Solved
-
-    test_clarabel_inner(selenium)
+    solution = solver.solve()
+    assert solution.status == clarabel.SolverStatus.Solved

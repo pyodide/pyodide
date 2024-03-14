@@ -12,6 +12,10 @@ about:
   summary: Clarabel Conic Interior Point Solver for Rust / Python
   license: Apache-2.0
 requirements:
+  run:
+    # Dependencies that are needed to run the package
+    - numpy
+    - scipy
   executable:
     - rustup
 extra:
