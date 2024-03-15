@@ -35,7 +35,7 @@ export default defineConfig({ optimizeDeps: { exclude: ["pyodide"] } });
 You can test your setup with this `index.html` file:
 
 ```html
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <script type="module" src="/src/main.js"></script>
