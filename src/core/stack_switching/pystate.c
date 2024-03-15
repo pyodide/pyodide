@@ -125,6 +125,11 @@ saveExceptionState(PyThreadState* tstate)
   ExceptionState es;
   es.exc_info = tstate->exc_info;
   es.exc_state = tstate->exc_state;
+  // Clear exc_state without decrementing any refcounts (we moved ownership to
+  // es) See test_switch_from_except_block for a test case for this.
+  tstate->exc_state.exc_value = NULL;
+  tstate->exc_state.previous_item = NULL;
+  tstate->exc_info = &tstate->exc_state;
   return es;
 }
 

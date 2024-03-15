@@ -83,6 +83,8 @@ myst:
 
 - Upgraded `OpenBLAS` to 0.26 {pr}`4526`
 
+- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
+
 ## Version 0.25.0
 
 _January 18, 2024_
