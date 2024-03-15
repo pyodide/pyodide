@@ -36,7 +36,7 @@ export const IN_BROWSER_MAIN_THREAD =
 
 /** @private */
 export const IN_BROWSER_WEB_WORKER =
-  IN_BROWSER && typeof importScripts === "function" && typeof self !== "object";
+  IN_BROWSER && typeof importScripts === "function" && typeof self === "object";
 
 /** @private */
 export const IN_SAFARI =
