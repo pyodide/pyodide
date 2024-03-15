@@ -14,7 +14,10 @@ The following instructions have been tested with Pyodide 0.25.0 and Vite 5.1.4.
 ```
 
 If you have installed Pyodide via npm, you can use it in Vite as follows. First,
-install the [`isomorphic-fetch`][] package:
+the Pyodide npm package currently uses [`node-fetch`][] to load some files,
+which does not work in a browser; to resolve this, install the
+[`isomorphic-fetch`][] package so that Pyodide does not try to load `node-fetch`
+in the browser:
 
 ```
 $ npm install --save isomorphic-fetch@^3
@@ -32,7 +35,7 @@ export default defineConfig({ optimizeDeps: { exclude: ["pyodide"] } });
 You can test your setup with this `index.html` file:
 
 ```html
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <script type="module" src="/src/main.js"></script>
@@ -78,5 +81,6 @@ $ npx vite preview
 ```
 
 [`isomorphic-fetch`]: https://www.npmjs.com/package/isomorphic-fetch
+[`node-fetch`]: https://www.npmjs.com/package/node-fetch
 [optimizedeps]: https://vitejs.dev/guide/dep-pre-bundling.html
 [pyodide webpack plugin]: https://github.com/pyodide/pyodide-webpack-plugin
