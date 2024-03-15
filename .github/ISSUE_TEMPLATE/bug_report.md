@@ -20,15 +20,15 @@ assignees: ""
 
 ### Environment
 
-- Pyodide Version<!-- (e.g. 1.8.1) -->:
-- Browser version<!-- (e.g. Chrome 95.0.4638.54) -->:
+- Pyodide Version<!-- (e.g. 0.25.0) -->:
+- Browser version<!-- (e.g. Chrome 122.0.4638.54) -->:
 - Any other relevant information:
 
 <!-- If you are building Pyodide by yourself, please also include these information: -->
 
 <!--
 - Commit hash of Pyodide git repository:
-- Build environment<!--(e.g. Ubuntu 18.04, pyodide/pyodide-env:19 docker)- ->:
+- Build environment<!--(e.g. Ubuntu 22.04)- ->:
 -->
 
 ### Additional context
