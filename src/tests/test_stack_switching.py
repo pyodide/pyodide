@@ -525,3 +525,54 @@ def test_throw_from_switcher(selenium):
         b.destroy();
         """
     )
+
+
+@requires_jspi
+def test_switch_from_except_block(selenium):
+    """Test for issue #4566"""
+    result = selenium.run_js(
+        """
+        const result = [];
+        pyodide.globals.set("result", result);
+        pyodide.runPython(`
+            from pyodide.ffi import run_sync, to_js
+            import sys
+            from js import sleep
+
+            def pe(s):
+                result.push(to_js([s, repr(sys.exception())]))
+
+            def g(n):
+                pe(f"{n}0")
+                try:
+                    raise Exception(n)
+                except:
+                    pe(f"{n}1")
+                    run_sync(sleep(10))
+                    pe(f"{n}2")
+                pe(f"{n}3")
+        `);
+        const pe = pyodide.globals.get("pe");
+        const g = pyodide.globals.get("g");
+        const g1 = g.callSyncifying("a");
+        const g2 = g.callSyncifying("b");
+        pe('tt')
+        await g1;
+        await g2;
+        pyodide.globals.delete("result");
+        pe.destroy();
+        g.destroy();
+        return result;
+        """
+    )
+    assert result == [
+        ["a0", "None"],
+        ["a1", "Exception('a')"],
+        ["b0", "None"],
+        ["b1", "Exception('b')"],
+        ["tt", "None"],
+        ["a2", "Exception('a')"],
+        ["a3", "None"],
+        ["b2", "Exception('b')"],
+        ["b3", "None"],
+    ]

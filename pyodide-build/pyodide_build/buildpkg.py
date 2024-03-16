@@ -457,7 +457,9 @@ class RecipeBuilder:
             try:
                 test_dir = self.src_dist_dir / "tests"
                 if self.build_metadata.unvendor_tests:
-                    nmoved = unvendor_tests(wheel_dir, test_dir)
+                    nmoved = unvendor_tests(
+                        wheel_dir, test_dir, self.build_metadata.retain_test_patterns
+                    )
                     if nmoved:
                         with chdir(self.src_dist_dir):
                             shutil.make_archive(f"{self.name}-tests", "tar", test_dir)
@@ -599,7 +601,9 @@ def copy_sharedlibs(
     return {}
 
 
-def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
+def unvendor_tests(
+    install_prefix: Path, test_install_prefix: Path, retain_test_patterns: list[str]
+) -> int:
     """Unvendor test files and folders
 
     This function recursively walks through install_prefix and moves anything
@@ -639,6 +643,8 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                 or fnmatch.fnmatchcase(fpath, "*_test.py")
                 or fpath == "conftest.py"
             ):
+                if any(fnmatch.fnmatchcase(fpath, pat) for pat in retain_test_patterns):
+                    continue
                 (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
                 shutil.move(
                     install_prefix / root_rel / fpath,
