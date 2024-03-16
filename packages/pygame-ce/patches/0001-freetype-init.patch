@@ -1,3 +1,6 @@
+https://github.com/pmp-p/pygame-ce-wasm/pull/3
+
+---
 diff --git a/src_c/_freetype.c b/src_c/_freetype.c
 index 3ee6241e05..7953dbd6e4 100644
 --- a/src_c/_freetype.c
