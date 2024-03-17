@@ -54,8 +54,8 @@ def mock_pyodide_lock() -> PyodideLockSpec:
     )
 
 
-@pytest.fixture(scope="module")
-def temp_xbuildenv(tmp_path_factory):
+@pytest.fixture()
+def mock_xbuildenv_url(tmp_path_factory, httpserver):
     """
     Create a temporary xbuildenv archive
     """
@@ -88,7 +88,9 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
     with chdir(base):
         archive_name = shutil.make_archive("xbuildenv", "tar")
 
-    yield base, archive_name
+    content = Path(base / archive_name).read_bytes()
+    httpserver.expect_request("/xbuildenv-mock.tar").respond_with_data(content)
+    yield httpserver.url_for("/xbuildenv-mock.tar")
 
 
 @pytest.fixture(scope="function")

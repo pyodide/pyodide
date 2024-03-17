@@ -1,11 +1,9 @@
 # flake8: noqa
 
-import os
 import shutil
 from pathlib import Path
 
 import pytest
-from pytest_pyodide import spawn_web_server
 import zipfile
 import typer
 from typer.testing import CliRunner
@@ -22,7 +20,7 @@ from pyodide_build.cli import (
     py_compile,
 )
 
-from .fixture import temp_python_lib, temp_python_lib2, temp_xbuildenv
+from .fixture import temp_python_lib, temp_python_lib2
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -337,66 +335,6 @@ def test_create_zipfile_compile(temp_python_lib, temp_python_lib2, tmp_path):
         assert "module2.pyc" in zf.namelist()
         assert "module3.pyc" in zf.namelist()
         assert "module4.pyc" in zf.namelist()
-
-
-def test_xbuildenv_create(selenium, tmp_path):
-    # selenium fixture is added to ensure that Pyodide is built... it's a hack
-    from conftest import package_is_built
-
-    envpath = Path(tmp_path) / ".xbuildenv"
-    result = runner.invoke(
-        xbuildenv.app,
-        [
-            "create",
-            str(envpath),
-            "--skip-missing-files",
-        ],
-    )
-    assert result.exit_code == 0, result.stdout
-    assert "xbuildenv created at" in result.stdout
-    assert (envpath / "xbuildenv").exists()
-    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
-    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
-    assert (envpath / "xbuildenv" / "requirements.txt").exists()
-
-    if not package_is_built("scipy"):
-        # creating xbuildenv without building scipy will raise error
-        result = runner.invoke(
-            xbuildenv.app,
-            [
-                "create",
-                str(tmp_path / ".xbuildenv"),
-            ],
-        )
-        assert result.exit_code != 0, result.stdout
-        assert isinstance(result.exception, FileNotFoundError), result.exception
-
-
-def test_xbuildenv_install(tmp_path, temp_xbuildenv):
-    envpath = Path(tmp_path) / ".xbuildenv"
-
-    xbuildenv_url_base, xbuildenv_filename = temp_xbuildenv
-
-    with spawn_web_server(xbuildenv_url_base) as (hostname, port, _):
-        xbuildenv_url = f"http://{hostname}:{port}/{xbuildenv_filename}"
-        result = runner.invoke(
-            xbuildenv.app,
-            [
-                "install",
-                "--path",
-                str(envpath),
-                "--download",
-                "--url",
-                xbuildenv_url,
-            ],
-        )
-
-    assert result.exit_code == 0, result.stdout
-    assert "Downloading xbuild environment" in result.stdout, result.stdout
-    assert "Installing xbuild environment" in result.stdout, result.stdout
-    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
-    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
-    assert (envpath / "xbuildenv" / "requirements.txt").exists()
 
 
 @pytest.mark.parametrize("target", ["dir", "file"])

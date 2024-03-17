@@ -114,14 +114,13 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     -------
         The path to the Pyodide root directory inside the xbuild environment
     """
-    from . import install_xbuildenv  # avoid circular import
+    from .xbuildenv import CrossBuildEnvManager  # avoid circular import
 
-    # TODO: Do not hardcode the path
     xbuildenv_path = Path(xbuildenv_dirname()).resolve()
-
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
-        return install_xbuildenv.install(xbuildenv_path, download=True)
+        manager = CrossBuildEnvManager(xbuildenv_path)
+        return manager.install()
 
 
 @functools.cache

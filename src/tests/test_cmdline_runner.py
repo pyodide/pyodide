@@ -438,7 +438,7 @@ def test_pip_install_from_pyodide(selenium, venv):
     )
 
 
-def test_pypa_index(tmp_path):
+def test_pypi_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
@@ -451,7 +451,7 @@ def test_pypa_index(tmp_path):
     install_xbuildenv(version, path)
     pip_opts = [
         "--index-url",
-        "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
+        "file:" + str((path / "xbuildenv/pyodide-root/pypi_index").resolve()),
         "--platform=emscripten_3_1_14_wasm32",
         "--only-binary=:all:",
         "--python-version=310",
