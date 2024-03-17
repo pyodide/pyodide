@@ -1,7 +1,7 @@
 # compiler paths are omitted intentionally so we can override the compiler using environment variables
 [binaries]
 exe_wrapper = 'node'
-pkgconfig = 'pkg-config'
+pkg-config = 'pkg-config'
 
 [properties]
 needs_exe_wrapper = true

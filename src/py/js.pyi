@@ -117,3 +117,9 @@ class ArrayBuffer(_JsObject):
 
 class DOMException(JsException):
     pass
+
+class Map:
+    @staticmethod
+    def new(a: Iterable[Any]) -> Map: ...
+
+async def sleep(ms: int | float) -> None: ...

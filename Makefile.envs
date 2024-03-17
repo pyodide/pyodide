@@ -41,11 +41,6 @@ export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
 export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
 export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
-export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
-
-# Using PKG_CONFIG_LIBDIR instead of PKG_CONFIG_PATH because
-# we don't want pkg-config to search system paths
-export PKG_CONFIG_LIBDIR=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS)
 
@@ -180,6 +175,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_PyErr_Clear \
 			,_PyErr_Occurred \
 			,_PyErr_Print \
+			,_PyErr_SetRaisedException \
 			,_PyErr_SetString \
 			,_PyEval_SaveThread \
 			,_PyEval_RestoreThread \
@@ -244,7 +240,7 @@ export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/i
 # For RUST
 export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
 export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
-export RUST_TOOLCHAIN=nightly-2023-04-29
+export RUST_TOOLCHAIN=nightly-2024-01-29
 export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
 export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
 

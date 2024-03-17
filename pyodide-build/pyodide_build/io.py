@@ -93,6 +93,7 @@ class _BuildSpec(BaseModel):
     script: str | None = None
     post: str | None = None
     unvendor_tests: bool = Field(True, alias="unvendor-tests")
+    retain_test_patterns: list[str] = Field([], alias="_retain-test-patterns")
     vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
@@ -151,6 +152,10 @@ class _AboutSpec(BaseModel):
         extra = pydantic.Extra.forbid
 
 
+class _ExtraSpec(BaseModel):
+    recipe_maintainers: list[str] = Field([], alias="recipe-maintainers")
+
+
 class MetaConfig(BaseModel):
     package: _PackageSpec
     source: _SourceSpec = _SourceSpec()
@@ -158,6 +163,7 @@ class MetaConfig(BaseModel):
     requirements: _RequirementsSpec = _RequirementsSpec()
     test: _TestSpec = _TestSpec()
     about: _AboutSpec = _AboutSpec()
+    extra: _ExtraSpec = _ExtraSpec()
 
     class Config:
         extra = pydantic.Extra.forbid

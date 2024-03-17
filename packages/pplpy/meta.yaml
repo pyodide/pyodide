@@ -25,3 +25,6 @@ about:
   PyPI: https://pypi.org/project/pplpy
   summary: Python PPL wrapper
   license: GPL v3
+extra:
+  recipe-maintainers:
+    - mkoeppe

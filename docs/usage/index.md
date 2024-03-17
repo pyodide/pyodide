@@ -129,8 +129,10 @@ undefined
 .. toctree::
    :hidden:
 
-   webworker.md
    loading-custom-python-code.md
    file-system.md
+   accessing-files.md
+   webworker.md
    service-worker.md
+   working-with-bundlers.md
 ```

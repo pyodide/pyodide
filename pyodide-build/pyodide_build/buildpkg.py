@@ -21,8 +21,8 @@ from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
 from .build_env import (
     RUST_BUILD_PRELUDE,
+    BuildArgs,
     get_build_environment_vars,
-    get_build_flag,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -37,7 +37,6 @@ from .common import (
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
-from .pywasmcross import BuildArgs
 
 
 def _make_whlfile(
@@ -64,7 +63,7 @@ class RecipeBuilder:
         self,
         recipe: str | Path,
         build_args: BuildArgs,
-        build_dir: str | Path | None,
+        build_dir: str | Path | None = None,
         force_rebuild: bool = False,
         continue_: bool = False,
     ):
@@ -93,10 +92,11 @@ class RecipeBuilder:
         self.build_args = build_args
 
         self.build_dir = (
-            Path(build_dir).resolve() / self.name / "build"
-            if build_dir
-            else self.pkg_root / "build"
+            Path(build_dir).resolve() if build_dir else self.pkg_root / "build"
         )
+
+        self.library_install_prefix = self.build_dir.parent.parent / ".libs"
+
         self.src_extract_dir = (
             self.build_dir / self.fullname
         )  # where we extract the source
@@ -434,7 +434,7 @@ class RecipeBuilder:
             )
 
             if self.build_metadata.vendor_sharedlib:
-                lib_dir = Path(get_build_flag("WASM_LIBRARY_DIR"))
+                lib_dir = self.library_install_prefix
                 copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
             python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
@@ -457,7 +457,9 @@ class RecipeBuilder:
             try:
                 test_dir = self.src_dist_dir / "tests"
                 if self.build_metadata.unvendor_tests:
-                    nmoved = unvendor_tests(wheel_dir, test_dir)
+                    nmoved = unvendor_tests(
+                        wheel_dir, test_dir, self.build_metadata.retain_test_patterns
+                    )
                     if nmoved:
                         with chdir(self.src_dist_dir):
                             shutil.make_archive(f"{self.name}-tests", "tar", test_dir)
@@ -527,6 +529,11 @@ class RecipeBuilder:
             "PKG_VERSION": self.version,
             "PKG_BUILD_DIR": str(self.src_extract_dir),
             "DISTDIR": str(self.src_dist_dir),
+            # TODO: rename this to something more compatible with Makefile or CMake conventions
+            "WASM_LIBRARY_DIR": str(self.library_install_prefix),
+            # Using PKG_CONFIG_LIBDIR instead of PKG_CONFIG_PATH,
+            # so pkg-config will not look in the default system directories
+            "PKG_CONFIG_LIBDIR": str(self.library_install_prefix / "lib/pkgconfig"),
         }
 
 
@@ -594,7 +601,9 @@ def copy_sharedlibs(
     return {}
 
 
-def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
+def unvendor_tests(
+    install_prefix: Path, test_install_prefix: Path, retain_test_patterns: list[str]
+) -> int:
     """Unvendor test files and folders
 
     This function recursively walks through install_prefix and moves anything
@@ -634,6 +643,8 @@ def unvendor_tests(install_prefix: Path, test_install_prefix: Path) -> int:
                 or fnmatch.fnmatchcase(fpath, "*_test.py")
                 or fpath == "conftest.py"
             ):
+                if any(fnmatch.fnmatchcase(fpath, pat) for pat in retain_test_patterns):
+                    continue
                 (test_install_prefix / root_rel).mkdir(exist_ok=True, parents=True)
                 shutil.move(
                     install_prefix / root_rel / fpath,

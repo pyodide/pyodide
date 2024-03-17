@@ -11,7 +11,7 @@ from typing import Any, TypeVar, overload
 from .ffi import IN_BROWSER, create_once_callable
 
 if IN_BROWSER:
-    from js import setTimeout
+    from pyodide_js._api import scheduleCallback
 
 T = TypeVar("T")
 S = TypeVar("S")
@@ -166,25 +166,6 @@ class PyodideFuture(Future[T]):
 
         self.add_done_callback(wrapper)
         return result
-
-    def syncify(self):
-        """Block until the future is resolved. Only works if JS Promise
-        integration is enabled in the runtime and the current Python call stack
-        was entered via :js:func:`pyodide.runPythonSyncifying` or
-        :js:func:`~PyCallable.callSyncifying`.
-
-        .. admonition:: Experimental
-           :class: warning
-
-           This feature is not yet stable.
-        """
-        from .ffi import create_proxy
-
-        p = create_proxy(self)
-        try:
-            return p.syncify()  # type:ignore[attr-defined]
-        finally:
-            p.destroy()
 
 
 class PyodideTask(Task[T], PyodideFuture[T]):
@@ -362,7 +343,10 @@ class WebLoop(asyncio.AbstractEventLoop):
                 else:
                     raise
 
-        setTimeout(create_once_callable(run_handle), delay * 1000)
+        scheduleCallback(
+            create_once_callable(run_handle, _may_syncify=True), delay * 1000
+        )
+
         return h
 
     def _decrement_in_progress(self, *args):

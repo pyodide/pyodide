@@ -1,0 +1,25 @@
+package:
+  name: altair
+  version: 5.2.0
+  top-level:
+    - altair
+source:
+  url: https://files.pythonhosted.org/packages/c5/e4/7fcceef127badbb0d644d730d992410e4f3799b295c9964a172f92a469c7/altair-5.2.0-py3-none-any.whl
+  sha256: 8c4888ad11db7c39f3f17aa7f4ea985775da389d79ac30a6c22856ab238df399
+about:
+  home: null
+  PyPI: https://pypi.org/project/altair
+  summary: "Vega-Altair: A declarative statistical visualization library for Python."
+  license: null
+extra:
+  recipe-maintainers:
+    - joelostblom
+requirements:
+  run:
+    - typing-extensions
+    - Jinja2
+    - jsonschema
+    - numpy
+    - pandas
+    - toolz
+    - packaging

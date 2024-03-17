@@ -178,6 +178,11 @@ def parse_args():
     parser.add_argument(
         "--dry-run", action="store_true", help="Don't actually write anything"
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Compare the current contents to the updated contents and fail if it would change anything",
+    )
 
     return parser.parse_args()
 
@@ -210,12 +215,20 @@ def main():
         if new_content is not None:
             update_queue.append((target, new_content))
 
+    if args.check:
+        if update_queue:
+            print("Version update would change files, failing", file=sys.stderr)
+            return 1
+        return 0
     if args.dry_run:
-        return
+        return 0
 
     for target, content in update_queue:
         target.file.write_text(content)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    sys.exit(main())

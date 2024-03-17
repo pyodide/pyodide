@@ -1,11 +1,11 @@
 package:
   name: urllib3
-  version: 2.1.0
+  version: 2.2.0
   top-level:
     - urllib3
 source:
-  url: https://github.com/urllib3/urllib3/archive/5d7979d3f03451c04c80995b8f35cb45ba37c003.zip
-  sha256: 0f8241f8f4f61a8bb4acae44fe5b20aa37754e953b5621bbb4c5b63d203ba599
+  url: https://files.pythonhosted.org/packages/e2/cc/abf6746cc90bc52df4ba730f301b89b3b844d6dc133cb89a01cfe2511eb9/urllib3-2.2.0.tar.gz
+  sha256: 051d961ad0c62a94e50ecf1af379c3aba230c66c710493493560c0c223c49f20
 test:
   imports:
     - urllib3

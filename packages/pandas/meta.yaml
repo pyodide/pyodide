@@ -1,13 +1,13 @@
 package:
   name: pandas
-  version: 1.5.3
+  version: 2.2.0
   tag:
     - min-scipy-stack
   top-level:
     - pandas
 source:
-  url: https://files.pythonhosted.org/packages/74/ee/146cab1ff6d575b54ace8a6a5994048380dc94879b0125b25e62edcb9e52/pandas-1.5.3.tar.gz
-  sha256: 74a3fd7e5a7ec052f183273dc7b0acd3a863edf7520f5d3a1765c04ffdb3b0b1
+  url: https://files.pythonhosted.org/packages/03/d2/6fb05f20ee1b3961c7b283c1f8bafc6de752155d075c5db61c173de0de62/pandas-2.2.0.tar.gz
+  sha256: 30b83f7c3eb217fb4d1b494a57a2fda5444f17834f5df2de6b2ffff68dc3c8e2
 build:
   cflags:
     -Werror=implicit-function-declaration -Werror=mismatched-parameter-types
