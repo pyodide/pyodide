@@ -1,13 +1,12 @@
 package:
   name: cvxpy-base
-  version: 1.4.2
+  version: 1.5.0
   top-level:
     - cvxpy
 source:
-  url: https://files.pythonhosted.org/packages/02/96/9b15df4809cc34914a2edb3a3854d71679223f05e33748325a95a2876477/cvxpy-base-1.4.2.tar.gz
-  sha256: 7183710573f5f6bf23083e377d193e55b428ec70b1eab745bfc67fa30d4642a7
-  patches:
-    - patches/0001-Do-not-build-C-extensions.patch
+  # TODO: replace with cvxpy-base from PyPI after 1.5 release
+  url: https://github.com/cvxpy/cvxpy/archive/310917d.zip
+  sha256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 requirements:
   run:
     # Dependencies that are needed to run the package
