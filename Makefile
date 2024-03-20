@@ -90,9 +90,11 @@ src/core/libpyodide.a: \
 	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
+	src/core/jsproxy_call.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/jslib.o \
+	src/core/jsbind.o \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \

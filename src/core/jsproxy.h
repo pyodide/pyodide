@@ -17,7 +17,10 @@ int
 JsProxy_compute_typeflags(JsVal obj);
 
 PyObject*
-JsProxy_create_with_type(int type_flags, JsVal object, JsVal this);
+JsProxy_create_with_type(int type_flags,
+                         JsVal object,
+                         JsVal this,
+                         PyObject* sig);
 
 PyObject*
 JsProxy_create_objmap(JsVal object, bool objmap);
@@ -30,7 +33,7 @@ JsProxy_create_objmap(JsVal object, bool objmap);
  * @return The Python object wrapping the JavaScript object.
  */
 PyObject*
-JsProxy_create_with_this(JsVal object, JsVal this);
+JsProxy_create_with_this(JsVal object, JsVal this, PyObject* sig);
 
 /**
  * Make a new JsProxy.
@@ -50,6 +53,16 @@ JsProxy_Check(PyObject* x);
 
 JsVal
 JsProxy_Val(PyObject* x);
+
+PyObject*
+wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter);
+
+// These could maybe move to JsLib?
+JsVal
+wrap_generator(JsVal gen, JsVal proxies);
+
+JsVal
+wrap_async_generator(JsVal gen, JsVal proxies);
 
 /** Initialize global state for JsProxy functionality. */
 int

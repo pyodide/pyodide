@@ -116,6 +116,10 @@ class JsProxy(metaclass=_JsProxyMetaClass):
             return super().__new__(cls)
         raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
+    def bind_sig(self, signature: Any) -> "JsProxy":
+        """Creates a copy of the JsProxy with a signature bound to it."""
+        return self
+
     @property
     def js_id(self) -> int:
         """An id number which can be used as a dictionary/set key if you want to
