@@ -23,7 +23,7 @@ def test_cvxpy_clarabel(selenium):
     assert prob.status == cp.OPTIMAL
 
 
-@run_in_pyodide(packages=["cvxpy"])
+@run_in_pyodide(packages=["cvxpy-base"])
 def test_cvxpy_scipy(selenium):
     import cvxpy as cp
 
