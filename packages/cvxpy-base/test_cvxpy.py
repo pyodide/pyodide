@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(firefox="slow")
 @run_in_pyodide(packages=["cvxpy-base"])
 def test_cvxpy_clarabel(selenium):
     import cvxpy as cp
