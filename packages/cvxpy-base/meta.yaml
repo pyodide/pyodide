@@ -1,0 +1,25 @@
+package:
+  name: cvxpy-base
+  version: 1.5.0
+  top-level:
+    - cvxpy
+source:
+  # TODO: replace with cvxpy-base from PyPI after 1.5 release
+  url: https://github.com/cvxpy/cvxpy/archive/23f1eaa.zip
+  sha256: 4b2a0d982a810d0fdb9f189ab5faa4dbef39679921335e54d737e1b57c555673
+requirements:
+  run:
+    # Dependencies that are needed to run the package
+    - numpy
+    - scipy
+    - clarabel
+about:
+  home: https://github.com/cvxpy/cvxpy
+  PyPI: https://pypi.org/project/cvxpy-base
+  summary:
+    A domain-specific language for modeling convex optimization problems in
+    Python.
+  license: Apache License, Version 2.0
+extra:
+  recipe-maintainers:
+    - phschiele
