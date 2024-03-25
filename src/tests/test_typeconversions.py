@@ -1285,6 +1285,7 @@ def test_tojs_literalmap(selenium):
         """
     )
 
+
 @run_in_pyodide
 def test_to_py1(selenium):
     from pyodide.code import run_js
