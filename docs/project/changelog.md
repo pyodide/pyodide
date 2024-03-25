@@ -16,6 +16,13 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
+  `jsproxy.toString` is undefined. Instead, it will use
+  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
+  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
+  throws, then `str` will still raise.
+  {pr}`4574`
+
 - {{ Enhancement }} Improved support for stack switching.
   {pr}`4532`, {pr}`4547`
 
@@ -72,7 +79,7 @@ myst:
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
-  `matplotlib-inline` {pr}`4605`
+  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`
 
 - Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
 
@@ -83,6 +90,8 @@ myst:
   `zengl` to 2.4.1 {pr}`4509`, `protobuf` to 4.24.4 {pr}`4553`
 
 - Upgraded `OpenBLAS` to 0.26 {pr}`4526`
+
+- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
 
 ## Version 0.25.0
 

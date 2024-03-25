@@ -76,11 +76,15 @@ jobs:
           environment-file: environment.yml
           channels: conda-forge
 
-      - name: Check Python versions
+      - name: Check Versions
         shell: bash -l {0}
         run: |
           python --version
+          node --version
+          npm --version
           which python
+          which node
+          which npm
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}

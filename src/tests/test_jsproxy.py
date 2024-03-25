@@ -1286,13 +1286,10 @@ def test_js_id(selenium):
 
 @run_in_pyodide
 def test_object_with_null_constructor(selenium):
-    from unittest import TestCase
-
     from pyodide.code import run_js
 
     o = run_js("Object.create(null)")
-    with TestCase().assertRaises(TypeError):
-        repr(o)
+    assert repr(o) == "[object Object]"
 
 
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
@@ -2557,3 +2554,70 @@ def test_js_proxy_attribute(selenium):
     assert x.c is None
     with pytest.raises(AttributeError):
         x.d  # noqa: B018
+
+
+@run_in_pyodide
+async def test_js_proxy_str(selenium):
+    import re
+
+    import pytest
+
+    from js import Array
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    assert (
+        re.sub(r"\s+", " ", str(Array).replace("\n", " "))
+        == "function Array() { [native code] }"
+    )
+    assert str(run_js("[1,2,3]")) == "1,2,3"
+    assert str(run_js("Object.create(null)")) == "[object Object]"
+    mod = await run_js("import('data:text/javascript,')")
+    assert str(mod) == "[object Module]"
+    # accessing toString fails, should fall back to Object.prototype.toString.call
+    x = run_js(
+        """
+        ({
+          get toString() {
+            throw new Error();
+          },
+          [Symbol.toStringTag] : "SomeTag"
+        })
+        """
+    )
+    assert str(x) == "[object SomeTag]"
+    # accessing toString succeeds but toString call throws, let exception propagate
+    x = run_js(
+        """
+        ({
+          toString() {
+            throw new Error("hi!");
+          },
+        })
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # No toString method, so we fall back to Object.prototype.toString.call
+    # which throws, let error propagate
+    x = run_js(
+        """
+        ({
+          get [Symbol.toStringTag]() {
+            throw new Error("hi!");
+          },
+        });
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # accessing toString fails, so fall back to Object.prototype.toString.call
+    # which also throws, let error propagate
+    px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
+    with pytest.raises(
+        JsException,
+        match="revoked",
+    ):
+        str(px)

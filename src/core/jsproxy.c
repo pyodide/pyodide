@@ -269,9 +269,6 @@ JsProxy_Repr(PyObject* self)
 {
   JsVal repr = JsvObject_toString(JsProxy_VAL(self));
   if (JsvNull_Check(repr)) {
-    PyErr_Format(PyExc_TypeError,
-                 "Pyodide cannot generate a repr for this Javascript object "
-                 "because it has no 'toString' method");
     return NULL;
   }
   return js2python(repr);

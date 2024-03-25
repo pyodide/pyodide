@@ -28,22 +28,20 @@ export const IN_BROWSER = !IN_NODE && !IN_DENO;
 /** @private */
 export const IN_BROWSER_MAIN_THREAD =
   IN_BROWSER &&
-  typeof window !== "undefined" &&
-  typeof document !== "undefined" &&
-  typeof document.createElement !== "undefined" &&
-  typeof sessionStorage !== "undefined" &&
-  typeof importScripts === "undefined";
+  typeof window === "object" &&
+  typeof document === "object" &&
+  typeof document.createElement === "function" &&
+  typeof sessionStorage === "object" &&
+  typeof importScripts !== "function";
 
 /** @private */
 export const IN_BROWSER_WEB_WORKER =
-  IN_BROWSER &&
-  typeof importScripts !== "undefined" &&
-  typeof self !== "undefined";
+  IN_BROWSER && typeof importScripts === "function" && typeof self === "object";
 
 /** @private */
 export const IN_SAFARI =
-  typeof navigator !== "undefined" &&
-  typeof navigator.userAgent !== "undefined" &&
+  typeof navigator === "object" &&
+  typeof navigator.userAgent === "string" &&
   navigator.userAgent.indexOf("Chrome") == -1 &&
   navigator.userAgent.indexOf("Safari") > -1;
 
