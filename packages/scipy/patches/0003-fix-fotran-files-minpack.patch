@@ -1,7 +1,7 @@
-From 950ec77d888ac4a7fb528c6b3cc10ff02c468a71 Mon Sep 17 00:00:00 2001
+From 8c5ef6d95d08948e2511d7975fd5660ff1f991b1 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 6 Apr 2022 21:21:53 -0700
-Subject: [PATCH 03/10] fix fotran files minpack
+Subject: [PATCH 3/9] fix fotran files minpack
 
 ---
  scipy/optimize/minpack/chkder.f | 3 +--

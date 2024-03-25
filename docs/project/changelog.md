@@ -54,6 +54,9 @@ myst:
 - {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
   {pr}`4546`
 
+- {{ Enhancement }} `asyncio.sleep(0)` now runs the next task a lot faster.
+  {pr}`4590`
+
 - {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
   existing nonempty directory. Also it throws much clearer error messages when
   it fails.
@@ -68,7 +71,8 @@ myst:
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
-  `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`
+  `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
+  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`
 
 - Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
 
@@ -76,9 +80,11 @@ myst:
 
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
-  `zengl` to 2.4.1 {pr}`4509`
+  `zengl` to 2.4.1 {pr}`4509`, `protobuf` to 4.24.4 {pr}`4553`
 
 - Upgraded `OpenBLAS` to 0.26 {pr}`4526`
+
+- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
 
 ## Version 0.25.0
 

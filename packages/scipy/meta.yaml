@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.11.2
+  version: 1.12.0
   tag:
     - min-scipy-stack
   top-level:
@@ -17,8 +17,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/9c/ef/87a5565907645998d7c62e76b84b0ca9f0b7c25cd433f5617a968051cec3/scipy-1.11.2.tar.gz
-  sha256: b29318a5e39bd200ca4381d80b065cdf3076c7d7281c5e36569e99273867f61d
+  url: https://files.pythonhosted.org/packages/30/85/cdbf2c3c460fe5aae812917866392068a88d02f07de0fe31ce738734c477/scipy-1.12.0.tar.gz
+  sha256: 4bf5abab8a36d20193c698b0f1fc282c1d083c94723902c447e5d2f1780936a3
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
@@ -26,10 +26,9 @@ source:
     - patches/0003-fix-fotran-files-minpack.patch
     - patches/0004-gemm_-no-const.patch
     - patches/0005-make-int-return-values.patch
-    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0008-Remove-test-modules-that-fails-to-build.patch
-    - patches/0009-Fix-fitpack.patch
-    - patches/0010-Fix-gees-calls.patch
+    - patches/0007-Remove-test-modules-that-fails-to-build.patch
+    - patches/0008-Fix-fitpack.patch
+    - patches/0009-Fix-gees-calls.patch
 
 build:
   cflags: |
@@ -88,6 +87,10 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
+
+  _retain-test-patterns:
+    - "*_page_trend_test.py"
+    - "*bws_test.py"
 
   cross-build-env: true
   cross-build-files:

@@ -6,15 +6,50 @@ from conftest import requires_jspi
 
 @requires_jspi
 @run_in_pyodide
-def test_syncify_create_task(selenium):
-    import asyncio
+def test_syncify_awaitable_types_accept(selenium):
+    from asyncio import create_task, gather, sleep
+
+    from js import sleep as js_sleep
+    from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     async def test():
-        await asyncio.sleep(0.1)
+        await sleep(0.1)
         return 7
 
-    task = asyncio.create_task(test())
-    assert task.syncify() == 7  # type:ignore[attr-defined]
+    assert run_sync(test()) == 7
+    assert run_sync(create_task(test())) == 7
+    run_sync(sleep(0.1))
+    run_sync(js_sleep(100))
+    res = run_sync(gather(test(), sleep(0.1), js_sleep(100), js_sleep(100)))
+    assert list(res) == [7, None, None, None]
+    p = run_js("[sleep(100)]")[0]
+    run_sync(p)
+
+
+@requires_jspi
+@run_in_pyodide
+def test_syncify_awaitable_type_errors(selenium):
+    import pytest
+
+    from pyodide.ffi import run_sync
+
+    with pytest.raises(TypeError):
+        run_sync(1)  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync(None)  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync([1, 2, 3])  # type:ignore[arg-type]
+    with pytest.raises(TypeError):
+        run_sync(iter([1, 2, 3]))  # type:ignore[arg-type]
+
+    def f():
+        yield 1
+        yield 2
+        yield 3
+
+    with pytest.raises(TypeError):
+        run_sync(f())
 
 
 @pytest.mark.xfail_browsers(node="Scopes don't work as needed")
@@ -31,7 +66,10 @@ def test_syncify_not_supported1(selenium_standalone_noload):
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
         await assertThrows(
-          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          () => pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            run_sync(1)
+          `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -56,7 +94,10 @@ def test_syncify_not_supported2(selenium_standalone_noload):
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
         await assertThrows(
-          () => pyodide.runPython("from js import sleep; sleep().syncify()"),
+          () => pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            run_sync(1)
+          `),
           "PythonError",
           "RuntimeError: WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -68,6 +109,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
 @run_in_pyodide
 def test_syncify1(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -77,7 +119,7 @@ def test_syncify1(selenium):
         })
         """
     )
-    assert test().syncify() == 7
+    assert run_sync(test()) == 7
 
 
 @requires_jspi
@@ -87,12 +129,13 @@ def test_syncify2(selenium):
 
     import pytest
 
+    from pyodide.ffi import run_sync
     from pyodide_js import loadPackage
 
     with pytest.raises(ModuleNotFoundError):
         importlib.metadata.version("micropip")
 
-    loadPackage("micropip").syncify()
+    run_sync(loadPackage("micropip"))
 
     assert importlib.metadata.version("micropip")
 
@@ -103,7 +146,7 @@ def test_syncify_error(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import JsException
+    from pyodide.ffi import JsException, run_sync
 
     asyncThrow = run_js(
         """
@@ -114,13 +157,14 @@ def test_syncify_error(selenium):
     )
 
     with pytest.raises(JsException, match="hi"):
-        asyncThrow().syncify()
+        run_sync(asyncThrow())
 
 
 @requires_jspi
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     asyncNull = run_js(
         """
@@ -130,7 +174,7 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert asyncNull().syncify() is None
+    assert run_sync(asyncNull()) is None
 
 
 @requires_jspi
@@ -140,6 +184,7 @@ def test_syncify_no_suspender(selenium):
         await pyodide.loadPackage("pytest");
         pyodide.runPython(`
             from pyodide.code import run_js
+            from pyodide.ffi import run_sync
             import pytest
 
             test = run_js(
@@ -151,7 +196,7 @@ def test_syncify_no_suspender(selenium):
                 '''
             )
             with pytest.raises(RuntimeError, match="No suspender"):
-                test().syncify()
+                run_sync(test())
             del test
         `);
         """
@@ -163,6 +208,7 @@ def test_syncify_no_suspender(selenium):
 @run_in_pyodide(packages=["fpcast-test"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -175,7 +221,7 @@ def test_syncify_getset(selenium):
     x = []
 
     def wrapper():
-        x.append(test().syncify())
+        x.append(run_sync(test()))
 
     import fpcast_test
 
@@ -192,6 +238,7 @@ def test_syncify_getset(selenium):
 @run_in_pyodide
 def test_syncify_ctypes(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     test = run_js(
         """
@@ -203,7 +250,7 @@ def test_syncify_ctypes(selenium):
     )
 
     def wrapper():
-        return test().syncify()
+        return run_sync(test())
 
     from ctypes import py_object, pythonapi
 
@@ -219,6 +266,7 @@ def test_cpp_exceptions_and_syncify(selenium):
         selenium.run_js(
             """
             ptr = pyodide.runPython(`
+                from pyodide.ffi import run_sync
                 from pyodide.code import run_js
                 temp = run_js(
                     '''
@@ -231,7 +279,7 @@ def test_cpp_exceptions_and_syncify(selenium):
 
                 def f():
                     try:
-                        return temp().syncify()
+                        return run_sync(temp())
                     except Exception as e:
                         print(e)
                         return -1
@@ -261,11 +309,12 @@ def test_two_way_transfer(selenium):
     res = selenium.run_js(
         """
         pyodide.runPython(`
+            from pyodide.ffi import run_sync
             l = []
             def f(n, t):
                 from js import sleep
                 for i in range(5):
-                    sleep(t).syncify()
+                    run_sync(sleep(t))
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
@@ -295,16 +344,17 @@ def test_two_way_transfer(selenium):
 def test_sync_async_mix(selenium):
     res = selenium.run_js(
         """
-        pyodide.runPython(
-        `
+        pyodide.runPython(`
+            from pyodide.ffi import run_sync
             from js import sleep
+
             l = [];
             async def a(t):
                 await sleep(t)
                 l.append(["a", t])
 
             def b(t):
-                sleep(t).syncify()
+                run_sync(sleep(t))
                 l.append(["b", t])
         `);
         const a = pyodide.globals.get("a");
@@ -357,18 +407,19 @@ def test_nested_syncify(selenium):
         pyodide.globals.set("getStuff", getStuff);
 
         pyodide.runPython(`
+            from pyodide.ffi import run_sync
             from js import sleep
             def g():
-                sleep(25).syncify()
-                return f1().syncify()
+                run_sync(sleep(25))
+                return run_sync(f1())
 
             def g1():
-                sleep(25).syncify()
-                return f2().syncify()
+                run_sync(sleep(25))
+                return run_sync(f2())
 
             def g2():
-                sleep(25).syncify()
-                return getStuff().syncify()
+                run_sync(sleep(25))
+                return run_sync(getStuff())
         `);
         const l = pyodide.runPython("l = []; l")
         const g = pyodide.globals.get("g");
@@ -379,7 +430,7 @@ def test_nested_syncify(selenium):
         p.push(pyodide.runPythonAsync(`
             from js import sleep
             for i in range(20):
-                sleep(9).syncify()
+                run_sync(sleep(9))
                 l.append(i)
         `));
         await Promise.all(p);
@@ -398,9 +449,10 @@ def test_nested_syncify(selenium):
 @requires_jspi
 @run_in_pyodide
 async def test_promise_methods(selenium):
-    from asyncio import ensure_future, sleep
+    from asyncio import sleep
 
     from pyodide.code import run_js
+    from pyodide.ffi import run_sync
 
     async_pass = run_js(
         """
@@ -420,9 +472,107 @@ async def test_promise_methods(selenium):
 
     def f(*args):
         print("will sleep")
-        ensure_future(sleep(0.1)).syncify()  # type:ignore[attr-defined]
+        run_sync(sleep(0.1))
         print("have slept")
 
     await async_pass().then(f, f)
     await async_raise().then(f, f)
     await async_pass().finally_(f)
+
+
+@requires_jspi
+def test_throw_from_switcher(selenium):
+    """
+    This used to fail because because a()'s error status got stolen by b(). This
+    happens because the promising function is a separate task from the js code
+    in callPyObjectSuspending, so the sequence of events goes:
+
+    - enter main task,
+        - enter callPyObjectSuspending(a)
+            - enter promisingApply(a)
+            - sets error flag and returns NULL
+        - queue continue callPyObjectSuspending(a) in event loop
+          now looks like [main task, continue callPyObjectSuspending(a)]
+
+        - enter b()
+            - enter Python
+            - returns 7 with error state still set
+        - rejects with "SystemError: <function b at 0x1140f20> returned a result with an exception set"
+    - queue continue main() in event loop
+    - continue callPyObjectSuspending(a)
+        - pythonexc2js called attempting to read error flag set by promisingApply(a), fails with
+          PythonError: TypeError: Pyodide internal error: no exception type or value
+
+    The solution: at the end of `_pyproxy_apply_promising` we move the error
+    flag into errStatus argument. In callPyObjectSuspending when we're ready we
+    move the error back from the errorStatus variable into the error flag before
+    calling `pythonexc2js()`
+    """
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            def a():
+                raise Exception("hi")
+            def b():
+                return 7;
+        `);
+        const a = pyodide.globals.get("a");
+        const b = pyodide.globals.get("b");
+        const p = a.callSyncifying();
+        assert(() => b() === 7);
+        await assertThrowsAsync(async () => await p, "PythonError", "Exception: hi");
+        a.destroy();
+        b.destroy();
+        """
+    )
+
+
+@requires_jspi
+def test_switch_from_except_block(selenium):
+    """Test for issue #4566"""
+    result = selenium.run_js(
+        """
+        const result = [];
+        pyodide.globals.set("result", result);
+        pyodide.runPython(`
+            from pyodide.ffi import run_sync, to_js
+            import sys
+            from js import sleep
+
+            def pe(s):
+                result.push(to_js([s, repr(sys.exception())]))
+
+            def g(n):
+                pe(f"{n}0")
+                try:
+                    raise Exception(n)
+                except:
+                    pe(f"{n}1")
+                    run_sync(sleep(10))
+                    pe(f"{n}2")
+                pe(f"{n}3")
+        `);
+        const pe = pyodide.globals.get("pe");
+        const g = pyodide.globals.get("g");
+        const g1 = g.callSyncifying("a");
+        const g2 = g.callSyncifying("b");
+        pe('tt')
+        await g1;
+        await g2;
+        pyodide.globals.delete("result");
+        pe.destroy();
+        g.destroy();
+        return result;
+        """
+    )
+    assert result == [
+        ["a0", "None"],
+        ["a1", "Exception('a')"],
+        ["b0", "None"],
+        ["b1", "Exception('b')"],
+        ["tt", "None"],
+        ["a2", "Exception('a')"],
+        ["a3", "None"],
+        ["b2", "Exception('b')"],
+        ["b3", "None"],
+    ]

@@ -1495,6 +1495,11 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
     pass
 
 
+def run_sync(x: Awaitable[T]) -> T:
+    """Hi!"""
+    raise NotImplementedError
+
+
 __name__ = _save_name
 del _save_name
 
@@ -1519,6 +1524,7 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "run_sync",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",

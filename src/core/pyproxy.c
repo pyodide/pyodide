@@ -137,6 +137,18 @@ gen_is_coroutine(PyObject* o)
   return 0;
 }
 
+bool
+py_is_awaitable(PyObject* o)
+{
+  if (PyCoro_CheckExact(o) || gen_is_coroutine(o)) {
+    /* 'o' is a coroutine. */
+    return true;
+  }
+
+  PyTypeObject* type = Py_TYPE(o);
+  return !!(type->tp_as_async && type->tp_as_async->am_await);
+}
+
 /**
  * Do introspection on the python object to work out which abstract protocols it
  * supports. Most of these tests are taken from a corresponding abstract Object
@@ -745,6 +757,26 @@ finally:
   Py_CLEAR(pyresult);
   Py_CLEAR(pykwnames);
   return result;
+}
+
+/**
+ * call _pyproxy_apply but save the error flag into the argument so it can't be
+ * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
+ * restore the error flag before calling pythonexc2js(). See
+ * test_stack_switching.test_throw_from_switcher for a detailed explanation.
+ */
+EMSCRIPTEN_KEEPALIVE JsVal
+_pyproxy_apply_promising(PyObject* callable,
+                         JsVal jsargs,
+                         size_t numposargs,
+                         JsVal jskwnames,
+                         size_t numkwargs,
+                         PyObject** exc)
+{
+  JsVal res =
+    _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
+  *exc = PyErr_GetRaisedException();
+  return res;
 }
 
 EMSCRIPTEN_KEEPALIVE bool

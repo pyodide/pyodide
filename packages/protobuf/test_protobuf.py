@@ -34,6 +34,8 @@ def test_generated_protobuf_code(selenium):
     After generation some small modifications have been made to fit the tests.
     It doesn't create any new globals for example.
     """
+    from copy import copy, deepcopy
+
     from google.protobuf import descriptor_pool as _descriptor_pool
     from google.protobuf import symbol_database as _symbol_database
     from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
@@ -57,3 +59,7 @@ def test_generated_protobuf_code(selenium):
     person.name = "test"
     person.id = 1
     assert repr(person) == 'name: "test"\nid: 1\n'
+
+    # the main reason to test copying and deepcopying is that we patch message.c
+    assert repr(person) == repr(copy(person))
+    assert repr(person) == repr(deepcopy(person))

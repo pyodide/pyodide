@@ -66,6 +66,7 @@ declare global {
   export const _PyMem_Free: (ptr: number) => number;
   export const _PyGILState_Check: () => number;
   export const __PyErr_CheckSignals: () => number;
+  export const _PyErr_SetRaisedException: (ptr: number) => void;
 }
 
 // Our own functions we use from JavaScript. These all need to be labeled with
@@ -321,6 +322,8 @@ export interface API {
   runPythonInternal_dict: any;
   saveState: () => any;
   restoreState: (state: any) => void;
+  scheduleCallback: (callback: () => void, timeout: number) => void;
+  detectEnvironment: () => Record<string, boolean>;
 
   package_loader: any;
   importlib: any;

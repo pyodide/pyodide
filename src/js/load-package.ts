@@ -6,12 +6,15 @@ import {
   loadBinaryFile,
   initNodeModules,
   resolvePath,
-  base16ToBase64,
 } from "./compat.js";
 import { createLock } from "./lock";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
-import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
+import {
+  canonicalizePackageName,
+  uriToPackageData,
+  base16ToBase64,
+} from "./packaging-utils";
 import { Lockfile } from "./types";
 
 /**
