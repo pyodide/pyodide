@@ -73,6 +73,11 @@ myst:
   directory into the Pyodide file system when running in node.
   {pr}`4561`
 
+- {{ Enhancement }} When a dictionary is converted to JavaScript with `toJs` the
+  result is now a `LiteralMap`. String keys are accessible via direct property
+  access unless they match a function on the `Map` prototype.
+  {pr}`4576`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,

@@ -509,6 +509,10 @@ MAKE_OPERATOR(greater_than_equal, >=);
 EM_JS_VAL(JsVal, JsvMap_New, (), {
   return new Map();
 })
+
+EM_JS_VAL(JsVal, JsvLiteralMap_New, (), {
+  return new API.LiteralMap();
+})
 // clang-format on
 
 EM_JS_NUM(errcode, JsvMap_Set, (JsVal map, JsVal key, JsVal val), {
