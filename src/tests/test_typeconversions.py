@@ -1221,25 +1221,69 @@ def test_tojs9(selenium):
     assert set(
         selenium.run_js(
             """
-                return Array.from(pyodide.runPython(`
-                    from pyodide.ffi import to_js
-                    to_js({ 1, "1" })
-                `).values())
-                """
+            return Array.from(pyodide.runPython(`
+                from pyodide.ffi import to_js
+                to_js({ 1, "1" })
+            `).values())
+            """
         )
     ) == {1, "1"}
 
     assert dict(
         selenium.run_js(
             """
-                return Array.from(pyodide.runPython(`
-                    from pyodide.ffi import to_js
-                    to_js({ 1 : 7, "1" : 9 })
-                `).entries())
-                """
+            return Array.from(pyodide.runPython(`
+                from pyodide.ffi import to_js
+                to_js({ 1 : 7, "1" : 9 })
+            `).entries())
+            """
         )
     ) == {1: 7, "1": 9}
 
+
+def test_tojs_literalmap(selenium):
+    selenium.run_js(
+        """
+        const res = pyodide.runPython(`
+            from pyodide.ffi import to_js
+            to_js({ "a" : 6, "b" : 10, 6 : 9, "get": 77, True: 90})
+        `);
+
+        assert(() => res.constructor.name === "LiteralMap");
+        assert(() => "a" in res);
+        assert(() => "b" in res);
+        assert(() => !(6 in res));
+        assert(() => "get" in res);
+        assert(() => !(true in res));
+        assert(() => res.has("a"));
+        assert(() => res.has("b"));
+        assert(() => res.has(6));
+        assert(() => res.has("get"));
+        assert(() => res.has(true));
+        assert(() => res.a === 6);
+        assert(() => res.b === 10);
+        assert(() => res[6] === undefined);
+        assert(() => typeof res.get === "function");
+        assert(() => res[true] === undefined);
+        assert(() => res.get("a") === 6);
+        assert(() => res.get("b") === 10);
+        assert(() => res.get(6) === 9);
+        assert(() => res.get("get") === 77);
+        assert(() => res.get(true) === 90);
+        res.delete("a");
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        res.a = 7;
+        assert(() => res.a === 7);
+        assert(() => res.get("a") === 7);
+        res.set("a", 99);
+        assert(() => res.get("a") === 99);
+        assert(() => res.a === 99);
+        delete res.a
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        """
+    )
 
 @run_in_pyodide
 def test_to_py1(selenium):
