@@ -16,6 +16,13 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
+  `jsproxy.toString` is undefined. Instead, it will use
+  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
+  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
+  throws, then `str` will still raise.
+  {pr}`4574`
+
 - {{ Enhancement }} Improved support for stack switching.
   {pr}`4532`, {pr}`4547`
 
