@@ -78,6 +78,9 @@ myst:
   access unless they match a function on the `Map` prototype.
   {pr}`4576`
 
+- {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
+  {pr}`4637`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
