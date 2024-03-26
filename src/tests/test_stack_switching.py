@@ -576,3 +576,97 @@ def test_switch_from_except_block(selenium):
         ["b2", "Exception('b')"],
         ["b3", "None"],
     ]
+
+
+@requires_jspi
+def test_memory_leak1(selenium):
+    length_change = selenium.run_js(
+        """
+        t = pyodide.runPython(`
+            def t(n):
+                pass
+
+            t
+        `);
+        for (let i = 0; i < 10; i++) {
+            t.callSyncifying(1)
+        }
+        const startLength = pyodide._module.HEAP32.length;
+        for (let i = 0; i < 200; i++) {
+            t.callSyncifying(1)
+        }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0
+
+
+@requires_jspi
+def test_memory_leak2(selenium):
+    length_change = selenium.run_js(
+        """
+        t = pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            from js import sleep
+
+            def test(n):
+                run_sync(sleep(1))
+
+            test
+        `);
+        let p = [];
+        for (let i = 0; i < 200; i++) {
+            p.push(t.callSyncifying(1));
+        }
+        await Promise.all(p);
+        const startLength = pyodide._module.HEAP32.length;
+        for (let i = 0; i < 10; i++) {
+            p = [];
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callSyncifying(1));
+            }
+            await Promise.all(p);
+        }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0
+
+
+@pytest.mark.xfail(reason="It leaks still")
+@requires_jspi
+def test_memory_leak3(selenium):
+    length_change = selenium.run_js(
+        """
+        t = pyodide.runPython(`
+            from pyodide.ffi import run_sync
+            from asyncio import sleep as py_sleep
+
+            async def sleep(x):
+                await py_sleep(x/1000)
+
+            def test(n):
+                run_sync(sleep(1))
+
+            test
+        `);
+        let p = [];
+        for (let i = 0; i < 200; i++) {
+            p.push(t.callSyncifying(1));
+        }
+        await Promise.all(p);
+        const startLength = pyodide._module.HEAP32.length;
+        for (let i = 0; i < 10; i++) {
+            p = [];
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callSyncifying(1));
+            }
+            await Promise.all(p);
+        }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0
