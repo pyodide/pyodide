@@ -1,10 +1,66 @@
+import shutil
 from pathlib import Path
 
+import pytest
+from pyodide_lock import PyodideLockSpec
 from typer.testing import CliRunner
 
 from pyodide_build.cli import (
     xbuildenv,
 )
+from pyodide_build.common import chdir
+
+
+def mock_pyodide_lock() -> PyodideLockSpec:
+    return PyodideLockSpec(
+        info={
+            "version": "0.22.1",
+            "arch": "wasm32",
+            "platform": "emscripten_xxx",
+            "python": "3.11",
+        },
+        packages={},
+    )
+
+
+@pytest.fixture()
+def mock_xbuildenv_url(tmp_path_factory, httpserver):
+    """
+    Create a temporary xbuildenv archive
+    """
+    base = tmp_path_factory.mktemp("base")
+
+    path = Path(base)
+
+    xbuildenv = path / "xbuildenv"
+    xbuildenv.mkdir()
+
+    pyodide_root = xbuildenv / "pyodide-root"
+    site_packages_extra = xbuildenv / "site-packages-extras"
+    requirements_txt = xbuildenv / "requirements.txt"
+
+    pyodide_root.mkdir()
+    site_packages_extra.mkdir()
+    requirements_txt.touch()
+
+    (pyodide_root / "Makefile.envs").write_text(
+        """
+export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
+
+.output_vars:
+	set
+"""  # noqa: W191
+    )
+    (pyodide_root / "dist").mkdir()
+    mock_pyodide_lock().to_json(pyodide_root / "dist" / "pyodide-lock.json")
+
+    with chdir(base):
+        archive_name = shutil.make_archive("xbuildenv", "tar")
+
+    content = Path(base / archive_name).read_bytes()
+    httpserver.expect_request("/xbuildenv-mock.tar").respond_with_data(content)
+    yield httpserver.url_for("/xbuildenv-mock.tar")
+
 
 runner = CliRunner()
 

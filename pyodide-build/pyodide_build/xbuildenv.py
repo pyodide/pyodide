@@ -101,7 +101,13 @@ class CrossBuildEnvManager:
 
         symlink_dir.symlink_to(version_path)
 
-    def install(self, version: str | None = None, *, url: str | None = None) -> Path:
+    def install(
+        self,
+        version: str | None = None,
+        *,
+        url: str | None = None,
+        skip_install_cross_build_packages: bool = False,
+    ) -> Path:
         """
         Install cross-build environment.
 
@@ -119,6 +125,8 @@ class CrossBuildEnvManager:
             Warning: if you are downloading from a version that is not the same
             as the current version of pyodide-build, make sure that the cross-build
             environment is compatible with the current version of Pyodide.
+        skip_install_cross_build_packages
+            If True, skip installing the cross-build packages. This is mostly for testing purposes.
 
         Returns
         -------
@@ -154,9 +162,10 @@ class CrossBuildEnvManager:
             if not install_marker.exists():
                 logger.info("Installing Pyodide cross-build environment")
 
-                self._install_cross_build_packages(
-                    xbuildenv_root, xbuildenv_pyodide_root
-                )
+                if not skip_install_cross_build_packages:
+                    self._install_cross_build_packages(
+                        xbuildenv_root, xbuildenv_pyodide_root
+                    )
 
                 if not url:
                     # If installed from url, skip creating the PyPI index (version is not known)
@@ -169,7 +178,7 @@ class CrossBuildEnvManager:
             shutil.rmtree(download_path)
             raise e
 
-        return xbuildenv_root
+        return xbuildenv_pyodide_root
 
     def _infer_version(self) -> str:
         from . import __version__
