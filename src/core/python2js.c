@@ -53,7 +53,7 @@ _python2js_addto_postprocess_list,
 EM_JS(void, _python2js_handle_postprocess_list, (JsVal list, JsVal cache), {
   for (const [parent, key, ptr] of list) {
     let val = cache.get(ptr);
-    if (parent.constructor.name === "Map") {
+    if (parent.constructor.name === "LiteralMap") {
       parent.set(key, val)
     } else {
       // This is unfortunately a bit of a hack, if user does something weird
@@ -552,7 +552,7 @@ python2js(PyObject* x)
 static JsVal
 _JsMap_New(ConversionContext *context)
 {
-  return JsvMap_New();
+  return JsvLiteralMap_New();
 }
 
 static int

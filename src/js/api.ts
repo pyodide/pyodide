@@ -11,6 +11,7 @@ import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
+import "./literal-map.js";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
