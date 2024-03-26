@@ -232,26 +232,6 @@ async function nodeLoadScript(url: string) {
   }
 }
 
-// consider dropping this this once we drop support for node 14?
-function nodeBase16ToBase64(b16: string): string {
-  return Buffer.from(b16, "hex").toString("base64");
-}
-
-function browserBase16ToBase64(b16: string): string {
-  return btoa(
-    b16
-      .match(/\w{2}/g)!
-      .map(function (a) {
-        return String.fromCharCode(parseInt(a, 16));
-      })
-      .join(""),
-  );
-}
-
-export const base16ToBase64 = IN_NODE
-  ? nodeBase16ToBase64
-  : browserBase16ToBase64;
-
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
   if (IN_NODE) {
     await initNodeModules();
