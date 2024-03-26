@@ -1,0 +1,45 @@
+package:
+  name: pyiceberg
+  version: 0.6.0
+  top-level:
+    - hive_metastore
+    - pyiceberg
+    - fb303
+#build:
+  #script: python -m pip install . -vv --no-deps --no-build-isolation
+source:
+  url: https://files.pythonhosted.org/packages/01/9e/417eb6ac44c9de920b5c360eb58075553ad6830a7425ea711b2742c3ba25/pyiceberg-0.6.0.tar.gz
+  sha256: 0d965c202a9f49d0daa911c3fe061c55c90fa469bb382ce6440a7799ed35b003
+about:
+  home: https://py.iceberg.apache.org/
+  PyPI: https://pypi.org/project/pyiceberg
+  summary: Apache Iceberg is an open table format for huge analytic datasets
+  license: Apache-2.0
+requirements:
+  host:
+  # Dependencies that are needed to build the package
+    - click
+    - fsspec
+    - mmh3 # pip uses mmhash3
+    - pydantic
+    - pyparsing
+    - requests
+    #- rich
+    #- sortedcontainers
+    #- strictyaml
+    #- zstandard
+  run:
+  # Dependencies that are needed to run the package
+    #- pyarrow
+    #- thrift
+    #- mypy-boto3-glue
+    #- python-snappy
+    #- ray
+    #- adlfs
+    #- gcsfs
+    #- psycopg2-binary
+    #- s3fs
+    - pandas
+    #- boto3
+    - sqlalchemy
+    #- duckdb
