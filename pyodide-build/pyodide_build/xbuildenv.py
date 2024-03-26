@@ -8,7 +8,6 @@ import requests
 from pyodide_lock import PyodideLockSpec
 
 from . import build_env
-from .common import exit_with_stdio
 from .create_pypi_index import create_pypi_index
 from .logger import logger
 
@@ -146,22 +145,29 @@ class CrossBuildEnvManager:
         else:
             self._download(download_url, download_path)
 
-        # there is an extra directory "xbuildenv" inside the xbuildenv archive
-        # TODO: remove the extra directory from the archive
-        xbuildenv_root = download_path / "xbuildenv"
-        xbuildenv_pyodide_root = xbuildenv_root / "pyodide-root"
-        install_marker = download_path / ".installed"
-        if not install_marker.exists():
-            logger.info("Installing Pyodide cross-build environment")
+        try:
+            # there is an redundant directory "xbuildenv" inside the xbuildenv archive
+            # TODO: remove the redundant directory from the archive
+            xbuildenv_root = download_path / "xbuildenv"
+            xbuildenv_pyodide_root = xbuildenv_root / "pyodide-root"
+            install_marker = download_path / ".installed"
+            if not install_marker.exists():
+                logger.info("Installing Pyodide cross-build environment")
 
-            self._install_cross_build_packages(xbuildenv_root, xbuildenv_pyodide_root)
+                self._install_cross_build_packages(
+                    xbuildenv_root, xbuildenv_pyodide_root
+                )
 
-            if not url:
-                # If installed from url, skip creating the PyPI index (version is not known)
-                self._create_pypi_index(xbuildenv_pyodide_root, version)
+                if not url:
+                    # If installed from url, skip creating the PyPI index (version is not known)
+                    self._create_pypi_index(xbuildenv_pyodide_root, version)
 
-        install_marker.touch()
-        self.use_version(version)
+            install_marker.touch()
+            self.use_version(version)
+        except Exception as e:
+            # if the installation failed, remove the downloaded directory
+            shutil.rmtree(download_path)
+            raise e
 
         return xbuildenv_root
 
@@ -185,7 +191,7 @@ class CrossBuildEnvManager:
             Path to extract the cross-build environment to.
             If the path already exists, raise an error.
         """
-        logger.info("Downloading Pyodide cross-build environment")
+        logger.info("Downloading Pyodide cross-build environment from %s", url)
 
         if path.exists():
             raise FileExistsError(f"Path {path} already exists")
@@ -232,7 +238,9 @@ class CrossBuildEnvManager:
         )
 
         if result.returncode != 0:
-            exit_with_stdio(result)
+            raise RuntimeError(
+                f"Failed to install cross-build packages: {result.stderr}"
+            )
 
         # Copy the site-packages-extras (coming from the cross-build-files meta.yaml
         # key) over the site-packages directory with the newly installed packages.

@@ -1,15 +1,13 @@
 from pathlib import Path
 
-import pytest
+from typer.testing import CliRunner
+
 from pyodide_build.cli import (
     xbuildenv,
 )
-from pyodide_build.xbuildenv import _url_to_version
-from typer.testing import CliRunner
-
-from .fixture import mock_xbuildenv_url
 
 runner = CliRunner()
+
 
 def test_xbuildenv_create(selenium, tmp_path):
     # selenium fixture is added to ensure that Pyodide is built... it's a hack
@@ -82,11 +80,12 @@ def test_xbuildenv_version(tmp_path):
             "version",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
     assert "0.26.0" in result.stdout, result.stdout
+
 
 def test_xbuildenv_versions(tmp_path):
     envpath = Path(tmp_path) / ".xbuildenv"
@@ -102,13 +101,14 @@ def test_xbuildenv_versions(tmp_path):
             "versions",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
     assert "  0.25.0" in result.stdout, result.stdout
     assert "  0.25.1" in result.stdout, result.stdout
     assert "* 0.26.0" in result.stdout, result.stdout
+
 
 def test_xbuildenv_use(tmp_path):
     envpath = Path(tmp_path) / ".xbuildenv"
@@ -125,11 +125,14 @@ def test_xbuildenv_use(tmp_path):
             "0.25.0",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
-    assert "Pyodide cross-build environment 0.25.0 is now in use" in result.stdout, result.stdout
+    assert (
+        "Pyodide cross-build environment 0.25.0 is now in use" in result.stdout
+    ), result.stdout
+
 
 def test_xbuildenv_uninstall(tmp_path):
     envpath = Path(tmp_path) / ".xbuildenv"
@@ -138,7 +141,7 @@ def test_xbuildenv_uninstall(tmp_path):
     (envpath / "0.25.1").mkdir(exist_ok=True, parents=True)
     (envpath / "0.26.0").mkdir(exist_ok=True, parents=True)
     (envpath / "xbuildenv").symlink_to(envpath / "0.26.0")
-    
+
     result = runner.invoke(
         xbuildenv.app,
         [
@@ -146,11 +149,13 @@ def test_xbuildenv_uninstall(tmp_path):
             "0.25.0",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
-    assert "Pyodide cross-build environment 0.25.0 uninstalled" in result.stdout, result.stdout
+    assert (
+        "Pyodide cross-build environment 0.25.0 uninstalled" in result.stdout
+    ), result.stdout
 
     result = runner.invoke(
         xbuildenv.app,
@@ -159,11 +164,13 @@ def test_xbuildenv_uninstall(tmp_path):
             "0.26.0",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code == 0, result.stdout
-    assert "Pyodide cross-build environment 0.26.0 uninstalled" in result.stdout, result.stdout
+    assert (
+        "Pyodide cross-build environment 0.26.0 uninstalled" in result.stdout
+    ), result.stdout
 
     result = runner.invoke(
         xbuildenv.app,
@@ -172,7 +179,7 @@ def test_xbuildenv_uninstall(tmp_path):
             "0.26.1",
             "--path",
             str(envpath),
-        ]
+        ],
     )
 
     assert result.exit_code != 0, result.stdout
