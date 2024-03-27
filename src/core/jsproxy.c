@@ -67,6 +67,7 @@
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
+_Py_IDENTIFIER(ensure_future);
 _Py_IDENTIFIER(create_future);
 _Py_IDENTIFIER(set_exception);
 _Py_IDENTIFIER(set_result);
@@ -94,7 +95,7 @@ _Py_IDENTIFIER(register);
 static PyObject* collections_abc;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
-static PyObject* asyncio_get_event_loop;
+static PyObject* asyncio_mod;
 static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
@@ -1035,7 +1036,7 @@ _agen_handle_result(JsVal promise, bool closing)
   PyObject* set_exception = NULL;
   PyObject* result = NULL;
 
-  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
 
   result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
@@ -2594,7 +2595,7 @@ wrap_promise(JsVal promise, JsVal done_callback)
 
   PyObject* result = NULL;
 
-  loop = PyObject_CallNoArgs(asyncio_get_event_loop);
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
   FAIL_IF_NULL(loop);
 
   result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
@@ -4522,9 +4523,14 @@ run_sync(PyObject* self, PyObject* pyarg)
                  Py_TYPE(pyarg)->tp_name);
     return NULL;
   }
+  PyObject* ensured_future = NULL;
   PyObject* pyresult = NULL;
 
-  JsVal jsarg = python2js(pyarg);
+  // For reasons that I absolutely do not comprehend, we leak memory if use a
+  // coroutine directly, but if we ensure_future it first we don't.
+  ensured_future =
+    _PyObject_CallMethodIdOneArg(asyncio_mod, &PyId_ensure_future, pyarg);
+  JsVal jsarg = python2js(ensured_future);
   FAIL_IF_JS_NULL(jsarg);
   JsVal jsresult = JsvPromise_Syncify(jsarg);
   if (JsvNull_Check(jsresult)) {
@@ -4542,6 +4548,7 @@ finally:
   if (pyproxy_Check(jsresult)) {
     destroy_proxy(jsresult, NULL);
   }
+  Py_CLEAR(ensured_future);
   return pyresult;
 }
 
@@ -4562,7 +4569,6 @@ jsproxy_init(PyObject* core_module)
 {
   bool success = false;
   PyObject* _pyodide_core_docs = NULL;
-  PyObject* asyncio_module = NULL;
   PyObject* flag_dict = NULL;
 
   _pyodide_core_docs = PyImport_ImportModule("_pyodide._core_docs");
@@ -4623,12 +4629,8 @@ jsproxy_init(PyObject* core_module)
 #undef AddFlag
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));
 
-  asyncio_module = PyImport_ImportModule("asyncio");
-  FAIL_IF_NULL(asyncio_module);
-
-  asyncio_get_event_loop =
-    _PyObject_GetAttrId(asyncio_module, &PyId_get_event_loop);
-  FAIL_IF_NULL(asyncio_get_event_loop);
+  asyncio_mod = PyImport_ImportModule("asyncio");
+  FAIL_IF_NULL(asyncio_mod);
 
   JsProxy_TypeDict = PyDict_New();
   FAIL_IF_NULL(JsProxy_TypeDict);
@@ -4646,7 +4648,6 @@ jsproxy_init(PyObject* core_module)
   success = true;
 finally:
   Py_CLEAR(_pyodide_core_docs);
-  Py_CLEAR(asyncio_module);
   Py_CLEAR(flag_dict);
   return success ? 0 : -1;
 }
