@@ -74,5 +74,3 @@ _python2js_buffer(PyObject* x)
   return result;
 }
 
-#include "include_js_file.h"
-#include "python2js_buffer.js"

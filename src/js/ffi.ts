@@ -22,6 +22,8 @@ export type {
 export type { TypedArray } from "./types";
 
 export type { PythonError } from "../core/error_handling";
+import "../core/js2python";
+import "../core/python2js_buffer";
 
 import {
   PyProxy,
