@@ -759,6 +759,18 @@ finally:
   return result;
 }
 
+void
+set_new_cframe(_PyCFrame* frame);
+
+_PyCFrame*
+get_cframe();
+
+void
+exit_cframe(_PyCFrame* frame);
+
+void
+restore_cframe(_PyCFrame* frame);
+
 /**
  * call _pyproxy_apply but save the error flag into the argument so it can't be
  * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
@@ -773,8 +785,12 @@ _pyproxy_apply_promising(PyObject* callable,
                          size_t numkwargs,
                          PyObject** exc)
 {
+  _PyCFrame* cur = get_cframe();
+  _PyCFrame frame;
+  set_new_cframe(&frame);
   JsVal res =
     _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
+  exit_cframe(cur);
   *exc = PyErr_GetRaisedException();
   return res;
 }
