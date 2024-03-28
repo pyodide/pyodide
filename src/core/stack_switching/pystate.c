@@ -168,6 +168,9 @@ savePythonState(PyThreadState* tstate)
   ps.datastack_chunk = tstate->datastack_chunk;
   ps.datastack_top = tstate->datastack_top;
   ps.datastack_limit = tstate->datastack_limit;
+  tstate->datastack_chunk = NULL;
+  tstate->datastack_top = NULL;
+  tstate->datastack_limit = NULL;
 
   ps.py_recursion_depth =
     tstate->py_recursion_limit - tstate->py_recursion_remaining;
@@ -253,9 +256,34 @@ set_new_cframe(_PyCFrame* frame)
   *frame = *tstate->cframe;
   tstate->cframe = frame;
   tstate->cframe->previous = &PyThreadState_GET()->root_cframe;
-  tstate->trash.delete_nesting = 0;
   tstate->cframe->current_frame = NULL;
+  tstate->trash.delete_nesting = 0;
+  tstate->py_recursion_remaining = tstate->py_recursion_limit;
+  tstate->c_recursion_remaining = C_RECURSION_LIMIT;
+}
+
+EMSCRIPTEN_KEEPALIVE void
+exit_cframe(_PyCFrame* frame)
+{
+  PyThreadState* tstate = PyThreadState_Get();
+  _PyStackChunk* chunk = tstate->datastack_chunk;
+
+  PyObjectArenaAllocator alloc;
+  PyObject_GetArenaAllocator(&alloc);
+
+  tstate->cframe = frame;
   tstate->datastack_chunk = NULL;
   tstate->datastack_top = NULL;
   tstate->datastack_limit = NULL;
+
+  if (!alloc.free) {
+    return;
+  }
+
+  while (chunk) {
+    _PyStackChunk* prev = chunk->previous;
+    chunk->previous = NULL;
+    alloc.free(alloc.ctx, chunk, chunk->size);
+    chunk = prev;
+  }
 }

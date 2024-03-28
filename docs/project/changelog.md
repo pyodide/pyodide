@@ -16,6 +16,13 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
+  `jsproxy.toString` is undefined. Instead, it will use
+  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
+  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
+  throws, then `str` will still raise.
+  {pr}`4574`
+
 - {{ Enhancement }} Improved support for stack switching.
   {pr}`4532`, {pr}`4547`
 
@@ -66,12 +73,21 @@ myst:
   directory into the Pyodide file system when running in node.
   {pr}`4561`
 
+- {{ Enhancement }} When a dictionary is converted to JavaScript with `toJs` the
+  result is now a `LiteralMap`. String keys are accessible via direct property
+  access unless they match a function on the `Map` prototype.
+  {pr}`4576`
+
+- {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
+  {pr}`4637`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
+  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
   `pygame-ce` {pr}`4602`
 
 - Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`

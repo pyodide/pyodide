@@ -267,6 +267,9 @@ Jsv_greater_than_equal(JsVal a, JsVal b);
 JsVal
 JsvMap_New(void);
 
+JsVal
+JsvLiteralMap_New(void);
+
 errcode
 JsvMap_Set(JsVal map, JsVal key, JsVal val);
 

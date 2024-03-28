@@ -513,7 +513,7 @@ def test_python2js4(selenium):
                 }
                 """
         )({42: 64})
-    ) == ["dict", "Map", 64]
+    ) == ["dict", "LiteralMap", 64]
 
 
 @run_in_pyodide
@@ -954,6 +954,30 @@ def test_recursive_dict_to_js(selenium):
     to_js(x)
 
 
+@run_in_pyodide
+def test_dict_subclass_to_js(selenium):
+    """See issue #4636"""
+    from collections import ChainMap
+
+    from pyodide.code import run_js
+
+    j = run_js(
+        """
+        (d) => JSON.stringify(d.toJs({ dict_converter: Object.fromEntries }))
+        """
+    )
+
+    class D1(ChainMap, dict):  # type: ignore[misc, type-arg]
+        pass
+
+    class D2(dict, ChainMap):  # type: ignore[misc, type-arg]
+        pass
+
+    d = {"a": "b"}
+    assert eval(j(D1({"a": "b"}))) == d
+    assert eval(j(D2({"a": "b"}))) == d
+
+
 def test_list_js2py2js(selenium):
     selenium.run_js("self.x = [1,2,3];")
     assert_js_to_py_to_js(selenium, "x")
@@ -1114,13 +1138,13 @@ def test_tojs2(selenium):
 
     from pyodide.code import run_js
 
-    o = [(1, 2), (3, 4), [5, 6], {2: 3, 4: 9}]
+    o = [(1, 2), (3, 4), [5, 6], {"a": 1, 2: 3, 4: 9}]
 
     assert run_js("(o) => Array.isArray(o.toJs())")(o)
     serialized = run_js("(o) => JSON.stringify(o.toJs())")(o)
-    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {}]
+    assert json.loads(serialized) == [[1, 2], [3, 4], [5, 6], {"a": 1}]
     serialized = run_js("(o) => JSON.stringify(Array.from(o.toJs()[3].entries()))")(o)
-    assert json.loads(serialized) == [[2, 3], [4, 9]]
+    assert json.loads(serialized) == [["a", 1], [2, 3], [4, 9]]
 
 
 def test_tojs4(selenium):
@@ -1221,24 +1245,69 @@ def test_tojs9(selenium):
     assert set(
         selenium.run_js(
             """
-                return Array.from(pyodide.runPython(`
-                    from pyodide.ffi import to_js
-                    to_js({ 1, "1" })
-                `).values())
-                """
+            return Array.from(pyodide.runPython(`
+                from pyodide.ffi import to_js
+                to_js({ 1, "1" })
+            `).values())
+            """
         )
     ) == {1, "1"}
 
     assert dict(
         selenium.run_js(
             """
-                return Array.from(pyodide.runPython(`
-                    from pyodide.ffi import to_js
-                    to_js({ 1 : 7, "1" : 9 })
-                `).entries())
-                """
+            return Array.from(pyodide.runPython(`
+                from pyodide.ffi import to_js
+                to_js({ 1 : 7, "1" : 9 })
+            `).entries())
+            """
         )
     ) == {1: 7, "1": 9}
+
+
+def test_tojs_literalmap(selenium):
+    selenium.run_js(
+        """
+        const res = pyodide.runPython(`
+            from pyodide.ffi import to_js
+            to_js({ "a" : 6, "b" : 10, 6 : 9, "get": 77, True: 90})
+        `);
+
+        assert(() => res.constructor.name === "LiteralMap");
+        assert(() => "a" in res);
+        assert(() => "b" in res);
+        assert(() => !(6 in res));
+        assert(() => "get" in res);
+        assert(() => !(true in res));
+        assert(() => res.has("a"));
+        assert(() => res.has("b"));
+        assert(() => res.has(6));
+        assert(() => res.has("get"));
+        assert(() => res.has(true));
+        assert(() => res.a === 6);
+        assert(() => res.b === 10);
+        assert(() => res[6] === undefined);
+        assert(() => typeof res.get === "function");
+        assert(() => res[true] === undefined);
+        assert(() => res.get("a") === 6);
+        assert(() => res.get("b") === 10);
+        assert(() => res.get(6) === 9);
+        assert(() => res.get("get") === 77);
+        assert(() => res.get(true) === 90);
+        res.delete("a");
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        res.a = 7;
+        assert(() => res.a === 7);
+        assert(() => res.get("a") === 7);
+        res.set("a", 99);
+        assert(() => res.get("a") === 99);
+        assert(() => res.a === 99);
+        delete res.a
+        assert(() => !("a" in res));
+        assert(() => !res.has("a"));
+        """
+    )
 
 
 @run_in_pyodide
