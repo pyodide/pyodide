@@ -34,6 +34,37 @@ pyodide.canvas.setCanvas2D(sdl2Canvas);
 
 See also: {ref}`js-api-pyodide-canvas`
 
+## Working with infinite loop
+
+It is common to use an infinite loop to draw animations or game scenes with SDL-based package.
+
+For instance, a common code pattern in `pygame` (a SDL-based Python game library) is:
+
+```python
+clock = pygame.time.Clock()
+fps = 60
+def run_game():
+    while True:
+        do_something()
+        draw_canvas()
+        clock.tick(fps)
+```
+
+However, in Pyodide, this will not work as expected, because the loop will block the main thread and prevent the browser from updating the canvas.
+To work around this, you need to use async functions and yield control to the browser.
+
+```python
+import asyncio
+
+async def run_game():
+    while True:
+        do_something()
+        draw_canvas()
+        await asyncio.sleep(1 / fps)
+```
+
+Using `asyncio.sleep` will yield control to the browser and allow the canvas to be updated.
+
 (sdl-known-issues)=
 
 ## Known issues

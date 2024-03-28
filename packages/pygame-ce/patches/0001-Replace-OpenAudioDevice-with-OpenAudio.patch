@@ -1,0 +1,29 @@
+From 948614b9410f57c599db98c3248314238a0d317c Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Sat, 17 Feb 2024 10:55:27 +0900
+Subject: [PATCH 1/1] Replace OpenAudioDevice with OpenAudio
+
+FIXME: for some reason, Mix_OpenAudioDevice is not statically linked when building the SDL module.
+
+---
+ src_c/mixer.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src_c/mixer.c b/src_c/mixer.c
+index 51097bba..6c79747c 100644
+--- a/src_c/mixer.c
++++ b/src_c/mixer.c
+@@ -441,8 +441,8 @@ _init(int freq, int size, int channels, int chunk, char *devicename,
+         if (SDL_InitSubSystem(SDL_INIT_AUDIO))
+             return RAISE(pgExc_SDLError, SDL_GetError());
+ 
+-        if (Mix_OpenAudioDevice(freq, fmt, channels, chunk, devicename,
+-                                allowedchanges) == -1) {
++        // No Mix_OpenAudioCompat in emscripten
++        if (Mix_OpenAudio(freq, fmt, channels, chunk) == -1) {
+             SDL_QuitSubSystem(SDL_INIT_AUDIO);
+             return RAISE(pgExc_SDLError, SDL_GetError());
+         }
+-- 
+2.29.2.windows.2
+
