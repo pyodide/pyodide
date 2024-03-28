@@ -79,7 +79,7 @@ def test_xbuildenv_create(selenium, tmp_path):
         ],
     )
     assert result.exit_code == 0, result.stdout
-    assert "xbuildenv created at" in result.stdout
+    assert "cross-build environment created at" in result.stdout
     assert (envpath / "xbuildenv").exists()
     assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
     assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()

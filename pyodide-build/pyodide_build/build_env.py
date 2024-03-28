@@ -208,7 +208,6 @@ def _get_make_environment_vars(*, pyodide_root: Path | None = None) -> dict[str,
     pyodide_root
         The root directory of the Pyodide repository. If None, this will be inferred.
     """
-
     PYODIDE_ROOT = get_pyodide_root() if pyodide_root is None else pyodide_root
     environment = {}
     result = subprocess.run(
