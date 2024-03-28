@@ -1,0 +1,34 @@
+package:
+  name: pytest_httpx
+  version: 0.30.0
+  top-level:
+    - pytest_httpx
+source:
+  url: https://files.pythonhosted.org/packages/14/60/ba9895a260e16c1115e40f8ae6f615c7e8ccdfa5d55418078391dd30b476/pytest_httpx-0.30.0-py3-none-any.whl
+  sha256: 6d47849691faf11d2532565d0c8e0e02b9f4ee730da31687feae315581d7520c
+requirements:
+  run:
+    - httpx
+    - pytest
+about:
+  home: ""
+  PyPI: https://pypi.org/project/pytest_httpx
+  summary: Send responses to httpx.
+  license:
+    'MIT License  Copyright (c) 2024 Colin Bounouar  Permission is hereby granted,
+    free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons
+    to whom the Software is furnished to do so, subject to the following conditions:  The
+    above copyright notice and this permission notice shall be included in all copies
+    or substantial portions of the Software.  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT
+    WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+    EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+    OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE. '
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
