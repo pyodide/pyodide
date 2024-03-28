@@ -4,22 +4,20 @@ difficult to compile. Solving this issue seems possible eventually but it
 requires more effort to put, which might be not worth it at this point.
 
 diff --git a/setup.py b/setup.py
-index 82dac9c..3fe102f 100644
+index e27f0bc..f708d2b 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -69,8 +69,8 @@ Details can be found at `https://pysathq.github.io <https://pysathq.github.io>`_
- # solvers to install
+@@ -70,7 +70,7 @@ Details can be found at `https://pysathq.github.io <https://pysathq.github.io>`_
  #==============================================================================
- to_install = ['cadical', 'gluecard30', 'gluecard41', 'glucose30', 'glucose41',
--        'lingeling', 'maplechrono', 'maplecm', 'maplesat', 'mergesat3',
--        'minicard', 'minisat22', 'minisatgh']
-+        'maplechrono', 'maplecm', 'maplesat', 'mergesat3', 'minicard',
-+        'minisat22', 'minisatgh']
+ to_install = ['cadical103', 'cadical153', 'cadical195', 'gluecard30',
+               'gluecard41', 'glucose30', 'glucose41', 'glucose421',
+-              'lingeling', 'maplechrono', 'maplecm', 'maplesat', 'mergesat3',
++              'maplechrono', 'maplecm', 'maplesat', 'mergesat3',
+               'minicard', 'minisat22', 'minisatgh']
  
- # example scripts to install as standalone executables
- #==============================================================================
-@@ -78,47 +78,9 @@ scripts = ['fm', 'genhard', 'lbx', 'lsu', 'mcsls', 'models', 'musx', 'optux',
-         'rc2']
+ # example and allies scripts to install as standalone executables
+@@ -80,47 +80,9 @@ example_scripts = ['fm', 'genhard', 'lbx', 'lsu', 'mcsls', 'models', 'musx',
+ allies_scripts = ['approxmc', 'unigen']
  
  
 -# we need to redefine the build command to
@@ -67,7 +65,7 @@ index 82dac9c..3fe102f 100644
  if platform.system() == 'Darwin':
      compile_flags += ['--stdlib=libc++']
      cpplib = ['c++']
-@@ -141,23 +103,19 @@ pycard_ext = Extension('pycard',
+@@ -143,23 +105,19 @@ pycard_ext = Extension('pycard',
  
  pysolvers_sources = ['solvers/pysolvers.cc']
  
@@ -102,19 +100,19 @@ index 82dac9c..3fe102f 100644
      extra_compile_args=compile_flags + \
          list(map(lambda x: '-DWITH_{0}'.format(x.upper()), to_install)),
      include_dirs=['solvers'],
-@@ -182,7 +140,6 @@ setup(name='python-sat',
-     url='https://github.com/pysathq/pysat',
+@@ -185,7 +143,6 @@ setup(name='python-sat',
      ext_modules=[pycard_ext, pysolvers_ext],
-     scripts=['examples/{0}.py'.format(s) for s in scripts],
--    cmdclass={'build': build, 'build_ext': build_ext},
+     scripts=['examples/{0}.py'.format(s) for s in example_scripts] + \
+             ['allies/{0}.py'.format(s) for s in allies_scripts],
+-    cmdclass={'build': build},
      install_requires=['six'],
      extras_require = {
          'aiger': ['py-aiger-cnf>=2.0.0'],
 diff --git a/solvers/prepare.py b/solvers/prepare.py
-index a1b5e91..464e1d1 100644
+index f9bd19d..7829083 100644
 --- a/solvers/prepare.py
 +++ b/solvers/prepare.py
-@@ -520,8 +520,6 @@ def do(to_install):
+@@ -840,8 +840,6 @@ def do(to_install):
          adapt_files(solver)
          patch_solver(solver)
  
