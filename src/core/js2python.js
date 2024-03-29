@@ -53,7 +53,7 @@ function js2python_bigint(value) {
   let ptr = stackAlloc(length * 4);
   value = value_orig;
   for (let i = 0; i < length; i++) {
-    ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
+    HEAPU32[(ptr >> 2) + i] = Number(value & BigInt(0xffffffff));
     value >>= BigInt(32);
   }
   let result = __PyLong_FromByteArray(
