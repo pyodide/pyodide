@@ -48,7 +48,7 @@ a folder with the
 ```js
 let mountDir = "/mnt";
 pyodide.FS.mkdirTree(mountDir);
-pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, { root: "." }, mountDir);
+pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, mountDir);
 ```
 
 If you are using Node.js you can access the native file system by mounting `NODEFS`.
