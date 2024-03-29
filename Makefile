@@ -13,6 +13,7 @@ all: \
 	dist/pyodide-lock.json \
 	dist/console.html \
 	dist/pyodide.d.ts \
+	dist/snapshot.bin \
 
 
 all-but-packages: \
@@ -211,6 +212,13 @@ dist/python_stdlib.zip: $(wildcard src/py/**/*) $(CPYTHONLIB)
 
 dist/test.html: src/templates/test.html
 	cp $< $@
+
+dist/makesnap.mjs: src/templates/makesnap.mjs
+	cp $< $@
+
+dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
+	cd dist && node makesnap.mjs
+	
 
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@

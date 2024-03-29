@@ -701,6 +701,47 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+function jsFinderHook(o: object) {
+  if ("__all__" in o) {
+    return;
+  }
+  Object.defineProperty(o, "__all__", {
+    get: () =>
+      API.public_api.toPy(
+        Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+      ),
+    enumerable: false,
+    configurable: true,
+  });
+}
+
+function restoreSnapshot(snapshot: Uint8Array) {
+  Module.HEAP8.set(snapshot);
+  Module.__hiwire_set(0, null);
+  Module.__hiwire_immortal_add(null);
+  Module._jslib_init();
+  Module.__hiwire_immortal_add(new Map());
+  Module.__hiwire_immortal_add('This borrowed proxy was automatically destroyed');
+  const _pyodide_ptr = Module.stringToNewUTF8("_pyodide");
+  const pyodide_mod_ptr = Module._PyImport_ImportModule(_pyodide_ptr);
+  const pyodide_mod = Module.pyproxy_new(pyodide_mod_ptr);
+  Module.API._pyodide = pyodide_mod;
+  Module._Py_DecRef(pyodide_mod_ptr);
+  Module._free(_pyodide_ptr);
+}
+
+function snapshotInitTable() {
+  Module.__hiwire_set(1, jsFinderHook);
+  Module.__hiwire_set(2, API.config.jsglobals);
+  Module.__hiwire_set(3, API.public_api);
+  Module.__hiwire_set(4, Module.API);
+  Module.__hiwire_set(5, scheduleCallback);
+  Module.__hiwire_set(6, Module.API);
+  Module.__hiwire_set(7, {});
+  Module.__hiwire_set(8, null);
+  Module.__hiwire_set(9, null);
+}
+
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -708,7 +749,10 @@ API.bootstrapFinalizedPromise = new Promise<void>(
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (): PyodideInterface {
+API.finalizeBootstrap = function (snapshot?: Uint8Array): PyodideInterface {
+  if (snapshot) {
+    restoreSnapshot(snapshot);
+  }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     API.fatal_loading_error(
@@ -725,7 +769,6 @@ API.finalizeBootstrap = function (): PyodideInterface {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, API.config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -739,24 +782,14 @@ API.finalizeBootstrap = function (): PyodideInterface {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  function jsFinderHook(o: object) {
-    if ("__all__" in o) {
-      return;
-    }
-    Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-        ),
-      enumerable: false,
-      configurable: true,
-    });
-  }
-  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-  importhook.register_js_module("js", API.config.jsglobals);
-
   let pyodide = makePublicAPI();
-  importhook.register_js_module("pyodide_js", pyodide);
+  if (snapshot) {
+    snapshotInitTable();
+  } else {
+    importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+    importhook.register_js_module("js", API.config.jsglobals);
+    importhook.register_js_module("pyodide_js", pyodide);
+  }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
