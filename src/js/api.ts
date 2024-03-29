@@ -722,7 +722,7 @@ function restoreSnapshot(snapshot: Uint8Array) {
   Module._jslib_init();
   Module.__hiwire_immortal_add(new Map());
   Module.__hiwire_immortal_add(
-    "This borrowed proxy was automatically destroyed",
+    "This borrowed proxy was automatically destroyed at the end of a function call. Try using create_proxy or create_once_callable.",
   );
   const _pyodide_ptr = Module.stringToNewUTF8("_pyodide");
   const pyodide_mod_ptr = Module._PyImport_ImportModule(_pyodide_ptr);
