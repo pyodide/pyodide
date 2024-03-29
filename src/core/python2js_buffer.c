@@ -73,4 +73,3 @@ _python2js_buffer(PyObject* x)
   PyBuffer_Release(&view);
   return result;
 }
-

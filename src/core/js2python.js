@@ -9,8 +9,7 @@ function js2python_string(value) {
   for (let c of value) {
     num_code_points++;
     let code_point = c.codePointAt(0);
-    max_code_point =
-      code_point > max_code_point ? code_point : max_code_point;
+    max_code_point = code_point > max_code_point ? code_point : max_code_point;
   }
 
   let result = _PyUnicode_New(num_code_points, max_code_point);
