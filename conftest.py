@@ -314,5 +314,5 @@ def patched_load_pyodide(self):
         """
     )
 
-NodeRunner.load_pyodide = patched_load_pyodide
 
+NodeRunner.load_pyodide = patched_load_pyodide
