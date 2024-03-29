@@ -361,6 +361,6 @@ export interface API {
   sys: PyProxy;
   os: PyProxy;
 
-  finalizeBootstrap: (snapshot?: Uint8Array) => PyodideInterface;
+  finalizeBootstrap: (fromSnapshot?: boolean) => PyodideInterface;
   version: string;
 }

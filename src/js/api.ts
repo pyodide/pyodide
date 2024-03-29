@@ -715,8 +715,7 @@ function jsFinderHook(o: object) {
   });
 }
 
-function restoreSnapshot(snapshot: Uint8Array) {
-  Module.HEAP8.set(snapshot);
+function syncUpSnapshotLoad1() {
   Module.__hiwire_set(0, null);
   Module.__hiwire_immortal_add(null);
   Module._jslib_init();
@@ -732,7 +731,7 @@ function restoreSnapshot(snapshot: Uint8Array) {
   Module._free(_pyodide_ptr);
 }
 
-function snapshotInitTable() {
+function syncUpSnapshotLoad2() {
   Module.__hiwire_set(1, jsFinderHook);
   Module.__hiwire_set(2, API.config.jsglobals);
   Module.__hiwire_set(3, API.public_api);
@@ -751,9 +750,9 @@ function snapshotInitTable() {
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (snapshot?: Uint8Array): PyodideInterface {
-  if (snapshot) {
-    restoreSnapshot(snapshot);
+API.finalizeBootstrap = function (fromSnapshot?: boolean): PyodideInterface {
+  if (fromSnapshot) {
+    syncUpSnapshotLoad1();
   }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
@@ -785,8 +784,8 @@ API.finalizeBootstrap = function (snapshot?: Uint8Array): PyodideInterface {
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
   let pyodide = makePublicAPI();
-  if (snapshot) {
-    snapshotInitTable();
+  if (fromSnapshot) {
+    syncUpSnapshotLoad2();
   } else {
     importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
     importhook.register_js_module("js", API.config.jsglobals);

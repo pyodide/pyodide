@@ -257,7 +257,11 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const pyodide = API.finalizeBootstrap(options._loadSnapshot);
+  if (options._loadSnapshot) {
+    // @ts-ignore
+    Module.HEAP8.set(options._loadSnapshot);
+  }
+  const pyodide = API.finalizeBootstrap(!!options._loadSnapshot);
 
   if (options._makeSnapshot) {
     // @ts-ignore
