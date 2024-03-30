@@ -92,7 +92,7 @@ class _DefaultIsolatedEnv(DefaultIsolatedEnv):
         _cprint("{bold}* {}{reset}", message)
     
     @property
-    def _scripts_dir() -> str:
+    def _scripts_dir(self) -> str:
         if hasattr(super(), "_scripts_dir"):
             return super()._scripts_dir
         elif hasattr(self, "scripts_dir"):
