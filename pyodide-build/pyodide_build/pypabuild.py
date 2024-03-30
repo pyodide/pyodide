@@ -56,7 +56,7 @@ SYMLINK_ENV_VARS = {
 
 def _gen_runner(
     cross_build_env: Mapping[str, str],
-    isolated_build_env: DefaultIsolatedEnv,
+    isolated_build_env: _DefaultIsolatedEnv,
 ) -> Callable[[Sequence[str], str | None, Mapping[str, str] | None], None]:
     """
     This returns a slightly modified version of default subprocess runner that pypa/build uses.
