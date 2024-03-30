@@ -90,6 +90,13 @@ class _DefaultIsolatedEnv(DefaultIsolatedEnv):
     @staticmethod
     def log(message: str) -> None:
         _cprint("{bold}* {}{reset}", message)
+    
+    @property
+    def _scripts_dir() -> str:
+        if hasattr(super(), "_scripts_dir"):
+            return super()._scripts_dir
+        elif hasattr(self, "scripts_dir"):
+            return self.scripts_dir
 
 
 @contextlib.contextmanager
