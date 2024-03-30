@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import cast
 
 from build import BuildBackendException, ConfigSettingsType
 from build.env import DefaultIsolatedEnv
@@ -143,6 +144,7 @@ def _build_in_isolated_env(
     # needed.
     # _DefaultIsolatedEnv.__exit__ = lambda *args: None
     with _DefaultIsolatedEnv() as env:
+        env = cast(_DefaultIsolatedEnv, env)
         builder = _ProjectBuilder.from_isolated_env(
             env,
             srcdir,
