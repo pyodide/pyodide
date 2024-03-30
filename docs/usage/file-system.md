@@ -45,10 +45,10 @@ For instance, to store data persistently between page reloads, one could mount
 a folder with the
 [IDBFS file system](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api-idbfs)
 
-```js
+```pyodide
 let mountDir = "/mnt";
 pyodide.FS.mkdirTree(mountDir);
-pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, { root: "." }, mountDir);
+pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, mountDir);
 ```
 
 If you are using Node.js you can access the native file system by mounting `NODEFS`.
