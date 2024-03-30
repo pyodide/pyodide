@@ -1,0 +1,44 @@
+{
+    "releases": {
+        "0.26.0a4": {
+            "version": "0.26.0a4",
+            "url": "https://github.com/pyodide/pyodide/releases/download/0.26.0a4/xbuildenv-0.26.0a4.tar.bz2",
+            "python_version": "3.12.1",
+            "emscripten_version": "3.1.52",
+            "min_pyodide_build_version": "0.26.0a4",
+            "max_pyodide_build_version": "0.26.0a4"
+        },
+        "0.26.0a3": {
+            "version": "0.26.0a3",
+            "url": "https://github.com/pyodide/pyodide/releases/download/0.26.0a3/xbuildenv-0.26.0a3.tar.bz2",
+            "python_version": "3.12.1",
+            "emscripten_version": "3.1.52",
+            "min_pyodide_build_version": "0.26.0a3",
+            "max_pyodide_build_version": "0.26.0a3"
+        },
+        "0.26.0a2": {
+            "version": "0.26.0a2",
+            "url": "https://github.com/pyodide/pyodide/releases/download/0.26.0a2/xbuildenv-0.26.0a2.tar.bz2",
+            "python_version": "3.12.1",
+            "emscripten_version": "3.1.52",
+            "min_pyodide_build_version": "0.26.0a2",
+            "max_pyodide_build_version": "0.26.0a2"
+        },
+        "0.26.0a1": {
+            "version": "0.26.0a1",
+            "url": "https://github.com/pyodide/pyodide/releases/download/0.26.0a1/xbuildenv-0.26.0a1.tar.bz2",
+            "python_version": "3.12.1",
+            "emscripten_version": "3.1.52",
+            "min_pyodide_build_version": "0.26.0a1",
+            "max_pyodide_build_version": "0.26.0a1"
+        },
+        "0.25.0": {
+            "version": "0.25.0",
+            "url": "https://github.com/pyodide/pyodide/releases/download/0.25.0/xbuildenv-0.25.0.tar.bz2",
+            "python_version": "3.11.3",
+            "emscripten_version": "3.1.46",
+            "min_pyodide_build_version": "0.25.0",
+            "max_pyodide_build_version": "0.25.0"
+        }
+    }
+}
