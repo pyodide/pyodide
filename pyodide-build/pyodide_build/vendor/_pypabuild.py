@@ -93,7 +93,7 @@ class _DefaultIsolatedEnv(DefaultIsolatedEnv):
 
     @property
     def scripts_dir(self) -> str:
-        if hasattr(self, "_env_backend"): # pypabuild >= 1.2.0
+        if hasattr(self, "_env_backend"):  # pypabuild >= 1.2.0
             return self._env_backend.scripts_dir
         elif hasattr(self, "_scripts_dir"):
             return self._scripts_dir
