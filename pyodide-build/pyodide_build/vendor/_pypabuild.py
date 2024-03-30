@@ -93,10 +93,12 @@ class _DefaultIsolatedEnv(DefaultIsolatedEnv):
     
     @property
     def _scripts_dir(self) -> str:
-        if hasattr(super(), "_scripts_dir"):
+        if hasattr(super(), "_env_backend"): # pypabuild >= 1.2.0
+            return super()._env_backend.scripts_dir
+        elif hasattr(super(), "_scripts_dir"):
             return super()._scripts_dir
-        elif hasattr(self, "scripts_dir"):
-            return self.scripts_dir
+        else:
+            raise AttributeError("No attribute '_scripts_dir' or 'scripts_dir' found")
 
 
 @contextlib.contextmanager
