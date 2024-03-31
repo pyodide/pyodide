@@ -14,6 +14,100 @@ myst:
 
 # Change Log
 
+<<<<<<< HEAD
+=======
+## Unreleased
+
+- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
+  `jsproxy.toString` is undefined. Instead, it will use
+  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
+  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
+  throws, then `str` will still raise.
+  {pr}`4574`
+
+- {{ Enhancement }} Improved support for stack switching.
+  {pr}`4532`, {pr}`4547`
+
+- Upgraded Python to v3.12.1
+  {pr}`4431` {pr}`4435`
+
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
+  {pr}`4399`
+
+- {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
+  This entrypoint was deprecated since 0.22.0.
+  {pr}`4368`
+
+- {{ Enhancement }} Added apis to discard extra arguments when calling Python
+  functions.
+  {pr}`4392`
+
+- {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
+  is not available in the Node.js < 18 environment.
+  {pr}`4417`
+
+- {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
+  {pr}`4395`
+
+- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
+  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
+  {pr}`4443`
+
+- {{ Enhancement }} The `build/post` script now runs under the directory
+  where the built wheel is unpacked.
+  {pr}`4481`
+
+- {{ Fix }} `dup` now works correctly in the Node filesystem.
+  {pr}`4554`
+
+- {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
+  {pr}`4546`
+
+- {{ Enhancement }} `asyncio.sleep(0)` now runs the next task a lot faster.
+  {pr}`4590`
+
+- {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
+  existing nonempty directory. Also it throws much clearer error messages when
+  it fails.
+  {pr}`4559`
+
+- {{ Enhancement }} Added a new API `pyodide.mountNodeFS` which mounts a host
+  directory into the Pyodide file system when running in node.
+  {pr}`4561`
+
+- {{ Enhancement }} When a dictionary is converted to JavaScript with `toJs` the
+  result is now a `LiteralMap`. String keys are accessible via direct property
+  access unless they match a function on the `Map` prototype.
+  {pr}`4576`
+
+- {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
+  {pr}`4637`
+
+- {{ Fix }} Fixed pyodide-build to work with pypa/build>=1.2.
+  {pr}`4653`
+
+### Packages
+
+- New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
+  `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
+  `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
+  `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
+  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
+  `pygame-ce` {pr}`4602`
+
+- Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
+
+- Upgraded `CoolProp` to 6.6.0 {pr}`4397`
+
+- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
+  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
+  `zengl` to 2.4.1 {pr}`4509`, `protobuf` to 4.24.4 {pr}`4553`
+
+- Upgraded `OpenBLAS` to 0.26 {pr}`4526`
+
+- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
+
+>>>>>>> 7cb3ad84 (Fix build error on pypa/build >= 1.2.0 (#4653))
 ## Version 0.25.0
 
 _January 18, 2024_
