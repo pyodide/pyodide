@@ -91,6 +91,15 @@ class _DefaultIsolatedEnv(DefaultIsolatedEnv):
     def log(message: str) -> None:
         _cprint("{bold}* {}{reset}", message)
 
+    @property
+    def scripts_dir(self) -> str:
+        if hasattr(self, "_env_backend"):  # pypabuild >= 1.2.0
+            return self._env_backend.scripts_dir
+        elif hasattr(self, "_scripts_dir"):
+            return self._scripts_dir
+        else:
+            raise AttributeError("No attribute '_env_backend' or '_scripts_dir' found")
+
 
 @contextlib.contextmanager
 def _handle_build_error() -> Iterator[None]:

@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import cast
 
 from build import BuildBackendException, ConfigSettingsType
 from build.env import DefaultIsolatedEnv
@@ -56,7 +57,7 @@ SYMLINK_ENV_VARS = {
 
 def _gen_runner(
     cross_build_env: Mapping[str, str],
-    isolated_build_env: DefaultIsolatedEnv,
+    isolated_build_env: _DefaultIsolatedEnv,
 ) -> Callable[[Sequence[str], str | None, Mapping[str, str] | None], None]:
     """
     This returns a slightly modified version of default subprocess runner that pypa/build uses.
@@ -81,7 +82,7 @@ def _gen_runner(
 
         # Some build dependencies like cmake, meson installs binaries to this directory
         # and we should add it to the PATH so that they can be found.
-        env["BUILD_ENV_SCRIPTS_DIR"] = isolated_build_env._scripts_dir
+        env["BUILD_ENV_SCRIPTS_DIR"] = isolated_build_env.scripts_dir
         env["PATH"] = f"{cross_build_env['COMPILER_WRAPPER_DIR']}:{env['PATH']}"
         # For debugging: Uncomment the following line to print the build command
         # print("Build backend call:", " ".join(str(x) for x in cmd), file=sys.stderr)
@@ -143,6 +144,7 @@ def _build_in_isolated_env(
     # needed.
     # _DefaultIsolatedEnv.__exit__ = lambda *args: None
     with _DefaultIsolatedEnv() as env:
+        env = cast(_DefaultIsolatedEnv, env)
         builder = _ProjectBuilder.from_isolated_env(
             env,
             srcdir,

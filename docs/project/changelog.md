@@ -81,6 +81,9 @@ myst:
 - {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
   {pr}`4637`
 
+- {{ Fix }} Fixed pyodide-build to work with pypa/build>=1.2.
+  {pr}`4653`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
