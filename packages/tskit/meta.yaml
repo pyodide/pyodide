@@ -11,6 +11,8 @@ requirements:
     - numpy
     - svgwrite
     - jsonschema
+  host:
+    - numpy
 about:
   home: https://tskit.dev/tskit
   PyPI: https://pypi.org/project/tskit

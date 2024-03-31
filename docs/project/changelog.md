@@ -14,6 +14,17 @@ myst:
 
 # Change Log
 
+## Version 0.25.1
+
+_March 31, 2024_
+
+- {{ Fix }} Fixed pyodide-build to work with pypa/build>=1.2.
+  {pr}`4653`
+
+- {{ Fix }} Fixed a bug that pyodide-build setting `MESON` env variable,
+  which overwrites the binary path of meson.
+  {pr}`4502`
+
 ## Version 0.25.0
 
 _January 18, 2024_

@@ -12,6 +12,8 @@ source:
 requirements:
   run:
     - numpy
+  host:
+    - numpy
 
 about:
   home: https://github.com/TEOS-10/GSW-python
