@@ -30,32 +30,28 @@ class PyodideFuture(Future[T]):
         self,
         onfulfilled: None,
         onrejected: Callable[[BaseException], Awaitable[S]],
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: None,
         onrejected: Callable[[BaseException], S],
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: Callable[[T], Awaitable[S]],
         onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
     def then(
         self,
         onfulfilled: Callable[[T], S],
         onrejected: Callable[[BaseException], S] | None = None,
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     def then(
         self,
@@ -128,12 +124,10 @@ class PyodideFuture(Future[T]):
     @overload
     def catch(
         self, onrejected: Callable[[BaseException], Awaitable[S]]
-    ) -> "PyodideFuture[S]":
-        ...
+    ) -> "PyodideFuture[S]": ...
 
     @overload
-    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]":
-        ...
+    def catch(self, onrejected: Callable[[BaseException], S]) -> "PyodideFuture[S]": ...
 
     def catch(
         self, onrejected: Callable[[BaseException], object]

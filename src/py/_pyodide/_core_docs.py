@@ -365,14 +365,12 @@ class JsPromise(JsProxy, Generic[T]):
     @overload
     def then(
         self, onfulfilled: None, onrejected: Callable[[BaseException], Awaitable[S]], /
-    ) -> "JsPromise[S]":
-        ...
+    ) -> "JsPromise[S]": ...
 
     @overload
     def then(
         self, onfulfilled: None, onrejected: Callable[[BaseException], S], /
-    ) -> "JsPromise[S]":
-        ...
+    ) -> "JsPromise[S]": ...
 
     @overload
     def then(
@@ -380,8 +378,7 @@ class JsPromise(JsProxy, Generic[T]):
         onfulfilled: Callable[[T], Awaitable[S]],
         onrejected: Callable[[BaseException], Awaitable[S]] | None = None,
         /,
-    ) -> "JsPromise[S]":
-        ...
+    ) -> "JsPromise[S]": ...
 
     @overload
     def then(
@@ -389,8 +386,7 @@ class JsPromise(JsProxy, Generic[T]):
         onfulfilled: Callable[[T], S],
         onrejected: Callable[[BaseException], S] | None = None,
         /,
-    ) -> "JsPromise[S]":
-        ...
+    ) -> "JsPromise[S]": ...
 
     @docs_argspec(
         "(self, onfulfilled: Callable[[T], Awaitable[S] | S] | None, onrejected: Callable[[BaseException], Awaitable[S] | S] | None = None, /) -> 'JsPromise[S]'"
@@ -410,12 +406,10 @@ class JsPromise(JsProxy, Generic[T]):
     @overload
     def catch(
         self, onrejected: Callable[[BaseException], Awaitable[S]], /
-    ) -> "JsPromise[S]":
-        ...
+    ) -> "JsPromise[S]": ...
 
     @overload
-    def catch(self, onrejected: Callable[[BaseException], S], /) -> "JsPromise[S]":
-        ...
+    def catch(self, onrejected: Callable[[BaseException], S], /) -> "JsPromise[S]": ...
 
     @docs_argspec(
         "(self, onrejected: Callable[[BaseException], Awaitable[S] | S], /) -> 'JsPromise[S]'"
@@ -670,8 +664,7 @@ class JsGenerator(JsIterable[T_co], Generic[T_co, T_contra, V_co]):
         val: BaseException | object = ...,
         tb: TracebackType | None = ...,
         /,
-    ) -> T_co:
-        ...
+    ) -> T_co: ...
 
     @overload
     def throw(
@@ -680,8 +673,7 @@ class JsGenerator(JsIterable[T_co], Generic[T_co, T_contra, V_co]):
         val: None = ...,
         tb: TracebackType | None = ...,
         /,
-    ) -> T_co:
-        ...
+    ) -> T_co: ...
 
     @docs_argspec("(self, error: BaseException, /) -> T_co")
     def throw(
@@ -801,8 +793,7 @@ class JsAsyncGenerator(JsAsyncIterable[T_co], Generic[T_co, T_contra, V_co]):
         val: BaseException | object = ...,
         tb: TracebackType | None = ...,
         /,
-    ) -> Awaitable[T_co]:
-        ...
+    ) -> Awaitable[T_co]: ...
 
     @overload
     def athrow(
@@ -811,8 +802,7 @@ class JsAsyncGenerator(JsAsyncIterable[T_co], Generic[T_co, T_contra, V_co]):
         val: None = ...,
         tb: TracebackType | None = ...,
         /,
-    ) -> Awaitable[T_co]:
-        ...
+    ) -> Awaitable[T_co]: ...
 
     @docs_argspec("(self, error: BaseException, /) -> T_co")
     def athrow(self, value: Any, *args: Any) -> Awaitable[T_co]:
@@ -856,23 +846,19 @@ class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta)
     _js_type_flags = ["IS_ARRAY", "IS_NODE_LIST", "IS_TYPEDARRAY"]
 
     @overload
-    def __getitem__(self, idx: int) -> T:
-        ...
+    def __getitem__(self, idx: int) -> T: ...
 
     @overload
-    def __getitem__(self, idx: slice) -> "JsArray[T]":
-        ...
+    def __getitem__(self, idx: slice) -> "JsArray[T]": ...
 
     def __getitem__(self, idx):
         raise NotImplementedError
 
     @overload
-    def __setitem__(self, idx: int, value: T) -> None:
-        ...
+    def __setitem__(self, idx: int, value: T) -> None: ...
 
     @overload
-    def __setitem__(self, idx: slice, value: Iterable[T]) -> None:
-        ...
+    def __setitem__(self, idx: slice, value: Iterable[T]) -> None: ...
 
     def __setitem__(self, idx, value):
         pass
@@ -999,12 +985,10 @@ class JsMap(JsIterable[KT], Generic[KT, VT_co], Mapping[KT, VT_co], metaclass=_A
         raise NotImplementedError
 
     @overload
-    def get(self, key: KT, /) -> VT_co | None:
-        ...
+    def get(self, key: KT, /) -> VT_co | None: ...
 
     @overload
-    def get(self, key: KT, default: VT_co | T, /) -> VT_co | T:
-        ...
+    def get(self, key: KT, default: VT_co | T, /) -> VT_co | T: ...
 
     @docs_argspec("(self, key: KT, default: VT_co | None, /) -> VT_co")
     def get(self, key: KT, default: Any = None, /) -> VT_co:
@@ -1013,11 +997,9 @@ class JsMap(JsIterable[KT], Generic[KT, VT_co], Mapping[KT, VT_co], metaclass=_A
 
 
 class _SupportsKeysAndGetItem(Protocol[KT, VT_co]):
-    def keys(self) -> Iterable[KT]:
-        ...
+    def keys(self) -> Iterable[KT]: ...
 
-    def __getitem__(self, __key: KT) -> VT_co:
-        ...
+    def __getitem__(self, __key: KT) -> VT_co: ...
 
 
 class JsMutableMap(
@@ -1037,12 +1019,10 @@ class JsMutableMap(
     _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
 
     @overload
-    def pop(self, key: KT, /) -> VT:
-        ...
+    def pop(self, key: KT, /) -> VT: ...
 
     @overload
-    def pop(self, key: KT, default: VT | T = ..., /) -> VT | T:
-        ...
+    def pop(self, key: KT, default: VT | T = ..., /) -> VT | T: ...
 
     @docs_argspec("(self, key: KT, default: VT | None = None, /) -> VT")
     def pop(self, key: KT, default: Any = None, /) -> Any:
@@ -1067,16 +1047,13 @@ class JsMutableMap(
         """Empty out the map entirely."""
 
     @overload
-    def update(self, __m: _SupportsKeysAndGetItem[KT, VT], **kwargs: VT) -> None:
-        ...
+    def update(self, __m: _SupportsKeysAndGetItem[KT, VT], **kwargs: VT) -> None: ...
 
     @overload
-    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None:
-        ...
+    def update(self, __m: Iterable[tuple[KT, VT]], **kwargs: VT) -> None: ...
 
     @overload
-    def update(self, **kwargs: VT) -> None:
-        ...
+    def update(self, **kwargs: VT) -> None: ...
 
     @docs_argspec(
         "(self, other : Mapping[KT, VT] | Iterable[tuple[KT, VT]] = None , /, **kwargs) -> None"
@@ -1277,8 +1254,7 @@ def to_js(
         ]
         | None
     ) = None,
-) -> JsArray[Any]:
-    ...
+) -> JsArray[Any]: ...
 
 
 @overload
@@ -1296,8 +1272,7 @@ def to_js(
         ]
         | None
     ) = None,
-) -> JsMap[Any, Any]:
-    ...
+) -> JsMap[Any, Any]: ...
 
 
 @overload
@@ -1315,8 +1290,7 @@ def to_js(
         ]
         | None
     ) = None,
-) -> Any:
-    ...
+) -> Any: ...
 
 
 def to_js(
