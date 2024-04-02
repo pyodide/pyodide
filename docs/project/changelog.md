@@ -90,17 +90,16 @@ myst:
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
   `pygame-ce` {pr}`4602`
 
-- Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
+## Version 0.25.1
 
-- Upgraded `CoolProp` to 6.6.0 {pr}`4397`
+_March 31, 2024_
 
-- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
-  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
-  `zengl` to 2.4.1 {pr}`4509`, `protobuf` to 4.24.4 {pr}`4553`
+- {{ Fix }} Fixed pyodide-build to work with pypa/build>=1.2.
+  {pr}`4653`
 
-- Upgraded `OpenBLAS` to 0.26 {pr}`4526`
-
-- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
+- {{ Fix }} Fixed a bug that pyodide-build setting `MESON` env variable,
+  which overwrites the binary path of meson.
+  {pr}`4502`
 
 ## Version 0.25.0
 
