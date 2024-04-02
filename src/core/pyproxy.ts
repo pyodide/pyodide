@@ -48,6 +48,8 @@ declare var IS_GENERATOR: number;
 declare var IS_ASYNC_GENERATOR: number;
 declare var IS_SEQUENCE: number;
 declare var IS_MUTABLE_SEQUENCE: number;
+declare var IS_JSON_ADAPTOR_DICT: number;
+declare var IS_JSON_ADAPTOR_SEQUENCE: number;
 
 declare function DEREF_U32(ptr: number, offset: number): number;
 declare function Py_ENTER(): void;
@@ -162,10 +164,10 @@ type PyProxyAttrs = {
 };
 
 const pyproxyAttrsSymbol = Symbol("pyproxy.attrs");
-function pyproxy_getflags(ptrobj: number) {
+function pyproxy_getflags(ptrobj: number, is_json_adaptor: boolean) {
   Py_ENTER();
   try {
-    return _pyproxy_getflags(ptrobj);
+    return _pyproxy_getflags(ptrobj, is_json_adaptor);
   } finally {
     Py_EXIT();
   }
@@ -198,25 +200,29 @@ function pyproxy_new(
     props,
     shared,
     gcRegister,
+    jsonAdaptor,
   }: {
     flags?: number;
     cache?: PyProxyCache;
     shared?: PyProxyShared;
     props?: any;
     gcRegister?: boolean;
+    jsonAdaptor?: boolean;
   } = {},
 ): PyProxy {
   if (gcRegister === undefined) {
     // register by default
     gcRegister = true;
   }
-  const flags = flags_arg !== undefined ? flags_arg : pyproxy_getflags(ptr);
+  const flags =
+    flags_arg !== undefined ? flags_arg : pyproxy_getflags(ptr, !!jsonAdaptor);
   if (flags === -1) {
     _pythonexc2js();
   }
   const is_sequence = flags & IS_SEQUENCE;
+  const is_dict_adaptor = flags & IS_JSON_ADAPTOR_DICT;
   const cls = Module.getPyProxyClass(flags);
-  let target;
+  let target: any;
   if (flags & IS_CALLABLE) {
     // In this case we are effectively subclassing Function in order to ensure
     // that the proxy is callable. With a Content Security Protocol that doesn't
@@ -263,10 +269,15 @@ function pyproxy_new(
     { isBound: false, captureThis: false, boundArgs: [], roundtrip: false },
     props,
   );
-  let proxy = new Proxy(
-    target,
-    is_sequence ? PyProxySequenceHandlers : PyProxyHandlers,
-  );
+  let handlers;
+  if (is_dict_adaptor) {
+    handlers = PyProxyJsonAdaptorDictHandlers;
+  } else if (is_sequence) {
+    handlers = PyProxySequenceHandlers;
+  } else {
+    handlers = PyProxyHandlers;
+  }
+  let proxy = new Proxy(target, handlers);
   if (!isAlias && gcRegister) {
     // we need to register only once for a set of aliases. we can't register the
     // proxy directly since that isn't shared between aliases. The aliases all
@@ -311,6 +322,13 @@ function _getPtr(jsobj: any) {
 
 function _getFlags(jsobj: any): number {
   return Object.getPrototypeOf(jsobj).$$flags;
+}
+
+function isJsonAdaptor(jsobj: any): boolean {
+  return !!(
+    _getFlags(jsobj) &
+    (IS_JSON_ADAPTOR_SEQUENCE | IS_JSON_ADAPTOR_DICT)
+  );
 }
 
 function _adjustArgs(proxyobj: any, jsthis: any, jsargs: any[]): any[] {
@@ -367,6 +385,12 @@ Module.getPyProxyClass = function (flags: number) {
         Object.getOwnPropertyDescriptors(methods.prototype),
       );
     }
+  }
+  if (flags & IS_SEQUENCE || flags & HAS_GET) {
+    Object.assign(
+      descriptors,
+      Object.getOwnPropertyDescriptors(PyAsJsonAdaptorMethods.prototype),
+    );
   }
   // Use base constructor (just throws an error if construction is attempted).
   descriptors.constructor = Object.getOwnPropertyDescriptor(
@@ -843,6 +867,23 @@ export class PyProxyWithGet extends PyProxy {
 
 export interface PyProxyWithGet extends PyGetItemMethods {}
 
+class PyAsJsonAdaptorMethods {
+  asJsonAdaptor() {
+    let { shared, props } = _getAttrs(this);
+    let flags = _getFlags(this);
+    if (flags & IS_SEQUENCE) {
+      flags |= IS_JSON_ADAPTOR_SEQUENCE;
+    } else {
+      flags |= IS_JSON_ADAPTOR_DICT;
+    }
+    return pyproxy_new(shared.ptr, {
+      shared,
+      flags,
+      props,
+    });
+  }
+}
+
 // Controlled by HAS_GET, appears for any class with __getitem__,
 // mp_subscript, or sq_item methods
 export class PyGetItemMethods {
@@ -857,7 +898,7 @@ export class PyGetItemMethods {
     let result;
     try {
       Py_ENTER();
-      result = __pyproxy_getitem(ptrobj, key);
+      result = __pyproxy_getitem(ptrobj, key, isJsonAdaptor(this));
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -870,6 +911,25 @@ export class PyGetItemMethods {
       }
     }
     return result;
+  }
+  /**
+   * Returns the object treated as a json adaptor.
+   *
+   * With a JsonAdaptor:
+   *  1. property access / modification / deletion is implemented with
+   *     :meth:`~object.__getitem__`, :meth:`~object.__setitem__`, and
+   *     :meth:`~object.__delitem__` respectively.
+   *  2. If an attribute is accessed and the result implements
+   *     :meth:`~object.__getitem__` then the result will also be a json
+   *     adaptor.
+   *
+   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * inverse to Python's :meth:`json.loads`.
+   */
+  asJsonAdaptor(): PyProxy & {} {
+    // This is just here for the docs. The actual implementation comes from
+    // PyAsJsonAdaptorMethods.
+    throw new Error("Should not happen");
   }
 }
 
@@ -983,12 +1043,16 @@ export class PyContainsMethods {
  * https://hacks.mozilla.org/2015/07/es6-in-depth-generators-continued/
  *
  */
-function* iter_helper(iterptr: number, token: {}): Generator<any> {
+function* iter_helper(
+  iterptr: number,
+  token: {},
+  is_json_adaptor: boolean,
+): Generator<any> {
   const to_destroy = [];
   try {
     while (true) {
       Py_ENTER();
-      const item = __pyproxy_iter_next(iterptr);
+      const item = __pyproxy_iter_next(iterptr, is_json_adaptor);
       if (item === null) {
         break;
       }
@@ -1059,7 +1123,7 @@ export class PyIterableMethods {
       _pythonexc2js();
     }
 
-    let result = iter_helper(iterptr, token);
+    let result = iter_helper(iterptr, token, isJsonAdaptor(this));
     Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   }
@@ -1741,6 +1805,32 @@ export class PySequenceMethods {
   ): number {
     return Array.prototype.findIndex.call(this, predicate, thisArg);
   }
+
+  // Makes `JSON.stringify` of a Sequence proxy turn into an array.
+  // This is leaky but I don't know any way to make it work and not be leaky...
+  toJSON(this: any) {
+    return Array.from(this, (x: PyProxy) => x?.copy?.() || x);
+  }
+
+  /**
+   * Returns the object treated as a json adaptor.
+   *
+   * With a JsonAdaptor:
+   *  1. property access / modification / deletion is implemented with
+   *     :meth:`~object.__getitem__`, :meth:`~object.__setitem__`, and
+   *     :meth:`~object.__delitem__` respectively.
+   *  2. If an attribute is accessed and the result implements
+   *     :meth:`~object.__getitem__` then the result will also be a json
+   *     adaptor.
+   *
+   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * inverse to Python's :meth:`json.loads`.
+   */
+  asJsonAdaptor(): PyProxy & {} {
+    // This is just here for the docs. The actual implementation comes from
+    // PyAsJsonAdaptorMethods.
+    throw new Error("Should not happen");
+  }
 }
 
 /**
@@ -2217,6 +2307,95 @@ const PyProxySequenceHandlers = {
     );
     result.push("length");
     return result;
+  },
+};
+
+const PyProxyJsonAdaptorDictHandlers = {
+  isExtensible(): boolean {
+    return true;
+  },
+  has(jsobj: PyProxy, jskey: any): boolean {
+    if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
+      return true;
+    }
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      jskey = Number(jskey);
+    }
+    if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
+      return true;
+    }
+    return false;
+  },
+  get(jsobj: PyProxy, jskey: any): any {
+    let result;
+    if (
+      ["copy", "constructor", "$$flags", "toString", "destroy"].includes(
+        jskey,
+      ) ||
+      typeof jskey === "symbol"
+    ) {
+      // @ts-ignore
+      return Reflect.get(...arguments);
+    }
+    if (typeof jskey === "string") {
+      // TODO: consider adding an attribute cache for asJsonAdaptor
+      result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
+    }
+    if (result) {
+      return result;
+    }
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      jskey = Number(jskey);
+      result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
+    }
+    if (result) {
+      return result;
+    }
+    // @ts-ignore
+    return Reflect.get(...arguments);
+  },
+  set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
+    if (typeof jskey === "string") {
+      try {
+        PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+        return true;
+      } catch (e) {
+        if (isPythonError(e)) {
+          return false;
+        }
+        throw e;
+      }
+    }
+    return false;
+  },
+  deleteProperty(jsobj: PyProxy, jskey: any): boolean {
+    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+      try {
+        PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
+        return true;
+      } catch (e) {
+        if (isPythonError(e)) {
+          return false;
+        }
+        throw e;
+      }
+    }
+    return false;
+  },
+  getOwnPropertyDescriptor(jsobj: PyProxy, prop: any) {
+    if (!PyProxyJsonAdaptorDictHandlers.has(jsobj, prop)) {
+      return undefined;
+    }
+    const value = PyProxyJsonAdaptorDictHandlers.get(jsobj, prop);
+    return {
+      configurable: true,
+      enumerable: true,
+      value,
+      writable: true,
+    };
+  },
+  ownKeys(jsobj: PyProxy): (string | symbol)[] {
+    return Array.from(PyProxyHandlers.get(jsobj, "keys")());
   },
 };
 

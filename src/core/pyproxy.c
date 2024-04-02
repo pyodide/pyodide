@@ -109,6 +109,8 @@ static PyObject* asyncio;
 #define IS_ASYNC_GENERATOR (1 << 12)
 #define IS_SEQUENCE (1 << 13)
 #define IS_MUTABLE_SEQUENCE (1 << 14)
+#define IS_JSON_ADAPTOR_DICT (1 << 15)
+#define IS_JSON_ADAPTOR_SEQUENCE (1 << 16)
 // clang-format on
 
 // _PyGen_GetCode is static, and PyGen_GetCode is a public wrapper around it
@@ -263,17 +265,29 @@ static int tuple_flags;
 static int list_flags;
 
 EMSCRIPTEN_KEEPALIVE int
-pyproxy_getflags(PyObject* pyobj)
+pyproxy_getflags(PyObject* pyobj, bool is_json_adaptor)
 {
   // Fast paths for some common cases
   if (PyDict_CheckExact(pyobj)) {
-    return dict_flags;
+    int result = dict_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_DICT;
+    }
+    return result;
   }
   if (PyTuple_CheckExact(pyobj)) {
-    return tuple_flags;
+    int result = tuple_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    }
+    return result;
   }
   if (PyList_CheckExact(pyobj)) {
-    return list_flags;
+    int result = list_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    }
+    return result;
   }
   PyTypeObject* obj_type = Py_TYPE(pyobj);
   int result = type_getflags(obj_type);
@@ -295,6 +309,13 @@ pyproxy_getflags(PyObject* pyobj)
   if (!(result & IS_AWAITABLE) && (result & IS_GENERATOR) &&
       gen_is_coroutine(pyobj)) {
     result |= IS_AWAITABLE;
+  }
+  if (is_json_adaptor) {
+    if (result & IS_SEQUENCE) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    } else if (result & HAS_GET) {
+      result |= IS_JSON_ADAPTOR_DICT;
+    }
   }
 finally:
   return result;
@@ -511,7 +532,7 @@ finally:
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_getitem(PyObject* pyobj, JsVal jskey)
+_pyproxy_getitem(PyObject* pyobj, JsVal jskey, bool is_json_adaptor)
 {
   bool success = false;
   PyObject* pykey = NULL;
@@ -522,7 +543,7 @@ _pyproxy_getitem(PyObject* pyobj, JsVal jskey)
   FAIL_IF_NULL(pykey);
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
-  result = python2js(pyresult);
+  result = python2js_json_adaptor(pyresult, is_json_adaptor);
   FAIL_IF_JS_NULL(result);
 
   success = true;
@@ -826,13 +847,13 @@ _iscoroutinefunction(PyObject* f)
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_iter_next(PyObject* iterator)
+_pyproxy_iter_next(PyObject* iterator, bool is_json_adaptor)
 {
   PyObject* item = PyIter_Next(iterator);
   if (item == NULL) {
     return JS_NULL;
   }
-  JsVal result = python2js(item);
+  JsVal result = python2js_json_adaptor(item, is_json_adaptor);
   Py_CLEAR(item);
   return result;
 }
@@ -1375,11 +1396,12 @@ _pyproxy_get_buffer(PyObject* ptrobj)
 // clang-format off
 EM_JS_VAL(JsVal,
 pyproxy_new_ex,
-(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister, bool jsonAdaptor),
 {
   return Module.pyproxy_new(ptrobj, {
     props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
     gcRegister,
+    jsonAdaptor
   });
 });
 // clang-format on
@@ -1548,7 +1570,8 @@ create_proxy(PyObject* self,
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
-  return JsProxy_create(pyproxy_new_ex(obj, capture_this, roundtrip, true));
+  return JsProxy_create(
+    pyproxy_new_ex(obj, capture_this, roundtrip, true, false));
 }
 
 static PyMethodDef methods[] = {
