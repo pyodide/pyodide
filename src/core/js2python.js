@@ -1,4 +1,4 @@
-import {_PropagatePythonError as PropagateError } from "generated/error_handling";
+import { _PropagatePythonError as PropagateError } from "generated/error_handling";
 
 function js2python_string(value) {
   // The general idea here is to allocate a Python string and then
