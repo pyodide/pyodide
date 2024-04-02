@@ -65,6 +65,11 @@ EM_JS(void, set_pyodide_module, (JsVal mod), {
 int
 init_pyodide_proxy()
 {
+  EM_ASM({
+    // sourmash needs open64 to mean the same thing as open.
+    // Emscripten 3.1.44 seems to have removed it??
+    wasmImports["open64"] = wasmImports["open"];
+  });
   bool success = false;
   // Enable JavaScript access to the _pyodide module.
   PyObject* _pyodide = PyImport_ImportModule("_pyodide");
@@ -83,12 +88,6 @@ EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
-  EM_ASM({
-    // sourmash needs open64 to mean the same thing as open.
-    // Emscripten 3.1.44 seems to have removed it??
-    wasmImports["open64"] = wasmImports["open"];
-  });
-
   bool success = false;
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;

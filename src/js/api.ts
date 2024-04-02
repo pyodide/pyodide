@@ -12,6 +12,7 @@ import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 import "./literal-map.js";
+import { makeGlobalsProxy, SnapshotConfig } from "./snapshot";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -647,6 +648,15 @@ export class PyodideAPI {
     API.debug_ffi = debug;
     return orig;
   }
+
+  static makeMemorySnapshot(): Uint8Array {
+    if (!API.config._makeSnapshot) {
+      throw new Error(
+        "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
+      );
+    }
+    return API.makeSnapshot();
+  }
 }
 
 /** @hidetype */
@@ -745,10 +755,21 @@ function syncUpSnapshotLoad1() {
   Module._init_pyodide_proxy();
 }
 
+function tableSet(idx: number, val: any): void {
+  if (Module.__hiwire_set(idx, val) < 0) {
+    throw new Error("table set failed");
+  }
+}
+
 /**
  * Fill in the JsRef table.
  */
-function syncUpSnapshotLoad2() {
+function syncUpSnapshotLoad2(snapshotConfig: SnapshotConfig) {
+  snapshotConfig.hiwireKeys.forEach((e, idx) => {
+    const x = e?.reduce((x, y) => x[y], globalThis as any) || null;
+    // @ts-ignore
+    tableSet(idx, x);
+  });
   [
     null,
     jsFinderHook,
@@ -758,9 +779,7 @@ function syncUpSnapshotLoad2() {
     scheduleCallback,
     Module.API,
     {},
-    null,
-    null,
-  ].forEach((v, idx) => Module.__hiwire_set(idx, v));
+  ].forEach((v, idx) => tableSet(idx, v));
 }
 
 /**
@@ -770,8 +789,10 @@ function syncUpSnapshotLoad2() {
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (fromSnapshot?: boolean): PyodideInterface {
-  if (fromSnapshot) {
+API.finalizeBootstrap = function (
+  snapshotConfig?: SnapshotConfig,
+): PyodideInterface {
+  if (snapshotConfig) {
     syncUpSnapshotLoad1();
   }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
@@ -804,11 +825,15 @@ API.finalizeBootstrap = function (fromSnapshot?: boolean): PyodideInterface {
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
   let pyodide = makePublicAPI();
-  if (fromSnapshot) {
-    syncUpSnapshotLoad2();
+  if (snapshotConfig) {
+    syncUpSnapshotLoad2(snapshotConfig);
   } else {
     importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-    importhook.register_js_module("js", API.config.jsglobals);
+    let jsglobals = API.config.jsglobals;
+    if (API.config._makeSnapshot) {
+      jsglobals = makeGlobalsProxy(jsglobals);
+    }
+    importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
   }
 
