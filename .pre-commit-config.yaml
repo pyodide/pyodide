@@ -71,7 +71,7 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic<2
+          - pydantic
           - unearth
           - resolvelib
           - rich
