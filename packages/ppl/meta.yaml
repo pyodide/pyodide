@@ -1,6 +1,6 @@
 package:
   name: ppl
-  version: 1.2
+  version: "1.2"
   tag:
     - library
 source:

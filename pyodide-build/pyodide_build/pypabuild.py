@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import cast
+from typing import Literal, cast
 
 from build import BuildBackendException, ConfigSettingsType
 from build.env import DefaultIsolatedEnv
@@ -136,7 +136,7 @@ def _build_in_isolated_env(
     build_env: Mapping[str, str],
     srcdir: Path,
     outdir: str,
-    distribution: str,
+    distribution: Literal["sdist", "wheel"],
     config_settings: ConfigSettingsType,
 ) -> str:
     # For debugging: The following line disables removal of the isolated venv.
@@ -288,11 +288,10 @@ def build(
     build_env: Mapping[str, str],
     config_settings: ConfigSettingsType,
 ) -> str:
-    distribution = "wheel"
     try:
         with _handle_build_error():
             built = _build_in_isolated_env(
-                build_env, srcdir, str(outdir), distribution, config_settings
+                build_env, srcdir, str(outdir), "wheel", config_settings
             )
             print("{bold}{green}Successfully built {}{reset}".format(built, **_STYLES))
             return built

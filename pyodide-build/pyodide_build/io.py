@@ -1,8 +1,8 @@
 from pathlib import Path
-from typing import Any, Literal, Self
+from typing import Literal, Self
 
 import pydantic
-from pydantic import ConfigDict, BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class _PackageSpec(BaseModel):
@@ -11,7 +11,7 @@ class _PackageSpec(BaseModel):
     top_level: list[str] = Field([], alias="top-level")
     tag: list[str] = Field([])
     disabled: bool = Field(False, alias="_disabled")
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
 
 class _SourceSpec(BaseModel):
@@ -21,7 +21,7 @@ class _SourceSpec(BaseModel):
     sha256: str | None = None
     patches: list[str] = []
     extras: list[tuple[str, str]] = []
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
     @pydantic.model_validator(mode="after")
     def _check_url_has_hash(self) -> Self:
@@ -29,7 +29,7 @@ class _SourceSpec(BaseModel):
             raise ValueError(
                 "If source is downloaded from url, it must have a 'source/sha256' hash."
             )
-        
+
         return self
 
     @pydantic.model_validator(mode="after")
@@ -46,7 +46,7 @@ class _SourceSpec(BaseModel):
             raise ValueError(
                 "Source section should not have both a 'url' and a 'path' key"
             )
-        
+
         return self
 
     @pydantic.model_validator(mode="after")
@@ -65,7 +65,7 @@ class _SourceSpec(BaseModel):
                 "If source is a wheel, 'source/patches' and 'source/extras' "
                 "keys are not allowed"
             )
-    
+
         return self
 
 
@@ -91,7 +91,7 @@ class _BuildSpec(BaseModel):
     vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
     @pydantic.model_validator(mode="after")
     def _check_config(self) -> Self:
@@ -115,7 +115,7 @@ class _BuildSpec(BaseModel):
                 raise ValueError(
                     f"If building a {typ}, 'build/{key}' key is not allowed."
                 )
-        
+
         return self
 
 
@@ -123,12 +123,12 @@ class _RequirementsSpec(BaseModel):
     run: list[str] = []
     host: list[str] = []
     executable: list[str] = []
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
 
 class _TestSpec(BaseModel):
     imports: list[str] = []
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
 
 class _AboutSpec(BaseModel):
@@ -136,7 +136,7 @@ class _AboutSpec(BaseModel):
     PyPI: str | None = None
     summary: str | None = None
     license: str | None = None
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
 
 class _ExtraSpec(BaseModel):
@@ -151,7 +151,7 @@ class MetaConfig(BaseModel):
     test: _TestSpec = _TestSpec()
     about: _AboutSpec = _AboutSpec()
     extra: _ExtraSpec = _ExtraSpec()
-    model_config = ConfigDict(extra=pydantic.Extra.forbid)
+    model_config = ConfigDict(extra="forbid")
 
     @classmethod
     def from_yaml(cls, path: Path) -> "MetaConfig":
@@ -183,7 +183,7 @@ class MetaConfig(BaseModel):
         import yaml
 
         with open(path, "w") as f:
-            yaml.dump(self.dict(by_alias=True, exclude_unset=True), f)
+            yaml.dump(self.model_dump(by_alias=True, exclude_unset=True), f)
 
     @pydantic.model_validator(mode="after")
     def _check_wheel_host_requirements(self) -> Self:
@@ -218,7 +218,7 @@ class MetaConfig(BaseModel):
                     raise ValueError(
                         f"If source is a wheel, 'build/{key}' key is not allowed"
                     )
-                
+
         return self
 
     def is_rust_package(self) -> bool:
