@@ -88,7 +88,7 @@ myst:
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
-  `pygame-ce` {pr}`4602`
+  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`
 
 ## Version 0.25.1
 
