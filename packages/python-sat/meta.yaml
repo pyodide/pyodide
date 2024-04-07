@@ -1,11 +1,11 @@
 package:
   name: python-sat
-  version: 1.8.dev8
+  version: 1.8.dev9
   top-level:
     - pysat
 source:
-  sha256: eaf24ec43f4edacd867c08552f4f44b41d44157a2466f19410824febb01bd910
-  url: https://files.pythonhosted.org/packages/63/b4/ae527b84f3619dbc9cd55ecb25f8610e81022286b3f26915527c0275951b/python-sat-1.8.dev8.tar.gz
+  sha256: ace2018d6f837879c7936287eca1c32928d98346e8f7731c63664fdae633c729
+  url: https://files.pythonhosted.org/packages/73/f6/4ac4fc5a70a70cda807cdf434544823996baa36a3f67549676d3a0390166/python-sat-1.8.dev9.tar.gz
 
   patches:
     - patches/force_malloc.patch
