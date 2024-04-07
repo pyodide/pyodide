@@ -7,6 +7,7 @@ The gist is we compile the package replacing calls to the compiler and linker
 with wrappers that adjusting include paths and flags as necessary for
 cross-compiling and then pass the command long to emscripten.
 """
+
 import json
 import os
 import sys

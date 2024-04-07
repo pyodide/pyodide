@@ -740,7 +740,7 @@ pyodide.runPython(`
 console.log(my_js_namespace.y); // 7
 ```
 
-If the JavaScript object's name is a reserved Python keyword, the {py:func}`setattr` function can be used to access the object by name within the js module::
+If the JavaScript object's name is a reserved Python keyword, the {py:func}`getattr` function can be used to access the object by name within the js module::
 
 ```pyodide
 lambda = (x) => {return x + 1};
