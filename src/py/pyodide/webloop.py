@@ -268,7 +268,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_soon(
         self,
         callback: Callable[..., Any],
-        *args: Any,
+        *args: Any,  # type: ignore[override]
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
@@ -284,7 +284,7 @@ class WebLoop(asyncio.AbstractEventLoop):
     def call_soon_threadsafe(
         self,
         callback: Callable[..., Any],
-        *args: Any,
+        *args: Any,  # type: ignore[override]
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
