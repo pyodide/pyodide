@@ -445,7 +445,15 @@ class RecipeBuilder:
             )
             if self.build_metadata.cross_build_env:
                 subprocess.run(
-                    ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"],
+                    [
+                        sys.executable,
+                        "-m",
+                        "pip",
+                        "install",
+                        "-t",
+                        str(host_site_packages),
+                        f"{name}=={ver}",
+                    ],
                     check=True,
                 )
 
