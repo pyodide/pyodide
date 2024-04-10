@@ -17,9 +17,6 @@ build:
   exports: whole_archive
   script: |
     export DUCKDB_CUSTOM_PLATFORM=wasm_eh_pyodide
-test:
-  imports:
-    - duckdb
 about:
   home: https://github.com/duckdb/duckdb
   PyPI: https://pypi.org/project/duckdb
