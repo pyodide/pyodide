@@ -8,7 +8,7 @@ import requests
 from pyodide_lock import PyodideLockSpec
 
 from . import build_env
-from .create_pypi_index import create_pypi_index
+from .create_package_index import create_package_index
 from .logger import logger
 
 XBUILDENV_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
@@ -59,7 +59,7 @@ class CrossBuildEnvManager:
         """
         versions = []
         for version_dir in self.env_dir.glob("*"):
-            if not version_dir.is_dir() or str(version_dir) == str(self.symlink_dir):
+            if not version_dir.is_dir() or version_dir == self.symlink_dir:
                 continue
 
             versions.append(version_dir.name)
@@ -133,10 +133,10 @@ class CrossBuildEnvManager:
         Path to the root directory for the cross-build environment.
         """
 
-        if url:
-            if version:
-                raise ValueError("Cannot specify both version and url")
+        if url and version:
+            raise ValueError("Cannot specify both version and url")
 
+        if url:
             version = _url_to_version(url)
             download_url = url
         else:
@@ -169,7 +169,7 @@ class CrossBuildEnvManager:
 
                 if not url:
                     # If installed from url, skip creating the PyPI index (version is not known)
-                    self._create_pypi_index(xbuildenv_pyodide_root, version)
+                    self._create_package_index(xbuildenv_pyodide_root, version)
 
             install_marker.touch()
             self.use_version(version)
@@ -285,7 +285,7 @@ class CrossBuildEnvManager:
             ]
         )
 
-    def _create_pypi_index(self, xbuildenv_pyodide_root: Path, version: str) -> None:
+    def _create_package_index(self, xbuildenv_pyodide_root: Path, version: str) -> None:
         """
         Create the PyPI index for the packages in the xbuild environment.
         TODO: Creating the PyPI Index is not required for the xbuild environment to work, so maybe we can
@@ -302,7 +302,7 @@ class CrossBuildEnvManager:
             return
 
         lockfile = PyodideLockSpec(**json.loads(lockfile_path.read_bytes()))
-        create_pypi_index(lockfile.packages, xbuildenv_pyodide_root, cdn_base)
+        create_package_index(lockfile.packages, xbuildenv_pyodide_root, cdn_base)
 
     def uninstall_version(self, version: str) -> None:
         """

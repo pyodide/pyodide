@@ -438,7 +438,7 @@ def test_pip_install_from_pyodide(selenium, venv):
     )
 
 
-def test_pypi_index(tmp_path):
+def test_package_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
@@ -451,7 +451,7 @@ def test_pypi_index(tmp_path):
 
     pip_opts = [
         "--index-url",
-        "file:" + str((env_path / "xbuildenv/pyodide-root/pypi_index").resolve()),
+        "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
         "--platform=emscripten_3_1_45_wasm32",
         "--only-binary=:all:",
         "--python-version=311",
@@ -476,10 +476,6 @@ def test_pypi_index(tmp_path):
         capture_output=True,
         encoding="utf8",
     )
-    # print("\n\nstdout:")
-    # print(result.stdout)
-    # print("\n\nstderr:")
-    # print(result.stderr)
 
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)

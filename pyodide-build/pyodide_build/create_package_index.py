@@ -4,15 +4,15 @@ from textwrap import dedent
 from pyodide_lock.spec import PackageSpec
 
 
-def create_pypi_index(
+def create_package_index(
     packages: dict[str, PackageSpec], target_dir: Path, dist_url: str
 ) -> None:
-    """Create a pip-compatible Python package (pypa) index to be used with a Pyodide virtual
+    """Create a pip-compatible Python package index to be used with a Pyodide virtual
     environment.
 
     To use, pass as an `--index-url` or `--extra-index-url` parameter to pip.
-    The argument should be a `file:` url pointing to the `pypi_index` folder (or
-    if you serve `pypi_index` it can be a normal url). It is also used
+    The argument should be a `file:` url pointing to the `package_index` folder (or
+    if you serve `package_index` it can be a normal url). It is also used
     automatically by Pyodide virtual environments created from a release version
     of Pyodide.
 
@@ -24,8 +24,8 @@ def create_pypi_index(
 
     target_dir:
         Where to put the  index. It will be placed in a subfolder of
-        target_dir called `pypi_index`. `target_dir` should exist but
-        `target_dir/pypi_index` should not exist.
+        target_dir called `package_index`. `target_dir` should exist but
+        `target_dir/package_index` should not exist.
 
     dist_url:
         The CDN url to download packages from. This will be hard coded into the
@@ -41,7 +41,7 @@ def create_pypi_index(
     if not target_dir.exists():
         raise RuntimeError(f"target_dir={target_dir} does not exist")
 
-    index_dir = target_dir / "pypi_index"
+    index_dir = target_dir / "package_index"
     if index_dir.exists():
         raise RuntimeError(f"{index_dir} already exists")
     index_dir.mkdir()

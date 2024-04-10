@@ -145,7 +145,7 @@ class TestCrossBuildEnvManager:
         assert (manager.symlink_dir / "xbuildenv").exists()
         assert (manager.symlink_dir / "xbuildenv" / "pyodide-root").exists()
         assert (
-            manager.symlink_dir / "xbuildenv" / "pyodide-root" / "pypi_index"
+            manager.symlink_dir / "xbuildenv" / "pyodide-root" / "package_index"
         ).exists()
         assert (manager.symlink_dir / "xbuildenv" / "site-packages-extras").exists()
 
@@ -169,7 +169,7 @@ class TestCrossBuildEnvManager:
         assert (manager.symlink_dir / "xbuildenv").exists()
         assert (manager.symlink_dir / "xbuildenv" / "pyodide-root").exists()
         assert not (
-            manager.symlink_dir / "xbuildenv" / "pyodide-root" / "pypi_index"
+            manager.symlink_dir / "xbuildenv" / "pyodide-root" / "package_index"
         ).exists()
         assert (manager.symlink_dir / "xbuildenv" / "site-packages-extras").exists()
 
@@ -200,7 +200,7 @@ class TestCrossBuildEnvManager:
         for file in cross_build_files.iterdir():
             assert (hostsitepackages / file.name).exists()
 
-    def test_create_pypi_index(self, tmp_path, xbuildenv_url):
+    def test_create_package_index(self, tmp_path, xbuildenv_url):
         manager = CrossBuildEnvManager(tmp_path)
 
         download_path = tmp_path / "test"
@@ -209,8 +209,8 @@ class TestCrossBuildEnvManager:
         xbuildenv_root = download_path / "xbuildenv"
         xbuildenv_pyodide_root = xbuildenv_root / "pyodide-root"
 
-        manager._create_pypi_index(xbuildenv_pyodide_root, version="0.25.0")
-        (xbuildenv_pyodide_root / "pypi_index").exists()
+        manager._create_package_index(xbuildenv_pyodide_root, version="0.25.0")
+        (xbuildenv_pyodide_root / "package_index").exists()
 
     def test_uninstall_version(self, tmp_path):
         manager = CrossBuildEnvManager(tmp_path)
