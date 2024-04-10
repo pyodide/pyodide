@@ -1,13 +1,11 @@
 import os
-import shutil
 from pathlib import Path
 
 import pytest
-from pyodide_lock import PyodideLockSpec
 
 from conftest import ROOT_PATH
 from pyodide_build import build_env
-from pyodide_build.common import chdir, xbuildenv_dirname
+from pyodide_build.common import xbuildenv_dirname
 
 
 @pytest.fixture(scope="module")
@@ -42,55 +40,6 @@ def temp_python_lib2(tmp_path_factory):
     yield libdir
 
 
-def mock_pyodide_lock() -> PyodideLockSpec:
-    return PyodideLockSpec(
-        info={
-            "version": "0.22.1",
-            "arch": "wasm32",
-            "platform": "emscripten_xxx",
-            "python": "3.11",
-        },
-        packages={},
-    )
-
-
-@pytest.fixture(scope="module")
-def temp_xbuildenv(tmp_path_factory):
-    """
-    Create a temporary xbuildenv archive
-    """
-    base = tmp_path_factory.mktemp("base")
-
-    path = Path(base)
-
-    xbuildenv = path / "xbuildenv"
-    xbuildenv.mkdir()
-
-    pyodide_root = xbuildenv / "pyodide-root"
-    site_packages_extra = xbuildenv / "site-packages-extras"
-    requirements_txt = xbuildenv / "requirements.txt"
-
-    pyodide_root.mkdir()
-    site_packages_extra.mkdir()
-    requirements_txt.touch()
-
-    (pyodide_root / "Makefile.envs").write_text(
-        """
-export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
-
-.output_vars:
-	set
-"""  # noqa: W191
-    )
-    (pyodide_root / "dist").mkdir()
-    mock_pyodide_lock().to_json(pyodide_root / "dist" / "pyodide-lock.json")
-
-    with chdir(base):
-        archive_name = shutil.make_archive("xbuildenv", "tar")
-
-    yield base, archive_name
-
-
 @pytest.fixture(scope="function")
 def reset_env_vars():
     # Will reset the environment variables to their original values after each test.
@@ -120,6 +69,8 @@ def reset_cache():
 def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
     import subprocess as sp
 
+    from pyodide_build import __version__
+
     assert "PYODIDE_ROOT" not in os.environ
 
     envpath = Path(tmp_path) / xbuildenv_dirname()
@@ -136,6 +87,26 @@ def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
     )
 
     assert result.returncode == 0
+
+    version_dir = envpath / __version__
+    version_dir.mkdir()
+
+    sp.run(
+        [
+            "mv",
+            str(envpath / "xbuildenv"),
+            str(version_dir),
+        ]
+    )
+
+    sp.run(
+        [
+            "ln",
+            "-s",
+            str(version_dir),
+            str(envpath / "xbuildenv"),
+        ]
+    )
 
     cur_dir = os.getcwd()
 

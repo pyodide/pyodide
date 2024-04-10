@@ -40,3 +40,4 @@ xbuildenv/
 pytest-pyodide
 tools/symlinks
 xbuildenv/
+.pyodide-xbuildenv*
