@@ -1,15 +1,12 @@
 package:
   name: contourpy
-  version: 1.2.0
+  version: 1.2.1
   top-level:
     - contourpy
 
 source:
-  url: https://files.pythonhosted.org/packages/11/a3/48ddc7ae832b000952cf4be64452381d150a41a2299c2eb19237168528d1/contourpy-1.2.0.tar.gz
-  sha256: 171f311cb758de7da13fc53af221ae47a5877be5a0843a9fe150818c51ed276a
-
-  patches:
-    - patches/0001-Install-pybind11-from-github-repo-after-PR-4767.patch
+  url: https://files.pythonhosted.org/packages/8d/9e/e4786569b319847ffd98a8326802d5cf8a5500860dbfc2df1f0f4883ed99/contourpy-1.2.1.tar.gz
+  sha256: 4d8908b3bee1c889e547867ca4cdc54e5ab6be6d3e078556814a22457f49423c
 
 requirements:
   run:
