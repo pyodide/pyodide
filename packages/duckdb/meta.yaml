@@ -6,6 +6,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/47/15/f78b67a07f53f4072c3ab81ab7942850968614098ef577cea8e44a8729fc/duckdb-0.10.1.tar.gz
   sha256: 0d5b6daa9bb54a635e371798994caa08f26d2f145ebcbc989e16b0a0104e84fb
+  patches:
+    - patches/py-ssize_t.patch
 build:
   cxxflags: |
     -fexceptions
