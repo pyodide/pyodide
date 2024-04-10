@@ -90,6 +90,8 @@ myst:
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
   `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`
 
+- Upgraded `contourpy` to 1.2.1 {pr}`4680`
+
 ## Version 0.25.1
 
 _March 31, 2024_
