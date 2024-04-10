@@ -13,9 +13,9 @@ about:
   license: Apache-2.0
 requirements:
   #  run:
-  #  - 
+  #  -
   #host:
-  #  - 
+  #  -
   executable:
     - rustup
 extra:
