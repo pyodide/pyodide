@@ -1,0 +1,23 @@
+package:
+  name: getdaft
+  version: 0.2.20
+  top-level:
+    - daft
+source:
+  url: https://files.pythonhosted.org/packages/3e/dd/f4d0e1cc0cc327fdc9370b10c8fc4021719e33c5ed5cee0a35e4ac7229fc/getdaft-0.2.20.tar.gz
+  sha256: 681f8a11ee4a286ba8de18b18de290f20f987303a87d2031cfcb5636c186d55d
+about:
+  home: https://www.getdaft.io
+  PyPI: https://pypi.org/project/getdaft
+  summary: Distributed Dataframes for Multimodal Data
+  license: Apache-2.0
+requirements:
+  #  run:
+  #  - 
+  #host:
+  #  - 
+  executable:
+    - rustup
+extra:
+  recipe-maintainers:
+    - bitsondatadev
