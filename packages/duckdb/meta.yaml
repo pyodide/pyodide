@@ -8,12 +8,15 @@ source:
   sha256: 0d5b6daa9bb54a635e371798994caa08f26d2f145ebcbc989e16b0a0104e84fb
   patches:
     - patches/py-ssize_t.patch
+    - patches/setup-py.patch
 build:
   cxxflags: |
     -fexceptions
   ldflags: |
     -fexceptions
   exports: whole_archive
+  script: |
+    export DUCKDB_CUSTOM_PLATFORM=wasm_eh_pyodide
 test:
   imports:
     - duckdb
