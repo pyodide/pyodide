@@ -1,7 +1,7 @@
-diff --git a/tools/pythonpkg/src/native/python_objects.cpp b/tools/pythonpkg/src/native/python_objects.cpp
+diff --git a/src/native/python_objects.cpp b/src/native/python_objects.cpp
 index 44d0acca4b..5c19f2ae13 100644
---- a/tools/pythonpkg/src/native/python_objects.cpp
-+++ b/tools/pythonpkg/src/native/python_objects.cpp
+--- a/src/native/python_objects.cpp
++++ b/src/native/python_objects.cpp
 @@ -575,7 +575,16 @@ py::object PythonObject::FromValue(const Value &val, const LogicalType &type,
  		auto &array_values = ArrayValue::GetChildren(val);
  		auto array_size = ArrayType::GetSize(type);
