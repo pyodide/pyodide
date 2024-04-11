@@ -91,6 +91,7 @@ myst:
   `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`
 
 - Upgraded `contourpy` to 1.2.1 {pr}`4680`
+- Upgraded `sourmash` to 4.8.8 {pr}`4683`
 
 ## Version 0.25.1
 
