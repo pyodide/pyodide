@@ -13,3 +13,15 @@ def test_duckdb(selenium):
 
     assert platform == "wasm_eh_pyodide"
     assert query_result == [(0, 42, "hello"), (1, 43, "world")]
+
+
+@run_in_pyodide(packages=["duckdb", "pandas"])
+def test_duckdb_with_pandas(selenium):
+    import duckdb
+    import pandas as pd
+
+    with duckdb.connect() as con:
+        df = con.sql("SELECT UNNEST(RANGE(5)) as x").df()
+
+    expected = pd.DataFrame({"x": range(5)})
+    assert df.equals(expected)
