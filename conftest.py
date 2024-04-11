@@ -38,7 +38,6 @@ pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.globals.get;
     pyodide.runPython("import pyodide_js._api; del pyodide_js");
-    pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
     pyodide._api.pyodide_code.eval_code;
