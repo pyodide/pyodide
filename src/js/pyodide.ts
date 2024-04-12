@@ -225,6 +225,9 @@ export async function loadPyodide(
   let snapshot;
   if (options._loadSnapshot) {
     snapshot = await options._loadSnapshot;
+    if (snapshot?.constructor?.name === "ArrayBuffer") {
+      snapshot = new Uint8Array(snapshot);
+    }
     // @ts-ignore
     Module.noInitialRun = !!snapshot;
     // @ts-ignore
