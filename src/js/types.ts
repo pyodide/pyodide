@@ -109,6 +109,7 @@ declare global {
   export const __pyproxy_getitem: (
     obj: number,
     key: any,
+    cache: Map<string, any>,
     is_json_adaptor: boolean,
   ) => any;
   export const __pyproxy_setitem: (ptr: number, key: any, value: any) => number;
@@ -119,6 +120,7 @@ declare global {
   export const __pyproxy_aiter_next: (ptr: number) => any;
   export const __pyproxy_iter_next: (
     ptr: number,
+    cache: Map<string, any>,
     is_json_adaptor: boolean,
   ) => any;
   export const __pyproxyGen_Send: (

@@ -437,6 +437,32 @@ proxy_cache_set,
 })
 // clang-format on
 
+/**
+ * Used by pyproxy_iter_next and pyproxy_get_item for handling json adaptors.
+ *
+ * If is_json_adaptor,
+ *  1. check json adaptor cache for x, if it's already there get existing value
+ *  2. If it's not already there, convert x. Add an appropriate json adaptor
+ *     type flag if x needs it.
+ *  3. Add result to proxy cache.
+ */
+JsVal
+python2js_json_adaptor(PyObject* x, JsVal proxyCache, bool is_json_adaptor)
+{
+  if (!is_json_adaptor) {
+    return python2js(x);
+  }
+  JsVal cached_proxy = proxy_cache_get(proxyCache, x); /* borrowed */
+  if (!JsvNull_Check(cached_proxy)) {
+    return cached_proxy;
+  }
+  JsVal result = python2js_inner(x, JS_NULL, false, true, is_json_adaptor);
+  if (pyproxy_Check(result)) {
+    proxy_cache_set(proxyCache, x, result);
+  }
+  return result;
+}
+
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 {
@@ -532,7 +558,10 @@ finally:
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_getitem(PyObject* pyobj, JsVal jskey, bool is_json_adaptor)
+_pyproxy_getitem(PyObject* pyobj,
+                 JsVal jskey,
+                 JsVal proxyCache,
+                 bool is_json_adaptor)
 {
   bool success = false;
   PyObject* pykey = NULL;
@@ -543,7 +572,7 @@ _pyproxy_getitem(PyObject* pyobj, JsVal jskey, bool is_json_adaptor)
   FAIL_IF_NULL(pykey);
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
-  result = python2js_json_adaptor(pyresult, is_json_adaptor);
+  result = python2js_json_adaptor(pyresult, proxyCache, is_json_adaptor);
   FAIL_IF_JS_NULL(result);
 
   success = true;
@@ -847,13 +876,13 @@ _iscoroutinefunction(PyObject* f)
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_iter_next(PyObject* iterator, bool is_json_adaptor)
+_pyproxy_iter_next(PyObject* iterator, JsVal proxyCache, bool is_json_adaptor)
 {
   PyObject* item = PyIter_Next(iterator);
   if (item == NULL) {
     return JS_NULL;
   }
-  JsVal result = python2js_json_adaptor(item, is_json_adaptor);
+  JsVal result = python2js_json_adaptor(item, proxyCache, is_json_adaptor);
   Py_CLEAR(item);
   return result;
 }

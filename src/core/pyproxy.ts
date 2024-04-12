@@ -124,7 +124,12 @@ Module.disable_pyproxy_allocation_tracing = function () {
 };
 Module.disable_pyproxy_allocation_tracing();
 
-type PyProxyCache = { map: Map<string, any>; refcnt: number; leaked?: boolean };
+type PyProxyCache = {
+  map: Map<string, any>;
+  json_adaptor_map: Map<string, any>;
+  refcnt: number;
+  leaked?: boolean;
+};
 type PyProxyShared = {
   ptr: number;
   cache: PyProxyCache;
@@ -251,7 +256,7 @@ function pyproxy_new(
     // Not an alias so we have to make `shared`.
     if (!cache) {
       // In this case it's not a copy.
-      cache = { map: new Map(), refcnt: 0 };
+      cache = { map: new Map(), json_adaptor_map: new Map(), refcnt: 0 };
     }
     cache.refcnt++;
     shared = {
@@ -421,11 +426,15 @@ function pyproxy_decref_cache(cache: PyProxyCache) {
     return;
   }
   cache.refcnt--;
+  if (cache.leaked) {
+    return;
+  }
   if (cache.refcnt === 0) {
-    for (let proxy of cache.map.values()) {
-      if (!cache.leaked) {
-        Module.pyproxy_destroy(proxy, pyproxy_cache_destroyed_msg, true);
-      }
+    for (const proxy of cache.map.values()) {
+      Module.pyproxy_destroy(proxy, pyproxy_cache_destroyed_msg, true);
+    }
+    for (const proxy of cache.json_adaptor_map.values()) {
+      Module.pyproxy_destroy(proxy, pyproxy_cache_destroyed_msg, true);
     }
   }
 }
@@ -894,11 +903,17 @@ export class PyGetItemMethods {
    * @returns The corresponding value.
    */
   get(key: any): any {
-    const ptrobj = _getPtr(this);
+    const { shared } = _getAttrs(this);
     let result;
     try {
       Py_ENTER();
-      result = __pyproxy_getitem(ptrobj, key, isJsonAdaptor(this));
+      // Cache is only used if isJsonAdaptor is true.
+      result = __pyproxy_getitem(
+        shared.ptr,
+        key,
+        shared.cache.json_adaptor_map,
+        isJsonAdaptor(this),
+      );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1046,19 +1061,23 @@ export class PyContainsMethods {
 function* iter_helper(
   iterptr: number,
   token: {},
+  proxyCache: Map<string, any>,
   is_json_adaptor: boolean,
 ): Generator<any> {
   const to_destroy = [];
   try {
     while (true) {
       Py_ENTER();
-      const item = __pyproxy_iter_next(iterptr, is_json_adaptor);
+      const item = __pyproxy_iter_next(iterptr, proxyCache, is_json_adaptor);
       if (item === null) {
         break;
       }
       Py_EXIT();
       yield item;
-      if (API.isPyProxy(item)) {
+      // If it's a json adaptor, we cached the result so we don't need to
+      // destroy it (they'll get destroyed when we destroy the root).
+      // This is necessary to get JSON.stringify to work correctly.
+      if (!is_json_adaptor && API.isPyProxy(item)) {
         to_destroy.push(item);
       }
     }
@@ -1109,12 +1128,12 @@ export class PyIterableMethods {
    * This will be used implicitly by ``for(let x of proxy){}``.
    */
   [Symbol.iterator](): Iterator<any, any, any> {
-    let ptrobj = _getPtr(this);
+    const { shared } = _getAttrs(this);
     let token = {};
     let iterptr;
     try {
       Py_ENTER();
-      iterptr = _PyObject_GetIter(ptrobj);
+      iterptr = _PyObject_GetIter(shared.ptr);
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
@@ -1123,7 +1142,13 @@ export class PyIterableMethods {
       _pythonexc2js();
     }
 
-    let result = iter_helper(iterptr, token, isJsonAdaptor(this));
+    // Cache is only used if isJsonAdaptor is true.
+    let result = iter_helper(
+      iterptr,
+      token,
+      shared.cache.json_adaptor_map,
+      isJsonAdaptor(this),
+    );
     Module.finalizationRegistry.register(result, [iterptr, undefined], token);
     return result;
   }
@@ -1806,10 +1831,8 @@ export class PySequenceMethods {
     return Array.prototype.findIndex.call(this, predicate, thisArg);
   }
 
-  // Makes `JSON.stringify` of a Sequence proxy turn into an array.
-  // This is leaky but I don't know any way to make it work and not be leaky...
   toJSON(this: any) {
-    return Array.from(this, (x: PyProxy) => x?.copy?.() || x);
+    return Array.from(this);
   }
 
   /**
@@ -2395,7 +2418,11 @@ const PyProxyJsonAdaptorDictHandlers = {
     };
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
-    return Array.from(PyProxyHandlers.get(jsobj, "keys")());
+    let dict_keys_view: Iterable<string> & PyProxy;
+    dict_keys_view = PyProxyHandlers.get(jsobj, "keys")();
+    const res = Array.from(dict_keys_view);
+    dict_keys_view.destroy();
+    return res;
   },
 };
 

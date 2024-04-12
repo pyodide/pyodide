@@ -2380,7 +2380,7 @@ def test_stringify_sequence(selenium):
 
 
 @run_in_pyodide
-def test_as_json_adaptor1(selenium):
+def test_as_json_adaptor_heritability1(selenium):
     from pyodide.code import run_js
 
     o = [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}]
@@ -2389,11 +2389,7 @@ def test_as_json_adaptor1(selenium):
         """
         (o, l) =>  {
             const o2 = o.asJsonAdaptor();
-            return l.reduce((x, y) => {
-                const res = x?.[y];
-                x !== o2 && x?.destroy?.();
-                return res;
-            }, o2);
+            return l.reduce((x, y) => x[y], o2);
         }
         """
     )
@@ -2406,26 +2402,8 @@ def test_as_json_adaptor1(selenium):
     assert f(o, [2, "b", "d", 1, "c"]) == 2
 
 
-@pytest.mark.skip_pyproxy_check
 @run_in_pyodide
-def test_as_json_adaptor2(selenium):
-    """Stringifying a PyProxy is leaky, but there is no obvious fix."""
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}]
-
-    f = run_js(
-        """
-        (o) => JSON.stringify(o.asJsonAdaptor())
-        """
-    )
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor3(selenium):
+def test_as_json_adaptor_heritability2(selenium):
     from pyodide.code import run_js
 
     class T1:
@@ -2446,7 +2424,7 @@ def test_as_json_adaptor3(selenium):
             const x0 = x[0];
             const x1 = x[1];
             const x1a = x1.a;
-            return {
+            return pyodide.toPy({
                 x0,
                 x1,
                 xflags: x.$$flags,
@@ -2455,24 +2433,100 @@ def test_as_json_adaptor3(selenium):
                 x0a: x0.a,
                 x1a,
                 x1ay: x1a.y,
-            };
+            });
         }
         """
     )
-    resjs = f(o)
-    res = resjs.to_py()
+    res = f(o)
     assert res["xflags"] & (1 << 16) != 0
     assert res["x0flags"] & (1 << 15) == 0
     assert res["x1flags"] & (1 << 15) != 0
     assert res["x0a"] == {"x": 2}
     assert res["x1a"] == {"y": 3}
     assert res["x1ay"] == 3
-    run_js(
-        """
-        (obj) => {
-            for (const attr in obj) {
-                obj[attr]?.destroy?.();
-            }
-        }
-        """
-    )(resjs)
+
+
+@run_in_pyodide
+def test_as_json_adaptor_ownkeys(selenium):
+    from pyodide.code import run_js
+
+    o = {"c": 7, "x": 99, "z": 29}
+    f = run_js("(o) => Reflect.ownKeys(o.asJsonAdaptor())")
+    assert set(f(o)) == set(o.keys())
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify1(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = [7]
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify2(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = [[7]]
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify3(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = {"c": 7}
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify4(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = {"c": [7]}
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify5(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = [1, {"c": 2}]
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify6(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = {"c": [1]}
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_stringify7(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    o = [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}]
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o

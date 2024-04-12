@@ -548,12 +548,6 @@ python2js(PyObject* x)
   return python2js_inner(x, JS_NULL, false, true, false);
 }
 
-EMSCRIPTEN_KEEPALIVE JsVal
-python2js_json_adaptor(PyObject* x, bool is_json_adaptor)
-{
-  return python2js_inner(x, JS_NULL, false, true, is_json_adaptor);
-}
-
 // taking function pointers to EM_JS functions leads to linker errors.
 static JsVal
 _JsMap_New(ConversionContext *context)
