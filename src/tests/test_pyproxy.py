@@ -2455,78 +2455,22 @@ def test_as_json_adaptor_ownkeys(selenium):
     assert set(f(o)) == set(o.keys())
 
 
+@pytest.mark.parametrize(
+    "o",
+    [
+        [7],
+        [[7]],
+        {"c": 7},
+        {"c": [7]},
+        [1, {"c": 2}],
+        [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}],
+    ],
+)
 @run_in_pyodide
-def test_as_json_adaptor_stringify1(selenium):
+def test_as_json_adaptor_stringify(selenium, o):
     from json import loads
 
     from pyodide.code import run_js
 
-    o = [7]
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify2(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = [[7]]
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify3(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = {"c": 7}
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify4(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = {"c": [7]}
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify5(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = [1, {"c": 2}]
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify6(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = {"c": [1]}
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
-    assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_stringify7(selenium):
-    from json import loads
-
-    from pyodide.code import run_js
-
-    o = [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}]
     f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
     assert loads(f(o)) == o
