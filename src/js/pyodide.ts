@@ -222,11 +222,13 @@ export async function loadPyodide(
     await loadScript(scriptSrc);
   }
 
+  let snapshot;
   if (options._loadSnapshot) {
+    snapshot = await options._loadSnapshot;
     // @ts-ignore
-    Module.noInitialRun = !!options._loadSnapshot;
+    Module.noInitialRun = !!snapshot;
     // @ts-ignore
-    Module.INITIAL_MEMORY = options._loadSnapshot.length;
+    Module.INITIAL_MEMORY = snapshot.length;
   }
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
@@ -257,11 +259,11 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  if (options._loadSnapshot) {
+  if (snapshot) {
     // @ts-ignore
-    Module.HEAP8.set(options._loadSnapshot);
+    Module.HEAP8.set(snapshot);
   }
-  const pyodide = API.finalizeBootstrap(!!options._loadSnapshot);
+  const pyodide = API.finalizeBootstrap(!!snapshot);
 
   if (options._makeSnapshot) {
     // @ts-ignore
