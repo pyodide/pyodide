@@ -497,7 +497,7 @@ finally:
  *
  */
 JsVal
-python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register)
+python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register, bool is_json_adaptor)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
@@ -505,7 +505,7 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
   }
-  JsVal proxy = pyproxy_new_ex(x, false, false, gc_register);
+  JsVal proxy = pyproxy_new_ex(x, false, false, gc_register, is_json_adaptor);
   FAIL_IF_JS_NULL(proxy);
   if (track_proxies) {
     JsvArray_Push(proxies, proxy);
@@ -535,7 +535,7 @@ finally:
 JsVal
 python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register)
 {
-  return python2js_inner(x, proxies, true, gc_register);
+  return python2js_inner(x, proxies, true, gc_register, false);
 }
 
 /**
@@ -545,7 +545,7 @@ python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register)
 EMSCRIPTEN_KEEPALIVE JsVal
 python2js(PyObject* x)
 {
-  return python2js_inner(x, JS_NULL, false, true);
+  return python2js_inner(x, JS_NULL, false, true, false);
 }
 
 // taking function pointers to EM_JS functions leads to linker errors.

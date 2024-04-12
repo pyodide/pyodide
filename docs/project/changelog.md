@@ -81,6 +81,10 @@ myst:
 - {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
   {pr}`4637`
 
+- {{ Enhancement }} Added `PyProxy.asJsonAdaptor` method to adapt between Python
+  JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
+  {pr}`4666`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
