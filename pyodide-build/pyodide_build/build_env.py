@@ -121,7 +121,9 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     with context:
         manager = CrossBuildEnvManager(xbuildenv_path)
         if manager.current_version is None:
-            return manager.install()
+            manager.install()
+
+        return manager.pyodide_root
 
 
 @functools.cache
