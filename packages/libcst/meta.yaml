@@ -1,0 +1,28 @@
+package:
+  name: libcst
+  version: 1.3.1
+  top-level:
+    - libcst
+source:
+  url: https://files.pythonhosted.org/packages/f5/7e/11e25b1fc11bcad6b3f3a90fe515406387fe02e6b1ad36dea00ec125ca98/libcst-1.3.1.tar.gz
+  sha256: 03b1df1ae02456f1d465fcd5ead1d0d454bb483caefd8c8e6bde515ffdb53d1b
+about:
+  home: ""
+  PyPI: https://pypi.org/project/libcst
+  summary:
+    A concrete syntax tree with AST-like properties for Python 3.0 through
+    3.12 programs.
+  license:
+    "All contributions towards LibCST are MIT licensed.  Some Python files
+    have been derived from the standard library and are therefore PSF licensed. Modifications
+    on these files are dual licensed (both MIT and PSF). Some Python files have been
+    taken from dataclasses and are therefore Apache licensed. Modifications on these
+    files are licensed under Apache 2.0 license."
+extra:
+  recipe-maintainers:
+    - zsol
+requirements:
+  run:
+    - pyyaml
+  executable:
+    - rustup

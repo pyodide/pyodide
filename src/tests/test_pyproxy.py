@@ -427,7 +427,7 @@ def test_pyproxy_mixins1(selenium):
         let result = {};
         for(let [name, x] of Object.entries(name_proxy)){
             let impls = {};
-            for(let [name, key] of [
+            for (let [name, key] of [
                 ["then", "then"],
                 ["catch", "catch"],
                 ["finally_", "finally"],
@@ -436,10 +436,11 @@ def test_pyproxy_mixins1(selenium):
             ]){
                 impls[name] = key in x;
             }
-            for(let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
+            for (let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
                 impls[name] = x instanceof pyodide.ffi[name];
             }
             result[name] = impls;
+            assert(() => !("asJsonAdaptor" in x))
             x.destroy();
         }
         return result;
@@ -500,6 +501,7 @@ def test_pyproxy_mixins2(selenium):
         assert(() => d.$get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
+        assert(() => "asJsonAdaptor" in d);
         d.destroy();
         """
     )
@@ -677,6 +679,7 @@ def test_pyproxy_mixins5(selenium):
             assert(() => !("length" in Test));
             assert(() => t.length === 9);
             assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
+            assert(() => !("asJsonAdaptor" in t));
             assertThrows(() => {t.length = 10}, "TypeError", "");
             assert(() => t.length === 9);
 
@@ -707,6 +710,7 @@ def test_pyproxy_mixins6(selenium):
         assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
         assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
         assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
+        assert(() => "asJsonAdaptor" in l);
         l.set(0, 80);
         pyodide.runPython(`
             assert l[0] == 80
@@ -2361,3 +2365,112 @@ def test_automatic_coroutine_scheduling(selenium):
         """
     )
     assert res == [3, 4, 6]
+
+
+@run_in_pyodide
+def test_stringify_sequence(selenium):
+    from json import loads
+
+    from js import JSON
+
+    l = [1, 2, 3]
+
+    assert loads(JSON.stringify(l)) == l  # type:ignore[arg-type]
+    assert loads(JSON.stringify(tuple(l))) == l  # type:ignore[arg-type]
+
+
+@run_in_pyodide
+def test_as_json_adaptor_heritability1(selenium):
+    from pyodide.code import run_js
+
+    o = [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}]
+
+    f = run_js(
+        """
+        (o, l) =>  {
+            const o2 = o.asJsonAdaptor();
+            return l.reduce((x, y) => x[y], o2);
+        }
+        """
+    )
+
+    assert f(o, [0]) == 1
+    assert f(o, [1]) == 2
+    assert f(o, [2, "a"]) == 3
+    assert f(o, [2, "b", "c"]) == 4
+    assert f(o, [2, "b", "d", 0]) == 1
+    assert f(o, [2, "b", "d", 1, "c"]) == 2
+
+
+@run_in_pyodide
+def test_as_json_adaptor_heritability2(selenium):
+    from pyodide.code import run_js
+
+    class T1:
+        a = {"x": 2}
+
+    class T2:
+        a = {"x": 2}
+
+        def __getitem__(self, key):
+            return {"y": 3}
+
+    o = [T1(), T2()]
+
+    f = run_js(
+        """
+        (o) => {
+            const x = o.asJsonAdaptor();
+            const x0 = x[0];
+            const x1 = x[1];
+            const x1a = x1.a;
+            return pyodide.toPy({
+                x0,
+                x1,
+                xflags: x.$$flags,
+                x0flags: x0.$$flags,
+                x1flags: x1.$$flags,
+                x0a: x0.a,
+                x1a,
+                x1ay: x1a.y,
+            });
+        }
+        """
+    )
+    res = f(o)
+    assert res["xflags"] & (1 << 16) != 0
+    assert res["x0flags"] & (1 << 15) == 0
+    assert res["x1flags"] & (1 << 15) != 0
+    assert res["x0a"] == {"x": 2}
+    assert res["x1a"] == {"y": 3}
+    assert res["x1ay"] == 3
+
+
+@run_in_pyodide
+def test_as_json_adaptor_ownkeys(selenium):
+    from pyodide.code import run_js
+
+    o = {"c": 7, "x": 99, "z": 29}
+    f = run_js("(o) => Reflect.ownKeys(o.asJsonAdaptor())")
+    assert set(f(o)) == set(o.keys())
+
+
+@pytest.mark.parametrize(
+    "o",
+    [
+        [7],
+        [[7]],
+        {"c": 7},
+        {"c": [7]},
+        [1, {"c": 2}],
+        [1, 2, {"a": 3, "b": {"c": 4, "d": [1, {"c": 2}]}}],
+    ],
+)
+@run_in_pyodide
+def test_as_json_adaptor_stringify(selenium, o):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    assert loads(f(o)) == o

@@ -244,9 +244,15 @@ def repack_zip_archive(archive_path: Path, compression_level: int = 6) -> None:
     with TemporaryDirectory() as temp_dir:
         input_path = Path(temp_dir) / archive_path.name
         shutil.move(archive_path, input_path)
-        with zipfile.ZipFile(input_path) as fh_zip_in, zipfile.ZipFile(
-            archive_path, "w", compression=compression, compresslevel=compression_level
-        ) as fh_zip_out:
+        with (
+            zipfile.ZipFile(input_path) as fh_zip_in,
+            zipfile.ZipFile(
+                archive_path,
+                "w",
+                compression=compression,
+                compresslevel=compression_level,
+            ) as fh_zip_out,
+        ):
             for name in fh_zip_in.namelist():
                 fh_zip_out.writestr(name, fh_zip_in.read(name))
 

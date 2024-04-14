@@ -75,15 +75,19 @@ def test_load_relative_url(
     pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
     shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
 
-    with spawn_web_server(tmp_path) as web_server, selenium_common(
-        request,
-        runtime,
-        web_server,
-        load_pyodide=False,
-        browsers=playwright_browsers,
-        script_type="classic",
-    ) as selenium, set_webdriver_script_timeout(
-        selenium, script_timeout=parse_driver_timeout(request.node)
+    with (
+        spawn_web_server(tmp_path) as web_server,
+        selenium_common(
+            request,
+            runtime,
+            web_server,
+            load_pyodide=False,
+            browsers=playwright_browsers,
+            script_type="classic",
+        ) as selenium,
+        set_webdriver_script_timeout(
+            selenium, script_timeout=parse_driver_timeout(request.node)
+        ),
     ):
         if selenium.browser != "node":
             selenium.goto(f"http://{url}:{web_server[1]}/test_temp.html")
