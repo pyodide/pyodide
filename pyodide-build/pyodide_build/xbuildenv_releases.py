@@ -9,7 +9,7 @@ class CrossBuildEnvReleaseSpec(BaseModel):
     # The URL to the cross-build environment tarball
     url: str
     # The SHA256 hash of the cross-build environment tarball
-    sha256: str
+    sha256: str | None = None
     # The version of the Python interpreter
     python_version: str
     # The version of the Emscripten SDK
