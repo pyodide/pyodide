@@ -16,6 +16,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.
+
 - {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
   `jsproxy.toString` is undefined. Instead, it will use
   `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
