@@ -13,9 +13,11 @@ from .recipe import load_all_recipes
 
 
 def _copy_xbuild_files(
-    pyodide_root: Path, xbuildenv_path: Path, skip_missing_files: bool = False
+    pyodide_root: Path,
+    xbuildenv_path: Path,
+    host_site_packages: Path,
+    skip_missing_files: bool = False
 ) -> None:
-    site_packages = Path(get_build_flag("HOSTSITEPACKAGES"))
     # Store package cross-build-files into site_packages_extras in the same tree
     # structure as they would appear in the real package.
     # In install_xbuildenv, we will use:
@@ -26,7 +28,7 @@ def _copy_xbuild_files(
     for recipe in recipes.values():
         xbuild_files = recipe.build.cross_build_files
         for path in xbuild_files:
-            source = site_packages / path
+            source = host_site_packages / path
             target = site_packages_extras / path
             target.parent.mkdir(parents=True, exist_ok=True)
 

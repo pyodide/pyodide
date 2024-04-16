@@ -4,7 +4,6 @@ export PYODIDE_ROOT=$(abspath ..)
 include ../Makefile.envs
 
 all:
-	mkdir -p $(HOSTINSTALLDIR)
 	pyodide build-recipes "$(PYODIDE_PACKAGES)" \
 		--install \
 		--metadata-files \
@@ -19,4 +18,4 @@ update-all:
 
 clean:
 	rm -rf ./*/build ./*/build.log ./*/dist
-	rm -rf ./.artifacts ./.libs
+	rm -rf ./.build_dependencies ./.libs
