@@ -47,7 +47,7 @@ Instead, it is better to load individual modules as needed using
   `webbrowser.open()`, `webbrowser.open_new()`, `webbrowser.open_new_tab()`.
 
 - zoneinfo: The zoneinfo package will only work if you install the timezone data using
-  the tzdata package (i.e. by calling `import tzdata`)
+  the tzdata package (i.e. by calling `pyodide.loadPackage("tzdata")`)
 
 ### Synchronous HTTP requests support
 
