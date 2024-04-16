@@ -9,9 +9,9 @@ index 98cdfe37..75f8fd2b 100644
 +        import sys
 +        if "tzdata" not in sys.modules:
 +            raise ZoneInfoNotFoundError(
-+                f"No time zone found with key {key}. "
-+                " On pyodide you must import the tzdata"
-+                 " package before you use zoneinfo.")
++                f"No time zone found with key {key}. \n"
++                " On Pyodide you must import the tzdata"
++                " package before you use zoneinfo.")
          # There are three types of exception that can be raised that all amount
          # to "we cannot find this key":
          #
