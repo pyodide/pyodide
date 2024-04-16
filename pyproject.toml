@@ -110,6 +110,7 @@ norecursedirs = [
 addopts = '''
 --doctest-modules
 --ignore-glob="**/dist/"
+--ignore-glob="src/py/_pyodide/jsbind.py"
 --ignore-glob="packages/**/extras/"
 --tb=short
 --dist-dir=dist'''
