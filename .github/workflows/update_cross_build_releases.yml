@@ -26,13 +26,11 @@ jobs:
           pip install ./pyodide-build
 
       - name: Get version number (release)
-        id: get_version
         if: github.event_name == 'release'
         run: |
           echo "VERSION=${{ github.event.release.name }}" > $GITHUB_ENV
 
       - name: Get version number (workflow_dispatch)
-        id: get_version
         if: github.event_name == 'workflow_dispatch'
         run: |
           echo "VERSION=${{ github.event.inputs.version }}" > $GITHUB_ENV
