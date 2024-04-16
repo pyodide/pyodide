@@ -219,7 +219,11 @@ pyodide_build:
 	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 
-dist/python_stdlib.zip: $(wildcard src/py/**/*) $(CPYTHONLIB)
+
+# Recursive wildcard
+rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
+
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
 	make pyodide_build
 	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
