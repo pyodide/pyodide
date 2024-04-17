@@ -5,6 +5,7 @@ from typing import (  # type:ignore[attr-defined]
     _AnnotatedAlias,
     _GenericAlias,
     _UnionGenericAlias,
+    get_type_hints,
 )
 from weakref import WeakKeyDictionary
 
@@ -156,8 +157,12 @@ def func_to_sig_inner(f):
     kwparam_converters = []
     kwparam_defaults = []
     varkwd = None
+    types = get_type_hints(f, include_extras=True)
+
     for p in sig.parameters.values():
-        converter = type_converter.py2js_annotation(p.annotation) or py2js_default
+        converter = (
+            type_converter.py2js_annotation(types.get(p.name, None)) or py2js_default
+        )
         match p.kind:
             case Parameter.POSITIONAL_ONLY:
                 posparams.append(converter)
@@ -181,7 +186,7 @@ def func_to_sig_inner(f):
         # We use a bitflag to check which kwparams have been passed to fill in
         # defaults / raise type error.
         raise RuntimeError("Cannot handle function with more than 64 kwonly args")
-    result = type_converter.js2py_annotation(sig.return_annotation)
+    result = type_converter.js2py_annotation(types.get("return", None))
     if iscoroutinefunction(f):
         if result is None:
             result = js2py_default

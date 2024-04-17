@@ -95,6 +95,7 @@ _Py_IDENTIFIER(fileno);
 _Py_IDENTIFIER(register);
 
 static PyObject* collections_abc;
+static PyObject* typing;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
 static PyObject* asyncio_mod;
@@ -395,6 +396,11 @@ JsProxy_GetAttr_sig_annotation(PyObject** pyresult,
     PyErr_Clear();
     goto exit_false;
   }
+  Py_CLEAR(annotations_dict);
+  _Py_IDENTIFIER(get_type_hints);
+  annotations_dict =
+    _PyObject_CallMethodIdOneArg(typing, &PyId_get_type_hints, sig);
+  FAIL_IF_NULL(annotations_dict);
   PyObject* attr_annotation =
     PyDict_GetItemWithError(annotations_dict, attr); /* borrowed */
   if (attr_annotation == NULL) {
@@ -4636,6 +4642,8 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_NULL(MutableMapping);
   Mapping = PyObject_GetAttrString(collections_abc, "Mapping");
   FAIL_IF_NULL(Mapping);
+  typing = PyImport_ImportModule("typing");
+  FAIL_IF_NULL(typing);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings(_pyodide_core_docs));
 

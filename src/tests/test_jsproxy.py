@@ -2773,3 +2773,33 @@ def test_bind_arg_checking(selenium, sig):
 
     check(1, 2, b=2)
     check(1, b=2, c=2)
+
+
+@run_in_pyodide
+def test_bind_self_reference(selenium):
+    from _pyodide.jsbind import BindClass
+    from pyodide.code import run_js
+
+    a = run_js("({f() { return this; }})")
+    a.a = a
+
+    global A
+
+    class A(BindClass):
+        a: "A"
+
+        @staticmethod
+        def f() -> "A":
+            return A()
+
+    # Hack to fix type name resolution. Once we merge
+    # https://github.com/pyodide/pytest-pyodide/pull/133
+    # it won't be needed anymore.
+    A.A = A  # type:ignore[attr-defined]
+
+    a = a.bind_sig(A)
+
+    assert a._sig == A
+    assert a.a._sig == A
+    assert a.a.a._sig == A
+    assert a.f()._sig == A
