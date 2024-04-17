@@ -7,7 +7,6 @@ from typing import (  # type:ignore[attr-defined]
     _UnionGenericAlias,
     get_type_hints,
 )
-from weakref import WeakKeyDictionary
 
 from _pyodide_core import (
     Js2PyConverter,
@@ -132,16 +131,28 @@ class TypeConverter:
 
 type_converter = TypeConverter()
 
-_func_to_sig_dict: Any = WeakKeyDictionary()
-
 
 def func_to_sig(f):
-    res = _func_to_sig_dict.get(f, None)
+    res = getattr(f, "_js_sig", None)
     if res:
         return res
     res = func_to_sig_inner(f)
-    _func_to_sig_dict[f] = res
+    f._js_sig = res
     return res
+
+
+def get_attr_sig(sig, attr):
+    if not hasattr(sig, "_type_hints"):
+        sig._type_hints = get_type_hints(sig, include_extras=True)
+    attr_sig = sig._type_hints.get(attr, None)
+    if not attr_sig:
+        return (False, getattr(sig, attr, None))
+    if isinstance(attr_sig, BindClass):
+        return (False, attr_sig)
+    converter = type_converter.js2py_annotation(attr_sig)
+    if converter:
+        return (True, converter)
+    return (False, None)
 
 
 no_default = Parameter.empty

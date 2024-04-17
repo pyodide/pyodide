@@ -2167,7 +2167,7 @@ async def test_bind_async3(selenium):
 def test_bind_pre_convert(selenium):
     from typing import Annotated, _caches  # type:ignore[attr-defined]
 
-    from _pyodide.jsbind import Deep, Py2JsConverterMeta, _func_to_sig_dict
+    from _pyodide.jsbind import Deep, Py2JsConverterMeta
     from js import Headers  # type:ignore[attr-defined]
     from pyodide.code import run_js
 
@@ -2186,4 +2186,3 @@ def test_bind_pre_convert(selenium):
     abound = ajs.bind_sig(a)
     assert abound({"x": "y"}) == ["[object Headers]", '[["x","y"]]']
     _caches[Annotated._class_getitem_inner.__wrapped__].cache_clear()  # type:ignore[attr-defined]
-    del _func_to_sig_dict[a]

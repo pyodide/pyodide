@@ -81,7 +81,6 @@ _Py_IDENTIFIER(popitem);
 _Py_IDENTIFIER(clear);
 _Py_IDENTIFIER(update);
 _Py_IDENTIFIER(_js_type_flags);
-_Py_IDENTIFIER(__annotations__);
 Js_IDENTIFIER(then);
 Js_IDENTIFIER(finally);
 Js_IDENTIFIER(has);
@@ -363,137 +362,6 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   return nullToUndefined(result);
 });
 
-// Maybe attr is a class variable as in:
-//
-// class A:
-//    x: SomeType
-//
-
-// We'll find out and return 1 and use SomeType to convert jsresult to pyresult
-// if this is what's going on. If an error occurs, we return -1. Otherwise we
-// return 0.
-//
-// Try to look up annotation for sig.attr. If no annotation exists, return 0.
-// Otherwise, call type_converter.js2py_annotation(annotation). If it returns
-// None, return 0. Otherwise, use the return value to convert the jsresult to
-// Python and stick the value we get into result and return 1.
-static int
-JsProxy_GetAttr_sig_annotation(PyObject** pyresult,
-                               PyObject* sig,
-                               PyObject* attr,
-                               JsVal jsresult)
-{
-  int status = -1;
-  PyObject* annotations_dict = NULL;
-  PyObject* type_converter = NULL;
-  PyObject* attr_converter = NULL;
-
-  // First load annotation. This is a class so the class attribute annotations
-  // are in Class.__annotations__["variable"].
-  annotations_dict = _PyObject_GetAttrId(sig, &PyId___annotations__);
-  if (annotations_dict == NULL) {
-    // No annotation, return false
-    PyErr_Clear();
-    goto exit_false;
-  }
-  Py_CLEAR(annotations_dict);
-  _Py_IDENTIFIER(get_type_hints);
-  annotations_dict =
-    _PyObject_CallMethodIdOneArg(typing, &PyId_get_type_hints, sig);
-  FAIL_IF_NULL(annotations_dict);
-  PyObject* attr_annotation =
-    PyDict_GetItemWithError(annotations_dict, attr); /* borrowed */
-  if (attr_annotation == NULL) {
-    FAIL_IF_ERR_OCCURRED();
-    goto exit_false;
-  }
-  type_converter = PyObject_GetAttrString(jsbind, "type_converter");
-  FAIL_IF_NULL(type_converter);
-  _Py_IDENTIFIER(js2py_annotation);
-  attr_converter = _PyObject_CallMethodIdOneArg(
-    type_converter, &PyId_js2py_annotation, attr_annotation);
-  FAIL_IF_NULL(attr_converter);
-  if (Py_IsNone(attr_converter)) {
-    goto exit_false;
-  }
-  *pyresult = Js2PyConverter_convert(attr_converter, jsresult, JS_NULL);
-  FAIL_IF_NULL(*pyresult);
-  goto exit_true;
-
-exit_true:
-  status = 1;
-  goto finally;
-exit_false:
-  status = 0;
-  goto finally;
-finally:
-  Py_CLEAR(annotations_dict);
-  Py_CLEAR(type_converter);
-  Py_CLEAR(attr_converter);
-  return status;
-}
-
-/**
- * If it's a class attribute, we'll convert jsresult to pyresult using the
- * appropriate converter and return 1. In this case we leave attr_sig alone.
- *
- * If it's a function, we'll look it up and stick it in attr_sig and return 0.
- * We leave pyresult alone. If we don't find anything, we leave attr_sig NULL
- * and return 0 ()
- *
- * If an error occurs, return -1.
- */
-static int
-JsProxy_GetAttr_sig(PyObject** pyresult,
-                    PyObject** attr_sig,
-                    PyObject* self,
-                    PyObject* attr,
-                    JsVal jsresult)
-{
-  int status = -1;
-  PyObject* annotations_dict = NULL;
-  PyObject* js2py_converter = NULL;
-
-  PyObject* self_sig = JsProxy_SIG(self); /* borrowed! */
-  if (self_sig == NULL) {
-    goto exit_false;
-  }
-  // Maybe it's a class variable as in:
-  // class A:
-  //    x: SomeType
-  int r = JsProxy_GetAttr_sig_annotation(pyresult, self_sig, attr, jsresult);
-  FAIL_IF_MINUS_ONE(r);
-  if (r == 1) {
-    // That was it.
-    goto exit_true;
-  }
-  // Maybe it's a method?
-  *attr_sig = PyObject_GetAttr(self_sig, attr);
-  if (*attr_sig == NULL) {
-    if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
-      // Unusual error, let it propagate
-      FAIL();
-    }
-    // Okay that's fine we'll just fall back to the default behavior.
-    PyErr_Clear();
-  }
-  goto exit_false;
-
-exit_true:
-  status = 1;
-  goto finally;
-exit_false:
-  status = 0;
-  goto finally;
-finally:
-  Py_CLEAR(annotations_dict);
-  Py_CLEAR(js2py_converter);
-  if (status != 1) {
-    Py_CLEAR(*pyresult);
-  }
-  return status;
-}
-
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
@@ -510,6 +378,7 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
 
   bool success = false;
   JsVal jsresult = JS_NULL;
+  PyObject* get_attr_sig_res = NULL;
   PyObject* attr_sig = NULL;
   // result:
   PyObject* pyresult = NULL;
@@ -534,11 +403,23 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
     FAIL();
   }
 
-  int status = JsProxy_GetAttr_sig(&pyresult, &attr_sig, self, attr, jsresult);
-  FAIL_IF_MINUS_ONE(status);
-  if (status == 1) {
-    // pyresult contains the result
-    goto success;
+  if (JsProxy_SIG(self) != NULL) {
+    _Py_IDENTIFIER(get_attr_sig);
+    get_attr_sig_res = _PyObject_CallMethodIdObjArgs(
+      jsbind, &PyId_get_attr_sig, JsProxy_SIG(self), attr, NULL);
+    FAIL_IF_NULL(get_attr_sig_res);
+
+    bool got_converter;
+    PyObject* sig;
+    if (!PyArg_ParseTuple(get_attr_sig_res, "pO", &got_converter, &sig)) {
+      FAIL();
+    }
+    if (got_converter) {
+      return Js2PyConverter_convert(sig, jsresult, JS_NULL);
+    }
+    if (!Py_IsNone(sig)) {
+      attr_sig = Py_XNewRef(sig);
+    }
   }
   // attr_sig might contain the result sig or it might be NULL.
   // TODO: maybe allow being strict and requiring that we get a sig?
@@ -557,6 +438,7 @@ success:
   success = true;
 finally:
   Py_CLEAR(attr_sig);
+  Py_CLEAR(get_attr_sig_res);
   if (!success) {
     Py_CLEAR(pyresult);
   }
