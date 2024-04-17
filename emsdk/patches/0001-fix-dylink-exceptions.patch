@@ -18,7 +18,7 @@ index bfd0d4fcaa83..f380f4be6055 100644
 +        // In theory this if could be done on creating the function, 
 +        // but I just added this to save wasting code space
 +        // and it only happens on an exception
-+        if(sig[0]=="j")return BigInt(0);
++        if (sig[0] == "j") return 0n;
        }
      }
    },
