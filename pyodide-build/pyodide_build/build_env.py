@@ -120,7 +120,10 @@ def _init_xbuild_env(*, quiet: bool = False) -> Path:
     context = redirect_stdout(StringIO()) if quiet else nullcontext()
     with context:
         manager = CrossBuildEnvManager(xbuildenv_path)
-        return manager.install()
+        if manager.current_version is None:
+            manager.install()
+
+        return manager.pyodide_root
 
 
 @functools.cache
