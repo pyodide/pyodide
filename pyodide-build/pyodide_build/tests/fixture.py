@@ -69,8 +69,6 @@ def reset_cache():
 def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
     import subprocess as sp
 
-    from pyodide_build import __version__
-
     assert "PYODIDE_ROOT" not in os.environ
 
     envpath = Path(tmp_path) / xbuildenv_dirname()
@@ -88,7 +86,7 @@ def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
 
     assert result.returncode == 0
 
-    version_dir = envpath / __version__
+    version_dir = envpath / "temp_version"
     version_dir.mkdir()
 
     sp.run(

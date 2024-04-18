@@ -38,6 +38,13 @@ class CrossBuildEnvManager:
         return self.env_dir / "xbuildenv"
 
     @property
+    def pyodide_root(self) -> Path:
+        """
+        Returns the path to the pyodide-root directory inside the xbuildenv directory.
+        """
+        return self.symlink_dir.resolve() / "xbuildenv" / "pyodide-root"
+
+    @property
     def current_version(self) -> str | None:
         """
         Returns the currently used xbuildenv version.
