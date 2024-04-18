@@ -1,7 +1,9 @@
-
+import os
+import subprocess
 from pathlib import Path
 
-from .build_env import _get_make_environment_vars
+from .common import _environment_substitute_str, exit_with_stdio
+from .logger import logger
 
 
 class ConfigManager:
@@ -17,46 +19,90 @@ class ConfigManager:
         4. Makefile.envs
         5. Default values
     """
-    
-    def __init__(self, pyodide_root: Path | None = None):
-        self.pyodide_root = pyodide_root
-        self.config = self.load_default_config()
 
-        self.config = {
-            **self.config,
-            **self.load_makefile_envs(),
+    def __init__(self, pyodide_root: Path):
+        self.pyodide_root = pyodide_root
+        self._config = {
+            **self._load_default_config(),
+            **self._load_makefile_envs(),
+            **self._load_config_file(),
+            **self._load_config_from_env(os.environ),
         }
 
-        self.load_env_config()
-        self.load_file_config()
-        self.load_cli_config()
-    
-    def load_default_config(self) -> dict[str, str]:
+    def _load_default_config(self) -> dict[str, str]:
         return DEFAULT_CONFIG.copy()
 
-    def load_makefile_envs(self) -> dict[str, str]:
-        vars = _get_make_environment_vars(self.pyodide_root)
-        return {BUILD_VAR_TO_KEY[k]: v for k, v in vars.items() if k in BUILD_VARS}
+    def _load_makefile_envs(self) -> dict[str, str]:
+        makefile_vars = self._get_make_environment_vars()
+        computed_vars = {
+            k: _environment_substitute_str(v, env=makefile_vars)
+            for k, v in DEFAULT_CONFIG_COMPUTED.items()
+        }
 
-    def load_env_config(self):
-        pass
+        return {
+            BUILD_VAR_TO_KEY[k]: v
+            for k, v in makefile_vars.items()
+            if k in BUILD_VAR_TO_KEY
+        } | computed_vars
 
-    def load_file_config(self) -> dict[str, str]:
+    def _get_make_environment_vars(self) -> dict[str, str]:
+        """
+        Load environment variables from Makefile.envs
+        """
+        environment = {}
+        result = subprocess.run(
+            ["make", "-f", str(self.pyodide_root / "Makefile.envs"), ".output_vars"],
+            capture_output=True,
+            text=True,
+            env={"PYODIDE_ROOT": str(self.pyodide_root)},
+        )
+
+        if result.returncode != 0:
+            logger.error(
+                "ERROR: Failed to load environment variables from Makefile.envs"
+            )
+            exit_with_stdio(result)
+
+        for line in result.stdout.splitlines():
+            equalPos = line.find("=")
+            if equalPos != -1:
+                varname = line[0:equalPos]
+
+                if varname not in BUILD_VAR_TO_KEY:
+                    continue
+
+                value = line[equalPos + 1 :]
+                value = value.strip("'").strip()
+                environment[varname] = value
+
+        return environment
+
+    def _load_config_from_env(self, env: dict[str, str]) -> dict[str, str]:
+        return {
+            BUILD_VAR_TO_KEY[key]: env[key] for key in env if key in BUILD_VAR_TO_KEY
+        }
+
+    def _load_config_file(self) -> dict[str, str]:
         # TODO: Implement this
         return {}
 
-    def load_cli_config(self):
-        pass
+    @property
+    def config(self) -> dict[str, str]:
+        return self._config.copy()
 
-    def to_env(self):
-        pass
+    def to_env(self) -> dict[str, str]:
+        """
+        Export the configuration to environment variables.
+        """
+        return {BUILD_KEY_TO_VAR[k]: v for k, v in self.config.items()}
+
 
 # Configuration variables and corresponding environment variables.
+# TODO: distinguish between variables that are overridable by the user and those that are not.
 BUILD_KEY_TO_VAR: dict[str, str] = {
     "cargo_build_target": "CARGO_BUILD_TARGET",
     "cargo_target_wasm32_unknown_emscripten_linker": "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
-    "hostinstalldir": "HOSTINSTALLDIR",
-    "hostsitepackages": "HOSTSITEPACKAGES",
+    "host_site_packages": "HOSTSITEPACKAGES",
     "numpy_lib": "NUMPY_LIB",
     "platform_triplet": "PLATFORM_TRIPLET",
     "pip_constraint": "PIP_CONSTRAINT",
@@ -71,8 +117,8 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
     "python_archive_sha256": "PYTHON_ARCHIVE_SHA256",
     "python_archive_url": "PYTHON_ARCHIVE_URL",
     "pythoninclude": "PYTHONINCLUDE",
-    "pythonpath": "PYTHONPATH",
     "pyversion": "PYVERSION",
+    "cpythoninstall": "CPYTHONINSTALL",
     "rustflags": "RUSTFLAGS",
     "rust_toolchain": "RUST_TOOLCHAIN",
     "side_module_cflags": "SIDE_MODULE_CFLAGS",
@@ -82,23 +128,18 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
     "sysconfigdata_dir": "SYSCONFIGDATA_DIR",
     "sysconfig_name": "SYSCONFIG_NAME",
     "targetinstalldir": "TARGETINSTALLDIR",
-    "wasm_library_dir": "WASM_LIBRARY_DIR",
     "cmake_toolchain_file": "CMAKE_TOOLCHAIN_FILE",
     "pyo3_config_file": "PYO3_CONFIG_FILE",
     "meson_cross_file": "MESON_CROSS_FILE",
-    "pkg_config_libdir": "PKG_CONFIG_LIBDIR",
+    "cflags_base": "CFLAGS_BASE",
+    "cxxflags_base": "CXXFLAGS_BASE",
+    "ldflags_base": "LDFLAGS_BASE",
+    "home": "HOME",
+    "path": "PATH",
+    "zip_compression_level": "PYODIDE_ZIP_COMPRESSION_LEVEL",
 }
 
 BUILD_VAR_TO_KEY = {v: k for k, v in BUILD_KEY_TO_VAR.items()}
-
-# Some environment variables that are not configurable by the user but comes from Makefile.envs
-NON_CONFIG_VARS: set[str] = {
-    "HOME",
-    "PATH",
-    "PYODIDE_PACKAGE_API",
-}
-
-BUILD_VARS: set[str] = set(BUILD_KEY_TO_VAR.values()) | NON_CONFIG_VARS
 
 # Default configuration values.
 TOOLS_DIR = Path(__file__).parent / "tools"
@@ -107,38 +148,29 @@ DEFAULT_CONFIG: dict[str, str] = {
     "cmake_toolchain_file": str(TOOLS_DIR / "cmake/Modules/Platform/Emscripten.cmake"),
     "pyo3_config_file": str(TOOLS_DIR / "pyo3_config.ini"),
     "meson_cross_file": str(TOOLS_DIR / "emscripten.meson.cross"),
-
     # Paths to build dependencies
     # This is relative to the build directory
-    "host_site_packages": ".build_dependencies",  # TODO: rename
+    "host_site_packages": ".build_dependencies",  # TODO: rename the variable?
     "numpy_lib": ".build_dependencies/numpy/",
-
     # Rust-specific configuration
     "rustflags": "-C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT -Z link-native-libraries=no",
     "cargo_build_target": "wasm32-unknown-emscripten",
     "cargo_target_wasm32_unknown_emscripten_linker": "emcc",
     "rust_toolchain": "nightly-2024-01-29",
-
     # Other configuration
-    
-    # The compression level used for wheels.
-    # When distributing via a CDN it's more efficient to keep this value to 0,
-    # and let the CDN perform the Brotli compression.
-    "zip_compression_level": 6,
+    "pyodide_jobs": "1",
 }
 
 # Default configs that are computed from other values (often from Makefile.envs)
 # TODO: Remove dependency on Makefile.envs
 DEFAULT_CONFIG_COMPUTED: dict[str, str] = {
     # Compiler flags
-    "cflags": "$(cflags_base) -I$(pythoninclude)",
-    "cxxflags": "$(cxxflags_base)",
-    "ldflags": "$(ldflags_base) -s SIDE_MODULE=1",
-    
+    "side_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE)",
+    "side_module_cxxflags": "$(CXXFLAGS_BASE)",
+    "side_module_ldflags": "$(LDFLAGS_BASE) -s SIDE_MODULE=1",
     # Rust-specific configuration
-    "pyo3_cross_lib_dir": "$(cpythoninstall)/lib",
-    "pyo3_cross_include_dir": "$(pythoninclude)",
-
+    "pyo3_cross_lib_dir": "$(CPYTHONINSTALL)/lib",
+    "pyo3_cross_include_dir": "$(PYTHONINCLUDE)",
     # Misc
-    "stdlib_cflags": "$(cflags_base) -I Include/ -I. -IInclude/internal/",  # TODO: remove this
+    "stdlib_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE) -I Include/ -I. -IInclude/internal/",  # TODO: remove this
 }

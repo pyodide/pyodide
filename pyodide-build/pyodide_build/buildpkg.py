@@ -23,6 +23,7 @@ from .build_env import (
     RUST_BUILD_PRELUDE,
     BuildArgs,
     get_build_environment_vars,
+    get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -294,8 +295,7 @@ class RecipeBuilder:
         Download the source from specified in the package metadata,
         then checksum it, then extract the archive into the build directory.
         """
-
-        build_env = get_build_environment_vars()
+        build_env = get_build_environment_vars(get_pyodide_root())
         url = cast(str, self.source_metadata.url)  # we know it's not None
         url = _environment_substitute_str(url, build_env)
 
@@ -438,11 +438,7 @@ class RecipeBuilder:
                 lib_dir = self.library_install_prefix
                 copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
-            python_dir = f"python{sys.version_info.major}.{sys.version_info.minor}"
-            host_site_packages = (
-                Path(self.build_args.host_install_dir)
-                / f"lib/{python_dir}/site-packages"
-            )
+            host_site_packages = self.build_args.host_site_packages
             if self.build_metadata.cross_build_env:
                 subprocess.run(
                     ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"],

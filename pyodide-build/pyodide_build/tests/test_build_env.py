@@ -59,7 +59,7 @@ class TestInTree:
         assert not build_env.in_xbuildenv()
 
     def test_get_build_environment_vars(self, reset_env_vars, reset_cache):
-        build_vars = build_env.get_build_environment_vars()
+        build_vars = build_env.get_build_environment_vars(ROOT_PATH)
 
         # extra variables that does not come from Makefile.envs but are added by build_env.py
         extra_vars = set(

@@ -151,7 +151,6 @@ class Package(BasePackage):
                 f"--cxxflags={build_args.cxxflags}",
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
-                f"--host-install-dir={build_args.host_install_dir}",
                 f"--build-dir={build_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
@@ -905,15 +904,15 @@ def install_packages(
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
-    if args.cflags is None:
-        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
-    if args.cxxflags is None:
-        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
-    if args.ldflags is None:
-        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
-    if args.target_install_dir is None:
-        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
-    if args.host_install_dir is None:
-        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+    if not args.cflags:
+        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
+    if not args.cxxflags:
+        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")
+    if not args.ldflags:
+        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")
+    if not args.target_install_dir:
+        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")
+    if not args.host_site_packages:
+        args.host_site_packages = build_env.get_build_flag("HOSTSITEPACKAGES")
 
     return args

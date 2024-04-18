@@ -13,16 +13,14 @@ from .recipe import load_all_recipes
 
 
 def _copy_xbuild_files(
-    pyodide_root: Path,
-    xbuildenv_path: Path,
-    host_site_packages: Path,
-    skip_missing_files: bool = False
+    pyodide_root: Path, xbuildenv_path: Path, skip_missing_files: bool = False
 ) -> None:
     # Store package cross-build-files into site_packages_extras in the same tree
     # structure as they would appear in the real package.
     # In install_xbuildenv, we will use:
     # pip install -t $HOSTSITEPACKAGES -r requirements.txt
     # cp site-packages-extras $HOSTSITEPACKAGES
+    host_site_packages = pyodide_root / ".build_dependencies"
     site_packages_extras = xbuildenv_path / "site-packages-extras"
     recipes = load_all_recipes(pyodide_root / "packages")
     for recipe in recipes.values():
