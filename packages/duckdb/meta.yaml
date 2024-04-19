@@ -1,22 +1,11 @@
 package:
   name: duckdb
-  version: 0.10.1
+  version: 0.10.2
   top-level:
     - duckdb
 source:
-  url: https://files.pythonhosted.org/packages/47/15/f78b67a07f53f4072c3ab81ab7942850968614098ef577cea8e44a8729fc/duckdb-0.10.1.tar.gz
-  sha256: 0d5b6daa9bb54a635e371798994caa08f26d2f145ebcbc989e16b0a0104e84fb
-  patches:
-    - patches/py-ssize_t.patch
-    - patches/setup-py.patch
-build:
-  cxxflags: |
-    -fexceptions
-  ldflags: |
-    -fexceptions
-  exports: whole_archive
-  script: |
-    export DUCKDB_CUSTOM_PLATFORM=wasm_eh_pyodide
+  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-0.10.2-cp311-cp311-emscripten_3_1_46_wasm32.whl
+  sha256: 9babd195558647f7a0339558c1218ac0f0ee1004cdfa8ff987642def9f00f6fd
 about:
   home: https://github.com/duckdb/duckdb
   PyPI: https://pypi.org/project/duckdb
