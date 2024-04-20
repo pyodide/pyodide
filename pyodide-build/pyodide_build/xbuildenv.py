@@ -281,13 +281,10 @@ class CrossBuildEnvManager:
         """
 
         if xbuildenv_pyodide_root is None:
-            xbuildenv_pyodide_root = (
-                self.symlink_dir.resolve() / "xbuildenv" / "pyodide-root"
-            )
+            xbuildenv_pyodide_root = self.pyodide_root
 
         return Path(
-            # TODO: use a separate configuration file for variables that are used only in package building
-            build_env._get_make_environment_vars(pyodide_root=xbuildenv_pyodide_root)[
+            build_env.get_build_environment_vars(pyodide_root=xbuildenv_pyodide_root)[
                 "HOSTSITEPACKAGES"
             ]
         )

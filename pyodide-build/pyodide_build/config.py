@@ -26,7 +26,7 @@ class ConfigManager:
             **self._load_default_config(),
             **self._load_makefile_envs(),
             **self._load_config_file(),
-            **self._load_config_from_env(os.environ),
+            **self._load_config_from_env(dict(os.environ)),
         }
 
     def _load_default_config(self) -> dict[str, str]:
