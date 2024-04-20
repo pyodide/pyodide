@@ -438,7 +438,7 @@ class RecipeBuilder:
                 lib_dir = self.library_install_prefix
                 copy_sharedlibs(wheel, wheel_dir, lib_dir)
 
-            host_site_packages = self.build_args.host_site_packages
+            host_site_packages = Path(self.build_args.host_site_packages)
             if self.build_metadata.cross_build_env:
                 subprocess.run(
                     ["pip", "install", "-t", str(host_site_packages), f"{name}=={ver}"],
