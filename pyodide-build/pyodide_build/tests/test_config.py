@@ -1,3 +1,6 @@
+# flake8: noqa
+# flake8 is not happy with fixture imports
+
 from conftest import ROOT_PATH
 from pyodide_build import common
 from pyodide_build.config import (
@@ -7,6 +10,8 @@ from pyodide_build.config import (
     ConfigManager,
 )
 from pyodide_build.xbuildenv import CrossBuildEnvManager
+
+from .fixture import reset_cache, reset_env_vars, xbuildenv
 
 
 class TestConfigManager_InTree:
