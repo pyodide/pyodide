@@ -153,7 +153,7 @@ DEFAULT_CONFIG: dict[str, str] = {
     "meson_cross_file": str(TOOLS_DIR / "emscripten.meson.cross"),
     # Paths to build dependencies
     # This is relative to the pyodide root directory
-    "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts",
+    "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts",  # TODO: rename the variable to something else?
     "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/numpy/",
     # Rust-specific configuration
     "rustflags": "-C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT -Z link-native-libraries=no",
