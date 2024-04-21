@@ -105,6 +105,7 @@ class ConfigManager:
 BUILD_KEY_TO_VAR: dict[str, str] = {
     "cargo_build_target": "CARGO_BUILD_TARGET",
     "cargo_target_wasm32_unknown_emscripten_linker": "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
+    "host_install_dir": "HOSTINSTALLDIR",
     "host_site_packages": "HOSTSITEPACKAGES",
     "numpy_lib": "NUMPY_LIB",
     "platform_triplet": "PLATFORM_TRIPLET",
@@ -153,6 +154,7 @@ DEFAULT_CONFIG: dict[str, str] = {
     "meson_cross_file": str(TOOLS_DIR / "emscripten.meson.cross"),
     # Paths to build dependencies
     # This is relative to the pyodide root directory
+    "host_install_dir": "$(PYODIDE_ROOT)/packages/.artifacts",  # TODO: for backward compatibility, remove this.
     "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts",  # TODO: rename the variable to something else?
     "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/numpy/",
     # Rust-specific configuration
