@@ -18,4 +18,4 @@ update-all:
 
 clean:
 	rm -rf ./*/build ./*/build.log ./*/dist
-	rm -rf ./.libs
+	rm -rf ./.artifacts ./.libs

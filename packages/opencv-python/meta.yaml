@@ -50,7 +50,7 @@ build:
   script: |
     # export VERBOSE=1
 
-    export NUMPY_INCLUDE_DIR="$HOSTSITEPACKAGES/numpy/core/include/"
+    export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/"
     export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
 
     source $PKGDIR/extras/build_args.sh

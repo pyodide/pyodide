@@ -151,6 +151,7 @@ class Package(BasePackage):
                 f"--cxxflags={build_args.cxxflags}",
                 f"--ldflags={build_args.ldflags}",
                 f"--target-install-dir={build_args.target_install_dir}",
+                f"--host-install-dir={build_args.host_install_dir}",
                 f"--build-dir={build_dir}",
                 # Either this package has been updated and this doesn't
                 # matter, or this package is dependent on a package that has
@@ -912,7 +913,7 @@ def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
         args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")
     if not args.target_install_dir:
         args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")
-    if not args.host_site_packages:
-        args.host_site_packages = build_env.get_build_flag("HOSTSITEPACKAGES")
+    if not args.host_install_dir:
+        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")
 
     return args

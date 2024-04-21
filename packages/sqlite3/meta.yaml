@@ -26,8 +26,6 @@ build:
 
     embuilder build sqlite3 --pic
 
-    echo stdlib_cflags $STDLIB_MODULE_CFLAGS
-
     for file in "${FILES[@]}"; do
       emcc $STDLIB_MODULE_CFLAGS -c "${file}" -o "${file/.c/.o}"  \
         -sUSE_SQLITE3 -DMODULENAME=sqlite

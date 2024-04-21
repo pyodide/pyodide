@@ -79,6 +79,10 @@ def build_recipes_no_deps(
         "",
         help="The path to the target Python installation. Default: TARGETINSTALLDIR",
     ),
+    host_install_dir: str = typer.Option(
+        "",
+        help="Directory for installing built host packages. Default: HOSTINSTALLDIR",
+    ),
     force_rebuild: bool = typer.Option(
         False,
         help="Force rebuild of all packages regardless of whether they appear to have been updated",
@@ -100,6 +104,7 @@ def build_recipes_no_deps(
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
+        host_install_dir=host_install_dir,
     )
     build_args = buildall.set_default_build_args(build_args)
     args = Args(
@@ -173,8 +178,12 @@ def build_recipes(
         None, help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS"
     ),
     target_install_dir: str = typer.Option(
-        None,
+        "",
         help="The path to the target Python installation. Default: TARGETINSTALLDIR",
+    ),
+    host_install_dir: str = typer.Option(
+        "",
+        help="Directory for installing built host packages. Default: HOSTINSTALLDIR",
     ),
     log_dir: str = typer.Option(None, help="Directory to place log files"),
     force_rebuild: bool = typer.Option(
@@ -217,6 +226,7 @@ def build_recipes(
         cxxflags=cxxflags,
         ldflags=ldflags,
         target_install_dir=target_install_dir,
+        host_install_dir=host_install_dir,
     )
     build_args = buildall.set_default_build_args(build_args)
     args = Args(

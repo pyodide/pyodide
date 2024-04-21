@@ -34,7 +34,7 @@ class BuildArgs:
     cxxflags: str = ""
     ldflags: str = ""
     target_install_dir: str = ""  # The path to the target Python installation
-    host_site_packages: str = ""  # Directory for installing built host packages.
+    host_install_dir: str = ""  # Directory for installing built host packages.
     builddir: str = ""  # The path to run pypa/build
 
 

@@ -31,7 +31,9 @@ class ConfigManager:
 
     def _load_default_config(self) -> dict[str, str]:
         return {
-            k: _environment_substitute_str(v, env={"PYODIDE_ROOT": str(self.pyodide_root)})
+            k: _environment_substitute_str(
+                v, env={"PYODIDE_ROOT": str(self.pyodide_root)}
+            )
             for k, v in DEFAULT_CONFIG.items()
         }
 
@@ -152,11 +154,6 @@ DEFAULT_CONFIG: dict[str, str] = {
     "cmake_toolchain_file": str(TOOLS_DIR / "cmake/Modules/Platform/Emscripten.cmake"),
     "pyo3_config_file": str(TOOLS_DIR / "pyo3_config.ini"),
     "meson_cross_file": str(TOOLS_DIR / "emscripten.meson.cross"),
-    # Paths to build dependencies
-    # This is relative to the pyodide root directory
-    "host_install_dir": "$(PYODIDE_ROOT)/packages/.artifacts",  # TODO: for backward compatibility, remove this.
-    "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts",  # TODO: rename the variable to something else?
-    "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/numpy/",
     # Rust-specific configuration
     "rustflags": "-C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT -Z link-native-libraries=no",
     "cargo_build_target": "wasm32-unknown-emscripten",
@@ -178,4 +175,8 @@ DEFAULT_CONFIG_COMPUTED: dict[str, str] = {
     "pyo3_cross_include_dir": "$(PYTHONINCLUDE)",
     # Misc
     "stdlib_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE) -I Include/ -I. -IInclude/internal/",  # TODO: remove this
+    # Paths to build dependencies
+    "host_install_dir": "$(PYODIDE_ROOT)/packages/.artifacts",
+    "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages",
+    "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/",
 }
