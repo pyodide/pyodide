@@ -20,7 +20,7 @@ def _copy_xbuild_files(
     # In install_xbuildenv, we will use:
     # pip install -t $HOSTSITEPACKAGES -r requirements.txt
     # cp site-packages-extras $HOSTSITEPACKAGES
-    host_site_packages = pyodide_root / ".build_dependencies"
+    host_site_packages = pyodide_root / "packages" / ".artifacts"
     site_packages_extras = xbuildenv_path / "site-packages-extras"
     recipes = load_all_recipes(pyodide_root / "packages")
     for recipe in recipes.values():

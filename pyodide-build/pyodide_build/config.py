@@ -30,7 +30,10 @@ class ConfigManager:
         }
 
     def _load_default_config(self) -> dict[str, str]:
-        return DEFAULT_CONFIG.copy()
+        return {
+            k: _environment_substitute_str(v, env={"PYODIDE_ROOT": str(self.pyodide_root)})
+            for k, v in DEFAULT_CONFIG.items()
+        }
 
     def _load_makefile_envs(self) -> dict[str, str]:
         makefile_vars = self._get_make_environment_vars()
@@ -149,9 +152,9 @@ DEFAULT_CONFIG: dict[str, str] = {
     "pyo3_config_file": str(TOOLS_DIR / "pyo3_config.ini"),
     "meson_cross_file": str(TOOLS_DIR / "emscripten.meson.cross"),
     # Paths to build dependencies
-    # This is relative to the build directory
-    "host_site_packages": ".build_dependencies",  # TODO: rename the variable?
-    "numpy_lib": ".build_dependencies/numpy/",
+    # This is relative to the pyodide root directory
+    "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts",
+    "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/numpy/",
     # Rust-specific configuration
     "rustflags": "-C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT -Z link-native-libraries=no",
     "cargo_build_target": "wasm32-unknown-emscripten",

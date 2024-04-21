@@ -19,7 +19,7 @@ class TestConfigManager_InTree:
         config_manager = ConfigManager(pyodide_root=ROOT_PATH)
 
         default_config = config_manager._load_default_config()
-        assert default_config == DEFAULT_CONFIG.copy()
+        assert default_config.keys() == DEFAULT_CONFIG.keys()
 
     def test_makefile_envs(self):
         config_manager = ConfigManager(pyodide_root=ROOT_PATH)
@@ -102,4 +102,4 @@ class TestConfigManager_OutOfTree:
         xbuildenv_manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
         config_manager = ConfigManager(pyodide_root=xbuildenv_manager.pyodide_root)
         make_vars = config_manager._get_make_environment_vars()
-        assert make_vars["PYODIDE_ROOT"] == str(ROOT_PATH)
+        assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_manager.pyodide_root)
