@@ -16,6 +16,8 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper {pr}`4705`.
+
 - {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.
 
 - {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
