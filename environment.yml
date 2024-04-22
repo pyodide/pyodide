@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - nodejs
+  - nodejs>=18
   - ccache
   - f2c
   - swig

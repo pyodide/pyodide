@@ -158,7 +158,7 @@ def test_unvendor_tests(tmpdir):
     touch(install_prefix / "ex1" / "tests" / "data.csv")
     touch(install_prefix / "ex1" / "tests" / "test_a.py")
 
-    n_moved = buildpkg.unvendor_tests(install_prefix, test_install_prefix)
+    n_moved = buildpkg.unvendor_tests(install_prefix, test_install_prefix, [])
 
     assert rlist(install_prefix) == ["ex1/base.py"]
     assert rlist(test_install_prefix) == [

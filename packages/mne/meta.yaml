@@ -12,7 +12,7 @@ requirements:
     - scipy
     - setuptools
     - decorator
-    - lazy-loader
+    - lazy_loader
     - packaging
 about:
   home: https://mne.tools/dev/

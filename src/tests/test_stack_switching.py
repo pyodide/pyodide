@@ -525,3 +525,124 @@ def test_throw_from_switcher(selenium):
         b.destroy();
         """
     )
+
+
+@requires_jspi
+def test_switch_from_except_block(selenium):
+    """Test for issue #4566"""
+    result = selenium.run_js(
+        """
+        const result = [];
+        pyodide.globals.set("result", result);
+        pyodide.runPython(`
+            from pyodide.ffi import run_sync, to_js
+            import sys
+            from js import sleep
+
+            def pe(s):
+                result.push(to_js([s, repr(sys.exception())]))
+
+            def g(n):
+                pe(f"{n}0")
+                try:
+                    raise Exception(n)
+                except:
+                    pe(f"{n}1")
+                    run_sync(sleep(10))
+                    pe(f"{n}2")
+                pe(f"{n}3")
+        `);
+        const pe = pyodide.globals.get("pe");
+        const g = pyodide.globals.get("g");
+        const g1 = g.callSyncifying("a");
+        const g2 = g.callSyncifying("b");
+        pe('tt')
+        await g1;
+        await g2;
+        pyodide.globals.delete("result");
+        pe.destroy();
+        g.destroy();
+        return result;
+        """
+    )
+    assert result == [
+        ["a0", "None"],
+        ["a1", "Exception('a')"],
+        ["b0", "None"],
+        ["b1", "Exception('b')"],
+        ["tt", "None"],
+        ["a2", "Exception('a')"],
+        ["a3", "None"],
+        ["b2", "Exception('b')"],
+        ["b3", "None"],
+    ]
+
+
+# Start with just a no-op script
+LEAK_SCRIPT1 = """
+def test(n):
+    pass
+"""
+
+#
+LEAK_SCRIPT2 = """
+from pyodide.ffi import run_sync
+from js import sleep
+
+def test(n):
+    run_sync(sleep(1))
+"""
+
+LEAK_SCRIPT3 = """
+from pyodide.ffi import run_sync
+from asyncio import sleep as py_sleep, ensure_future
+
+async def sleep(x):
+    await py_sleep(x/1000)
+
+def test(n):
+    run_sync(ensure_future(sleep(1)))
+"""
+
+LEAK_SCRIPT4 = """
+from pyodide.ffi import run_sync
+from asyncio import sleep as py_sleep
+
+async def sleep(x):
+    await py_sleep(x/1000)
+
+def test(n):
+    run_sync(sleep(1))
+"""
+
+
+@requires_jspi
+@pytest.mark.parametrize(
+    "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
+)
+def test_memory_leak(selenium, script):
+    length_change = selenium.run_js(
+        f"""
+        pyodide.runPython(`{script}`);
+        """
+        """
+        const t = pyodide.globals.get("test");
+        let p = [];
+        // warm up first to avoid edge problems
+        for (let i = 0; i < 200; i++) {
+            p.push(t.callSyncifying(1));
+        }
+        await Promise.all(p);
+        const startLength = pyodide._module.HEAP32.length;
+        for (let i = 0; i < 10; i++) {
+            p = [];
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callSyncifying(1));
+            }
+            await Promise.all(p);
+        }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0

@@ -1,0 +1,17 @@
+package:
+  name: matplotlib-inline
+  version: 0.1.6
+requirements:
+  run:
+    - traitlets
+source:
+  url: https://files.pythonhosted.org/packages/f2/51/c34d7a1d528efaae3d8ddb18ef45a41f284eacf9e514523b191b7d0872cc/matplotlib_inline-0.1.6-py3-none-any.whl
+  sha256: f1f41aab5328aa5aaea9b16d083b128102f8712542f819fe7e6a420ff581b311
+about:
+  home: https://github.com/ipython/matplotlib-inline
+  PyPI: https://pypi.org/project/matplotlib-inline
+  summary: Inline Matplotlib backend for Jupyter
+  license: BSD 3-Clause
+extra:
+  recipe-maintainers:
+    - mhochsteger

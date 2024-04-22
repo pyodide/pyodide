@@ -4,7 +4,7 @@ ruamel.yaml
 # lint
 pre-commit
 # testing
-build==1.0.3
+build~=1.2.0
 sphinx-click
 hypothesis
 # (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0

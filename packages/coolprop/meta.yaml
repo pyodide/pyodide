@@ -15,6 +15,11 @@ source:
     - - extras/pyproject.toml
       - ./pyproject.toml
 
+build:
+  cflags: -fexceptions
+  cxxflags: -fexceptions
+  ldflags: -fexceptions
+
 requirements:
   run:
     - numpy

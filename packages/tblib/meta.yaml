@@ -4,6 +4,7 @@ package:
   top-level:
     - tblib
   tag:
+    - always
     - core
     - min-scipy-stack
 source:

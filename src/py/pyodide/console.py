@@ -283,9 +283,9 @@ class Console:
         self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator: Generator[
-            None, None, None
-        ] | None = None  # track persistent stream redirection
+        self._stream_generator: Generator[None, None, None] | None = (
+            None  # track persistent stream redirection
+        )
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)
