@@ -18,7 +18,7 @@ dependencies = [
     "ruamel.yaml",
     "packaging",
     "wheel",
-    "build>=1.0.0",
+    "build~=1.2.0",
     "virtualenv",
     "pydantic>=1.10.2,<2",
     "pyodide-cli~=0.2.1",
@@ -60,6 +60,7 @@ test = [
     # (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
     "pytest<8.0.0",
     "pytest-pyodide==0.56.2",
+    "pytest-httpserver",
     "packaging",
 ]
 deploy = [

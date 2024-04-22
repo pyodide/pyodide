@@ -1,0 +1,93 @@
+package:
+  name: pygame-ce
+  version: 2.4.1
+  top-level:
+    - pygame
+source:
+  url: https://files.pythonhosted.org/packages/dc/b1/64fffc2c8664497ae82b2afb4f5efe0130d38b39f2d25af0288c4261df3e/pygame-ce-2.4.1.tar.gz
+  sha256: 70a84aa1417c633a0fd6754ffa5dc92ee1b9aeb70baaa52c8c8c94a7c6db9cf0
+  patches:
+    - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
+    - patches/0001-freetype-init.patch
+    - patches/0001-wasm_unify_pygame_web_pyodide_static_Freetype_init.patch
+build:
+  script: |
+    embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype --pic
+    export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
+  cflags: |
+    -sRELOCATABLE=1
+    -DSDL_NO_COMPAT
+    -DBUILD_STATIC
+    -ferror-limit=1
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sSDL2_MIXER_FORMATS=mid,mod,mpg,ogg
+    -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
+    -sSDL2_IMAGE_FORMATS=bmp,gif,jpg,png
+    -sUSE_SDL_GFX=2
+    -sUSE_FREETYPE=1
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -sUSE_GIFLIB=1
+    -sUSE_HARFBUZZ=1
+  ldflags: |
+    -sRELOCATABLE=1
+    -sUSE_SDL=2
+    -sUSE_SDL_MIXER=2
+    -sSDL2_MIXER_FORMATS=mid,mod,mpg,ogg
+    -sUSE_SDL_TTF=2
+    -sUSE_SDL_IMAGE=2
+    -sSDL2_IMAGE_FORMATS=bmp,gif,jpg,png
+    -sUSE_SDL_GFX=2
+    -sUSE_FREETYPE=1
+    -sUSE_LIBJPEG=1
+    -sUSE_LIBPNG=1
+    -sUSE_GIFLIB=1
+    -sUSE_HARFBUZZ=1
+  post: |
+    # Remove docs to reduce the size of a wheel
+    # (Perhaps also remove typeshed and examples too?)
+    rm -rf ./pygame/docs
+
+    # WASM version of pygame uses a single module 'pygame_static',
+    # and pygame_static calls PyInit_* functions from other modules.
+    # This is okay when all these modules are bundled in a single module: libpython.
+    # But as we don't do that, we need to load these modules globally, so that
+    # pygame_static can see the symbols.
+    STATIC_OBJS=$(find ${PKG_BUILD_DIR} -name "*.o")
+    echo "build dir: " $PKG_BUILD_DIR
+    echo "static objs: " $STATIC_OBJS
+
+    SHARED_LIBS=$(find ${WHEELDIR} -name "*.so" ! -name "static*.so")
+    echo "shared libs: " $SHARED_LIBS
+
+    emcc \
+      -shared \
+      ${SIDE_MODULE_LDFLAGS} \
+      -fPIC \
+      -lSDL2 \
+      -lSDL2_image_bmp-gif-jpg-png \
+      -lSDL2_ttf \
+      -lSDL2_mixer_mid-mod-mpg-ogg \
+      -lSDL2_gfx \
+      -lfreetype \
+      -lharfbuzz \
+      -lpng \
+      -ljpeg \
+      -lgif \
+      -lvorbis \
+      -lmodplug \
+      -lmpg123 \
+      -logg \
+      ${STATIC_OBJS} \
+      ${SHARED_LIBS} \
+      -o pygame_static.so
+
+    # Remove duplicated static.so module
+    rm -f ./pygame/static*.so
+about:
+  home: https://www.pygame.org
+  PyPI: https://pypi.org/project/pygame
+  summary: Python Game Development
+  license: LGPL

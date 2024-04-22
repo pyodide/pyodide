@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper {pr}`4705`.
+
+- {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.
+
 - {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
   `jsproxy.toString` is undefined. Instead, it will use
   `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
@@ -78,25 +82,43 @@ myst:
   access unless they match a function on the `Map` prototype.
   {pr}`4576`
 
+- {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
+  {pr}`4637`
+
+- {{ Enhancement }} Added `PyProxy.asJsonAdaptor` method to adapt between Python
+  JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
+  {pr}`4666`
+
+- {{ Breaking }} The experimental `callSyncifying` method was renamed to
+  `callPromising`.
+  {pr}`4608`
+
+- {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of a
+  callable.
+  {pr}`4608`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
   `memory_allocator` {pr}`4393`, `primesieve`, `primecount`, `primecountpy` {pr}`4477`,
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
-  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`
+  `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
+  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`
 
-- Upgraded `scikit-learn` to 1.4.1.post1 {pr}`4409` and {pr}`4534`
+- Upgraded `contourpy` to 1.2.1 {pr}`4680`
+- Upgraded `sourmash` to 4.8.8 {pr}`4683`
 
-- Upgraded `CoolProp` to 6.6.0 {pr}`4397`
+## Version 0.25.1
 
-- Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
-  `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
-  `zengl` to 2.4.1 {pr}`4509`, `protobuf` to 4.24.4 {pr}`4553`
+_March 31, 2024_
 
-- Upgraded `OpenBLAS` to 0.26 {pr}`4526`
+- {{ Fix }} Fixed pyodide-build to work with pypa/build>=1.2.
+  {pr}`4653`
 
-- Upgraded `RobotRaconteur` to 1.1.0 {pr}`4613`
+- {{ Fix }} Fixed a bug that pyodide-build setting `MESON` env variable,
+  which overwrites the binary path of meson.
+  {pr}`4502`
 
 ## Version 0.25.0
 

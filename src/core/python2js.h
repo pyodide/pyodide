@@ -16,6 +16,13 @@
 JsVal
 python2js(PyObject* x);
 
+JsVal
+python2js_inner(PyObject* x,
+                JsVal proxies,
+                bool track_proxies,
+                bool gc_register,
+                bool is_json_adaptor);
+
 /**
  * Like python2js except in the handling of PyProxy creation.
  *

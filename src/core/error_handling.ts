@@ -242,7 +242,7 @@ Module.handle_js_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     throw e;
   }
-  if (e instanceof Module._PropagatePythonError) {
+  if (e instanceof _PropagatePythonError) {
     // Python error indicator is already set in this case. If this branch is
     // not taken, Python error indicator should be unset, and we have to set
     // it. In this case we don't want to tamper with the traceback.
@@ -343,7 +343,7 @@ API.PythonError = PythonError;
 // C keeping the current Python error flag. This signals to the EM_JS wrappers
 // that the Python error flag is set and to leave it alone and return the
 // appropriate error value (either NULL or -1).
-class _PropagatePythonError extends Error {
+export class _PropagatePythonError extends Error {
   constructor() {
     super(
       "If you are seeing this message, an internal Pyodide error has " +
@@ -368,8 +368,6 @@ class NoGilError extends Error {}
   NoGilError,
 ].forEach(setName);
 API.NoGilError = NoGilError;
-
-Module._PropagatePythonError = _PropagatePythonError;
 
 // Stolen from:
 // https://github.com/sindresorhus/serialize-error/blob/main/error-constructors.js

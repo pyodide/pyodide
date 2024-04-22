@@ -122,9 +122,10 @@ def _compile(
         else:
             compression = zipfile.ZIP_STORED
 
-        with zipfile.ZipFile(
-            input_path
-        ) as fh_zip_in, TemporaryDirectory() as temp_dir_str:
+        with (
+            zipfile.ZipFile(input_path) as fh_zip_in,
+            TemporaryDirectory() as temp_dir_str,
+        ):
             temp_dir = Path(temp_dir_str)
             output_path_tmp = temp_dir / output_name
             with zipfile.ZipFile(

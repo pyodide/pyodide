@@ -166,9 +166,10 @@ class RecipeBuilder:
             self._prepare_source()
             self._patch()
 
-        with chdir(self.pkg_root), get_bash_runner(
-            self._get_helper_vars()
-        ) as bash_runner:
+        with (
+            chdir(self.pkg_root),
+            get_bash_runner(self._get_helper_vars()) as bash_runner,
+        ):
             if self.recipe.is_rust_package():
                 bash_runner.run(
                     RUST_BUILD_PRELUDE,

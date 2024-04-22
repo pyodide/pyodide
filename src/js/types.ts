@@ -100,17 +100,29 @@ declare global {
         ) => any),
   ) => any;
 
-  export const _pyproxy_getflags: (ptr: number) => number;
+  export const _pyproxy_getflags: (
+    ptr: number,
+    is_json_adaptor: boolean,
+  ) => number;
   export const __pyproxy_type: (ptr: number) => string;
   export const __pyproxy_repr: (ptr: number) => string;
-  export const __pyproxy_getitem: (obj: number, key: any) => any;
+  export const __pyproxy_getitem: (
+    obj: number,
+    key: any,
+    cache: Map<string, any>,
+    is_json_adaptor: boolean,
+  ) => any;
   export const __pyproxy_setitem: (ptr: number, key: any, value: any) => number;
   export const __pyproxy_delitem: (ptr: number, key: any) => number;
   export const __pyproxy_contains: (ptr: number, key: any) => number;
   export const __pyproxy_GetIter: (ptr: number) => number;
   export const __pyproxy_GetAIter: (ptr: number) => number;
   export const __pyproxy_aiter_next: (ptr: number) => any;
-  export const __pyproxy_iter_next: (ptr: number) => any;
+  export const __pyproxy_iter_next: (
+    ptr: number,
+    cache: Map<string, any>,
+    is_json_adaptor: boolean,
+  ) => any;
   export const __pyproxyGen_Send: (
     ptr: number,
     arg: any,

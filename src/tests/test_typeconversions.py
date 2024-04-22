@@ -954,6 +954,30 @@ def test_recursive_dict_to_js(selenium):
     to_js(x)
 
 
+@run_in_pyodide
+def test_dict_subclass_to_js(selenium):
+    """See issue #4636"""
+    from collections import ChainMap
+
+    from pyodide.code import run_js
+
+    j = run_js(
+        """
+        (d) => JSON.stringify(d.toJs({ dict_converter: Object.fromEntries }))
+        """
+    )
+
+    class D1(ChainMap, dict):  # type: ignore[misc, type-arg]
+        pass
+
+    class D2(dict, ChainMap):  # type: ignore[misc, type-arg]
+        pass
+
+    d = {"a": "b"}
+    assert eval(j(D1({"a": "b"}))) == d
+    assert eval(j(D2({"a": "b"}))) == d
+
+
 def test_list_js2py2js(selenium):
     selenium.run_js("self.x = [1,2,3];")
     assert_js_to_py_to_js(selenium, "x")
