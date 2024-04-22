@@ -554,8 +554,8 @@ def test_switch_from_except_block(selenium):
         `);
         const pe = pyodide.globals.get("pe");
         const g = pyodide.globals.get("g");
-        const g1 = g.callSyncifying("a");
-        const g2 = g.callSyncifying("b");
+        const g1 = g.callPromising("a");
+        const g2 = g.callPromising("b");
         pe('tt')
         await g1;
         await g2;
@@ -630,14 +630,14 @@ def test_memory_leak(selenium, script):
         let p = [];
         // warm up first to avoid edge problems
         for (let i = 0; i < 200; i++) {
-            p.push(t.callSyncifying(1));
+            p.push(t.callPromising(1));
         }
         await Promise.all(p);
         const startLength = pyodide._module.HEAP32.length;
         for (let i = 0; i < 10; i++) {
             p = [];
             for (let i = 0; i < 200; i++) {
-                p.push(t.callSyncifying(1));
+                p.push(t.callPromising(1));
             }
             await Promise.all(p);
         }
