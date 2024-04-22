@@ -389,7 +389,6 @@ EM_JS_VAL(JsVal, get_async_js_call_done_callback, (JsVal proxies), {
   };
 });
 
-
 // Promise conversion. We use "extra" to record the converter we want to use for
 // the promise result.
 static PyObject*
@@ -423,7 +422,6 @@ create_promise_converter(PyObject* self, PyObject* result_converter)
   }
   return result;
 }
-
 
 // clang-format off
 EM_JS_VAL(JsVal, wrap_generator, (JsVal gen, JsVal proxies), {
@@ -512,7 +510,6 @@ EM_JS_VAL(JsVal, wrap_async_generator, (JsVal gen, JsVal proxies), {
   };
 });
 // clang-format on
-
 
 // Deep js2py conversion for function call result.
 static PyObject*
