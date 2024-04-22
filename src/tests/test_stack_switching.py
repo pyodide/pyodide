@@ -61,7 +61,7 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         delete WebAssembly.Suspender;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -89,7 +89,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
         WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -318,7 +318,7 @@ def test_two_way_transfer(selenium):
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
-        await Promise.all([f.callSyncifying("a", 15), f.callSyncifying("b", 25)])
+        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 25)])
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -362,9 +362,9 @@ def test_sync_async_mix(selenium):
         const l = pyodide.globals.get("l");
 
         await Promise.all([
-            b.callSyncifying(300),
-            b.callSyncifying(200),
-            b.callSyncifying(250),
+            b.callPromising(300),
+            b.callPromising(200),
+            b.callPromising(250),
             a(220),
             a(150),
             a(270)
@@ -392,11 +392,11 @@ def test_nested_syncify(selenium):
         """
         async function f1() {
             await sleep(30);
-            return await g1.callSyncifying();
+            return await g1.callPromising();
         }
         async function f2() {
             await sleep(30);
-            return await g2.callSyncifying();
+            return await g2.callPromising();
         }
         async function getStuff() {
             await sleep(30);
@@ -426,7 +426,7 @@ def test_nested_syncify(selenium):
         const g1 = pyodide.globals.get("g1");
         const g2 = pyodide.globals.get("g2");
         const p = [];
-        p.push(g.callSyncifying().then((res) => l.append(res)));
+        p.push(g.callPromising().then((res) => l.append(res)));
         p.push(pyodide.runPythonAsync(`
             from js import sleep
             for i in range(20):
@@ -518,7 +518,7 @@ def test_throw_from_switcher(selenium):
         `);
         const a = pyodide.globals.get("a");
         const b = pyodide.globals.get("b");
-        const p = a.callSyncifying();
+        const p = a.callPromising();
         assert(() => b() === 7);
         await assertThrowsAsync(async () => await p, "PythonError", "Exception: hi");
         a.destroy();
@@ -554,8 +554,8 @@ def test_switch_from_except_block(selenium):
         `);
         const pe = pyodide.globals.get("pe");
         const g = pyodide.globals.get("g");
-        const g1 = g.callSyncifying("a");
-        const g2 = g.callSyncifying("b");
+        const g1 = g.callPromising("a");
+        const g2 = g.callPromising("b");
         pe('tt')
         await g1;
         await g2;
@@ -630,14 +630,14 @@ def test_memory_leak(selenium, script):
         let p = [];
         // warm up first to avoid edge problems
         for (let i = 0; i < 200; i++) {
-            p.push(t.callSyncifying(1));
+            p.push(t.callPromising(1));
         }
         await Promise.all(p);
         const startLength = pyodide._module.HEAP32.length;
         for (let i = 0; i < 10; i++) {
             p = [];
             for (let i = 0; i < 200; i++) {
-                p.push(t.callSyncifying(1));
+                p.push(t.callPromising(1));
             }
             await Promise.all(p);
         }

@@ -1455,7 +1455,7 @@ EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj, bool may_syncify), {
     }
     try {
       if (may_syncify) {
-        return Module.callPyObjectMaybeSuspending(obj, args);
+        return Module.callPyObjectMaybePromising(obj, args);
       } else {
         return Module.callPyObject(obj, args);
       }
@@ -1557,7 +1557,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
     checkUsed();
     try {
       if(handle_result){
-        return Module.callPyObjectMaybeSuspending(handle_result, [res]);
+        return Module.callPyObjectMaybePromising(handle_result, [res]);
       }
     } finally {
       done_callback(res);
@@ -1568,7 +1568,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
     checkUsed();
     try {
       if(handle_exception){
-        return Module.callPyObjectMaybeSuspending(handle_exception, [err]);
+        return Module.callPyObjectMaybePromising(handle_exception, [err]);
       }
     } finally {
       done_callback(undefined);
