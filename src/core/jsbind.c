@@ -369,7 +369,26 @@ Js2Py_func_deep(PyObject* self, JsVal jsval, JsVal proxies)
   return result;
 }
 
-JsVal get_async_js_call_done_callback(JsVal);
+/**
+ * This is a helper function for calling asynchronous js functions. proxies_id
+ * is an Array of proxies to destroy, it returns a JsRef to a function that
+ * destroys them and the result of the Promise.
+ */
+EM_JS_VAL(JsVal, get_async_js_call_done_callback, (JsVal proxies), {
+  return function(result)
+  {
+    let msg = "This borrowed proxy was automatically destroyed " +
+              "at the end of an asynchronous function call. Try " +
+              "using create_proxy or create_once_callable.";
+    for (let px of proxies) {
+      Module.pyproxy_destroy(px, msg, false);
+    }
+    if (API.isPyProxy(result)) {
+      Module.pyproxy_destroy(result, msg, false);
+    }
+  };
+});
+
 
 // Promise conversion. We use "extra" to record the converter we want to use for
 // the promise result.
@@ -404,6 +423,96 @@ create_promise_converter(PyObject* self, PyObject* result_converter)
   }
   return result;
 }
+
+
+// clang-format off
+EM_JS_VAL(JsVal, wrap_generator, (JsVal gen, JsVal proxies), {
+  proxies = new Set(proxies);
+  const msg =
+    "This borrowed proxy was automatically destroyed " +
+    "when a generator completed execution. Try " +
+    "using create_proxy or create_once_callable.";
+  function cleanup() {
+    proxies.forEach((px) => Module.pyproxy_destroy(px, msg));
+  }
+  function wrap(funcname) {
+    return function (val) {
+      if(API.isPyProxy(val)) {
+        val = val.copy();
+        proxies.add(val);
+      }
+      let res;
+      try {
+        res = gen[funcname](val);
+      } catch (e) {
+        cleanup();
+        throw e;
+      }
+      if (res.done) {
+        // Don't destroy the return value!
+        proxies.delete(res.value);
+        cleanup();
+      }
+      return res;
+    };
+  }
+  return {
+    get [Symbol.toStringTag]() {
+      return "Generator";
+    },
+    [Symbol.iterator]() {
+      return this;
+    },
+    next: wrap("next"),
+    throw: wrap("throw"),
+    return: wrap("return"),
+  };
+});
+
+EM_JS_VAL(JsVal, wrap_async_generator, (JsVal gen, JsVal proxies), {
+  proxies = new Set(proxies);
+  const msg =
+    "This borrowed proxy was automatically destroyed " +
+    "when an asynchronous generator completed execution. Try " +
+    "using create_proxy or create_once_callable.";
+  function cleanup() {
+    proxies.forEach((px) => Module.pyproxy_destroy(px, msg));
+  }
+  function wrap(funcname) {
+    return async function (val) {
+      if(API.isPyProxy(val)) {
+        val = val.copy();
+        proxies.add(val);
+      }
+      let res;
+      try {
+        res = await gen[funcname](val);
+      } catch (e) {
+        cleanup();
+        throw e;
+      }
+      if (res.done) {
+        // Don't destroy the return value!
+        proxies.delete(res.value);
+        cleanup();
+      }
+      return res;
+    };
+  }
+  return {
+    get [Symbol.toStringTag]() {
+      return "AsyncGenerator";
+    },
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+    next: wrap("next"),
+    throw: wrap("throw"),
+    return: wrap("return"),
+  };
+});
+// clang-format on
+
 
 // Deep js2py conversion for function call result.
 static PyObject*

@@ -479,7 +479,7 @@ def handle_command_generate_args(  # noqa: C901
         return line
     elif cmd == "cmake":
         # If it is a build/install command, or running a script, we don't do anything.
-        if "--build" in line or "--install" in line or "-P" in line:
+        if "--build" in line or "--install" in line or "-P" in line or "-E" in line:
             return line
 
         flags = get_cmake_compiler_flags()

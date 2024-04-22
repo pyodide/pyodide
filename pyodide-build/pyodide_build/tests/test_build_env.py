@@ -7,7 +7,8 @@ import os
 import pytest
 
 from conftest import ROOT_PATH
-from pyodide_build import build_env, common, __version__
+from pyodide_build import build_env, common
+from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 from .fixture import reset_cache, reset_env_vars, xbuildenv
 
@@ -130,41 +131,30 @@ class TestOutOfTree(TestInTree):
         assert "PYODIDE_ROOT" not in os.environ
 
         build_env.init_environment()
+        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
 
         assert "PYODIDE_ROOT" in os.environ
-        assert os.environ["PYODIDE_ROOT"] == str(
-            xbuildenv
-            / common.xbuildenv_dirname()
-            / __version__
-            / "xbuildenv/pyodide-root"
-        )
+        assert os.environ["PYODIDE_ROOT"] == str(manager.pyodide_root)
 
     def test_get_pyodide_root(self, xbuildenv, reset_env_vars, reset_cache):
         assert "PYODIDE_ROOT" not in os.environ
 
-        assert (
-            build_env.get_pyodide_root()
-            == xbuildenv
-            / common.xbuildenv_dirname()
-            / __version__
-            / "xbuildenv/pyodide-root"
-        )
+        pyodide_root = build_env.get_pyodide_root()
+        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        assert pyodide_root == manager.pyodide_root
 
     def test_in_xbuildenv(self, xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
 
     def test_get_make_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
-        xbuildenv_root = (
-            xbuildenv
-            / common.xbuildenv_dirname()
-            / __version__
-            / "xbuildenv/pyodide-root"
-        )
+        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
         make_vars = build_env._get_make_environment_vars()
-        assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_root)
+        assert make_vars["PYODIDE_ROOT"] == str(manager.pyodide_root)
 
-        make_vars = build_env._get_make_environment_vars(pyodide_root=xbuildenv_root)
-        assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_root)
+        make_vars = build_env._get_make_environment_vars(
+            pyodide_root=manager.pyodide_root
+        )
+        assert make_vars["PYODIDE_ROOT"] == str(manager.pyodide_root)
 
 
 def test_check_emscripten_version(monkeypatch):
