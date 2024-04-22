@@ -2377,7 +2377,7 @@ export class PyCallableMethods {
     return Module.callPyObject(_getPtr(this), jsargs);
   }
 
-  callOptions(
+  callWithOptions(
     {
       relaxed,
       kwargs,
@@ -2385,12 +2385,13 @@ export class PyCallableMethods {
     }: { relaxed?: boolean; kwargs?: boolean; promising?: boolean },
     ...jsargs: any
   ) {
-    let target = relaxed ? API.pyodide_code.relaxed_call : this;
-    if (relaxed) {
-      jsargs.unshift(this);
-    }
     let kwarg = {};
     if (kwargs) {
+      if (jsargs.length === 0) {
+        throw new TypeError(
+          "callWithOptions with 'kwargs: true' requires at least one argument (the key word argument object)",
+        );
+      }
       kwarg = jsargs.pop();
       if (
         kwarg.constructor !== undefined &&
@@ -2398,6 +2399,10 @@ export class PyCallableMethods {
       ) {
         throw new TypeError("kwargs argument is not an object");
       }
+    }
+    const target = relaxed ? API.pyodide_code.relaxed_call : this;
+    if (relaxed) {
+      jsargs.unshift(this);
     }
     const callFunc = promising
       ? callPyObjectKwargsPromising
