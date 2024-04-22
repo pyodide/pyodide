@@ -1,9 +1,9 @@
 #include "Python.h"
-#include "jslib.h"
-#include "python2js.h"
 #include "error_handling.h"
-#include "pyproxy.h"
 #include "js2python.h"
+#include "jslib.h"
+#include "pyproxy.h"
+#include "python2js.h"
 
 _Py_IDENTIFIER(create_future);
 _Py_IDENTIFIER(get_event_loop);
@@ -114,7 +114,6 @@ JsMethod_ConvertArgs(PyObject* const* pyargs,
 finally:
   return jsargs;
 }
-
 
 /**
  * This is a helper function for calling asynchronous js functions. proxies_id
@@ -229,10 +228,10 @@ EM_JS_VAL(JsVal, wrap_async_generator, (JsVal gen, JsVal proxies), {
  */
 PyObject*
 JsMethod_Vectorcall_impl(JsVal target,
-                    JsVal thisarg,
-                    PyObject* const* pyargs,
-                    size_t nargsf,
-                    PyObject* kwnames)
+                         JsVal thisarg,
+                         PyObject* const* pyargs,
+                         size_t nargsf,
+                         PyObject* kwnames)
 {
   bool success = false;
   JsVal jsresult = JS_NULL;
@@ -245,8 +244,7 @@ JsMethod_Vectorcall_impl(JsVal target,
   JsVal jsargs =
     JsMethod_ConvertArgs(pyargs, PyVectorcall_NARGS(nargsf), kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
-  jsresult =
-    JsvFunction_CallBound(target, thisarg, jsargs);
+  jsresult = JsvFunction_CallBound(target, thisarg, jsargs);
   FAIL_IF_JS_NULL(jsresult);
   // various cases where we want to extend the lifetime of the arguments:
   // 1. if the return value is a promise we extend arguments lifetime until the
@@ -306,9 +304,9 @@ finally:
  */
 PyObject*
 JsMethod_Construct_impl(JsVal target,
-                   PyObject* const* pyargs,
-                   Py_ssize_t nargs,
-                   PyObject* kwnames)
+                        PyObject* const* pyargs,
+                        Py_ssize_t nargs,
+                        PyObject* kwnames)
 {
   bool success = false;
   PyObject* pyresult = NULL;
