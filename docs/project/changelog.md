@@ -87,6 +87,14 @@ myst:
   JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
   {pr}`4666`
 
+- {{ Breaking }} The experimental `callSyncifying` method was renamed to
+  `callPromising`.
+  {pr}`4608`
+
+- {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of a
+  callable.
+  {pr}`4608`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,

@@ -2583,6 +2583,21 @@ export class PyCallableMethods {
     return Module.callPyObject(_getPtr(this), jsargs);
   }
 
+  /**
+   * Call the Python function. The first parameter controls various parameters
+   * that change the way the call is performed.
+   *
+   * @param options
+   * @param options.kwargs If true, the last argument is treated as a collection
+   *                       of keyword arguments.
+   * @param options.promising If true, the call is made with stack switching
+   *                          enabled. Not needed if the callee is an async
+   *                          Python function.
+   * @param options.relaxed If true, extra arguments are ignored instead of
+   *                        raising a :py:exc:`TypeError`.
+   * @param jsargs Arguments to the Python function.
+   * @returns
+   */
   callWithOptions(
     {
       relaxed,
@@ -2657,8 +2672,8 @@ export class PyCallableMethods {
    * will be ignored. This matches the behavior of JavaScript functions more
    * accurately.
    *
-   * Missing arguments are **NOT** filled with `None`. If too few arguments are
-   * passed, this will still raise a TypeError. Also, if the same argument is
+   * Missing arguments are **NOT** filled with ``None``. If too few arguments are
+   * passed, this will still raise a :py:exc:`TypeError`. Also, if the same argument is
    * passed as both a keyword argument and a positional argument, it will raise
    * an error.
    *
@@ -2669,11 +2684,11 @@ export class PyCallableMethods {
   }
 
   /**
-   * Call the function with stack switching enabled. Functions called this way
-   * can use
-   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
-   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
-   * resolved. Only works in runtimes with JS Promise integration.
+   * Call the function with stack switching enabled. The last argument must be
+   * an object with the keyword arguments. Functions called this way can use
+   * :py:meth:`~pyodide.ffi.run_sync` to block until an
+   * :py:class:`~collections.abc.Awaitable` is resolved. Only works in runtimes
+   * with JS Promise integration.
    *
    * .. admonition:: Experimental
    *    :class: warning
@@ -2689,9 +2704,9 @@ export class PyCallableMethods {
   /**
    * Call the function with stack switching enabled. The last argument must be
    * an object with the keyword arguments. Functions called this way can use
-   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
-   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
-   * resolved. Only works in runtimes with JS Promise integration.
+   * :py:meth:`~pyodide.ffi.run_sync` to block until an
+   * :py:class:`~collections.abc.Awaitable` is resolved. Only works in runtimes
+   * with JS Promise integration.
    *
    * .. admonition:: Experimental
    *    :class: warning
