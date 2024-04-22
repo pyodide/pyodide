@@ -1,8 +1,8 @@
-#include "error_handling.h"
 #include "Python.h"
-#include "pyproxy.h"
-#include "jsproxy.h"
+#include "error_handling.h"
 #include "js2python.h"
+#include "jsproxy.h"
+#include "pyproxy.h"
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
                  "This borrowed proxy was automatically destroyed at the "
@@ -28,7 +28,6 @@ EM_JS_VAL(JsVal, get_async_js_call_done_callback, (JsVal proxies), {
     }
   };
 });
-
 
 // clang-format off
 EM_JS_VAL(JsVal, wrap_generator, (JsVal gen, JsVal proxies), {
@@ -118,7 +117,6 @@ EM_JS_VAL(JsVal, wrap_async_generator, (JsVal gen, JsVal proxies), {
 });
 // clang-format on
 
-
 // Deep js2py conversion for function call result.
 PyObject*
 Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
@@ -146,8 +144,7 @@ Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
     // Instead we return a Future. When the promise is ready, we resolve the
     // Future with the result from the Promise and destroy the arguments and
     // result.
-    pyresult =
-      wrap_promise(jsresult, get_async_js_call_done_callback(proxies));
+    pyresult = wrap_promise(jsresult, get_async_js_call_done_callback(proxies));
   } else {
     pyresult = js2python(jsresult);
   }
@@ -169,4 +166,3 @@ Js2Py_func_default_call_result(PyObject* self, JsVal jsresult, JsVal proxies)
 finally:
   return pyresult;
 }
-
