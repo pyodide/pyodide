@@ -96,7 +96,7 @@ _Py_IDENTIFIER(register);
 static PyObject* collections_abc;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
-PyObject* asyncio_mod;
+static PyObject* asyncio_mod;
 static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
@@ -2579,6 +2579,50 @@ static int
 JsProxy_Bool(PyObject* self)
 {
   return JsProxy_Bool_js(JsProxy_VAL(self));
+}
+
+/**
+ * Create a Future attached to the given Promise. When the promise is
+ * resolved/rejected, the status of the future is set accordingly and
+ * done_callback is called.
+ */
+PyObject*
+wrap_promise(JsVal promise, JsVal done_callback)
+{
+  bool success = false;
+  PyObject* loop = NULL;
+  PyObject* set_result = NULL;
+  PyObject* set_exception = NULL;
+
+  PyObject* result = NULL;
+
+  loop = _PyObject_CallMethodIdNoArgs(asyncio_mod, &PyId_get_event_loop);
+  FAIL_IF_NULL(loop);
+
+  result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
+  FAIL_IF_NULL(result);
+
+  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  FAIL_IF_NULL(set_result);
+  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  FAIL_IF_NULL(set_exception);
+
+  promise = JsvPromise_Resolve(promise);
+  FAIL_IF_JS_NULL(promise);
+  JsVal promise_handles =
+    create_promise_handles(set_result, set_exception, done_callback);
+  FAIL_IF_JS_NULL(promise_handles);
+  FAIL_IF_JS_NULL(JsvObject_CallMethodId(promise, &JsId_then, promise_handles));
+
+  success = true;
+finally:
+  Py_CLEAR(loop);
+  Py_CLEAR(set_result);
+  Py_CLEAR(set_exception);
+  if (!success) {
+    Py_CLEAR(result);
+  }
+  return result;
 }
 
 /**
