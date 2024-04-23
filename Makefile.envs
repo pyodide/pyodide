@@ -169,6 +169,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,__hiwire_set \
 			,__hiwire_immortal_add \
 			,_jslib_init \
+			,_init_pyodide_proxy \
 			\
 			,_PyBuffer_Release \
 			,_Py_DecRef \
@@ -185,7 +186,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_PyEval_RestoreThread \
 			,_PyFloat_FromDouble \
 			,_PyGILState_Check \
-			,_PyImport_ImportModule \
 			,_Py_IncRef \
 			,_PyList_New \
 			,_PyList_SetItem \
