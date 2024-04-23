@@ -715,32 +715,52 @@ function jsFinderHook(o: object) {
   });
 }
 
+/**
+ * Set up some of the JavaScript state that is normally set up by C initialization code. TODO:
+ * adjust C code to simplify.
+ *
+ * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the beginning of
+ * finalizeBootstrap before the public API is setup, syncUpSnapshotLoad2 happens near the end.
+ *
+ * This code is quite sensitive to the details of our setup, so it might break if we move stuff
+ * around far away in the code base. Ideally over time we can structure the code to make it less
+ * brittle.
+ */
 function syncUpSnapshotLoad1() {
+  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
+  // It also puts our deduplication map into the immortal table.
+  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function.
   Module.__hiwire_set(0, null);
   Module.__hiwire_immortal_add(null);
-  Module._jslib_init();
   Module.__hiwire_immortal_add(new Map());
+  // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
+  Module._jslib_init();
+  // An interned JS string.
+  // TODO: Better system for handling interned strings.
   Module.__hiwire_immortal_add(
     "This borrowed proxy was automatically destroyed at the end of a function call. Try using create_proxy or create_once_callable.",
   );
-  const _pyodide_ptr = Module.stringToNewUTF8("_pyodide");
-  const pyodide_mod_ptr = Module._PyImport_ImportModule(_pyodide_ptr);
-  const pyodide_mod = Module.pyproxy_new(pyodide_mod_ptr);
-  Module.API._pyodide = pyodide_mod;
-  Module._Py_DecRef(pyodide_mod_ptr);
-  Module._free(_pyodide_ptr);
+  // Set API._pyodide to a proxy of the _pyodide module.
+  // Normally called by import _pyodide.
+  Module._init_pyodide_proxy();
 }
 
+/**
+ * Fill in the JsRef table.
+ */
 function syncUpSnapshotLoad2() {
-  Module.__hiwire_set(1, jsFinderHook);
-  Module.__hiwire_set(2, API.config.jsglobals);
-  Module.__hiwire_set(3, API.public_api);
-  Module.__hiwire_set(4, Module.API);
-  Module.__hiwire_set(5, scheduleCallback);
-  Module.__hiwire_set(6, Module.API);
-  Module.__hiwire_set(7, {});
-  Module.__hiwire_set(8, null);
-  Module.__hiwire_set(9, null);
+  [
+    null,
+    jsFinderHook,
+    API.config.jsglobals,
+    API.public_api,
+    Module.API,
+    scheduleCallback,
+    Module.API,
+    {},
+    null,
+    null,
+  ].forEach((v, idx) => Module.__hiwire_set(idx, v));
 }
 
 /**

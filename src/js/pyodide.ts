@@ -169,7 +169,10 @@ export async function loadPyodide(
     /**
      * @ignore
      */
-    _loadSnapshot?: Uint8Array;
+    _loadSnapshot?:
+      | Uint8Array
+      | ArrayBuffer
+      | PromiseLike<Uint8Array | ArrayBuffer>;
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
