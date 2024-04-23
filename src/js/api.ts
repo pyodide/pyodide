@@ -728,13 +728,13 @@ function jsFinderHook(o: object) {
  */
 function syncUpSnapshotLoad1() {
   // hiwire init puts a null at the beginning of both the mortal and immortal tables.
-  // It also puts our deduplication map into the immortal table.
-  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function.
   Module.__hiwire_set(0, null);
   Module.__hiwire_immortal_add(null);
-  Module.__hiwire_immortal_add(new Map());
   // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
   Module._jslib_init();
+  // Puts deduplication map into the immortal table.
+  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function.
+  Module.__hiwire_immortal_add(new Map());
   // An interned JS string.
   // TODO: Better system for handling interned strings.
   Module.__hiwire_immortal_add(
