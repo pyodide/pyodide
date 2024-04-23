@@ -92,6 +92,7 @@ src/core/libpyodide.a: \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/jsproxy_call.o \
+	src/core/jsbind.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/jslib.o \
