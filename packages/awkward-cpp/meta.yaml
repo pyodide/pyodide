@@ -11,7 +11,7 @@ source:
 build:
   script: |
     export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
-  exports: whole_archive
+  exports: requested
 
 requirements:
   run:
