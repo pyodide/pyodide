@@ -1,6 +1,8 @@
 import os
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
+from types import MappingProxyType
 
 from .common import _environment_substitute_str, exit_with_stdio
 from .logger import logger
@@ -26,10 +28,10 @@ class ConfigManager:
             **self._load_default_config(),
             **self._load_makefile_envs(),
             **self._load_config_file(),
-            **self._load_config_from_env(dict(os.environ)),
+            **self._load_config_from_env(os.environ),
         }
 
-    def _load_default_config(self) -> dict[str, str]:
+    def _load_default_config(self) -> Mapping[str, str]:
         return {
             k: _environment_substitute_str(
                 v, env={"PYODIDE_ROOT": str(self.pyodide_root)}
@@ -37,7 +39,7 @@ class ConfigManager:
             for k, v in DEFAULT_CONFIG.items()
         }
 
-    def _load_makefile_envs(self) -> dict[str, str]:
+    def _load_makefile_envs(self) -> Mapping[str, str]:
         makefile_vars = self._get_make_environment_vars()
         computed_vars = {
             k: _environment_substitute_str(v, env=makefile_vars)
@@ -50,7 +52,7 @@ class ConfigManager:
             if k in BUILD_VAR_TO_KEY
         } | computed_vars
 
-    def _get_make_environment_vars(self) -> dict[str, str]:
+    def _get_make_environment_vars(self) -> Mapping[str, str]:
         """
         Load environment variables from Makefile.envs
         """
@@ -82,20 +84,20 @@ class ConfigManager:
 
         return environment
 
-    def _load_config_from_env(self, env: dict[str, str]) -> dict[str, str]:
+    def _load_config_from_env(self, env: Mapping[str, str]) -> Mapping[str, str]:
         return {
             BUILD_VAR_TO_KEY[key]: env[key] for key in env if key in BUILD_VAR_TO_KEY
         }
 
-    def _load_config_file(self) -> dict[str, str]:
+    def _load_config_file(self) -> Mapping[str, str]:
         # TODO: Implement this
         return {}
 
     @property
-    def config(self) -> dict[str, str]:
-        return self._config.copy()
+    def config(self) -> Mapping[str, str]:
+        return MappingProxyType(self._config)
 
-    def to_env(self) -> dict[str, str]:
+    def to_env(self) -> Mapping[str, str]:
         """
         Export the configuration to environment variables.
         """
