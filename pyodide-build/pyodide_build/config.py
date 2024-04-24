@@ -13,9 +13,9 @@ class ConfigManager:
     The configuration manager is responsible for loading configuration from various sources.
     The configuration can be loaded from the following sources (in order of precedence):
 
-        1. Command line arguments
+        1. Command line arguments (TODO)
         2. Environment variables
-        3. Configuration file
+        3. Configuration file (TODO)
         4. Makefile.envs
         5. Default values
     """
