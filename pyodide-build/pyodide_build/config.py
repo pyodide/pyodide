@@ -97,7 +97,7 @@ class ConfigManager:
     def config(self) -> Mapping[str, str]:
         return MappingProxyType(self._config)
 
-    def to_env(self) -> Mapping[str, str]:
+    def to_env(self) -> dict[str, str]:
         """
         Export the configuration to environment variables.
         """

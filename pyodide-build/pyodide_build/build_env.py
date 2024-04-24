@@ -132,14 +132,16 @@ def get_build_environment_vars(pyodide_root: Path) -> dict[str, str]:
     config_manager = ConfigManager(pyodide_root)
     env = config_manager.to_env()
 
-    env |= {
-        # This environment variable is used for packages to detect if they are built
-        # for pyodide during build time
-        "PYODIDE": "1",
-        # This is the legacy environment variable used for the aforementioned purpose
-        "PYODIDE_PACKAGE_ABI": "1",
-        "PYTHONPATH": env["HOSTSITEPACKAGES"],
-    }
+    env.update(
+        {
+            # This environment variable is used for packages to detect if they are built
+            # for pyodide during build time
+            "PYODIDE": "1",
+            # This is the legacy environment variable used for the aforementioned purpose
+            "PYODIDE_PACKAGE_ABI": "1",
+            "PYTHONPATH": env["HOSTSITEPACKAGES"],
+        }
+    )
 
     return env
 
