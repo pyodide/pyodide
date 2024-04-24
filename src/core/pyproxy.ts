@@ -505,11 +505,7 @@ Module.pyproxy_destroy = function (
 // Now a lot of boilerplate to wrap the abstract Object protocol wrappers
 // defined in pyproxy.c in JavaScript functions.
 
-Module.callPyObjectKwargs = function (
-  ptrobj: number,
-  jsargs: any[],
-  kwargs: any,
-) {
+function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
   // We don't do any checking for kwargs, checks are in PyProxy.callKwargs
   // which only is used when the keyword arguments come from the user.
   const num_pos_args = jsargs.length;
@@ -546,7 +542,7 @@ Module.callPyObjectKwargs = function (
     }
   }
   return result;
-};
+}
 
 /**
  * A version of callPyObjectKwargs that supports the JSPI.
@@ -560,7 +556,7 @@ Module.callPyObjectKwargs = function (
  * into suspenderGlobal (for later use by JsvPromise_syncify). Then it calls
  * _pyproxy_apply with the same arguments we gave to `promisingApply`.
  */
-async function callPyObjectKwargsSuspending(
+async function callPyObjectKwargsPromising(
   ptrobj: number,
   jsargs: any,
   kwargs: any,
@@ -619,18 +615,18 @@ async function callPyObjectKwargsSuspending(
   return result;
 }
 
-Module.callPyObjectMaybeSuspending = async function (
+Module.callPyObjectMaybePromising = async function (
   ptrobj: number,
   jsargs: any,
 ) {
   if (Module.jspiSupported) {
-    return await callPyObjectKwargsSuspending(ptrobj, jsargs, {});
+    return await callPyObjectKwargsPromising(ptrobj, jsargs, {});
   }
-  return Module.callPyObjectKwargs(ptrobj, jsargs, {});
+  return callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
 Module.callPyObject = function (ptrobj: number, jsargs: any) {
-  return Module.callPyObjectKwargs(ptrobj, jsargs, {});
+  return callPyObjectKwargs(ptrobj, jsargs, {});
 };
 
 export interface PyProxy {
@@ -2586,6 +2582,55 @@ export class PyCallableMethods {
     jsargs = _adjustArgs(this, thisArg, jsargs);
     return Module.callPyObject(_getPtr(this), jsargs);
   }
+
+  /**
+   * Call the Python function. The first parameter controls various parameters
+   * that change the way the call is performed.
+   *
+   * @param options
+   * @param options.kwargs If true, the last argument is treated as a collection
+   *                       of keyword arguments.
+   * @param options.promising If true, the call is made with stack switching
+   *                          enabled. Not needed if the callee is an async
+   *                          Python function.
+   * @param options.relaxed If true, extra arguments are ignored instead of
+   *                        raising a :py:exc:`TypeError`.
+   * @param jsargs Arguments to the Python function.
+   * @returns
+   */
+  callWithOptions(
+    {
+      relaxed,
+      kwargs,
+      promising,
+    }: { relaxed?: boolean; kwargs?: boolean; promising?: boolean },
+    ...jsargs: any
+  ) {
+    let kwarg = {};
+    if (kwargs) {
+      if (jsargs.length === 0) {
+        throw new TypeError(
+          "callWithOptions with 'kwargs: true' requires at least one argument (the key word argument object)",
+        );
+      }
+      kwarg = jsargs.pop();
+      if (
+        kwarg.constructor !== undefined &&
+        kwarg.constructor.name !== "Object"
+      ) {
+        throw new TypeError("kwargs argument is not an object");
+      }
+    }
+    const target = relaxed ? API.pyodide_code.relaxed_call : this;
+    if (relaxed) {
+      jsargs.unshift(this);
+    }
+    const callFunc = promising
+      ? callPyObjectKwargsPromising
+      : callPyObjectKwargs;
+    return callFunc(_getPtr(target), jsargs, kwarg);
+  }
+
   /**
    * Call the function with keyword arguments. The last argument must be an
    * object with the keyword arguments.
@@ -2603,7 +2648,7 @@ export class PyCallableMethods {
     ) {
       throw new TypeError("kwargs argument is not an object");
     }
-    return Module.callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
+    return callPyObjectKwargs(_getPtr(this), jsargs, kwargs);
   }
 
   /**
@@ -2627,8 +2672,8 @@ export class PyCallableMethods {
    * will be ignored. This matches the behavior of JavaScript functions more
    * accurately.
    *
-   * Missing arguments are **NOT** filled with `None`. If too few arguments are
-   * passed, this will still raise a TypeError. Also, if the same argument is
+   * Missing arguments are **NOT** filled with ``None``. If too few arguments are
+   * passed, this will still raise a :py:exc:`TypeError`. Also, if the same argument is
    * passed as both a keyword argument and a positional argument, it will raise
    * an error.
    *
@@ -2639,11 +2684,11 @@ export class PyCallableMethods {
   }
 
   /**
-   * Call the function with stack switching enabled. Functions called this way
-   * can use
-   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
-   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
-   * resolved. Only works in runtimes with JS Promise integration.
+   * Call the function with stack switching enabled. The last argument must be
+   * an object with the keyword arguments. Functions called this way can use
+   * :py:meth:`~pyodide.ffi.run_sync` to block until an
+   * :py:class:`~collections.abc.Awaitable` is resolved. Only works in runtimes
+   * with JS Promise integration.
    *
    * .. admonition:: Experimental
    *    :class: warning
@@ -2652,16 +2697,16 @@ export class PyCallableMethods {
    *
    * @experimental
    */
-  callSyncifying(...jsargs: any) {
-    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, {});
+  callPromising(...jsargs: any) {
+    return callPyObjectKwargsPromising(_getPtr(this), jsargs, {});
   }
 
   /**
    * Call the function with stack switching enabled. The last argument must be
    * an object with the keyword arguments. Functions called this way can use
-   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
-   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
-   * resolved. Only works in runtimes with JS Promise integration.
+   * :py:meth:`~pyodide.ffi.run_sync` to block until an
+   * :py:class:`~collections.abc.Awaitable` is resolved. Only works in runtimes
+   * with JS Promise integration.
    *
    * .. admonition:: Experimental
    *    :class: warning
@@ -2670,7 +2715,7 @@ export class PyCallableMethods {
    *
    * @experimental
    */
-  callSyncifyingKwargs(...jsargs: any) {
+  callPromisingKwargs(...jsargs: any) {
     if (jsargs.length === 0) {
       throw new TypeError(
         "callKwargs requires at least one argument (the key word argument object)",
@@ -2683,7 +2728,7 @@ export class PyCallableMethods {
     ) {
       throw new TypeError("kwargs argument is not an object");
     }
-    return callPyObjectKwargsSuspending(_getPtr(this), jsargs, kwargs);
+    return callPyObjectKwargsPromising(_getPtr(this), jsargs, kwargs);
   }
 
   /**

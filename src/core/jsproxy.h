@@ -51,6 +51,9 @@ JsProxy_Check(PyObject* x);
 JsVal
 JsProxy_Val(PyObject* x);
 
+PyObject*
+wrap_promise(JsVal promise, JsVal done_callback);
+
 /** Initialize global state for JsProxy functionality. */
 int
 JsProxy_init(PyObject* core_module);

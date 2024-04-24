@@ -54,6 +54,7 @@ __all__ = [
     "create_proxy",
     "destroy_proxies",
     "to_js",
+    "run_sync",
     "IN_BROWSER",
     "register_js_module",
     "unregister_js_module",

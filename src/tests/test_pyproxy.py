@@ -1104,6 +1104,87 @@ def test_pyproxy_call(selenium):
     selenium.run_js("f.destroy()")
 
 
+def test_pyproxy_call_relaxed(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(x=2, y=3):
+                return to_js([x, y])
+        `);
+        self.f = pyodide.globals.get("f");
+        """
+    )
+
+    def assert_call(s, val):
+        res = selenium.run_js(f"return {s};")
+        assert res == val
+
+    assert_call("f.callRelaxed()", [2, 3])
+    assert_call("f.callRelaxed(1)", [1, 3])
+    assert_call("f.callRelaxed(1, 2)", [1, 2])
+    assert_call("f.callRelaxed(1, 2, 3)", [1, 2])
+    assert_call("f.callRelaxed(1, 2, 3, 4)", [1, 2])
+    selenium.run_js("f.destroy()")
+
+
+def test_pyproxy_call_with_options(selenium):
+    selenium.run_js(
+        """
+        pyodide.runPython(`
+            from pyodide.ffi import to_js
+            def f(x=2, y=3):
+                return to_js([x, y])
+        `);
+        self.f = pyodide.globals.get("f");
+        """
+    )
+
+    def assert_call(s, val):
+        res = selenium.run_js(f"return {s};")
+        assert res == val
+
+    assert_call("f.callWithOptions({})", [2, 3])
+    assert_call("f.callWithOptions({}, 7)", [7, 3])
+    assert_call("f.callWithOptions({}, 7, 9)", [7, 9])
+    msg = r"TypeError: f\(\) takes from 0 to 2 positional arguments but 3 were given"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({}, 7, 9, 10)")
+
+    assert_call("f.callWithOptions({relaxed: true})", [2, 3])
+    assert_call("f.callWithOptions({relaxed: true}, 7)", [7, 3])
+    assert_call("f.callWithOptions({relaxed: true}, 7, 9)", [7, 9])
+    assert_call("f.callWithOptions({relaxed: true}, 7, 9, 10)", [7, 9])
+
+    msg = "callWithOptions with 'kwargs: true' requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({kwargs: true})")
+
+    msg = "callWithOptions with 'kwargs: true' requires at least one argument"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({kwargs: true, relaxed: true})")
+
+    msg = "kwargs argument is not an object"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({kwargs: true}, 7, 9, 10)")
+
+    msg = "kwargs argument is not an object"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({kwargs: true, relaxed: true}, 7, 9, 10)")
+
+    msg = r"TypeError: f\(\) takes from 0 to 2 positional arguments but 3 were given"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js("f.callWithOptions({kwargs: true}, 7, 9, 10, {})")
+
+    assert_call(
+        "f.callWithOptions({kwargs: true, relaxed: true}, 7, 9, 10, {})", [7, 9]
+    )
+
+    assert_call("f.callWithOptions({kwargs: true}, {x: 9})", [9, 3])
+    assert_call("f.callWithOptions({kwargs: true, relaxed: true}, {x: 9})", [9, 3])
+    selenium.run_js("f.destroy()")
+
+
 def test_pyproxy_borrow(selenium):
     selenium.run_js(
         """
