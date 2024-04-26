@@ -179,15 +179,16 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
 };
 
 /**
- * Set up some of the JavaScript state that is normally set up by C initialization code. TODO:
- * adjust C code to simplify.
+ * Set up some of the JavaScript state that is normally set up by C
+ * initialization code. TODO: adjust C code to simplify.
  *
- * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the beginning of
- * finalizeBootstrap before the public API is setup, syncUpSnapshotLoad2 happens near the end.
+ * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the
+ * beginning of finalizeBootstrap before the public API is setup,
+ * syncUpSnapshotLoad2 happens near the end so that API.public_api exists.
  *
- * This code is quite sensitive to the details of our setup, so it might break if we move stuff
- * around far away in the code base. Ideally over time we can structure the code to make it less
- * brittle.
+ * This code is quite sensitive to the details of our setup, so it might break
+ * if we move stuff around far away in the code base. Ideally over time we can
+ * structure the code to make it less brittle.
  */
 export function syncUpSnapshotLoad1() {
   // hiwire init puts a null at the beginning of both the mortal and immortal tables.
