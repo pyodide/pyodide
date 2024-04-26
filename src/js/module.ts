@@ -11,16 +11,17 @@ import { EmscriptenSettings } from "./types";
  * @private
  */
 export function createSettings(): EmscriptenSettings {
-  return {
+  const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
     noWasmDecoding: false,
     preRun: [],
     quit(status: number, toThrow: Error) {
-      this.exited = { status, toThrow };
+      settings.exited = { status, toThrow };
       throw toThrow;
     },
   };
+  return settings;
 }
 
 /**
