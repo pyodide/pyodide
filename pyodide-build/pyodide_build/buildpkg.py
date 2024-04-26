@@ -319,6 +319,8 @@ class RecipeBuilder:
         )
         if "filename" in parameters:
             tarballname = parameters["filename"]
+            # Remove a possible query string
+            tarballname = tarballname.rsplit("?")[0]
         else:
             tarballname = Path(response.geturl()).name
 
