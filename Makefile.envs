@@ -166,6 +166,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_hiwire_incref \
 			,_hiwire_decref \
 			,_hiwire_pop \
+			,__hiwire_get \
 			,__hiwire_set \
 			,__hiwire_immortal_add \
 			,_jslib_init \

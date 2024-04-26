@@ -93,7 +93,6 @@ API.makeSnapshot = function (): Uint8Array {
     } catch (e) {
       break;
     }
-    console.log("value", value, value?.[getAccessorList] || null);
     hiwireKeys.push(value?.[getAccessorList] || null);
   }
   const snapshotConfig: SnapshotConfig = {
