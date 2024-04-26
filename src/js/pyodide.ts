@@ -9,17 +9,19 @@ import {
   loadLockFile,
 } from "./compat";
 
-import { createModule, initializeFileSystem, preloadWasm } from "./module";
+import { createSettings, initializeFileSystem, preloadWasm } from "./module";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, API, Module } from "./types";
+import type { TypedArray, API, Module, EmscriptenSettings } from "./types";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 
 export { version, type PackageData };
 
-declare function _createPyodideModule(Module: any): Promise<void>;
+declare function _createPyodideModule(
+  settings: EmscriptenSettings,
+): Promise<Module>;
 
 /**
  * See documentation for loadPyodide.
@@ -199,23 +201,23 @@ export async function loadPyodide(
     config.env.HOME = "/home/pyodide";
   }
 
-  const Module = createModule();
-  Module.print = config.stdout;
-  Module.printErr = config.stderr;
-  Module.arguments = config.args;
+  let emscriptenSettings = createSettings();
+  emscriptenSettings.print = config.stdout;
+  emscriptenSettings.printErr = config.stderr;
+  emscriptenSettings.arguments = config.args;
 
   const API = { config } as API;
-  Module.API = API;
+  emscriptenSettings.API = API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
 
-  preloadWasm(Module, indexURL);
-  initializeFileSystem(Module, config);
+  preloadWasm(emscriptenSettings, indexURL);
+  initializeFileSystem(emscriptenSettings, config);
 
-  const moduleLoaded = new Promise((r) => (Module.postRun = r));
+  const moduleLoaded = new Promise((r) => (emscriptenSettings.postRun = r));
 
   // locateFile tells Emscripten where to find the data files that initialize
   // the file system.
-  Module.locateFile = (path: string) => config.indexURL + path;
+  emscriptenSettings.locateFile = (path: string) => config.indexURL + path;
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
@@ -232,14 +234,14 @@ export async function loadPyodide(
       snapshot = new Uint8Array(snapshot);
     }
     // @ts-ignore
-    Module.noInitialRun = !!snapshot;
+    emscriptenSettings.noInitialRun = !!snapshot;
     // @ts-ignore
-    Module.INITIAL_MEMORY = snapshot.length;
+    emscriptenSettings.INITIAL_MEMORY = snapshot.length;
   }
 
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
-  await _createPyodideModule(Module);
+  const Module = await _createPyodideModule(emscriptenSettings);
 
   // There is some work to be done between the module being "ready" and postRun
   // being called.

@@ -250,17 +250,30 @@ export interface FS {
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
 }
 
-export interface Module {
-  noImageDecoding: boolean;
-  noAudioDecoding: boolean;
-  noWasmDecoding: boolean;
-  quit: (status: number, toThrow: Error) => void;
-  preRun: { (): void }[];
+export interface EmscriptenSettings {
+  noImageDecoding?: boolean;
+  noAudioDecoding?: boolean;
+  noWasmDecoding?: boolean;
+  preRun: { (Module: Module): void }[];
+  quit?: (status: number, toThrow: Error) => void;
+  exited?: { status: number; toThrow: Error };
   print?: (a: string) => void;
   printErr?: (a: string) => void;
-  arguments: string[];
+  arguments?: string[];
+  instantiateWasm?: (
+    imports: { [key: string]: any },
+    successCallback: (
+      instance: WebAssembly.Instance,
+      module: WebAssembly.Module,
+    ) => void,
+  ) => void;
+  API?: API;
+  postRun?: ((a: Module) => void) | ((a: Module) => void)[];
+  locateFile?: (file: string) => string;
+}
+
+export interface Module {
   API: API;
-  postRun: ((a: Module) => void) | ((a: Module) => void)[];
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
@@ -272,13 +285,6 @@ export interface Module {
   removeRunDependency: (id: string) => void;
   reportUndefinedSymbols: () => void;
   ERRNO_CODES: { [k: string]: number };
-  instantiateWasm?: (
-    imports: { [key: string]: any },
-    successCallback: (
-      instance: WebAssembly.Instance,
-      module: WebAssembly.Module,
-    ) => void,
-  ) => void;
 }
 
 type LockfileInfo = {
