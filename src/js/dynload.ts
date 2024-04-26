@@ -7,11 +7,8 @@ import { memoize } from "./pyodide-util";
 import { InternalPackageData } from "./load-package";
 import { LoadDynlibFS, ReadFileType } from "./types";
 
-
 // File System-like type which can be passed to
 // Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-
-
 
 /**
  * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule

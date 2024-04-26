@@ -232,9 +232,12 @@ export interface FS {
   readdir: (node: FSNode) => string[];
   isDir: (mode: number) => boolean;
   isMountpoint: (mode: FSNode) => boolean;
-  lookupPath: (path: string, options?:{
-    follow_mount?: boolean,
-  }) => { node: FSNode };
+  lookupPath: (
+    path: string,
+    options?: {
+      follow_mount?: boolean;
+    },
+  ) => { node: FSNode };
   isFile: (mode: number) => boolean;
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
   chmod: (path: string, mode: number) => void;
@@ -290,8 +293,8 @@ type DSO = any;
 export interface LDSO {
   loadedLibsByName: {
     [key: string]: DSO;
-  }
-};
+  };
+}
 
 export interface Module {
   API: API;
@@ -306,13 +309,16 @@ export interface Module {
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
   reportUndefinedSymbols(): void;
-  loadDynamicLibrary(lib: string, options?: {
-    loadAsync?: boolean;
-    nodelete?: boolean;
-    allowUndefined?: boolean;
-    global?: boolean;
-    fs: LoadDynlibFS;
-  }): void;
+  loadDynamicLibrary(
+    lib: string,
+    options?: {
+      loadAsync?: boolean;
+      nodelete?: boolean;
+      allowUndefined?: boolean;
+      global?: boolean;
+      fs: LoadDynlibFS;
+    },
+  ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
@@ -320,10 +326,17 @@ export interface Module {
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
   _compat_to_string_repr: number;
-  js2python_convert: (obj: any, options: {
-    depth?: number;
-    defaultConverter?: (value: any, converter: (value: any) => any, cacheConversion: (input: any, output: any) => void) => any;
-  }) => any;
+  js2python_convert: (
+    obj: any,
+    options: {
+      depth?: number;
+      defaultConverter?: (
+        value: any,
+        converter: (value: any) => any,
+        cacheConversion: (input: any, output: any) => void,
+      ) => any;
+    },
+  ) => any;
   _PropagatePythonError: typeof Error;
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
@@ -331,10 +344,10 @@ export interface Module {
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
-  _jslib_init() : number;
+  _jslib_init(): number;
   _init_pyodide_proxy(): number;
   jsWrapperTag: any; // Should be WebAssembly.Tag
-  getExceptionMessage(e:number): [string, string];
+  getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
 }
 
