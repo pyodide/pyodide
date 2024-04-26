@@ -162,6 +162,17 @@ export async function loadPyodide(
      * @ignore
      */
     _node_mounts?: string[];
+    /**
+     * @ignore
+     */
+    _makeSnapshot?: boolean;
+    /**
+     * @ignore
+     */
+    _loadSnapshot?:
+      | Uint8Array
+      | ArrayBuffer
+      | PromiseLike<Uint8Array | ArrayBuffer>;
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -214,6 +225,18 @@ export async function loadPyodide(
     await loadScript(scriptSrc);
   }
 
+  let snapshot;
+  if (options._loadSnapshot) {
+    snapshot = await options._loadSnapshot;
+    if (snapshot?.constructor?.name === "ArrayBuffer") {
+      snapshot = new Uint8Array(snapshot);
+    }
+    // @ts-ignore
+    Module.noInitialRun = !!snapshot;
+    // @ts-ignore
+    Module.INITIAL_MEMORY = snapshot.length;
+  }
+
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   await _createPyodideModule(Module);
@@ -242,7 +265,17 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const pyodide = API.finalizeBootstrap();
+  if (snapshot) {
+    // @ts-ignore
+    Module.HEAP8.set(snapshot);
+  }
+  const pyodide = API.finalizeBootstrap(!!snapshot);
+
+  if (options._makeSnapshot) {
+    // @ts-ignore
+    pyodide._snapshot = Module.HEAP8.slice();
+  }
+  API.sys.path.insert(0, API.config.env.HOME);
 
   // runPython works starting here.
   if (!pyodide.version.includes("dev")) {

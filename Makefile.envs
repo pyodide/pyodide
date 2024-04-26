@@ -166,6 +166,10 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_hiwire_incref \
 			,_hiwire_decref \
 			,_hiwire_pop \
+			,__hiwire_set \
+			,__hiwire_immortal_add \
+			,_jslib_init \
+			,_init_pyodide_proxy \
 			\
 			,_PyBuffer_Release \
 			,_Py_DecRef \

@@ -13,6 +13,7 @@ all: \
 	dist/pyodide-lock.json \
 	dist/console.html \
 	dist/pyodide.d.ts \
+	dist/snapshot.bin \
 
 
 all-but-packages: \
@@ -91,6 +92,7 @@ src/core/libpyodide.a: \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
 	src/core/jsproxy_call.o \
+	src/core/jsbind.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/jslib.o \
@@ -230,6 +232,13 @@ dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
 
 dist/test.html: src/templates/test.html
 	cp $< $@
+
+dist/makesnap.mjs: src/templates/makesnap.mjs
+	cp $< $@
+
+dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
+	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
+
 
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@

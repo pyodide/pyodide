@@ -701,6 +701,68 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+function jsFinderHook(o: object) {
+  if ("__all__" in o) {
+    return;
+  }
+  Object.defineProperty(o, "__all__", {
+    get: () =>
+      API.public_api.toPy(
+        Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+      ),
+    enumerable: false,
+    configurable: true,
+  });
+}
+
+/**
+ * Set up some of the JavaScript state that is normally set up by C initialization code. TODO:
+ * adjust C code to simplify.
+ *
+ * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the beginning of
+ * finalizeBootstrap before the public API is setup, syncUpSnapshotLoad2 happens near the end.
+ *
+ * This code is quite sensitive to the details of our setup, so it might break if we move stuff
+ * around far away in the code base. Ideally over time we can structure the code to make it less
+ * brittle.
+ */
+function syncUpSnapshotLoad1() {
+  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
+  Module.__hiwire_set(0, null);
+  Module.__hiwire_immortal_add(null);
+  // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
+  Module._jslib_init();
+  // Puts deduplication map into the immortal table.
+  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function.
+  Module.__hiwire_immortal_add(new Map());
+  // An interned JS string.
+  // TODO: Better system for handling interned strings.
+  Module.__hiwire_immortal_add(
+    "This borrowed proxy was automatically destroyed at the end of a function call. Try using create_proxy or create_once_callable.",
+  );
+  // Set API._pyodide to a proxy of the _pyodide module.
+  // Normally called by import _pyodide.
+  Module._init_pyodide_proxy();
+}
+
+/**
+ * Fill in the JsRef table.
+ */
+function syncUpSnapshotLoad2() {
+  [
+    null,
+    jsFinderHook,
+    API.config.jsglobals,
+    API.public_api,
+    Module.API,
+    scheduleCallback,
+    Module.API,
+    {},
+    null,
+    null,
+  ].forEach((v, idx) => Module.__hiwire_set(idx, v));
+}
+
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -708,7 +770,10 @@ API.bootstrapFinalizedPromise = new Promise<void>(
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (): PyodideInterface {
+API.finalizeBootstrap = function (fromSnapshot?: boolean): PyodideInterface {
+  if (fromSnapshot) {
+    syncUpSnapshotLoad1();
+  }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     API.fatal_loading_error(
@@ -725,7 +790,6 @@ API.finalizeBootstrap = function (): PyodideInterface {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, API.config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -739,24 +803,14 @@ API.finalizeBootstrap = function (): PyodideInterface {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  function jsFinderHook(o: object) {
-    if ("__all__" in o) {
-      return;
-    }
-    Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-        ),
-      enumerable: false,
-      configurable: true,
-    });
-  }
-  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-  importhook.register_js_module("js", API.config.jsglobals);
-
   let pyodide = makePublicAPI();
-  importhook.register_js_module("pyodide_js", pyodide);
+  if (fromSnapshot) {
+    syncUpSnapshotLoad2();
+  } else {
+    importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+    importhook.register_js_module("js", API.config.jsglobals);
+    importhook.register_js_module("pyodide_js", pyodide);
+  }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
