@@ -15,7 +15,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
-from urllib import request
+from urllib import parse, request
 
 from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
@@ -319,10 +319,8 @@ class RecipeBuilder:
         )
         if "filename" in parameters:
             tarballname = parameters["filename"]
-            # Remove a possible query string
-            tarballname = tarballname.rsplit("?")[0]
         else:
-            tarballname = Path(response.geturl()).name
+            tarballname = Path(parse.urlparse(response.geturl()).path).name
 
         self.build_dir.mkdir(parents=True, exist_ok=True)
         tarballpath = self.build_dir / tarballname
