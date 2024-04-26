@@ -1,5 +1,6 @@
 import pytest
 
+
 def test_make_snapshot_requires_arg(selenium):
     match = "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide"
     with pytest.raises(selenium.JavascriptException, match=match):
@@ -12,7 +13,7 @@ def test_make_snapshot_requires_arg(selenium):
 
 def test_snapshot_bad_magic(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    match="Snapshot has invalid magic number"
+    match = "Snapshot has invalid magic number"
     with pytest.raises(selenium.JavascriptException, match=match):
         selenium.run_js(
             """
@@ -41,14 +42,14 @@ def test_snapshot_simple(selenium_standalone_noload):
 
 def test_snapshot_cannot_serialize(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    match="Can't serialize object at index"
+    match = "Can't serialize object at index"
     with pytest.raises(selenium.JavascriptException, match=match):
         selenium.run_js(
             """
             const py1 = await loadPyodide({_makeSnapshot: true});
             py1.runPython(`
                 from js import Headers, URL
-                
+
                 a = Headers.new()
             `);
             py1.makeMemorySnapshot();
@@ -67,7 +68,7 @@ def test_snapshot_deleted_proxy(selenium_standalone_noload):
 
             assert run_js("1+1") == 2
             assert run_js("(x) => x.get('a')")({'a': 7}) == 7
-            
+
             a = Headers.new()
             del a
         `);
@@ -76,7 +77,7 @@ def test_snapshot_deleted_proxy(selenium_standalone_noload):
         py2.runPython(`
             assert run_js("1+1") == 2
             assert run_js("(x) => x.get('a')")({'a': 7}) == 7
-            
+
             a = Headers.new()
         `);
         """
@@ -94,7 +95,7 @@ def test_snapshot_stacked(selenium_standalone_noload):
 
             assert run_js("1+1") == 2
             assert run_js("(x) => x.get('a')")({'a': 7}) == 7
-            
+
             a = Headers.new()
             del a
         `);
@@ -107,7 +108,7 @@ def test_snapshot_stacked(selenium_standalone_noload):
 
             t = URL.new("http://a.com/z?t=2").searchParams["t"]
             assert t == "2"
-            
+
             a = Headers.new()
             del a
         `);
@@ -119,9 +120,8 @@ def test_snapshot_stacked(selenium_standalone_noload):
 
             t = URL.new("http://a.com/z?t=2").searchParams["t"]
             assert t == "2"
-            
+
             a = Headers.new()
         `);
         """
     )
-
