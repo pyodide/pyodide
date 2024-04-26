@@ -1,7 +1,23 @@
+import { jsFinderHook } from "./api";
+import { scheduleCallback } from "./scheduler";
+
 declare var Module: any;
+const MAP_INDEX = 5;
+
+export function getExpectedKeys() {
+  return [
+    null,
+    jsFinderHook,
+    API.config.jsglobals,
+    API.public_api,
+    API,
+    scheduleCallback,
+    API,
+    {},
+  ];
+}
 
 const getAccessorList = Symbol("getAccessorList");
-const illegalOperation = "Illegal operation while taking memory snapshot: ";
 /**
  * @private
  */
@@ -16,6 +32,16 @@ export function makeGlobalsProxy(
       }
       // @ts-ignore
       const orig = Reflect.get(...arguments);
+      const descr = Reflect.getOwnPropertyDescriptor(target, prop);
+      // We're required to return the original value unmodified if it's an own
+      // property with a non-writable, non-configurable data descriptor
+      if (descr && descr.writable === false && !descr.configurable) {
+        return orig;
+      }
+      // Or an accessor descriptor with a setter but no getter
+      if (descr && descr.set && !descr.get) {
+        return orig;
+      }
       if (!["object", "function"].includes(typeof orig)) {
         return orig;
       }
@@ -28,50 +54,12 @@ export function makeGlobalsProxy(
         "[getProtoTypeOf]",
       ]);
     },
-    // has, ownKeys, isExtensible left alone
-    apply() {
-      throw new Error(illegalOperation + "apply " + accessorList.join("."));
-    },
-    construct() {
-      throw new Error(illegalOperation + "construct " + accessorList.join("."));
-    },
-    defineProperty(target, prop, val) {
-      if (prop === "__all__") {
-        // @ts-ignore
-        return Reflect.defineProperty(...arguments);
-      }
-      throw new Error(
-        illegalOperation + "defineProperty " + accessorList.join("."),
-      );
-    },
-    deleteProperty() {
-      throw new Error(
-        illegalOperation + "deleteProperty " + accessorList.join("."),
-      );
-    },
-    getOwnPropertyDescriptor() {
-      throw new Error(
-        illegalOperation + "getOwnPropertyDescriptor " + accessorList.join("."),
-      );
-    },
-    preventExtensions() {
-      throw new Error(
-        illegalOperation + "preventExtensions " + accessorList.join("."),
-      );
-    },
-    set() {
-      throw new Error(illegalOperation + "set " + accessorList.join("."));
-    },
-    setPrototypeOf() {
-      throw new Error(
-        illegalOperation + "setPrototypeOf " + accessorList.join("."),
-      );
-    },
   });
 }
 
 export type SnapshotConfig = {
   hiwireKeys: (string[] | null)[];
+  immortalKeys: string[];
 };
 
 const SNAPSHOT_MAGIC = 0x706e7300; // "\x00snp"
@@ -86,17 +74,67 @@ API.makeSnapshot = function (): Uint8Array {
     );
   }
   const hiwireKeys: (string[] | null)[] = [];
-  for (let i = 0; ; i++) {
+  const expectedKeys = getExpectedKeys();
+  for (let i = 0; i < expectedKeys.length; i++) {
+    let value;
+    try {
+      value = Module.__hiwire_get(i);
+    } catch (e) {
+      throw new Error(`Failed to get value at index ${i}`);
+    }
+    let isOkay = false;
+    try {
+      isOkay =
+        value === expectedKeys[i] ||
+        JSON.stringify(value) === JSON.stringify(expectedKeys[i]);
+    } catch (e) {
+      // first comparison returned false and stringify raised
+      console.warn(e);
+    }
+    if (!isOkay) {
+      console.warn(expectedKeys[i], value);
+      throw new Error(`Unexpected hiwire entry at index ${i}`);
+    }
+  }
+
+  for (let i = expectedKeys.length; ; i++) {
     let value;
     try {
       value = Module.__hiwire_get(i);
     } catch (e) {
       break;
     }
-    hiwireKeys.push(value?.[getAccessorList] || null);
+    if (!["object", "function"].includes(typeof value)) {
+      throw new Error(
+        `Unexpected object of type ${typeof value} at index ${i}`,
+      );
+    }
+    if (value === null) {
+      hiwireKeys.push(value);
+      continue;
+    }
+    const accessorList = value[getAccessorList];
+    if (!accessorList) {
+      throw new Error(`Can't serialize object at index ${i}`);
+    }
+    hiwireKeys.push(accessorList);
+  }
+  const immortalKeys = [];
+  for (let i = MAP_INDEX + 1; ; i++) {
+    let v;
+    try {
+      v = Module.__hiwire_immortal_get(i);
+    } catch (e) {
+      break;
+    }
+    if (typeof v !== "string") {
+      throw new Error("Expected a string");
+    }
+    immortalKeys.push(v);
   }
   const snapshotConfig: SnapshotConfig = {
     hiwireKeys,
+    immortalKeys,
   };
   const snapshotConfigString = JSON.stringify(snapshotConfig);
   let snapshotOffset = HEADER_SIZE + 2 * snapshotConfigString.length;
@@ -139,3 +177,56 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
   Module.HEAP8.set(snapshot);
   return snapshotConfig;
 };
+
+/**
+ * Set up some of the JavaScript state that is normally set up by C initialization code. TODO:
+ * adjust C code to simplify.
+ *
+ * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the beginning of
+ * finalizeBootstrap before the public API is setup, syncUpSnapshotLoad2 happens near the end.
+ *
+ * This code is quite sensitive to the details of our setup, so it might break if we move stuff
+ * around far away in the code base. Ideally over time we can structure the code to make it less
+ * brittle.
+ */
+export function syncUpSnapshotLoad1() {
+  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
+  Module.__hiwire_set(0, null);
+  Module.__hiwire_immortal_add(null);
+  // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
+  Module._jslib_init();
+  // Puts deduplication map into the immortal table.
+  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function?
+  let mapIndex = Module.__hiwire_immortal_add(new Map());
+  // We expect everything after this in the immortal table to be interned strings.
+  // We need to know where to start looking for the strings so that we serialized correctly.
+  if (mapIndex !== MAP_INDEX) {
+    throw new Error(`Expected mapIndex to be ${MAP_INDEX}, got ${mapIndex}`);
+  }
+  // Set API._pyodide to a proxy of the _pyodide module.
+  // Normally called by import _pyodide.
+  Module._init_pyodide_proxy();
+}
+
+function tableSet(idx: number, val: any): void {
+  if (Module.__hiwire_set(idx, val) < 0) {
+    throw new Error("table set failed");
+  }
+}
+
+/**
+ * Fill in the JsRef table.
+ */
+export function syncUpSnapshotLoad2(
+  jsglobals: any,
+  snapshotConfig: SnapshotConfig,
+) {
+  const expectedKeys = getExpectedKeys();
+  expectedKeys.forEach((v, idx) => tableSet(idx, v));
+  snapshotConfig.hiwireKeys.forEach((e, idx) => {
+    const x = e?.reduce((x, y) => x[y], jsglobals) || null;
+    // @ts-ignore
+    tableSet(expectedKeys.length + idx, x);
+  });
+  snapshotConfig.immortalKeys.forEach((v) => Module.__hiwire_immortal_add(v));
+}

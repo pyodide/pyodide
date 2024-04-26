@@ -12,7 +12,12 @@ import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 import "./literal-map.js";
-import { makeGlobalsProxy, SnapshotConfig } from "./snapshot";
+import {
+  makeGlobalsProxy,
+  SnapshotConfig,
+  syncUpSnapshotLoad1,
+  syncUpSnapshotLoad2,
+} from "./snapshot";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -711,7 +716,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
-function jsFinderHook(o: object) {
+export function jsFinderHook(o: object) {
   if ("__all__" in o) {
     return;
   }
@@ -723,63 +728,6 @@ function jsFinderHook(o: object) {
     enumerable: false,
     configurable: true,
   });
-}
-
-/**
- * Set up some of the JavaScript state that is normally set up by C initialization code. TODO:
- * adjust C code to simplify.
- *
- * This is divided up into two parts: syncUpSnapshotLoad1 has to happen at the beginning of
- * finalizeBootstrap before the public API is setup, syncUpSnapshotLoad2 happens near the end.
- *
- * This code is quite sensitive to the details of our setup, so it might break if we move stuff
- * around far away in the code base. Ideally over time we can structure the code to make it less
- * brittle.
- */
-function syncUpSnapshotLoad1() {
-  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
-  Module.__hiwire_set(0, null);
-  Module.__hiwire_immortal_add(null);
-  // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
-  Module._jslib_init();
-  // Puts deduplication map into the immortal table.
-  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function.
-  Module.__hiwire_immortal_add(new Map());
-  // An interned JS string.
-  // TODO: Better system for handling interned strings.
-  Module.__hiwire_immortal_add(
-    "This borrowed proxy was automatically destroyed at the end of a function call. Try using create_proxy or create_once_callable.",
-  );
-  // Set API._pyodide to a proxy of the _pyodide module.
-  // Normally called by import _pyodide.
-  Module._init_pyodide_proxy();
-}
-
-function tableSet(idx: number, val: any): void {
-  if (Module.__hiwire_set(idx, val) < 0) {
-    throw new Error("table set failed");
-  }
-}
-
-/**
- * Fill in the JsRef table.
- */
-function syncUpSnapshotLoad2(snapshotConfig: SnapshotConfig) {
-  snapshotConfig.hiwireKeys.forEach((e, idx) => {
-    const x = e?.reduce((x, y) => x[y], globalThis as any) || null;
-    // @ts-ignore
-    tableSet(idx, x);
-  });
-  [
-    null,
-    jsFinderHook,
-    API.config.jsglobals,
-    API.public_api,
-    Module.API,
-    scheduleCallback,
-    Module.API,
-    {},
-  ].forEach((v, idx) => tableSet(idx, v));
 }
 
 /**
@@ -825,14 +773,14 @@ API.finalizeBootstrap = function (
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
   let pyodide = makePublicAPI();
+  if (API.config._makeSnapshot) {
+    API.config.jsglobals = makeGlobalsProxy(API.config.jsglobals);
+  }
+  const jsglobals = API.config.jsglobals;
   if (snapshotConfig) {
-    syncUpSnapshotLoad2(snapshotConfig);
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig);
   } else {
     importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-    let jsglobals = API.config.jsglobals;
-    if (API.config._makeSnapshot) {
-      jsglobals = makeGlobalsProxy(jsglobals);
-    }
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
   }
