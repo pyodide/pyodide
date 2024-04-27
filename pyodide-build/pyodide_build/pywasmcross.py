@@ -435,7 +435,8 @@ def get_export_flags(
     with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
         # Use a response file to avoid command line length limits
         f.write(json.dumps(prefixed_exports))
-        yield f"-sEXPORTED_FUNCTIONS=@{f.name}"
+
+    yield f"-sEXPORTED_FUNCTIONS=@{f.name}"
 
 
 def handle_command_generate_args(  # noqa: C901
