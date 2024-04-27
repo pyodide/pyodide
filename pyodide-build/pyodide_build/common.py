@@ -107,7 +107,9 @@ def parse_top_level_import_name(whlfile: Path) -> list[str] | None:
     return top_level_imports
 
 
-def _environment_substitute_str(string: str, env: dict[str, str] | None = None) -> str:
+def _environment_substitute_str(
+    string: str, env: Mapping[str, str] | None = None
+) -> str:
     """
     Substitute $(VAR) in string with the value of the environment variable VAR.
 

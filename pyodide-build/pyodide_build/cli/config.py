@@ -1,6 +1,6 @@
 import typer
 
-from ..build_env import get_build_environment_vars, init_environment
+from ..build_env import get_build_environment_vars, get_pyodide_root, init_environment
 
 app = typer.Typer(help="Manage config variables used in pyodide")
 
@@ -28,7 +28,7 @@ def callback() -> None:
 def _get_configs() -> dict[str, str]:
     init_environment(quiet=True)
 
-    configs: dict[str, str] = get_build_environment_vars()
+    configs: dict[str, str] = get_build_environment_vars(get_pyodide_root())
 
     configs_filtered = {k: configs[v] for k, v in PYODIDE_CONFIGS.items()}
     return configs_filtered

@@ -9,6 +9,7 @@ import pytest
 from conftest import ROOT_PATH
 from pyodide_build import build_env, common
 from pyodide_build.xbuildenv import CrossBuildEnvManager
+from pyodide_build.config import BUILD_KEY_TO_VAR
 
 from .fixture import reset_cache, reset_env_vars, xbuildenv
 
@@ -59,29 +60,22 @@ class TestInTree:
         assert not build_env.in_xbuildenv()
 
     def test_get_build_environment_vars(self, reset_env_vars, reset_cache):
-        build_vars = build_env.get_build_environment_vars()
+        build_vars = build_env.get_build_environment_vars(ROOT_PATH)
 
-        # extra variables that does not come from Makefile.envs but are added by build_env.py
-        extra_vars = set(
-            ["PYODIDE", "MESON_CROSS_FILE", "CMAKE_TOOLCHAIN_FILE", "PYO3_CONFIG_FILE"]
-        )
-
+        # extra variables that does not come from config files.
+        extra_vars = set(["PYODIDE", "PYODIDE_PACKAGE_ABI", "PYTHONPATH"])
+        all_keys = set(BUILD_KEY_TO_VAR.values()) | extra_vars
         for var in build_vars:
-            assert var in build_env.BUILD_VARS | extra_vars, f"Unknown {var}"
+            assert var in all_keys, f"Unknown {var}"
 
         # Additionally we set these variables
         for var in extra_vars:
             assert var in build_vars, f"Missing {var}"
 
-    def test_get_make_environment_vars(self, reset_env_vars, reset_cache):
-        make_vars = build_env._get_make_environment_vars()
-        assert make_vars["PYODIDE_ROOT"] == str(ROOT_PATH)
-
-        make_vars = build_env._get_make_environment_vars(pyodide_root=ROOT_PATH)
-        assert make_vars["PYODIDE_ROOT"] == str(ROOT_PATH)
-
     def test_get_build_flag(self, reset_env_vars, reset_cache):
-        for key, val in build_env.get_build_environment_vars().items():
+        for key, val in build_env.get_build_environment_vars(
+            pyodide_root=ROOT_PATH
+        ).items():
             assert build_env.get_build_flag(key) == val
 
         with pytest.raises(ValueError):
@@ -95,23 +89,22 @@ class TestInTree:
 
         import os
 
-        e = build_env.get_build_environment_vars()
+        e = build_env.get_build_environment_vars(ROOT_PATH)
         assert e["PYODIDE"] == "1"
 
         monkeypatch.setenv("HOME", "/home/user")
         monkeypatch.setenv("PATH", "/usr/bin:/bin")
-        monkeypatch.setenv("PKG_CONFIG_LIBDIR", "/x/y/z:/c/d/e")
+        # We now inject PKG_CONFIG_LIBDIR inside buildpkg.py
+        # monkeypatch.setenv("PKG_CONFIG_LIBDIR", "/x/y/z:/c/d/e")
 
         build_env.get_build_environment_vars.cache_clear()
 
-        e_host = build_env.get_build_environment_vars()
+        e_host = build_env.get_build_environment_vars(ROOT_PATH)
         assert e_host.get("HOME") == os.environ.get("HOME")
         assert e_host.get("PATH") == os.environ.get("PATH")
-        assert e_host["PKG_CONFIG_LIBDIR"].endswith("/x/y/z:/c/d/e")
 
         assert e_host.get("HOME") != e.get("HOME")
         assert e_host.get("PATH") != e.get("PATH")
-        assert e_host.get("PKG_CONFIG_LIBDIR") != e.get("PKG_CONFIG_LIBDIR")
 
         build_env.get_build_environment_vars.cache_clear()
 
@@ -119,7 +112,7 @@ class TestInTree:
         monkeypatch.setenv("RANDOM_ENV", "1234")
 
         build_env.get_build_environment_vars.cache_clear()
-        e = build_env.get_build_environment_vars()
+        e = build_env.get_build_environment_vars(ROOT_PATH)
         assert "HOME" not in e
         assert "RANDOM_ENV" not in e
 
@@ -146,15 +139,68 @@ class TestOutOfTree(TestInTree):
     def test_in_xbuildenv(self, xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
 
-    def test_get_make_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
+    def test_get_build_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
         manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
-        make_vars = build_env._get_make_environment_vars()
-        assert make_vars["PYODIDE_ROOT"] == str(manager.pyodide_root)
+        build_vars = build_env.get_build_environment_vars(manager.pyodide_root)
 
-        make_vars = build_env._get_make_environment_vars(
+        # extra variables that does not come from config files.
+        extra_vars = set(["PYODIDE", "PYODIDE_PACKAGE_ABI", "PYTHONPATH"])
+
+        all_keys = set(BUILD_KEY_TO_VAR.values()) | extra_vars
+        for var in build_vars:
+            assert var in all_keys, f"Unknown {var}"
+
+        # Additionally we set these variables
+        for var in extra_vars:
+            assert var in build_vars, f"Missing {var}"
+
+    def test_get_build_flag(self, xbuildenv, reset_env_vars, reset_cache):
+        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        for key, val in build_env.get_build_environment_vars(
             pyodide_root=manager.pyodide_root
-        )
-        assert make_vars["PYODIDE_ROOT"] == str(manager.pyodide_root)
+        ).items():
+            assert build_env.get_build_flag(key) == val
+
+        with pytest.raises(ValueError):
+            build_env.get_build_flag("UNKNOWN_VAR")
+
+    def test_get_build_environment_vars_host_env(
+        self, monkeypatch, xbuildenv, reset_env_vars, reset_cache
+    ):
+        # host environment variables should have precedence over
+        # variables defined in Makefile.envs
+
+        import os
+
+        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        pyodide_root = manager.pyodide_root
+
+        e = build_env.get_build_environment_vars(pyodide_root)
+        assert e["PYODIDE"] == "1"
+
+        monkeypatch.setenv("HOME", "/home/user")
+        monkeypatch.setenv("PATH", "/usr/bin:/bin")
+        # We now inject PKG_CONFIG_LIBDIR inside buildpkg.py
+        # monkeypatch.setenv("PKG_CONFIG_LIBDIR", "/x/y/z:/c/d/e")
+
+        build_env.get_build_environment_vars.cache_clear()
+
+        e_host = build_env.get_build_environment_vars(pyodide_root)
+        assert e_host.get("HOME") == os.environ.get("HOME")
+        assert e_host.get("PATH") == os.environ.get("PATH")
+
+        assert e_host.get("HOME") != e.get("HOME")
+        assert e_host.get("PATH") != e.get("PATH")
+
+        build_env.get_build_environment_vars.cache_clear()
+
+        monkeypatch.delenv("HOME")
+        monkeypatch.setenv("RANDOM_ENV", "1234")
+
+        build_env.get_build_environment_vars.cache_clear()
+        e = build_env.get_build_environment_vars(pyodide_root)
+        assert "HOME" not in e
+        assert "RANDOM_ENV" not in e
 
 
 def test_check_emscripten_version(monkeypatch):

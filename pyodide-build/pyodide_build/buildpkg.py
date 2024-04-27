@@ -23,6 +23,7 @@ from .build_env import (
     RUST_BUILD_PRELUDE,
     BuildArgs,
     get_build_environment_vars,
+    get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -294,8 +295,7 @@ class RecipeBuilder:
         Download the source from specified in the package metadata,
         then checksum it, then extract the archive into the build directory.
         """
-
-        build_env = get_build_environment_vars()
+        build_env = get_build_environment_vars(get_pyodide_root())
         url = cast(str, self.source_metadata.url)  # we know it's not None
         url = _environment_substitute_str(url, build_env)
 
