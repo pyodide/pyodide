@@ -7,7 +7,7 @@ import pydantic
 import pytest
 
 from pyodide_build import build_env, buildpkg, common
-from pyodide_build.build_env import BuildArgs
+from pyodide_build.build_env import BuildArgs, get_pyodide_root
 from pyodide_build.buildpkg import RecipeBuilder
 from pyodide_build.io import _SourceSpec
 
@@ -71,7 +71,7 @@ def test_prepare_source(monkeypatch, tmp_path):
         returncode = 0
         stdout = ""
 
-    build_env.get_build_environment_vars()
+    build_env.get_build_environment_vars(get_pyodide_root())
     monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess_result)
     monkeypatch.setattr(buildpkg, "check_checksum", lambda *args, **kwargs: True)
     monkeypatch.setattr(shutil, "unpack_archive", lambda *args, **kwargs: True)

@@ -13,55 +13,14 @@ from pathlib import Path
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
-from .common import exit_with_stdio, xbuildenv_dirname
-from .logger import logger
+from .common import xbuildenv_dirname
+from .config import ConfigManager
 from .recipe import load_all_recipes
 
 RUST_BUILD_PRELUDE = """
 rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
 rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
 """
-
-
-BUILD_VARS: set[str] = {
-    "CARGO_BUILD_TARGET",
-    "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
-    "HOME",
-    "HOSTINSTALLDIR",
-    "HOSTSITEPACKAGES",
-    "NUMPY_LIB",
-    "PATH",
-    "PLATFORM_TRIPLET",
-    "PIP_CONSTRAINT",
-    "PYMAJOR",
-    "PYMICRO",
-    "PYMINOR",
-    "PYO3_CROSS_INCLUDE_DIR",
-    "PYO3_CROSS_LIB_DIR",
-    "PYODIDE_EMSCRIPTEN_VERSION",
-    "PYODIDE_JOBS",
-    "PYODIDE_PACKAGE_ABI",
-    "PYODIDE_ROOT",
-    "PYTHON_ARCHIVE_SHA256",
-    "PYTHON_ARCHIVE_URL",
-    "PYTHONINCLUDE",
-    "PYTHONPATH",
-    "PYVERSION",
-    "RUSTFLAGS",
-    "RUST_TOOLCHAIN",
-    "SIDE_MODULE_CFLAGS",
-    "SIDE_MODULE_CXXFLAGS",
-    "SIDE_MODULE_LDFLAGS",
-    "STDLIB_MODULE_CFLAGS",
-    "SYSCONFIGDATA_DIR",
-    "SYSCONFIG_NAME",
-    "TARGETINSTALLDIR",
-    "WASM_LIBRARY_DIR",
-    "CMAKE_TOOLCHAIN_FILE",
-    "PYO3_CONFIG_FILE",
-    "MESON_CROSS_FILE",
-    "PKG_CONFIG_LIBDIR",
-}
 
 
 @dataclasses.dataclass(eq=False, order=False, kw_only=True)
@@ -166,83 +125,33 @@ def in_xbuildenv() -> bool:
 
 
 @functools.cache
-def get_build_environment_vars() -> dict[str, str]:
+def get_build_environment_vars(pyodide_root: Path) -> dict[str, str]:
     """
     Get common environment variables for the in-tree and out-of-tree build.
     """
-    env = _get_make_environment_vars().copy()
+    config_manager = ConfigManager(pyodide_root)
+    env = config_manager.to_env()
 
-    # Allow users to overwrite the build environment variables by setting
-    # host environment variables.
-    # TODO: Add modifiable configuration file instead.
-    # (https://github.com/pyodide/pyodide/pull/3737/files#r1161247201)
-    env.update({key: os.environ[key] for key in BUILD_VARS if key in os.environ})
-    env["PYODIDE"] = "1"
-
-    tools_dir = Path(__file__).parent / "tools"
-
-    if "CMAKE_TOOLCHAIN_FILE" not in env:
-        env["CMAKE_TOOLCHAIN_FILE"] = str(
-            tools_dir / "cmake/Modules/Platform/Emscripten.cmake"
-        )
-
-    if "PYO3_CONFIG_FILE" not in env:
-        env["PYO3_CONFIG_FILE"] = str(tools_dir / "pyo3_config.ini")
-
-    if "MESON_CROSS_FILE" not in env:
-        env["MESON_CROSS_FILE"] = str(tools_dir / "emscripten.meson.cross")
-
-    hostsitepackages = env["HOSTSITEPACKAGES"]
-    pythonpath = [
-        hostsitepackages,
-    ]
-    env["PYTHONPATH"] = ":".join(pythonpath)
-
-    return env
-
-
-def _get_make_environment_vars(*, pyodide_root: Path | None = None) -> dict[str, str]:
-    """Load environment variables from Makefile.envs
-
-    This allows us to set all build vars in one place
-
-    Parameters
-    ----------
-    pyodide_root
-        The root directory of the Pyodide repository. If None, this will be inferred.
-    """
-    PYODIDE_ROOT = get_pyodide_root() if pyodide_root is None else pyodide_root
-    environment = {}
-    result = subprocess.run(
-        ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
-        capture_output=True,
-        text=True,
-        env={"PYODIDE_ROOT": str(PYODIDE_ROOT)},
+    env.update(
+        {
+            # This environment variable is used for packages to detect if they are built
+            # for pyodide during build time
+            "PYODIDE": "1",
+            # This is the legacy environment variable used for the aforementioned purpose
+            "PYODIDE_PACKAGE_ABI": "1",
+            "PYTHONPATH": env["HOSTSITEPACKAGES"],
+        }
     )
 
-    if result.returncode != 0:
-        logger.error("ERROR: Failed to load environment variables from Makefile.envs")
-        exit_with_stdio(result)
-
-    for line in result.stdout.splitlines():
-        equalPos = line.find("=")
-        if equalPos != -1:
-            varname = line[0:equalPos]
-
-            if varname not in BUILD_VARS:
-                continue
-
-            value = line[equalPos + 1 :]
-            value = value.strip("'").strip()
-            environment[varname] = value
-    return environment
+    return env
 
 
 def get_build_flag(name: str) -> str:
     """
     Get a value of a build flag.
     """
-    build_vars = get_build_environment_vars()
+    pyodide_root = get_pyodide_root()
+    build_vars = get_build_environment_vars(pyodide_root)
     if name not in build_vars:
         raise ValueError(f"Unknown build flag: {name}")
 

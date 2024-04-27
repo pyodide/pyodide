@@ -1,0 +1,108 @@
+From ec6451264b6a348f4a6eaa2e067fb1ffa432a6c2 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Tue, 23 Apr 2024 10:04:42 +0000
+Subject: [PATCH 1/1] Fix compilation on 32-bit platforms.
+
+Partially applies the upstream PR: https://github.com/dmlc/xgboost/pull/8964
+
+---
+ src/collective/communicator-inl.h | 9 ---------
+ src/common/quantile.cc            | 6 +++---
+ src/data/iterative_dmatrix.cc     | 2 +-
+ src/metric/auc.cc                 | 2 +-
+ src/objective/adaptive.h          | 2 +-
+ 5 files changed, 6 insertions(+), 15 deletions(-)
+
+diff --git a/src/collective/communicator-inl.h b/src/collective/communicator-inl.h
+index 991e19f2c..ea7b415b1 100644
+--- a/cpp_src/src/collective/communicator-inl.h
++++ b/cpp_src/src/collective/communicator-inl.h
+@@ -288,15 +288,6 @@ inline void Allreduce(uint64_t *send_receive_buffer, size_t count) {
+   Communicator::Get()->AllReduce(send_receive_buffer, count, DataType::kUInt64, op);
+ }
+ 
+-// Specialization for size_t, which is implementation defined, so it might or might not
+-// be one of uint64_t/uint32_t/unsigned long long/unsigned long.
+-template <Operation op, typename T,
+-          typename = std::enable_if_t<std::is_same<size_t, T>{} && !std::is_same<uint64_t, T>{}> >
+-inline void Allreduce(T *send_receive_buffer, size_t count) {
+-  static_assert(sizeof(T) == sizeof(uint64_t));
+-  Communicator::Get()->AllReduce(send_receive_buffer, count, DataType::kUInt64, op);
+-}
+-
+ template <Operation op>
+ inline void Allreduce(float *send_receive_buffer, size_t count) {
+   Communicator::Get()->AllReduce(send_receive_buffer, count, DataType::kFloat, op);
+diff --git a/src/common/quantile.cc b/src/common/quantile.cc
+index 8c743d940..0ea819c38 100644
+--- a/cpp_src/src/common/quantile.cc
++++ b/cpp_src/src/common/quantile.cc
+@@ -154,7 +154,7 @@ void SketchContainerImpl<WQSketch>::GatherSketchInfo(
+   worker_segments.resize(1, 0);
+   auto world = collective::GetWorldSize();
+   auto rank = collective::GetRank();
+-  auto n_columns = sketches_.size();
++  std::uint64_t n_columns = sketches_.size();
+ 
+   // get the size of each feature.
+   std::vector<bst_idx_t> sketch_size;
+@@ -285,7 +285,7 @@ void SketchContainerImpl<WQSketch>::AllReduce(
+     std::vector<typename WQSketch::SummaryContainer> *p_reduced, std::vector<int32_t> *p_num_cuts) {
+   monitor_.Start(__func__);
+ 
+-  size_t n_columns = sketches_.size();
++  std::uint64_t n_columns = sketches_.size();
+   collective::Allreduce<collective::Operation::kMax>(&n_columns, 1);
+   CHECK_EQ(n_columns, sketches_.size()) << "Number of columns differs across workers";
+ 
+@@ -339,7 +339,7 @@ void SketchContainerImpl<WQSketch>::AllReduce(
+   ParallelFor(n_columns, n_threads_, [&](auto fidx) {
+     // gcc raises subobject-linkage warning if we put allreduce_result as lambda capture
+     QuantileAllreduce<typename WQSketch::Entry> allreduce_result{global_sketches, worker_segments,
+-                                                                 sketches_scan, n_columns};
++                                                                 sketches_scan, static_cast<size_t>(n_columns)};
+     int32_t intermediate_num_cuts = num_cuts[fidx];
+     auto nbytes = WQSketch::SummaryContainer::CalcMemCost(intermediate_num_cuts);
+     if (IsCat(feature_types_, fidx)) {
+diff --git a/src/data/iterative_dmatrix.cc b/src/data/iterative_dmatrix.cc
+index 0d75d0651..75f9d1145 100644
+--- a/cpp_src/src/data/iterative_dmatrix.cc
++++ b/cpp_src/src/data/iterative_dmatrix.cc
+@@ -100,7 +100,7 @@ void SyncFeatureType(Context const*, std::vector<FeatureType>* p_h_ft) {
+     return;
+   }
+   auto& h_ft = *p_h_ft;
+-  auto n_ft = h_ft.size();
++  std::uint64_t n_ft = h_ft.size();
+   collective::Allreduce<collective::Operation::kMax>(&n_ft, 1);
+   if (!h_ft.empty()) {
+     // Check correct size if this is not an empty DMatrix.
+diff --git a/src/metric/auc.cc b/src/metric/auc.cc
+index 212a3a027..bf2862a7d 100644
+--- a/cpp_src/src/metric/auc.cc
++++ b/cpp_src/src/metric/auc.cc
+@@ -264,7 +264,7 @@ class EvalAUC : public MetricNoCache {
+       info.weights_.SetDevice(ctx_->Device());
+     }
+     //  We use the global size to handle empty dataset.
+-    std::array<size_t, 2> meta{info.labels.Size(), preds.Size()};
++    std::array<bst_idx_t, 2> meta{info.labels.Size(), preds.Size()};
+     if (!info.IsVerticalFederated()) {
+       collective::Allreduce<collective::Operation::kMax>(meta.data(), meta.size());
+     }
+diff --git a/src/objective/adaptive.h b/src/objective/adaptive.h
+index cbe69e79a..c9e92ae59 100644
+--- a/cpp_src/src/objective/adaptive.h
++++ b/cpp_src/src/objective/adaptive.h
+@@ -42,7 +42,7 @@ inline void UpdateLeafValues(Context const* ctx, std::vector<float>* p_quantiles
+   auto& quantiles = *p_quantiles;
+   auto const& h_node_idx = nidx;
+ 
+-  size_t n_leaf = collective::GlobalMax(ctx, info, h_node_idx.size());
++  std::uint64_t n_leaf = collective::GlobalMax(ctx, info, static_cast<std::uint64_t>(h_node_idx.size()));
+   CHECK(quantiles.empty() || quantiles.size() == n_leaf);
+   if (quantiles.empty()) {
+     quantiles.resize(n_leaf, std::numeric_limits<float>::quiet_NaN());
+-- 
+2.43.2
+
