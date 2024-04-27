@@ -135,11 +135,11 @@ def test_pandas(selenium):
     # 1  2    0    1    0
     # 2  3    0    0    1
     result, _, _ = xgb.data._transform_pandas_df(dummies, enable_categorical=False)
-    exp = np.array([[1.0, 1.0, 0.0, 0.0], [2.0, 0.0, 1.0, 0.0], [3.0, 0.0, 0.0, 1.0]])
-    np.testing.assert_array_equal(result, exp)
+    exp = np.array([[1.0, 1.0, 0.0, 0.0], [2.0, 0.0, 1.0, 0.0], [3.0, 0.0, 0.0, 1.0]]).T
+    np.testing.assert_array_equal(result.columns, exp)
     dm = xgb.DMatrix(dummies)
     assert dm.feature_names == ["B", "A_X", "A_Y", "A_Z"]
-    assert dm.feature_types == ["int", "int", "int", "int"]
+    assert dm.feature_types == ["int", "i", "i", "i"]
     assert dm.num_row() == 3
     assert dm.num_col() == 4
 
@@ -228,7 +228,7 @@ def test_pandas_categorical(selenium):
         X, enable_categorical=True
     )
 
-    assert transformed[:, 0].min() == 0
+    assert transformed.columns[0].min() == 0
 
     # test missing value
     X = pd.DataFrame({"f0": ["a", "b", np.NaN]})
@@ -282,18 +282,18 @@ def test_pandas_label(selenium):
     # label must be a single column
     df = pd.DataFrame({"A": ["X", "Y", "Z"], "B": [1, 2, 3]})
     with pytest.raises(ValueError):
-        xgb.data._transform_pandas_df(df, False, None, None, "label", "float")
+        xgb.data._transform_pandas_df(df, False, None, None, "label")
 
     # label must be supported dtype
     df = pd.DataFrame({"A": np.array(["a", "b", "c"], dtype=object)})
     with pytest.raises(ValueError):
-        xgb.data._transform_pandas_df(df, False, None, None, "label", "float")
+        xgb.data._transform_pandas_df(df, False, None, None, "label")
 
     df = pd.DataFrame({"A": np.array([1, 2, 3], dtype=int)})
-    result, _, _ = xgb.data._transform_pandas_df(
-        df, False, None, None, "label", "float"
+    result, _, _ = xgb.data._transform_pandas_df(df, False, None, None, "label")
+    np.testing.assert_array_equal(
+        np.stack(result.columns, axis=1), np.array([[1.0], [2.0], [3.0]], dtype=float)
     )
-    np.testing.assert_array_equal(result, np.array([[1.0], [2.0], [3.0]], dtype=float))
     dm = xgb.DMatrix(np.random.randn(3, 2), label=df)
     assert dm.num_row() == 3
     assert dm.num_col() == 2
