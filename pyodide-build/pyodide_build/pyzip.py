@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from ._py_compile import _compile
 from .common import make_zip_archive
 
+
 def default_filterfunc(
     root: Path, excludes: list[str], stubs: list[str], verbose: bool = False
 ) -> Callable[[str, list[str]], set[str]]:
@@ -42,9 +43,7 @@ def default_filterfunc(
         return False
 
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
-        filtered_files = {
-            (root / f).resolve() for f in excludes
-        }
+        filtered_files = {(root / f).resolve() for f in excludes}
 
         # We have JS implementations of these modules, so we don't need to
         # include the Python ones. Checking the name of the root directory
@@ -74,8 +73,8 @@ def default_filterfunc(
 
 def create_zipfile(
     libdirs: list[Path],
-    excludes: list[str] = [],
-    stubs: list[str] = [],
+    excludes: list[str] | None = None,
+    stubs: list[str] | None = None,
     output: Path | str = "python",
     pycompile: bool = False,
     filterfunc: Callable[[str, list[str]], set[str]] | None = None,
@@ -101,10 +100,10 @@ def create_zipfile(
 
     excludes
         List of files to exclude from the zip file.
-    
+
     stubs
         List of files that are replaced by JS implementations.
-        
+
     output
         Path to the output zip file. Defaults to python.zip.
 
@@ -127,6 +126,8 @@ def create_zipfile(
     """
 
     archive = Path(output)
+    excludes = excludes or []
+    stubs = stubs or []
 
     with TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)

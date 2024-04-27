@@ -1,5 +1,5 @@
-from pathlib import Path
 import re
+from pathlib import Path
 
 import typer
 
@@ -15,7 +15,7 @@ def main(
         "",
         help="List of files to exclude from the zip file. Defaults to no files.",
     ),
-    stubs: str = typer.Option(
+    stub: str = typer.Option(
         "",
         help="List of files that are replaced by JS implementations. Defaults to no files.",
     ),
@@ -37,7 +37,7 @@ def main(
     excludes = [
         item.strip() for item in re.split(r",|\s", exclude) if item.strip() != ""
     ]
-    stubs = [item.strip() for item in re.split(r",|\s", stubs) if item.strip() != ""]
+    stubs = [item.strip() for item in re.split(r",|\s", stub) if item.strip() != ""]
 
     create_zipfile(
         libdir,
