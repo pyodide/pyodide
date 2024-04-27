@@ -905,15 +905,15 @@ def install_packages(
 def set_default_build_args(build_args: BuildArgs) -> BuildArgs:
     args = dataclasses.replace(build_args)
 
-    if args.cflags is None:
-        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")  # type: ignore[unreachable]
-    if args.cxxflags is None:
-        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")  # type: ignore[unreachable]
-    if args.ldflags is None:
-        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")  # type: ignore[unreachable]
-    if args.target_install_dir is None:
-        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")  # type: ignore[unreachable]
-    if args.host_install_dir is None:
-        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")  # type: ignore[unreachable]
+    if not args.cflags:
+        args.cflags = build_env.get_build_flag("SIDE_MODULE_CFLAGS")
+    if not args.cxxflags:
+        args.cxxflags = build_env.get_build_flag("SIDE_MODULE_CXXFLAGS")
+    if not args.ldflags:
+        args.ldflags = build_env.get_build_flag("SIDE_MODULE_LDFLAGS")
+    if not args.target_install_dir:
+        args.target_install_dir = build_env.get_build_flag("TARGETINSTALLDIR")
+    if not args.host_install_dir:
+        args.host_install_dir = build_env.get_build_flag("HOSTINSTALLDIR")
 
     return args

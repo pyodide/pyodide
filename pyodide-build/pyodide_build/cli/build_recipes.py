@@ -67,20 +67,20 @@ def build_recipes_no_deps(
         "Default: recipe_dir.",
     ),
     cflags: str = typer.Option(
-        None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
+        "", help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
     ),
     cxxflags: str = typer.Option(
-        None, help="Extra compiling flags. Default: SIDE_MODULE_CXXFLAGS"
+        "", help="Extra compiling flags. Default: SIDE_MODULE_CXXFLAGS"
     ),
     ldflags: str = typer.Option(
-        None, help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS"
+        "", help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS"
     ),
     target_install_dir: str = typer.Option(
-        None,
+        "",
         help="The path to the target Python installation. Default: TARGETINSTALLDIR",
     ),
     host_install_dir: str = typer.Option(
-        None,
+        "",
         help="Directory for installing built host packages. Default: HOSTINSTALLDIR",
     ),
     force_rebuild: bool = typer.Option(
@@ -178,11 +178,11 @@ def build_recipes(
         None, help="Extra linking flags. Default: SIDE_MODULE_LDFLAGS"
     ),
     target_install_dir: str = typer.Option(
-        None,
+        "",
         help="The path to the target Python installation. Default: TARGETINSTALLDIR",
     ),
     host_install_dir: str = typer.Option(
-        None,
+        "",
         help="Directory for installing built host packages. Default: HOSTINSTALLDIR",
     ),
     log_dir: str = typer.Option(None, help="Directory to place log files"),
