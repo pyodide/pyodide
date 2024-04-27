@@ -302,11 +302,13 @@ class RecipeBuilder:
         max_retry = 3
         for retry_cnt in range(max_retry):
             response = requests.get(url)
-            if not response.ok:
+            try:
+                response.raise_for_status()
+            except requests.HTTPError as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
-                    )
+                    ) from e
 
                 continue
 
