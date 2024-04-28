@@ -1,4 +1,3 @@
-declare var Module: any;
 import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
@@ -606,7 +605,7 @@ export class PyodideAPI {
    * purpose you like.
    */
   static setInterruptBuffer(interrupt_buffer: TypedArray) {
-    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = !!interrupt_buffer;
+    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = +!!interrupt_buffer;
     Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
   }
 
