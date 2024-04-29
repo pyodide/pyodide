@@ -9,6 +9,7 @@ source:
 requirements:
   run:
     - numpy
+    - packaging
     - sympy
 about:
   home: https://github.com/yt-project/unyt
