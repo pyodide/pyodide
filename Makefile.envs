@@ -154,6 +154,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_hiwire_pop \
 			,__hiwire_get \
 			,__hiwire_set \
+			,__hiwire_immortal_get \
 			,__hiwire_immortal_add \
 			,_jslib_init \
 			,_init_pyodide_proxy \
