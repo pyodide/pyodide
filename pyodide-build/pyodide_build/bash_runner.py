@@ -106,7 +106,7 @@ def get_bash_runner(
     extra_envs: dict[str, str],
 ) -> Iterator[BashRunnerWithSharedEnvironment]:
     pyodide_root = get_pyodide_root()
-    env = get_build_environment_vars()
+    env = get_build_environment_vars(pyodide_root)
     env.update(extra_envs)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:

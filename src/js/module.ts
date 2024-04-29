@@ -3,24 +3,25 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { Module } from "./types";
+import { EmscriptenSettings } from "./types";
 
 /**
  * The Emscripten Module.
  *
  * @private
  */
-export function createModule(): Module {
-  let Module: any = {};
-  Module.noImageDecoding = true;
-  Module.noAudioDecoding = true;
-  Module.noWasmDecoding = false; // we preload wasm using the built in plugin now
-  Module.preRun = [];
-  Module.quit = (status: number, toThrow: Error) => {
-    Module.exited = { status, toThrow };
-    throw toThrow;
+export function createSettings(): EmscriptenSettings {
+  const settings: EmscriptenSettings = {
+    noImageDecoding: true,
+    noAudioDecoding: true,
+    noWasmDecoding: false,
+    preRun: [],
+    quit(status: number, toThrow: Error) {
+      settings.exited = { status, toThrow };
+      throw toThrow;
+    },
   };
-  return Module as Module;
+  return settings;
 }
 
 /**
@@ -31,8 +32,8 @@ export function createModule(): Module {
  * @param path The path to the home directory.
  * @private
  */
-function createHomeDirectory(Module: Module, path: string) {
-  Module.preRun.push(function () {
+function createHomeDirectory(settings: EmscriptenSettings, path: string) {
+  settings.preRun.push(function (Module) {
     const fallbackPath = "/";
     try {
       Module.FS.mkdirTree(path);
@@ -46,8 +47,11 @@ function createHomeDirectory(Module: Module, path: string) {
   });
 }
 
-function setEnvironment(Module: Module, env: { [key: string]: string }) {
-  Module.preRun.push(function () {
+function setEnvironment(
+  settings: EmscriptenSettings,
+  env: { [key: string]: string },
+) {
+  settings.preRun.push(function (Module) {
     Object.assign(Module.ENV, env);
   });
 }
@@ -57,8 +61,8 @@ function setEnvironment(Module: Module, env: { [key: string]: string }) {
  * @param module The Emscripten Module.
  * @param mounts The list of paths to mount.
  */
-function mountLocalDirectories(Module: Module, mounts: string[]) {
-  Module.preRun.push(() => {
+function mountLocalDirectories(settings: EmscriptenSettings, mounts: string[]) {
+  settings.preRun.push((Module) => {
     for (const mount of mounts) {
       Module.FS.mkdirTree(mount);
       Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
@@ -80,10 +84,10 @@ function mountLocalDirectories(Module: Module, mounts: string[]) {
  * @param Module The Emscripten Module.
  * @param stdlibPromise A promise that resolves to the standard library.
  */
-function installStdlib(Module: Module, stdlibURL: string) {
+function installStdlib(settings: EmscriptenSettings, stdlibURL: string) {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
 
-  Module.preRun.push(() => {
+  settings.preRun.push((Module) => {
     /* @ts-ignore */
     const pymajor = Module._py_version_major();
     /* @ts-ignore */
@@ -112,7 +116,10 @@ function installStdlib(Module: Module, stdlibURL: string) {
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
-export function initializeFileSystem(Module: Module, config: ConfigType) {
+export function initializeFileSystem(
+  settings: EmscriptenSettings,
+  config: ConfigType,
+) {
   let stdLibURL;
   if (config.stdLibURL != undefined) {
     stdLibURL = config.stdLibURL;
@@ -120,14 +127,14 @@ export function initializeFileSystem(Module: Module, config: ConfigType) {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
 
-  installStdlib(Module, stdLibURL);
-  createHomeDirectory(Module, config.env.HOME);
-  setEnvironment(Module, config.env);
-  mountLocalDirectories(Module, config._node_mounts);
-  Module.preRun.push(() => initializeNativeFS(Module));
+  installStdlib(settings, stdLibURL);
+  createHomeDirectory(settings, config.env.HOME);
+  setEnvironment(settings, config.env);
+  mountLocalDirectories(settings, config._node_mounts);
+  settings.preRun.push((Module) => initializeNativeFS(Module));
 }
 
-export function preloadWasm(Module: Module, indexURL: string) {
+export function preloadWasm(settings: EmscriptenSettings, indexURL: string) {
   if (SOURCEMAP) {
     // According to the docs:
     //
@@ -137,7 +144,7 @@ export function preloadWasm(Module: Module, indexURL: string) {
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  Module.instantiateWasm = function (
+  settings.instantiateWasm = function (
     imports: { [key: string]: any },
     successCallback: (
       instance: WebAssembly.Instance,
