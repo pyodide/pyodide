@@ -9,11 +9,12 @@ import {
   loadLockFile,
 } from "./compat";
 
-import { createSettings, initializeFileSystem, preloadWasm } from "./module";
+import { createSettings } from "./emscriptenSettings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, API, Module, EmscriptenSettings } from "./types";
+import type { TypedArray, API, Module } from "./types";
+import type { EmscriptenSettings } from "./emscriptenSettings";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 
@@ -200,24 +201,9 @@ export async function loadPyodide(
   if (!config.env.HOME) {
     config.env.HOME = "/home/pyodide";
   }
-
-  let emscriptenSettings = createSettings();
-  emscriptenSettings.print = config.stdout;
-  emscriptenSettings.printErr = config.stderr;
-  emscriptenSettings.arguments = config.args;
-
-  const API = { config } as API;
-  emscriptenSettings.API = API;
+  const emscriptenSettings = createSettings(config);
+  const API = emscriptenSettings.API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
-
-  preloadWasm(emscriptenSettings, indexURL);
-  initializeFileSystem(emscriptenSettings, config);
-
-  const moduleLoaded = new Promise((r) => (emscriptenSettings.postRun = r));
-
-  // locateFile tells Emscripten where to find the data files that initialize
-  // the file system.
-  emscriptenSettings.locateFile = (path: string) => config.indexURL + path;
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
@@ -233,8 +219,7 @@ export async function loadPyodide(
     if (snapshot?.constructor?.name === "ArrayBuffer") {
       snapshot = new Uint8Array(snapshot);
     }
-    // @ts-ignore
-    emscriptenSettings.noInitialRun = !!snapshot;
+    emscriptenSettings.noInitialRun = true;
     // @ts-ignore
     emscriptenSettings.INITIAL_MEMORY = snapshot.length;
   }
@@ -242,13 +227,9 @@ export async function loadPyodide(
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   const Module = await _createPyodideModule(emscriptenSettings);
-
-  // There is some work to be done between the module being "ready" and postRun
-  // being called.
-  await moduleLoaded;
   // Handle early exit
-  if (Module.exited) {
-    throw Module.exited.toThrow;
+  if (emscriptenSettings.exited) {
+    throw emscriptenSettings.exited.toThrow;
   }
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
