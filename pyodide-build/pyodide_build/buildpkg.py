@@ -4,18 +4,18 @@
 Builds a Pyodide package.
 """
 
-import cgi
 import fnmatch
 import os
+import re
 import shutil
 import subprocess
 import sys
-import urllib
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
-from urllib import parse, request
+
+import requests
 
 from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
@@ -301,9 +301,10 @@ class RecipeBuilder:
 
         max_retry = 3
         for retry_cnt in range(max_retry):
+            response = requests.get(url)
             try:
-                response = request.urlopen(url)
-            except urllib.error.URLError as e:
+                response.raise_for_status()
+            except requests.HTTPError as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
@@ -313,18 +314,18 @@ class RecipeBuilder:
 
             break
 
-        # TODO: replace cgi with something else (will be removed in Python 3.13)
-        _, parameters = cgi.parse_header(
-            response.headers.get("Content-Disposition", "")
-        )
-        if "filename" in parameters:
-            tarballname = parameters["filename"]
-        else:
-            tarballname = Path(parse.urlparse(response.geturl()).path).name
-
         self.build_dir.mkdir(parents=True, exist_ok=True)
+
+        tarballname = url.split("/")[-1]
+        if "Content-Disposition" in response.headers:
+            filenames = re.findall(
+                "filename=(.+)", response.headers["Content-Disposition"]
+            )
+            if filenames:
+                tarballname = filenames[0]
+
         tarballpath = self.build_dir / tarballname
-        tarballpath.write_bytes(response.read())
+        tarballpath.write_bytes(response.content)
 
         checksum = self.source_metadata.sha256
         if checksum is not None:
