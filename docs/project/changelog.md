@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
+  This Fixes "Argument list too long" error.
+
 - {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper {pr}`4705`.
 
 - {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.

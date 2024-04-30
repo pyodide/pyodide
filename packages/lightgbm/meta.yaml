@@ -6,7 +6,7 @@ source:
   sha256: 006f5784a9bcee43e5a7e943dc4f02de1ba2ee7a7af1ee5f190d383f3b6c9ebe
 build:
   backend-flags: cmake.define.USE_OPENMP=OFF
-  exports: whole_archive # FIXME: using "requested" fails with SIGKILL, not sure why
+  exports: requested
 requirements:
   run:
     - numpy
