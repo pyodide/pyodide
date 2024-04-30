@@ -5,6 +5,9 @@ import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc } from "./types";
 
+/**
+ * @private
+ */
 export interface EmscriptenSettings {
   readonly noImageDecoding?: boolean;
   readonly noAudioDecoding?: boolean;
