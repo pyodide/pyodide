@@ -16,7 +16,6 @@ requirements:
     - scipy
     - six
     - smart_open
-    - wrapt
   host:
     - numpy
 about:
