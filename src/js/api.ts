@@ -1,4 +1,3 @@
-import "./emscriptenSettings";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 

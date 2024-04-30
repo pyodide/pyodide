@@ -269,7 +269,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   API._pyodide.set_excepthook();
   await API.packageIndexReady;
   // I think we want this initializeStreams call to happen after
-  // initPackageHooks? I don't remember why.
+  // packageIndexReady? I don't remember why.
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }
