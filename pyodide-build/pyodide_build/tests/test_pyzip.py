@@ -6,9 +6,11 @@ from .fixture import temp_python_lib, temp_python_lib2
 
 
 def test_defaultfilterfunc(temp_python_lib):
-    filterfunc = default_filterfunc(temp_python_lib, verbose=True)
-
     ignored = ["test", "turtle.py"]
+    filterfunc = default_filterfunc(
+        temp_python_lib, excludes=ignored, stubs=[], verbose=True
+    )
+
     assert set(ignored) == filterfunc(str(temp_python_lib), ignored)
 
     assert set() == filterfunc(str(temp_python_lib), ["hello.py", "world.py"])
@@ -19,7 +21,14 @@ def test_create_zip(temp_python_lib, tmp_path):
 
     output = tmp_path / "python.zip"
 
-    create_zipfile([temp_python_lib], output, pycompile=False, filterfunc=None)
+    create_zipfile(
+        [temp_python_lib],
+        excludes=[],
+        stubs=[],
+        output=output,
+        pycompile=False,
+        filterfunc=None,
+    )
 
     assert output.exists()
 
@@ -33,7 +42,14 @@ def test_create_zip_compile(temp_python_lib, tmp_path):
 
     output = tmp_path / "python.zip"
 
-    create_zipfile([temp_python_lib], output, pycompile=True, filterfunc=None)
+    create_zipfile(
+        [temp_python_lib],
+        excludes=[],
+        stubs=[],
+        output=output,
+        pycompile=True,
+        filterfunc=None,
+    )
 
     assert output.exists()
 
@@ -46,7 +62,12 @@ def test_import_from_zip(temp_python_lib, temp_python_lib2, tmp_path, monkeypatc
     output = tmp_path / "python.zip"
 
     create_zipfile(
-        [temp_python_lib, temp_python_lib2], output, pycompile=False, filterfunc=None
+        [temp_python_lib, temp_python_lib2],
+        excludes=[],
+        stubs=[],
+        output=output,
+        pycompile=False,
+        filterfunc=None,
     )
 
     assert output.exists()

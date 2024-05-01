@@ -228,7 +228,7 @@ rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $
 
 dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
 	make pyodide_build
-	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@

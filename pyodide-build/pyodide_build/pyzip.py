@@ -6,41 +6,9 @@ from tempfile import TemporaryDirectory
 from ._py_compile import _compile
 from .common import make_zip_archive
 
-# These files are removed from the stdlib
-REMOVED_FILES = (
-    # package management
-    "ensurepip/",
-    "venv/",
-    # build system
-    "lib2to3/",
-    # other platforms
-    "_osx_support.py",
-    "_aix_support.py",
-    # Not supported by browser
-    "curses/",
-    "dbm/",
-    "idlelib/",
-    "tkinter/",
-    "turtle.py",
-    "turtledemo",
-)
-
-# These files are unvendored from the stdlib and can be loaded with `loadPackage`
-UNVENDORED_FILES = (
-    "test/",
-    "sqlite3",
-    "ssl.py",
-    "lzma.py",
-    "_pydecimal.py",
-    "pydoc_data",
-)
-
-# We have JS implementations of these modules
-JS_STUB_FILES = ("webbrowser.py",)
-
 
 def default_filterfunc(
-    root: Path, verbose: bool = False
+    root: Path, excludes: list[str], stubs: list[str], verbose: bool = False
 ) -> Callable[[str, list[str]], set[str]]:
     """
     The default filter function used by `create_zipfile`.
@@ -75,15 +43,13 @@ def default_filterfunc(
         return False
 
     def filterfunc(path: Path | str, names: list[str]) -> set[str]:
-        filtered_files = {
-            (root / f).resolve() for f in REMOVED_FILES + UNVENDORED_FILES
-        }
+        filtered_files = {(root / f).resolve() for f in excludes}
 
         # We have JS implementations of these modules, so we don't need to
         # include the Python ones. Checking the name of the root directory
         # is a bit of a hack, but it works...
         if root.name.startswith("python3"):
-            filtered_files.update({root / f for f in JS_STUB_FILES})
+            filtered_files.update({root / f for f in stubs})
 
         path = Path(path).resolve()
 
@@ -107,6 +73,8 @@ def default_filterfunc(
 
 def create_zipfile(
     libdirs: list[Path],
+    excludes: list[str] | None = None,
+    stubs: list[str] | None = None,
     output: Path | str = "python",
     pycompile: bool = False,
     filterfunc: Callable[[str, list[str]], set[str]] | None = None,
@@ -130,6 +98,12 @@ def create_zipfile(
     libdirs
         List of paths to the directory containing the Python standard library or extra packages.
 
+    excludes
+        List of files to exclude from the zip file.
+
+    stubs
+        List of files that are replaced by JS implementations.
+
     output
         Path to the output zip file. Defaults to python.zip.
 
@@ -152,6 +126,8 @@ def create_zipfile(
     """
 
     archive = Path(output)
+    excludes = excludes or []
+    stubs = stubs or []
 
     with TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -160,7 +136,7 @@ def create_zipfile(
             libdir = Path(libdir)
 
             if filterfunc is None:
-                _filterfunc = default_filterfunc(libdir)
+                _filterfunc = default_filterfunc(libdir, excludes, stubs)
 
             shutil.copytree(libdir, temp_dir, ignore=_filterfunc, dirs_exist_ok=True)
 
