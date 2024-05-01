@@ -36,7 +36,7 @@ Target = namedtuple("target", ("file", "pattern", "prerelease"))
 PYTHON_TARGETS = [
     Target(
         file=ROOT / "Makefile.envs",
-        pattern=build_version_pattern("PYODIDE_VERSION \?= {python_version}"),
+        pattern=build_version_pattern(r"PYODIDE_VERSION \?= {python_version}"),
         prerelease=True,
     ),
     Target(
