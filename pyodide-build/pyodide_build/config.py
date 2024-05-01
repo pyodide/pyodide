@@ -107,6 +107,7 @@ class ConfigManager:
 # Configuration variables and corresponding environment variables.
 # TODO: distinguish between variables that are overridable by the user and those that are not.
 BUILD_KEY_TO_VAR: dict[str, str] = {
+    "pyodide_version": "PYODIDE_VERSION",
     "cargo_build_target": "CARGO_BUILD_TARGET",
     "cargo_target_wasm32_unknown_emscripten_linker": "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "host_install_dir": "HOSTINSTALLDIR",

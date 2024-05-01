@@ -772,15 +772,12 @@ def generate_lockfile(
 ) -> PyodideLockSpec:
     """Generate the package.json file"""
 
-    from . import __version__
-
     # Build package.json data.
     [platform, _, arch] = build_env.platform().rpartition("_")
     info = {
         "arch": arch,
         "platform": platform,
-        # This assumes that pyodide-build version == pyodide version.
-        "version": __version__,
+        "version": build_env.get_build_flag("PYODIDE_VERSION"),
         "python": sys.version.partition(" ")[0],
     }
     packages = generate_packagedata(output_dir, pkg_map)
