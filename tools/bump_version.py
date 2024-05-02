@@ -35,6 +35,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 Target = namedtuple("target", ("file", "pattern", "prerelease"))
 PYTHON_TARGETS = [
     Target(
+        file=ROOT / "Makefile.envs",
+        pattern=build_version_pattern(r"PYODIDE_VERSION \?= {python_version}"),
+        prerelease=True,
+    ),
+    Target(
         file=ROOT / "src/py/pyodide/__init__.py",
         pattern=build_version_pattern('__version__ = "{python_version}"'),
         prerelease=True,

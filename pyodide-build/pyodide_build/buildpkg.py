@@ -301,8 +301,8 @@ class RecipeBuilder:
 
         max_retry = 3
         for retry_cnt in range(max_retry):
-            response = requests.get(url)
             try:
+                response = requests.get(url)
                 response.raise_for_status()
             except requests.HTTPError as e:
                 if retry_cnt == max_retry - 1:

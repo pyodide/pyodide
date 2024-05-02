@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(safari="timeout")
 @run_in_pyodide(packages=["pyiceberg"])
 def test_catalog(selenium):
     import os
