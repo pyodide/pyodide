@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ROOT_PATH
 from pyodide_build import build_env
 from pyodide_build.common import xbuildenv_dirname
+from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 
 @pytest.fixture(scope="module")
@@ -66,58 +66,11 @@ def reset_cache():
 
 
 @pytest.fixture(scope="function")
-def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
-    import subprocess as sp
-
-    assert "PYODIDE_ROOT" not in os.environ
-
-    envpath = Path(tmp_path) / xbuildenv_dirname()
-    result = sp.run(
-        [
-            "pyodide",
-            "xbuildenv",
-            "create",
-            str(envpath),
-            "--root",
-            ROOT_PATH,
-            "--skip-missing-files",
-        ]
-    )
-
-    assert result.returncode == 0
-
-    version_dir = envpath / "temp_version"
-    version_dir.mkdir()
-
-    sp.run(
-        [
-            "mv",
-            str(envpath / "xbuildenv"),
-            str(version_dir),
-        ]
-    )
-
-    sp.run(
-        [
-            "ln",
-            "-s",
-            str(version_dir),
-            str(envpath / "xbuildenv"),
-        ]
-    )
-
-    cur_dir = os.getcwd()
-
-    os.chdir(tmp_path)
-
-    try:
-        yield tmp_path
-    finally:
-        os.chdir(cur_dir)
-
-
-@pytest.fixture()
 def dummy_xbuildenv_url(httpserver):
+    """
+    Returns the URL of a dummy xbuildenv archive.
+    This archive contains a minimal files that are required to install a xbuildenv.
+    """
     test_xbuildenv_archive_path = (
         Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.zip"
     )
@@ -127,3 +80,25 @@ def dummy_xbuildenv_url(httpserver):
         test_xbuildenv_archive
     )
     yield httpserver.url_for("/xbuildenv-test.zip")
+
+
+@pytest.fixture(scope="function")
+def dummy_xbuildenv(dummy_xbuildenv_url, tmp_path, reset_env_vars, reset_cache):
+    """
+    Downloads the dummy xbuildenv archive and installs it in the temporary directory.
+
+    This fixture can be used to run any functions that require a xbuildenv to be installed before running.
+    """
+    assert "PYODIDE_ROOT" not in os.environ
+
+    manager = CrossBuildEnvManager(tmp_path / xbuildenv_dirname())
+    manager.install(version=None, url=dummy_xbuildenv_url)
+
+    cur_dir = os.getcwd()
+
+    os.chdir(tmp_path)
+
+    try:
+        yield tmp_path
+    finally:
+        os.chdir(cur_dir)
