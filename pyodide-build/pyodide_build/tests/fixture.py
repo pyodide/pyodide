@@ -92,7 +92,9 @@ def dummy_xbuildenv(dummy_xbuildenv_url, tmp_path, reset_env_vars, reset_cache):
     assert "PYODIDE_ROOT" not in os.environ
 
     manager = CrossBuildEnvManager(tmp_path / xbuildenv_dirname())
-    manager.install(version=None, url=dummy_xbuildenv_url)
+    manager.install(
+        version=None, url=dummy_xbuildenv_url, skip_install_cross_build_packages=True
+    )
 
     cur_dir = os.getcwd()
 
@@ -102,3 +104,57 @@ def dummy_xbuildenv(dummy_xbuildenv_url, tmp_path, reset_env_vars, reset_cache):
         yield tmp_path
     finally:
         os.chdir(cur_dir)
+
+
+class MockEmscripten:
+    def __init__(self, log_file: Path):
+        self.log_file = log_file
+
+    def capture_output(self) -> list[str]:
+        return self.log_file.read_text().splitlines()
+
+
+MOCK_EMSCRIPTEN_TEMPLATE = (
+    Path(__file__).parent / "utils" / "mock_emscripten.sh.tmpl"
+).read_text()
+
+
+@pytest.fixture(scope="function")
+def mock_emscripten(tmp_path, dummy_xbuildenv):
+    """
+    This fixture makes a fake emscripten compilers in the PATH.
+    TODO: make this fixture more smart and flexible.
+    """
+    emscripten_version = build_env.get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+    mock_dir = Path(tmp_path).resolve()
+    mock_dir.mkdir(exist_ok=True, parents=True)
+
+    emcc_log_file = mock_dir / "emcc.log"
+    emcc_binary = mock_dir / "emcc"
+    emcc_binary.write_text(
+        MOCK_EMSCRIPTEN_TEMPLATE.format(
+            output_file=emcc_log_file, version=emscripten_version
+        )
+    )
+    emcc_binary.chmod(0o755)
+
+    llvm_readobj_log_file = mock_dir / "llvm-readobj.log"
+    llvm_readobj_binary = mock_dir / "llvm-readobj"
+    llvm_readobj_binary.write_text(
+        MOCK_EMSCRIPTEN_TEMPLATE.format(
+            output_file=llvm_readobj_log_file, version=emscripten_version
+        )
+    )
+    llvm_readobj_binary.chmod(0o755)
+
+    original_path = os.environ["PATH"]
+
+    os.environ["PATH"] = f"{mock_dir}:{original_path}"
+
+    yield {
+        "emcc": MockEmscripten(emcc_log_file),
+        "llvm-readobj": MockEmscripten(llvm_readobj_log_file),
+    }
+
+    os.environ["PATH"] = original_path
