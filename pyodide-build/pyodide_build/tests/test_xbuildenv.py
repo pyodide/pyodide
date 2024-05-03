@@ -1,21 +1,10 @@
-from pathlib import Path
+# flake8: noqa
 
 import pytest
 
 from pyodide_build.xbuildenv import CrossBuildEnvManager, _url_to_version
 
-
-@pytest.fixture()
-def xbuildenv_url(httpserver):
-    test_xbuildenv_archive_path = (
-        Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.tar.gz"
-    )
-    test_xbuildenv_archive = test_xbuildenv_archive_path.read_bytes()
-
-    httpserver.expect_request("/xbuildenv-test.tar.gz").respond_with_data(
-        test_xbuildenv_archive
-    )
-    yield httpserver.url_for("/xbuildenv-test.tar.gz")
+from .fixture import dummy_xbuildenv_url
 
 
 @pytest.fixture()
@@ -103,11 +92,11 @@ class TestCrossBuildEnvManager:
         manager.use_version("0.25.0")
         assert manager.current_version == "0.25.0"
 
-    def test_download(self, tmp_path, xbuildenv_url):
+    def test_download(self, tmp_path, dummy_xbuildenv_url):
         manager = CrossBuildEnvManager(tmp_path)
 
         download_path = tmp_path / "test"
-        manager._download(xbuildenv_url, download_path)
+        manager._download(dummy_xbuildenv_url, download_path)
 
         assert download_path.exists()
         assert (download_path / "xbuildenv").exists()
@@ -125,12 +114,12 @@ class TestCrossBuildEnvManager:
             )
 
     def test_install_version(
-        self, tmp_path, xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip
+        self, tmp_path, dummy_xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip
     ):
         manager = CrossBuildEnvManager(tmp_path)
 
         monkeypatch.setattr(
-            manager, "_download_url_for_version", lambda version: xbuildenv_url
+            manager, "_download_url_for_version", lambda version: dummy_xbuildenv_url
         )
         version = "0.25.0"
 
@@ -153,12 +142,12 @@ class TestCrossBuildEnvManager:
         manager.install(version)
 
     def test_install_url(
-        self, tmp_path, xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip
+        self, tmp_path, dummy_xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip
     ):
         manager = CrossBuildEnvManager(tmp_path)
 
-        manager.install(version=None, url=xbuildenv_url)
-        version = _url_to_version(xbuildenv_url)
+        manager.install(version=None, url=dummy_xbuildenv_url)
+        version = _url_to_version(dummy_xbuildenv_url)
 
         assert (tmp_path / version).exists()
         assert (tmp_path / version / ".installed").exists()
@@ -174,13 +163,13 @@ class TestCrossBuildEnvManager:
         assert (manager.symlink_dir / "xbuildenv" / "site-packages-extras").exists()
 
     def test_install_cross_build_packages(
-        self, tmp_path, xbuildenv_url, monkeypatch_subprocess_run_pip
+        self, tmp_path, dummy_xbuildenv_url, monkeypatch_subprocess_run_pip
     ):
         pip_called_with = monkeypatch_subprocess_run_pip
         manager = CrossBuildEnvManager(tmp_path)
 
         download_path = tmp_path / "test"
-        manager._download(xbuildenv_url, download_path)
+        manager._download(dummy_xbuildenv_url, download_path)
 
         xbuildenv_root = download_path / "xbuildenv"
         xbuildenv_pyodide_root = xbuildenv_root / "pyodide-root"
@@ -200,11 +189,11 @@ class TestCrossBuildEnvManager:
         for file in cross_build_files.iterdir():
             assert (hostsitepackages / file.name).exists()
 
-    def test_create_package_index(self, tmp_path, xbuildenv_url):
+    def test_create_package_index(self, tmp_path, dummy_xbuildenv_url):
         manager = CrossBuildEnvManager(tmp_path)
 
         download_path = tmp_path / "test"
-        manager._download(xbuildenv_url, download_path)
+        manager._download(dummy_xbuildenv_url, download_path)
 
         xbuildenv_root = download_path / "xbuildenv"
         xbuildenv_pyodide_root = xbuildenv_root / "pyodide-root"

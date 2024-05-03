@@ -114,3 +114,16 @@ def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
         yield tmp_path
     finally:
         os.chdir(cur_dir)
+
+
+@pytest.fixture()
+def dummy_xbuildenv_url(httpserver):
+    test_xbuildenv_archive_path = (
+        Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.zip"
+    )
+    test_xbuildenv_archive = test_xbuildenv_archive_path.read_bytes()
+
+    httpserver.expect_request("/xbuildenv-test.zip").respond_with_data(
+        test_xbuildenv_archive
+    )
+    yield httpserver.url_for("/xbuildenv-test.zip")

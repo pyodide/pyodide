@@ -219,7 +219,8 @@ class CrossBuildEnvManager:
                 f"Failed to download cross-build environment from {url} (status code: {r.status_code})"
             )
 
-        with NamedTemporaryFile(suffix=".tar") as f:
+        suffix = Path(url).suffix
+        with NamedTemporaryFile(suffix=suffix) as f:
             f_path = Path(f.name)
             f_path.write_bytes(r.content)
             shutil.unpack_archive(str(f_path), path)
