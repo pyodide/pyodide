@@ -257,10 +257,13 @@ async function downloadPackage(
   let installBaseUrl: string;
   if (IN_NODE) {
     installBaseUrl = API.config.packageCacheDir;
-    // ensure that the directory exists before trying to download files into it
-    await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
-      recursive: true,
-    });
+    // Ensure that the directory exists before trying to download files into it.
+    // Call mkdir() only when the dir doesn't exist to avoid an error on read-only file systems. See https://github.com/pyodide/pyodide/issues/4736
+    await nodeFsPromisesMod.access(API.config.packageCacheDir).catch(() =>
+      nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
+        recursive: true,
+      })
+    );
   } else {
     installBaseUrl = API.config.indexURL;
   }
