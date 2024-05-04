@@ -262,7 +262,7 @@ async function downloadPackage(
     await nodeFsPromisesMod.access(API.config.packageCacheDir).catch(() =>
       nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
         recursive: true,
-      })
+      }),
     );
   } else {
     installBaseUrl = API.config.indexURL;
