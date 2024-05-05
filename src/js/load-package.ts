@@ -259,11 +259,11 @@ async function downloadPackage(
     installBaseUrl = API.config.packageCacheDir;
     // Ensure that the directory exists before trying to download files into it.
     try {
-      // Check if the packageCacheDir exists
-      await nodeFsPromisesMod.stat(API.config.packageCacheDir); // Use `.stat()` which works even on ASAR archives of Electron apps, while `.access` doesn't.
+      // Check if the `installBaseUrl` directory exists
+      await nodeFsPromisesMod.stat(installBaseUrl); // Use `.stat()` which works even on ASAR archives of Electron apps, while `.access` doesn't.
     } catch {
       // If it doesn't exist, make it. Call mkdir() here only when necessary after checking the existence to avoid an error on read-only file systems. See https://github.com/pyodide/pyodide/issues/4736
-      await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
+      await nodeFsPromisesMod.mkdir(installBaseUrl, {
         recursive: true,
       });
     }
