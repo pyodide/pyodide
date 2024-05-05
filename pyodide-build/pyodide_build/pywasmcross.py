@@ -608,7 +608,6 @@ def handle_command(
 
         scipy_fixes(new_args)
 
-    print("PATH in pywasmcross:", os.environ["PATH"])
     result = subprocess.run(new_args)
     return result.returncode
 
