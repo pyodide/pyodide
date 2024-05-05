@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `pyodide.loadPackage` now checks if the cache directory exists and calls `mkdir` only when it doesn't to avoid an error on read-only file systems in Node.js environment.
+  {pr}`4738`
+
 - {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
   This Fixes "Argument list too long" error.
 
