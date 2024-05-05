@@ -75,14 +75,14 @@ def dummy_xbuildenv_url(httpserver):
     This archive contains a minimal files that are required to install a xbuildenv.
     """
     test_xbuildenv_archive_path = (
-        Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.zip"
+        Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.tar.gz"
     )
     test_xbuildenv_archive = test_xbuildenv_archive_path.read_bytes()
 
-    httpserver.expect_request("/xbuildenv-test.zip").respond_with_data(
+    httpserver.expect_request("/xbuildenv-test.tar.gz").respond_with_data(
         test_xbuildenv_archive
     )
-    yield httpserver.url_for("/xbuildenv-test.zip")
+    yield httpserver.url_for("/xbuildenv-test.tar.gz")
 
 
 @pytest.fixture(scope="function")
