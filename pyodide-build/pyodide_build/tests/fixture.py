@@ -58,11 +58,14 @@ def reset_env_vars():
 def reset_cache():
     # Will remove all caches before each test.
 
-    build_env.get_pyodide_root.cache_clear()
-    build_env.get_build_environment_vars.cache_clear()
-    build_env.get_unisolated_packages.cache_clear()
+    def _reset():
+        build_env.get_pyodide_root.cache_clear()
+        build_env.get_build_environment_vars.cache_clear()
+        build_env.get_unisolated_packages.cache_clear()
 
-    yield
+    _reset()
+
+    yield _reset
 
 
 @pytest.fixture(scope="function")
@@ -120,7 +123,7 @@ MOCK_EMSCRIPTEN_TEMPLATE = (
 
 
 @pytest.fixture(scope="function")
-def mock_emscripten(tmp_path, dummy_xbuildenv):
+def mock_emscripten(tmp_path, dummy_xbuildenv, reset_env_vars, reset_cache):
     """
     This fixture makes a fake emscripten compilers in the PATH.
     TODO: make this fixture more smart and flexible.
@@ -151,6 +154,7 @@ def mock_emscripten(tmp_path, dummy_xbuildenv):
     original_path = os.environ["PATH"]
 
     os.environ["PATH"] = f"{mock_dir}:{original_path}"
+    reset_cache()
 
     yield {
         "emcc": MockEmscripten(emcc_log_file),
