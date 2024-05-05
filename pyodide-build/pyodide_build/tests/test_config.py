@@ -84,7 +84,9 @@ class TestConfigManager_OutOfTree:
     # Note: other tests are inherited from TestInTree
 
     def test_makefile_envs(self, dummy_xbuildenv, reset_env_vars, reset_cache):
-        xbuildenv_manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
+        xbuildenv_manager = CrossBuildEnvManager(
+            dummy_xbuildenv / common.xbuildenv_dirname()
+        )
         config_manager = ConfigManager(pyodide_root=xbuildenv_manager.pyodide_root)
 
         makefile_vars = config_manager._load_makefile_envs()
@@ -98,8 +100,12 @@ class TestConfigManager_OutOfTree:
         for key in default_config:
             assert key not in makefile_vars
 
-    def test_get_make_environment_vars(self, dummy_xbuildenv, reset_env_vars, reset_cache):
-        xbuildenv_manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
+    def test_get_make_environment_vars(
+        self, dummy_xbuildenv, reset_env_vars, reset_cache
+    ):
+        xbuildenv_manager = CrossBuildEnvManager(
+            dummy_xbuildenv / common.xbuildenv_dirname()
+        )
         config_manager = ConfigManager(pyodide_root=xbuildenv_manager.pyodide_root)
         make_vars = config_manager._get_make_environment_vars()
         assert make_vars["PYODIDE_ROOT"] == str(xbuildenv_manager.pyodide_root)

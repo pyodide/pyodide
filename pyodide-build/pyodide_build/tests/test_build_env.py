@@ -139,7 +139,9 @@ class TestOutOfTree(TestInTree):
     def test_in_xbuildenv(self, dummy_xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
 
-    def test_get_build_environment_vars(self, dummy_xbuildenv, reset_env_vars, reset_cache):
+    def test_get_build_environment_vars(
+        self, dummy_xbuildenv, reset_env_vars, reset_cache
+    ):
         manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
         build_vars = build_env.get_build_environment_vars(manager.pyodide_root)
 
