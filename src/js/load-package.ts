@@ -33,6 +33,14 @@ async function initializePackageIndex(lockFilePromise: Promise<Lockfile>) {
     );
   }
 
+  if (lockfile.info.version !== API.version) {
+    throw new Error(
+      "Lock file version doesn't match Pyodide version.\n" +
+        `   lockfile version: ${API.lockfile_info.version}\n` +
+        `   pyodide  version: ${API.version}`,
+    );
+  }
+
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -59,7 +67,20 @@ async function initializePackageIndex(lockFilePromise: Promise<Lockfile>) {
     API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
-  await loadPackage(API.config.packages, { messageCallback() {} });
+  let toLoad = API.config.packages;
+  if (API.config.fullStdLib) {
+    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
+  }
+  await loadPackage(toLoad, { messageCallback() {} });
+  // Have to wait for bootstrapFinalizedPromise before calling Python APIs
+  await API.bootstrapFinalizedPromise;
+  // Set up module_not_found_hook
+  const importhook = API._pyodide._importhook;
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.lockfile_unvendored_stdlibs_and_test,
+  );
+  API.package_loader.init_loaded_packages();
 }
 
 if (API.lockFilePromise) {
