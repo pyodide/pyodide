@@ -344,7 +344,7 @@ API.PythonError = PythonError;
  * C keeping the current Python error flag. This signals to the EM_JS wrappers
  * that the Python error flag is set and to leave it alone and return the
  * appropriate error value (either NULL or -1).
- * @private
+ * @hidden
  */
 export class _PropagatePythonError extends Error {
   constructor() {
