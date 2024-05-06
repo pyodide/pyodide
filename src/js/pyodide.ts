@@ -9,12 +9,12 @@ import {
   loadLockFile,
 } from "./compat";
 
-import { createSettings } from "./emscriptenSettings";
+import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { TypedArray, API, Module } from "./types";
-import type { EmscriptenSettings } from "./emscriptenSettings";
+import type { EmscriptenSettings } from "./emscripten-settings";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 

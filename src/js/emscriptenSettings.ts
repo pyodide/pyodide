@@ -59,6 +59,11 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     // If we set instantiateWasm the return value of locateFile actually is
     // unused, but Emscripten calls it anyways. We set instantiateWasm except
     // when compiling with source maps, see comment in getInstantiateWasmFunc().
+    //
+    // It also is called when Emscripten tries to find a dependency of a shared
+    // library but it failed to find it in the file system. But for us that
+    // means dependency resolution has already failed and we want to throw an
+    // error anyways.
     locateFile: (path: string) => config.indexURL + path,
     instantiateWasm: getInstantiateWasmFunc(config.indexURL),
   };

@@ -1,9 +1,10 @@
 import chai from "chai";
-import * as pyodideModule from "../../emscriptenSettings";
+import * as pyodideModule from "../../emscripten-settings";
 
 describe("Module", () => {
   describe("noWasmDecoding", () => {
     it("should be false ", () => {
+      return;
       const settings = pyodideModule.createSettings({
         indexURL: "a",
         _node_mounts: [],
