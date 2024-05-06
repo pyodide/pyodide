@@ -156,8 +156,8 @@ export async function loadPyodide(
      */
     packages?: string[];
     /**
-     * Opt into the old behavior where :py:meth:`PyProxy.toString` calls :py:func:`repr` and not
-     * :py:func:`str`.
+     * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
+     * calls :py:func:`repr` and not :py:class:`str() <str>`.
      * @deprecated
      */
     pyproxyToStringRepr?: boolean;

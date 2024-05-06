@@ -113,6 +113,9 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
+/**
+ * @private
+ */
 export type PackageType =
   | "package"
   | "cpython_module"

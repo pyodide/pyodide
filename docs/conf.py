@@ -18,7 +18,25 @@ panels_add_bootstrap_css = False
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
-copyright = "2019-2022, Pyodide contributors and Mozilla"
+copyright = "2019-2024, Pyodide contributors and Mozilla"
+
+nitpicky = True
+nitpick_ignore = []
+
+
+def ignore_typevars():
+    """These are all intentionally broken. Disable the warnings about it."""
+    PY_TYPEVARS_TO_IGNORE = ["T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co"]
+    JS_TYPEVARS_TO_IGNORE = ["TResult", "TResult1", "TResult2", "U"]
+
+    for typevar in PY_TYPEVARS_TO_IGNORE:
+        nitpick_ignore.append(("py:obj", f"_pyodide._core_docs.{typevar}"))
+
+    for typevar in JS_TYPEVARS_TO_IGNORE:
+        nitpick_ignore.append(("js:func", typevar))
+
+
+ignore_typevars()
 
 # -- General configuration ---------------------------------------------------
 
@@ -62,7 +80,7 @@ autodoc_default_flags = ["members", "inherited-members"]
 
 micropip_version = micropip.__version__
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.11", None),
+    "python": ("https://docs.python.org/3.12", None),
     "micropip": (f"https://micropip.pyodide.org/en/v{micropip_version}/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
