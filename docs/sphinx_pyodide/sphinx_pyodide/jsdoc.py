@@ -1,27 +1,14 @@
 from collections.abc import Iterator
 
-from sphinx_js import ir, typedoc
+from sphinx_js import ir
 from sphinx_js.ir import Class
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
-from sphinx_js.typedoc import Base, Callable, Converter, Interface, ReflectionType
 
-# Custom tags are a great way of conveniently passing information from the
-# source code to this file. No custom tags will be seen by this code unless they
-# are registered in src/js/tsdoc.json
-#
-# Modifier tags act like a flag, block tags have content.
+__all__ = ["ts_xref_formatter", "patch_sphinx_js"]
 
 
 def patch_sphinx_js():
-    Base.member_properties = member_properties
-    Converter.convert_all_nodes = convert_all_nodes
     TsAnalyzer._get_toplevel_objects = _get_toplevel_objects
-    Interface.to_ir = Interface_to_ir
-
-
-def ts_should_destructure_arg(sig, param):
-    """Destructure all parameters named 'options'"""
-    return param.name == "options"
 
 
 def ts_xref_formatter(_config, xref):
@@ -40,15 +27,11 @@ def ts_xref_formatter(_config, xref):
     return f":js:class:`{name}`"
 
 
-def member_properties(self):
-    """Monkey patch for node.member_properties that hides all external nodes by
-    marking them as private."""
-    return dict(
-        is_abstract=self.flags.isAbstract,
-        is_optional=self.flags.isOptional,
-        is_static=self.flags.isStatic,
-        is_private=self.flags.isPrivate or self.flags.isExternal,
-    )
+# Custom tags are a great way of passing information from the source code to
+# this file. No custom tags will be seen by this code unless they are registered
+# in src/js/tsdoc.json
+#
+# Modifier tags act like a flag, block tags have content.
 
 
 def has_tag(doclet, tag):
@@ -64,97 +47,10 @@ def has_tag(doclet, tag):
 PYPROXY_METHODS = {}
 
 
-def ts_post_convert(converter, node, doclet):
-    # hide exported_from
-    doclet.exported_from = None
-
-    if has_tag(doclet, "hidetype"):
-        doclet.type = ""
-        if isinstance(node, typedoc.Callable):
-            node.signatures[0].type = ""
-
-    if isinstance(doclet, ir.Class) and has_tag(doclet, "hideconstructor"):
-        doclet.constructor = None
-
-    if node.name == "setStdin":
-        fix_set_stdin(converter, node, doclet)
-
-    if node.name == "mountNativeFS":
-        fix_native_fs(converter, node, doclet)
-
-    if doclet.deppath == "./core/pyproxy" and doclet.path.segments[-1].endswith(
-        "Methods"
-    ):
-        PYPROXY_METHODS[doclet.name] = doclet.members
-
-
-def fix_set_stdin(converter, node, doclet):
-    """The type of stdin is given as StdinFunc which is opaque. Replace it with
-    the definition of StdinFunc.
-
-    TODO: Find a better way!
-    """
-    assert isinstance(node, Callable)
-    options = node.signatures[0].parameters[0]
-    assert isinstance(options.type, ReflectionType)
-    for param in options.type.declaration.children:
-        if param.name == "stdin":
-            break
-    else:
-        raise RuntimeError("Stdin param not found")
-    target = converter.index[param.type.target]
-    for docparam in doclet.params:
-        if docparam.name == "options.stdin":
-            break
-    else:
-        raise RuntimeError("Stdin param not found")
-    docparam.type = target.type.render_name(converter)
-
-
-NATIVE_FS_DOCLET = None
-
-
-def fix_native_fs(converter, node, doclet):
-    """mountNativeFS has NativeFS as it's return type. This is a bit opaque, so
-    we resolve the reference to the reference target which is
-    Promise<{ syncfs: () => Promise<void>; }>
-
-    TODO: find a better way.
-    """
-    assert isinstance(node, Callable)
-    ty = node.signatures[0].type
-    if not ty.typeArguments[0].type == "reference":
-        return
-    target = converter.index[ty.typeArguments[0].target]
-    ty.typeArguments[0] = target.type
-    return_type = ty.render_name(converter)
-    doclet.returns[0].type = return_type
-
-
 # locate the ffi fields. We use this to redirect the documentation items to be
 # documented under pyodide.ffi and to adjust the xrefs to point appropriately to
 # `pyodide.ffi.xxx`
 FFI_FIELDS: set[str] = set()
-
-orig_convert_all_nodes = Converter.convert_all_nodes
-
-
-def convert_all_nodes(self, root):
-    children = children_dict(root)
-    locate_ffi_fields(children["js/ffi"])
-    return orig_convert_all_nodes(self, root)
-
-
-def children_dict(root):
-    return {node.name: node for node in root.children}
-
-
-def locate_ffi_fields(ffi_module):
-    for child in ffi_module.children:
-        if child.name == "ffi":
-            break
-    fields = child.type.declaration.children
-    FFI_FIELDS.update(x.name for x in fields)
 
 
 def _get_toplevel_objects(
@@ -163,9 +59,20 @@ def _get_toplevel_objects(
     """Monkeypatch: yield object, module, kind for each triple we want to
     document.
     """
+    FFI_FIELDS.update(self._extra_data["ffiFields"])
+    from sphinx_js.ir import Attribute, Function, converter
+
+    methodPairs = converter.structure(
+        self._extra_data["pyproxyMethods"], list[tuple[str, list[Function | Attribute]]]
+    )
+    PYPROXY_METHODS.update(methodPairs)
     for obj in ir_objects:
         if obj.name == "PyodideAPI":
+            for member in obj.members:
+                member.documentation_root = True
             yield from _get_toplevel_objects(self, obj.members)
+            continue
+        if not obj.documentation_root:
             continue
         if doclet_is_private(obj):
             continue
@@ -228,12 +135,7 @@ def set_kind(obj: ir.TopLevel) -> None:
     k = obj.block_tags.get("dockind", [None])[0]
     if not k:
         return
-    kind = k[0].text.strip()
-    if kind == "class":
-        kind += "es"
-    else:
-        kind += "s"
-    obj.kind = kind
+    obj.kind = k[0].text.strip()
 
 
 def fix_pyproxy_class(cls: ir.Class) -> None:
@@ -242,21 +144,7 @@ def fix_pyproxy_class(cls: ir.Class) -> None:
     2. For each PyXxxMethods in supers, add PyXxxMethods.children to
        cls.children
     """
-    methods_supers = [x for x in cls.supers if x.segments[-1] in PYPROXY_METHODS]
-    cls.supers = [x for x in cls.supers if x.segments[-1] not in PYPROXY_METHODS]
-    for x in cls.supers:
-        x.segments = [x.segments[-1]]
+    methods_supers = [x for x in cls.supers if x[0].name in PYPROXY_METHODS]
+    cls.supers = [x for x in cls.supers if x[0].name not in PYPROXY_METHODS]
     for x in methods_supers:
-        cls.members.extend(PYPROXY_METHODS[x.segments[-1]])
-
-
-orig_Interface_to_ir = Interface.to_ir
-
-# sphinx_js incorrectly handles is_private for classes and interfaces.
-# TODO: fix sphinx_js
-
-
-def Interface_to_ir(self, converter):
-    orig = orig_Interface_to_ir(self, converter)
-    orig[0].is_private = self.flags.isPrivate
-    return orig
+        cls.members.extend(PYPROXY_METHODS[x[0].name])

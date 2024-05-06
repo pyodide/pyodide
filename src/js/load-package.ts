@@ -120,6 +120,9 @@ export type PackageType =
   | "static_library";
 
 // Package data inside pyodide-lock.json
+/**
+ * @private
+ */
 export type PackageData = {
   name: string;
   version: string;

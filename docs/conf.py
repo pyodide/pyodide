@@ -46,7 +46,7 @@ extensions = [
 myst_enable_extensions = ["substitution", "attrs_inline"]
 
 js_language = "typescript"
-jsdoc_config_path = "../src/js/tsconfig.json"
+jsdoc_tsconfig_path = "../src/js/tsconfig.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 
