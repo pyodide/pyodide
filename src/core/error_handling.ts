@@ -1,7 +1,6 @@
 import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
 import "types";
 
-declare var Module: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -338,11 +337,15 @@ export class PythonError extends Error {
   }
 }
 API.PythonError = PythonError;
-// A special marker. If we call a CPython API from an EM_JS function and the
-// CPython API sets an error, we might want to return an error status back to
-// C keeping the current Python error flag. This signals to the EM_JS wrappers
-// that the Python error flag is set and to leave it alone and return the
-// appropriate error value (either NULL or -1).
+
+/**
+ * A special marker. If we call a CPython API from an EM_JS function and the
+ * CPython API sets an error, we might want to return an error status back to
+ * C keeping the current Python error flag. This signals to the EM_JS wrappers
+ * that the Python error flag is set and to leave it alone and return the
+ * appropriate error value (either NULL or -1).
+ * @hidden
+ */
 export class _PropagatePythonError extends Error {
   constructor() {
     super(

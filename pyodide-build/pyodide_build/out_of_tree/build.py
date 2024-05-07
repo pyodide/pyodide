@@ -4,6 +4,7 @@ from pathlib import Path
 from build import ConfigSettingsType
 
 from .. import build_env, common, pypabuild
+from ..build_env import get_pyodide_root
 from ..io import _BuildSpecExports
 
 
@@ -24,7 +25,7 @@ def run(
         "TARGETINSTALLDIR", build_env.get_build_flag("TARGETINSTALLDIR")
     )
     env = os.environ.copy()
-    env.update(build_env.get_build_environment_vars())
+    env.update(build_env.get_build_environment_vars(get_pyodide_root()))
 
     build_env_ctx = pypabuild.get_build_env(
         env=env,

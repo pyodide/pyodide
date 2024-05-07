@@ -11,7 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.build_env import emscripten_version, get_pyodide_root
-from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
+from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -438,23 +438,23 @@ def test_pip_install_from_pyodide(selenium, venv):
     )
 
 
-def test_pypa_index(tmp_path):
+def test_package_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
-    version = "0.21.0"  # just need some version that already exists
-    _download_xbuildenv(version, path)
+    version = "0.24.0"  # just need some version that already exists + contains pyodide-lock.json
 
-    # We don't need host dependencies for this test so zero them out
-    (path / "xbuildenv/requirements.txt").write_text("")
+    mgr = CrossBuildEnvManager(path)
+    mgr.install(version, skip_install_cross_build_packages=True)
 
-    install_xbuildenv(version, path)
+    env_path = mgr.symlink_dir.resolve()
+
     pip_opts = [
         "--index-url",
-        "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
-        "--platform=emscripten_3_1_14_wasm32",
+        "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
+        "--platform=emscripten_3_1_45_wasm32",
         "--only-binary=:all:",
-        "--python-version=310",
+        "--python-version=311",
         "-t",
         str(path / "temp_lib"),
     ]
@@ -476,15 +476,12 @@ def test_pypa_index(tmp_path):
         capture_output=True,
         encoding="utf8",
     )
-    print("\n\nstdout:")
-    print(result.stdout)
-    print("\n\nstderr:")
-    print(result.stderr)
+
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
         stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* sharedlib-test-py-*"
+        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
     )
 
 

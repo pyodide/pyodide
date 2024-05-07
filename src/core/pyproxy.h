@@ -11,7 +11,11 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsVal
-pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip, bool register);
+pyproxy_new_ex(PyObject* obj,
+               bool capture_this,
+               bool roundtrip,
+               bool register,
+               bool is_json_adaptor);
 
 JsVal
 pyproxy_new(PyObject* obj);

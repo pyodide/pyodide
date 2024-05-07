@@ -43,6 +43,7 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide._api.package_loader.get_dynlibs;
     pyodide._api.pyodide_code.eval_code;
     pyodide._api.pyodide_code.eval_code_async;
+    pyodide._api.pyodide_code.relaxed_call
     pyodide._api.pyodide_code.find_imports;
     pyodide._api.pyodide_ffi.register_js_module;
     pyodide._api.pyodide_ffi.unregister_js_module;
@@ -296,3 +297,23 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+from pytest_pyodide.runner import NodeRunner
+
+
+def patched_load_pyodide(self):
+    self.run_js(
+        """
+        const {readFileSync} = require("fs");
+        let snap = readFileSync("snapshot.bin");
+        snap = new Uint8Array(snap.buffer);
+        let pyodide = await loadPyodide({ fullStdLib: false, jsglobals : self, _loadSnapshot: snap });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._api.inTestHoist = true; // improve some error messages for tests
+        """
+    )
+
+
+NodeRunner.load_pyodide = patched_load_pyodide

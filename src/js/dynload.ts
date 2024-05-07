@@ -1,21 +1,14 @@
 /* Handle dynamic library loading. */
 
-declare var Module: any;
 declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
 import { memoize } from "./pyodide-util";
 import { InternalPackageData } from "./load-package";
-
-type ReadFileType = (path: string) => Uint8Array;
+import { LoadDynlibFS, ReadFileType } from "./types";
 
 // File System-like type which can be passed to
 // Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-
-type LoadDynlibFS = {
-  readFile: ReadFileType;
-  findObject: (path: string, dontResolveLastLink: boolean) => any;
-};
 
 /**
  * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule

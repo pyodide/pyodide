@@ -1186,6 +1186,7 @@ class JsDomElement(JsProxy):
 # from pyproxy.c
 
 
+@docs_argspec("(obj: Callable[..., Any], /) -> JsOnceCallable")
 def create_once_callable(
     obj: Callable[..., Any], /, *, _may_syncify: bool = False
 ) -> JsOnceCallable:
@@ -1470,7 +1471,18 @@ def destroy_proxies(pyproxies: JsArray[Any], /) -> None:
 
 
 def run_sync(x: Awaitable[T]) -> T:
-    """Hi!"""
+    """Block until an awaitable is resolved.
+
+    Only works if JS Promise integration is enabled in the runtime and the
+    current Python call stack was entered via :js:func:`pyodide.runPythonAsync`,
+    by calling an async Python function, or via
+    :js:func:`~pyodide.ffi.PyCallable.callPromising`.
+
+    .. admonition:: Experimental
+        :class: warning
+
+        This feature is not yet stable.
+    """
     raise NotImplementedError
 
 

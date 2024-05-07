@@ -48,6 +48,7 @@ export const IN_SAFARI =
 /**
  * Detects the current environment and returns a record with the results.
  * This function is useful for debugging and testing purposes.
+ * @private
  */
 export function detectEnvironment(): Record<string, boolean> {
   return {

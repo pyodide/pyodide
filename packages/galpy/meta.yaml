@@ -1,11 +1,11 @@
 package:
   name: galpy
-  version: 1.9.1
+  version: 1.9.2
   top-level:
     - galpy
 source:
-  url: https://files.pythonhosted.org/packages/0b/4a/6e895e2a494fea28b3cba582c018f29f6d0801718927b003a3bd97c8ef56/galpy-1.9.1.tar.gz
-  sha256: 962424a8d8180650019e816dc97aefa9eb4f6796594128a53d2e1004de3b03d7
+  url: https://files.pythonhosted.org/packages/7c/78/884c468c43679ee6f3d59d14773677aa0095dde13be0cdb9c8aafb07affd/galpy-1.9.2.tar.gz
+  sha256: cf13e166b046e07cdcc663acf5412dd2f2649a5ae06985ee040f109325a92e5a
 build:
   script:
     export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix

@@ -16,6 +16,16 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `pyodide.loadPackage` now checks if the cache directory exists and calls `mkdir` only when it doesn't to avoid an error on read-only file systems in Node.js environment.
+  {pr}`4738`
+
+- {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
+  This Fixes "Argument list too long" error.
+
+- {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper {pr}`4705`.
+
+- {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.
+
 - {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
   `jsproxy.toString` is undefined. Instead, it will use
   `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
@@ -29,8 +39,8 @@ myst:
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
-  {pr}`4399`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+  {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
   This entrypoint was deprecated since 0.22.0.
@@ -81,6 +91,18 @@ myst:
 - {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
   {pr}`4637`
 
+- {{ Enhancement }} Added `PyProxy.asJsonAdaptor` method to adapt between Python
+  JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
+  {pr}`4666`
+
+- {{ Breaking }} The experimental `callSyncifying` method was renamed to
+  `callPromising`.
+  {pr}`4608`
+
+- {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of a
+  callable.
+  {pr}`4608`
+
 ### Packages
 
 - New Packages: `cysignals`, `ppl`, `pplpy` {pr}`4407`, `flint`, `python-flint` {pr}`4410`,
@@ -88,7 +110,10 @@ myst:
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
-  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`
+  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`
+
+- Upgraded `contourpy` to 1.2.1 {pr}`4680`
+- Upgraded `sourmash` to 4.8.8 {pr}`4683`
 
 ## Version 0.25.1
 
