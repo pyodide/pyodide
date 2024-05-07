@@ -10,8 +10,12 @@ from pyodide_lock import PyodideLockSpec
 from . import build_env
 from .create_package_index import create_package_index
 from .logger import logger
+from .xbuildenv_releases import (
+    CrossBuildEnvReleaseSpec,
+    cross_build_env_metadata_url,
+    load_cross_build_env_metadata,
+)
 
-XBUILDENV_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"
 CDN_BASE = "https://cdn.jsdelivr.net/pyodide/v{version}/full/"
 
 
@@ -20,8 +24,18 @@ class CrossBuildEnvManager:
     Manager for the cross-build environment.
     """
 
-    def __init__(self, env_dir: str | Path) -> None:
+    def __init__(self, env_dir: str | Path, metadata_url: str | None = None) -> None:
+        """
+        Parameters
+        ----------
+        env_dir
+            The directory to store the cross-build environments.
+        metadata_url
+            URL to the metadata file that contains the information about the available
+            cross-build environments. If not specified, the default metadata file is used.
+        """
         self.env_dir = Path(env_dir).resolve()
+        self.metadata_url = metadata_url or cross_build_env_metadata_url()
 
         try:
             self.env_dir.mkdir(parents=True, exist_ok=True)
@@ -53,6 +67,13 @@ class CrossBuildEnvManager:
             return None
 
         return self.symlink_dir.resolve().name
+
+    def _find_remote_release(self, version: str) -> CrossBuildEnvReleaseSpec:
+        """
+        Find the cross-build environment release with the given version from remote metadata.
+        """
+        metadata = load_cross_build_env_metadata(self.metadata_url)
+        return metadata.get_release(version)
 
     def _path_for_version(self, version: str) -> Path:
         """Returns the path to the xbuildenv for the given version."""
@@ -114,6 +135,7 @@ class CrossBuildEnvManager:
         *,
         url: str | None = None,
         skip_install_cross_build_packages: bool = False,
+        force_install: bool = False,
     ) -> Path:
         """
         Install cross-build environment.
@@ -134,6 +156,8 @@ class CrossBuildEnvManager:
             environment is compatible with the current version of Pyodide.
         skip_install_cross_build_packages
             If True, skip installing the cross-build packages. This is mostly for testing purposes.
+        force_install
+            If True, force the installation even if the cross-build environment is not compatible
 
         Returns
         -------
@@ -148,7 +172,18 @@ class CrossBuildEnvManager:
             download_url = url
         else:
             version = version or self._infer_version()
-            download_url = self._download_url_for_version(version)
+
+            local_versions = build_env.local_versions()
+            release = self._find_remote_release(version)
+            if not force_install and not release.is_compatible(
+                python_version=local_versions["python"],
+                pyodide_build_version=local_versions["pyodide-build"],
+            ):
+                raise ValueError(
+                    f"Version {version} is not compatible with the current environment."
+                )
+
+            download_url = release.url
 
         download_path = self._path_for_version(version)
 
@@ -191,9 +226,6 @@ class CrossBuildEnvManager:
         from . import __version__
 
         return __version__
-
-    def _download_url_for_version(self, version: str) -> str:
-        return XBUILDENV_URL.format(version=version)
 
     def _download(self, url: str, path: Path) -> None:
         """

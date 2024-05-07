@@ -1,6 +1,11 @@
+import os
+from functools import cache
+
 import pydantic
 from packaging.version import Version
 from pydantic import BaseModel
+
+DEFAULT_CROSS_BUILD_ENV_METADATA_URL = "https://raw.githubusercontent.com/pyodide/pyodide/main/pyodide-cross-build-environments.json"
 
 
 class CrossBuildEnvReleaseSpec(BaseModel):
@@ -157,3 +162,62 @@ class CrossBuildEnvMetaSpec(BaseModel):
             return None
 
         return compatible_releases[0]
+
+    def get_release(
+        self,
+        version: str,
+    ) -> CrossBuildEnvReleaseSpec:
+        """
+        Get the release with the given version
+
+        Parameters
+        ----------
+        version
+            The version of the release
+
+        Returns
+        -------
+        CrossBuildEnvReleaseSpec
+            The release with the given version
+        """
+        if version not in self.releases:
+            raise ValueError(f"Cannot find a version {version}")
+
+        return self.releases[version]
+
+
+def cross_build_env_metadata_url() -> str:
+    """
+    Get the URL to the Pyodide cross-build environment metadata
+
+    Returns
+    -------
+    str
+        The URL to the Pyodide cross-build environment metadata
+    """
+    url = os.environ.get("PYODIDE_CROSS_BUILD_ENV_METADATA_URL")
+    if url is not None:
+        return url
+
+    return DEFAULT_CROSS_BUILD_ENV_METADATA_URL
+
+
+@cache
+def load_cross_build_env_metadata(url_or_filename: str) -> CrossBuildEnvMetaSpec:
+    """
+    Load the Pyodide cross-build environment metadata from the given URL or filename
+
+    Returns
+    -------
+    CrossBuildEnvMetaSpec
+        The Pyodide cross-build environment metadata
+    """
+    if url_or_filename.startswith("http"):
+        import requests
+
+        response = requests.get(url_or_filename)
+        response.raise_for_status()
+        data = response.json()
+        return CrossBuildEnvMetaSpec.parse_obj(data)
+
+    return CrossBuildEnvMetaSpec.parse_file(url_or_filename)
