@@ -195,6 +195,11 @@ def cross_build_env_metadata_url() -> str:
     str
         The URL to the Pyodide cross-build environment metadata
     """
+
+    # The default URL can be overridden by the PYODIDE_CROSS_BUILD_ENV_METADATA_URL environment variable
+    # This has two purposes:
+    # 1. When running tests, we can set this variable to use a local metadata file
+    # 2. If we change the URL for the metadata file, people can set this variable to use the new URL
     url = os.environ.get("PYODIDE_CROSS_BUILD_ENV_METADATA_URL")
     if url is not None:
         return url
