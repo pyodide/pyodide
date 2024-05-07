@@ -130,7 +130,7 @@ export interface PackageData {
   fileName: string;
   /** @experimental */
   packageType: PackageType;
-};
+}
 
 /**
  * @hidden
