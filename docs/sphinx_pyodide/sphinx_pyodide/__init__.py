@@ -7,6 +7,7 @@ from .jsdoc import (
 from .lexers import HtmlPyodideLexer, PyodideLexer
 from .mdn_xrefs import add_mdn_xrefs
 from .packages import get_packages_summary_directive
+from sphinx_js import renderers
 
 
 def fix_pyodide_ffi_path():
@@ -58,3 +59,4 @@ def setup(app):
     app.config.ts_type_xref_formatter = ts_xref_formatter
     app.config.ts_type_bold = True
     app.config.ts_sphinx_js_config = Path(__file__).parent / "sphinxJsConfig.ts"
+    renderers._SECTION_ORDER = ["type_aliases", "interfaces", "attributes", "functions", "classes"]
