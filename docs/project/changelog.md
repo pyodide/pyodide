@@ -39,8 +39,8 @@ myst:
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
-  {pr}`4399`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+  {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
   This entrypoint was deprecated since 0.22.0.
