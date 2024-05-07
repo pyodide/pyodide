@@ -3,7 +3,7 @@ from collections.abc import Iterator
 from sphinx_js import ir, typedoc
 from sphinx_js.ir import Class
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
-from sphinx_js.typedoc import Base, Callable, Converter, ReflectionType
+from sphinx_js.typedoc import Base, Callable, Converter, Interface, ReflectionType
 
 # Custom tags are a great way of conveniently passing information from the
 # source code to this file. No custom tags will be seen by this code unless they
@@ -16,6 +16,7 @@ def patch_sphinx_js():
     Base.member_properties = member_properties
     Converter.convert_all_nodes = convert_all_nodes
     TsAnalyzer._get_toplevel_objects = _get_toplevel_objects
+    Interface.to_ir = Interface_to_ir
 
 
 def ts_should_destructure_arg(sig, param):
@@ -247,3 +248,15 @@ def fix_pyproxy_class(cls: ir.Class) -> None:
         x.segments = [x.segments[-1]]
     for x in methods_supers:
         cls.members.extend(PYPROXY_METHODS[x.segments[-1]])
+
+
+orig_Interface_to_ir = Interface.to_ir
+
+# sphinx_js incorrectly handles is_private for classes and interfaces.
+# TODO: fix sphinx_js
+
+
+def Interface_to_ir(self, converter):
+    orig = orig_Interface_to_ir(self, converter)
+    orig[0].is_private = self.flags.isPrivate
+    return orig

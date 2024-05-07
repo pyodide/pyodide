@@ -20,6 +20,8 @@ build:
   script: |
     export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
 
+    embuilder build zlib --pic
+
     # dap + byterange: no libcurl
 
     emconfigure ./configure \
@@ -32,8 +34,9 @@ build:
       --disable-examples \
       --disable-utilities \
       --disable-testsets \
-      CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
-      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include"
+      CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
+      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
+      LDFLAGS="-fPIC -s USE_ZLIB=1"
 
     emmake make -j ${PYODIDE_JOBS:-3} LDFLAGS="-avoid-version -L${WASM_LIBRARY_DIR}/lib"
     emmake make -j ${PYODIDE_JOBS:-3} install

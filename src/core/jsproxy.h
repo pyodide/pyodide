@@ -57,13 +57,6 @@ JsProxy_Val(PyObject* x);
 PyObject*
 wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter);
 
-// These could maybe move to JsLib?
-JsVal
-wrap_generator(JsVal gen, JsVal proxies);
-
-JsVal
-wrap_async_generator(JsVal gen, JsVal proxies);
-
 /** Initialize global state for JsProxy functionality. */
 int
 JsProxy_init(PyObject* core_module);

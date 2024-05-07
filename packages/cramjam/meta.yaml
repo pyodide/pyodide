@@ -1,17 +1,11 @@
 package:
   name: cramjam
-  version: 2.8.1
+  version: 2.8.3
   top-level:
     - cramjam
 source:
-  url: https://files.pythonhosted.org/packages/6d/37/69fc31f8bb047b7980c2c49d9abe19249d087c93dfd0991ffcadb3d115a7/cramjam-2.8.1.tar.gz
-  sha256: f7e233791761b61e3d85598b25db75868d9f1cd35b2bd10eb34ec4755ff2add1
-build:
-  script: |
-    # TODO: remove this when updating cramjam
-    cd cramjam-python
-    cargo update -p zstd-sys --precise 2.0.9
-    cargo update -p proc-macro2 --precise 1.0.60
+  url: https://files.pythonhosted.org/packages/0d/f2/a7c127e61dcb7878f3ec5bf07fbf472805ea8108fd63335a51ab0bd1a432/cramjam-2.8.3.tar.gz
+  sha256: 6b1fa0a6ea8183831d04572597c182bd6cece62d583a36cde1e6a86e72ce2389
 about:
   home: ""
   PyPI: https://pypi.org/project/cramjam

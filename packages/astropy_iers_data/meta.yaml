@@ -1,11 +1,11 @@
 package:
   name: astropy_iers_data
-  version: 0.2024.2.5.0.30.52
+  version: 0.2024.4.22.0.29.50
   top-level:
     - astropy_iers_data
 source:
-  url: https://files.pythonhosted.org/packages/03/41/ef4c45995f2450ed7f26e2b9d87f8ed962a1bdb17dc17bab8d9df04bd6e8/astropy_iers_data-0.2024.2.5.0.30.52-py3-none-any.whl
-  sha256: fe99b3f58a355751eef694757fb8962d1ad2bba5f66186ef7de9c20d23d1574d
+  url: https://files.pythonhosted.org/packages/35/81/c52d438edab8a3567fa265a10bf02598aac082cf89223072a45ed40f5c3c/astropy_iers_data-0.2024.4.22.0.29.50-py3-none-any.whl
+  sha256: 2986299dbeb0e4a5f1703d2aa6bba7a2fc860963e34bb2adf58f29bf79336ab5
 about:
   home: ""
   PyPI: https://pypi.org/project/astropy_iers_data

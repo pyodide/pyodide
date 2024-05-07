@@ -62,6 +62,23 @@ EM_JS(void, set_pyodide_module, (JsVal mod), {
 })
 // clang-format on
 
+int
+init_pyodide_proxy()
+{
+  bool success = false;
+  // Enable JavaScript access to the _pyodide module.
+  PyObject* _pyodide = PyImport_ImportModule("_pyodide");
+  FAIL_IF_NULL(_pyodide);
+  JsVal _pyodide_proxy = python2js(_pyodide);
+  FAIL_IF_JS_NULL(_pyodide_proxy);
+  set_pyodide_module(_pyodide_proxy);
+
+  success = true;
+finally:
+  Py_CLEAR(_pyodide);
+  return success ? 0 : -1;
+}
+
 EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
@@ -100,12 +117,9 @@ PyInit__pyodide_core(void)
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
   TRY_INIT_WITH_CORE_MODULE(jsbind);
 
-  // Enable JavaScript access to the _pyodide module.
-  JsVal _pyodide_proxy = python2js(_pyodide);
-  if (JsvNull_Check(_pyodide_proxy)) {
+  if (init_pyodide_proxy() == -1) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
   }
-  set_pyodide_module(_pyodide_proxy);
 
   success = true;
 finally:

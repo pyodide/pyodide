@@ -97,7 +97,7 @@ static PyObject* collections_abc;
 static PyObject* typing;
 static PyObject* MutableMapping;
 static PyObject* JsProxy_metaclass;
-PyObject* asyncio_mod;
+static PyObject* asyncio_mod;
 static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;

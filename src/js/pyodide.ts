@@ -9,17 +9,20 @@ import {
   loadLockFile,
 } from "./compat";
 
-import { createModule, initializeFileSystem, preloadWasm } from "./module";
+import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
 import type { TypedArray, API, Module } from "./types";
+import type { EmscriptenSettings } from "./emscripten-settings";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
 
 export { version, type PackageData };
 
-declare function _createPyodideModule(Module: any): Promise<void>;
+declare function _createPyodideModule(
+  settings: EmscriptenSettings,
+): Promise<Module>;
 
 /**
  * See documentation for loadPyodide.
@@ -162,6 +165,17 @@ export async function loadPyodide(
      * @ignore
      */
     _node_mounts?: string[];
+    /**
+     * @ignore
+     */
+    _makeSnapshot?: boolean;
+    /**
+     * @ignore
+     */
+    _loadSnapshot?:
+      | Uint8Array
+      | ArrayBuffer
+      | PromiseLike<Uint8Array | ArrayBuffer>;
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -187,24 +201,9 @@ export async function loadPyodide(
   if (!config.env.HOME) {
     config.env.HOME = "/home/pyodide";
   }
-
-  const Module = createModule();
-  Module.print = config.stdout;
-  Module.printErr = config.stderr;
-  Module.arguments = config.args;
-
-  const API = { config } as API;
-  Module.API = API;
+  const emscriptenSettings = createSettings(config);
+  const API = emscriptenSettings.API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
-
-  preloadWasm(Module, indexURL);
-  initializeFileSystem(Module, config);
-
-  const moduleLoaded = new Promise((r) => (Module.postRun = r));
-
-  // locateFile tells Emscripten where to find the data files that initialize
-  // the file system.
-  Module.locateFile = (path: string) => config.indexURL + path;
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
@@ -214,16 +213,23 @@ export async function loadPyodide(
     await loadScript(scriptSrc);
   }
 
+  let snapshot;
+  if (options._loadSnapshot) {
+    snapshot = await options._loadSnapshot;
+    if (snapshot?.constructor?.name === "ArrayBuffer") {
+      snapshot = new Uint8Array(snapshot);
+    }
+    emscriptenSettings.noInitialRun = true;
+    // @ts-ignore
+    emscriptenSettings.INITIAL_MEMORY = snapshot.length;
+  }
+
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
-  await _createPyodideModule(Module);
-
-  // There is some work to be done between the module being "ready" and postRun
-  // being called.
-  await moduleLoaded;
+  const Module = await _createPyodideModule(emscriptenSettings);
   // Handle early exit
-  if (Module.exited) {
-    throw Module.exited.toThrow;
+  if (emscriptenSettings.exited) {
+    throw emscriptenSettings.exited.toThrow;
   }
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
@@ -242,34 +248,28 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
-  const pyodide = API.finalizeBootstrap();
+  if (snapshot) {
+    // @ts-ignore
+    Module.HEAP8.set(snapshot);
+  }
+  // runPython works starting after the call to finalizeBootstrap.
+  const pyodide = API.finalizeBootstrap(!!snapshot);
 
-  // runPython works starting here.
+  if (options._makeSnapshot) {
+    // @ts-ignore
+    pyodide._snapshot = Module.HEAP8.slice();
+  }
+  API.sys.path.insert(0, API.config.env.HOME);
+
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
     // loaded. But in other cases it's harmless.
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
-  await API.packageIndexReady;
-
   API._pyodide.set_excepthook();
-  const importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(
-    API._import_name_to_package_name,
-    API.lockfile_unvendored_stdlibs_and_test,
-  );
-
-  if (API.lockfile_info.version !== version) {
-    throw new Error(
-      "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${API.lockfile_info.version}\n` +
-        `   pyodide  version: ${version}`,
-    );
-  }
-  API.package_loader.init_loaded_packages();
-  if (config.fullStdLib) {
-    await pyodide.loadPackage(API.lockfile_unvendored_stdlibs);
-  }
+  await API.packageIndexReady;
+  // I think we want this initializeStreams call to happen after
+  // packageIndexReady? I don't remember why.
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
   return pyodide;
 }

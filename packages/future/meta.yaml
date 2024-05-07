@@ -1,11 +1,11 @@
 package:
   name: future
-  version: 0.18.3
+  version: 1.0.0
   top-level:
     - future
 source:
-  sha256: 34a17436ed1e96697a86f9de3d15a3b0be01d8bc8de9c1dffd59fb8234ed5307
-  url: https://files.pythonhosted.org/packages/8f/2e/cf6accf7415237d6faeeebdc7832023c90e0282aa16fd3263db0eb4715ec/future-0.18.3.tar.gz
+  sha256: bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05
+  url: https://files.pythonhosted.org/packages/a7/b2/4140c69c6a66432916b26158687e821ba631a4c9273c474343badf84d3ba/future-1.0.0.tar.gz
 about:
   home: https://python-future.org
   PyPI: https://pypi.org/project/future

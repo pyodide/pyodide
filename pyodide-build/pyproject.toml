@@ -59,7 +59,7 @@ xbuildenv = "pyodide_build.cli.xbuildenv:app"
 test = [
     # (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
     "pytest<8.0.0",
-    "pytest-pyodide==0.56.2",
+    "pytest-pyodide==0.57.0",
     "pytest-httpserver",
     "packaging",
 ]

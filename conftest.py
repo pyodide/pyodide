@@ -297,3 +297,23 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+from pytest_pyodide.runner import NodeRunner
+
+
+def patched_load_pyodide(self):
+    self.run_js(
+        """
+        const {readFileSync} = require("fs");
+        let snap = readFileSync("snapshot.bin");
+        snap = new Uint8Array(snap.buffer);
+        let pyodide = await loadPyodide({ fullStdLib: false, jsglobals : self, _loadSnapshot: snap });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._api.inTestHoist = true; // improve some error messages for tests
+        """
+    )
+
+
+NodeRunner.load_pyodide = patched_load_pyodide

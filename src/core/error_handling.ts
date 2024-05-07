@@ -1,7 +1,6 @@
 import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
 import "types";
 
-declare var Module: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {

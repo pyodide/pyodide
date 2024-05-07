@@ -4,18 +4,18 @@
 Builds a Pyodide package.
 """
 
-import cgi
 import fnmatch
 import os
+import re
 import shutil
 import subprocess
 import sys
-import urllib
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
-from urllib import request
+
+import requests
 
 from . import common, pypabuild
 from .bash_runner import BashRunnerWithSharedEnvironment, get_bash_runner
@@ -23,6 +23,7 @@ from .build_env import (
     RUST_BUILD_PRELUDE,
     BuildArgs,
     get_build_environment_vars,
+    get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
 )
@@ -294,16 +295,16 @@ class RecipeBuilder:
         Download the source from specified in the package metadata,
         then checksum it, then extract the archive into the build directory.
         """
-
-        build_env = get_build_environment_vars()
+        build_env = get_build_environment_vars(get_pyodide_root())
         url = cast(str, self.source_metadata.url)  # we know it's not None
         url = _environment_substitute_str(url, build_env)
 
         max_retry = 3
         for retry_cnt in range(max_retry):
             try:
-                response = request.urlopen(url)
-            except urllib.error.URLError as e:
+                response = requests.get(url)
+                response.raise_for_status()
+            except requests.HTTPError as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
@@ -313,18 +314,18 @@ class RecipeBuilder:
 
             break
 
-        # TODO: replace cgi with something else (will be removed in Python 3.13)
-        _, parameters = cgi.parse_header(
-            response.headers.get("Content-Disposition", "")
-        )
-        if "filename" in parameters:
-            tarballname = parameters["filename"]
-        else:
-            tarballname = Path(response.geturl()).name
-
         self.build_dir.mkdir(parents=True, exist_ok=True)
+
+        tarballname = url.split("/")[-1]
+        if "Content-Disposition" in response.headers:
+            filenames = re.findall(
+                "filename=(.+)", response.headers["Content-Disposition"]
+            )
+            if filenames:
+                tarballname = filenames[0]
+
         tarballpath = self.build_dir / tarballname
-        tarballpath.write_bytes(response.read())
+        tarballpath.write_bytes(response.content)
 
         checksum = self.source_metadata.sha256
         if checksum is not None:

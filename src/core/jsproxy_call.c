@@ -206,6 +206,13 @@ find_keyword(PyObject* kwarg_names, PyObject* key)
   return -1;
 }
 
+/**
+ * Prepare arguments from a `METH_FASTCALL | METH_KEYWORDS` Python function to a
+ * JavaScript call. We call `python2js` on each argument. Any PyProxy *created*
+ * by `python2js` is stored into the `proxies` list to be destroyed later (if
+ * the argument is a PyProxy created with `create_proxy` it won't be recorded
+ * for destruction).
+ */
 static JsVal
 JsMethod_ConvertArgs(JsFuncSignature* sig,
                      PyObject* const* pyargs,
@@ -346,6 +353,9 @@ finally:
   return jsargs;
 }
 
+/**
+ * __call__ overload for methods. Controlled by IS_CALLABLE.
+ */
 PyObject*
 JsMethod_Vectorcall_impl(JsVal func,
                          JsVal receiver,
