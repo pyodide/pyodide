@@ -2,7 +2,6 @@ import { jsFinderHook } from "./api";
 import { scheduleCallback } from "./scheduler";
 
 declare var Module: any;
-const MAP_INDEX = 5;
 
 export function getExpectedKeys() {
   return [
@@ -67,6 +66,11 @@ const SNAPSHOT_MAGIC = 0x706e7300; // "\x00snp"
 const SNAPSHOT_BUILD_ID = 0;
 const HEADER_SIZE = 4 * 4;
 
+// The expected index of the deduplication map in the immortal externref table.
+// We double check that this is still right in makeSnapshot (when creating the
+// snapshot) and in syncUpSnapshotLoad1 (when using it).
+const MAP_INDEX = 5;
+
 API.makeSnapshot = function (): Uint8Array {
   if (!API.config._makeSnapshot) {
     throw new Error(
@@ -120,6 +124,10 @@ API.makeSnapshot = function (): Uint8Array {
     hiwireKeys.push(accessorList);
   }
   const immortalKeys = [];
+  const shouldBeAMap = Module.__hiwire_immortal_get(MAP_INDEX);
+  if (Object.prototype.toString.call(shouldBeAMap) !== "[object Map]") {
+    throw new Error(`Internal error: expected a map at index ${MAP_INDEX}`);
+  }
   for (let i = MAP_INDEX + 1; ; i++) {
     let v;
     try {
@@ -202,7 +210,9 @@ export function syncUpSnapshotLoad1() {
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
   if (mapIndex !== MAP_INDEX) {
-    throw new Error(`Expected mapIndex to be ${MAP_INDEX}, got ${mapIndex}`);
+    throw new Error(
+      `Internal error: Expected mapIndex to be ${MAP_INDEX}, got ${mapIndex}`,
+    );
   }
   // Set API._pyodide to a proxy of the _pyodide module.
   // Normally called by import _pyodide.

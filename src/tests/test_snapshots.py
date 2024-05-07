@@ -58,6 +58,12 @@ def test_snapshot_cannot_serialize(selenium_standalone_noload):
 
 
 def test_snapshot_deleted_proxy(selenium_standalone_noload):
+    """In previous test, we fail to make the snapshot because we have a proxy of
+    a Headers which we don't know how to serialize.
+
+    In this test, we delete the headers proxy and should be able to successfully
+    create the snapshot.
+    """
     selenium = selenium_standalone_noload
     selenium.run_js(
         """
@@ -70,7 +76,7 @@ def test_snapshot_deleted_proxy(selenium_standalone_noload):
             assert run_js("(x) => x.get('a')")({'a': 7}) == 7
 
             a = Headers.new()
-            del a
+            del a # delete non-serializable JsProxy
         `);
         const snapshot = py1.makeMemorySnapshot();
         const py2 = await loadPyodide({_loadSnapshot: snapshot});
