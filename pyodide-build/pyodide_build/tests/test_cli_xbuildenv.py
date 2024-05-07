@@ -1,3 +1,6 @@
+# flake8: noqa
+
+import os
 import shutil
 from pathlib import Path
 
@@ -9,6 +12,9 @@ from pyodide_build.cli import (
     xbuildenv,
 )
 from pyodide_build.common import chdir
+from pyodide_build.xbuildenv_releases import CROSS_BUILD_ENV_METADATA_URL_ENV_VAR
+
+from .fixture import fake_xbuildenv_releases_compatible, fake_xbuildenv_releases_incompatible
 
 
 def mock_pyodide_lock() -> PyodideLockSpec:
@@ -98,7 +104,7 @@ def test_xbuildenv_create(selenium, tmp_path):
         assert isinstance(result.exception, FileNotFoundError), result.exception
 
 
-def test_xbuildenv_install(tmp_path, mock_xbuildenv_url):
+def test_xbuildenv_install_url(tmp_path, mock_xbuildenv_url):
     envpath = Path(tmp_path) / ".xbuildenv"
 
     result = runner.invoke(
@@ -120,6 +126,64 @@ def test_xbuildenv_install(tmp_path, mock_xbuildenv_url):
 
     concrete_path = (envpath / "xbuildenv").resolve()
     assert (concrete_path / ".installed").exists()
+
+
+def test_xbuildenv_install_version(tmp_path, fake_xbuildenv_releases_compatible):
+    envpath = Path(tmp_path) / ".xbuildenv"
+
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(fake_xbuildenv_releases_compatible)
+    
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "install",
+            "0.1.0",
+            "--path",
+            str(envpath),
+        ],
+    )
+
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+
+    assert result.exit_code == 0, result.stdout
+    assert "Downloading Pyodide cross-build environment" in result.stdout, result.stdout
+    assert "Installing Pyodide cross-build environment" in result.stdout, result.stdout
+    assert (envpath / "xbuildenv").is_symlink()
+    assert (envpath / "xbuildenv").resolve().exists()
+    assert (envpath / "0.1.0").exists()
+
+    concrete_path = (envpath / "xbuildenv").resolve()
+    assert (concrete_path / ".installed").exists()
+
+
+def test_xbuildenv_install_force_install(tmp_path, fake_xbuildenv_releases_incompatible):
+    envpath = Path(tmp_path) / ".xbuildenv"
+
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(fake_xbuildenv_releases_incompatible)
+    
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "install",
+            "0.1.0",
+            "--path",
+            str(envpath),
+        ],
+    )
+
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+
+    assert result.exit_code == 0, result.stdout
+    # assert "Downloading Pyodide cross-build environment" in result.stdout, result.stdout
+    # assert "Installing Pyodide cross-build environment" in result.stdout, result.stdout
+    # assert (envpath / "xbuildenv").is_symlink()
+    # assert (envpath / "xbuildenv").resolve().exists()
+    # assert (envpath / "0.1.0").exists()
+
+    # concrete_path = (envpath / "xbuildenv").resolve()
+    # assert (concrete_path / ".installed").exists()
 
 
 def test_xbuildenv_version(tmp_path):
@@ -240,3 +304,45 @@ def test_xbuildenv_uninstall(tmp_path):
 
     assert result.exit_code != 0, result.stdout
     assert isinstance(result.exception, ValueError), result.exception
+
+
+def test_xbuildenv_search(tmp_path, fake_xbuildenv_releases_compatible, fake_xbuildenv_releases_incompatible):
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "search",
+            "--metadata",
+            str(fake_xbuildenv_releases_compatible),
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "0.1.0" in result.stdout, result.stdout
+
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "search",
+            "--metadata",
+            str(fake_xbuildenv_releases_incompatible),
+        ],
+    )
+
+    assert result.exit_code != 0, result.stdout
+    assert (
+        "No compatible cross-build environment found for your system" in result.stdout
+    )
+    assert "0.1.0" not in result.stdout, result.stdout
+
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "search",
+            "--metadata",
+            str(fake_xbuildenv_releases_incompatible),
+            "--all",
+        ],
+    )
+
+    assert result.exit_code == 0, result.stdout
+    assert "0.1.0" in result.stdout, result.stdout

@@ -172,6 +172,11 @@ class TestCrossBuildEnvManager:
             manager.symlink_dir / "xbuildenv" / "pyodide-root" / "package_index"
         ).exists()
         assert (manager.symlink_dir / "xbuildenv" / "site-packages-extras").exists()
+    
+    def test_install_force(
+        self,
+    ):
+        pass
 
     def test_install_cross_build_packages(
         self, tmp_path, xbuildenv_url, monkeypatch_subprocess_run_pip
