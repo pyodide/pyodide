@@ -1915,7 +1915,7 @@ def test_bind_call_convert(selenium):
     from _pyodide.jsbind import Deep, Json
     from pyodide.code import run_js
 
-    def f(
+    def fsig(
         a: dict[str, int],
         b: Annotated[dict[str, int], Json],
         c: Annotated[dict[str, int], Deep],
@@ -1929,7 +1929,7 @@ def test_bind_call_convert(selenium):
             return [x.get("a"), y.b, z.c]
         })
         """
-    ).bind_sig(f)
+    ).bind_sig(fsig)
 
     x = {"a": 2}
     y = {"b": 4}
@@ -1947,7 +1947,7 @@ def test_bind_call_bind_return_value(selenium):
     class A(BindClass):
         x: Annotated[list[int], Deep]
 
-    def f() -> A:
+    def fsig() -> A:
         raise NotImplementedError
 
     f = run_js(
@@ -1956,7 +1956,7 @@ def test_bind_call_bind_return_value(selenium):
             return {x: [77, 1]};
         })
         """
-    ).bind_sig(f)
+    ).bind_sig(fsig)
 
     assert f().x == [77, 1]
 
