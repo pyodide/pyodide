@@ -259,6 +259,7 @@ export interface FS {
   readFile(a: string): Uint8Array;
 }
 
+/** @private */
 export type PreRunFunc = (Module: Module) => void;
 
 export type ReadFileType = (path: string) => Uint8Array;

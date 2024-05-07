@@ -680,7 +680,7 @@ export class PyProxy {
   }
   /**
    * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
-   * :js:func:`loadPyodide` in which case it will return `repr(o)`)
+   * :js:func:`~globalThis.loadPyodide` in which case it will return `repr(o)`)
    */
   toString(): string {
     let ptrobj = _getPtr(this);
@@ -935,7 +935,7 @@ export class PyGetItemMethods {
    *     adaptor.
    *
    * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
-   * inverse to Python's :meth:`json.loads`.
+   * inverse to Python's :py:func:`json.loads`.
    */
   asJsonAdaptor(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
@@ -1274,7 +1274,7 @@ export class PyIteratorMethods {
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
-   * @param any The value to send to the generator. The value will be assigned
+   * @param arg The value to send to the generator. The value will be assigned
    * as a result of a yield expression.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``next`` returns ``{done : false, value :
@@ -1319,7 +1319,7 @@ export class PyGeneratorMethods {
    *
    * See the documentation for :js:meth:`Generator.throw`.
    *
-   * @param exception Error The error to throw into the generator. Must be an
+   * @param exc Error The error to throw into the generator. Must be an
    * instanceof ``Error``.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value
@@ -1351,7 +1351,7 @@ export class PyGeneratorMethods {
    * :py:exc:`GeneratorExit` or :py:exc:`StopIteration`, that error is propagated. See
    * the documentation for :js:meth:`Generator.return`.
    *
-   * @param any The value to return from the generator.
+   * @param v The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value
    * : some_value}``. When the generator raises a
@@ -1401,7 +1401,7 @@ export class PyAsyncIteratorMethods {
    *
    * This will be used implicitly by ``for(let x of proxy){}``.
    *
-   * @param any The value to send to a generator. The value will be assigned as
+   * @param arg The value to send to a generator. The value will be assigned as
    * a result of a yield expression.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * iterator yields ``some_value``, ``next`` returns ``{done : false, value :
@@ -1459,7 +1459,7 @@ export class PyAsyncGeneratorMethods {
    *
    * See the documentation for :js:meth:`AsyncGenerator.throw`.
    *
-   * @param exception Error The error to throw into the generator. Must be an
+   * @param exc Error The error to throw into the generator. Must be an
    * instanceof ``Error``.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value
@@ -1506,7 +1506,7 @@ export class PyAsyncGeneratorMethods {
    * :py:exc:`GeneratorExit` or :py:exc:`StopAsyncIteration`, that error is
    * propagated. See the documentation for :js:meth:`AsyncGenerator.throw`
    *
-   * @param any The value to return from the generator.
+   * @param v The value to return from the generator.
    * @returns An Object with two properties: ``done`` and ``value``. When the
    * generator yields ``some_value``, ``return`` returns ``{done : false, value
    * : some_value}``. When the generator raises a :py:exc:`StopAsyncIteration`
@@ -1656,7 +1656,7 @@ export class PySequenceMethods {
    * See :js:meth:`Array.filter`. Creates a shallow copy of a portion of a given
    * ``Sequence``, filtered down to just the elements from the given array that pass
    * the test implemented by the provided function.
-   * @param callbackfn A function to execute for each element in the array. It
+   * @param predicate A function to execute for each element in the array. It
    * should return a truthy value to keep the element in the resulting array,
    * and a falsy value otherwise.
    * @param thisArg A value to use as ``this`` when executing ``predicate``.
@@ -1670,7 +1670,7 @@ export class PySequenceMethods {
   /**
    * See :js:meth:`Array.some`. Tests whether at least one element in the
    * ``Sequence`` passes the test implemented by the provided function.
-   * @param callbackfn A function to execute for each element in the
+   * @param predicate A function to execute for each element in the
    * ``Sequence``. It should return a truthy value to indicate the element
    * passes the test, and a falsy value otherwise.
    * @param thisArg A value to use as ``this`` when executing ``predicate``.
@@ -1684,7 +1684,7 @@ export class PySequenceMethods {
   /**
    * See :js:meth:`Array.every`. Tests whether every element in the ``Sequence``
    * passes the test implemented by the provided function.
-   * @param callbackfn A function to execute for each element in the
+   * @param predicate A function to execute for each element in the
    * ``Sequence``. It should return a truthy value to indicate the element
    * passes the test, and a falsy value otherwise.
    * @param thisArg A value to use as ``this`` when executing ``predicate``.
@@ -1702,7 +1702,6 @@ export class PySequenceMethods {
    * running the reducer across all elements of the Sequence is a single value.
    * @param callbackfn A function to execute for each element in the ``Sequence``. Its
    * return value is discarded.
-   * @param thisArg A value to use as ``this`` when executing ``callbackfn``.
    */
   reduce(
     callbackfn: (
@@ -1723,7 +1722,6 @@ export class PySequenceMethods {
    * single value.
    * @param callbackfn A function to execute for each element in the Sequence.
    * Its return value is discarded.
-   * @param thisArg A value to use as ``this`` when executing ``callbackFn``.
    */
   reduceRight(
     callbackfn: (
@@ -1843,7 +1841,7 @@ export class PySequenceMethods {
    *     adaptor.
    *
    * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
-   * inverse to Python's :meth:`json.loads`.
+   * inverse to Python's :py:func:`json.loads`.
    */
   asJsonAdaptor(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
@@ -3148,8 +3146,13 @@ export class PyBufferView {
    */
   f_contiguous: boolean;
 
+  /**
+   * @private
+   */
   _released: boolean;
-
+  /**
+   * @private
+   */
   _view_ptr: number;
 
   /** @private */
