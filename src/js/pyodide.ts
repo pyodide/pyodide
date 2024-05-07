@@ -13,7 +13,7 @@ import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, API, Module } from "./types";
+import type { TypedArray, Module } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { PackageData } from "./load-package";
 export type { PyodideInterface, TypedArray };
@@ -156,8 +156,8 @@ export async function loadPyodide(
      */
     packages?: string[];
     /**
-     * Opt into the old behavior where PyProxy.toString calls `repr` and not
-     * `str`.
+     * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
+     * calls :py:func:`repr` and not :py:class:`str() <str>`.
      * @deprecated
      */
     pyproxyToStringRepr?: boolean;

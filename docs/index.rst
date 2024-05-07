@@ -44,7 +44,7 @@ Using Pyodide
    usage/downloading-and-deploying.md
    usage/index.md
    usage/loading-packages.md
-   usage/loading-files.md
+   usage/accessing-files.md
    usage/wasm-constraints.md
    usage/type-conversions.md
    usage/keyboard-interrupts.md

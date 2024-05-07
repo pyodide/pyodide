@@ -7,6 +7,7 @@ import { API, PreRunFunc } from "./types";
 
 /**
  * @private
+ * @hidden
  */
 export interface EmscriptenSettings {
   readonly noImageDecoding?: boolean;

@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.12.1
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.52
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.58
 export PYODIDE_VERSION ?= 0.26.0.dev0
 
 export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
@@ -144,6 +144,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
+	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -163,56 +164,55 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lsdl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
+EXPORTS= _main\
+		\
+		,_free \
+		\
+		,_hiwire_new \
+		,_hiwire_intern \
+		,_hiwire_num_refs \
+		,_hiwire_get \
+		,_hiwire_incref \
+		,_hiwire_decref \
+		,_hiwire_pop \
+		,__hiwire_set \
+		,__hiwire_immortal_add \
+		,_jslib_init \
+		,_init_pyodide_proxy \
+		\
+		,_PyBuffer_Release \
+		,_Py_DecRef \
+		,_PyDict_New \
+		,_PyDict_SetItem \
+		,__PyErr_CheckSignals \
+		,_PyErr_CheckSignals \
+		,_PyErr_Clear \
+		,_PyErr_Occurred \
+		,_PyErr_Print \
+		,_PyErr_SetRaisedException \
+		,_PyErr_SetString \
+		,_PyEval_SaveThread \
+		,_PyEval_RestoreThread \
+		,_PyFloat_FromDouble \
+		,_PyGILState_Check \
+		,_Py_IncRef \
+		,_PyList_New \
+		,_PyList_SetItem \
+		,__PyLong_FromByteArray \
+		,_PyLong_FromDouble \
+		,_PyMem_Free \
+		,_PyObject_GetAIter \
+		,_PyObject_GetIter \
+		,_PyObject_Size \
+		,_PyRun_SimpleString \
+		,_PySet_Add \
+		,_PySet_New \
+		,__PyTraceback_Add \
+		,_PyUnicode_Data \
+		,_PyUnicode_New \
+
 
 ifeq ($(DISABLE_DYLINK), 1)
-
-	EXPORTS= _main\
-			\
-			,_free \
-			\
-			,_hiwire_new \
-			,_hiwire_intern \
-			,_hiwire_num_refs \
-			,_hiwire_get \
-			,_hiwire_incref \
-			,_hiwire_decref \
-			,_hiwire_pop \
-			,__hiwire_set \
-			,__hiwire_immortal_add \
-			,_jslib_init \
-			,_init_pyodide_proxy \
-			\
-			,_PyBuffer_Release \
-			,_Py_DecRef \
-			,_PyDict_New \
-			,_PyDict_SetItem \
-			,__PyErr_CheckSignals \
-			,_PyErr_CheckSignals \
-			,_PyErr_Clear \
-			,_PyErr_Occurred \
-			,_PyErr_Print \
-			,_PyErr_SetRaisedException \
-			,_PyErr_SetString \
-			,_PyEval_SaveThread \
-			,_PyEval_RestoreThread \
-			,_PyFloat_FromDouble \
-			,_PyGILState_Check \
-			,_Py_IncRef \
-			,_PyList_New \
-			,_PyList_SetItem \
-			,__PyLong_FromByteArray \
-			,_PyLong_FromDouble \
-			,_PyMem_Free \
-			,_PyObject_GetAIter \
-			,_PyObject_GetIter \
-			,_PyObject_Size \
-			,_PyRun_SimpleString \
-			,_PySet_Add \
-			,_PySet_New \
-			,__PyTraceback_Add \
-			,_PyUnicode_Data \
-			,_PyUnicode_New \
-
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \

@@ -113,6 +113,9 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
+/**
+ * @private
+ */
 export type PackageType =
   | "package"
   | "cpython_module"
@@ -120,6 +123,9 @@ export type PackageType =
   | "static_library";
 
 // Package data inside pyodide-lock.json
+/**
+ * @private
+ */
 export type PackageData = {
   name: string;
   version: string;

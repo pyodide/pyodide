@@ -1196,6 +1196,7 @@ class JsDomElement(JsProxy):
 # from pyproxy.c
 
 
+@docs_argspec("(obj: Callable[..., Any], /) -> JsOnceCallable")
 def create_once_callable(
     obj: Callable[..., Any], /, *, _may_syncify: bool = False
 ) -> JsOnceCallable:
