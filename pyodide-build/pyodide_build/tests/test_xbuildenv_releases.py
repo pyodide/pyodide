@@ -1,6 +1,16 @@
+import json
+import os
+
+import pytest
+import requests
+
 from pyodide_build.xbuildenv_releases import (
+    CROSS_BUILD_ENV_METADATA_URL_ENV_VAR,
+    DEFAULT_CROSS_BUILD_ENV_METADATA_URL,
     CrossBuildEnvMetaSpec,
     CrossBuildEnvReleaseSpec,
+    cross_build_env_metadata_url,
+    load_cross_build_env_metadata,
 )
 
 FAKE_METADATA = {
@@ -115,6 +125,16 @@ def test_get_latest_compatible_release():
     assert release is None
 
 
+def test_get_release():
+    model = CrossBuildEnvMetaSpec(**FAKE_METADATA)
+
+    release = model.get_release("0.1.0")
+    assert release.version == "0.1.0"
+
+    with pytest.raises(KeyError):
+        model.get_release("0.123.0")
+
+
 def test_is_compatible_full():
     release = CrossBuildEnvReleaseSpec(
         version="0.1.0",
@@ -210,3 +230,62 @@ def test_is_compatible_without_pyodide_build_range():
         emscripten_version="1.39.8",
         pyodide_build_version="0.1.0",
     )
+
+
+def test_cross_build_env_metadata_url():
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+
+    assert cross_build_env_metadata_url() == DEFAULT_CROSS_BUILD_ENV_METADATA_URL
+
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = (
+        "https://example.com/metadata.json"
+    )
+    assert cross_build_env_metadata_url() == "https://example.com/metadata.json"
+
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = "/tmp/metadata.json"
+    assert cross_build_env_metadata_url() == "/tmp/metadata.json"
+
+    os.environ.pop("PYODIDE_CROSS_BUILD_ENV_METADATA_URL", None)
+
+
+def test_load_cross_build_env_metadata_from_url(httpserver):
+    httpserver.expect_oneshot_request(
+        "/cross-build-env-metadata1.json"
+    ).respond_with_json(FAKE_METADATA)
+
+    # by passing the URL
+    load_cross_build_env_metadata.cache_clear()
+    metadata = load_cross_build_env_metadata(
+        httpserver.url_for("/cross-build-env-metadata1.json")
+    )
+
+    assert "0.1.0" in metadata.releases
+
+    httpserver.expect_oneshot_request(
+        "/cross-build-env-metadata2.json"
+    ).respond_with_data("Not found", status=404, content_type="text/plain")
+
+    with pytest.raises(requests.exceptions.HTTPError):
+        load_cross_build_env_metadata.cache_clear()
+        load_cross_build_env_metadata(
+            httpserver.url_for("/cross-build-env-metadata2.json")
+        )
+
+
+def test_load_cross_build_env_metadata_from_file(tmp_path):
+    fake_metadata_file = tmp_path / "metadata.json"
+    fake_metadata_file.write_text(json.dumps(FAKE_METADATA))
+
+    # by passing the file path
+
+    load_cross_build_env_metadata.cache_clear()
+    metadata = load_cross_build_env_metadata(str(fake_metadata_file))
+
+    assert "0.1.0" in metadata.releases
+
+    # failure (file does not exist)
+
+    fake_metadata_file.unlink()
+    with pytest.raises(FileNotFoundError):
+        load_cross_build_env_metadata.cache_clear()
+        load_cross_build_env_metadata(str(fake_metadata_file))
