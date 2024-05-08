@@ -230,7 +230,7 @@ jobs:
           name: create xbuild environment
           command: |
             pip install -e ./pyodide-build
-            pyodide xbuildenv create .
+            python tools/create_xbuildenv.py .
 
       - run:
           name: Zip xbuild environment
