@@ -157,7 +157,7 @@ def _build_in_isolated_env(
         installed_requires_for_build = False
         try:
             build_reqs = builder.get_requires_for_build(
-                distribution,  # type: ignore[arg-type]
+                distribution,
             )
         except BuildBackendException:
             pass
@@ -168,13 +168,13 @@ def _build_in_isolated_env(
         with common.replace_env(build_env):
             if not installed_requires_for_build:
                 build_reqs = builder.get_requires_for_build(
-                    distribution,  # type: ignore[arg-type]
+                    distribution,
                     config_settings,
                 )
                 install_reqs(env, build_reqs)
 
             return builder.build(
-                distribution,  # type: ignore[arg-type]
+                distribution,
                 outdir,
                 config_settings,
             )

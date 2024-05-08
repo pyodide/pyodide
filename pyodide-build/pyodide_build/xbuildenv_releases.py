@@ -83,13 +83,14 @@ class CrossBuildEnvReleaseSpec(BaseModel):
 
 
 class CrossBuildEnvMetaSpec(BaseModel):
+    """
+    The specification for the Pyodide cross-build environment metadata
+    """
+
     releases: dict[str, CrossBuildEnvReleaseSpec]
     model_config = ConfigDict(
         extra=pydantic.Extra.forbid,
         title="CrossBuildEnvMetaSpec",
-        description=(
-            "The specification for the Pyodide cross-build environment metadata"
-        ),
     )
 
     def list_compatible_releases(
