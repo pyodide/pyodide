@@ -38,6 +38,7 @@ DATA = {
         "Error": "$global/",
         "Function": "$global/",
         "Promise": "$global/",
+        "PromiseLike": "$global/Promise#thenables",
         "FileSystemDirectoryHandle": "API/",
     },
     "js:method": {

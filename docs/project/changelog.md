@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} `pyodide.loadPackage` now checks if the cache directory exists and calls `mkdir` only when it doesn't to avoid an error on read-only file systems in Node.js environment.
+  {pr}`4738`
+
 - {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
   This Fixes "Argument list too long" error.
 
@@ -36,8 +39,8 @@ myst:
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.52
-  {pr}`4399`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+  {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
   This entrypoint was deprecated since 0.22.0.

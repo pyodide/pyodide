@@ -1,4 +1,3 @@
-import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
