@@ -192,7 +192,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ \
+          tools/pytest_wrapper.py src packages/micropip/ tools/ \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
