@@ -2867,7 +2867,7 @@ export class PyBufferMethods {
    * @param type The type of the :js:attr:`~pyodide.ffi.PyBufferView.data` field
    * in the output. Should be one of: ``"i8"``, ``"u8"``, ``"u8clamped"``,
    * ``"i16"``, ``"u16"``, ``"i32"``, ``"u32"``, ``"i32"``, ``"u32"``,
-   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64``, or ``"dataview"``. This argument
+   * ``"i64"``, ``"u64"``, ``"f32"``, ``"f64"``, or ``"dataview"``. This argument
    * is optional, if absent :js:meth:`~pyodide.ffi.PyBuffer.getBuffer` will try
    * to determine the appropriate output type based on the buffer format string
    * (see :std:ref:`struct-format-strings`).
@@ -3015,23 +3015,23 @@ export interface PyDict
  *
  * .. code-block:: js
  *
- *    function multiIndexToIndex(pybuff, multiIndex){
- *       if(multindex.length !==pybuff.ndim){
- *          throw new Error("Wrong length index");
+ *     function multiIndexToIndex(pybuff, multiIndex) {
+ *       if (multindex.length !== pybuff.ndim) {
+ *         throw new Error("Wrong length index");
  *       }
  *       let idx = pybuff.offset;
- *       for(let i = 0; i < pybuff.ndim; i++){
- *          if(multiIndex[i] < 0){
- *             multiIndex[i] = pybuff.shape[i] - multiIndex[i];
- *          }
- *          if(multiIndex[i] < 0 || multiIndex[i] >= pybuff.shape[i]){
- *             throw new Error("Index out of range");
- *          }
- *          idx += multiIndex[i] * pybuff.stride[i];
+ *       for (let i = 0; i < pybuff.ndim; i++) {
+ *         if (multiIndex[i] < 0) {
+ *           multiIndex[i] = pybuff.shape[i] - multiIndex[i];
+ *         }
+ *         if (multiIndex[i] < 0 || multiIndex[i] >= pybuff.shape[i]) {
+ *           throw new Error("Index out of range");
+ *         }
+ *         idx += multiIndex[i] * pybuff.stride[i];
  *       }
  *       return idx;
- *    }
- *    console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0, -1])]);
+ *     }
+ *     console.log("entry is", pybuff.data[multiIndexToIndex(pybuff, [2, 0, -1])]);
  *
  * .. admonition:: Converting between TypedArray types
  *    :class: warning
@@ -3091,7 +3091,8 @@ export class PyBufferView {
 
   /**
    * The total number of bytes the buffer takes up. This is equal to
-   * :js:attr:`buff.data.byteLength <TypedArray.byteLength>`. See :py:attr:`memoryview.nbytes`.
+   * :js:attr:`buff.data.byteLength <TypedArray.byteLength>`. See
+   * :py:attr:`memoryview.nbytes`.
    */
   nbytes: number;
 

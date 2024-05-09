@@ -16,8 +16,8 @@ def ts_xref_formatter(_config, xref):
     from sphinx_pyodide.mdn_xrefs import JSDATA
 
     name = xref.name
-    if name == "PyodideInterface":
-        return ":ref:`PyodideInterface <js-api-pyodide>`"
+    if name == "PyodideAPI":
+        return ":ref:`PyodideAPI <js-api-pyodide>`"
     if name in JSDATA:
         return f":js:data:`{name}`"
     if name in FFI_FIELDS:
