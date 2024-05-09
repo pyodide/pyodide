@@ -8,7 +8,11 @@ sphinx_book_theme>=0.4.0rc1
 # A dependency of the above theme, which had some breaking changes in 0.13.2
 pydata_sphinx_theme < 0.13.2
 sphinx-issues
-sphinx-click
+# Use my branch of sphinx-click with fix for warnings:
+# CRITICAL: Unexpected section title or transition
+# https://github.com/click-contrib/sphinx-click/pull/137
+# https://github.com/click-contrib/sphinx-click/pull/138
+sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5dd4390f26381a353224e
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic
