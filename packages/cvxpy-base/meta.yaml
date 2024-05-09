@@ -4,9 +4,8 @@ package:
   top-level:
     - cvxpy
 source:
-  # TODO: replace with cvxpy-base from PyPI after 1.5 release
-  url: https://github.com/cvxpy/cvxpy/archive/23f1eaa.zip
-  sha256: 4b2a0d982a810d0fdb9f189ab5faa4dbef39679921335e54d737e1b57c555673
+  url: https://files.pythonhosted.org/packages/06/cd/c2d7c3f4dd08221a10148d0f7402a06a4696b28f14f0464b3216c55ef2e9/cvxpy_base-1.5.0.tar.gz
+  sha256: 95b4f7817a9462d91dd32e98adfb095e6b36af8983d3d5a08657b1d348b2c656
 requirements:
   run:
     # Dependencies that are needed to run the package
