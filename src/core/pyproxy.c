@@ -5,6 +5,7 @@
 
 #include "docstring.h"
 #include "js2python.h"
+#include "jsbind.h"
 #include "jslib.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
@@ -1499,6 +1500,33 @@ create_once_callable_py(PyObject* _mod,
 
 // clang-format off
 
+EMSCRIPTEN_KEEPALIVE int
+create_promise_handles_result_helper(PyObject* handle_result, PyObject* converter, JsVal jsval) {
+  bool success = false;
+  PyObject* pyval = NULL;
+  PyObject* result = NULL;
+
+  if (converter == NULL || Py_IsNone(converter)) {
+    pyval = js2python(jsval);
+  } else {
+    pyval = Js2PyConverter_convert(converter, jsval, JS_NULL);
+  }
+  FAIL_IF_NULL(pyval);
+  result = PyObject_CallOneArg(handle_result, pyval);
+  FAIL_IF_NULL(result);
+
+  success = true;
+finally:
+  Py_CLEAR(pyval);
+  Py_CLEAR(result);
+  if (!success) {
+    // Not sure what we'll do if this function fails tbh...
+    printf("Unexpected error:\n");
+    PyErr_Print();
+  }
+  return success ? 0 : -1;
+}
+
 /**
  * Arguments:
  *  handle_result -- Python callable expecting one argument, called with the
@@ -1524,7 +1552,10 @@ create_once_callable_py(PyObject* _mod,
  * some_promise.then(onResolved, onRejected).
  */
 EM_JS_VAL(JsVal, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception, JsVal done_callback
+  PyObject* handle_result,
+  PyObject* handle_exception,
+  JsVal done_callback,
+  PyObject* js2py_converter
 ), {
   // At some point it would be nice to use FinalizationRegistry with these, but
   // it's a bit tricky.
@@ -1533,6 +1564,9 @@ EM_JS_VAL(JsVal, create_promise_handles, (
   }
   if (handle_exception) {
     _Py_IncRef(handle_exception);
+  }
+  if (js2py_converter) {
+    _Py_IncRef(js2py_converter);
   }
   if(!done_callback){
     done_callback = (x) => {};
@@ -1550,14 +1584,18 @@ EM_JS_VAL(JsVal, create_promise_handles, (
       _Py_DecRef(handle_result);
     }
     if(handle_exception){
-      _Py_DecRef(handle_exception)
+      _Py_DecRef(handle_exception);
+    }
+    if (js2py_converter) {
+      _Py_DecRef(js2py_converter);
     }
   }
   function onFulfilled(res) {
     checkUsed();
     try {
-      if(handle_result){
-        return Module.callPyObjectMaybePromising(handle_result, [res]);
+      if (handle_result) {
+        // MaybePromising??
+        return _create_promise_handles_result_helper(handle_result, js2py_converter, res);
       }
     } finally {
       done_callback(res);

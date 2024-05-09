@@ -11,7 +11,8 @@ sphinx-issues
 # Use my branch of sphinx-click with fix for warnings:
 # CRITICAL: Unexpected section title or transition
 # https://github.com/click-contrib/sphinx-click/pull/137
-sphinx-click @ git+https://github.com/hoodmane/sphinx-click@88e1a8483112f50ff206cfa9d543c3bd9c8d97e8
+# https://github.com/click-contrib/sphinx-click/pull/138
+sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5dd4390f26381a353224e
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic
