@@ -102,18 +102,20 @@ PyInit__pyodide_core(void)
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
+  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
+  if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
+    FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
+    FAIL();
+  }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT_WITH_CORE_MODULE(jsproxy);
+  TRY_INIT_WITH_CORE_MODULE(jsproxy_call);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-
-  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
-  if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
-    FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
-  }
+  TRY_INIT_WITH_CORE_MODULE(jsbind);
 
   if (init_pyodide_proxy() == -1) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
