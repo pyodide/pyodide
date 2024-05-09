@@ -110,7 +110,7 @@ def get_bash_runner(
     env.update(extra_envs)
 
     with BashRunnerWithSharedEnvironment(env=env) as b:
-        # Working in`-tree, add emscripten toolchain into PATH and set ccache
+        # Working in-tree, add emscripten toolchain into PATH and set ccache
         if Path(pyodide_root, "pyodide_env.sh").exists():
             b.run(
                 f"source {pyodide_root}/pyodide_env.sh",
