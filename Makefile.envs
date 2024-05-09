@@ -1,5 +1,6 @@
 export PYVERSION ?= 3.12.1
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.52
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.58
+export PYODIDE_VERSION ?= 0.26.0.dev0
 
 export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
 
@@ -51,6 +52,30 @@ export PYODIDE_BASE_URL?=./
 export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 
 export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
+
+# List of modules to exclude from the zipped standard library
+export PYZIP_EXCLUDE_FILES=\
+	ensurepip/ \
+	venv/ \
+	lib2to3/ \
+	_osx_support.py \
+	_aix_support.py \
+	curses/ \
+	dbm/ \
+	idlelib/ \
+	tkinter/ \
+	turtle.py \
+	turtledemo/ \
+	test/ \
+	sqlite3/ \
+	ssl.py \
+	lzma.py \
+	_pydecimal.py \
+	pydoc_data/
+
+# List of modules that we replace with a stub in the zipped standard library
+export PYZIP_JS_STUBS=\
+	webbrowser.py
 
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
@@ -119,6 +144,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
+	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -138,10 +164,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lsdl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
-
-ifeq ($(DISABLE_DYLINK), 1)
-
-	EXPORTS= _main\
+EXPORTS= _main\
 			\
 			,_free \
 			\
@@ -190,6 +213,8 @@ ifeq ($(DISABLE_DYLINK), 1)
 			,_PyUnicode_Data \
 			,_PyUnicode_New \
 
+
+ifeq ($(DISABLE_DYLINK), 1)
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \

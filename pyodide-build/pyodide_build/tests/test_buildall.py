@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 from pyodide_lock.spec import PackageSpec
 
-from pyodide_build import buildall
+from pyodide_build import build_env, buildall
 from pyodide_build.build_env import BuildArgs
 
 RECIPE_DIR = Path(__file__).parent / "_test_recipes"
@@ -70,6 +70,7 @@ def test_generate_lockfile(tmp_path):
     package_data = buildall.generate_lockfile(tmp_path, pkg_map)
     assert package_data.info.arch == "wasm32"
     assert package_data.info.platform.startswith("emscripten")
+    assert package_data.info.version == build_env.get_build_flag("PYODIDE_VERSION")
 
     assert set(package_data.packages) == {
         "pkg-1",

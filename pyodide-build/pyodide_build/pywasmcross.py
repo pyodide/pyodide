@@ -427,8 +427,16 @@ def get_export_flags(
         export_list = calculate_exports(line, exports == "requested")
     else:
         export_list = exports
+
     prefixed_exports = ["_" + x for x in export_list]
-    yield f"-sEXPORTED_FUNCTIONS={prefixed_exports!r}"
+
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
+        # Use a response file to avoid command line length limits
+        f.write(json.dumps(prefixed_exports))
+
+    yield f"-sEXPORTED_FUNCTIONS=@{f.name}"
 
 
 def handle_command_generate_args(  # noqa: C901

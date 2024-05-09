@@ -1,11 +1,11 @@
 package:
   name: pywavelets
-  version: 1.5.0
+  version: 1.6.0
   top-level:
     - pywt
 source:
-  sha256: d9e25c7cabef7ccd53f5fead26ab22152fe4cb937bad7411b5d506e2b5de38f6
-  url: https://files.pythonhosted.org/packages/ee/ce/cfce0d615746d9b9ccc698401599183d6edb6d1bb0ae234bd717a840711d/pywavelets-1.5.0.tar.gz
+  sha256: ea027c70977122c5fc27b2510f0a0d9528f9c3df6ea3e4c577ca55fd00325a5b
+  url: https://files.pythonhosted.org/packages/96/9b/f124c8a8d1a69258a4d4d5cbb30a58dc059f836494cd3f067f419705bc72/pywavelets-1.6.0.tar.gz
 requirements:
   host:
     - numpy
