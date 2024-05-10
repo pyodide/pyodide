@@ -14,27 +14,11 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.26.0
 
-- {{ Enhancement }} `pyodide.loadPackage` now checks if the cache directory exists and calls `mkdir` only when it doesn't to avoid an error on read-only file systems in Node.js environment.
-  {pr}`4738`
+_Date here_
 
-- {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
-  This Fixes "Argument list too long" error.
-
-- {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper {pr}`4705`.
-
-- {{ Fix }} Fix exception handling in dynamic linking of int64 functions {pr}`4698`.
-
-- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
-  `jsproxy.toString` is undefined. Instead, it will use
-  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
-  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
-  throws, then `str` will still raise.
-  {pr}`4574`
-
-- {{ Enhancement }} Improved support for stack switching.
-  {pr}`4532`, {pr}`4547`
+### General
 
 - Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
@@ -42,37 +26,29 @@ myst:
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
   {pr}`4399` {pr}`4715`
 
-- {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
-  This entrypoint was deprecated since 0.22.0.
-  {pr}`4368`
-
-- {{ Enhancement }} Added apis to discard extra arguments when calling Python
-  functions.
-  {pr}`4392`
-
 - {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
   is not available in the Node.js < 18 environment.
   {pr}`4417`
 
-- {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
-  {pr}`4395`
+- {{ Enhancement }} Improved support for stack switching.
+  {pr}`4532`, {pr}`4547`, {pr}`4615`, {pr}`4639`
 
-- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
-  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
-  {pr}`4443`
-
-- {{ Enhancement }} The `build/post` script now runs under the directory
-  where the built wheel is unpacked.
-  {pr}`4481`
+- {{ Breaking }} The experimental `callSyncifying` method was renamed to
+  `callPromising`.
+  {pr}`4608`
 
 - {{ Fix }} `dup` now works correctly in the Node filesystem.
   {pr}`4554`
 
-- {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
-  {pr}`4546`
-
 - {{ Enhancement }} `asyncio.sleep(0)` now runs the next task a lot faster.
   {pr}`4590`
+
+### JavaScript APIs
+
+- {{ Enhancement }} `pyodide.loadPackage` now checks if the cache directory
+  exists and calls `mkdir` only when it doesn't to avoid an error on read-only
+  file systems in Node.js environment.
+  {pr}`4738`
 
 - {{ Fix }} `pyodide.mountNativeFS` will no longer silently overwrite an
   existing nonempty directory. Also it throws much clearer error messages when
@@ -82,6 +58,21 @@ myst:
 - {{ Enhancement }} Added a new API `pyodide.mountNodeFS` which mounts a host
   directory into the Pyodide file system when running in node.
   {pr}`4561`
+
+- {{ Enhancement }} Updated `pyimport` to support `pyimport("module.attribute")`.
+  {pr}`4395`
+
+### FFI
+
+- {{ Enhancement }} `str(jsproxy)` has been adjusted to not raise an error if
+  `jsproxy.toString` is undefined. Instead, it will use
+  `Object.prototype.toString` in this case. If `jsproxy.toString` is defined and
+  throws or is not defined but `jsproxy[Symbol.toStringTag]` is defined and
+  throws, then `str` will still raise.
+  {pr}`4574`
+
+- {{ Enhancement }} Fixed a memory leak when iterating over a PyProxy.
+  {pr}`4546`
 
 - {{ Enhancement }} When a dictionary is converted to JavaScript with `toJs` the
   result is now a `LiteralMap`. String keys are accessible via direct property
@@ -95,13 +86,37 @@ myst:
   JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
   {pr}`4666`
 
-- {{ Breaking }} The experimental `callSyncifying` method was renamed to
-  `callPromising`.
+- {{ Enhancement }} Added a new `callRelaxed` to PyProxies of callables that
+  discards extra arguments rather than raising a `TypeError``.
+{pr}`4392`
+
+- {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of
+  callables.
   {pr}`4608`
 
-- {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of a
-  callable.
-  {pr}`4608`
+### Build
+
+- {{ Fix }} pyodide-build now use response file when passing list of exported symbols to `emcc`.
+  This fixes "Argument list too long" error.
+  {pr}`4717``
+
+- {{ Fix }} Pass through `-E` (command mode) arguments in CMake wrapper
+  {pr}`4705`.
+
+- {{ Fix }} Fix exception handling in dynamic linking of int64 functions
+  {pr}`4698`.
+
+- {{ Breaking }} `pyodide-build` entrypoint is removed in favor of `pyodide`.
+  This entrypoint was deprecated since 0.22.0.
+  {pr}`4368`
+
+- {{ Breaking }} The `--no-deps` option to `pyodide build-recipes` has been
+  replaced with a separate subcommand `pyodide build-recipes-no-deps`.
+  {pr}`4443`
+
+- {{ Enhancement }} The `build/post` script now runs under the directory
+  where the built wheel is unpacked.
+  {pr}`4481`
 
 ### Packages
 
