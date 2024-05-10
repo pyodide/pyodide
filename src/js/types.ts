@@ -8,6 +8,7 @@ import {
   type InternalPackageData,
   type PackageLoadMetadata,
 } from "./load-package";
+import { SnapshotConfig } from "./snapshot";
 
 export type TypedArray =
   | Int8Array
@@ -424,6 +425,10 @@ export interface API {
   sys: PyProxy;
   os: PyProxy;
 
-  finalizeBootstrap: (fromSnapshot?: boolean) => PyodideInterface;
+  restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
+  makeSnapshot(): Uint8Array;
+  saveSnapshot(): Uint8Array;
+  finalizeBootstrap: (fromSnapshot?: SnapshotConfig) => PyodideInterface;
+  syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   version: string;
 }
