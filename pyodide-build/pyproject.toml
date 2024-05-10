@@ -63,10 +63,6 @@ test = [
     "pytest-httpserver",
     "packaging",
 ]
-deploy = [
-    "boto3",
-    "moto",
-]
 
 [tool.setuptools]
 package-dir = {"" = "."}
