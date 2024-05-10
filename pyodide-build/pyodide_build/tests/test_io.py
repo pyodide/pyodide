@@ -1,5 +1,5 @@
 import pytest
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 
 from pyodide_build.io import MetaConfig, _BuildSpec, _SourceSpec
 
@@ -26,7 +26,7 @@ def test_source_fields():
 
     msg = "Source section should not have both a 'url' and a 'path' key"
     with pytest.raises(ValidationError, match=msg):
-        _SourceSpec(url="a", path="b")
+        _SourceSpec(url="a", path="b", sha256="a")
 
     msg = "If source is downloaded from url, it must have a 'source/sha256' hash"
     with pytest.raises(ValidationError, match=msg):
@@ -34,11 +34,11 @@ def test_source_fields():
 
     msg = "If source is in tree, 'source/patches' and 'source/extras' keys are not allowed"
     with pytest.raises(ValidationError, match=msg):
-        _SourceSpec(path="b", patches=["a"])
+        _SourceSpec(path="b", patches=["a"], sha256="a")
 
     msg = "If source is a wheel, 'source/patches' and 'source/extras' keys are not allowed"
     with pytest.raises(ValidationError, match=msg):
-        _SourceSpec(url="b.whl", patches=["a"])
+        _SourceSpec(url="b.whl", patches=["a"], sha256="a")
 
 
 def test_build_fields():
