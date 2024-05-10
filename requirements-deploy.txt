@@ -1,0 +1,4 @@
+# used to deploy files to s3
+boto3
+moto
+typer

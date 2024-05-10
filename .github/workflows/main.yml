@@ -33,8 +33,8 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          cd pyodide-build && python3 -m pip install -e ".[test,deploy]" && cd ..
-          python3 -m pip install pytest-cov hypothesis pytz
+          cd pyodide-build && python3 -m pip install -e ".[test]" && cd ..
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Run tests
         shell: bash -l {0}
         run: |
