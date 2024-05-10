@@ -103,6 +103,9 @@ API.setCdnUrl = function (url: string) {
 //
 const DEFAULT_CHANNEL = "default channel";
 
+/**
+ * @hidden
+ */
 export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
@@ -113,9 +116,6 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
-/**
- * @private
- */
 export type PackageType =
   | "package"
   | "cpython_module"
@@ -123,17 +123,18 @@ export type PackageType =
   | "static_library";
 
 // Package data inside pyodide-lock.json
-/**
- * @private
- */
-export type PackageData = {
+
+export interface PackageData {
   name: string;
   version: string;
   fileName: string;
   /** @experimental */
   packageType: PackageType;
-};
+}
 
+/**
+ * @hidden
+ */
 export type InternalPackageData = {
   name: string;
   version: string;

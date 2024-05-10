@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from sphinx_js import renderers
+
 from .jsdoc import (
     patch_sphinx_js,
     ts_xref_formatter,
@@ -58,3 +60,10 @@ def setup(app):
     app.config.ts_type_xref_formatter = ts_xref_formatter
     app.config.ts_type_bold = True
     app.config.ts_sphinx_js_config = Path(__file__).parent / "sphinxJsConfig.ts"
+    renderers._SECTION_ORDER = [
+        "type_aliases",
+        "interfaces",
+        "attributes",
+        "functions",
+        "classes",
+    ]

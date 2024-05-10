@@ -1883,3 +1883,306 @@ def test_html_array(selenium):
 
     with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
         del x[0]
+
+
+@run_in_pyodide
+def test_bind_attrs(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+
+    class A(BindClass):
+        x: int
+        y: Annotated[list[int], Deep]
+
+    a: A = run_js(
+        """
+        ({
+            x: 7,
+            y: [1,2,3],
+        })
+        """
+    ).bind_sig(A)
+    assert a.x == 7
+    assert a.y == [1, 2, 3]
+
+
+@run_in_pyodide
+def test_bind_call_convert(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import Deep, Json
+    from pyodide.code import run_js
+
+    def fsig(
+        a: dict[str, int],
+        b: Annotated[dict[str, int], Json],
+        c: Annotated[dict[str, int], Deep],
+        /,
+    ) -> Annotated[list[int], Deep]:
+        raise NotImplementedError
+
+    f = run_js(
+        """
+        (function f(x, y, z) {
+            return [x.get("a"), y.b, z.c]
+        })
+        """
+    ).bind_sig(fsig)
+
+    x = {"a": 2}
+    y = {"b": 4}
+    z = {"c": 6}
+    assert f(x, y, z) == [2, 4, 6]
+
+
+@run_in_pyodide
+def test_bind_call_bind_return_value(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+
+    class A(BindClass):
+        x: Annotated[list[int], Deep]
+
+    def fsig() -> A:
+        raise NotImplementedError
+
+    f = run_js(
+        """
+        (function f() {
+            return {x: [77, 1]};
+        })
+        """
+    ).bind_sig(fsig)
+
+    assert f().x == [77, 1]
+
+
+@run_in_pyodide
+async def test_bind_future_convert_result(selenium):
+    from asyncio import Future
+    from typing import Annotated
+
+    from _pyodide.jsbind import Deep
+    from pyodide.code import run_js
+
+    def f1() -> Future[Annotated[list[int], Deep]]:
+        raise NotImplementedError
+
+    async def f2() -> Annotated[list[int], Deep]:
+        raise NotImplementedError
+
+    jsfunc = run_js(
+        """
+        (async function() {
+            return [1,2,3];
+        })
+        """
+    )
+    f1 = jsfunc.bind_sig(f1)
+    f2 = jsfunc.bind_sig(f2)
+    assert await f1() == [1, 2, 3]
+    assert await f2() == [1, 2, 3]
+
+
+@run_in_pyodide
+async def test_bind_future_bind_result(selenium):
+    from asyncio import Future
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+
+    class A(BindClass):
+        x: Annotated[list[int], Deep]
+
+    def f1() -> Future[A]:
+        raise NotImplementedError
+
+    async def f2() -> A:
+        raise NotImplementedError
+
+    jsfunc = run_js(
+        """
+        async function f() {
+            return {x: [77, 1]};
+        };
+        f
+        """
+    )
+    f1 = jsfunc.bind_sig(f1)
+    f2 = jsfunc.bind_sig(f2)
+    assert (await f1()).x == [77, 1]
+    assert (await f2()).x == [77, 1]
+
+
+@run_in_pyodide
+def test_bind3(selenium):
+    from pyodide.code import run_js
+
+    o = run_js(
+        """
+        ({
+            f(x, y, z) {
+                return [x.get("a"), y.b, z.c]
+            },
+            x: [1,2,3],
+            y: {
+                g(x) {
+                    return x.a;
+                },
+                c: [1,2,3]
+            }
+        })
+        """
+    )
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep, Json
+
+    class B(BindClass):
+        @staticmethod
+        def g(x: Annotated[dict[str, int], Json], /) -> int:
+            raise NotImplementedError
+
+        c: Annotated[list[int], Deep]
+
+    class A(BindClass):
+        @staticmethod
+        def f(
+            a: dict[str, int],
+            b: Annotated[dict[str, int], Json],
+            c: Annotated[dict[str, int], Deep],
+            /,
+        ) -> Annotated[list[int], Deep]:
+            raise NotImplementedError
+
+        x: Annotated[list[int], Deep]
+        y: B
+
+    o2: A = o.bind_sig(A)
+    f1 = o2.f
+    f2 = o.f.bind_sig(A.f)
+
+    x = {"a": 2}
+    y = {"b": 4}
+    z = {"c": 6}
+    assert o2.f(x, y, z) == [2, 4, 6]
+    assert f1(x, y, z) == [2, 4, 6]
+    assert f2(x, y, z) == [2, 4, 6]
+    assert o2.y.g({"a": 7}) == 7
+
+
+@run_in_pyodide
+async def test_bind_async1(selenium):
+    from asyncio import Future
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+
+    class A(BindClass):
+        x: Future[Annotated[list[int], Deep]]
+
+    a: A = run_js(
+        """
+        ({
+            x: (async function () {
+                return [1, 2, 3]
+            })()
+        })
+        """
+    ).bind_sig(A)
+
+    assert await a.x == [1, 2, 3]
+
+
+@run_in_pyodide
+async def test_bind_async2(selenium):
+    from asyncio import Future
+    from typing import Annotated
+
+    from _pyodide.jsbind import Deep
+    from pyodide.code import run_js
+
+    jsfunc = run_js(
+        """
+        (async function () {
+            return [1, 2, 3]
+        });
+        """
+    )
+
+    async def f1() -> Annotated[list[int], Deep]:
+        raise NotImplementedError
+
+    def f2() -> Future[Annotated[list[int], Deep]]:
+        raise NotImplementedError
+
+    f1 = jsfunc.bind_sig(f1)
+    f2 = jsfunc.bind_sig(f2)
+
+    assert await f1() == [1, 2, 3]
+    assert await f2() == [1, 2, 3]
+
+
+@run_in_pyodide
+async def test_bind_async3(selenium):
+    from asyncio import Future
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+
+    class A(BindClass):
+        x: Annotated[list[int], Deep]
+
+    async def f1() -> A:
+        raise NotImplementedError
+
+    def f2() -> Future[A]:
+        raise NotImplementedError
+
+    jsfunc = run_js(
+        """
+        (async function() {
+            return {
+                x : [1,2,3]
+            };
+        })
+        """
+    )
+
+    f1 = jsfunc.bind_sig(f1)
+    f2 = jsfunc.bind_sig(f2)
+
+    assert (await f1()).x == [1, 2, 3]
+    assert (await f2()).x == [1, 2, 3]
+
+
+@run_in_pyodide
+def test_bind_pre_convert(selenium):
+    from typing import Annotated, _caches  # type:ignore[attr-defined]
+
+    from _pyodide.jsbind import Deep, Py2JsConverterMeta
+    from js import Headers  # type:ignore[attr-defined]
+    from pyodide.code import run_js
+
+    ajs = run_js("(x) => [x.toString(), JSON.stringify(Array.from(x))]")
+
+    class ToHeaders(metaclass=Py2JsConverterMeta):
+        @staticmethod
+        def pre_convert(value):
+            return Headers.new(value.items())
+
+    def a(
+        x: Annotated[dict[str, str] | None, ToHeaders], /
+    ) -> Annotated[list[str], Deep]:
+        return []
+
+    abound = ajs.bind_sig(a)
+    assert abound({"x": "y"}) == ["[object Headers]", '[["x","y"]]']
+    _caches[Annotated._class_getitem_inner.__wrapped__].cache_clear()  # type:ignore[attr-defined]

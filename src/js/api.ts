@@ -40,7 +40,7 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
-/** @private */
+/** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
 };
@@ -647,7 +647,7 @@ export class PyodideAPI {
   }
 }
 
-/** @hidetype */
+/** @hidden */
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */

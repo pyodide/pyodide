@@ -26,7 +26,7 @@ declare function _createPyodideModule(
 
 /**
  * See documentation for loadPyodide.
- * @private
+ * @hidden
  */
 export type ConfigType = {
   indexURL: string;
