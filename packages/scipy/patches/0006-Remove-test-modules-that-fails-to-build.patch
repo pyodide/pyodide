@@ -1,7 +1,7 @@
 From 00cf564c05308bb498d53f9b31e2bf7797e26df2 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Tue, 14 May 2024 23:37:42 +0530
-Subject: [PATCH 7/9] Remove test modules that fail to build
+Subject: [PATCH 6/8] Remove test modules that fail to build
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
