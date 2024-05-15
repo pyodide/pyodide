@@ -29,6 +29,7 @@ source:
     - patches/0006-Remove-test-modules-that-fails-to-build.patch
     - patches/0007-Fix-fitpack.patch
     - patches/0008-Fix-gees-calls.patch
+    - patches/0009-Remove-fpchec-inline-if-else-constructs.patch
 
 build:
   cflags: |
