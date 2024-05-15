@@ -6,9 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/29/93/5d70b035f987a48dd854c1afc21025fb8446aae4d43c685b68691175623c/lakers_python-0.3.0.tar.gz
   sha256: 009fc5e31b5a9a276216ff43ffd097004396a2a9131359a1da35d464e599cd1c
-build:
-  script: |
-    cargo update -p proc-macro2 --precise 1.0.60
 requirements:
   executable:
     - rustup
