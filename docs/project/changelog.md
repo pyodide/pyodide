@@ -110,7 +110,8 @@ myst:
   `pyxirr` {pr}`4513`, `ipython`, `asttokens`, `executing`, `prompt_toolkit`,
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
-  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`
+  `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`,
+  `lakers-python` {pr}`4763`
 
 - Upgraded `contourpy` to 1.2.1 {pr}`4680`
 - Upgraded `sourmash` to 4.8.8 {pr}`4683`
