@@ -821,7 +821,6 @@ const PyProxyFunctionProto = Object.create(
 );
 function PyProxyFunction() {}
 PyProxyFunction.prototype = PyProxyFunctionProto;
-globalThis.PyProxyFunction = PyProxyFunction;
 
 /**
  * A :js:class:`~pyodide.ffi.PyProxy` whose proxied Python object has a :meth:`~object.__len__`
