@@ -44,6 +44,9 @@ Homepage = "https://github.com/pyodide/pyodide"
 "Bug Tracker" = "https://github.com/pyodide/pyodide/issues"
 Documentation = "https://pyodide.org/en/stable/"
 
+[project.entry-points."pipx.run"]
+pyodide = "pyodide_cli.__main__:main"
+
 [project.entry-points."pyodide.cli"]
 build = "pyodide_build.cli.build:main"
 build-recipes = "pyodide_build.cli.build_recipes:build_recipes"
