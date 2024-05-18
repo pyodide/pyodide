@@ -1,4 +1,3 @@
-import pytest
 from pytest_pyodide import run_in_pyodide
 
 
@@ -7,6 +6,7 @@ def test_iminuit(selenium):
     import iminuit
     import iminuit.cost
     import numpy as np
+    import pytest
 
     def line(x, α, β):
         return α + x * β
