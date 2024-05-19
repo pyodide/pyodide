@@ -12,9 +12,12 @@ pyodide venv .venv-pyodide
 .venv-pyodide/bin/pip install fastapi
 .venv-pyodide/bin/python -c 'import micropip; print(micropip.freeze(), file=open("pyodide-lock.json","w"))'
 ```
+
 Then serve the lock file and pass the url as the `lockFileURL` argument to `loadPyodide`:
+
 ```js
-const pyodide = await loadPyodide({ lockFileURL : "https://wherever.com/you/served/it/pyodide-lock.json" });
+const pyodide = await loadPyodide({
+  lockFileURL: "https://wherever.com/you/served/it/pyodide-lock.json",
+});
 // ...
 ```
-
