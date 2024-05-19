@@ -872,7 +872,7 @@ export class PyProxyWithGet extends PyProxy {
 export interface PyProxyWithGet extends PyGetItemMethods {}
 
 class PyAsJsonAdaptorMethods {
-  asJsonAdaptor() {
+  asJsJson() {
     let { shared, props } = _getAttrs(this);
     let flags = _getFlags(this);
     if (flags & IS_SEQUENCE) {
@@ -933,10 +933,10 @@ export class PyGetItemMethods {
    *     :meth:`~object.__getitem__` then the result will also be a json
    *     adaptor.
    *
-   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * For instance, ``JSON.stringify(proxy.asJsJson())`` acts like an
    * inverse to Python's :py:func:`json.loads`.
    */
-  asJsonAdaptor(): PyProxy & {} {
+  asJsJson(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
     // PyAsJsonAdaptorMethods.
     throw new Error("Should not happen");
@@ -1839,10 +1839,10 @@ export class PySequenceMethods {
    *     :meth:`~object.__getitem__` then the result will also be a json
    *     adaptor.
    *
-   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * For instance, ``JSON.stringify(proxy.asJsJson())`` acts like an
    * inverse to Python's :py:func:`json.loads`.
    */
-  asJsonAdaptor(): PyProxy & {} {
+  asJsJson(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
     // PyAsJsonAdaptorMethods.
     throw new Error("Should not happen");
@@ -2354,7 +2354,7 @@ const PyProxyJsonAdaptorDictHandlers = {
       return Reflect.get(...arguments);
     }
     if (typeof jskey === "string") {
-      // TODO: consider adding an attribute cache for asJsonAdaptor
+      // TODO: consider adding an attribute cache for asJsJson
       result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
     }
     if (result) {
