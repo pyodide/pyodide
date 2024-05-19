@@ -283,6 +283,41 @@ def _get_sha256_checksum(archive: Path) -> str:
     return h.hexdigest()
 
 
+def ensure_wheel_platform(path: Path) -> Path:
+    """
+    Change emscripten platformed wheels to pyodide platformed ones
+    """
+    if "emscripten" not in path.name:
+        return path
+
+    from .build_env import platform
+
+    pyversion = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wheel",
+            "tags",
+            "--remove",
+            "--python-tag",
+            pyversion,
+            "--abi-tag",
+            pyversion,
+            "--platform-tag",
+            platform(),
+            str(path),
+        ],
+        check=False,
+        encoding="utf-8",
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Setting wheel {path.name} platform failed")
+        exit_with_stdio(result)
+    return path.with_name(result.stdout.strip())
+
+
 def unpack_wheel(wheel_path: Path, target_dir: Path | None = None) -> None:
     if target_dir is None:
         target_dir = wheel_path.parent

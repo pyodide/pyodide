@@ -69,7 +69,7 @@ def test_generate_lockfile(tmp_path):
 
     package_data = buildall.generate_lockfile(tmp_path, pkg_map)
     assert package_data.info.arch == "wasm32"
-    assert package_data.info.platform.startswith("emscripten")
+    assert package_data.info.platform.startswith("pyodide")
     assert package_data.info.version == build_env.get_build_flag("PYODIDE_VERSION")
 
     assert set(package_data.packages) == {

@@ -1,6 +1,7 @@
 export PYVERSION ?= 3.12.1
 export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.58
 export PYODIDE_VERSION ?= 0.26.0.dev0
+export PYODIDE_ABI ?= 202405_0
 
 export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
 
@@ -247,6 +248,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/.. \
+	-DPYODIDE_ABI=$(PYODIDE_ABI) \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 .output_vars:

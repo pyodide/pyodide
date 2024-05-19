@@ -6,6 +6,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/7c/78/884c468c43679ee6f3d59d14773677aa0095dde13be0cdb9c8aafb07affd/galpy-1.9.2.tar.gz
   sha256: cf13e166b046e07cdcc663acf5412dd2f2649a5ae06985ee040f109325a92e5a
+  patches:
+    - patches/0001-Check-for-Pyodide-instead-of-Emscripten.patch
 build:
   script:
     export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix

@@ -1,0 +1,25 @@
+From 41916341032a576bd44ffadbe14eb3162b7c62bb Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sun, 19 May 2024 05:50:14 -0400
+Subject: [PATCH] Check for Pyodide system
+
+---
+ galpy/__init__.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/galpy/__init__.py b/galpy/__init__.py
+index 27a58f4..21c8f81 100644
+--- a/galpy/__init__.py
++++ b/galpy/__init__.py
+@@ -68,7 +68,7 @@ def print_version_warning():  # pragma: no cover
+ 
+ _CHECK_VERSION_UPGRADE = (
+     __config__.getboolean("version-check", "do-check")
+-    and not platform.system() == "Emscripten"
++    and not platform.system() in ["Emscripten", "Pyodide"]
+ )
+ if _CHECK_VERSION_UPGRADE and hasattr(sys, "ps1"):  # pragma: no cover
+     # Interactive session, https://stackoverflow.com/a/64523765
+-- 
+2.34.1
+

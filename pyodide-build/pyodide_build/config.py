@@ -121,6 +121,7 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
     "pyo3_cross_include_dir": "PYO3_CROSS_INCLUDE_DIR",
     "pyo3_cross_lib_dir": "PYO3_CROSS_LIB_DIR",
     "pyodide_emscripten_version": "PYODIDE_EMSCRIPTEN_VERSION",
+    "pyodide_abi": "PYODIDE_ABI",
     "pyodide_jobs": "PYODIDE_JOBS",
     "pyodide_root": "PYODIDE_ROOT",
     "python_archive_sha256": "PYTHON_ARCHIVE_SHA256",

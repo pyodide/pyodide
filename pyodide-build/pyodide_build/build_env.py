@@ -198,9 +198,16 @@ def get_unisolated_packages() -> list[str]:
 
 
 def platform() -> str:
-    emscripten_version = get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
-    version = emscripten_version.replace(".", "_")
+    return f"pyodide_{pyodide_abi()}_wasm32"
+
+
+def emscripten_platform() -> str:
+    version = emscripten_version().replace(".", "_")
     return f"emscripten_{version}_wasm32"
+
+
+def pyodide_abi() -> str:
+    return get_build_flag("PYODIDE_ABI")
 
 
 def pyodide_tags() -> Iterator[Tag]:
@@ -211,10 +218,11 @@ def pyodide_tags() -> Iterator[Tag]:
     """
     PYMAJOR = get_pyversion_major()
     PYMINOR = get_pyversion_minor()
-    PLATFORM = platform()
+    # Accept both "pyodide_abiver_wasm32" and "emscripten_ver_wasm32" (rust packages)
+    platforms = [platform(), emscripten_platform()]
     python_version = (int(PYMAJOR), int(PYMINOR))
-    yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
-    yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
+    yield from cpython_tags(platforms=platforms, python_version=python_version)
+    yield from compatible_tags(platforms=platforms, python_version=python_version)
     # Following line can be removed once packaging 22.0 is released and we update to it.
     yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 
