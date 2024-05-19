@@ -91,8 +91,8 @@ myst:
 - {{ Fix }} `toJs` now works as expected on subclasses of `dict`.
   {pr}`4637`
 
-- {{ Enhancement }} Added `PyProxy.asJsonAdaptor` method to adapt between Python
-  JSON (lists and dicts) and JavaScript JSON (Arrays and Objects).
+- {{ Enhancement }} Added `PyProxy.asJsJson` method to adapt between Python JSON
+  (lists and dicts) and JavaScript JSON (Arrays and Objects).
   {pr}`4666`
 
 - {{ Breaking }} The experimental `callSyncifying` method was renamed to

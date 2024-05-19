@@ -440,7 +440,7 @@ def test_pyproxy_mixins1(selenium):
                 impls[name] = x instanceof pyodide.ffi[name];
             }
             result[name] = impls;
-            assert(() => !("asJsonAdaptor" in x))
+            assert(() => !("asJsJson" in x))
             x.destroy();
         }
         return result;
@@ -501,7 +501,7 @@ def test_pyproxy_mixins2(selenium):
         assert(() => d.$get.type === "builtin_function_or_method");
         assert(() => d.get.type === undefined);
         assert(() => d.set.type === undefined);
-        assert(() => "asJsonAdaptor" in d);
+        assert(() => "asJsJson" in d);
         d.destroy();
         """
     )
@@ -679,7 +679,7 @@ def test_pyproxy_mixins5(selenium):
             assert(() => !("length" in Test));
             assert(() => t.length === 9);
             assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-            assert(() => !("asJsonAdaptor" in t));
+            assert(() => !("asJsJson" in t));
             assertThrows(() => {t.length = 10}, "TypeError", "");
             assert(() => t.length === 9);
 
@@ -710,7 +710,7 @@ def test_pyproxy_mixins6(selenium):
         assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
         assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
         assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
-        assert(() => "asJsonAdaptor" in l);
+        assert(() => "asJsJson" in l);
         l.set(0, 80);
         pyodide.runPython(`
             assert l[0] == 80
@@ -2469,7 +2469,7 @@ def test_as_json_adaptor_heritability1(selenium):
     f = run_js(
         """
         (o, l) =>  {
-            const o2 = o.asJsonAdaptor();
+            const o2 = o.asJsJson();
             return l.reduce((x, y) => x[y], o2);
         }
         """
@@ -2501,7 +2501,7 @@ def test_as_json_adaptor_heritability2(selenium):
     f = run_js(
         """
         (o) => {
-            const x = o.asJsonAdaptor();
+            const x = o.asJsJson();
             const x0 = x[0];
             const x1 = x[1];
             const x1a = x1.a;
@@ -2532,7 +2532,7 @@ def test_as_json_adaptor_ownkeys(selenium):
     from pyodide.code import run_js
 
     o = {"c": 7, "x": 99, "z": 29}
-    f = run_js("(o) => Reflect.ownKeys(o.asJsonAdaptor())")
+    f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
     assert set(f(o)) == set(o.keys())
 
 
@@ -2553,5 +2553,5 @@ def test_as_json_adaptor_stringify(selenium, o):
 
     from pyodide.code import run_js
 
-    f = run_js("(o) => JSON.stringify(o.asJsonAdaptor())")
+    f = run_js("(o) => JSON.stringify(o.asJsJson())")
     assert loads(f(o)) == o
