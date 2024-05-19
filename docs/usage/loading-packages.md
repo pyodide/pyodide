@@ -190,4 +190,5 @@ main();
 
    packages-in-pyodide.md
    sdl.md
+   lock-files.md
 ```
