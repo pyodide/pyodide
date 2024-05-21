@@ -349,7 +349,7 @@ def retag_wheel(wheel_path: Path, platform: str) -> Path:
     if result.returncode != 0:
         logger.error(f"ERROR: Retagging wheel {wheel_path} to {platform} failed")
         exit_with_stdio(result)
-    return wheel_path.parent / result.stdout.strip()
+    return wheel_path.parent / result.stdout.splitlines()[-1].strip()
 
 
 def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
