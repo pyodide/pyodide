@@ -20,8 +20,11 @@ _Date here_
 
 ### General
 
-- Upgraded Python to v3.12.1
+- {{ Update }} Upgraded Python to v3.12.1
   {pr}`4431` {pr}`4435`
+
+- {{ Update }} The wheel tag for Pyodide wheels has changed to pyodide_2024_0_wasm32.
+  {pr}`4777`
 
 - {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
   {pr}`4399` {pr}`4715`
