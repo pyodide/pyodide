@@ -203,6 +203,10 @@ def platform() -> str:
     return f"emscripten_{version}_wasm32"
 
 
+def wheel_platform() -> str:
+    return "pyodide_2024_0_wasm32"
+
+
 def pyodide_tags() -> Iterator[Tag]:
     """
     Returns the sequence of tag triples for the Pyodide interpreter.
@@ -211,10 +215,10 @@ def pyodide_tags() -> Iterator[Tag]:
     """
     PYMAJOR = get_pyversion_major()
     PYMINOR = get_pyversion_minor()
-    PLATFORM = platform()
+    PLATFORMS = [platform(), wheel_platform()]
     python_version = (int(PYMAJOR), int(PYMINOR))
-    yield from cpython_tags(platforms=[PLATFORM], python_version=python_version)
-    yield from compatible_tags(platforms=[PLATFORM], python_version=python_version)
+    yield from cpython_tags(platforms=PLATFORMS, python_version=python_version)
+    yield from compatible_tags(platforms=PLATFORMS, python_version=python_version)
     # Following line can be removed once packaging 22.0 is released and we update to it.
     yield Tag(interpreter=f"cp{PYMAJOR}{PYMINOR}", abi="none", platform="any")
 

@@ -46,11 +46,12 @@ class ConfigManager:
             for k, v in DEFAULT_CONFIG_COMPUTED.items()
         }
 
-        return {
+        res = {
             BUILD_VAR_TO_KEY[k]: v
             for k, v in makefile_vars.items()
             if k in BUILD_VAR_TO_KEY
         } | computed_vars
+        return res
 
     def _get_make_environment_vars(self) -> Mapping[str, str]:
         """
@@ -108,6 +109,7 @@ class ConfigManager:
 # TODO: distinguish between variables that are overridable by the user and those that are not.
 BUILD_KEY_TO_VAR: dict[str, str] = {
     "pyodide_version": "PYODIDE_VERSION",
+    "pyodide_abi_version": "PYODIDE_ABI_VERSION",
     "cargo_build_target": "CARGO_BUILD_TARGET",
     "cargo_target_wasm32_unknown_emscripten_linker": "CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER",
     "host_install_dir": "HOSTINSTALLDIR",

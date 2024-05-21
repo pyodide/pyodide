@@ -115,6 +115,17 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
             return sys.executable.removesuffix("-host")
 
         scripts.get_executable = get_executable
+
+        from pip._vendor.packaging import tags
+        orig_platform_tags = tags.platform_tags
+
+        def platform_tags():
+            if platform.system() == "emscripten":
+                yield "pyodide_2024_0_wasm32"
+                yield from tags._generic_platforms()
+            return orig_platform_tags()
+
+        tags.platform_tags = platform_tags
         """
         f"""
         os_name, sys_platform, multiarch, host_platform = {platform_data}
