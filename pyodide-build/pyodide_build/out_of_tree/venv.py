@@ -122,7 +122,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
         # TODO: Remove the following monkeypatch when we merge and pull in
         # https://github.com/pypa/packaging/pull/804
         """
-        def _emscripten_platforms() -> Iterator[str]:
+        def _emscripten_platforms():
             pyodide_abi_version = sysconfig.get_config_var("PYODIDE_ABI_VERSION")
             if pyodide_abi_version:
                 yield f"pyodide_{pyodide_abi_version}_wasm32"
