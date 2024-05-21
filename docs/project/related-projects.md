@@ -40,6 +40,8 @@
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
   that runs entirely in the browser, using Pyodide.
 - [Flet](https://flet.dev) is a UI framework for your Pyodide apps based on Flutter.
+- [stlite](https://github.com/whitphx/stlite) is a serverless version of [Streamlit](https://streamlit.io/) running on Pyodide.
+- [Gradio-Lite](https://www.gradio.app/guides/gradio-lite) is a serverless version of [Gradio](https://www.gradio.app/) running on Pyodide.
 
 ## Other projects
 
