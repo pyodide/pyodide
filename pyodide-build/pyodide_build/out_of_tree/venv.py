@@ -118,11 +118,20 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
 
         from pip._vendor.packaging import tags
         orig_platform_tags = tags.platform_tags
+        """
+        # TODO: Remove the following monkeypatch when we merge and pull in
+        # https://github.com/pypa/packaging/pull/804
+        """
+        def _emscripten_platforms() -> Iterator[str]:
+            pyodide_abi_version = sysconfig.get_config_var("PYODIDE_ABI_VERSION")
+            if pyodide_abi_version:
+                yield f"pyodide_{pyodide_abi_version}_wasm32"
+            yield from _generic_platforms()
 
         def platform_tags():
             if platform.system() == "emscripten":
-                yield "pyodide_2024_0_wasm32"
-                yield from tags._generic_platforms()
+                yield from _emscripten_platforms()
+                return
             return orig_platform_tags()
 
         tags.platform_tags = platform_tags
