@@ -204,7 +204,8 @@ def platform() -> str:
 
 
 def wheel_platform() -> str:
-    return "pyodide_2024_0_wasm32"
+    abi_version = get_build_flag("PYODIDE_ABI_VERSION")
+    return f"pyodide_{abi_version}_wasm32"
 
 
 def pyodide_tags() -> Iterator[Tag]:

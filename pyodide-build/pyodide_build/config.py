@@ -46,12 +46,11 @@ class ConfigManager:
             for k, v in DEFAULT_CONFIG_COMPUTED.items()
         }
 
-        res = {
+        return {
             BUILD_VAR_TO_KEY[k]: v
             for k, v in makefile_vars.items()
             if k in BUILD_VAR_TO_KEY
         } | computed_vars
-        return res
 
     def _get_make_environment_vars(self) -> Mapping[str, str]:
         """
