@@ -4,7 +4,7 @@ from pathlib import Path
 from build import ConfigSettingsType
 
 from .. import build_env, common, pypabuild
-from ..build_env import get_pyodide_root
+from ..build_env import get_pyodide_root, wheel_platform
 from ..io import _BuildSpecExports
 
 
@@ -41,6 +41,7 @@ def run(
         built_wheel = pypabuild.build(srcdir, outdir, env, config_settings)
 
     wheel_path = Path(built_wheel)
+    wheel_path = common.retag_wheel(wheel_path, wheel_platform())
     with common.modify_wheel(wheel_path) as wheel_dir:
         build_env.replace_so_abi_tags(wheel_dir)
 
