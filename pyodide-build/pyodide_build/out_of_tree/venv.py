@@ -126,7 +126,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
             pyodide_abi_version = sysconfig.get_config_var("PYODIDE_ABI_VERSION")
             if pyodide_abi_version:
                 yield f"pyodide_{pyodide_abi_version}_wasm32"
-            yield from _generic_platforms()
+            yield from tags._generic_platforms()
 
         def platform_tags():
             if platform.system() == "emscripten":
