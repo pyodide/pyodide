@@ -779,6 +779,7 @@ def generate_lockfile(
         "platform": platform,
         "version": build_env.get_build_flag("PYODIDE_VERSION"),
         "python": sys.version.partition(" ")[0],
+        "abi_version": build_env.get_build_flag("PYODIDE_ABI_VERSION"),
     }
     packages = generate_packagedata(output_dir, pkg_map)
     lock_spec = PyodideLockSpec(info=info, packages=packages)
@@ -872,7 +873,7 @@ def install_packages(
     """
     Install packages into the output directory.
     - copies build artifacts (wheel, zip, ...) to the output directory
-    - create pyodide_lock.json
+    - create pyodide-lock.json
 
 
     pkg_map

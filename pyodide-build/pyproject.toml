@@ -28,7 +28,7 @@ dependencies = [
     "types-requests",
     "typer",
     "auditwheel-emscripten~=0.0.9",
-    "pyodide-lock==0.1.0a5",
+    "pyodide-lock==0.1.0a6",
     "resolvelib",
     "rich",
     "loky",
