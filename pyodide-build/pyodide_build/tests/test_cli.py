@@ -20,7 +20,15 @@ from pyodide_build.cli import (
     py_compile,
 )
 
-from .fixture import temp_python_lib, temp_python_lib2
+from .fixture import (
+    temp_python_lib,
+    temp_python_lib2,
+    dummy_xbuildenv,
+    mock_emscripten,
+    dummy_xbuildenv_url,
+    reset_env_vars,
+    reset_cache,
+)
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -71,9 +79,7 @@ def test_skeleton_pypi(tmp_path):
     assert "already exists" in str(result.exception)
 
 
-def test_build_recipe(selenium, tmp_path):
-    # TODO: Run this test without building Pyodide
-
+def test_build_recipe(tmp_path, dummy_xbuildenv, mock_emscripten):
     output_dir = tmp_path / "dist"
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
@@ -112,9 +118,7 @@ def test_build_recipe(selenium, tmp_path):
     assert len(built_wheels) == len(pkgs_to_build)
 
 
-def test_build_recipe_no_deps(selenium, tmp_path):
-    # TODO: Run this test without building Pyodide
-
+def test_build_recipe_no_deps(tmp_path, dummy_xbuildenv, mock_emscripten):
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     for build_dir in recipe_dir.rglob("build"):
@@ -143,9 +147,7 @@ def test_build_recipe_no_deps(selenium, tmp_path):
         assert len(list(dist_dir.glob("*.whl"))) == 1
 
 
-def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
-    # TODO: Run this test without building Pyodide
-
+def test_build_recipe_no_deps_force_rebuild(tmp_path, dummy_xbuildenv, mock_emscripten):
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     for build_dir in recipe_dir.rglob("build"):
@@ -194,9 +196,7 @@ def test_build_recipe_no_deps_force_rebuild(selenium, tmp_path):
     assert f"Succeeded building package {pkg}" in result.stdout
 
 
-def test_build_recipe_no_deps_continue(selenium, tmp_path):
-    # TODO: Run this test without building Pyodide
-
+def test_build_recipe_no_deps_continue(tmp_path, dummy_xbuildenv, mock_emscripten):
     recipe_dir = Path(__file__).parent / "_test_recipes"
 
     for build_dir in recipe_dir.rglob("build"):
@@ -359,7 +359,7 @@ def test_py_compile(tmp_path, target, compression_level):
             assert fh.filelist[0].compress_type == zipfile.ZIP_STORED
 
 
-def test_build1(selenium, tmp_path, monkeypatch):
+def test_build1(tmp_path, monkeypatch, dummy_xbuildenv, mock_emscripten):
     from pyodide_build import pypabuild
 
     def mocked_build(srcdir: Path, outdir: Path, env: Any, backend_flags: Any) -> str:
@@ -390,7 +390,9 @@ def test_build1(selenium, tmp_path, monkeypatch):
     assert results["backend_flags"] == {"x": "", "y": "", "z": ""}
 
 
-def test_build2_replace_so_abi_tags(selenium, tmp_path, monkeypatch):
+def test_build2_replace_so_abi_tags(
+    tmp_path, monkeypatch, dummy_xbuildenv, mock_emscripten
+):
     """
     We intentionally include an "so" (actually an empty file) with Linux slug in
     the name into the wheel generated from the package in

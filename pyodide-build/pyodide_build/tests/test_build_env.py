@@ -11,7 +11,7 @@ from pyodide_build import build_env, common
 from pyodide_build.xbuildenv import CrossBuildEnvManager
 from pyodide_build.config import BUILD_KEY_TO_VAR
 
-from .fixture import reset_cache, reset_env_vars, xbuildenv
+from .fixture import reset_cache, reset_env_vars, dummy_xbuildenv, dummy_xbuildenv_url
 
 
 class TestInTree:
@@ -120,27 +120,29 @@ class TestInTree:
 class TestOutOfTree(TestInTree):
     # Note: other tests are inherited from TestInTree
 
-    def test_init_environment(self, xbuildenv, reset_env_vars, reset_cache):
+    def test_init_environment(self, dummy_xbuildenv, reset_env_vars, reset_cache):
         assert "PYODIDE_ROOT" not in os.environ
 
         build_env.init_environment()
-        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
 
         assert "PYODIDE_ROOT" in os.environ
         assert os.environ["PYODIDE_ROOT"] == str(manager.pyodide_root)
 
-    def test_get_pyodide_root(self, xbuildenv, reset_env_vars, reset_cache):
+    def test_get_pyodide_root(self, dummy_xbuildenv, reset_env_vars, reset_cache):
         assert "PYODIDE_ROOT" not in os.environ
 
         pyodide_root = build_env.get_pyodide_root()
-        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
         assert pyodide_root == manager.pyodide_root
 
-    def test_in_xbuildenv(self, xbuildenv, reset_env_vars, reset_cache):
+    def test_in_xbuildenv(self, dummy_xbuildenv, reset_env_vars, reset_cache):
         assert build_env.in_xbuildenv()
 
-    def test_get_build_environment_vars(self, xbuildenv, reset_env_vars, reset_cache):
-        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+    def test_get_build_environment_vars(
+        self, dummy_xbuildenv, reset_env_vars, reset_cache
+    ):
+        manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
         build_vars = build_env.get_build_environment_vars(manager.pyodide_root)
 
         # extra variables that does not come from config files.
@@ -154,8 +156,8 @@ class TestOutOfTree(TestInTree):
         for var in extra_vars:
             assert var in build_vars, f"Missing {var}"
 
-    def test_get_build_flag(self, xbuildenv, reset_env_vars, reset_cache):
-        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+    def test_get_build_flag(self, dummy_xbuildenv, reset_env_vars, reset_cache):
+        manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
         for key, val in build_env.get_build_environment_vars(
             pyodide_root=manager.pyodide_root
         ).items():
@@ -165,14 +167,14 @@ class TestOutOfTree(TestInTree):
             build_env.get_build_flag("UNKNOWN_VAR")
 
     def test_get_build_environment_vars_host_env(
-        self, monkeypatch, xbuildenv, reset_env_vars, reset_cache
+        self, monkeypatch, dummy_xbuildenv, reset_env_vars, reset_cache
     ):
         # host environment variables should have precedence over
         # variables defined in Makefile.envs
 
         import os
 
-        manager = CrossBuildEnvManager(xbuildenv / common.xbuildenv_dirname())
+        manager = CrossBuildEnvManager(dummy_xbuildenv / common.xbuildenv_dirname())
         pyodide_root = manager.pyodide_root
 
         e = build_env.get_build_environment_vars(pyodide_root)
