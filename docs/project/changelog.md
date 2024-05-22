@@ -26,8 +26,8 @@ _Date here_
 - {{ Update }} The wheel tag for Pyodide wheels has changed to pyodide_2024_0_wasm32.
   {pr}`4777`, {pr}`4780`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
-  {pr}`4399` {pr}`4715`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.60
+  {pr}`4399` {pr}`4715` {pr}`4782`
 
 - {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
   is not available in the Node.js < 18 environment.
