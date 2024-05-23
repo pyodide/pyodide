@@ -133,7 +133,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
-	-s DEMANGLE_SUPPORT=1 \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
