@@ -1,13 +1,14 @@
 # Test suite for the crc32c Pyodide package, based on the original test suite:
 # https://github.com/ICRAR/crc32c/blob/master/test/test_crc32c.py
 
-import crc32c
 import pytest
 from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["crc32c"])
 def test_zero():
+    import crc32c
+
     assert crc32c.crc32c(b"") == 0
 
 
@@ -40,12 +41,17 @@ def as_individual_bytes(val):
 @run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
 def test_all(name, val, checksum):
+    import crc32c
+
     assert crc32c.crc32c(val) == checksum
 
 
+@run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
 def test_piece_by_piece(name, val, checksum):
     c = 0
     for x in as_individual_bytes(val):
+        import crc32c
+
         c = crc32c.crc32c(x, c)
     assert c == checksum
