@@ -6,7 +6,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["crc32c"])
-def test_zero():
+def test_zero(selenium):
     import crc32c
 
     assert crc32c.crc32c(b"") == 0
@@ -40,7 +40,7 @@ def as_individual_bytes(val):
 
 @run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
-def test_all(name, val, checksum):
+def test_all(selenium, name, val, checksum):
     import crc32c
 
     assert crc32c.crc32c(val) == checksum
@@ -48,7 +48,7 @@ def test_all(name, val, checksum):
 
 @run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
-def test_piece_by_piece(name, val, checksum):
+def test_piece_by_piece(selenium, name, val, checksum):
     c = 0
     for x in as_individual_bytes(val):
         import crc32c
