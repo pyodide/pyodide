@@ -26,6 +26,7 @@ from .build_env import (
     get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
+    wheel_platform,
 )
 from .common import (
     _environment_substitute_str,
@@ -35,6 +36,7 @@ from .common import (
     find_matching_wheels,
     make_zip_archive,
     modify_wheel,
+    retag_wheel,
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
@@ -422,6 +424,10 @@ class RecipeBuilder:
             raise Exception(
                 f"Unexpected number of wheels {len(rest) + 1} when building {self.name}"
             )
+
+        if "emscripten" in wheel.name:
+            # Retag platformed wheels to pyodide
+            wheel = retag_wheel(wheel, wheel_platform())
 
         logger.info(f"Unpacking wheel to {str(wheel)}")
 

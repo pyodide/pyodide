@@ -71,12 +71,12 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic<2
+          - pydantic>=2.0
           - unearth
           - resolvelib
           - rich
           - auditwheel_emscripten
-          - pyodide-lock==0.1.0a4
+          - pyodide-lock==0.1.0a5
           - micropip
       - id: mypy
         name: mypy-tests

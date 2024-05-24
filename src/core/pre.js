@@ -2,7 +2,7 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.26.0.dev0";
+API.version = "0.26.0a6";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
