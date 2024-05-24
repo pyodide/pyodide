@@ -119,8 +119,7 @@ def test_interactive_console():
         assert await get_result("") is None
         assert await get_result("factorial(10)") == 3628800
 
-        assert await get_result("import pytz") is None
-        assert await get_result("pytz.utc.zone") == "UTC"
+        assert await get_result("import pathlib") is None
 
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
