@@ -2186,3 +2186,17 @@ def test_bind_pre_convert(selenium):
     abound = ajs.bind_sig(a)
     assert abound({"x": "y"}) == ["[object Headers]", '[["x","y"]]']
     _caches[Annotated._class_getitem_inner.__wrapped__].cache_clear()  # type:ignore[attr-defined]
+
+
+@run_in_pyodide
+def test_bind_construct(selenium):
+    from pyodide.code import run_js
+
+    A = run_js("(class {})")
+
+    class A_sig:
+        pass
+
+    A = A.bind_sig(A_sig)
+
+    A()
