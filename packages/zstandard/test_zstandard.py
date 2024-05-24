@@ -3,7 +3,6 @@ import os
 # Ensure C extension is used, and then CFFI as fallback, error if neither
 os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
 
-import zstandard as zstd
 from pytest_pyodide import run_in_pyodide
 
 # ------- Some compression tests ----------------------------------------------
@@ -11,6 +10,8 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["zstandard"])
 def test_zstandard_compression_and_decompression(selenium):
+    import zstandard as zstd
+
     data = b"foo"
     compress = zstd.ZstdCompressor(
         write_checksum=True, write_content_size=True
@@ -22,6 +23,8 @@ def test_zstandard_compression_and_decompression(selenium):
 
 @run_in_pyodide(packages=["zstandard"])
 def test_zstandard_compression_and_decompression_with_level(selenium):
+    import zstandard as zstd
+
     data = b"foo"
     compress = zstd.ZstdCompressor(
         level=1, write_checksum=True, write_content_size=True
@@ -33,6 +36,8 @@ def test_zstandard_compression_and_decompression_with_level(selenium):
 
 @run_in_pyodide(packages=["zstandard"])
 def test_compress_empty(selenium):
+    import zstandard as zstd
+
     cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
     result = cctx.compress(b"")
@@ -53,6 +58,8 @@ def test_compress_empty(selenium):
 @run_in_pyodide(packages=["zstandard"])
 def test_compress_large(selenium):
     import struct
+
+    import zstandard as zstd
 
     chunks = []
     for i in range(255):
@@ -78,6 +85,8 @@ def test_compress_large(selenium):
 
 @run_in_pyodide(packages=["zstandard"])
 def test_empty(selenium):
+    import zstandard as zstd
+
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"")
 
@@ -86,6 +95,8 @@ def test_empty(selenium):
 
 @run_in_pyodide(packages=["zstandard"])
 def test_basic(selenium):
+    import zstandard as zstd
+
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"foobar")
 
@@ -94,6 +105,8 @@ def test_basic(selenium):
 
 @run_in_pyodide(packages=["zstandard"])
 def test_dictionary(selenium):
+    import zstandard as zstd
+
     samples = []
     for _ in range(128):
         samples.append(b"foo" * 64)
