@@ -171,7 +171,7 @@ class RecipeBuilder:
 
         with (
             chdir(self.pkg_root),
-            get_bash_runner(self._get_helper_vars()) as bash_runner,
+            get_bash_runner(self._get_helper_vars() | os.environ.copy()) as bash_runner,
         ):
             if self.recipe.is_rust_package():
                 bash_runner.run(
