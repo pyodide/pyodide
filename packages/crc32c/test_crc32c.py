@@ -33,11 +33,6 @@ TEST_DATA = [
 ]
 
 
-def as_individual_bytes(val):
-    for byte in val:
-        yield bytes([byte])
-
-
 @run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
 def test_all(selenium, name, val, checksum):
@@ -49,7 +44,15 @@ def test_all(selenium, name, val, checksum):
 @run_in_pyodide(packages=["crc32c"])
 @pytest.mark.parametrize("name, val, checksum", TEST_DATA)
 def test_piece_by_piece(selenium, name, val, checksum):
+    # The initial CRC value
     c = 0
+
+    # A generator that yields each byte of the input value
+    # as a separate byte
+    def as_individual_bytes(val):
+        for byte in val:
+            yield bytes([byte])
+
     for x in as_individual_bytes(val):
         import crc32c
 
