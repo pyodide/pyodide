@@ -409,7 +409,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """

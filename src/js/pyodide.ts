@@ -16,6 +16,7 @@ import type { PyodideInterface } from "./api.js";
 import type { TypedArray, Module } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { PackageData } from "./load-package";
+import { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
 
 export { version, type PackageData };
@@ -42,6 +43,7 @@ export type ConfigType = {
   _node_mounts: string[];
   env: { [key: string]: string };
   packages: string[];
+  _makeSnapshot: boolean;
 };
 
 /**
@@ -213,11 +215,13 @@ export async function loadPyodide(
     await loadScript(scriptSrc);
   }
 
-  let snapshot;
+  let snapshot: Uint8Array | undefined = undefined;
   if (options._loadSnapshot) {
-    snapshot = await options._loadSnapshot;
-    if (snapshot?.constructor?.name === "ArrayBuffer") {
-      snapshot = new Uint8Array(snapshot);
+    const snp = await options._loadSnapshot;
+    if (ArrayBuffer.isView(snp)) {
+      snapshot = snp;
+    } else {
+      snapshot = new Uint8Array(snp);
     }
     emscriptenSettings.noInitialRun = true;
     // @ts-ignore
@@ -248,17 +252,12 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     throw new Error("Didn't expect to load any more file_packager files!");
   };
 
+  let snapshotConfig: SnapshotConfig | undefined = undefined;
   if (snapshot) {
-    // @ts-ignore
-    Module.HEAP8.set(snapshot);
+    snapshotConfig = API.restoreSnapshot(snapshot);
   }
   // runPython works starting after the call to finalizeBootstrap.
-  const pyodide = API.finalizeBootstrap(!!snapshot);
-
-  if (options._makeSnapshot) {
-    // @ts-ignore
-    pyodide._snapshot = Module.HEAP8.slice();
-  }
+  const pyodide = API.finalizeBootstrap(snapshotConfig);
   API.sys.path.insert(0, API.config.env.HOME);
 
   if (!pyodide.version.includes("dev")) {
