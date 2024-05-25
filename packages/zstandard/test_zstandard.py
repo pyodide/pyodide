@@ -7,9 +7,9 @@ from pytest_pyodide import run_in_pyodide
 def env(selenium):
     selenium.run_python(
         """
-      import os
-      os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
-      """
+        import os
+        os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
+        """
     )
     yield
 
