@@ -18,7 +18,7 @@ class CrossBuildEnvReleaseSpec(BaseModel):
     min_pyodide_build_version: str | None = None
     max_pyodide_build_version: str | None = None
     model_config = ConfigDict(
-        extra=pydantic.Extra.forbid, title="CrossBuildEnvReleasesSpec"
+        extra="forbid", title="CrossBuildEnvReleasesSpec"
     )
 
     @property
@@ -89,7 +89,7 @@ class CrossBuildEnvMetaSpec(BaseModel):
 
     releases: dict[str, CrossBuildEnvReleaseSpec]
     model_config = ConfigDict(
-        extra=pydantic.Extra.forbid,
+        extra="forbid",
         title="CrossBuildEnvMetaSpec",
     )
 

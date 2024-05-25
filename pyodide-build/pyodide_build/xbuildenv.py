@@ -222,7 +222,7 @@ class CrossBuildEnvManager:
         with NamedTemporaryFile(suffix=".tar") as f:
             f_path = Path(f.name)
             f_path.write_bytes(r.content)
-            shutil.unpack_archive(str(f_path), path)
+            shutil.unpack_archive(str(f_path), path, filter="data")
 
     def _install_cross_build_packages(
         self, xbuildenv_root: Path, xbuildenv_pyodide_root: Path
