@@ -366,11 +366,15 @@ def test_build1(tmp_path, monkeypatch, dummy_xbuildenv, mock_emscripten):
         results["srcdir"] = srcdir
         results["outdir"] = outdir
         results["backend_flags"] = backend_flags
-        return str(outdir / "a.whl")
+        dummy_wheel = outdir / "package-1.0.0-py3-none-any.whl"
+        return str(dummy_wheel)
 
     from contextlib import nullcontext
 
     monkeypatch.setattr(common, "modify_wheel", lambda whl: nullcontext())
+    monkeypatch.setattr(
+        common, "retag_wheel", lambda wheel_path, platform: Path(wheel_path)
+    )
     monkeypatch.setattr(build_env, "check_emscripten_version", lambda: None)
     monkeypatch.setattr(build_env, "replace_so_abi_tags", lambda whl: None)
 
@@ -384,7 +388,7 @@ def test_build1(tmp_path, monkeypatch, dummy_xbuildenv, mock_emscripten):
     app.command(**build.main.typer_kwargs)(build.main)  # type:ignore[attr-defined]
     result = runner.invoke(app, [str(srcdir), "--outdir", str(outdir), "x", "y", "z"])
 
-    assert result.exit_code == 0
+    assert result.exit_code == 0, result.stdout
     assert results["srcdir"] == srcdir
     assert results["outdir"] == outdir
     assert results["backend_flags"] == {"x": "", "y": "", "z": ""}
