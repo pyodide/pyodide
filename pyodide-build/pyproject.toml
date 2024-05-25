@@ -66,10 +66,6 @@ test = [
     "pytest-httpserver",
     "packaging",
 ]
-deploy = [
-    "boto3",
-    "moto",
-]
 
 [tool.hatch]
 version.path = "pyodide_build/__init__.py"
