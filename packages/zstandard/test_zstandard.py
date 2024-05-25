@@ -2,22 +2,24 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
-# Ensure C extension is used, and then CFFI as fallback, error if neither
+# Ensure that tests are executed with both the C extension and the CFFI backend
+@run_in_pyodide(packages=["zstandard"])
+def pytest_generate_tests(selenium, metafunc):
+    if "zstd_backend" in metafunc.fixturenames:
+        metafunc.parametrize("zstd_backend", ["cext", "cffi"])
+
+
+@run_in_pyodide(packages=["zstandard"])
 @pytest.fixture(autouse=True)
-def env(selenium):
-    selenium.run_python(
-        """
-        import os
-        os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
-        """
-    )
-    yield
+def set_zstd_backend(selenium, monkeypatch, zstd_backend):
+    monkeypatch.setenv("PYTHON_ZSTANDARD_IMPORT_POLICY", zstd_backend)
 
 
 # ------- Some compression tests ----------------------------------------------
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_zstandard_compression_and_decompression(selenium):
     import zstandard as zstd
 
@@ -31,6 +33,7 @@ def test_zstandard_compression_and_decompression(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_zstandard_compression_and_decompression_with_level(selenium):
     import zstandard as zstd
 
@@ -44,6 +47,7 @@ def test_zstandard_compression_and_decompression_with_level(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_compress_empty(selenium):
     import zstandard as zstd
 
@@ -65,6 +69,7 @@ def test_compress_empty(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_compress_large(selenium):
     import struct
 
@@ -79,7 +84,6 @@ def test_compress_large(selenium):
     assert len(result) == 999
     assert result[0:4] == b"\x28\xb5\x2f\xfd"
 
-    # This matches the test for read_to_iter() below.
     cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
     result = cctx.compress(b"f" * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE + b"o")
     assert (
@@ -93,6 +97,7 @@ def test_compress_large(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_empty(selenium):
     import zstandard as zstd
 
@@ -103,6 +108,7 @@ def test_empty(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_basic(selenium):
     import zstandard as zstd
 
@@ -113,6 +119,7 @@ def test_basic(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
+@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_dictionary(selenium):
     import zstandard as zstd
 
