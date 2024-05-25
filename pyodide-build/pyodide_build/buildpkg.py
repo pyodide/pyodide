@@ -5,6 +5,7 @@ Builds a Pyodide package.
 """
 
 import fnmatch
+import http.client
 import os
 import re
 import shutil
@@ -306,7 +307,7 @@ class RecipeBuilder:
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-            except requests.HTTPError as e:
+            except (requests.HTTPError, http.client.HTTPException) as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
