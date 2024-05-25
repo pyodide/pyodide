@@ -1,9 +1,9 @@
 import argparse
+import logging
 import shutil
 import subprocess
-from pathlib import Path
-import logging
 import textwrap
+from pathlib import Path
 
 try:
     from pyodide_build.build_env import (
@@ -14,6 +14,7 @@ try:
 except ImportError:
     print("Requires pyodide-build package to be installed")
     exit(1)
+
 
 def _copy_xbuild_files(
     pyodide_root: Path, xbuildenv_path: Path, skip_missing_files: bool = False
@@ -133,11 +134,16 @@ def create(
     (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))
 
 
-
 def parse_args():
-    parser = argparse.ArgumentParser(description="Create cross-build environment for building packages for Pyodide.")
+    parser = argparse.ArgumentParser(
+        description="Create cross-build environment for building packages for Pyodide."
+    )
     parser.add_argument("path", help="path to cross-build environment directory")
-    parser.add_argument("--skip-missing-files", action="store_true", help="skip if cross build files are missing instead of raising an error. This is useful for testing.")
+    parser.add_argument(
+        "--skip-missing-files",
+        action="store_true",
+        help="skip if cross build files are missing instead of raising an error. This is useful for testing.",
+    )
 
     args = parser.parse_args()
     return args
