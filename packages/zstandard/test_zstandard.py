@@ -46,7 +46,7 @@ def test_compress_empty(selenium):
     params = zstd.get_frame_parameters(result)
     assert params.window_size == 1024
     assert params.dict_id == 0
-    assert params.has_checksum != 0
+    assert params.has_checksum is False
 
     cctx = zstd.ZstdCompressor()
     result = cctx.compress(b"")
@@ -73,10 +73,10 @@ def test_compress_large(selenium):
     # This matches the test for read_to_iter() below.
     cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
     result = cctx.compress(b"f" * zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE + b"o")
-    assert result == (
-        b"\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00"
+    assert (
+        result == b"\x28\xb5\x2f\xfd\x00\x40\x54\x00\x00"
         b"\x10\x66\x66\x01\x00\xfb\xff\x39\xc0"
-        b"\x02\x09\x00\x00\x6f",
+        b"\x02\x09\x00\x00\x6f"
     )
 
 
