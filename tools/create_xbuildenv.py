@@ -35,7 +35,7 @@ def _copy_xbuild_files(
 
             if not source.exists():
                 if skip_missing_files:
-                    logging.warn(f"Cross-build file '{path}' not found")
+                    logging.warning(f"Cross-build file '{path}' not found")
                     continue
 
                 raise FileNotFoundError(f"Cross-build file '{path}' not found")
@@ -83,7 +83,7 @@ def _copy_wasm_libs(
     for path in to_copy:
         if not (pyodide_root / path).exists():
             if skip_missing_files:
-                logging.warn(f"Cross-build file '{path}' not found")
+                logging.warning(f"Cross-build file '{path}' not found")
                 continue
 
             raise FileNotFoundError(f"Cross-build file '{path}' not found")
