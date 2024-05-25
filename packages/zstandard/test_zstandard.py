@@ -4,16 +4,11 @@ from pytest_pyodide import run_in_pyodide
 
 # Ensure that tests are executed with both the C extension and the CFFI backend
 @run_in_pyodide(packages=["zstandard"])
-def set_zstd_backend(selenium, zstd_backend):
-    import os
+@pytest.fixture(params=["cffi", "cext"], autouse=True)
+def use_backend(selenium, request):
+    import zstandard as zstd
 
-    os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = zstd_backend
-
-
-@run_in_pyodide(packages=["zstandard"])
-@pytest.fixture(params=["cext", "cffi"], autouse=True)
-def zstd_backend(selenium, request):
-    set_zstd_backend(selenium, request.param)
+    zstd.backend = request.param
 
 
 # ------- Some compression tests ----------------------------------------------
