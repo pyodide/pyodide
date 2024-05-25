@@ -1,4 +1,7 @@
 # See also test_typeconversions, and test_python.
+
+from typing import no_type_check
+
 import pytest
 from hypothesis import example, given
 from hypothesis import strategies as st
@@ -2621,3 +2624,182 @@ async def test_js_proxy_str(selenium):
         match="revoked",
     ):
         str(px)
+
+
+@run_in_pyodide
+def test_bind_jsfunc_sig(selenium):
+    from _pyodide.jsbind import func_to_sig_inner
+
+    def f(
+        a: dict[str, int],
+        /,
+    ) -> list[int]:
+        raise NotImplementedError
+
+    assert (
+        repr(func_to_sig_inner(f))
+        == "<JsSignature (a: dict[str, int], /) -> list[int]>"
+    )
+
+
+@run_in_pyodide
+def test_bind_func_illegal_sigs(selenium):
+    from typing import no_type_check
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    jsfunc = run_js("(...args) => pyodide.toPy(args)")
+
+    def func(a):
+        pass
+
+    with pytest.raises(RuntimeError, match="Don't currently handle POS_OR_KWD args"):
+        jsfunc.bind_sig(func)(1)
+
+    @no_type_check
+    def get_bound(sig):
+        d = {}
+        exec(f"def func({sig}): ...", d)
+        func = d.pop("func")
+        return jsfunc.bind_sig(func)
+
+    func = get_bound("*," + ", ".join([f"a{n}" for n in range(65)]))
+    with pytest.raises(
+        RuntimeError, match="Cannot handle function with more than 64 kwonly args"
+    ):
+        func()  # type:ignore[call-arg]
+
+    kwargs = {f"a{n}": 0 for n in range(64)}
+    func = get_bound("*," + ", ".join([f"a{n}" for n in range(64)]))
+    assert func(**kwargs) == [kwargs]
+    del kwargs["a63"]
+    with pytest.raises(
+        TypeError, match="func.. missing 1 required keyword-only argument: 'a63'"
+    ):
+        func(**kwargs)
+
+
+@no_type_check
+@pytest.mark.parametrize(
+    "sig",
+    [
+        "",
+        "a, /",
+        "a, b, /",
+        "a=7, /",
+        "a, b=7, /",
+        "a, b=7, /, *, c",
+        "a, b=7, /, *, c=None",
+        "a, b=7, /, *, c=2",
+        "a, b=7, /, **kwargs",
+        "a, b=7, /, **kwargs",
+        "a, b=7, /, *, c=None, **kwargs",
+        "a, b=7, /, *, c, **kwargs",
+    ],
+)
+@run_in_pyodide
+def test_bind_arg_checking(selenium, sig):
+    from inspect import Parameter, signature
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    d = {}
+    exec(f"def func({sig}): ...", d)
+    func = d.pop("func")
+
+    f = run_js("(...args) => pyodide.toPy(args)").bind_sig(func)
+
+    def check(*args, **kwargs):
+        err = None
+        try:
+            try:
+                func(*args, **kwargs)
+            except TypeError as e:
+                err = e
+
+            if err:
+                with pytest.raises(TypeError) as e:
+                    f(*args, **kwargs)
+                assert e.value.args[0] == err.args[0]
+                return
+
+            sig = signature(func)
+            # rename positional parameters to work around bug in bind
+            # https://github.com/python/cpython/issues/87106
+            new_params = []
+            for p in sig.parameters.values():
+                if p.kind == Parameter.POSITIONAL_ONLY:
+                    p = p.replace(name=f"__{p.name}")
+                new_params.append(p)
+            sig = sig.replace(parameters=new_params)
+            res = sig.bind(*args, **kwargs)
+            res.apply_defaults()
+            expected = [*res.args]
+            reskwargs = dict(res.kwargs)
+            if reskwargs:
+                expected.append(reskwargs)
+            for k, v in list(reskwargs.items()):
+                if v is None:
+                    del reskwargs[k]
+            assert f(*args, **kwargs) == expected
+        finally:
+            err = None
+
+    check()
+    check(1)
+    check(1, 2)
+    check(1, 2, 3)
+
+    check(x=1)
+    check(1, x=1)
+    check(1, 2, 3, x=1)
+
+    check(x=1, y=1)
+    check(1, x=1, y=1)
+    check(1, 2, x=1, y=1)
+
+    check(a=1)
+    check(1, b=1)
+    check(1, a=1)
+
+    check(c=2)
+    check(1, c=2)
+    check(1, 2, c=2)
+    check(1, 2, 3, c=2)
+
+    check(1, 2, b=2)
+    check(1, b=2, c=2)
+
+
+@run_in_pyodide
+def test_bind_self_reference(selenium):
+    from _pyodide.jsbind import BindClass
+    from pyodide.code import run_js
+
+    a = run_js("({f() { return this; }})")
+    a.a = a
+
+    global A
+
+    class A(BindClass):
+        a: "A"
+
+        @staticmethod
+        def f() -> "A":
+            return A()
+
+    # Hack to fix type name resolution. Once we merge
+    # https://github.com/pyodide/pytest-pyodide/pull/133
+    # it won't be needed anymore.
+    A.A = A  # type:ignore[attr-defined]
+
+    a = a.bind_sig(A)
+
+    assert a._sig == A
+    assert a.a._sig == A
+    assert a.a.a._sig == A
+    assert a.f()._sig == A

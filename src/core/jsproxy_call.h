@@ -2,17 +2,16 @@
 #include "jslib.h"
 
 PyObject*
-wrap_promise(JsVal promise, JsVal done_callback);
-
-PyObject*
-JsMethod_Vectorcall_impl(JsVal target,
-                         JsVal thisarg,
+JsMethod_Vectorcall_impl(JsVal func,
+                         JsVal receiver,
+                         PyObject* sig,
                          PyObject* const* pyargs,
                          size_t nargsf,
                          PyObject* kwnames);
 
 PyObject*
-JsMethod_Construct_impl(JsVal target,
+JsMethod_Construct_impl(JsVal func,
+                        PyObject* sig,
                         PyObject* const* pyargs,
-                        Py_ssize_t nargs,
+                        size_t nargs,
                         PyObject* kwnames);

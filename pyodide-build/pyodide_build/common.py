@@ -330,6 +330,28 @@ def modify_wheel(wheel: Path) -> Iterator[Path]:
         pack_wheel(wheel_dir, wheel.parent)
 
 
+def retag_wheel(wheel_path: Path, platform: str) -> Path:
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "wheel",
+            "tags",
+            wheel_path,
+            "--platform-tag",
+            platform,
+            "--remove",
+        ],
+        check=False,
+        encoding="utf-8",
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        logger.error(f"ERROR: Retagging wheel {wheel_path} to {platform} failed")
+        exit_with_stdio(result)
+    return wheel_path.parent / result.stdout.splitlines()[-1].strip()
+
+
 def extract_wheel_metadata_file(wheel_path: Path, output_path: Path) -> None:
     """Extracts the METADATA file from the given wheel and writes it to the
     output path.

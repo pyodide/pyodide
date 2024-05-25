@@ -296,7 +296,7 @@ function js2python_convert_with_context(value, context) {
     if (result !== undefined) {
       return result;
     }
-    if (context.defaultConverter === undefined) {
+    if (!context.defaultConverter) {
       return _JsProxy_create(value);
     }
     let result_js = context.defaultConverter(

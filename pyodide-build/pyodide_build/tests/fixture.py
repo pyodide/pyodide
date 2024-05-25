@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from conftest import ROOT_PATH
 from pyodide_build import build_env
 from pyodide_build.common import xbuildenv_dirname
+from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 
 @pytest.fixture(scope="module")
@@ -58,52 +58,45 @@ def reset_env_vars():
 def reset_cache():
     # Will remove all caches before each test.
 
-    build_env.get_pyodide_root.cache_clear()
-    build_env.get_build_environment_vars.cache_clear()
-    build_env.get_unisolated_packages.cache_clear()
+    def _reset():
+        build_env.get_pyodide_root.cache_clear()
+        build_env.get_build_environment_vars.cache_clear()
+        build_env.get_unisolated_packages.cache_clear()
 
-    yield
+    _reset()
+
+    yield _reset
 
 
 @pytest.fixture(scope="function")
-def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
-    import subprocess as sp
+def dummy_xbuildenv_url(httpserver):
+    """
+    Returns the URL of a dummy xbuildenv archive.
+    This archive contains a minimal files that are required to install a xbuildenv.
+    """
+    test_xbuildenv_archive_path = (
+        Path(__file__).parent / "_test_xbuildenv" / "xbuildenv-test.tar.gz"
+    )
+    test_xbuildenv_archive = test_xbuildenv_archive_path.read_bytes()
 
+    httpserver.expect_request("/xbuildenv-test.tar.gz").respond_with_data(
+        test_xbuildenv_archive
+    )
+    yield httpserver.url_for("/xbuildenv-test.tar.gz")
+
+
+@pytest.fixture(scope="function")
+def dummy_xbuildenv(dummy_xbuildenv_url, tmp_path, reset_env_vars, reset_cache):
+    """
+    Downloads the dummy xbuildenv archive and installs it in the temporary directory.
+
+    This fixture can be used to run any functions that require a xbuildenv to be installed before running.
+    """
     assert "PYODIDE_ROOT" not in os.environ
 
-    envpath = Path(tmp_path) / xbuildenv_dirname()
-    result = sp.run(
-        [
-            "pyodide",
-            "xbuildenv",
-            "create",
-            str(envpath),
-            "--root",
-            ROOT_PATH,
-            "--skip-missing-files",
-        ]
-    )
-
-    assert result.returncode == 0
-
-    version_dir = envpath / "temp_version"
-    version_dir.mkdir()
-
-    sp.run(
-        [
-            "mv",
-            str(envpath / "xbuildenv"),
-            str(version_dir),
-        ]
-    )
-
-    sp.run(
-        [
-            "ln",
-            "-s",
-            str(version_dir),
-            str(envpath / "xbuildenv"),
-        ]
+    manager = CrossBuildEnvManager(tmp_path / xbuildenv_dirname())
+    manager.install(
+        version=None, url=dummy_xbuildenv_url, skip_install_cross_build_packages=True
     )
 
     cur_dir = os.getcwd()
@@ -114,3 +107,58 @@ def xbuildenv(selenium, tmp_path, reset_env_vars, reset_cache):
         yield tmp_path
     finally:
         os.chdir(cur_dir)
+
+
+class MockEmscripten:
+    def __init__(self, log_file: Path):
+        self.log_file = log_file
+
+    def capture_output(self) -> list[str]:
+        return self.log_file.read_text().splitlines()
+
+
+MOCK_EMSCRIPTEN_TEMPLATE = (
+    Path(__file__).parent / "utils" / "mock_emscripten.sh.tmpl"
+).read_text()
+
+
+@pytest.fixture(scope="function")
+def mock_emscripten(tmp_path, dummy_xbuildenv, reset_env_vars, reset_cache):
+    """
+    This fixture makes a fake emscripten compilers in the PATH.
+    TODO: make this fixture more smart and flexible.
+    """
+    emscripten_version = build_env.get_build_flag("PYODIDE_EMSCRIPTEN_VERSION")
+
+    mock_dir = Path(tmp_path).resolve()
+    mock_dir.mkdir(exist_ok=True, parents=True)
+
+    emcc_log_file = mock_dir / "emcc.log"
+    emcc_binary = mock_dir / "emcc"
+    emcc_binary.write_text(
+        MOCK_EMSCRIPTEN_TEMPLATE.format(
+            output_file=emcc_log_file, version=emscripten_version
+        )
+    )
+    emcc_binary.chmod(0o755)
+
+    llvm_readobj_log_file = mock_dir / "llvm-readobj.log"
+    llvm_readobj_binary = mock_dir / "llvm-readobj"
+    llvm_readobj_binary.write_text(
+        MOCK_EMSCRIPTEN_TEMPLATE.format(
+            output_file=llvm_readobj_log_file, version=emscripten_version
+        )
+    )
+    llvm_readobj_binary.chmod(0o755)
+
+    original_path = os.environ["PATH"]
+
+    os.environ["PATH"] = f"{mock_dir}:{original_path}"
+    reset_cache()
+
+    yield {
+        "emcc": MockEmscripten(emcc_log_file),
+        "llvm-readobj": MockEmscripten(llvm_readobj_log_file),
+    }
+
+    os.environ["PATH"] = original_path

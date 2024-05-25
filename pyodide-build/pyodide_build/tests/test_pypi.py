@@ -15,7 +15,13 @@ import typer
 from typer.testing import CliRunner
 
 from pyodide_build.cli import build
-from .fixture import reset_cache, reset_env_vars, xbuildenv
+from .fixture import (
+    reset_cache,
+    reset_env_vars,
+    dummy_xbuildenv,
+    dummy_xbuildenv_url,
+    mock_emscripten,
+)
 
 runner = CliRunner()
 
@@ -220,9 +226,8 @@ def fake_pypi_url(fake_pypi_server):
     pyodide_build.out_of_tree.pypi._PYPI_INDEX = pypi_old
 
 
-def test_fetch_or_build_pypi(xbuildenv):
-    # TODO: - make test run without pyodide
-    output_dir = xbuildenv / "dist"
+def test_fetch_or_build_pypi(dummy_xbuildenv, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
     # one pure-python package (doesn't need building) and one sdist package (needs building)
     pkgs = ["pytest-pyodide", "pycryptodome==3.15.0"]
 
@@ -240,9 +245,8 @@ def test_fetch_or_build_pypi(xbuildenv):
     assert len(built_wheels) == len(pkgs)
 
 
-def test_fetch_or_build_pypi_with_deps_and_extras(xbuildenv):
-    # TODO: - make test run without pyodide
-    output_dir = xbuildenv / "dist"
+def test_fetch_or_build_pypi_with_deps_and_extras(dummy_xbuildenv, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
     # one pure-python package (doesn't need building) which depends on one sdist package (needs building)
     pkgs = ["eth-hash[pycryptodome]==0.5.1", "safe-pysha3 (>=1.0.0)"]
 
@@ -260,9 +264,8 @@ def test_fetch_or_build_pypi_with_deps_and_extras(xbuildenv):
     assert len(built_wheels) == 3
 
 
-def test_fake_pypi_succeed(xbuildenv, fake_pypi_url):
-    # TODO: - make test run without pyodide
-    output_dir = xbuildenv / "dist"
+def test_fake_pypi_succeed(dummy_xbuildenv, fake_pypi_url, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
     # build package that resolves right
     app = typer.Typer()
     app.command()(build.main)
@@ -280,8 +283,8 @@ def test_fake_pypi_succeed(xbuildenv, fake_pypi_url):
     assert len(set(output_dir.glob("micropip*.whl"))) == 0
 
 
-def test_fake_pypi_resolve_fail(xbuildenv, fake_pypi_url):
-    output_dir = xbuildenv / "dist"
+def test_fake_pypi_resolve_fail(dummy_xbuildenv, fake_pypi_url, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
 
     # build package that resolves right
 
@@ -299,9 +302,8 @@ def test_fake_pypi_resolve_fail(xbuildenv, fake_pypi_url):
     assert len(built_wheels) == 0
 
 
-def test_fake_pypi_extras_build(xbuildenv, fake_pypi_url):
-    # TODO: - make test run without pyodide
-    output_dir = xbuildenv / "dist"
+def test_fake_pypi_extras_build(dummy_xbuildenv, fake_pypi_url, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
     # build package that resolves right
     app = typer.Typer()
     app.command()(build.main)
@@ -317,8 +319,8 @@ def test_fake_pypi_extras_build(xbuildenv, fake_pypi_url):
     assert len(built_wheels) == 2
 
 
-def test_fake_pypi_repeatable_build(xbuildenv, fake_pypi_url):
-    output_dir = xbuildenv / "dist"
+def test_fake_pypi_repeatable_build(dummy_xbuildenv, fake_pypi_url, mock_emscripten):
+    output_dir = dummy_xbuildenv / "dist"
 
     # build package that resolves right
     app = typer.Typer()
@@ -372,7 +374,7 @@ pkg-a
     assert len(built_wheels) == 2, result.stdout
 
 
-def test_bad_requirements_text(xbuildenv):
+def test_bad_requirements_text(dummy_xbuildenv, mock_emscripten):
     app = typer.Typer()
     app.command()(build.main)
     # test 1 - error on URL location in requirements

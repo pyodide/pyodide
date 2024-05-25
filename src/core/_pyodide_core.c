@@ -65,6 +65,11 @@ EM_JS(void, set_pyodide_module, (JsVal mod), {
 int
 init_pyodide_proxy()
 {
+  EM_ASM({
+    // sourmash needs open64 to mean the same thing as open.
+    // Emscripten 3.1.44 seems to have removed it??
+    wasmImports["open64"] = wasmImports["open"];
+  });
   bool success = false;
   // Enable JavaScript access to the _pyodide module.
   PyObject* _pyodide = PyImport_ImportModule("_pyodide");
@@ -83,12 +88,6 @@ EM_JS_DEPS(pyodide_core_deps, "stackAlloc,stackRestore,stackSave");
 PyObject*
 PyInit__pyodide_core(void)
 {
-  EM_ASM({
-    // sourmash needs open64 to mean the same thing as open.
-    // Emscripten 3.1.44 seems to have removed it??
-    wasmImports["open64"] = wasmImports["open"];
-  });
-
   bool success = false;
   PyObject* _pyodide = NULL;
   PyObject* core_module = NULL;
@@ -102,18 +101,20 @@ PyInit__pyodide_core(void)
   if (core_module == NULL) {
     FATAL_ERROR("Failed to create core module.");
   }
+  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
+  if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
+    FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
+    FAIL();
+  }
 
   TRY_INIT_WITH_CORE_MODULE(error_handling);
   TRY_INIT(jslib);
   TRY_INIT(docstring);
   TRY_INIT_WITH_CORE_MODULE(python2js);
   TRY_INIT_WITH_CORE_MODULE(jsproxy);
+  TRY_INIT_WITH_CORE_MODULE(jsproxy_call);
   TRY_INIT_WITH_CORE_MODULE(pyproxy);
-
-  PyObject* module_dict = PyImport_GetModuleDict(); /* borrowed */
-  if (PyDict_SetItemString(module_dict, "_pyodide_core", core_module)) {
-    FATAL_ERROR("Failed to add '_pyodide_core' module to modules dict.");
-  }
+  TRY_INIT_WITH_CORE_MODULE(jsbind);
 
   if (init_pyodide_proxy() == -1) {
     FATAL_ERROR("Failed to create _pyodide proxy.");
