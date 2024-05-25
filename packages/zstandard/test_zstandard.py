@@ -4,22 +4,22 @@ from pytest_pyodide import run_in_pyodide
 
 # Ensure that tests are executed with both the C extension and the CFFI backend
 @run_in_pyodide(packages=["zstandard"])
-def pytest_generate_tests(selenium, metafunc):
-    if "zstd_backend" in metafunc.fixturenames:
-        metafunc.parametrize("zstd_backend", ["cext", "cffi"])
+def set_zstd_backend(selenium, zstd_backend):
+    import os
+
+    os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = zstd_backend
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.fixture(autouse=True)
-def set_zstd_backend(selenium, monkeypatch, zstd_backend):
-    monkeypatch.setenv("PYTHON_ZSTANDARD_IMPORT_POLICY", zstd_backend)
+@pytest.mark.fixture(params=["cext", "cffi"], autouse=True)
+def zstd_backend(selenium, request):
+    set_zstd_backend(selenium, request.param)
 
 
 # ------- Some compression tests ----------------------------------------------
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_zstandard_compression_and_decompression(selenium):
     import zstandard as zstd
 
@@ -33,7 +33,6 @@ def test_zstandard_compression_and_decompression(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_zstandard_compression_and_decompression_with_level(selenium):
     import zstandard as zstd
 
@@ -47,7 +46,6 @@ def test_zstandard_compression_and_decompression_with_level(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_compress_empty(selenium):
     import zstandard as zstd
 
@@ -69,7 +67,6 @@ def test_compress_empty(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_compress_large(selenium):
     import struct
 
@@ -97,7 +94,6 @@ def test_compress_large(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_empty(selenium):
     import zstandard as zstd
 
@@ -108,7 +104,6 @@ def test_empty(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_basic(selenium):
     import zstandard as zstd
 
@@ -119,7 +114,6 @@ def test_basic(selenium):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.paramtrize("zstd_backend", ["cext", "cffi"])
 def test_dictionary(selenium):
     import zstandard as zstd
 
