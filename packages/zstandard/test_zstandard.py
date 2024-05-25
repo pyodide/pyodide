@@ -1,9 +1,18 @@
-import os
+import pytest
+from pytest_pyodide import run_in_pyodide
+
 
 # Ensure C extension is used, and then CFFI as fallback, error if neither
-os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
+@pytest.fixture(autouse=True)
+def env(selenium):
+    selenium.run_python(
+        """
+      import os
+      os.environ["PYTHON_ZSTANDARD_IMPORT_POLICY"] = "default"
+      """
+    )
+    yield
 
-from pytest_pyodide import run_in_pyodide
 
 # ------- Some compression tests ----------------------------------------------
 
