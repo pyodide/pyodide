@@ -11,7 +11,7 @@ def set_zstd_backend(selenium, zstd_backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.fixture(params=["cext", "cffi"], autouse=True)
+@pytest.fixture(params=["cext", "cffi"], autouse=True)
 def zstd_backend(selenium, request):
     set_zstd_backend(selenium, request.param)
 
