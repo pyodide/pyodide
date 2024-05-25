@@ -507,7 +507,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            python3 -m pip install -e "./pyodide-build[deploy]"
+            python3 -m pip install -r requirements-deploy.txt
 
             wget https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz
             tar xzf ghr_v0.16.2_linux_amd64.tar.gz
@@ -582,7 +582,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            python3 -m pip install -e "./pyodide-build[deploy]"
+            python3 -m pip install -r requirements-deploy.txt
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
