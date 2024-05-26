@@ -5,13 +5,13 @@ Build all of the packages in a given directory.
 """
 
 import dataclasses
+import datetime
 import shutil
 import subprocess
 import sys
 from collections import defaultdict
 from collections.abc import Iterable, Iterator
 from contextlib import contextmanager
-from datetime import datetime
 from functools import total_ordering
 from graphlib import TopologicalSorter
 from pathlib import Path
@@ -188,7 +188,7 @@ class PackageStatus:
         self.finished = False
 
     def finish(self, success: bool, elapsed_time: float) -> None:
-        time = datetime.utcfromtimestamp(elapsed_time)
+        time = datetime.datetime.fromtimestamp(elapsed_time, tz=datetime.UTC)
         if time.minute == 0:
             minutes = ""
         else:

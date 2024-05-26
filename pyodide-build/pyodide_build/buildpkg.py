@@ -345,7 +345,7 @@ class RecipeBuilder:
             shutil.copy(tarballpath, self.src_dist_dir)
             return
 
-        shutil.unpack_archive(tarballpath, self.build_dir)
+        shutil.unpack_archive(tarballpath, self.build_dir, filter="data")
 
         extract_dir_name = self.source_metadata.extract_dir
         if extract_dir_name is None:

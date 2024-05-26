@@ -1,4 +1,3 @@
-import pydantic
 from packaging.version import Version
 from pydantic import BaseModel, ConfigDict
 
@@ -17,9 +16,7 @@ class CrossBuildEnvReleaseSpec(BaseModel):
     # Minimum and maximum pyodide-build versions that is compatible with this release
     min_pyodide_build_version: str | None = None
     max_pyodide_build_version: str | None = None
-    model_config = ConfigDict(
-        extra=pydantic.Extra.forbid, title="CrossBuildEnvReleasesSpec"
-    )
+    model_config = ConfigDict(extra="forbid", title="CrossBuildEnvReleasesSpec")
 
     @property
     def python_version_tuple(self) -> tuple[int, int, int]:
@@ -89,7 +86,7 @@ class CrossBuildEnvMetaSpec(BaseModel):
 
     releases: dict[str, CrossBuildEnvReleaseSpec]
     model_config = ConfigDict(
-        extra=pydantic.Extra.forbid,
+        extra="forbid",
         title="CrossBuildEnvMetaSpec",
     )
 
