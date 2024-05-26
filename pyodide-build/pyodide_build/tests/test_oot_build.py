@@ -1,7 +1,11 @@
+from typing import Literal
+
 from pyodide_build.out_of_tree import build
 
+# selenium fixture b/c we can't run this test until after building Python.
 
-def test_non_platformed_build(tmp_path):
+
+def test_non_platformed_build(selenium, tmp_path):
     """Check that we don't accidentally attach Pyodide platform to non
     platformed wheels.
     """
@@ -24,8 +28,8 @@ packages = ["fake_pkg"]
     (tmp_path / "fake_pkg.py").write_text("print('hi from fake_pkg!')")
     src = tmp_path
     dst = tmp_path / "dist"
-    exports = "pyinit"
-    config_settings = {}
+    exports: Literal["pyinit"] = "pyinit"
+    config_settings = {}  # type:ignore[var-annotated]
     build.run(src, dst, exports, config_settings)
 
     wheels = list(dst.glob("*.whl"))
