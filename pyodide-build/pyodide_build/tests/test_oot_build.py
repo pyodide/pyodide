@@ -1,5 +1,5 @@
-
 from pyodide_build.out_of_tree import build
+
 
 def test_non_platformed_build(tmp_path):
     """Check that we don't accidentally attach Pyodide platform to non
@@ -31,5 +31,3 @@ packages = ["fake_pkg"]
     wheels = list(dst.glob("*.whl"))
     assert len(wheels) == 1
     assert wheels[0].name == "fake_pkg-1.0-py3-none-any.whl"
-
-
