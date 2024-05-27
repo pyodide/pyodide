@@ -88,7 +88,7 @@ def _get_built_wheel_internal(url):
         data = requests.get(url).content
         f.write(data)
         f.close()
-        shutil.unpack_archive(f.name, build_path, filter="data")
+        shutil.unpack_archive(f.name, build_path)
         os.unlink(f.name)
         files = list(build_path.iterdir())
         if len(files) == 1 and files[0].is_dir():
