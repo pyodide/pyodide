@@ -22,10 +22,10 @@ def zstd_backend(selenium, request):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_zstandard_compression_and_decompression(selenium, backend):
+def test_zstandard_compression_and_decompression(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     data = b"foo"
     compress = zstd.ZstdCompressor(
@@ -37,10 +37,10 @@ def test_zstandard_compression_and_decompression(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_zstandard_compression_and_decompression_with_level(selenium, backend):
+def test_zstandard_compression_and_decompression_with_level(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     data = b"foo"
     compress = zstd.ZstdCompressor(
@@ -52,10 +52,10 @@ def test_zstandard_compression_and_decompression_with_level(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_compress_empty(selenium, backend):
+def test_compress_empty(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
@@ -75,12 +75,12 @@ def test_compress_empty(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_compress_large(selenium, backend):
+def test_compress_large(selenium, zstd_backend):
     import struct
 
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     chunks = []
     for i in range(255):
@@ -104,10 +104,10 @@ def test_compress_large(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_empty(selenium, backend):
+def test_empty(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"")
@@ -116,10 +116,10 @@ def test_empty(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_basic(selenium, backend):
+def test_basic(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"foobar")
@@ -128,10 +128,10 @@ def test_basic(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-def test_dictionary(selenium, backend):
+def test_dictionary(selenium, zstd_backend):
     import zstandard as zstd
 
-    zstd.backend = backend
+    zstd.backend = zstd_backend
 
     samples = []
     for _ in range(128):
