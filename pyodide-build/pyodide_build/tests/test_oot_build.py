@@ -2,10 +2,18 @@ from typing import Literal
 
 from pyodide_build.out_of_tree import build
 
+# flake8: noqa
+from .fixture import (
+    dummy_xbuildenv,
+    dummy_xbuildenv_url,
+    reset_env_vars,
+    reset_cache,
+)
+
 # selenium fixture b/c we can't run this test until after building Python.
 
 
-def test_non_platformed_build(selenium, tmp_path):
+def test_non_platformed_build(dummy_xbuildenv, tmp_path):
     """Check that we don't accidentally attach Pyodide platform to non
     platformed wheels.
     """
