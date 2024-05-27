@@ -41,7 +41,9 @@ def run(
         built_wheel = pypabuild.build(srcdir, outdir, env, config_settings)
 
     wheel_path = Path(built_wheel)
-    wheel_path = common.retag_wheel(wheel_path, wheel_platform())
+    if "emscripten" in wheel_path.name:
+        # Retag platformed wheels to pyodide
+        wheel_path = common.retag_wheel(wheel_path, wheel_platform())
     with common.modify_wheel(wheel_path) as wheel_dir:
         build_env.replace_so_abi_tags(wheel_dir)
 
