@@ -3,7 +3,6 @@ from pathlib import Path
 import typer
 
 from ..common import xbuildenv_dirname
-from ..create_xbuildenv import create
 from ..xbuildenv import CrossBuildEnvManager
 
 DIRNAME = xbuildenv_dirname()
