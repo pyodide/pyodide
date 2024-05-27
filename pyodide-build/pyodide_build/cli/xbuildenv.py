@@ -51,30 +51,6 @@ def _install(
     typer.echo(f"Pyodide cross-build environment installed at {path.resolve()}")
 
 
-@app.command("create")
-def _create(
-    path: Path = typer.Argument(
-        DIRNAME, help="path to cross-build environment directory"
-    ),
-    root: Path = typer.Option(
-        None, help="path to pyodide root directory, if not given, will be inferred"
-    ),
-    skip_missing_files: bool = typer.Option(
-        False,
-        help="skip if cross build files are missing instead of raising an error. This is useful for testing.",
-    ),
-) -> None:
-    """
-    Create cross-build environment.
-
-    The create environment is then used to cross-compile packages out-of-tree.
-    Note: this is a private endpoint that should not be used outside of the Pyodide Makefile.
-    """
-
-    create(path, pyodide_root=root, skip_missing_files=skip_missing_files)
-    typer.echo(f"Pyodide cross-build environment created at {path.resolve()}")
-
-
 @app.command("version")
 def _version(
     path: Path = typer.Option(
