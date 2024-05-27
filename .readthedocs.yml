@@ -8,11 +8,6 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
-formats:
-  - htmlzip
-  - pdf
-  # TODO: figure out why we can't build epub
-
 python:
   install:
     - requirements: docs/requirements-doc.txt
