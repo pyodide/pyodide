@@ -4,6 +4,7 @@ import pytest
 #        pytest-pyodide should be able to handle this but it doesn't work as expected.
 #        (https://github.com/pyodide/pytest-pyodide/blob/f957dcd510eb62af286df608ed9a1861adce1b6d/pytest_pyodide/hook.py#L274)
 
+
 def test_webworker_zero_timeout1(selenium_webworker_standalone, script_type):
     selenium = selenium_webworker_standalone
     output = selenium.run_webworker(
