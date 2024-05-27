@@ -4,17 +4,18 @@ from pytest_pyodide import run_in_pyodide
 
 # Run tests against both the C extension and the CFFI backend
 @run_in_pyodide(packages=["zstandard"])
-def set_zstd_backend(selenium, request):
+def set_zstd_backend(selenium, backend):
     import zstandard as zstd
 
-    zstd.backend = request.param
+    zstd.backend = backend
 
 
 @pytest.fixture(params=["cext", "cffi"], autouse=True)
 def zstd_backend(selenium, request):
     # Runs in host, request not pickleable so we can't send it to Pyodide.
     # Look up `request.param` which is a string hence pickleable and send that to Pyodide
-    set_zstd_backend(selenium, request.param)
+    backend = request.param
+    set_zstd_backend(selenium, backend)
 
 
 # ------- Some compression tests ----------------------------------------------
