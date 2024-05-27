@@ -26,8 +26,8 @@ _Date here_
 - {{ Update }} The wheel tag for Pyodide wheels has changed to pyodide_2024_0_wasm32.
   {pr}`4777`, {pr}`4780`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.60
-  {pr}`4399` {pr}`4715` {pr}`4782`
+- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+  {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
   is not available in the Node.js < 18 environment.
@@ -129,7 +129,7 @@ _Date here_
   `pure_eval`, `stack_data`, `traitlets`, `wcwidth` {pr}`4452`, `altair` {pr}`4580`,
   `cvxpy` {pr}`4587`, `clarabel` {pr}`4587`, `matplotlib-inline` {pr}`4626`,
   `pygame-ce` {pr}`4602`, `libcst` {pr}`4665`, `mmh3`, `pyiceberg` {pr}`4648`,
-  `lakers-python` {pr}`4763`, `crc32c` {pr}`4789`
+  `lakers-python` {pr}`4763`, `crc32c` {pr}`4789`, `zstandard` {pr}`4792`
 
 - Upgraded `contourpy` to 1.2.1 {pr}`4680`
 - Upgraded `sourmash` to 4.8.8 {pr}`4683`
