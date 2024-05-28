@@ -73,10 +73,11 @@ class RichFormatter(logging.Formatter):
 
 console_stdout = CIAwareConsole(theme=COLOR_THEME)
 console_stderr = CIAwareConsole(stderr=True, theme=COLOR_THEME)
+logging.setLoggerClass(_Logger)
 
 
 def _get_logger(log_level: int) -> _Logger:
-    logger = _Logger(__name__)
+    logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
 
     rich_handler_stdout = RichHandler(
