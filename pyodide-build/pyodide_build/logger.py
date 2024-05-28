@@ -2,6 +2,7 @@ import logging
 import os
 from collections.abc import Generator
 from contextlib import contextmanager
+from typing import cast
 
 from rich.console import Console
 from rich.highlighter import NullHighlighter
@@ -78,6 +79,7 @@ logging.setLoggerClass(_Logger)
 
 def _get_logger(log_level: int) -> _Logger:
     logger = logging.getLogger(__name__)
+    logger = cast(_Logger, logger)
     logger.setLevel(log_level)
 
     rich_handler_stdout = RichHandler(
