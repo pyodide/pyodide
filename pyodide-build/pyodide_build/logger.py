@@ -77,7 +77,7 @@ console_stderr = CIAwareConsole(stderr=True, theme=COLOR_THEME)
 logging.setLoggerClass(_Logger)
 
 
-def _get_logger(log_level: int) -> logging.Logger:
+def _get_logger(log_level: int) -> _Logger:
     logger = logging.getLogger(__name__)
     logger = cast(_Logger, logger)
     logger.setLevel(log_level)
