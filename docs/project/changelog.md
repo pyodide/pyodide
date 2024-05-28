@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
 ## Version 0.26.0
 
 _May 27, 2024_
