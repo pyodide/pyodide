@@ -1,7 +1,7 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import only_node, requires_jspi
+from conftest import requires_jspi
 
 
 @requires_jspi
@@ -648,7 +648,7 @@ def test_memory_leak(selenium, script):
     assert length_change == 0
 
 
-@only_node
+@requires_jspi
 @run_in_pyodide
 def test_run_until_complete(selenium):
     from asyncio import create_task, gather, get_event_loop, sleep

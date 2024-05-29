@@ -299,10 +299,14 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
     return res
 
 
-from pytest_pyodide.runner import NodeRunner
+from pytest_pyodide.runner import (
+    NodeRunner,
+    PlaywrightChromeRunner,
+    SeleniumChromeRunner,
+)
 
 
-def patched_load_pyodide(self):
+def patched_load_pyodide_node(self):
     self.run_js(
         """
         const {readFileSync} = require("fs");
@@ -321,4 +325,23 @@ def patched_load_pyodide(self):
     )
 
 
-NodeRunner.load_pyodide = patched_load_pyodide
+NodeRunner.load_pyodide = patched_load_pyodide_node
+
+
+def patched_load_pyodide_chrome(self):
+    self.run_js(
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            enableRunUntilComplete: true,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._api.inTestHoist = true; // improve some error messages for tests
+        """
+    )
+
+
+SeleniumChromeRunner.load_pyodide = patched_load_pyodide_chrome
+PlaywrightChromeRunner.load_pyodide = patched_load_pyodide_chrome
