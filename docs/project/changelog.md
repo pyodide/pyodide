@@ -21,6 +21,10 @@ myst:
   stack switching is disabled.
   {pr}`4817`
 
+### Packages
+
+- New Packages: `pytest-asyncio` {pr}`4819`
+
 ## Version 0.26.0
 
 _May 27, 2024_
