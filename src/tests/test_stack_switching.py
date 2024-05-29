@@ -1,7 +1,7 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import requires_jspi
+from conftest import only_node, requires_jspi
 
 
 @requires_jspi
@@ -646,3 +646,29 @@ def test_memory_leak(selenium, script):
         """
     )
     assert length_change == 0
+
+
+@only_node
+@run_in_pyodide
+def test_run_until_complete(selenium):
+    from asyncio import create_task, gather, get_event_loop, sleep
+
+    from js import sleep as js_sleep
+    from pyodide.code import run_js
+
+    loop = get_event_loop()
+
+    async def test():
+        await sleep(0.1)
+        return 7
+
+    assert loop.run_until_complete(test()) == 7
+    assert loop.run_until_complete(create_task(test())) == 7
+    loop.run_until_complete(sleep(0.1))
+    loop.run_until_complete(js_sleep(100))
+    res = loop.run_until_complete(
+        gather(test(), sleep(0.1), js_sleep(100), js_sleep(100))
+    )
+    assert list(res) == [7, None, None, None]
+    p = run_js("[sleep(100).then(() => 99)]")[0]
+    assert loop.run_until_complete(p) == 99
