@@ -16,7 +16,7 @@ myst:
 
 ## Version 0.26.0
 
-_Date here_
+_May 27, 2024_
 
 ### General
 

@@ -1,15 +1,29 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+
+# Run tests against both the C extension and the CFFI backend
+@run_in_pyodide(packages=["zstandard"])
+def set_zstd_backend(selenium, backend):
+    import zstandard as zstd
+
+    zstd.backend = backend
+
+
+@pytest.fixture(params=["cext", "cffi"], autouse=True)
+def zstd_backend(selenium, request):
+    # Runs in host, request not pickleable so we can't send it to Pyodide.
+    # Look up `request.param` which is a string hence pickleable and send that to Pyodide
+    backend = request.param
+    set_zstd_backend(selenium, backend)
+
+
 # ------- Some compression tests ----------------------------------------------
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_zstandard_compression_and_decompression(selenium, backend):
+def test_zstandard_compression_and_decompression(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     data = b"foo"
     compress = zstd.ZstdCompressor(
@@ -21,11 +35,8 @@ def test_zstandard_compression_and_decompression(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_zstandard_compression_and_decompression_with_level(selenium, backend):
+def test_zstandard_compression_and_decompression_with_level(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     data = b"foo"
     compress = zstd.ZstdCompressor(
@@ -37,11 +48,8 @@ def test_zstandard_compression_and_decompression_with_level(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_compress_empty(selenium, backend):
+def test_compress_empty(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     cctx = zstd.ZstdCompressor(level=1, write_content_size=False)
 
@@ -61,13 +69,10 @@ def test_compress_empty(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_compress_large(selenium, backend):
+def test_compress_large(selenium):
     import struct
 
     import zstandard as zstd
-
-    zstd.backend = backend
 
     chunks = []
     for i in range(255):
@@ -91,11 +96,8 @@ def test_compress_large(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_empty(selenium, backend):
+def test_empty(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"")
@@ -104,11 +106,8 @@ def test_empty(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_basic(selenium, backend):
+def test_basic(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     cctx = zstd.ZstdCompressor()
     frame = cctx.compress(b"foobar")
@@ -117,11 +116,8 @@ def test_basic(selenium, backend):
 
 
 @run_in_pyodide(packages=["zstandard"])
-@pytest.mark.parametrize("backend", ["cffi", "cext"])
-def test_dictionary(selenium, backend):
+def test_dictionary(selenium):
     import zstandard as zstd
-
-    zstd.backend = backend
 
     samples = []
     for _ in range(128):
