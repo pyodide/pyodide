@@ -183,7 +183,7 @@ def _search(
     Search for available versions of cross-build environment.
     """
 
-    # TODO: maybe cache the metadata file somewhere to avoid downloading it every time
+    # TODO: cache the metadata file somewhere to avoid downloading it every time
     metadata_path = metadata_path or cross_build_env_metadata_url()
     metadata = load_cross_build_env_metadata(metadata_path)
     local = local_versions()

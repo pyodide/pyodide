@@ -276,7 +276,7 @@ def check_emscripten_version() -> None:
 def local_versions() -> dict[str, str]:
     """
     Returns the versions of the local Python interpreter and the pyodide-build.
-    This information is intended to be used for checking compatibility with the cross-build environment.
+    This information is used for checking compatibility with the cross-build environment.
     """
     return {
         "python": f"{sys.version_info.major}.{sys.version_info.minor}",
