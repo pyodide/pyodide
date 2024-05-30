@@ -37,7 +37,7 @@ pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 # We need to go through and touch them all once to keep everything okay.
 pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.globals.get;
-    pyodide.runPython("import pyodide_js._api; del pyodide_js");
+    pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
     pyodide._api.importlib.invalidate_caches;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
@@ -299,16 +299,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
     return res
 
 
-from pytest_pyodide.runner import NodeRunner
+from pytest_pyodide.runner import (
+    NodeRunner,
+    PlaywrightChromeRunner,
+    SeleniumChromeRunner,
+)
 
 
-def patched_load_pyodide(self):
+def patched_load_pyodide_node(self):
     self.run_js(
         """
         const {readFileSync} = require("fs");
         let snap = readFileSync("snapshot.bin");
         snap = new Uint8Array(snap.buffer);
-        let pyodide = await loadPyodide({ fullStdLib: false, jsglobals : self, _loadSnapshot: snap });
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals: self,
+            _loadSnapshot: snap,
+            enableRunUntilComplete: true,
+        });
         self.pyodide = pyodide;
         globalThis.pyodide = pyodide;
         pyodide._api.inTestHoist = true; // improve some error messages for tests
@@ -316,4 +325,23 @@ def patched_load_pyodide(self):
     )
 
 
-NodeRunner.load_pyodide = patched_load_pyodide
+NodeRunner.load_pyodide = patched_load_pyodide_node
+
+
+def patched_load_pyodide_chrome(self):
+    self.run_js(
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            enableRunUntilComplete: true,
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._api.inTestHoist = true; // improve some error messages for tests
+        """
+    )
+
+
+SeleniumChromeRunner.load_pyodide = patched_load_pyodide_chrome
+PlaywrightChromeRunner.load_pyodide = patched_load_pyodide_chrome
