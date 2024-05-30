@@ -1,5 +1,5 @@
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 mypy_path = ["src/py", "pyodide-build"]
 show_error_codes = true
 warn_unreachable = true
@@ -62,7 +62,7 @@ lint.select = [
   "PLE",    # pylint errors
   "UP",     # pyupgrade
 ]
-lint.ignore = ["E402", "E501", "E731", "E741"]
+lint.ignore = ["E402", "E501", "E731", "E741", "UP038"]
 # line-length = 219  # E501: Recommended goal is 88 to match black
 target-version = "py311"
 
@@ -110,6 +110,7 @@ norecursedirs = [
 addopts = '''
 --doctest-modules
 --ignore-glob="**/dist/"
+--ignore-glob="src/py/_pyodide/jsbind.py"
 --ignore-glob="packages/**/extras/"
 --tb=short
 --dist-dir=dist'''

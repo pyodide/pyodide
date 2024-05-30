@@ -115,6 +115,26 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
             return sys.executable.removesuffix("-host")
 
         scripts.get_executable = get_executable
+
+        from pip._vendor.packaging import tags
+        orig_platform_tags = tags.platform_tags
+        """
+        # TODO: Remove the following monkeypatch when we merge and pull in
+        # https://github.com/pypa/packaging/pull/804
+        """
+        def _emscripten_platforms():
+            pyodide_abi_version = sysconfig.get_config_var("PYODIDE_ABI_VERSION")
+            if pyodide_abi_version:
+                yield f"pyodide_{pyodide_abi_version}_wasm32"
+            yield from tags._generic_platforms()
+
+        def platform_tags():
+            if platform.system() == "emscripten":
+                yield from _emscripten_platforms()
+                return
+            return orig_platform_tags()
+
+        tags.platform_tags = platform_tags
         """
         f"""
         os_name, sys_platform, multiarch, host_platform = {platform_data}

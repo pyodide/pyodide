@@ -116,6 +116,16 @@ class JsProxy(metaclass=_JsProxyMetaClass):
             return super().__new__(cls)
         raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
+    def bind_sig(self, signature: Any) -> "JsProxy":
+        """Creates a copy of the JsProxy with a signature bound to it.
+
+        .. admonition:: Experimental
+           :class: warning
+
+           This feature is not yet stable, nor really documented.
+        """
+        return self
+
     @property
     def js_id(self) -> int:
         """An id number which can be used as a dictionary/set key if you want to
@@ -1186,6 +1196,7 @@ class JsDomElement(JsProxy):
 # from pyproxy.c
 
 
+@docs_argspec("(obj: Callable[..., Any], /) -> JsOnceCallable")
 def create_once_callable(
     obj: Callable[..., Any], /, *, _may_syncify: bool = False
 ) -> JsOnceCallable:

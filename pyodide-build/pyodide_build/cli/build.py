@@ -282,5 +282,6 @@ main.typer_kwargs = {  # type: ignore[attr-defined]
     "context_settings": {
         "ignore_unknown_options": True,
         "allow_extra_args": True,
+        "help_option_names": ["-h", "--help"],
     },
 }

@@ -5,6 +5,7 @@ Builds a Pyodide package.
 """
 
 import fnmatch
+import http.client
 import os
 import re
 import shutil
@@ -26,6 +27,7 @@ from .build_env import (
     get_pyodide_root,
     pyodide_tags,
     replace_so_abi_tags,
+    wheel_platform,
 )
 from .common import (
     _environment_substitute_str,
@@ -35,6 +37,7 @@ from .common import (
     find_matching_wheels,
     make_zip_archive,
     modify_wheel,
+    retag_wheel,
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
@@ -169,7 +172,7 @@ class RecipeBuilder:
 
         with (
             chdir(self.pkg_root),
-            get_bash_runner(self._get_helper_vars()) as bash_runner,
+            get_bash_runner(self._get_helper_vars() | os.environ.copy()) as bash_runner,
         ):
             if self.recipe.is_rust_package():
                 bash_runner.run(
@@ -304,7 +307,7 @@ class RecipeBuilder:
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-            except requests.HTTPError as e:
+            except (requests.HTTPError, http.client.HTTPException) as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
@@ -422,6 +425,10 @@ class RecipeBuilder:
             raise Exception(
                 f"Unexpected number of wheels {len(rest) + 1} when building {self.name}"
             )
+
+        if "emscripten" in wheel.name:
+            # Retag platformed wheels to pyodide
+            wheel = retag_wheel(wheel, wheel_platform())
 
         logger.info(f"Unpacking wheel to {str(wheel)}")
 

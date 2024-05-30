@@ -70,7 +70,8 @@ create_once_callable(PyObject* obj, bool may_syncify);
 JsVal
 create_promise_handles(PyObject* onfulfilled,
                        PyObject* onrejected,
-                       JsVal done_callback_id);
+                       JsVal done_callback,
+                       PyObject* js2py_converter);
 
 int
 pyproxy_init(PyObject* core);

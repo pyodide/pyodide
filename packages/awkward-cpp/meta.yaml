@@ -1,16 +1,14 @@
 package:
   name: awkward-cpp
-  version: "32"
+  version: "33"
   top-level:
     - awkward_cpp
 
 source:
-  url: https://files.pythonhosted.org/packages/e4/64/f95efa6441d08284e760a394545d6ac3ede2811011d24f0797d786cb2570/awkward-cpp-32.tar.gz
-  sha256: ad8c5af86206fb0f434b16749cc5cca69a15a88e16ca43e91e56c5cca77421f0
+  url: https://files.pythonhosted.org/packages/7e/4f/058f320b0952d7a59fdaa5dbd96ec7c4485271178b2404f644a79ef8b095/awkward-cpp-33.tar.gz
+  sha256: 550adebccd329d18d02e95226d0b89698188fd33e44f07450942c692881927d8
 
 build:
-  script: |
-    export CMAKE_ARGS="${CMAKE_ARGS} -DEMSCRIPTEN=1"
   exports: requested
 
 requirements:

@@ -2,6 +2,7 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
+from typing import Self
 
 import pydantic
 import pytest
@@ -172,6 +173,12 @@ def test_unvendor_tests(tmpdir):
     assert n_moved == 3
 
 
+class MockSourceSpec(_SourceSpec):
+    @pydantic.model_validator(mode="after")
+    def _check_patches_extra(self) -> Self:
+        return self
+
+
 def test_needs_rebuild(tmpdir):
     pkg_root = Path(tmpdir)
     buildpath = pkg_root / "build"
@@ -182,11 +189,6 @@ def test_needs_rebuild(tmpdir):
     extra_file = pkg_root / "extra"
     src_path = pkg_root / "src"
     src_path_file = src_path / "file"
-
-    class MockSourceSpec(_SourceSpec):
-        @pydantic.root_validator
-        def _check_patches_extra(cls, values):
-            return values
 
     source_metadata = MockSourceSpec(
         patches=[
