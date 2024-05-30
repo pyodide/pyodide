@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fix `pyodide config` command being printing unnecessary outputs.
+  {pr}`4814`
+
 ## Version 0.26.0
 
 _May 27, 2024_
