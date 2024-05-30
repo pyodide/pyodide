@@ -216,6 +216,11 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         else:
             add_externs_to_structs(lines)
 
+    # Non recursive functions declare all their locals as static, ones marked
+    # "recursive" need them to be proper local variables. Not sure if non
+    # recursive funcs need static locals, let's try making all locals non-static
+    # first.
+    lines = [line.replace(" static ", " ") for line in lines]
     if f2c_output.name == "_lapack_subroutine_wrappers.c":
         lines = [
             line.replace("integer chla_transtype__", "void chla_transtype__")
