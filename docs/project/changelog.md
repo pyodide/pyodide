@@ -14,6 +14,13 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
+  which makes `run_until_complete` block using stack switching, or crash if
+  stack switching is disabled.
+  {pr}`4817`
+
 ## Version 0.26.0
 
 _May 27, 2024_
