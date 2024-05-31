@@ -21,6 +21,9 @@ myst:
   stack switching is disabled.
   {pr}`4817`
 
+- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
+  {pr}`4825`
+
 ## Version 0.26.0
 
 _May 27, 2024_
