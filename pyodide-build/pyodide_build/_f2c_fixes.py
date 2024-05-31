@@ -194,9 +194,12 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)
+    f2c_output.with_suffix(".c.bak").write_text(f2c_output.read_text())
 
     with open(f2c_output) as f:
         lines = f.readlines()
+
+    lines = list(regroup_lines(lines))
     if "id_dist" in f2c_output_path:
         # Fix implicit casts in id_dist.
         lines = fix_inconsistent_decls(lines)
@@ -216,11 +219,6 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         else:
             add_externs_to_structs(lines)
 
-    # Non recursive functions declare all their locals as static, ones marked
-    # "recursive" need them to be proper local variables. Not sure if non
-    # recursive funcs need static locals, let's try making all locals non-static
-    # first.
-    lines = [line.replace(" static ", " ") for line in lines]
     if f2c_output.name == "_lapack_subroutine_wrappers.c":
         lines = [
             line.replace("integer chla_transtype__", "void chla_transtype__")
@@ -275,15 +273,44 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     if "eupd.c" in str(f2c_output):
         # put signature on a single line to make replacement more
         # straightforward
-        regrouped_lines = regroup_lines(lines)
         lines = [
-            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line)
-            for line in regrouped_lines
+            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line) for line in lines
         ]
 
     # Fix signature of c_abs to match the OpenBLAS one
     if "REVCOM.c" in str(f2c_output):
         lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
+
+    # Non recursive functions declare all their locals as static, ones marked
+    # "recursive" need them to be proper local variables. Not sure if non
+    # recursive funcs need static locals, let's try making all locals non-static
+    # first.
+    def fix_static(line: str) -> str:
+        static_prefix = "    static"
+        if not line.startswith(static_prefix):
+            return line
+        line = line.removeprefix(static_prefix).strip()
+        # If line contains a { or " there's already an initializer and we'll get
+        # confused. When there's an initializer there's also only one variable
+        # so we don't need to do anything.
+        if "{" in line or '"' in line:
+            return line + "\n"
+        # split off type
+        type, rest = line.split(" ", 1)
+        # Since there is no { or " each comma separates a variable name
+        names = rest[:-1].split(",")
+        init_names = []
+        for name in names:
+            if "=" in name:
+                # There's already an initializer
+                init_names.append(name)
+            else:
+                # = {0} initializes all types to all 0s.
+                init_names.append(name + " = {0}")
+        joined_names = ",".join(init_names)
+        return f"    {type} {joined_names};\n"
+
+    lines = list(map(fix_static, lines))
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
@@ -346,7 +373,11 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     """
     line_iter = iter(lines)
     for line in line_iter:
-        if "/* Subroutine */" not in line:
+        if "/* Subroutine */" not in line and "static" not in line:
+            yield line
+            continue
+
+        if '"' in line:
             yield line
             continue
 
@@ -365,7 +396,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
         if is_definition:
             yield joined_line
         else:
-            yield from (x + ";" for x in joined_line.split(";")[:-1])
+            yield from (x + ";\n" for x in joined_line.split(";")[:-1])
 
 
 def fix_inconsistent_decls(lines: list[str]) -> list[str]:
@@ -415,7 +446,6 @@ def fix_inconsistent_decls(lines: list[str]) -> list[str]:
     }
     """
     func_types = {}
-    lines = list(regroup_lines(lines))
     for line in lines:
         if not line.startswith("/* Subroutine */"):
             continue
