@@ -4,7 +4,7 @@ import pytest
 
 from pyodide_build.xbuildenv import CrossBuildEnvManager, _url_to_version
 
-from .fixture import dummy_xbuildenv_url
+from .fixture import dummy_xbuildenv_url, fake_xbuildenv_releases_compatible
 
 
 @pytest.fixture()
@@ -114,14 +114,10 @@ class TestCrossBuildEnvManager:
             )
 
     def test_install_version(
-        self, tmp_path, dummy_xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip
+        self, tmp_path, dummy_xbuildenv_url, monkeypatch, monkeypatch_subprocess_run_pip, fake_xbuildenv_releases_compatible
     ):
-        manager = CrossBuildEnvManager(tmp_path)
-
-        monkeypatch.setattr(
-            manager, "_download_url_for_version", lambda version: dummy_xbuildenv_url
-        )
-        version = "0.25.0"
+        manager = CrossBuildEnvManager(tmp_path, fake_xbuildenv_releases_compatible)
+        version = "0.1.0"
 
         manager.install(version)
 
