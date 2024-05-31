@@ -21,6 +21,11 @@ myst:
   stack switching is disabled.
   {pr}`4817`
 
+
+### Packages
+
+- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+
 ## Version 0.26.0
 
 _May 27, 2024_
