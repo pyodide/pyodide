@@ -2267,7 +2267,7 @@ const PyProxySequenceHandlers = {
     return true;
   },
   has(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       return Number(jskey) < jsobj.length;
     }
     return PyProxyHandlers.has(jsobj, jskey);
@@ -2276,7 +2276,7 @@ const PyProxySequenceHandlers = {
     if (jskey === "length") {
       return jsobj.length;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
       } catch (e) {
@@ -2289,7 +2289,7 @@ const PyProxySequenceHandlers = {
     return PyProxyHandlers.get(jsobj, jskey);
   },
   set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
         return true;
@@ -2303,7 +2303,7 @@ const PyProxySequenceHandlers = {
     return PyProxyHandlers.set(jsobj, jskey, jsval);
   },
   deleteProperty(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;
@@ -2334,7 +2334,7 @@ const PyProxyJsonAdaptorDictHandlers = {
     if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
       return true;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       jskey = Number(jskey);
     }
     if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
@@ -2360,7 +2360,7 @@ const PyProxyJsonAdaptorDictHandlers = {
     if (result) {
       return result;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       jskey = Number(jskey);
       result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
     }
@@ -2372,8 +2372,11 @@ const PyProxyJsonAdaptorDictHandlers = {
   },
   set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
     if (typeof jskey === "string") {
+      if (/^[0-9]+$/.test(jskey)) {
+        jskey = Number(jskey);
+      }
       try {
-        PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+        PySetItemMethods.prototype.set.call(jsobj, jskey, jsval);
         return true;
       } catch (e) {
         if (isPythonError(e)) {
@@ -2385,7 +2388,7 @@ const PyProxyJsonAdaptorDictHandlers = {
     return false;
   },
   deleteProperty(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;
