@@ -42,7 +42,7 @@
       "sha256": "0b3f52155fdf54e1802aaed0496aab05e012c3a8347ed2f913620d6c251059a0",
       "python_version": "3.21.1",
       "emscripten_version": "3.1.58",
-      "min_pyodide_build_version": "0.26.0",
+      "min_pyodide_build_version": "0.26.0"
     },
     "0.25.1": {
       "version": "0.25.1",
