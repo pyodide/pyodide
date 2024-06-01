@@ -21,9 +21,13 @@ myst:
   stack switching is disabled.
   {pr}`4817`
 
+- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
+  {pr}`4825`
+  
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
+
 
 ## Version 0.26.0
 
