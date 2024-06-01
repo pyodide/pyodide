@@ -60,6 +60,24 @@ FAKE_METADATA = {
             "min_pyodide_build_version": "0.5.0",
             "max_pyodide_build_version": "0.6.0",
         },
+        "0.6.0a1": {
+            "version": "0.6.0a1",
+            "url": "https://example.com/0.6.0a1.tar.gz",
+            "sha256": "1234567890abcdef",
+            "python_version": "3.11.2",
+            "emscripten_version": "1.40.0",
+            "min_pyodide_build_version": "0.6.0",
+            "max_pyodide_build_version": "0.7.0",
+        },
+        "0.6.0": {
+            "version": "0.6.0",
+            "url": "https://example.com/0.6.0.tar.gz",
+            "sha256": "1234567890abcdef",
+            "python_version": "3.11.2",
+            "emscripten_version": "1.40.0",
+            "min_pyodide_build_version": "0.6.0",
+            "max_pyodide_build_version": "0.7.0",
+        },
     },
 }
 
@@ -100,6 +118,15 @@ def test_list_compatible_releases():
     )
 
     assert not releases
+
+
+def test_list_compatible_releases_sort():
+    model = CrossBuildEnvMetaSpec(**FAKE_METADATA)
+
+    releases = model.list_compatible_releases()
+    assert releases[0].version == "0.6.0"
+    assert releases[1].version == "0.6.0a1"
+    assert releases[2].version == "0.5.0"
 
 
 def test_get_latest_compatible_release():

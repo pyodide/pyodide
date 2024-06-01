@@ -14,7 +14,11 @@ from pyodide_build.cli import (
 from pyodide_build.common import chdir
 from pyodide_build.xbuildenv_releases import CROSS_BUILD_ENV_METADATA_URL_ENV_VAR
 
-from .fixture import fake_xbuildenv_releases_compatible, fake_xbuildenv_releases_incompatible
+from .fixture import (
+    dummy_xbuildenv_url,
+    fake_xbuildenv_releases_compatible,
+    fake_xbuildenv_releases_incompatible,
+)
 
 
 def mock_pyodide_lock() -> PyodideLockSpec:
@@ -99,8 +103,10 @@ def test_xbuildenv_install_version(tmp_path, fake_xbuildenv_releases_compatible)
     envpath = Path(tmp_path) / ".xbuildenv"
 
     os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
-    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(fake_xbuildenv_releases_compatible)
-    
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(
+        fake_xbuildenv_releases_compatible
+    )
+
     result = runner.invoke(
         xbuildenv.app,
         [
@@ -124,12 +130,16 @@ def test_xbuildenv_install_version(tmp_path, fake_xbuildenv_releases_compatible)
     assert (concrete_path / ".installed").exists()
 
 
-def test_xbuildenv_install_force_install(tmp_path, fake_xbuildenv_releases_incompatible):
+def test_xbuildenv_install_force_install(
+    tmp_path, fake_xbuildenv_releases_incompatible
+):
     envpath = Path(tmp_path) / ".xbuildenv"
 
     os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
-    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(fake_xbuildenv_releases_incompatible)
-    
+    os.environ[CROSS_BUILD_ENV_METADATA_URL_ENV_VAR] = str(
+        fake_xbuildenv_releases_incompatible
+    )
+
     result = runner.invoke(
         xbuildenv.app,
         [
@@ -140,17 +150,31 @@ def test_xbuildenv_install_force_install(tmp_path, fake_xbuildenv_releases_incom
         ],
     )
 
-    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
+    # should fail if no force option is given
+    assert result.exit_code != 0, result.stdout
+
+    result = runner.invoke(
+        xbuildenv.app,
+        [
+            "install",
+            "0.1.0",
+            "--path",
+            str(envpath),
+            "--force",
+        ],
+    )
 
     assert result.exit_code == 0, result.stdout
-    # assert "Downloading Pyodide cross-build environment" in result.stdout, result.stdout
-    # assert "Installing Pyodide cross-build environment" in result.stdout, result.stdout
-    # assert (envpath / "xbuildenv").is_symlink()
-    # assert (envpath / "xbuildenv").resolve().exists()
-    # assert (envpath / "0.1.0").exists()
+    assert "Downloading Pyodide cross-build environment" in result.stdout, result.stdout
+    assert "Installing Pyodide cross-build environment" in result.stdout, result.stdout
+    assert (envpath / "xbuildenv").is_symlink()
+    assert (envpath / "xbuildenv").resolve().exists()
+    assert (envpath / "0.1.0").exists()
 
-    # concrete_path = (envpath / "xbuildenv").resolve()
-    # assert (concrete_path / ".installed").exists()
+    concrete_path = (envpath / "xbuildenv").resolve()
+    assert (concrete_path / ".installed").exists()
+
+    os.environ.pop(CROSS_BUILD_ENV_METADATA_URL_ENV_VAR, None)
 
 
 def test_xbuildenv_version(tmp_path):
@@ -273,7 +297,9 @@ def test_xbuildenv_uninstall(tmp_path):
     assert isinstance(result.exception, ValueError), result.exception
 
 
-def test_xbuildenv_search(tmp_path, fake_xbuildenv_releases_compatible, fake_xbuildenv_releases_incompatible):
+def test_xbuildenv_search(
+    tmp_path, fake_xbuildenv_releases_compatible, fake_xbuildenv_releases_incompatible
+):
     result = runner.invoke(
         xbuildenv.app,
         [

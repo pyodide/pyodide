@@ -180,17 +180,24 @@ def fake_xbuildenv_releases_compatible(tmp_path, dummy_xbuildenv_url):
                 "python_version": f"{local['python']}.0",
                 "emscripten_version": "1.39.8",
             },
+            "0.2.0": {
+                "version": "0.2.0",
+                "url": dummy_xbuildenv_url,
+                "sha256": "1234567890abcdef",
+                "python_version": f"{local['python']}.0",
+                "emscripten_version": "2.39.8",
+            },
         },
     }
 
-    metadata_path = Path(tmp_path) / f"metadata-compat.json"
+    metadata_path = Path(tmp_path) / "metadata-compat.json"
     metadata_path.write_text(json.dumps(fake_releases))
 
     yield metadata_path
 
 
 @pytest.fixture(scope="function")
-def fake_xbuildenv_releases_incompatible(tmp_path):
+def fake_xbuildenv_releases_incompatible(tmp_path, dummy_xbuildenv_url):
     """
     Create a fake metadata file with a single release that is incompatible with the local environment.
     """
@@ -198,7 +205,7 @@ def fake_xbuildenv_releases_incompatible(tmp_path):
         "releases": {
             "0.1.0": {
                 "version": "0.1.0",
-                "url": "https://example.com/0.1.0.tar.gz",
+                "url": dummy_xbuildenv_url,
                 "sha256": "1234567890abcdef",
                 "python_version": "4.5.6",
                 "emscripten_version": "1.39.8",
@@ -206,7 +213,7 @@ def fake_xbuildenv_releases_incompatible(tmp_path):
         },
     }
 
-    metadata_path = Path(tmp_path) / f"metadata-incompat.json"
+    metadata_path = Path(tmp_path) / "metadata-incompat.json"
     metadata_path.write_text(json.dumps(fake_releases))
 
     yield metadata_path

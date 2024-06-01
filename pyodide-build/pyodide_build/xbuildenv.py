@@ -145,7 +145,6 @@ class CrossBuildEnvManager:
         version
             The version of the cross-build environment to install. If not specified,
             use the same version as the current version of pyodide-build.
-            # TODO: installing the different version is not supported yet
         url
             URL to download the cross-build environment from.
             The URL should point to a tarball containing the cross-build environment.
@@ -171,7 +170,7 @@ class CrossBuildEnvManager:
             version = _url_to_version(url)
             download_url = url
         else:
-            version = version or self._infer_version()
+            version = version or self._find_latest_version()
 
             local_versions = build_env.local_versions()
             release = self._find_remote_release(version)
@@ -222,10 +221,21 @@ class CrossBuildEnvManager:
 
         return xbuildenv_pyodide_root
 
-    def _infer_version(self) -> str:
-        from . import __version__
+    def _find_latest_version(self) -> str:
+        """
+        Find the latest compatible cross-build environment release.
+        """
+        metadata = load_cross_build_env_metadata(self.metadata_url)
+        local = build_env.local_versions()
+        latest = metadata.get_latest_compatible_release(
+            python_version=local["python"],
+            pyodide_build_version=local["pyodide-build"],
+        )
 
-        return __version__
+        if not latest:
+            raise ValueError("No compatible cross-build environment found")
+
+        return latest.version
 
     def _download(self, url: str, path: Path) -> None:
         """
