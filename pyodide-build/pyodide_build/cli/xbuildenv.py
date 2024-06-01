@@ -1,8 +1,6 @@
 from pathlib import Path
 
-import rich
 import typer
-from rich.table import Table
 
 from ..build_env import local_versions
 from ..common import xbuildenv_dirname
@@ -177,12 +175,20 @@ def _search(
         )
         raise typer.Exit(1)
 
-    table = Table(title="Pyodide cross-build environments")
-    table.add_column("Pyodide Version", justify="right")
-    table.add_column("Python", justify="right")
-    table.add_column("Emscripten", justify="right")
-    table.add_column("Compatible pyodide-build Versions", justify="right")
-    table.add_column("Compatible", justify="right")
+    table = []
+    columns = [
+        # column name, width
+        ("Version", 10),
+        ("Python", 10),
+        ("Emscripten", 10),
+        ("pyodide-build", 25),
+        ("Compatible", 10),
+    ]
+    header = [f"{name:{width}}" for name, width in columns]
+    divider = ["-" * width for _, width in columns]
+
+    table.append("\t".join(header))
+    table.append("\t".join(divider))
 
     for release in releases:
         compatible = (
@@ -193,13 +199,16 @@ def _search(
             )
             else "No"
         )
+        pyodide_build_range = f"{release.min_pyodide_build_version or ''} - {release.max_pyodide_build_version or ''}"
 
-        table.add_row(
-            release.version,
-            release.python_version,
-            release.emscripten_version,
-            f"{release.min_pyodide_build_version or ''} - {release.max_pyodide_build_version or ''}",
-            compatible,
-        )
+        row = [
+            f"{release.version:{columns[0][1]}}",
+            f"{release.python_version:{columns[1][1]}}",
+            f"{release.emscripten_version:{columns[2][1]}}",
+            f"{pyodide_build_range:{columns[3][1]}}",
+            f"{compatible:{columns[4][1]}}",
+        ]
 
-    rich.print(table)
+        table.append("\t".join(row))
+
+    print("\n".join(table))

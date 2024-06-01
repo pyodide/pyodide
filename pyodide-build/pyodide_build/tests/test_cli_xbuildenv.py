@@ -338,4 +338,15 @@ def test_xbuildenv_search(
     )
 
     assert result.exit_code == 0, result.stdout
-    assert "0.1.0" in result.stdout, result.stdout
+
+    header = result.stdout.splitlines()[0]
+    assert header.split() == [
+        "Version",
+        "Python",
+        "Emscripten",
+        "pyodide-build",
+        "Compatible",
+    ]
+
+    row1 = result.stdout.splitlines()[2]
+    assert row1.split() == ["0.1.0", "4.5.6", "1.39.8", "-", "No"]
