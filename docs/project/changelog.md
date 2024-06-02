@@ -24,6 +24,9 @@ myst:
 - {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
   {pr}`4825`
 
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
