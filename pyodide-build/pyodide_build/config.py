@@ -1,8 +1,8 @@
 import os
 import subprocess
+import tomllib
 from collections.abc import Mapping
 from pathlib import Path
-import tomllib
 from types import MappingProxyType
 
 from .common import _environment_substitute_str, exit_with_stdio
@@ -90,7 +90,9 @@ class ConfigManager:
             BUILD_VAR_TO_KEY[key]: env[key] for key in env if key in BUILD_VAR_TO_KEY
         }
 
-    def _load_config_file(self, pyproject_file: Path, env: Mapping[str,str]) -> Mapping[str, str]:
+    def _load_config_file(
+        self, pyproject_file: Path, env: Mapping[str, str]
+    ) -> Mapping[str, str]:
         if not pyproject_file.is_file():
             return {}
 
@@ -100,10 +102,15 @@ class ConfigManager:
         except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
-        if "tool" in configs and "pyodide" in configs["tool"] and "build" in configs["tool"]["pyodide"]:
+        if (
+            "tool" in configs
+            and "pyodide" in configs["tool"]
+            and "build" in configs["tool"]["pyodide"]
+        ):
             return {
                 key: _environment_substitute_str(v, env)
-                for key, v in configs["tool"]["pyodide"]["build"].items() if key in OVERRIDABLE_BUILD_KEYS
+                for key, v in configs["tool"]["pyodide"]["build"].items()
+                if key in OVERRIDABLE_BUILD_KEYS
             }
         else:
             return {}
