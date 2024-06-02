@@ -173,7 +173,7 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
 
 BUILD_VAR_TO_KEY = {v: k for k, v in BUILD_KEY_TO_VAR.items()}
 
-# Configuration keys that can be overriden by the user.
+# Configuration keys that can be overridden by the user.
 # TODO: distinguish between variables that are overridable by the user and those that are not.
 OVERRIDABLE_BUILD_KEYS = {
     "side_module_cflags",
