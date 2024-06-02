@@ -2,6 +2,7 @@ import os
 import subprocess
 from collections.abc import Mapping
 from pathlib import Path
+import tomllib
 from types import MappingProxyType
 
 from .common import _environment_substitute_str, exit_with_stdio
@@ -17,7 +18,7 @@ class ConfigManager:
 
         1. Command line arguments (TODO)
         2. Environment variables
-        3. Configuration file (TODO)
+        3. Configuration file
         4. Makefile.envs
         5. Default values
     """
@@ -27,7 +28,7 @@ class ConfigManager:
         self._config = {
             **self._load_default_config(),
             **self._load_makefile_envs(),
-            **self._load_config_file(),
+            **self._load_config_file(pyodide_root / "pyproject.toml", os.environ),
             **self._load_config_from_env(os.environ),
         }
 
@@ -89,9 +90,23 @@ class ConfigManager:
             BUILD_VAR_TO_KEY[key]: env[key] for key in env if key in BUILD_VAR_TO_KEY
         }
 
-    def _load_config_file(self) -> Mapping[str, str]:
-        # TODO: Implement this
-        return {}
+    def _load_config_file(self, pyproject_file: Path, env: Mapping[str,str]) -> Mapping[str, str]:
+        if not pyproject_file.is_file():
+            return {}
+
+        try:
+            with pyproject_file.open("rb") as f:
+                configs = tomllib.load(f)
+        except tomllib.TOMLDecodeError as e:
+            raise ValueError(f"Could not parse {pyproject_file}.") from e
+
+        if "tool" in configs and "pyodide" in configs["tool"] and "build" in configs["tool"]["pyodide"]:
+            return {
+                key: _environment_substitute_str(v, env)
+                for key, v in configs["tool"]["pyodide"]["build"].items() if key in OVERRIDABLE_BUILD_KEYS
+            }
+        else:
+            return {}
 
     @property
     def config(self) -> Mapping[str, str]:
@@ -150,6 +165,15 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
 }
 
 BUILD_VAR_TO_KEY = {v: k for k, v in BUILD_KEY_TO_VAR.items()}
+
+# Configuration keys that can be overriden by the user.
+# TODO: distinguish between variables that are overridable by the user and those that are not.
+OVERRIDABLE_BUILD_KEYS = {
+    "side_module_cflags",
+    "side_module_ldflags",
+    "rust_toolchain",
+    "meson_cross_file",
+}
 
 # Default configuration values.
 TOOLS_DIR = Path(__file__).parent / "tools"
