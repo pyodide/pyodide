@@ -18,7 +18,7 @@ myst:
 
 - {{ Fix }} Fix `pyodide config` command being printing unnecessary outputs.
   {pr}`4814`
-  
+
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
   which makes `run_until_complete` block using stack switching, or crash if
   stack switching is disabled.
