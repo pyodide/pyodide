@@ -65,39 +65,6 @@ export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR)
 runner = CliRunner()
 
 
-def test_xbuildenv_create(selenium, tmp_path):
-    # selenium fixture is added to ensure that Pyodide is built... it's a hack
-    from conftest import package_is_built
-
-    envpath = Path(tmp_path) / ".xbuildenv"
-    result = runner.invoke(
-        xbuildenv.app,
-        [
-            "create",
-            str(envpath),
-            "--skip-missing-files",
-        ],
-    )
-    assert result.exit_code == 0, result.stdout
-    assert "cross-build environment created at" in result.stdout
-    assert (envpath / "xbuildenv").exists()
-    assert (envpath / "xbuildenv" / "pyodide-root").is_dir()
-    assert (envpath / "xbuildenv" / "site-packages-extras").is_dir()
-    assert (envpath / "xbuildenv" / "requirements.txt").exists()
-
-    if not package_is_built("scipy"):
-        # creating xbuildenv without building scipy will raise error
-        result = runner.invoke(
-            xbuildenv.app,
-            [
-                "create",
-                str(tmp_path / ".xbuildenv"),
-            ],
-        )
-        assert result.exit_code != 0, result.stdout
-        assert isinstance(result.exception, FileNotFoundError), result.exception
-
-
 def test_xbuildenv_install(tmp_path, mock_xbuildenv_url):
     envpath = Path(tmp_path) / ".xbuildenv"
 

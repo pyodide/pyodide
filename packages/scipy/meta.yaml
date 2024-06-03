@@ -43,6 +43,7 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
+  backend-flags: build-dir=build
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
