@@ -1,4 +1,5 @@
 from inspect import getsource
+from pathlib import Path
 from textwrap import dedent
 from typing import TypeVar, assert_type
 
@@ -7,7 +8,8 @@ from pytest import raises
 
 
 def _mypy_check(source: str) -> tuple[str, str, int]:
-    stdout, stderr, exit_status = run(["-c", source, "--check-untyped-defs"])
+    path = str(Path(__file__).parent.parent.parent / "pyproject.toml")
+    stdout, stderr, exit_status = run(["-c", source, "--config-file", path])
     return stdout, stderr, exit_status
 
 
