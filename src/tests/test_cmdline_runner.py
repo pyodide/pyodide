@@ -452,7 +452,7 @@ def test_package_index(tmp_path):
     pip_opts = [
         "--index-url",
         "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
-        "--platform=emscripten_3_1_58_wasm32",
+        "--platform=pyodide_2024_0_wasm32",
         "--only-binary=:all:",
         "--python-version=312",
         "-t",
