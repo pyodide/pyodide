@@ -2,6 +2,7 @@ import pytest
 from pytest_pyodide.fixture import selenium_context_manager
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.driver_timeout(40)
 @pytest.mark.xfail_browsers(
     chrome="Times out in chrome", firefox="Times out in firefox"
