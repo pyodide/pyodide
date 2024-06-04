@@ -117,11 +117,16 @@ class ConfigManager:
             and "pyodide" in configs["tool"]
             and "build" in configs["tool"]["pyodide"]
         ):
-            return {
-                key: _environment_substitute_str(v, env)
-                for key, v in configs["tool"]["pyodide"]["build"].items()
-                if key in OVERRIDABLE_BUILD_KEYS
-            }
+            build_config = {}
+            for key, v in configs["tool"]["pyodide"]["build"].items():
+                if key not in OVERRIDABLE_BUILD_KEYS:
+                    logger.warning(
+                        f"WARNING: The provided build key {key} is either invalid or not overridable, hence ignored."
+                    )
+                    continue
+                build_config[key] = _environment_substitute_str(v, env)
+
+            return build_config
         else:
             return {}
 
