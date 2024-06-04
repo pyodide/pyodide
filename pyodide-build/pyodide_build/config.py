@@ -28,7 +28,7 @@ class ConfigManager:
         self._config = {
             **self._load_default_config(),
             **self._load_makefile_envs(),
-            **self._load_config_file(pyodide_root / "pyproject.toml", os.environ),
+            **self._load_config_file(Path.cwd(), os.environ),
             **self._load_config_from_env(os.environ),
         }
 
@@ -91,8 +91,18 @@ class ConfigManager:
         }
 
     def _load_config_file(
-        self, pyproject_file: Path, env: Mapping[str, str]
+        self, curdir: Path, env: Mapping[str, str]
     ) -> Mapping[str, str]:
+        # avoid circular import
+        from pyodide_build.build_env import search_pyodide_root
+
+        pyproject_dir = search_pyodide_root(curdir)
+
+        if pyproject_dir is None:
+            return {}
+
+        pyproject_file = pyproject_dir / "pyproject.toml"
+
         if not pyproject_file.is_file():
             return {}
 
