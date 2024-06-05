@@ -6,7 +6,7 @@ package:
     - xarray
 source:
   url: https://files.pythonhosted.org/packages/67/91/1f55f0e026fba8eba15afb7d097bb873bd6a9e466be45a45e7cac40a930b/xarray-2024.5.0-py3-none-any.whl
-  sha256: e0eb1cb265f265126795f388ed9591f3c752f2aca491f6c0576711fd15b708f2
+  sha256: 7ddedfe2294a0ab00f02d0fbdcb9c6300ec589f3cf436a9c7b7b577a12cd9bcf
 requirements:
   run:
     - numpy
