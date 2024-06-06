@@ -836,7 +836,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7  # type:ignore[operator]
+    assert proxy() == 7
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -890,7 +890,7 @@ def test_return_destroyed_value(selenium):
     from pyodide.ffi import JsException, create_proxy
 
     f = run_js("(function(x){ return x; })")
-    p = create_proxy([])
+    p = create_proxy([])  # type: ignore[var-annotated]
     p.destroy()
     with pytest.raises(JsException, match="Object has already been destroyed"):
         f(p)

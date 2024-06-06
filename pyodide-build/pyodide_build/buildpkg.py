@@ -307,7 +307,10 @@ class RecipeBuilder:
             try:
                 response = requests.get(url)
                 response.raise_for_status()
-            except (requests.HTTPError, http.client.HTTPException) as e:
+            except (
+                requests.exceptions.RequestException,
+                http.client.HTTPException,
+            ) as e:
                 if retry_cnt == max_retry - 1:
                     raise RuntimeError(
                         f"Failed to download {url} after {max_retry} trials"
