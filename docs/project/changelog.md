@@ -24,8 +24,13 @@ myst:
   stack switching is disabled.
   {pr}`4817`
 
-- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
+- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were
+  unexpectedly cast to numbers.
   {pr}`4825`
+
+- {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
+  `InvalidStateError`.
+  {pr}`4837`
 
 ### Packages
 
