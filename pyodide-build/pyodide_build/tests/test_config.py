@@ -72,8 +72,8 @@ class TestConfigManager_InTree:
 
         pyproject_file.write_text("""[tool.pyodide.build]
                                   invalid_flags = "this_should_not_be_parsed"
-                                  side_module_cflags = "$(CFLAGS_BASE) -I/path/to/include"
-                                  side_module_ldflags = "-L/path/to/lib"
+                                  cflags = "$(CFLAGS_BASE) -I/path/to/include"
+                                  ldflags = "-L/path/to/lib"
                                   rust_toolchain = "nightly"
                                   meson_cross_file = "$(MESON_CROSS_FILE)"
                                   """)
@@ -83,8 +83,8 @@ class TestConfigManager_InTree:
         config = config_manager._load_config_file(pyproject_file, env)
 
         assert "invalid_flags" not in config
-        assert config["side_module_cflags"] == "-O2 -I/path/to/include"
-        assert config["side_module_ldflags"] == "-L/path/to/lib"
+        assert config["cflags"] == "-O2 -I/path/to/include"
+        assert config["ldflags"] == "-L/path/to/lib"
         assert config["rust_toolchain"] == "nightly"
         assert config["meson_cross_file"] == "/path/to/crossfile"
 
