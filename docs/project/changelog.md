@@ -16,7 +16,7 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Fix `pyodide config` command being printing unnecessary outputs.
+- {{ Fix }} Fix `pyodide config` command printing extra output.
   {pr}`4814`
 
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
@@ -31,6 +31,10 @@ myst:
 - {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
   `InvalidStateError`.
   {pr}`4837`
+
+### Packages
+
+- New Packages: `pytest-asyncio` {pr}`4819`
 
 ## Version 0.26.0
 
