@@ -29,6 +29,8 @@ myst:
 
 ### Packages
 
+- New Packages: `pytest-asyncio` {pr}`4819`
+
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
 
 ## Version 0.26.0
