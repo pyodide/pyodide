@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
 
-from .common import _environment_substitute_str, exit_with_stdio
+from .common import _environment_substitute_str, exit_with_stdio, search_pyproject_toml
 from .logger import logger
 
 
@@ -92,9 +92,6 @@ class ConfigManager:
     def _load_config_file(
         self, curdir: Path, env: Mapping[str, str]
     ) -> Mapping[str, str]:
-        # avoid circular import
-        from pyodide_build.build_env import search_pyproject_toml
-
         pyproject_path, configs = search_pyproject_toml(curdir)
 
         if pyproject_path is None or configs is None:
@@ -156,9 +153,9 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
     "cpythoninstall": "CPYTHONINSTALL",
     "rustflags": "RUSTFLAGS",
     "rust_toolchain": "RUST_TOOLCHAIN",
-    "side_module_cflags": "SIDE_MODULE_CFLAGS",
-    "side_module_cxxflags": "SIDE_MODULE_CXXFLAGS",
-    "side_module_ldflags": "SIDE_MODULE_LDFLAGS",
+    "cflags": "SIDE_MODULE_CFLAGS",
+    "cxxflags": "SIDE_MODULE_CXXFLAGS",
+    "ldflags": "SIDE_MODULE_LDFLAGS",
     "stdlib_module_cflags": "STDLIB_MODULE_CFLAGS",
     "sysconfigdata_dir": "SYSCONFIGDATA_DIR",
     "sysconfig_name": "SYSCONFIG_NAME",
@@ -206,9 +203,9 @@ DEFAULT_CONFIG: dict[str, str] = {
 # TODO: Remove dependency on Makefile.envs
 DEFAULT_CONFIG_COMPUTED: dict[str, str] = {
     # Compiler flags
-    "side_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE)",
-    "side_module_cxxflags": "$(CXXFLAGS_BASE)",
-    "side_module_ldflags": "$(LDFLAGS_BASE) -s SIDE_MODULE=1",
+    "cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE)",
+    "cxxflags": "$(CXXFLAGS_BASE)",
+    "ldflags": "$(LDFLAGS_BASE) -s SIDE_MODULE=1",
     # Rust-specific configuration
     "pyo3_cross_lib_dir": "$(CPYTHONINSTALL)/lib",
     "pyo3_cross_include_dir": "$(PYTHONINCLUDE)",
