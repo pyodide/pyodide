@@ -129,7 +129,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | No
     if pyproject_path is None:
         return None
 
-    if "tool" in pyproject_file and "pyodide" in pyproject_file["tool"]:
+    if "tool" in pyproject_file and "_pyodide" in pyproject_file["tool"]:
         return pyproject_path.parent
 
     return None

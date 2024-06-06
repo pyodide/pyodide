@@ -73,3 +73,22 @@ def test_add_version():
     assert list(new_metadata.releases.keys())[0] == "0.17.0"
     assert list(new_metadata.releases.keys())[1] == "0.16.1"
     assert list(new_metadata.releases.keys())[2] == "0.16.0"
+
+    new_metadata_raw = add_version(
+        metadata.json(),
+        "0.17.0a1",
+        "https://example.com/xbuildenv-0.17.0a1.tar.bz2",
+        "abcdef1234567890",
+    )
+
+    new_metadata = CrossBuildEnvMetaSpec.parse_raw(new_metadata_raw)
+    assert new_metadata.releases["0.17.0a1"].version == "0.17.0a1"
+    assert (
+        new_metadata.releases["0.17.0a1"].url
+        == "https://example.com/xbuildenv-0.17.0a1.tar.bz2"
+    )
+    assert new_metadata.releases["0.17.0a1"].sha256 == "abcdef1234567890"
+
+    assert list(new_metadata.releases.keys())[0] == "0.17.0"
+    assert list(new_metadata.releases.keys())[1] == "0.17.0a1"
+    assert list(new_metadata.releases.keys())[2] == "0.16.0"

@@ -1780,7 +1780,7 @@ def test_jsarray_remove(selenium):
         a.remove(78)
     assert a.to_py() == l
     l.append([])  # type:ignore[arg-type]
-    p = create_proxy([], roundtrip=False)
+    p = create_proxy([], roundtrip=False)  # type:ignore[var-annotated]
     a.append(p)
     assert a.to_py() == l
     l.remove([])  # type:ignore[arg-type]

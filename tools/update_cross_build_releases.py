@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import requests
+from packaging.version import Version
 
 from pyodide_build.xbuildenv_releases import (
     CrossBuildEnvMetaSpec,
@@ -44,8 +45,9 @@ def add_version(raw_metadata: str, version: str, url: str, digest: str) -> str:
     metadata.releases[version] = new_release
 
     # Sort releases in reverse order
-    metadata.releases = dict(sorted(metadata.releases.items(), reverse=True))
-
+    metadata.releases = dict(
+        sorted(metadata.releases.items(), reverse=True, key=lambda x: Version(x[0]))
+    )
     dictionary = metadata.dict()
     return json.dumps(dictionary, indent=2)
 
@@ -62,7 +64,7 @@ def main():
     metadata = METADATA_FILE.read_text()
     new_metadata = add_version(metadata, version, full_url, digest)
 
-    METADATA_FILE.write_text(new_metadata)
+    METADATA_FILE.write_text(new_metadata + "\n")
 
 
 if __name__ == "__main__":
