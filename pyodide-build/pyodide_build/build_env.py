@@ -10,6 +10,7 @@ from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from pathlib import Path
+from typing import Any, Tuple
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
@@ -91,11 +92,11 @@ def get_pyodide_root() -> Path:
     return Path(os.environ["PYODIDE_ROOT"])
 
 
-def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | None:
+def search_pyproject_toml(
+    curdir: str | Path, max_depth: int = 10
+) -> Tuple[Path, dict[str | Any]] | Tuple[None, None]:
     """
-    Recursively search for the root of the Pyodide repository,
-    by looking for the pyproject.toml file in the parent directories
-    which contains [tool.pyodide] section.
+    Recursively search for the pyproject.toml file in the parent directories.
     """
 
     # We want to include "curdir" in parent_dirs, so add a garbage suffix
@@ -110,11 +111,26 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | No
         try:
             with pyproject_file.open("rb") as f:
                 configs = tomllib.load(f)
+                return pyproject_file, configs
         except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
-        if "tool" in configs and "pyodide" in configs["tool"]:
-            return base
+    return None, None
+
+
+def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | None:
+    """
+    Recursively search for the root of the Pyodide repository,
+    by looking for the pyproject.toml file in the parent directories
+    which contains [tool.pyodide] section.
+    """
+    pyproject_path, pyproject_file = search_pyproject_toml(curdir, max_depth)
+
+    if pyproject_path is None:
+        return None
+
+    if "tool" in pyproject_file and "pyodide" in pyproject_file["tool"]:
+        return pyproject_path.parent
 
     return None
 

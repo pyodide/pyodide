@@ -94,23 +94,12 @@ class ConfigManager:
         self, curdir: Path, env: Mapping[str, str]
     ) -> Mapping[str, str]:
         # avoid circular import
-        from pyodide_build.build_env import search_pyodide_root
+        from pyodide_build.build_env import search_pyproject_toml
 
-        pyproject_dir = search_pyodide_root(curdir)
+        pyproject_path, configs = search_pyproject_toml(curdir)
 
-        if pyproject_dir is None:
+        if pyproject_path is None:
             return {}
-
-        pyproject_file = pyproject_dir / "pyproject.toml"
-
-        if not pyproject_file.is_file():
-            return {}
-
-        try:
-            with pyproject_file.open("rb") as f:
-                configs = tomllib.load(f)
-        except tomllib.TOMLDecodeError as e:
-            raise ValueError(f"Could not parse {pyproject_file}.") from e
 
         if (
             "tool" in configs
