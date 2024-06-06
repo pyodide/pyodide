@@ -97,7 +97,7 @@ class ConfigManager:
 
         pyproject_path, configs = search_pyproject_toml(curdir)
 
-        if pyproject_path is None:
+        if pyproject_path is None or configs is None:
             return {}
 
         if (

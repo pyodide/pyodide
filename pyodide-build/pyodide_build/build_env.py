@@ -94,7 +94,7 @@ def get_pyodide_root() -> Path:
 
 def search_pyproject_toml(
     curdir: str | Path, max_depth: int = 10
-) -> tuple[Path, dict[str | Any]] | tuple[None, None]:
+) -> tuple[Path, dict[str, Any]] | tuple[None, None]:
     """
     Recursively search for the pyproject.toml file in the parent directories.
     """
@@ -126,7 +126,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | No
     """
     pyproject_path, pyproject_file = search_pyproject_toml(curdir, max_depth)
 
-    if pyproject_path is None:
+    if pyproject_path is None or pyproject_file is None:
         return None
 
     if "tool" in pyproject_file and "_pyodide" in pyproject_file["tool"]:
