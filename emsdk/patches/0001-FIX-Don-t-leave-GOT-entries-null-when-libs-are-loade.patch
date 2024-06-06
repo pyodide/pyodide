@@ -1,0 +1,48 @@
+From 7fc1c52626ea78add22e22c49456e86d5fa277c1 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 3 Jun 2024 22:25:09 -0700
+Subject: [PATCH] FIX Don't leave GOT entries null when libs are loaded with
+ `allowUndefined: true`
+
+Resolves #22052
+---
+ src/library_dylink.js | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+
+diff --git a/src/library_dylink.js b/src/library_dylink.js
+index 965b119a4..c7392a17b 100644
+--- a/src/library_dylink.js
++++ b/src/library_dylink.js
+@@ -160,7 +160,8 @@ var LibraryDylink = {
+   $GOTHandler: {
+     get(obj, symName) {
+       var rtn = GOT[symName];
+-      if (!rtn) {
++      var found = !!rtn; 
++      if (!found) {
+         rtn = GOT[symName] = new WebAssembly.Global({'value': '{{{ POINTER_WASM_TYPE }}}', 'mutable': true});
+ #if DYLINK_DEBUG == 2
+         dbg("new GOT entry: " + symName);
+@@ -172,6 +173,19 @@ var LibraryDylink = {
+         // correctly.
+         rtn.required = true;
+       }
++      if (found) {
++        return;
++      }
++      var value = resolveGlobalSymbol(symName, true).sym;
++      if (!value) {
++        return rtn;
++      }
++      if (typeof value == 'function') {
++        /** @suppress {checkTypes} */
++        rtn.value = addFunction(value, value.sig);
++      } else if (typeof value == {{{ POINTER_JS_TYPE }}}) {
++        rtn.value = value;
++      }
+       return rtn;
+     }
+   },
+-- 
+2.34.1
+
