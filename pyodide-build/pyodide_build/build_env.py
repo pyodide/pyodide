@@ -10,7 +10,7 @@ from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
@@ -94,7 +94,7 @@ def get_pyodide_root() -> Path:
 
 def search_pyproject_toml(
     curdir: str | Path, max_depth: int = 10
-) -> Tuple[Path, dict[str | Any]] | Tuple[None, None]:
+) -> tuple[Path, dict[str | Any]] | tuple[None, None]:
     """
     Recursively search for the pyproject.toml file in the parent directories.
     """
