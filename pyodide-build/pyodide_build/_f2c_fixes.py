@@ -365,11 +365,10 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     ...        static doublereal psum[52];
     ...        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *,
     ...            doublereal *, doublereal *, integer *);
-    ... '''))))
+    ... '''))).strip())
     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len){
        static doublereal psum[52];
        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);
-
     """
     line_iter = iter(lines)
     for line in line_iter:
