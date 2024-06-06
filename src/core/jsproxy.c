@@ -2653,8 +2653,8 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   helpers_mod = PyImport_ImportModule("_pyodide._future_helper");
   FAIL_IF_NULL(helpers_mod);
   _Py_IDENTIFIER(get_future_resolvers);
-  helpers =
-    _PyObject_CallMethodIdOneArg(helpers_mod, &PyId_get_future_resolvers, result);
+  helpers = _PyObject_CallMethodIdOneArg(
+    helpers_mod, &PyId_get_future_resolvers, result);
   FAIL_IF_NULL(helpers);
   set_result = Py_XNewRef(PyTuple_GetItem(helpers, 0));
   FAIL_IF_NULL(set_result);
