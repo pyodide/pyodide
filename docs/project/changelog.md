@@ -18,7 +18,7 @@ myst:
 
 _June 7, 2024_
 
-### Build system
+### Package build system
 
 - {{ Fix }} Fix `pyodide config` command printing extra output.
   {pr}`4814`
@@ -33,6 +33,10 @@ _June 7, 2024_
 - {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
   anymore in the command line runner.
   {pr}`4836`
+
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
 
 
 ### Runtime / FFI
