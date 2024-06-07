@@ -1,3 +1,5 @@
+from asyncio import ensure_future
+
 import pytest
 from pytest_pyodide import run_in_pyodide
 
@@ -196,3 +198,29 @@ def test_pyfetch_cors_error(selenium, httpserver):
             data = await pyodide.http.pyfetch('{request_url}')
         """
     )
+
+
+@run_in_pyodide
+async def test_pyfetch_manually_abort(selenium):
+    import pytest
+
+    from pyodide.ffi import JsException
+    from pyodide.http import pyfetch
+
+    resp = await pyfetch("/")
+    resp.abort()
+    with pytest.raises(JsException):
+        await resp.text()
+
+
+@run_in_pyodide
+async def test_pyfetch_abort_on_cancel(selenium):
+    import pytest
+
+    from pyodide.ffi import JsException
+    from pyodide.http import pyfetch
+
+    future = ensure_future(pyfetch("/"))
+    future.cancel()
+    with pytest.raises(JsException):
+        await future

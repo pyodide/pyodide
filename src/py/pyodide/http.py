@@ -1,4 +1,5 @@
 import json
+from asyncio import CancelledError
 from io import StringIO
 from typing import IO, Any
 
@@ -6,7 +7,7 @@ from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
-    from js import Object
+    from js import AbortController, Object
 
     try:
         from js import fetch as _jsfetch
@@ -70,9 +71,15 @@ class FetchResponse:
         A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
     """
 
-    def __init__(self, url: str, js_response: JsFetchResponse):
+    def __init__(
+        self,
+        url: str,
+        js_response: JsFetchResponse,
+        abort_controller: "AbortController | None" = None,
+    ):
         self._url = url
         self.js_response = js_response
+        self.abort_controller = abort_controller
 
     @property
     def body_used(self) -> bool:
@@ -270,8 +277,14 @@ class FetchResponse:
         filename = self._url.rsplit("/", -1)[-1]
         unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
+    def abort(self, reason: Any = None) -> None:
+        assert self.abort_controller is not None, "abort_controller is not set"
+        self.abort_controller.abort(reason)
 
-async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
+
+async def pyfetch(
+    url: str, abort_on_cancel: bool = True, **kwargs: Any
+) -> FetchResponse:
     r"""Fetch the url and return the response.
 
     This functions provides a similar API to :js:func:`fetch` however it is
@@ -301,9 +314,18 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
     'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
+    if abort_on_cancel:
+        controller = AbortController.new()
+        kwargs["signal"] = controller.signal
     try:
         return FetchResponse(
-            url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+            url,
+            await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
+            controller if abort_on_cancel else None,
         )
+    except CancelledError as e:
+        if abort_on_cancel:
+            controller.abort(e.args[0] if e.args else None)
+        raise
     except JsException as e:
         raise OSError(e.message) from None
