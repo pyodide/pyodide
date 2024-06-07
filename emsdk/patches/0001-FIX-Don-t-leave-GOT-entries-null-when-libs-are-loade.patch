@@ -28,7 +28,7 @@ index 965b119a4..c7392a17b 100644
          rtn.required = true;
        }
 +      if (found) {
-+        return;
++        return rtn;
 +      }
 +      var value = resolveGlobalSymbol(symName, true).sym;
 +      if (!value) {
