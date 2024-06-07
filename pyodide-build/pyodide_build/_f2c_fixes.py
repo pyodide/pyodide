@@ -214,8 +214,6 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)
-    f2c_output.with_suffix(".c.bak").write_text(f2c_output.read_text())
-
     with open(f2c_output) as f:
         lines = f.readlines()
 
