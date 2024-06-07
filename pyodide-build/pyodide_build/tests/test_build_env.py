@@ -48,7 +48,7 @@ class TestInTree:
 
     def test_search_pyodide_root(self, tmp_path, reset_env_vars, reset_cache):
         pyproject_file = tmp_path / "pyproject.toml"
-        pyproject_file.write_text("[tool.pyodide]")
+        pyproject_file.write_text("[tool._pyodide]")
         assert build_env.search_pyodide_root(tmp_path) == tmp_path
         assert build_env.search_pyodide_root(tmp_path / "subdir") == tmp_path
         assert build_env.search_pyodide_root(tmp_path / "subdir" / "subdir") == tmp_path

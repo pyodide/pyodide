@@ -1,0 +1,11 @@
+package:
+  name: cpp-exceptions-test2
+  version: "1.0"
+  tag:
+    - core
+    - pyodide.test
+source:
+  path: src
+build:
+  cxxflags: -fexceptions
+  ldflags: -fexceptions

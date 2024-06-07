@@ -2637,6 +2637,8 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
 {
   bool success = false;
   PyObject* loop = NULL;
+  PyObject* helpers_mod = NULL;
+  PyObject* helpers = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
 
@@ -2648,9 +2650,15 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
-  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  helpers_mod = PyImport_ImportModule("_pyodide._future_helper");
+  FAIL_IF_NULL(helpers_mod);
+  _Py_IDENTIFIER(get_future_resolvers);
+  helpers = _PyObject_CallMethodIdOneArg(
+    helpers_mod, &PyId_get_future_resolvers, result);
+  FAIL_IF_NULL(helpers);
+  set_result = Py_XNewRef(PyTuple_GetItem(helpers, 0));
   FAIL_IF_NULL(set_result);
-  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  set_exception = Py_XNewRef(PyTuple_GetItem(helpers, 1));
   FAIL_IF_NULL(set_exception);
 
   promise = JsvPromise_Resolve(promise);
@@ -2663,6 +2671,8 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   success = true;
 finally:
   Py_CLEAR(loop);
+  Py_CLEAR(helpers_mod);
+  Py_CLEAR(helpers);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
   if (!success) {
