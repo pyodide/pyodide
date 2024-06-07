@@ -502,3 +502,19 @@ def test_sys_exit(selenium, venv):
     assert result.returncode == 12
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_cpp_exceptions(selenium, venv):
+    result = install_pkg(venv, "cpp-exceptions-test2")
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0
+    result = subprocess.run(
+        [venv / "bin/python", "-c", "import cpp_exceptions_test2"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 1
+    assert "ImportError: oops" in result.stderr

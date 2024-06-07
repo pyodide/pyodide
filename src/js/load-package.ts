@@ -555,6 +555,10 @@ export async function loadPackage(
       Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
     );
 
+    // Warning: this sounds like it might not do anything important, but it
+    // fills in the GOT. There can be segfaults if we leave it out.
+    // See https://github.com/emscripten-core/emscripten/issues/22052
+    // TODO: Fix Emscripten so this isn't needed
     Module.reportUndefinedSymbols();
     if (loadedPackageData.size > 0) {
       const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)

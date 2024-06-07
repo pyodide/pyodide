@@ -43,6 +43,10 @@ myst:
   "Emscripten" and not as "emscripten".
   {pr}`4812`
 
+- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
+  anymore.
+  {pr}`4836`
+
 ### Packages
 
 - New Packages: `pytest-asyncio` {pr}`4819`
