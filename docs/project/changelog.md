@@ -24,6 +24,25 @@ myst:
 - {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
   {pr}`4825`
 
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
+- {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
+  `InvalidStateError`.
+  {pr}`4837`
+
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
+
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
+- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
+  anymore.
+  {pr}`4836`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
