@@ -119,13 +119,13 @@ EM_JS(JsVal, restore_stderr, (void), {
 /**
  * Wrap the exception in a JavaScript PythonError object.
  *
- * The return value of this function is always a valid hiwire ID to an error
- * object. It never returns NULL.
+ * The return value of this function is always a JavaScript error object. It
+ * never returns null.
  *
  * We are cautious about leaking the Python stack frame, so we don't increment
  * the reference count on the exception object, we just store a pointer to it.
- * Later we can check if this pointer is equal to sys.last_exc and if so
- * restore the exception (see restore_sys_last_exception).
+ * Later we can check if this pointer is equal to sys.last_exc and if so restore
+ * the exception (see restore_sys_last_exception).
  *
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
