@@ -283,9 +283,7 @@ class FetchResponse:
         self.abort_controller.abort(reason)
 
 
-async def pyfetch(
-    url: str, abort_on_cancel: bool = True, **kwargs: Any
-) -> FetchResponse:
+async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     r"""Fetch the url and return the response.
 
     This functions provides a similar API to :js:func:`fetch` however it is
@@ -327,8 +325,7 @@ async def pyfetch(
             controller,
         )
     except CancelledError as e:
-        if abort_on_cancel:
-            controller.abort(e.args[0] if e.args else None)
+        controller.abort("\n".join(map(str, e.args)) if e.args else None)
         raise
     except JsException as e:
         raise OSError(e.message) from None
