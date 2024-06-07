@@ -78,7 +78,7 @@ class FetchResponse:
     ):
         self._url = url
         self.js_response = js_response
-        self.abort_controller = abort_controller or AbortController.new()
+        self.abort_controller = abort_controller
 
     @property
     def body_used(self) -> bool:
@@ -279,6 +279,7 @@ class FetchResponse:
         unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
     def abort(self, reason: Any = None) -> None:
+        assert self.abort_controller is not None, "abort_controller is not set"
         self.abort_controller.abort(reason)
 
 
