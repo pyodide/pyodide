@@ -58,7 +58,6 @@ def fix_f2c_input(f2c_input_path: str) -> None:
         lines = f.readlines()
     new_lines = []
     lines = char1_args_to_int(lines)
-
     for line in lines:
         line = fix_string_args(line)
 
@@ -90,6 +89,27 @@ def fix_f2c_input(f2c_input_path: str) -> None:
             line = line.replace("rho(d*(d-1)/2)", "rho(123002)")
 
         new_lines.append(line)
+
+    # We assume one function per file, since this seems quite consistently true.
+    # Figure out if it's supposed to be recursive. f2c can't handle the
+    # recursive keyword so we need to remove it and add a comment so we can tell
+    # it was supposed to be recursive. In fix_f2c_output, we'll remove the
+    # static keywords from all the variables.
+    is_recursive = False
+    for idx, line in enumerate(new_lines):
+        if "recursive" in line:
+            is_recursive = True
+            new_lines[idx] = new_lines[idx].replace("recursive", "")
+            if line.strip() == "recursive":
+                # If whole line was recursive, then the next line starts with an
+                # asterisk to indicate line continuation. Fortran is very
+                # persnickity so we have to remove the line continuation. Make
+                # sure to replace the * with a space because the number of
+                # pre-code characters is significant...
+                new_lines[idx + 1] = new_lines[idx + 1].replace("*", " ")
+            break
+    if is_recursive:
+        new_lines.append("C     .. xxISRECURSIVExx ..")
 
     with open(f2c_input_path, "w") as f:
         f.writelines(new_lines)
@@ -199,6 +219,8 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     with open(f2c_output) as f:
         lines = f.readlines()
 
+    is_recursive = any("xxISRECURSIVExx" in line for line in lines)
+
     lines = list(regroup_lines(lines))
     if "id_dist" in f2c_output_path:
         # Fix implicit casts in id_dist.
@@ -282,9 +304,8 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
 
     # Non recursive functions declare all their locals as static, ones marked
-    # "recursive" need them to be proper local variables. Not sure if non
-    # recursive funcs need static locals, let's try making all locals non-static
-    # first.
+    # "recursive" need them to be proper local variables. For recursive
+    # functions we'll replace them.
     def fix_static(line: str) -> str:
         static_prefix = "    static"
         if not line.startswith(static_prefix):
@@ -310,7 +331,8 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
         joined_names = ",".join(init_names)
         return f"    {type} {joined_names};\n"
 
-    lines = list(map(fix_static, lines))
+    if is_recursive:
+        lines = list(map(fix_static, lines))
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
