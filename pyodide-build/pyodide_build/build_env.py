@@ -113,7 +113,7 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | No
         except tomllib.TOMLDecodeError as e:
             raise ValueError(f"Could not parse {pyproject_file}.") from e
 
-        if "tool" in configs and "pyodide" in configs["tool"]:
+        if "tool" in configs and "_pyodide" in configs["tool"]:
             return base
 
     return None

@@ -1,15 +1,19 @@
+import argparse
+import logging
 import shutil
 import subprocess
+import textwrap
 from pathlib import Path
 
-from .build_env import (
-    get_build_flag,
-    get_pyodide_root,
-    get_unisolated_packages,
-)
-from .common import exit_with_stdio
-from .logger import logger
-from .recipe import load_all_recipes
+try:
+    from pyodide_build.build_env import (
+        get_build_flag,
+        get_unisolated_packages,
+    )
+    from pyodide_build.recipe import load_all_recipes
+except ImportError:
+    print("Requires pyodide-build package to be installed")
+    exit(1)
 
 
 def _copy_xbuild_files(
@@ -32,7 +36,7 @@ def _copy_xbuild_files(
 
             if not source.exists():
                 if skip_missing_files:
-                    logger.warning(f"Cross-build file '{path}' not found")
+                    logging.warning(f"Cross-build file '{path}' not found")
                     continue
 
                 raise FileNotFoundError(f"Cross-build file '{path}' not found")
@@ -80,7 +84,7 @@ def _copy_wasm_libs(
     for path in to_copy:
         if not (pyodide_root / path).exists():
             if skip_missing_files:
-                logger.warning(f"Cross-build file '{path}' not found")
+                logging.warning(f"Cross-build file '{path}' not found")
                 continue
 
             raise FileNotFoundError(f"Cross-build file '{path}' not found")
@@ -96,13 +100,10 @@ def _copy_wasm_libs(
 
 def create(
     path: str | Path,
-    pyodide_root: Path | None = None,
+    pyodide_root: Path,
     *,
     skip_missing_files: bool = False,
 ) -> None:
-    if pyodide_root is None:
-        pyodide_root = get_pyodide_root()
-
     xbuildenv_path = Path(path) / "xbuildenv"
     xbuildenv_root = xbuildenv_path / "pyodide-root"
 
@@ -120,8 +121,42 @@ def create(
         encoding="utf8",
     )
     if res.returncode != 0:
-        logger.error("Failed to run pip freeze:")
-        exit_with_stdio(res)
+        logging.error("Failed to run pip freeze:")
+        if res.stdout:
+            logging.error("  stdout:")
+            logging.error(textwrap.indent(res.stdout, "    "))
+        if res.stderr:
+            logging.error("  stderr:")
+            logging.error(textwrap.indent(res.stderr, "    "))
+        exit(1)
 
     (xbuildenv_path / "requirements.txt").write_text(res.stdout)
     (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Create cross-build environment for building packages for Pyodide."
+    )
+    parser.add_argument("path", help="path to cross-build environment directory")
+    parser.add_argument(
+        "--skip-missing-files",
+        action="store_true",
+        help="skip if cross build files are missing instead of raising an error. This is useful for testing.",
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+def main():
+    args = parse_args()
+    root = Path(__file__).parent.parent
+
+    create(args.path, pyodide_root=root, skip_missing_files=args.skip_missing_files)
+
+    print(f"Pyodide cross-build environment created at {args.path}")
+
+
+if __name__ == "__main__":
+    main()

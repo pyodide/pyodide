@@ -28,7 +28,7 @@ jobs:
       - name: Get version number (release)
         if: github.event_name == 'release'
         run: |
-          echo "VERSION=${{ github.event.release.name }}" >> $GITHUB_ENV
+          echo "VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
 
       - name: Get version number (workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'

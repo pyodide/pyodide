@@ -3,8 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from urllib.request import urlopen
 
-import requests
 from pyodide_lock import PyodideLockSpec
 
 from . import build_env
@@ -212,16 +212,25 @@ class CrossBuildEnvManager:
         if path.exists():
             raise FileExistsError(f"Path {path} already exists")
 
-        r = requests.get(url)
-
-        if r.status_code != 200:
+        try:
+            resp = urlopen(url)
+            data = resp.read()
+        except Exception as e:
             raise ValueError(
-                f"Failed to download cross-build environment from {url} (status code: {r.status_code})"
-            )
+                f"Failed to download cross-build environment from {url}"
+            ) from e
+
+        # FIXME: requests makes a verbose output (see: https://github.com/pyodide/pyodide/issues/4810)
+        # r = requests.get(url)
+
+        # if r.status_code != 200:
+        #     raise ValueError(
+        #         f"Failed to download cross-build environment from {url} (status code: {r.status_code})"
+        #     )
 
         with NamedTemporaryFile(suffix=".tar") as f:
             f_path = Path(f.name)
-            f_path.write_bytes(r.content)
+            f_path.write_bytes(data)
             shutil.unpack_archive(str(f_path), path)
 
     def _install_cross_build_packages(

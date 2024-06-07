@@ -180,7 +180,7 @@ jobs:
       - name: install test requirements
         shell: bash -l {0}
         run: |
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-deploy.txt
           pip install -e ./pyodide-build
           python -m playwright install
 
@@ -192,7 +192,7 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ \
+          tools/pytest_wrapper.py src packages/micropip/ tools/ \
             -v \
             -k "not webworker" \
             --runtime="${BROWSER}-no-host" \

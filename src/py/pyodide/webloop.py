@@ -8,7 +8,7 @@ from asyncio import Future, Task
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar, overload
 
-from .ffi import IN_BROWSER, create_once_callable
+from .ffi import IN_BROWSER, create_once_callable, run_sync
 
 if IN_BROWSER:
     from pyodide_js._api import scheduleCallback
@@ -259,6 +259,10 @@ class WebLoop(asyncio.AbstractEventLoop):
             do_something_with_result(result)
         ```
         """
+        from pyodide_js._api import config
+
+        if config.enableRunUntilComplete:
+            return run_sync(future)
         return asyncio.ensure_future(future)
 
     #

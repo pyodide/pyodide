@@ -44,6 +44,7 @@ export type ConfigType = {
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
+  enableRunUntilComplete: boolean;
 };
 
 /**
@@ -164,6 +165,10 @@ export async function loadPyodide(
      */
     pyproxyToStringRepr?: boolean;
     /**
+     * Make loop.run_until_complete() function correctly using stack switching
+     */
+    enableRunUntilComplete?: boolean;
+    /**
      * @ignore
      */
     _node_mounts?: string[];
@@ -198,6 +203,7 @@ export async function loadPyodide(
     env: {},
     packageCacheDir: indexURL,
     packages: [],
+    enableRunUntilComplete: false,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (!config.env.HOME) {
