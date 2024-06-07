@@ -130,7 +130,7 @@ def get_pip_monkeypatch(venv_bin: Path) -> str:
             yield from tags._generic_platforms()
 
         def platform_tags():
-            if platform.system() == "emscripten":
+            if platform.system() == "Emscripten":
                 yield from _emscripten_platforms()
                 return
             return orig_platform_tags()
