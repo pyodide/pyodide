@@ -1,5 +1,3 @@
-from asyncio import ensure_future
-
 import pytest
 from pytest_pyodide import run_in_pyodide
 
@@ -214,11 +212,13 @@ async def test_pyfetch_manually_abort(selenium):
 
 @run_in_pyodide
 async def test_pyfetch_abort_on_cancel(selenium):
+    from asyncio import CancelledError, ensure_future
+
     import pytest
 
     from pyodide.http import pyfetch
 
     future = ensure_future(pyfetch("/"))
     future.cancel()
-    with pytest.raises(OSError):
+    with pytest.raises(CancelledError):
         await future
