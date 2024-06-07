@@ -14,10 +14,28 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.26.1
+
+_June 7, 2024_
+
+### Build system
 
 - {{ Fix }} Fix `pyodide config` command printing extra output.
   {pr}`4814`
+
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
+- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
+  anymore in the command line runner.
+  {pr}`4836`
+
+
+### Runtime / FFI
 
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
   which makes `run_until_complete` block using stack switching, or crash if
@@ -28,20 +46,10 @@ myst:
   unexpectedly cast to numbers.
   {pr}`4825`
 
-- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
-  {pr}`4831`
-
 - {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
   `InvalidStateError`.
   {pr}`4837`
 
-- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
-  "Emscripten" and not as "emscripten".
-  {pr}`4812`
-
-- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
-  anymore.
-  {pr}`4836`
 
 ### Packages
 
