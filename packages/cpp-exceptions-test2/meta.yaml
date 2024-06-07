@@ -4,8 +4,6 @@ package:
   tag:
     - core
     - pyodide.test
-  top-level:
-    - cpp_exceptions_test2
 source:
   path: src
 build:
