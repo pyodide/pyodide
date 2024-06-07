@@ -59,7 +59,6 @@ _June 7, 2024_
   `InvalidStateError`.
   {pr}`4837`
 
-
 ### Packages
 
 - New Packages: `pytest-asyncio` {pr}`4819`
