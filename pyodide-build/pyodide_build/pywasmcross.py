@@ -563,15 +563,12 @@ def handle_command_generate_args(  # noqa: C901
         new_args.append("-Wl,--fatal-warnings")
         new_args.extend(build_args.ldflags.split())
         new_args.extend(get_export_flags(line, build_args.exports))
-        new_args.append("-g2")
 
     if "-c" in line:
         if new_args[0] == "emcc":
             new_args.extend(build_args.cflags.split())
-            new_args.append("-g2")
         elif new_args[0] == "em++":
             new_args.extend(build_args.cflags.split() + build_args.cxxflags.split())
-            new_args.append("-g2")
 
         if build_args.pythoninclude:
             new_args.extend(["-I", build_args.pythoninclude])
