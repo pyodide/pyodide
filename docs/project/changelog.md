@@ -32,6 +32,10 @@ myst:
   `InvalidStateError`.
   {pr}`4837`
 
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
+
 ### Packages
 
 - New Packages: `pytest-asyncio` {pr}`4819`
