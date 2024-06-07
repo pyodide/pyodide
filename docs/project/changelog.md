@@ -35,6 +35,10 @@ myst:
   `InvalidStateError`.
   {pr}`4837`
 
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
+
 - {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
   "Emscripten" and not as "emscripten".
   {pr}`4812`
