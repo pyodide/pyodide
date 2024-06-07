@@ -32,6 +32,10 @@ myst:
   `InvalidStateError`.
   {pr}`4837`
 
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
 ### Packages
 
 - New Packages: `pytest-asyncio` {pr}`4819`
