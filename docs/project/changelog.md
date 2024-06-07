@@ -38,7 +38,6 @@ _June 7, 2024_
   platforms with platlibdir not equal to "lib".
   {pr}`4844`
 
-
 ### Runtime / FFI
 
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
@@ -53,7 +52,6 @@ _June 7, 2024_
 - {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
   `InvalidStateError`.
   {pr}`4837`
-
 
 ### Packages
 
