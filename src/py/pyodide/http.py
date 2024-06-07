@@ -7,7 +7,7 @@ from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
-    from js import AbortController, Object
+    from js import AbortController, AbortSignal, Object
 
     try:
         from js import fetch as _jsfetch
@@ -79,7 +79,7 @@ class FetchResponse:
     ):
         self._url = url
         self.js_response = js_response
-        self.abort_controller = abort_controller
+        self.abort_controller = abort_controller or AbortController.new()
 
     @property
     def body_used(self) -> bool:
@@ -145,9 +145,11 @@ class FetchResponse:
         """
         return self.js_response.url
 
-    def _raise_if_failed(self) -> None:
+    def _raise_if_failed_or_aborted(self) -> None:
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
+        if (signal := self.abort_controller.signal).aborted:
+            raise OSError(signal.reason)
 
     def raise_for_status(self) -> None:
         """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
@@ -180,12 +182,12 @@ class FetchResponse:
 
         See :js:meth:`Response.arrayBuffer`.
         """
-        self._raise_if_failed()
+        self._raise_if_failed_or_aborted()
         return await self.js_response.arrayBuffer()
 
     async def text(self) -> str:
         """Return the response body as a string"""
-        self._raise_if_failed()
+        self._raise_if_failed_or_aborted()
         return await self.js_response.text()
 
     async def string(self) -> str:
@@ -206,12 +208,12 @@ class FetchResponse:
 
         Any keyword arguments are passed to :py:func:`json.loads`.
         """
-        self._raise_if_failed()
+        self._raise_if_failed_or_aborted()
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
         """Return the response body as a :py:class:`memoryview` object"""
-        self._raise_if_failed()
+        self._raise_if_failed_or_aborted()
         return (await self.buffer()).to_memoryview()
 
     async def _into_file(self, f: IO[bytes] | IO[str]) -> None:
@@ -247,7 +249,7 @@ class FetchResponse:
 
     async def bytes(self) -> bytes:
         """Return the response body as a bytes object"""
-        self._raise_if_failed()
+        self._raise_if_failed_or_aborted()
         return (await self.buffer()).to_bytes()
 
     async def unpack_archive(
@@ -278,7 +280,6 @@ class FetchResponse:
         unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
     def abort(self, reason: Any = None) -> None:
-        assert self.abort_controller is not None, "abort_controller is not set"
         self.abort_controller.abort(reason)
 
 
@@ -314,14 +315,16 @@ async def pyfetch(
     {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
     'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
-    if abort_on_cancel:
-        controller = AbortController.new()
+    controller = AbortController.new()
+    if "signal" in kwargs:
+        kwargs["signal"] = AbortSignal.any([kwargs["signal"], controller.signal])
+    else:
         kwargs["signal"] = controller.signal
     try:
         return FetchResponse(
             url,
             await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
-            controller if abort_on_cancel else None,
+            controller,
         )
     except CancelledError as e:
         if abort_on_cancel:

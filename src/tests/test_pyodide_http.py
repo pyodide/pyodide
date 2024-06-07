@@ -204,12 +204,11 @@ def test_pyfetch_cors_error(selenium, httpserver):
 async def test_pyfetch_manually_abort(selenium):
     import pytest
 
-    from pyodide.ffi import JsException
     from pyodide.http import pyfetch
 
     resp = await pyfetch("/")
-    resp.abort()
-    with pytest.raises(JsException):
+    resp.abort("reason")
+    with pytest.raises(OSError, match="reason"):
         await resp.text()
 
 
@@ -217,10 +216,9 @@ async def test_pyfetch_manually_abort(selenium):
 async def test_pyfetch_abort_on_cancel(selenium):
     import pytest
 
-    from pyodide.ffi import JsException
     from pyodide.http import pyfetch
 
     future = ensure_future(pyfetch("/"))
     future.cancel()
-    with pytest.raises(JsException):
+    with pytest.raises(OSError):
         await future
