@@ -7,9 +7,8 @@ from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
-    from js import AbortController, AbortSignal, Object
-
     try:
+        from js import AbortController, AbortSignal, Object
         from js import fetch as _jsfetch
     except ImportError:
         pass
