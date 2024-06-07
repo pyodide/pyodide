@@ -5,7 +5,6 @@ import functools
 import os
 import re
 import subprocess
-import tomllib
 from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
@@ -13,7 +12,7 @@ from pathlib import Path
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
-from .common import xbuildenv_dirname
+from .common import search_pyproject_toml, xbuildenv_dirname
 from .config import ConfigManager
 from .recipe import load_all_recipes
 
@@ -97,24 +96,13 @@ def search_pyodide_root(curdir: str | Path, *, max_depth: int = 10) -> Path | No
     by looking for the pyproject.toml file in the parent directories
     which contains [tool.pyodide] section.
     """
+    pyproject_path, pyproject_file = search_pyproject_toml(curdir, max_depth)
 
-    # We want to include "curdir" in parent_dirs, so add a garbage suffix
-    parent_dirs = (Path(curdir) / "garbage").parents[:max_depth]
+    if pyproject_path is None or pyproject_file is None:
+        return None
 
-    for base in parent_dirs:
-        pyproject_file = base / "pyproject.toml"
-
-        if not pyproject_file.is_file():
-            continue
-
-        try:
-            with pyproject_file.open("rb") as f:
-                configs = tomllib.load(f)
-        except tomllib.TOMLDecodeError as e:
-            raise ValueError(f"Could not parse {pyproject_file}.") from e
-
-        if "tool" in configs and "_pyodide" in configs["tool"]:
-            return base
+    if "tool" in pyproject_file and "_pyodide" in pyproject_file["tool"]:
+        return pyproject_path.parent
 
     return None
 

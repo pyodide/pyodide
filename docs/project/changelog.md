@@ -28,6 +28,9 @@ myst:
   unexpectedly cast to numbers.
   {pr}`4825`
 
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
 - {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
   `InvalidStateError`.
   {pr}`4837`
