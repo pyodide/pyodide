@@ -503,6 +503,7 @@ def test_sys_exit(selenium, venv):
     assert result.stdout == ""
     assert result.stderr == ""
 
+
 def test_cpp_exceptions(selenium, venv):
     result = install_pkg(venv, "cpp-exceptions-test2")
     print(result.stdout)

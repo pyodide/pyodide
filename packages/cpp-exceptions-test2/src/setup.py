@@ -6,10 +6,11 @@ setup(
     ext_modules=[
         Extension(
             name="cpp_exceptions_test2",  # as it would be imported
-                               # may include packages/namespaces separated by `.`
-
+            # may include packages/namespaces separated by `.`
             language="c++",
-            sources=["cpp_exceptions_test2.cpp"], # all sources are compiled into a single binary file
+            sources=[
+                "cpp_exceptions_test2.cpp"
+            ],  # all sources are compiled into a single binary file
         ),
-    ]
+    ],
 )
