@@ -17,7 +17,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, Protocol, TypeVar, overload
+from typing import IO, Any, Generic, ParamSpec, Protocol, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -33,6 +33,7 @@ from .docs_argspec import docs_argspec
 _save_name = __name__
 __name__ = ""
 
+P = ParamSpec("P")
 T = TypeVar("T")
 S = TypeVar("S")
 KT = TypeVar("KT")  # Key type.
@@ -346,7 +347,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         raise NotImplementedError
 
 
-class JsDoubleProxy(JsProxy):
+class JsDoubleProxy(JsProxy, Generic[T]):
     """A double proxy created with :py:func:`create_proxy`."""
 
     _js_type_flags = ["IS_DOUBLE_PROXY"]
@@ -355,7 +356,7 @@ class JsDoubleProxy(JsProxy):
         """Destroy the proxy."""
         pass
 
-    def unwrap(self) -> Any:
+    def unwrap(self) -> T:
         """Unwrap a double proxy created with :py:func:`create_proxy` into the
         wrapped Python object.
         """
@@ -843,11 +844,15 @@ class JsAsyncGenerator(JsAsyncIterable[T_co], Generic[T_co, T_contra, V_co]):
         raise NotImplementedError
 
 
-class JsCallable(JsProxy):
+class JsCallable(JsProxy, Generic[P, T]):
     _js_type_flags = ["IS_CALLABLE"]
 
-    def __call__(self):
-        pass
+    __call__: Callable[P, T]
+
+
+class JsCallableDoubleProxy(
+    JsDoubleProxy[Callable[P, T]], JsCallable[P, T], Generic[P, T]
+): ...
 
 
 class JsArray(JsIterable[T], Generic[T], MutableSequence[T], metaclass=_ABCMeta):
@@ -1113,7 +1118,7 @@ class JsMutableMap(
         return None
 
 
-class JsOnceCallable(JsCallable):
+class JsOnceCallable(JsCallable[P, T], Generic[P, T]):
     def destroy(self):
         pass
 
@@ -1198,20 +1203,32 @@ class JsDomElement(JsProxy):
 
 @docs_argspec("(obj: Callable[..., Any], /) -> JsOnceCallable")
 def create_once_callable(
-    obj: Callable[..., Any], /, *, _may_syncify: bool = False
-) -> JsOnceCallable:
+    obj: Callable[P, T], /, *, _may_syncify: bool = False
+) -> JsOnceCallable[P, T]:
     """Wrap a Python Callable in a JavaScript function that can be called once.
 
     After being called the proxy will decrement the reference count
     of the Callable. The JavaScript function also has a ``destroy`` API that
     can be used to release the proxy without calling it.
     """
-    return obj  # type: ignore[return-value]
+    return obj  # type:ignore[return-value]
+
+
+@overload
+def create_proxy(
+    obj: Callable[P, T], /, *, capture_this: bool = False, roundtrip: bool = True
+) -> JsCallableDoubleProxy[P, T]: ...
+
+
+@overload
+def create_proxy(
+    obj: T, /, *, capture_this: bool = False, roundtrip: bool = True
+) -> JsDoubleProxy[T]: ...
 
 
 def create_proxy(
-    obj: Any, /, *, capture_this: bool = False, roundtrip: bool = True
-) -> JsDoubleProxy:
+    obj: T, /, *, capture_this: bool = False, roundtrip: bool = True
+) -> JsDoubleProxy[T]:
     """Create a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`.
 
     This allows explicit control over the lifetime of the
@@ -1244,7 +1261,7 @@ def create_proxy(
 
         With ``roundtrip=False`` this would be an error.
     """
-    return obj
+    return obj  # type:ignore[return-value]
 
 
 # from python2js

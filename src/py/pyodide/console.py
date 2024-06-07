@@ -398,7 +398,7 @@ class Console:
         This doesn't include a stack trace because there isn't one. The actual
         error object is stored into :py:data:`sys.last_value`.
         """
-        sys.last_exc = e  # type:ignore[attr-defined]
+        sys.last_exc = e
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = None
@@ -420,7 +420,7 @@ class Console:
 
         The actual error object is stored into :py:data:`sys.last_value`.
         """
-        sys.last_exc = e  # type:ignore[attr-defined]
+        sys.last_exc = e
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = e.__traceback__
