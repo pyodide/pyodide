@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import textwrap
+import tomllib
 import zipfile
 from collections import deque
 from collections.abc import Generator, Iterable, Iterator, Mapping
@@ -413,3 +414,29 @@ def check_wasm_magic_number(file_path: Path) -> bool:
     WASM_BINARY_MAGIC = b"\0asm"
     with file_path.open(mode="rb") as file:
         return file.read(4) == WASM_BINARY_MAGIC
+
+
+def search_pyproject_toml(
+    curdir: str | Path, max_depth: int = 10
+) -> tuple[Path, dict[str, Any]] | tuple[None, None]:
+    """
+    Recursively search for the pyproject.toml file in the parent directories.
+    """
+
+    # We want to include "curdir" in parent_dirs, so add a garbage suffix
+    parent_dirs = (Path(curdir) / "garbage").parents[:max_depth]
+
+    for base in parent_dirs:
+        pyproject_file = base / "pyproject.toml"
+
+        if not pyproject_file.is_file():
+            continue
+
+        try:
+            with pyproject_file.open("rb") as f:
+                configs = tomllib.load(f)
+                return pyproject_file, configs
+        except tomllib.TOMLDecodeError as e:
+            raise ValueError(f"Could not parse {pyproject_file}.") from e
+
+    return None, None
