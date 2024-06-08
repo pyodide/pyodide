@@ -78,7 +78,8 @@ def add_version(
         python_version=python_version or "FIXME",
         emscripten_version=emscripten_version or "FIXME",
         min_pyodide_build_version=min_pyodide_build_version or "FIXME",
-        # max_pyodide_build_version=max_pyodide_build_version or "FIXME",
+        # Max version is optional, and maintainers should update it when needed.
+        max_pyodide_build_version=max_pyodide_build_version or None,
     )
 
     metadata.releases[version] = new_release
