@@ -144,10 +144,10 @@ class FetchResponse:
         """
         return self.js_response.url
 
-    def _raise_if_failed_or_aborted(self) -> None:
+    def _raise_if_failed(self) -> None:
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
-        if (signal := self.abort_controller.signal).aborted:
+        if self.abort_controller and (signal := self.abort_controller.signal).aborted:
             raise OSError(signal.reason)
 
     def raise_for_status(self) -> None:
@@ -181,12 +181,12 @@ class FetchResponse:
 
         See :js:meth:`Response.arrayBuffer`.
         """
-        self._raise_if_failed_or_aborted()
+        self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
     async def text(self) -> str:
         """Return the response body as a string"""
-        self._raise_if_failed_or_aborted()
+        self._raise_if_failed()
         return await self.js_response.text()
 
     async def string(self) -> str:
@@ -207,12 +207,12 @@ class FetchResponse:
 
         Any keyword arguments are passed to :py:func:`json.loads`.
         """
-        self._raise_if_failed_or_aborted()
+        self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
     async def memoryview(self) -> memoryview:
         """Return the response body as a :py:class:`memoryview` object"""
-        self._raise_if_failed_or_aborted()
+        self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
     async def _into_file(self, f: IO[bytes] | IO[str]) -> None:
@@ -248,7 +248,7 @@ class FetchResponse:
 
     async def bytes(self) -> bytes:
         """Return the response body as a bytes object"""
-        self._raise_if_failed_or_aborted()
+        self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
     async def unpack_archive(
