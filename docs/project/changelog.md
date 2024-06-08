@@ -16,17 +16,52 @@ myst:
 
 ## Unreleased
 
+### Packages
+
+- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+
+## Version 0.26.1
+
+_June 7, 2024_
+
+### Build system
+
+- {{ Fix }} Fix `pyodide config` command printing extra output.
+  {pr}`4814`
+
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
+- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
+  anymore in the command line runner.
+  {pr}`4836`
+
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
+
+### Runtime / FFI
+
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
   which makes `run_until_complete` block using stack switching, or crash if
   stack switching is disabled.
   {pr}`4817`
 
-- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were unexpectedly cast to numbers.
+- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were
+  unexpectedly cast to numbers.
   {pr}`4825`
+
+- {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
+  `InvalidStateError`.
+  {pr}`4837`
 
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- New Packages: `pytest-asyncio` {pr}`4819`
 
 ## Version 0.26.0
 

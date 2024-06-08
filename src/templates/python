@@ -142,6 +142,11 @@ async function main() {
             console.error(e);
         }
     }
+    // Warning: this sounds like it might not do anything important, but it
+    // fills in the GOT. There can be segfaults if we leave it out.
+    // See https://github.com/emscripten-core/emscripten/issues/22052
+    // TODO: Fix Emscripten so this isn't needed
+    py._module.reportUndefinedSymbols();
 
     py.runPython(
         `
@@ -176,14 +181,10 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
-        // If someone called exit, just exit with the right return code.
         if(e.constructor.name === "ExitStatus"){
             process.exit(e.status);
         }
-        // Otherwise if there is some sort of error, include the Python
-        // tracebook in addition to the JavaScript traceback
-        py._module._dump_traceback();
-        throw e;
+        py._api.fatal_error(e);
     }
     if (errcode) {
         process.exit(errcode);
