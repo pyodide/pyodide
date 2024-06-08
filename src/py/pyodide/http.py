@@ -196,7 +196,7 @@ class FetchResponse:
         """
         if self.js_response.bodyUsed:
             raise OSError("Response body is already used")
-        return FetchResponse(self._url, self.js_response.clone())
+        return FetchResponse(self._url, self.js_response.clone(), self.abort_controller)
 
     @_abort_on_cancel
     async def buffer(self) -> JsBuffer:
@@ -310,8 +310,14 @@ class FetchResponse:
         unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
 
     def abort(self, reason: Any = None) -> None:
-        assert self.abort_controller is not None, "abort_controller is not set"
-        self.abort_controller.abort(reason)
+        """Abort the fetch request.
+
+        In case ``abort_controller`` is not set, a :py:exc:`ValueError` is raised.
+        """
+        if self.abort_controller:
+            self.abort_controller.abort(reason)
+
+        raise ValueError("abort_controller is not set")
 
 
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
