@@ -19,6 +19,7 @@ myst:
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- Upgraded `libcst` to 1.4.0 {pr}`4856`
 
 ## Version 0.26.1
 
