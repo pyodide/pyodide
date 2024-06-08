@@ -1,7 +1,9 @@
 import json
 from asyncio import CancelledError
+from collections.abc import Awaitable, Callable
+from functools import wraps
 from io import StringIO
-from typing import IO, Any
+from typing import IO, Any, ParamSpec, TypeVar
 
 from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
@@ -57,6 +59,26 @@ def open_url(url: str) -> StringIO:
     req.open("GET", url, False)
     req.send()
     return StringIO(req.response)
+
+
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    @wraps(method)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        try:
+            return await method(*args, **kwargs)
+        except CancelledError as e:
+            self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[assignment]
+            if self.abort_controller:
+                self.abort_controller.abort(
+                    "\n".join(map(str, e.args)) if e.args else None
+                )
+            raise
+
+    return wrapper
 
 
 class FetchResponse:
@@ -176,6 +198,7 @@ class FetchResponse:
             raise OSError("Response body is already used")
         return FetchResponse(self._url, self.js_response.clone())
 
+    @_abort_on_cancel
     async def buffer(self) -> JsBuffer:
         """Return the response body as a Javascript :js:class:`ArrayBuffer`.
 
@@ -184,11 +207,13 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
+    @_abort_on_cancel
     async def text(self) -> str:
         """Return the response body as a string"""
         self._raise_if_failed()
         return await self.js_response.text()
 
+    @_abort_on_cancel
     async def string(self) -> str:
         """Return the response body as a string
 
@@ -201,6 +226,7 @@ class FetchResponse:
         """
         return await self.text()
 
+    @_abort_on_cancel
     async def json(self, **kwargs: Any) -> Any:
         """Treat the response body as a JSON string and use
         :py:func:`json.loads` to parse it into a Python object.
@@ -210,11 +236,13 @@ class FetchResponse:
         self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
+    @_abort_on_cancel
     async def memoryview(self) -> memoryview:
         """Return the response body as a :py:class:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
+    @_abort_on_cancel
     async def _into_file(self, f: IO[bytes] | IO[str]) -> None:
         """Write the data into an empty file with no copy.
 
@@ -224,6 +252,7 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
+    @_abort_on_cancel
     async def _create_file(self, path: str) -> None:
         """Uses the data to back a new file without copying it.
 
@@ -246,11 +275,13 @@ class FetchResponse:
         with open(path, "x") as f:
             await self._into_file(f)
 
+    @_abort_on_cancel
     async def bytes(self) -> bytes:
         """Return the response body as a bytes object"""
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    @_abort_on_cancel
     async def unpack_archive(
         self, *, extract_dir: str | None = None, format: str | None = None
     ) -> None:
