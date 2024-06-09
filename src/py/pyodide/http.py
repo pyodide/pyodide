@@ -12,6 +12,7 @@ if IN_BROWSER:
     try:
         from js import AbortController, Object
         from js import fetch as _jsfetch
+        from pyodide_js._api import abortSignalAny
     except ImportError:
         pass
     try:
@@ -351,11 +352,9 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
 
-    from .utils.abort import abort_signal_any
-
     controller = AbortController.new()
     if "signal" in kwargs:
-        kwargs["signal"] = abort_signal_any([kwargs["signal"], controller.signal])
+        kwargs["signal"] = abortSignalAny([kwargs["signal"], controller.signal])
     else:
         kwargs["signal"] = controller.signal
     try:
