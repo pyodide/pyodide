@@ -1,11 +1,11 @@
 package:
   name: libcst
-  version: 1.3.1
+  version: 1.4.0
   top-level:
     - libcst
 source:
-  url: https://files.pythonhosted.org/packages/f5/7e/11e25b1fc11bcad6b3f3a90fe515406387fe02e6b1ad36dea00ec125ca98/libcst-1.3.1.tar.gz
-  sha256: 03b1df1ae02456f1d465fcd5ead1d0d454bb483caefd8c8e6bde515ffdb53d1b
+  url: https://files.pythonhosted.org/packages/e4/bd/ff41d7a8efc4f60a61d903c3f9823565006f44f2b8b11c99701f552b0851/libcst-1.4.0.tar.gz
+  sha256: 449e0b16604f054fa7f27c3ffe86ea7ef6c409836fe68fe4e752a1894175db00
 about:
   home: ""
   PyPI: https://pypi.org/project/libcst
@@ -13,11 +13,11 @@ about:
     A concrete syntax tree with AST-like properties for Python 3.0 through
     3.12 programs.
   license:
-    "All contributions towards LibCST are MIT licensed.  Some Python files
-    have been derived from the standard library and are therefore PSF licensed. Modifications
+    All contributions towards LibCST are MIT licensed.  Some Python files have
+    been derived from the standard library and are therefore PSF licensed. Modifications
     on these files are dual licensed (both MIT and PSF). Some Python files have been
     taken from dataclasses and are therefore Apache licensed. Modifications on these
-    files are licensed under Apache 2.0 license."
+    files are licensed under Apache 2.0 license.
 extra:
   recipe-maintainers:
     - zsol
