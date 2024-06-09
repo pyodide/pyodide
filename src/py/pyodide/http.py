@@ -10,7 +10,7 @@ from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
     try:
-        from js import AbortController, AbortSignal, Object
+        from js import AbortController, Object
         from js import fetch as _jsfetch
     except ImportError:
         pass
@@ -350,9 +350,12 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
     'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
+
+    from .utils.abort import abort_signal_any
+
     controller = AbortController.new()
     if "signal" in kwargs:
-        kwargs["signal"] = AbortSignal.any([kwargs["signal"], controller.signal])
+        kwargs["signal"] = abort_signal_any([kwargs["signal"], controller.signal])
     else:
         kwargs["signal"] = controller.signal
     try:
