@@ -13,58 +13,16 @@ project.
 The following instructions have been tested with Pyodide 0.26.0 and Vite 5.2.13.
 ```
 
-If you have installed Pyodide via npm, you can use it in Vite as follows. First,
-install the Pyodide npm package:
+First, install the Pyodide npm package:
 
 ```
 $ npm install pyodide
 ```
 
-Then, exclude Pyodide from [Vite's dependency pre-bundling][optimizedeps] by
-setting `optimizeDeps.exclude` in your `vite.config.js` file:
-
-```js
-import { defineConfig } from "vite";
-
-export default defineConfig({ optimizeDeps: { exclude: ["pyodide"] } });
-```
-
-You can test your setup with this `index.html` file:
-
-```html
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>Vite + Pyodide</title>
-    <script type="module" src="/src/main.js"></script>
-  </head>
-</html>
-```
-
-And this `src/main.js` file:
-
-```js
-import { loadPyodide } from "pyodide";
-
-async function hello_python() {
-  let pyodide = await loadPyodide();
-  return pyodide.runPythonAsync("1+1");
-}
-
-hello_python().then((result) => {
-  console.log("Python says that 1+1 =", result);
-});
-```
-
-This should be sufficient for Vite dev mode:
-
-```
-npx vite
-```
-
-For a production build, you must also make sure that all Pyodide files
-will be available in `dist/assets` by using a Vite plugin like this in your
-`vite.config.js` file:
+Then, in your `vite.config.js` file, exclude Pyodide from [Vite's dependency
+pre-bundling][optimizedeps] by setting `optimizeDeps.exclude` and ensure that
+all Pyodide files will be available in `dist/assets` for production builds by
+using a Vite plugin:
 
 ```js
 import { defineConfig } from "vite";
@@ -97,7 +55,40 @@ export default defineConfig({
 });
 ```
 
-Then you can view this production build to verify that it works:
+You can test your setup with this `index.html` file:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Vite + Pyodide</title>
+    <script type="module" src="/src/main.js"></script>
+  </head>
+</html>
+```
+
+And this `src/main.js` file:
+
+```js
+import { loadPyodide } from "pyodide";
+
+async function hello_python() {
+  let pyodide = await loadPyodide();
+  return pyodide.runPythonAsync("1+1");
+}
+
+hello_python().then((result) => {
+  console.log("Python says that 1+1 =", result);
+});
+```
+
+Make sure this works both in Vite's dev mode:
+
+```
+npx vite
+```
+
+And as a production build:
 
 ```
 npx vite build
