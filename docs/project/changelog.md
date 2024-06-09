@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
+  {pr}`4853`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
