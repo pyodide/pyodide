@@ -1,10 +1,13 @@
-const registry = new FinalizationRegistry(
-  (callback: () => any) => void callback(),
-);
-
 interface _AbortSignal extends AbortSignal {
   /** @private */
   __controller?: AbortController;
+}
+
+let registry: FinalizationRegistry<(callback: () => any) => void>;
+
+// @ts-ignore
+if (!AbortSignal.any) {
+  registry = new FinalizationRegistry((callback: () => any) => void callback());
 }
 
 API.abortSignalAny =
