@@ -314,10 +314,10 @@ class FetchResponse:
 
         In case ``abort_controller`` is not set, a :py:exc:`ValueError` is raised.
         """
-        if self.abort_controller:
-            self.abort_controller.abort(reason)
+        if self.abort_controller is None:
+            raise ValueError("abort_controller is not set")
 
-        raise ValueError("abort_controller is not set")
+        self.abort_controller.abort(reason)
 
 
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
