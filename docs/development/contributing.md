@@ -79,9 +79,9 @@ Pyodide follows [semantic versioning](http://semver.org/) - major versions for
 breaking changes (x.0.0), minor versions for new features (0.x.0), and patches
 for bug fixes (0.0.x).
 
-We keep a file, {ref}`docs/changelog.md <changelog>`, outlining changes to
-Pyodide in each release. We like to think of the audience for changelogs as
-non-developers who primarily run the latest stable. So the change log will
+We keep a file, {ref}`docs/project/changelog.md <changelog>`, outlining changes
+to Pyodide in each release. We like to think of the audience for changelogs
+as non-developers who primarily run the latest stable. So the change log will
 primarily outline user-visible changes such as new features and deprecations,
 and will exclude things that might otherwise be inconsequential to the end user
 experience, such as infrastructure or refactoring.
