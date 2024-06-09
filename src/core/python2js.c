@@ -275,6 +275,7 @@ _python2js_dict(ConversionContext* context, PyObject* x)
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
     }
+    Py_CLEAR(item);
   }
   FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {

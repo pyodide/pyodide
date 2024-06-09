@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
+  {pr}`4853`
+
 ## Version 0.26.1
 
 _June 7, 2024_
