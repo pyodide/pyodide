@@ -89,6 +89,8 @@ def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable
     async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
         try:
             return await method(*args, **kwargs)
+        except JsException as e:
+            raise AbortError(e.message) from None
         except CancelledError as e:
             self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[assignment]
             if self.abort_controller:
