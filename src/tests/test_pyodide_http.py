@@ -222,3 +222,17 @@ async def test_pyfetch_abort_on_cancel(selenium):
     future.cancel()
     with pytest.raises(CancelledError):
         await future
+
+
+@run_in_pyodide
+async def test_pyfetch_custom_abort_signal(selenium):
+    import pytest
+
+    from js import AbortController
+    from pyodide.http import AbortError, pyfetch
+
+    controller = AbortController.new()
+    controller.abort("reason")
+    f = pyfetch("/", signal=controller.signal)
+    with pytest.raises(AbortError, match="reason"):
+        await f
