@@ -1,3 +1,19 @@
+/**
+ * Polyfill for the static method `AbortSignal.any` which is not yet implemented
+ * in all browsers. This function creates a new `AbortSignal` that is aborted
+ * when any of the provided signals are aborted, which is used in `pyfetch`.
+ *
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal/any_static#browser_compatibility
+ *
+ *    deno: 1.39   (Released 2023-12)
+ *  nodejs: 20.3.0 (Released 2023-06)
+ *  chrome: 100    (Released 2023-08)
+ *  safari: 17.4   (Released 2024-03)
+ * firefox: 124    (Released 2024-03)
+ *
+ * We may consider dropping this polyfill after EOL of Node.js 18 (April 2025).
+ */
+
 // @ts-ignore
 if (AbortSignal.any) {
   // @ts-ignore
