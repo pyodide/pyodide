@@ -27,6 +27,24 @@ __all__ = [
 ]
 
 
+class HttpStatusError(OSError):
+    def __init__(self, status: int, status_text: str, url: str) -> None:
+        if 400 <= status < 500:
+            super().__init__(f"{status} Client Error: {status_text} for url: {url}")
+        elif 500 <= status < 600:
+            super().__init__(f"{status} Server Error: {status_text} for url: {url}")
+
+
+class BodyUsedError(OSError):
+    def __init__(self) -> None:
+        super().__init__("Response body is already used")
+
+
+class AbortError(OSError):
+    def __init__(self, reason: Any) -> None:
+        super().__init__(reason)
+
+
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
@@ -169,25 +187,14 @@ class FetchResponse:
 
     def _raise_if_failed(self) -> None:
         if self.js_response.bodyUsed:
-            raise OSError("Response body is already used")
+            raise BodyUsedError
         if self.abort_controller and (signal := self.abort_controller.signal).aborted:
-            raise OSError(signal.reason)
+            raise AbortError(signal.reason)
 
     def raise_for_status(self) -> None:
         """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
-        http_error_msg = ""
-        if 400 <= self.status < 500:
-            http_error_msg = (
-                f"{self.status} Client Error: {self.status_text} for url: {self.url}"
-            )
-
-        if 500 <= self.status < 600:
-            http_error_msg = (
-                f"{self.status} Server Error: {self.status_text} for url: {self.url}"
-            )
-
-        if http_error_msg:
-            raise OSError(http_error_msg)
+        if 400 <= self.status < 600:
+            raise HttpStatusError(self.status, self.status_text, self.url)
 
     def clone(self) -> "FetchResponse":
         """Return an identical copy of the :py:class:`FetchResponse`.
@@ -196,7 +203,7 @@ class FetchResponse:
         objects. See :js:meth:`Response.clone`.
         """
         if self.js_response.bodyUsed:
-            raise OSError("Response body is already used")
+            raise BodyUsedError
         return FetchResponse(self._url, self.js_response.clone(), self.abort_controller)
 
     @_abort_on_cancel
@@ -367,4 +374,4 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
         controller.abort("\n".join(map(str, e.args)) if e.args else None)
         raise
     except JsException as e:
-        raise OSError(e.message) from None
+        raise AbortError(e.message) from None

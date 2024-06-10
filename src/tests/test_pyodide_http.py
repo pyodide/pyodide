@@ -202,11 +202,11 @@ def test_pyfetch_cors_error(selenium, httpserver):
 async def test_pyfetch_manually_abort(selenium):
     import pytest
 
-    from pyodide.http import pyfetch
+    from pyodide.http import AbortError, pyfetch
 
     resp = await pyfetch("/")
     resp.abort("reason")
-    with pytest.raises(OSError, match="reason"):
+    with pytest.raises(AbortError, match="reason"):
         await resp.text()
 
 
