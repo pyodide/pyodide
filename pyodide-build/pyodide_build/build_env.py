@@ -5,6 +5,7 @@ import functools
 import os
 import re
 import subprocess
+import sys
 from collections.abc import Iterator
 from contextlib import nullcontext, redirect_stdout
 from io import StringIO
@@ -12,6 +13,7 @@ from pathlib import Path
 
 from packaging.tags import Tag, compatible_tags, cpython_tags
 
+from . import __version__
 from .common import search_pyproject_toml, xbuildenv_dirname
 from .config import ConfigManager
 from .recipe import load_all_recipes
@@ -257,3 +259,15 @@ def check_emscripten_version() -> None:
         raise RuntimeError(
             f"Incorrect Emscripten version {installed_version}. Need Emscripten version {needed_version}"
         )
+
+
+def local_versions() -> dict[str, str]:
+    """
+    Returns the versions of the local Python interpreter and the pyodide-build.
+    This information is used for checking compatibility with the cross-build environment.
+    """
+    return {
+        "python": f"{sys.version_info.major}.{sys.version_info.minor}",
+        "pyodide-build": __version__,
+        # "emscripten": "TODO"
+    }
