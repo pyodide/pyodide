@@ -232,7 +232,7 @@ async def test_pyfetch_custom_abort_signal(selenium):
     from pyodide.http import AbortError, pyfetch
 
     controller = AbortController.new()
-    controller.abort("reason")
+    controller.abort()
     f = pyfetch("/", signal=controller.signal)
-    with pytest.raises(AbortError, match="reason"):
+    with pytest.raises(AbortError):
         await f

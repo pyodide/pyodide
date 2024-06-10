@@ -41,8 +41,8 @@ class BodyUsedError(OSError):
 
 
 class AbortError(OSError):
-    def __init__(self, reason: Any) -> None:
-        super().__init__(reason)
+    def __init__(self, reason: JsException) -> None:
+        super().__init__(reason.message)
 
 
 def open_url(url: str) -> StringIO:
@@ -90,16 +90,23 @@ def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable
         try:
             return await method(*args, **kwargs)
         except JsException as e:
-            raise AbortError(e.message) from None
+            raise AbortError(e) from None
         except CancelledError as e:
             self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[assignment]
             if self.abort_controller:
                 self.abort_controller.abort(
-                    "\n".join(map(str, e.args)) if e.args else None
+                    _construct_abort_reason(
+                        "\n".join(map(str, e.args)) if e.args else None
+                    )
                 )
             raise
 
     return wrapper
+
+
+def _construct_abort_reason(reason: Any) -> JsException | None:  # type:ignore[return]
+    if reason is not None:
+        return JsException("AbortError", reason)
 
 
 class FetchResponse:
@@ -327,7 +334,7 @@ class FetchResponse:
         if self.abort_controller is None:
             raise ValueError("abort_controller is not set")
 
-        self.abort_controller.abort(reason)
+        self.abort_controller.abort(_construct_abort_reason(reason))
 
 
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
@@ -373,7 +380,9 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
             controller,
         )
     except CancelledError as e:
-        controller.abort("\n".join(map(str, e.args)) if e.args else None)
+        controller.abort(
+            _construct_abort_reason("\n".join(map(str, e.args))) if e.args else None
+        )
         raise
     except JsException as e:
-        raise AbortError(e.message) from None
+        raise AbortError(e) from None
