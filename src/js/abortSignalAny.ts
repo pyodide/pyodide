@@ -29,6 +29,12 @@ if (AbortSignal.any) {
 
   API.abortSignalAny = function (signals: AbortSignal[]) {
     const controller = new AbortController();
+    for (const signal of signals) {
+      if (signal.aborted) {
+        controller.abort(signal.reason);
+        return controller.signal;
+      }
+    }
     const controllerRef = new WeakRef(controller);
     const eventListenerPairs: [WeakRef<AbortSignal>, () => void][] = [];
     let followingCount = signals.length;
