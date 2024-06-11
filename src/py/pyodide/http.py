@@ -371,7 +371,7 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
 
     controller = AbortController.new()
     if "signal" in kwargs:
-        kwargs["signal"] = abortSignalAny([kwargs["signal"], controller.signal])
+        kwargs["signal"] = abortSignalAny(to_js([kwargs["signal"], controller.signal]))
     else:
         kwargs["signal"] = controller.signal
     try:
