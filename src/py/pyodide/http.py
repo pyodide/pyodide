@@ -104,9 +104,10 @@ def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable
     return wrapper
 
 
-def _construct_abort_reason(reason: Any) -> JsException | None:  # type:ignore[return]
-    if reason is not None:
-        return JsException("AbortError", reason)
+def _construct_abort_reason(reason: Any) -> JsException | None:
+    if reason is None:
+        return None
+    return JsException("AbortError", reason)
 
 
 class FetchResponse:
