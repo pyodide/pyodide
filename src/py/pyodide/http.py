@@ -198,8 +198,6 @@ class FetchResponse:
     def _raise_if_failed(self) -> None:
         if self.js_response.bodyUsed:
             raise BodyUsedError
-        if self.abort_controller and (signal := self.abort_controller.signal).aborted:
-            raise AbortError(signal.reason)
 
     def raise_for_status(self) -> None:
         """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
