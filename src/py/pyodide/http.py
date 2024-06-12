@@ -10,7 +10,7 @@ from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
     try:
-        from js import AbortController, Object
+        from js import AbortController, AbortSignal, Object
         from js import fetch as _jsfetch
         from pyodide_js._api import abortSignalAny
     except ImportError:
@@ -90,9 +90,10 @@ def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable
         try:
             return await method(*args, **kwargs)
         except JsException as e:
-            raise AbortError(e) from None
-        except CancelledError as e:
             self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[assignment]
+            raise AbortError(s.reason if (s := self.abort_signal) else e) from None
+        except CancelledError as e:
+            self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[no-redef]
             if self.abort_controller:
                 self.abort_controller.abort(
                     _construct_abort_reason(
@@ -126,10 +127,12 @@ class FetchResponse:
         url: str,
         js_response: JsFetchResponse,
         abort_controller: "AbortController | None" = None,
+        abort_signal: "AbortSignal | None" = None,
     ):
         self._url = url
         self.js_response = js_response
         self.abort_controller = abort_controller
+        self.abort_signal = abort_signal
 
     @property
     def body_used(self) -> bool:
@@ -369,14 +372,16 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
 
     controller = AbortController.new()
     if "signal" in kwargs:
-        kwargs["signal"] = abortSignalAny(to_js([kwargs["signal"], controller.signal]))
+        signal = abortSignalAny(to_js([kwargs["signal"], controller.signal]))
     else:
-        kwargs["signal"] = controller.signal
+        signal = controller.signal
+    kwargs["signal"] = signal
     try:
         return FetchResponse(
             url,
             await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
             controller,
+            signal,
         )
     except CancelledError as e:
         controller.abort(
