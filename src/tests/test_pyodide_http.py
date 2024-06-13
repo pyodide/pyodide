@@ -225,6 +225,19 @@ async def test_pyfetch_abort_on_cancel(selenium):
 
 
 @run_in_pyodide
+async def test_pyfetch_abort_cloned_response(selenium):
+    import pytest
+
+    from pyodide.http import AbortError, pyfetch
+
+    resp = await pyfetch("/")
+    clone = resp.clone()
+    clone.abort()
+    with pytest.raises(AbortError):
+        await clone.text()
+
+
+@run_in_pyodide
 async def test_pyfetch_custom_abort_signal(selenium):
     import pytest
 
