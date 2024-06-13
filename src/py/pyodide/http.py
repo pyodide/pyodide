@@ -199,6 +199,8 @@ class FetchResponse:
         return self.js_response.url
 
     def _raise_if_failed(self) -> None:
+        if (signal := self.abort_signal) and signal.aborted:
+            raise AbortError(signal.reason)
         if self.js_response.bodyUsed:
             raise BodyUsedError
 
