@@ -36,7 +36,7 @@ class HttpStatusError(OSError):
 
 
 class BodyUsedError(OSError):
-    def __init__(self) -> None:
+    def __init__(self, *args: Any) -> None:
         super().__init__("Response body is already used")
 
 
