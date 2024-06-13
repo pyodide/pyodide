@@ -217,7 +217,12 @@ class FetchResponse:
         """
         if self.js_response.bodyUsed:
             raise BodyUsedError
-        return FetchResponse(self._url, self.js_response.clone(), self.abort_controller)
+        return FetchResponse(
+            self._url,
+            self.js_response.clone(),
+            self.abort_controller,
+            self.abort_signal,
+        )
 
     @_abort_on_cancel
     async def buffer(self) -> JsBuffer:
