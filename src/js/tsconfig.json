@@ -21,6 +21,6 @@
       "*": ["*", "js/*"]
     }
   },
-  "include": ["../**/*.ts", "*.json"],
+  "include": ["../**/*.ts", "*.json", "vendor/stackframe/stackframe.js", "vendor/stackframe/error-stack-parser.js"],
   "exclude": ["../**/*test*/**/*"]
 }
