@@ -3,17 +3,17 @@
 // Definitions by: Eric Wendelin <https://www.eriwen.com>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 
-import StackFrame from './stackframe';
+import StackFrame from "./stackframe";
 
 declare namespace ErrorStackParser {
-    export type {StackFrame};
-    /**
-     * Given an Error object, extract the most information from it.
-     *
-     * @param {Error} error object
-     * @return {Array} of StackFrames
-     */
-    export function parse(error: Error): StackFrame[];
+  export type { StackFrame };
+  /**
+   * Given an Error object, extract the most information from it.
+   *
+   * @param {Error} error object
+   * @return {Array} of StackFrames
+   */
+  export function parse(error: Error): StackFrame[];
 }
 
 export = ErrorStackParser;
