@@ -1855,3 +1855,24 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
+
+
+@run_in_pyodide
+async def test_bug_4861(selenium):
+    """In version 0.26.1, there was a regression that makes this raise
+    "KeyError: '__builtins__'".
+
+    I don't really understand what this reproducer does, what the problem was,
+    or why the fix prevents the problem.
+    """
+    import collections
+
+    from pyodide.code import run_js
+
+    class ChainMap(collections.ChainMap, dict):  # type:ignore[misc, type-arg]
+        pass
+
+    def g(x):
+        return eval("x()", ChainMap({}, {"x": x}))
+
+    await g(run_js("async () => {}"))
