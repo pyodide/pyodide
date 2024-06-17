@@ -35,7 +35,15 @@ def test_keyboard_input():
     TODO: find a better way to test keyboard input
     """
     from auditwheel_emscripten import get_imports
-    get_imports
+    from pathlib import Path
+
+    dist_dir = Path(__file__).parent / "dist"
+    wheel_path = next(dist_dir.glob("pygame_ce-*.whl"))
+    assert wheel_path.exists()
+    all_libs = get_imports(wheel_path)
+    for imports in all_libs.values():
+        all_fields = [imp.field for imp in imports]
+        assert "emscripten_compute_dom_pk_code" not in all_fields
 
 
 @pytest.mark.driver_timeout(300)
