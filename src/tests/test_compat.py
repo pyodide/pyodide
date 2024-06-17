@@ -1,11 +1,14 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
 from conftest import DIST_PATH
 
 HTML_TEAMPLTE_DIR = Path(__file__).parent / "html_templates"
 
 
+@pytest.mark.xfail_browsers(node="No goto")
 def test_commonjs_define(selenium_standalone_noload):
     """
     ErrorStackParser behaves differently when "define", and "define.amd" are defined in the global scope (CommonJS),
