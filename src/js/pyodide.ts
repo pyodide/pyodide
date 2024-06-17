@@ -41,6 +41,7 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
+  _pythonInspect?: boolean;
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
@@ -169,9 +170,24 @@ export async function loadPyodide(
      */
     enableRunUntilComplete?: boolean;
     /**
+     * Used by the cli runner. If we want to detect a virtual environment from
+     * the host file system, it needs to be visible from when `main()` is
+     * called. The directories in this list will be mounted at the same address
+     * into the Emscripten file system so that virtual environments work in the
+     * cli runner.
      * @ignore
      */
     _node_mounts?: string[];
+    /**
+     * Defaults true, set false by the cli runner. `PyErr_Print()` will call
+     * `exit()` if the exception is a `SystemError`. This shuts down the Python
+     * interpreter, which is a change in behavior from what happened before. In
+     * order to avoid this, we set the `inspect` config parameter which prevents
+     * `PyErr_Print()` from calling `exit()`. Except in the cli runner, we
+     * actually do want to exit.
+     * @ignore
+     */
+    _pythonInspect?: boolean;
     /**
      * @ignore
      */
@@ -202,12 +218,16 @@ export async function loadPyodide(
     _node_mounts: [],
     env: {},
     packageCacheDir: indexURL,
+    _pythonInspect: 1,
     packages: [],
     enableRunUntilComplete: false,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   if (!config.env.HOME) {
     config.env.HOME = "/home/pyodide";
+  }
+  if (config._pythonInspect) {
+    config.env.PYTHONINSPECT = "1";
   }
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;

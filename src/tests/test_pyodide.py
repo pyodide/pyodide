@@ -1855,3 +1855,20 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
+
+
+def test_system_exit(selenium):
+    """Make sure nothing weird happens when we throw SystemExit"""
+    for _ in range(3):
+        selenium.run_js(
+            """
+            assertThrows(
+                () =>
+                    pyodide.runPython(`
+                        exit(1)
+                    `),
+                "PythonError",
+                "SystemExit: 1",
+            );
+            """
+        )

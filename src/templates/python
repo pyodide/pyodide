@@ -82,6 +82,7 @@ async function main() {
             env: Object.assign({}, process.env, {HOME: process.cwd() }),
             fullStdLib: false,
             _node_mounts: dirsToMount(),
+            _pythonInspect: false,
             // Strip out messages written to stderr while loading
             // After Pyodide is loaded we will replace stdstreams with setupStreams.
             stderr(e) {
@@ -181,7 +182,7 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
-        if(e.constructor.name === "ExitStatus"){
+        if (e.constructor.name === "ExitStatus") {
             process.exit(e.status);
         }
         py._api.fatal_error(e);
