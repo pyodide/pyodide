@@ -19,6 +19,11 @@ myst:
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
 
+- {{ Fix }} Restored the pre-0.26.0 behavior of calling `exit()` or raising
+  `SystemExit`. In 0.26.0 and 0.26.1, `exit()` shuts down the Python
+  interpreter. In all other versions of Pyodide it does not.
+  {pr}`4867`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
