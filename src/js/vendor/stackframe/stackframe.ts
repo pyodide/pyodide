@@ -95,7 +95,6 @@ declare class StackFrame {
   toString(): string;
 }
 
-
 function StackFrame(obj) {
   if (!obj) return;
   for (var i = 0; i < props.length; i++) {
