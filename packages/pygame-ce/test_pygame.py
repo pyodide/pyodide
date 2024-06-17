@@ -34,8 +34,9 @@ def test_keyboard_input():
     See: https://github.com/pyodide/pyodide/issues/4805#issuecomment-2169077347
     TODO: find a better way to test keyboard input
     """
-    from auditwheel_emscripten import get_imports
     from pathlib import Path
+
+    from auditwheel_emscripten import get_imports
 
     dist_dir = Path(__file__).parent / "dist"
     wheel_path = next(dist_dir.glob("pygame_ce-*.whl"))
