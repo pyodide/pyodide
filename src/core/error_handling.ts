@@ -1,4 +1,4 @@
-import ErrorStackParser from "../js/vendor/stackframe/error-stack-parser";
+import ErrorStackParser, { StackFrame } from "../js/vendor/stackframe/error-stack-parser";
 import "types";
 
 declare var Tests: any;
@@ -233,7 +233,7 @@ function isPyodideFrame(frame: StackFrame): boolean {
   return true;
 }
 
-function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
+function isErrorStart(frame: StackFrame): boolean {
   return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 

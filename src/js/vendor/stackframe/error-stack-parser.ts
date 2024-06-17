@@ -5,6 +5,17 @@
 
 import StackFrame from "./stackframe";
 
+declare namespace ErrorStackParser {
+  export type { StackFrame };
+  /**
+   * Given an Error object, extract the most information from it.
+   *
+   * @param {Error} error object
+   * @return {Array} of StackFrames
+   */
+  export function parse(error: Error): StackFrame[];
+}
+
 function ErrorStackParser() {
   var CHROME_IE_STACK_REGEXP = /^\s*at .*(\S+:\d+|\(native\))/m;
   var SAFARI_NATIVE_CODE_REGEXP = /^(eval@)?(\[native code])?$/;
@@ -16,7 +27,7 @@ function ErrorStackParser() {
      * @param {Error} error object
      * @return {Array} of StackFrames
      */
-    parse: function ErrorStackParser$$parse(error) {
+    parse: function ErrorStackParser$$parse(error: Error): StackFrame[] {
       if (error.stack && error.stack.match(CHROME_IE_STACK_REGEXP)) {
         return this.parseV8OrIE(error);
       } else if (error.stack) {
@@ -127,4 +138,5 @@ function ErrorStackParser() {
 
 const errorStackParser = new ErrorStackParser();
 
+export { StackFrame }
 export default errorStackParser;
