@@ -1503,7 +1503,7 @@ def test_args(selenium_standalone_noload):
             stdout,
             stderr,
             args: ['-c', 'print([x*x+1 for x in range(10)])'],
-            _pythonInspect: false,
+            env: { PYTHONINSPECT: "" },
         });
         self.pyodide = pyodide;
         globalThis.pyodide = pyodide;
