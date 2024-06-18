@@ -41,7 +41,6 @@ export type ConfigType = {
   jsglobals?: object;
   args: string[];
   _node_mounts: string[];
-  _pythonInspect?: boolean;
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
@@ -179,16 +178,6 @@ export async function loadPyodide(
      */
     _node_mounts?: string[];
     /**
-     * Defaults true, set false by the cli runner. `PyErr_Print()` will call
-     * `exit()` if the exception is a `SystemError`. This shuts down the Python
-     * interpreter, which is a change in behavior from what happened before. In
-     * order to avoid this, we set the `inspect` config parameter which prevents
-     * `PyErr_Print()` from calling `exit()`. Except in the cli runner, we
-     * actually do want to exit.
-     * @ignore
-     */
-    _pythonInspect?: boolean;
-    /**
      * @ignore
      */
     _makeSnapshot?: boolean;
@@ -218,17 +207,20 @@ export async function loadPyodide(
     _node_mounts: [],
     env: {},
     packageCacheDir: indexURL,
-    _pythonInspect: 1,
     packages: [],
     enableRunUntilComplete: false,
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  if (!config.env.HOME) {
-    config.env.HOME = "/home/pyodide";
-  }
-  if (config._pythonInspect) {
-    config.env.PYTHONINSPECT = "1";
-  }
+  config.env.HOME ??= "/home/pyodide";
+  /**
+   * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
+   * This shuts down the Python interpreter, which is a change in behavior from
+   * what happened before. In order to avoid this, we set the `inspect` config
+   * parameter which prevents `PyErr_Print()` from calling `exit()`. Except in
+   * the cli runner, we actually do want to exit. So set default to true and in
+   * cli runner we explicitly set it to false.
+   */
+  config.env.PYTHONINSPECT ??= "1";
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
