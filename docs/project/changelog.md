@@ -19,6 +19,10 @@ myst:
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
 
+- {{ Fix }} Fixed a weird regression occurring in difficult to describe
+  circumstances introduced by {pr}`4837`. See {issue}`4861`.
+  {pr}`4861`
+
 ## Version 0.26.1
 
 _June 7, 2024_
