@@ -430,5 +430,6 @@ export interface API {
   saveSnapshot(): Uint8Array;
   finalizeBootstrap: (fromSnapshot?: SnapshotConfig) => PyodideInterface;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
+  abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
 }

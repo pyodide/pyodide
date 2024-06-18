@@ -1,15 +1,18 @@
 import json
+from asyncio import CancelledError
+from collections.abc import Awaitable, Callable
+from functools import wraps
 from io import StringIO
-from typing import IO, Any
+from typing import IO, Any, ParamSpec, TypeVar
 
 from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if IN_BROWSER:
-    from js import Object
-
     try:
+        from js import AbortController, AbortSignal, Object
         from js import fetch as _jsfetch
+        from pyodide_js._api import abortSignalAny
     except ImportError:
         pass
     try:
@@ -22,6 +25,24 @@ __all__ = [
     "pyfetch",
     "FetchResponse",
 ]
+
+
+class HttpStatusError(OSError):
+    def __init__(self, status: int, status_text: str, url: str) -> None:
+        if 400 <= status < 500:
+            super().__init__(f"{status} Client Error: {status_text} for url: {url}")
+        elif 500 <= status < 600:
+            super().__init__(f"{status} Server Error: {status_text} for url: {url}")
+
+
+class BodyUsedError(OSError):
+    def __init__(self, *args: Any) -> None:
+        super().__init__("Response body is already used")
+
+
+class AbortError(OSError):
+    def __init__(self, reason: JsException) -> None:
+        super().__init__(reason.message)
 
 
 def open_url(url: str) -> StringIO:
@@ -59,6 +80,37 @@ def open_url(url: str) -> StringIO:
     return StringIO(req.response)
 
 
+P = ParamSpec("P")
+T = TypeVar("T")
+
+
+def _abort_on_cancel(method: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+    @wraps(method)
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
+        try:
+            return await method(*args, **kwargs)
+        except JsException as e:
+            self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[assignment]
+            raise AbortError(s.reason if (s := self.abort_signal) else e) from None
+        except CancelledError as e:
+            self: FetchResponse = kwargs.get("self") or args[0]  # type:ignore[no-redef]
+            if self.abort_controller:
+                self.abort_controller.abort(
+                    _construct_abort_reason(
+                        "\n".join(map(str, e.args)) if e.args else None
+                    )
+                )
+            raise
+
+    return wrapper
+
+
+def _construct_abort_reason(reason: Any) -> JsException | None:
+    if reason is None:
+        return None
+    return JsException("AbortError", reason)
+
+
 class FetchResponse:
     """A wrapper for a Javascript fetch :js:data:`Response`.
 
@@ -70,9 +122,17 @@ class FetchResponse:
         A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
     """
 
-    def __init__(self, url: str, js_response: JsFetchResponse):
+    def __init__(
+        self,
+        url: str,
+        js_response: JsFetchResponse,
+        abort_controller: "AbortController | None" = None,
+        abort_signal: "AbortSignal | None" = None,
+    ):
         self._url = url
         self.js_response = js_response
+        self.abort_controller = abort_controller
+        self.abort_signal = abort_signal
 
     @property
     def body_used(self) -> bool:
@@ -139,24 +199,15 @@ class FetchResponse:
         return self.js_response.url
 
     def _raise_if_failed(self) -> None:
+        if (signal := self.abort_signal) and signal.aborted:
+            raise AbortError(signal.reason)
         if self.js_response.bodyUsed:
-            raise OSError("Response body is already used")
+            raise BodyUsedError
 
     def raise_for_status(self) -> None:
         """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
-        http_error_msg = ""
-        if 400 <= self.status < 500:
-            http_error_msg = (
-                f"{self.status} Client Error: {self.status_text} for url: {self.url}"
-            )
-
-        if 500 <= self.status < 600:
-            http_error_msg = (
-                f"{self.status} Server Error: {self.status_text} for url: {self.url}"
-            )
-
-        if http_error_msg:
-            raise OSError(http_error_msg)
+        if 400 <= self.status < 600:
+            raise HttpStatusError(self.status, self.status_text, self.url)
 
     def clone(self) -> "FetchResponse":
         """Return an identical copy of the :py:class:`FetchResponse`.
@@ -165,9 +216,15 @@ class FetchResponse:
         objects. See :js:meth:`Response.clone`.
         """
         if self.js_response.bodyUsed:
-            raise OSError("Response body is already used")
-        return FetchResponse(self._url, self.js_response.clone())
+            raise BodyUsedError
+        return FetchResponse(
+            self._url,
+            self.js_response.clone(),
+            self.abort_controller,
+            self.abort_signal,
+        )
 
+    @_abort_on_cancel
     async def buffer(self) -> JsBuffer:
         """Return the response body as a Javascript :js:class:`ArrayBuffer`.
 
@@ -176,11 +233,13 @@ class FetchResponse:
         self._raise_if_failed()
         return await self.js_response.arrayBuffer()
 
+    @_abort_on_cancel
     async def text(self) -> str:
         """Return the response body as a string"""
         self._raise_if_failed()
         return await self.js_response.text()
 
+    @_abort_on_cancel
     async def string(self) -> str:
         """Return the response body as a string
 
@@ -193,6 +252,7 @@ class FetchResponse:
         """
         return await self.text()
 
+    @_abort_on_cancel
     async def json(self, **kwargs: Any) -> Any:
         """Treat the response body as a JSON string and use
         :py:func:`json.loads` to parse it into a Python object.
@@ -202,11 +262,13 @@ class FetchResponse:
         self._raise_if_failed()
         return json.loads(await self.string(), **kwargs)
 
+    @_abort_on_cancel
     async def memoryview(self) -> memoryview:
         """Return the response body as a :py:class:`memoryview` object"""
         self._raise_if_failed()
         return (await self.buffer()).to_memoryview()
 
+    @_abort_on_cancel
     async def _into_file(self, f: IO[bytes] | IO[str]) -> None:
         """Write the data into an empty file with no copy.
 
@@ -216,6 +278,7 @@ class FetchResponse:
         buf = await self.buffer()
         buf._into_file(f)
 
+    @_abort_on_cancel
     async def _create_file(self, path: str) -> None:
         """Uses the data to back a new file without copying it.
 
@@ -238,11 +301,13 @@ class FetchResponse:
         with open(path, "x") as f:
             await self._into_file(f)
 
+    @_abort_on_cancel
     async def bytes(self) -> bytes:
         """Return the response body as a bytes object"""
         self._raise_if_failed()
         return (await self.buffer()).to_bytes()
 
+    @_abort_on_cancel
     async def unpack_archive(
         self, *, extract_dir: str | None = None, format: str | None = None
     ) -> None:
@@ -269,6 +334,16 @@ class FetchResponse:
         buf = await self.buffer()
         filename = self._url.rsplit("/", -1)[-1]
         unpack_buffer(buf, filename=filename, format=format, extract_dir=extract_dir)
+
+    def abort(self, reason: Any = None) -> None:
+        """Abort the fetch request.
+
+        In case ``abort_controller`` is not set, a :py:exc:`ValueError` is raised.
+        """
+        if self.abort_controller is None:
+            raise ValueError("abort_controller is not set")
+
+        self.abort_controller.abort(_construct_abort_reason(reason))
 
 
 async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
@@ -301,9 +376,24 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     {'info': {'arch': 'wasm32', 'platform': 'emscripten_3_1_32',
     'version': '0.23.4', 'python': '3.11.2'}, ... # long output truncated
     """
+
+    controller = AbortController.new()
+    if "signal" in kwargs:
+        signal = abortSignalAny(to_js([kwargs["signal"], controller.signal]))
+    else:
+        signal = controller.signal
+    kwargs["signal"] = signal
     try:
         return FetchResponse(
-            url, await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries))
+            url,
+            await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
+            controller,
+            signal,
         )
+    except CancelledError as e:
+        controller.abort(
+            _construct_abort_reason("\n".join(map(str, e.args))) if e.args else None
+        )
+        raise
     except JsException as e:
-        raise OSError(e.message) from None
+        raise AbortError(e) from None

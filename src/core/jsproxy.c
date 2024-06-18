@@ -102,6 +102,7 @@ static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
+static PyObject* future_helper_mod;
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
                  "This borrowed proxy was automatically destroyed at the "
@@ -2637,7 +2638,6 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
 {
   bool success = false;
   PyObject* loop = NULL;
-  PyObject* helpers_mod = NULL;
   PyObject* helpers = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
@@ -2650,11 +2650,9 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
-  helpers_mod = PyImport_ImportModule("_pyodide._future_helper");
-  FAIL_IF_NULL(helpers_mod);
   _Py_IDENTIFIER(get_future_resolvers);
   helpers = _PyObject_CallMethodIdOneArg(
-    helpers_mod, &PyId_get_future_resolvers, result);
+    future_helper_mod, &PyId_get_future_resolvers, result);
   FAIL_IF_NULL(helpers);
   set_result = Py_XNewRef(PyTuple_GetItem(helpers, 0));
   FAIL_IF_NULL(set_result);
@@ -2671,7 +2669,6 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   success = true;
 finally:
   Py_CLEAR(loop);
-  Py_CLEAR(helpers_mod);
   Py_CLEAR(helpers);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
@@ -4428,6 +4425,8 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_NULL(Mapping);
   typing = PyImport_ImportModule("typing");
   FAIL_IF_NULL(typing);
+  future_helper_mod = PyImport_ImportModule("_pyodide._future_helper");
+  FAIL_IF_NULL(future_helper_mod);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings(_pyodide_core_docs));
 

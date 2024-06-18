@@ -196,3 +196,56 @@ def test_pyfetch_cors_error(selenium, httpserver):
             data = await pyodide.http.pyfetch('{request_url}')
         """
     )
+
+
+@run_in_pyodide
+async def test_pyfetch_manually_abort(selenium):
+    import pytest
+
+    from pyodide.http import AbortError, pyfetch
+
+    resp = await pyfetch("/")
+    resp.abort("reason")
+    with pytest.raises(AbortError, match="reason"):
+        await resp.text()
+
+
+@run_in_pyodide
+async def test_pyfetch_abort_on_cancel(selenium):
+    from asyncio import CancelledError, ensure_future
+
+    import pytest
+
+    from pyodide.http import pyfetch
+
+    future = ensure_future(pyfetch("/"))
+    future.cancel()
+    with pytest.raises(CancelledError):
+        await future
+
+
+@run_in_pyodide
+async def test_pyfetch_abort_cloned_response(selenium):
+    import pytest
+
+    from pyodide.http import AbortError, pyfetch
+
+    resp = await pyfetch("/")
+    clone = resp.clone()
+    clone.abort()
+    with pytest.raises(AbortError):
+        await clone.text()
+
+
+@run_in_pyodide
+async def test_pyfetch_custom_abort_signal(selenium):
+    import pytest
+
+    from js import AbortController
+    from pyodide.http import AbortError, pyfetch
+
+    controller = AbortController.new()
+    controller.abort()
+    f = pyfetch("/", signal=controller.signal)
+    with pytest.raises(AbortError):
+        await f
