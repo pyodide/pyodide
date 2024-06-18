@@ -1,4 +1,4 @@
-import ErrorStackParser from "error-stack-parser";
+import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
 import {
   IN_NODE,
   IN_NODE_ESM,

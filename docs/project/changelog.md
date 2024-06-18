@@ -16,6 +16,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
 
@@ -57,6 +61,10 @@ myst:
 - {{ Fix }} Fixed a bug with the JSPI that made it interact incorrectly with
   JavaScript code that iterates a `PyProxy`.
   {pr}`4919`
+
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
 
 ### Packages
 
