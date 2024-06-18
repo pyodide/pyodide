@@ -16,12 +16,20 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
 
 - {{ Fix }} Fixed a weird regression occurring in difficult to describe
   circumstances introduced by {pr}`4837`. See {issue}`4861`.
   {pr}`4861`
+
+- {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
+  manually or automatically.
+  {pr}`4846`
 
 ### Packages
 

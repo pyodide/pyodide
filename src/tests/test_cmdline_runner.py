@@ -442,7 +442,7 @@ def test_package_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
-    version = "0.24.0"  # just need some version that already exists + contains pyodide-lock.json
+    version = "0.26.0"  # just need some version that already exists + contains pyodide-lock.json
 
     mgr = CrossBuildEnvManager(path)
     mgr.install(version, skip_install_cross_build_packages=True)
@@ -452,9 +452,9 @@ def test_package_index(tmp_path):
     pip_opts = [
         "--index-url",
         "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
-        "--platform=emscripten_3_1_45_wasm32",
+        "--platform=pyodide_2024_0_wasm32",
         "--only-binary=:all:",
-        "--python-version=311",
+        "--python-version=312",
         "-t",
         str(path / "temp_lib"),
     ]

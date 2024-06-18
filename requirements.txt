@@ -12,4 +12,4 @@ pytest-asyncio
 pytest-cov
 pytest-httpserver
 pytest-benchmark
-pytest-pyodide==0.57.0
+pytest-pyodide==0.58.1
