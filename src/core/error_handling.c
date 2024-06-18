@@ -154,6 +154,15 @@ wrap_exception()
   // Calls sys.excepthook. We set the excepthook to call
   // traceback.print_exception, see `set_excepthook()` in
   // `_pyodide/__init__.py`.
+  //
+  // If the error is a SystemExit and the PyConfig.inspect flag is not set,
+  // PyErr_Print() will call exit(). We don't want this generally, so we will
+  // generally set the `inspect` flag. The exception is in the CLI runner.
+  //
+  // In the CLI runner, if we call back into JS then back into Python and the
+  // inner Python raises SystemExit, we won't actually unwind the Python frames
+  // in the outer Python. Hypothetically this could cause trouble and we should
+  // fix it, but it's probably not worth the effort.
   PyErr_Print();
   JsVal formatted_exception = restore_stderr();
 
