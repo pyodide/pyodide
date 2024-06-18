@@ -3,7 +3,6 @@
 declare var DEBUG: boolean;
 
 import { createLock } from "./lock";
-import { memoize } from "./pyodide-util";
 import { InternalPackageData } from "./load-package";
 import { LoadDynlibFS, ReadFileType } from "./types";
 
@@ -16,14 +15,12 @@ import { LoadDynlibFS, ReadFileType } from "./types";
  *
  * @param lib The path to the library to load
  * @param searchDirs The list of directories to search for the library
- * @param readFileFunc The function to read a file, if not provided, Module.FS.readFile will be used
  * @returns A filesystem-like object
  * @private
  */
 function createDynlibFS(
   lib: string,
   searchDirs?: string[],
-  readFileFunc?: ReadFileType,
 ): LoadDynlibFS {
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
 
@@ -46,11 +43,8 @@ function createDynlibFS(
     return path;
   };
 
-  let readFile: ReadFileType = (path: string) =>
+  const readFile: ReadFileType = (path: string) =>
     Module.FS.readFile(resolvePath(path));
-  if (readFileFunc !== undefined) {
-    readFile = (path: string) => readFileFunc(resolvePath(path));
-  }
 
   const fs: LoadDynlibFS = {
     findObject: (path: string, dontResolveLastLink: boolean) => {
@@ -82,14 +76,12 @@ const acquireDynlibLock = createLock();
  * @param lib The file system path to the library.
  * @param global Whether to make the symbols available globally.
  * @param searchDirs Directories to search for the library.
- * @param readFileFunc The function to read a file, if not provided, Module.FS.readFile will be used
  * @private
  */
 export async function loadDynlib(
   lib: string,
   global: boolean,
   searchDirs?: string[],
-  readFileFunc?: ReadFileType,
 ) {
   const releaseDynlibLock = await acquireDynlibLock();
 
@@ -97,7 +89,7 @@ export async function loadDynlib(
     console.debug(`Loading a dynamic library ${lib} (global: ${global})`);
   }
 
-  const fs = createDynlibFS(lib, searchDirs, readFileFunc);
+  const fs = createDynlibFS(lib, searchDirs);
   const localScope = global ? null : {};
   
   try {
@@ -162,14 +154,8 @@ export async function loadDynlibsFromPackage(
     pkg.file_name.split("-")[0]
   }.libs`;
 
-  // This prevents from reading large libraries multiple times. We may read it
-  // once in calculateGlobalLibs and again in loadDynlib.
-  // Memoized function is intentionally instanced per call to
-  // loadDynlibsFromPackage since we won't need the data again after we're done.
-  const readFileMemoized: ReadFileType = memoize(Module.FS.readFile);
-
   for (const path of dynlibPaths) {
-    await loadDynlib(path, false, [auditWheelLibDir], readFileMemoized);
+    await loadDynlib(path, false, [auditWheelLibDir]);
   }
 }
 
