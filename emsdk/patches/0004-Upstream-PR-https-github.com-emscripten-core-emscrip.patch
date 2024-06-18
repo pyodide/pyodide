@@ -1,7 +1,7 @@
 From 9352fac9a4618603fbe5ce7ad97a26a3963704bd Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Sat, 13 Apr 2024 21:41:11 +0100
-Subject: [PATCH 4/5] Upstream PR:
+Subject: [PATCH 4/6] Upstream PR:
  https://github.com/emscripten-core/emscripten/pull/21759
 
 ---
