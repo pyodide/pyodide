@@ -1,4 +1,6 @@
-import ErrorStackParser, { StackFrame } from "../js/vendor/stackframe/error-stack-parser";
+import ErrorStackParser, {
+  StackFrame,
+} from "../js/vendor/stackframe/error-stack-parser";
 import "types";
 
 declare var Tests: any;

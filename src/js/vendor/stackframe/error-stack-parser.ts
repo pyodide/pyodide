@@ -138,5 +138,5 @@ function ErrorStackParser() {
 
 const errorStackParser = new ErrorStackParser();
 
-export { StackFrame }
+export { StackFrame };
 export default errorStackParser;
