@@ -173,16 +173,9 @@ export async function loadDynlibsFromPackage(
       global: true,
     }));
   } else {
-    // Otherwise, they should only be global if they are in the DT_NEEDED list
-    // of another dynlib.
-    const globalLibs: Set<string> = calculateGlobalLibs(
-      dynlibPaths,
-      readFileMemoized,
-    );
-
     dynlibs = dynlibPaths.map((path) => ({
       path,
-      global: globalLibs.has(Module.PATH.basename(path)),
+      global: false,
     }));
     // Sort libraries so that global libraries can be loaded first.
     // TODO(ryanking13): It is not clear why global libraries should be loaded first.
