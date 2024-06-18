@@ -137,7 +137,7 @@ async function main() {
     for (const dynlib of dynlibs) {
         try {
             await py._module.API.loadDynlib(dynlib);
-        } catch(e){
+        } catch(e) {
             console.error("Failed to load lib ", dynlib);
             console.error(e);
         }
@@ -181,7 +181,7 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
-        if(e.constructor.name === "ExitStatus"){
+        if (e.constructor.name === "ExitStatus") {
             process.exit(e.status);
         }
         py._api.fatal_error(e);
