@@ -20,6 +20,9 @@ myst:
   defined in the global scope.
   {pr}`4866`
 
+- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
+  {pr}`4865`
+
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
 
