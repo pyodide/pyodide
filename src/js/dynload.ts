@@ -98,21 +98,26 @@ export async function loadDynlib(
   }
 
   const fs = createDynlibFS(lib, searchDirs, readFileFunc);
-
+  const localScope = global ? null : {};
+  
   try {
-    await Module.loadDynamicLibrary(lib, {
-      loadAsync: true,
-      nodelete: true,
-      allowUndefined: true,
-      global,
-      fs,
-    });
+    await Module.loadDynamicLibrary(
+      lib, 
+      {
+        loadAsync: true,
+        nodelete: true,
+        allowUndefined: true,
+        global,
+        fs,
+      },
+      localScope,
+    );
 
     // Emscripten saves the list of loaded libraries in LDSO.loadedLibsByName.
     // However, since emscripten dylink metadata only contains the name of the
     // library not the full path, we need to update it manually in order to
     // prevent loading same library twice.
-    if (global && Module.PATH.isAbs(lib)) {
+    if (Module.PATH.isAbs(lib)) {
       const libName: string = Module.PATH.basename(lib);
       const dso: any = Module.LDSO.loadedLibsByName[libName];
       if (!dso) {
@@ -163,61 +168,9 @@ export async function loadDynlibsFromPackage(
   // loadDynlibsFromPackage since we won't need the data again after we're done.
   const readFileMemoized: ReadFileType = memoize(Module.FS.readFile);
 
-  type Dynlib = { path: string; global: boolean };
-  let dynlibs: Dynlib[];
-
-  if (pkg.shared_library) {
-    // All dynamic libs in a shared library should be global.
-    dynlibs = dynlibPaths.map((path) => ({
-      path,
-      global: true,
-    }));
-  } else {
-    dynlibs = dynlibPaths.map((path) => ({
-      path,
-      global: false,
-    }));
-    // Sort libraries so that global libraries can be loaded first.
-    // TODO(ryanking13): It is not clear why global libraries should be loaded first.
-    // But without this, we get a fatal error when loading the libraries.
-    type T = { global: boolean };
-    dynlibs.sort(
-      (lib1: T, lib2: T) => Number(lib2.global) - Number(lib1.global),
-    );
+  for (const path of dynlibPaths) {
+    await loadDynlib(path, false, [auditWheelLibDir], readFileMemoized);
   }
-
-  for (const { path, global } of dynlibs) {
-    await loadDynlib(path, global, [auditWheelLibDir], readFileMemoized);
-  }
-}
-
-/**
- * Given a list of libraries, return a list of libraries to load globally.
- * @param libs The list of path to libraries
- * @param readFileFunc A function to read the file, if not provided, use Module.FS.readFile
- * @returns A list of libraries needed to be loaded globally
- * @private
- */
-function calculateGlobalLibs(
-  libs: string[],
-  readFileFunc?: ReadFileType,
-): Set<string> {
-  let readFile: ReadFileType = Module.FS.readFile;
-  if (readFileFunc !== undefined) {
-    readFile = readFileFunc;
-  }
-
-  const globalLibs = new Set<string>();
-
-  libs.forEach((lib: string) => {
-    const binary = readFile(lib);
-    const needed = Module.getDylinkMetadata(binary).neededDynlibs;
-    needed.forEach((lib: string) => {
-      globalLibs.add(lib);
-    });
-  });
-
-  return globalLibs;
 }
 
 API.loadDynlib = loadDynlib;

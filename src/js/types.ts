@@ -300,6 +300,8 @@ export interface Module {
       global?: boolean;
       fs: LoadDynlibFS;
     },
+    localScope?: object | null,
+    handle?: number,
   ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
