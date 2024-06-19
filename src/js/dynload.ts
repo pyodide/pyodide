@@ -6,8 +6,38 @@ import { createLock } from "./lock";
 import { InternalPackageData } from "./load-package";
 import { LoadDynlibFS, ReadFileType } from "./types";
 
-// File System-like type which can be passed to
-// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+// return child directories recursively
+function getSubDirs(dir: string): string[] {
+  const dirs = Module.FS.readdir(dir);
+  console.log(`subdirs of ${dir}: ${dirs}`)
+  const subDirs: string[] = [];
+
+  for (const d of dirs) {
+    if (d === "." || d === "..") {
+      continue
+    }
+
+    const subdir = Module.PATH.join2(dir, d);
+
+    const lookup = Module.FS.lookupPath(subdir);
+    if (lookup.node === null) {
+      console.log(`Failed to lookup ${subdir}`)
+      continue;
+    }
+    
+    const mode = lookup.node.mode
+    if (!Module.FS.isDir(mode)) {
+      console.log(`${subdir} is not a directory`)
+      continue;
+    }
+    
+    console.log(`subdir: ${subdir}`)
+    subDirs.push(subdir);
+    subDirs.push(...getSubDirs(subdir));
+  }
+
+  return subDirs;
+}
 
 /**
  * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule
@@ -34,12 +64,37 @@ function createDynlibFS(
       }
     }
 
+    if (Module.PATH.isAbs(path)) {
+      return path;
+    }
+
+    // Step 1) Try to find the library in the search directories
     for (const dir of _searchDirs) {
       const fullPath = Module.PATH.join2(dir, path);
+      console.log(`fullPath: ${fullPath}`)
+      if (Module.FS.findObject(fullPath) !== null) {
+        console.log(`Found a library: ${fullPath}`)
+        return fullPath;
+      } else {
+        console.log(`Failed to find a library: ${fullPath}`)
+      }
+    }
+
+    console.log(`Failed to find a library: ${path}`)
+    console.log(`Search dirs: ${_searchDirs}`)
+    console.log(`dirname: ${dirname}`)
+    console.log(`lib: ${lib}`)
+
+    // Step 2) try to find the library by searching child directories of the library directory
+    const childDirs = getSubDirs(dirname);
+    console.log(`childDirs: ${childDirs}`)
+    for (const childDir of childDirs) {
+      const fullPath = Module.PATH.join2(childDir, path);
       if (Module.FS.findObject(fullPath) !== null) {
         return fullPath;
       }
     }
+
     return path;
   };
 
