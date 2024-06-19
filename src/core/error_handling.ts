@@ -1,4 +1,6 @@
-import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
+import ErrorStackParser, {
+  StackFrame,
+} from "../js/vendor/stackframe/error-stack-parser";
 import "types";
 
 declare var Tests: any;
@@ -207,7 +209,7 @@ API.fatal_loading_error = function (...args: string[]) {
   throw new FatalPyodideError(message);
 };
 
-function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
+function isPyodideFrame(frame: StackFrame): boolean {
   if (!frame) {
     return false;
   }
@@ -233,7 +235,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   return true;
 }
 
-function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
+function isErrorStart(frame: StackFrame): boolean {
   return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
