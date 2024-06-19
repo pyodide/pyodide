@@ -1,6 +1,7 @@
 package:
   name: biopython
   version: "1.83"
+  _disabled: true  # setuptools issue I guess?
   top-level:
     - Bio
     - BioSQL
