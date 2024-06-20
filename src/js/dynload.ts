@@ -8,7 +8,7 @@ import { LoadDynlibFS, ReadFileType } from "./types";
 
 /**
  * Recursively get all subdirectories of a directory
- * 
+ *
  * @param dir The absolute path to the directory
  * @returns A list of absolute paths to the subdirectories
  * @private
@@ -19,7 +19,7 @@ function getSubDirs(dir: string): string[] {
 
   for (const d of dirs) {
     if (d === "." || d === "..") {
-      continue
+      continue;
     }
 
     const subdir = Module.PATH.join2(dir, d);
@@ -27,12 +27,12 @@ function getSubDirs(dir: string): string[] {
     if (lookup.node === null) {
       continue;
     }
-    
-    const mode = lookup.node.mode
+
+    const mode = lookup.node.mode;
     if (!Module.FS.isDir(mode)) {
       continue;
     }
-    
+
     subDirs.push(subdir);
     subDirs.push(...getSubDirs(subdir));
   }
@@ -49,10 +49,7 @@ function getSubDirs(dir: string): string[] {
  * @returns A filesystem-like object
  * @private
  */
-function createDynlibFS(
-  lib: string,
-  searchDirs?: string[],
-): LoadDynlibFS {
+function createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
   const dirname = lib.substring(0, lib.lastIndexOf("/"));
 
   let _searchDirs = searchDirs || [];
@@ -140,10 +137,10 @@ export async function loadDynlib(
 
   const fs = createDynlibFS(lib, searchDirs);
   const localScope = global ? null : {};
-  
+
   try {
     await Module.loadDynamicLibrary(
-      lib, 
+      lib,
       {
         loadAsync: true,
         nodelete: true,
