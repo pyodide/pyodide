@@ -36,7 +36,7 @@ build:
       --disable-examples \
       --disable-utilities \
       --disable-testsets \
-      --disabled-shared \
+      --disable-shared \
       CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
       CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
       LDFLAGS="-fPIC -s USE_ZLIB=1"
