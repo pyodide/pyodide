@@ -12,7 +12,7 @@ source:
     - patches/0001-wasm_unify_pygame_web_pyodide_static_Freetype_init.patch
 build:
   script: |
-    embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype --pic
+    embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype libhtml5 --pic
     export SDL_CONFIG=$(em-config CACHE)/sysroot/bin/sdl2-config
   cflags: |
     -sRELOCATABLE=1
@@ -80,6 +80,7 @@ build:
       -lmodplug \
       -lmpg123 \
       -logg \
+      -lhtml5 \
       ${STATIC_OBJS} \
       ${SHARED_LIBS} \
       -o pygame_static.so
