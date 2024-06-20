@@ -20,8 +20,24 @@ myst:
   defined in the global scope.
   {pr}`4866`
 
+- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
+  {pr}`4865`
+
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
+
+- {{ Fix }} Loading of dynamic libraries now works slightly better in the cli
+  runner. Resolved {issue}`3865`.
+  {pr}`4871`
+
+- {{ Fix }} Restored the pre-0.26.0 behavior of calling `exit()` or raising
+  `SystemExit`. In 0.26.0 and 0.26.1, `exit()` shuts down the Python
+  interpreter. In all other versions of Pyodide it does not.
+  {pr}`4867`
+
+- {{ Fix }} Fixed a weird regression occurring in difficult to describe
+  circumstances introduced by {pr}`4837`. See {issue}`4861`.
+  {pr}`4861`
 
 - {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
   manually or automatically.

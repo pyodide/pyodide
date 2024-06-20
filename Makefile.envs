@@ -160,6 +160,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
+	-lhtml5.js \
 	-lhtml5_webgl.js \
 	-lsdl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
