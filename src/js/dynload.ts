@@ -6,10 +6,15 @@ import { createLock } from "./lock";
 import { InternalPackageData } from "./load-package";
 import { LoadDynlibFS, ReadFileType } from "./types";
 
-// return child directories recursively
+/**
+ * Recursively get all subdirectories of a directory
+ * 
+ * @param dir The absolute path to the directory
+ * @returns A list of absolute paths to the subdirectories
+ * @private
+ */
 function getSubDirs(dir: string): string[] {
   const dirs = Module.FS.readdir(dir);
-  console.log(`subdirs of ${dir}: ${dirs}`)
   const subDirs: string[] = [];
 
   for (const d of dirs) {
@@ -18,20 +23,16 @@ function getSubDirs(dir: string): string[] {
     }
 
     const subdir = Module.PATH.join2(dir, d);
-
     const lookup = Module.FS.lookupPath(subdir);
     if (lookup.node === null) {
-      console.log(`Failed to lookup ${subdir}`)
       continue;
     }
     
     const mode = lookup.node.mode
     if (!Module.FS.isDir(mode)) {
-      console.log(`${subdir} is not a directory`)
       continue;
     }
     
-    console.log(`subdir: ${subdir}`)
     subDirs.push(subdir);
     subDirs.push(...getSubDirs(subdir));
   }
@@ -64,6 +65,7 @@ function createDynlibFS(
       }
     }
 
+    // If the path is absolute, we don't need to search for it.
     if (Module.PATH.isAbs(path)) {
       return path;
     }
@@ -71,23 +73,15 @@ function createDynlibFS(
     // Step 1) Try to find the library in the search directories
     for (const dir of _searchDirs) {
       const fullPath = Module.PATH.join2(dir, path);
-      console.log(`fullPath: ${fullPath}`)
+
       if (Module.FS.findObject(fullPath) !== null) {
-        console.log(`Found a library: ${fullPath}`)
         return fullPath;
-      } else {
-        console.log(`Failed to find a library: ${fullPath}`)
       }
     }
 
-    console.log(`Failed to find a library: ${path}`)
-    console.log(`Search dirs: ${_searchDirs}`)
-    console.log(`dirname: ${dirname}`)
-    console.log(`lib: ${lib}`)
-
     // Step 2) try to find the library by searching child directories of the library directory
+    //         (This should not be necessary in most cases, but some libraries have dependencies in the child directories)
     const childDirs = getSubDirs(dirname);
-    console.log(`childDirs: ${childDirs}`)
     for (const childDir of childDirs) {
       const fullPath = Module.PATH.join2(childDir, path);
       if (Module.FS.findObject(fullPath) !== null) {
