@@ -10,34 +10,58 @@ project.
 ## Vite
 
 ```{note}
-The following instructions have been tested with Pyodide 0.25.0 and Vite 5.1.4.
+The following instructions have been tested with Pyodide 0.26.0 and Vite 5.2.13.
 ```
 
-If you have installed Pyodide via npm, you can use it in Vite as follows. First,
-the Pyodide npm package currently uses [`node-fetch`][] to load some files,
-which does not work in a browser; to resolve this, install the
-[`isomorphic-fetch`][] package so that Pyodide does not try to load `node-fetch`
-in the browser:
+First, install the Pyodide npm package:
 
 ```
-$ npm install --save isomorphic-fetch@^3
+$ npm install pyodide
 ```
 
-Then, exclude Pyodide from [Vite's dependency pre-bundling][optimizedeps] by
-setting `optimizeDeps.exclude` in your `vite.config.js` file:
+Then, in your `vite.config.js` file, exclude Pyodide from [Vite's dependency
+pre-bundling][optimizedeps] by setting `optimizeDeps.exclude` and ensure that
+all Pyodide files will be available in `dist/assets` for production builds by
+using a Vite plugin:
 
 ```js
 import { defineConfig } from "vite";
+import { copyFile, mkdir } from "fs/promises";
+import { join } from "path";
 
-export default defineConfig({ optimizeDeps: { exclude: ["pyodide"] } });
+export default defineConfig({
+  optimizeDeps: { exclude: ["pyodide"] },
+  plugins: [
+    {
+      name: "vite-plugin-pyodide",
+      generateBundle: async () => {
+        const assetsDir = "dist/assets";
+        await mkdir(assetsDir, { recursive: true });
+        const files = [
+          "pyodide-lock.json",
+          "pyodide.asm.js",
+          "pyodide.asm.wasm",
+          "python_stdlib.zip",
+        ];
+        for (const file of files) {
+          await copyFile(
+            join("node_modules/pyodide", file),
+            join(assetsDir, file),
+          );
+        }
+      },
+    },
+  ],
+});
 ```
 
 You can test your setup with this `index.html` file:
 
 ```html
 <!doctype html>
-<html>
+<html lang="en">
   <head>
+    <title>Vite + Pyodide</title>
     <script type="module" src="/src/main.js"></script>
   </head>
 </html>
@@ -58,29 +82,18 @@ hello_python().then((result) => {
 });
 ```
 
-This should be sufficient for Vite dev mode:
+Make sure this works both in Vite's dev mode:
 
 ```
-$ npx vite
+npx vite
 ```
 
-For a production build, you must also manually make sure that all Pyodide files
-will be available in `dist/assets`, by first copying them to `public/assets`
-before building:
+And as a production build:
 
 ```
-$ mkdir -p public/assets/
-$ cp node_modules/pyodide/* public/assets/
-$ npx vite build
+npx vite build
+npx vite preview
 ```
 
-Then you can view this production build to verify that it works:
-
-```
-$ npx vite preview
-```
-
-[`isomorphic-fetch`]: https://www.npmjs.com/package/isomorphic-fetch
-[`node-fetch`]: https://www.npmjs.com/package/node-fetch
 [optimizedeps]: https://vitejs.dev/guide/dep-pre-bundling.html
 [pyodide webpack plugin]: https://github.com/pyodide/pyodide-webpack-plugin

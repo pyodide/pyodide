@@ -4,12 +4,14 @@ package:
   top-level:
     - Bio
     - BioSQL
-requirements:
-  run:
-    - numpy
 source:
   sha256: 78e6bfb78de63034037afd35fe77cb6e0a9e5b62706becf78a7d922b16ed83f7
   url: https://files.pythonhosted.org/packages/cc/d4/3d8848191a7a37187704c382e6dfda4d6a47d05a14cd64f004c55a3cd5a1/biopython-1.83.tar.gz
+  patches:
+    - "patches/0001-Remove-error-message-if-wheel-is-not-installed.patch"
+requirements:
+  run:
+    - numpy
 about:
   home: https://biopython.org/
   PyPI: https://pypi.org/project/biopython

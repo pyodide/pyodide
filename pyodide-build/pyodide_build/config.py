@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from types import MappingProxyType
 
-from .common import _environment_substitute_str, exit_with_stdio
+from .common import _environment_substitute_str, exit_with_stdio, search_pyproject_toml
 from .logger import logger
 
 
@@ -17,7 +17,7 @@ class ConfigManager:
 
         1. Command line arguments (TODO)
         2. Environment variables
-        3. Configuration file (TODO)
+        3. Configuration file
         4. Makefile.envs
         5. Default values
     """
@@ -27,7 +27,7 @@ class ConfigManager:
         self._config = {
             **self._load_default_config(),
             **self._load_makefile_envs(),
-            **self._load_config_file(),
+            **self._load_config_file(Path.cwd(), os.environ),
             **self._load_config_from_env(os.environ),
         }
 
@@ -89,9 +89,31 @@ class ConfigManager:
             BUILD_VAR_TO_KEY[key]: env[key] for key in env if key in BUILD_VAR_TO_KEY
         }
 
-    def _load_config_file(self) -> Mapping[str, str]:
-        # TODO: Implement this
-        return {}
+    def _load_config_file(
+        self, curdir: Path, env: Mapping[str, str]
+    ) -> Mapping[str, str]:
+        pyproject_path, configs = search_pyproject_toml(curdir)
+
+        if pyproject_path is None or configs is None:
+            return {}
+
+        if (
+            "tool" in configs
+            and "pyodide" in configs["tool"]
+            and "build" in configs["tool"]["pyodide"]
+        ):
+            build_config = {}
+            for key, v in configs["tool"]["pyodide"]["build"].items():
+                if key not in OVERRIDABLE_BUILD_KEYS:
+                    logger.warning(
+                        f"WARNING: The provided build key {key} is either invalid or not overridable, hence ignored."
+                    )
+                    continue
+                build_config[key] = _environment_substitute_str(v, env)
+
+            return build_config
+        else:
+            return {}
 
     @property
     def config(self) -> Mapping[str, str]:
@@ -131,9 +153,9 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
     "cpythoninstall": "CPYTHONINSTALL",
     "rustflags": "RUSTFLAGS",
     "rust_toolchain": "RUST_TOOLCHAIN",
-    "side_module_cflags": "SIDE_MODULE_CFLAGS",
-    "side_module_cxxflags": "SIDE_MODULE_CXXFLAGS",
-    "side_module_ldflags": "SIDE_MODULE_LDFLAGS",
+    "cflags": "SIDE_MODULE_CFLAGS",
+    "cxxflags": "SIDE_MODULE_CXXFLAGS",
+    "ldflags": "SIDE_MODULE_LDFLAGS",
     "stdlib_module_cflags": "STDLIB_MODULE_CFLAGS",
     "sysconfigdata_dir": "SYSCONFIGDATA_DIR",
     "sysconfig_name": "SYSCONFIG_NAME",
@@ -150,6 +172,16 @@ BUILD_KEY_TO_VAR: dict[str, str] = {
 }
 
 BUILD_VAR_TO_KEY = {v: k for k, v in BUILD_KEY_TO_VAR.items()}
+
+# Configuration keys that can be overridden by the user.
+# TODO: distinguish between variables that are overridable by the user and those that are not.
+OVERRIDABLE_BUILD_KEYS = {
+    "cflags",
+    "cxxflags",
+    "ldflags",
+    "rust_toolchain",
+    "meson_cross_file",
+}
 
 # Default configuration values.
 TOOLS_DIR = Path(__file__).parent / "tools"
@@ -171,9 +203,9 @@ DEFAULT_CONFIG: dict[str, str] = {
 # TODO: Remove dependency on Makefile.envs
 DEFAULT_CONFIG_COMPUTED: dict[str, str] = {
     # Compiler flags
-    "side_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE)",
-    "side_module_cxxflags": "$(CXXFLAGS_BASE)",
-    "side_module_ldflags": "$(LDFLAGS_BASE) -s SIDE_MODULE=1",
+    "cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE)",
+    "cxxflags": "$(CXXFLAGS_BASE)",
+    "ldflags": "$(LDFLAGS_BASE) -s SIDE_MODULE=1",
     # Rust-specific configuration
     "pyo3_cross_lib_dir": "$(CPYTHONINSTALL)/lib",
     "pyo3_cross_include_dir": "$(PYTHONINCLUDE)",

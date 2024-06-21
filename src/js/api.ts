@@ -10,6 +10,7 @@ import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 import "./literal-map.js";
+import "./abortSignalAny";
 import {
   makeGlobalsProxy,
   SnapshotConfig,

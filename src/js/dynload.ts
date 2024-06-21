@@ -157,41 +157,41 @@ export async function loadDynlibsFromPackage(
     pkg.file_name.split("-")[0]
   }.libs`;
 
-  // This prevents from reading large libraries multiple times.
+  // This prevents from reading large libraries multiple times. We may read it
+  // once in calculateGlobalLibs and again in loadDynlib.
+  // Memoized function is intentionally instanced per call to
+  // loadDynlibsFromPackage since we won't need the data again after we're done.
   const readFileMemoized: ReadFileType = memoize(Module.FS.readFile);
-
-  const forceGlobal: boolean = !!pkg.shared_library;
 
   type Dynlib = { path: string; global: boolean };
   let dynlibs: Dynlib[];
 
-  if (forceGlobal) {
-    dynlibs = dynlibPaths.map((path) => {
-      return {
-        path: path,
-        global: true,
-      };
-    });
+  if (pkg.shared_library) {
+    // All dynamic libs in a shared library should be global.
+    dynlibs = dynlibPaths.map((path) => ({
+      path,
+      global: true,
+    }));
   } else {
+    // Otherwise, they should only be global if they are in the DT_NEEDED list
+    // of another dynlib.
     const globalLibs: Set<string> = calculateGlobalLibs(
       dynlibPaths,
       readFileMemoized,
     );
 
-    dynlibs = dynlibPaths.map((path) => {
-      const global = globalLibs.has(Module.PATH.basename(path));
-      return {
-        path: path,
-        global: global || !!pkg.shared_library,
-      };
-    });
+    dynlibs = dynlibPaths.map((path) => ({
+      path,
+      global: globalLibs.has(Module.PATH.basename(path)),
+    }));
+    // Sort libraries so that global libraries can be loaded first.
+    // TODO(ryanking13): It is not clear why global libraries should be loaded first.
+    // But without this, we get a fatal error when loading the libraries.
+    type T = { global: boolean };
+    dynlibs.sort(
+      (lib1: T, lib2: T) => Number(lib2.global) - Number(lib1.global),
+    );
   }
-
-  // Sort libraries so that global libraries can be loaded first.
-  // TODO(ryanking13): It is not clear why global libraries should be loaded first.
-  //    But without this, we get a fatal error when loading the libraries.
-  type T = { global: boolean };
-  dynlibs.sort((lib1: T, lib2: T) => Number(lib2.global) - Number(lib1.global));
 
   for (const { path, global } of dynlibs) {
     await loadDynlib(path, global, [auditWheelLibDir], readFileMemoized);

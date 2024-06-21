@@ -2536,6 +2536,52 @@ def test_as_json_adaptor_ownkeys(selenium):
     assert set(f(o)) == set(o.keys())
 
 
+@run_in_pyodide
+def test_as_json_adaptor_get(selenium):
+    from pyodide.code import run_js
+
+    o = {0: "a", "1": "b", "3c": 4}
+
+    assert run_js("(o) => o.asJsJson()['']")(o) is None
+
+    assert run_js("(o) => o.asJsJson()[0]")(o) == "a"
+    assert run_js("(o) => o.asJsJson()['0']")(o) == "a"
+    assert run_js("(o) => o.asJsJson().get(0)")(o) == "a"
+    assert run_js("(o) => o.asJsJson().get('0')")(o) is None
+
+    assert run_js("(o) => o.asJsJson()[1]")(o) == "b"
+    assert run_js("(o) => o.asJsJson()['1']")(o) == "b"
+    assert run_js("(o) => o.asJsJson().get(1)")(o) is None
+    assert run_js("(o) => o.asJsJson().get('1')")(o) == "b"
+
+    assert run_js("(o) => o.asJsJson()['3c']")(o) == 4
+
+
+@run_in_pyodide
+def test_as_json_adaptor_set(selenium):
+    from pyodide.code import run_js
+
+    o = {}  # type:ignore[var-annotated]
+
+    run_js(
+        """
+        (o) => {
+            x = o.asJsJson();
+            x.a = 1;
+            x[2] = 3;
+            x["4"] = 5;
+            x.b5 = "c";
+            x[""] = 6;
+            assert(() => (typeof x[0] == "undefined"));
+        }
+        """
+    )(o)
+
+    assert o == {"a": 1, 2: 3, 4: 5, "b5": "c", "": 6}
+    assert "2" not in o
+    assert "4" not in o
+
+
 @pytest.mark.parametrize(
     "o",
     [

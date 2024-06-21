@@ -16,10 +16,80 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
+- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
+  {pr}`4865`
+
+- {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
+  {pr}`4853`
+
+- {{ Fix }} Loading of dynamic libraries now works slightly better in the cli
+  runner. Resolved {issue}`3865`.
+  {pr}`4871`
+
+- {{ Fix }} Restored the pre-0.26.0 behavior of calling `exit()` or raising
+  `SystemExit`. In 0.26.0 and 0.26.1, `exit()` shuts down the Python
+  interpreter. In all other versions of Pyodide it does not.
+  {pr}`4867`
+
+- {{ Fix }} Fixed a weird regression occurring in difficult to describe
+  circumstances introduced by {pr}`4837`. See {issue}`4861`.
+  {pr}`4861`
+
+- {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
+  manually or automatically.
+  {pr}`4846`
+
+### Packages
+
+- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- Upgraded `libcst` to 1.4.0 {pr}`4856`
+
+## Version 0.26.1
+
+_June 7, 2024_
+
+### Build system
+
+- {{ Fix }} Fix `pyodide config` command printing extra output.
+  {pr}`4814`
+
+- {{ Enhancement }} Added implementation to read build settings from `pyproject.toml`.
+  {pr}`4831`
+
+- {{ Fix }} In the Pyodide virtual environment, pip sees `platform.system()` as
+  "Emscripten" and not as "emscripten".
+  {pr}`4812`
+
+- {{ Fix }} Resolution of JavaScript symbols in dynamic libraries doesn't fail
+  anymore in the command line runner.
+  {pr}`4836`
+
+- {{ Fix }} Pyodide virtual environments now work correctly in Fedora and other
+  platforms with platlibdir not equal to "lib".
+  {pr}`4844`
+
+### Runtime / FFI
+
 - {{ Enhancement }} Added the `enableRunUntilComplete` option to `loadPyodide`
   which makes `run_until_complete` block using stack switching, or crash if
   stack switching is disabled.
   {pr}`4817`
+
+- {{ Fix }} Resolved an issue where string keys in `PyProxyJsonAdaptor` were
+  unexpectedly cast to numbers.
+  {pr}`4825`
+
+- {{ Fix }} When a `Future` connected to a `Promise` is cancelled, don't raise
+  `InvalidStateError`.
+  {pr}`4837`
+
+### Packages
+
+- New Packages: `pytest-asyncio` {pr}`4819`
 
 ## Version 0.26.0
 
