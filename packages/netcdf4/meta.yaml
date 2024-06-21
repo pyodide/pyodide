@@ -25,6 +25,10 @@ build:
     export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
     export HDF5_DIR=${WASM_LIBRARY_DIR}
     echo ${HDF5_DIR}
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+    -lhdf5
+    -lhdf5_hl
 about:
   home: https://github.com/Unidata/netcdf4-python
   PyPI: https://pypi.org/project/netcdf4
