@@ -9,17 +9,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  get_python_version:
-    runs-on: ubuntu-latest
-    outputs:
-      PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Read the Python version from Makefile.envs
-        id: get_python_version
-        run: |
-          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-
   build-core:
     strategy:
       fail-fast: false
