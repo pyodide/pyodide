@@ -109,7 +109,7 @@ def fix_f2c_input(f2c_input_path: str) -> None:
                 new_lines[idx + 1] = new_lines[idx + 1].replace("*", " ")
             break
     if is_recursive:
-        new_lines.append("C     .. xxISRECURSIVExx ..")
+        new_lines.insert(0, "C     .. xxISRECURSIVExx ..\n")
 
     with open(f2c_input_path, "w") as f:
         f.writelines(new_lines)
