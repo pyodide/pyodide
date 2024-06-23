@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.12.0
+  version: 1.13.0
   tag:
     - min-scipy-stack
   top-level:
@@ -17,18 +17,19 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/30/85/cdbf2c3c460fe5aae812917866392068a88d02f07de0fe31ce738734c477/scipy-1.12.0.tar.gz
-  sha256: 4bf5abab8a36d20193c698b0f1fc282c1d083c94723902c447e5d2f1780936a3
+  url: https://files.pythonhosted.org/packages/fb/a3/328965862f41ba67d27ddd26205962007ec87d99eec6d364a29bf00ac093/scipy-1.13.0.tar.gz
+  sha256: 58569af537ea29d3f78e5abd18398459f195546bb3be23d16677fb26616cc11e
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-int-to-string.patch
-    - patches/0003-fix-fotran-files-minpack.patch
+    - patches/0003-fix-fortran-files-minpack.patch
     - patches/0004-gemm_-no-const.patch
     - patches/0005-make-int-return-values.patch
-    - patches/0007-Remove-test-modules-that-fails-to-build.patch
-    - patches/0008-Fix-fitpack.patch
-    - patches/0009-Fix-gees-calls.patch
+    - patches/0006-Remove-test-modules-that-fails-to-build.patch
+    - patches/0007-Fix-fitpack.patch
+    - patches/0008-Fix-gees-calls.patch
+    - patches/0009-Remove-fpchec-inline-if-else-constructs.patch
 
 build:
   cflags: |
@@ -68,6 +69,7 @@ build:
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+    sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
 
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
