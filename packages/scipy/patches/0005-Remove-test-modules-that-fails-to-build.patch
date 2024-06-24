@@ -1,7 +1,7 @@
-From e09752b52f2b70b326d45d36fed0f23b5f0fade2 Mon Sep 17 00:00:00 2001
+From e21f33695da3275ec81b5f94685f0e4ac92c9ad5 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Mon, 30 Oct 2023 14:35:04 +0000
-Subject: [PATCH 7/9] Remove test modules that fails to build
+Subject: [PATCH 5/7] Remove test modules that fails to build
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
@@ -67,5 +67,5 @@ index f1aa1d517..1eeae1f7c 100644
  py3.install_sources([
      '__init__.py',
 -- 
-2.25.1
+2.34.1
 

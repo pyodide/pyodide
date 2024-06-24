@@ -103,6 +103,19 @@ def test_logm(selenium_standalone):
     logm(A)
 
 
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_dblquad(selenium):
+    import scipy.integrate
+
+    unit_square_area = scipy.integrate.dblquad(
+        lambda y, x: 1, 0, 1, lambda x: 0, lambda x: 1
+    )
+    assert (
+        abs(unit_square_area[0] - 1) < unit_square_area[1]
+    ), f"Unit square area calculated using scipy.integrate.dblquad of {unit_square_area[0]} (+- {unit_square_area[0]}) is too far from 1.0"
+
+
 import shutil
 import subprocess
 from contextlib import contextmanager

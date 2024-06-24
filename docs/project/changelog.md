@@ -32,6 +32,9 @@ myst:
   circumstances introduced by {pr}`4837`. See {issue}`4861`.
   {pr}`4861`
 
+- {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
+  {pr}`4822`
+
 ## Version 0.26.1
 
 _June 7, 2024_
