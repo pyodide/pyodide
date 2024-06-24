@@ -58,7 +58,6 @@ def fix_f2c_input(f2c_input_path: str) -> None:
         lines = f.readlines()
     new_lines = []
     lines = char1_args_to_int(lines)
-
     for line in lines:
         line = fix_string_args(line)
 
@@ -90,6 +89,27 @@ def fix_f2c_input(f2c_input_path: str) -> None:
             line = line.replace("rho(d*(d-1)/2)", "rho(123002)")
 
         new_lines.append(line)
+
+    # We assume one function per file, since this seems quite consistently true.
+    # Figure out if it's supposed to be recursive. f2c can't handle the
+    # recursive keyword so we need to remove it and add a comment so we can tell
+    # it was supposed to be recursive. In fix_f2c_output, we'll remove the
+    # static keywords from all the variables.
+    is_recursive = False
+    for idx, line in enumerate(new_lines):
+        if "recursive" in line:
+            is_recursive = True
+            new_lines[idx] = new_lines[idx].replace("recursive", "")
+            if line.strip() == "recursive":
+                # If whole line was recursive, then the next line starts with an
+                # asterisk to indicate line continuation. Fortran is very
+                # persnickity so we have to remove the line continuation. Make
+                # sure to replace the * with a space because the number of
+                # pre-code characters is significant...
+                new_lines[idx + 1] = new_lines[idx + 1].replace("*", " ")
+            break
+    if is_recursive:
+        new_lines.insert(0, "C     .. xxISRECURSIVExx ..\n")
 
     with open(f2c_input_path, "w") as f:
         f.writelines(new_lines)
@@ -194,9 +214,12 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     90 and Fortran 95.
     """
     f2c_output = Path(f2c_output_path)
-
     with open(f2c_output) as f:
         lines = f.readlines()
+
+    is_recursive = any("xxISRECURSIVExx" in line for line in lines)
+
+    lines = list(regroup_lines(lines))
     if "id_dist" in f2c_output_path:
         # Fix implicit casts in id_dist.
         lines = fix_inconsistent_decls(lines)
@@ -270,15 +293,44 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     if "eupd.c" in str(f2c_output):
         # put signature on a single line to make replacement more
         # straightforward
-        regrouped_lines = regroup_lines(lines)
         lines = [
-            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line)
-            for line in regrouped_lines
+            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line) for line in lines
         ]
 
     # Fix signature of c_abs to match the OpenBLAS one
     if "REVCOM.c" in str(f2c_output):
         lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
+
+    # Non recursive functions declare all their locals as static, ones marked
+    # "recursive" need them to be proper local variables. For recursive
+    # functions we'll replace them.
+    def fix_static(line: str) -> str:
+        static_prefix = "    static"
+        if not line.startswith(static_prefix):
+            return line
+        line = line.removeprefix(static_prefix).strip()
+        # If line contains a { or " there's already an initializer and we'll get
+        # confused. When there's an initializer there's also only one variable
+        # so we don't need to do anything.
+        if "{" in line or '"' in line:
+            return line + "\n"
+        # split off type
+        type, rest = line.split(" ", 1)
+        # Since there is no { or " each comma separates a variable name
+        names = rest[:-1].split(",")
+        init_names = []
+        for name in names:
+            if "=" in name:
+                # There's already an initializer
+                init_names.append(name)
+            else:
+                # = {0} initializes all types to all 0s.
+                init_names.append(name + " = {0}")
+        joined_names = ",".join(init_names)
+        return f"    {type} {joined_names};\n"
+
+    if is_recursive:
+        lines = list(map(fix_static, lines))
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
@@ -333,15 +385,18 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
     ...        static doublereal psum[52];
     ...        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *,
     ...            doublereal *, doublereal *, integer *);
-    ... '''))))
+    ... '''))).strip())
     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len){
        static doublereal psum[52];
        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);
-
     """
     line_iter = iter(lines)
     for line in line_iter:
-        if "/* Subroutine */" not in line:
+        if "/* Subroutine */" not in line and "static" not in line:
+            yield line
+            continue
+
+        if '"' in line:
             yield line
             continue
 
@@ -360,7 +415,7 @@ def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
         if is_definition:
             yield joined_line
         else:
-            yield from (x + ";" for x in joined_line.split(";")[:-1])
+            yield from (x + ";\n" for x in joined_line.split(";")[:-1])
 
 
 def fix_inconsistent_decls(lines: list[str]) -> list[str]:
@@ -410,7 +465,6 @@ def fix_inconsistent_decls(lines: list[str]) -> list[str]:
     }
     """
     func_types = {}
-    lines = list(regroup_lines(lines))
     for line in lines:
         if not line.startswith("/* Subroutine */"):
             continue
