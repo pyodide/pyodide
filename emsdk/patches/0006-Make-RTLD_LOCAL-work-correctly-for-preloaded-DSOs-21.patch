@@ -5,6 +5,9 @@ Date: Wed, 12 Jun 2024 20:10:35 +0200
 Subject: [PATCH 6/6] Make RTLD_LOCAL work correctly for preloaded DSOs
  (#21985)
 
+Copied from: https://github.com/emscripten-core/emscripten/pull/21985
+This patch can be removed when updating Emscripten version to >= 3.1.62
+
 Follow-up to commit c9a5e63c, for the FS.createPreloadedFile()
 case.
 
