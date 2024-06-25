@@ -23,12 +23,11 @@ source:
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-int-to-string.patch
-    - patches/0003-fix-fotran-files-minpack.patch
-    - patches/0004-gemm_-no-const.patch
-    - patches/0005-make-int-return-values.patch
-    - patches/0007-Remove-test-modules-that-fails-to-build.patch
-    - patches/0008-Fix-fitpack.patch
-    - patches/0009-Fix-gees-calls.patch
+    - patches/0003-gemm_-no-const.patch
+    - patches/0004-make-int-return-values.patch
+    - patches/0005-Remove-test-modules-that-fails-to-build.patch
+    - patches/0006-Fix-fitpack.patch
+    - patches/0007-Fix-gees-calls.patch
 
 build:
   cflags: |
@@ -54,7 +53,6 @@ build:
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
-    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
     sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h
 
     # Change many functions that return void into functions that return int

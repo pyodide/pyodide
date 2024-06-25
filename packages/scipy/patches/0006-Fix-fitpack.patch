@@ -1,7 +1,7 @@
-From 58f1d3c151b9941e3b5825106d35dc0535b7db15 Mon Sep 17 00:00:00 2001
+From c784d3a1ee38da88943364de4ea847a3b9cd155f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 30 Aug 2022 11:51:53 -0700
-Subject: [PATCH 8/9] Fix fitpack
+Subject: [PATCH 6/7] Fix fitpack
 
 ---
  scipy/interpolate/fitpack/dblint.f | 9 ++++-----
@@ -11,13 +11,13 @@ Subject: [PATCH 8/9] Fix fitpack
  4 files changed, 11 insertions(+), 15 deletions(-)
 
 diff --git a/scipy/interpolate/fitpack/dblint.f b/scipy/interpolate/fitpack/dblint.f
-index 8ae6b175f..b03858f0f 100644
+index 8ae6b175f..51ec84744 100644
 --- a/scipy/interpolate/fitpack/dblint.f
 +++ b/scipy/interpolate/fitpack/dblint.f
 @@ -1,7 +1,6 @@
 -      recursive function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,
 -     *    ye,wrk) result(dblint_res)
-+      real*8 function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,
++      recursive real*8 function dblint(tx,nx,ty,ny,c,kx,ky,xb,xe,yb,
 +     *    ye,wrk)
        implicit none
 -      real*8 :: dblint_res
@@ -43,12 +43,12 @@ index 8ae6b175f..b03858f0f 100644
   200  continue
        return
 diff --git a/scipy/interpolate/fitpack/evapol.f b/scipy/interpolate/fitpack/evapol.f
-index f02569a40..7e976002a 100644
+index f02569a40..1e4d65724 100644
 --- a/scipy/interpolate/fitpack/evapol.f
 +++ b/scipy/interpolate/fitpack/evapol.f
 @@ -1,6 +1,5 @@
 -      recursive function evapol(tu,nu,tv,nv,c,rad,x,y) result(e_res)
-+      real*8 function evapol(tu,nu,tv,nv,c,rad,x,y)
++      recursive real*8 function evapol(tu,nu,tv,nv,c,rad,x,y)
        implicit none
 -      real*8 :: e_res
  c  function program evacir evaluates the function f(x,y) = s(u,v),
@@ -108,5 +108,5 @@ index 02b00da6a..6024a0476 100644
        return
        end
 -- 
-2.25.1
+2.34.1
 

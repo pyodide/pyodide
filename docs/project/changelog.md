@@ -43,6 +43,9 @@ myst:
   manually or automatically.
   {pr}`4846`
 
+- {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
+  {pr}`4822`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
