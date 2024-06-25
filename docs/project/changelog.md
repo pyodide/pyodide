@@ -46,6 +46,10 @@ myst:
 - {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
   {pr}`4822`
 
+- {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
+  depend on shared libraries link to the shared libraries explicitly.
+  {pr}`4876`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
