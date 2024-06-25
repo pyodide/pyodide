@@ -13,16 +13,15 @@ import { LoadDynlibFS, ReadFileType } from "./types";
  * @returns A list of absolute paths to the subdirectories
  * @private
  */
-function getSubDirs(dir: string): string[] {
+function* getSubDirs(dir: string): Generator<string> {
   const dirs = Module.FS.readdir(dir);
-  const subDirs: string[] = [];
 
   for (const d of dirs) {
     if (d === "." || d === "..") {
       continue;
     }
 
-    const subdir = Module.PATH.join2(dir, d);
+    const subdir: string = Module.PATH.join2(dir, d);
     const lookup = Module.FS.lookupPath(subdir);
     if (lookup.node === null) {
       continue;
@@ -33,11 +32,9 @@ function getSubDirs(dir: string): string[] {
       continue;
     }
 
-    subDirs.push(subdir);
-    subDirs.push(...getSubDirs(subdir));
+    yield subdir;
+    yield* getSubDirs(subdir);
   }
-
-  return subDirs;
 }
 
 /**
@@ -78,8 +75,7 @@ function createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
 
     // Step 2) try to find the library by searching child directories of the library directory
     //         (This should not be necessary in most cases, but some libraries have dependencies in the child directories)
-    const childDirs = getSubDirs(dirname);
-    for (const childDir of childDirs) {
+    for (const childDir of getSubDirs(dirname)) {
       const fullPath = Module.PATH.join2(childDir, path);
       if (Module.FS.findObject(fullPath) !== null) {
         return fullPath;
