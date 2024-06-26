@@ -1,22 +1,3 @@
-/**
- * @param fn A function to be memoized.
- * @returns
- * @private
- */
-export const memoize = (fn: CallableFunction) => {
-  let cache: any = {};
-  return (...args: any) => {
-    let n = args[0];
-    if (n in cache) {
-      return cache[n];
-    } else {
-      let result = fn(n);
-      cache[n] = result;
-      return result;
-    }
-  };
-};
-
 /** @private */
 export function makeWarnOnce(warning: string) {
   let warned = false;
