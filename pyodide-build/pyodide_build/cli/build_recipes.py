@@ -168,6 +168,10 @@ def build_recipes(
     no_deps: bool = typer.Option(
         False, help="Removed, use `pyodide build-recipes-no-deps` instead."
     ),
+    keep_going: bool = typer.Option(
+        False,
+        help="Continue building remaining packages even if there are some build failures",
+    ),
     cflags: str = typer.Option(
         None, help="Extra compiling flags. Default: SIDE_MODULE_CFLAGS"
     ),
@@ -238,7 +242,7 @@ def build_recipes(
         n_jobs=n_jobs,
     )
     log_dir_ = Path(log_dir).resolve() if log_dir else None
-    build_recipes_impl(packages, args, log_dir_, install_options)
+    build_recipes_impl(packages, args, log_dir_, install_options, keep_going)
 
 
 def build_recipes_impl(
@@ -246,6 +250,7 @@ def build_recipes_impl(
     args: Args,
     log_dir: Path | None,
     install_options: InstallOptions | None,
+    keep_going: bool,
 ) -> None:
     if len(packages) == 1 and "," in packages[0]:
         # Handle packages passed with old comma separated syntax.
@@ -261,6 +266,7 @@ def build_recipes_impl(
         build_dir=args.build_dir,
         n_jobs=args.n_jobs,
         force_rebuild=args.force_rebuild,
+        keep_going=keep_going,
     )
 
     if log_dir:
