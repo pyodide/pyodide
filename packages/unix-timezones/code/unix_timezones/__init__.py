@@ -2,6 +2,7 @@
 import importlib
 import importlib.resources
 import shutil
+import warnings
 from pathlib import Path
 
 import js
