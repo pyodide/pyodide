@@ -20,6 +20,7 @@ try:
         localtime_path = Path("/etc/localtime")
         if not localtime_path.exists():
             # get local timezone from browser js object
+            # type: ignore[attr-defined]
             timezone = js.Intl.DateTimeFormat().resolvedOptions().timeZone
             if timezone and str(timezone) != "":
                 timezone = str(timezone)
