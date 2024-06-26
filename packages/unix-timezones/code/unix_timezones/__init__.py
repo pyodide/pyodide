@@ -28,4 +28,4 @@ try:
                 Path("/etc/").mkdir(parents=True, exist_ok=True)
                 localtime_path.symlink_to(dst_path / timezone)
 except OSError:
-    warnings.warn("Couldn't install timezone db to /usr/share/zoneinfo",ImportWarning)
+    warnings.warn("Couldn't install timezone db to /usr/share/zoneinfo", ImportWarning)
