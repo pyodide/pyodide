@@ -1,15 +1,20 @@
 # install zoneinfo data compatible with a unix system
-import importlib.resources
-from pathlib import Path
-import shutil
 import importlib
+import importlib.resources
+import shutil
+from pathlib import Path
+
 import js
 
 try:
-    dst_path=Path("/usr/share/zoneinfo")
+    dst_path = Path("/usr/share/zoneinfo")
     if not Path("/usr/share/zoneinfo").exists():
-        with importlib.resources.as_file(importlib.resources.files("unix_timezones").joinpath("tzdata/usr/share/zoneinfo")) as src_path:
-            shutil.copytree(src_path,dst_path)
+        with importlib.resources.as_file(
+            importlib.resources.files("unix_timezones").joinpath(
+                "tzdata/usr/share/zoneinfo"
+            )
+        ) as src_path:
+            shutil.copytree(src_path, dst_path)
 
         localtime_path = Path("/etc/localtime")
         if not localtime_path.exists():
@@ -20,6 +25,5 @@ try:
                 # make symbolic link to local time
                 Path("/etc/").mkdir(parents=True, exist_ok=True)
                 localtime_path.symlink_to(dst_path / timezone)
-except (IOError):
+except OSError:
     warnings.warn("Couldn't install timezone db to /usr/share/zoneinfo")
-

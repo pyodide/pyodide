@@ -1,12 +1,12 @@
-# this is a package to install the unix timezone database into 
-# a Pyodide instance, meaning it can be used by C packages which 
-# expect timezone data to be in /usr/share/zoneinfo, such as 
+# this is a package to install the unix timezone database into
+# a Pyodide instance, meaning it can be used by C packages which
+# expect timezone data to be in /usr/share/zoneinfo, such as
 # pyarrow
 package:
-  name: unix-timezones 
+  name: unix-timezones
   version: 2024a
-  top-level: 
-    - unix_timezones 
+  top-level:
+    - unix_timezones
 source:
   path: code
 
@@ -19,5 +19,3 @@ build:
     tar xzf tzcode2024a.tar.gz
     tar xzf tzdata2024a.tar.gz
     make ZFLAGS="-b fat" POSIXRULES= TOPDIR=../unix_timezones/tzdata install
-
-  
