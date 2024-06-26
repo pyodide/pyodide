@@ -19,9 +19,8 @@ try:
 
         localtime_path = Path("/etc/localtime")
         if not localtime_path.exists():
-            # get local timezone from browser js object
-            # type: ignore[attr-defined]
-            timezone = js.Intl.DateTimeFormat().resolvedOptions().timeZone
+            # get local timezone from browser js object            
+            timezone = js.Intl.DateTimeFormat().resolvedOptions().timeZone # type: ignore[attr-defined]
             if timezone and str(timezone) != "":
                 timezone = str(timezone)
                 # make symbolic link to local time
