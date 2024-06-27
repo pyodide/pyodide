@@ -288,6 +288,18 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     asyncio.run(test())
 
 
+async def test_compile_optimize():
+    from pyodide.console import Console
+
+    console = Console(optimize=2)
+    await console.push("assert 0")
+
+    await console.push("def f():")
+    await console.push("    '''docstring'''\n\n")
+
+    assert await console.push("f.__doc__") is None
+
+
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
 async def test_console_imports(selenium):
