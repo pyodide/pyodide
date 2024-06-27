@@ -1,6 +1,6 @@
 package:
   name: pandas
-  version: 2.2.0
+  version: 2.2.2
   tag:
     - min-scipy-stack
   top-level:
