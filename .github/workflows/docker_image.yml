@@ -45,7 +45,7 @@ jobs:
           echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to Docker Hub
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ./Dockerfile
           push: true
@@ -83,7 +83,7 @@ jobs:
           echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to ${{ env.GHCR_REGISTRY }}
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           file: ./Dockerfile
           push: true

@@ -43,10 +43,16 @@ myst:
   manually or automatically.
   {pr}`4846`
 
+- {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
+  {pr}`4822`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
+- Upgraded `lakers` to 0.3.3 {pr}`4885`
+- Upgraded `bokeh` to 3.4.2 {pr}`4888`
+- Upgraded `pandas` to 2.2.2 {pr}`4893`
 
 ## Version 0.26.1
 

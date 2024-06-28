@@ -16,7 +16,7 @@ requirements:
     - libxml
 
 build:
-  type: shared_library
+  type: static_library
   script: |
     export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
 
@@ -25,15 +25,18 @@ build:
     # dap + byterange: no libcurl
 
     emconfigure ./configure \
+      --host=none \
       --prefix=${WASM_LIBRARY_DIR} \
       --disable-doxygen \
       --enable-netcdf-4 \
       --disable-dap \
+      --disable-nczarr \
       --disable-byterange \
       --disable-dap-remote-tests \
       --disable-examples \
       --disable-utilities \
       --disable-testsets \
+      --disable-shared \
       CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
       CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
       LDFLAGS="-fPIC -s USE_ZLIB=1"
