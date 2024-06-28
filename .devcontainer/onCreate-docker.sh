@@ -3,9 +3,6 @@
 # Do not keep running on errors
 set -e
 
-# https://pyodide.org/en/stable/development/new-packages.html#prerequisites
-pip install -e ./pyodide-build
-
 export PYODIDE_RECIPE_BUILD_DIR=/tmp/pyodide-build
 mkdir -p "$PYODIDE_RECIPE_BUILD_DIR"
 echo "export PYODIDE_RECIPE_BUILD_DIR=$PYODIDE_RECIPE_BUILD_DIR" >> ~/.bashrc

@@ -222,7 +222,6 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    - `docs/development/building-and-testing-packages.md`
    - `environment.yml`
    - `.pre-commit-config.yaml`
-   - `pyodide-build/pyodide_build/tools/pyo3_config.ini` (two places)
    - `pyproject.toml`
 
    (TODO: make this list shorter.)
