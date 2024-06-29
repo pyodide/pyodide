@@ -8,6 +8,7 @@ package:
 source:
   path: src
 build:
+  type: cpython_module
   unvendor-tests: false # Obviously :)
   script: |
     wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
