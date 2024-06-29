@@ -50,6 +50,9 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
+- {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
+  {pr}`4902`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
