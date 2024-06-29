@@ -8,7 +8,7 @@ package:
 source:
   path: src
 build:
-  unvendor-tests: false  # Obviously :)
+  unvendor-tests: false # Obviously :)
   script: |
     wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
     tar -xf Python-${PYVERSION}.tgz
