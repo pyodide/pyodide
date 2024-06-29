@@ -288,6 +288,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     asyncio.run(test())
 
 
+@pytest.mark.asyncio
 async def test_compile_optimize():
     from pyodide.console import Console
 
@@ -300,6 +301,7 @@ async def test_compile_optimize():
     assert await console.push("f.__doc__") is None
 
 
+@pytest.mark.asyncio
 async def test_console_filename():
     from pyodide.console import Console
 
