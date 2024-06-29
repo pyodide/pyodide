@@ -57,6 +57,7 @@ myst:
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
+- Upgraded `zengl` to 2.5.0 {pr}`4894`
 
 ## Version 0.26.1
 
