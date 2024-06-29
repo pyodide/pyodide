@@ -320,8 +320,8 @@ async def test_pyodide_console_runcode_locked(selenium):
 
     console = PyodideConsole()
 
-    console.push("import numpy as np")
-    await console.push("np")
+    console.push("import micropip")
+    await console.push("micropip")
 
 
 @pytest.mark.skip_refcount_check
