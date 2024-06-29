@@ -92,11 +92,15 @@ class _Compile(Compile):
         return_mode: ReturnMode = "last_expr",
         quiet_trailing_semicolon: bool = True,
         flags: int = 0x0,
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         super().__init__()
         self.flags |= flags
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
+        self.dont_inherit = dont_inherit
+        self.optimize = optimize
 
     def __call__(  # type: ignore[override]
         self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True
@@ -119,6 +123,8 @@ class _Compile(Compile):
             filename=filename,
             return_mode=return_mode,
             flags=self.flags,
+            dont_inherit=self.dont_inherit,
+            optimize=self.optimize,
         ).compile()
         assert code_runner.code
         for feature in _features:
@@ -146,11 +152,15 @@ class _CommandCompiler(CommandCompiler):
         return_mode: ReturnMode = "last_expr",
         quiet_trailing_semicolon: bool = True,
         flags: int = 0x0,
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         self.compiler = _Compile(
             return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             flags=flags,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
         )
 
     def __call__(  # type: ignore[override]
@@ -237,6 +247,16 @@ class Console:
     filename :
 
         The file name to report in error messages. Defaults to ``"<console>"``.
+
+    dont_inherit :
+
+        Whether to inherit ``__future__`` imports from the outer code.
+        See the documentation for the built-in :external:py:func:`compile` function.
+
+    optimize :
+
+        Specifies the optimization level of the compiler. See the documentation
+        for the built-in :external:py:func:`compile` function.
     """
 
     globals: dict[str, Any]
@@ -270,6 +290,8 @@ class Console:
         stderr_callback: Callable[[str], None] | None = None,
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         if globals is None:
             globals = {"__name__": "__console__", "__doc__": None}
@@ -294,7 +316,11 @@ class Console:
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        self._compile = _CommandCompiler(
+            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
+        )
 
     def persistent_redirect_streams(self) -> None:
         """Redirect :py:data:`~sys.stdin`/:py:data:`~sys.stdout`/:py:data:`~sys.stdout` persistently"""
