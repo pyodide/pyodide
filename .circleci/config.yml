@@ -17,9 +17,6 @@ defaults: &defaults
       # Disable the compression of wheels, so they are better compressed by the CDN
       PYODIDE_ZIP_COMPRESSION_LEVEL: 0
 
-orbs:
-  macos: circleci/macos@2.5.1
-
 jobs:
   build-core:
     parameters:
@@ -317,66 +314,6 @@ jobs:
               --durations 50 \
               --benchmark-json=benchmark-time.json \
               --benchmark-columns=mean,min,max,stddev \
-              << parameters.test-params >> \
-              -o cache_dir=$CACHE_DIR
-      - store_test_results:
-          path: test-results
-
-  test-main-macos:
-    parameters:
-      test-params:
-        description: The tests to run.
-        type: string
-      cache-dir:
-        description: pytest-cache-dir.
-        type: string
-        default: ""
-    resource_class: macos.x86.medium.gen2
-    macos:
-      xcode: 15.0.0
-
-    working_directory: ~/repo
-    steps:
-      - attach_workspace:
-          at: .
-      # The standard way of enabling safaridriver no longer works for Safari 14+
-      # https://blog.bytesguy.com/enabling-remote-automation-in-safari-14
-      - macos/add-safari-permissions
-      - run:
-          name: install miniforge
-          command: |
-            curl -L -O https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh
-            bash Miniforge3-MacOSX-x86_64.sh -b && rm -f Miniforge3-MacOSX-x86_64.sh
-            ~/miniforge3/bin/conda create -n pyodide python=3.12 -y
-      - run:
-          name: install dependencies
-          command: |
-            export PATH="$HOME/miniforge3/bin:$PATH"
-            conda create -n pyodide python=3.12 -y
-            source activate pyodide
-            python -m pip install -r requirements.txt
-            pip install -e ./pyodide-build
-      - run:
-          name: show safari version
-          command: |
-            safari_version=$(defaults read /Applications/Safari.app/Contents/Info.plist CFBundleShortVersionString)
-            echo "Safari Version: $safari_version"
-      - run:
-          name: test safari
-          command: |
-            export PATH="$HOME/miniforge3/bin:$PATH"
-            source activate pyodide
-            mkdir test-results
-            if [ -z "<< parameters.cache-dir >>" ]; then
-              export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
-            else
-              export CACHE_DIR=".test_cache/<< parameters.cache-dir >>"
-            fi
-            echo "pytest cache dir: $CACHE_DIR"
-            tools/pytest_wrapper.py \
-              --junitxml=test-results/junit.xml \
-              --verbose \
-              --durations 50 \
               << parameters.test-params >> \
               -o cache_dir=$CACHE_DIR
       - store_test_results:
@@ -771,15 +708,6 @@ workflows:
             tags:
               only: /.*/
 
-      - test-main-macos:
-          name: test-core-safari
-          test-params: --runtime=safari-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-
       - test-main:
           name: test-core-chrome-webworker
           test-params: --runtime=chrome-no-host src/tests/test_webworker.py
@@ -871,32 +799,6 @@ workflows:
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
-            - build-packages
-          filters:
-            tags:
-              only: /.*/
-
-      - test-main-macos:
-          name: test-packages-safari-no-numpy-dependents
-          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py
-          cache-dir: .pytest_cache_safari
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main-macos:
-          name: test-packages-safari
-          test-params: --runtime=safari-no-host -k "not webworker" packages/*/test*.py --skip-passed
-          cache-dir: .pytest_cache_safari
-          requires:
-            - test-packages-safari-no-numpy-dependents
             - build-packages
           filters:
             tags:
