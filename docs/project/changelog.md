@@ -46,6 +46,10 @@ myst:
 - {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
   {pr}`4822`
 
+- {{ Enhancement }} Allow setting `dont_inherit` and `optimize` for `compile`
+  in `CodeRunner` and `Console`.
+  {pr}`4897`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`

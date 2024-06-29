@@ -118,10 +118,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-latest, macos-latest] # FIXME: macos + playwright is very unstable.
-        os: [ubuntu-latest]
-        runner: [playwright]
-        browser: [chrome]
+        os: [macos-14]
+        runner: [selenium]
+        browser: [safari]
 
     steps:
       - uses: actions/checkout@v4
@@ -143,7 +142,11 @@ jobs:
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
           pip install pyodide-build --upgrade
-          python -m playwright install
+
+      - uses: pyodide/pyodide-actions/install-browser@v1
+        with:
+          runner: ${{ matrix.runner }}
+          browser: ${{ matrix.browser }}
 
       - name: run core tests
         env:
