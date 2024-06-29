@@ -300,6 +300,17 @@ async def test_compile_optimize():
     assert await console.push("f.__doc__") is None
 
 
+async def test_console_filename():
+    from pyodide.console import Console
+
+    for filename in ("<console>", "<exec>", "other"):
+        future = Console(filename=filename).push("assert 0")
+        with pytest.raises(AssertionError):
+            await future
+        assert isinstance(future.formatted_error, str)
+        assert f'File "{filename}", line 1, in <module>' in future.formatted_error
+
+
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
 async def test_console_imports(selenium):
