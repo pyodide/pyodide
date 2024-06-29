@@ -405,18 +405,21 @@ class Console:
                 res.set_result(fut.result())
             res = None
 
-        ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
+        ensure_future(self._runcode_inner(source, code)).add_done_callback(done_cb)
         return res
+
+    async def _runcode_inner(self, source: str, code: CodeRunner) -> Any:
+        async with self._lock:
+            return await self.runcode(source, code)
 
     async def runcode(self, source: str, code: CodeRunner) -> Any:
         """Execute a code object and return the result."""
-        async with self._lock:
-            with self.redirect_streams():
-                try:
-                    return await code.run_async(self.globals)
-                finally:
-                    sys.stdout.flush()
-                    sys.stderr.flush()
+        with self.redirect_streams():
+            try:
+                return await code.run_async(self.globals)
+            finally:
+                sys.stdout.flush()
+                sys.stderr.flush()
 
     def formatsyntaxerror(self, e: Exception) -> str:
         """Format the syntax error that just occurred.

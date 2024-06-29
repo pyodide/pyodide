@@ -315,6 +315,17 @@ async def test_console_filename():
 
 @pytest.mark.skip_refcount_check
 @run_in_pyodide
+async def test_pyodide_console_runcode_locked(selenium):
+    from pyodide.console import PyodideConsole
+
+    console = PyodideConsole()
+
+    console.push("import numpy as np")
+    await console.push("np")
+
+
+@pytest.mark.skip_refcount_check
+@run_in_pyodide
 async def test_console_imports(selenium):
     from pyodide.console import PyodideConsole
 
