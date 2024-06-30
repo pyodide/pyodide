@@ -169,6 +169,11 @@ export async function loadPyodide(
      */
     enableRunUntilComplete?: boolean;
     /**
+     * If false (default), throw an error if the version of Pyodide core does not
+     * match the version of the Pyodide js package. Otherwise, just log a warning.
+     */
+    allowVersionMismatch?: boolean;
+    /**
      * Used by the cli runner. If we want to detect a virtual environment from
      * the host file system, it needs to be visible from when `main()` is
      * called. The directories in this list will be mounted at the same address
@@ -258,12 +263,15 @@ export async function loadPyodide(
   }
 
   if (API.version !== version) {
-    throw new Error(
-      `\
+    const message = `\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
-`,
-    );
+`;
+    if (options.allowVersionMismatch) {
+      console.warn(message);
+    } else {
+      throw new Error(message);
+    }
   }
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {

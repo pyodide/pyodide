@@ -50,6 +50,10 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
+- {{ Enhancement }} Added `allowVersionMismatch` option to `loadPyodide` to allow
+  bootstrapping pyodide with a different version.
+  {pr}`4907`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
