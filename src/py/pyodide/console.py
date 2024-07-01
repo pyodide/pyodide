@@ -405,10 +405,10 @@ class Console:
                 res.set_result(fut.result())
             res = None
 
-        ensure_future(self._runcode_inner(source, code)).add_done_callback(done_cb)
+        ensure_future(self._runcode_with_lock(source, code)).add_done_callback(done_cb)
         return res
 
-    async def _runcode_inner(self, source: str, code: CodeRunner) -> Any:
+    async def _runcode_with_lock(self, source: str, code: CodeRunner) -> Any:
         async with self._lock:
             return await self.runcode(source, code)
 
