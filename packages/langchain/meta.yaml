@@ -1,0 +1,19 @@
+package:
+  name: langchain
+  version: 0.1.8
+  top-level:
+    - langchain
+source:
+  url: https://files.pythonhosted.org/packages/87/8b/d859c3125fc27e678f7da3625894d3d84e6599ef85f1559c1fc5b9c913ad/langchain-0.1.8-py3-none-any.whl
+  sha256: 19e951b0e2be099ff048ee483acecb47e1a39c33a47dadfee70fcfa20f45cc19
+requirements:
+  run:
+    - langchain-core
+about:
+  home: https://github.com/langchain-ai/langchain
+  PyPI: https://pypi.org/project/langchain
+  summary: Building applications with LLMs through composability
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

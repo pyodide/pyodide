@@ -1,0 +1,30 @@
+package:
+  name: langchain-core
+  version: 0.1.25
+  top-level:
+    - langchain_core
+source:
+  url: https://files.pythonhosted.org/packages/8c/ed/76c8e2451418b2169fc0d52d3fe9bf63bcaa24bac3f32b27692b9d22ec23/langchain_core-0.1.25-py3-none-any.whl
+  sha256: ff0a0ad1ed877878e7b9c7601870cd12145abf3c814aae41995968d05ea6c09d
+about:
+  home: https://github.com/langchain-ai/langchain
+  PyPI: https://pypi.org/project/langchain_core
+  summary: Building applications with LLMs through composability
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
+requirements:
+  run:
+    - jsonpatch
+    - langsmith
+    - packaging
+    - pyyaml
+    - tenacity
+test:
+  imports:
+    - langchain_core
+    - langchain_core.callbacks
+    - langchain_core.language_models.llms
+    - langchain_core.prompts
+    - langchain_core.output_parsers
