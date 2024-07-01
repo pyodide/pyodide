@@ -50,11 +50,11 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
-- {{ Fix } Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
+- {{ Fix }} Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
   unexpectedly when `filename` is specified.
   {pr}`4905`
 
-- {{ Fix } Locked `PyodideConsole.runcode` to block `loadPackagesFromImports`.
+- {{ Fix }} Locked `PyodideConsole.runcode` to block `loadPackagesFromImports`.
   {pr}`4905`
 
 ### Packages
