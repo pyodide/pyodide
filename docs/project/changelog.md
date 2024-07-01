@@ -16,6 +16,11 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
+  timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
+  timezone handling.
+  {pr}`4889`
+
 - {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
   defined in the global scope.
   {pr}`4866`
