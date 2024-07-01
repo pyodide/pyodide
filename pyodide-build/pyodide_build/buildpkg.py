@@ -192,7 +192,7 @@ class RecipeBuilder:
                 # Nothing needs to be done for a static library
                 pass
 
-            elif self.package_type in ("shared_library", "cpython_module"):
+            elif self.package_type == "shared_library":
                 # If shared library, we copy .so files to dist_dir
                 # and create a zip archive of the .so files
                 shutil.rmtree(self.dist_dir, ignore_errors=True)

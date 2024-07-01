@@ -118,7 +118,7 @@ class Package(BasePackage):
 
     def dist_artifact_path(self) -> Path:
         dist_dir = self.pkgdir / "dist"
-        if self.package_type in ("shared_library", "cpython_module"):
+        if self.package_type == "shared_library":
             candidates = list(dist_dir.glob("*.zip"))
         else:
             candidates = list(
@@ -730,12 +730,10 @@ def generate_packagedata(
         update_package_sha256(pkg_entry, output_dir / pkg.file_name)
 
         pkg_type = pkg.package_type
-        if pkg_type in ("shared_library", "cpython_module"):
+        if pkg_type == "shared_library":
             # We handle cpython modules as shared libraries
             pkg_entry.shared_library = True
-            pkg_entry.install_dir = (
-                "stdlib" if pkg_type == "cpython_module" else "dynlib"
-            )
+            pkg_entry.install_dir = "dynlib"
 
         pkg_entry.depends = [x.lower() for x in pkg.run_dependencies]
 

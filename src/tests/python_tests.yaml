@@ -479,7 +479,10 @@
 - test_importlib.extension.test_loader:
     xfail: "TODO: why does it fail?"
 - test_importlib.extension.test_path_hook
-- test_importlib.frozen.test_finder
+- test_importlib.frozen.test_finder:
+    skip:
+      # incompatible with wheel
+      - "*FindSpecTests*"
 - test_importlib.frozen.test_loader
 - test_importlib.import_.test___loader__
 - test_importlib.import_.test___package__

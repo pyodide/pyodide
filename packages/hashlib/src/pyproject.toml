@@ -1,0 +1,19 @@
+[project]
+name = "hashlib"
+authors = [
+  { name="Pyodide"},
+]
+description = "Unvendored hashlib for Pyodide"
+version = "1.0.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+include = [
+  "_hashlib.so",
+]
+exclude = [
+  "Python-*",
+]
