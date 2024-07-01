@@ -18,10 +18,7 @@ typedef struct Js_Identifier
   JsRef object;
 } Js_Identifier;
 
-#define Js_static_string_init(value)                                           \
-  {                                                                            \
-    .string = value, .object = NULL                                            \
-  }
+#define Js_static_string_init(value) { .string = value, .object = NULL }
 #define Js_static_string(varname, value)                                       \
   static Js_Identifier varname = Js_static_string_init(value)
 #define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)

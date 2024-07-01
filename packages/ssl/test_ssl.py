@@ -6,6 +6,7 @@ def test_ssl(selenium):
     import platform
     import unittest
     import unittest.mock
+
     from test.libregrtest.main import main
 
     platform.platform(aliased=True)
