@@ -10,7 +10,8 @@ assignees: ""
 Important Note:
 
 Opening a new package request doesn't mean that Pyodide maintainers will look into it immediately.
-A way to speed up your progress is to read the documentation, try building the package yourself, and report any issues you encounter.
+In most cases, the maintainer will have no idea about the package you're asking for, and you're probably the most knowledgeable person about it.
+Therefore, a way to speed up your progress is to read the documentation, try building the package yourself, and report any issues you encounter.
 
 -->
 
