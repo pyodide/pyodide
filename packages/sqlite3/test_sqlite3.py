@@ -3,8 +3,9 @@ from pytest_pyodide import run_in_pyodide
 
 @run_in_pyodide(packages=["test", "sqlite3"], pytest_assert_rewrites=False)
 def test_sqlite3(selenium):
-    import test.test_sqlite3
     import unittest
+
+    import test.test_sqlite3
 
     suite = unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromModule(test.test_sqlite3)]
