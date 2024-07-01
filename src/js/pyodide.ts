@@ -169,6 +169,11 @@ export async function loadPyodide(
      */
     enableRunUntilComplete?: boolean;
     /**
+     * If false (default), throw an error if the version of Pyodide core does not
+     * match the version of the Pyodide js package.
+     */
+    skipVersionCheck?: boolean;
+    /**
      * Used by the cli runner. If we want to detect a virtual environment from
      * the host file system, it needs to be visible from when `main()` is
      * called. The directories in this list will be mounted at the same address
@@ -257,13 +262,11 @@ export async function loadPyodide(
     API.setPyProxyToStringMethod(true);
   }
 
-  if (API.version !== version) {
-    throw new Error(
-      `\
+  if (API.version !== version && !options.skipVersionCheck) {
+    throw new Error(`\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
-`,
-    );
+`);
   }
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
