@@ -288,6 +288,7 @@ def test_nonpersistent_redirection(safe_sys_redirections):
     asyncio.run(test())
 
 
+@pytest.mark.asyncio
 async def test_compile_optimize():
     from pyodide.console import Console
 
@@ -298,6 +299,29 @@ async def test_compile_optimize():
     await console.push("    '''docstring'''\n\n")
 
     assert await console.push("f.__doc__") is None
+
+
+@pytest.mark.asyncio
+async def test_console_filename():
+    from pyodide.console import Console
+
+    for filename in ("<console>", "<exec>", "other"):
+        future = Console(filename=filename).push("assert 0")
+        with pytest.raises(AssertionError):
+            await future
+        assert isinstance(future.formatted_error, str)
+        assert f'File "{filename}", line 1, in <module>' in future.formatted_error
+
+
+@pytest.mark.skip_refcount_check
+@run_in_pyodide
+async def test_pyodide_console_runcode_locked(selenium):
+    from pyodide.console import PyodideConsole
+
+    console = PyodideConsole()
+
+    console.push("import micropip")
+    await console.push("micropip")
 
 
 @pytest.mark.skip_refcount_check

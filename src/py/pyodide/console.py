@@ -405,18 +405,21 @@ class Console:
                 res.set_result(fut.result())
             res = None
 
-        ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
+        ensure_future(self._runcode_with_lock(source, code)).add_done_callback(done_cb)
         return res
+
+    async def _runcode_with_lock(self, source: str, code: CodeRunner) -> Any:
+        async with self._lock:
+            return await self.runcode(source, code)
 
     async def runcode(self, source: str, code: CodeRunner) -> Any:
         """Execute a code object and return the result."""
-        async with self._lock:
-            with self.redirect_streams():
-                try:
-                    return await code.run_async(self.globals)
-                finally:
-                    sys.stdout.flush()
-                    sys.stderr.flush()
+        with self.redirect_streams():
+            try:
+                return await code.run_async(self.globals)
+            finally:
+                sys.stdout.flush()
+                sys.stderr.flush()
 
     def formatsyntaxerror(self, e: Exception) -> str:
         """Format the syntax error that just occurred.
@@ -435,7 +438,7 @@ class Console:
         kept_frames = 0
         # Try to trim out stack frames inside our code
         for frame, _ in traceback.walk_tb(tb):
-            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == self.filename
             keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
             if keep_frames:
                 kept_frames += 1
