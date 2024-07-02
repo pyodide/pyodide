@@ -50,7 +50,7 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
-- {{ Enhancement }} Added `skipVersionCheck` option to `loadPyodide` to allow
+- {{ Enhancement }} Added `checkAPIVersion` option to `loadPyodide` to allow
   bootstrapping pyodide with a different version.
   {pr}`4907`
 

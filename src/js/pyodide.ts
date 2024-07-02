@@ -172,7 +172,7 @@ export async function loadPyodide(
      * If false (default), throw an error if the version of Pyodide core does not
      * match the version of the Pyodide js package.
      */
-    skipVersionCheck?: boolean;
+    checkAPIVersion?: boolean;
     /**
      * Used by the cli runner. If we want to detect a virtual environment from
      * the host file system, it needs to be visible from when `main()` is
@@ -262,7 +262,7 @@ export async function loadPyodide(
     API.setPyProxyToStringMethod(true);
   }
 
-  if (API.version !== version && !options.skipVersionCheck) {
+  if (API.version !== version && !options.checkAPIVersion) {
     throw new Error(`\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
