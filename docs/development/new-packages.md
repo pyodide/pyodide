@@ -75,12 +75,6 @@ This will mount the current working directory as `/src` within the container so
 if you build the package within the container the files created will persist in
 the directory after you exit the container.
 
-You should install `pyodide-build`:
-
-```bash
-pip install -e ./pyodide-build
-```
-
 If you want to build the package, you will need to build Python which you can do
 as follows:
 

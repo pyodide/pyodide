@@ -219,8 +219,8 @@ $(eval $(call preprocess-js,js2python.js))
 
 
 pyodide_build:
-	@echo "Ensuring editable pyodide-build is installed"
-	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	@echo "Ensuring required pyodide-build version is installed"
+	./tools/check_pyodide_build.py "$(PYODIDE_BUILD_VERSION)" || $(HOSTPYTHON) -m pip install "pyodide-build==$(PYODIDE_BUILD_VERSION)" --upgrade
 	@which pyodide >/dev/null
 
 

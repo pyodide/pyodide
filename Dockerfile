@@ -28,12 +28,11 @@ RUN wget https://mirrors.sarata.com/gnu/autoconf/autoconf-2.71.tar.xz \
     && rm -rf autoconf-2.71
 
 ADD requirements.txt docs/requirements-doc.txt /
-ADD pyodide-build /pyodide-build
 
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
     && pip3 --no-cache-dir install -r requirements-doc.txt \
-    && rm -rf requirements.txt requirements-doc.txt pyodide-build
+    && rm -rf requirements.txt requirements-doc.txt
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
