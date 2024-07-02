@@ -45,6 +45,7 @@ export type ConfigType = {
   packages: string[];
   _makeSnapshot: boolean;
   enableRunUntilComplete: boolean;
+  checkAPIVersion: boolean;
 };
 
 /**
