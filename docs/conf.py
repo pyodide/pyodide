@@ -267,6 +267,21 @@ def write_console_html(app):
     atexit.register(remove_console_html)
 
 
+def write_examples(app):
+    """Preprocess the examples HTML files and copy them to the output directory"""
+    example_outdir = Path(app.outdir) / "examples"
+    example_outdir.mkdir(exist_ok=True, parents=True)
+
+    example_html_dir = Path("./usage/examples")
+
+    for example in example_html_dir.glob("*.html"):
+        text = example.read_text()
+        text = text.replace("{{ PYODIDE_BASE_URL }}", app.config.CDN_URL)
+
+        output_path = example_outdir / example.name
+        output_path.write_text(text)
+
+
 def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
         return
@@ -359,5 +374,6 @@ def setup(app):
     calculate_pyodide_version(app)
     ensure_typedoc_on_path()
     write_console_html(app)
+    write_examples(app)
     prune_docs()
     Path("../src/js/generated/pyproxy.ts").unlink(missing_ok=True)
