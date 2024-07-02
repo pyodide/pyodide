@@ -1,0 +1,16 @@
+package:
+  name: dominodatalab-data
+  version: 5.9.0
+  top-level:
+    - datasource_api_client
+    - domino_data
+    - feature_store_api_client
+    - training_set_api_client
+source:
+  url: https://files.pythonhosted.org/packages/0c/9b/fb66970fc815af2e65d637a7648c49de8b45ce84b0f4fc1f3dd9d4db0ea3/dominodatalab_data-5.9.0-py3-none-any.whl
+  sha256: c7db8e96fed7cc825595f7994ee61f53a8d8ea602569806351ee059195c1bf6c
+about:
+  home: https://github.com/dominodatalab/domino-data
+  PyPI: https://pypi.org/project/dominodatalab-data
+  summary: Domino Data API for interacting with Domino Data features
+  license: Apache Software License 2.0

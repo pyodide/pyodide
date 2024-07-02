@@ -1,11 +1,11 @@
 package:
   name: ssl
   version: 1.0.0 # Nonsense
-  tag:
-    - always
   top-level:
     - ssl
     - _ssl
+  tag:
+    - core
 source:
   sha256: $(PYTHON_ARCHIVE_SHA256)
   url: $(PYTHON_ARCHIVE_URL)
@@ -20,7 +20,6 @@ build:
     emcc Modules/_ssl.o $(pkg-config --libs --dont-define-prefix openssl) $SIDE_MODULE_LDFLAGS -o $DISTDIR/_ssl.so
 
     cp Lib/ssl.py $DISTDIR
-
 requirements:
   host:
     - openssl

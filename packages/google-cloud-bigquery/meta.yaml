@@ -1,0 +1,13 @@
+package:
+  name: google-cloud-bigquery
+  version: 3.14.1
+  top-level:
+    - google
+source:
+  url: https://files.pythonhosted.org/packages/1d/6e/fc83bc634635e552225cf0eb895b2105b86cd45ea79957faea73fd47ca2f/google_cloud_bigquery-3.14.1-py2.py3-none-any.whl
+  sha256: a8ded18455da71508db222b7c06197bc12b6dbc6ed5b0b64e7007b76d7016957
+about:
+  home: https://github.com/googleapis/python-bigquery
+  PyPI: https://pypi.org/project/google-cloud-bigquery
+  summary: Google BigQuery API client library
+  license: Apache 2.0
