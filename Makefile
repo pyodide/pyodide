@@ -334,3 +334,7 @@ check-emcc: emsdk/emsdk/.complete
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
 	make
+
+.PHONY: py-compile
+py-compile:
+	pyodide py-compile --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --exclude "$(PYCOMPILE_EXCLUDE_FILES)" dist/
