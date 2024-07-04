@@ -1512,6 +1512,15 @@ def run_sync(x: Awaitable[T]) -> T:
     """
     raise NotImplementedError
 
+def can_run_sync() -> bool:
+    """Returns ``True`` if :py:func:`run_sync` is available and ``False`` if not.
+
+    .. admonition:: Experimental
+        :class: warning
+
+        This feature is not yet stable.
+    """
+    raise NotImplementedError
 
 __name__ = _save_name
 del _save_name
@@ -1538,6 +1547,7 @@ __all__ = [
     "JsCallable",
     "JsTypedArray",
     "run_sync",
+    "can_run_sync",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
