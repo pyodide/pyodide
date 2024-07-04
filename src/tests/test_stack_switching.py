@@ -716,7 +716,7 @@ def test_can_run_sync(selenium):
             def fsync():
                 expect(5, False)
 
-            run_js("(f) => f()")(fsync)           
+            run_js("(f) => f()")(fsync)
         `);
 
         await pyodide.runPythonAsync(`
@@ -727,7 +727,7 @@ def test_can_run_sync(selenium):
                 fsync()
                 expect(7, True)
 
-            await run_js("(f) => f()")(fasync)           
+            await run_js("(f) => f()")(fasync)
         `);
 
         return results;

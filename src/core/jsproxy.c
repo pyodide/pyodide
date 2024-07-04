@@ -4378,12 +4378,11 @@ finally:
   return pyresult;
 }
 
-EM_JS(int, can_run_sync_js, (), {
-  return !!Module.validSuspender.value;
-});
+EM_JS(int, can_run_sync_js, (), { return !!Module.validSuspender.value; });
 
 PyObject*
-can_run_sync(PyObject* _mod, PyObject* _null) {
+can_run_sync(PyObject* _mod, PyObject* _null)
+{
   if (can_run_sync_js()) {
     Py_RETURN_TRUE;
   } else {

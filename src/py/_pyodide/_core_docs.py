@@ -1512,6 +1512,7 @@ def run_sync(x: Awaitable[T]) -> T:
     """
     raise NotImplementedError
 
+
 def can_run_sync() -> bool:
     """Returns ``True`` if :py:func:`run_sync` is available and ``False`` if not.
 
@@ -1521,6 +1522,7 @@ def can_run_sync() -> bool:
         This feature is not yet stable.
     """
     raise NotImplementedError
+
 
 __name__ = _save_name
 del _save_name
