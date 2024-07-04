@@ -248,3 +248,30 @@ def test_py_compile_archive_dir(tmp_path, with_lockfile):
         "file_name": "some-path.tar",
         "checksum": "123",
     }
+
+
+@pytest.mark.parametrize("with_lockfile", [True, False])
+def test_py_compile_archive_dir_excludes(tmp_path, with_lockfile):
+    wheel_data = {
+        "a.so": "abc",
+        "b.txt": "123",
+        "METADATA": "a",
+        "packageB/a.py": "1+1",
+    }
+
+    _create_tmp_wheel(
+        "packageB", base_dir=tmp_path, data=wheel_data, tag="py3-none-any"
+    )
+
+    excludes = ["packageB-"]
+    mapping = _py_compile_archive_dir(tmp_path, keep=True, excludes=excludes)
+
+    assert mapping == {}
+
+    mapping2 = _py_compile_archive_dir(tmp_path, keep=False)
+
+    ver = sys.version_info
+    cpver = f"cp{ver.major}{ver.minor}"
+    assert mapping2 == {
+        "packageB-0.1.0-py3-none-any.whl": f"packageb-0.1.0-{cpver}-none-any.whl",
+    }
