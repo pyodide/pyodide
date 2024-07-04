@@ -482,7 +482,7 @@
 - test_importlib.frozen.test_finder:
     skip:
       # incompatible with wheel
-      - "Frozen_FindSpecTests.test_module"
+      - "*FindSpecTests*"
 - test_importlib.frozen.test_loader
 - test_importlib.import_.test___loader__
 - test_importlib.import_.test___package__
