@@ -170,7 +170,7 @@ export async function loadPyodide(
      */
     enableRunUntilComplete?: boolean;
     /**
-     * If false (default), throw an error if the version of Pyodide core does not
+     * If true (default), throw an error if the version of Pyodide core does not
      * match the version of the Pyodide js package.
      */
     checkAPIVersion?: boolean;
@@ -215,6 +215,7 @@ export async function loadPyodide(
     packageCacheDir: indexURL,
     packages: [],
     enableRunUntilComplete: false,
+    checkAPIVersion: true,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
@@ -263,7 +264,7 @@ export async function loadPyodide(
     API.setPyProxyToStringMethod(true);
   }
 
-  if (API.version !== version && !options.checkAPIVersion) {
+  if (API.version !== version && !config.checkAPIVersion) {
     throw new Error(`\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
