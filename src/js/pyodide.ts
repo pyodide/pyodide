@@ -264,7 +264,7 @@ export async function loadPyodide(
     API.setPyProxyToStringMethod(true);
   }
 
-  if (API.version !== version && !config.checkAPIVersion) {
+  if (API.version !== version && config.checkAPIVersion) {
     throw new Error(`\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
