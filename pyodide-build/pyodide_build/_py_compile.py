@@ -11,8 +11,7 @@ from typing import Any
 from packaging.tags import Tag
 from packaging.utils import parse_wheel_filename
 
-from pyodide_build.common import _get_sha256_checksum
-
+from .common import _get_sha256_checksum
 from .logger import logger, set_log_level
 
 
@@ -236,11 +235,7 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
     >>> import re
     >>> re.sub("cp[0-9]*", "cpxxx", _get_py_compiled_archive_name(Path("snowballstemmer-2.2.0-py2.py3-none-any.whl")))
     'snowballstemmer-2.2.0-cpxxx-none-any.whl'
-    >>> _get_py_compiled_archive_name(Path("test-1.0.0.zip"))
     """
-    # TODO: fix py-compilation of the following packages
-    if path.name.startswith(("RobotRaconteur", "astropy-", "opencv_python-")):
-        return None
 
     if path.suffix == ".whl":
         try:
@@ -249,9 +244,6 @@ def _get_py_compiled_archive_name(path: Path) -> str | None:
         except Exception as e:
             print(e)
             return None
-    elif path.name == "test-1.0.0.zip":
-        # We don't want to py-compile the test package
-        return None
     elif path.suffix == ".zip":
         # If it's a zip file with .py files, keep the same name
         with zipfile.ZipFile(path, "r") as zip_ref:
@@ -281,6 +273,7 @@ def _py_compile_archive_dir(
     keep: bool = True,
     verbose: bool = True,
     compression_level: int = 6,
+    excludes: list[str] | None = None,
 ) -> dict[str, str]:
     """Py-compile all wheels or zip files in a directory.
 
@@ -315,15 +308,21 @@ def _py_compile_archive_dir(
     for file_path in itertools.chain(
         *[input_dir.glob(ext) for ext in ["*.zip", "*.whl"]]
     ):
-        if (output_name := _get_py_compiled_archive_name(file_path)) is not None:
-            _compile(
-                file_path,
-                file_path.parent / output_name,
-                keep=keep,
-                verbose=verbose,
-                compression_level=compression_level,
-            )
-            name_mapping[file_path.name] = output_name
+        if excludes and any(file_path.name.startswith(exclude) for exclude in excludes):
+            continue
+
+        output_name = _get_py_compiled_archive_name(file_path)
+        if output_name is None:
+            continue
+
+        _compile(
+            file_path,
+            file_path.parent / output_name,
+            keep=keep,
+            verbose=verbose,
+            compression_level=compression_level,
+        )
+        name_mapping[file_path.name] = output_name
 
     lockfile_path = input_dir / "pyodide-lock.json"
     if name_mapping and lockfile_path.exists():

@@ -50,6 +50,13 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
+- {{ Fix }} Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
+  unexpectedly when `filename` is specified.
+  {pr}`4905`
+
+- {{ Fix }} Locked `PyodideConsole.runcode` to block `loadPackagesFromImports`.
+  {pr}`4905`
+
 - {{ Enhancement }} Added `checkAPIVersion` option to `loadPyodide` to allow
   bootstrapping pyodide with a different version.
   {pr}`4907`
@@ -61,6 +68,7 @@ myst:
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
+- Upgraded `zengl` to 2.5.0 {pr}`4894`
 
 ## Version 0.26.1
 
