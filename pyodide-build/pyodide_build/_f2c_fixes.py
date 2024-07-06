@@ -57,17 +57,10 @@ def fix_f2c_input(f2c_input_path: str) -> None:
     with open(f2c_input) as f:
         lines = f.readlines()
     new_lines = []
-    lines = char1_args_to_int(lines)
     for line in lines:
-        line = fix_string_args(line)
-
         if f2c_input_path.endswith("_flapack-f2pywrappers.f"):
             line = line.replace("character cmach", "integer cmach")
             line = line.replace("character norm", "integer norm")
-        if "id_dist" in str(f2c_input):
-            line = line.replace("character*1 jobz", "integer jobz")
-            if "jobz =" in line:
-                line = re.sub("'(.)'", lambda r: str(ord(r.group(1))), line)
 
         if f2c_input.name in [
             "_lapack_subroutine_wrappers.f",
@@ -76,135 +69,10 @@ def fix_f2c_input(f2c_input_path: str) -> None:
             line = line.replace("character", "integer")
             line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
 
-        # f2c has no support for variable sized arrays, so we replace them with
-        # dummy fixed sized arrays and then put the formulas back in in
-        # fix_f2c_output. Luckily, variable sized arrays are scarce in the scipy
-        # code base.
-        if "PROPACK" in str(f2c_input):
-            line = line.replace("ylocal(n)", "ylocal(123001)")
-            line = line.replace("character*1", "integer")
-
-        if f2c_input.name == "mvndst.f":
-            line = re.sub(r"(infin|stdev|nlower|nupper)\(d\)", r"\1(123001)", line)
-            line = line.replace("rho(d*(d-1)/2)", "rho(123002)")
-
         new_lines.append(line)
-
-    # We assume one function per file, since this seems quite consistently true.
-    # Figure out if it's supposed to be recursive. f2c can't handle the
-    # recursive keyword so we need to remove it and add a comment so we can tell
-    # it was supposed to be recursive. In fix_f2c_output, we'll remove the
-    # static keywords from all the variables.
-    is_recursive = False
-    for idx, line in enumerate(new_lines):
-        if "recursive" in line:
-            is_recursive = True
-            new_lines[idx] = new_lines[idx].replace("recursive", "")
-            if line.strip() == "recursive":
-                # If whole line was recursive, then the next line starts with an
-                # asterisk to indicate line continuation. Fortran is very
-                # persnickity so we have to remove the line continuation. Make
-                # sure to replace the * with a space because the number of
-                # pre-code characters is significant...
-                new_lines[idx + 1] = new_lines[idx + 1].replace("*", " ")
-            break
-    if is_recursive:
-        new_lines.insert(0, "C     .. xxISRECURSIVExx ..\n")
 
     with open(f2c_input_path, "w") as f:
         f.writelines(new_lines)
-
-
-def fix_string_args(line: str) -> str:
-    """
-    Replace all single character strings in (the first line of) "call"
-    statements with their ascci codes.
-    """
-    if (
-        not re.search("call", line, re.I)
-        and "SIGNST" not in line
-        and "TRANST" not in line
-    ):
-        return line
-    else:
-        return re.sub("'[A-Za-z0-9]'", lambda y: str(ord(y.group(0)[1])), line)
-
-
-def char1_to_int(x: str) -> str:
-    """
-    Replace multicharacter strings with the ascii code of their first character.
-
-    >>> char1_to_int("CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )")
-    'CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )'
-    """
-    return re.sub("'(.)[A-Za-z -]*'", lambda r: str(ord(r.group(1))), x)
-
-
-def char1_args_to_int(lines: list[str]) -> list[str]:
-    """
-    Replace strings with the ascii code of their first character if they are
-    arguments to one of a long list of hard coded LAPACK functions (see
-    fncstems). This handles multiline function calls.
-
-    >>> print(char1_args_to_int(["CALL sTRSV( 'UPPER', 'NOTRANS', 'NONUNIT', J, H, LDH, Y, 1 )"]))
-    ['CALL sTRSV( 85, 78, 78, J, H, LDH, Y, 1 )']
-
-    >>> print("".join(char1_args_to_int(prepare_doctest('''
-    ...               call cvout (logfil, nconv, workl(ihbds), ndigit,
-    ...     &            '_neupd: Last row of the eigenvector matrix for T')
-    ...     call ctrmm('Right'   , 'Upper'      , 'No transpose',
-    ...     &                  'Non-unit', n            , nconv         ,
-    ...     &                  one       , workl(invsub), ldq           ,
-    ...     &                  z         , ldz)
-    ... '''))))
-    call cvout (logfil, nconv, workl(ihbds), ndigit,
-    &            '_neupd: Last row of the eigenvector matrix for T')
-    call ctrmm(82   , 85      , 78,
-    &                  78, n            , nconv         ,
-    &                  one       , workl(invsub), ldq           ,
-    &                  z         , ldz)
-    """
-    fncstems = [
-        "gemm",
-        "ggbak",
-        "gghrd",
-        "lacpy",
-        "lamch",
-        "lanhs",
-        "lanst",
-        "larf",
-        "lascl",
-        "laset",
-        "lasr",
-        "ormqr",
-        "orm2r",
-        "steqr",
-        "stevr",
-        "trevc",
-        "trmm",
-        "trsen",
-        "trsv",
-        "unm2r",
-        "unmqr",
-    ]
-    fncnames = []
-    for c in "cdsz":
-        for stem in fncstems:
-            fncnames.append(c + stem)
-    fncnames += ["lsame"]
-
-    funcs_pattern = "|".join(fncnames)
-    new_lines = []
-    replace = False
-    for line in lines:
-        if re.search(funcs_pattern, line, re.IGNORECASE):
-            replace = True
-        if replace:
-            line = char1_to_int(line)
-        if not re.search(r",\s*$", line):
-            replace = False
-        new_lines.append(line)
-    return new_lines
 
 
 def fix_f2c_output(f2c_output_path: str) -> str | None:
@@ -217,61 +85,13 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
     with open(f2c_output) as f:
         lines = f.readlines()
 
-    is_recursive = any("xxISRECURSIVExx" in line for line in lines)
-
-    lines = list(regroup_lines(lines))
-    if "id_dist" in f2c_output_path:
-        # Fix implicit casts in id_dist.
-        lines = fix_inconsistent_decls(lines)
-    if "odepack" in f2c_output_path or f2c_output.name == "mvndst.c":
-        # Mark all but one declaration of each struct as extern.
-        if f2c_output.name == "blkdta000.c":
-            # extern marking in blkdata000.c doesn't work properly so we let it
-            # define the one copy of the structs. It doesn't talk about lsa001
-            # at all though, so we need to add a definition of it.
-            lines.append(
-                """
-                struct {    doublereal rownd2, pdest, pdlast, ratio, cm1[12], cm2[5], pdnorm;
-                    integer iownd2[3], icount, irflag, jtyp, mused, mxordn, mxords;
-                } lsa001_;
-                """
-            )
-        else:
-            add_externs_to_structs(lines)
-
     if f2c_output.name == "_lapack_subroutine_wrappers.c":
         lines = [
             line.replace("integer chla_transtype__", "void chla_transtype__")
             for line in lines
         ]
 
-    # Substitute back the dummy fixed array sizes. We also have to remove the
-    # "static" storage specifier since variable sized arrays can't have static
-    # storage.
-    if f2c_output.name == "mvndst.c":
-        lines = fix_inconsistent_decls(lines)
-
-        def fix_line(line: str) -> str:
-            if "12300" in line:
-                return (
-                    line.replace("static", "")
-                    .replace("123001", "(*d__)")
-                    .replace("123002", "(*d__)*((*d__)-1)/2")
-                )
-            return line
-
-        lines = list(map(fix_line, lines))
-
     if "PROPACK" in str(f2c_output):
-
-        def fix_line(line: str) -> str:
-            if f2c_output.name != "cgemm_ovwr.c":
-                line = line.replace("struct", "extern struct")
-            if "12300" in line:
-                return line.replace("static", "").replace("123001", "(*n)")
-            return line
-
-        lines = list(map(fix_line, lines))
         if f2c_output.name.endswith("lansvd.c"):
             lines.append(
                 """
@@ -284,229 +104,14 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
                 """
             )
 
-    # In numpy 1.24 f2py changed its treatment of character argument. In
-    # particular it does not generate a ftnlen parameter for each
-    # character parameter but f2c still generates it. The following code
-    # removes unneeded ftnlen parameters from the f2ced signature. The
-    # problematic subroutines and parameters are the ones with a type character
-    # in scipy/sparse/linalg/_eigen/arpack/arpack.pyf.src
-    if "eupd.c" in str(f2c_output):
-        # put signature on a single line to make replacement more
-        # straightforward
-        lines = [
-            re.sub(r",?\s*ftnlen\s*(howmny_len|bmat_len)", "", line) for line in lines
-        ]
-
     # Fix signature of c_abs to match the OpenBLAS one
     if "REVCOM.c" in str(f2c_output):
         lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
-
-    # Non recursive functions declare all their locals as static, ones marked
-    # "recursive" need them to be proper local variables. For recursive
-    # functions we'll replace them.
-    def fix_static(line: str) -> str:
-        static_prefix = "    static"
-        if not line.startswith(static_prefix):
-            return line
-        line = line.removeprefix(static_prefix).strip()
-        # If line contains a { or " there's already an initializer and we'll get
-        # confused. When there's an initializer there's also only one variable
-        # so we don't need to do anything.
-        if "{" in line or '"' in line:
-            return line + "\n"
-        # split off type
-        type, rest = line.split(" ", 1)
-        # Since there is no { or " each comma separates a variable name
-        names = rest[:-1].split(",")
-        init_names = []
-        for name in names:
-            if "=" in name:
-                # There's already an initializer
-                init_names.append(name)
-            else:
-                # = {0} initializes all types to all 0s.
-                init_names.append(name + " = {0}")
-        joined_names = ",".join(init_names)
-        return f"    {type} {joined_names};\n"
-
-    if is_recursive:
-        lines = list(map(fix_static, lines))
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
 
     return None
-
-
-def add_externs_to_structs(lines: list[str]) -> None:
-    """
-    The fortran "common" keyword is supposed to share variables between a bunch
-    of files. f2c doesn't handle this correctly (it isn't possible for it to
-    handle it correctly because it only looks one file at a time).
-
-    We mark all the structs as externs and then (separately) add one non extern
-    version to each file.
-    >>> lines = prepare_doctest('''
-    ...     struct {    doublereal rls[218];
-    ...         integer ils[39];
-    ...     } ls0001_;
-    ...     struct {    doublereal rlsa[22];
-    ...         integer ilsa[9];
-    ...     } lsa001_;
-    ...     struct {    integer ieh[2];
-    ...     } eh0001_;
-    ... ''')
-    >>> add_externs_to_structs(lines)
-    >>> print("".join(lines))
-    extern struct {    doublereal rls[218];
-        integer ils[39];
-    } ls0001_;
-    extern struct {    doublereal rlsa[22];
-        integer ilsa[9];
-    } lsa001_;
-    extern struct {    integer ieh[2];
-    } eh0001_;
-    """
-    for idx, line in enumerate(lines):
-        if line.startswith("struct"):
-            lines[idx] = "extern " + lines[idx]
-
-
-def regroup_lines(lines: Iterable[str]) -> Iterator[str]:
-    """
-    Make sure that functions and declarations have their argument list only on
-    one line.
-
-    >>> print("".join(regroup_lines(prepare_doctest('''
-    ...     /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char *
-    ...     	uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen
-    ...     	transr_len, ftnlen uplo_len)
-    ...     {
-    ...        static doublereal psum[52];
-    ...        extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *,
-    ...            doublereal *, doublereal *, integer *);
-    ... '''))).strip())
-    /* Subroutine */ int clanhfwrp_(real *ret, char *norm, char *transr, char * uplo, integer *n, complex *a, real *work, ftnlen norm_len, ftnlen transr_len, ftnlen uplo_len){
-       static doublereal psum[52];
-       extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);
-    """
-    line_iter = iter(lines)
-    for line in line_iter:
-        if "/* Subroutine */" not in line and "static" not in line:
-            yield line
-            continue
-
-        if '"' in line:
-            yield line
-            continue
-
-        is_definition = line.startswith("/* Subroutine */")
-        stop = ")" if is_definition else ";"
-        if stop in line:
-            yield line
-            continue
-
-        sub_lines = [line.rstrip()]
-        for line in line_iter:
-            sub_lines.append(line.strip())
-            if stop in line:
-                break
-        joined_line = " ".join(sub_lines)
-        if is_definition:
-            yield joined_line
-        else:
-            yield from (x + ";\n" for x in joined_line.split(";")[:-1])
-
-
-def fix_inconsistent_decls(lines: list[str]) -> list[str]:
-    """
-    Fortran functions in id_dist use implicit casting of function args which f2c
-    doesn't support.
-
-    The fortran equivalent of the following code:
-
-        double f(double x){
-            return x + 5;
-        }
-        double g(int x){
-            return f(x);
-        }
-
-    gets f2c'd to:
-
-        double f(double x){
-            return x + 5;
-        }
-        double g(int x){
-            double f(int);
-            return f(x);
-        }
-
-    which fails to compile because the declaration of f type clashes with the
-    definition. Gather up all the definitions in each file and then gathers the
-    declarations and fixes them if necessary so that the declaration matches the
-    definition.
-
-    >>> print("".join(fix_inconsistent_decls(prepare_doctest('''
-    ...    /* Subroutine */ double f(double x){
-    ...        return x + 5;
-    ...    }
-    ...    /* Subroutine */ double g(int x){
-    ...        extern /* Subroutine */ double f(int);
-    ...        return f(x);
-    ...    }
-    ... '''))))
-    /* Subroutine */ double f(double x){
-        return x + 5;
-    }
-    /* Subroutine */ double g(int x){
-        extern /* Subroutine */ double f(double);
-        return f(x);
-    }
-    """
-    func_types = {}
-    for line in lines:
-        if not line.startswith("/* Subroutine */"):
-            continue
-        [func_name, types] = get_subroutine_decl(line)
-        func_types[func_name] = types
-
-    for idx, line in enumerate(lines):
-        if "extern /* Subroutine */" not in line:
-            continue
-        decls = line.split(")")[:-1]
-        for decl in decls:
-            [func_name, types] = get_subroutine_decl(decl)
-            if func_name not in func_types or types == func_types[func_name]:
-                continue
-            types = func_types[func_name]
-            l = list(line.partition(func_name + "("))
-            l[2:] = list(l[2].partition(")"))
-            l[2] = ", ".join(types)
-            line = "".join(l)
-        lines[idx] = line
-    return lines
-
-
-def get_subroutine_decl(sub: str) -> tuple[str, list[str]]:
-    """
-    >>> get_subroutine_decl(
-    ...     "extern /* Subroutine */ int dqelg_(integer *, doublereal *, doublereal *, doublereal *, doublereal *, integer *);"
-    ... )
-    ('dqelg_', ['integer *', 'doublereal *', 'doublereal *', 'doublereal *', 'doublereal *', 'integer *'])
-    """
-    func_name = sub.partition("(")[0].rpartition(" ")[2]
-    args_str = sub.partition("(")[2].partition(")")[0]
-    args = args_str.split(",")
-    types = []
-    for arg in args:
-        arg = arg.strip()
-        if "*" in arg:
-            type = "".join(arg.partition("*")[:-1])
-        else:
-            type = arg.partition(" ")[0]
-        types.append(type.strip())
-    return (func_name, types)
 
 
 def scipy_fix_cfile(path: str) -> None:
@@ -570,7 +175,7 @@ def scipy_fixes(args: list[str]) -> None:
             scipy_fix_cfile(arg)
 
 
-def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
+def replay_f2c(f2c_path: str, args: list[str], dryrun: bool = False) -> list[str] | None:
     """Apply f2c to compilation arguments
 
     Parameters
@@ -634,7 +239,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                     open(filepath.with_suffix(".c"), "w") as output_pipe,
                 ):
                     subprocess.check_call(
-                        ["f2c", "-R"],
+                        [f2c_path, "-R"],
                         stdin=input_pipe,
                         stdout=output_pipe,
                         cwd=filepath.parent,
