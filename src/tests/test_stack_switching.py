@@ -731,7 +731,7 @@ def test_can_run_sync(selenium):
         `);
 
         await pyodide.runPythonAsync(`
-            run_js("(x) => Array.from(x)")([]) 
+            run_js("(x) => Array.from(x)")([])
             expect(8, True)
         `);
 
