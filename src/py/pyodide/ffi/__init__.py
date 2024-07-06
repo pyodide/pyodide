@@ -21,6 +21,7 @@ if IN_BROWSER:
     for t in [
         "JsException",
         "run_sync",
+        "can_run_sync",
         "create_once_callable",
         "create_proxy",
         "destroy_proxies",
