@@ -5,6 +5,7 @@ import {
   IN_BROWSER_MAIN_THREAD,
   IN_BROWSER_WEB_WORKER,
   IN_NODE_COMMONJS,
+  IN_BUN,
 } from "./environments";
 import { Lockfile } from "./types";
 
@@ -268,6 +269,9 @@ export async function calculateDirname(): Promise<string> {
 
     // FIXME: We would like to use import.meta.url here,
     // but mocha seems to mess with compiling typescript files to ES6.
+    if (IN_BUN) {
+      return nodeUrl.fileURLToPath(`file://${nodePath.dirname(fileName)}`);
+    }
     return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
   }
 

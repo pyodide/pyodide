@@ -5,8 +5,10 @@ export const IN_NODE =
   typeof process === "object" &&
   typeof process.versions === "object" &&
   typeof process.versions.node === "string" &&
-  typeof process.browser ===
-    "undefined"; /* This last condition checks if we run the browser shim of process */
+  !process.browser; /* This last condition checks if we run the browser shim of process */
+
+/** @private */
+export const IN_BUN = IN_NODE && process.title === "bun";
 
 /** @private */
 export const IN_NODE_COMMONJS =
