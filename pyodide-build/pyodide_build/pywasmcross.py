@@ -622,7 +622,7 @@ def compiler_main():
         target_install_dir=PYWASMCROSS_ARGS["target_install_dir"],
         pythoninclude=PYWASMCROSS_ARGS["pythoninclude"],
         exports=PYWASMCROSS_ARGS["exports"],
-        f2c_path=PYWASMCROSS_ARGS["F2C_PATH"]
+        f2c_path=PYWASMCROSS_ARGS["F2C_PATH"],
     )
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)

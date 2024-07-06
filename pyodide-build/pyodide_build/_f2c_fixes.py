@@ -1,6 +1,5 @@
 import re
 import subprocess
-from collections.abc import Iterable, Iterator
 from pathlib import Path
 from textwrap import dedent  # for doctests
 
@@ -175,7 +174,9 @@ def scipy_fixes(args: list[str]) -> None:
             scipy_fix_cfile(arg)
 
 
-def replay_f2c(f2c_path: str, args: list[str], dryrun: bool = False) -> list[str] | None:
+def replay_f2c(
+    f2c_path: str, args: list[str], dryrun: bool = False
+) -> list[str] | None:
     """Apply f2c to compilation arguments
 
     Parameters
