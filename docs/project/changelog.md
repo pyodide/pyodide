@@ -57,6 +57,10 @@ myst:
 - {{ Fix }} Locked `PyodideConsole.runcode` to block `loadPackagesFromImports`.
   {pr}`4905`
 
+- {{ Enhancement }} Added `checkAPIVersion` option to `loadPyodide` to allow
+  bootstrapping pyodide with a different version.
+  {pr}`4907`
+
 - {{ Enhancement }} Added `can_run_sync` to test whether or not `run_sync`
   should work.
   {pr}`4913`
