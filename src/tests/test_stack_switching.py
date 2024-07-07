@@ -730,10 +730,15 @@ def test_can_run_sync(selenium):
             await run_js("(f) => f()")(fasync)
         `);
 
+        await pyodide.runPythonAsync(`
+            run_js("(x) => Array.from(x)")([])
+            expect(8, True)
+        `);
+
         return results;
         """
     )
-    assert len(results) == 8
+    assert len(results) == 9
     for idx, [i, res, expected] in enumerate(results):
         assert idx == i
         assert res == expected
