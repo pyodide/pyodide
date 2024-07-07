@@ -112,7 +112,6 @@ requirements:
     - openblas
   executable:
     - gfortran
-    - f2c
 
 test:
   imports:
