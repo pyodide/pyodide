@@ -61,6 +61,14 @@ myst:
   bootstrapping pyodide with a different version.
   {pr}`4907`
 
+- {{ Enhancement }} Added `can_run_sync` to test whether or not `run_sync`
+  should work.
+  {pr}`4913`
+
+- {{ Fix }} Fixed a bug with the JSPI that made it interact incorrectly with
+  JavaScript code that iterates a `PyProxy`.
+  {pr}`4919`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
