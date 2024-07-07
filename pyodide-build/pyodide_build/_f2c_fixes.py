@@ -42,22 +42,17 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             for line in lines
         ]
 
-    if "PROPACK" in str(f2c_output):
-        if f2c_output.name.endswith("lansvd.c"):
-            lines.append(
-                """
-                #include <time.h>
+    if f2c_output.name.endswith("lansvd.c"):
+        lines.append(
+            """
+            #include <time.h>
 
-                int second_(real *t) {
-                    *t = clock()/1000;
-                    return 0;
-                }
-                """
-            )
-
-    # Fix signature of c_abs to match the OpenBLAS one
-    if "REVCOM.c" in str(f2c_output):
-        lines = [line.replace("double c_abs(", "float c_abs(") for line in lines]
+            int second_(real *t) {
+                *t = clock()/1000;
+                return 0;
+            }
+            """
+        )
 
     with open(f2c_output, "w") as f:
         f.writelines(lines)
@@ -84,15 +79,6 @@ def scipy_fix_cfile(path: str) -> None:
     if path.endswith("_flapackmodule.c"):
         text = text.replace(",size_t", "")
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
-
-    if path.endswith("stats/statlib/spearman.c"):
-        # in scipy/stats/statlib/swilk.f ALNORM is called with a double, and in
-        # scipy/stats/statlib/spearman.f with a real this generates
-        # inconsistent signature. Let's use double in both, I don't think this
-        # code path will work (but at least it will compile) since it needs
-        # "ALNORM = algorithm AS66", which I don't think we have with the f2c
-        # route
-        text = text.replace("extern real alnorm_", "extern doublereal alnorm_")
 
     source_path.write_text(text)
 
@@ -154,54 +140,55 @@ def replay_f2c(
     new_args = ["gcc"]
     found_source = False
     for arg in args[1:]:
-        if arg.endswith(".f") or arg.endswith(".F"):
-            filepath = Path(arg).resolve()
-            if not dryrun:
-                fix_f2c_input(arg)
-                if arg.endswith(".F"):
-                    # .F files apparently expect to be run through the C
-                    # preprocessor (they have #ifdef's in them)
-                    # Use gfortran frontend, as gcc frontend might not be
-                    # present on osx
-                    # The file-system might be not case-sensitive,
-                    # so take care to handle this by renaming.
-                    # For preprocessing and further operation the
-                    # expected file-name and extension needs to be preserved.
-                    subprocess.check_call(
-                        [
-                            "gfortran",
-                            "-E",
-                            "-C",
-                            "-P",
-                            filepath,
-                            "-o",
-                            filepath.with_suffix(".f77"),
-                        ]
-                    )
-                    filepath = filepath.with_suffix(".f77")
-                # -R flag is important, it means that Fortran functions that
-                # return real e.g. sdot will be transformed into C functions
-                # that return float. For historic reasons, by default f2c
-                # transform them into functions that return a double. Using -R
-                # allows to match what OpenBLAS has done when they f2ced their
-                # Fortran files, see
-                # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
-                # for more details
-                with (
-                    open(filepath) as input_pipe,
-                    open(filepath.with_suffix(".c"), "w") as output_pipe,
-                ):
-                    subprocess.check_call(
-                        [f2c_path, "-R"],
-                        stdin=input_pipe,
-                        stdout=output_pipe,
-                        cwd=filepath.parent,
-                    )
-                fix_f2c_output(arg[:-2] + ".c")
-            new_args.append(arg[:-2] + ".c")
-            found_source = True
-        else:
+        if not arg.endswith((".f", ".F")):
             new_args.append(arg)
+            continue
+        found_source = True
+        filepath = Path(arg).resolve()
+        new_args.append(arg[:-2] + ".c")
+        if dryrun:
+            continue
+        fix_f2c_input(arg)
+        if arg.endswith(".F"):
+            # .F files apparently expect to be run through the C
+            # preprocessor (they have #ifdef's in them)
+            # Use gfortran frontend, as gcc frontend might not be
+            # present on osx
+            # The file-system might be not case-sensitive,
+            # so take care to handle this by renaming.
+            # For preprocessing and further operation the
+            # expected file-name and extension needs to be preserved.
+            subprocess.check_call(
+                [
+                    "gfortran",
+                    "-E",
+                    "-C",
+                    "-P",
+                    filepath,
+                    "-o",
+                    filepath.with_suffix(".f77"),
+                ]
+            )
+            filepath = filepath.with_suffix(".f77")
+        # -R flag is important, it means that Fortran functions that
+        # return real e.g. sdot will be transformed into C functions
+        # that return float. For historic reasons, by default f2c
+        # transform them into functions that return a double. Using -R
+        # allows to match what OpenBLAS has done when they f2ced their
+        # Fortran files, see
+        # https://github.com/xianyi/OpenBLAS/pull/3539#issuecomment-1493897254
+        # for more details
+        with (
+            open(filepath) as input_pipe,
+            open(filepath.with_suffix(".c"), "w") as output_pipe,
+        ):
+            subprocess.check_call(
+                [f2c_path, "-R"],
+                stdin=input_pipe,
+                stdout=output_pipe,
+                cwd=filepath.parent,
+            )
+        fix_f2c_output(arg[:-2] + ".c")
 
     new_args_str = " ".join(args)
     if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
