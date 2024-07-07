@@ -50,6 +50,9 @@ myst:
   should work.
   {pr}`4913`
 
+- {{ Fix }} Fixed a bug with the JSPI that made it interact incorrectly with
+  JavaScript code that iterates a `PyProxy`.
+  {pr}`4919`
 
 ## Version 0.26.1
 
