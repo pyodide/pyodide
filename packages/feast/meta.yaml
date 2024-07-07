@@ -1,0 +1,14 @@
+package:
+  name: feast
+  version: 0.34.1
+  top-level:
+    - feast
+    - tests
+source:
+  url: https://files.pythonhosted.org/packages/cc/df/0570722f495e87c461e7d113334ab4ac3f2b999ff420fe280490b8cfb839/feast-0.34.1-py2.py3-none-any.whl
+  sha256: 1caac5b52e5a0332461367df5c69a62999a787e4a7eaf09e9795b94b7567c83f
+about:
+  home: https://github.com/feast-dev/feast
+  PyPI: https://pypi.org/project/feast
+  summary: Python SDK for Feast
+  license: Apache

@@ -1,0 +1,15 @@
+package:
+  name: frozendict
+  version: 2.4.0
+  top-level:
+    - frozendict
+  tag:
+    - core
+source:
+  url: https://files.pythonhosted.org/packages/8d/af/ea169c16f17f1c11a3fb2db3d56ca51cfec6b9bce8765cab58eed5ad1a49/frozendict-2.4.0.tar.gz
+  sha256: c26758198e403337933a92b01f417a8240c954f553e1d4b5e0f8e39d9c8e3f0a
+about:
+  home: https://github.com/Marco-Sulla/python-frozendict
+  PyPI: https://pypi.org/project/frozendict
+  summary: A simple immutable dictionary
+  license: LGPL v3
