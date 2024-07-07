@@ -50,6 +50,9 @@ myst:
   in `CodeRunner` and `Console`.
   {pr}`4897`
 
+- {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
+  {pr}`4902`
+
 - {{ Fix }} Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
   unexpectedly when `filename` is specified.
   {pr}`4905`
