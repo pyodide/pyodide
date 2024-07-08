@@ -77,7 +77,6 @@ class CrossCompileArgs(NamedTuple):
     target_install_dir: str = ""  # The path to the target Python installation
     pythoninclude: str = ""  # path to the cross-compiled Python include directory
     exports: Literal["whole_archive", "requested", "pyinit"] | list[str] = "pyinit"
-    f2c_path: str = "f2c"
 
 
 def is_link_cmd(line: list[str]) -> bool:
@@ -594,7 +593,7 @@ def handle_command(
     if line[0] == "gfortran":
         from pyodide_build._f2c_fixes import replay_f2c
 
-        tmp = replay_f2c(build_args.f2c_path, line)
+        tmp = replay_f2c(line)
         if tmp is None:
             # No source file, it's a query for information about the compiler. Pretend we're
             # gfortran by letting gfortran handle it
@@ -622,7 +621,6 @@ def compiler_main():
         target_install_dir=PYWASMCROSS_ARGS["target_install_dir"],
         pythoninclude=PYWASMCROSS_ARGS["pythoninclude"],
         exports=PYWASMCROSS_ARGS["exports"],
-        f2c_path=PYWASMCROSS_ARGS["F2C_PATH"],
     )
     basename = Path(sys.argv[0]).name
     args = list(sys.argv)

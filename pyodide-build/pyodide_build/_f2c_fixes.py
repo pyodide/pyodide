@@ -1,3 +1,4 @@
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -112,9 +113,7 @@ def scipy_fixes(args: list[str]) -> None:
             scipy_fix_cfile(arg)
 
 
-def replay_f2c(
-    f2c_path: str, args: list[str], dryrun: bool = False
-) -> list[str] | None:
+def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
     """Apply f2c to compilation arguments
 
     Parameters
@@ -136,6 +135,7 @@ def replay_f2c(
     >>> replay_f2c(['gfortran', 'test.f'], dryrun=True)
     ['gcc', 'test.c']
     """
+    f2c_path = os.environ.get("F2C_PATH", "f2c")
 
     new_args = ["gcc"]
     found_source = False

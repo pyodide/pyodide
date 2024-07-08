@@ -56,6 +56,8 @@ build:
     git clone https://github.com/hoodmane/f2c.git --depth 1
     (cd f2c/src && cp makefile.u makefile && sed -i "s/gram.c:/gram.c1:/" makefile && make)
     export F2C_PATH=$(pwd)/f2c/src/f2c
+
+    echo F2C_PATH: $F2C_PATH
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 

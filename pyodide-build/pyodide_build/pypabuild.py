@@ -270,7 +270,6 @@ def get_build_env(
         args["orig__name__"] = __name__
         args["pythoninclude"] = get_build_flag("PYTHONINCLUDE")
         args["PATH"] = env["PATH"]
-        args["F2C_PATH"] = env.get("F2C_PATH", "f2c")
 
         pywasmcross_env = json.dumps(args)
         # Store into environment variable and to disk. In most cases we will
