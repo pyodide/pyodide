@@ -139,9 +139,6 @@ def get_format(format: str) -> str:
 def get_install_dir(target: Literal["site", "dynlib"] | None = None) -> str:
     """
     Get the installation directory for a target.
-
-    Normally, Python packages are installed into the site-packages directory.
-    However, shared libraries are installed into the system library directory.
     """
     return str(TARGETS.get(target, SITE_PACKAGES))
 
