@@ -39,6 +39,7 @@ pytest_pyodide.runner.INITIALIZE_SCRIPT = """
     pyodide.globals.get;
     pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
     pyodide._api.importlib.invalidate_caches;
+    pyodide._api.package_loader.get_install_dir;
     pyodide._api.package_loader.unpack_buffer;
     pyodide._api.package_loader.get_dynlibs;
     pyodide._api.pyodide_code.eval_code;
