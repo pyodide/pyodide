@@ -1,7 +1,6 @@
 import re
 import shutil
 import sys
-import sysconfig
 from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
@@ -140,11 +139,11 @@ def get_format(format: str) -> str:
 def get_install_dir(target: Literal["site", "dynlib"] | None = None) -> str:
     """
     Get the installation directory for a target.
+
+    Normally, Python packages are installed into the site-packages directory.
+    However, shared libraries are installed into the system library directory.
     """
-    if target in TARGETS:
-        return str(TARGETS[target])
-    
-    return str(SITE_PACKAGES)
+    return str(TARGETS.get(target, SITE_PACKAGES))
 
 
 def unpack_buffer(
@@ -203,7 +202,7 @@ def unpack_buffer(
         format = get_format(format)
     if not filename and format is None:
         raise ValueError("At least one of filename and format must be provided")
-    
+
     extract_path = Path(extract_dir or ".")
     filename = filename.rpartition("/")[-1]
 
@@ -211,7 +210,7 @@ def unpack_buffer(
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
-        
+
         suffix = Path(filename).suffix
         if suffix == ".whl":
             set_wheel_installer(filename, f, extract_path, installer, source)
