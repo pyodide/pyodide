@@ -49,7 +49,7 @@ myst:
 - {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
   depend on shared libraries link to the shared libraries explicitly.
   {pr}`4876`
-  
+
 - {{ Enhancement }} Allow setting `dont_inherit` and `optimize` for `compile`
   in `CodeRunner` and `Console`.
   {pr}`4897`
