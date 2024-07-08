@@ -350,7 +350,11 @@ def test_py_compile(tmp_path, target, compression_level):
         target_path = wheel_path
 
     py_compile.main(
-        path=target_path, silent=False, keep=False, compression_level=compression_level
+        path=target_path,
+        silent=False,
+        keep=False,
+        compression_level=compression_level,
+        exclude="",
     )
     with zipfile.ZipFile(tmp_path / "python.zip", "r") as fh:
         if compression_level > 0:
