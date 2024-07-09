@@ -160,7 +160,8 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: \
 		src/js/*.ts                          \
-		src/js/*.js                          \
+		src/js/common/*                      \
+		src/js/vendor/*                      \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \

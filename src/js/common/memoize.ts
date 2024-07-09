@@ -4,15 +4,15 @@
  * @private
  */
 export const memoize = (fn: CallableFunction) => {
-    let cache: any = {};
-    return (...args: any) => {
-      let n = args[0];
-      if (n in cache) {
-        return cache[n];
-      } else {
-        let result = fn(n);
-        cache[n] = result;
-        return result;
-      }
-    };
+  let cache: any = {};
+  return (...args: any) => {
+    let n = args[0];
+    if (n in cache) {
+      return cache[n];
+    } else {
+      let result = fn(n);
+      cache[n] = result;
+      return result;
+    }
   };
+};

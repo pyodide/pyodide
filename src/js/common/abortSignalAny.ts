@@ -68,6 +68,6 @@ function abortSignalAny(signals: AbortSignal[]) {
   signal.__controller = controller; // keep a strong reference
 
   return signal;
-};
+}
 
 export default abortSignalAny;
