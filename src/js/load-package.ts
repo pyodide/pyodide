@@ -364,10 +364,13 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
+  const installDir: string = API.package_loader.get_install_dir(
+    pkg.install_dir,
+  );
   const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
-    target: pkg.install_dir,
+    extract_dir: installDir,
     calculate_dynlibs: true,
     installer: "pyodide.loadPackage",
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
