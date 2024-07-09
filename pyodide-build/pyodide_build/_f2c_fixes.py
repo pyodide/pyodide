@@ -43,6 +43,11 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             for line in lines
         ]
 
+    if "eupd.c" in str(f2c_output):
+        lines = [
+            re.sub(r"ftnlen\s*(howmny_len|bmat_len),?", "", line) for line in lines
+        ]
+
     if f2c_output.name.endswith("lansvd.c"):
         lines.append(
             """
