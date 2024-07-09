@@ -2,8 +2,8 @@
 
 declare var DEBUG: boolean;
 
-import { createLock } from "./lock";
-import { memoize } from "./pyodide-util";
+import { createLock } from "./common/lock";
+import { memoize } from "./common/memoize";
 import { InternalPackageData } from "./load-package";
 import { LoadDynlibFS, ReadFileType } from "./types";
 
