@@ -140,6 +140,9 @@ def get_install_dir(target: Literal["site", "dynlib"] | None = None) -> str:
     """
     Get the installation directory for a target.
     """
+    if not target:
+        return str(SITE_PACKAGES)
+
     return str(TARGETS.get(target, SITE_PACKAGES))
 
 
