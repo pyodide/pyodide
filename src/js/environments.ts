@@ -8,9 +8,6 @@ export const IN_NODE =
   !process.browser; /* This last condition checks if we run the browser shim of process */
 
 /** @private */
-export const IN_BUN = IN_NODE && process.title === "bun";
-
-/** @private */
 export const IN_NODE_COMMONJS =
   IN_NODE &&
   typeof module !== "undefined" &&
@@ -20,6 +17,9 @@ export const IN_NODE_COMMONJS =
 
 /** @private */
 export const IN_NODE_ESM = IN_NODE && !IN_NODE_COMMONJS;
+
+/** @private */
+export const IN_BUN = IN_NODE && process.title === "bun";
 
 /** @private */
 export const IN_DENO = typeof Deno !== "undefined"; // just in case...
@@ -57,6 +57,7 @@ export function detectEnvironment(): Record<string, boolean> {
     IN_NODE: IN_NODE,
     IN_NODE_COMMONJS: IN_NODE_COMMONJS,
     IN_NODE_ESM: IN_NODE_ESM,
+    IN_BUN: IN_BUN,
     IN_DENO: IN_DENO,
     IN_BROWSER: IN_BROWSER,
     IN_BROWSER_MAIN_THREAD: IN_BROWSER_MAIN_THREAD,
