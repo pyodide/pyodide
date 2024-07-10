@@ -207,7 +207,7 @@ class RecipeBuilder:
                 with TemporaryDirectory() as tmpdir:
                     tmpdir_path = Path(tmpdir)
                     for relfile in self.sharedlib_files:
-                        target = self.src_dist_dir / relfile
+                        target = self.library_install_prefix / relfile
                         if not target.exists():
                             raise FileNotFoundError(f"File {target} does not exist")
 
