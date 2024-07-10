@@ -14,8 +14,8 @@ import sys
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import Any, cast
 from tempfile import TemporaryDirectory
+from typing import Any, cast
 
 import requests
 
@@ -36,10 +36,10 @@ from .common import (
     chdir,
     exit_with_stdio,
     find_matching_wheels,
+    install,
     make_zip_archive,
     modify_wheel,
     retag_wheel,
-    install,
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
@@ -210,9 +210,11 @@ class RecipeBuilder:
                         target = self.src_dist_dir / relfile
                         if not target.exists():
                             raise FileNotFoundError(f"File {target} does not exist")
-                        
-                        shutil.copy(target, tmpdir_path / relfile)
-                        make_zip_archive(self.dist_dir / f"{self.fullname}.zip", tmpdir_path)
+
+                        shutil.copy(target, tmpdir_path / target.name)
+                        make_zip_archive(
+                            self.dist_dir / f"{self.fullname}.zip", tmpdir_path
+                        )
 
             else:  # wheel
                 url = self.source_metadata.url

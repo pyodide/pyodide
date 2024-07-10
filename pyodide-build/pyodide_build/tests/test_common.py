@@ -8,10 +8,10 @@ from pyodide_build.common import (
     extract_wheel_metadata_file,
     find_missing_executables,
     get_num_cores,
+    install,
     make_zip_archive,
     parse_top_level_import_name,
     repack_zip_archive,
-    install,
 )
 
 

@@ -444,7 +444,7 @@ def search_pyproject_toml(
 
 def install(src: str | Path, dst: str | Path) -> None:
     """
-    Installs everthing in src recursively to dst.
+    Installs everything in src recursively to dst.
 
     This function is similar to shutil.copytree, but it does not raise an error if dst or any of its subdirectories
     already exist. Instead, it will copy the files from src to dst, overwriting any existing files with the same name.
@@ -465,7 +465,7 @@ def install(src: str | Path, dst: str | Path) -> None:
 
     if not dst.exists():
         dst.mkdir(parents=True)
-    
+
     if not dst.is_dir():
         raise ValueError(f"{dst} is not a directory.")
 

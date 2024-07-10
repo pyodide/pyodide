@@ -91,7 +91,7 @@ class _BuildSpec(BaseModel):
     vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
     # List of files that needs to be included in the shared librari archive.
     # Effective only if package_type is shared_library.
-    sharedlib_files: list[str] = Field([], alias="sharedlib-paths")
+    sharedlib_files: list[str] = Field([], alias="sharedlib-files")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
 
@@ -111,6 +111,7 @@ class _BuildSpec(BaseModel):
             "script",
             "exports",
             "unvendor_tests",
+            "sharedlib_files",
         }
 
         typ = self.package_type

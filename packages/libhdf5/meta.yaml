@@ -52,4 +52,3 @@ build:
   sharedlib-files:
     - lib/libhdf5.so
     - lib/libhdf5_hl.so
-
