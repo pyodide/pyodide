@@ -100,7 +100,7 @@ def test_python2js_numpy_dtype(selenium, order, dtype):
     assert classname != "Array"
     selenium.run(
         """
-        x = x.byteswap().newbyteorder()
+        x = x.view(x.dtype.newbyteorder())
         """
     )
     assert_equal()
@@ -161,7 +161,7 @@ def test_python2js_numpy_scalar(selenium, dtype):
     )
     selenium.run(
         """
-        x = x.byteswap().newbyteorder()
+        x = x.byteswap().view(x.dtype.newbyteorder())
         """
     )
     assert (
@@ -304,12 +304,12 @@ def test_get_buffer_big_endian(selenium):
         await pyodide.loadPackage(['numpy']);
         self.a = pyodide.runPython(`
             import numpy as np
-            np.arange(24, dtype="int16").byteswap().newbyteorder()
+            np.arange(24, dtype="int16").byteswap().view(np.dtype("int16").newbyteorder())
         `);
         """
     )
     with pytest.raises(
-        Exception, match="Javascript has no native support for big endian buffers"
+        Exception, match="JavaScript has no native support for big endian buffers"
     ):
         selenium.run_js("a.getBuffer()")
     result = selenium.run_js(
