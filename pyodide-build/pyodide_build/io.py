@@ -89,8 +89,12 @@ class _BuildSpec(BaseModel):
     unvendor_tests: bool = Field(True, alias="unvendor-tests")
     retain_test_patterns: list[str] = Field([], alias="_retain-test-patterns")
     vendor_sharedlib: bool = Field(False, alias="vendor-sharedlib")
+    # List of files that needs to be included in the shared librari archive.
+    # Effective only if package_type is shared_library.
+    sharedlib_files: list[str] = Field([], alias="sharedlib-paths")
     cross_build_env: bool = Field(False, alias="cross-build-env")
     cross_build_files: list[str] = Field([], alias="cross-build-files")
+
     model_config = ConfigDict(extra="forbid")
 
     @pydantic.model_validator(mode="after")

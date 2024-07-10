@@ -15,6 +15,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
+from tempfile import TemporaryDirectory
 
 import requests
 
@@ -38,6 +39,7 @@ from .common import (
     make_zip_archive,
     modify_wheel,
     retag_wheel,
+    install,
 )
 from .io import MetaConfig, _SourceSpec
 from .logger import logger
@@ -107,7 +109,9 @@ class RecipeBuilder:
 
         # where the built artifacts are put.
         # For wheels, this is the default location where the built wheels are put by pypa/build.
-        # For shared libraries, users should use this directory to put the built shared libraries (can be accessed by DISTDIR env var)
+        # For static and shared libraries, users should use this directory to put the built artifacts (can be accessed by DISTDIR env var),
+        # and the artifacts will be copied to `library_install_prefix` so that they can be accessed by other recipes
+        # (can be accessed by WASM_LIBRARY_DIR env var)
         self.src_dist_dir = self.src_extract_dir / "dist"
 
         # where Pyodide will look for the built artifacts when building pyodide-lock.json.
@@ -120,6 +124,8 @@ class RecipeBuilder:
 
         self.force_rebuild = force_rebuild or continue_
         self.continue_ = continue_
+
+        self.sharedlib_files = self.build_metadata.sharedlib_files
 
     def build(self) -> None:
         """
@@ -189,17 +195,24 @@ class RecipeBuilder:
 
             # TODO: maybe subclass this for different package types?
             if self.package_type == "static_library":
-                # Nothing needs to be done for a static library
-                pass
+                install(self.src_dist_dir, self.library_install_prefix)
 
             elif self.package_type == "shared_library":
-                # If shared library, we copy .so files to dist_dir
-                # and create a zip archive of the .so files
+                install(self.src_dist_dir, self.library_install_prefix)
+
+                # If shared library, we copy sharedlib_files to dist_dir and create a zip archive
                 shutil.rmtree(self.dist_dir, ignore_errors=True)
                 self.dist_dir.mkdir(parents=True)
-                make_zip_archive(
-                    self.dist_dir / f"{self.fullname}.zip", self.src_dist_dir
-                )
+
+                with TemporaryDirectory() as tmpdir:
+                    tmpdir_path = Path(tmpdir)
+                    for relfile in self.sharedlib_files:
+                        target = self.src_dist_dir / relfile
+                        if not target.exists():
+                            raise FileNotFoundError(f"File {target} does not exist")
+                        
+                        shutil.copy(target, tmpdir_path / relfile)
+                        make_zip_archive(self.dist_dir / f"{self.fullname}.zip", tmpdir_path)
 
             else:  # wheel
                 url = self.source_metadata.url

@@ -11,6 +11,7 @@ from pyodide_build.common import (
     make_zip_archive,
     parse_top_level_import_name,
     repack_zip_archive,
+    install,
 )
 
 
@@ -164,3 +165,63 @@ def test_check_wasm_magic_number(tmp_path):
 
     (tmp_path / "badfile.so").write_bytes(not_wasm_magic_number)
     assert check_wasm_magic_number(tmp_path / "badfile.so") is False
+
+
+def test_install_simple(tmp_path):
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    (src_dir / "a.txt").write_text("a")
+    (src_dir / "b").mkdir()
+    (src_dir / "b/c.txt").write_text("c")
+
+    dest_dir = tmp_path / "dest"
+    install(src_dir, dest_dir)
+
+    assert (dest_dir / "a.txt").read_text() == "a"
+    assert (dest_dir / "b/c.txt").read_text() == "c"
+
+
+def test_install_error(tmp_path):
+    with pytest.raises(ValueError, match="nonexistent is not a directory."):
+        install(tmp_path / "nonexistent", tmp_path / "dest")
+
+    with pytest.raises(ValueError, match="dest is not a directory."):
+        (tmp_path / "empty").mkdir()
+        (tmp_path / "dest").write_text("a")
+        install(tmp_path / "empty", tmp_path / "dest")
+
+
+def test_install_overwrite(tmp_path):
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    (src_dir / "a.txt").write_text("a")
+    (src_dir / "b").mkdir()
+    (src_dir / "b/c.txt").write_text("c")
+
+    dest_dir = tmp_path / "dest"
+    dest_dir.mkdir()
+    (dest_dir / "a.txt").write_text("A")
+    (dest_dir / "b").mkdir()
+    (dest_dir / "b/c.txt").write_text("C")
+    (dest_dir / "b/d.txt").write_text("D")
+
+    install(src_dir, dest_dir)
+
+    assert (dest_dir / "a.txt").read_text() == "a"
+    assert (dest_dir / "b/c.txt").read_text() == "c"
+    assert (dest_dir / "b/d.txt").read_text() == "D"
+
+
+def test_install_multiple_times(tmp_path):
+    src_dir = tmp_path / "src"
+    src_dir.mkdir()
+    (src_dir / "a.txt").write_text("a")
+    (src_dir / "b").mkdir()
+    (src_dir / "b/c.txt").write_text("c")
+
+    dest_dir = tmp_path / "dest"
+    install(src_dir, dest_dir)
+    install(src_dir, dest_dir)
+
+    assert (dest_dir / "a.txt").read_text() == "a"
+    assert (dest_dir / "b/c.txt").read_text() == "c"
