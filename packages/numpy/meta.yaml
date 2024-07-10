@@ -24,7 +24,7 @@ build:
   cross-build-files:
     - numpy/_core/include/numpy/numpyconfig.h
     - numpy/_core/include/numpy/_numpyconfig.h
-    - numpy/core/lib/libnpymath.a
+    - numpy/_core/lib/libnpymath.a
     - numpy/random/lib/libnpyrandom.a
 about:
   home: https://www.numpy.org
