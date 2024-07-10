@@ -20,7 +20,7 @@ build:
         CFLAGS="-fPIC" \
         --disable-dependency-tracking \
         --disable-shared \
-        --prefix=${WASM_LIBRARY_DIR} \
+        --prefix=${DISTDIR} \
         --with-gmp=${WASM_LIBRARY_DIR} \
         --with-mpfr=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}

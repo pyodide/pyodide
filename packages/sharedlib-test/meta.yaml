@@ -17,3 +17,7 @@ build:
     emcc dep2.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/sharedlib-test-dep2.so
     emcc dep.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep2.so -o ${DISTDIR}/sharedlib-test-dep.so
     emcc main.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep.so -o ${DISTDIR}/sharedlib-test.so
+  sharedlib-files:
+    - sharedlib-test.so
+    - sharedlib-test-dep.so
+    - sharedlib-test-dep2.so

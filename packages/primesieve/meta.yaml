@@ -17,7 +17,7 @@ build:
   type: static_library
   script: |
     emcmake cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
-          -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+          -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
           -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
           -DBUILD_STATIC_LIBS=ON \
           -DBUILD_SHARED_LIBS=OFF \

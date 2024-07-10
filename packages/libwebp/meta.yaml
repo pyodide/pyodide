@@ -12,7 +12,7 @@ build:
   script: |
     mkdir build && cd build && emcmake cmake \
       -DCMAKE_C_FLAGS="-fPIC" \
-      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
       -DWEBP_BUILD_CWEBP=OFF \
       -DWEBP_BUILD_DWEBP=OFF \
       -DWEBP_BUILD_VWEBP=OFF \

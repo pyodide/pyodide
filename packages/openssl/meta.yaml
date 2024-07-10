@@ -17,7 +17,7 @@ build:
       -DOPENSSL_NO_SECURE_MEMORY \
       -DNO_SYSLOG \
       ${SIDE_MODULE_CFLAGS} \
-      --prefix=${WASM_LIBRARY_DIR}
+      --prefix=${DISTDIR}
 
     sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
     make build_generated
@@ -28,8 +28,10 @@ build:
     emcc ${SIDE_MODULE_LDFLAGS} libssl.a libcrypto.so -o libssl.so
 
     make install_sw
-    mkdir -p ${WASM_LIBRARY_DIR}/lib
+    mkdir -p ${DISTDIR}/lib
     # remove static libraries, we will use shared one
-    rm -f ${WASM_LIBRARY_DIR}/lib/{libcrypto.a,libssl.a}
-    cp libcrypto.so libssl.so ${WASM_LIBRARY_DIR}/lib
-    cp libcrypto.so libssl.so ${DISTDIR}
+    rm -f ${DISTDIR}/lib/{libcrypto.a,libssl.a}
+    cp libcrypto.so libssl.so ${DISTDIR}/lib
+  sharedlib-files:
+    - lib/libcrypto.so
+    - lib/libssl.so

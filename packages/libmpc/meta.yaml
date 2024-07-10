@@ -20,6 +20,6 @@ build:
         --disable-shared \
         --with-gmp="${WASM_LIBRARY_DIR}" \
         --with-mpfr="${WASM_LIBRARY_DIR}" \
-        --prefix=${WASM_LIBRARY_DIR}
+        --prefix=${DISTDIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

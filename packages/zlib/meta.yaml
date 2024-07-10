@@ -18,7 +18,7 @@ build:
       -DBUILD_DOCUMENTATION=OFF \
       -DCMAKE_C_FLAGS="-fPIC -Wno-deprecated-non-prototype" \
       -DCMAKE_CXX_FLAGS="-fPIC -Wno-deprecated-non-prototype" \
-      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
       ../
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

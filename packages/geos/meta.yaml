@@ -18,11 +18,11 @@ build:
       -DBUILD_GEOSOP=OFF \
       -DCMAKE_C_FLAGS="-fPIC" \
       -DCMAKE_CXX_FLAGS="-fPIC" \
-      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DCMAKE_INSTALL_PREFIX=${DISDIR} \
       ./
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-
-    mkdir -p dist
-    cp ${WASM_LIBRARY_DIR}/lib/libgeos* dist/
+  sharedlib-files:
+    - lib/libgeos_c.so
+    - lib/libgeos.so

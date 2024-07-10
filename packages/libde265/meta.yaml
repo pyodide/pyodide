@@ -14,7 +14,7 @@ build:
     emconfigure ./configure \
         CFLAGS="-fPIC" \
         CXXFLAGS="-fPIC" \
-        --prefix=${WASM_LIBRARY_DIR} \
+        --prefix=${DISTDIR} \
         --disable-sse \
         --disable-dec265 \
         --disable-sherlock265 \

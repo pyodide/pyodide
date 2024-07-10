@@ -11,7 +11,7 @@ build:
   script: |
     emconfigure ./configure \
         CFLAGS="-fPIC" \
-        --prefix=${WASM_LIBRARY_DIR} \
+        --prefix=${DISTDIR} \
         --disable-dependency-tracking \
         --disable-shared
     emmake make -j ${PYODIDE_JOBS:-3}

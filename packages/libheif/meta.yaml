@@ -19,7 +19,7 @@ build:
     sed -i 's@#include "heif_emscripten.h"@@' libheif/heif.cc
     emcmake cmake \
       -DCMAKE_CXX_FLAGS="-fPIC" \
-      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
       -DWITH_EXAMPLES=OFF \
       -DBUILD_SHARED_LIBS=ON \
       -DLIBDE265_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
@@ -28,4 +28,5 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
-    cp ${WASM_LIBRARY_DIR}/lib/libheif.so ${DISTDIR}
+  sharedlib-files:
+    - lib/libheif.so

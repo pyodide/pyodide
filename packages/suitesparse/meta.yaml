@@ -26,14 +26,13 @@ build:
       LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
       BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
-      INSTALL=${WASM_LIBRARY_DIR}
-
-    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
-       ${WASM_LIBRARY_DIR}/lib/libamd.so \
-       ${WASM_LIBRARY_DIR}/lib/libcamd.so \
-       ${WASM_LIBRARY_DIR}/lib/libccolamd.so \
-       ${WASM_LIBRARY_DIR}/lib/libcolamd.so \
-       ${WASM_LIBRARY_DIR}/lib/libmetis.so \
-       ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
-       ${WASM_LIBRARY_DIR}/lib/libspqr.so \
-       ${DISTDIR}
+      INSTALL=${DISTDIR}
+  sharedlib-files:
+    - lib/libamd.so
+    - lib/libcamd.so
+    - lib/libccolamd.so
+    - lib/libcholmod.so
+    - lib/libcolamd.so
+    - lib/libmetis.so
+    - lib/libsuitesparseconfig.so
+    - lib/libspqr.so

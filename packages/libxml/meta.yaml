@@ -23,6 +23,6 @@ build:
         --with-iconv="${WASM_LIBRARY_DIR}/lib" \
         --with-zlib="${WASM_LIBRARY_DIR}/lib" \
         --with-lzma="no" \
-        --prefix=${WASM_LIBRARY_DIR}
+        --prefix=${DISTDIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install

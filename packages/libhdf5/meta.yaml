@@ -20,7 +20,7 @@ build:
 
     cd build \
         && emcmake cmake \
-        -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+        -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
         -DH5_HAVE_GETPWUID=0 \
         -DH5_HAVE_SIGNAL=0 \
         -DCMAKE_BUILD_TYPE=Release \
@@ -49,5 +49,7 @@ build:
     cp ${PKGDIR}/settings/* src/
 
     emmake make -j ${PYODIDE_JOBS:-3} install
+  sharedlib-files:
+    - lib/libhdf5.so
+    - lib/libhdf5_hl.so
 
-    cp -P ${WASM_LIBRARY_DIR}/lib/libhdf* ${DISTDIR}
