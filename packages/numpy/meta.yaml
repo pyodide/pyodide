@@ -22,8 +22,8 @@ build:
     -Wno-return-type
   cross-build-env: true
   cross-build-files:
-    - numpy/core/include/numpy/numpyconfig.h
-    - numpy/core/include/numpy/_numpyconfig.h
+    - numpy/_core/include/numpy/numpyconfig.h
+    - numpy/_core/include/numpy/_numpyconfig.h
     - numpy/core/lib/libnpymath.a
     - numpy/random/lib/libnpyrandom.a
 about:
