@@ -215,16 +215,20 @@ def test_get_buffer(selenium):
             z2 = z1[-1::-1]
             z3 = z1[::,-1::-1]
             z4 = z1[-1::-1,-1::-1]
+            print("Python z1 dtype:", z1.dtype)
+            print("Python z1[0, 0]:", z1[0, 0], type(z1[0, 0]))
         `);
         for(let x of ["z1", "z2", "z3", "z4"]){
             let z = pyodide.globals.get(x).getBuffer("u32");
+            console.log(`JavaScript ${x} buffer:`, z);
             for(let idx1 = 0; idx1 < 8; idx1++) {
                 for(let idx2 = 0; idx2 < 3; idx2++){
                     let v1 = z.data[z.offset + z.strides[0] * idx1 + z.strides[1] * idx2];
-                    let v2 = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
-                    console.log(`${v1}, ${typeof(v1)}, ${v2}, ${typeof(v2)}, ${v1===v2}`);
-                    if(v1.toString() !== v2){
-                        throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} != ${v2}`);
+                    let v2 = pyodide.runPython(`int(${x}[${idx1}, ${idx2}])`);  // Convert to int
+                    let v2_repr = pyodide.runPython(`repr(${x}[${idx1}, ${idx2}])`);
+                    console.log(`${x}[${idx1}, ${idx2}]: JS=${v1} (${typeof(v1)}), Python=${v2} (${typeof(v2)}), repr=${v2_repr}`);
+                    if(v1 !== v2){
+                        throw new Error(`Discrepancy ${x}[${idx1}, ${idx2}]: ${v1} (${typeof(v1)}) != ${v2} (${typeof(v2)}), repr=${v2_repr}`);
                     }
                 }
             }
