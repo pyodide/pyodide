@@ -100,7 +100,7 @@ def test_python2js_numpy_dtype(selenium, order, dtype):
     assert classname != "Array"
     selenium.run(
         """
-        x = x.view(x.dtype.newbyteorder())
+        x = x.byteswap().view(x.dtype.newbyteorder())
         """
     )
     assert_equal()
