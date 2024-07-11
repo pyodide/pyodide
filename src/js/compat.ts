@@ -5,7 +5,6 @@ import {
   IN_BROWSER_MAIN_THREAD,
   IN_BROWSER_WEB_WORKER,
   IN_NODE_COMMONJS,
-  IN_BUN,
 } from "./environments";
 import { Lockfile } from "./types";
 
@@ -263,15 +262,16 @@ export async function calculateDirname(): Promise<string> {
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
 
+  if (!fileName.startsWith("file://")) {
+    fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
+  }
+
   if (IN_NODE_ESM) {
     const nodePath = await import("node:path");
     const nodeUrl = await import("node:url");
 
     // FIXME: We would like to use import.meta.url here,
     // but mocha seems to mess with compiling typescript files to ES6.
-    if (IN_BUN) {
-      return nodeUrl.fileURLToPath(`file://${nodePath.dirname(fileName)}`);
-    }
     return nodeUrl.fileURLToPath(nodePath.dirname(fileName));
   }
 
