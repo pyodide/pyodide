@@ -18,7 +18,7 @@ build:
       -DBUILD_GEOSOP=OFF \
       -DCMAKE_C_FLAGS="-fPIC" \
       -DCMAKE_CXX_FLAGS="-fPIC" \
-      -DCMAKE_INSTALL_PREFIX=${DISDIR} \
+      -DCMAKE_INSTALL_PREFIX=${DISTDIR} \
       ./
 
     emmake make -j ${PYODIDE_JOBS:-3}
