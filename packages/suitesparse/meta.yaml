@@ -23,7 +23,7 @@ build:
     grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
 
     emmake make -j ${PYODIDE_JOBS:-3} install \
-      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
+      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib -L${DISTDIR}/lib" \
       BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       INSTALL=${DISTDIR}
