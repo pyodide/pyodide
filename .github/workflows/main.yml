@@ -253,7 +253,7 @@ jobs:
 
       - name: run bun tests
         working-directory: src/test-bun
-        run: bun smoke-test.ts
+        run: bun smoke-test.js
 
   test-deno:
     runs-on: ${{ matrix.os }}
