@@ -19,7 +19,7 @@ export const IN_NODE_COMMONJS =
 export const IN_NODE_ESM = IN_NODE && !IN_NODE_COMMONJS;
 
 /** @private */
-export const IN_BUN = IN_NODE && process.title === "bun";
+export const IN_BUN = typeof globalThis.Bun !== "undefined";
 
 /** @private */
 export const IN_DENO = typeof Deno !== "undefined"; // just in case...
