@@ -48,9 +48,10 @@ def test_binom_ppf(selenium):
 @run_in_pyodide(packages=["pytest", "scipy-tests", "micropip"])
 async def test_scipy_pytest(selenium):
     import pytest
+
     import micropip
 
-    await micropip.install('hypothesis')
+    await micropip.install("hypothesis")
 
     def runtest(module, filter):
         result = pytest.main(
