@@ -225,6 +225,36 @@ jobs:
           paths: "test-results/*.xml"
         if: always()
 
+  test-bun:
+    runs-on: ${{ matrix.os }}
+
+    needs: [build-core]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - uses: oven-sh/setup-bun@v1
+
+      - name: install test requirements
+        working-directory: src/test-bun
+        run: |
+          bun --version
+          bun install
+
+      - name: run bun tests
+        working-directory: src/test-bun
+        run: bun smoke-test.js
+
   test-deno:
     runs-on: ${{ matrix.os }}
 
