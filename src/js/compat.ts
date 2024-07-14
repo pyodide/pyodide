@@ -262,6 +262,10 @@ export async function calculateDirname(): Promise<string> {
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
 
+  if (IN_NODE && !fileName.startsWith("file://")) {
+    fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
+  }
+
   if (IN_NODE_ESM) {
     const nodePath = await import("node:path");
     const nodeUrl = await import("node:url");
