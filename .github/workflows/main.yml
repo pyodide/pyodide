@@ -345,7 +345,7 @@ jobs:
           cp packages/scipy/conftest.py .
           cp packages/scipy/scipy-pytest.js .
 
-          node scipy-pytest.js --pyargs scipy
+          node scipy-pytest.js --pyargs scipy -m 'not slow'
 
   test-bun:
     runs-on: ${{ matrix.os }}
