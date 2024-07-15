@@ -1,7 +1,7 @@
 From 3b05904c1859d3c13f4ef47bd0d614ddfd4368d2 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 15 Jul 2024 15:26:24 +0530
-Subject: [PATCH] Avoid reading the Python include directory headers
+Subject: [PATCH 1/4] Avoid reading the Python include directory headers
 
 This patch disables reading the Python include directory headers for the SWIG
 codegen to identify the major version of Python. Instead, it directly sets the

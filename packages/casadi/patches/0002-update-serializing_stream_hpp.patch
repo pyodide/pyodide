@@ -1,7 +1,13 @@
 From 86ac669c11f0f466ece32e6fcebacd62af0bdc32 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 15 Jul 2024 18:00:31 +0530
-Subject: [PATCH] Update serializing_stream.hpp
+Subject: [PATCH 2/4] Disable SIZE_MAX check for Emscripten, part I
+
+In WebAssembly (currently 32-bit), SIZE_MAX is equal to UINT_MAX, which meant
+these functions weren't being compiled, so there was no way to serialize or
+deserialize unsigned int values, leading to compile errors when these functions
+were called elsewhere. On many 32-bit systems, size_t and unsigned int are the
+same size, so SIZE_MAX == UINT_MAX is a common case.
 
 ---
  casadi/core/serializing_stream.hpp | 4 ++--

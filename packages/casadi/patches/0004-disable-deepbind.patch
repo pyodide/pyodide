@@ -1,7 +1,14 @@
 From 6c9443c0c1694600927dca29373d29fb741581f2 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 15 Jul 2024 18:40:51 +0530
-Subject: [PATCH] Modify setup.py
+Subject: [PATCH 4/4] Disable RTLD_DEEPBIND by setting -DWITH_DEEPBIND to OFF
+
+RTLD_DEEPBIND gives symbol resolution preference to the loaded library
+over the global scope, it's usually used to avoid symbol collision. However,
+WebAssembly handles internal symbol resolution differently, so RTLD_DEEPBIND
+might not be necessary. This flag is used on Linux systems and does not
+necessarily translate to other platforms.
+
 
 ---
  setup.py | 2 +-
