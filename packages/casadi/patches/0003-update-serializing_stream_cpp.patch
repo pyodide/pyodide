@@ -1,0 +1,25 @@
+From 31f4659ad64c0d05161a484d203baf4ffef5edd4 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 15 Jul 2024 18:03:48 +0530
+Subject: [PATCH] Update serializing_stream.cpp
+
+---
+ serializing_stream.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/casadi/core/serializing_stream.cpp b/casadi/core/serializing_stream.cpp
+index f3101f84..dfc6b2e4 100644
+--- a/casadi/core/serializing_stream.cpp
++++ b/casadi/core/serializing_stream.cpp
+@@ -155,7 +155,7 @@ namespace casadi {
+       for (int j=0;j<4;++j) pack(c[j]);
+     }
+ 
+-#if SIZE_MAX != UINT_MAX
++#if SIZE_MAX != UINT_MAX || defined(__EMSCRIPTEN__)
+     void DeserializingStream::unpack(unsigned int& e) {
+       assert_decoration('u');
+       uint32_t n;
+-- 
+2.39.3 (Apple Git-146)
+
