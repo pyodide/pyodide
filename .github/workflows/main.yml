@@ -124,13 +124,13 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide core + numpy
+      - name: build Pyodide core + numpy + scipy
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES="tag:core,numpy" make
+          PYODIDE_PACKAGES="tag:core,numpy,scipy" make
           ccache -s
 
       - name: check-size
@@ -145,85 +145,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: core-build-${{ runner.os }}
-          path: ./dist/
-          retention-days: 60
-
-  build-scipy:
-    needs: [build-core]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    env:
-      EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      CCACHE_DIR: /tmp/ccache
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: core-build-${{ runner.os }}
-          path: ./dist/
-
-      - name: Cache ccache output
-        uses: actions/cache@v4
-        with:
-          path: |
-            /tmp/ccache
-          key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
-
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: pyodide-env
-          environment-file: environment.yml
-          channels: conda-forge
-
-      - name: Check Versions
-        shell: bash -l {0}
-        run: |
-          python --version
-          node --version
-          npm --version
-          which python
-          which node
-          which npm
-
-      - name: Install dependencies (ubuntu)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
-        run: |
-          sudo apt install -y build-essential git xxd
-
-      - name: Install dependencies (Python)
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt
-
-      # TODO: I probably need to have CPython and emsdk as artifacts otherwise
-      # I rebuild them it seems
-      - name: build scipy
-        shell: bash -l {0}
-        run: |
-          # This is necessary to use the ccache from emsdk
-          source pyodide_env.sh
-          ccache -z
-          PYODIDE_PACKAGES="scipy" make
-          ccache -s
-
-      - name: check-size
-        shell: bash -l {0}
-        run: |
-          ls -lh dist/
-
-      - name: Store artifacts build
-        uses: actions/upload-artifact@v4
-        with:
-          name: scipy-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
 
@@ -306,10 +227,7 @@ jobs:
 
   test-scipy:
     runs-on: ${{ matrix.os }}
-    env:
-      DISPLAY: :99
-
-    needs: [build-scipy]
+    needs: [build-core]
     strategy:
       fail-fast: false
       matrix:
@@ -321,22 +239,10 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: scipy-build-${{ runner.os }}
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          activate-environment: pyodide-env
-          python-version: "3.12"
-          channels: conda-forge
-
-      - name: install test requirements
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt -r requirements-deploy.txt
-          pip install -e ./pyodide-build
-
-      - name: run scipy tests
+      - name: run scipy tests inside node
         shell: bash -l {0}
         run: |
           npm install pyodide
