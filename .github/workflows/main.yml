@@ -128,7 +128,7 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide core + numpy + scipy
+      - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
@@ -255,8 +255,11 @@ jobs:
           # This uses conftest.py on the current working directory to
           # skip/xfail tests in scipy
           cd packages/scipy
+          # XXX for some unknown reason adding a conftest.py in the repo throws off the
+          # other tests trying to import from conftest they find the scipy one ...
+          mv scipy-conftest.py conftest.py
 
-          node scipy-pytest.js --pyargs scipy -m 'not slow'
+          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra
 
   test-bun:
     runs-on: ${{ matrix.os }}
