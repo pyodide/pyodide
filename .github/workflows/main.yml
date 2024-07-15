@@ -336,7 +336,7 @@ jobs:
           pip install -r requirements.txt -r requirements-deploy.txt
           pip install -e ./pyodide-build
 
-      - name: run scpiy tests
+      - name: run scipy tests
         shell: bash -l {0}
         run: |
           npm install pyodide
