@@ -1,4 +1,4 @@
-const { opendir } = require('node:fs/promises');
+const { opendir } = require("node:fs/promises");
 const { loadPyodide } = require("pyodide");
 
 async function main() {
@@ -63,10 +63,11 @@ async function main() {
     `);
 
     await pyodide.runPythonAsync(
-        "import micropip; micropip.install(['pytest', 'hypothesis', 'pooch', 'lzma'])");
+      "import micropip; micropip.install(['pytest', 'hypothesis', 'pooch', 'lzma'])",
+    );
     let pytest = pyodide.pyimport("pytest");
     let args = process.argv.slice(2);
-    console.log('pytest args:', args);
+    console.log("pytest args:", args);
     exit_code = pytest.main(pyodide.toPy(args));
   } catch (e) {
     console.error(e);
@@ -75,7 +76,6 @@ async function main() {
     // Python error). When there is a Pyodide fatal error we don't end up here
     // somehow, and the exit code is 7
     exit_code = 66;
-
   } finally {
     process.exit(exit_code);
   }
