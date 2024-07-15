@@ -164,6 +164,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
       - name: Cache ccache output
         uses: actions/cache@v4
         with:
