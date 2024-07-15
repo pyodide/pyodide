@@ -1,32 +1,37 @@
-From 3b05904c1859d3c13f4ef47bd0d614ddfd4368d2 Mon Sep 17 00:00:00 2001
+From 6241d84b52702ad9535781e0a8f4eea130323fd4 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
-Date: Mon, 15 Jul 2024 15:26:24 +0530
-Subject: [PATCH 1/4] Avoid reading the Python include directory headers
+Date: Mon, 15 Jul 2024 20:39:19 +0530
+Subject: [PATCH 1/4] Fix the location of the Python include directory
 
-This patch disables reading the Python include directory headers for the SWIG
-codegen to identify the major version of Python. Instead, it directly sets the
-Python version to 3 to avoid bothering with patchlevel.h, a file that usually
-contains the version information for Python.
+CasADi's setup code used an incorrect location for the Python include
+directory via the use of self.include_dirs[0], which isn't guaranteed
+to return the correct interpreter used during compilation. This patch
+replaces it with sysconfig.get_path('include').
 
 ---
- CMakeLists.txt | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
+ setup.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/swig/python/CMakeLists.txt b/swig/python/CMakeLists.txt
-index 8f96af68..b588d685 100644
---- a/swig/python/CMakeLists.txt
-+++ b/swig/python/CMakeLists.txt
-@@ -28,10 +28,7 @@ if(APPLE)
- endif()
-
- function(CasadiGetPythonVersionMajor VERSION_MAJOR_RESULT INCLUDE_PATH)
--  set(MATCH_STRING "#define[ \t]+PY_MAJOR_VERSION[ \t]+([0-9]+)")
--  file(STRINGS "${INCLUDE_PATH}/patchlevel.h" PY_MAJOR_VERSION REGEX ${MATCH_STRING})
--  string(REGEX REPLACE "${MATCH_STRING}" "\\1" PYTHON_VERSION_MAJOR "${PY_MAJOR_VERSION}")
--  set(${VERSION_MAJOR_RESULT} ${PYTHON_VERSION_MAJOR} PARENT_SCOPE)
-+  set(${VERSION_MAJOR_RESULT} 3 PARENT_SCOPE)
- endfunction()
-
- if(SWIG_EXPORT)
---
+diff --git a/setup.py b/setup.py
+index d7506513..42b8affb 100644
+--- a/setup.py
++++ b/setup.py
+@@ -6,6 +6,7 @@ import subprocess
+ import pathlib
+ import multiprocessing
+ from io import open
++import sysconfig
+ 
+ from setuptools import setup, Extension
+ from setuptools.command.build_ext import build_ext
+@@ -47,7 +48,7 @@ class CMakeBuild(build_ext):
+             '-DSWIG_IMPORT=ON',
+             '-DWITH_PYTHON=ON',
+             '-DWITH_EXAMPLES=OFF',
+-            '-DPYTHON_INCLUDE_DIR=' + self.include_dirs[0],
++            '-DPYTHON_INCLUDE_DIR=' + sysconfig.get_path('include'),
+             '-DCMAKE_INSTALL_PREFIX=' + extdir,
+             '-DWITH_SELFCONTAINED=ON',
+             '-DWITH_DEEPBIND=ON'
+-- 
 2.39.3 (Apple Git-146)
