@@ -52,7 +52,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        include:
+          - os: ubuntu-latest
+            pyodide_packages: "tag:core,numpy,scipy"
+          - os: macos-14
+            pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
     env:
       EMSDK_NUM_CORES: 3
@@ -130,7 +134,7 @@ jobs:
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES="tag:core,numpy,scipy" make
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
           ccache -s
 
       - name: check-size
