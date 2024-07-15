@@ -342,8 +342,9 @@ jobs:
           npm install pyodide
           cp -f dist/* node_modules/pyodide
 
-          cp packages/scipy/conftest.py .
-          cp packages/scipy/scipy-pytest.js .
+          # This uses conftest.py on the current working directory to
+          # skip/xfail tests in scipy
+          cd packages/scipy
 
           node scipy-pytest.js --pyargs scipy -m 'not slow'
 
