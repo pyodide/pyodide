@@ -10,6 +10,7 @@ source:
     - patches/0001-fix-python-include-dir.patch
     - patches/0002-update-serializing_stream_hpp.patch
     - patches/0003-update-serializing_stream_cpp.patch
+    - patches/0004-disable-deepbind.patch
 requirements:
   host:
     - numpy
