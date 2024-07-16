@@ -54,10 +54,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            pyodide_packages: "tag:core,numpy,scipy"
+            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
           - os: macos-14
             pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
+    needs: [test-scipy-trigger]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -233,7 +234,7 @@ jobs:
     name: test-scipy-trigger
     runs-on: ubuntu-latest
     outputs:
-      test: ${{ steps.check-build-trigger.outputs.trigger }}
+      test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
 
     steps:
       - uses: actions/checkout@v4
@@ -247,7 +248,7 @@ jobs:
   test-scipy:
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger, build-core]
-    if: needs.test-scipy-trigger.outputs.test
+    if: needs.test-scipy-trigger.outputs.test-scipy
     strategy:
       fail-fast: false
       matrix:
