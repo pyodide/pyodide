@@ -1,7 +1,7 @@
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 from conftest import package_is_built
-from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["duckdb"])
