@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["casadi"])
-def test_symbolic_variable():
+def test_symbolic_variable(selenium):
     import casadi as ca
 
     x = ca.SX.sym("x")
@@ -12,7 +12,7 @@ def test_symbolic_variable():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_basic_casadi_function_eval():
+def test_basic_casadi_function_eval(selenium):
     import casadi as ca
     import numpy as np
 
@@ -30,7 +30,7 @@ def test_basic_casadi_function_eval():
 # in the future
 @pytest.mark.skip(reason="IPOPT not available for now")
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_simple_optimization():
+def test_simple_optimization(selenium):
     import casadi as ca
     import numpy as np
 
@@ -45,7 +45,7 @@ def test_simple_optimization():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_matrix_operations():
+def test_matrix_operations(selenium):
     import casadi as ca
     import numpy as np
 
@@ -56,7 +56,7 @@ def test_matrix_operations():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_basic_integration():
+def test_basic_integration(selenium):
     import casadi as ca
     import numpy as np
 
@@ -70,7 +70,7 @@ def test_basic_integration():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_basic_rootfinder():
+def test_basic_rootfinder(selenium):
     import casadi as ca
     import numpy as np
 
@@ -98,7 +98,7 @@ def test_basic_rootfinder():
 
 @run_in_pyodide(packages=["casadi", "numpy"])
 @pytest.mark.parametrize("integrator_type", ["cvodes", "idas"])
-def test_casadi_integrator(integrator_type):
+def test_casadi_integrator(selenium, integrator_type):
     import casadi as ca
     import numpy as np
 
@@ -157,7 +157,7 @@ def test_casadi_integrator(integrator_type):
     "interp_type, expected_result", [("linear", 6.5), ("bspline", 6.25)]
 )
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_interpolant(interp_type, expected_result):
+def test_interpolant(selenium, interp_type, expected_result):
     import casadi
     import numpy as np
 
@@ -176,7 +176,7 @@ def test_interpolant(interp_type, expected_result):
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_jacobian():
+def test_jacobian(selenium):
     import casadi as ca
     import numpy as np
 
@@ -194,7 +194,7 @@ def test_jacobian():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_ode_rk4():
+def test_ode_rk4(selenium):
     import casadi as ca
     import numpy as np
 
@@ -212,7 +212,7 @@ def test_ode_rk4():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_forward_sensitivity():
+def test_forward_sensitivity(selenium):
     import casadi as ca
     import numpy as np
 
@@ -235,7 +235,7 @@ def test_forward_sensitivity():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_adjoint_sensitivity():
+def test_adjoint_sensitivity(selenium):
     import casadi as ca
     import numpy as np
 
@@ -258,7 +258,7 @@ def test_adjoint_sensitivity():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_gradient_computation():
+def test_gradient_computation(selenium):
     import casadi as ca
     import numpy as np
 
@@ -278,7 +278,7 @@ def test_gradient_computation():
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-def test_hessian_computation():
+def test_hessian_computation(selenium):
     import casadi as ca
     import numpy as np
 
