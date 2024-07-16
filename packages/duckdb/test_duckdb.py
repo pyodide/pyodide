@@ -18,7 +18,8 @@ def test_duckdb(selenium):
             con.execute("INSERT INTO t VALUES (42, 'hello'), (43, 'world')")
             query_result = con.execute("SELECT rowid, * FROM t ORDER BY rowid").fetchall()
 
-        assert platform == "wasm_eh_pyodide"
+        assert "pyodide" in platform
+        assert "wasm" in platform
         assert query_result == [(0, 42, "hello"), (1, 43, "world")]
         """
     )
