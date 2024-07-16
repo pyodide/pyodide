@@ -1,10 +1,8 @@
 import pytest
-from pytest_pyodide import run_in_pyodide
 
 from conftest import package_is_built
 
 
-@run_in_pyodide(packages=["duckdb"])
 def test_duckdb(selenium):
     if not package_is_built("duckdb"):
         pytest.skip("duckdb not built")
@@ -26,7 +24,6 @@ def test_duckdb(selenium):
     )
 
 
-@run_in_pyodide(packages=["duckdb", "pandas"])
 def test_duckdb_with_pandas(selenium):
     if not package_is_built("pandas"):
         pytest.skip("pandas not built")
