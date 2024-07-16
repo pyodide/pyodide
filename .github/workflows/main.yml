@@ -229,9 +229,25 @@ jobs:
           paths: "test-results/*.xml"
         if: always()
 
+  test-scipy-trigger:
+    name: test-scipy-trigger
+    runs-on: ubuntu-latest
+    outputs:
+      test: ${{ steps.check-build-trigger.outputs.build }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: check-build-trigger
+        name: Check build trigger
+        run: bash tools/check_build_trigger.sh
+
   test-scipy:
     runs-on: ${{ matrix.os }}
-    needs: [build-core]
+    needs: [test-scipy-trigger, build-core]
+    if: needs.test-scipy-trigger.outputs.test
     strategy:
       fail-fast: false
       matrix:
