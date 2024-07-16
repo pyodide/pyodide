@@ -128,4 +128,4 @@ markers = [
 
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
-skip = 'benchmark/benchmarks/pystone_benchmarks/pystone.py,src/js/package-lock.json'
+skip = 'benchmark/benchmarks/pystone_benchmarks/pystone.py,src/js/package-lock.json,tools/codespell_ignore_words.txt'
