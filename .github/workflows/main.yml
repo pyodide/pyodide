@@ -275,7 +275,7 @@ jobs:
           # other tests trying to import from conftest they find the scipy one ...
           mv scipy-conftest.py conftest.py
 
-          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra
+          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
 
   test-bun:
     runs-on: ${{ matrix.os }}
