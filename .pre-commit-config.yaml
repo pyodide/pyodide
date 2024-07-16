@@ -45,15 +45,9 @@ repos:
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.3.0"
+    rev: "v2.2.6"
     hooks:
       - id: codespell
-        args:
-          [
-            "--ignore-words-list",
-            "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te,oint,conveniant",
-          ]
-        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.10.0"
