@@ -116,14 +116,13 @@ typedef struct
   PyThreadState* ts;
 } ThreadState;
 
-PyThreadState *
-_PyThreadState_SwapNoGIL(PyThreadState *newts);
+PyThreadState*
+_PyThreadState_SwapNoGIL(PyThreadState* newts);
 
 #define THREADSTATE_MAX_FREELIST 10
 
-PyThreadState *threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
+PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
 int threadstate_freelist_len = 0;
-
 
 EMSCRIPTEN_KEEPALIVE ThreadState*
 captureThreadState()
@@ -133,17 +132,18 @@ captureThreadState()
   PyThreadState* tstate;
   if (threadstate_freelist_len > 0) {
     tstate = threadstate_freelist[threadstate_freelist_len - 1];
-    threadstate_freelist_len --;
+    threadstate_freelist_len--;
   } else {
     tstate = PyThreadState_New(PyInterpreterState_Get());
   }
   res->ts = _PyThreadState_SwapNoGIL(tstate);
-  
+
   PyObject* _asyncio_module = NULL;
   PyObject* t = NULL;
   _asyncio_module = PyImport_ImportModule("_asyncio");
   _Py_IDENTIFIER(_set_running_loop);
-  t = _PyObject_CallMethodIdOneArg(_asyncio_module, &PyId__set_running_loop, res->as.loop);
+  t = _PyObject_CallMethodIdOneArg(
+    _asyncio_module, &PyId__set_running_loop, res->as.loop);
 
   Py_CLEAR(_asyncio_module);
   Py_CLEAR(t);
@@ -153,15 +153,14 @@ captureThreadState()
 EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(ThreadState* state)
 {
-   restoreAsyncioState(state->as);
-   PyThreadState* res = _PyThreadState_SwapNoGIL(state->ts);
-   if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
-     PyThreadState_Delete(res);
-   } else {
-     threadstate_freelist[threadstate_freelist_len] = res;
-     threadstate_freelist_len ++;
-   }
-
+  restoreAsyncioState(state->as);
+  PyThreadState* res = _PyThreadState_SwapNoGIL(state->ts);
+  if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
+    PyThreadState_Delete(res);
+  } else {
+    threadstate_freelist[threadstate_freelist_len] = res;
+    threadstate_freelist_len++;
+  }
 }
 
 EMSCRIPTEN_KEEPALIVE int size_of_cframe = sizeof(_PyCFrame);
