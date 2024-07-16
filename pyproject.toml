@@ -125,3 +125,6 @@ markers = [
 ]
 
 [tool._pyodide]
+
+[tool.codespell]
+ignore-words = 'tools/codespell_ignore_words.txt'

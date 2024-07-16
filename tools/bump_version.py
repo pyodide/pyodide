@@ -125,7 +125,7 @@ def parse_current_version(target: Target) -> str:
     match = target.pattern.search(content)
 
     if match is None:
-        raise ValueError(f"Unabled to detect version string: {target.file}")
+        raise ValueError(f"Unable to detect version string: {target.file}")
 
     return match.groupdict()["version"]
 
