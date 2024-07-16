@@ -2,54 +2,49 @@ import os
 import re
 import subprocess
 from pathlib import Path
+from textwrap import dedent
 
 
-def fix_f2c_input(f2c_input_path: str) -> None:
-    f2c_input = Path(f2c_input_path)
-    with open(f2c_input) as f:
-        lines = f.readlines()
-    new_lines = []
-    for line in lines:
-        if f2c_input_path.endswith("_flapack-f2pywrappers.f"):
-            line = line.replace("character cmach", "integer cmach")
-            line = line.replace("character norm", "integer norm")
+def fix_f2c_input(f2c_input: Path) -> None:
+    if f2c_input.name.endswith("_flapack-f2pywrappers.f"):
+        content = f2c_input.read_text()
+        content = content.replace("character cmach", "integer cmach")
+        content = content.replace("character norm", "integer norm")
+        f2c_input.write_text(content)
+        return
 
-        if f2c_input.name in [
-            "_lapack_subroutine_wrappers.f",
-            "_blas_subroutine_wrappers.f",
-        ]:
-            line = line.replace("character", "integer")
-            line = line.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
-
-        new_lines.append(line)
-
-    with open(f2c_input_path, "w") as f:
-        f.writelines(new_lines)
+    if f2c_input.name in [
+        "_lapack_subroutine_wrappers.f",
+        "_blas_subroutine_wrappers.f",
+    ]:
+        content = f2c_input.read_text()
+        content = content.replace("character", "integer")
+        content = content.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
+        f2c_input.write_text(content)
 
 
-def fix_f2c_output(f2c_output_path: str) -> str | None:
+
+def fix_f2c_output(f2c_output: Path) -> None:
     """
     This function is called on the name of each C output file. It fixes up the C
     output in various ways to compensate for the lack of f2c support for Fortran
     90 and Fortran 95.
     """
-    f2c_output = Path(f2c_output_path)
-    with open(f2c_output) as f:
-        lines = f.readlines()
-
     if f2c_output.name == "_lapack_subroutine_wrappers.c":
-        lines = [
-            line.replace("integer chla_transtype__", "void chla_transtype__")
-            for line in lines
-        ]
+        content = f2c_output.read_text()
+        content = content.replace("integer chla_transtype__", "void chla_transtype__")
+        f2c_output.write_text(content)
+        return
 
-    if "eupd.c" in str(f2c_output):
-        lines = [
-            re.sub(r"ftnlen\s*(howmny_len|bmat_len),?", "", line) for line in lines
-        ]
+    if f2c_output.name.endswith("eupd.c"):
+        content = f2c_output.read_text()
+        content = re.sub(r"ftnlen\s*(howmny_len|bmat_len),?", "", content, flags=re.MULTILINE)
+        f2c_output.write_text(content)
+        return
 
     if f2c_output.name.endswith("lansvd.c"):
-        lines.append(
+        content = f2c_output.read_text()
+        content += dedent(
             """
             #include <time.h>
 
@@ -59,21 +54,17 @@ def fix_f2c_output(f2c_output_path: str) -> str | None:
             }
             """
         )
-
-    with open(f2c_output, "w") as f:
-        f.writelines(lines)
-
-    return None
+        f2c_output.write_text(content)
+        return
 
 
-def scipy_fix_cfile(path: str) -> None:
+def scipy_fix_cfile(path: Path) -> None:
     """
     Replace void return types with int return types in various generated .c and
     .h files. We can't achieve this with a simple patch because these files are
     not in the sdist, they are generated as part of the build.
     """
-    source_path = Path(path)
-    text = source_path.read_text()
+    text = path.read_text()
     text = text.replace("extern void F_WRAPPEDFUNC", "extern int F_WRAPPEDFUNC")
     text = text.replace("extern void F_FUNC", "extern int F_FUNC")
     text = text.replace("void (*f2py_func)", "int (*f2py_func)")
@@ -82,16 +73,16 @@ def scipy_fix_cfile(path: str) -> None:
     text = text.replace("void(*)", "int(*)")
     text = text.replace("static void f2py_setup_", "static int f2py_setup_")
 
-    if path.endswith("_flapackmodule.c"):
+    if path.name.endswith("_flapackmodule.c"):
         text = text.replace(",size_t", "")
         text = re.sub(r",slen\([a-z]*\)\)", ")", text)
 
-    source_path.write_text(text)
+    path.write_text(text)
 
     for lib in ["lapack", "blas"]:
-        if path.endswith(f"cython_{lib}.c"):
+        if path.name.endswith(f"cython_{lib}.c"):
             header_name = f"_{lib}_subroutines.h"
-            header_dir = Path(path).parent
+            header_dir = path.parent
             header_path = find_header(header_dir, header_name)
 
             header_text = header_path.read_text()
@@ -115,7 +106,7 @@ def find_header(source_dir: Path, header_name: str) -> Path:
 def scipy_fixes(args: list[str]) -> None:
     for arg in args:
         if arg.endswith(".c"):
-            scipy_fix_cfile(arg)
+            scipy_fix_cfile(Path(arg))
 
 
 def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
@@ -153,7 +144,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
         new_args.append(arg[:-2] + ".c")
         if dryrun:
             continue
-        fix_f2c_input(arg)
+        fix_f2c_input(Path(arg))
         if arg.endswith(".F"):
             # .F files apparently expect to be run through the C
             # preprocessor (they have #ifdef's in them)
@@ -193,7 +184,7 @@ def replay_f2c(args: list[str], dryrun: bool = False) -> list[str] | None:
                 stdout=output_pipe,
                 cwd=filepath.parent,
             )
-        fix_f2c_output(arg[:-2] + ".c")
+        fix_f2c_output(Path(arg[:-2] + ".c"))
 
     new_args_str = " ".join(args)
     if ".so" in new_args_str and "libgfortran.so" not in new_args_str:
