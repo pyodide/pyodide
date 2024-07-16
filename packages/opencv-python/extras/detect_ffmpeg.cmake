@@ -30,8 +30,8 @@ elseif(OPENCL_INCLUDE_DIR)
 else()
     set(__opencl_dirs "${OpenCV_SOURCE_DIR}/3rdparty/include/opencl/1.2")
 endif()
-# extra dependencies for buildin code (OpenCL dir is required for extensions like cl_d3d11.h)
-# buildin HAVE_OPENCL is already defined through cvconfig.h
+# extra dependencies for building code (OpenCL dir is required for extensions like cl_d3d11.h)
+# building HAVE_OPENCL is already defined through cvconfig.h
 list(APPEND __builtin_include_dirs "${__opencl_dirs}")
 
 # extra dependencies for
