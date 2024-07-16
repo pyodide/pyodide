@@ -19,9 +19,10 @@ def fix_f2c_input(f2c_input: Path) -> None:
     ]:
         content = f2c_input.read_text()
         content = content.replace("character", "integer")
-        content = content.replace("ret = chla_transtype(", "call chla_transtype(ret, 1,")
+        content = content.replace(
+            "ret = chla_transtype(", "call chla_transtype(ret, 1,"
+        )
         f2c_input.write_text(content)
-
 
 
 def fix_f2c_output(f2c_output: Path) -> None:
@@ -38,7 +39,9 @@ def fix_f2c_output(f2c_output: Path) -> None:
 
     if f2c_output.name.endswith("eupd.c"):
         content = f2c_output.read_text()
-        content = re.sub(r"ftnlen\s*(howmny_len|bmat_len),?", "", content, flags=re.MULTILINE)
+        content = re.sub(
+            r"ftnlen\s*(howmny_len|bmat_len),?", "", content, flags=re.MULTILINE
+        )
         f2c_output.write_text(content)
         return
 
