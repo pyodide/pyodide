@@ -9,5 +9,5 @@ COMMIT_MSG=$(git log --no-merges -1 --oneline)
 # message contains "[scipy]"
 if [[ "$GITHUB_EVENT_NAME" == push ||
       "$COMMIT_MSG" =~ \[scipy\] ]]; then
-    echo "build=true" >> $GITHUB_OUTPUT
+    echo "trigger=true" >> "$GITHUB_OUTPUT"
 fi

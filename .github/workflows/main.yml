@@ -233,7 +233,7 @@ jobs:
     name: test-scipy-trigger
     runs-on: ubuntu-latest
     outputs:
-      test: ${{ steps.check-build-trigger.outputs.build }}
+      test: ${{ steps.check-build-trigger.outputs.trigger }}
 
     steps:
       - uses: actions/checkout@v4
