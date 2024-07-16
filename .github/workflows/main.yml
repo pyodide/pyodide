@@ -243,7 +243,7 @@ jobs:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - uses: oven-sh/setup-bun@v1
+      - uses: oven-sh/setup-bun@v2
 
       - name: install test requirements
         working-directory: src/test-bun
