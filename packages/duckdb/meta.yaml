@@ -4,8 +4,8 @@ package:
   top-level:
     - duckdb
 source:
-  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-0.10.2-cp311-cp311-emscripten_3_1_46_wasm32.whl
-  sha256: 9babd195558647f7a0339558c1218ac0f0ee1004cdfa8ff987642def9f00f6fd
+  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-1.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: 02ee0ea70f528e8aa6843f74b1fdd93619a8fb8521ccfb67585e2a68b25e3a39
 about:
   home: https://github.com/duckdb/duckdb
   PyPI: https://pypi.org/project/duckdb
