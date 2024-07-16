@@ -18,6 +18,14 @@ requirements:
     - numpy
     - python-dateutil
     - pytz
+build:
+  exports: requested
+  cflags: |
+    -fexceptions -frtti
+  cxxflags: |
+    -fexceptions -frtti
+  ldflags: |
+    -fexceptions
 about:
   home: http://casadi.org
   PyPI: https://pypi.org/project/casadi
