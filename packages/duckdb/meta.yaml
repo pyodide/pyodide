@@ -1,6 +1,6 @@
 package:
   name: duckdb
-  version: 0.10.2
+  version: 1.0.0
   top-level:
     - duckdb
 source:
