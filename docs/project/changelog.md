@@ -16,9 +16,6 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Added Explanations of release files in the documentation.
-  {pr}`4945`
-
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
   timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
   timezone handling.
