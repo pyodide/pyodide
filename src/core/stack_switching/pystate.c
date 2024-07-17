@@ -72,9 +72,6 @@ finally:
       "Pyodide: Internal error occurred while switching stacks:\n");
     PyErr_Print();
   }
-  if (task == NULL) {
-    Py_CLEAR(loop);
-  }
   Py_CLEAR(asyncio_module);
   Py_CLEAR(_asyncio_module);
   Py_CLEAR(_current_tasks);
@@ -115,122 +112,55 @@ finally:
 
 typedef struct
 {
-  _PyErr_StackItem* exc_info;
-  _PyErr_StackItem exc_state;
-} ExceptionState;
-
-ExceptionState
-saveExceptionState(PyThreadState* tstate)
-{
-  ExceptionState es;
-  es.exc_info = tstate->exc_info;
-  es.exc_state = tstate->exc_state;
-  // Clear exc_state without decrementing any refcounts (we moved ownership to
-  // es) See test_switch_from_except_block for a test case for this.
-  tstate->exc_state.exc_value = NULL;
-  tstate->exc_state.previous_item = NULL;
-  tstate->exc_info = &tstate->exc_state;
-  return es;
-}
-
-void
-restoreExceptionState(PyThreadState* tstate, ExceptionState es)
-{
-  tstate->exc_state = es.exc_state;
-  tstate->exc_info = es.exc_info ? es.exc_info : &es.exc_state;
-
-  es.exc_info = NULL;
-  es.exc_state.exc_value = NULL;
-  es.exc_state.previous_item = NULL;
-}
-
-typedef struct
-{
-  PyFrameObject* _top_frame;
-  _PyCFrame* cframe;
-  int py_recursion_depth;
-  int c_recursion_depth;
-  int trash_delete_nesting;
-  _PyInterpreterFrame* current_frame;
-  _PyStackChunk* datastack_chunk;
-  PyObject** datastack_top;
-  PyObject** datastack_limit;
-  PyObject* context;
-} PythonState;
-
-PythonState
-savePythonState(PyThreadState* tstate)
-{
-  PythonState ps;
-
-  ps.cframe = tstate->cframe;
-  ps.current_frame = tstate->cframe->current_frame;
-  ps.datastack_chunk = tstate->datastack_chunk;
-  ps.datastack_top = tstate->datastack_top;
-  ps.datastack_limit = tstate->datastack_limit;
-  tstate->datastack_chunk = NULL;
-  tstate->datastack_top = NULL;
-  tstate->datastack_limit = NULL;
-
-  ps.py_recursion_depth =
-    tstate->py_recursion_limit - tstate->py_recursion_remaining;
-  ps.c_recursion_depth = C_RECURSION_LIMIT - tstate->c_recursion_remaining;
-
-  ps._top_frame = PyThreadState_GetFrame((PyThreadState*)tstate);
-  Py_XDECREF(ps._top_frame);
-
-  ps.trash_delete_nesting = tstate->trash.delete_nesting;
-
-  ps.context = tstate->context;
-  Py_XINCREF(ps.context);
-  return ps;
-}
-
-void
-restorePythonState(PyThreadState* tstate, PythonState ps)
-{
-  tstate->cframe = ps.cframe;
-  tstate->cframe->current_frame = ps.current_frame;
-  tstate->datastack_chunk = ps.datastack_chunk;
-  tstate->datastack_top = ps.datastack_top;
-  tstate->datastack_limit = ps.datastack_limit;
-
-  tstate->py_recursion_remaining =
-    tstate->py_recursion_limit - ps.py_recursion_depth;
-  tstate->c_recursion_remaining = C_RECURSION_LIMIT - ps.c_recursion_depth;
-
-  tstate->trash.delete_nesting = ps.trash_delete_nesting;
-
-  tstate->context = ps.context;
-  Py_XDECREF(ps.context);
-}
-
-typedef struct
-{
   AsyncioState as;
-  PythonState ps;
-  ExceptionState es;
+  PyThreadState* ts;
 } ThreadState;
+
+PyThreadState*
+_PyThreadState_SwapNoGIL(PyThreadState* newts);
+
+#define THREADSTATE_MAX_FREELIST 10
+
+PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
+int threadstate_freelist_len = 0;
 
 EMSCRIPTEN_KEEPALIVE ThreadState*
 captureThreadState()
 {
-  PyThreadState* tstate = PyThreadState_Get();
-  ThreadState* state = (ThreadState*)malloc(sizeof(ThreadState));
-  state->as = saveAsyncioState();
-  state->es = saveExceptionState(tstate);
-  state->ps = savePythonState(tstate);
-  return state;
+  ThreadState* res = malloc(sizeof(ThreadState));
+  res->as = saveAsyncioState();
+  PyThreadState* tstate;
+  if (threadstate_freelist_len > 0) {
+    tstate = threadstate_freelist[threadstate_freelist_len - 1];
+    threadstate_freelist_len--;
+  } else {
+    tstate = PyThreadState_New(PyInterpreterState_Get());
+  }
+  res->ts = _PyThreadState_SwapNoGIL(tstate);
+
+  PyObject* _asyncio_module = NULL;
+  PyObject* t = NULL;
+  _asyncio_module = PyImport_ImportModule("_asyncio");
+  _Py_IDENTIFIER(_set_running_loop);
+  t = _PyObject_CallMethodIdOneArg(
+    _asyncio_module, &PyId__set_running_loop, res->as.loop);
+
+  Py_CLEAR(_asyncio_module);
+  Py_CLEAR(t);
+  return res;
 }
 
 EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(ThreadState* state)
 {
-  PyThreadState* tstate = PyThreadState_Get();
-  restoreExceptionState(tstate, state->es);
-  restorePythonState(tstate, state->ps);
   restoreAsyncioState(state->as);
-  free(state);
+  PyThreadState* res = _PyThreadState_SwapNoGIL(state->ts);
+  if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
+    PyThreadState_Delete(res);
+  } else {
+    threadstate_freelist[threadstate_freelist_len] = res;
+    threadstate_freelist_len++;
+  }
 }
 
 EMSCRIPTEN_KEEPALIVE int size_of_cframe = sizeof(_PyCFrame);
