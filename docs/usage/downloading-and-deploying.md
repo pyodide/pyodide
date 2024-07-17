@@ -62,7 +62,7 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 ### Files in `pyodide-core-{{VERSION}}.tar.bz2`
 
 | File Name                 | Description
-|:--------------------------|:-----------
+|:--------------------------|:------------
 | pyodide.asm.js            | The JavaScript half of the main "binary". Direct output from the Emscripten compiler. Contains the Emscripten bootstrap code + all JavaScript libraries used by C + the JavaScript/Wasm runtime interop APIs.
 | pyodide.asm.wasm          | The WebAssembly half of the main "binary". Direct output from the Emscripten compiler. Contains all C library code that is statically linked. Also includes enough of libcxx to support things like exceptions in extension modules that use C++.
 | pyodide.js                | Exports loadPyodide on globalThis. Legacy support for people who can't use es6 modules for whatever reason. Prefer pyodide.mjs.
@@ -74,7 +74,7 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 ### Additional Files in `pyodide-{{VERSION}}.tar.bz2`
 
 | File Name                 | Description
-|:--------------------------|:-----------
+|:--------------------------|:------------
 | fonts/                    | Used by matplotlib-pyodide.
 | ffi.d.ts                  | Typescript type definitions, useful if you want to use Pyodide in a typescript project.
 | pyodide.d.ts              | Typescript type definitions, useful if you want to use Pyodide in a typescript project.
