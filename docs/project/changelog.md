@@ -16,6 +16,12 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} The `pyodide config list` command now shows an additional
+  config variable `pythoninclude` that can be used to access the location of
+  the Pyodide Python interpreter headers. This variable can be accessed through
+  `pyodide config get pythoninclude` as well for use in out-of-tree builds.
+  {pr}`4947`
+
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
   timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
   timezone handling.
