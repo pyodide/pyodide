@@ -8,9 +8,8 @@ source:
   sha256: 409a5f6725eadea40fddfb8ba2321139b5252edac8bc115a72f68e648631d56a
   patches:
     - patches/0001-fix-python-include-dir.patch
-    - patches/0002-update-serializing_stream_hpp.patch
-    - patches/0003-update-serializing_stream_cpp.patch
-    - patches/0004-disable-deepbind.patch
+    - patches/0002-disable-size-max-check.patch
+    - patches/0003-disable-rtld_deepbind.patch
 requirements:
   host:
     - numpy
