@@ -58,6 +58,10 @@ myst:
   JavaScript code that iterates a `PyProxy`.
   {pr}`4919`
 
+### Packages
+
+- Added `duckdb` 1.0.0 {pr}`4684`
+
 ## Version 0.26.1
 
 _June 7, 2024_
