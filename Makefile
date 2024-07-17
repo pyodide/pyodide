@@ -160,7 +160,8 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 
 dist/pyodide.js src/js/generated/_pyodide.out.js: \
 		src/js/*.ts                          \
-		src/js/*.js                          \
+		src/js/common/*                      \
+		src/js/vendor/*                      \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
@@ -260,6 +261,23 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
+
+
+# Prepare the dist directory for the release by removing unneeded files
+.PHONY: clean-dist-dir
+clean-dist-dir:
+	# Remove snapshot files
+	rm dist/makesnap.mjs
+	rm dist/snapshot.bin
+	rm dist/module_test.html dist/test.html
+	# TODO: Remove webworker.js too? Would require updating the docs I think.
+	rm dist/module_webworker_dev.js  dist/webworker_dev.js
+
+	# TODO: Source maps aren't useful outside of debug builds I don't think. But
+	# removing them adds "missing sourcemap" warnings to JS console. We should
+	# not generate them in the first place?
+	# rm dist/*.map
+
 
 .PHONY: lint
 lint:

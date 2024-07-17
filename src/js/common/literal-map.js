@@ -33,7 +33,7 @@ const handler = {
   set: (map, k, v) => (map.set(k, v), true),
 };
 
-API.LiteralMap = new Proxy(
+const LiteralMap = new Proxy(
   class LiteralMap extends Map {
     constructor(...args) {
       return new Proxy(super(...args), handler);
@@ -53,3 +53,5 @@ API.LiteralMap = new Proxy(
     },
   },
 );
+
+export default LiteralMap;
