@@ -57,7 +57,7 @@ For additional suggestions for optimizing the size and load time for Pyodide,
 see the [Emscripten documentation about
 deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 
-## Contents of Pyodide github releases
+## Contents of Pyodide Github releases
 
 ### Files in `pyodide-core-{{VERSION}}.tar.bz2`
 
@@ -66,8 +66,8 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 | pyodide.asm.js    | The JavaScript half of the main "binary". Direct output from the Emscripten compiler. Contains the Emscripten bootstrap code + all JavaScript libraries used by C + the JavaScript/Wasm runtime interop APIs.                                     |
 | pyodide.asm.wasm  | The WebAssembly half of the main "binary". Direct output from the Emscripten compiler. Contains all C library code that is statically linked. Also includes enough of libcxx to support things like exceptions in extension modules that use C++. |
 | pyodide.js        | Exports loadPyodide on globalThis. Legacy support for people who can't use es6 modules for whatever reason. Prefer pyodide.mjs.                                                                                                                   |
-| pyodides.mjs      | A small JS loader shim which exports loadPyodide. It manages downloading the runtime and handling user settings.                                                                                                                                  |
-| python_stdlin.zip | The Python Standard Library for pyodide. A zip file consisting of the Python Lib folder (except a few things we've unvendored) and the Pyodide Python runtime libraries. Mounted directly into the Pyodide FS and imported using ZipImporter.     |
+| pyodide.mjs      | A small JS loader shim which exports loadPyodide. It manages downloading the runtime and handling user settings.                                                                                                                                  |
+| python_stdlib.zip | The Python Standard Library for pyodide. A zip file consisting of the Python Lib folder (except a few things we've unvendored) and the Pyodide Python runtime libraries. Mounted directly into the Pyodide FS and imported using ZipImporter.     |
 | package.json      | Tells node how to use Pyodide, since pyodide-core was primarily intended for use with node.                                                                                                                                                       |
 | pyodide-lock.json | Lockfile for Python packages, used by pyodide.loadPackage and micropip.install. Necessary in all cases.                                                                                                                                           |
 
