@@ -52,8 +52,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        include:
+          - os: ubuntu-latest
+            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
+          - os: macos-14
+            pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
+    needs: [test-scipy-trigger]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -124,13 +129,13 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide core + numpy
+      - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES="tag:core,numpy" make
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
           ccache -s
 
       - name: check-size
@@ -224,6 +229,54 @@ jobs:
         with:
           paths: "test-results/*.xml"
         if: always()
+
+  test-scipy-trigger:
+    name: test-scipy-trigger
+    runs-on: ubuntu-latest
+    outputs:
+      test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - id: check-build-trigger
+        name: Check build trigger
+        run: bash tools/check_build_trigger.sh
+
+  test-scipy:
+    runs-on: ${{ matrix.os }}
+    needs: [test-scipy-trigger, build-core]
+    if: needs.test-scipy-trigger.outputs.test-scipy
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - name: run scipy tests inside node
+        shell: bash -l {0}
+        run: |
+          npm install pyodide
+          cp -f dist/* node_modules/pyodide
+
+          # This uses conftest.py on the current working directory to
+          # skip/xfail tests in scipy
+          cd packages/scipy
+          # XXX for some unknown reason adding a conftest.py in the repo throws off the
+          # other tests trying to import from conftest they find the scipy one ...
+          mv scipy-conftest.py conftest.py
+
+          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
 
   test-bun:
     runs-on: ${{ matrix.os }}
