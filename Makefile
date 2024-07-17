@@ -271,7 +271,7 @@ clean-dist-dir:
 	rm dist/module_test.html dist/test.html
 	# TODO: Remove webworker.js too? Would require updating the docs I think.
 	rm dist/module_webworker_dev.js  dist/webworker_dev.js
-	
+
 	# TODO: Source maps aren't useful outside of debug builds I don't think. But
 	# removing them adds "missing sourcemap" warnings to JS console. We should
 	# not generate them in the first place?
