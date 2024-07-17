@@ -7,7 +7,8 @@ import {
   initNodeModules,
   resolvePath,
 } from "./compat.js";
-import { createLock } from "./lock";
+import { createLock } from "./common/lock";
+import { ResolvablePromise, createResolvable } from "./common/resolveable";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
 import {
@@ -148,25 +149,6 @@ export type InternalPackageData = {
   shared_library: boolean;
 };
 
-interface ResolvablePromise extends Promise<void> {
-  resolve: (value?: any) => void;
-  reject: (err?: Error) => void;
-}
-
-function createDonePromise(): ResolvablePromise {
-  let _resolve: (value: any) => void = () => {};
-  let _reject: (err: Error) => void = () => {};
-
-  const p: any = new Promise<void>((resolve, reject) => {
-    _resolve = resolve;
-    _reject = reject;
-  });
-
-  p.resolve = _resolve;
-  p.reject = _reject;
-  return p;
-}
-
 /**
  * Recursively add a package and its dependencies to toLoad.
  * A helper function for recursiveDependencies.
@@ -193,7 +175,7 @@ function addPackageToLoad(
     channel: DEFAULT_CHANNEL,
     depends: pkgInfo.depends,
     installPromise: undefined,
-    done: createDonePromise(),
+    done: createResolvable(),
     packageData: pkgInfo,
   });
 
@@ -244,7 +226,7 @@ function recursiveDependencies(
       channel: channel, // name is url in this case
       depends: [],
       installPromise: undefined,
-      done: createDonePromise(),
+      done: createResolvable(),
       packageData: {
         name: pkgname,
         version: version,
@@ -594,4 +576,4 @@ export async function loadPackage(
  * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
  * install location for a particular ``package_name``.
  */
-export let loadedPackages: { [key: string]: string } = {};
+export let loadedPackages: Record<string, string> = {};
