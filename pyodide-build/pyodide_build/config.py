@@ -211,8 +211,9 @@ DEFAULT_CONFIG_COMPUTED: dict[str, str] = {
     "pyo3_cross_include_dir": "$(PYTHONINCLUDE)",
     # Misc
     "stdlib_module_cflags": "$(CFLAGS_BASE) -I$(PYTHONINCLUDE) -I Include/ -I. -IInclude/internal/",  # TODO: remove this
-    # Paths to build dependencies
+    # Paths to build dependencies and config files
     "host_install_dir": "$(PYODIDE_ROOT)/packages/.artifacts",
     "host_site_packages": "$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages",
+    "pythoninclude": "$(PYTHONINCLUDE)",
     "numpy_lib": "$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages/numpy/",
 }

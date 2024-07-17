@@ -9,6 +9,7 @@ app = typer.Typer(help="Manage config variables used in pyodide")
 PYODIDE_CONFIGS = {
     "emscripten_version": "PYODIDE_EMSCRIPTEN_VERSION",
     "python_version": "PYVERSION",
+    "pythoninclude": "PYTHONINCLUDE",
     "rustflags": "RUSTFLAGS",
     "cmake_toolchain_file": "CMAKE_TOOLCHAIN_FILE",
     "pyo3_config_file": "PYO3_CONFIG_FILE",
