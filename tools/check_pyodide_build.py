@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
+import os
 import sys
 
 
 def main():
+    if os.environ.get("SKIP_PYODIDE_BUILD_CHECK"):
+        sys.exit(0)
+
     try:
         import pyodide_build
 
