@@ -1,7 +1,7 @@
-From 86ac669c11f0f466ece32e6fcebacd62af0bdc32 Mon Sep 17 00:00:00 2001
+From 2d025093decd62a69d6d400340617e9baf116858 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
-Date: Mon, 15 Jul 2024 18:00:31 +0530
-Subject: [PATCH 2/4] Disable SIZE_MAX check for Emscripten, part I
+Date: Thu, 18 Jul 2024 02:08:07 +0530
+Subject: [PATCH 2/3] Disable SIZE_MAX check for Emscripten
 
 In WebAssembly (currently 32-bit), SIZE_MAX is equal to UINT_MAX, which meant
 these functions weren't being compiled, so there was no way to serialize or
@@ -10,11 +10,25 @@ were called elsewhere. On many 32-bit systems, size_t and unsigned int are the
 same size, so SIZE_MAX == UINT_MAX is a common case.
 
 ---
- casadi/core/serializing_stream.hpp | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ casadi/core/serializing_stream.cpp | 2 +-
+ casadi/core/serializing_stream.hpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
 
+diff --git a/casadi/core/serializing_stream.cpp b/casadi/core/serializing_stream.cpp
+index f3101f84..dfc6b2e4 100644
+--- a/casadi/core/serializing_stream.cpp
++++ a/casadi/core/serializing_stream.cpp
+@@ -155,7 +155,7 @@ namespace casadi {
+       for (int j=0;j<4;++j) pack(c[j]);
+     }
+ 
+-#if SIZE_MAX != UINT_MAX
++#if SIZE_MAX != UINT_MAX || defined(__EMSCRIPTEN__)
+     void DeserializingStream::unpack(unsigned int& e) {
+       assert_decoration('u');
+       uint32_t n;
 diff --git a/casadi/core/serializing_stream.hpp b/casadi/core/serializing_stream.hpp
-index 47070d0e..e06081c1 100644
+index d6d7a7fc..e06081c1 100644
 --- a/casadi/core/serializing_stream.hpp
 +++ b/casadi/core/serializing_stream.hpp
 @@ -99,7 +99,7 @@ namespace casadi {
@@ -26,15 +40,6 @@ index 47070d0e..e06081c1 100644
      void unpack(unsigned int& e);
  #endif
      void unpack(bool& e);
-@@ -236,7 +236,7 @@ namespace casadi {
-     void pack(const GenericType& e);
-     void pack(std::istream& s);
-     void pack(int e);
--#if SIZE_MAX != UINT_MAX
-+#if SIZE_MAX != UINT_MAX || defined(__EMSCRIPTEN__)
-     void pack(unsigned int e);
- #endif
-     void pack(bool e);
 -- 
 2.39.3 (Apple Git-146)
 
