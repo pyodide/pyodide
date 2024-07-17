@@ -59,7 +59,6 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 
 ## Type Definitions of Pyodide files
 
-
 ### Core Release Files
 
 | File Name                 | Description |
