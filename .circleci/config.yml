@@ -259,7 +259,7 @@ jobs:
       - run:
           name: Py-compile packages
           command: |
-            pyodide py-compile --compression-level 0 dist/
+            make py-compile
             rm -f dist/snapshot.bin
             make dist/snapshot.bin
 

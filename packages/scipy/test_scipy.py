@@ -43,13 +43,18 @@ def test_binom_ppf(selenium):
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.driver_timeout(40)
-@run_in_pyodide(packages=["pytest", "scipy-tests"])
-def test_scipy_pytest(selenium):
+@run_in_pyodide(packages=["pytest", "scipy-tests", "micropip"])
+async def test_scipy_pytest(selenium):
     import pytest
 
+    import micropip
+
+    await micropip.install("hypothesis")
+
     def runtest(module, filter):
-        pytest.main(
+        result = pytest.main(
             [
                 "--pyargs",
                 f"scipy.{module}",
@@ -59,6 +64,7 @@ def test_scipy_pytest(selenium):
                 filter,
             ]
         )
+        assert result == 0
 
     runtest("odr", "explicit")
     runtest("signal.tests.test_ltisys", "TestImpulse2")
