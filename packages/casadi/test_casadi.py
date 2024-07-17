@@ -114,9 +114,9 @@ def test_casadi_integrator(selenium, integrator_type):
         "ode": ca.vertcat(v, -(omega**2) * x - 2 * zeta * omega * v),
     }
     opts = {
-        "abstol": 1e-8,  # Absolute tolerance
-        "reltol": 1e-8,  # Relative tolerance
-        "max_num_steps": 10000,  # Maximum number of steps the integrator can take
+        "abstol": 1e-10,  # Absolute tolerance
+        "reltol": 1e-10,  # Relative tolerance
+        "max_num_steps": 100000,  # Maximum number of steps the integrator can take
     }
 
     F = ca.integrator("F", integrator_type, dae, 0, 1, opts)
