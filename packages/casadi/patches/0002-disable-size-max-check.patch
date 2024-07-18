@@ -11,13 +11,13 @@ same size, so SIZE_MAX == UINT_MAX is a common case.
 
 ---
  casadi/core/serializing_stream.cpp | 2 +-
- casadi/core/serializing_stream.hpp | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ casadi/core/serializing_stream.hpp | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/casadi/core/serializing_stream.cpp b/casadi/core/serializing_stream.cpp
 index f3101f84..dfc6b2e4 100644
 --- a/casadi/core/serializing_stream.cpp
-+++ a/casadi/core/serializing_stream.cpp
++++ b/casadi/core/serializing_stream.cpp
 @@ -155,7 +155,7 @@ namespace casadi {
        for (int j=0;j<4;++j) pack(c[j]);
      }
@@ -28,7 +28,7 @@ index f3101f84..dfc6b2e4 100644
        assert_decoration('u');
        uint32_t n;
 diff --git a/casadi/core/serializing_stream.hpp b/casadi/core/serializing_stream.hpp
-index d6d7a7fc..e06081c1 100644
+index 47070d0e..e06081c1 100644
 --- a/casadi/core/serializing_stream.hpp
 +++ b/casadi/core/serializing_stream.hpp
 @@ -99,7 +99,7 @@ namespace casadi {
@@ -40,6 +40,15 @@ index d6d7a7fc..e06081c1 100644
      void unpack(unsigned int& e);
  #endif
      void unpack(bool& e);
+@@ -236,7 +236,7 @@ namespace casadi {
+     void pack(const GenericType& e);
+     void pack(std::istream& s);
+     void pack(int e);
+-#if SIZE_MAX != UINT_MAX
++#if SIZE_MAX != UINT_MAX || defined(__EMSCRIPTEN__)
+     void pack(unsigned int e);
+ #endif
+     void pack(bool e);
 -- 
 2.39.3 (Apple Git-146)
 
