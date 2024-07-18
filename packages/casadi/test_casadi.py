@@ -98,7 +98,7 @@ def test_basic_rootfinder(selenium):
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
-# @pytest.mark.parametrize("integrator_type", ["cvodes", "idas"])
+@pytest.mark.parametrize("integrator_type", ["cvodes", "idas"])
 def test_casadi_integrator(selenium, integrator_type):
     import casadi as ca
     import numpy as np
@@ -120,7 +120,7 @@ def test_casadi_integrator(selenium, integrator_type):
         "max_num_steps": 100000,  # Maximum number of steps the integrator can take
     }
 
-    F = ca.integrator("F", "cvodes", dae, 0, 1, opts)
+    F = ca.integrator("F", integrator_type, dae, 0, 1, opts)
 
     # Set initial conditions: x(0) = 1, v(0) = 0
     r = F(x0=[1, 0])
