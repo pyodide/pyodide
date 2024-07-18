@@ -1,8 +1,9 @@
+import re
 from pathlib import Path
 
 import typer
 
-from pyodide_build._py_compile import _py_compile_archive, _py_compile_archive_dir
+from .._py_compile import _py_compile_archive, _py_compile_archive_dir
 
 
 def main(
@@ -14,6 +15,10 @@ def main(
     compression_level: int = typer.Option(
         6, help="Compression level to use for the created zip file"
     ),
+    exclude: str = typer.Option(
+        "",
+        help="List of files to exclude from compilation, works only for directories. Defaults to no files.",
+    ),
 ) -> None:
     """Compile .py files to .pyc in a wheel, a zip file, or a folder with wheels or zip files.
 
@@ -23,6 +28,11 @@ def main(
     if not path.exists():
         typer.echo(f"Error: {path} does not exist")
         raise typer.Exit(1)
+
+    # Convert the comma / space separated strings to lists
+    excludes = [
+        item.strip() for item in re.split(r",|\s", exclude) if item.strip() != ""
+    ]
 
     if path.is_file():
         if path.suffix not in [".whl", ".zip"]:
@@ -36,7 +46,11 @@ def main(
         )
     elif path.is_dir():
         _py_compile_archive_dir(
-            path, verbose=not silent, keep=keep, compression_level=compression_level
+            path,
+            verbose=not silent,
+            keep=keep,
+            compression_level=compression_level,
+            excludes=excludes,
         )
     else:
         typer.echo(f"{path=} is not a file or a directory")

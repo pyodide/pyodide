@@ -18,7 +18,6 @@ declare var Tests: any;
 declare var Module: any;
 
 import { TypedArray } from "types";
-import { warnOnce } from "pyodide-util";
 
 // pyodide-skip
 
@@ -1064,10 +1063,10 @@ function* iter_helper(
     while (true) {
       Py_ENTER();
       const item = __pyproxy_iter_next(iterptr, proxyCache, is_json_adaptor);
+      Py_EXIT();
       if (item === null) {
         break;
       }
-      Py_EXIT();
       yield item;
       // If it's a json adaptor, we cached the result so we don't need to
       // destroy it (they'll get destroyed when we destroy the root).
