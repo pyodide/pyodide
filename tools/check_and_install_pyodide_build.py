@@ -2,6 +2,12 @@
 import sys
 import subprocess as sp
 
+# Note for maintainers:
+#   Update the following variables when you want to update the version of the
+#   pyodide-build version used in the build process.
+#   If you want to make breaking changes in pyodide-build, it is also useful to
+#   change the repository URL to your fork to test the changes are working as
+#   expected.
 PYODIDE_BUILD_REPO: str = "https://github.com/pyodide/pyodide-build"
 PYODIDE_BUILD_COMMIT: str = "fac0109aa2acf14469320b049d710dd42639bf94"  # v0.27.3
 
