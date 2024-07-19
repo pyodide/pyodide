@@ -30,7 +30,8 @@ def get_pyodide_build_install_url() -> str | None:
             try:
                 return line.split(" @ ")[1]
             except IndexError:
-                raise ValueError("pyodide-build is not installed from a VCS")
+                print("pyodide-build is not installed from a VCS: ", line)
+                return None
 
     return None
 
