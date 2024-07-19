@@ -85,6 +85,7 @@ myst:
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Added `duckdb` 1.0.0 {pr}`4684`
 
 ## Version 0.26.1
 

@@ -105,7 +105,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
             tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
@@ -163,7 +163,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
             tar cjf build-logs.tar.gz  packages/build-logs
 
       - run:
@@ -453,13 +453,14 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
+            make clean-dist-dir
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
@@ -546,6 +547,7 @@ jobs:
           # Unlike the release version, we upload the dev version to S3 not to GitHub.
           name: Deploy release files to S3
           command: |
+            make clean-dist-dir
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
             cp -r xbuildenv /tmp/ghr/xbuildenv
