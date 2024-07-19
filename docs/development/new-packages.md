@@ -81,6 +81,7 @@ as follows:
 ```bash
 make -C emsdk
 make -C cpython
+make pyodide_build
 ```
 
 This also builds the appropriate version of Emscripten.
