@@ -226,7 +226,7 @@ jobs:
       - run:
           name: create xbuild environment
           command: |
-            pip install pyodide-build --upgrade
+            make pyodide_build
             python tools/create_xbuildenv.py .
 
       - run:
@@ -254,7 +254,7 @@ jobs:
           name: Install requirements
           command: |
             pip install -r requirements.txt
-            pip install pyodide-build --upgrade
+            make pyodide_build
 
       - run:
           name: Py-compile packages
@@ -300,7 +300,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install -r requirements.txt
-            pip install pyodide-build --upgrade
+            make pyodide_build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
@@ -387,7 +387,7 @@ jobs:
 
             python -m venv .venv-host
             source .venv-host/bin/activate
-            pip install pyodide-build --upgrade
+            make pyodide_build
             pyodide venv .venv-pyodide
             source .venv-pyodide/bin/activate
 

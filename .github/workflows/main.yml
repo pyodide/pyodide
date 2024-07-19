@@ -9,6 +9,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install requirements
+        shell: bash -l {0}
+        run: |
+          mkdir test-results
+          python -m pip install -r requirements.txt -r requirements-deploy.txt
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          PYODIDE_ROOT=. pytest \
+              --junitxml=test-results/junit.xml \
+              --verbose \
+              --runtime=host \
+              --cov=pyodide_build --cov=pyodide \
+              src tools/
+      - uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
+
   build-core:
     strategy:
       fail-fast: false
@@ -146,7 +171,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
-          pip install pyodide-build --upgrade
+          make pyodide_build
 
       - uses: pyodide/pyodide-actions/install-browser@v1
         with:
