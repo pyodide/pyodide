@@ -6,7 +6,7 @@ package:
 source:
   url: https://github.com/apache/arrow/releases/download/apache-arrow-17.0.0/apache-arrow-17.0.0.tar.gz
   sha256: 9d280d8042e7cf526f8c28d170d93bfab65e50f94569f6a790982a878d8d898d
-#  extract_dir: arrow-57ac40ca23ebcaa4d42ae808137033689d3be9b1
+  #  extract_dir: arrow-57ac40ca23ebcaa4d42ae808137033689d3be9b1
   patches:
     - patches/autoload_timezones.patch
 build:
@@ -22,7 +22,7 @@ build:
       mv $PKG_BUILD_DIR ${PKG_BUILD_DIR}_cpp
       cp -r ${PKG_BUILD_DIR}_cpp/python $PKG_BUILD_DIR
       # build arrow cpp library and install to emscripten sysroot
-      # n.b. the if statements below mean that you can call pyodide build-packages-no-deps 
+      # n.b. the if statements below mean that you can call pyodide build-packages-no-deps
       # pyarrow --continue to debug build errors without having to do a full rebuild
       mkdir cppbuild
       cd cppbuild
