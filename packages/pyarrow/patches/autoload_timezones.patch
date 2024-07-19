@@ -7,7 +7,7 @@ index e52e0d24..9982f41c 100644
  For more information see the official page at https://arrow.apache.org
  """
 -
-+import pyodide_timezones
++import unix_timezones
  import gc as _gc
  import importlib as _importlib
  import os as _os
