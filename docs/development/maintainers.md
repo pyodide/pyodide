@@ -191,6 +191,11 @@ to update all packages and make a pull request with these changes. There will be
 build/test failures, revert the packages that fail the build or tests and make a
 note to update them independently.
 
+## Updating pyodide-build
+
+You can update the pyodide-build vession (or test with a different version / branch of pyodide-build)
+by changing the variables in `tools/check_and_instal_pyodide_build.py`.
+
 ## Upgrading pyodide to a new version of CPython
 
 ### Prerequisites
