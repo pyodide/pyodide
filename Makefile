@@ -252,6 +252,14 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
+dist/console_webworker.html: src/templates/console_webworker.html
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
+dist/console_webworker.js: src/templates/console_webworker.js
+	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
+
 dist/webworker.js: src/templates/webworker.js
 	cp $< $@
 
