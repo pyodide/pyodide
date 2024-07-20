@@ -388,7 +388,7 @@ jobs:
 
             python -m venv .venv-host
             source .venv-host/bin/activate
-            
+
             pyodide venv .venv-pyodide
             source .venv-pyodide/bin/activate
 
