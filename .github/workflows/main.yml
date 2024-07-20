@@ -31,7 +31,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          python -m pip install -r requirements.txt -r requirements-deploy.txt
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
       - name: Run tests
         shell: bash -l {0}
