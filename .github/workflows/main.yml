@@ -9,13 +9,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_python_version:
+    runs-on: ubuntu-latest
+    outputs:
+      PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the Python version from Makefile.envs
+        id: get_python_version
+        run: |
+          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
   test-python:
     runs-on: ubuntu-latest
+    needs: get_python_version
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
