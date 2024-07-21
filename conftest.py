@@ -90,6 +90,8 @@ pyodide.pyimport("pyodide_js._api");
         """
     )
 
+set_configs()
+
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
 )
