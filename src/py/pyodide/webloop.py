@@ -135,7 +135,7 @@ class PyodideFuture(Future[T]):
         """Equivalent to ``then(None, onrejected)``"""
         return self.then(None, onrejected)
 
-    def finally_(self, onfinally: Callable[[], None]) -> "PyodideFuture[T]":
+    def finally_(self, onfinally: Callable[[], Any]) -> "PyodideFuture[T]":
         """When the future is either resolved or rejected, call ``onfinally`` with
         no arguments.
         """
@@ -269,10 +269,10 @@ class WebLoop(asyncio.AbstractEventLoop):
     # Scheduling methods: use browser.setTimeout to schedule tasks on the browser event loop.
     #
 
-    def call_soon(
+    def call_soon(  # type: ignore[override]
         self,
         callback: Callable[..., Any],
-        *args: Any,  # type: ignore[override]
+        *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Arrange for a callback to be called as soon as possible.
@@ -285,10 +285,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay = 0
         return self.call_later(delay, callback, *args, context=context)
 
-    def call_soon_threadsafe(
+    def call_soon_threadsafe(  # type: ignore[override]
         self,
         callback: Callable[..., Any],
-        *args: Any,  # type: ignore[override]
+        *args: Any,
         context: contextvars.Context | None = None,
     ) -> asyncio.Handle:
         """Like ``call_soon()``, but thread-safe.
@@ -369,7 +369,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         delay = when - cur_time
         return self.call_later(delay, callback, *args, context=context)
 
-    def run_in_executor(self, executor, func, *args):
+    def run_in_executor(self, executor, func, *args):  # type: ignore[override]
         """Arrange for func to be called in the specified executor.
 
         This is normally supposed to run func(*args) in a separate process or
@@ -407,7 +407,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(self, coro, *, name=None):
+    def create_task(self, coro, *, name=None):  # type: ignore[override]
         """Schedule a coroutine object.
 
         Return a task object.
