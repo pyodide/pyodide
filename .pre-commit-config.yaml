@@ -50,7 +50,7 @@ repos:
       - id: codespell
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.10.0"
+    rev: "v1.11.0"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -75,7 +75,7 @@ repos:
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
+        files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$)
         additional_dependencies: *mypy-deps
 
