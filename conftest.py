@@ -76,7 +76,7 @@ pyodide.pyimport("pyodide_js._api");
     )
 
     pytest_pyodide_config.set_load_pyodide_script(
-        "node"
+        "node",
         """
         const {readFileSync} = require("fs");
         let snap = readFileSync("snapshot.bin");
