@@ -193,8 +193,8 @@ note to update them independently.
 
 ## Updating pyodide-build
 
-You can update the pyodide-build vession (or test with a different version / branch of pyodide-build)
-by changing the variables in `tools/check_and_instal_pyodide_build.py`.
+to change the version of pyodide-build, update the PYODIDE_BUILD_REPO and PYODIDE_BUILD_COMMIT
+variables in `Makefile.envs`.
 
 ## Upgrading pyodide to a new version of CPython
 

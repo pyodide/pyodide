@@ -221,7 +221,7 @@ $(eval $(call preprocess-js,js2python.js))
 .PHONY: pyodide_build
 pyodide_build:
 	@echo "Ensuring required pyodide-build version is installed"
-	./tools/check_and_install_pyodide_build.py
+	./tools/check_and_install_pyodide_build.py "$(PYODIDE_BUILD_COMMIT)" --repo "$(PYODIDE_BUILD_REPO)"
 	@which pyodide >/dev/null
 
 
