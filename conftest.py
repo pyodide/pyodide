@@ -76,7 +76,7 @@ pyodide.pyimport("pyodide_js._api");
     )
 
     pytest_pyodide_config.set_load_pyodide_script(
-        "node"
+        "node",
         """
         const {readFileSync} = require("fs");
         let snap = readFileSync("snapshot.bin");
@@ -87,10 +87,15 @@ pyodide.pyimport("pyodide_js._api");
             _loadSnapshot: snap,
             enableRunUntilComplete: true,
         });
-        """
+        """,
     )
 
 
+<<<<<<< HEAD
+=======
+set_configs()
+
+>>>>>>> b516580f2f0c3118bc81abb24b126af421a25796
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
 )
