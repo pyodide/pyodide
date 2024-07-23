@@ -28,19 +28,19 @@ os.environ["IN_PYTEST"] = "1"
 def set_configs():
     pytest_pyodide_config = get_global_config()
 
-    pytest_pyodide_config.set_flag(
+    pytest_pyodide_config.set_flags(
         "chrome",
-        pytest_pyodide_config.get_flag("chrome") + [
+        pytest_pyodide_config.get_flags("chrome")
+        + [
             "--enable-features=WebAssemblyExperimentalJSPI",
             "--enable-experimental-webassembly-features",
         ],
     )
 
-    pytest_pyodide_config.set_flag(
+    pytest_pyodide_config.set_flags(
         "node",
-        pytest_pyodide_config.get_flag("node") + [
-            "--experimental-wasm-stack-switching"
-        ],
+        pytest_pyodide_config.get_flags("node")
+        + ["--experimental-wasm-stack-switching"],
     )
 
     # There are a bunch of global objects that occasionally enter the hiwire cache
@@ -72,7 +72,7 @@ pyodide.pyimport("pyodide_js._api");
             jsglobals : self,
             enableRunUntilComplete: true,
         });
-        """
+        """,
     )
 
     pytest_pyodide_config.set_load_pyodide_script(
@@ -89,6 +89,7 @@ pyodide.pyimport("pyodide_js._api");
         });
         """
     )
+
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
