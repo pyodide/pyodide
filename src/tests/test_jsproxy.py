@@ -1983,6 +1983,82 @@ def test_as_object_map_heritable(selenium):
     n = mh.pop("1")
     assert n["3"] == 77
 
+    o = run_js(
+        """({0:[], 1:new Uint8Array(), 2:new Error(), 3:new ArrayBuffer()})"""
+    ).as_object_map(hereditary=True)
+    assert "constructor" not in o["0"]
+    assert "constructor" not in o["1"]
+    with pytest.raises(TypeError):
+        "constructor" not in o["2"] # noq1:B015
+    with pytest.raises(TypeError):
+        "constructor" not in o["3"] # noq1:B015
+
+    o = run_js("""({1:{get(){}, "2": 1}, 2:new Map([["a", 1]])})""").as_object_map(
+        hereditary=True
+    )
+    assert "2" in o["1"]
+    assert "a" not in o["2"]
+
+
+@run_in_pyodide
+def test_as_object_map_presence(selenium):
+    from pyodide.code import run_js
+
+    for meth in ["[Symbol.iterator]", "get", "set"]:
+        o = run_js(
+            "({ %s(){} })" % meth,
+        )
+        assert hasattr(o, "as_object_map")
+        assert hasattr(o, "as_py_json")
+
+    o = run_js("[]")
+    assert not hasattr(o, "as_object_map")
+    assert hasattr(o, "as_py_json")
+
+    for s in [
+        "({ next(){} })",
+        "new Uint8Array()",
+        "new ArrayBuffer()",
+        "new Error()",
+        "() => {}",
+    ]:
+        o = run_js(s)
+        assert not hasattr(o, "as_object_map")
+        assert not hasattr(o, "as_py_json")
+
+
+@run_in_pyodide
+def test_as_py_json(selenium):
+    from js import JSON
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    o = run_js("({a: [1,2, {b: 7}]})").as_py_json()
+    assert "a" in o
+    assert len(o) == 1
+    assert len(o["a"]) == 3
+    assert o["a"][0] == 1
+    assert len(o["a"][-1]) == 1
+    assert o["a"][-1]["b"] == 7
+
+    assert list(o.keys()) == ["a"]
+    assert [(k, v.to_py()) for (k, v) in o.items()] == [("a", [1, 2, {"b": 7}])]
+
+    a = run_js("([{b: 1}, {b: 3}, {b: 7}])").as_py_json()
+    l = [e["b"] for e in a]
+    assert l == [1, 3, 7]
+    import json
+
+    def default(obj):
+        if isinstance(obj, JsProxy):
+            if obj.constructor.name == "Array":
+                return list(obj)
+            return dict(obj)
+
+    for x in [o, a]:
+        assert json.dumps(x, default=default).replace(" ", "") == JSON.stringify(x)
+        assert json.loads(json.dumps(x, default=default)) == x.to_py()
+
 
 @run_in_pyodide
 def test_jsproxy_subtypes(selenium):
