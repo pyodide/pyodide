@@ -78,6 +78,12 @@ export PYZIP_EXCLUDE_FILES=\
 export PYZIP_JS_STUBS=\
 	webbrowser.py
 
+export PYCOMPILE_EXCLUDE_FILES=\
+	RobotRaconteur- \
+	astropy- \
+	opencv_python- \
+	test-
+
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
 export DBGFLAGS_SOURCEMAPDEBUG=-g3
