@@ -35,7 +35,7 @@ def parse_args():
         "--repo", type=str, default="https://github.com/pyodide/pyodide-build"
     )
 
-    parser.parse_args()
+    return parser.parse_args()
 
 
 def main():
