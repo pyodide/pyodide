@@ -295,6 +295,7 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies, item)
         with contextlib.suppress(Exception) if err else contextlib.nullcontext():
             browser.disable_pyproxy_tracing()
             browser.restore_state()
+            browser.run_js("pyodide._module._clear_method_call_singleton();")
 
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
