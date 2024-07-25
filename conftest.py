@@ -47,21 +47,21 @@ def set_configs():
     # but never leave. The refcount checks get angry about them if they aren't preloaded.
     # We need to go through and touch them all once to keep everything okay.
     pytest_pyodide_config.set_initialize_script("""
-pyodide.globals.get;
-pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
-pyodide._api.importlib.invalidate_caches;
-pyodide._api.package_loader.get_install_dir;
-pyodide._api.package_loader.unpack_buffer;
-pyodide._api.package_loader.get_dynlibs;
-pyodide._api.pyodide_code.eval_code;
-pyodide._api.pyodide_code.eval_code_async;
-pyodide._api.pyodide_code.relaxed_call
-pyodide._api.pyodide_code.find_imports;
-pyodide._api.pyodide_ffi.register_js_module;
-pyodide._api.pyodide_ffi.unregister_js_module;
-pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-pyodide.pyimport("pyodide.http").destroy();
-pyodide.pyimport("pyodide_js._api");
+        pyodide.globals.get;
+        pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
+        pyodide._api.importlib.invalidate_caches;
+        pyodide._api.package_loader.get_install_dir;
+        pyodide._api.package_loader.unpack_buffer;
+        pyodide._api.package_loader.get_dynlibs;
+        pyodide._api.pyodide_code.eval_code;
+        pyodide._api.pyodide_code.eval_code_async;
+        pyodide._api.pyodide_code.relaxed_call
+        pyodide._api.pyodide_code.find_imports;
+        pyodide._api.pyodide_ffi.register_js_module;
+        pyodide._api.pyodide_ffi.unregister_js_module;
+        pyodide.pyimport("pyodide.ffi.wrappers").destroy();
+        pyodide.pyimport("pyodide.http").destroy();
+        pyodide.pyimport("pyodide_js._api");
     """)
 
     pytest_pyodide_config.set_load_pyodide_script(
