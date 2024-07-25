@@ -18,7 +18,7 @@ from pathlib import Path
 from queue import PriorityQueue, Queue
 from threading import Lock, Thread
 from time import perf_counter, sleep
-from typing import Any
+from typing import Any, NoReturn
 
 from packaging.utils import canonicalize_name
 from pyodide_lock import PyodideLockSpec
@@ -42,11 +42,25 @@ from .io import MetaConfig, _BuildSpecTypes
 from .logger import console_stdout, logger
 
 
-class BuildError(Exception):
-    def __init__(self, returncode: int, msg: str) -> None:
-        self.returncode = returncode
-        self.msg = msg
+class PackageBuildError(Exception):
+    def __init__(self, pkgname: str, pkgdir: Path, returncode: int) -> None:
         super().__init__()
+        self.pkgname = pkgname
+        self.pkgdir = pkgdir
+        self.returncode = returncode
+
+    def log_and_exit(self) -> NoReturn:
+        msg: list[str] = []
+        msg.append(f"Error building {self.pkgname}. Printing build logs.")
+        logfile = self.pkgdir / "build.log"
+        if logfile.is_file():
+            msg.append(logfile.read_text(encoding="utf-8"))
+        else:
+            msg.append("ERROR: No build log found.")
+        msg.append(f"ERROR: cancelling buildall due to error building {self.pkgname}")
+        # Failed and not keep_going
+        logger.error("\n".join(msg))
+        sys.exit(self.returncode)
 
 
 @total_ordering
@@ -165,15 +179,12 @@ class Package(BasePackage):
         )
 
         if p.returncode != 0:
-            msg = []
-            msg.append(f"Error building {self.name}. Printing build logs.")
-            logfile = self.pkgdir / "build.log"
-            if logfile.is_file():
-                msg.append(logfile.read_text(encoding="utf-8") + "\n")
-            else:
-                msg.append("ERROR: No build log found.")
-            msg.append(f"ERROR: cancelling buildall due to error building {self.name}")
-            raise BuildError(p.returncode, "\n".join(msg))
+            raise PackageBuildError(self.name, self.pkgdir, p.returncode)
+
+
+SUCCESS_BLUE = "\033[94m"
+FAIL_RED = "\033[91m"
+END_COLOR = "\033[0m"
 
 
 class PackageStatus:
@@ -200,10 +211,8 @@ class PackageStatus:
 
         self.finished = True
 
-        if success:
-            logger.success(done_message)
-        else:
-            logger.error(done_message)
+        color = SUCCESS_BLUE if success else FAIL_RED
+        print(color + done_message + END_COLOR)
 
     def __rich__(self):
         return self.table
@@ -497,6 +506,26 @@ def generate_needs_build_set(
     return needs_build
 
 
+def _transitive_dependents(
+    pkg_map: dict[str, BasePackage], pkg: BasePackage
+) -> set[str]:
+    result: set[str] = set()
+    _transitive_dependents_helper(pkg_map, pkg, result)
+    result.remove(pkg.name)
+    return result
+
+
+def _transitive_dependents_helper(
+    pkg_map: dict[str, BasePackage], pkg: BasePackage, dep_set: set[str]
+) -> None:
+    if pkg.name in dep_set:
+        return
+    dep_set.add(pkg.name)
+    for _dependent in pkg.host_dependents:
+        dependent = pkg_map[_dependent]
+        _transitive_dependents_helper(pkg_map, dependent, dep_set)
+
+
 class _GraphBuilder:
     """A class to manage state for build_from_graph.
 
@@ -526,6 +555,9 @@ class _GraphBuilder:
         self.progress_formatter: ReplProgressFormatter = ReplProgressFormatter(
             len(self.needs_build)
         )
+        self.built_list: list[str] = []
+        self.failed_list: list[str] = []
+        self.skipped_list: list[str] = []
 
     @contextmanager
     def _queue_index(self, pkg: BasePackage) -> Iterator[int | None]:
@@ -605,15 +637,10 @@ class _GraphBuilder:
                 pkg._queue_idx = idx
                 res = self._build_one(n, pkg)
                 self.built_queue.put((pkg, res))
-                if res:
-                    # Build failed, quit the thread.
-                    # Note that all other threads just keep going for a bit
-                    # longer until we call sys.exit
-                    return
                 # Release the GIL so new packages get queued
                 sleep(0.01)
 
-    def run(self, n_jobs: int, already_built: set[str]) -> None:
+    def run(self, n_jobs: int, already_built: set[str], keep_going: bool) -> None:
         """Build the graph with n_jobs threads
 
         Prepare the queue by locating packages with no deps, set up the cli
@@ -624,18 +651,25 @@ class _GraphBuilder:
             if len(pkg.unbuilt_host_dependencies) == 0:
                 self.build_queue.put((job_priority(pkg), pkg))
 
-        num_built = len(already_built)
         with Live(self.progress_formatter, console=console_stdout):
             for n in range(0, n_jobs):
                 Thread(target=self._builder, args=(n + 1,), daemon=True).start()
 
-            while num_built < len(self.pkg_map):
+            while len(self.built_list) + len(self.failed_list) + len(
+                self.skipped_list
+            ) < len(self.pkg_map):
                 [pkg, err] = self.built_queue.get()
-                if err:
+                if isinstance(err, SystemError | KeyboardInterrupt):
                     raise err
+                if err:
+                    if not keep_going:
+                        raise err
+                    self.failed_list.append(pkg.name)
+                    dependents = _transitive_dependents(self.pkg_map, pkg)
+                    self.skipped_list.extend(dependents)
+                    continue
 
-                num_built += 1
-
+                self.built_list.append(pkg.name)
                 self.progress_formatter.update_progress_bar()
 
                 for _dependent in pkg.host_dependents:
@@ -651,6 +685,7 @@ def build_from_graph(
     build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
+    keep_going: bool = False,
 ) -> None:
     """
     This builds packages in pkg_map in parallel, building at most n_jobs
@@ -702,10 +737,29 @@ def build_from_graph(
     )
     build_state = _GraphBuilder(pkg_map, build_args, build_dir, set(needs_build))
     try:
-        build_state.run(n_jobs, already_built)
-    except BuildError as err:
-        logger.error(err.msg)
-        sys.exit(err.returncode)
+        build_state.run(n_jobs, already_built, keep_going)
+    except PackageBuildError as err:
+        err.log_and_exit()
+    success = len(build_state.built_list) == len(needs_build)
+    if success:
+        logger.success(
+            "Built the following packages: "
+            f"[bold]{format_name_list(sorted_needs_build)}[/bold]"
+        )
+    else:
+        logger.success(
+            "Built the following packages: "
+            f"[bold]{format_name_list(sorted(build_state.built_list))}[/bold]"
+        )
+        logger.error(
+            "Failed to build the following packages: "
+            f"[bold]{format_name_list(build_state.failed_list)}[/bold]"
+        )
+        logger.error(
+            "Skipped the following packages: "
+            f"[bold]{format_name_list(build_state.skipped_list)}[/bold]"
+        )
+        sys.exit(1)
 
 
 def generate_packagedata(
@@ -820,6 +874,7 @@ def build_packages(
     build_dir: Path,
     n_jobs: int = 1,
     force_rebuild: bool = False,
+    keep_going: bool = False,
 ) -> dict[str, BasePackage]:
     requested, disabled = _parse_package_query(targets)
     requested_packages = recipe.load_recipes(packages_dir, requested)
@@ -827,7 +882,7 @@ def build_packages(
         packages_dir, set(requested_packages.keys()), disabled
     )
 
-    build_from_graph(pkg_map, build_args, build_dir, n_jobs, force_rebuild)
+    build_from_graph(pkg_map, build_args, build_dir, n_jobs, force_rebuild, keep_going)
     for pkg in pkg_map.values():
         assert isinstance(pkg, Package)
 
