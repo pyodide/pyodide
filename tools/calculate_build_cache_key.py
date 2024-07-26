@@ -28,9 +28,6 @@ def main():
         root / "Makefile",
         root / "Makefile.envs",
         root / "packages" / "Makefile",
-        root / "pyodide-build" / "setup.cfg",
-        root / "pyodide-build" / "pyodide_build" / "__init__.py",
-        root / "pyodide-build" / "pyodide_build" / "pywasmcross.py",
         root / "tools",
     ]
 

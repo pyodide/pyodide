@@ -16,8 +16,8 @@ sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic
-# Packages that we want to document as part of the Pyodide CLI
-./pyodide-build/
+# TODO: separate document for pyodide-build?
+pyodide-build>=0.27.3
 # Version should be consistent with packages/micropip/meta.yaml
 micropip==0.2.2
 jinja2>=3.0

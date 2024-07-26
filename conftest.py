@@ -14,7 +14,6 @@ import pytest
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
-sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
 # importing this fixture has a side effect of making the safari webdriver reused during the session

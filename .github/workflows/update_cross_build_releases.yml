@@ -23,7 +23,7 @@ jobs:
       - name: Install pyodide-build
         run: |
           python -m pip install --upgrade pip
-          pip install ./pyodide-build
+          make pyodide_build
 
       - name: Get version number (release)
         if: github.event_name == 'release'
