@@ -36,7 +36,6 @@ myst:
   speedup for methods with arguments is less drastic but still quite a lot.
   {pr}`4961`
 
-
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
