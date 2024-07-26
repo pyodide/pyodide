@@ -3,6 +3,20 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:41:37 +0200
 Subject: [PATCH 7/7] Add call to `JsProxy_GetMethod` to help remove temporary
 
+_PyObject_GetMethod is a special attribute lookup function that won't call the
+`__get__` descriptor on a method to avoid creating a temporary PyMethodObject.
+We also want to optimize away a temporary JsProxy in a special way. In order to
+do this, we patch the behavior of `_PyObject_GetMethod` to use
+`JsProxy_GetMethod`.
+
+In order to avoid linker errors when used with just Python and not with
+libpyodide.a, we declare a dummy JsProxy_GetMethod with weak linkage that does
+nothing. When linked to libpyodide.a it will get overridden by the real
+function. Otherwise, this patch does nothing.
+
+See the definition of `JsProxy_GetMethod` in `jsproxy.c` and particularly
+`JsMethodCallSingleton` for how this is used.
+
 ---
  Objects/object.c | 17 +++++++++++++++++
  1 file changed, 17 insertions(+)

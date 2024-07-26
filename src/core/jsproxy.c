@@ -363,6 +363,26 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   return nullToUndefined(result);
 });
 
+// JsMethodCallSingleton is a special structure which we return from
+// JsProxy_GetMethod. The purpose of it is to optimize method calls
+// `jsproxy.f()`. When we execute JsProxy_GetMethod(jsproxy, f_unicode), we
+// stuff the JS function `jsproxy.f`, the JS object `jsproxy`, and the method
+// signature into one of these structs and return it. Then the call is routed to
+// this struct which avoids making a JsProxy.
+//
+// As an additional optimization, we observe that the pattern is always:
+//
+// method = PyObject_GetMethod(obj, method_name);
+// result = PyObject_Call(method, obj, ... other args)
+// Py_DECREF(method);
+//
+// In other words, the return value of `_PyObject_GetMethod` is used exactly
+// once. To save on allocations, we make a global called method_call_singleton
+// and reuse it if the reference count is 1 (since then the only reference to it
+// is our reference). Otherwise we allocate a new one. We shouldn't have to
+// allocate a new `method_call_singleton` except when third party code uses
+// `_PyObject_GetMethod`.
+
 typedef struct {
   PyObject_HEAD
   JsRef func;
@@ -371,6 +391,8 @@ typedef struct {
   vectorcallfunc vectorcall;
 } JsMethodCallSingleton;
 
+
+static PyTypeObject JsMethodCallSingletonType;
 static JsMethodCallSingleton* method_call_singleton;
 
 static PyObject*
@@ -395,9 +417,9 @@ JsMethodCallSingleton_Vectorcall(PyObject* o,
                                   kwnames);
 }
 
-static PyObject*
+static JsMethodCallSingleton*
 make_method_call_singleton() {
-  PyObject* result = (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(&JsMethodCallSingletonType, 0);
+  JsMethodCallSingleton* result = (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(&JsMethodCallSingletonType, 0);
   if(result == NULL) {
     return NULL;
   }
@@ -409,7 +431,7 @@ make_method_call_singleton() {
 }
 
 static int
-JsMethodCallSingleton_clear(PyObject* o)
+JsMethodCallSingleton_clear(JsMethodCallSingleton* o)
 {
   JsMethodCallSingleton* self = (JsMethodCallSingleton*)o;
   hiwire_CLEAR(self->func);
@@ -418,12 +440,14 @@ JsMethodCallSingleton_clear(PyObject* o)
   return 0;
 }
 
+
+// This isn't static so we can call it from conftest.py to prevent leak check false positives
 void
 clear_method_call_singleton(void) {
   if (Py_REFCNT(method_call_singleton) == 1) {
     // We hold the only reference count so we can reuse it.
     // Clear it out first.
-    JsMethodCallSingleton_clear(method_call_singleton->func);
+    JsMethodCallSingleton_clear(method_call_singleton);
   } else {
     // Oops, someone held on to the previous method_call_singleton or otherwise
     // used it in an unexpected way. Make another!
@@ -436,7 +460,7 @@ clear_method_call_singleton(void) {
 static void
 JsMethodCallSingleton_dealloc(PyObject* self)
 {
-  JsMethodCallSingleton_clear(self);
+  JsMethodCallSingleton_clear((JsMethodCallSingleton*)self);
   Py_TYPE(self)->tp_free(self);
 }
 
