@@ -39,7 +39,7 @@ myst:
 
 ## Version 0.26.2
 
-_July 25, 2024_
+_July 26, 2024_
 
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
