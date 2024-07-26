@@ -383,14 +383,13 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
 // allocate a new `method_call_singleton` except when third party code uses
 // `_PyObject_GetMethod`.
 
-typedef struct {
-  PyObject_HEAD
-  JsRef func;
+typedef struct
+{
+  PyObject_HEAD JsRef func;
   JsRef this_;
   PyObject* signature;
   vectorcallfunc vectorcall;
 } JsMethodCallSingleton;
-
 
 static PyTypeObject JsMethodCallSingletonType;
 static JsMethodCallSingleton* method_call_singleton;
@@ -409,18 +408,16 @@ JsMethodCallSingleton_Vectorcall(PyObject* o,
   JsVal func = hiwire_get(self->func);
   JsVal this_ = hiwire_get(self->this_);
   PyObject* sig = self->signature;
-  return JsMethod_Vectorcall_impl(func,
-                                  this_,
-                                  sig,
-                                  pyargs,
-                                  nargsf,
-                                  kwnames);
+  return JsMethod_Vectorcall_impl(func, this_, sig, pyargs, nargsf, kwnames);
 }
 
 static JsMethodCallSingleton*
-make_method_call_singleton() {
-  JsMethodCallSingleton* result = (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(&JsMethodCallSingletonType, 0);
-  if(result == NULL) {
+make_method_call_singleton()
+{
+  JsMethodCallSingleton* result =
+    (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(
+      &JsMethodCallSingletonType, 0);
+  if (result == NULL) {
     return NULL;
   }
   result->vectorcall = JsMethodCallSingleton_Vectorcall;
@@ -440,10 +437,11 @@ JsMethodCallSingleton_clear(JsMethodCallSingleton* o)
   return 0;
 }
 
-
-// This isn't static so we can call it from conftest.py to prevent leak check false positives
+// This isn't static so we can call it from conftest.py to prevent leak check
+// false positives
 void
-clear_method_call_singleton(void) {
+clear_method_call_singleton(void)
+{
   if (Py_REFCNT(method_call_singleton) == 1) {
     // We hold the only reference count so we can reuse it.
     // Clear it out first.
@@ -464,7 +462,6 @@ JsMethodCallSingleton_dealloc(PyObject* self)
   Py_TYPE(self)->tp_free(self);
 }
 
-
 static PyTypeObject JsMethodCallSingletonType = {
   .tp_name = "_pyodide.JsMethodCallSingleton",
   .tp_basicsize = sizeof(JsMethodCallSingleton),
@@ -475,12 +472,12 @@ static PyTypeObject JsMethodCallSingletonType = {
   .tp_dealloc = JsMethodCallSingleton_dealloc,
 };
 
-
 static PyObject*
 JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method);
 
 PyObject*
-JsProxy_GetMethod(PyObject* self, PyObject* attr) {
+JsProxy_GetMethod(PyObject* self, PyObject* attr)
+{
   return JsProxy_GetAttr_helper(self, attr, true);
 }
 
