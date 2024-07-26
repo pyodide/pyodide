@@ -14,7 +14,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.26.2
+
+_July 26, 2024_
 
 - {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
   defined in the global scope.
