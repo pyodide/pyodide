@@ -17,41 +17,81 @@ DIST_PATH = ROOT_PATH / "dist"
 sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-import pytest_pyodide.runner
-
 # importing this fixture has a side effect of making the safari webdriver reused during the session
+from pytest_pyodide import get_global_config
 from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
-pytest_pyodide.runner.CHROME_FLAGS.extend(
-    [
-        "--enable-features=WebAssemblyExperimentalJSPI",
-        "--enable-experimental-webassembly-features",
-    ]
-)
-pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 
-# There are a bunch of global objects that occasionally enter the hiwire cache
-# but never leave. The refcount checks get angry about them if they aren't preloaded.
-# We need to go through and touch them all once to keep everything okay.
-pytest_pyodide.runner.INITIALIZE_SCRIPT = """
-    pyodide.globals.get;
-    pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
-    pyodide._api.importlib.invalidate_caches;
-    pyodide._api.package_loader.get_install_dir;
-    pyodide._api.package_loader.unpack_buffer;
-    pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.pyodide_code.eval_code;
-    pyodide._api.pyodide_code.eval_code_async;
-    pyodide._api.pyodide_code.relaxed_call
-    pyodide._api.pyodide_code.find_imports;
-    pyodide._api.pyodide_ffi.register_js_module;
-    pyodide._api.pyodide_ffi.unregister_js_module;
-    pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-    pyodide.pyimport("pyodide.http").destroy();
-    pyodide.pyimport("pyodide_js._api");
-"""
+
+def set_configs():
+    pytest_pyodide_config = get_global_config()
+
+    pytest_pyodide_config.set_flags(
+        "chrome",
+        pytest_pyodide_config.get_flags("chrome")
+        + [
+            "--enable-features=WebAssemblyExperimentalJSPI",
+            "--enable-experimental-webassembly-features",
+        ],
+    )
+
+    pytest_pyodide_config.set_flags(
+        "node",
+        pytest_pyodide_config.get_flags("node")
+        + ["--experimental-wasm-stack-switching"],
+    )
+
+    # There are a bunch of global objects that occasionally enter the hiwire cache
+    # but never leave. The refcount checks get angry about them if they aren't preloaded.
+    # We need to go through and touch them all once to keep everything okay.
+    pytest_pyodide_config.set_initialize_script("""
+        pyodide.globals.get;
+        pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
+        pyodide._api.importlib.invalidate_caches;
+        pyodide._api.package_loader.get_install_dir;
+        pyodide._api.package_loader.unpack_buffer;
+        pyodide._api.package_loader.get_dynlibs;
+        pyodide._api.pyodide_code.eval_code;
+        pyodide._api.pyodide_code.eval_code_async;
+        pyodide._api.pyodide_code.relaxed_call
+        pyodide._api.pyodide_code.find_imports;
+        pyodide._api.pyodide_ffi.register_js_module;
+        pyodide._api.pyodide_ffi.unregister_js_module;
+        pyodide.pyimport("pyodide.ffi.wrappers").destroy();
+        pyodide.pyimport("pyodide.http").destroy();
+        pyodide.pyimport("pyodide_js._api");
+    """)
+
+    pytest_pyodide_config.set_load_pyodide_script(
+        "chrome",
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            enableRunUntilComplete: true,
+        });
+        """,
+    )
+
+    pytest_pyodide_config.set_load_pyodide_script(
+        "node",
+        """
+        const {readFileSync} = require("fs");
+        let snap = readFileSync("snapshot.bin");
+        snap = new Uint8Array(snap.buffer);
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals: self,
+            _loadSnapshot: snap,
+            enableRunUntilComplete: true,
+        });
+        """,
+    )
+
+
+set_configs()
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -298,51 +338,3 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
-
-
-from pytest_pyodide.runner import (
-    NodeRunner,
-    PlaywrightChromeRunner,
-    SeleniumChromeRunner,
-)
-
-
-def patched_load_pyodide_node(self):
-    self.run_js(
-        """
-        const {readFileSync} = require("fs");
-        let snap = readFileSync("snapshot.bin");
-        snap = new Uint8Array(snap.buffer);
-        let pyodide = await loadPyodide({
-            fullStdLib: false,
-            jsglobals: self,
-            _loadSnapshot: snap,
-            enableRunUntilComplete: true,
-        });
-        self.pyodide = pyodide;
-        globalThis.pyodide = pyodide;
-        pyodide._api.inTestHoist = true; // improve some error messages for tests
-        """
-    )
-
-
-NodeRunner.load_pyodide = patched_load_pyodide_node
-
-
-def patched_load_pyodide_chrome(self):
-    self.run_js(
-        """
-        let pyodide = await loadPyodide({
-            fullStdLib: false,
-            jsglobals : self,
-            enableRunUntilComplete: true,
-        });
-        self.pyodide = pyodide;
-        globalThis.pyodide = pyodide;
-        pyodide._api.inTestHoist = true; // improve some error messages for tests
-        """
-    )
-
-
-SeleniumChromeRunner.load_pyodide = patched_load_pyodide_chrome
-PlaywrightChromeRunner.load_pyodide = patched_load_pyodide_chrome

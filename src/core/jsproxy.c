@@ -371,11 +371,10 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
 static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
-  PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+  PyObject* result = _PyObject_GenericGetAttrWithDict(self, attr, NULL, 1);
+  if (result != NULL || PyErr_Occurred()) {
     return result;
   }
-  PyErr_Clear();
 
   bool success = false;
   JsVal jsresult = JS_NULL;
