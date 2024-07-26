@@ -440,7 +440,7 @@ JsMethodCallSingleton_clear(JsMethodCallSingleton* o)
 
 // This isn't static so we can call it from conftest.py to prevent leak check
 // false positives
-void
+EMSCRIPTEN_KEEPALIVE void
 clear_method_call_singleton(void)
 {
   if (Py_REFCNT(method_call_singleton) == 1) {
