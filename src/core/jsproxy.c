@@ -385,7 +385,8 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
 
 typedef struct
 {
-  PyObject_HEAD JsRef func;
+  PyObject_HEAD;
+  JsRef func;
   JsRef this_;
   PyObject* signature;
   vectorcallfunc vectorcall;
