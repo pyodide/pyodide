@@ -158,9 +158,7 @@ IN_READTHEDOCS_LATEST = (
 base_dir = Path(__file__).resolve().parent.parent
 extra_sys_path_dirs = [
     str(base_dir),
-    str(base_dir / "pyodide-build"),
     str(base_dir / "src/py"),
-    str(base_dir / "packages/micropip/src"),
 ]
 
 
