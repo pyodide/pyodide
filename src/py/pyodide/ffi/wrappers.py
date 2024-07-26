@@ -1,10 +1,17 @@
 from collections.abc import Callable
 from typing import Any, Protocol, cast
 
-from . import IN_BROWSER, JsDomElement, JsProxy, create_once_callable, create_proxy
+from . import (
+    IN_BROWSER,
+    JsDomElement,
+    JsProxy,
+    create_once_callable,
+    create_proxy,
+    to_js,
+)
 
 if IN_BROWSER:
-    from js import clearInterval, clearTimeout, setInterval, setTimeout
+    from js import Object, clearInterval, clearTimeout, setInterval, setTimeout
 
 
 class Destroyable(Protocol):
@@ -31,26 +38,67 @@ EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
 
 
 def add_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], **kwargs: Any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.addEventListener` which automatically manages the lifetime of a
     JsProxy corresponding to the ``listener`` parameter.
+
+    Parameters
+    ----------
+    elt:
+        The DOM element to attach the listener to.
+
+    event:
+        The event type to respond to.
+
+    listener:
+        A Callable to call when the named event type occurs. The ``listener`` will be
+        passed the corresponding Event object from JavaScript.
+
+    \\*\\*kwargs:
+        Keyword arguments are passed along to :js:meth:`~EventTarget.addEventListener`. For
+        convenience, arguments are converted to JavaScript Objects using
+        :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = create_proxy(listener)
     EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
-    elt.addEventListener(event, cast(Callable[[Any], None], proxy))
+    elt.addEventListener(
+        event,
+        cast(Callable[[Any], None], proxy),
+        options=to_js(kwargs, dict_converter=Object.fromEntries),
+    )
 
 
 def remove_event_listener(
-    elt: JsDomElement, event: str, listener: Callable[[Any], None]
+    elt: JsDomElement, event: str, listener: Callable[[Any], None], **kwargs: Any
 ) -> None:
     """Wrapper for JavaScript's
     :js:meth:`~EventTarget.removeEventListener` which automatically manages the
     lifetime of a JsProxy corresponding to the ``listener`` parameter.
+
+    Parameters
+    ----------
+    elt:
+        The DOM element that the listener is already attached to
+
+    event:
+        The event type to remove the listener from.
+
+    listener:
+        The Callable to remove.
+
+    \\*\\*kwargs:
+        Keyword arguments are passed along to :js:meth:`~EventTarget.addEventListener`. For
+        convenience, arguments are converted to JavaScript Objects using
+        :py:meth:`to_js(..., dict_converter=Object.fromEntries) <pyodide.ffi.to_js>`.
     """
     proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
-    elt.removeEventListener(event, cast(Callable[[Any], None], proxy))
+    elt.removeEventListener(
+        event,
+        cast(Callable[[Any], None], proxy),
+        options=to_js(kwargs, dict_converter=Object.fromEntries),
+    )
     proxy.destroy()
 
 
