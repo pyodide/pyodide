@@ -45,6 +45,7 @@ export type ConfigType = {
   packages: string[];
   _makeSnapshot: boolean;
   enableRunUntilComplete: boolean;
+  checkAPIVersion: boolean;
 };
 
 /**
@@ -169,6 +170,16 @@ export async function loadPyodide(
      */
     enableRunUntilComplete?: boolean;
     /**
+     * If true (default), throw an error if the version of Pyodide core does not
+     * match the version of the Pyodide js package.
+     */
+    checkAPIVersion?: boolean;
+    /**
+     * Used by the cli runner. If we want to detect a virtual environment from
+     * the host file system, it needs to be visible from when `main()` is
+     * called. The directories in this list will be mounted at the same address
+     * into the Emscripten file system so that virtual environments work in the
+     * cli runner.
      * @ignore
      */
     _node_mounts?: string[];
@@ -204,11 +215,19 @@ export async function loadPyodide(
     packageCacheDir: indexURL,
     packages: [],
     enableRunUntilComplete: false,
+    checkAPIVersion: true,
   };
   const config = Object.assign(default_config, options) as ConfigType;
-  if (!config.env.HOME) {
-    config.env.HOME = "/home/pyodide";
-  }
+  config.env.HOME ??= "/home/pyodide";
+  /**
+   * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
+   * This shuts down the Python interpreter, which is a change in behavior from
+   * what happened before. In order to avoid this, we set the `inspect` config
+   * parameter which prevents `PyErr_Print()` from calling `exit()`. Except in
+   * the cli runner, we actually do want to exit. So set default to true and in
+   * cli runner we explicitly set it to false.
+   */
+  config.env.PYTHONINSPECT ??= "1";
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
@@ -245,13 +264,11 @@ export async function loadPyodide(
     API.setPyProxyToStringMethod(true);
   }
 
-  if (API.version !== version) {
-    throw new Error(
-      `\
+  if (API.version !== version && config.checkAPIVersion) {
+    throw new Error(`\
 Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
-`,
-    );
+`);
   }
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {

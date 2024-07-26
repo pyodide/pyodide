@@ -101,3 +101,78 @@ def test_logm(selenium_standalone):
     scale = 1e-4
     A = (eye(n) + random.rand(n, n) * scale).astype(dtype)
     logm(A)
+
+
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_dblquad(selenium):
+    import scipy.integrate
+
+    unit_square_area = scipy.integrate.dblquad(
+        lambda y, x: 1, 0, 1, lambda x: 0, lambda x: 1
+    )
+    assert (
+        abs(unit_square_area[0] - 1) < unit_square_area[1]
+    ), f"Unit square area calculated using scipy.integrate.dblquad of {unit_square_area[0]} (+- {unit_square_area[0]}) is too far from 1.0"
+
+
+import shutil
+import subprocess
+from contextlib import contextmanager
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+
+def check_emscripten():
+    if not shutil.which("emcc"):
+        pytest.skip("Needs Emscripten")
+
+
+@contextmanager
+def venv_ctxmgr(path):
+    check_emscripten()
+
+    if TYPE_CHECKING:
+        create_pyodide_venv: Any = None
+    else:
+        from pyodide_build.out_of_tree.venv import create_pyodide_venv
+
+    create_pyodide_venv(path)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="module")
+def venv(runtime):
+    if runtime != "node":
+        pytest.xfail("node only")
+    check_emscripten()
+    path = Path(".venv-pyodide-tmp-test")
+    with venv_ctxmgr(path) as venv:
+        yield venv
+
+
+def install_pkg(venv, pkgname):
+    return subprocess.run(
+        [
+            venv / "bin/pip",
+            "install",
+            pkgname,
+            "--disable-pip-version-check",
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+
+
+def test_cmdline_runner(selenium, venv):
+    result = install_pkg(venv, "scipy")
+    assert result.returncode == 0
+    result = subprocess.run(
+        [venv / "bin/python", Path(__file__).parent / "cmdline_test_file.py"]
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0

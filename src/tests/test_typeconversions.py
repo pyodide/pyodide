@@ -2200,3 +2200,12 @@ def test_bind_construct(selenium):
     A = A.bind_sig(A_sig)
 
     A()
+
+
+@run_in_pyodide
+def test_to_js_no_leak(selenium):
+    from js import Object
+    from pyodide.ffi import to_js
+
+    d = {"key": Object()}
+    to_js(d)

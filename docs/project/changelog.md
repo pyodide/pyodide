@@ -14,6 +14,65 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
+- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
+  {pr}`4865`
+
+- {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
+  {pr}`4853`
+
+- {{ Fix }} Loading of dynamic libraries now works slightly better in the cli
+  runner. Resolved {issue}`3865`.
+  {pr}`4871`
+
+- {{ Fix }} Restored the pre-0.26.0 behavior of calling `exit()` or raising
+  `SystemExit`. In 0.26.0 and 0.26.1, `exit()` shuts down the Python
+  interpreter. In all other versions of Pyodide it does not.
+  {pr}`4867`
+
+- {{ Fix }} Fixed a weird regression occurring in difficult to describe
+  circumstances introduced by {pr}`4837`. See {issue}`4861`.
+  {pr}`4861`
+
+- {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
+  {pr}`4822`
+
+- {{ Enhancement }} Allow setting `dont_inherit` and `optimize` for `compile`
+  in `CodeRunner` and `Console`.
+  {pr}`4897`
+
+- {{ Fix }} Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
+  unexpectedly when `filename` is specified.
+  {pr}`4905`
+
+- {{ Fix }} Locked `PyodideConsole.runcode` to block `loadPackagesFromImports`.
+  {pr}`4905`
+
+- {{ Enhancement }} Added `checkAPIVersion` option to `loadPyodide` to allow
+  bootstrapping pyodide with a different version.
+  {pr}`4907`
+
+- {{ Enhancement }} Added `can_run_sync` to test whether or not `run_sync`
+  should work.
+  {pr}`4913`
+
+- {{ Fix }} Fixed a bug with the JSPI that made it interact incorrectly with
+  JavaScript code that iterates a `PyProxy`.
+  {pr}`4919`
+
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
+### Packages
+
+- Added `duckdb` 1.0.0 {pr}`4684`
+
 ## Version 0.26.1
 
 _June 7, 2024_
