@@ -113,6 +113,8 @@ pygments_style = None
 
 # -- Options for HTML output -------------------------------------------------
 
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
