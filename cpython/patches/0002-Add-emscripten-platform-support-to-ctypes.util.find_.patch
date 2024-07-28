@@ -1,7 +1,7 @@
-From 55c6694ccc7cd62f2aecbc15f72df89e437adf57 Mon Sep 17 00:00:00 2001
+From a68778f7d8d2fa121ff4cab402f2a862e5cb1afe Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 2 Dec 2022 11:36:44 +0000
-Subject: [PATCH 3/6] Add emscripten platform support to
+Subject: [PATCH 2/7] Add emscripten platform support to
  ctypes.util.find_library
 
 ---
@@ -9,7 +9,7 @@ Subject: [PATCH 3/6] Add emscripten platform support to
  1 file changed, 24 insertions(+)
 
 diff --git a/Lib/ctypes/util.py b/Lib/ctypes/util.py
-index 0c2510e161..c8875ec009 100644
+index 0c2510e1619..c8875ec0099 100644
 --- a/Lib/ctypes/util.py
 +++ b/Lib/ctypes/util.py
 @@ -80,6 +80,30 @@ def find_library(name):
@@ -44,5 +44,5 @@ index 0c2510e161..c8875ec009 100644
      # AIX has two styles of storing shared libraries
      # GNU auto_tools refer to these as svr4 and aix
 -- 
-2.25.1
+2.34.1
 
