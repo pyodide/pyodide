@@ -36,6 +36,7 @@ def test_duckdb(selenium):
     do_test(selenium)
 
 
+@pytest.mark.driver_timeout(60)
 def test_duckdb_with_pandas(selenium):
     packages = ["duckdb", "pandas"]
 
