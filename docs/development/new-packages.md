@@ -75,18 +75,13 @@ This will mount the current working directory as `/src` within the container so
 if you build the package within the container the files created will persist in
 the directory after you exit the container.
 
-You should install `pyodide-build`:
-
-```bash
-pip install -e ./pyodide-build
-```
-
 If you want to build the package, you will need to build Python which you can do
 as follows:
 
 ```bash
 make -C emsdk
 make -C cpython
+make pyodide_build
 ```
 
 This also builds the appropriate version of Emscripten.
@@ -150,12 +145,13 @@ and see if there are any errors.
 
 If the build succeeds you can try to load the package:
 
-1. Serve the dist directory with `python -m http.server --directory ./dist`.
+1. Build pyodide via `PYODIDE_PACKAGES=tag:core make`.
+2. Serve the dist directory with `python -m http.server --directory ./dist`.
    If you use docker, you can execute this either outside of the docker container or
    make sure to forward a port by setting the environment variable
    PYODIDE_SYSTEM_PORT or starting docker with `./run_docker -p <port>`.
-2. Open `localhost:<port>/console.html` and try to import the package.
-3. You can test the package in the repl.
+3. Open `localhost:8000/console.html` and try to import the package.
+4. You can test the package in the repl.
 
 ### Fixing build issues
 

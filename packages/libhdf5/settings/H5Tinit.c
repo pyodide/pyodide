@@ -1052,7 +1052,7 @@ done:
       dt->shared = H5FL_FREE(H5T_shared_t, dt->shared);
       dt = H5FL_FREE(H5T_t, dt);
     } /* end if */
-  }   /* end if */
+  } /* end if */
 
   FUNC_LEAVE_NOAPI(ret_value);
 } /* end H5T__init_native() */
@@ -1060,7 +1060,7 @@ done:
 /****************************************/
 /* ALIGNMENT and signal-handling status */
 /****************************************/
-/* ALIGNAMENT test is not available */
+/* ALIGNMENT test is not available */
 /* Signal handlers verify test is not available */
 /* Signal() support: no */
 /* setjmp() support: yes */

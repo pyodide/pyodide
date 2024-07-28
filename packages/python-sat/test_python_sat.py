@@ -2,7 +2,9 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 solvers = [
-    "cadical",
+    "cadical103",
+    "cadical153",
+    "cadical195",
     "gluecard30",
     "gluecard41",
     "glucose30",

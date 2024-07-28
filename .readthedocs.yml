@@ -8,7 +8,9 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
-formats: all
+formats:
+  - htmlzip
+  # we can't build epub / pdf
 
 python:
   install:
@@ -17,5 +19,5 @@ python:
 build:
   os: ubuntu-20.04
   tools:
-    python: "3.11"
+    python: "3.12"
     nodejs: "20"

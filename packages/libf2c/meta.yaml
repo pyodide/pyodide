@@ -22,6 +22,7 @@ source:
     # In CLAPACK's F2CLIBS/libf2c Makefile, some commands are mistakenly (?) hardcoded
     # instead of using the right variables
     - patches/0006-adjust-ld-ar-ranlib.patch
+    - patches/0007-add-singlecomplex.patch
 
   extras:
     - [extras/make.inc, make.inc]

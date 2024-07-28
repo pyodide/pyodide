@@ -89,8 +89,6 @@ export function promisingApply(...args) {
   Module.stackStop = stackSave();
   // Subtle cframe shenanigans...
   Module.origCframe = _get_cframe();
-  const cframe = stackAlloc(HEAP32[_size_of_cframe / 4]);
-  _set_new_cframe(cframe);
   return promisingApplyHandler(...args);
 }
 
@@ -201,7 +199,7 @@ let validSuspender;
  */
 export function initSuspenders() {
   validSuspender = new WebAssembly.Global({ value: "i32", mutable: true }, 0);
-  promisingApplyHandler = createPromising(wasmExports._pyproxy_apply);
+  promisingApplyHandler = createPromising(wasmExports._pyproxy_apply_promising);
   Module.validSuspender = validSuspender;
   setSyncifyHandler();
 }

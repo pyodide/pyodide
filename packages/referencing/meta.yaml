@@ -1,0 +1,17 @@
+package:
+  name: referencing
+  version: 0.34.0
+  top-level:
+    - referencing
+source:
+  url: https://files.pythonhosted.org/packages/42/8e/ae1de7b12223986e949bdb886c004de7c304b6fa94de5b87c926c1099656/referencing-0.34.0-py3-none-any.whl
+  sha256: d53ae300ceddd3169f1ffa9caf2cb7b769e92657e4fafb23d34b93679116dfd4
+requirements:
+  run:
+    - attrs
+    - rpds-py
+about:
+  home: ""
+  PyPI: https://pypi.org/project/referencing
+  summary: JSON Referencing + Python
+  license: MIT

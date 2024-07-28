@@ -11,7 +11,11 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsVal
-pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip, bool register);
+pyproxy_new_ex(PyObject* obj,
+               bool capture_this,
+               bool roundtrip,
+               bool register,
+               bool is_json_adaptor);
 
 JsVal
 pyproxy_new(PyObject* obj);
@@ -54,7 +58,7 @@ destroy_proxy(JsVal proxy, Js_Identifier* msg);
  * reference count without calling the function.
  */
 JsVal
-create_once_callable(PyObject* obj);
+create_once_callable(PyObject* obj, bool may_syncify);
 
 /**
  * Wrap a pair of Python callables in a JavaScript function that can be called
@@ -66,10 +70,14 @@ create_once_callable(PyObject* obj);
 JsVal
 create_promise_handles(PyObject* onfulfilled,
                        PyObject* onrejected,
-                       JsVal done_callback_id);
+                       JsVal done_callback,
+                       PyObject* js2py_converter);
 
 int
 pyproxy_init(PyObject* core);
+
+bool
+py_is_awaitable(PyObject* o);
 
 // These are defined as an enum in Python.h but we want to use them in
 // pyproxy.ts.

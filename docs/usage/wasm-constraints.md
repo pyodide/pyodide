@@ -18,7 +18,6 @@ However this has a significant impact on the download size.
 Instead, it is better to load individual modules as needed using
 {js:func}`pyodide.loadPackage` or {py:func}`micropip.install`.
 
-- distutils
 - ssl
 - lzma
 - sqlite3
@@ -46,6 +45,9 @@ Instead, it is better to load individual modules as needed using
 - webbrowser: The original webbrowser module is not available. Instead,
   Pyodide includes some method stubs based on browser APIs:
   `webbrowser.open()`, `webbrowser.open_new()`, `webbrowser.open_new_tab()`.
+
+- zoneinfo: The zoneinfo package will only work if you install the timezone data using
+  the tzdata package (i.e. by calling `pyodide.loadPackage("tzdata")`)
 
 ### Synchronous HTTP requests support
 

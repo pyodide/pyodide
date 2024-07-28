@@ -7,7 +7,7 @@
 #
 # See the INSTALL/ directory for more examples.
 #
-SHELL = /bin/sh
+SHELL = /usr/bin/env sh
 #
 #  The machine (platform) identifier to append to the library names
 #

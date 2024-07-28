@@ -6,16 +6,21 @@ package:
   top-level:
     - _hashlib
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
   script: |
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o Modules/_hashlib.o \
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}
+
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/_hashopenssl.c -o _hashlib.o \
       $(pkg-config --cflags --dont-define-prefix libcrypto) -DOPENSSL_THREADS
 
-    emcc Modules/_hashlib.o -o $DISTDIR/_hashlib.so $SIDE_MODULE_LDFLAGS \
+    emcc _hashlib.o -o _hashlib.so $SIDE_MODULE_LDFLAGS \
       $(pkg-config --libs --dont-define-prefix libcrypto) -DOPENSSL_THREADS
+
+    cp _hashlib.so ${PKG_BUILD_DIR}/_hashlib.so
 
 requirements:
   run:

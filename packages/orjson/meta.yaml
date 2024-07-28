@@ -1,11 +1,11 @@
 package:
   name: orjson
-  version: 3.9.2
+  version: 3.10.1
   top-level:
     - orjson
 source:
-  url: https://files.pythonhosted.org/packages/30/a4/96bcb52da0de9ccfcd99a60719b995c9b9c3aaa3a70701f0790ce856c10d/orjson-3.9.2.tar.gz
-  sha256: 24257c8f641979bf25ecd3e27251b5cc194cdd3a6e96004aac8446f5e63d9664
+  url: https://files.pythonhosted.org/packages/f5/af/0daa12a907215a5af6d97db8adf301ef14a1b1c651f7e176ee04e0998433/orjson-3.10.1.tar.gz
+  sha256: a883b28d73370df23ed995c466b4f6c708c1f7a9bdc400fe89165c96c7603204
 requirements:
   executable:
     - rustup
@@ -18,3 +18,6 @@ about:
     Fast, correct Python JSON library supporting dataclasses, datetimes, and
     numpy
   license: Apache-2.0 OR MIT
+extra:
+  recipe-maintainers:
+    - spicy-sauce

@@ -1,11 +1,11 @@
 package:
   name: bokeh
-  version: 3.2.2
+  version: 3.4.2
   top-level:
     - bokeh
 requirements:
   run:
-    - distutils
+    - contourpy
     - numpy
     - Jinja2
     - pandas
@@ -16,10 +16,13 @@ requirements:
     - pyyaml
     - xyzservices
 source:
-  sha256: e31670a013e1ff15c3d4d04f587c8162c4cc9fe1af507fd741d295e6c4e1225b
-  url: https://files.pythonhosted.org/packages/84/60/33f23dbb15fcd785d6287bdd6fa8c9d836dacb40e21c14aad41a57a0ec0f/bokeh-3.2.2-py3-none-any.whl
+  sha256: a16d5cc0abb93d2d270d70fc35851f3e1b9208814a985a4678e0ba5ef2d9cd42
+  url: https://files.pythonhosted.org/packages/d4/91/df53287e2f34c7cd6262b3b31c4dd4d274c78b7ece20cf0736bc4a21ab85/bokeh-3.4.2.tar.gz
 about:
   home: https://github.com/bokeh/bokeh
   PyPI: https://pypi.org/project/bokeh
   summary: Interactive plots and applications in the browser from Python
   license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - ianthomas23

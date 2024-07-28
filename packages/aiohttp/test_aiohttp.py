@@ -24,6 +24,6 @@ async def aiohttp_test_helper(selenium, patch, base_url, lock_data):
 
 def test_aiohttp(selenium):
     patch = (Path(__file__).parent / "aiohttp_patch.py").read_text()
-    dist_dir = cast(str, pytest.pyodide_dist_dir)
+    dist_dir = cast(str, pytest.pyodide_dist_dir)  # type:ignore[attr-defined]
     lock_data = (Path(dist_dir) / "pyodide-lock.json").read_text()
     aiohttp_test_helper(selenium, patch, selenium.base_url, lock_data)

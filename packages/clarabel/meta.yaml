@@ -1,0 +1,23 @@
+package:
+  name: clarabel
+  version: 0.7.1
+  top-level:
+    - clarabel
+source:
+  url: https://files.pythonhosted.org/packages/a2/1b/571478ec8a425cce3736eb51de8db45a9ea6a6a5c8be4705711306a6baea/clarabel-0.7.1.tar.gz
+  sha256: a30ab135f475c5bc78329fd7df575291155e6055bcaf02124eb610b8ad176396
+about:
+  home: https://github.com/oxfordcontrol/Clarabel.rs
+  PyPI: https://pypi.org/project/clarabel
+  summary: Clarabel Conic Interior Point Solver for Rust / Python
+  license: Apache-2.0
+requirements:
+  run:
+    # Dependencies that are needed to run the package
+    - numpy
+    - scipy
+  executable:
+    - rustup
+extra:
+  recipe-maintainers:
+    - phschiele

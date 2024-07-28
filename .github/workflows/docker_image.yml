@@ -31,7 +31,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
       - name: Set tag
@@ -45,7 +45,7 @@ jobs:
           echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to Docker Hub
         id: build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           file: ./Dockerfile
           push: true
@@ -69,7 +69,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
       - name: Set tag
@@ -83,7 +83,7 @@ jobs:
           echo "::set-output name=tag::$TAG"
       - name: Build and push Docker image to ${{ env.GHCR_REGISTRY }}
         id: build
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v6
         with:
           file: ./Dockerfile
           push: true

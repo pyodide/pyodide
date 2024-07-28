@@ -3,7 +3,6 @@ import sys
 from typing import Any
 
 import __main__
-
 from _pyodide._importhook import jsfinder
 
 from .ffi import JsProxy
@@ -41,6 +40,7 @@ def restore_state(state: dict[str, Any]) -> int:
             del sys.modules[key]
     sys.modules.update(loaded_js_modules)
 
+    sys.last_exc = None  # type:ignore[assignment]
     sys.last_type = None
     sys.last_value = None
     sys.last_traceback = None

@@ -7,6 +7,7 @@ import {
   jsWrapperTag,
   wrapException,
   adjustWasmImports,
+  createInvoke,
 } from "./create_invokes.mjs";
 import { initSuspenders } from "./suspenders.mjs";
 
@@ -36,4 +37,5 @@ if (Module.jspiSupported) {
   Module.preRun.push(initSuspenders);
   Module.adjustWasmImports = adjustWasmImports;
   Module.wrapException = wrapException;
+  Module.createInvoke = createInvoke;
 }

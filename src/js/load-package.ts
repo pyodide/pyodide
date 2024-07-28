@@ -6,12 +6,17 @@ import {
   loadBinaryFile,
   initNodeModules,
   resolvePath,
-  base16ToBase64,
 } from "./compat.js";
-import { createLock } from "./lock";
+import { createLock } from "./common/lock";
+import { ResolvablePromise, createResolvable } from "./common/resolveable";
 import { loadDynlibsFromPackage } from "./dynload";
 import { PyProxy } from "generated/pyproxy";
-import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
+import {
+  canonicalizePackageName,
+  uriToPackageData,
+  base16ToBase64,
+} from "./packaging-utils";
+import { Lockfile } from "./types";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -20,12 +25,20 @@ import { canonicalizePackageName, uriToPackageData } from "./packaging-utils";
  * @param lockFileURL
  * @private
  */
-async function initializePackageIndex(lockFilePromise: Promise<any>) {
+async function initializePackageIndex(lockFilePromise: Promise<Lockfile>) {
   await initNodeModules();
   const lockfile = await lockFilePromise;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
+    );
+  }
+
+  if (lockfile.info.version !== API.version) {
+    throw new Error(
+      "Lock file version doesn't match Pyodide version.\n" +
+        `   lockfile version: ${API.lockfile_info.version}\n` +
+        `   pyodide  version: ${API.version}`,
     );
   }
 
@@ -55,7 +68,20 @@ async function initializePackageIndex(lockFilePromise: Promise<any>) {
     API.lockfile_unvendored_stdlibs_and_test.filter(
       (lib: string) => lib !== "test",
     );
-  await loadPackage(API.config.packages, { messageCallback() {} });
+  let toLoad = API.config.packages;
+  if (API.config.fullStdLib) {
+    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
+  }
+  await loadPackage(toLoad, { messageCallback() {} });
+  // Have to wait for bootstrapFinalizedPromise before calling Python APIs
+  await API.bootstrapFinalizedPromise;
+  // Set up module_not_found_hook
+  const importhook = API._pyodide._importhook;
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.lockfile_unvendored_stdlibs_and_test,
+  );
+  API.package_loader.init_loaded_packages();
 }
 
 if (API.lockFilePromise) {
@@ -78,7 +104,10 @@ API.setCdnUrl = function (url: string) {
 //
 const DEFAULT_CHANNEL = "default channel";
 
-type PackageLoadMetadata = {
+/**
+ * @hidden
+ */
+export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
   channel: string;
@@ -95,14 +124,18 @@ export type PackageType =
   | "static_library";
 
 // Package data inside pyodide-lock.json
-export type PackageData = {
+
+export interface PackageData {
   name: string;
   version: string;
   fileName: string;
   /** @experimental */
   packageType: PackageType;
-};
+}
 
+/**
+ * @hidden
+ */
 export type InternalPackageData = {
   name: string;
   version: string;
@@ -115,25 +148,6 @@ export type InternalPackageData = {
   /** @deprecated */
   shared_library: boolean;
 };
-
-interface ResolvablePromise extends Promise<void> {
-  resolve: (value?: any) => void;
-  reject: (err?: Error) => void;
-}
-
-function createDonePromise(): ResolvablePromise {
-  let _resolve: (value: any) => void = () => {};
-  let _reject: (err: Error) => void = () => {};
-
-  const p: any = new Promise<void>((resolve, reject) => {
-    _resolve = resolve;
-    _reject = reject;
-  });
-
-  p.resolve = _resolve;
-  p.reject = _reject;
-  return p;
-}
 
 /**
  * Recursively add a package and its dependencies to toLoad.
@@ -161,7 +175,7 @@ function addPackageToLoad(
     channel: DEFAULT_CHANNEL,
     depends: pkgInfo.depends,
     installPromise: undefined,
-    done: createDonePromise(),
+    done: createResolvable(),
     packageData: pkgInfo,
   });
 
@@ -212,7 +226,7 @@ function recursiveDependencies(
       channel: channel, // name is url in this case
       depends: [],
       installPromise: undefined,
-      done: createDonePromise(),
+      done: createResolvable(),
       packageData: {
         name: pkgname,
         version: version,
@@ -228,6 +242,7 @@ function recursiveDependencies(
   }
   return toLoad;
 }
+API.recursiveDependencies = recursiveDependencies;
 
 //
 // Dependency download and install
@@ -252,10 +267,16 @@ async function downloadPackage(
   let installBaseUrl: string;
   if (IN_NODE) {
     installBaseUrl = API.config.packageCacheDir;
-    // ensure that the directory exists before trying to download files into it
-    await nodeFsPromisesMod.mkdir(API.config.packageCacheDir, {
-      recursive: true,
-    });
+    // Ensure that the directory exists before trying to download files into it.
+    try {
+      // Check if the `installBaseUrl` directory exists
+      await nodeFsPromisesMod.stat(installBaseUrl); // Use `.stat()` which works even on ASAR archives of Electron apps, while `.access` doesn't.
+    } catch {
+      // If it doesn't exist, make it. Call mkdir() here only when necessary after checking the existence to avoid an error on read-only file systems. See https://github.com/pyodide/pyodide/issues/4736
+      await nodeFsPromisesMod.mkdir(installBaseUrl, {
+        recursive: true,
+      });
+    }
   } else {
     installBaseUrl = API.config.indexURL;
   }
@@ -325,10 +346,13 @@ async function installPackage(
   }
   const filename = pkg.file_name;
   // This Python helper function unpacks the buffer and lists out any .so files in it.
+  const installDir: string = API.package_loader.get_install_dir(
+    pkg.install_dir,
+  );
   const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
     buffer,
     filename,
-    target: pkg.install_dir,
+    extract_dir: installDir,
     calculate_dynlibs: true,
     installer: "pyodide.loadPackage",
     source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
@@ -485,9 +509,9 @@ export async function loadPackage(
     return [];
   }
 
-  const packageNames = Array.from(toLoad.values(), ({ name }) => name).join(
-    ", ",
-  );
+  const packageNames = Array.from(toLoad.values(), ({ name }) => name)
+    .sort()
+    .join(", ");
   const failed = new Map<string, Error>();
   const releaseLock = await acquirePackageLock();
   try {
@@ -516,6 +540,10 @@ export async function loadPackage(
       Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
     );
 
+    // Warning: this sounds like it might not do anything important, but it
+    // fills in the GOT. There can be segfaults if we leave it out.
+    // See https://github.com/emscripten-core/emscripten/issues/22052
+    // TODO: Fix Emscripten so this isn't needed
     Module.reportUndefinedSymbols();
     if (loadedPackageData.size > 0) {
       const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
@@ -525,7 +553,7 @@ export async function loadPackage(
     }
 
     if (failed.size > 0) {
-      const failedNames = Array.from(failed.keys()).join(", ");
+      const failedNames = Array.from(failed.keys()).sort().join(", ");
       messageCallback(`Failed to load ${failedNames}`);
       for (const [name, err] of failed) {
         errorCallback(`The following error occurred while loading ${name}:`);
@@ -548,4 +576,4 @@ export async function loadPackage(
  * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
  * install location for a particular ``package_name``.
  */
-export let loadedPackages: { [key: string]: string } = {};
+export let loadedPackages: Record<string, string> = {};

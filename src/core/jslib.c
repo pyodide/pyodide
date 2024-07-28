@@ -279,7 +279,10 @@ EM_JS_VAL(JsVal, JsvObject_Values, (JsVal obj), {
 
 EM_JS_VAL(JsVal,
 JsvObject_toString, (JsVal obj), {
-  return obj.toString();
+  if (hasMethod(obj, "toString")) {
+    return obj.toString();
+  }
+  return Object.prototype.toString.call(obj);
 });
 
 
@@ -505,6 +508,10 @@ MAKE_OPERATOR(greater_than_equal, >=);
 // clang-format off
 EM_JS_VAL(JsVal, JsvMap_New, (), {
   return new Map();
+})
+
+EM_JS_VAL(JsVal, JsvLiteralMap_New, (), {
+  return new API.LiteralMap();
 })
 // clang-format on
 

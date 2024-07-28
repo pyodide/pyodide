@@ -41,7 +41,15 @@ def test_ffi_import_star():
     exec("from pyodide.ffi import *", {})
 
 
-def test_pyimport(selenium):
+def test_pyimport1():
+    from _pyodide._base import pyimport_impl
+
+    assert pyimport_impl("pyodide").__name__ == "pyodide"
+    assert pyimport_impl("pyodide.console").__name__ == "pyodide.console"
+    assert pyimport_impl("pyodide.console.BANNER").startswith("Python ")
+
+
+def test_pyimport2(selenium):
     selenium.run_js(
         """
         let platform = pyodide.pyimport("platform");
@@ -192,6 +200,126 @@ def test_eval_code_locals():
         """
     )
     assert res == "Hello"
+
+
+def test_relaxed_call():
+    from pyodide.code import relaxed_call
+
+    assert relaxed_call(int, "7") == 7
+
+    def f1(a, b):
+        return [a, b]
+
+    assert relaxed_call(f1, 1, 2) == [1, 2]
+    assert relaxed_call(f1, 1, 2, 3) == [1, 2]
+    assert relaxed_call(f1, 1, b=7) == [1, 7]
+    assert relaxed_call(f1, a=2, b=7) == [2, 7]
+    assert relaxed_call(f1, 1, b=7, c=9) == [1, 7]
+    assert relaxed_call(f1, 1, 2, 3, c=9) == [1, 2]
+    with pytest.raises(TypeError, match="missing a required argument: 'b'"):
+        relaxed_call(f1, 1)
+    with pytest.raises(TypeError, match="multiple values for argument 'b'"):
+        relaxed_call(f1, 1, 2, b=3)
+
+    def f2(a, b=7):
+        return [a, b]
+
+    assert relaxed_call(f2, 1, 2) == [1, 2]
+    assert relaxed_call(f2, 1, 2, 3) == [1, 2]
+    assert relaxed_call(f2, 1, b=7) == [1, 7]
+    assert relaxed_call(f2, a=2, b=7) == [2, 7]
+    assert relaxed_call(f2, 1, b=7, c=9) == [1, 7]
+    assert relaxed_call(f2, 1, 2, 3, c=9) == [1, 2]
+    assert relaxed_call(f2, 1) == [1, 7]
+    with pytest.raises(TypeError, match="missing a required argument: 'a'"):
+        relaxed_call(f2)
+
+    def f3(a, *args, b=7):
+        return [a, args, b]
+
+    assert relaxed_call(f3, 1, 2) == [1, (2,), 7]
+    assert relaxed_call(f3, 1, 2, 3) == [1, (2, 3), 7]
+    assert relaxed_call(f3, 1, b=7) == [1, (), 7]
+    assert relaxed_call(f3, a=2, b=7) == [2, (), 7]
+    assert relaxed_call(f3, 1, b=7, c=9) == [1, (), 7]
+    assert relaxed_call(f3, 1, 2, 3, c=9) == [1, (2, 3), 7]
+    assert relaxed_call(f3, 1) == [1, (), 7]
+
+    def f4(a, /, *args, b=7):
+        return [a, args, b]
+
+    with pytest.raises(
+        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+    ):
+        relaxed_call(f4, a=2, b=7)
+
+    def f5(a, *args, b=7, **kwargs):
+        return [a, args, b, kwargs]
+
+    assert relaxed_call(f5, 1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
+
+
+def test_relaxed_wrap():
+    from pyodide.code import relaxed_wrap
+
+    with pytest.raises(TypeError, match="Cannot wrap function"):
+        relaxed_wrap(int)
+
+    @relaxed_wrap
+    def f1(a, b):
+        return [a, b]
+
+    assert f1(1, 2) == [1, 2]
+    assert f1(1, 2, 3) == [1, 2]
+    assert f1(1, b=7) == [1, 7]
+    assert f1(a=2, b=7) == [2, 7]
+    assert f1(1, b=7, c=9) == [1, 7]
+    assert f1(1, 2, 3, c=9) == [1, 2]
+    with pytest.raises(TypeError, match="missing a required argument: 'b'"):
+        f1(1)
+    with pytest.raises(TypeError, match="multiple values for argument 'b'"):
+        f1(1, 2, b=3)
+
+    @relaxed_wrap
+    def f2(a, b=7):
+        return [a, b]
+
+    assert f2(1, 2) == [1, 2]
+    assert f2(1, 2, 3) == [1, 2]
+    assert f2(1, b=7) == [1, 7]
+    assert f2(a=2, b=7) == [2, 7]
+    assert f2(1, b=7, c=9) == [1, 7]
+    assert f2(1, 2, 3, c=9) == [1, 2]
+    assert f2(1) == [1, 7]
+    with pytest.raises(TypeError, match="missing a required argument: 'a'"):
+        f2()
+
+    @relaxed_wrap
+    def f3(a, *args, b=7):
+        return [a, args, b]
+
+    assert f3(1, 2) == [1, (2,), 7]
+    assert f3(1, 2, 3) == [1, (2, 3), 7]
+    assert f3(1, b=7) == [1, (), 7]
+    assert f3(a=2, b=7) == [2, (), 7]
+    assert f3(1, b=7, c=9) == [1, (), 7]
+    assert f3(1, 2, 3, c=9) == [1, (2, 3), 7]
+    assert f3(1) == [1, (), 7]
+
+    @relaxed_wrap
+    def f4(a, /, *args, b=7):
+        return [a, args, b]
+
+    with pytest.raises(
+        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+    ):
+        f4(a=2, b=7)
+
+    @relaxed_wrap
+    def f5(a, *args, b=7, **kwargs):
+        return [a, args, b, kwargs]
+
+    assert f5(1, 2, 3, 4, b=7, c=9) == [1, (2, 3, 4), 7, {"c": 9}]
 
 
 def test_unpack_archive(selenium_standalone):
@@ -403,6 +531,7 @@ def test_run_python_last_exc(selenium):
         } catch(e){}
         pyodide.runPython(`
             import sys
+            assert sys.last_exc is x
             assert sys.last_value is x
             assert sys.last_type is type(x)
             assert sys.last_traceback is x.__traceback__
@@ -638,41 +767,37 @@ def test_run_python_locals(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_once_callable(selenium):
-    selenium.run_js(
-        """
-        self.call7 = function call7(f){
-            return f(7);
-        }
-        pyodide.runPython(`
-            from pyodide.ffi import create_once_callable, JsException
-            from js import call7;
-            from unittest import TestCase
-            raises = TestCase().assertRaisesRegex
-            class Square:
-                def __call__(self, x):
-                    return x*x
+    import sys
 
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
+    from pytest import raises
 
-            f = Square()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_once_callable(f)
-            assert sys.getrefcount(f) == 3
-            assert call7(proxy) == 49
-            assert sys.getrefcount(f) == 2
-            with raises(JsException, "can only be called once"):
-                call7(proxy)
-            destroyed = False
-            del f
-            assert destroyed == True
-            del proxy
-        `);
-        """
-    )
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_once_callable
+
+    destroyed = False
+
+    class Square:
+        def __call__(self, x):
+            return x * x
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Square()
+    assert sys.getrefcount(f) == 2
+    proxy = create_once_callable(f)
+    assert sys.getrefcount(f) == 3
+
+    call7 = run_js("(f) => f(7)")
+    assert call7(proxy) == 49
+    assert sys.getrefcount(f) == 2
+    with raises(JsException, match="can only be called once"):
+        call7(proxy)
+    del f
+    assert destroyed
 
 
 @run_in_pyodide
@@ -711,7 +836,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7  # type:ignore[operator]
+    assert proxy() == 7
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -765,7 +890,7 @@ def test_return_destroyed_value(selenium):
     from pyodide.ffi import JsException, create_proxy
 
     f = run_js("(function(x){ return x; })")
-    p = create_proxy([])
+    p = create_proxy([])  # type: ignore[var-annotated]
     p.destroy()
     with pytest.raises(JsException, match="Object has already been destroyed"):
         f(p)
@@ -794,7 +919,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj, /)"
+    sig_once_should_equal = "(obj, /, *, _may_syncify=False)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
@@ -1035,7 +1160,7 @@ def test_js_stackframes(selenium):
         ["<exec>", "c1"],
         ["test.html", "b"],
         ["pyodide.asm.js", "pyimport"],
-        ["importlib/__init__.py", "import_module"],
+        ["_pyodide/_base.py", "pyimport_impl"],
     ]
     assert normalize_tb(res[: len(frames)]) == frames
 
@@ -1149,10 +1274,11 @@ def test_restore_error(selenium):
                 f()
             except Exception as e:
                 assert err == e
+                assert e == sys.last_exc
                 assert e == sys.last_value
             finally:
                 del err
-            assert sys.getrefcount(sys.last_value) == 2
+            assert sys.getrefcount(sys.last_exc) == 3
         `);
         """
     )
@@ -1296,76 +1422,95 @@ def test_raises_jsexception(selenium):
 
 
 @run_in_pyodide(packages=["pytest"])
-def test_module_not_found_hook(selenium_standalone):
+def test_module_not_found_note(selenium_standalone):
     import importlib
 
     import pytest
+
+    from _pyodide._importhook import add_note_to_module_not_found_error
+    from pyodide.code import run_js
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
     lockfile_packages = ["micropip", "packaging", "regex"]
 
+    # When error is wrapped, add_note_to_module_not_found_error is called
+    with pytest.raises(ModuleNotFoundError) as e:
+        run_js("(f) => f()")(lambda: importlib.import_module("test"))
+    assert "unvendored from the Python standard library" in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
+
     for lib in unvendored_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="unvendored from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        add_note_to_module_not_found_error(e.value)
+        assert "unvendored from the Python standard library" in e.value.__notes__[0]
+        assert len(e.value.__notes__) == 1
 
     for lib in removed_stdlibs:
-        with pytest.raises(
-            ModuleNotFoundError, match="removed from the Python standard library"
-        ):
+        with pytest.raises(ModuleNotFoundError) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "removed from the Python standard library" in e.value.__notes__[0]
 
     with pytest.raises(ModuleNotFoundError, match="No module named"):
         importlib.import_module("urllib.there_is_no_such_module")
 
     for lib in lockfile_packages:
         with pytest.raises(
-            ModuleNotFoundError, match="included in the Pyodide distribution"
-        ):
+            ModuleNotFoundError,
+        ) as e:
             importlib.import_module(lib)
+        add_note_to_module_not_found_error(e.value)
+        assert "included in the Pyodide distribution" in e.value.__notes__[0]
 
-    with pytest.raises(ModuleNotFoundError, match="No module named"):
+    with pytest.raises(ModuleNotFoundError, match="No module named") as e:
         importlib.import_module("pytest.there_is_no_such_module")
+    add_note_to_module_not_found_error(e.value)
+    assert getattr(e.value, "__notes__", None) is None
 
     # liblzma and openssl are libraries not python packages, so it should just fail.
     for pkg in ["liblzma", "openssl"]:
-        with pytest.raises(ModuleNotFoundError, match="No module named"):
+        with pytest.raises(ModuleNotFoundError, match="No module named") as e:
             importlib.import_module(pkg)
+        add_note_to_module_not_found_error(e.value)
+        assert getattr(e.value, "__notes__", None) is None
 
-    with pytest.raises(ModuleNotFoundError, match=r'loadPackage\("hashlib"\)'):
+    with pytest.raises(ModuleNotFoundError) as e:
         importlib.import_module("_hashlib")
+    add_note_to_module_not_found_error(e.value)
+    add_note_to_module_not_found_error(e.value)
+    assert 'loadPackage("hashlib")' in e.value.__notes__[0]
+    assert len(e.value.__notes__) == 1
 
 
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
-    assert (
-        selenium.run_js(
-            """
-            self.stdoutStrings = [];
-            self.stderrStrings = [];
-            function stdout(s){
-                stdoutStrings.push(s);
-            }
-            function stderr(s){
-                stderrStrings.push(s);
-            }
-            let pyodide = await loadPyodide({
-                fullStdLib: false,
-                jsglobals : self,
-                stdout,
-                stderr,
-                args: ['-c', 'print([x*x+1 for x in range(10)])']
-            });
-            self.pyodide = pyodide;
-            globalThis.pyodide = pyodide;
-            pyodide._module._run_main();
-            return stdoutStrings.pop()
-            """
-        )
-        == repr([x * x + 1 for x in range(10)])
-    )
+    assert selenium.run_js(
+        """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            stdout,
+            stderr,
+            args: ['-c', 'print([x*x+1 for x in range(10)])'],
+            env: { PYTHONINSPECT: "" },
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._module._run_main();
+        return stdoutStrings.pop()
+        """
+    ) == repr([x * x + 1 for x in range(10)])
 
 
 def test_args_OO(selenium_standalone_noload):
@@ -1711,3 +1856,41 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
+
+
+def test_system_exit(selenium):
+    """Make sure nothing weird happens when we throw SystemExit"""
+    for _ in range(3):
+        selenium.run_js(
+            """
+            assertThrows(
+                () =>
+                    pyodide.runPython(`
+                        exit(1)
+                    `),
+                "PythonError",
+                "SystemExit: 1",
+            );
+            """
+        )
+
+
+@run_in_pyodide
+async def test_bug_4861(selenium):
+    """In version 0.26.1, there was a regression that makes this raise
+    "KeyError: '__builtins__'".
+
+    I don't really understand what this reproducer does, what the problem was,
+    or why the fix prevents the problem.
+    """
+    import collections
+
+    from pyodide.code import run_js
+
+    class ChainMap(collections.ChainMap, dict):  # type:ignore[misc, type-arg]
+        pass
+
+    def g(x):
+        return eval("x()", ChainMap({}, {"x": x}))
+
+    await g(run_js("async () => {}"))

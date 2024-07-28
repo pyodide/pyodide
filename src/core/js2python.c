@@ -83,6 +83,3 @@ EM_JS_REF(PyObject*, js2python_convert, (JsVal v, int depth, JsVal defaultConver
   return Module.js2python_convert(v, { depth, defaultConverter });
 });
 // clang-format on
-
-#include "include_js_file.h"
-#include "js2python.js"

@@ -1,7 +1,6 @@
 import re
 import shutil
 import sys
-import sysconfig
 from collections.abc import Iterable
 from importlib.machinery import EXTENSION_SUFFIXES
 from pathlib import Path
@@ -20,7 +19,6 @@ from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
     # not in a virtualenv
-    STD_LIB = Path(sysconfig.get_path("stdlib"))
     DSO_DIR = Path("/usr/lib")
 else:
     # in a virtualenv
@@ -29,13 +27,18 @@ else:
     #
     # e.g., SITE_PACKAGES = .venv/lib/python3.10/site_packages
     # and   DSO_DIR       = .venv/lib/
-    STD_LIB = SITE_PACKAGES
     DSO_DIR = SITE_PACKAGES.parents[1]
-TARGETS = {"site": SITE_PACKAGES, "stdlib": STD_LIB, "dynlib": DSO_DIR}
-
+TARGETS = {"site": SITE_PACKAGES, "dynlib": DSO_DIR}
 
 ZIP_TYPES = {".whl", ".zip"}
-TAR_TYPES = {".tar", ".gz", ".bz", ".gz", ".tgz", ".bz2", ".tbz2"}
+TAR_TYPES = {
+    ".bz",
+    ".bz2",
+    ".tbz2",
+    ".gz",
+    ".tgz",
+    ".tar",
+}
 EXTENSION_TAGS = [suffix.removesuffix(".so") for suffix in EXTENSION_SUFFIXES]
 # See PEP 3149. I think the situation has since been updated since PEP 3149 does
 # not talk about platform triples. But I could not find any newer pep discussing
@@ -100,9 +103,7 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     canonical_name = canonicalize_name(name)
     if not info_dir_name.startswith(canonical_name):
         raise UnsupportedWheel(
-            ".dist-info directory {!r} does not start with {!r}".format(
-                info_dir, canonical_name
-            )
+            f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
         )
 
     return info_dir
@@ -117,7 +118,10 @@ def make_whlfile(
 if IN_BROWSER:
     shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
     shutil.register_unpack_format(
-        "whl", [".whl", ".wheel"], shutil._unpack_zipfile, description="Wheel file"  # type: ignore[attr-defined]
+        "whl",
+        [".whl", ".wheel"],
+        shutil._unpack_zipfile,  # type: ignore[attr-defined]
+        description="Wheel file",
     )
 
 
@@ -132,12 +136,21 @@ def get_format(format: str) -> str:
     raise ValueError(f"Unrecognized format {format}")
 
 
+def get_install_dir(target: Literal["site", "dynlib"] | None = None) -> str:
+    """
+    Get the installation directory for a target.
+    """
+    if not target:
+        return str(SITE_PACKAGES)
+
+    return str(TARGETS.get(target, SITE_PACKAGES))
+
+
 def unpack_buffer(
     buffer: JsBuffer,
     *,
     filename: str = "",
     format: str | None = None,
-    target: Literal["site", "lib", "dynlib"] | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
     installer: str | None = None,
@@ -169,16 +182,9 @@ def unpack_buffer(
         3. If neither is present or the file name has no extension, we throw an
            error.
 
-
     extract_dir
         Controls which directory the file is unpacked into. Default is the
-        working directory. Mutually exclusive with target.
-
-    target
-        Controls which directory the file is unpacked into. Either "site" which
-        unpacked the file into the sitepackages directory or "lib" which
-        unpacked the file into the standard library. Mutually exclusive with
-        extract_dir.
+        working directory.
 
     calculate_dynlibs
         If true, will return a Javascript Array of paths to dynamic libraries
@@ -194,30 +200,26 @@ def unpack_buffer(
     """
     if format:
         format = get_format(format)
-    if target and extract_dir:
-        raise ValueError("Cannot provide both 'target' and 'extract_dir'")
     if not filename and format is None:
         raise ValueError("At least one of filename and format must be provided")
-    if target:
-        extract_path = TARGETS[target]
-    elif extract_dir:
-        extract_path = Path(extract_dir)
-    else:
-        extract_path = Path(".")
+
+    extract_path = Path(extract_dir or ".")
     filename = filename.rpartition("/")[-1]
 
     extract_path.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(suffix=filename) as f:
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
+
         suffix = Path(filename).suffix
         if suffix == ".whl":
             set_wheel_installer(filename, f, extract_path, installer, source)
+
         if calculate_dynlibs:
             suffix = Path(f.name).suffix
             return to_js(get_dynlibs(f, suffix, extract_path))
-        else:
-            return None
+
+    return None
 
 
 def should_load_dynlib(path: str | Path) -> bool:

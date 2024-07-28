@@ -1,6 +1,7 @@
 """
 A library of helper utilities for connecting Python to the browser environment.
 """
+
 # Added by C:
 # JsException (from jsproxy.c)
 
@@ -131,6 +132,8 @@ def _parse_and_compile_gen(
     mode: str = "exec",
     filename: str = "<exec>",
     flags: int = 0x0,
+    dont_inherit: bool = False,
+    optimize: int = -1,
 ) -> Generator[ast.Module, ast.Module, CodeType]:
     """Parse ``source``, then yield the AST, then compile the AST and return the
     code object.
@@ -159,7 +162,7 @@ def _parse_and_compile_gen(
         _last_expr_to_raise(mod)
 
     ast.fix_missing_locations(mod)
-    return compile(mod, filename, mode, flags=flags)
+    return compile(mod, filename, mode, flags, dont_inherit, optimize)
 
 
 ReturnMode = Literal["last_expr", "last_expr_or_assign", "none"]
@@ -213,6 +216,16 @@ class CodeRunner:
         The flags to compile with. See the documentation for the built-in
         :external:py:func:`compile` function.
 
+    dont_inherit :
+
+        Whether to inherit ``__future__`` imports from the outer code.
+        See the documentation for the built-in :external:py:func:`compile` function.
+
+    optimize :
+
+        Specifies the optimization level of the compiler. See the documentation
+        for the built-in :external:py:func:`compile` function.
+
     Examples
     --------
     >>> source = "1 + 1"
@@ -253,6 +266,8 @@ class CodeRunner:
         quiet_trailing_semicolon: bool = True,
         filename: str = "<exec>",
         flags: int = 0x0,
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ):
         self._compiled = False
         self._source = source
@@ -263,6 +278,8 @@ class CodeRunner:
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             filename=filename,
             flags=flags,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
         )
         self.ast = next(self._gen)
 
@@ -406,6 +423,8 @@ def eval_code(
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,
+    dont_inherit: bool = False,
+    optimize: int = -1,
 ) -> Any:
     """Runs a string as Python source code.
 
@@ -496,6 +515,8 @@ def eval_code(
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             filename=filename,
             flags=flags,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
         )
         .compile()
         .run(globals, locals)
@@ -511,6 +532,8 @@ async def eval_code_async(
     quiet_trailing_semicolon: bool = True,
     filename: str = "<exec>",
     flags: int = 0x0,
+    dont_inherit: bool = False,
+    optimize: int = -1,
 ) -> Any:
     """Runs a code string asynchronously.
 
@@ -576,6 +599,8 @@ async def eval_code_async(
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             filename=filename,
             flags=flags,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
         )
         .compile()
         .run_async(globals, locals)
@@ -621,3 +646,11 @@ def find_imports(source: str) -> list[str]:
                 continue
             imports.add(module_name.split(".")[0])
     return list(sorted(imports))
+
+
+def pyimport_impl(path: str) -> Any:
+    [stem, *fromlist] = path.rsplit(".", 1)
+    res = __import__(stem, fromlist=fromlist)
+    if fromlist:
+        res = getattr(res, fromlist[0])
+    return res
