@@ -19,6 +19,6 @@ build:
     echo PYTHONPATH: $PYTHONPATH
     echo _PYTHON_HOST_PLATFORM: $_PYTHON_HOST_PLATFORM
   cflags: |
-    -I$(PYODIDE_ROOT)/packages/sharedlib-test/src/include
+    -I$(PKGDIR)/../sharedlib-test/src/include
   ldflags: |
-    $(PYODIDE_ROOT)/packages/sharedlib-test/build/sharedlib-test-1.0/dist/sharedlib-test.so
+    $(PKGDIR)/../sharedlib-test/build/sharedlib-test-1.0/dist/sharedlib-test.so

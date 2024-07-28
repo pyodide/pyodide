@@ -371,11 +371,10 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
 static PyObject*
 JsProxy_GetAttr(PyObject* self, PyObject* attr)
 {
-  PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+  PyObject* result = _PyObject_GenericGetAttrWithDict(self, attr, NULL, 1);
+  if (result != NULL || PyErr_Occurred()) {
     return result;
   }
-  PyErr_Clear();
 
   bool success = false;
   JsVal jsresult = JS_NULL;
@@ -4378,6 +4377,18 @@ finally:
   return pyresult;
 }
 
+EM_JS(int, can_run_sync_js, (), { return !!Module.validSuspender.value; });
+
+PyObject*
+can_run_sync(PyObject* _mod, PyObject* _null)
+{
+  if (can_run_sync_js()) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+}
+
 PyMethodDef methods[] = {
   {
     "run_sync",
@@ -4385,6 +4396,11 @@ PyMethodDef methods[] = {
     // run_sync_not_supported in jsproxy_init.
     (PyCFunction)NULL,
     METH_O,
+  },
+  {
+    "can_run_sync",
+    (PyCFunction)can_run_sync,
+    METH_NOARGS,
   },
   { NULL } /* Sentinel */
 };

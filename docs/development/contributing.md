@@ -197,10 +197,6 @@ information, as well as Mozilla's
 [MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) if you need further
 clarification on what is and isn't permitted.
 
-## Get in Touch
-
-- **Gitter:** [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
-
 [tl;drlegal entry]: https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
 
 ```{eval-rst}

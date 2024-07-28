@@ -28,6 +28,7 @@
   to create interactive code cells and documents within a variety of
   [Quarto](https://quarto.org/) document formats like
   HTML Documents, RevealJS, Books, and Websites.
+- [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
 
 ## Workarounds for common WASM and browser limitations
 
