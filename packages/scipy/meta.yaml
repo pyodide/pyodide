@@ -30,7 +30,8 @@ source:
     - patches/0007-Fix-gees-calls.patch
     - patches/0008-MAINT-linalg-Remove-id_dist-Fortran-files.patch
     - patches/0009-Mark-mvndst-functions-recursive.patch
-    - patches/0001-Make-sreorth-recursive.patch
+    - patches/0010-Make-sreorth-recursive.patch
+    - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
 
 build:
   cflags: |
