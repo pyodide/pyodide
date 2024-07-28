@@ -17,4 +17,6 @@ build:
            -DUSE_IMPLICIT_CRYPTO=0 \
            -DREQUIRE_CRYPTO_NATIVE=1
     emmake cmake --build build --target libqpdf
+    cp -r . ${WASM_LIBRARY_DIR}/qpdf
+  # How to do it in a cleaner way?
   # better to use openssl instead of CRYPTO_NATIVE?

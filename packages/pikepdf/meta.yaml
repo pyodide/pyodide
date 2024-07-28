@@ -26,14 +26,18 @@ build:
     -fexceptions
 
   # We need to pass the path to qpdf source as well as the path to libqpf
-  # Something like ?
-  # script: |
-  #   export QPDF_SOURCE_TREE=/opt/qpdf
-  #   export QPDF_BUILD_LIBDIR=/opt/qpdf/build/libqpdf
+  # Something like this ? (dirty)
+  script: |
+    export QPDF_SOURCE_TREE=${WASM_LIBRARY_DIR}/qpdf
+    export QPDF_BUILD_LIBDIR=${WASM_LIBRARY_DIR}/qpdf/build/libqpdf
 
 requirements:
   host:
     - libqpdf
+
+test:
+  imports:
+    - pikepdf
 
 extra:
   recipe-maintainers:
