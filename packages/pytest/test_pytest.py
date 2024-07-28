@@ -1,19 +1,41 @@
+from pytest_pyodide import run_in_pyodide
+
+
+@run_in_pyodide(packages=["pytest"])
+def do_test(selenium, contents):
+    from contextlib import redirect_stdout
+    from io import StringIO
+    from pathlib import Path
+
+    import pytest
+
+    Path("test_pytest.py").write_text(contents)
+
+    out = StringIO()
+    with redirect_stdout(out):
+        result = pytest.main(["test_pytest.py"])
+
+        assert result == 1
+
+        out.seek(0)
+        output = out.read()
+        assert "2 passed" in output, output
+        assert "1 failed" in output, output
+        assert "1 warning" in output, output
+        assert "This is a warning" in output, output
+
+
 def test_pytest(selenium):
-    # TODO: don't use numpy in this test as it's not necessarily installed.
-    selenium.load_package(["pytest", "numpy"])
+    contents = """
+def test_success():
+    assert 1 == 1
 
-    selenium.run(
-        """
-        from pathlib import Path
-        import os
-        import numpy
-        import pytest
+def test_warning():
+    import warnings
+    warnings.warn("This is a warning")
 
-        base_dir = Path(numpy.__file__).parent / "core" / "tests"
-        """
-    )
+def test_fail():
+    assert 1 == 2
+"""
 
-    selenium.run("pytest.main([str(base_dir / 'test_api.py')])")
-
-    logs = "\n".join(selenium.logs)
-    assert "INTERNALERROR" not in logs
+    do_test(selenium, contents)
