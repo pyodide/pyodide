@@ -53,6 +53,7 @@ function createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
   let _searchDirs = searchDirs || [];
   _searchDirs = _searchDirs.concat(API.defaultLdLibraryPath, [dirname]);
 
+  // TODO: add rpath to Emscripten dsos and remove this logic
   const resolvePath = (path: string) => {
     if (DEBUG) {
       if (Module.PATH.basename(path) !== Module.PATH.basename(lib)) {
