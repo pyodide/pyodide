@@ -6,7 +6,7 @@ package:
 source:
   sha256: 98d509e29def377d90ff4a34e48e8e20865600342006bff53e489f689bbbb15d
   url: https://github.com/qpdf/qpdf/archive/refs/tags/v11.9.1.tar.gz
-    
+
 build:
   type: shared_library
   script: |
