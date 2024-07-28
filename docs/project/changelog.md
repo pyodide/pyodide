@@ -19,6 +19,11 @@ myst:
 - {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
   {pr}`4961`
 
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4963`
+
 ## Version 0.26.2
 
 _July 26, 2024_
