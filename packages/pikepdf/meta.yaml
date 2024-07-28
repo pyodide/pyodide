@@ -1,0 +1,40 @@
+package:
+  name: pikepdf
+  version: 9.1.0
+  top-level:
+    - pikepdf
+
+about:
+  home: null
+  PyPI: https://pypi.org/project/pikepdf
+  summary: Read and write PDFs with Python, powered by qpdf
+  license: MPL-2.0
+
+source:
+  url: https://files.pythonhosted.org/packages/6f/f0/8ebf71fb64d8135d61b5fd28ef2785f02d84352cf82357565cde8e67a3ab/pikepdf-9.1.0.tar.gz
+  sha256: e0c8d0a165b61d62495919b4351b5d2c7f0ebd47ea31d94d82c5203e97e07897
+build:
+  # RELOCATABLE flag is required because if affects how emscripten build ports.
+  cflags: |
+    -s RELOCATABLE=1
+    -s USE_LIBJPEG=1
+    -s USE_ZLIB=1
+    -fexceptions
+  cxxflags: |
+    -fexceptions
+  ldflags: |
+    -fexceptions
+
+  # We need to pass the path to qpdf source as well as the path to libqpf
+  # Something like ?
+  # script: |
+  #   export QPDF_SOURCE_TREE=/opt/qpdf
+  #   export QPDF_BUILD_LIBDIR=/opt/qpdf/build/libqpdf
+
+requirements:
+  host:
+    - libqpdf
+
+extra:
+  recipe-maintainers:
+    - SF73

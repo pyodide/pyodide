@@ -1,0 +1,20 @@
+package:
+  name: libqpdf
+  version: 11.9.1
+  tag:
+    - library
+source:
+  sha256: 98d509e29def377d90ff4a34e48e8e20865600342006bff53e489f689bbbb15d
+  url: https://github.com/qpdf/qpdf/archive/refs/tags/v11.9.1.tar.gz
+    
+build:
+  type: static_library
+  script: |
+    embuilder build zlib
+    embuilder build libjpeg
+    emcmake cmake -S . -B build \
+           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+           -DUSE_IMPLICIT_CRYPTO=0 \
+           -DREQUIRE_CRYPTO_NATIVE=1
+    emmake cmake --build build --target libqpdf
+  # better to use openssl instead of CRYPTO_NATIVE?
