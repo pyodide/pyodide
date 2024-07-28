@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-# if -v is passed, print the fake version to stderr
-if [ "$1" == "-v" ]; then
-    echo {version} >&2
-fi
-
-# redirect all output to given file
-echo $@ > {output_file}
