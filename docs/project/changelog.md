@@ -28,6 +28,14 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4961`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
