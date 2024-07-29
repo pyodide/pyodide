@@ -8,15 +8,18 @@ source:
   url: https://github.com/qpdf/qpdf/archive/refs/tags/v11.9.1.tar.gz
     
 build:
-  type: static_library
+  type: shared_library
   script: |
     embuilder build zlib
     embuilder build libjpeg
+    mkdir -p ${WASM_LIBRARY_DIR}/{include,lib}
     emcmake cmake -S . -B build \
            -DCMAKE_BUILD_TYPE=RelWithDebInfo \
            -DUSE_IMPLICIT_CRYPTO=0 \
-           -DREQUIRE_CRYPTO_NATIVE=1
+           -DREQUIRE_CRYPTO_NATIVE=1 \
+           -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+           -DCMAKE_C_FLAGS="-fexceptions -fPIC" \
+           -DCMAKE_CXX_FLAGS="-fexceptions -fPIC" \
+           -DBUILD_SHARED_LIBS=OFF
     emmake cmake --build build --target libqpdf
-    cp -r . ${WASM_LIBRARY_DIR}/qpdf
-  # How to do it in a cleaner way?
-  # better to use openssl instead of CRYPTO_NATIVE?
+    emmake cmake --install build --component dev
