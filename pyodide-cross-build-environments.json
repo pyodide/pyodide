@@ -1,5 +1,13 @@
 {
   "releases": {
+    "0.26.2": {
+      "version": "0.26.2",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.26.2/xbuildenv-0.26.2.tar.bz2",
+      "sha256": "ae576996328d51f7ccf14a953cf6e68fa65a2d4d5c01ed9208afe1a62fa82762",
+      "python_version": "3.12.1",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "0.26.1": {
       "version": "0.26.1",
       "url": "https://github.com/pyodide/pyodide/releases/download/0.26.1/xbuildenv-0.26.1.tar.bz2",
