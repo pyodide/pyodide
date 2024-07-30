@@ -25,6 +25,10 @@ myst:
   depend on shared libraries link to the shared libraries explicitly.
   {pr}`4876`
 
+- {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
+  manually or automatically.
+  {pr}`4846`
+
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
