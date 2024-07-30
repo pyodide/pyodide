@@ -13,11 +13,6 @@ import {
   insertSectionPrefix,
 } from "../../../core/stack_switching/runtime_wasm.mjs";
 import { createInvokeModule } from "../../../core/stack_switching/create_invokes.mjs";
-import {
-  createPromisingModule,
-  createPromising,
-  suspenderGlobal,
-} from "../../../core/stack_switching/suspenders.mjs";
 
 const __dirname = new URL(".", import.meta.url).pathname;
 
@@ -311,49 +306,6 @@ describe("dynamic wasm generation code", () => {
           compareModules(result, expected);
         });
       }
-    });
-
-    describe("createPromisingModule", () => {
-      for (let sig of ["v", "vd", "fd", "dd", "jjjj"]) {
-        describe(sig, () => {
-          const result = createPromisingModule(emscriptenSigToWasm(sig));
-          const expected = fromWatFile(`promising_${sig}.wat`);
-          compareModules(result, expected);
-        });
-      }
-    });
-
-    it("createPromising", async () => {
-      WasmModule.prototype.generate = origWasmGenerate;
-      const bin = fromWat(`
-        (module
-          (global $suspender (import "e" "s") (mut externref))
-          (import "e" "i" (func $i (param externref) (result i32)))
-          (func (export "o") (result i32)
-            global.get $suspender
-            call $i
-          )
-        )
-      `);
-      const mod = new WebAssembly.Module(bin);
-      function sleep(ms) {
-        return new Promise((res) => setTimeout(res, ms));
-      }
-      async function f() {
-        await sleep(20);
-        return 7;
-      }
-      const i = new WebAssembly.Function(
-        { parameters: ["externref"], results: ["i32"] },
-        f,
-        { suspending: "first" },
-      );
-      const inst = new WebAssembly.Instance(mod, {
-        e: { i, s: suspenderGlobal },
-      });
-      const w = createPromising(inst.exports.o, suspenderGlobal);
-      expect(w()).to.instanceOf(Promise);
-      expect(await w()).to.equal(7);
     });
   });
 });
