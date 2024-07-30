@@ -21,7 +21,7 @@ index 4acc119a5..3c0e0f695 100644
 @@ -167,7 +167,7 @@ py3.extension_module('_dop',
    _dop_module,
    link_with: [dop_lib],
-   c_args: [numpy_nodepr_api, Wno_unused_variable],
+   c_args: [Wno_unused_variable],
 -  dependencies: [fortranobject_dep],
 +  dependencies: [lapack, fortranobject_dep],
    link_args: version_link_args,
@@ -31,8 +31,9 @@ diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
 index 964edad36..3ca17e3dc 100644
 --- a/scipy/optimize/meson.build
 +++ b/scipy/optimize/meson.build
-@@ -138,7 +138,7 @@ _cobyla = py3.extension_module('_cobyla',
-   c_args: [numpy_nodepr_api, Wno_unused_variable],
+@@ -138,7 +138,7 @@ py3.extension_module('_cobyla',
+   [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+   c_args: [Wno_unused_variable],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,
 -  dependencies: [fortranobject_dep],
@@ -40,8 +41,13 @@ index 964edad36..3ca17e3dc 100644
    install: true,
    link_language: 'fortran',
    subdir: 'scipy/optimize'
-@@ -172,7 +172,7 @@ _slsqp = py3.extension_module('_slsqp',
-   c_args: numpy_nodepr_api,
+
+diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
+index 964edad36..3ca17e3dc 100644
+--- a/scipy/optimize/meson.build
++++ b/scipy/optimize/meson.build
+@@ -172,7 +172,7 @@ py3.extension_module('_slsqp',
+   [slsqp_module, 'slsqp/slsqp_optmz.f'],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,
 -  dependencies: [fortranobject_dep],
@@ -49,19 +55,6 @@ index 964edad36..3ca17e3dc 100644
    install: true,
    link_language: 'fortran',
    subdir: 'scipy/optimize'
-diff --git a/scipy/special/meson.build b/scipy/special/meson.build
-index d166555f5..c0ca05f77 100644
---- a/scipy/special/meson.build
-+++ b/scipy/special/meson.build
-@@ -276,7 +276,7 @@ py3.extension_module('_specfun',
-   specfun_module,
-   c_args: numpy_nodepr_api,
-   link_args: version_link_args,
--  dependencies: [fortranobject_dep],
-+  dependencies: [lapack, fortranobject_dep],
-   link_with: specfun_lib,
-   link_language: 'fortran',
-   install: true,
 diff --git a/scipy/stats/meson.build b/scipy/stats/meson.build
 index 9460f5338..145436fb4 100644
 --- a/scipy/stats/meson.build
