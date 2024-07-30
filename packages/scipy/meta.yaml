@@ -32,6 +32,7 @@ source:
     - patches/0009-Mark-mvndst-functions-recursive.patch
     - patches/0010-Make-sreorth-recursive.patch
     - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0012-Remove-fpchec-inline-if-else-constructs.patch
 
 build:
   cflags: |
