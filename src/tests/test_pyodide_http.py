@@ -80,10 +80,12 @@ def raise_for_status_fixture(httpserver):
 
 
 @run_in_pyodide
-async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
+async def test_pyfetch_raise_for_status_does_not_raise_200(
+    selenium, raise_for_status_fixture
+):
     import pytest
 
-    from pyodide.http import pyfetch
+    from pyodide.http import HttpStatusError, pyfetch
 
     resp = await pyfetch(raise_for_status_fixture["/status_200"])
     resp.raise_for_status()
@@ -91,15 +93,24 @@ async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
 
     resp = await pyfetch(raise_for_status_fixture["/status_404"])
     with pytest.raises(
-        OSError, match="404 Client Error: NOT FOUND for url: .*/status_404"
-    ):
+        HttpStatusError, match="404 Client Error: NOT FOUND for url: .*/status_404"
+    ) as error_404:
         resp.raise_for_status()
+
+    assert error_404.value.status == 404
+    assert error_404.value.status_text == "NOT FOUND"
+    assert error_404.value.url.endswith("status_404")
 
     resp = await pyfetch(raise_for_status_fixture["/status_504"])
     with pytest.raises(
-        OSError, match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504"
-    ):
+        HttpStatusError,
+        match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504",
+    ) as error_504:
         resp.raise_for_status()
+
+    assert error_504.value.status == 504
+    assert error_504.value.status_text == "GATEWAY TIMEOUT"
+    assert error_504.value.url.endswith("status_504")
 
 
 @run_in_pyodide

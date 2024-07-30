@@ -21,6 +21,9 @@ myst:
   timezone handling.
   {pr}`4889`
 
+- {{ Enhancement }} `HttpStatusError` now store their the corresponding request
+  `status`, `status_message` and `url` {pr}`4974`.
+
 - {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
   manually or automatically.
   {pr}`4846`
