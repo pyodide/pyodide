@@ -35,6 +35,7 @@ typedef struct {
   // The function we made this from. We call it when there are bad args in order
   // to make a TypeError that exactly matches the standard Python TypeError.
   PyObject* func;
+  bool should_construct;
   // Number of mandatory positional arguments
   int posparams_nmandatory;
   // A tuple of Py2JsConverters.
@@ -68,6 +69,7 @@ JsFuncSignature_init(PyObject* o, PyObject* args, PyObject* kwds)
 {
   JsFuncSignature* self = (JsFuncSignature*)o;
   static char* kwlist[] = { "func",
+                            "should_construct",
                             "posparams_nmandatory",
                             "posparams",
                             "posparams_defaults",
@@ -80,9 +82,10 @@ JsFuncSignature_init(PyObject* o, PyObject* args, PyObject* kwds)
                             0 };
   if (!PyArg_ParseTupleAndKeywords(args,
                                    kwds,
-                                   "OiOOOOOOOO:__init__",
+                                   "OpiOOOOOOOO:__init__",
                                    kwlist,
                                    &self->func,
+                                   &self->should_construct,
                                    &self->posparams_nmandatory,
                                    &self->posparams,
                                    &self->posparams_defaults,
@@ -366,7 +369,7 @@ JsMethod_Vectorcall_impl(JsVal func,
 {
   bool success = false;
   JsVal jsresult = JS_NULL;
-  PyObject* call_sig = NULL;
+  JsFuncSignature* call_sig = NULL;
   PyObject* pyresult = NULL;
   JsVal proxies = JsvArray_New();
 
@@ -374,19 +377,24 @@ JsMethod_Vectorcall_impl(JsVal func,
   FAIL_IF_NONZERO(Py_EnterRecursiveCall(" while calling a JavaScript object"));
   if (sig) {
     _Py_IDENTIFIER(func_to_sig);
-    call_sig = _PyObject_CallMethodIdOneArg(jsbind, &PyId_func_to_sig, sig);
+    call_sig = (JsFuncSignature*)_PyObject_CallMethodIdOneArg(
+      jsbind, &PyId_func_to_sig, sig);
     FAIL_IF_NULL(call_sig);
   }
-  if (Py_IsNone(call_sig)) {
+  if (Py_IsNone((PyObject*)call_sig)) {
     Py_CLEAR(call_sig);
   }
   if (!call_sig) {
-    call_sig = Py_NewRef(default_signature);
+    call_sig = (JsFuncSignature*)Py_NewRef(default_signature);
   }
-  JsVal jsargs = JsMethod_ConvertArgs(
-    (JsFuncSignature*)call_sig, pyargs, nargsf, kwnames, proxies);
+  JsVal jsargs =
+    JsMethod_ConvertArgs(call_sig, pyargs, nargsf, kwnames, proxies);
   FAIL_IF_JS_NULL(jsargs);
-  jsresult = JsvFunction_CallBound(func, receiver, jsargs);
+  if (call_sig->should_construct) {
+    jsresult = JsvFunction_Construct(func, jsargs);
+  } else {
+    jsresult = JsvFunction_CallBound(func, receiver, jsargs);
+  }
   FAIL_IF_JS_NULL(jsresult);
   PyObject* result_converter = ((JsFuncSignature*)call_sig)->result;
   pyresult = Js2PyConverter_convert(result_converter, jsresult, proxies);

@@ -646,3 +646,99 @@ def test_memory_leak(selenium, script):
         """
     )
     assert length_change == 0
+
+
+@requires_jspi
+@run_in_pyodide
+def test_run_until_complete(selenium):
+    from asyncio import create_task, gather, get_event_loop, sleep
+
+    from js import sleep as js_sleep
+    from pyodide.code import run_js
+
+    loop = get_event_loop()
+
+    async def test():
+        await sleep(0.1)
+        return 7
+
+    assert loop.run_until_complete(test()) == 7
+    assert loop.run_until_complete(create_task(test())) == 7
+    loop.run_until_complete(sleep(0.1))
+    loop.run_until_complete(js_sleep(100))
+    res = loop.run_until_complete(
+        gather(test(), sleep(0.1), js_sleep(100), js_sleep(100))
+    )
+    assert list(res) == [7, None, None, None]
+    p = run_js("[sleep(100).then(() => 99)]")[0]
+    assert loop.run_until_complete(p) == 99
+
+
+@requires_jspi
+def test_can_run_sync(selenium):
+    results = selenium.run_js(
+        """
+        const results = [];
+        pyodide.globals.set("results", results);
+        pyodide.runPython(`
+            from pyodide.ffi import can_run_sync, to_js
+            from pyodide.code import run_js
+            def expect(n, val):
+                results.append(to_js([n, can_run_sync(), val]))
+        `)
+
+
+        pyodide.runPython(`expect(0, False)`);
+
+        await pyodide.runPythonAsync(`expect(1, True)`);
+
+        pyodide.runPython(`
+            def fsync():
+               expect(2, False)
+        `);
+        const fsync = pyodide.globals.get("fsync");
+        fsync();
+        fsync.destroy();
+
+        pyodide.runPython(`
+            def fsync():
+                expect(3, True)
+
+            async def fasync():
+                fsync()
+                expect(4, True)
+        `);
+        const fasync = pyodide.globals.get("fasync");
+        await fasync();
+        fasync.destroy();
+
+        await pyodide.runPythonAsync(`
+            def fsync():
+                expect(5, False)
+
+            run_js("(f) => f()")(fsync)
+        `);
+
+        await pyodide.runPythonAsync(`
+            def fsync():
+                expect(6, True)
+
+            async def fasync():
+                fsync()
+                expect(7, True)
+
+            await run_js("(f) => f()")(fasync)
+        `);
+
+        await pyodide.runPythonAsync(`
+            run_js("(x) => Array.from(x)")([])
+            expect(8, True)
+        `);
+
+        return results;
+        """
+    )
+    assert len(results) == 9
+    for idx, [i, res, expected] in enumerate(results):
+        assert idx == i
+        assert res == expected

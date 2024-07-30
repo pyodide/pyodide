@@ -1,6 +1,8 @@
 import pytest
 from pytest_pyodide import run_in_pyodide
 
+from conftest import package_is_built
+
 
 @pytest.fixture(scope="function")
 def selenium_sdl(selenium_standalone):
@@ -24,6 +26,31 @@ def test_init(selenium_sdl):
     import pygame.display
 
     pygame.display.init()
+
+
+def test_keyboard_input():
+    """
+    Checks if the wheel is importing "emscripten_compute_dom_pk_code" from the main module.
+    This symbol should not appear in the imports of the wheel, as libhtml5 should be linked to the wheel.
+    This symbol is used by SDL2 to handle keyboard input.
+    See: https://github.com/pyodide/pyodide/issues/4805#issuecomment-2169077347
+    TODO: find a better way to test keyboard input
+    """
+
+    if not package_is_built("pygame-ce"):
+        pytest.skip("pygame-ce is not built")
+
+    from pathlib import Path
+
+    from auditwheel_emscripten import get_imports
+
+    dist_dir = Path(pytest.pyodide_dist_dir)  # type: ignore[attr-defined]
+    wheel_path = next(dist_dir.glob("pygame_ce-*.whl"))
+    assert wheel_path.exists()
+    all_libs = get_imports(wheel_path)
+    for imports in all_libs.values():
+        all_fields = [imp.field for imp in imports]
+        assert "emscripten_compute_dom_pk_code" not in all_fields
 
 
 @pytest.mark.driver_timeout(300)

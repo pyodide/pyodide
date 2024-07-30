@@ -50,11 +50,6 @@ PYTHON_TARGETS = [
         prerelease=True,
     ),
     Target(
-        ROOT / "pyodide-build/pyodide_build/__init__.py",
-        pattern=build_version_pattern('__version__ = "{python_version}"'),
-        prerelease=True,
-    ),
-    Target(
         ROOT / "docs/project/about.md",
         build_version_pattern(r"version\s*=\s*{{{python_version}}}"),
         prerelease=False,
@@ -125,7 +120,7 @@ def parse_current_version(target: Target) -> str:
     match = target.pattern.search(content)
 
     if match is None:
-        raise ValueError(f"Unabled to detect version string: {target.file}")
+        raise ValueError(f"Unable to detect version string: {target.file}")
 
     return match.groupdict()["version"]
 

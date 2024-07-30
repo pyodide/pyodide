@@ -1,7 +1,7 @@
-From 00cf564c05308bb498d53f9b31e2bf7797e26df2 Mon Sep 17 00:00:00 2001
-From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
-Date: Tue, 14 May 2024 23:37:42 +0530
-Subject: [PATCH 6/9] Remove test modules that fail to build
+From e21f33695da3275ec81b5f94685f0e4ac92c9ad5 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Mon, 30 Oct 2023 14:35:04 +0000
+Subject: [PATCH 5/9] Remove test modules that fails to build
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
@@ -70,5 +70,5 @@ index b41f29022c..af04022208 100644
      '__init__.py',
      '_fortran.py',
 -- 
-2.39.3 (Apple Git-146)
+2.34.1
 

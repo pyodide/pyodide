@@ -28,6 +28,7 @@
   to create interactive code cells and documents within a variety of
   [Quarto](https://quarto.org/) document formats like
   HTML Documents, RevealJS, Books, and Websites.
+- [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
 
 ## Workarounds for common WASM and browser limitations
 
@@ -40,6 +41,8 @@
 - [WebDash](https://github.com/ibdafna/webdash) is a Plotly Dash distribution
   that runs entirely in the browser, using Pyodide.
 - [Flet](https://flet.dev) is a UI framework for your Pyodide apps based on Flutter.
+- [stlite](https://github.com/whitphx/stlite) is a serverless version of [Streamlit](https://streamlit.io/) running on Pyodide.
+- [Gradio-Lite](https://www.gradio.app/guides/gradio-lite) is a serverless version of [Gradio](https://www.gradio.app/) running on Pyodide.
 
 ## Other projects
 

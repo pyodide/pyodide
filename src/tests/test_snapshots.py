@@ -29,13 +29,13 @@ def test_snapshot_simple(selenium_standalone_noload):
         const py1 = await loadPyodide({_makeSnapshot: true});
         py1.runPython(`
             from js import Headers, URL
-            canParse = URL.canParse
+            createObjectURL = URL.createObjectURL
         `);
         const snapshot = py1.makeMemorySnapshot();
         const py2 = await loadPyodide({_loadSnapshot: snapshot});
         assert(() => py2.globals.get("Headers") === Headers);
         assert(() => py2.globals.get("URL") === URL);
-        assert(() => py2.globals.get("canParse") === URL.canParse);
+        assert(() => py2.globals.get("createObjectURL") === URL.createObjectURL);
         """
     )
 

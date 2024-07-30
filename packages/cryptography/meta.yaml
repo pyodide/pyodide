@@ -10,15 +10,9 @@ source:
     - patches/0001-Tell-rust-lang-libc-that-time_t-is-64-bits.patch
 build:
   script: |
-    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
-    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     export OPENSSL_DIR=$WASM_LIBRARY_DIR
-  cflags: |
-    -Wno-implicit-function-declaration
-    $(OPENSSL_INCLUDE_PATH)
-  ldflags: |
-    $(OPENSSL_LIBRARY_PATH)
-    -Wl,--no-entry
+    # Allow linking to native libraries, otherwise libssl and libcrypto will be not linked to the final binary
+    export RUSTFLAGS="-Z link-native-libraries=yes"
 requirements:
   run:
     - openssl
