@@ -1,0 +1,80 @@
+From 091fb1486525e310a9b8e41d6b4d7a70c965c649 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Sun, 28 Jul 2024 18:15:17 +0900
+Subject: [PATCH 1/1] Link openblas with modules that require f2c
+
+Some fortran modules require symbols from f2c, which is provided by
+openblas.
+This patch adds openblas as a dependency to the modules that require f2c
+symbols.
+---
+ scipy/integrate/meson.build | 2 +-
+ scipy/optimize/meson.build  | 4 ++--
+ scipy/special/meson.build   | 2 +-
+ scipy/stats/meson.build     | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/scipy/integrate/meson.build b/scipy/integrate/meson.build
+index 4acc119a5..3c0e0f695 100644
+--- a/scipy/integrate/meson.build
++++ b/scipy/integrate/meson.build
+@@ -167,7 +167,7 @@ py3.extension_module('_dop',
+   _dop_module,
+   link_with: [dop_lib],
+   c_args: [numpy_nodepr_api, Wno_unused_variable],
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   link_args: version_link_args,
+   install: true,
+   link_language: 'fortran',
+diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
+index 964edad36..3ca17e3dc 100644
+--- a/scipy/optimize/meson.build
++++ b/scipy/optimize/meson.build
+@@ -138,7 +138,7 @@ _cobyla = py3.extension_module('_cobyla',
+   c_args: [numpy_nodepr_api, Wno_unused_variable],
+   fortran_args: fortran_ignore_warnings,
+   link_args: version_link_args,
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   install: true,
+   link_language: 'fortran',
+   subdir: 'scipy/optimize'
+@@ -172,7 +172,7 @@ _slsqp = py3.extension_module('_slsqp',
+   c_args: numpy_nodepr_api,
+   fortran_args: fortran_ignore_warnings,
+   link_args: version_link_args,
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   install: true,
+   link_language: 'fortran',
+   subdir: 'scipy/optimize'
+diff --git a/scipy/special/meson.build b/scipy/special/meson.build
+index d166555f5..c0ca05f77 100644
+--- a/scipy/special/meson.build
++++ b/scipy/special/meson.build
+@@ -276,7 +276,7 @@ py3.extension_module('_specfun',
+   specfun_module,
+   c_args: numpy_nodepr_api,
+   link_args: version_link_args,
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   link_with: specfun_lib,
+   link_language: 'fortran',
+   install: true,
+diff --git a/scipy/stats/meson.build b/scipy/stats/meson.build
+index 9460f5338..145436fb4 100644
+--- a/scipy/stats/meson.build
++++ b/scipy/stats/meson.build
+@@ -44,7 +44,7 @@ mvn = py3.extension_module('_mvn',
+   # Wno-surprising is to suppress a pointless warning with GCC 10-12
+   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
+   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
+-  dependencies: [fortranobject_dep],
++  dependencies: [lapack, fortranobject_dep],
+   link_args: version_link_args,
+   install: true,
+   link_language: 'fortran',
+-- 
+2.29.2.windows.2
+
