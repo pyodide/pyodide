@@ -523,17 +523,16 @@ def test_custom_stdin_interrupts(selenium, method):
     from pyodide.code import run_js
 
     run_js(
-        """
+        f"""
         ib = new Int32Array(1);
         pyodide.setInterruptBuffer(ib);
-        pyodide.setStdin({
-            %s () {
+        pyodide.setStdin({{
+            {method} () {{
                 ib[0] = 2;
                 pyodide.checkInterrupt();
-            }
-        });
+            }}
+        }});
         """
-        % method
     )
     try:
         with pytest.raises(KeyboardInterrupt):
@@ -555,17 +554,16 @@ def test_custom_stdout_interrupts(selenium, method):
     from pyodide.code import run_js
 
     run_js(
-        """
+        f"""
         ib = new Int32Array(1);
         pyodide.setInterruptBuffer(ib);
-        pyodide.setStdout({
-            %s () {
+        pyodide.setStdout({{
+            {method} () {{
                 ib[0] = 2;
                 pyodide.checkInterrupt();
-            }
-        });
+            }}
+        }});
         """
-        % method
     )
     try:
         with pytest.raises(KeyboardInterrupt):
