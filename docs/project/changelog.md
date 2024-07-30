@@ -22,7 +22,12 @@ myst:
   {pr}`4889`
 
 - {{ Enhancement }} `HttpStatusError` now store their the corresponding request
-  `status`, `status_message` and `url` {pr}`4974`.
+  `status`, `status_message` and `url`
+  {pr}`4974`.
+
+- {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
+  depend on shared libraries link to the shared libraries explicitly.
+  {pr}`4876`
 
 - {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
   manually or automatically.
