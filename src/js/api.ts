@@ -78,8 +78,6 @@ if (AbortSignal.any) {
 
 API.LiteralMap = LiteralMap;
 
-API.isPyProxy = isPyProxy;
-
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);
   const { node } = Module.FS.lookupPath(path, {

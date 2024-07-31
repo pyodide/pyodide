@@ -55,9 +55,6 @@ declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
 
-/**
- * @hidden
- */
 export function isPyProxy(jsobj: any): jsobj is PyProxy {
   try {
     return jsobj instanceof PyProxy;
@@ -65,6 +62,7 @@ export function isPyProxy(jsobj: any): jsobj is PyProxy {
     return false;
   }
 }
+API.isPyProxy = isPyProxy;
 
 declare var FinalizationRegistry: any;
 declare var globalThis: any;

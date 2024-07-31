@@ -531,9 +531,13 @@ export async function initializePackageIndex(lockFilePromise: Promise<Lockfile>)
     API.package_loader.init_loaded_packages();
   }
 
-const singletonPackageManager = new PackageManager(Module, API);
+// FIXME:
+let singletonPackageManager: PackageManager;
+if (API && Module) {
+    singletonPackageManager = new PackageManager(Module, API);
+}
 
-export const loadPackage = singletonPackageManager.loadPackage.bind(singletonPackageManager);
+export const loadPackage = singletonPackageManager!.loadPackage.bind(singletonPackageManager!);
 
 /**
  * The list of packages that Pyodide has loaded.
@@ -541,8 +545,8 @@ export const loadPackage = singletonPackageManager.loadPackage.bind(singletonPac
  * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
  * install location for a particular ``package_name``.
  */
-export const loadedPackages = singletonPackageManager.loadedPackages;
+export const loadedPackages = singletonPackageManager!.loadedPackages;
 
 // TODO: Find a better way to register these functions
-API.recursiveDependencies = singletonPackageManager.recursiveDependencies.bind(singletonPackageManager);
-API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(singletonPackageManager);
+API.recursiveDependencies = singletonPackageManager!.recursiveDependencies.bind(singletonPackageManager!);
+API.setCdnUrl = singletonPackageManager!.setCdnUrl.bind(singletonPackageManager!);
