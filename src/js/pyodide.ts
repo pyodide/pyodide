@@ -15,7 +15,6 @@ import { version } from "./version";
 import type { PyodideInterface } from "./api.js";
 import type { TypedArray, Module, PackageData } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
-import { initializePackageIndex } from "./package-manager";
 import { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
 
@@ -231,7 +230,6 @@ export async function loadPyodide(
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
   API.lockFilePromise = loadLockFile(config.lockFileURL);
-  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where

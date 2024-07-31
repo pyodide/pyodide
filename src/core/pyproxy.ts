@@ -55,7 +55,7 @@ declare function Py_ENTER(): void;
 declare function Py_EXIT(): void;
 // end-pyodide-skip
 
-export function isPyProxy(jsobj: any): jsobj is PyProxy {
+function isPyProxy(jsobj: any): jsobj is PyProxy {
   try {
     return jsobj instanceof PyProxy;
   } catch (e) {

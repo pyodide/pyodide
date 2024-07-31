@@ -27,8 +27,7 @@ const acquirePackageLock = createLock();
  * The package manager is responsible for installing and managing Pyodide packages.
  */
 class PackageManager {
-    private readonly module: Module;
-    private readonly api: API;
+    // TODO: Add API and Module as properties
 
     /**
      * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -44,11 +43,6 @@ class PackageManager {
      * TODO: Make this private and expose a setter
      */
     public loadedPackages: Record<string, string> = {};
-
-    constructor(_module: Module, api: API) {
-        this.module = _module;
-        this.api = api;
-    }
 
     /**
      * Load packages from the Pyodide distribution or Python wheels by URL.
@@ -165,7 +159,7 @@ class PackageManager {
             // fills in the GOT. There can be segfaults if we leave it out.
             // See https://github.com/emscripten-core/emscripten/issues/22052
             // TODO: Fix Emscripten so this isn't needed
-            this.module.reportUndefinedSymbols();
+            Module.reportUndefinedSymbols();
             if (loadedPackageData.size > 0) {
                 const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
                     .sort()
@@ -184,7 +178,7 @@ class PackageManager {
 
             // We have to invalidate Python's import caches, or it won't
             // see the new files.
-            this.api.importlib.invalidate_caches();
+            API.importlib.invalidate_caches();
             return Array.from(loadedPackageData, filterPackageData);
         } finally {
             releaseLock();
@@ -272,7 +266,7 @@ class PackageManager {
                     : Promise.resolve();
             });
             // Can't install until bootstrap is finalized.
-            await this.api.bootstrapFinalizedPromise;
+            await API.bootstrapFinalizedPromise;
 
             // wait until all dependencies are installed
             await Promise.all(installPromiseDependencies);
@@ -308,7 +302,7 @@ class PackageManager {
     ): Promise<Uint8Array> {
         let installBaseUrl: string;
         if (IN_NODE) {
-            installBaseUrl = this.api.config.packageCacheDir;
+            installBaseUrl = API.config.packageCacheDir;
             // Ensure that the directory exists before trying to download files into it.
             try {
                 // Check if the `installBaseUrl` directory exists
@@ -320,15 +314,15 @@ class PackageManager {
                 });
             }
         } else {
-            installBaseUrl = this.api.config.indexURL;
+            installBaseUrl = API.config.indexURL;
         }
 
         let fileName, uri, fileSubResourceHash;
         if (pkg.channel === DEFAULT_CHANNEL) {
-            if (!(pkg.normalizedName in this.api.lockfile_packages)) {
+            if (!(pkg.normalizedName in API.lockfile_packages)) {
                 throw new Error(`Internal error: no entry for package named ${name}`);
             }
-            const lockfilePackage = this.api.lockfile_packages[pkg.normalizedName];
+            const lockfilePackage = API.lockfile_packages[pkg.normalizedName];
             fileName = lockfilePackage.file_name;
 
             uri = resolvePath(fileName, installBaseUrl);
@@ -372,7 +366,7 @@ class PackageManager {
         buffer: Uint8Array,
         channel: string,
     ) {
-        let pkg = this.api.lockfile_packages[normalizedName];
+        let pkg = API.lockfile_packages[normalizedName];
         if (!pkg) {
             pkg = {
                 name: "",
@@ -388,10 +382,10 @@ class PackageManager {
         }
         const filename = pkg.file_name;
         // This Python helper function unpacks the buffer and lists out any .so files in it.
-        const installDir: string = this.api.package_loader.get_install_dir(
+        const installDir: string = API.package_loader.get_install_dir(
             pkg.install_dir,
         );
-        const dynlibs: string[] = this.api.package_loader.unpack_buffer.callKwargs({
+        const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
             buffer,
             filename,
             extract_dir: installDir,
@@ -424,7 +418,7 @@ class PackageManager {
         if (toLoad.has(normalizedName)) {
             return;
         }
-        const pkgInfo = this.api.lockfile_packages[normalizedName];
+        const pkgInfo = API.lockfile_packages[normalizedName];
         if (!pkgInfo) {
             throw new Error(`No known package with name '${name}'`);
         }
@@ -476,68 +470,64 @@ export async function initializePackageIndex(lockFilePromise: Promise<Lockfile>)
     await initNodeModules();
     const lockfile = await lockFilePromise;
     if (!lockfile.packages) {
-      throw new Error(
-        "Loaded pyodide lock file does not contain the expected key 'packages'.",
-      );
+        throw new Error(
+            "Loaded pyodide lock file does not contain the expected key 'packages'.",
+        );
     }
-  
+
     if (lockfile.info.version !== API.version) {
-      throw new Error(
-        "Lock file version doesn't match Pyodide version.\n" +
-          `   lockfile version: ${API.lockfile_info.version}\n` +
-          `   pyodide  version: ${API.version}`,
-      );
+        throw new Error(
+            "Lock file version doesn't match Pyodide version.\n" +
+            `   lockfile version: ${API.lockfile_info.version}\n` +
+            `   pyodide  version: ${API.version}`,
+        );
     }
-  
+
     API.lockfile_info = lockfile.info;
     API.lockfile_packages = lockfile.packages;
     API.lockfile_unvendored_stdlibs_and_test = [];
-  
+
     // micropip compatibility
     API.repodata_info = lockfile.info;
     API.repodata_packages = lockfile.packages;
-  
+
     // compute the inverted index for imports to package names
     API._import_name_to_package_name = new Map<string, string>();
     for (let name of Object.keys(API.lockfile_packages)) {
-      const pkg = API.lockfile_packages[name];
-  
-      for (let import_name of pkg.imports) {
-        API._import_name_to_package_name.set(import_name, name);
-      }
-  
-      if (pkg.package_type === "cpython_module") {
-        API.lockfile_unvendored_stdlibs_and_test.push(name);
-      }
+        const pkg = API.lockfile_packages[name];
+
+        for (let import_name of pkg.imports) {
+            API._import_name_to_package_name.set(import_name, name);
+        }
+
+        if (pkg.package_type === "cpython_module") {
+            API.lockfile_unvendored_stdlibs_and_test.push(name);
+        }
     }
-  
+
     API.lockfile_unvendored_stdlibs =
-      API.lockfile_unvendored_stdlibs_and_test.filter(
-        (lib: string) => lib !== "test",
-      );
+        API.lockfile_unvendored_stdlibs_and_test.filter(
+            (lib: string) => lib !== "test",
+        );
     let toLoad = API.config.packages;
     if (API.config.fullStdLib) {
-      toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
+        toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
     }
-    await loadPackage(toLoad, { messageCallback() {} });
+    await loadPackage(toLoad, { messageCallback() { } });
     // Have to wait for bootstrapFinalizedPromise before calling Python APIs
     await API.bootstrapFinalizedPromise;
     // Set up module_not_found_hook
     const importhook = API._pyodide._importhook;
     importhook.register_module_not_found_hook(
-      API._import_name_to_package_name,
-      API.lockfile_unvendored_stdlibs_and_test,
+        API._import_name_to_package_name,
+        API.lockfile_unvendored_stdlibs_and_test,
     );
     API.package_loader.init_loaded_packages();
-  }
-
-// FIXME:
-let singletonPackageManager: PackageManager;
-if (API && Module) {
-    singletonPackageManager = new PackageManager(Module, API);
 }
 
-export const loadPackage = singletonPackageManager!.loadPackage.bind(singletonPackageManager!);
+const singletonPackageManager = new PackageManager();
+
+export const loadPackage = singletonPackageManager.loadPackage.bind(singletonPackageManager);
 
 /**
  * The list of packages that Pyodide has loaded.
@@ -545,8 +535,12 @@ export const loadPackage = singletonPackageManager!.loadPackage.bind(singletonPa
  * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
  * install location for a particular ``package_name``.
  */
-export const loadedPackages = singletonPackageManager!.loadedPackages;
+export const loadedPackages = singletonPackageManager.loadedPackages;
 
 // TODO: Find a better way to register these functions
-API.recursiveDependencies = singletonPackageManager!.recursiveDependencies.bind(singletonPackageManager!);
-API.setCdnUrl = singletonPackageManager!.setCdnUrl.bind(singletonPackageManager!);
+API.recursiveDependencies = singletonPackageManager.recursiveDependencies.bind(singletonPackageManager);
+API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(singletonPackageManager);
+
+if (API.lockFilePromise) {
+    API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+}
