@@ -33,6 +33,8 @@ source:
     - patches/0010-Make-sreorth-recursive.patch
     - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
     - patches/0012-Remove-fpchec-inline-if-else-constructs.patch
+    - patches/0001-Remove-chla_transtype.patch
+    - patches/0001-Set-wrapper-return-type-to-int.patch
 
 build:
   cflags: |
@@ -88,6 +90,7 @@ build:
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
+    sed -i 's/^void/int/g' scipy/_build_utils/src/wrap_dummy_g77_abi.c
     sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/, 1)/)/g' scipy/optimize/_trlib/trlib_private.h
 
