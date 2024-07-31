@@ -1757,9 +1757,9 @@ def test_pickle_internal_error(selenium):
 )
 def test_runpython_filename(selenium, run_python):
     msg = selenium.run_js(
-        f"""
-        try {{
-            {run_python}(`
+        """
+        try {
+            %s(`
                 def f1():
                     f2()
 
@@ -1767,11 +1767,12 @@ def test_runpython_filename(selenium, run_python):
                     raise Exception("oops")
 
                 f1()
-            `, {{filename: "a.py"}});
-        }} catch(e) {{
+            `, {filename: "a.py"});
+        } catch(e) {
             return e.message
-        }}
+        }
         """
+        % run_python
     )
     expected = dedent(
         """
