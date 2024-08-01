@@ -1,5 +1,6 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["rasterio"])
 def test_drivers(selenium):
     import rasterio
@@ -9,6 +10,7 @@ def test_drivers(selenium):
         assert driver_count() > 0
         assert type(m) == rasterio.Env
     assert driver_count() > 0
+
 
 @run_in_pyodide(packages=["rasterio"])
 def test_open(selenium):
@@ -23,25 +25,29 @@ def test_open(selenium):
     from rasterio.transform import IDENTITY
 
     rows = cols = 10
-    geometry = {'type': 'Polygon',
-                'coordinates': [[(2, 2), (2, 4.25), (4.25, 4.25),
-                                (4.25, 2), (2, 2)]]}
+    geometry = {
+        "type": "Polygon",
+        "coordinates": [[(2, 2), (2, 4.25), (4.25, 4.25), (4.25, 2), (2, 2)]],
+    }
 
     with rasterio.Env():
         result = rasterize([geometry], out_shape=(rows, cols))
         with rasterio.open(
-                'test.tif', 'w',
-                driver='GTiff',
-                width=cols,
-                height=rows,
-                count=1,
-                dtype=numpy.uint8,
-                nodata=0,
-                transform=IDENTITY,
-                crs={'init': 'EPSG:4326'}) as out:
+            "test.tif",
+            "w",
+            driver="GTiff",
+            width=cols,
+            height=rows,
+            count=1,
+            dtype=numpy.uint8,
+            nodata=0,
+            transform=IDENTITY,
+            crs={"init": "EPSG:4326"},
+        ) as out:
             out.write_band(1, result.astype(numpy.uint8))
-        
-    assert out.name == 'test.tif'
+
+    assert out.name == "test.tif"
+
 
 @run_in_pyodide(packages=["rasterio"])
 def test_affine(selenium):
@@ -51,14 +57,21 @@ def test_affine(selenium):
     x = np.linspace(-4.0, 4.0, 240)
     y = np.linspace(-3.0, 3.0, 180)
     X, Y = np.meshgrid(x, y)
-    Z1 = np.exp(-2 * np.log(2) * ((X - 0.5) ** 2 + (Y - 0.5) ** 2) / 1 ** 2)
-    Z2 = np.exp(-3 * np.log(2) * ((X + 0.5) ** 2 + (Y + 0.5) ** 2) / 2.5 ** 2)
+    Z1 = np.exp(-2 * np.log(2) * ((X - 0.5) ** 2 + (Y - 0.5) ** 2) / 1**2)
+    Z2 = np.exp(-3 * np.log(2) * ((X + 0.5) ** 2 + (Y + 0.5) ** 2) / 2.5**2)
     Z = 10.0 * (Z2 - Z1)
 
     res = (x[-1] - x[0]) / 240.0
-    affine = Affine(0.033333333333333333, 0.0, -4.0166666666666666,
-       0.0, 0.033333333333333333, -3.0166666666666666)
+    affine = Affine(
+        0.033333333333333333,
+        0.0,
+        -4.0166666666666666,
+        0.0,
+        0.033333333333333333,
+        -3.0166666666666666,
+    )
 
-    transform = Affine.translation(x[0] - res / 2, y[0] - res / 2) * Affine.scale(res, res)
+    transform = Affine.translation(x[0] - res / 2, y[0] - res / 2) * Affine.scale(
+        res, res
+    )
     assert affine == transform
-
