@@ -1,4 +1,4 @@
-From b82445488de21258ba2a72dfb0853eb1c6514658 Mon Sep 17 00:00:00 2001
+From dd7c0ccf731b605e540401f13aa801a02016f6b2 Mon Sep 17 00:00:00 2001
 From: casatir <romain.casati@basthon.fr>
 Date: Mon, 12 Dec 2022 18:26:01 -0800
 Subject: [PATCH 2/3] fix threading
@@ -9,10 +9,10 @@ threading.Timer is not yet supported in Pyodide.
  1 file changed, 3 insertions(+), 5 deletions(-)
 
 diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
-index a5742ef88f..7eb183ab00 100644
+index a91ca4ba45..c16466ef5e 100644
 --- a/lib/matplotlib/font_manager.py
 +++ b/lib/matplotlib/font_manager.py
-@@ -1093,10 +1093,8 @@ class FontManager:
+@@ -1031,10 +1031,8 @@ class FontManager:
          self.afmlist = []
          self.ttflist = []
  
@@ -25,7 +25,7 @@ index a5742ef88f..7eb183ab00 100644
          try:
              for fontext in ["afm", "ttf"]:
                  for path in [*findSystemFonts(paths, fontext=fontext),
-@@ -1109,7 +1107,7 @@ class FontManager:
+@@ -1047,7 +1045,7 @@ class FontManager:
                          _log.info("Failed to extract font properties from %s: "
                                    "%s", path, exc)
          finally:
