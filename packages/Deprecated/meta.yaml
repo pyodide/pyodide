@@ -1,0 +1,18 @@
+package:
+  name: Deprecated
+  version: 1.2.14
+  top-level:
+    - deprecated
+source:
+  url: https://files.pythonhosted.org/packages/20/8d/778b7d51b981a96554f29136cd59ca7880bf58094338085bcf2a979a0e6a/Deprecated-1.2.14-py2.py3-none-any.whl
+  sha256: 6fac8b097794a90302bdbb17b9b815e732d3c4720583ff1b198499d78470466c
+about:
+  home: https://github.com/tantale/deprecated
+  PyPI: https://pypi.org/project/Deprecated
+  summary:
+    Python @deprecated decorator to deprecate old python classes, functions
+    or methods.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - SF73

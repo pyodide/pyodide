@@ -32,7 +32,7 @@ requirements:
     - Pillow
     - lxml
     - packaging
-  #   - Deprecated # pure python package, should I add it as it can be pulled directly from pypi
+    - Deprecated
 
 test:
   imports:
