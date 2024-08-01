@@ -97,7 +97,7 @@ def test_import(
 
     def _import_pkg():
         for import_name in import_names:
-            selenium_standalone.run_async("import %s" % import_name)
+            selenium_standalone.run_async(f"import {import_name}")
 
     benchmark(_import_pkg)
 
