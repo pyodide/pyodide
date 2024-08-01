@@ -17,14 +17,14 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.3.5"
+    rev: "v0.5.0"
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v18.1.3"
+    rev: "v18.1.8"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -45,9 +45,15 @@ repos:
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.6"
+    rev: "v2.3.0"
     hooks:
       - id: codespell
+        args:
+          [
+            "--ignore-words-list",
+            "ags,aray,asend,ba,crate,falsy,feld,inflight,lits,nd,slowy,te,oint,conveniant,atmost",
+          ]
+        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.11.0"
