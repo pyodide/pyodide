@@ -93,13 +93,18 @@ def test_basic_rootfinder(selenium):
     initial_guess = 2
     result = rf(initial_guess, 9)
 
-    print(result)  # TODO: remove, added for debugging
     assert np.isclose(result.full()[0, 0], 3, atol=1e-6)
+
+
+######################################################################
+
+# CasADi integrator tests, using the damped harmonic oscillator and the
+# bouncing balls as examples. The tests are run for both CVODES and IDAS.
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
 @pytest.mark.parametrize("integrator_type", ["cvodes", "idas"])
-def test_casadi_integrator(selenium, integrator_type):
+def test_harmonic_oscillator(selenium, integrator_type):
     import casadi as ca
     import numpy as np
 
@@ -117,7 +122,7 @@ def test_casadi_integrator(selenium, integrator_type):
     opts = {
         "abstol": 1e-10,  # Absolute tolerance
         "reltol": 1e-10,  # Relative tolerance
-        "max_num_steps": 100000,  # Maximum number of steps the integrator can take
+        "max_num_steps": 10000,  # max steps
     }
 
     F = ca.integrator("F", integrator_type, dae, 0, 1, opts)
@@ -126,26 +131,40 @@ def test_casadi_integrator(selenium, integrator_type):
     r = F(x0=[1, 0])
 
     # exact analytical solution for the damped harmonic oscillator
-    def exact_solution(t):
+    def exact_solution(t, x0, v0):
         # damped natural frequency
         wd = omega * np.sqrt(1 - zeta**2)
         # initial amplitude
-        A = 1
-        phi = np.arctan(-zeta / np.sqrt(1 - zeta**2))
+        A = np.sqrt(x0**2 + ((v0 + zeta * omega * x0) / wd) ** 2)
+        phi = np.arctan((v0 + zeta * omega * x0) / (wd * x0))
 
-        # return A * np.exp(-zeta*omega*t) * (np.cos(wd * t) + zeta/np.sqrt(1 - zeta**2) * np.sin(wd*t))
-        return A * np.exp(-zeta * omega * t) * np.cos(wd * t - phi)
+        x = A * np.exp(-zeta * omega * t) * np.cos(wd * t - phi)
+        v = (
+            -A
+            * np.exp(-zeta * omega * t)
+            * (zeta * omega * np.cos(wd * t - phi) + wd * np.sin(wd * t - phi))
+        )
 
-    expected_x = exact_solution(1)  # Solution at t equals 1
-    assert np.isclose(r["xf"][0].full()[0, 0], expected_x, atol=1e-6, rtol=1e-6)
+        return x, v
+
+    t = 1  # Solution at t equals 1
+    expected_x, expected_v = exact_solution(t, 1, 0)
+
+    assert np.isclose(r["xf"][0].full()[0, 0], expected_x, atol=1e-8, rtol=1e-6)
+    assert np.isclose(r["xf"][1].full()[0, 0], expected_v, atol=1e-8, rtol=1e-6)
 
     # probably test with custom time horizon too
-    F_custom = ca.integrator("F_custom", integrator_type, dae, 0, 2, opts)
+    t_custom = 2
+    F_custom = ca.integrator("F_custom", integrator_type, dae, 0, t_custom, opts)
     r_custom = F_custom(x0=[1, 0])
 
-    expected_x_custom = exact_solution(2)  # Solution at t equals 2
+    expected_x_custom, expected_v_custom = exact_solution(t_custom, 1, 0)
+
     assert np.isclose(
         r_custom["xf"][0].full()[0, 0], expected_x_custom, atol=1e-6, rtol=1e-6
+    )
+    assert np.isclose(
+        r_custom["xf"][1].full()[0, 0], expected_v_custom, atol=1e-6, rtol=1e-6
     )
 
     # verify that the results are indeed different
@@ -154,17 +173,86 @@ def test_casadi_integrator(selenium, integrator_type):
     )
 
 
+@run_in_pyodide(packages=["casadi", "numpy"])
+@pytest.mark.parametrize("integrator_type", ["cvodes", "idas"])
+def test_bouncing_ball(selenium, integrator_type):
+    import casadi as ca
+
+    # Parameters
+    g = 9.81  # Gravity (m/s^2)
+    e = 0.8  # Coefficient of restitution
+    h0 = 10  # Initial height (m)
+    v0 = 0  # Initial velocity (m/s)
+
+    # state variables
+    s = ca.SX.sym("s", 2)  # s[0] is height, s[1] is velocity
+
+    # add ODE right hand side
+    ode = ca.vertcat(s[1], -g)
+
+    # create integrator
+    opts = {"abstol": 1e-8, "reltol": 1e-8, "max_num_steps": 1000}
+    integrator = ca.integrator(
+        "integrator", integrator_type, {"x": s, "ode": ode}, opts
+    )
+
+    # simulating a bouncing ball
+    sim_time = 2.0
+    num_steps = 20
+    dt = sim_time / num_steps
+
+    t_log = [0.0]
+    h_log = [h0]
+    v_log = [v0]
+
+    s_current = ca.DM([h0, v0])
+    t_current = 0.0
+
+    for _ in range(num_steps):
+        # integrate for one step
+        res = integrator(x0=s_current, p=dt)
+        s_end = res["xf"]
+        # check if the ball passed through the ground
+        if s_end[0] < 0:
+            # some simple bounce handling
+            s_end[0] = abs(s_end[0])  # reflect position
+            s_end[1] = -e * s_end[1]  # apply coefficient of restitution
+
+        t_current += dt
+        t_log.append(t_current)
+        h_log.append(s_end[0])
+        v_log.append(s_end[1])
+
+        s_current = s_end
+
+    # adding some basic verifications
+    assert (
+        len(t_log) == num_steps + 1
+    ), f"Expected {num_steps + 1} time steps, got {len(t_log)}"
+    assert all(h >= 0 for h in h_log), "Height should never be negative"
+    assert abs(h_log[0] - h0) < 1e-6, "Initial height should match h0"
+    assert abs(v_log[0] - v0) < 1e-6, "Initial velocity should match v0"
+
+    max_heights = [max(h_log[i:]) for i in range(0, len(h_log), 5)]
+    assert all(
+        max_heights[i] >= max_heights[i + 1] for i in range(len(max_heights) - 1)
+    ), "Maximum height should not increase over time"
+
+
+######################################################################
+
+
 @pytest.mark.parametrize(
     "interp_type, expected_result", [("linear", 6.5), ("bspline", 6.25)]
 )
 @run_in_pyodide(packages=["casadi", "numpy"])
 def test_interpolant(selenium, interp_type, expected_result):
-    import casadi
+    import casadi as ca
     import numpy as np
 
     x = [0, 1, 2, 3, 4, 5]
     y = [0, 1, 4, 9, 16, 25]
-    F = casadi.interpolant("F", interp_type, [x], y)
+    F = ca.interpolant("F", interp_type, [x], y)
 
     test_x = 2.5
     result = F(test_x)
