@@ -19,22 +19,20 @@ jobs:
         id: get_python_version
         run: |
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-
   test-python:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
           mkdir test-results
-          cd pyodide-build && python3 -m pip install -e ".[test]" && cd ..
           python3 -m pip install -r requirements.txt -r requirements-deploy.txt
+          make pyodide_build
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -43,7 +41,7 @@ jobs:
               --verbose \
               --runtime=host \
               --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/ packages/_tests tools/
+              src packages/_tests tools/
       - uses: codecov/codecov-action@v4
         with:
           fail_ci_if_error: false
@@ -185,7 +183,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
-          pip install -e ./pyodide-build
+          make pyodide_build
 
       - uses: pyodide/pyodide-actions/install-browser@v1
         with:

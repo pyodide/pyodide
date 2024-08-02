@@ -218,10 +218,10 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
-
+.PHONY: pyodide_build
 pyodide_build:
-	@echo "Ensuring editable pyodide-build is installed"
-	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	@echo "Ensuring required pyodide-build version is installed"
+	./tools/check_and_install_pyodide_build.py "$(PYODIDE_BUILD_COMMIT)" --repo "$(PYODIDE_BUILD_REPO)"
 	@which pyodide >/dev/null
 
 
