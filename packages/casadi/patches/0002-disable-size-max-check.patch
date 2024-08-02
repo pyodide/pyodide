@@ -8,6 +8,9 @@ these functions weren't being compiled, so there was no way to serialize or
 deserialize unsigned int values, leading to compile errors when these functions
 were called elsewhere. This patch removes the check for SIZE_MAX != UINT_MAX.
 
+This patch can be revisited after the upstream PR is resolved:
+https://github.com/casadi/casadi/pull/3785
+
 ---
  casadi/core/serializing_stream.cpp | 2 --
  casadi/core/serializing_stream.hpp | 7 +++----

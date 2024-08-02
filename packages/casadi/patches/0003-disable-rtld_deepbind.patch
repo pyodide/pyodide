@@ -9,6 +9,8 @@ WebAssembly handles internal symbol resolution differently, and the flag is
 is used on Linux systems and does not necessarily translate to other platforms
 such as Emscripten.
 
+This can be revisited after the upstream PR is resolved:
+https://github.com/casadi/casadi/pull/3785
 
 ---
  casadi/core/casadi_os.cpp | 2 +-

@@ -8,8 +8,8 @@ source:
   sha256: 409a5f6725eadea40fddfb8ba2321139b5252edac8bc115a72f68e648631d56a
   patches:
     - patches/0001-fix-python-include-dir.patch # can be removed with version 3.6.6
-    - patches/0002-disable-size-max-check.patch
-    - patches/0003-disable-rtld_deepbind.patch
+    - patches/0002-disable-size-max-check.patch # https://github.com/casadi/casadi/pull/3785
+    - patches/0003-disable-rtld_deepbind.patch # https://github.com/casadi/casadi/pull/3785
 requirements:
   host:
     - numpy
