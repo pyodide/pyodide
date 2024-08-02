@@ -53,6 +53,9 @@ myst:
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Added `pikepdf` 9.1.0 {pr}`4969`
+- Added `libqpdf` 11.9.1 {pr}`4969`
+- Added `Deprecated` 1.2.14 {pr}`4969`
 
 ## Version 0.26.2
 

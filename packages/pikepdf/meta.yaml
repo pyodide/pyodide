@@ -1,0 +1,43 @@
+package:
+  name: pikepdf
+  version: 9.1.0
+  top-level:
+    - pikepdf
+
+about:
+  home: null
+  PyPI: https://pypi.org/project/pikepdf
+  summary: Read and write PDFs with Python, powered by qpdf
+  license: MPL-2.0
+
+source:
+  url: https://files.pythonhosted.org/packages/6f/f0/8ebf71fb64d8135d61b5fd28ef2785f02d84352cf82357565cde8e67a3ab/pikepdf-9.1.0.tar.gz
+  sha256: e0c8d0a165b61d62495919b4351b5d2c7f0ebd47ea31d94d82c5203e97e07897
+build:
+  cflags: |
+    -fexceptions
+  cxxflags: |
+    -fexceptions
+  ldflags: |
+    -fexceptions
+
+  script: |
+    export QPDF_SOURCE_TREE=${WASM_LIBRARY_DIR}
+    export QPDF_BUILD_LIBDIR=${WASM_LIBRARY_DIR}/lib
+
+requirements:
+  host:
+    - libqpdf
+  run:
+    - Pillow
+    - lxml
+    - packaging
+    - Deprecated
+
+test:
+  imports:
+    - pikepdf
+
+extra:
+  recipe-maintainers:
+    - SF73

@@ -1,0 +1,25 @@
+package:
+  name: libqpdf
+  version: 11.9.1
+  tag:
+    - library
+source:
+  sha256: 98d509e29def377d90ff4a34e48e8e20865600342006bff53e489f689bbbb15d
+  url: https://github.com/qpdf/qpdf/archive/refs/tags/v11.9.1.tar.gz
+
+build:
+  type: shared_library
+  script: |
+    embuilder build zlib
+    embuilder build libjpeg
+    mkdir -p ${WASM_LIBRARY_DIR}/{include,lib}
+    emcmake cmake -S . -B build \
+           -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+           -DUSE_IMPLICIT_CRYPTO=0 \
+           -DREQUIRE_CRYPTO_NATIVE=1 \
+           -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+           -DCMAKE_C_FLAGS="-fexceptions -fPIC" \
+           -DCMAKE_CXX_FLAGS="-fexceptions -fPIC" \
+           -DBUILD_SHARED_LIBS=OFF
+    emmake cmake --build build --target libqpdf
+    emmake cmake --install build --component dev
