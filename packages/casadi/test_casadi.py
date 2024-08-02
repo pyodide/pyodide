@@ -29,20 +29,20 @@ def test_basic_casadi_function_eval(selenium):
 # by default for size reasons. This can be changed by setting
 # -DWITH_IPOPT=ON in the future, but it requires IPOPT to be
 # built beforehand.
-# @pytest.mark.skip(reason="IPOPT not available for now")
-# @run_in_pyodide(packages=["casadi", "numpy"])
-# def test_simple_optimization(selenium):
-#     import casadi as ca
-#     import numpy as np
+@pytest.mark.skip(reason="IPOPT not available for now")
+@run_in_pyodide(packages=["casadi", "numpy"])
+def test_simple_optimization(selenium):
+    import casadi as ca
+    import numpy as np
 
-#     opti = ca.Opti()
-#     x = opti.variable()
-#     y = opti.variable()
-#     opti.minimize((x - 1) ** 2 + (y - 2) ** 2)
-#     opti.solver("ipopt")
-#     sol = opti.solve()
-#     assert np.allclose(sol.value(x), 1.0, atol=1e-6)
-#     assert np.allclose(sol.value(y), 2.0, atol=1e-6)
+    opti = ca.Opti()
+    x = opti.variable()
+    y = opti.variable()
+    opti.minimize((x - 1) ** 2 + (y - 2) ** 2)
+    opti.solver("ipopt")
+    sol = opti.solve()
+    assert np.allclose(sol.value(x), 1.0, atol=1e-6)
+    assert np.allclose(sol.value(y), 2.0, atol=1e-6)
 
 
 @run_in_pyodide(packages=["casadi", "numpy"])
