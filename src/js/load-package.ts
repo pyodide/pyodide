@@ -22,6 +22,74 @@ import {
 } from "./compat";
 import { loadDynlibsFromPackage } from "./dynload";
 
+/**
+ * Initialize the packages index. This is called as early as possible in
+ * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
+ * operations.
+ * @param lockFileURL
+ * @private
+ */
+export async function initializePackageIndex(
+  lockFilePromise: Promise<Lockfile>,
+) {
+  await initNodeModules();
+  const lockfile = await lockFilePromise;
+  if (!lockfile.packages) {
+    throw new Error(
+      "Loaded pyodide lock file does not contain the expected key 'packages'.",
+    );
+  }
+
+  if (lockfile.info.version !== API.version) {
+    throw new Error(
+      "Lock file version doesn't match Pyodide version.\n" +
+        `   lockfile version: ${API.lockfile_info.version}\n` +
+        `   pyodide  version: ${API.version}`,
+    );
+  }
+
+  API.lockfile_info = lockfile.info;
+  API.lockfile_packages = lockfile.packages;
+  API.lockfile_unvendored_stdlibs_and_test = [];
+
+  // micropip compatibility
+  API.repodata_info = lockfile.info;
+  API.repodata_packages = lockfile.packages;
+
+  // compute the inverted index for imports to package names
+  API._import_name_to_package_name = new Map<string, string>();
+  for (let name of Object.keys(API.lockfile_packages)) {
+    const pkg = API.lockfile_packages[name];
+
+    for (let import_name of pkg.imports) {
+      API._import_name_to_package_name.set(import_name, name);
+    }
+
+    if (pkg.package_type === "cpython_module") {
+      API.lockfile_unvendored_stdlibs_and_test.push(name);
+    }
+  }
+
+  API.lockfile_unvendored_stdlibs =
+    API.lockfile_unvendored_stdlibs_and_test.filter(
+      (lib: string) => lib !== "test",
+    );
+  let toLoad = API.config.packages;
+  if (API.config.fullStdLib) {
+    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
+  }
+  await loadPackage(toLoad, { messageCallback() {} });
+  // Have to wait for bootstrapFinalizedPromise before calling Python APIs
+  await API.bootstrapFinalizedPromise;
+  // Set up module_not_found_hook
+  const importhook = API._pyodide._importhook;
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.lockfile_unvendored_stdlibs_and_test,
+  );
+  API.package_loader.init_loaded_packages();
+}
+
 const DEFAULT_CHANNEL = "default channel";
 
 const acquirePackageLock = createLock();
@@ -462,74 +530,6 @@ function filterPackageData({
   package_type,
 }: InternalPackageData): PackageData {
   return { name, version, fileName: file_name, packageType: package_type };
-}
-
-/**
- * Initialize the packages index. This is called as early as possible in
- * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
- * operations.
- * @param lockFileURL
- * @private
- */
-export async function initializePackageIndex(
-  lockFilePromise: Promise<Lockfile>,
-) {
-  await initNodeModules();
-  const lockfile = await lockFilePromise;
-  if (!lockfile.packages) {
-    throw new Error(
-      "Loaded pyodide lock file does not contain the expected key 'packages'.",
-    );
-  }
-
-  if (lockfile.info.version !== API.version) {
-    throw new Error(
-      "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${API.lockfile_info.version}\n` +
-        `   pyodide  version: ${API.version}`,
-    );
-  }
-
-  API.lockfile_info = lockfile.info;
-  API.lockfile_packages = lockfile.packages;
-  API.lockfile_unvendored_stdlibs_and_test = [];
-
-  // micropip compatibility
-  API.repodata_info = lockfile.info;
-  API.repodata_packages = lockfile.packages;
-
-  // compute the inverted index for imports to package names
-  API._import_name_to_package_name = new Map<string, string>();
-  for (let name of Object.keys(API.lockfile_packages)) {
-    const pkg = API.lockfile_packages[name];
-
-    for (let import_name of pkg.imports) {
-      API._import_name_to_package_name.set(import_name, name);
-    }
-
-    if (pkg.package_type === "cpython_module") {
-      API.lockfile_unvendored_stdlibs_and_test.push(name);
-    }
-  }
-
-  API.lockfile_unvendored_stdlibs =
-    API.lockfile_unvendored_stdlibs_and_test.filter(
-      (lib: string) => lib !== "test",
-    );
-  let toLoad = API.config.packages;
-  if (API.config.fullStdLib) {
-    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
-  }
-  await loadPackage(toLoad, { messageCallback() {} });
-  // Have to wait for bootstrapFinalizedPromise before calling Python APIs
-  await API.bootstrapFinalizedPromise;
-  // Set up module_not_found_hook
-  const importhook = API._pyodide._importhook;
-  importhook.register_module_not_found_hook(
-    API._import_name_to_package_name,
-    API.lockfile_unvendored_stdlibs_and_test,
-  );
-  API.package_loader.init_loaded_packages();
 }
 
 const singletonPackageManager = new PackageManager();
