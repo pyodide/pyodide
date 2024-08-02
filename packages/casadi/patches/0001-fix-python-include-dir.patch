@@ -8,6 +8,10 @@ directory via the use of self.include_dirs[0], which isn't guaranteed
 to return the correct interpreter used during compilation. This patch
 replaces it with sysconfig.get_path('include').
 
+This patch can be safely removed when the next release of CasADi comes
+out, i.e., version 3.6.6. The relevant PR is 
+https://github.com/casadi/casadi/pull/3759
+
 ---
  setup.py | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
