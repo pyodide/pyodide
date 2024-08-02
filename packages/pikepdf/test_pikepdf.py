@@ -23,8 +23,7 @@ def test_one_based_pages(selenium):
     @run_in_pyodide(packages=["pikepdf", "pytest"])
     def run(selenium, fourpages):
         from pikepdf import Pdf
-        import pytest
-        
+
         with Pdf.open(fourpages) as pdf:
             assert pdf.pages.p(1) == pdf.pages[0]
             assert pdf.pages.p(4) == pdf.pages[-1]
