@@ -1,7 +1,7 @@
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { loadPackage, loadedPackages } from "./package-manager";
+import { loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";

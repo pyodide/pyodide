@@ -5,7 +5,6 @@ import {
   InternalPackageData,
   PackageLoadMetadata,
 } from "./types";
-import { type Module, type API } from "./types";
 import { IN_NODE } from "./environments";
 import { PyProxy } from "generated/pyproxy";
 import { createResolvable } from "./common/resolveable";
