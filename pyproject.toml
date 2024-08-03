@@ -62,7 +62,7 @@ lint.select = [
   "PLE",    # pylint errors
   "UP",     # pyupgrade
 ]
-lint.ignore = ["E402", "E501", "E731", "E741", "UP038"]
+lint.ignore = ["E402", "E501", "E731", "E741", "UP031", "UP038"]
 # line-length = 219  # E501: Recommended goal is 88 to match black
 target-version = "py311"
 
