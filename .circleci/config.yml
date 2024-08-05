@@ -16,6 +16,9 @@ defaults: &defaults
       CCACHE_DIR: /root/.ccache/
       # Disable the compression of wheels, so they are better compressed by the CDN
       PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+      # For maintainers: set this to 0 if you are making an ABI break, and
+      # reset to 1 after updating the packages to the new ABI.
+      USE_PREBUILT_PACKAGES: 1
 
 jobs:
   build-core:
@@ -578,11 +581,28 @@ workflows:
             tags:
               only: /.*/
 
-      - build-packages:
+      - build-core-packages:
           name: build-packages
           packages: "*"
           requires:
             - build-core
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
+
+      - build-full-packages:
+          name: build-packages
+          environment:
+            ENABLE_PREBUILT_PACKAGES: ${USE_PREBUILT_PACKAGES}
+          packages: "*"
+          requires:
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -666,7 +686,7 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome
+          name: test-core-packages-chrome
           test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
@@ -676,7 +696,7 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-firefox
+          name: test-core-packages-firefox
           test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
@@ -686,7 +706,7 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-node
+          name: test-core-packages-node
           test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
@@ -754,8 +774,8 @@ workflows:
       - deploy-release:
           requires:
             - check-release-version
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
@@ -768,8 +788,8 @@ workflows:
             - s3-deployment
       - deploy-dev:
           requires:
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
