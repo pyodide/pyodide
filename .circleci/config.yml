@@ -690,7 +690,7 @@ workflows:
           test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -700,7 +700,7 @@ workflows:
           test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -710,7 +710,7 @@ workflows:
           test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -731,35 +731,35 @@ workflows:
 
       - benchmark:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - create-xbuild-env:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-cmdline-runner:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - build-pyodide-debug:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - build-test-pyc-packages:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
