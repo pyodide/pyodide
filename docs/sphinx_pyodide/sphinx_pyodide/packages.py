@@ -14,6 +14,7 @@ from pyodide_build.io import MetaConfig
 PYODIDE_TESTONLY = "pyodide.test"
 
 
+# FIXME: Change to parse package lists from pyodide-lock.json
 def get_packages_summary_directive(app):
     class PyodidePackagesSummary(Directive):
         """A directive that dumps the full list of packages included in Pyodide in place."""
