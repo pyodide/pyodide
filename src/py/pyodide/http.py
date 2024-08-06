@@ -40,6 +40,9 @@ class HttpStatusError(OSError):
             super().__init__(f"{status} Client Error: {status_text} for url: {url}")
         elif 500 <= status < 600:
             super().__init__(f"{status} Server Error: {status_text} for url: {url}")
+        raise ValueError(
+            f"Invalid error code not comprised between 400 and 599: {status}"
+        )
 
 
 class BodyUsedError(OSError):
