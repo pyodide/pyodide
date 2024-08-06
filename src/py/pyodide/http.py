@@ -42,7 +42,7 @@ class HttpStatusError(OSError):
             super().__init__(f"{status} Server Error: {status_text} for url: {url}")
         else:
             super().__init__(
-                f"{status} Invalid error code not comprised between 400 and 599: {status_text} for url: {url}"
+                f"{status} Invalid error code not between 400 and 599: {status_text} for url: {url}"
             )
 
 
