@@ -1,12 +1,12 @@
 package:
   name: awkward-cpp
-  version: "33"
+  version: "37"
   top-level:
     - awkward_cpp
 
 source:
-  url: https://files.pythonhosted.org/packages/7e/4f/058f320b0952d7a59fdaa5dbd96ec7c4485271178b2404f644a79ef8b095/awkward-cpp-33.tar.gz
-  sha256: 550adebccd329d18d02e95226d0b89698188fd33e44f07450942c692881927d8
+  url: https://files.pythonhosted.org/packages/3d/40/fa115d845bfd9bb0b69646a2f1f2321fee3bd82cc286eaa202cb5179fbf5/awkward_cpp-37.tar.gz
+  sha256: 6dff5fce4afcadb492bbf7cb20908572d99bdc32aa2bea8681bacfb69b2aa86d
 
 build:
   exports: requested

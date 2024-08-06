@@ -46,13 +46,14 @@ myst:
 
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Added `casadi` 3.6.5 {pr}`4936`
 
 ## Version 0.26.2
 
