@@ -54,6 +54,7 @@ myst:
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Added `casadi` 3.6.5 {pr}`4936`
+- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 
 ## Version 0.26.2
 
@@ -231,8 +232,8 @@ _May 27, 2024_
   {pr}`4666`
 
 - {{ Enhancement }} Added a new `callRelaxed` to PyProxies of callables that
-  discards extra arguments rather than raising a `TypeError``.
-{pr}`4392`
+  discards extra arguments rather than raising a ` TypeError``.
+{pr} `4392`
 
 - {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of
   callables.
