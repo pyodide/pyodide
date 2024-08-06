@@ -114,21 +114,6 @@ async def test_pyfetch_raise_for_status_does_not_raise_200(
 
 
 @run_in_pyodide
-async def cant_create_invalid_HttpStatusErrors(selenium):
-    from pyodide.http import HttpStatusError
-
-    with pytest.raises(
-        ValueError, match="Invalid error code not comprised between 400 and 599"
-    ):
-        HttpStatusError(200, "Can't raise a success error code")
-
-    with pytest.raises(
-        ValueError, match="Invalid error code not comprised between 400 and 599"
-    ):
-        HttpStatusError(999, "Can't raise an unknown error code")
-
-
-@run_in_pyodide
 async def test_pyfetch_unpack_archive(selenium):
     import pathlib
 
