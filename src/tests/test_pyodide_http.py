@@ -130,6 +130,7 @@ async def test_pyfetch_raise_for_status_does_not_raise_200(
     assert error_900.value.status_text == "Wrong error code"
     assert error_900.value.url.endswith("status_900")
 
+
 @run_in_pyodide
 async def test_pyfetch_unpack_archive(selenium):
     import pathlib
