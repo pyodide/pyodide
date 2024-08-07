@@ -216,8 +216,8 @@ class FetchResponse:
             raise BodyUsedError
 
     def raise_for_status(self) -> None:
-        """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
-        if 400 <= self.status < 600:
+        """Raise an :py:class:`HttpStatusError` if the status of the response is an error (400 or more.)"""
+        if 400 <= self.status:
             raise HttpStatusError(self.status, self.status_text, self.url)
 
     def clone(self) -> "FetchResponse":
