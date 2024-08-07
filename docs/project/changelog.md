@@ -44,6 +44,9 @@ myst:
   speedup for methods with arguments is less drastic but still quite a lot.
   {pr}`4961`
 
+- {{ Fix }} `raise_for_status()` now raises for error codes greater or equal to
+  600 {pr}`4989`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
