@@ -1,7 +1,9 @@
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 from typing import Any
 
@@ -59,6 +61,20 @@ def test_pyimport2(selenium):
         platform.destroy();
         """
     )
+
+
+def test_pyimport3():
+    from _pyodide._base import pyimport_impl
+
+    with TemporaryDirectory() as tempdir:
+        Path(tempdir, "aaa").mkdir()
+        Path(tempdir, "aaa", "bbb.py").write_text("ccc = 1")
+        sys.path.insert(0, tempdir)
+
+        aaa = pyimport_impl("aaa")
+        del aaa.bbb
+        assert pyimport_impl("aaa.bbb")
+        assert pyimport_impl("aaa.bbb.ccc") == 1
 
 
 def test_code_runner():
