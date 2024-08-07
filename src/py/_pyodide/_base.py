@@ -652,5 +652,8 @@ def pyimport_impl(path: str) -> Any:
     [stem, *fromlist] = path.rsplit(".", 1)
     res = __import__(stem, fromlist=fromlist)
     if fromlist:
-        res = getattr(res, fromlist[0])
+        try:
+            res = getattr(res, fromlist[0])
+        except AttributeError:
+            res = __import__(path)
     return res
