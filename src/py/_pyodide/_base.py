@@ -11,6 +11,7 @@ import linecache
 import tokenize
 from collections.abc import Generator
 from copy import deepcopy
+from importlib import import_module
 from io import StringIO
 from textwrap import dedent
 from types import CodeType
@@ -649,8 +650,11 @@ def find_imports(source: str) -> list[str]:
 
 
 def pyimport_impl(path: str) -> Any:
-    [stem, *fromlist] = path.rsplit(".", 1)
-    res = __import__(stem, fromlist=fromlist)
-    if fromlist:
-        res = getattr(res, fromlist[0])
-    return res
+    if "." not in path:
+        return import_module(path)
+    stem, name = path.rsplit(".", 1)
+    mod = import_module(stem)
+    try:
+        return getattr(mod, name)
+    except AttributeError:
+        return import_module(path)
