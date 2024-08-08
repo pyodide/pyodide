@@ -45,6 +45,13 @@ class HttpStatusError(OSError):
                 f"{status} Invalid error code not between 400 and 599: {status_text} for url: {url}"
             )
 
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (self.status, self.status_text, self.url),
+            self.__dict__,
+        )
+
 
 class BodyUsedError(OSError):
     def __init__(self, *args: Any) -> None:
