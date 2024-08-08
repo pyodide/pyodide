@@ -581,8 +581,8 @@ workflows:
             tags:
               only: /.*/
 
-      - build-core-packages:
-          name: build-packages
+      - build-packages:
+          name: build-core-packages
           packages: "*"
           requires:
             - build-core
@@ -596,8 +596,8 @@ workflows:
                   - ./packages
                   - ./dist
 
-      - build-full-packages:
-          name: build-packages
+      - build-packages:
+          name: build-full-packages
           environment:
             ENABLE_PREBUILT_PACKAGES: ${USE_PREBUILT_PACKAGES}
           packages: "*"
