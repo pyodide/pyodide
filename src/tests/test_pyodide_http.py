@@ -122,7 +122,7 @@ async def test_pyfetch_raise_for_status_does_not_raise_200(
     resp = await pyfetch(raise_for_status_fixture["/status_900"])
     with pytest.raises(
         HttpStatusError,
-        match="900 Invalid error code not between 400 and 599: Wrong error code for url: .*/status_900",
+        match="900 Invalid error code not between 400 and 599: UNKNOWN for url: .*/status_900",
     ) as error_900:
         resp.raise_for_status()
 
