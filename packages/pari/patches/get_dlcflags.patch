@@ -1,0 +1,22 @@
+Add -fno-common to DLCFLAGS on Darwin
+
+Submitted upstream, but upstream only applied it for PowerPC. Since this
+doesn't break anything and only improves performance, add the flag
+unconditionally.
+
+Index: config/get_dlcflags
+===================================================================
+--- a/config/get_dlcflags	(revision 12594)
++++ b/config/get_dlcflags	(working copy)
+@@ -2,10 +2,7 @@
+ if test -n "$__gnuc__"; then
+   case $osname in
+     cygwin|mingw) DLCFLAGS=;;
+-    darwin) DLCFLAGS=-fPIC
+-      case $arch in
+-        ppc|ppc64) DLCFLAGS="$DLCFLAGS -fno-common"
+-      esac;;
++    darwin) DLCFLAGS="-fPIC -fno-common";;
+     *) DLCFLAGS=-fPIC;;
+   esac
+ else #assume native compiler
