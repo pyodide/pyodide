@@ -74,8 +74,15 @@ def raise_for_status_fixture(httpserver):
         headers={"Access-Control-Allow-Origin": "*"},
         status=504,
     )
+    httpserver.expect_oneshot_request("/status_900").respond_with_data(
+        b"Wrong error code",
+        content_type="text/text",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=900,
+    )
     return {
-        p: httpserver.url_for(p) for p in ["/status_200", "/status_404", "/status_504"]
+        p: httpserver.url_for(p)
+        for p in ["/status_200", "/status_404", "/status_504", "/status_900"]
     }
 
 
@@ -111,6 +118,22 @@ async def test_pyfetch_raise_for_status_does_not_raise_200(
     assert error_504.value.status == 504
     assert error_504.value.status_text == "GATEWAY TIMEOUT"
     assert error_504.value.url.endswith("status_504")
+
+    resp = await pyfetch(raise_for_status_fixture["/status_900"])
+
+    # this should not raise as it is above 600.
+    resp.raise_for_status()
+
+    with pytest.raises(
+        HttpStatusError,
+        match="900 Invalid error code not between 400 and 599: UNKNOWN for url: a_fake_url",
+    ) as error_900:
+        # check that even with >600 error code, we get a message that matches
+        raise HttpStatusError(900, "UNKNOWN", "a_fake_url")
+
+    assert error_900.value.status == 900
+    assert error_900.value.status_text == "UNKNOWN"
+    assert error_900.value.url == "a_fake_url"
 
 
 @run_in_pyodide
