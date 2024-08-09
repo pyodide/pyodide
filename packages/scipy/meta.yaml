@@ -52,7 +52,6 @@ build:
     -fexceptions
   backend-flags: |
     build-dir=build
-    setup-args=-Dbuildtype=debug
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython

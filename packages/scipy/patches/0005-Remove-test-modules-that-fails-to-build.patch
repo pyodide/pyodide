@@ -6,8 +6,6 @@ Subject: [PATCH 5/15] Remove test modules that fails to build
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
 
-Co-Developed-by: Gyeongjae Choi <def6488@gmail.com>
-Co-Authored-By: Gyeongjae Choi <def6488@gmail.com>
 ---
  scipy/integrate/meson.build | 17 -----------------
  scipy/io/meson.build        | 20 --------------------
