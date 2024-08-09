@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.12.0
+  version: 1.13.0
   tag:
     - min-scipy-stack
   top-level:
@@ -17,8 +17,8 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/30/85/cdbf2c3c460fe5aae812917866392068a88d02f07de0fe31ce738734c477/scipy-1.12.0.tar.gz
-  sha256: 4bf5abab8a36d20193c698b0f1fc282c1d083c94723902c447e5d2f1780936a3
+  url: https://files.pythonhosted.org/packages/fb/a3/328965862f41ba67d27ddd26205962007ec87d99eec6d364a29bf00ac093/scipy-1.13.0.tar.gz
+  sha256: 58569af537ea29d3f78e5abd18398459f195546bb3be23d16677fb26616cc11e
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
@@ -32,6 +32,10 @@ source:
     - patches/0009-Mark-mvndst-functions-recursive.patch
     - patches/0010-Make-sreorth-recursive.patch
     - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0012-Remove-fpchec-inline-if-else-constructs.patch
+    - patches/0013-Remove-chla_transtype.patch
+    - patches/0014-Set-wrapper-return-type-to-int.patch
+    - patches/0015-Skip-svd_gesdd-test.patch
 
 build:
   cflags: |
@@ -46,7 +50,8 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
-  backend-flags: build-dir=build
+  backend-flags: |
+    build-dir=build
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
@@ -75,6 +80,7 @@ build:
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+    sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
 
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
@@ -86,6 +92,7 @@ build:
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
+    sed -i 's/^void/int/g' scipy/_build_utils/src/wrap_dummy_g77_abi.c
     sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/, 1)/)/g' scipy/optimize/_trlib/trlib_private.h
 
@@ -164,3 +171,4 @@ extra:
   recipe-maintainers:
     - lesteve
     - steppi
+    - agriyakhetarpal
