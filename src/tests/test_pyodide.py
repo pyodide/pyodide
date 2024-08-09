@@ -72,6 +72,7 @@ def test_pyimport3():
         sys.path.insert(0, tempdir)
 
         aaa = pyimport_impl("aaa")
+        assert pyimport_impl("aaa.bbb")
         del aaa.bbb
         assert pyimport_impl("aaa.bbb")
         assert pyimport_impl("aaa.bbb.ccc") == 1
