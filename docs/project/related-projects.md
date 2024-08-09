@@ -32,7 +32,7 @@
 - [quarto-live](https://github.com/r-wasm/quarto-live) uses Pyodide
   to create interactive code cells and exercises within a variety of
   [Quarto](https://quarto.org/) document.
-  
+
 ## Workarounds for common WASM and browser limitations
 
 - [pyodide-http](https://github.com/koenvo/pyodide-http) Provides patches for
