@@ -1,0 +1,19 @@
+package:
+  name: jsonpatch
+  version: "1.33"
+  top-level:
+    - jsonpatch
+source:
+  url: https://files.pythonhosted.org/packages/73/07/02e16ed01e04a374e644b575638ec7987ae846d25ad97bcc9945a3ee4b0e/jsonpatch-1.33-py2.py3-none-any.whl
+  sha256: 0ae28c0cd062bbd8b8ecc26d7d164fbbea9652a1a3693f3b956c1eae5145dade
+requirements:
+  run:
+    - jsonpointer
+about:
+  home: https://github.com/stefankoegl/python-json-patch
+  PyPI: https://pypi.org/project/jsonpatch
+  summary: Apply JSON-Patches (RFC 6902)
+  license: Modified BSD License
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

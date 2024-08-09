@@ -1,0 +1,25 @@
+package:
+  name: langsmith
+  version: 0.1.5
+  top-level:
+    - langsmith
+source:
+  url: https://files.pythonhosted.org/packages/91/ff/a330448e7f335298bed0129a71742ec8a96c41196a3d96304ed890ff25a7/langsmith-0.1.5-py3-none-any.whl
+  sha256: a1811821a923d90e53bcbacdd0988c3c366aff8f4c120d8777e7af8ecda06268
+about:
+  home: https://smith.langchain.com/
+  PyPI: https://pypi.org/project/langsmith
+  summary: Client library to connect to the LangSmith LLM Tracing and Evaluation Platform.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
+requirements:
+  run:
+    - requests
+    - typing-extensions
+    - pydantic
+test:
+  imports:
+    - langsmith
+    - langsmith.client
