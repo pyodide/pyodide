@@ -369,32 +369,6 @@ EM_JS_VAL(JsVal, JsvPromise_Resolve, (JsVal obj), {
   // clang-format on
 });
 
-// Either syncifyHandler will get filled in by stack_switching/suspenders.mjs or
-// stack switching is not available so syncify will always return an error in
-// JsProxy.c and syncifyHandler will never be called.
-EMSCRIPTEN_KEEPALIVE JsVal (*syncifyHandler)(JsVal promise) = NULL;
-
-EM_JS(void, JsvPromise_Syncify_handleError, (void), {
-  if (!Module.syncify_error) {
-    // In this case we tried to syncify in a context where there is no
-    // suspender. JsProxy.c checks for this case and sets the error flag
-    // appropriately.
-    return;
-  }
-  Module.handle_js_error(Module.syncify_error);
-  delete Module.syncify_error;
-})
-
-JsVal
-JsvPromise_Syncify(JsVal promise)
-{
-  JsVal result = syncifyHandler(promise);
-  if (JsvNull_Check(result)) {
-    JsvPromise_Syncify_handleError();
-  }
-  return result;
-}
-
 // ==================== Buffers ====================
 
 // clang-format off
