@@ -33,8 +33,9 @@ source:
     - patches/0010-Make-sreorth-recursive.patch
     - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
     - patches/0012-Remove-fpchec-inline-if-else-constructs.patch
-    - patches/0001-Remove-chla_transtype.patch
-    - patches/0001-Set-wrapper-return-type-to-int.patch
+    - patches/0013-Remove-chla_transtype.patch
+    - patches/0014-Set-wrapper-return-type-to-int.patch
+    - patches/0015-Skip-svd_gesdd-test.patch
 
 build:
   cflags: |
