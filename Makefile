@@ -325,7 +325,6 @@ dist/pyodide-lock.json: FORCE
 	make -C packages
 	@date +"[%F %T] done building packages..."
 
-
 emsdk/emsdk/.complete:
 	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
