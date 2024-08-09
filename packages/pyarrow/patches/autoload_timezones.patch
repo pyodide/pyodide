@@ -1,0 +1,13 @@
+diff --git a/python/pyarrow/__init__.py.orig b/python/pyarrow/__init__.py
+index e52e0d24..9982f41c 100644
+--- a/python/pyarrow/__init__.py
++++ b/python/pyarrow/__init__.py
+@@ -28,7 +28,7 @@ streaming messaging and interprocess communication.
+ 
+ For more information see the official page at https://arrow.apache.org
+ """
+-
++import unix_timezones
+ import gc as _gc
+ import importlib as _importlib
+ import os as _os
