@@ -84,7 +84,7 @@ def test_pyimport3():
         assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
 
         # case 3 recover deleted value
-        with pytest.raises(AttributeError):
+        with pytest.raises(ModuleNotFoundError):
             pyimport_impl("aaa.bbb.ccc")
         del sys.modules["aaa.bbb"]
         assert pyimport_impl("aaa.bbb.ccc") == 1
