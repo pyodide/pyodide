@@ -44,6 +44,10 @@ myst:
   speedup for methods with arguments is less drastic but still quite a lot.
   {pr}`4961`
 
+- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
+  not included in the cross-build env anymore.
+  {pr}`4995`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
