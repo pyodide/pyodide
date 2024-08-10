@@ -1,0 +1,43 @@
+package:
+  name: rasterio
+  version: 1.3.10
+  top-level:
+    - rasterio
+source:
+  url: https://github.com/rasterio/rasterio/archive/1.3.10.tar.gz
+  sha256: 0da4bea271a7f2ef2c44f528245a4f5c76ec635d075a0bd834300c75924b62c5
+requirements:
+  host:
+    - numpy
+    - gdal
+    - libproj
+  run:
+    - numpy
+    - affine
+    - gdal
+    - attrs
+    - certifi
+    - click
+    - cligj
+      # - click-plugins # only for rio cli?
+build:
+  vendor-sharedlib: true
+  script: |
+    export PACKAGE_DATA=1
+    export GDAL_CONFIG=${WASM_LIBRARY_DIR}/bin/gdal-config
+    export GDAL_DATA=${WASM_LIBRARY_DIR}/share/gdal
+    export PROJ_LIB=${WASM_LIBRARY_DIR}/share/proj
+    echo ${GDAL_CONFIG}
+    echo ${GDAL_DATA}
+    echo ${PROJ_LIB}
+test:
+  imports:
+    - rasterio
+about:
+  home: https://github.com/rasterio/rasterio
+  PyPI: https://pypi.org/project/rasterio
+  summary: Fast and direct raster I/O for use with Numpy and SciPy
+  license: BSD
+extra:
+  recipe-maintainers:
+    - kjmalek

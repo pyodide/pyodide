@@ -29,6 +29,8 @@
   [Quarto](https://quarto.org/) document formats like
   HTML Documents, RevealJS, Books, and Websites.
 - [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
+- [quarto-live](https://github.com/r-wasm/quarto-live) uses Pyodide
+  to create interactive Python code cells and exercises in [Quarto](https://quarto.org/) documents.
 
 ## Workarounds for common WASM and browser limitations
 

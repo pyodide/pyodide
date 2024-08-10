@@ -145,8 +145,6 @@ export type InternalPackageData = {
   sha256: string;
   imports: string[];
   depends: string[];
-  /** @deprecated */
-  shared_library: boolean;
 };
 
 /**
@@ -236,7 +234,6 @@ function recursiveDependencies(
         package_type: "package",
         imports: [],
         depends: [],
-        shared_library: false,
       },
     });
   }
@@ -341,7 +338,6 @@ async function installPackage(
       package_type: "package",
       imports: [] as string[],
       depends: [],
-      shared_library: false,
     };
   }
   const filename = pkg.file_name;

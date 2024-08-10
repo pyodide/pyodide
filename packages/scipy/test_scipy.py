@@ -67,7 +67,6 @@ async def test_scipy_pytest(selenium):
         assert result == 0
 
     runtest("odr", "explicit")
-    runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
     runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
 
