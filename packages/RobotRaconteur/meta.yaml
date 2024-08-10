@@ -11,6 +11,7 @@ requirements:
     - numpy
   host:
     - boost-cpp
+    - openssl
     - numpy
 
 build:
@@ -41,8 +42,9 @@ build:
     -DBoost_RANDOM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_random.a \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_program_options.a \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_program_options.a \
-    -DOPENSSL_CRYPTO_LIBRARY=$WASM_LIBRARY_DIR/lib/libcrypto.a \
-    -DOPENSSL_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+    -DOpenSSL_CRYPTO_LIBRARY=$WASM_LIBRARY_DIR/lib/libcrypto.a \
+    -DOpenSSL_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+    -DOpenSSL_USE_STATIC_LIBS=ON \
     -DUSE_PREGENERATED_SOURCE=ON \
      .
     emmake make -j ${PYODIDE_JOBS:-3}
