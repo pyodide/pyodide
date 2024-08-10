@@ -132,6 +132,7 @@ jobs:
         description: The packages to be built.
         type: string
       enable_prebuilt_packages:
+        default: "0"
         description: Use prebuilt packages instead of actually building packages.
         type: string
     <<: *defaults
