@@ -1,7 +1,9 @@
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 from typing import Any
 
@@ -59,6 +61,35 @@ def test_pyimport2(selenium):
         platform.destroy();
         """
     )
+
+
+def test_pyimport3():
+    from _pyodide._base import eval_code, pyimport_impl
+
+    with TemporaryDirectory() as tempdir:
+        Path(tempdir, "aaa").mkdir()
+        Path(tempdir, "aaa", "bbb.py").write_text("ccc = 1")
+        sys.path.insert(0, tempdir)
+
+        aaa = pyimport_impl("aaa")
+        pyimport_impl("aaa.bbb")
+        del aaa.bbb.ccc
+
+        # case 1 unload parent module
+        del sys.modules["aaa"]
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 2 delete child module
+        del aaa.bbb
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 3 recover deleted value
+        with pytest.raises(ModuleNotFoundError):
+            pyimport_impl("aaa.bbb.ccc")
+        del sys.modules["aaa.bbb"]
+        assert pyimport_impl("aaa.bbb.ccc") == 1
+
+        sys.path.remove(tempdir)
 
 
 def test_code_runner():

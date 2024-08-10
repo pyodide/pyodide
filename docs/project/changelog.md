@@ -44,6 +44,9 @@ myst:
   speedup for methods with arguments is less drastic but still quite a lot.
   {pr}`4961`
 
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
