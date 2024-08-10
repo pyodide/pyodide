@@ -47,7 +47,7 @@ myst:
 - {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
   not included in the cross-build env anymore.
   {pr}`4995`
-  
+
 - {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
   {pr}`4993`
 
