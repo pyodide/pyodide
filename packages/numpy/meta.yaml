@@ -31,3 +31,6 @@ about:
   PyPI: https://pypi.org/project/numpy
   summary: NumPy is the fundamental package for array computing with Python.
   license: BSD
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal
