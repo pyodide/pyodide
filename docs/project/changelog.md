@@ -27,6 +27,9 @@ myst:
 - {{ Enhancement }} Updated stack switching support to handle new JSPI.
   {pr}`4982`
 
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
 ## Version 0.26.2
 
 _July 26, 2024_
