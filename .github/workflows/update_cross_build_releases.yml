@@ -23,7 +23,7 @@ jobs:
       - name: Install pyodide-build
         run: |
           python -m pip install --upgrade pip
-          pip install ./pyodide-build
+          make pyodide_build
 
       - name: Get version number (release)
         if: github.event_name == 'release'
@@ -44,10 +44,10 @@ jobs:
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update cross-build metadata file for version ${{ env.VERSION }}
+          commit-message: Update cross-build metadata file for version ${{ env.VERSION }} [skip ci]
           title: Update cross-build metadata file for version ${{ env.VERSION }}
           body: |
-            This PR updates the cross-build metadata file.
+            This PR updates the cross-build metadata file for version ${{ env.VERSION }}
           branch: update-cross-build-metadata-${{ env.VERSION }}
           base: main
           branch-suffix: timestamp

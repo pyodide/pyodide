@@ -1,9 +1,0 @@
-package:
-  name: libtest_shared
-  version: 1.0.0
-source:
-  sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-  url: https://dummy-url-that-not-exists.com/libtest.tar.gz
-build:
-  type: shared_library
-  script: "pass"

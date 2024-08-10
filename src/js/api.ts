@@ -9,8 +9,9 @@ import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
-import "./literal-map.js";
-import "./abortSignalAny";
+// @ts-ignore
+import LiteralMap from "./common/literal-map";
+import abortSignalAny from "./common/abortSignalAny";
 import {
   makeGlobalsProxy,
   SnapshotConfig,
@@ -64,6 +65,18 @@ API.scheduleCallback = scheduleCallback;
 
 /** @private */
 API.detectEnvironment = detectEnvironment;
+
+// @ts-ignore
+if (AbortSignal.any) {
+  /** @private */
+  // @ts-ignore
+  API.abortSignalAny = AbortSignal.any;
+} else {
+  /** @private */
+  API.abortSignalAny = abortSignalAny;
+}
+
+API.LiteralMap = LiteralMap;
 
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);
