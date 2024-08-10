@@ -68,7 +68,14 @@ async def test_scipy_pytest(selenium):
 
     runtest("odr", "explicit")
     runtest("stats.tests.test_multivariate", "haar")
-    runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
+
+    # function signature mismatch with PROPACK, works with LOBPCG and ARPACK.
+    # Restore this when updating scipy
+    # runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
+    runtest(
+        "sparse.linalg._eigen.tests.test_svds",
+        "(not Test_SVDS_PROPACK) and test_svds_parameter_k_which",
+    )
 
 
 @pytest.mark.driver_timeout(40)
