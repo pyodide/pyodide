@@ -74,8 +74,9 @@ async def test_scipy_pytest(selenium):
     # runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
     runtest(
         "sparse.linalg._eigen.tests.test_svds",
-        "(not Test_SVDS_PROPACK) and test_svds_parameter_k_which"
+        "(not Test_SVDS_PROPACK) and test_svds_parameter_k_which",
     )
+
 
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
