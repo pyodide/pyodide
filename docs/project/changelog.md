@@ -59,6 +59,7 @@ myst:
 - Upgraded `scipy` to 1.13.0 {pr}`4719`
 - Upgraded `gensim` to `4.3.3` {pr}`4719`
 - Upgraded `numpy` to 2.0.1 {pr}`4925`
+- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4930`
 - Added `casadi` 3.6.5 {pr}`4936`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 
