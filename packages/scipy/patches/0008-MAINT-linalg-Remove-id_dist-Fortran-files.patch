@@ -1,7 +1,7 @@
-From ff20089a10768110934f803233471a7b4c67b068 Mon Sep 17 00:00:00 2001
+From 12ba8a395ce04194074a24d362143c22e7ac54bd Mon Sep 17 00:00:00 2001
 From: Ilhan Polat <ilhanpolat@gmail.com>
 Date: Tue, 23 Apr 2024 09:26:38 +0200
-Subject: [PATCH 8/9] MAINT:linalg:Remove id_dist Fortran files
+Subject: [PATCH 8/15] MAINT:linalg:Remove id_dist Fortran files
 
 [skip ci]
 
@@ -41,7 +41,7 @@ DOC:linalg: Fix grammar and typos
  scipy/linalg/_decomp_interpolative.pyx        | 1992 +++++++++++
  scipy/linalg/_interpolative_backend.py        | 1681 ---------
  scipy/linalg/interpolative.py                 |  316 +-
- scipy/linalg/meson.build                      |   54 +-
+ scipy/linalg/meson.build                      |   56 +-
  scipy/linalg/src/id_dist/README.txt           |    6 -
  scipy/linalg/src/id_dist/doc/doc.bib          |   19 -
  scipy/linalg/src/id_dist/doc/doc.tex          |  977 ------
@@ -83,7 +83,7 @@ DOC:linalg: Fix grammar and typos
  scipy/linalg/src/id_dist/src/idzr_rsvd.f      |  159 -
  scipy/linalg/src/id_dist/src/prini.f          |  113 -
  scipy/linalg/tests/test_interpolative.py      |   78 +-
- 46 files changed, 2158 insertions(+), 18883 deletions(-)
+ 46 files changed, 2159 insertions(+), 18884 deletions(-)
  create mode 100644 scipy/linalg/_decomp_interpolative.pyx
  delete mode 100644 scipy/linalg/_interpolative_backend.py
  delete mode 100644 scipy/linalg/src/id_dist/README.txt
@@ -4441,10 +4441,11 @@ diff --git a/scipy/linalg/meson.build b/scipy/linalg/meson.build
 index cc208092e..777edd008 100644
 --- a/scipy/linalg/meson.build
 +++ b/scipy/linalg/meson.build
-@@ -121,57 +121,14 @@ interpolative_module = custom_target('interpolative_module',
-   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+@@ -103,58 +103,15 @@ interpolative_module = custom_target('interpolative_module',
+   input: 'interpolative.pyf',
+   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
  )
- 
+-
 -# id_dist contains a copy of FFTPACK, which has type mismatch warnings
 -# that are hard to fix. This code is terrible and noisy during the build,
 -# silence it completely.
@@ -4490,24 +4491,25 @@ index cc208092e..777edd008 100644
 -    'src/id_dist/src/prini.f',
 -    interpolative_module,
 -  ],
+-  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
 +# _decomp_interpolative
 +py3.extension_module('_decomp_interpolative',
 +  linalg_init_cython_gen.process('_decomp_interpolative.pyx'),
 +  c_args: cython_c_args,
 +  dependencies: np_dep,
-   c_args: numpy_nodepr_api,
--  fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
++  c_args: numpy_nodepr_api,
    link_args: version_link_args,
 -  dependencies: [lapack, fortranobject_dep],
+   override_options: ['b_lto=false'],
    install: true,
 -  link_language: 'fortran',
    subdir: 'scipy/linalg'
  )
  
-@@ -303,7 +260,6 @@ python_sources = [
+@@ -273,7 +230,6 @@ python_sources = [
+   '_decomp_schur.py',
    '_decomp_svd.py',
    '_expm_frechet.py',
-   '_flinalg_py.py',
 -  '_interpolative_backend.py',
    '_matfuncs.py',
    '_matfuncs_expm.pyi',
@@ -21862,5 +21864,5 @@ index ddc56f7c7..95b83dfad 100644
                        [0, 0, 0, 1, 1, 1],
                        [1, 0, 0, 1, 0, 0],
 -- 
-2.34.1
+2.39.3 (Apple Git-146)
 
