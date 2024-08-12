@@ -62,7 +62,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     FIREFOX_VERSION="nightly-latest"; \
     FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64-aarch64&lang=en-US"; \
   fi \
-  if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+  && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
     GECKODRIVER_ARCH="linux64"; \
   elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     GECKODRIVER_ARCH="linux-aarch64"; \
@@ -70,9 +70,11 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "Unsupported platform: $TARGETPLATFORM"; \
     exit 1; \
   fi \
-  if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" ] || [ $FIREFOX_VERSION = "devedition-latest" ] || [ $FIREFOX_VERSION = "esr-latest" ]; \
-  then FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
-  else FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
+  && if [ "$FIREFOX_VERSION" = "latest" ] || [ "$FIREFOX_VERSION" = "nightly-latest" ] || [ "$FIREFOX_VERSION" = "devedition-latest" ] || [ "$FIREFOX_VERSION" = "esr-latest" ]; then \
+    FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
+  else \
+    FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" \
+    && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
   fi \
   && wget --no-verbose -O /tmp/firefox.tar.bz2 $FIREFOX_DOWNLOAD_URL \
   && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
@@ -87,7 +89,7 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
   && chmod 755 /opt/geckodriver-$GECKODRIVER_VERSION \
   && ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/local/bin/geckodriver \
   && echo "Using Firefox version: $(firefox --version)" \
-  && echo "Using GeckoDriver version: "$GECKODRIVER_VERSION
+  && echo "Using GeckoDriver version: $GECKODRIVER_VERSION, built for $GECKODRIVER_ARCH"
 
 
 #============================================
@@ -105,23 +107,24 @@ RUN \
   if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "Chrome and Chrome web driver aren't currently supported on arm64, skipping installation"; \
   else \
-    if [ $CHROME_VERSION = "latest" ]; \
-    then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
-    else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
+    if [ "$CHROME_VERSION" = "latest" ]; then \
+      CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
+    else \
+      CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
     fi \
     && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
     && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
-    && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
+    && wget --no-verbose -O /tmp/google-chrome.deb "${CHROME_DOWNLOAD_URL}" \
     && apt-get update \
     && apt install -qqy /tmp/google-chrome.deb \
     && rm -f /tmp/google-chrome.deb \
     && rm -rf /var/lib/apt/lists/* \
-    && wget --no-verbose -O /tmp/chromedriver-linux64.zip ${CHROMEDRIVER_DOWNLOAD_URL} \
+    && wget --no-verbose -O /tmp/chromedriver-linux64.zip "${CHROMEDRIVER_DOWNLOAD_URL}" \
     && unzip /tmp/chromedriver-linux64.zip -d /opt/ \
     && rm /tmp/chromedriver-linux64.zip \
     && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && echo "Using Chrome version: $(google-chrome --version)" \
-    && echo "Using Chrome Driver version: $(chromedriver --version)" \
+    && echo "Using Chrome Driver version: $(chromedriver --version)"; \
   fi
 
 COPY --from=node-image /usr/local/bin/node /usr/local/bin/
