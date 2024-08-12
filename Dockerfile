@@ -1,5 +1,7 @@
-FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.1-slim-bookworm
+FROM --platform=$TARGETPLATFORM node:20.11-bookworm-slim AS node-image
+FROM --platform=$TARGETPLATFORM python:3.12.1-slim-bookworm
+
+ARG TARGETPLATFORM
 
 # Requirements for building packages
 RUN apt-get update \
