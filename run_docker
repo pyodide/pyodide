@@ -115,7 +115,7 @@ else
 fi
 
 if [ "$BUILD_IMAGE" = true ]; then
-  echo "Building Docker image for $DOCKER_PLATFORM..."
+  echo "Building image and spinning up Docker container for $DOCKER_PLATFORM..."
   docker buildx build --platform $DOCKER_PLATFORM $NO_CACHE -t "$PYODIDE_DOCKER_IMAGE" .
 fi
 
