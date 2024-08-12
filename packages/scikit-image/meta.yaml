@@ -33,3 +33,7 @@ about:
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
   license: Modified BSD
+extra:
+  recipe-maintainers:
+    - lagru
+    - mkcor
