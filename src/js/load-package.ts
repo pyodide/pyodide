@@ -302,7 +302,6 @@ class PackageManager {
           package_type: "package",
           imports: [],
           depends: [],
-          shared_library: false,
         },
       });
     }
@@ -450,7 +449,6 @@ class PackageManager {
         package_type: "package",
         imports: [] as string[],
         depends: [],
-        shared_library: false,
       };
     }
     const filename = pkg.file_name;

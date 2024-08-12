@@ -373,8 +373,6 @@ export type InternalPackageData = {
   sha256: string;
   imports: string[];
   depends: string[];
-  /** @deprecated */
-  shared_library: boolean;
 };
 
 /**
