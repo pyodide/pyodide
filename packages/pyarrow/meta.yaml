@@ -5,7 +5,7 @@ package:
     - pyarrow
 source:
   url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.27.3/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
-  sha256: b2e55d44d7136e47932c0b33b0372d46e83e9f4d4fde8d67eea5d45ce58a1372
+  sha256: 0da35930827a468d20ee285398c1f48dfd1721b3f8ac2b629ebad5e7cdc88d3d
 requirements:
   run:
     - numpy
