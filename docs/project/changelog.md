@@ -21,6 +21,14 @@ myst:
   timezone handling.
   {pr}`4889`
 
+- {{ Enhancement }} `HttpStatusError` now store their the corresponding request
+  `status`, `status_message` and `url`
+  {pr}`4974`.
+
+- {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
+  depend on shared libraries link to the shared libraries explicitly.
+  {pr}`4876`
+
 - {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
   manually or automatically.
   {pr}`4846`
@@ -28,14 +36,33 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4961`
+
+- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
+  not included in the cross-build env anymore.
+  {pr}`4995`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Upgraded `scipy` to 1.13.0 {pr}`4719`
+- Added `casadi` 3.6.5 {pr}`4936`
+- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 
 ## Version 0.26.2
 

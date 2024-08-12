@@ -22,13 +22,15 @@
   [IDE](https://futurecoder.io/course/#ide) with a REPL,
   debuggers, and automatic installation of
   any imported packages supported by Pyodide's `micropip`.
-- [PyRepl.io](https://pyrepl.io) uses Pyodide for a Python interpreter in your browser. PyRepl is made for creating and sharing code snippets. Embed interactive Python examples in your documentation, blog posts, presentations and more.
+- [react-py Playground](https://elilambnz.github.io/react-py/playground) uses Pyodide as part of the `react-py` package documentation. Try out code snippets and packages directly in your browser without logging in.
 - [marimo](https://github.com/marimo-team/marimo) is a reactive notebook that is compatible with Pyodide with an [online editor](https://marimo.app/) that runs entirely in the browser. These notebooks can also run as standalone applications or embedded in blogs.
 - [quarto-pyodide](https://github.com/coatless-quarto/pyodide) uses Pyodide
   to create interactive code cells and documents within a variety of
   [Quarto](https://quarto.org/) document formats like
   HTML Documents, RevealJS, Books, and Websites.
 - [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
+- [quarto-live](https://github.com/r-wasm/quarto-live) uses Pyodide
+  to create interactive Python code cells and exercises in [Quarto](https://quarto.org/) documents.
 
 ## Workarounds for common WASM and browser limitations
 

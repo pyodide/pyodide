@@ -1,0 +1,68 @@
+From 0577d6e0b0dc5bf127b1041018cfb41137d9f39c Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Fri, 2 Aug 2024 23:05:20 +0530
+Subject: [PATCH 2/3] Remove size max check
+
+In WebAssembly (currently 32-bit), SIZE_MAX is equal to UINT_MAX, which meant
+these functions weren't being compiled, so there was no way to serialize or
+deserialize unsigned int values, leading to compile errors when these functions
+were called elsewhere. This patch removes the check for SIZE_MAX != UINT_MAX.
+
+This patch can be revisited after the upstream PR is resolved:
+https://github.com/casadi/casadi/pull/3785
+
+---
+ casadi/core/serializing_stream.cpp | 2 --
+ casadi/core/serializing_stream.hpp | 7 +++----
+ 2 files changed, 3 insertions(+), 6 deletions(-)
+
+diff --git a/casadi/core/serializing_stream.cpp b/casadi/core/serializing_stream.cpp
+index f3101f84e..e68caaf5c 100644
+--- a/casadi/core/serializing_stream.cpp
++++ b/casadi/core/serializing_stream.cpp
+@@ -155,7 +155,6 @@ namespace casadi {
+       for (int j=0;j<4;++j) pack(c[j]);
+     }
+ 
+-#if SIZE_MAX != UINT_MAX
+     void DeserializingStream::unpack(unsigned int& e) {
+       assert_decoration('u');
+       uint32_t n;
+@@ -171,7 +170,6 @@ namespace casadi {
+       const char* c = reinterpret_cast<const char*>(&n);
+       for (int j=0;j<4;++j) pack(c[j]);
+     }
+-#endif
+ 
+     void DeserializingStream::unpack(bool& e) {
+       assert_decoration('b');
+diff --git a/casadi/core/serializing_stream.hpp b/casadi/core/serializing_stream.hpp
+index 47070d0e6..81c8d56bd 100644
+--- a/casadi/core/serializing_stream.hpp
++++ b/casadi/core/serializing_stream.hpp
+@@ -99,9 +99,8 @@ namespace casadi {
+     void unpack(Slice& e);
+     void unpack(int& e);
+ 
+-#if SIZE_MAX != UINT_MAX
+     void unpack(unsigned int& e);
+-#endif
++
+     void unpack(bool& e);
+     void unpack(casadi_int& e);
+     void unpack(size_t& e);
+@@ -236,9 +235,9 @@ namespace casadi {
+     void pack(const GenericType& e);
+     void pack(std::istream& s);
+     void pack(int e);
+-#if SIZE_MAX != UINT_MAX
++
+     void pack(unsigned int e);
+-#endif
++
+     void pack(bool e);
+     void pack(casadi_int e);
+     void pack(size_t e);
+-- 
+2.39.3 (Apple Git-146)
+

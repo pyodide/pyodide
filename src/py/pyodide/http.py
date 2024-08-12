@@ -28,7 +28,14 @@ __all__ = [
 
 
 class HttpStatusError(OSError):
+    status: int
+    status_text: str
+    url: str
+
     def __init__(self, status: int, status_text: str, url: str) -> None:
+        self.status = status
+        self.status_text = status_text
+        self.url = url
         if 400 <= status < 500:
             super().__init__(f"{status} Client Error: {status_text} for url: {url}")
         elif 500 <= status < 600:
