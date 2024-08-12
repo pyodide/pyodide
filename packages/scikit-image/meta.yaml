@@ -1,14 +1,14 @@
 package:
   name: scikit-image
-  version: 0.23.2
+  version: 0.24.0
   top-level:
     - skimage
       # - doc  # scikit-image has top level `doc` directory... but it is too common name so we don't want to use it as a hint for top-level import.
 source:
   patches:
     - patches/make-tifffile-optional.patch
-  sha256: c9da4b2c3117e3e30364a3d14496ee5c72b09eb1a4ab1292b302416faa360590
-  url: https://files.pythonhosted.org/packages/24/ce/183ff64ed397911a9d3b671714f8a2618af407b427a40ca48550fb0f7bd7/scikit_image-0.23.2.tar.gz
+  sha256: 5d16efe95da8edbeb363e0c4157b99becbd650a60b77f6e3af5768b66cf007ab
+  url: https://files.pythonhosted.org/packages/5d/c5/bcd66bf5aae5587d3b4b69c74bee30889c46c9778e858942ce93a030e1f3/scikit_image-0.24.0.tar.gz
 
 build:
   script: |
@@ -33,3 +33,7 @@ about:
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
   license: Modified BSD
+extra:
+  recipe-maintainers:
+    - lagru
+    - mkcor
