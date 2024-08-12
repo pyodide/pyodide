@@ -57,12 +57,9 @@ ARG GECKODRIVER_VERSION="0.34.0"
 
 # https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64-aarch64&lang=en-US
 
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    echo "Note: Firefox is available as nightly-latest on Linux arm64, using it"; \
-    FIREFOX_VERSION="nightly-latest"; \
-    FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64-aarch64&lang=en-US"; \
-  fi \
-  && if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+RUN \
+  # Handle GeckoDriver architecture
+  if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
     GECKODRIVER_ARCH="linux64"; \
   elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     GECKODRIVER_ARCH="linux-aarch64"; \
@@ -70,11 +67,20 @@ RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "Unsupported platform: $TARGETPLATFORM"; \
     exit 1; \
   fi \
+  # Handle Firefox version based on FIREFOX_VERSION and Linux amd64
   && if [ "$FIREFOX_VERSION" = "latest" ] || [ "$FIREFOX_VERSION" = "nightly-latest" ] || [ "$FIREFOX_VERSION" = "devedition-latest" ] || [ "$FIREFOX_VERSION" = "esr-latest" ]; then \
     FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
   else \
     FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" \
     && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
+  fi && \
+  # Handle Firefox version based on FIREFOX_VERSION and Linux arm64. Here we use
+  # "nightly-latest", because it is the only one available for arm64 (as of 13/08/2024)
+  # TODO: Simplify this when Firefox non-nightlies are available for arm64
+  if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    echo "Note: Firefox is available as nightly-latest on Linux arm64, using it and ignoring $FIREFOX_VERSION"; \
+    FIREFOX_VERSION="nightly-latest"; \
+    FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64-aarch64&lang=en-US"; \
   fi \
   && wget --no-verbose -O /tmp/firefox.tar.bz2 $FIREFOX_DOWNLOAD_URL \
   && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
