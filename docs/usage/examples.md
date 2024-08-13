@@ -10,7 +10,6 @@ This section contains a collection of examples using Pyodide, contributed by the
 
 - [Run a console which communicates with pyodide in a WebWorker](../examples/console_webworker.html){.external} - by [@joemarshall](https://github.com/joemarshall)
 
-
 <!-- Contribution Guide -->
 <!--
 We welcome contributions to this section.

@@ -74,13 +74,13 @@
 
       #description-header {
         background-color: #fff;
-        width:100%;
-        max-width:80ch;
-        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        width: 100%;
+        max-width: 80ch;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         padding: 4px;
       }
       #description-header h1 {
-        font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
       }
     </style>
   </head>
@@ -91,11 +91,20 @@
     </div>
     <div id="description-header">
       <h1>Webworker console</h1>
-      <p>This example runs Pyodide in a web-worker, and sends javascript calls from the console to 
-        the web-worker. This means that long running python calls don't hang the main window Javascript. 
-        Really useful for things like running pytest tests, where you want to see output as it happens. </p>
-    <p>HTML Code: <a href="console_webworker.html" download>console_webworker.html</a></p>
-    <p>Worker Code: <a href="console_webworker.js" download>console_webworker.js</a></p>
+      <p>
+        This example runs Pyodide in a web-worker, and sends javascript calls
+        from the console to the web-worker. This means that long running python
+        calls don't hang the main window Javascript. Really useful for things
+        like running pytest tests, where you want to see output as it happens.
+      </p>
+      <p>
+        HTML Code:
+        <a href="console_webworker.html" download>console_webworker.html</a>
+      </p>
+      <p>
+        Worker Code:
+        <a href="console_webworker.js" download>console_webworker.js</a>
+      </p>
     </div>
     <div id="loading"></div>
     <script>

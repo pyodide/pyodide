@@ -275,7 +275,7 @@ def write_examples(app):
     example_html_dir = Path("./usage/examples")
 
     for example in example_html_dir.iterdir():
-        if not example.is_file() or example.suffix not in [".html",".js"]:
+        if not example.is_file() or example.suffix not in [".html", ".js"]:
             continue
         text = example.read_text()
         text = text.replace("{{ PYODIDE_BASE_URL }}", app.config.CDN_URL)
