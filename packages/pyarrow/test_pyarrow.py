@@ -1,8 +1,8 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide
-def test_read_write_parquet():
+@run_in_pyodide(packages=["pyarrow", "numpy", "pandas"])
+def test_read_write_parquet(selenium):
     import numpy as np
     import pandas as pd
     import pyarrow as pa
