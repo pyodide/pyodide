@@ -21,12 +21,53 @@ myst:
   timezone handling.
   {pr}`4889`
 
-- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
-  defined in the global scope.
-  {pr}`4866`
+- {{ Enhancement }} `HttpStatusError` now store their the corresponding request
+  `status`, `status_message` and `url`
+  {pr}`4974`.
 
-- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
-  {pr}`4865`
+- {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
+  depend on shared libraries link to the shared libraries explicitly.
+  {pr}`4876`
+
+- {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
+  manually or automatically.
+  {pr}`4846`
+
+- {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
+  {pr}`4902`
+
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4961`
+
+- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
+  not included in the cross-build env anymore.
+  {pr}`4995`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
+### Packages
+
+- Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
+- Upgraded `libcst` to 1.4.0 {pr}`4856`
+- Upgraded `lakers` to 0.3.3 {pr}`4885`
+- Upgraded `bokeh` to 3.4.2 {pr}`4888`
+- Upgraded `pandas` to 2.2.2 {pr}`4893`
+- Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Upgraded `scipy` to 1.13.0 {pr}`4719`
+- Upgraded `scikit-image` to 0.24.0 {pr}`5003`
+- Added `casadi` 3.6.5 {pr}`4936`
+- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
+
+## Version 0.26.2
+
+_July 26, 2024_
 
 - {{ Fix }} Don't leak the values in a dictionary when applying `to_js` to it.
   {pr}`4853`
@@ -44,19 +85,12 @@ myst:
   circumstances introduced by {pr}`4837`. See {issue}`4861`.
   {pr}`4861`
 
-- {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
-  manually or automatically.
-  {pr}`4846`
-
 - {{ Fix }} Recursive fortran functions now work correctly in scipy {issue}`4818`.
   {pr}`4822`
 
 - {{ Enhancement }} Allow setting `dont_inherit` and `optimize` for `compile`
   in `CodeRunner` and `Console`.
   {pr}`4897`
-
-- {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
-  {pr}`4902`
 
 - {{ Fix }} Fixed a bug that caused `Console`'s `formatted_traceback` being truncated
   unexpectedly when `filename` is specified.
@@ -77,14 +111,15 @@ myst:
   JavaScript code that iterates a `PyProxy`.
   {pr}`4919`
 
+- {{ Fix }} Pyodide now loads correctly when `define` and `define.amd` are
+  defined in the global scope.
+  {pr}`4866`
+
+- {{ Fix }} Fixed keyboard input handling in SDL-based packages.
+  {pr}`4865`
+
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5 {pr}`4823`
-- Upgraded `libcst` to 1.4.0 {pr}`4856`
-- Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `bokeh` to 3.4.2 {pr}`4888`
-- Upgraded `pandas` to 2.2.2 {pr}`4893`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Added `duckdb` 1.0.0 {pr}`4684`
 
 ## Version 0.26.1

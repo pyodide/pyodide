@@ -226,7 +226,7 @@ jobs:
       - run:
           name: create xbuild environment
           command: |
-            pip install -e ./pyodide-build
+            make pyodide_build
             python tools/create_xbuildenv.py .
 
       - run:
@@ -254,7 +254,7 @@ jobs:
           name: Install requirements
           command: |
             pip install -r requirements.txt
-            pip install -e ./pyodide-build
+            make pyodide_build
 
       - run:
           name: Py-compile packages
@@ -300,7 +300,7 @@ jobs:
             make npm-link
             mkdir test-results
             pip install -r requirements.txt
-            pip install -e ./pyodide-build
+            make pyodide_build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
             else
@@ -379,6 +379,7 @@ jobs:
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
             source pyodide_env.sh
+            make pyodide_build
             cd ~
             mkdir test
             cd test
@@ -387,7 +388,7 @@ jobs:
 
             python -m venv .venv-host
             source .venv-host/bin/activate
-            pip install $PYODIDE_ROOT/pyodide-build
+
             pyodide venv .venv-pyodide
             source .venv-pyodide/bin/activate
 
@@ -676,7 +677,7 @@ workflows:
 
       - test-main:
           name: test-core-node-nodylink
-          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-build/pyodide_build/tests
+          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core-nodylink
           filters:
@@ -703,7 +704,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ pyodide-build/pyodide_build/tests
+          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
           requires:
             - build-core
           filters:

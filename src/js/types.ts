@@ -230,7 +230,7 @@ export interface FS {
   mkdev: (path: string, dev: number) => FSNode;
   filesystems: any;
   stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (node: FSNode) => string[];
+  readdir: (path: string) => string[];
   isDir: (mode: number) => boolean;
   isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (
@@ -265,6 +265,8 @@ export type PreRunFunc = (Module: Module) => void;
 
 export type ReadFileType = (path: string) => Uint8Array;
 
+// File System-like type which can be passed to
+// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
 export type LoadDynlibFS = {
   readFile: ReadFileType;
   findObject: (path: string, dontResolveLastLink: boolean) => any;
@@ -300,6 +302,8 @@ export interface Module {
       global?: boolean;
       fs: LoadDynlibFS;
     },
+    localScope?: object | null,
+    handle?: number,
   ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
