@@ -158,7 +158,7 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch $@
 
-dist/pyodide.js src/js/generated/_pyodide.out.js: \
+src/js/generated/_pyodide.out.js:            \
 		src/js/*.ts                          \
 		src/js/common/*                      \
 		src/js/vendor/*                      \
@@ -166,7 +166,14 @@ dist/pyodide.js src/js/generated/_pyodide.out.js: \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
 		node_modules/.installed
-	cd src/js && npm run build && cd -
+	cd src/js && npm run build-inner && cd -
+
+dist/pyodide.js:                             \
+		src/js/pyodide.ts                    \
+		src/js/compat.ts                     \
+		src/js/emscripten-settings.ts        \
+		src/js/version.ts
+	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
 	node src/core/stack_switching/esbuild.config.mjs
