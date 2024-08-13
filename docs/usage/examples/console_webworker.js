@@ -1,5 +1,5 @@
 // run pyodide interactively in a web-worker
-import { loadPyodide } from "{{PYODIDE_BASE_URL}}/pyodide.mjs";
+import { loadPyodide } from "{{ PYODIDE_BASE_URL }}pyodide.mjs";
 
 // functions to send messages back to client
 function on_echo(msg, ...opts) {
