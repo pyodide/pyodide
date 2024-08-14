@@ -4443,7 +4443,7 @@ index cc208092e..777edd008 100644
 +++ b/scipy/linalg/meson.build
 @@ -103,58 +103,15 @@ interpolative_module = custom_target('interpolative_module',
    input: 'interpolative.pyf',
-   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
  )
 -
 -# id_dist contains a copy of FFTPACK, which has type mismatch warnings
