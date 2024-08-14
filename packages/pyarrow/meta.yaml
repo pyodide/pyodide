@@ -4,8 +4,8 @@ package:
   top-level:
     - pyarrow
 source:
-  url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.27.3/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
-  sha256: 0da35930827a468d20ee285398c1f48dfd1721b3f8ac2b629ebad5e7cdc88d3d
+  url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.26.2/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: ffa61d6410f960829727efe0a23a934da88972d993c13601351abbbc1f57ee2a
 requirements:
   run:
     - numpy
