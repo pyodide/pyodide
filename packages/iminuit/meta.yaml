@@ -11,6 +11,8 @@ requirements:
   run:
     - numpy # runtime only
 build:
+  script: |
+    export CMAKE_ARGS="-DPYBIND11_FINDPYTHON=ON"
   cxxflags: -fexceptions
   ldflags: -fexceptions
 about:
