@@ -79,6 +79,9 @@ target-version = "py311"
 "tools/*" = [
   "B008",  # Do not perform function call `typer.Optional` in argument defaults
 ]
+"packages/*" = [
+  "PLC2401", # Unicode argument names are valid
+]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = ["typer.Argument", "typer.Option"]
