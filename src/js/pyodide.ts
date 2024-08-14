@@ -25,6 +25,8 @@ declare function _createPyodideModule(
   settings: EmscriptenSettings,
 ): Promise<Module>;
 
+declare const BUILD_ID: string;
+
 /**
  * See documentation for loadPyodide.
  * @hidden
@@ -46,6 +48,7 @@ export type ConfigType = {
   _makeSnapshot: boolean;
   enableRunUntilComplete: boolean;
   checkAPIVersion: boolean;
+  BUILD_ID: string;
 };
 
 /**
@@ -216,6 +219,7 @@ export async function loadPyodide(
     packages: [],
     enableRunUntilComplete: false,
     checkAPIVersion: true,
+    BUILD_ID,
   };
   const config = Object.assign(default_config, options) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
