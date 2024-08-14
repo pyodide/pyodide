@@ -80,10 +80,12 @@ def raise_for_status_fixture(httpserver):
 
 
 @run_in_pyodide
-async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
+async def test_pyfetch_raise_for_status_does_not_raise_200(
+    selenium, raise_for_status_fixture
+):
     import pytest
 
-    from pyodide.http import pyfetch
+    from pyodide.http import HttpStatusError, pyfetch
 
     resp = await pyfetch(raise_for_status_fixture["/status_200"])
     resp.raise_for_status()
@@ -91,15 +93,24 @@ async def test_pyfetch_raise_for_status(selenium, raise_for_status_fixture):
 
     resp = await pyfetch(raise_for_status_fixture["/status_404"])
     with pytest.raises(
-        OSError, match="404 Client Error: NOT FOUND for url: .*/status_404"
-    ):
+        HttpStatusError, match="404 Client Error: NOT FOUND for url: .*/status_404"
+    ) as error_404:
         resp.raise_for_status()
+
+    assert error_404.value.status == 404
+    assert error_404.value.status_text == "NOT FOUND"
+    assert error_404.value.url.endswith("status_404")
 
     resp = await pyfetch(raise_for_status_fixture["/status_504"])
     with pytest.raises(
-        OSError, match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504"
-    ):
+        HttpStatusError,
+        match="504 Server Error: GATEWAY TIMEOUT for url: .*/status_504",
+    ) as error_504:
         resp.raise_for_status()
+
+    assert error_504.value.status == 504
+    assert error_504.value.status_text == "GATEWAY TIMEOUT"
+    assert error_504.value.url.endswith("status_504")
 
 
 @run_in_pyodide
@@ -196,3 +207,56 @@ def test_pyfetch_cors_error(selenium, httpserver):
             data = await pyodide.http.pyfetch('{request_url}')
         """
     )
+
+
+@run_in_pyodide
+async def test_pyfetch_manually_abort(selenium):
+    import pytest
+
+    from pyodide.http import AbortError, pyfetch
+
+    resp = await pyfetch("/")
+    resp.abort("reason")
+    with pytest.raises(AbortError, match="reason"):
+        await resp.text()
+
+
+@run_in_pyodide
+async def test_pyfetch_abort_on_cancel(selenium):
+    from asyncio import CancelledError, ensure_future
+
+    import pytest
+
+    from pyodide.http import pyfetch
+
+    future = ensure_future(pyfetch("/"))
+    future.cancel()
+    with pytest.raises(CancelledError):
+        await future
+
+
+@run_in_pyodide
+async def test_pyfetch_abort_cloned_response(selenium):
+    import pytest
+
+    from pyodide.http import AbortError, pyfetch
+
+    resp = await pyfetch("/")
+    clone = resp.clone()
+    clone.abort()
+    with pytest.raises(AbortError):
+        await clone.text()
+
+
+@run_in_pyodide
+async def test_pyfetch_custom_abort_signal(selenium):
+    import pytest
+
+    from js import AbortController
+    from pyodide.http import AbortError, pyfetch
+
+    controller = AbortController.new()
+    controller.abort()
+    f = pyfetch("/", signal=controller.signal)
+    with pytest.raises(AbortError):
+        await f

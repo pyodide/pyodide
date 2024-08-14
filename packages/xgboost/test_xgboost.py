@@ -231,7 +231,7 @@ def test_pandas_categorical(selenium):
     assert transformed.columns[0].min() == 0
 
     # test missing value
-    X = pd.DataFrame({"f0": ["a", "b", np.NaN]})
+    X = pd.DataFrame({"f0": ["a", "b", np.nan]})
     X["f0"] = X["f0"].astype("category")  # type: ignore[call-overload]
     arr, _, _ = xgb.data._transform_pandas_df(X, enable_categorical=True)
     assert not np.any(arr == -1.0)

@@ -102,6 +102,7 @@ static PyObject* MutableSequence;
 static PyObject* Sequence;
 static PyObject* MutableMapping;
 static PyObject* Mapping;
+static PyObject* future_helper_mod;
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
                  "This borrowed proxy was automatically destroyed at the "
@@ -362,19 +363,143 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   return nullToUndefined(result);
 });
 
+// JsMethodCallSingleton is a special structure which we return from
+// JsProxy_GetMethod. The purpose of it is to optimize method calls
+// `jsproxy.f()`. When we execute JsProxy_GetMethod(jsproxy, f_unicode), we
+// stuff the JS function `jsproxy.f`, the JS object `jsproxy`, and the method
+// signature into one of these structs and return it. Then the call is routed to
+// this struct which avoids making a JsProxy.
+//
+// As an additional optimization, we observe that the pattern is always:
+//
+// method = PyObject_GetMethod(obj, method_name);
+// result = PyObject_Call(method, obj, ... other args)
+// Py_DECREF(method);
+//
+// In other words, the return value of `_PyObject_GetMethod` is used exactly
+// once. To save on allocations, we make a global called method_call_singleton
+// and reuse it if the reference count is 1 (since then the only reference to it
+// is our reference). Otherwise we allocate a new one. We shouldn't have to
+// allocate a new `method_call_singleton` except when third party code uses
+// `_PyObject_GetMethod`.
+
+typedef struct
+{
+  PyObject_HEAD;
+  JsRef func;
+  JsRef this_;
+  PyObject* signature;
+  vectorcallfunc vectorcall;
+} JsMethodCallSingleton;
+
+static PyTypeObject JsMethodCallSingletonType;
+static JsMethodCallSingleton* method_call_singleton;
+
+static PyObject*
+JsMethodCallSingleton_Vectorcall(PyObject* o,
+                                 PyObject* const* pyargs,
+                                 size_t nargsf,
+                                 PyObject* kwnames)
+{
+  JsMethodCallSingleton* self = (JsMethodCallSingleton*)o;
+  if (self->func == NULL) {
+    PyErr_SetString(PyExc_SystemError, "Expected self->func not to be NULL");
+    return NULL;
+  }
+  JsVal func = hiwire_get(self->func);
+  JsVal this_ = hiwire_get(self->this_);
+  PyObject* sig = self->signature;
+  return JsMethod_Vectorcall_impl(func, this_, sig, pyargs, nargsf, kwnames);
+}
+
+static JsMethodCallSingleton*
+make_method_call_singleton()
+{
+  JsMethodCallSingleton* result =
+    (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(
+      &JsMethodCallSingletonType, 0);
+  if (result == NULL) {
+    return NULL;
+  }
+  result->vectorcall = JsMethodCallSingleton_Vectorcall;
+  result->func = NULL;
+  result->this_ = NULL;
+  result->signature = NULL;
+  return result;
+}
+
+static int
+JsMethodCallSingleton_clear(JsMethodCallSingleton* o)
+{
+  JsMethodCallSingleton* self = (JsMethodCallSingleton*)o;
+  hiwire_CLEAR(self->func);
+  hiwire_CLEAR(self->this_);
+  Py_CLEAR(self->signature);
+  return 0;
+}
+
+// This isn't static so we can call it from conftest.py to prevent leak check
+// false positives
+EMSCRIPTEN_KEEPALIVE void
+clear_method_call_singleton(void)
+{
+  if (Py_REFCNT(method_call_singleton) == 1) {
+    // We hold the only reference count so we can reuse it.
+    // Clear it out first.
+    JsMethodCallSingleton_clear(method_call_singleton);
+  } else {
+    // Oops, someone held on to the previous method_call_singleton or otherwise
+    // used it in an unexpected way. Make another!
+    // This should never happen except when third party code uses
+    // `_PyObject_GetMethod`.
+    Py_SETREF(method_call_singleton, make_method_call_singleton());
+  }
+}
+
+static void
+JsMethodCallSingleton_dealloc(PyObject* self)
+{
+  JsMethodCallSingleton_clear((JsMethodCallSingleton*)self);
+  Py_TYPE(self)->tp_free(self);
+}
+
+static PyTypeObject JsMethodCallSingletonType = {
+  .tp_name = "_pyodide.JsMethodCallSingleton",
+  .tp_basicsize = sizeof(JsMethodCallSingleton),
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_VECTORCALL,
+  .tp_vectorcall_offset = offsetof(JsMethodCallSingleton, vectorcall),
+  .tp_call = (PyCFunctionWithKeywords)PyObject_Vectorcall,
+  .tp_doc = "A hacky type to avoid temporaries",
+  .tp_dealloc = JsMethodCallSingleton_dealloc,
+};
+
+static PyObject*
+JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method);
+
+PyObject*
+JsProxy_GetMethod(PyObject* self, PyObject* attr)
+{
+  return JsProxy_GetAttr_helper(self, attr, true);
+}
+
+PyObject*
+JsProxy_GetAttr(PyObject* self, PyObject* attr)
+{
+  return JsProxy_GetAttr_helper(self, attr, false);
+}
+
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
  * object.
  */
 static PyObject*
-JsProxy_GetAttr(PyObject* self, PyObject* attr)
+JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 {
-  PyObject* result = PyObject_GenericGetAttr(self, attr);
-  if (result != NULL || !PyErr_ExceptionMatches(PyExc_AttributeError)) {
+  PyObject* result = _PyObject_GenericGetAttrWithDict(self, attr, NULL, 1);
+  if (result != NULL || PyErr_Occurred()) {
     return result;
   }
-  PyErr_Clear();
 
   bool success = false;
   JsVal jsresult = JS_NULL;
@@ -415,7 +540,8 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
       FAIL();
     }
     if (got_converter) {
-      return Js2PyConverter_convert(sig, jsresult, JS_NULL);
+      pyresult = Js2PyConverter_convert(sig, jsresult, JS_NULL);
+      goto success;
     }
     if (!Py_IsNone(sig)) {
       attr_sig = Py_XNewRef(sig);
@@ -425,7 +551,24 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   // TODO: maybe allow being strict and requiring that we get a sig?
   if (pyproxy_Check(jsresult)) {
     pyresult = js2python(jsresult);
-  } else if (JsvFunction_Check(jsresult)) {
+    FAIL_IF_NULL(pyresult);
+    goto success;
+  }
+  if (is_method) {
+    if (!JsvFunction_Check(jsresult)) {
+      // Not callable, this should be an error...
+      PyErr_SetString(PyExc_TypeError, "Expected callable");
+      FAIL();
+    }
+    clear_method_call_singleton();
+    pyresult = Py_NewRef(method_call_singleton);
+    method_call_singleton->func = hiwire_new(jsresult);
+    method_call_singleton->this_ = JsProxy_REF(self);
+    hiwire_incref(method_call_singleton->this_);
+    method_call_singleton->signature = Py_NewRef(attr_sig);
+    goto success;
+  }
+  if (JsvFunction_Check(jsresult)) {
     pyresult = JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig);
   } else if (attr_sig) {
     pyresult = JsProxy_create_with_this(jsresult, JS_NULL, attr_sig);
@@ -2637,6 +2780,7 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
 {
   bool success = false;
   PyObject* loop = NULL;
+  PyObject* helpers = NULL;
   PyObject* set_result = NULL;
   PyObject* set_exception = NULL;
 
@@ -2648,9 +2792,13 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   result = _PyObject_CallMethodIdNoArgs(loop, &PyId_create_future);
   FAIL_IF_NULL(result);
 
-  set_result = _PyObject_GetAttrId(result, &PyId_set_result);
+  _Py_IDENTIFIER(get_future_resolvers);
+  helpers = _PyObject_CallMethodIdOneArg(
+    future_helper_mod, &PyId_get_future_resolvers, result);
+  FAIL_IF_NULL(helpers);
+  set_result = Py_XNewRef(PyTuple_GetItem(helpers, 0));
   FAIL_IF_NULL(set_result);
-  set_exception = _PyObject_GetAttrId(result, &PyId_set_exception);
+  set_exception = Py_XNewRef(PyTuple_GetItem(helpers, 1));
   FAIL_IF_NULL(set_exception);
 
   promise = JsvPromise_Resolve(promise);
@@ -2663,6 +2811,7 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter)
   success = true;
 finally:
   Py_CLEAR(loop);
+  Py_CLEAR(helpers);
   Py_CLEAR(set_result);
   Py_CLEAR(set_exception);
   if (!success) {
@@ -4371,6 +4520,18 @@ finally:
   return pyresult;
 }
 
+EM_JS(int, can_run_sync_js, (), { return !!Module.validSuspender.value; });
+
+PyObject*
+can_run_sync(PyObject* _mod, PyObject* _null)
+{
+  if (can_run_sync_js()) {
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+}
+
 PyMethodDef methods[] = {
   {
     "run_sync",
@@ -4378,6 +4539,11 @@ PyMethodDef methods[] = {
     // run_sync_not_supported in jsproxy_init.
     (PyCFunction)NULL,
     METH_O,
+  },
+  {
+    "can_run_sync",
+    (PyCFunction)can_run_sync,
+    METH_NOARGS,
   },
   { NULL } /* Sentinel */
 };
@@ -4418,6 +4584,8 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_NULL(Mapping);
   typing = PyImport_ImportModule("typing");
   FAIL_IF_NULL(typing);
+  future_helper_mod = PyImport_ImportModule("_pyodide._future_helper");
+  FAIL_IF_NULL(future_helper_mod);
 
   FAIL_IF_MINUS_ONE(JsProxy_init_docstrings(_pyodide_core_docs));
 
@@ -4465,6 +4633,8 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_NULL(JsException);
   FAIL_IF_MINUS_ONE(
     PyObject_SetAttrString(core_module, "JsException", JsException));
+  FAIL_IF_MINUS_ONE(PyType_Ready(&JsMethodCallSingletonType));
+  method_call_singleton = make_method_call_singleton();
 
   success = true;
 finally:

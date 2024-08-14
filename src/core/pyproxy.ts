@@ -18,7 +18,6 @@ declare var Tests: any;
 declare var Module: any;
 
 import { TypedArray } from "types";
-import { warnOnce } from "pyodide-util";
 
 // pyodide-skip
 
@@ -872,7 +871,7 @@ export class PyProxyWithGet extends PyProxy {
 export interface PyProxyWithGet extends PyGetItemMethods {}
 
 class PyAsJsonAdaptorMethods {
-  asJsonAdaptor() {
+  asJsJson() {
     let { shared, props } = _getAttrs(this);
     let flags = _getFlags(this);
     if (flags & IS_SEQUENCE) {
@@ -933,10 +932,10 @@ export class PyGetItemMethods {
    *     :meth:`~object.__getitem__` then the result will also be a json
    *     adaptor.
    *
-   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * For instance, ``JSON.stringify(proxy.asJsJson())`` acts like an
    * inverse to Python's :py:func:`json.loads`.
    */
-  asJsonAdaptor(): PyProxy & {} {
+  asJsJson(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
     // PyAsJsonAdaptorMethods.
     throw new Error("Should not happen");
@@ -1064,10 +1063,10 @@ function* iter_helper(
     while (true) {
       Py_ENTER();
       const item = __pyproxy_iter_next(iterptr, proxyCache, is_json_adaptor);
+      Py_EXIT();
       if (item === null) {
         break;
       }
-      Py_EXIT();
       yield item;
       // If it's a json adaptor, we cached the result so we don't need to
       // destroy it (they'll get destroyed when we destroy the root).
@@ -1839,10 +1838,10 @@ export class PySequenceMethods {
    *     :meth:`~object.__getitem__` then the result will also be a json
    *     adaptor.
    *
-   * For instance, ``JSON.stringify(proxy.asJsonAdaptor())`` acts like an
+   * For instance, ``JSON.stringify(proxy.asJsJson())`` acts like an
    * inverse to Python's :py:func:`json.loads`.
    */
-  asJsonAdaptor(): PyProxy & {} {
+  asJsJson(): PyProxy & {} {
     // This is just here for the docs. The actual implementation comes from
     // PyAsJsonAdaptorMethods.
     throw new Error("Should not happen");
@@ -2267,7 +2266,7 @@ const PyProxySequenceHandlers = {
     return true;
   },
   has(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       return Number(jskey) < jsobj.length;
     }
     return PyProxyHandlers.has(jsobj, jskey);
@@ -2276,7 +2275,7 @@ const PyProxySequenceHandlers = {
     if (jskey === "length") {
       return jsobj.length;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         return PyGetItemMethods.prototype.get.call(jsobj, Number(jskey));
       } catch (e) {
@@ -2289,7 +2288,7 @@ const PyProxySequenceHandlers = {
     return PyProxyHandlers.get(jsobj, jskey);
   },
   set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
         return true;
@@ -2303,7 +2302,7 @@ const PyProxySequenceHandlers = {
     return PyProxyHandlers.set(jsobj, jskey, jsval);
   },
   deleteProperty(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;
@@ -2334,7 +2333,7 @@ const PyProxyJsonAdaptorDictHandlers = {
     if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
       return true;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       jskey = Number(jskey);
     }
     if (PyContainsMethods.prototype.has.call(jsobj, jskey)) {
@@ -2354,13 +2353,13 @@ const PyProxyJsonAdaptorDictHandlers = {
       return Reflect.get(...arguments);
     }
     if (typeof jskey === "string") {
-      // TODO: consider adding an attribute cache for asJsonAdaptor
+      // TODO: consider adding an attribute cache for asJsJson
       result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
     }
     if (result) {
       return result;
     }
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       jskey = Number(jskey);
       result = PyGetItemMethods.prototype.get.call(jsobj, jskey);
     }
@@ -2372,8 +2371,11 @@ const PyProxyJsonAdaptorDictHandlers = {
   },
   set(jsobj: PyProxy, jskey: any, jsval: any): boolean {
     if (typeof jskey === "string") {
+      if (/^[0-9]+$/.test(jskey)) {
+        jskey = Number(jskey);
+      }
       try {
-        PySetItemMethods.prototype.set.call(jsobj, Number(jskey), jsval);
+        PySetItemMethods.prototype.set.call(jsobj, jskey, jsval);
         return true;
       } catch (e) {
         if (isPythonError(e)) {
@@ -2385,7 +2387,7 @@ const PyProxyJsonAdaptorDictHandlers = {
     return false;
   },
   deleteProperty(jsobj: PyProxy, jskey: any): boolean {
-    if (typeof jskey === "string" && /^[0-9]*$/.test(jskey)) {
+    if (typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
       try {
         PySetItemMethods.prototype.delete.call(jsobj, Number(jskey));
         return true;

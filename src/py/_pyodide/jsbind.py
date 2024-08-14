@@ -1,4 +1,4 @@
-from inspect import Parameter, iscoroutinefunction, signature
+from inspect import Parameter, isclass, iscoroutinefunction, signature
 from types import GenericAlias
 from typing import (  # type:ignore[attr-defined]
     Any,
@@ -205,8 +205,10 @@ def func_to_sig_inner(f):
     elif result is None:
         result = js2py_default_call_result
 
+    should_construct = isclass(f)
     return JsFuncSignature(
         f,
+        should_construct,
         posparams_nmandatory,
         tuple(posparams),
         tuple(posparams_defaults),

@@ -409,7 +409,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """
@@ -442,7 +442,7 @@ def test_package_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
-    version = "0.24.0"  # just need some version that already exists + contains pyodide-lock.json
+    version = "0.26.0"  # just need some version that already exists + contains pyodide-lock.json
 
     mgr = CrossBuildEnvManager(path)
     mgr.install(version, skip_install_cross_build_packages=True)
@@ -452,9 +452,9 @@ def test_package_index(tmp_path):
     pip_opts = [
         "--index-url",
         "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
-        "--platform=emscripten_3_1_45_wasm32",
+        "--platform=pyodide_2024_0_wasm32",
         "--only-binary=:all:",
-        "--python-version=311",
+        "--python-version=312",
         "-t",
         str(path / "temp_lib"),
     ]
@@ -502,3 +502,19 @@ def test_sys_exit(selenium, venv):
     assert result.returncode == 12
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_cpp_exceptions(selenium, venv):
+    result = install_pkg(venv, "cpp-exceptions-test2")
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0
+    result = subprocess.run(
+        [venv / "bin/python", "-c", "import cpp_exceptions_test2"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 1
+    assert "ImportError: oops" in result.stderr

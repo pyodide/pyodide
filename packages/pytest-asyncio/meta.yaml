@@ -1,0 +1,22 @@
+package:
+  name: pytest-asyncio
+  version: 0.23.7
+  tag:
+    - core
+    - min-scipy-stack
+  top-level:
+    - pytest_asyncio
+source:
+  url: https://files.pythonhosted.org/packages/e5/98/947690b1a79af83e584143cb904497caff05bb6016614b38326a81076357/pytest_asyncio-0.23.7-py3-none-any.whl
+  sha256: 009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b
+requirements:
+  run:
+    - pytest
+about:
+  home: https://github.com/pytest-dev/pytest-asyncio
+  PyPI: https://pypi.org/project/pytest-asyncio
+  summary: Pytest support for asyncio
+  license: Apache 2.0
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal

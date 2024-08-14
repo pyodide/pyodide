@@ -48,6 +48,7 @@ def adjust_sysconfig(config_vars: dict[str, str]):
         CXX="c++",
         LDCXXSHARED="c++",
     )
+    config_vars["PYODIDE_ABI_VERSION"] = os.environ["PYODIDE_ABI_VERSION"]
     for [key, val] in config_vars.items():
         if not isinstance(val, str):
             continue

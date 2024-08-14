@@ -158,14 +158,22 @@ node_modules/.installed : src/js/package.json src/js/package-lock.json
 	ln -sfn src/js/node_modules/ node_modules
 	touch $@
 
-dist/pyodide.js src/js/generated/_pyodide.out.js: \
+src/js/generated/_pyodide.out.js:            \
 		src/js/*.ts                          \
-		src/js/*.js                          \
+		src/js/common/*                      \
+		src/js/vendor/*                      \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
 		node_modules/.installed
-	cd src/js && npm run build && cd -
+	cd src/js && npm run build-inner && cd -
+
+dist/pyodide.js:                             \
+		src/js/pyodide.ts                    \
+		src/js/compat.ts                     \
+		src/js/emscripten-settings.ts        \
+		src/js/version.ts
+	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
 	node src/core/stack_switching/esbuild.config.mjs
@@ -217,10 +225,10 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
-
+.PHONY: pyodide_build
 pyodide_build:
-	@echo "Ensuring editable pyodide-build is installed"
-	./tools/check_editable_pyodide_build.py || $(HOSTPYTHON) -m pip install -e ./pyodide-build
+	@echo "Ensuring required pyodide-build version is installed"
+	./tools/check_and_install_pyodide_build.py "$(PYODIDE_BUILD_COMMIT)" --repo "$(PYODIDE_BUILD_REPO)"
 	@which pyodide >/dev/null
 
 
@@ -260,6 +268,23 @@ dist/module_webworker_dev.js: src/templates/module_webworker.js
 
 dist/webworker_dev.js: src/templates/webworker.js
 	cp $< $@
+
+
+# Prepare the dist directory for the release by removing unneeded files
+.PHONY: clean-dist-dir
+clean-dist-dir:
+	# Remove snapshot files
+	rm dist/makesnap.mjs
+	rm dist/snapshot.bin
+	rm dist/module_test.html dist/test.html
+	# TODO: Remove webworker.js too? Would require updating the docs I think.
+	rm dist/module_webworker_dev.js  dist/webworker_dev.js
+
+	# TODO: Source maps aren't useful outside of debug builds I don't think. But
+	# removing them adds "missing sourcemap" warnings to JS console. We should
+	# not generate them in the first place?
+	# rm dist/*.map
+
 
 .PHONY: lint
 lint:
@@ -334,3 +359,7 @@ check-emcc: emsdk/emsdk/.complete
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
 	make
+
+.PHONY: py-compile
+py-compile:
+	pyodide py-compile --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --exclude "$(PYCOMPILE_EXCLUDE_FILES)" dist/
