@@ -34,6 +34,7 @@ index edee2ca0ba..c20243ef61 100644
 -  install: true,
 -  link_language: 'fortran',
 -  subdir: 'scipy/integrate'
+-  install_tag: 'tests'
 -)
 -
  subdir('_ivp')
@@ -52,8 +53,8 @@ index b41f29022c..af04022208 100644
 -
 -py3.extension_module('_test_fortran',
 -  [
--    _test_fortran_module,
--    '_test_fortran.f'
+-   f2py_gen.process('test_fortran.pyf'),
+-   '_test_fortran.f'
 -  ],
 -  c_args: [Wno_unused_variable],
 -  fortran_args: fortran_ignore_warnings,
@@ -62,6 +63,7 @@ index b41f29022c..af04022208 100644
 -  install: true,
 -  link_language: 'fortran',
 -  subdir: 'scipy/io'
+-  install_tag: 'tests'
 -)
 -
  py3.install_sources([
