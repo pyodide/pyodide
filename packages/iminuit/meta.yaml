@@ -13,6 +13,7 @@ test:
 requirements:
   run:
     - numpy # runtime only
+    - packaging
 build:
   cxxflags: -fexceptions
   ldflags: -fexceptions
