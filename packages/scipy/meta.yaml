@@ -54,10 +54,11 @@ build:
     -fexceptions
 
   # Exclude tests via Meson's install tags functionality.
-  unvendor-tests: false
+  unvendor-tests: true
+  # install-args=--tags=runtime,python-runtime,devel
+  # Disable when running tests, enable when a PR is ready, i.e., building for distribution.
   backend-flags: |
     build-dir=build
-    install-args=--tags=runtime,python-runtime,devel
 
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
