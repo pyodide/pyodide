@@ -50,8 +50,13 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
+
+  # Exclude tests via Meson's install tags functionality.
+  unvendor-tests: false
   backend-flags: |
     build-dir=build
+    install-args=--tags=runtime,python-runtime,devel
+
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
