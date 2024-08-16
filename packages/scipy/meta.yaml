@@ -25,7 +25,6 @@ source:
     - patches/0002-int-to-string.patch
     - patches/0003-gemm_-no-const.patch
     - patches/0004-make-int-return-values.patch
-    # - patches/0005-Remove-test-modules-that-fails-to-build.patch # CAN BE NOW REMOVED WITH INSTALL TAGS
     - patches/0005-Fix-fitpack.patch
     - patches/0006-Fix-gees-calls.patch
     - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
