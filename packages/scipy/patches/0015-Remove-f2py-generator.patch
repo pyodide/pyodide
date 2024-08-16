@@ -103,7 +103,7 @@ index 69ec25f6af..38dd2a8cc3 100644
  )
  
 +dfitpack_module = custom_target('dfitpack_module',
-+  output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
++  output: ['dfitpack-f2pywrappers.f', 'src/dfitpackmodule.c'],
 +  input: 'src/dfitpack.pyf',
 +  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 +)
