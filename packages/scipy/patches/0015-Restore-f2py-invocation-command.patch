@@ -3,6 +3,14 @@ From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Fri, 16 Aug 2024 23:31:19 +0530
 Subject: [PATCH 15/15] Restore f2py invocation command
 
+This patch restores the convention of invoking f2py using the `numpy.f2py`
+module instead of directly calling the `f2py` executable. This is done to
+ensure that the correct Python interpreter is used to run f2py, which is
+not found in the PATH in the Pyodide environment for some reason.
+
+This helps fix the f2py generators added in SciPy v1.14.0 without the need
+to disable them and rely on the older module generators.
+
 ---
  tools/generate_f2pymod.py | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
