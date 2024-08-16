@@ -36,6 +36,7 @@ source:
     - patches/0013-Set-wrapper-return-type-to-int.patch
     - patches/0014-Skip-svd_gesdd-test.patch
     - patches/0015-Restore-f2py-invocation-command.patch
+    - patches/0016-Make-sf_error_state_lib-a-static-library.patch
 
 build:
   cflags: |
