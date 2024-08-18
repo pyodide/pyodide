@@ -1,11 +1,10 @@
 From 9d93ca19f4ad0ca327964b6234316547d774b17f Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 17 Aug 2024 01:12:28 +0530
-Subject: [PATCH] Make `sf_error_state_lib` a static library
+Subject: [PATCH 16/17] Make `sf_error_state_lib` a static library
 
-Temporarily converted to a static library instead of a shared one
-to allow the build to proceed – the WASM linker does not support
-shared libraries yet. I'll have to see what to do about this later.
+wasm.ld does not support linkage with shared libraries. This patch
+changes `sf_error_state_lib` to a static one.
 
 ---
  scipy/special/meson.build | 2 +-
