@@ -185,7 +185,7 @@ tests_to_mark = [
         todo_fp_exception_msg,
     ),
     (
-        "test_sf_error.py::est_errstate_cpp_alt_ufunc_machinery",
+        "test_sf_error.py::test_errstate_cpp_alt_ufunc_machinery",
         xfail,
         todo_fp_exception_msg,
     ),
