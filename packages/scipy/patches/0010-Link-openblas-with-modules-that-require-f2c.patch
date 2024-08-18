@@ -10,10 +10,10 @@ symbols.
 
 Co-Developed-by: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 ---
- scipy/integrate/meson.build   | 2 +-
- scipy/optimize/meson.build    | 6 +++---
- scipy/stats/meson.build       | 2 +-
- 4 files changed, 5 insertions(+), 5 deletions(-)
+ scipy/integrate/meson.build | 2 +-
+ scipy/optimize/meson.build  | 6 +++---
+ scipy/stats/meson.build     | 2 +-
+ 3 files changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/scipy/integrate/meson.build b/scipy/integrate/meson.build
 index 23a715dd58..e5cd9ad4c8 100644
