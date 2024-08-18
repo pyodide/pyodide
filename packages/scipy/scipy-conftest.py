@@ -14,6 +14,8 @@ thread_msg = "no thread support"
 todo_signature_mismatch_msg = "TODO signature mismatch"
 todo_memory_corruption_msgt = "TODO memory corruption"
 todo_genuine_difference_msg = "TODO genuine difference to be investigated"
+todo_fp_exception_msg = "TODO did not raise maybe no floating point exception support?"
+
 
 tests_to_mark = [
     # scipy/_lib/tests
@@ -216,7 +218,7 @@ tests_to_mark = [
     (
         "test_qmc.py::TestMultivariateNormalQMC.test_validations",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_qmc.py::TestMultivariateNormalQMC.test_MultivariateNormalQMCDegenerate",
@@ -233,12 +235,12 @@ tests_to_mark = [
     (
         "test_stats.py::TestKSTwoSamples.test_some_code_paths",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_stats.py::TestGeometricStandardDeviation.test_raises_value_error",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_stats.py::TestBrunnerMunzel.test_brunnermunzel_normal_dist",
