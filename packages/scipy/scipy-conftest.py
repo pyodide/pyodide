@@ -167,6 +167,28 @@ tests_to_mark = [
         skip,
         "TODO C++ exception that causes a Pyodide fatal error",
     ),
+    # The following four tests do not raise the required
+    # <class 'scipy.special._sf_error.SpecialFunctionError'>
+    (
+        "test_basic.py::test_error_raising",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::test_errstate_pyx_basic",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::test_errstate_cpp_scipy_special",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::est_errstate_cpp_alt_ufunc_machinery",
+        xfail,
+        todo_fp_exception_msg,
+    ),
     (
         "test_kdeoth.py::test_kde_[12]d",
         xfail,
