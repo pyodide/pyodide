@@ -268,13 +268,15 @@ def write_console_html(app):
 
 
 def write_examples(app):
-    """Preprocess the examples HTML files and copy them to the output directory"""
+    """Preprocess the examples HTML/ js files and copy them to the output directory"""
     example_outdir = Path(app.outdir) / "examples"
     example_outdir.mkdir(exist_ok=True, parents=True)
 
     example_html_dir = Path("./usage/examples")
 
-    for example in example_html_dir.glob("*.html"):
+    for example in example_html_dir.iterdir():
+        if not example.is_file() or example.suffix not in [".html", ".js"]:
+            continue
         text = example.read_text()
         text = text.replace("{{ PYODIDE_BASE_URL }}", app.config.CDN_URL)
 

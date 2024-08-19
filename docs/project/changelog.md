@@ -60,14 +60,15 @@ myst:
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
-- Upgraded `scipy` to 1.13.1 {pr}`4719`,{pr}`4925`
-- Upgraded `gensim` to `4.3.3` {pr}`4719`
-- Upgraded `numpy` to 2.0.1 {pr}`4925`
-- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4930`
+- Upgraded `scipy` to 1.13.1 {pr}`4719`, {pr}`5011`
+- Upgraded `gensim` to 4.3.3 {pr}`4719`
+- Upgraded `numpy` to 2.1.0 {pr}`4925`
+- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4925`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
 - Added `casadi` 3.6.5 {pr}`4936`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
+- Added `iminuit` 2.28.0 {pr}`4767`
 
 ## Version 0.26.2
 
