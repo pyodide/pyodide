@@ -215,8 +215,6 @@ def test_get_buffer(selenium):
             z2 = z1[-1::-1]
             z3 = z1[::,-1::-1]
             z4 = z1[-1::-1,-1::-1]
-            print("Python z1 dtype:", z1.dtype)
-            print("Python z1[0, 0]:", z1[0, 0], type(z1[0, 0]))
         `);
         for(let x of ["z1", "z2", "z3", "z4"]){
             let z = pyodide.globals.get(x).getBuffer("u32");
