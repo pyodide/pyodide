@@ -67,6 +67,7 @@ myst:
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
 - Upgraded `yt` to 4.3.1 {pr}`4925`
 - Upgraded `opencv-python` to 4.3.1 {pr}`4925`
+- Upgraded `gsw` to 3.6.19 {pr}`4925`
 - Added `casadi` 3.6.5 {pr}`4936`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`

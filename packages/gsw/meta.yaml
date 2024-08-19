@@ -1,11 +1,11 @@
 package:
   name: gsw
-  version: 3.6.17
+  version: 3.6.19
   top-level:
     - gsw
 source:
-  url: https://files.pythonhosted.org/packages/00/24/11db47cfc7027cd94f66ab17792d2be4f8d1bcb641fb92fd9fa09cc90ba9/gsw-3.6.17.tar.gz
-  sha256: e13979e1ba29fd41f63c8a3cbb1c47fe50b602d8ce9357b4008b0c2f6e76c665
+  url: https://files.pythonhosted.org/packages/3a/23/ffb0b0622ad5f5898f1dc07786f95787704ce9e9540017b756722dc66919/gsw-3.6.19.tar.gz
+  sha256: 3595b686458d852444ae6f1946d260a7c8f16ba457e9061aa953cf417927423f
 
 requirements:
   run:
