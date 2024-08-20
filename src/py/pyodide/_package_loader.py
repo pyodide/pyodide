@@ -1,3 +1,4 @@
+import os
 import re
 import shutil
 import sys
@@ -76,37 +77,60 @@ class UnsupportedWheel(Exception):
     """Unsupported wheel."""
 
 
-def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
-    """Returns the name of the contained .dist-info directory.
-
-    Raises UnsupportedWheel if not found, >1 found, or it doesn't match the
-    provided name.
+def find_wheel_metadata_dir(source: ZipFile, name: str, suffix: str) -> str | None:
     """
+    Returns the name of the contained metadata directory inside the wheel file.
+
+    Parameters
+    ----------
+    source
+        A ZipFile object representing the wheel file.
+    
+    name
+        The name of the package
+    
+    suffix
+        The suffix of the metadata directory. Usually ".dist-info" or ".data"
+    
+    Returns
+    -------
+        The name of the metadata directory. If not found, returns None.
+    """
+
     # Zip file path separators must be /
     subdirs = {p.split("/", 1)[0] for p in source.namelist()}
 
-    info_dirs = [s for s in subdirs if s.endswith(".dist-info")]
+    info_dirs = [s for s in subdirs if s.endswith(suffix)]
 
     if not info_dirs:
+        return None
+
+    # Choose the first directory if there are multiple directories
+    info_dir = info_dirs[0]
+    return info_dir
+
+def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
+    """
+    Returns the name of the contained .dist-info directory.
+    """
+    dist_info_dir = find_wheel_metadata_dir(source, name, suffix=".dist-info")
+    if dist_info_dir is None:
         raise UnsupportedWheel(f".dist-info directory not found in wheel {name!r}")
 
-    if len(info_dirs) > 1:
-        raise UnsupportedWheel(
-            "multiple .dist-info directories found in wheel {!r}: {}".format(
-                name, ", ".join(info_dirs)
-            )
-        )
-
-    info_dir = info_dirs[0]
-
-    info_dir_name = canonicalize_name(info_dir)
+    info_dir_name = canonicalize_name(dist_info_dir)
     canonical_name = canonicalize_name(name)
     if not info_dir_name.startswith(canonical_name):
         raise UnsupportedWheel(
-            f".dist-info directory {info_dir!r} does not start with {canonical_name!r}"
+            f".dist-info directory {dist_info_dir!r} does not start with {canonical_name!r}"
         )
 
-    return info_dir
+    return dist_info_dir
+
+
+def wheel_data_file_dir(source: ZipFile, name: str) -> str | None:
+    data_file_dir = find_wheel_metadata_dir(source, name, suffix=".data")
+    # data files are optional, so we return None if not found
+    return data_file_dir
 
 
 def make_whlfile(
@@ -213,7 +237,9 @@ def unpack_buffer(
 
         suffix = Path(filename).suffix
         if suffix == ".whl":
-            set_wheel_installer(filename, f, extract_path, installer, source)
+            z = ZipFile(f)
+            set_wheel_installer(filename, z, extract_path, installer, source)
+            install_datafiles(filename, z, extract_path)
 
         if calculate_dynlibs:
             suffix = Path(f.name).suffix
@@ -246,7 +272,7 @@ def should_load_dynlib(path: str | Path) -> bool:
 
 def set_wheel_installer(
     filename: str,
-    archive: IO[bytes],
+    archive: ZipFile,
     target_dir: Path,
     installer: str | None,
     source: str | None,
@@ -270,7 +296,7 @@ def set_wheel_installer(
         The file name of the wheel.
 
     archive
-        A binary representation of a wheel archive
+        A ZipFile object representing the wheel file.
 
     target_dir
         The directory the wheel is being installed into. Probably site-packages.
@@ -282,14 +308,66 @@ def set_wheel_installer(
     source
         Where did the package come from? Either a url, `pyodide`, or `PyPI`.
     """
-    z = ZipFile(archive)
     wheel_name = parse_wheel_name(filename)[0]
-    dist_info_name = wheel_dist_info_dir(z, wheel_name)
+    dist_info_name = wheel_dist_info_dir(archive, wheel_name)
     dist_info = target_dir / dist_info_name
     if installer:
         (dist_info / "INSTALLER").write_text(installer)
     if source:
         (dist_info / "PYODIDE_SOURCE").write_text(source)
+
+
+def install_datafiles(
+    filename: str,
+    archive: ZipFile,
+    target_dir: Path,
+):
+    """
+    Install data files from a wheel into the target directory.
+    While data files are not standard in wheels, they are common in the wild and pip supports them.
+    """
+
+    wheel_name = parse_wheel_name(filename)[0]
+    data_file_dir_name = wheel_data_file_dir(archive, wheel_name)
+    if data_file_dir_name is None:
+        return
+
+    data_file_dir = target_dir / data_file_dir_name
+    install(data_file_dir, sys.prefix())
+
+
+def install(src: str | Path, dst: str | Path) -> None:
+    """
+    Installs everything in src recursively to dst.
+    This function is similar to shutil.copytree, but it does not raise an error if dst or any of its subdirectories
+    already exist. Instead, it will copy the files from src to dst, overwriting any existing files with the same name.
+    It mostly bahaves like `make install` in the sense it is used to install multiple files into a single directory.
+    
+    Parameters
+    ----------
+    src
+        The source directory to copy from.
+    dst
+        The destination directory to copy to.
+    """
+    src = Path(src).resolve()
+    dst = Path(dst).resolve()
+
+    if not src.is_dir():
+        raise ValueError(f"{src} is not a directory.")
+
+    if not dst.exists():
+        dst.mkdir(parents=True)
+
+    if not dst.is_dir():
+        raise ValueError(f"{dst} is not a directory.")
+
+    for root, _, files in os.walk(src):
+        for file in files:
+            src_file = Path(root) / file
+            dst_file = dst / src_file.relative_to(src)
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src_file, dst_file)
 
 
 def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
@@ -325,7 +403,6 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         for path in dynlib_paths_iter
         if should_load_dynlib(path)
     ]
-
 
 def get_dist_source(dist_path: Path) -> tuple[str, str]:
     """Get the package name and a description of the source of a package.
