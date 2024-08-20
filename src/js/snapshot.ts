@@ -62,7 +62,6 @@ export type SnapshotConfig = {
 };
 
 const SNAPSHOT_MAGIC = 0x706e7300; // "\x00snp"
-// TODO: Make SNAPSHOT_BUILD_ID distinct for each build of pyodide.asm.js / pyodide.asm.wasm
 const HEADER_SIZE_IN_BYTES =
   4 /* magic */ +
   4 /* offset to binary */ +
