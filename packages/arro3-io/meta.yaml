@@ -2,7 +2,7 @@ package:
   name: arro3-io
   version: 0.2.1
   top-level:
-    - arro3.io
+    - "arro3.io"
 source:
   url: https://github.com/kylebarron/arro3/releases/download/py-v0.2.1/arro3_io-0.2.1-cp38-abi3-emscripten_3_1_58_wasm32.whl
   sha256: 91aa680d6e1feba3ba3ec2a488d150c487ca95b1b9e183bcc6d9f6652173f4d7
