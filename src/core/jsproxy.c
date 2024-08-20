@@ -265,9 +265,9 @@ js2python_objmap(JsVal jsval, int flags)
   return JsProxy_create_objmap(jsval, flags);
 }
 
-#define INCLUDE_OBJMAP_METHODS(flags) \
-      !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |   \
-                   IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
+#define INCLUDE_OBJMAP_METHODS(flags)                                          \
+  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |           \
+               IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
 
 static int
 JsProxy_clear(PyObject* self)
@@ -4693,6 +4693,8 @@ jsproxy_init(PyObject* core_module)
   AddFlag(IS_ASYNC_GENERATOR);
   AddFlag(IS_ASYNC_ITERATOR);
   AddFlag(IS_ERROR);
+  AddFlag(IS_PY_JSON_DICT);
+  AddFlag(IS_PY_JSON_SEQUENCE);
 
 #undef AddFlag
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));

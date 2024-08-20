@@ -1024,7 +1024,11 @@ class JsMap(JsIterable[KT], Generic[KT, VT_co], Mapping[KT, VT_co], metaclass=_A
     (idiomatically it should be called ``size``) and it must be iterable.
     """
 
-    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+    _js_type_flags = [
+        "HAS_GET | HAS_LENGTH | IS_ITERABLE",
+        "IS_OBJECT_MAP",
+        "IS_PY_JSON_DICT",
+    ]
 
     def __getitem__(self, idx: KT) -> VT_co:
         raise NotImplementedError
@@ -1079,7 +1083,11 @@ class JsMutableMap(
     ``JsMap`` .
     """
 
-    _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+    _js_type_flags = [
+        "HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE",
+        "IS_OBJECT_MAP",
+        "IS_PY_JSON_DICT",
+    ]
 
     @overload
     def pop(self, key: KT, /) -> VT: ...
