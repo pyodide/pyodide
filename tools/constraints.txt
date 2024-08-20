@@ -1,0 +1,3 @@
+# https://github.com/serge-sans-paille/pythran/issues/2228
+# Remove this when all packages fixes pythran + setuptools 73.0.0 issue
+setuptools<73.0.0
