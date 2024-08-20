@@ -57,7 +57,7 @@ myst:
 
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
+- Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
