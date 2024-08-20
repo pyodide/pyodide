@@ -51,6 +51,10 @@ myst:
 - {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
   {pr}`4993`
 
+- {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
+  JSON (Arrays and Objects). to Python JSON (lists and dicts).
+  {pr}`4666`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
