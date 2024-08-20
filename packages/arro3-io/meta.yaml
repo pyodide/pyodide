@@ -8,6 +8,7 @@ source:
   sha256: 91aa680d6e1feba3ba3ec2a488d150c487ca95b1b9e183bcc6d9f6652173f4d7
 requirements:
   run:
+    - arro3-core
 extra:
   recipe-maintainers:
     - kylebarron
