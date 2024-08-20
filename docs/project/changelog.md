@@ -14,6 +14,10 @@ myst:
 
 # Change Log
 
+### Packages
+
+- New packages:
+
 ## Unreleased
 
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
@@ -888,6 +892,14 @@ iterable`. (Python async _iterables_ that were not also iterators were already
   {pr}`3671`
 
 ### Packages
+
+## Version 0.22.2
+
+- New packages: dlib {pr}`3690`
+
+_March 23, 2023_
+
+- {{ Enhancement }} `dlib` added to pyodide
 
 - New packages: fastparquet {pr}`3590`, cramjam {pr}`3590`, pynacl {pr}`3500`,
   pyxel {pr}`3508`.
