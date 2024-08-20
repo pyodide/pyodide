@@ -456,6 +456,84 @@ def test_get_dynlibs():
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
 
 
+def test_find_wheel_metadata_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import find_wheel_metadata_dir
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("a.dist-info/METADATA", "")
+        z.wirtestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        assert find_wheel_metadata_dir(z, ".dist-info") == "a.dist-info"
+        assert find_wheel_metadata_dir(z, ".some-info") == "b.some-info"
+        assert find_wheel_metadata_dir(z, ".not-exist") is None
+
+
+def test_wheel_dist_info_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import wheel_dist_info_dir, UnsupportedWheel
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        with pytest.raises(UnsupportedWheel, match=".dist-info directory not found in wheel"):
+            wheel_dist_info_dir(z, "pkg-name")
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("pkg_name.dist-info/METADATA", "")
+        z.writestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_dist_info_dir(z, "pkg_name") == "pkg_name.dist-info"
+        assert wheel_dist_info_dir(z, "pkg-name") == "pkg_name.dist-info"
+
+        with pytest.raises(UnsupportedWheel, match="does not start with not-package"):
+            wheel_dist_info_dir(z, "not-package")
+
+
+def test_wheel_data_file_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import wheel_data_file_dir
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("anythingelse", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_data_file_dir(z, "pkg_name") is None
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("pkg_name.data/etc/hostname", "")
+        z.writestr("pkg_name.data/etc/hosts", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_data_file_dir(z, "pkg_name") == "pkg_name.data"
+        assert wheel_data_file_dir(z, "pkg-name") == "pkg_name.data"
+
+        assert wheel_data_file_dir(z, "not-package") is None
+
 class DummyDistribution:
     def __init__(
         self,

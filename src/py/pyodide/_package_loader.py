@@ -15,7 +15,9 @@ try:
 except ImportError:
     loadedPackages = None
 
+from .common import install_files
 from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
+
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -77,7 +79,7 @@ class UnsupportedWheel(Exception):
     """Unsupported wheel."""
 
 
-def find_wheel_metadata_dir(source: ZipFile, name: str, suffix: str) -> str | None:
+def find_wheel_metadata_dir(source: ZipFile, suffix: str) -> str | None:
     """
     Returns the name of the contained metadata directory inside the wheel file.
 
@@ -85,9 +87,6 @@ def find_wheel_metadata_dir(source: ZipFile, name: str, suffix: str) -> str | No
     ----------
     source
         A ZipFile object representing the wheel file.
-    
-    name
-        The name of the package
     
     suffix
         The suffix of the metadata directory. Usually ".dist-info" or ".data"
@@ -113,13 +112,13 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     """
     Returns the name of the contained .dist-info directory.
     """
-    dist_info_dir = find_wheel_metadata_dir(source, name, suffix=".dist-info")
+    dist_info_dir = find_wheel_metadata_dir(source, suffix=".dist-info")
     if dist_info_dir is None:
         raise UnsupportedWheel(f".dist-info directory not found in wheel {name!r}")
 
-    info_dir_name = canonicalize_name(dist_info_dir)
+    dist_info_dir_name = canonicalize_name(dist_info_dir)
     canonical_name = canonicalize_name(name)
-    if not info_dir_name.startswith(canonical_name):
+    if not dist_info_dir_name.startswith(canonical_name):
         raise UnsupportedWheel(
             f".dist-info directory {dist_info_dir!r} does not start with {canonical_name!r}"
         )
@@ -128,9 +127,19 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
 
 
 def wheel_data_file_dir(source: ZipFile, name: str) -> str | None:
-    data_file_dir = find_wheel_metadata_dir(source, name, suffix=".data")
+    data_file_dir = find_wheel_metadata_dir(source, suffix=".data")
+
     # data files are optional, so we return None if not found
+    if data_file_dir is None:
+        return None
+
+    data_file_dir_name = canonicalize_name(data_file_dir)
+    canonical_name = canonicalize_name(name)
+    if not data_file_dir_name.startswith(canonical_name):
+        return None
+    
     return data_file_dir
+
 
 
 def make_whlfile(
@@ -333,41 +342,7 @@ def install_datafiles(
         return
 
     data_file_dir = target_dir / data_file_dir_name
-    install(data_file_dir, sys.prefix())
-
-
-def install(src: str | Path, dst: str | Path) -> None:
-    """
-    Installs everything in src recursively to dst.
-    This function is similar to shutil.copytree, but it does not raise an error if dst or any of its subdirectories
-    already exist. Instead, it will copy the files from src to dst, overwriting any existing files with the same name.
-    It mostly bahaves like `make install` in the sense it is used to install multiple files into a single directory.
-    
-    Parameters
-    ----------
-    src
-        The source directory to copy from.
-    dst
-        The destination directory to copy to.
-    """
-    src = Path(src).resolve()
-    dst = Path(dst).resolve()
-
-    if not src.is_dir():
-        raise ValueError(f"{src} is not a directory.")
-
-    if not dst.exists():
-        dst.mkdir(parents=True)
-
-    if not dst.is_dir():
-        raise ValueError(f"{dst} is not a directory.")
-
-    for root, _, files in os.walk(src):
-        for file in files:
-            src_file = Path(root) / file
-            dst_file = dst / src_file.relative_to(src)
-            dst_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src_file, dst_file)
+    install_files(data_file_dir, sys.prefix())
 
 
 def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
