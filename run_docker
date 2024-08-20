@@ -19,6 +19,14 @@ HEALTHCHECK_MESSAGE="Done initialization"
 
 set -eo pipefail
 
+# If docker does not exist, podman is used instead.
+if ! command -v docker &> /dev/null; then
+    USER_FLAG=()
+    docker() {
+      podman "$@"
+    }
+fi
+
 
 function usage() {
   cat > /dev/stdout <<EOF
@@ -107,6 +115,23 @@ mkdir -p .docker_home
 
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
+cat << EOF >.docker_home/entrypoint.sh
+groupadd --gid '$USER_GID' '$USER_NAME';
+useradd\
+  --home '$USER_HOME'\
+  --uid '$USER_ID'\
+  --gid '$USER_GID'\
+  --comment '$USER_COMMENT_FIELD'\
+  --shell '$USER_INTERPRETER'\
+  --groups sudo\
+  $USER_NAME\
+;
+echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
+echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ;
+echo '$HEALTHCHECK_MESSAGE';
+tail -f /dev/null
+EOF
+
 CONTAINER=$(\
   docker run \
     "${PORT_CONFIGURATION_LINE[@]}" \
@@ -115,22 +140,7 @@ CONTAINER=$(\
     --user root \
     --shm-size 2g \
     "${PYODIDE_DOCKER_IMAGE}" \
-    /bin/bash -c " \
-      groupadd --gid '$USER_GID' '$USER_NAME'; \
-      useradd \
-        --home '$USER_HOME' \
-        --uid '$USER_ID' \
-        --gid '$USER_GID' \
-        --comment '$USER_COMMENT_FIELD' \
-        --shell '$USER_INTERPRETER' \
-        --groups sudo  \
-        $USER_NAME \
-      ; \
-      echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile; \
-      echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
-      echo '$HEALTHCHECK_MESSAGE'; \
-      tail -f /dev/null \
-    " \
+    /bin/bash .docker_home/entrypoint.sh \
 )
 
 until docker logs "$CONTAINER" 2>&1 | grep -q "$HEALTHCHECK_MESSAGE"; do

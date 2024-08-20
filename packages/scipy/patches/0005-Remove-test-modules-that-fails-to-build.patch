@@ -22,7 +22,7 @@ index edee2ca0ba..c20243ef61 100644
 -_test_odeint_banded_module = custom_target('_test_odeint_banded_module',
 -  output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
 -  input: 'tests/banded5x5.pyf',
--  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 -)
 -
 -py3.extension_module('_test_odeint_banded',
@@ -47,7 +47,7 @@ index b41f29022c..af04022208 100644
 -_test_fortran_module = custom_target('_test_fortran_module',
 -  output: ['_test_fortranmodule.c'],
 -  input: '_test_fortran.pyf',
--  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 -)
 -
 -py3.extension_module('_test_fortran',

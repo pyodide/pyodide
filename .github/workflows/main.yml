@@ -8,6 +8,9 @@ concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 3
+
 jobs:
   get_python_version:
     runs-on: ubuntu-latest

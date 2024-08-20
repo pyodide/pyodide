@@ -15,7 +15,7 @@ import { version } from "./version";
 import type { PyodideInterface } from "./api.js";
 import type { TypedArray, Module, PackageData } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
-import { SnapshotConfig } from "./snapshot";
+import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
 
 export { version, type PackageData };
