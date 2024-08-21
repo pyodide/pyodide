@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.driver_timeout(120)
 @run_in_pyodide(packages=["pyarrow", "numpy", "pandas"])
 def test_read_write_parquet(selenium):
     import numpy as np
