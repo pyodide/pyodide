@@ -59,6 +59,8 @@ build:
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     set -x
+    export PIP_CONSTRAINT=$(pwd)/../../pip-constraint.txt
+
     git clone https://github.com/hoodmane/f2c.git --depth 1
     (cd f2c/src && cp makefile.u makefile && sed -i "s/gram.c:/gram.c1:/" makefile && make)
     export F2C_PATH=$(pwd)/f2c/src/f2c
