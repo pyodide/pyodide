@@ -16,7 +16,7 @@ myst:
 
 ## Unreleased
 
-- {{ Enhancement }} Updated tqdm to version 4.66.5, fixing compatiblity issues with Python 3.12
+- {{ Enhancement }} Updated tqdm to version 4.66.5, fixing compatibility issues with Python 3.12
   {pr}`5024`
 
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
