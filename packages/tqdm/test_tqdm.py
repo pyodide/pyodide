@@ -5,7 +5,6 @@ from pytest_pyodide import run_in_pyodide
 def test_tqdm(selenium):
     import warnings
     with warnings.catch_warnings(record=True) as w:
-        try:
             for i in tqdm(range(100), desc="Processing"):
                 time.sleep(0.1)
             assert len(w)==0
