@@ -7,6 +7,6 @@ def test_tqdm(selenium):
     import tqdm
 
     with warnings.catch_warnings(record=True) as w:
-        for i in tqdm(range(100), desc="Processing"):
+        for _ in tqdm(range(100), desc="Processing"):
             time.sleep(0.1)
         assert len(w) == 0
