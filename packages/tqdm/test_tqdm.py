@@ -4,6 +4,7 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["tqdm"], pytest_assert_rewrites=False)
 def test_tqdm(selenium):
     import warnings
+
     import tqdm
 
     with warnings.catch_warnings(record=True) as w:
