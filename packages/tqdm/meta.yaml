@@ -12,6 +12,6 @@ about:
   summary: Fast, Extensible Progress Meter
   license: MPLv2.0, MIT Licences
 
-extra:  
-  recipe-maintainers:  
-    - michaelweinold  
+extra:
+  recipe-maintainers:
+    - michaelweinold
