@@ -666,13 +666,17 @@ export class PyodideAPI {
     return orig;
   }
 
-  static makeMemorySnapshot(): Uint8Array {
+  static makeMemorySnapshot({
+    serializer,
+  }: {
+    serializer?: (obj: any) => any;
+  } = {}): Uint8Array {
     if (!API.config._makeSnapshot) {
       throw new Error(
         "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
       );
     }
-    return API.makeSnapshot();
+    return API.makeSnapshot(serializer);
   }
 }
 
@@ -751,6 +755,7 @@ export function jsFinderHook(o: object) {
  */
 API.finalizeBootstrap = function (
   snapshotConfig?: SnapshotConfig,
+  snapshotDeserializer?: (obj: any) => any,
 ): PyodideInterface {
   if (snapshotConfig) {
     syncUpSnapshotLoad1();
@@ -790,7 +795,7 @@ API.finalizeBootstrap = function (
   }
   const jsglobals = API.config.jsglobals;
   if (snapshotConfig) {
-    syncUpSnapshotLoad2(jsglobals, snapshotConfig);
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
   } else {
     importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
     importhook.register_js_module("js", jsglobals);
