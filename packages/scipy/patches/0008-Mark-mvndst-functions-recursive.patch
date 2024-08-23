@@ -1,7 +1,7 @@
 From c11745d763407d9a2bb195a21e2a8afaf7635248 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 6 Jul 2024 22:38:55 +0200
-Subject: [PATCH 9/15] Mark mvndst functions recursive
+Subject: [PATCH 8/17] Mark mvndst functions recursive
 
 ---
  scipy/stats/mvndst.f | 8 ++++----
