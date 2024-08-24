@@ -117,6 +117,147 @@ class PackageManager {
   private _lock = createLock();
 
   /**
+   * Load packages from the Pyodide distribution or Python wheels by URL.
+   *
+   * This installs packages in the virtual filesystem. Packages
+   * needs to be imported from Python before it can be used.
+   *
+   * This function can only install packages included in the Pyodide distribution,
+   * or Python wheels by URL, without dependency resolution. It is significantly
+   * more limited in terms of functionality as compared to :mod:`micropip`,
+   * however it has less overhead and can be faster.
+   *
+   * When installing binary wheels by URLs it is user's responsibility to check
+   * that the installed binary wheel is compatible in terms of Python and
+   * Emscripten versions. Compatibility is not checked during installation time
+   * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
+   * is installed it would fail at import time.
+   *
+   *
+   * @param names Either a single package name or URL or a list of them. URLs can
+   * be absolute or relative. The URLs must correspond to Python wheels:
+   * either pure Python wheels, with a file name ending with ``none-any.whl``
+   * or Emscripten/WASM 32 wheels, with a file name ending with
+   * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
+   * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
+   * which case the list will be converted to JavaScript and the
+   * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
+   * @param options
+   * @param options.messageCallback A callback, called with progress messages
+   *    (optional)
+   * @param options.errorCallback A callback, called with error/warning messages
+   *    (optional)
+   * @param options.checkIntegrity If true, check the integrity of the downloaded
+   *    packages (default: true)
+   * @async
+   * @returns The loaded package data.
+   */
+  public async loadPackage(
+    names: string | PyProxy | Array<string>,
+    options: {
+      messageCallback?: (message: string) => void;
+      errorCallback?: (message: string) => void;
+      checkIntegrity?: boolean;
+    } = {
+      checkIntegrity: true,
+    },
+  ): Promise<Array<PackageData>> {
+    const loadedPackageData = new Set<InternalPackageData>();
+    const messageCallback = options.messageCallback || console.log;
+    const errorCallback = options.errorCallback || console.error;
+    if (names instanceof PyProxy) {
+      names = names.toJs();
+    }
+    if (!Array.isArray(names)) {
+      names = [names as string];
+    }
+
+    const toLoad = this.recursiveDependencies(names, errorCallback);
+
+    for (const [_, { name, normalizedName, channel }] of toLoad) {
+      const loaded = loadedPackages[name];
+      if (loaded === undefined) {
+        continue;
+      }
+
+      toLoad.delete(normalizedName);
+      // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+      // dependency, which was previously overridden.
+      if (loaded === channel || channel === DEFAULT_CHANNEL) {
+        messageCallback(`${name} already loaded from ${loaded}`);
+      } else {
+        errorCallback(
+          `URI mismatch, attempting to load package ${name} from ${channel} ` +
+            `while it is already loaded from ${loaded}. To override a dependency, ` +
+            `load the custom package first.`,
+        );
+      }
+    }
+
+    if (toLoad.size === 0) {
+      messageCallback("No new packages to load");
+      return [];
+    }
+
+    const packageNames = Array.from(toLoad.values(), ({ name }) => name)
+      .sort()
+      .join(", ");
+    const failed = new Map<string, Error>();
+    const releaseLock = await this._lock();
+    try {
+      messageCallback(`Loading ${packageNames}`);
+      for (const [_, pkg] of toLoad) {
+        if (loadedPackages[pkg.name]) {
+          // Handle the race condition where the package was loaded between when
+          // we did dependency resolution and when we acquired the lock.
+          toLoad.delete(pkg.normalizedName);
+          continue;
+        }
+
+        pkg.installPromise = this.downloadAndInstall(
+          pkg,
+          toLoad,
+          loadedPackageData,
+          failed,
+          options.checkIntegrity,
+        );
+      }
+
+      await Promise.all(
+        Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
+      );
+
+      // Warning: this sounds like it might not do anything important, but it
+      // fills in the GOT. There can be segfaults if we leave it out.
+      // See https://github.com/emscripten-core/emscripten/issues/22052
+      // TODO: Fix Emscripten so this isn't needed
+      Module.reportUndefinedSymbols();
+      if (loadedPackageData.size > 0) {
+        const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
+          .sort()
+          .join(", ");
+        messageCallback(`Loaded ${successNames}`);
+      }
+
+      if (failed.size > 0) {
+        const failedNames = Array.from(failed.keys()).sort().join(", ");
+        messageCallback(`Failed to load ${failedNames}`);
+        for (const [name, err] of failed) {
+          errorCallback(`The following error occurred while loading ${name}:`);
+          errorCallback(err.message);
+        }
+      }
+
+      // We have to invalidate Python's import caches, or it won't
+      // see the new files.
+      API.importlib.invalidate_caches();
+      return Array.from(loadedPackageData, filterPackageData);
+    } finally {
+      releaseLock();
+    }
+  }
+
+  /**
    * Recursively add a package and its dependencies to toLoad.
    * A helper function for recursiveDependencies.
    * @param name The package to add
@@ -300,7 +441,7 @@ class PackageManager {
         install_dir: "site",
         sha256: "",
         package_type: "package",
-        imports: [] as string[],
+        imports: [],
         depends: [],
       };
     }
@@ -372,147 +513,6 @@ class PackageManager {
       // pkg.done.reject(err);
     } finally {
       pkg.done.resolve();
-    }
-  }
-
-  /**
-   * Load packages from the Pyodide distribution or Python wheels by URL.
-   *
-   * This installs packages in the virtual filesystem. Packages
-   * needs to be imported from Python before it can be used.
-   *
-   * This function can only install packages included in the Pyodide distribution,
-   * or Python wheels by URL, without dependency resolution. It is significantly
-   * more limited in terms of functionality as compared to :mod:`micropip`,
-   * however it has less overhead and can be faster.
-   *
-   * When installing binary wheels by URLs it is user's responsibility to check
-   * that the installed binary wheel is compatible in terms of Python and
-   * Emscripten versions. Compatibility is not checked during installation time
-   * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
-   * is installed it would fail at import time.
-   *
-   *
-   * @param names Either a single package name or URL or a list of them. URLs can
-   * be absolute or relative. The URLs must correspond to Python wheels:
-   * either pure Python wheels, with a file name ending with ``none-any.whl``
-   * or Emscripten/WASM 32 wheels, with a file name ending with
-   * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
-   * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
-   * which case the list will be converted to JavaScript and the
-   * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
-   * @param options
-   * @param options.messageCallback A callback, called with progress messages
-   *    (optional)
-   * @param options.errorCallback A callback, called with error/warning messages
-   *    (optional)
-   * @param options.checkIntegrity If true, check the integrity of the downloaded
-   *    packages (default: true)
-   * @async
-   * @returns The loaded package data.
-   */
-  public async loadPackage(
-    names: string | PyProxy | Array<string>,
-    options: {
-      messageCallback?: (message: string) => void;
-      errorCallback?: (message: string) => void;
-      checkIntegrity?: boolean;
-    } = {
-      checkIntegrity: true,
-    },
-  ): Promise<Array<PackageData>> {
-    const loadedPackageData = new Set<InternalPackageData>();
-    const messageCallback = options.messageCallback || console.log;
-    const errorCallback = options.errorCallback || console.error;
-    if (names instanceof PyProxy) {
-      names = names.toJs();
-    }
-    if (!Array.isArray(names)) {
-      names = [names as string];
-    }
-
-    const toLoad = this.recursiveDependencies(names, errorCallback);
-
-    for (const [_, { name, normalizedName, channel }] of toLoad) {
-      const loaded = loadedPackages[name];
-      if (loaded === undefined) {
-        continue;
-      }
-
-      toLoad.delete(normalizedName);
-      // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
-      // dependency, which was previously overridden.
-      if (loaded === channel || channel === DEFAULT_CHANNEL) {
-        messageCallback(`${name} already loaded from ${loaded}`);
-      } else {
-        errorCallback(
-          `URI mismatch, attempting to load package ${name} from ${channel} ` +
-            `while it is already loaded from ${loaded}. To override a dependency, ` +
-            `load the custom package first.`,
-        );
-      }
-    }
-
-    if (toLoad.size === 0) {
-      messageCallback("No new packages to load");
-      return [];
-    }
-
-    const packageNames = Array.from(toLoad.values(), ({ name }) => name)
-      .sort()
-      .join(", ");
-    const failed = new Map<string, Error>();
-    const releaseLock = await this._lock();
-    try {
-      messageCallback(`Loading ${packageNames}`);
-      for (const [_, pkg] of toLoad) {
-        if (loadedPackages[pkg.name]) {
-          // Handle the race condition where the package was loaded between when
-          // we did dependency resolution and when we acquired the lock.
-          toLoad.delete(pkg.normalizedName);
-          continue;
-        }
-
-        pkg.installPromise = this.downloadAndInstall(
-          pkg,
-          toLoad,
-          loadedPackageData,
-          failed,
-          options.checkIntegrity,
-        );
-      }
-
-      await Promise.all(
-        Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
-      );
-
-      // Warning: this sounds like it might not do anything important, but it
-      // fills in the GOT. There can be segfaults if we leave it out.
-      // See https://github.com/emscripten-core/emscripten/issues/22052
-      // TODO: Fix Emscripten so this isn't needed
-      Module.reportUndefinedSymbols();
-      if (loadedPackageData.size > 0) {
-        const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
-          .sort()
-          .join(", ");
-        messageCallback(`Loaded ${successNames}`);
-      }
-
-      if (failed.size > 0) {
-        const failedNames = Array.from(failed.keys()).sort().join(", ");
-        messageCallback(`Failed to load ${failedNames}`);
-        for (const [name, err] of failed) {
-          errorCallback(`The following error occurred while loading ${name}:`);
-          errorCallback(err.message);
-        }
-      }
-
-      // We have to invalidate Python's import caches, or it won't
-      // see the new files.
-      API.importlib.invalidate_caches();
-      return Array.from(loadedPackageData, filterPackageData);
-    } finally {
-      releaseLock();
     }
   }
 
