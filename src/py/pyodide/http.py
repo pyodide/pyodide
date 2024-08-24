@@ -40,6 +40,17 @@ class HttpStatusError(OSError):
             super().__init__(f"{status} Client Error: {status_text} for url: {url}")
         elif 500 <= status < 600:
             super().__init__(f"{status} Server Error: {status_text} for url: {url}")
+        else:
+            super().__init__(
+                f"{status} Invalid error code not between 400 and 599: {status_text} for url: {url}"
+            )
+
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (self.status, self.status_text, self.url),
+            self.__dict__,
+        )
 
 
 class BodyUsedError(OSError):
@@ -212,7 +223,7 @@ class FetchResponse:
             raise BodyUsedError
 
     def raise_for_status(self) -> None:
-        """Raise an :py:exc:`OSError` if the status of the response is an error (4xx or 5xx)"""
+        """Raise an :py:exc:`HttpStatusError` if the status of the response is an error (4xx or 5xx)"""
         if 400 <= self.status < 600:
             raise HttpStatusError(self.status, self.status_text, self.url)
 

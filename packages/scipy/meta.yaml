@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.13.1
+  version: 1.14.0
   tag:
     - min-scipy-stack
   top-level:
@@ -17,25 +17,27 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/ae/00/48c2f661e2816ccf2ecd77982f6605b2950afe60f60a52b4cbbc2504aa8f/scipy-1.13.1.tar.gz
-  sha256: 095a87a0312b08dfd6a6155cbbd310a8c51800fc931b8c0b84003014b874ed3c
+  url: https://files.pythonhosted.org/packages/4e/e5/0230da034a2e1b1feb32621d7cd57c59484091d6dccc9e6b855b0d309fc9/scipy-1.14.0.tar.gz
+  sha256: b5923f48cb840380f9854339176ef21763118a7300a88203ccd0bdd26e58527b
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-int-to-string.patch
     - patches/0003-gemm_-no-const.patch
     - patches/0004-make-int-return-values.patch
-    - patches/0005-Remove-test-modules-that-fails-to-build.patch
-    - patches/0006-Fix-fitpack.patch
-    - patches/0007-Fix-gees-calls.patch
-    - patches/0008-MAINT-linalg-Remove-id_dist-Fortran-files.patch
-    - patches/0009-Mark-mvndst-functions-recursive.patch
-    - patches/0010-Make-sreorth-recursive.patch
-    - patches/0011-Link-openblas-with-modules-that-require-f2c.patch
-    - patches/0012-Remove-fpchec-inline-if-else-constructs.patch
-    - patches/0013-Remove-chla_transtype.patch
-    - patches/0014-Set-wrapper-return-type-to-int.patch
-    - patches/0015-Skip-svd_gesdd-test.patch
+    - patches/0005-Fix-fitpack.patch
+    - patches/0006-Fix-gees-calls.patch
+    - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
+    - patches/0008-Mark-mvndst-functions-recursive.patch
+    - patches/0009-Make-sreorth-recursive.patch
+    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0011-Remove-fpchec-inline-if-then-endif-constructs.patch # remove with SciPy v1.15.0
+    - patches/0012-Remove-chla_transtype.patch
+    - patches/0013-Set-wrapper-return-type-to-int.patch
+    - patches/0014-Skip-svd_gesdd-test.patch # remove with SciPy v1.15.0
+    - patches/0015-Remove-f2py-generator.patch
+    - patches/0016-Make-sf_error_state_lib-a-static-library.patch
+    - patches/0017-Remove-test-modules-that-fail-to-build.patch
 
 build:
   cflags: |
@@ -50,8 +52,14 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
+
+  # Exclude tests via Meson's install tags functionality.
+  unvendor-tests: true
+  # install-args=--tags=runtime,python-runtime,devel
+  # Disable when running tests, enable when a PR is ready, i.e., building for distribution.
   backend-flags: |
     build-dir=build
+
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython

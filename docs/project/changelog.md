@@ -51,16 +51,20 @@ myst:
 - {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
   {pr}`4993`
 
+- {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
+  JSON (Arrays and Objects). to Python JSON (lists and dicts).
+  {pr}`4666`
+
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5.0 {pr}`4823`
+- Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `bokeh` to 3.4.2 {pr}`4888`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
-- Upgraded `scipy` to 1.13.1 {pr}`4719`, {pr}`5011`
+- Upgraded `scipy` to 1.14.0 {pr}`4719`, {pr}`5011`, {pr}`5012`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
 - Added `casadi` 3.6.5 {pr}`4936`
 - Added `pyarrow` 17.0.0 {pr}`4950`
