@@ -3,12 +3,8 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import {
-  type PackageData,
-  type InternalPackageData,
-  type PackageLoadMetadata,
-} from "./load-package";
 import { SnapshotConfig } from "./snapshot";
+import { ResolvablePromise } from "./common/resolveable";
 
 export type TypedArray =
   | Int8Array
@@ -347,6 +343,49 @@ type LockfileInfo = {
 export type Lockfile = {
   info: LockfileInfo;
   packages: Record<string, InternalPackageData>;
+};
+
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
+
+// Package data inside pyodide-lock.json
+
+export interface PackageData {
+  name: string;
+  version: string;
+  fileName: string;
+  /** @experimental */
+  packageType: PackageType;
+}
+
+/**
+ * @hidden
+ */
+export type InternalPackageData = {
+  name: string;
+  version: string;
+  file_name: string;
+  package_type: PackageType;
+  install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+};
+
+/**
+ * @hidden
+ */
+export type PackageLoadMetadata = {
+  name: string;
+  normalizedName: string;
+  channel: string;
+  depends: string[];
+  done: ResolvablePromise;
+  installPromise?: Promise<void>;
+  packageData: InternalPackageData;
 };
 
 export interface API {
