@@ -739,6 +739,7 @@ def test_data_files_support(selenium_standalone, httpserver):
     def _run(selenium):
         import sys
         from pathlib import Path
+
         import dummy_pkg
 
         assert dummy_pkg

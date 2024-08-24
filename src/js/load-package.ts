@@ -447,7 +447,8 @@ class PackageManager {
       extract_dir: installDir,
       calculate_dynlibs: true,
       installer: "pyodide.loadPackage",
-      source: metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
+      source:
+        metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
     });
 
     if (DEBUG) {

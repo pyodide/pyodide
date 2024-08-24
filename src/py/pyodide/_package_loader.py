@@ -337,7 +337,7 @@ def install_datafiles(
     data_file_dir_name = wheel_data_file_dir(archive, wheel_name)
     if data_file_dir_name is None:
         return
-    
+
     data_file_dir = target_dir / data_file_dir_name / "data"
     install_files(data_file_dir, sys.prefix)
 
