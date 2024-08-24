@@ -242,14 +242,13 @@ def unpack_buffer(
         buffer._into_file(f)
         shutil.unpack_archive(f.name, extract_path, format)
 
-        suffix = Path(filename).suffix
+        suffix = Path(f.name).suffix
         if suffix == ".whl":
             z = ZipFile(f)
             set_wheel_installer(filename, z, extract_path, installer, source)
             install_datafiles(filename, z, extract_path)
 
         if calculate_dynlibs:
-            suffix = Path(f.name).suffix
             return to_js(get_dynlibs(f, suffix, extract_path))
 
     return None
@@ -338,7 +337,7 @@ def install_datafiles(
     data_file_dir_name = wheel_data_file_dir(archive, wheel_name)
     if data_file_dir_name is None:
         return
-
+    
     data_file_dir = target_dir / data_file_dir_name / "data"
     install_files(data_file_dir, sys.prefix)
 

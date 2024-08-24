@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
@@ -734,13 +735,15 @@ def test_data_files_support(selenium_standalone, httpserver):
         """
     )
 
-    selenium.run(
-        """
+    @run_in_pyodide
+    def _run(selenium):
         import sys
         from pathlib import Path
+        import dummy_pkg
 
-        assert "dummy_pkg" in sys.modules
-        assert (Path(sys.prefix) / "share" / "datafile").is_file()
-        assert (Path(sys.prefix) / "etc" / "datafile2").is_file()
-        """
-    )
+        assert dummy_pkg
+
+        assert (Path(sys.prefix) / "share" / "datafile").is_file(), "datafile not found"
+        assert (Path(sys.prefix) / "etc" / "datafile2").is_file(), "datafile2 not found"
+
+    _run(selenium)
