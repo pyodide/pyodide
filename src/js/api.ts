@@ -1,13 +1,13 @@
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { PackageData, loadPackage, loadedPackages } from "./load-package";
+import { loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray } from "./types";
+import { TypedArray, PackageData } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
