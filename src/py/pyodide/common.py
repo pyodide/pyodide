@@ -1,6 +1,7 @@
-from pathlib import Path
 import os
 import shutil
+from pathlib import Path
+
 
 def install_files(src: str | Path, dst: str | Path) -> None:
     """
@@ -8,7 +9,7 @@ def install_files(src: str | Path, dst: str | Path) -> None:
     This function is similar to shutil.copytree, but it does not raise an error if dst or any of its subdirectories
     already exist. Instead, it will copy the files from src to dst, overwriting any existing files with the same name.
     It mostly bahaves like `make install` in the sense it is used to install multiple files into a single directory.
-    
+
     Parameters
     ----------
     src

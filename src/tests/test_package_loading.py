@@ -479,7 +479,7 @@ def test_wheel_dist_info_dir():
     from tempfile import NamedTemporaryFile
     from zipfile import ZipFile
 
-    from pyodide._package_loader import wheel_dist_info_dir, UnsupportedWheel
+    from pyodide._package_loader import UnsupportedWheel, wheel_dist_info_dir
 
     with NamedTemporaryFile(suffix=".whl") as t:
         z = ZipFile(t, mode="w")
@@ -488,7 +488,9 @@ def test_wheel_dist_info_dir():
         z.close()
         t.flush()
 
-        with pytest.raises(UnsupportedWheel, match=".dist-info directory not found in wheel"):
+        with pytest.raises(
+            UnsupportedWheel, match=".dist-info directory not found in wheel"
+        ):
             wheel_dist_info_dir(z, "pkg-name")
 
     with NamedTemporaryFile(suffix=".whl") as t:
@@ -533,6 +535,7 @@ def test_wheel_data_file_dir():
         assert wheel_data_file_dir(z, "pkg-name") == "pkg_name.data"
 
         assert wheel_data_file_dir(z, "not-package") is None
+
 
 class DummyDistribution:
     def __init__(

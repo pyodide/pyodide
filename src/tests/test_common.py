@@ -1,5 +1,6 @@
 import pytest
 
+
 def test_install_files_simple(tmp_path):
     from pyodide.common import install_files
 

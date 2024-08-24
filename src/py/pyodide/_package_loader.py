@@ -1,4 +1,3 @@
-import os
 import re
 import shutil
 import sys
@@ -17,7 +16,6 @@ except ImportError:
 
 from .common import install_files
 from .ffi import IN_BROWSER, JsArray, JsBuffer, to_js
-
 
 SITE_PACKAGES = Path(getsitepackages()[0])
 if sys.base_prefix == sys.prefix:
@@ -87,10 +85,10 @@ def find_wheel_metadata_dir(source: ZipFile, suffix: str) -> str | None:
     ----------
     source
         A ZipFile object representing the wheel file.
-    
+
     suffix
         The suffix of the metadata directory. Usually ".dist-info" or ".data"
-    
+
     Returns
     -------
         The name of the metadata directory. If not found, returns None.
@@ -107,6 +105,7 @@ def find_wheel_metadata_dir(source: ZipFile, suffix: str) -> str | None:
     # Choose the first directory if there are multiple directories
     info_dir = info_dirs[0]
     return info_dir
+
 
 def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     """
@@ -137,9 +136,8 @@ def wheel_data_file_dir(source: ZipFile, name: str) -> str | None:
     canonical_name = canonicalize_name(name)
     if not data_file_dir_name.startswith(canonical_name):
         return None
-    
-    return data_file_dir
 
+    return data_file_dir
 
 
 def make_whlfile(
@@ -330,7 +328,7 @@ def install_datafiles(
     filename: str,
     archive: ZipFile,
     target_dir: Path,
-):
+) -> None:
     """
     Install data files from a wheel into the target directory.
     While data files are not standard in wheels, they are common in the wild and pip supports them.
@@ -342,7 +340,7 @@ def install_datafiles(
         return
 
     data_file_dir = target_dir / data_file_dir_name / "data"
-    install_files(data_file_dir, sys.prefix())
+    install_files(data_file_dir, sys.prefix)
 
 
 def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
@@ -378,6 +376,7 @@ def get_dynlibs(archive: IO[bytes], suffix: str, target_dir: Path) -> list[str]:
         for path in dynlib_paths_iter
         if should_load_dynlib(path)
     ]
+
 
 def get_dist_source(dist_path: Path) -> tuple[str, str]:
     """Get the package name and a description of the source of a package.
