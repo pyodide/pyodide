@@ -1,7 +1,16 @@
 From b43a231f8326d6953929030131c3fb6b2cb163bd Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Wed, 15 May 2024 21:29:02 +0530
-Subject: [PATCH 12/15] Remove fpchec inline if-else constructs
+Subject: [PATCH 11/17] Remove fpchec inline if-then-endif constructs
+
+This PR removes the single-line if-then-endif constructs in fpchec.f
+that were causing syntactical errors when compiling with f2c, possibly
+because fpchec uses some dated, punch-card FORTRAN syntax. It converts
+them to statements split over multiple lines.
+
+This patch has been upstreamed via https://github.com/scipy/scipy/pull/21365
+and it can be safely removed once SciPy v1.15.0 is released and is being
+integrated in Pyodide.
 
 ---
  scipy/interpolate/fitpack/fpchec.f | 42 +++++++++++++++++++++++-------

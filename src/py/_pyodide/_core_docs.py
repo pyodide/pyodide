@@ -241,6 +241,54 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         """
         raise NotImplementedError
 
+    def as_py_json(self) -> "JsMutableMap[str, Any] | JsArray[Any]":
+        """Returns a new JsProxy that treats a JavaScript object as Python json.
+
+        It allows one to treat a JavaScript object that is a mixture of
+        JavaScript arrays and objects as a mixture of Python lists and dicts.
+
+        This method is not present on typed arrays, array buffers, functions,
+        and errors.
+
+        Examples
+        --------
+
+        >>> from pyodide.code import run_js # doctest: +RUN_IN_PYODIDE
+        >>> o1 = run_js("({x : {y: 2}})")
+        >>> o1.as_py_json()["x"]["y"]
+        2
+        >>> o2 = run_js("[{x: 2}, {x: 7}]")
+        >>> [e["x"] for e in o2.as_py_json()]
+        [2, 7]
+
+
+
+        You can use the following converter as the `default` argument to
+        :py:func:`json.dumps` to serialize a JavaScript object with
+
+        >>> from pyodide.ffi import JsProxy
+        >>> def default(obj):
+        ...   if isinstance(obj, JsProxy):
+        ...     if obj.constructor.name == "Array":
+        ...       return list(obj)
+        ...     return dict(obj)
+
+        For example:
+
+        >>> import json
+        >>> json.dumps(o1.as_py_json(), default=default)
+        '{"x": {"y": 2}}'
+        >>> json.dumps(o2.as_py_json(), default=default)
+        '[{"x": 2}, {"x": 7}]'
+
+        If you load the resulting json back into Python, the result is the same
+        as calling :py:meth:`JsProxy.to_py()`:
+
+        >>> assert json.loads(json.dumps(o1.as_py_json(), default=default)) == o1.to_py()
+        >>> assert json.loads(json.dumps(o2.as_py_json(), default=default)) == o2.to_py()
+        """
+        raise NotImplementedError
+
     def new(self, *args: Any, **kwargs: Any) -> "JsProxy":
         """Construct a new instance of the JavaScript object"""
         raise NotImplementedError
@@ -976,7 +1024,11 @@ class JsMap(JsIterable[KT], Generic[KT, VT_co], Mapping[KT, VT_co], metaclass=_A
     (idiomatically it should be called ``size``) and it must be iterable.
     """
 
-    _js_type_flags = ["HAS_GET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+    _js_type_flags = [
+        "HAS_GET | HAS_LENGTH | IS_ITERABLE",
+        "IS_OBJECT_MAP",
+        "IS_PY_JSON_DICT",
+    ]
 
     def __getitem__(self, idx: KT) -> VT_co:
         raise NotImplementedError
@@ -1031,7 +1083,11 @@ class JsMutableMap(
     ``JsMap`` .
     """
 
-    _js_type_flags = ["HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE", "IS_OBJECT_MAP"]
+    _js_type_flags = [
+        "HAS_GET | HAS_SET | HAS_LENGTH | IS_ITERABLE",
+        "IS_OBJECT_MAP",
+        "IS_PY_JSON_DICT",
+    ]
 
     @overload
     def pop(self, key: KT, /) -> VT: ...

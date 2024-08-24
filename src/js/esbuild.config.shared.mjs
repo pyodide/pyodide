@@ -18,6 +18,9 @@ function toDefines(o, path = "") {
     if (typeof v === "object") {
       return toDefines(v, path + x + ".");
     }
+    if (typeof v === "string" && !v.startsWith('"')) {
+      return [[path + x, `"${v}"`]];
+    }
     // Else convert to string
     return [[path + x, v.toString()]];
   });
@@ -29,7 +32,13 @@ const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines };
 const DEFINES = Object.fromEntries(toDefines(constants));
 
 export const dest = (output) => join(__dirname, "..", "..", output);
-export const config = ({ input, output, format, name: globalName }) => ({
+export const config = ({
+  input,
+  output,
+  format,
+  name: globalName,
+  extraDefines,
+}) => ({
   entryPoints: [join(__dirname, input + ".ts")],
   outfile: dest(output),
   external: [
@@ -43,7 +52,7 @@ export const config = ({ input, output, format, name: globalName }) => ({
     "node:vm",
     "ws",
   ],
-  define: DEFINES,
+  define: { ...DEFINES, ...Object.fromEntries(toDefines(extraDefines ?? {})) },
   minify: !DEBUG,
   keepNames: true,
   sourcemap: true,
