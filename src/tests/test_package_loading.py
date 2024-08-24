@@ -718,7 +718,10 @@ def test_data_files_support(selenium_standalone, httpserver):
     test_file_data = test_file_path.read_bytes()
 
     httpserver.expect_oneshot_request("/" + test_file_name).respond_with_data(
-       test_file_data, content_type="application/zip",
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
     )
     request_url = httpserver.url_for("/" + test_file_name)
 
