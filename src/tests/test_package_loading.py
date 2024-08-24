@@ -465,7 +465,7 @@ def test_find_wheel_metadata_dir():
     with NamedTemporaryFile(suffix=".whl") as t:
         z = ZipFile(t, mode="w")
         z.writestr("a.dist-info/METADATA", "")
-        z.wirtestr("b.some-info/METADATA", "")
+        z.writestr("b.some-info/METADATA", "")
 
         z.close()
         t.flush()
@@ -502,7 +502,7 @@ def test_wheel_dist_info_dir():
         assert wheel_dist_info_dir(z, "pkg_name") == "pkg_name.dist-info"
         assert wheel_dist_info_dir(z, "pkg-name") == "pkg_name.dist-info"
 
-        with pytest.raises(UnsupportedWheel, match="does not start with not-package"):
+        with pytest.raises(UnsupportedWheel, match="does not start with 'not-package'"):
             wheel_dist_info_dir(z, "not-package")
 
 
