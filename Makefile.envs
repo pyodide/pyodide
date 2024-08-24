@@ -15,7 +15,7 @@ export PYODIDE_BUILD_COMMIT=fac0109aa2acf14469320b049d710dd42639bf94
 export PYODIDE_BUILD_REPO=https://github.com/pyodide/pyodide-build
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_URL=https://github.com/ryanking13/pyodide-recipes-mirror/releases/download/20240803/packages.tar.gz
+export PYODIDE_PREBUILT_PACKAGES_URL=https://github.com/pyodide/pyodide-recipes/releases/download/20240803/packages.tar.gz
 export ENABLE_PREBUILT_PACKAGES?=0
 
 ifdef CPYTHON_DEBUG
