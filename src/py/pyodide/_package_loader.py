@@ -52,6 +52,10 @@ PLATFORM_TAG_REGEX = re.compile(
 )
 SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
+DIST_INFO_DIR_SUFFIX = ".dist-info"
+DATA_FILES_DIR_SUFFIX = ".data"
+DATA_FILES_PARENT_DIR = "data"
+
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
     tokens = filename.split("-")
@@ -111,22 +115,24 @@ def wheel_dist_info_dir(source: ZipFile, name: str) -> str:
     """
     Returns the name of the contained .dist-info directory.
     """
-    dist_info_dir = find_wheel_metadata_dir(source, suffix=".dist-info")
+    dist_info_dir = find_wheel_metadata_dir(source, suffix=DIST_INFO_DIR_SUFFIX)
     if dist_info_dir is None:
-        raise UnsupportedWheel(f".dist-info directory not found in wheel {name!r}")
+        raise UnsupportedWheel(
+            f"{DIST_INFO_DIR_SUFFIX} directory not found in wheel {name!r}"
+        )
 
     dist_info_dir_name = canonicalize_name(dist_info_dir)
     canonical_name = canonicalize_name(name)
     if not dist_info_dir_name.startswith(canonical_name):
         raise UnsupportedWheel(
-            f".dist-info directory {dist_info_dir!r} does not start with {canonical_name!r}"
+            f"{DIST_INFO_DIR_SUFFIX} directory {dist_info_dir!r} does not start with {canonical_name!r}"
         )
 
     return dist_info_dir
 
 
 def wheel_data_file_dir(source: ZipFile, name: str) -> str | None:
-    data_file_dir = find_wheel_metadata_dir(source, suffix=".data")
+    data_file_dir = find_wheel_metadata_dir(source, suffix=DATA_FILES_DIR_SUFFIX)
 
     # data files are optional, so we return None if not found
     if data_file_dir is None:
@@ -338,7 +344,7 @@ def install_datafiles(
     if data_file_dir_name is None:
         return
 
-    data_file_dir = target_dir / data_file_dir_name / "data"
+    data_file_dir = target_dir / data_file_dir_name / DATA_FILES_PARENT_DIR
     install_files(data_file_dir, sys.prefix)
 
 
