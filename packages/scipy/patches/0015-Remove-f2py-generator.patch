@@ -1,0 +1,304 @@
+From 9b670bd5330bd7834d157a9ec3087a97b71d6516 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Fri, 16 Aug 2024 22:59:26 +0530
+Subject: [PATCH 15/17] Remove f2py generator
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+This patch reverts changes made in d85ba6b910ea9040b6a72bdc4ea87d151118f41d
+and is applied at the end, after the rest of the patches – the order is important.
+
+It removes the f2py generator and replaces it with custom targets mapping to
+f2py-generated wrappers. This is done to avoid the need for the f2py executable
+to be present in the environment where SciPy is built. Instead, the Python
+executable is used to run f2py as a module which is useful where f2py is not
+present on PATH.
+
+---
+ scipy/integrate/meson.build              | 32 +++++++++++++++++++++---
+ scipy/interpolate/meson.build            |  8 +++++-
+ scipy/io/meson.build                     |  8 +++++-
+ scipy/meson.build                        | 24 ------------------
+ scipy/optimize/meson.build               | 30 +++++++++++++++++++---
+ scipy/sparse/linalg/_propack/meson.build |  8 +++++-
+ scipy/stats/meson.build                  |  8 +++++-
+ tools/generate_f2pymod.py                |  3 ++-
+ 8 files changed, 85 insertions(+), 36 deletions(-)
+
+diff --git a/scipy/integrate/meson.build b/scipy/integrate/meson.build
+index cfaa927139..44c63fa526 100644
+--- a/scipy/integrate/meson.build
++++ b/scipy/integrate/meson.build
+@@ -128,8 +128,14 @@ py3.extension_module('_odepack',
+   subdir: 'scipy/integrate'
+ )
+ 
++vode_module = custom_target('vode_module',
++  output: ['_vode-f2pywrappers.f', '_vodemodule.c'],
++  input: 'vode.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_vode',
+-  f2py_gen.process('vode.pyf'),
++  vode_module,
+   link_with: [vode_lib],
+   c_args: [Wno_unused_variable],
+   link_args: version_link_args,
+@@ -139,8 +145,14 @@ py3.extension_module('_vode',
+   subdir: 'scipy/integrate'
+ )
+ 
++lsoda_module = custom_target('lsoda_module',
++  output: ['_lsoda-f2pywrappers.f', '_lsodamodule.c'],
++  input: 'lsoda.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_lsoda',
+-  f2py_gen.process('lsoda.pyf'),
++  lsoda_module,
+   link_with: [lsoda_lib, mach_lib],
+   c_args: [Wno_unused_variable],
+   dependencies: [lapack_dep, fortranobject_dep],
+@@ -150,8 +162,14 @@ py3.extension_module('_lsoda',
+   subdir: 'scipy/integrate'
+ )
+ 
++_dop_module = custom_target('_dop_module',
++  output: ['_dop-f2pywrappers.f', '_dopmodule.c'],
++  input: 'dop.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_dop',
+-  f2py_gen.process('dop.pyf'),
++  _dop_module,
+   link_with: [dop_lib],
+   c_args: [Wno_unused_variable],
+   dependencies: [lapack, fortranobject_dep],
+@@ -169,8 +187,14 @@ py3.extension_module('_test_multivariate',
+   install_tag: 'tests'
+ )
+ 
++_test_odeint_banded_module = custom_target('_test_odeint_banded_module',
++  output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
++  input: 'tests/test_odeint_banded.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_test_odeint_banded',
+-  ['tests/banded5x5.f', f2py_gen.process('tests/test_odeint_banded.pyf')],
++  ['tests/banded5x5.f', _test_odeint_banded_module],
+   link_with: [lsoda_lib, mach_lib],
+   fortran_args: _fflag_Wno_unused_dummy_argument,
+   link_args: version_link_args,
+diff --git a/scipy/interpolate/meson.build b/scipy/interpolate/meson.build
+index 69ec25f6af..38dd2a8cc3 100644
+--- a/scipy/interpolate/meson.build
++++ b/scipy/interpolate/meson.build
+@@ -143,9 +143,15 @@ py3.extension_module('_fitpack',
+   subdir: 'scipy/interpolate'
+ )
+ 
++dfitpack_module = custom_target('dfitpack_module',
++  output: ['_dfitpack-f2pywrappers.f', '_dfitpackmodule.c'],
++  input: 'src/dfitpack.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ # TODO: Add flags for 64 bit ints
+ py3.extension_module('_dfitpack',
+-  f2py_gen.process('src/dfitpack.pyf'),
++  dfitpack_module,
+   c_args: [Wno_unused_variable],
+   link_args: version_link_args,
+   dependencies: [lapack_dep, fortranobject_dep],
+diff --git a/scipy/io/meson.build b/scipy/io/meson.build
+index 60f71c6968..89a9cf69ba 100644
+--- a/scipy/io/meson.build
++++ b/scipy/io/meson.build
+@@ -1,6 +1,12 @@
++_test_fortran_module = custom_target('_test_fortran_module',
++  output: ['_test_fortranmodule.c'],
++  input: 'test_fortran.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_test_fortran',
+   [
+-    f2py_gen.process('test_fortran.pyf'),
++    _test_fortran_module,
+     '_test_fortran.f'
+   ],
+   c_args: [Wno_unused_variable],
+diff --git a/scipy/meson.build b/scipy/meson.build
+index a0857848a2..ff47bde52e 100644
+--- a/scipy/meson.build
++++ b/scipy/meson.build
+@@ -144,30 +144,6 @@ fortranobject_dep = declare_dependency(
+   compile_args: _f2py_c_args,
+ )
+ 
+-f2py = find_program('f2py')
+-# It should be quite rare for the `f2py` executable to not be the one from
+-# `numpy` installed in the Python env we are building for (unless we are
+-# cross-compiling). If it is from a different env, that is still fine as long
+-# as it's not too old. We are only using f2py as a code generator, and the
+-# output is not dependent on platform or Python version (see gh-20612 for more
+-# details).
+-# This should be robust enough. If not, we can make this more complex, using
+-# a fallback to `python -m f2py` rather than erroring out.
+-f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
+-if f2py_version.version_compare('<'+min_numpy_version)
+-  error(f'Found f2py executable is too old: @f2py_version@')
+-endif
+-
+-# Note: this generato cannot handle:
+-# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
+-# 2. targets with #include's (due to no `depend_files` - see feature request
+-#    at meson#8295)
+-f2py_gen = generator(generate_f2pymod,
+-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+-  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+-)
+-
+-
+ # TODO: 64-bit BLAS and LAPACK
+ #
+ # Note that this works as long as BLAS and LAPACK are detected properly via
+diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
+index 50d62ef68b..6cef85027a 100644
+--- a/scipy/optimize/meson.build
++++ b/scipy/optimize/meson.build
+@@ -92,12 +92,18 @@ py3.extension_module('_zeros',
+   subdir: 'scipy/optimize'
+ )
+ 
++lbfgsb_module = custom_target('lbfgsb_module',
++  output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
++  input: 'lbfgsb_src/lbfgsb.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_lbfgsb',
+   [
+     'lbfgsb_src/lbfgsb.f',
+     'lbfgsb_src/linpack.f',
+     'lbfgsb_src/timer.f',
+-    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
++    lbfgsb_module,
+   ],
+   fortran_args: fortran_ignore_warnings,
+   link_args: version_link_args,
+@@ -120,6 +126,12 @@ py3.extension_module('_moduleTNC',
+   subdir: 'scipy/optimize'
+ )
+ 
++cobyla_module = custom_target('cobyla_module',
++  output: ['_cobylamodule.c'],
++  input: 'cobyla/cobyla.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_cobyla',
+-  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
++  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+   c_args: [Wno_unused_variable],
+@@ -131,8 +143,14 @@ py3.extension_module('_cobyla',
+   subdir: 'scipy/optimize'
+ )
+ 
++minpack2_module = custom_target('minpack2_module',
++  output: ['_minpack2module.c'],
++  input: 'minpack2/minpack2.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_minpack2',
+-  [f2py_gen.process('minpack2/minpack2.pyf'), 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
++  [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
+   fortran_args: fortran_ignore_warnings,
+   link_args: version_link_args,
+   dependencies: [lapack, fortranobject_dep],
+@@ -142,8 +160,14 @@ py3.extension_module('_minpack2',
+   subdir: 'scipy/optimize'
+ )
+ 
++slsqp_module = custom_target('slsqp_module',
++  output: ['_slsqpmodule.c'],
++  input: 'slsqp/slsqp.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_slsqp',
+-  [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
++  [slsqp_module, 'slsqp/slsqp_optmz.f'],
+   fortran_args: fortran_ignore_warnings,
+   link_args: version_link_args,
+   dependencies: [fortranobject_dep],
+diff --git a/scipy/sparse/linalg/_propack/meson.build b/scipy/sparse/linalg/_propack/meson.build
+index 6714724958..df358df651 100644
+--- a/scipy/sparse/linalg/_propack/meson.build
++++ b/scipy/sparse/linalg/_propack/meson.build
+@@ -97,8 +97,14 @@ foreach ele: elements
+     gnu_symbol_visibility: 'hidden',
+   )
+ 
++  propack_module = custom_target('propack_module' + ele[0],
++    output: [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
++    input: ele[2],
++    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++  )
++
+   propacklib = py3.extension_module(ele[0],
+-    f2py_gen.process(ele[2]),
++    propack_module,
+     link_with: propack_lib,
+     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
+     fortran_args: _fflag_Wno_maybe_uninitialized,
+diff --git a/scipy/stats/meson.build b/scipy/stats/meson.build
+index 358279a93b..7c973b1cf3 100644
+--- a/scipy/stats/meson.build
++++ b/scipy/stats/meson.build
+@@ -31,8 +31,14 @@ py3.extension_module('_ansari_swilk_statistics',
+   subdir: 'scipy/stats'
+ )
+ 
++mvn_module = custom_target('mvn_module',
++  output: ['_mvn-f2pywrappers.f', '_mvnmodule.c'],
++  input: 'mvn.pyf',
++  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
++)
++
+ py3.extension_module('_mvn',
+-  [f2py_gen.process('mvn.pyf'), 'mvndst.f'],
++  [mvn_module, 'mvndst.f'],
+   # Wno-surprising is to suppress a pointless warning with GCC 10-12
+   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
+   fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
+diff --git a/tools/generate_f2pymod.py b/tools/generate_f2pymod.py
+index b6bc02eb04..3da75c14d1 100644
+--- a/tools/generate_f2pymod.py
++++ b/tools/generate_f2pymod.py
+@@ -9,6 +9,7 @@ import argparse
+ import os
+ import re
+ import subprocess
++import sys
+ 
+ 
+ # START OF CODE VENDORED FROM `numpy.distutils.from_template`
+@@ -283,7 +284,7 @@ def main():
+ 
+     # Now invoke f2py to generate the C API module file
+     if args.infile.endswith(('.pyf.src', '.pyf')):
+-        p = subprocess.Popen(['f2py', fname_pyf,
++        p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
+                             '--build-dir', outdir_abs], #'--quiet'],
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             cwd=os.getcwd())
+-- 
+2.39.3 (Apple Git-146)
+

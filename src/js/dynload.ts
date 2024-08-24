@@ -3,9 +3,7 @@
 declare var DEBUG: boolean;
 
 import { createLock } from "./common/lock";
-import { memoize } from "./common/memoize";
-import { InternalPackageData } from "./load-package";
-import { LoadDynlibFS, ReadFileType } from "./types";
+import { LoadDynlibFS, ReadFileType, InternalPackageData } from "./types";
 
 /**
  * Recursively get all subdirectories of a directory
