@@ -52,6 +52,7 @@ def _copy_wasm_libs(
 
     pythoninclude = get_relative_path(pyodide_root, "PYTHONINCLUDE")
     sysconfig_dir = get_relative_path(pyodide_root, "SYSCONFIGDATA_DIR")
+
     to_copy: list[Path] = [
         pythoninclude,
         sysconfig_dir,
