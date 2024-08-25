@@ -4,7 +4,7 @@
 
 ## How can I load external files in Pyodide?
 
-See {accessing_files_quickref}`accessing_files_quickref`.
+See {ref}`accessing_files_quickref`.
 
 ## Why can't I load files from the local file system?
 

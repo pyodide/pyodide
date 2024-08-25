@@ -18,6 +18,8 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
     -fPIC
   script: |
+    embuilder build zlib --pic
+    embuilder build bzip2 --pic
     cd htslib
     emconfigure ./configure CFLAGS="-s USE_ZLIB=1 -s USE_BZIP2=1 -fPIC" --disable-lzma
     export HTSLIB_MODE="separate"

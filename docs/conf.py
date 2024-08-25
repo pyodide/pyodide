@@ -18,7 +18,25 @@ panels_add_bootstrap_css = False
 # -- Project information -----------------------------------------------------
 
 project = "Pyodide"
-copyright = "2019-2022, Pyodide contributors and Mozilla"
+copyright = "2019-2024, Pyodide contributors and Mozilla"
+
+nitpicky = True
+nitpick_ignore = []
+
+
+def ignore_typevars():
+    """These are all intentionally broken. Disable the warnings about it."""
+    PY_TYPEVARS_TO_IGNORE = ["T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co"]
+    JS_TYPEVARS_TO_IGNORE = ["TResult", "TResult1", "TResult2", "U"]
+
+    for typevar in PY_TYPEVARS_TO_IGNORE:
+        nitpick_ignore.append(("py:obj", f"_pyodide._core_docs.{typevar}"))
+
+    for typevar in JS_TYPEVARS_TO_IGNORE:
+        nitpick_ignore.append(("js:func", typevar))
+
+
+ignore_typevars()
 
 # -- General configuration ---------------------------------------------------
 
@@ -46,7 +64,7 @@ extensions = [
 myst_enable_extensions = ["substitution", "attrs_inline"]
 
 js_language = "typescript"
-jsdoc_config_path = "../src/js/tsconfig.json"
+jsdoc_tsconfig_path = "../src/js/tsconfig.json"
 root_for_relative_js_paths = "../src/"
 issues_github_path = "pyodide/pyodide"
 
@@ -62,7 +80,7 @@ autodoc_default_flags = ["members", "inherited-members"]
 
 micropip_version = micropip.__version__
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3.11", None),
+    "python": ("https://docs.python.org/3.12", None),
     "micropip": (f"https://micropip.pyodide.org/en/v{micropip_version}/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
@@ -94,6 +112,8 @@ exclude_patterns = [
 pygments_style = None
 
 # -- Options for HTML output -------------------------------------------------
+
+html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -140,9 +160,7 @@ IN_READTHEDOCS_LATEST = (
 base_dir = Path(__file__).resolve().parent.parent
 extra_sys_path_dirs = [
     str(base_dir),
-    str(base_dir / "pyodide-build"),
     str(base_dir / "src/py"),
-    str(base_dir / "packages/micropip/src"),
 ]
 
 
@@ -249,6 +267,23 @@ def write_console_html(app):
     atexit.register(remove_console_html)
 
 
+def write_examples(app):
+    """Preprocess the examples HTML/ js files and copy them to the output directory"""
+    example_outdir = Path(app.outdir) / "examples"
+    example_outdir.mkdir(exist_ok=True, parents=True)
+
+    example_html_dir = Path("./usage/examples")
+
+    for example in example_html_dir.iterdir():
+        if not example.is_file() or example.suffix not in [".html", ".js"]:
+            continue
+        text = example.read_text()
+        text = text.replace("{{ PYODIDE_BASE_URL }}", app.config.CDN_URL)
+
+        output_path = example_outdir / example.name
+        output_path.write_text(text)
+
+
 def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
         return
@@ -341,5 +376,6 @@ def setup(app):
     calculate_pyodide_version(app)
     ensure_typedoc_on_path()
     write_console_html(app)
+    write_examples(app)
     prune_docs()
     Path("../src/js/generated/pyproxy.ts").unlink(missing_ok=True)

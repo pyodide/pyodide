@@ -79,7 +79,9 @@ async function main() {
     try {
         py = await loadPyodide({
             args,
-            env: Object.assign({}, process.env, {HOME: process.cwd() }),
+            env: Object.assign({
+                PYTHONINSPECT: "",
+            }, process.env, { HOME: process.cwd() }),
             fullStdLib: false,
             _node_mounts: dirsToMount(),
             // Strip out messages written to stderr while loading
@@ -137,11 +139,16 @@ async function main() {
     for (const dynlib of dynlibs) {
         try {
             await py._module.API.loadDynlib(dynlib);
-        } catch(e){
+        } catch(e) {
             console.error("Failed to load lib ", dynlib);
             console.error(e);
         }
     }
+    // Warning: this sounds like it might not do anything important, but it
+    // fills in the GOT. There can be segfaults if we leave it out.
+    // See https://github.com/emscripten-core/emscripten/issues/22052
+    // TODO: Fix Emscripten so this isn't needed
+    py._module.reportUndefinedSymbols();
 
     py.runPython(
         `
@@ -176,14 +183,10 @@ async function main() {
     try {
         errcode = py._module._run_main();
     } catch (e) {
-        // If someone called exit, just exit with the right return code.
-        if(e.constructor.name === "ExitStatus"){
+        if (e.constructor.name === "ExitStatus") {
             process.exit(e.status);
         }
-        // Otherwise if there is some sort of error, include the Python
-        // tracebook in addition to the JavaScript traceback
-        py._module._dump_traceback();
-        throw e;
+        py._api.fatal_error(e);
     }
     if (errcode) {
         process.exit(errcode);

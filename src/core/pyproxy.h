@@ -11,7 +11,11 @@
 // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
 
 JsVal
-pyproxy_new_ex(PyObject* obj, bool capture_this, bool roundtrip, bool register);
+pyproxy_new_ex(PyObject* obj,
+               bool capture_this,
+               bool roundtrip,
+               bool register,
+               bool is_json_adaptor);
 
 JsVal
 pyproxy_new(PyObject* obj);
@@ -66,7 +70,8 @@ create_once_callable(PyObject* obj, bool may_syncify);
 JsVal
 create_promise_handles(PyObject* onfulfilled,
                        PyObject* onrejected,
-                       JsVal done_callback_id);
+                       JsVal done_callback,
+                       PyObject* js2py_converter);
 
 int
 pyproxy_init(PyObject* core);

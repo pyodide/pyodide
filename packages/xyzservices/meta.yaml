@@ -1,11 +1,11 @@
 package:
   name: xyzservices
-  version: 2023.10.1
+  version: 2024.4.0
   top-level:
     - xyzservices
 source:
-  sha256: 091229269043bc8258042edbedad4fcb44684b0473ede027b5672ad40dc9fa02
-  url: https://files.pythonhosted.org/packages/70/6a/6c0f3b2269d0b6f25013987a044de70a9af78280cf589c1056642f1f715e/xyzservices-2023.10.1.tar.gz
+  sha256: 6a04f11487a6fb77d92a98984cd107fbd9157fd5e65f929add9c3d6e604ee88c
+  url: https://files.pythonhosted.org/packages/1c/5a/ff41db7ce4112e7d9f33117798136e7d139070b0e7a8ff2967c0ba5336df/xyzservices-2024.4.0.tar.gz
 about:
   home: https://github.com/geopandas/xyzservices
   PyPI: https://pypi.org/project/xyzservices

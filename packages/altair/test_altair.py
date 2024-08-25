@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(firefox="slow")
 @run_in_pyodide(packages=["altair"])
 def test_altair(selenium):
     import altair as alt

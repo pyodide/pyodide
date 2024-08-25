@@ -3,11 +3,8 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import {
-  type PackageData,
-  type InternalPackageData,
-  type PackageLoadMetadata,
-} from "./load-package";
+import { SnapshotConfig } from "./snapshot";
+import { ResolvablePromise } from "./common/resolveable";
 
 export type TypedArray =
   | Int8Array
@@ -100,17 +97,29 @@ declare global {
         ) => any),
   ) => any;
 
-  export const _pyproxy_getflags: (ptr: number) => number;
+  export const _pyproxy_getflags: (
+    ptr: number,
+    is_json_adaptor: boolean,
+  ) => number;
   export const __pyproxy_type: (ptr: number) => string;
   export const __pyproxy_repr: (ptr: number) => string;
-  export const __pyproxy_getitem: (obj: number, key: any) => any;
+  export const __pyproxy_getitem: (
+    obj: number,
+    key: any,
+    cache: Map<string, any>,
+    is_json_adaptor: boolean,
+  ) => any;
   export const __pyproxy_setitem: (ptr: number, key: any, value: any) => number;
   export const __pyproxy_delitem: (ptr: number, key: any) => number;
   export const __pyproxy_contains: (ptr: number, key: any) => number;
   export const __pyproxy_GetIter: (ptr: number) => number;
   export const __pyproxy_GetAIter: (ptr: number) => number;
   export const __pyproxy_aiter_next: (ptr: number) => any;
-  export const __pyproxy_iter_next: (ptr: number) => any;
+  export const __pyproxy_iter_next: (
+    ptr: number,
+    cache: Map<string, any>,
+    is_json_adaptor: boolean,
+  ) => any;
   export const __pyproxyGen_Send: (
     ptr: number,
     arg: any,
@@ -166,6 +175,7 @@ export type FSNode = {
   timestamp: number;
   rdev: number;
   contents: Uint8Array;
+  mode: number;
 };
 
 export type FSStream = {
@@ -216,10 +226,15 @@ export interface FS {
   mkdev: (path: string, dev: number) => FSNode;
   filesystems: any;
   stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (node: FSNode) => string[];
+  readdir: (path: string) => string[];
   isDir: (mode: number) => boolean;
   isMountpoint: (mode: FSNode) => boolean;
-  lookupPath: (path: string) => { node: FSNode };
+  lookupPath: (
+    path: string,
+    options?: {
+      follow_mount?: boolean;
+    },
+  ) => { node: FSNode };
   isFile: (mode: number) => boolean;
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
   chmod: (path: string, mode: number) => void;
@@ -236,37 +251,86 @@ export interface FS {
   close: (stream: FSStream) => void;
   ErrnoError: { new (errno: number): Error };
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
+  syncfs(dir: boolean, oncomplete: (val: void) => void): void;
+  findObject(a: string, dontResolveLastLink?: boolean): any;
+  readFile(a: string): Uint8Array;
+}
+
+/** @private */
+export type PreRunFunc = (Module: Module) => void;
+
+export type ReadFileType = (path: string) => Uint8Array;
+
+// File System-like type which can be passed to
+// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+export type LoadDynlibFS = {
+  readFile: ReadFileType;
+  findObject: (path: string, dontResolveLastLink: boolean) => any;
+};
+
+type DSO = any;
+
+export interface LDSO {
+  loadedLibsByName: {
+    [key: string]: DSO;
+  };
 }
 
 export interface Module {
-  noImageDecoding: boolean;
-  noAudioDecoding: boolean;
-  noWasmDecoding: boolean;
-  quit: (status: number, toThrow: Error) => void;
-  preRun: { (): void }[];
-  print?: (a: string) => void;
-  printErr?: (a: string) => void;
-  arguments: string[];
   API: API;
-  postRun: ((a: Module) => void) | ((a: Module) => void)[];
   locateFile: (file: string) => string;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
   FS: FS;
+  LDSO: LDSO;
   canvas?: HTMLCanvasElement;
-  addRunDependency: (id: string) => void;
-  removeRunDependency: (id: string) => void;
-  reportUndefinedSymbols: () => void;
+  addRunDependency(id: string): void;
+  removeRunDependency(id: string): void;
+  reportUndefinedSymbols(): void;
+  loadDynamicLibrary(
+    lib: string,
+    options?: {
+      loadAsync?: boolean;
+      nodelete?: boolean;
+      allowUndefined?: boolean;
+      global?: boolean;
+      fs: LoadDynlibFS;
+    },
+    localScope?: object | null,
+    handle?: number,
+  ): void;
+  getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
+    neededDynlibs: string[];
+  };
+
   ERRNO_CODES: { [k: string]: number };
-  instantiateWasm?: (
-    imports: { [key: string]: any },
-    successCallback: (
-      instance: WebAssembly.Instance,
-      module: WebAssembly.Module,
-    ) => void,
-  ) => void;
+  stringToNewUTF8(x: string): number;
+  _compat_to_string_repr: number;
+  js2python_convert: (
+    obj: any,
+    options: {
+      depth?: number;
+      defaultConverter?: (
+        value: any,
+        converter: (value: any) => any,
+        cacheConversion: (input: any, output: any) => void,
+      ) => any;
+    },
+  ) => any;
+  _PropagatePythonError: typeof Error;
+  _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
+  Py_EmscriptenSignalBuffer: TypedArray;
+  HEAP8: Uint8Array;
+  __hiwire_get(a: number): any;
+  __hiwire_set(a: number, b: any): void;
+  __hiwire_immortal_add(a: any): void;
+  _jslib_init(): number;
+  _init_pyodide_proxy(): number;
+  jsWrapperTag: any; // Should be WebAssembly.Tag
+  getExceptionMessage(e: number): [string, string];
+  handle_js_error(e: any): void;
 }
 
 type LockfileInfo = {
@@ -279,6 +343,49 @@ type LockfileInfo = {
 export type Lockfile = {
   info: LockfileInfo;
   packages: Record<string, InternalPackageData>;
+};
+
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
+
+// Package data inside pyodide-lock.json
+
+export interface PackageData {
+  name: string;
+  version: string;
+  fileName: string;
+  /** @experimental */
+  packageType: PackageType;
+}
+
+/**
+ * @hidden
+ */
+export type InternalPackageData = {
+  name: string;
+  version: string;
+  file_name: string;
+  package_type: PackageType;
+  install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+};
+
+/**
+ * @hidden
+ */
+export type PackageLoadMetadata = {
+  name: string;
+  normalizedName: string;
+  channel: string;
+  depends: string[];
+  done: ResolvablePromise;
+  installPromise?: Promise<void>;
+  packageData: InternalPackageData;
 };
 
 export interface API {
@@ -361,6 +468,16 @@ export interface API {
   sys: PyProxy;
   os: PyProxy;
 
-  finalizeBootstrap: () => PyodideInterface;
+  restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
+  makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
+  saveSnapshot(): Uint8Array;
+  finalizeBootstrap: (
+    fromSnapshot?: SnapshotConfig,
+    snapshotDeserializer?: (obj: any) => any,
+  ) => PyodideInterface;
+  syncUpSnapshotLoad3(conf: SnapshotConfig): void;
+  abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
+
+  LiteralMap: any;
 }

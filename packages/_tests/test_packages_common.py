@@ -72,9 +72,7 @@ def test_import(
 
     if name in UNSUPPORTED_PACKAGES[selenium_standalone.browser]:
         pytest.xfail(
-            "{} fails to load and is not supported on {}.".format(
-                name, selenium_standalone.browser
-            )
+            f"{name} fails to load and is not supported on {selenium_standalone.browser}."
         )
 
     selenium_standalone.run("import glob, os, site")
@@ -99,7 +97,7 @@ def test_import(
 
     def _import_pkg():
         for import_name in import_names:
-            selenium_standalone.run_async("import %s" % import_name)
+            selenium_standalone.run_async(f"import {import_name}")
 
     benchmark(_import_pkg)
 

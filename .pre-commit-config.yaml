@@ -3,7 +3,7 @@ default_language_version:
   python: "3.12"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: "v4.5.0"
+    rev: "v4.6.0"
     hooks:
       - id: check-added-large-files
       - id: check-case-conflict
@@ -16,15 +16,15 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
 
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.1.14"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.5.0"
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: "v17.0.6"
+    rev: "v18.1.8"
     hooks:
       - id: clang-format
         types_or: [c++, c, cuda]
@@ -39,24 +39,24 @@ repos:
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: "v0.9.0.6"
+    rev: "v0.10.0.1"
     hooks:
       - id: shellcheck
         exclude: ^src/templates/python$
 
   - repo: https://github.com/codespell-project/codespell
-    rev: "v2.2.6"
+    rev: "v2.3.0"
     hooks:
       - id: codespell
         args:
           [
             "--ignore-words-list",
-            "ags,aray,asend,ba,classs,crate,falsy,feld,inflight,lits,nd,slowy,te,oint",
+            "ags,aray,asend,ba,crate,falsy,feld,inflight,lits,nd,slowy,te,oint,conveniant,atmost",
           ]
         exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: "v1.8.0"
+    rev: "v1.11.0"
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
@@ -71,22 +71,22 @@ repos:
           - numpy
           - build
           - pytest
-          - pydantic<2
+          - pydantic>=2.0
           - unearth
           - resolvelib
           - rich
           - auditwheel_emscripten
-          - pyodide-lock==0.1.0a4
+          - pyodide-lock==0.1.0a5
           - micropip
       - id: mypy
         name: mypy-tests
         args: [--ignore-missing-imports]
-        files: ^(packages/|docs|/conftest.py|src/tests|pyodide-build/pyodide_build/tests)
+        files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v3.1.0"
+    rev: "v4.0.0-alpha.8"
     hooks:
       - id: prettier
 

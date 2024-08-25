@@ -140,7 +140,7 @@ try {
 export const wrapException = (e) =>
   new WebAssembly.Exception(jsWrapperTag, [e]);
 
-function createInvoke(sig) {
+export function createInvoke(sig) {
   if (!jsWrapperTag) {
     return createInvokeFunction(sig);
   }
@@ -162,10 +162,10 @@ function createInvoke(sig) {
 // our Wasm invokes if wasm EH is available.
 export function adjustWasmImports(wasmImports) {
   const i = "invoke_";
-  for (let name of Object.keys(wasmImports)) {
+  for (let name of Object.keys(wasmImports.env)) {
     if (!name.startsWith(i)) {
       continue;
     }
-    wasmImports[name] = createInvoke(name.slice(i.length));
+    wasmImports.env[name] = createInvoke(name.slice(i.length));
   }
 }

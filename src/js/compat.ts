@@ -1,4 +1,4 @@
-import ErrorStackParser from "error-stack-parser";
+import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
 import {
   IN_NODE,
   IN_NODE_ESM,
@@ -232,26 +232,6 @@ async function nodeLoadScript(url: string) {
   }
 }
 
-// consider dropping this this once we drop support for node 14?
-function nodeBase16ToBase64(b16: string): string {
-  return Buffer.from(b16, "hex").toString("base64");
-}
-
-function browserBase16ToBase64(b16: string): string {
-  return btoa(
-    b16
-      .match(/\w{2}/g)!
-      .map(function (a) {
-        return String.fromCharCode(parseInt(a, 16));
-      })
-      .join(""),
-  );
-}
-
-export const base16ToBase64 = IN_NODE
-  ? nodeBase16ToBase64
-  : browserBase16ToBase64;
-
 export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
   if (IN_NODE) {
     await initNodeModules();
@@ -281,6 +261,10 @@ export async function calculateDirname(): Promise<string> {
     err = e as Error;
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
+
+  if (IN_NODE && !fileName.startsWith("file://")) {
+    fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
+  }
 
   if (IN_NODE_ESM) {
     const nodePath = await import("node:path");

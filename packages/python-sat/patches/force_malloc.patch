@@ -26,18 +26,18 @@ index c4d2ead..a0a30db 100644
  
  	if (m == NULL)
 diff --git a/solvers/pysolvers.cc b/solvers/pysolvers.cc
-index a198f43..d45639b 100644
+index c2ef77d..67a3303 100644
 --- a/solvers/pysolvers.cc
 +++ b/solvers/pysolvers.cc
-@@ -15,6 +15,7 @@
+@@ -16,6 +16,7 @@
  #include <setjmp.h>
  #include <signal.h>
  #include <stdio.h>
 +#include <stdlib.h>
  #include <vector>
  
- #ifdef WITH_CADICAL
-@@ -643,8 +644,14 @@ static struct PyModuleDef module_def = {
+ #ifdef WITH_CADICAL103
+@@ -848,8 +849,14 @@ static struct PyModuleDef module_def = {
  	NULL,              /* m_free */
  };
  

@@ -1,0 +1,16 @@
+package:
+  name: lakers-python
+  version: 0.3.3
+  top-level:
+    - lakers
+source:
+  url: https://files.pythonhosted.org/packages/0b/53/4c942f81eb87be878f82331b63c04c7bff6268a837403837a07dfe129e7a/lakers_python-0.3.3.tar.gz
+  sha256: c0b3cfbc82478bde7dedcf06db275bdce328656361660bae7f527e6de617550c
+requirements:
+  executable:
+    - rustup
+about:
+  home: https://github.com/openwsn-berkeley/lakers/
+  PyPI: https://pypi.org/project/lakers-python/
+  summary: An implementation of EDHOC (RFC 9528)
+  license: BSD-3-Clause

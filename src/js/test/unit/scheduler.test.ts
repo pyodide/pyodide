@@ -13,6 +13,6 @@ describe("scheduleCallback", () => {
     const start = Date.now();
     scheduleCallback(() => {
       chai.assert.isAtLeast(Date.now() - start, 10);
-    }, 10);
+    }, 11);
   });
 });

@@ -18,10 +18,7 @@ typedef struct Js_Identifier
   JsRef object;
 } Js_Identifier;
 
-#define Js_static_string_init(value)                                           \
-  {                                                                            \
-    .string = value, .object = NULL                                            \
-  }
+#define Js_static_string_init(value) { .string = value, .object = NULL }
 #define Js_static_string(varname, value)                                       \
   static Js_Identifier varname = Js_static_string_init(value)
 #define Js_IDENTIFIER(varname) Js_static_string(JsId_##varname, #varname)
@@ -266,6 +263,9 @@ Jsv_greater_than_equal(JsVal a, JsVal b);
 
 JsVal
 JsvMap_New(void);
+
+JsVal
+JsvLiteralMap_New(void);
 
 errcode
 JsvMap_Set(JsVal map, JsVal key, JsVal val);

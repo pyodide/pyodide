@@ -1,6 +1,6 @@
 package:
   name: peewee
-  version: 3.17.1
+  version: 3.17.3
   top-level:
     - peewee
 requirements:
@@ -10,8 +10,8 @@ requirements:
     - sqlite3
     - cffi
 source:
-  url: https://files.pythonhosted.org/packages/8d/a5/89cdbc4a7f6d7a0624c120be102db770ee717aa371066581e3daf2beb96f/peewee-3.17.1.tar.gz
-  sha256: e009ac4227c4fdc0058a56e822ad5987684f0a1fbb20fed577200785102581c3
+  url: https://files.pythonhosted.org/packages/7a/b1/2331e6b1fc8c61686dd9276f34142265462640eb0dd431246e30c4461065/peewee-3.17.3.tar.gz
+  sha256: ef15f90b628e41a584be8306cdc3243c51f73ce88b06154d9572f6d0284a0169
 about:
   home: https://github.com/coleifer/peewee/
   PyPI: https://pypi.org/project/peewee/

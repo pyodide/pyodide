@@ -89,8 +89,6 @@ export function promisingApply(...args) {
   Module.stackStop = stackSave();
   // Subtle cframe shenanigans...
   Module.origCframe = _get_cframe();
-  const cframe = stackAlloc(HEAP32[_size_of_cframe / 4]);
-  _set_new_cframe(cframe);
   return promisingApplyHandler(...args);
 }
 
