@@ -119,13 +119,13 @@ EM_JS(JsVal, restore_stderr, (void), {
 /**
  * Wrap the exception in a JavaScript PythonError object.
  *
- * The return value of this function is always a valid hiwire ID to an error
- * object. It never returns NULL.
+ * The return value of this function is always a JavaScript error object. It
+ * never returns null.
  *
  * We are cautious about leaking the Python stack frame, so we don't increment
  * the reference count on the exception object, we just store a pointer to it.
- * Later we can check if this pointer is equal to sys.last_exc and if so
- * restore the exception (see restore_sys_last_exception).
+ * Later we can check if this pointer is equal to sys.last_exc and if so restore
+ * the exception (see restore_sys_last_exception).
  *
  * WARNING: dereferencing the error pointer stored on the PythonError is a
  * use-after-free bug.
@@ -154,6 +154,15 @@ wrap_exception()
   // Calls sys.excepthook. We set the excepthook to call
   // traceback.print_exception, see `set_excepthook()` in
   // `_pyodide/__init__.py`.
+  //
+  // If the error is a SystemExit and the PyConfig.inspect flag is not set,
+  // PyErr_Print() will call exit(). We don't want this generally, so we will
+  // generally set the `inspect` flag. The exception is in the CLI runner.
+  //
+  // In the CLI runner, if we call back into JS then back into Python and the
+  // inner Python raises SystemExit, we won't actually unwind the Python frames
+  // in the outer Python. Hypothetically this could cause trouble and we should
+  // fix it, but it's probably not worth the effort.
   PyErr_Print();
   JsVal formatted_exception = restore_stderr();
 

@@ -61,7 +61,7 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         delete WebAssembly.Suspender;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -89,7 +89,7 @@ def test_syncify_not_supported2(selenium_standalone_noload):
         WebAssembly.Module = new Proxy(WebAssembly.Module, {construct(){throw new Error("NOPE!");}});
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
-          async () => await pyodide._api.pyodide_code.eval_code.callSyncifying("1+1"),
+          async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
           "Error",
           "WebAssembly stack switching not supported in this JavaScript runtime"
         );
@@ -318,7 +318,7 @@ def test_two_way_transfer(selenium):
                     l.append([n, i])
         `);
         f = pyodide.globals.get("f");
-        await Promise.all([f.callSyncifying("a", 15), f.callSyncifying("b", 25)])
+        await Promise.all([f.callPromising("a", 15), f.callPromising("b", 25)])
         f.destroy();
         const l = pyodide.globals.get("l");
         const res = l.toJs();
@@ -362,9 +362,9 @@ def test_sync_async_mix(selenium):
         const l = pyodide.globals.get("l");
 
         await Promise.all([
-            b.callSyncifying(300),
-            b.callSyncifying(200),
-            b.callSyncifying(250),
+            b.callPromising(300),
+            b.callPromising(200),
+            b.callPromising(250),
             a(220),
             a(150),
             a(270)
@@ -392,11 +392,11 @@ def test_nested_syncify(selenium):
         """
         async function f1() {
             await sleep(30);
-            return await g1.callSyncifying();
+            return await g1.callPromising();
         }
         async function f2() {
             await sleep(30);
-            return await g2.callSyncifying();
+            return await g2.callPromising();
         }
         async function getStuff() {
             await sleep(30);
@@ -426,7 +426,7 @@ def test_nested_syncify(selenium):
         const g1 = pyodide.globals.get("g1");
         const g2 = pyodide.globals.get("g2");
         const p = [];
-        p.push(g.callSyncifying().then((res) => l.append(res)));
+        p.push(g.callPromising().then((res) => l.append(res)));
         p.push(pyodide.runPythonAsync(`
             from js import sleep
             for i in range(20):
@@ -518,7 +518,7 @@ def test_throw_from_switcher(selenium):
         `);
         const a = pyodide.globals.get("a");
         const b = pyodide.globals.get("b");
-        const p = a.callSyncifying();
+        const p = a.callPromising();
         assert(() => b() === 7);
         await assertThrowsAsync(async () => await p, "PythonError", "Exception: hi");
         a.destroy();
@@ -554,8 +554,8 @@ def test_switch_from_except_block(selenium):
         `);
         const pe = pyodide.globals.get("pe");
         const g = pyodide.globals.get("g");
-        const g1 = g.callSyncifying("a");
-        const g2 = g.callSyncifying("b");
+        const g1 = g.callPromising("a");
+        const g2 = g.callPromising("b");
         pe('tt')
         await g1;
         await g2;
@@ -576,3 +576,169 @@ def test_switch_from_except_block(selenium):
         ["b2", "Exception('b')"],
         ["b3", "None"],
     ]
+
+
+# Start with just a no-op script
+LEAK_SCRIPT1 = """
+def test(n):
+    pass
+"""
+
+#
+LEAK_SCRIPT2 = """
+from pyodide.ffi import run_sync
+from js import sleep
+
+def test(n):
+    run_sync(sleep(1))
+"""
+
+LEAK_SCRIPT3 = """
+from pyodide.ffi import run_sync
+from asyncio import sleep as py_sleep, ensure_future
+
+async def sleep(x):
+    await py_sleep(x/1000)
+
+def test(n):
+    run_sync(ensure_future(sleep(1)))
+"""
+
+LEAK_SCRIPT4 = """
+from pyodide.ffi import run_sync
+from asyncio import sleep as py_sleep
+
+async def sleep(x):
+    await py_sleep(x/1000)
+
+def test(n):
+    run_sync(sleep(1))
+"""
+
+
+@requires_jspi
+@pytest.mark.parametrize(
+    "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
+)
+def test_memory_leak(selenium, script):
+    length_change = selenium.run_js(
+        f"""
+        pyodide.runPython(`{script}`);
+        """
+        """
+        const t = pyodide.globals.get("test");
+        let p = [];
+        // warm up first to avoid edge problems
+        for (let i = 0; i < 200; i++) {
+            p.push(t.callPromising(1));
+        }
+        await Promise.all(p);
+        const startLength = pyodide._module.HEAP32.length;
+        for (let i = 0; i < 10; i++) {
+            p = [];
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callPromising(1));
+            }
+            await Promise.all(p);
+        }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0
+
+
+@requires_jspi
+@run_in_pyodide
+def test_run_until_complete(selenium):
+    from asyncio import create_task, gather, get_event_loop, sleep
+
+    from js import sleep as js_sleep
+    from pyodide.code import run_js
+
+    loop = get_event_loop()
+
+    async def test():
+        await sleep(0.1)
+        return 7
+
+    assert loop.run_until_complete(test()) == 7
+    assert loop.run_until_complete(create_task(test())) == 7
+    loop.run_until_complete(sleep(0.1))
+    loop.run_until_complete(js_sleep(100))
+    res = loop.run_until_complete(
+        gather(test(), sleep(0.1), js_sleep(100), js_sleep(100))
+    )
+    assert list(res) == [7, None, None, None]
+    p = run_js("[sleep(100).then(() => 99)]")[0]
+    assert loop.run_until_complete(p) == 99
+
+
+@requires_jspi
+def test_can_run_sync(selenium):
+    results = selenium.run_js(
+        """
+        const results = [];
+        pyodide.globals.set("results", results);
+        pyodide.runPython(`
+            from pyodide.ffi import can_run_sync, to_js
+            from pyodide.code import run_js
+            def expect(n, val):
+                results.append(to_js([n, can_run_sync(), val]))
+        `)
+
+
+        pyodide.runPython(`expect(0, False)`);
+
+        await pyodide.runPythonAsync(`expect(1, True)`);
+
+        pyodide.runPython(`
+            def fsync():
+               expect(2, False)
+        `);
+        const fsync = pyodide.globals.get("fsync");
+        fsync();
+        fsync.destroy();
+
+        pyodide.runPython(`
+            def fsync():
+                expect(3, True)
+
+            async def fasync():
+                fsync()
+                expect(4, True)
+        `);
+        const fasync = pyodide.globals.get("fasync");
+        await fasync();
+        fasync.destroy();
+
+        await pyodide.runPythonAsync(`
+            def fsync():
+                expect(5, False)
+
+            run_js("(f) => f()")(fsync)
+        `);
+
+        await pyodide.runPythonAsync(`
+            def fsync():
+                expect(6, True)
+
+            async def fasync():
+                fsync()
+                expect(7, True)
+
+            await run_js("(f) => f()")(fasync)
+        `);
+
+        await pyodide.runPythonAsync(`
+            run_js("(x) => Array.from(x)")([])
+            expect(8, True)
+        `);
+
+        return results;
+        """
+    )
+    assert len(results) == 9
+    for idx, [i, res, expected] in enumerate(results):
+        assert idx == i
+        assert res == expected

@@ -38,7 +38,7 @@ declare var FS: typeof Module.FS;
 
 // The type of the function we expect the user to give us. make_get_char takes
 // one of these and turns it into a GetCharType function for us.
-/** @private */
+/** @hidden */
 export type InFuncType = () =>
   | null
   | undefined

@@ -1,7 +1,9 @@
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 from typing import Any
 
@@ -59,6 +61,35 @@ def test_pyimport2(selenium):
         platform.destroy();
         """
     )
+
+
+def test_pyimport3():
+    from _pyodide._base import eval_code, pyimport_impl
+
+    with TemporaryDirectory() as tempdir:
+        Path(tempdir, "aaa").mkdir()
+        Path(tempdir, "aaa", "bbb.py").write_text("ccc = 1")
+        sys.path.insert(0, tempdir)
+
+        aaa = pyimport_impl("aaa")
+        pyimport_impl("aaa.bbb")
+        del aaa.bbb.ccc
+
+        # case 1 unload parent module
+        del sys.modules["aaa"]
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 2 delete child module
+        del aaa.bbb
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 3 recover deleted value
+        with pytest.raises(ModuleNotFoundError):
+            pyimport_impl("aaa.bbb.ccc")
+        del sys.modules["aaa.bbb"]
+        assert pyimport_impl("aaa.bbb.ccc") == 1
+
+        sys.path.remove(tempdir)
 
 
 def test_code_runner():
@@ -836,7 +867,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7  # type:ignore[operator]
+    assert proxy() == 7
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -890,7 +921,7 @@ def test_return_destroyed_value(selenium):
     from pyodide.ffi import JsException, create_proxy
 
     f = run_js("(function(x){ return x; })")
-    p = create_proxy([])
+    p = create_proxy([])  # type: ignore[var-annotated]
     p.destroy()
     with pytest.raises(JsException, match="Object has already been destroyed"):
         f(p)
@@ -1489,26 +1520,27 @@ def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert selenium.run_js(
         """
-            self.stdoutStrings = [];
-            self.stderrStrings = [];
-            function stdout(s){
-                stdoutStrings.push(s);
-            }
-            function stderr(s){
-                stderrStrings.push(s);
-            }
-            let pyodide = await loadPyodide({
-                fullStdLib: false,
-                jsglobals : self,
-                stdout,
-                stderr,
-                args: ['-c', 'print([x*x+1 for x in range(10)])']
-            });
-            self.pyodide = pyodide;
-            globalThis.pyodide = pyodide;
-            pyodide._module._run_main();
-            return stdoutStrings.pop()
-            """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            stdout,
+            stderr,
+            args: ['-c', 'print([x*x+1 for x in range(10)])'],
+            env: { PYTHONINSPECT: "" },
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._module._run_main();
+        return stdoutStrings.pop()
+        """
     ) == repr([x * x + 1 for x in range(10)])
 
 
@@ -1855,3 +1887,41 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
+
+
+def test_system_exit(selenium):
+    """Make sure nothing weird happens when we throw SystemExit"""
+    for _ in range(3):
+        selenium.run_js(
+            """
+            assertThrows(
+                () =>
+                    pyodide.runPython(`
+                        exit(1)
+                    `),
+                "PythonError",
+                "SystemExit: 1",
+            );
+            """
+        )
+
+
+@run_in_pyodide
+async def test_bug_4861(selenium):
+    """In version 0.26.1, there was a regression that makes this raise
+    "KeyError: '__builtins__'".
+
+    I don't really understand what this reproducer does, what the problem was,
+    or why the fix prevents the problem.
+    """
+    import collections
+
+    from pyodide.code import run_js
+
+    class ChainMap(collections.ChainMap, dict):  # type:ignore[misc, type-arg]
+        pass
+
+    def g(x):
+        return eval("x()", ChainMap({}, {"x": x}))
+
+    await g(run_js("async () => {}"))

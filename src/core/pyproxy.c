@@ -5,6 +5,7 @@
 
 #include "docstring.h"
 #include "js2python.h"
+#include "jsbind.h"
 #include "jslib.h"
 #include "jsmemops.h" // for pyproxy.js
 #include "jsproxy.h"
@@ -109,6 +110,8 @@ static PyObject* asyncio;
 #define IS_ASYNC_GENERATOR (1 << 12)
 #define IS_SEQUENCE (1 << 13)
 #define IS_MUTABLE_SEQUENCE (1 << 14)
+#define IS_JSON_ADAPTOR_DICT (1 << 15)
+#define IS_JSON_ADAPTOR_SEQUENCE (1 << 16)
 // clang-format on
 
 // _PyGen_GetCode is static, and PyGen_GetCode is a public wrapper around it
@@ -263,17 +266,29 @@ static int tuple_flags;
 static int list_flags;
 
 EMSCRIPTEN_KEEPALIVE int
-pyproxy_getflags(PyObject* pyobj)
+pyproxy_getflags(PyObject* pyobj, bool is_json_adaptor)
 {
   // Fast paths for some common cases
   if (PyDict_CheckExact(pyobj)) {
-    return dict_flags;
+    int result = dict_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_DICT;
+    }
+    return result;
   }
   if (PyTuple_CheckExact(pyobj)) {
-    return tuple_flags;
+    int result = tuple_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    }
+    return result;
   }
   if (PyList_CheckExact(pyobj)) {
-    return list_flags;
+    int result = list_flags;
+    if (is_json_adaptor) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    }
+    return result;
   }
   PyTypeObject* obj_type = Py_TYPE(pyobj);
   int result = type_getflags(obj_type);
@@ -295,6 +310,13 @@ pyproxy_getflags(PyObject* pyobj)
   if (!(result & IS_AWAITABLE) && (result & IS_GENERATOR) &&
       gen_is_coroutine(pyobj)) {
     result |= IS_AWAITABLE;
+  }
+  if (is_json_adaptor) {
+    if (result & IS_SEQUENCE) {
+      result |= IS_JSON_ADAPTOR_SEQUENCE;
+    } else if (result & HAS_GET) {
+      result |= IS_JSON_ADAPTOR_DICT;
+    }
   }
 finally:
   return result;
@@ -416,6 +438,32 @@ proxy_cache_set,
 })
 // clang-format on
 
+/**
+ * Used by pyproxy_iter_next and pyproxy_get_item for handling json adaptors.
+ *
+ * If is_json_adaptor,
+ *  1. check json adaptor cache for x, if it's already there get existing value
+ *  2. If it's not already there, convert x. Add an appropriate json adaptor
+ *     type flag if x needs it.
+ *  3. Add result to proxy cache.
+ */
+JsVal
+python2js_json_adaptor(PyObject* x, JsVal proxyCache, bool is_json_adaptor)
+{
+  if (!is_json_adaptor) {
+    return python2js(x);
+  }
+  JsVal cached_proxy = proxy_cache_get(proxyCache, x); /* borrowed */
+  if (!JsvNull_Check(cached_proxy)) {
+    return cached_proxy;
+  }
+  JsVal result = python2js_inner(x, JS_NULL, false, true, is_json_adaptor);
+  if (pyproxy_Check(result)) {
+    proxy_cache_set(proxyCache, x, result);
+  }
+  return result;
+}
+
 EMSCRIPTEN_KEEPALIVE JsVal
 _pyproxy_getattr(PyObject* pyobj, JsVal key, JsVal proxyCache)
 {
@@ -511,7 +559,10 @@ finally:
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_getitem(PyObject* pyobj, JsVal jskey)
+_pyproxy_getitem(PyObject* pyobj,
+                 JsVal jskey,
+                 JsVal proxyCache,
+                 bool is_json_adaptor)
 {
   bool success = false;
   PyObject* pykey = NULL;
@@ -522,7 +573,7 @@ _pyproxy_getitem(PyObject* pyobj, JsVal jskey)
   FAIL_IF_NULL(pykey);
   pyresult = PyObject_GetItem(pyobj, pykey);
   FAIL_IF_NULL(pyresult);
-  result = python2js(pyresult);
+  result = python2js_json_adaptor(pyresult, proxyCache, is_json_adaptor);
   FAIL_IF_JS_NULL(result);
 
   success = true;
@@ -759,6 +810,18 @@ finally:
   return result;
 }
 
+void
+set_new_cframe(_PyCFrame* frame);
+
+_PyCFrame*
+get_cframe();
+
+void
+exit_cframe(_PyCFrame* frame);
+
+void
+restore_cframe(_PyCFrame* frame);
+
 /**
  * call _pyproxy_apply but save the error flag into the argument so it can't be
  * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
@@ -773,8 +836,12 @@ _pyproxy_apply_promising(PyObject* callable,
                          size_t numkwargs,
                          PyObject** exc)
 {
+  _PyCFrame* cur = get_cframe();
+  _PyCFrame frame;
+  set_new_cframe(&frame);
   JsVal res =
     _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
+  exit_cframe(cur);
   *exc = PyErr_GetRaisedException();
   return res;
 }
@@ -810,13 +877,13 @@ _iscoroutinefunction(PyObject* f)
 }
 
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_iter_next(PyObject* iterator)
+_pyproxy_iter_next(PyObject* iterator, JsVal proxyCache, bool is_json_adaptor)
 {
   PyObject* item = PyIter_Next(iterator);
   if (item == NULL) {
     return JS_NULL;
   }
-  JsVal result = python2js(item);
+  JsVal result = python2js_json_adaptor(item, proxyCache, is_json_adaptor);
   Py_CLEAR(item);
   return result;
 }
@@ -1359,11 +1426,12 @@ _pyproxy_get_buffer(PyObject* ptrobj)
 // clang-format off
 EM_JS_VAL(JsVal,
 pyproxy_new_ex,
-(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister),
+(PyObject * ptrobj, bool capture_this, bool roundtrip, bool gcRegister, bool jsonAdaptor),
 {
   return Module.pyproxy_new(ptrobj, {
     props: { captureThis: !!capture_this, roundtrip: !!roundtrip },
     gcRegister,
+    jsonAdaptor
   });
 });
 // clang-format on
@@ -1388,7 +1456,7 @@ EM_JS_VAL(JsVal, create_once_callable, (PyObject * obj, bool may_syncify), {
     }
     try {
       if (may_syncify) {
-        return Module.callPyObjectMaybeSuspending(obj, args);
+        return Module.callPyObjectMaybePromising(obj, args);
       } else {
         return Module.callPyObject(obj, args);
       }
@@ -1432,6 +1500,33 @@ create_once_callable_py(PyObject* _mod,
 
 // clang-format off
 
+EMSCRIPTEN_KEEPALIVE int
+create_promise_handles_result_helper(PyObject* handle_result, PyObject* converter, JsVal jsval) {
+  bool success = false;
+  PyObject* pyval = NULL;
+  PyObject* result = NULL;
+
+  if (converter == NULL || Py_IsNone(converter)) {
+    pyval = js2python(jsval);
+  } else {
+    pyval = Js2PyConverter_convert(converter, jsval, JS_NULL);
+  }
+  FAIL_IF_NULL(pyval);
+  result = PyObject_CallOneArg(handle_result, pyval);
+  FAIL_IF_NULL(result);
+
+  success = true;
+finally:
+  Py_CLEAR(pyval);
+  Py_CLEAR(result);
+  if (!success) {
+    // Not sure what we'll do if this function fails tbh...
+    printf("Unexpected error:\n");
+    PyErr_Print();
+  }
+  return success ? 0 : -1;
+}
+
 /**
  * Arguments:
  *  handle_result -- Python callable expecting one argument, called with the
@@ -1457,7 +1552,10 @@ create_once_callable_py(PyObject* _mod,
  * some_promise.then(onResolved, onRejected).
  */
 EM_JS_VAL(JsVal, create_promise_handles, (
-  PyObject* handle_result, PyObject* handle_exception, JsVal done_callback
+  PyObject* handle_result,
+  PyObject* handle_exception,
+  JsVal done_callback,
+  PyObject* js2py_converter
 ), {
   // At some point it would be nice to use FinalizationRegistry with these, but
   // it's a bit tricky.
@@ -1466,6 +1564,9 @@ EM_JS_VAL(JsVal, create_promise_handles, (
   }
   if (handle_exception) {
     _Py_IncRef(handle_exception);
+  }
+  if (js2py_converter) {
+    _Py_IncRef(js2py_converter);
   }
   if(!done_callback){
     done_callback = (x) => {};
@@ -1483,14 +1584,18 @@ EM_JS_VAL(JsVal, create_promise_handles, (
       _Py_DecRef(handle_result);
     }
     if(handle_exception){
-      _Py_DecRef(handle_exception)
+      _Py_DecRef(handle_exception);
+    }
+    if (js2py_converter) {
+      _Py_DecRef(js2py_converter);
     }
   }
   function onFulfilled(res) {
     checkUsed();
     try {
-      if(handle_result){
-        return Module.callPyObjectMaybeSuspending(handle_result, [res]);
+      if (handle_result) {
+        // MaybePromising??
+        return _create_promise_handles_result_helper(handle_result, js2py_converter, res);
       }
     } finally {
       done_callback(res);
@@ -1501,7 +1606,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
     checkUsed();
     try {
       if(handle_exception){
-        return Module.callPyObjectMaybeSuspending(handle_exception, [err]);
+        return Module.callPyObjectMaybePromising(handle_exception, [err]);
       }
     } finally {
       done_callback(undefined);
@@ -1532,7 +1637,8 @@ create_proxy(PyObject* self,
         args, nargs, kwnames, &_parser, &obj, &capture_this, &roundtrip)) {
     return NULL;
   }
-  return JsProxy_create(pyproxy_new_ex(obj, capture_this, roundtrip, true));
+  return JsProxy_create(
+    pyproxy_new_ex(obj, capture_this, roundtrip, true, false));
 }
 
 static PyMethodDef methods[] = {

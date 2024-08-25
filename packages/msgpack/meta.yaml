@@ -1,11 +1,11 @@
 package:
   name: msgpack
-  version: 1.0.7
+  version: 1.0.8
   top-level:
     - msgpack
 source:
-  sha256: 572efc93db7a4d27e404501975ca6d2d9775705c2d922390d878fcf768d92c87
-  url: https://files.pythonhosted.org/packages/c2/d5/5662032db1571110b5b51647aed4b56dfbd01bfae789fa566a2be1f385d1/msgpack-1.0.7.tar.gz
+  sha256: 95c02b0e27e706e48d0e5426d1710ca78e0f0628d6e89d5b5a5b91a5f12274f3
+  url: https://files.pythonhosted.org/packages/08/4c/17adf86a8fbb02c144c7569dc4919483c01a2ac270307e2d59e1ce394087/msgpack-1.0.8.tar.gz
 about:
   home: https://msgpack.org/
   PyPI: https://pypi.org/project/msgpack

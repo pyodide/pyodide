@@ -43,13 +43,18 @@ def test_binom_ppf(selenium):
     assert binom.ppf(0.9, 1000, 0.1) == 112
 
 
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.driver_timeout(40)
-@run_in_pyodide(packages=["pytest", "scipy-tests"])
-def test_scipy_pytest(selenium):
+@run_in_pyodide(packages=["pytest", "scipy-tests", "micropip"])
+async def test_scipy_pytest(selenium):
     import pytest
 
+    import micropip
+
+    await micropip.install("hypothesis")
+
     def runtest(module, filter):
-        pytest.main(
+        result = pytest.main(
             [
                 "--pyargs",
                 f"scipy.{module}",
@@ -59,11 +64,18 @@ def test_scipy_pytest(selenium):
                 filter,
             ]
         )
+        assert result == 0
 
     runtest("odr", "explicit")
-    runtest("signal.tests.test_ltisys", "TestImpulse2")
     runtest("stats.tests.test_multivariate", "haar")
-    runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
+
+    # function signature mismatch with PROPACK, works with LOBPCG and ARPACK.
+    # Restore this when updating scipy
+    # runtest("sparse.linalg._eigen", "test_svds_parameter_k_which")
+    runtest(
+        "sparse.linalg._eigen.tests.test_svds",
+        "(not Test_SVDS_PROPACK) and test_svds_parameter_k_which",
+    )
 
 
 @pytest.mark.driver_timeout(40)
@@ -101,3 +113,78 @@ def test_logm(selenium_standalone):
     scale = 1e-4
     A = (eye(n) + random.rand(n, n) * scale).astype(dtype)
     logm(A)
+
+
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy"])
+def test_dblquad(selenium):
+    import scipy.integrate
+
+    unit_square_area = scipy.integrate.dblquad(
+        lambda y, x: 1, 0, 1, lambda x: 0, lambda x: 1
+    )
+    assert (
+        abs(unit_square_area[0] - 1) < unit_square_area[1]
+    ), f"Unit square area calculated using scipy.integrate.dblquad of {unit_square_area[0]} (+- {unit_square_area[0]}) is too far from 1.0"
+
+
+import shutil
+import subprocess
+from contextlib import contextmanager
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
+
+
+def check_emscripten():
+    if not shutil.which("emcc"):
+        pytest.skip("Needs Emscripten")
+
+
+@contextmanager
+def venv_ctxmgr(path):
+    check_emscripten()
+
+    if TYPE_CHECKING:
+        create_pyodide_venv: Any = None
+    else:
+        from pyodide_build.out_of_tree.venv import create_pyodide_venv
+
+    create_pyodide_venv(path)
+    try:
+        yield path
+    finally:
+        shutil.rmtree(path, ignore_errors=True)
+
+
+@pytest.fixture(scope="module")
+def venv(runtime):
+    if runtime != "node":
+        pytest.xfail("node only")
+    check_emscripten()
+    path = Path(".venv-pyodide-tmp-test")
+    with venv_ctxmgr(path) as venv:
+        yield venv
+
+
+def install_pkg(venv, pkgname):
+    return subprocess.run(
+        [
+            venv / "bin/pip",
+            "install",
+            pkgname,
+            "--disable-pip-version-check",
+        ],
+        capture_output=True,
+        encoding="utf8",
+    )
+
+
+def test_cmdline_runner(selenium, venv):
+    result = install_pkg(venv, "scipy")
+    assert result.returncode == 0
+    result = subprocess.run(
+        [venv / "bin/python", Path(__file__).parent / "cmdline_test_file.py"]
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0

@@ -1,12 +1,12 @@
 package:
   name: protobuf
-  version: 5.26.0
+  version: 5.27.3
   top-level:
     - google
 
 source:
-  url: https://files.pythonhosted.org/packages/ea/ab/ae590cd71f5a50cd9e0979593e217529b532a001e46c2dd0811c8697f4ad/protobuf-5.26.0.tar.gz
-  sha256: 82f5870d74c99addfe4152777bdf8168244b9cf0ac65f8eccf045ddfa9d80d9b
+  url: https://files.pythonhosted.org/packages/1b/61/0671db2ab2aee7c92d6c1b617c39b30a4cd973950118da56d77e7f397a9d/protobuf-5.27.3.tar.gz
+  sha256: 82460903e640f2b7e34ee81a947fdaad89de796d324bcbc38ff5430bcdead82c
 
 about:
   home: https://github.com/protocolbuffers/protobuf

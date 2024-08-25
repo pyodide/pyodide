@@ -1,16 +1,23 @@
-declare var Module: any;
-import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { PackageData, loadPackage, loadedPackages } from "./load-package";
+import { loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray } from "./types";
+import { TypedArray, PackageData } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
+// @ts-ignore
+import LiteralMap from "./common/literal-map";
+import abortSignalAny from "./common/abortSignalAny";
+import {
+  makeGlobalsProxy,
+  SnapshotConfig,
+  syncUpSnapshotLoad1,
+  syncUpSnapshotLoad2,
+} from "./snapshot";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -41,7 +48,7 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
-/** @private */
+/** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
 };
@@ -58,6 +65,18 @@ API.scheduleCallback = scheduleCallback;
 
 /** @private */
 API.detectEnvironment = detectEnvironment;
+
+// @ts-ignore
+if (AbortSignal.any) {
+  /** @private */
+  // @ts-ignore
+  API.abortSignalAny = AbortSignal.any;
+} else {
+  /** @private */
+  API.abortSignalAny = abortSignalAny;
+}
+
+API.LiteralMap = LiteralMap;
 
 function ensureMountPathExists(path: string): void {
   Module.FS.mkdirTree(path);
@@ -130,7 +149,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as any;
+  static FS = {} as typeof Module.FS;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -605,7 +624,7 @@ export class PyodideAPI {
    * purpose you like.
    */
   static setInterruptBuffer(interrupt_buffer: TypedArray) {
-    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = !!interrupt_buffer;
+    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = +!!interrupt_buffer;
     Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
   }
 
@@ -646,9 +665,22 @@ export class PyodideAPI {
     API.debug_ffi = debug;
     return orig;
   }
+
+  static makeMemorySnapshot({
+    serializer,
+  }: {
+    serializer?: (obj: any) => any;
+  } = {}): Uint8Array {
+    if (!API.config._makeSnapshot) {
+      throw new Error(
+        "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
+      );
+    }
+    return API.makeSnapshot(serializer);
+  }
 }
 
-/** @hidetype */
+/** @hidden */
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */
@@ -700,6 +732,20 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+export function jsFinderHook(o: object) {
+  if ("__all__" in o) {
+    return;
+  }
+  Object.defineProperty(o, "__all__", {
+    get: () =>
+      API.public_api.toPy(
+        Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+      ),
+    enumerable: false,
+    configurable: true,
+  });
+}
+
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -707,7 +753,13 @@ API.bootstrapFinalizedPromise = new Promise<void>(
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (): PyodideInterface {
+API.finalizeBootstrap = function (
+  snapshotConfig?: SnapshotConfig,
+  snapshotDeserializer?: (obj: any) => any,
+): PyodideInterface {
+  if (snapshotConfig) {
+    syncUpSnapshotLoad1();
+  }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     API.fatal_loading_error(
@@ -724,7 +776,6 @@ API.finalizeBootstrap = function (): PyodideInterface {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, API.config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -738,24 +789,18 @@ API.finalizeBootstrap = function (): PyodideInterface {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  function jsFinderHook(o: object) {
-    if ("__all__" in o) {
-      return;
-    }
-    Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-        ),
-      enumerable: false,
-      configurable: true,
-    });
-  }
-  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-  importhook.register_js_module("js", API.config.jsglobals);
-
   let pyodide = makePublicAPI();
-  importhook.register_js_module("pyodide_js", pyodide);
+  if (API.config._makeSnapshot) {
+    API.config.jsglobals = makeGlobalsProxy(API.config.jsglobals);
+  }
+  const jsglobals = API.config.jsglobals;
+  if (snapshotConfig) {
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
+  } else {
+    importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+    importhook.register_js_module("js", jsglobals);
+    importhook.register_js_module("pyodide_js", pyodide);
+  }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of

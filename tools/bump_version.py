@@ -35,6 +35,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 Target = namedtuple("target", ("file", "pattern", "prerelease"))
 PYTHON_TARGETS = [
     Target(
+        file=ROOT / "Makefile.envs",
+        pattern=build_version_pattern(r"PYODIDE_VERSION \?= {python_version}"),
+        prerelease=True,
+    ),
+    Target(
         file=ROOT / "src/py/pyodide/__init__.py",
         pattern=build_version_pattern('__version__ = "{python_version}"'),
         prerelease=True,
@@ -42,11 +47,6 @@ PYTHON_TARGETS = [
     Target(
         file=ROOT / "src/py/pyproject.toml",
         pattern=build_version_pattern('version = "{python_version}"'),
-        prerelease=True,
-    ),
-    Target(
-        ROOT / "pyodide-build/pyodide_build/__init__.py",
-        pattern=build_version_pattern('__version__ = "{python_version}"'),
         prerelease=True,
     ),
     Target(
@@ -120,7 +120,7 @@ def parse_current_version(target: Target) -> str:
     match = target.pattern.search(content)
 
     if match is None:
-        raise ValueError(f"Unabled to detect version string: {target.file}")
+        raise ValueError(f"Unable to detect version string: {target.file}")
 
     return match.groupdict()["version"]
 

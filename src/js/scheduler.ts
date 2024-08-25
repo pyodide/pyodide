@@ -63,14 +63,21 @@ function scheduleCallbackImmediate(callback: () => void) {
   if (IN_NODE) {
     // node has setImmediate, let's use it
     setImmediate(callback);
-  } else if (IN_BROWSER_MAIN_THREAD) {
+  } else if (
+    IN_BROWSER_MAIN_THREAD &&
+    typeof globalThis.postMessage === "function"
+  ) {
     tasks[nextTaskHandle] = callback;
     globalThis.postMessage(
       scheduleCallbackImmediateMessagePrefix + nextTaskHandle,
       "*",
     );
     nextTaskHandle++;
-  } else if (IN_BROWSER_WEB_WORKER && !IN_SAFARI) {
+  } else if (
+    IN_BROWSER_WEB_WORKER &&
+    !IN_SAFARI &&
+    typeof MessageChannel === "function"
+  ) {
     const channel = new MessageChannel();
     channel.port1.onmessage = () => callback();
     channel.port2.postMessage("");

@@ -74,6 +74,15 @@ pyodide.runPython(`
 Micropip implements file integrity validation by checking the hash of the
 downloaded wheel against pre-recorded hash digests from the PyPI JSON API.
 
+(micropip-installing-from-other-indexes)=
+
+### Installing wheels from different indexes
+
+By default micropip will look for wheel on [pypi](https://pypi.org). It is
+possible to provide a list of indexes url to the install commands via the
+[`index_urls`](https://micropip.pyodide.org/en/stable/project/api.html#micropip.install)
+parameter of the `install` command.
+
 (micropip-installing-from-arbitrary-urls)=
 
 ### Installing wheels from arbitrary URLs
