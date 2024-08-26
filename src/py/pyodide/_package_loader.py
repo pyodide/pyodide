@@ -54,7 +54,9 @@ SHAREDLIB_REGEX = re.compile(r"\.so(.\d+)*$")
 
 DIST_INFO_DIR_SUFFIX = ".dist-info"
 DATA_FILES_DIR_SUFFIX = ".data"
-DATA_FILES_PARENT_DIR = "data"
+# There are other "scheme"s available, but we are not interested in them.
+# https://github.com/pypa/pip/blob/81041f7f573e89361e6ed934436adb6bf40ea3bc/src/pip/_internal/models/scheme.py#L10
+DATA_FILES_SCHEME = "data"
 
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
@@ -344,7 +346,9 @@ def install_datafiles(
     if data_file_dir_name is None:
         return
 
-    data_file_dir = target_dir / data_file_dir_name / DATA_FILES_PARENT_DIR
+    data_file_dir = target_dir / data_file_dir_name / DATA_FILES_SCHEME
+    if not data_file_dir.exists():
+        return
     install_files(data_file_dir, sys.prefix)
 
 
