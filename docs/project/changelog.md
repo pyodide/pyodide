@@ -55,6 +55,9 @@ myst:
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
   {pr}`4666`
 
+- {{ Enhancement }} `pyodide.loadPackage` will now install data files inside the wheel.
+  {pr}`5034`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`
