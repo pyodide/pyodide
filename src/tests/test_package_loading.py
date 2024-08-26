@@ -73,8 +73,7 @@ def test_load_relative_url(
     test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
     (tmp_path / "test_temp.html").write_text(test_html)
     pytz_wheel = get_pytz_wheel_name()
-    pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
-    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
+    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz_wheel)
 
     with (
         spawn_web_server(tmp_path) as web_server,
@@ -98,9 +97,9 @@ def test_load_relative_url(
         selenium.restore_state()
         if selenium.browser == "node":
             selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
-        selenium.load_package(pytz1_wheel)
+        selenium.load_package(pytz_wheel)
         selenium.run(
-            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
+            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz)"
         )
 
 
