@@ -469,9 +469,12 @@ export interface API {
   os: PyProxy;
 
   restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
-  makeSnapshot(): Uint8Array;
+  makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
-  finalizeBootstrap: (fromSnapshot?: SnapshotConfig) => PyodideInterface;
+  finalizeBootstrap: (
+    fromSnapshot?: SnapshotConfig,
+    snapshotDeserializer?: (obj: any) => any,
+  ) => PyodideInterface;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;

@@ -161,3 +161,73 @@ def test_snapshot_stacked(selenium_standalone_noload):
         `);
         """
     )
+
+
+def test_snapshot_serializer1(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        const py1 = await loadPyodide({_makeSnapshot: true});
+        py1.runPython(`
+            from js import Headers, URL
+
+            a = Headers.new([["X", "1"], ["Y", "2"]])
+        `);
+        const snapshot = py1.makeMemorySnapshot({serializer(obj) {
+            if (obj.constructor.name === "Headers") {
+                return {type: "Headers", value: Array.from(obj)};
+            }
+            throw new Error("Not implemented");
+        }});
+        const py2 = await loadPyodide({_loadSnapshot: snapshot, _snapshotDeserializer(obj) {
+            if (obj.type === "Headers") {
+                return new Headers(obj.value);
+            }
+        }});
+        py2.runPython(`
+            assert a.constructor.name == "Headers"
+            assert a["X"] == "1"
+            assert a["Y"] == "2"
+        `);
+        """
+    )
+
+
+def test_snapshot_serializer_not_serializable(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    match = "Serializer returned result that cannot be JSON.stringify'd at index"
+    with pytest.raises(selenium.JavascriptException, match=match):
+        selenium.run_js(
+            """
+            const py1 = await loadPyodide({_makeSnapshot: true});
+            py1.runPython(`
+                from pyodide.code import run_js
+
+                a = run_js("(o = {}, o.o = o)")
+            `);
+            const snapshot = py1.makeMemorySnapshot({serializer: (obj) => obj});
+            """
+        )
+
+
+def test_snapshot_serializer_need_deserializer(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    match = "You must pass an appropriate deserializer as _snapshotDeserializer"
+    with pytest.raises(selenium.JavascriptException, match=match):
+        selenium.run_js(
+            """
+            const py1 = await loadPyodide({_makeSnapshot: true});
+            py1.runPython(`
+                from js import Headers, URL
+
+                a = Headers.new([["X", "1"], ["Y", "2"]])
+            `);
+            const snapshot = py1.makeMemorySnapshot({serializer(obj) {
+                if (obj.constructor.name === "Headers") {
+                    return {type: "Headers", value: Array.from(obj)};
+                }
+                throw new Error("Not implemented");
+            }});
+            const py2 = await loadPyodide({_loadSnapshot: snapshot });
+            """
+        )
