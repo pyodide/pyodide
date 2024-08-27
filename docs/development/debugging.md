@@ -17,6 +17,7 @@ Before doing any debugger I strongly recommend running
 `npx prettier -w pyodide.asm.js`. This makes everything much easier.
 
 (build-with-symbols)
+
 ## Building with symbols or source maps
 
 Building with symbols retains the names of all internal functions, but will not
@@ -26,11 +27,13 @@ minor increase in code size. Building with source maps disables many
 optimizations such as inlining and slows down execution by quite a lot.
 
 To rebuild with symbols you can use the following:
+
 ```sh
 touch src/core/jsproxy.h
 PYODIDE_SYMBOLS=1 make -C cpython rebuild-all
 PYODIDE_SYMBOLS=1 make all-but-packages
 ```
+
 To use source maps, use `PYODIDE_SOURCEMAPS=1` instead of `PYODIDE_SYMBOLS=1`.
 To get the benefits of source maps, you need the
 [C/C++ devtoools support Chrome extension](https://chromewebstore.google.com/detail/cc++-devtools-support-dwa/pdcpmagijalfljmkmjngeonclgbbannb?pli=1).
@@ -40,7 +43,6 @@ be able to see the raw disassembly, which makes it hard to inspect the state of
 the program in the debugger because there is no support for executing C
 expressions. The extension provides no way to see the raw assembly without
 disabling the extension and refreshing the page.
-
 
 ## Linker error: function signature mismatch
 
