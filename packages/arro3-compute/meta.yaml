@@ -4,8 +4,8 @@ package:
   top-level:
     - "arro3.compute"
 source:
-  url: https://github.com/kylebarron/arro3/releases/download/py-v0.2.1/arro3_compute-0.2.1-cp38-abi3-emscripten_3_1_58_wasm32.whl
-  sha256: ba412caa87fd00b9f305cc213f4d0555db5b1efb675979d01c517ecb6050698f
+  url: https://github.com/kylebarron/arro3/releases/download/py-v0.3.0/arro3_compute-0.3.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: 0753b631c43c674dfa8651366c3e9f9a3221c13c1dab7c9da6606f45264a5f56
 requirements:
   run:
     - arro3-core
