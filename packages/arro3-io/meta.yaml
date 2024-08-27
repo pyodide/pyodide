@@ -16,5 +16,5 @@ extra:
 about:
   home: https://github.com/kylebarron/arro3
   PyPI: https://pypi.org/project/arro3-io
-  summary: A minimal Python library for Apache Arrow, connecting to the Rust arrow crate
+  summary: Read and write tabular data formats to and from Apache Arrow.
   license: MIT

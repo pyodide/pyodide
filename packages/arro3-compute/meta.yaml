@@ -16,5 +16,5 @@ extra:
 about:
   home: https://github.com/kylebarron/arro3
   PyPI: https://pypi.org/project/arro3-compute
-  summary: A minimal Python library for Apache Arrow, connecting to the Rust arrow crate
+  summary: Compute kernels for Apache Arrow memory.
   license: MIT
