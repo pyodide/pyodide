@@ -1,6 +1,6 @@
 package:
   name: arro3-core
-  version: 0.2.1
+  version: 0.3.0
   top-level:
     - "arro3.core"
 source:
@@ -9,3 +9,9 @@ source:
 extra:
   recipe-maintainers:
     - kylebarron
+
+about:
+  home: https://github.com/kylebarron/arro3
+  PyPI: https://pypi.org/project/arro3-core
+  summary: A minimal Python library for Apache Arrow, connecting to the Rust arrow crate
+  license: MIT
