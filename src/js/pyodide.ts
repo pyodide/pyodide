@@ -13,9 +13,8 @@ import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module } from "./types";
+import type { TypedArray, Module, PackageData } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
-import type { PackageData } from "./load-package";
 import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
 
@@ -192,17 +191,15 @@ export async function loadPyodide(
      * @ignore
      */
     _node_mounts?: string[];
-    /**
-     * @ignore
-     */
+    /** @ignore */
     _makeSnapshot?: boolean;
-    /**
-     * @ignore
-     */
+    /** @ignore */
     _loadSnapshot?:
       | Uint8Array
       | ArrayBuffer
       | PromiseLike<Uint8Array | ArrayBuffer>;
+    /** @ignore */
+    _snapshotDeserializer?: (obj: any) => any;
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
@@ -290,7 +287,10 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     snapshotConfig = API.restoreSnapshot(snapshot);
   }
   // runPython works starting after the call to finalizeBootstrap.
-  const pyodide = API.finalizeBootstrap(snapshotConfig);
+  const pyodide = API.finalizeBootstrap(
+    snapshotConfig,
+    options._snapshotDeserializer,
+  );
   API.sys.path.insert(0, API.config.env.HOME);
 
   if (!pyodide.version.includes("dev")) {

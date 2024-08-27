@@ -1,13 +1,13 @@
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { PackageData, loadPackage, loadedPackages } from "./load-package";
+import { loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray } from "./types";
+import { TypedArray, PackageData } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
@@ -149,7 +149,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as any;
+  static FS = {} as typeof Module.FS;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -666,13 +666,17 @@ export class PyodideAPI {
     return orig;
   }
 
-  static makeMemorySnapshot(): Uint8Array {
+  static makeMemorySnapshot({
+    serializer,
+  }: {
+    serializer?: (obj: any) => any;
+  } = {}): Uint8Array {
     if (!API.config._makeSnapshot) {
       throw new Error(
         "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
       );
     }
-    return API.makeSnapshot();
+    return API.makeSnapshot(serializer);
   }
 }
 
@@ -751,6 +755,7 @@ export function jsFinderHook(o: object) {
  */
 API.finalizeBootstrap = function (
   snapshotConfig?: SnapshotConfig,
+  snapshotDeserializer?: (obj: any) => any,
 ): PyodideInterface {
   if (snapshotConfig) {
     syncUpSnapshotLoad1();
@@ -790,7 +795,7 @@ API.finalizeBootstrap = function (
   }
   const jsglobals = API.config.jsglobals;
   if (snapshotConfig) {
-    syncUpSnapshotLoad2(jsglobals, snapshotConfig);
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
   } else {
     importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
     importhook.register_js_module("js", jsglobals);
