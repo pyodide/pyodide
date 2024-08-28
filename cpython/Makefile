@@ -49,14 +49,21 @@ $(PYBUILD)/.patched_makefile:
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
 	# touch libpython3.12.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
-	emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
+	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
 .PHONY=rebuild
 rebuild: sysconfigdata
-	emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
+	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
+
+
+.PHONY=rebuild-all
+rebuild-all:
+# touching abstract.h is enough to force most stuff to be rebuilt...
+	touch $(PYBUILD)/Include/abstract.h
+	make rebuild
 
 
 clean:
