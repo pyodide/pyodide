@@ -16,7 +16,7 @@ chromium-based browser (e.g., chrome) for debugging. They are better at it.
 Before doing any debugger I strongly recommend running
 `npx prettier -w pyodide.asm.js`. This makes everything much easier.
 
-(build-with-symbols)
+(build-with-symbols)=
 
 ## Building with symbols or source maps
 
