@@ -55,6 +55,11 @@ myst:
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
   {pr}`4666`
 
+- {{ Enhancement }} `find_imports("import pkg.module.submodule")` will now
+  return `["pkg", "pkg.module", "pkg.module.submodule"]`. This improves support
+  for namespace packages.
+  {pr}`5039`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`

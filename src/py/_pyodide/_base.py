@@ -627,14 +627,18 @@ def find_imports(source: str) -> list[str]:
 
     Returns
     -------
-        A list of module names that are imported in ``source``. If ``source`` is not
-        syntactically correct Python code (after dedenting), returns an empty list.
+        A list of module names that are imported in ``source``. If ``source`` is
+        not syntactically correct Python code (after dedenting), returns an
+        empty list.
+
+        Given `import package.module`, `find_imports` will include both
+        `"package"` and `"package.module"` in the result.
 
     Examples
     --------
     >>> source = "import numpy as np; import scipy.stats"
     >>> find_imports(source)
-    ['numpy', 'scipy']
+    ['numpy', 'scipy', 'scipy.stats']
     """
     # handle mis-indented input from multi-line strings
     source = dedent(source)

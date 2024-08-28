@@ -24,7 +24,7 @@ def test_find_imports():
         import matplotlib.pyplot as plt
         """
     )
-    assert set(res) == {"numpy", "scipy", "matplotlib"}
+    assert set(res) == {"numpy", "scipy", "matplotlib", "matplotlib.pyplot"}
 
     # If there is a syntax error in the code, find_imports should return empty
     # list.
