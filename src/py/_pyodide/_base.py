@@ -608,6 +608,14 @@ async def eval_code_async(
     )
 
 
+def _add_prefixes(s: set[str], mod: str) -> None:
+    [current, *rest] = mod.split(".")
+    s.add(current)
+    for part in rest:
+        current += f".{part}"
+        s.add(current)
+
+
 def find_imports(source: str) -> list[str]:
     """
     Finds the imports in a Python source code string
@@ -635,17 +643,17 @@ def find_imports(source: str) -> list[str]:
         mod = ast.parse(source)
     except SyntaxError:
         return []
-    imports = set()
+    imports: set[str] = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
             for name in node.names:
                 node_name = name.name
-                imports.add(node_name.split(".")[0])
+                _add_prefixes(imports, node_name)
         elif isinstance(node, ast.ImportFrom):
             module_name = node.module
             if module_name is None:
                 continue
-            imports.add(module_name.split(".")[0])
+            _add_prefixes(imports, module_name)
     return list(sorted(imports))
 
 
