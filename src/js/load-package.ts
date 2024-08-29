@@ -8,7 +8,7 @@ import {
   type API,
 } from "./types";
 import { IN_NODE } from "./environments";
-import { PyProxy } from "./generated/pyproxy";
+import type { PyProxy } from "generated/pyproxy";
 import { createResolvable } from "./common/resolveable";
 import { createLock } from "./common/lock";
 import {
@@ -95,10 +95,16 @@ export async function initializePackageIndex(
 
 const DEFAULT_CHANNEL = "default channel";
 
-// Subset of the Pyodide API and Module that the package manager needs
+// Subset of the API and Module that the package manager needs
+/**
+ * @hidden
+ */
 export type PackageManagerAPI = Pick<API, "importlib" | "package_loader" | "lockfile_packages" | "bootstrapFinalizedPromise"> & {
   config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
 }
+/**
+ * @hidden
+ */
 export type PackageManagerModule = Pick<Module, "reportUndefinedSymbols">;
 
 /**
@@ -129,9 +135,8 @@ export class PackageManager {
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.api = api;
-    this.pyodideModule = pyodideModule
+    this.pyodideModule = pyodideModule;
   }
-
 
   /**
    * Load packages from the Pyodide distribution or Python wheels by URL.
@@ -182,7 +187,14 @@ export class PackageManager {
     const loadedPackageData = new Set<InternalPackageData>();
     const messageCallback = options.messageCallback || console.log;
     const errorCallback = options.errorCallback || console.error;
-    if (names instanceof PyProxy) {
+
+    // originally, this condition was "names instanceof PyProxy",
+    // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
+    // this change is required to run unit tests against this file, when global API or Module is not available.
+    // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy       
+    // @ts-ignore
+    if (typeof names.toJs === "function") {
+      // @ts-ignore
       names = names.toJs();
     }
     if (!Array.isArray(names)) {
@@ -550,7 +562,7 @@ function filterPackageData({
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
 export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
 
-if (API !== undefined && Module !== undefined) {
+if (typeof globalThis.API !== "undefined" && typeof globalThis.Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);
 
   loadPackage = singletonPackageManager.loadPackage.bind(
