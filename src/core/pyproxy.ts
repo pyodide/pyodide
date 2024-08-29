@@ -3185,5 +3185,4 @@ export class PyBufferView {
 }
 
 if (API !== undefined && Module !== undefined) {
-  
 }
