@@ -6,7 +6,7 @@ import {
 
 describe("PackageManager", () => {
     // TODO: add more unittests
-    test("should initialize with API and Module", () => {
+    it("should initialize with API and Module", () => {
         const mockApi: PackageManagerAPI = {
             importlib: {
                 invalidate_caches: () => {},
