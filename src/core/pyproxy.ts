@@ -3183,3 +3183,7 @@ export class PyBufferView {
     this.data = null;
   }
 }
+
+if (API !== undefined && Module !== undefined) {
+  
+}
