@@ -66,7 +66,7 @@ myst:
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `certifi` to 2024.7.4 {pr}`5035`
-- Upgraded `bokeh` to 3.4.2 {pr}`4888`
+- Upgraded `bokeh` to 3.5.2 {pr}`4888`, {pr}`5047`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `protobuf` to 5.27.3 {pr}`4601`
