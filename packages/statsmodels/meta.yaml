@@ -36,3 +36,7 @@ about:
   PyPI: https://pypi.org/project/statsmodels
   summary: Statistical computations and models for Python
   license: BSD License
+
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal
