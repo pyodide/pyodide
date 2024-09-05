@@ -39,8 +39,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 class redirect_stdin(_RedirectStream[Any]):
     _stream = "stdin"
 
+
 class _StdioFile(TextIOBase):
-    def __init__(self, name: str, encoding: str='utf-8', errors: str='strict'):
+    def __init__(self, name: str, encoding: str = "utf-8", errors: str = "strict"):
         self._name = name
         self._encoding = encoding
         self._errors = errors
@@ -60,8 +61,15 @@ class _StdioFile(TextIOBase):
     def isatty(self):
         return True
 
+
 class _StdOutputFile(_StdioFile):
-    def __init__(self, write_handler: Callable[[str], int | None], name: str, encoding: str='utf-8', errors: str='strict'):
+    def __init__(
+        self,
+        write_handler: Callable[[str], int | None],
+        name: str,
+        encoding: str = "utf-8",
+        errors: str = "strict",
+    ):
         super().__init__(name, encoding, errors)
         self._write_handler = write_handler
 
@@ -77,13 +85,19 @@ class _StdOutputFile(_StdioFile):
             # They didn't tell us how much they wrote, assume it was the whole string
             return len(s)
         return written
-    
+
 
 class _StdInputFile(_StdioFile):
-    def __init__(self, read_handler: Callable[[int], str], name: str, encoding: str='utf-8', errors: str='strict'):
+    def __init__(
+        self,
+        read_handler: Callable[[int], str],
+        name: str,
+        encoding: str = "utf-8",
+        errors: str = "strict",
+    ):
         super().__init__(name, encoding, errors)
         self._read_handler = read_handler
-        self._buffer = ''
+        self._buffer = ""
 
     def readable(self) -> bool:
         return True
@@ -96,7 +110,9 @@ class _StdInputFile(_StdioFile):
             # sys.stdin.readline(None) raises a TypeError
             size = -1
         if not isinstance(size, int):
-            raise TypeError(f"argument should be integer or None, not '{type(size).__name__}'")
+            raise TypeError(
+                f"argument should be integer or None, not '{type(size).__name__}'"
+            )
         if 0 <= size < len(self._buffer):
             result = self._buffer[:size]
             self._buffer = self._buffer[size:]
@@ -108,11 +124,13 @@ class _StdInputFile(_StdioFile):
         self._buffer = got[size:]
         return result + got[:size]
 
-    def readline(self, size: int =-1) -> str:
+    def readline(self, size: int = -1) -> str:
         if not isinstance(size, int):
             # For some reason sys.stdin.read(None) works, but
             # sys.stdin.readline(None) raises a TypeError
-            raise TypeError(f"'{type(size).__name__}' object cannot be interpreted as an integer")
+            raise TypeError(
+                f"'{type(size).__name__}' object cannot be interpreted as an integer"
+            )
         res = self.read(size)
         [start, nl, rest] = res.partition("\n")
         self._buffer = rest + self._buffer
