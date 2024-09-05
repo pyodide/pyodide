@@ -1,0 +1,813 @@
+diff --git a/.github/workflows/emscripten.yml b/.github/workflows/emscripten.yml
+new file mode 100644
+index 000000000..e5716b090
+--- /dev/null
++++ b/.github/workflows/emscripten.yml
+@@ -0,0 +1,68 @@
++# Attributed to NumPy via https://github.com/numpy/numpy/pull/25894
++# https://github.com/numpy/numpy/blob/d2d2c25fa81b47810f5cbd85ea6485eb3a3ffec3/.github/workflows/emscripten.yml
++name: Test Emscripten/Pyodide build
++
++on:
++  push:
++    branches: [ 'main']
++  pull_request:
++    branches: [ 'main' ]
++
++# Cancel intermediate runs if a new run is queued
++concurrency:
++  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
++  cancel-in-progress: true
++
++jobs:
++  build-wasm-emscripten:
++    name: Build statsmodels distribution for Pyodide
++    runs-on: ubuntu-latest
++    env:
++      PYODIDE_VERSION: 0.26.1
++      # PYTHON_VERSION and EMSCRIPTEN_VERSION are determined by PYODIDE_VERSION.
++      # The appropriate versions can be found in the Pyodide repodata.json
++      # "info" field, or in Makefile.envs:
++      # https://github.com/pyodide/pyodide/blob/main/Makefile.envs#L2
++      PYTHON_VERSION: 3.12.1
++      EMSCRIPTEN_VERSION: 3.1.58
++      NODE_VERSION: 20
++    steps:
++    - name: Checkout statsmodels
++      uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
++
++    - name: Set up Python ${{ env.PYTHON_VERSION }}
++      id: setup-python
++      uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
++      with:
++        python-version: ${{ env.PYTHON_VERSION }}
++
++    - name: Set up Emscripten toolchain
++      uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021  # v14
++      with:
++        version: ${{ env.EMSCRIPTEN_VERSION }}
++        actions-cache-folder: emsdk-cache
++
++    - name: Install pyodide-build
++      run: pip install pyodide-build==${{ env.PYODIDE_VERSION }}
++
++    - name: Build statsmodels for Pyodide
++      run: |
++        # pass verbose option to pypa/build
++        pyodide build -C="--global-option=--verbose"
++
++    - name: Set up Node.js
++      uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.0.2
++      with:
++        node-version: ${{ env.NODE_VERSION }}
++
++    - name: Set up Pyodide virtual environment and test statsmodels for Pyodide
++      run: |
++        pyodide venv .venv-pyodide
++
++    - name: Install Pyodide package from npm registry
++      run: npm install pyodide@${{ env.PYODIDE_VERSION }}
++
++    - name: Test statsmodels for Pyodide in activated virtual environment
++      run: |
++        source .venv-pyodide/bin/activate
++        node tools/ci/run_statsmodels_test_suite.js
+diff --git a/docs/source/install.rst b/docs/source/install.rst
+index 5378e9189..35efa0c07 100644
+--- a/docs/source/install.rst
++++ b/docs/source/install.rst
+@@ -76,7 +76,7 @@ If your system is already set up with pip, a compiler, and git, you can try:
+ 
+     python -m pip install git+https://github.com/statsmodels/statsmodels
+ 
+-If you do not have pip installed or want to do the installation more manually,
++If you do not have git installed or want to do the installation more manually,
+ you can also type:
+ 
+ .. code-block:: bash
+@@ -114,12 +114,16 @@ Python has been built using a variety of different Windows C compilers.
+ `This guide <https://wiki.python.org/moin/WindowsCompilers>`_ should help
+ clarify which version of Python uses which compiler by default.
+ 
+-Mac
++macOS
+ ^^^
+ 
+-Installing statsmodels on MacOS requires installing `gcc` which provides
++Installing statsmodels on macOS requires installing `gcc` which provides
+ a suitable C compiler. We recommend installing Xcode and the Command Line
+-Tools.
++Tools, which can be done through the following command:
++
++.. code-block:: bash
++
++    xcode-select --install
+ 
+ Dependencies
+ ------------
+@@ -159,3 +163,13 @@ Optional Dependencies
+ * `joblib <https://joblib.readthedocs.io/>`__ >= 1.0can be used to accelerate distributed
+   estimation for certain models.
+ * `jupyter <https://jupyter.org/>`__ is needed to run the notebooks.
++
++The optional dependencies can be installed along with `statsmodels` by modifying
++the installation command:
++
++.. code-block:: bash
++
++    python -m pip install statsmodels[extras]
++
++where ``<extras>`` is a comma-separated list of extras to install (``build``,
++``develop``, ``docs``).
+diff --git a/statsmodels/__init__.py b/statsmodels/__init__.py
+index 8cc3679d6..419ab8096 100644
+--- a/statsmodels/__init__.py
++++ b/statsmodels/__init__.py
+@@ -26,7 +26,7 @@ def test(extra_args=None, exit=False):
+         List of argument to pass to pytest when running the test suite. The
+         default is ['--tb=short', '--disable-pytest-warnings'].
+     exit : bool
+-        Flag indicating whether the test runner should exist when finished.
++        Flag indicating whether the test runner should exit when finished.
+ 
+     Returns
+     -------
+diff --git a/statsmodels/base/tests/test_generic_methods.py b/statsmodels/base/tests/test_generic_methods.py
+index b4a3a1c2b..fd812fe6a 100644
+--- a/statsmodels/base/tests/test_generic_methods.py
++++ b/statsmodels/base/tests/test_generic_methods.py
+@@ -16,6 +16,7 @@ from statsmodels.compat.platform import (
+     PLATFORM_OSX,
+     PLATFORM_WIN32,
+ )
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.compat.scipy import SCIPY_GT_14
+ 
+ import numpy as np
+@@ -160,6 +161,7 @@ class CheckGenericMixin:
+             res = mod.fit(maxiter=500)
+         return res
+ 
++
+     def test_zero_collinear(self):
+         # not completely generic yet
+         if isinstance(self.results.model, (sm.GEE)):
+@@ -194,9 +196,12 @@ class CheckGenericMixin:
+             k_extra = mod.k_extra
+ 
+         # TODO: Can we choose a test case without this issue?
+-        #  If not, should we be getting this warning for all
+-        #  model subclasses?
+-        warn_cls = HessianInversionWarning if isinstance(mod, sm.GLM) else None
++        # If not, should we be getting this warning for all
++        # model subclasses?
++        # TODO: Investigate how to resolve unseen warnings for Pyodide
++        # Most likely coming from NumPy.linalg + lack of fp exceptions
++        # support under WASM
++        warn_cls = HessianInversionWarning if (isinstance(mod, sm.GLM) and not PYTHON_IMPL_WASM) else None
+ 
+         cov_types = ['nonrobust', 'HC0']
+ 
+diff --git a/statsmodels/compat/python.py b/statsmodels/compat/python.py
+index f975d0055..a43370324 100644
+--- a/statsmodels/compat/python.py
++++ b/statsmodels/compat/python.py
+@@ -3,6 +3,13 @@ Compatibility tools for differences between Python 2 and 3
+ """
+ asunicode = lambda x, _: str(x)  # noqa:E731
+ 
++import sys
++import platform
++
++PYTHON_IMPL_WASM = (
++    sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
++)
++
+ 
+ __all__ = [
+     "asunicode",
+@@ -13,6 +20,7 @@ __all__ = [
+     "lrange",
+     "lfilter",
+     "with_metaclass",
++    "PYTHON_IMPL_WASM",
+ ]
+ 
+ 
+diff --git a/statsmodels/conftest.py b/statsmodels/conftest.py
+index 9553a2f37..098d4c68b 100644
+--- a/statsmodels/conftest.py
++++ b/statsmodels/conftest.py
+@@ -5,6 +5,8 @@ import numpy as np
+ import pandas as pd
+ import pytest
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
++
+ try:
+     import matplotlib
+ 
+@@ -141,3 +143,26 @@ def reset_randomstate():
+     np.random.seed(1)
+     yield
+     np.random.set_state(state)
++
++
++# This is a special hook that converts all xfail marks to have strict=False
++# instead of strict=True. This is useful to have for Pyodide tests, where
++# some tests will consistently xfail due to missing functionality (such as
++# NotImplementedErrors) or floating point imprecisions, but we don't want
++# to mark them as strict xfails because they are more prominently expected
++# to fail in a Pyodide environment.
++def pytest_collection_modifyitems(config, items):
++    if PYTHON_IMPL_WASM:
++        for item in items:
++            if 'xfail' in item.keywords:
++                mark = item.get_closest_marker('xfail')
++                if mark:
++                    # Modify the existing xfail mark if it exists
++                    # to set strict=False
++                    new_kwargs = dict(mark.kwargs)
++                    new_kwargs['strict'] = False
++                    new_mark = pytest.mark.xfail(**new_kwargs)
++                    item.add_marker(new_mark)
++                    item.keywords['xfail'] = new_mark
++    else:
++        pass
+diff --git a/statsmodels/datasets/tests/test_utils.py b/statsmodels/datasets/tests/test_utils.py
+index cf8458c81..b4cdc0b47 100644
+--- a/statsmodels/datasets/tests/test_utils.py
++++ b/statsmodels/datasets/tests/test_utils.py
+@@ -1,18 +1,22 @@
+ import os
+-from ssl import SSLError
+ from socket import timeout
++
+ from urllib.error import HTTPError, URLError
+ 
+ import numpy as np
+ from numpy.testing import assert_, assert_array_equal
+ import pytest
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.datasets import get_rdataset, webuse, check_internet, utils
+ 
+-cur_dir = os.path.dirname(os.path.abspath(__file__))
+ 
+-IGNORED_EXCEPTIONS = (HTTPError, URLError, SSLError,  UnicodeEncodeError,
+-                      timeout)
++CUR_DIR = os.path.dirname(os.path.abspath(__file__))
++
++IGNORED_EXCEPTIONS = (HTTPError, URLError, UnicodeEncodeError, timeout)
++if not PYTHON_IMPL_WASM:
++    from ssl import SSLError
++    IGNORED_EXCEPTIONS += (SSLError,)
+ 
+ 
+ @pytest.mark.smoke
+@@ -23,11 +27,11 @@ def test_get_rdataset():
+     if not internet_available:  # pragma: no cover
+         pytest.skip('Unable to retrieve file - skipping test')
+     try:
+-        duncan = get_rdataset("Duncan", "carData", cache=cur_dir)
++        duncan = get_rdataset("Duncan", "carData", cache=CUR_DIR)
+     except IGNORED_EXCEPTIONS:
+         pytest.skip('Failed with HTTPError or URLError, these are random')
+     assert_(isinstance(duncan, utils.Dataset))
+-    duncan = get_rdataset("Duncan", "carData", cache=cur_dir)
++    duncan = get_rdataset("Duncan", "carData", cache=CUR_DIR)
+     assert_(duncan.from_cache)
+ 
+ 
+@@ -35,19 +39,19 @@ def test_get_rdataset():
+ def test_get_rdataset_write_read_cache():
+     # test writing and reading cache
+     try:
+-        guerry = get_rdataset("Guerry", "HistData", cache=cur_dir)
++        guerry = get_rdataset("Guerry", "HistData", cache=CUR_DIR)
+     except IGNORED_EXCEPTIONS:
+         pytest.skip('Failed with HTTPError or URLError, these are random')
+ 
+     assert_(guerry.from_cache is False)
+-    guerry2 = get_rdataset("Guerry", "HistData", cache=cur_dir)
++    guerry2 = get_rdataset("Guerry", "HistData", cache=CUR_DIR)
+     assert_(guerry2.from_cache is True)
+     fn = "raw.githubusercontent.com,vincentarelbundock,Rdatasets,master,csv," \
+          "HistData,Guerry-v2.csv.zip"
+-    os.remove(os.path.join(cur_dir, fn))
++    os.remove(os.path.join(CUR_DIR, fn))
+     fn = "raw.githubusercontent.com,vincentarelbundock,Rdatasets,master,doc," \
+          "HistData,rst,Guerry-v2.rst.zip"
+-    os.remove(os.path.join(cur_dir, fn))
++    os.remove(os.path.join(CUR_DIR, fn))
+ 
+ 
+ def test_webuse():
+diff --git a/statsmodels/distributions/tests/test_discrete.py b/statsmodels/distributions/tests/test_discrete.py
+index f05b13d0d..609198787 100644
+--- a/statsmodels/distributions/tests/test_discrete.py
++++ b/statsmodels/distributions/tests/test_discrete.py
+@@ -4,6 +4,7 @@ from numpy.testing import assert_allclose, assert_equal
+ from scipy import stats
+ from scipy.stats import poisson, nbinom
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.tools.tools import Bunch
+ 
+ from statsmodels.distributions.discrete import (
+@@ -330,6 +331,12 @@ class CheckDiscretized():
+         dfr = mod.get_distr(res.params)
+         nobs_rvs = 500
+         rvs = dfr.rvs(size=nobs_rvs)
++        # TypeError: Cannot cast array data from dtype('int64') to
++        # dtype('int32') according to the rule 'safe'.
++        # To fix this, change the dtype of rvs to int32 so that it
++        # can bepassed to np.bincount
++        if PYTHON_IMPL_WASM:
++            rvs = rvs.astype(np.int32)
+         freq = np.bincount(rvs)
+         p = mod.predict(res.params, which="probs", k_max=nobs_rvs)
+         k = len(freq)
+diff --git a/statsmodels/graphics/tests/test_functional.py b/statsmodels/graphics/tests/test_functional.py
+index 36d487ff6..b23a6e116 100644
+--- a/statsmodels/graphics/tests/test_functional.py
++++ b/statsmodels/graphics/tests/test_functional.py
+@@ -2,6 +2,7 @@ import numpy as np
+ from numpy.testing import assert_almost_equal, assert_equal
+ import pytest
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.datasets import elnino
+ from statsmodels.graphics.functional import (
+     banddepth,
+@@ -22,6 +23,10 @@ labels = data.raw_data[:, 0].astype(int)
+ data = data.raw_data[:, 1:]
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Matplotlib uses different backend in WASM"
++)
+ @pytest.mark.matplotlib
+ def test_hdr_basic(close_figures):
+     try:
+@@ -77,6 +82,10 @@ def test_hdr_basic_brute(close_figures, reset_randomstate):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.slow
+ @pytest.mark.matplotlib
+ def test_hdr_plot(close_figures):
+@@ -96,6 +105,10 @@ def test_hdr_plot(close_figures):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.slow
+ @pytest.mark.matplotlib
+ def test_hdr_alpha(close_figures):
+@@ -111,6 +124,10 @@ def test_hdr_alpha(close_figures):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.slow
+ @pytest.mark.matplotlib
+ def test_hdr_multiple_alpha(close_figures):
+@@ -135,6 +152,10 @@ def test_hdr_multiple_alpha(close_figures):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.slow
+ @pytest.mark.matplotlib
+ def test_hdr_threshold(close_figures):
+@@ -149,6 +170,10 @@ def test_hdr_threshold(close_figures):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.matplotlib
+ def test_hdr_bw(close_figures):
+     try:
+@@ -162,6 +187,10 @@ def test_hdr_bw(close_figures):
+         pytest.xfail('Multiprocess randomly crashes in Windows testing')
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Multiprocessing is not supported in WASM/Pyodide"
++)
+ @pytest.mark.slow
+ @pytest.mark.matplotlib
+ def test_hdr_ncomp(close_figures):
+diff --git a/statsmodels/graphics/tests/test_gofplots.py b/statsmodels/graphics/tests/test_gofplots.py
+index b66469d8e..a73dad050 100644
+--- a/statsmodels/graphics/tests/test_gofplots.py
++++ b/statsmodels/graphics/tests/test_gofplots.py
+@@ -5,6 +5,7 @@ import pytest
+ from scipy import stats
+ 
+ import statsmodels.api as sm
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.graphics import gofplots
+ from statsmodels.graphics.gofplots import (
+     ProbPlot,
+@@ -70,6 +71,10 @@ class BaseProbplotMixin:
+ 
+     @pytest.mark.xfail(strict=True)
+     @pytest.mark.matplotlib
++    @pytest.mark.skipif(
++        PYTHON_IMPL_WASM,
++        reason="Matplotlib uses different backend in WASM/Pyodide"
++    )
+     def test_probplot_other_array(self, close_figures):
+         self.prbplt.probplot(
+             ax=self.ax,
+@@ -98,6 +103,10 @@ class BaseProbplotMixin:
+ 
+     @pytest.mark.xfail(strict=True)
+     @pytest.mark.matplotlib
++    @pytest.mark.skipif(
++        PYTHON_IMPL_WASM,
++        reason="Matplotlib uses different backend in WASM/Pyodide"
++    )
+     def test_probplot_other_prbplt(self, close_figures):
+         self.prbplt.probplot(
+             ax=self.ax,
+@@ -174,6 +183,10 @@ class BaseProbplotMixin:
+         assert self.prbplt.fit_params[-1] == self.prbplt.scale
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Matplotlib uses different backend in WASM/Pyodide"
++)
+ class TestProbPlotLongelyNoFit(BaseProbplotMixin):
+     def setup_method(self):
+         np.random.seed(5)
+diff --git a/statsmodels/graphics/tests/test_tsaplots.py b/statsmodels/graphics/tests/test_tsaplots.py
+index da8c9ed6b..41ef7e545 100644
+--- a/statsmodels/graphics/tests/test_tsaplots.py
++++ b/statsmodels/graphics/tests/test_tsaplots.py
+@@ -10,6 +10,7 @@ from numpy.testing import assert_, assert_equal
+ import pandas as pd
+ import pytest
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.datasets import elnino, macrodata
+ from statsmodels.graphics.tsaplots import (
+     month_plot,
+@@ -242,6 +243,10 @@ def test_plot_accf_grid(close_figures):
+     plot_accf_grid(x, fig=fig, use_vlines=False)
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Matplotlib uses different backend in WASM"
++)
+ @pytest.mark.matplotlib
+ def test_plot_month(close_figures):
+     dta = elnino.load_pandas().data
+diff --git a/statsmodels/stats/tests/test_multi.py b/statsmodels/stats/tests/test_multi.py
+index 94519d9d3..7f63c7f53 100644
+--- a/statsmodels/stats/tests/test_multi.py
++++ b/statsmodels/stats/tests/test_multi.py
+@@ -17,6 +17,7 @@ import numpy as np
+ from numpy.testing import (assert_almost_equal, assert_equal,
+                            assert_allclose)
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.stats.multitest import (multipletests, fdrcorrection,
+                                          fdrcorrection_twostage,
+                                          NullDistribution,
+@@ -26,6 +27,7 @@ from scipy.stats.distributions import norm
+ import scipy
+ from packaging import version
+ 
++
+ pval0 = np.array([
+     0.838541367553,  0.642193923795,  0.680845947633,
+     0.967833824309,  0.71626938238,  0.177096952723,  5.23656777208e-005,
+@@ -423,6 +425,10 @@ def test_floating_precision(method):
+     assert multipletests(pvals, method=method)[1][0] > 1e-60
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ def test_tukeyhsd():
+     # example multicomp in R p 83
+ 
+diff --git a/statsmodels/stats/tests/test_pairwise.py b/statsmodels/stats/tests/test_pairwise.py
+index be4ac4fd7..b13849491 100644
+--- a/statsmodels/stats/tests/test_pairwise.py
++++ b/statsmodels/stats/tests/test_pairwise.py
+@@ -4,7 +4,6 @@ Created on Wed Mar 28 15:34:18 2012
+ 
+ Author: Josef Perktold
+ """
+-from statsmodels.compat.python import asbytes
+ 
+ from io import BytesIO
+ import warnings
+@@ -15,6 +14,7 @@ import pytest
+ from numpy.testing import assert_, assert_allclose, assert_almost_equal, assert_equal, \
+     assert_raises
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM, asbytes
+ from statsmodels.stats.libqsturng import qsturng
+ from statsmodels.stats.multicomp import (tukeyhsd, pairwise_tukeyhsd,
+                                          MultiComparison)
+@@ -196,6 +196,10 @@ class CheckTuckeyHSDMixin:
+         self.res.plot_simultaneous(comparison_name=reference)
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ class TestTuckeyHSD2(CheckTuckeyHSDMixin):
+ 
+     @classmethod
+@@ -245,6 +249,10 @@ class TestTuckeyHSD2(CheckTuckeyHSDMixin):
+             assert_((first_group, second_group) == expected_order[i - 1])
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ class TestTuckeyHSD2Pandas(TestTuckeyHSD2):
+ 
+     @classmethod
+@@ -302,6 +310,10 @@ class TestTuckeyHSD2Pandas(TestTuckeyHSD2):
+                             err_msg=err_msg)
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ class TestTuckeyHSD2s(CheckTuckeyHSDMixin):
+     @classmethod
+     def setup_class(cls):
+@@ -323,6 +335,10 @@ class TestTuckeyHSD2s(CheckTuckeyHSDMixin):
+         cls.reject2 = pvals < 0.01
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ class TestTuckeyHSD3(CheckTuckeyHSDMixin):
+ 
+     @classmethod
+@@ -339,6 +355,10 @@ class TestTuckeyHSD3(CheckTuckeyHSDMixin):
+         cls.reject2 = sas_['sig'] == asbytes('***')
+ 
+ 
++@pytest.mark.xfail(
++    PYTHON_IMPL_WASM,
++    reason="Failing on Pyodide due to issues with scipy.optimize's solver"
++)
+ class TestTuckeyHSD4(CheckTuckeyHSDMixin):
+ 
+     @classmethod
+diff --git a/statsmodels/stats/tests/test_rates_poisson.py b/statsmodels/stats/tests/test_rates_poisson.py
+index ff57cef6b..dd3ae8edb 100644
+--- a/statsmodels/stats/tests/test_rates_poisson.py
++++ b/statsmodels/stats/tests/test_rates_poisson.py
+@@ -6,6 +6,7 @@ from numpy.testing import assert_allclose, assert_equal
+ from scipy import stats
+ 
+ # we cannot import test_poisson_2indep directly, pytest treats that as test
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ import statsmodels.stats.rates as smr
+ from statsmodels.stats.rates import (
+     # test_poisson, # cannot import functions that start with test
+@@ -716,10 +717,13 @@ class TestMethodsCompare2indep():
+         assert_allclose(tst2.pvalue, tst.pvalue, rtol=rtol)
+ 
+         # check corner case count2 = 0, see issue #8313
+-        with pytest.warns(RuntimeWarning):
+-            tst = smr.test_poisson_2indep(count1, n1, 0, n2, method=meth,
+-                                          compare=compare,
+-                                          value=None, alternative='two-sided')
++        if not PYTHON_IMPL_WASM:  # No fp exception support in WASM
++            with pytest.warns(RuntimeWarning):
++                smr.test_poisson_2indep(
++                    count1, n1, 0, n2, method=meth,
++                    compare=compare,
++                    value=None, alternative='two-sided'
++                )
+ 
+     @pytest.mark.parametrize(
+         "compare, meth",
+diff --git a/statsmodels/tests/test_package.py b/statsmodels/tests/test_package.py
+index 95bf9380f..4397fa6d3 100644
+--- a/statsmodels/tests/test_package.py
++++ b/statsmodels/tests/test_package.py
+@@ -1,7 +1,15 @@
+ import subprocess
+ import sys
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ 
++import pytest
++
++
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Can't start subprocess in WASM/Pyodide"
++)
+ def test_lazy_imports():
+     # Check that when statsmodels.api is imported, matplotlib is _not_ imported
+     cmd = ("import statsmodels.api as sm; "
+@@ -15,6 +23,10 @@ def test_lazy_imports():
+     assert rc == 0
+ 
+ 
++@pytest.mark.skipif(
++    PYTHON_IMPL_WASM,
++    reason="Can't start subprocess in WASM/Pyodide"
++)
+ def test_docstring_optimization_compat():
+     # GH#5235 check that importing with stripped docstrings does not raise
+     cmd = sys.executable + ' -OO -c "import statsmodels.api as sm"'
+diff --git a/statsmodels/tools/_testing.py b/statsmodels/tools/_testing.py
+index 072dcffd1..64242444f 100644
+--- a/statsmodels/tools/_testing.py
++++ b/statsmodels/tools/_testing.py
+@@ -11,7 +11,6 @@ The first group of functions provide consistency checks
+ 
+ import os
+ import sys
+-from packaging.version import Version, parse
+ 
+ import numpy as np
+ from numpy.testing import assert_allclose, assert_
+@@ -30,20 +29,17 @@ class PytestTester:
+         self.package_name = f.f_locals.get('__name__', None)
+ 
+     def __call__(self, extra_args=None, exit=False):
+-        try:
+-            import pytest
+-            if not parse(pytest.__version__) >= Version('3.0'):
+-                raise ImportError
+-            if extra_args is None:
+-                extra_args = ['--tb=short', '--disable-pytest-warnings']
+-            cmd = [self.package_path] + extra_args
+-            print('Running pytest ' + ' '.join(cmd))
+-            status = pytest.main(cmd)
+-            if exit:
+-                print(f"Exit status: {status}")
+-                sys.exit(status)
+-        except ImportError:
+-            raise ImportError('pytest>=3 required to run the test')
++        import pytest
++        if extra_args is None:
++            extra_args = ['--tb=short', '--disable-pytest-warnings']
++        cmd = [self.package_path] + extra_args
++        print('Running pytest ' + ' '.join(cmd))
++        status = pytest.main(cmd)
++        if exit:
++            print(f"Exit status: {status}")
++            sys.exit(status)
++
++        return (status == 0)
+ 
+ 
+ def check_ttest_tvalues(results):
+diff --git a/statsmodels/tools/tools.py b/statsmodels/tools/tools.py
+index 36a61ba9a..38035fc27 100644
+--- a/statsmodels/tools/tools.py
++++ b/statsmodels/tools/tools.py
+@@ -18,17 +18,6 @@ def asstr2(s):
+         return str(s)
+ 
+ 
+-def _make_dictnames(tmp_arr, offset=0):
+-    """
+-    Helper function to create a dictionary mapping a column number
+-    to the name in tmp_arr.
+-    """
+-    col_map = {}
+-    for i, col_name in enumerate(tmp_arr):
+-        col_map[i + offset] = col_name
+-    return col_map
+-
+-
+ def drop_missing(Y, X=None, axis=1):
+     """
+     Returns views on the arrays Y and X where missing observations are dropped.
+diff --git a/statsmodels/tsa/tests/test_stattools.py b/statsmodels/tsa/tests/test_stattools.py
+index b9427bad7..064ddad0d 100644
+--- a/statsmodels/tsa/tests/test_stattools.py
++++ b/statsmodels/tsa/tests/test_stattools.py
+@@ -20,6 +20,7 @@ import pytest
+ from scipy import stats
+ from scipy.interpolate import interp1d
+ 
++from statsmodels.compat.python import PYTHON_IMPL_WASM
+ from statsmodels.datasets import macrodata, modechoice, nile, randhie, sunspots
+ from statsmodels.tools.sm_exceptions import (
+     CollinearityWarning,
+@@ -349,6 +350,10 @@ class TestPACF(CheckCorrGram):
+         pacfyw = pacf_yw(self.x, nlags=40, method="mle")
+         assert_almost_equal(pacfyw[1:], self.pacfyw, DECIMAL_8)
+ 
++    @pytest.mark.skipif(
++        PYTHON_IMPL_WASM,
++        reason="No fp exception support in WASM"
++    )
+     def test_yw_singular(self):
+         with pytest.warns(ValueWarning):
+             pacf(np.ones(30), nlags=6)
+@@ -1084,7 +1089,6 @@ def test_arma_order_select_ic():
+     arparams = np.array([0.75, -0.25])
+     maparams = np.array([0.65, 0.35])
+     arparams = np.r_[1, -arparams]
+-    maparam = np.r_[1, maparams]  # FIXME: Never used
+     nobs = 250
+     np.random.seed(2014)
+     y = arma_generate_sample(arparams, maparams, nobs)
+diff --git a/tools/ci/run_statsmodels_test_suite.js b/tools/ci/run_statsmodels_test_suite.js
+new file mode 100644
+index 000000000..03460d672
+--- /dev/null
++++ b/tools/ci/run_statsmodels_test_suite.js
+@@ -0,0 +1,55 @@
++// A JavaScript file to run the statsmodels test suite using Pyodide
++// This file is used by the GitHub Actions workflow to run the tests
++// against the Pyodide build of statsmodels defined in emscripten.yml.
++
++// The contents of this file are attributed to the scikit-learn developers,
++// who have a similar file in their repository:
++// https://github.com/scikit-learn/scikit-learn/blob/main/build_tools/azure/pytest-pyodide.js
++
++
++const { opendir } = require('node:fs/promises');
++const { loadPyodide } = require("pyodide");
++
++async function main() {
++    let exit_code = 0;
++    try {
++        global.pyodide = await loadPyodide();
++        let pyodide = global.pyodide;
++
++        let mountDir = "/mnt";
++        pyodide.FS.mkdir(mountDir);
++        pyodide.FS.mount(pyodide.FS.filesystems.NODEFS, { root: "." }, mountDir);
++
++        await pyodide.loadPackage(["micropip"]);
++        await pyodide.runPythonAsync(`
++            import glob
++            import micropip
++
++            wheels = glob.glob("/mnt/dist/*.whl")
++            wheels = [f'emfs://{wheel}' for wheel in wheels]
++            print(f"Installing wheels: {wheels}")
++            await micropip.install(wheels);
++
++            pkg_list = micropip.list()
++            print(pkg_list)
++        `);
++
++
++        await pyodide.runPythonAsync("import micropip; micropip.install('pytest')");
++        await pyodide.runPythonAsync("import micropip; micropip.install('pytest-cov')");
++        await pyodide.runPythonAsync("import micropip; micropip.install('matplotlib')");
++        await pyodide.runPython(`
++        import sys
++        import statsmodels
++        result = statsmodels.test(['-ra', '--skip-examples', '--skip-slow'], exit=True)
++        sys.exit(result)
++        `);
++    } catch (e) {
++        console.error(e);
++        exit_code = e.status;
++    } finally {
++        process.exit(exit_code);
++    }
++}
++
++main();
+

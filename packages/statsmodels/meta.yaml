@@ -6,6 +6,9 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/25/a3/4a7a240e9bc9e146fbd9f0c410ecac328a899ca0c4467c72d9b8aa1e4015/statsmodels-0.14.2.tar.gz
   sha256: 890550147ad3a81cda24f0ba1a5c4021adc1601080bd00e191ae7cd6feecd6ad
+  patches:
+    # Introduced in the v0.14.2 release cycle, remove this when updating to 0.14.3
+    - patches/Add-WASM-support.patch
 
 build:
   ldflags: |
