@@ -15,9 +15,7 @@ requirements:
   host:
     - numpy
     - scipy
-      # TODO: Check that pandas and patsy really host dependencies
-    - pandas
-    - patsy
+    - setuptools
   run:
     - numpy
     - scipy
