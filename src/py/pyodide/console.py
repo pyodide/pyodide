@@ -19,6 +19,7 @@ from contextlib import (
     redirect_stderr,
     redirect_stdout,
 )
+from io import TextIOBase
 from platform import python_build, python_version
 from tokenize import TokenError
 from types import TracebackType
@@ -38,43 +39,84 @@ Type "help", "copyright", "credits" or "license" for more information.
 class redirect_stdin(_RedirectStream[Any]):
     _stream = "stdin"
 
+class _StdioFile(TextIOBase):
+    def __init__(self, name: str, encoding: str='utf-8', errors: str='strict'):
+        self._name = name
+        self._encoding = encoding
+        self._errors = errors
 
-class _WriteStream:
-    """A utility class so we can specify our own handlers for writes to sdout, stderr"""
+    @property
+    def encoding(self):
+        return self._encoding
 
-    def __init__(
-        self, write_handler: Callable[[str], Any], name: str | None = None
-    ) -> None:
-        self.write_handler = write_handler
-        self.name = name
+    @property
+    def errors(self):
+        return self._errors
 
-    def write(self, text: str) -> None:
-        self.write_handler(text)
+    @property
+    def name(self):
+        return self._name
 
-    def flush(self) -> None:
-        pass
-
-    def isatty(self) -> bool:
+    def isatty(self):
         return True
 
+class _StdOutputFile(_StdioFile):
+    def __init__(self, write_handler: Callable[[str], int | None], name: str, encoding: str='utf-8', errors: str='strict'):
+        super().__init__(name, encoding, errors)
+        self._write_handler = write_handler
 
-class _ReadStream:
-    """A utility class so we can specify our own handler for reading from stdin"""
-
-    def __init__(
-        self, read_handler: Callable[[int], str], name: str | None = None
-    ) -> None:
-        self.read_handler = read_handler
-        self.name = name
-
-    def readline(self, n: int = -1) -> str:
-        return self.read_handler(n)
-
-    def flush(self) -> None:
-        pass
-
-    def isatty(self) -> bool:
+    def writable(self) -> bool:
         return True
+
+    def write(self, s: str) -> int:
+        if self.closed:
+            raise ValueError("write to closed file")
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
+        written = self._write_handler(s)
+        if written is None:
+            # They didn't tell us how much they wrote, assume it was the whole string
+            return len(s)
+        return written
+    
+
+class _StdInputFile(_StdioFile):
+    def __init__(self, read_handler: Callable[[int], str], name: str, encoding: str='utf-8', errors: str='strict'):
+        super().__init__(name, encoding, errors)
+        self._read_handler = read_handler
+        self._buffer = ''
+
+    def readable(self) -> bool:
+        return True
+
+    def read(self, size: int | None = -1) -> str:
+        if self.closed:
+            raise ValueError("read from closed file")
+        if size is None:
+            # For some reason sys.stdin.read(None) works, but
+            # sys.stdin.readline(None) raises a TypeError
+            size = -1
+        if not isinstance(size, int):
+            raise TypeError(f"argument should be integer or None, not '{type(size).__name__}'")
+        if 0 <= size < len(self._buffer):
+            result = self._buffer[:size]
+            self._buffer = self._buffer[size:]
+            return result
+        if size >= 0:
+            size -= len(self._buffer)
+        result = self._buffer
+        got = self._read_handler(size)
+        self._buffer = got[size:]
+        return result + got[:size]
+
+    def readline(self, size: int =-1) -> str:
+        if not isinstance(size, int):
+            # For some reason sys.stdin.read(None) works, but
+            # sys.stdin.readline(None) raises a TypeError
+            raise TypeError(f"'{type(size).__name__}' object cannot be interpreted as an integer")
+        res = self.read(size)
+        [start, nl, rest] = res.partition("\n")
+        self._buffer = rest + self._buffer
+        return start + nl
 
 
 class _Compile(Compile):
@@ -265,10 +307,10 @@ class Console:
     stdin_callback: Callable[[int], str] | None
     """The function to call at each read from :py:data:`sys.stdin`"""
 
-    stdout_callback: Callable[[str], None] | None
+    stdout_callback: Callable[[str], int | None] | None
     """Function to call at each write to :py:data:`sys.stdout`."""
 
-    stderr_callback: Callable[[str], None] | None
+    stderr_callback: Callable[[str], int | None] | None
     """Function to call at each write to :py:data:`sys.stderr`."""
 
     buffer: list[str]
@@ -352,15 +394,15 @@ class Console:
         redirects: list[Any] = []
         if self.stdin_callback:
             stdin_name = getattr(sys.stdin, "name", "<stdin>")
-            stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
+            stdin_stream = _StdInputFile(self.stdin_callback, name=stdin_name)
             redirects.append(redirect_stdin(stdin_stream))
         if self.stdout_callback:
             stdout_name = getattr(sys.stdout, "name", "<stdout>")
-            stdout_stream = _WriteStream(self.stdout_callback, name=stdout_name)
+            stdout_stream = _StdOutputFile(self.stdout_callback, name=stdout_name)
             redirects.append(redirect_stdout(stdout_stream))
         if self.stderr_callback:
             stderr_name = getattr(sys.stderr, "name", "<stderr>")
-            stderr_stream = _WriteStream(self.stderr_callback, name=stderr_name)
+            stderr_stream = _StdOutputFile(self.stderr_callback, name=stderr_name)
             redirects.append(redirect_stderr(stderr_stream))
         try:
             self._streams_redirected = True

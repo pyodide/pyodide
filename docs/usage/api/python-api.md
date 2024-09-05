@@ -27,7 +27,7 @@ By default there are two JavaScript modules. More can be added with
    *  - :py:mod:`pyodide.code`
       - Utilities for evaluating Python and JavaScript code.
    *  - :py:mod:`pyodide.console`
-      - Similar to the Python builtin `code` module but handles top level await. Used
+      - Similar to the builtin :py:mod:`code` module but handles top level await. Used
         for implementing the Pyodide console.
    *  - :py:mod:`pyodide.ffi`
       - The :py:class:`~pyodide.ffi.JsProxy` class and utilities to help interact with JavaScript code.
