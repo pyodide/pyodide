@@ -1,7 +1,7 @@
 From 59d3efdf9e55958c6a3651e8eda2a9d6fe48e192 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Fri, 9 Aug 2024 19:00:41 +0530
-Subject: [PATCH 14/17] Skip svd_gesdd test
+Subject: [PATCH 14/18] Skip svd_gesdd test
 
 This patch excludes a test for gesdd which was introduced in this PR:
 https://github.com/scipy/scipy/pull/20349. It is not useful for Pyodide

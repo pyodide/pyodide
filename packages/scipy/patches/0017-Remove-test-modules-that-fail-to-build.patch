@@ -1,7 +1,7 @@
 From e21f33695da3275ec81b5f94685f0e4ac92c9ad5 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Mon, 30 Oct 2023 14:35:04 +0000
-Subject: [PATCH 17/17] Remove test modules that fail to build
+Subject: [PATCH 17/18] Remove test modules that fail to build
 
 These are tests and they have both void vs int return value problems and implicit
 function argument cast problems. Not worth fixing for tests.
