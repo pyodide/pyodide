@@ -7,12 +7,8 @@ source:
   url: https://files.pythonhosted.org/packages/f2/d4/1d54b291225d3ada8bc149726bcb8480a56155430c86a2b03a9210048b3a/casadi-3.6.6.tar.gz
   sha256: 104601d37ab7ebf897bce7e097823bb090dd7629a7cc4c2e76780f46fc0e59f6
 requirements:
-  host:
-    - numpy
   run:
     - numpy
-    - python-dateutil
-    - pytz
 build:
   exports: requested
   cflags: |
