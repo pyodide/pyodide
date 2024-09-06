@@ -1,7 +1,7 @@
 From ccbb0fa0884d567c6139eeed7dc2dc9f8db4db3a Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sun, 28 Jul 2024 18:15:17 +0900
-Subject: [PATCH 10/17] Link openblas with modules that require f2c
+Subject: [PATCH 10/18] Link openblas with modules that require f2c
 
 Some fortran modules require symbols from f2c, which is provided by
 openblas.

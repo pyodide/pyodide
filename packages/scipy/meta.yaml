@@ -35,9 +35,10 @@ source:
     - patches/0012-Remove-chla_transtype.patch
     - patches/0013-Set-wrapper-return-type-to-int.patch
     - patches/0014-Skip-svd_gesdd-test.patch # remove with SciPy v1.15.0
-    - patches/0015-Remove-f2py-generator.patch
+    - patches/0015-Remove-f2py-generators.patch
     - patches/0016-Make-sf_error_state_lib-a-static-library.patch
     - patches/0017-Remove-test-modules-that-fail-to-build.patch
+    - patches/0018-Fix-lapack-larfg-function-signature.patch
 
 build:
   cflags: |
