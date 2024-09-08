@@ -15,7 +15,9 @@ Subsystem for Linux.
 If your package is a pure Python package (i.e., if the wheel ends in
 `py3-none-any.whl`) then follow the official PyPA documentation on building
 [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
-Otherwise, the procedure is as follows.
+For binary packages, the manual steps are detailed below. In addition,
+[cibuildwheels](https://cibuildwheel.pypa.io/en/stable/) 2.19 or later provide
+support for building binary packages.
 
 ### Install pyodide-build
 
@@ -142,10 +144,10 @@ and you can pass options to it just like normal. Currently `subprocess` doesn't
 work, so if you have a test runner that uses `subprocess` then it cannot be
 used.
 
-## Build Github actions example
+## Build Github actions examples
 
-Here is a complete example of a Github Actions workflow for building a Python
-wheel out of tree:
+This is a complete example for building a Python wheel out of tree using
+`pyodide build` directly:
 
 ```yaml
 runs-on: ubuntu-22.04
@@ -153,14 +155,25 @@ runs-on: ubuntu-22.04
   - uses: actions/checkout@v4
   - uses: actions/setup-python@v5
     with:
-       python-version: 3.11.2
+       python-version: 3.12
   - run: |
-      pip install pyodide-build>=0.23.0
+      pip install pyodide-build>=0.28.0
       echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
   - uses: mymindstorm/setup-emsdk@v14
     with:
        version: ${{ env.EMSCRIPTEN_VERSION }}
   - run: pyodide build
+```
+
+And this is an example using `cibuildwheel` to build a Python wheel out of tree:
+
+```yaml
+runs-on: ubuntu-22.04
+  steps:
+  - uses: actions/checkout@v4
+  - uses: pypa/cibuildwheel@v2.20.0
+    env:
+       CIBW_PLATFORM: pyodide
 ```
 
 For an example "in the wild" of a github action to build and test a wheel
