@@ -242,9 +242,20 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - id: check-build-trigger
-        name: Check build trigger
-        run: bash tools/check_build_trigger.sh
+      - name: Check build trigger
+        id: check-build-trigger
+        shell: bash
+        run: |
+          set -e -x
+
+          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+
+          # The scipy tests will be triggered on push or on pull_request when the commit
+          # message contains "[scipy]"
+          if [[ "$GITHUB_EVENT_NAME" == push ||
+                "$COMMIT_MSG" =~ \[scipy\] ]]; then
+              echo "trigger=true" >> "$GITHUB_OUTPUT"
+          fi
 
   test-scipy:
     runs-on: ${{ matrix.os }}
