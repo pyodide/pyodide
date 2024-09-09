@@ -144,13 +144,13 @@ and you can pass options to it just like normal. Currently `subprocess` doesn't
 work, so if you have a test runner that uses `subprocess` then it cannot be
 used.
 
-## Build Github actions examples
+## Github Actions build examples
 
-This is a complete example for building a Python wheel out of tree using
+This is a complete example for building a Pyodide wheel out of tree using
 `pyodide build` directly:
 
 ```yaml
-runs-on: ubuntu-22.04
+runs-on: ubuntu-22.04 # or ubuntu-latest
   steps:
   - uses: actions/checkout@v4
   - uses: actions/setup-python@v5
@@ -165,10 +165,10 @@ runs-on: ubuntu-22.04
   - run: pyodide build
 ```
 
-And this is an example using `cibuildwheel` to build a Python wheel out of tree:
+And this is an example using `cibuildwheel` to build a Pyodide wheel out of tree:
 
 ```yaml
-runs-on: ubuntu-22.04
+runs-on: ubuntu-22.04 # or ubuntu-latest
   steps:
   - uses: actions/checkout@v4
   - uses: pypa/cibuildwheel@v2.20.0
