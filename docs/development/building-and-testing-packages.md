@@ -16,8 +16,8 @@ If your package is a pure Python package (i.e., if the wheel ends in
 `py3-none-any.whl`) then follow the official PyPA documentation on building
 [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
 For binary packages, the manual steps are detailed below. In addition,
-[cibuildwheels](https://cibuildwheel.pypa.io/en/stable/) 2.19 or later provide
-support for building binary packages.
+[cibuildwheel](https://cibuildwheel.pypa.io/en/stable/) 2.19 or later provides
+support for building binary wheels with Pyodide as a target.
 
 ### Install pyodide-build
 
