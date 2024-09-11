@@ -231,7 +231,7 @@ JsProxy_getflags(PyObject* self)
 #define OBJMAP_HEREDITARY 1
 #define OBJMAP_PY_JSON 2
 
-int
+static int
 JsProxy_get_objmap_flags(PyObject* self)
 {
   int flags = JsProxy_getflags(self);
@@ -253,7 +253,7 @@ JsProxy_is_py_json(PyObject* self)
   return !!(JsProxy_getflags(self) & (IS_PY_JSON_DICT | IS_PY_JSON_SEQUENCE));
 }
 
-PyObject*
+static PyObject*
 js2python_objmap(JsVal jsval, int flags)
 {
   PyObject* result = NULL;
@@ -263,6 +263,12 @@ js2python_objmap(JsVal jsval, int flags)
     return result;
   }
   return JsProxy_create_objmap(jsval, flags);
+}
+
+PyObject*
+js2python_as_py_json(JsVal jsval)
+{
+  return js2python_objmap(jsval, OBJMAP_PY_JSON);
 }
 
 #define INCLUDE_OBJMAP_METHODS(flags)                                          \
