@@ -62,7 +62,7 @@ myst:
 
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`
+- Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `certifi` to 2024.7.4 {pr}`5035`
@@ -77,7 +77,7 @@ myst:
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
-- Added `iminuit` 2.28.0 {pr}`4767`
+- Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0 {pr}`5020`
 
 ## Version 0.26.2
