@@ -10,9 +10,6 @@ test:
 requirements:
   run:
     - numpy # runtime only
-build:
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
 about:
   home: http://github.com/scikit-hep/iminuit
   PyPI: https://pypi.org/project/iminuit

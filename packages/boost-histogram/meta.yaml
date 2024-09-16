@@ -1,17 +1,14 @@
 package:
   name: boost-histogram
-  version: 1.4.1
+  version: 1.5.0
   top-level:
     - boost_histogram
 source:
-  url: https://files.pythonhosted.org/packages/60/68/a901fa3287fe62bde47e3936081286b6588b55f89bbcb9984be519414551/boost_histogram-1.4.1.tar.gz
-  sha256: 97146f735f467d506976a047f3f237ce59840a952fd231f5f431f897fb006cdd
+  url: https://files.pythonhosted.org/packages/8d/51/96712ed4e1d64618d3e76aac2d1f96e2f4856120012f0dad51adf42c78e4/boost_histogram-1.5.0.tar.gz
+  sha256: 0623f010e6c52e5d018767723959686090db07fc30f0d1d8475b5d663c5ddb2c
 requirements:
   run:
     - numpy # runtime only
-build:
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
 about:
   home: https://github.com/scikit-hep/boost-histogram
   PyPI: https://pypi.org/project/boost-histogram
