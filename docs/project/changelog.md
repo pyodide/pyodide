@@ -75,6 +75,7 @@ myst:
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
 - Upgraded `contourpy` to 1.3.0 {pr}`5048`
 - Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
+- Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`

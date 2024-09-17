@@ -1,11 +1,11 @@
 package:
   name: duckdb
-  version: 1.0.0
+  version: 1.1.0
   top-level:
     - duckdb
 source:
-  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-1.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
-  sha256: 02ee0ea70f528e8aa6843f74b1fdd93619a8fb8521ccfb67585e2a68b25e3a39
+  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-1.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: 5f6dffea55b467b41b329e8117120403cbd63fd8096a046daa740dfc94dfcb66
 about:
   home: https://github.com/duckdb/duckdb
   PyPI: https://pypi.org/project/duckdb
