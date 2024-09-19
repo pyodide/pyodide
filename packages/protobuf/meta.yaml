@@ -1,12 +1,14 @@
 package:
   name: protobuf
-  version: 4.24.4
+  version: 5.27.3
   top-level:
     - google
 
 source:
-  url: https://files.pythonhosted.org/packages/52/5c/f2c0778278259089952f94b0884ca27a001a17ffbd992ebe30c841085f4c/protobuf-4.24.4.tar.gz
-  sha256: 5a70731910cd9104762161719c3d883c960151eea077134458503723b60e3667
+  url: https://files.pythonhosted.org/packages/1b/61/0671db2ab2aee7c92d6c1b617c39b30a4cd973950118da56d77e7f397a9d/protobuf-5.27.3.tar.gz
+  sha256: 82460903e640f2b7e34ee81a947fdaad89de796d324bcbc38ff5430bcdead82c
+  patches:
+    - patches/0001-Fix-signature-of-PyUpb_MessageMeta_Clear.patch
 
 about:
   home: https://github.com/protocolbuffers/protobuf
