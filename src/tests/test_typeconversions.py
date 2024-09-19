@@ -2107,8 +2107,9 @@ async def test_bind_async2(selenium):
 
     from _pyodide.jsbind import Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
-    jsfunc = run_js(
+    jsfunc: JsProxy = run_js(
         """
         (async function () {
             return [1, 2, 3]
@@ -2136,6 +2137,7 @@ async def test_bind_async3(selenium):
 
     from _pyodide.jsbind import BindClass, Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
     class A(BindClass):
         x: Annotated[list[int], Deep]
@@ -2146,7 +2148,7 @@ async def test_bind_async3(selenium):
     def f2() -> Future[A]:
         raise NotImplementedError
 
-    jsfunc = run_js(
+    jsfunc: JsProxy = run_js(
         """
         (async function() {
             return {
@@ -2170,8 +2172,9 @@ def test_bind_pre_convert(selenium):
     from _pyodide.jsbind import Deep, Py2JsConverterMeta
     from js import Headers  # type:ignore[attr-defined]
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
-    ajs = run_js("(x) => [x.toString(), JSON.stringify(Array.from(x))]")
+    ajs: JsProxy = run_js("(x) => [x.toString(), JSON.stringify(Array.from(x))]")
 
     class ToHeaders(metaclass=Py2JsConverterMeta):
         @staticmethod
@@ -2190,16 +2193,57 @@ def test_bind_pre_convert(selenium):
 
 @run_in_pyodide
 def test_bind_construct(selenium):
-    from pyodide.code import run_js
+    from typing import Annotated, Any, NotRequired, TypedDict
 
-    A = run_js("(class {})")
+    from _pyodide.jsbind import Default, Json
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class Inner(TypedDict):
+        b: int
+        c: NotRequired[str]
+
+    class Outer(TypedDict):
+        a: list[Inner]
+        x: int
+
+    ajs: JsProxy = run_js("(x) => x")
+
+    def a_shape(x: Annotated[Any, Default], /) -> Annotated[Outer, Json]:
+        raise NotImplementedError
+
+    # pyright infers abound has same type as a_shape,
+    a = ajs.bind_sig(a_shape)
+    o = run_js("({x: 7, a : [{b: 1, c: 'xyz'},{b: 2},{b: 3}]})")
+
+    res = a(o)
+    assert res["x"] == 7
+    res["x"] = 9
+    assert o.x == 9
+    assert res["a"][0]["b"] == 1
+    assert res["a"][0]["c"]
+    assert "c" in res["a"][0]
+    assert res["a"][0]["c"] == "xyz"
+    assert res["a"][1]["b"] == 2
+    assert "c" not in res["a"][1]
+    res["a"][1]["c"] = "s"
+    assert o.a[1].c == "s"
+
+
+@run_in_pyodide
+def test_bind_py_json(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    A: JsProxy = run_js("(class {x = 7})")
 
     class A_sig:
-        pass
+        x: int
 
-    A = A.bind_sig(A_sig)
+    Abound = A.bind_sig(A_sig)
 
-    A()
+    res = Abound()
+    assert res.x == 7
 
 
 @run_in_pyodide

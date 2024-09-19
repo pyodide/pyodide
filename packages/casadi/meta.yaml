@@ -1,22 +1,14 @@
 package:
   name: casadi
-  version: 3.6.5
+  version: 3.6.6
   top-level:
     - casadi
 source:
-  url: https://files.pythonhosted.org/packages/5a/97/ca40c4d7d36162ddfd0bb96a89206469a95b925faf67046ba6e4b5b78283/casadi-3.6.5.tar.gz
-  sha256: 409a5f6725eadea40fddfb8ba2321139b5252edac8bc115a72f68e648631d56a
-  patches:
-    - patches/0001-fix-python-include-dir.patch # can be removed with version 3.6.6
-    - patches/0002-disable-size-max-check.patch # https://github.com/casadi/casadi/pull/3785
-    - patches/0003-disable-rtld_deepbind.patch # https://github.com/casadi/casadi/pull/3785
+  url: https://files.pythonhosted.org/packages/f2/d4/1d54b291225d3ada8bc149726bcb8480a56155430c86a2b03a9210048b3a/casadi-3.6.6.tar.gz
+  sha256: 104601d37ab7ebf897bce7e097823bb090dd7629a7cc4c2e76780f46fc0e59f6
 requirements:
-  host:
-    - numpy
   run:
     - numpy
-    - python-dateutil
-    - pytz
 build:
   exports: requested
   cflags: |

@@ -1,0 +1,20 @@
+package:
+  name: arro3-io
+  version: 0.3.0
+  top-level:
+    - "arro3.io"
+source:
+  url: https://github.com/kylebarron/arro3/releases/download/py-v0.3.0/arro3_io-0.3.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: ca5a05da31f1d72ac77ade6c5532b3d333317257eab768c61dc2cf46149e33e5
+requirements:
+  run:
+    - arro3-core
+extra:
+  recipe-maintainers:
+    - kylebarron
+
+about:
+  home: https://github.com/kylebarron/arro3
+  PyPI: https://pypi.org/project/arro3-io
+  summary: Read and write tabular data formats to and from Apache Arrow.
+  license: MIT

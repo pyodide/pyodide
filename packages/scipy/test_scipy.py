@@ -100,6 +100,22 @@ def test_cpp_exceptions(selenium):
         lombscargle(x=[1], y=[1, 2], freqs=[1, 2, 3])
 
 
+# Regression test for LAPACK larfg signature mismatch
+# https://github.com/pyodide/pyodide/issues/3379
+@pytest.mark.driver_timeout(40)
+@run_in_pyodide(packages=["scipy", "numpy"])
+def test_lapack_larfg(selenium):
+    import numpy as np
+    from scipy.linalg.lapack import get_lapack_funcs
+
+    a = np.arange(16).reshape(4, 4)
+    a = a.T.dot(a)
+
+    (larfg,) = get_lapack_funcs(["larfg"], dtype="float64")
+    alpha, x, tau = larfg(a.shape[0] - 1, a[1, 0], a[2:, 0])
+    return (alpha, x, tau) is not None
+
+
 @pytest.mark.driver_timeout(40)
 @run_in_pyodide(packages=["scipy"])
 def test_logm(selenium_standalone):
