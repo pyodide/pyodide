@@ -1,5 +1,5 @@
 package:
-  name: stack_data
+  name: stack-data
   version: 0.6.3
   top-level:
     - stack_data
