@@ -1,5 +1,5 @@
 package:
-  name: pillow_heif
+  name: pillow-heif
   version: 0.18.0
 source:
   url: https://files.pythonhosted.org/packages/c9/bb/e7797fe7f5cad447bb470f916ead38f0929e8d28bdf6bd5d9f31dfe1ac26/pillow_heif-0.18.0.tar.gz
