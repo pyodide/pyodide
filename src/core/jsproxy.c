@@ -4520,7 +4520,7 @@ finally:
   return pyresult;
 }
 
-EM_JS(int, can_run_sync_js, (), { return !!Module.validSuspender.value; });
+EM_JS(int, can_run_sync_js, (), { return !!validSuspender.value; });
 
 PyObject*
 can_run_sync(PyObject* _mod, PyObject* _null)
@@ -4562,7 +4562,7 @@ jsproxy_init(PyObject* core_module)
     PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
   FAIL_IF_NULL(JsProxy_metaclass);
 
-  bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
+  bool jspiSupported = EM_ASM_INT({ return jspiSupported; });
   if (jspiSupported) {
     run_sync_MethodDef->ml_meth = (PyCFunction)run_sync;
   } else {

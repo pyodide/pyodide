@@ -24,6 +24,9 @@ myst:
   speedup for methods with arguments is less drastic but still quite a lot.
   {pr}`4963`
 
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
 ## Version 0.26.2
 
 _July 26, 2024_

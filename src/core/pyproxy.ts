@@ -16,6 +16,7 @@
 
 declare var Tests: any;
 declare var Module: any;
+declare var validSuspender: { value: boolean };
 
 import { TypedArray } from "types";
 import { warnOnce } from "pyodide-util";
