@@ -28,6 +28,9 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5 {pr}`4823`
