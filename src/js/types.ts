@@ -3,12 +3,8 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import {
-  type PackageData,
-  type InternalPackageData,
-  type PackageLoadMetadata,
-} from "./load-package";
 import { SnapshotConfig } from "./snapshot";
+import { ResolvablePromise } from "./common/resolveable";
 
 export type TypedArray =
   | Int8Array
@@ -230,7 +226,7 @@ export interface FS {
   mkdev: (path: string, dev: number) => FSNode;
   filesystems: any;
   stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (node: FSNode) => string[];
+  readdir: (path: string) => string[];
   isDir: (mode: number) => boolean;
   isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (
@@ -265,6 +261,8 @@ export type PreRunFunc = (Module: Module) => void;
 
 export type ReadFileType = (path: string) => Uint8Array;
 
+// File System-like type which can be passed to
+// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
 export type LoadDynlibFS = {
   readFile: ReadFileType;
   findObject: (path: string, dontResolveLastLink: boolean) => any;
@@ -300,6 +298,8 @@ export interface Module {
       global?: boolean;
       fs: LoadDynlibFS;
     },
+    localScope?: object | null,
+    handle?: number,
   ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
@@ -343,6 +343,49 @@ type LockfileInfo = {
 export type Lockfile = {
   info: LockfileInfo;
   packages: Record<string, InternalPackageData>;
+};
+
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
+
+// Package data inside pyodide-lock.json
+
+export interface PackageData {
+  name: string;
+  version: string;
+  fileName: string;
+  /** @experimental */
+  packageType: PackageType;
+}
+
+/**
+ * @hidden
+ */
+export type InternalPackageData = {
+  name: string;
+  version: string;
+  file_name: string;
+  package_type: PackageType;
+  install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+};
+
+/**
+ * @hidden
+ */
+export type PackageLoadMetadata = {
+  name: string;
+  normalizedName: string;
+  channel: string;
+  depends: string[];
+  done: ResolvablePromise;
+  installPromise?: Promise<void>;
+  packageData: InternalPackageData;
 };
 
 export interface API {
@@ -426,9 +469,12 @@ export interface API {
   os: PyProxy;
 
   restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
-  makeSnapshot(): Uint8Array;
+  makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
-  finalizeBootstrap: (fromSnapshot?: SnapshotConfig) => PyodideInterface;
+  finalizeBootstrap: (
+    fromSnapshot?: SnapshotConfig,
+    snapshotDeserializer?: (obj: any) => any,
+  ) => PyodideInterface;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;

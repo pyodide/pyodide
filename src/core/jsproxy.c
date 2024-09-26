@@ -65,6 +65,8 @@
 #define IS_ASYNC_GENERATOR (1 << 17)
 #define IS_ASYNC_ITERATOR  (1 << 18)
 #define IS_ERROR           (1 << 19)
+#define IS_PY_JSON_DICT    (1 << 20)
+#define IS_PY_JSON_SEQUENCE (1 << 21)
 // clang-format on
 
 _Py_IDENTIFIER(get_event_loop);
@@ -226,6 +228,53 @@ JsProxy_getflags(PyObject* self)
   return result;
 }
 
+#define OBJMAP_HEREDITARY 1
+#define OBJMAP_PY_JSON 2
+
+static int
+JsProxy_get_objmap_flags(PyObject* self)
+{
+  int flags = JsProxy_getflags(self);
+  bool py_json = !!(flags & (IS_PY_JSON_DICT | IS_PY_JSON_SEQUENCE));
+  bool objmap_hereditary = (flags & IS_OBJECT_MAP) && JsObjMap_HEREDITARY(self);
+  int result = 0;
+  if (py_json) {
+    result |= OBJMAP_PY_JSON;
+  }
+  if (objmap_hereditary) {
+    result |= OBJMAP_HEREDITARY;
+  }
+  return result;
+}
+
+int
+JsProxy_is_py_json(PyObject* self)
+{
+  return !!(JsProxy_getflags(self) & (IS_PY_JSON_DICT | IS_PY_JSON_SEQUENCE));
+}
+
+static PyObject*
+js2python_objmap(JsVal jsval, int flags)
+{
+  PyObject* result = NULL;
+
+  result = js2python_immutable(jsval);
+  if (result != NULL) {
+    return result;
+  }
+  return JsProxy_create_objmap(jsval, flags);
+}
+
+PyObject*
+js2python_as_py_json(JsVal jsval)
+{
+  return js2python_objmap(jsval, OBJMAP_PY_JSON);
+}
+
+#define INCLUDE_OBJMAP_METHODS(flags)                                          \
+  !((flags) & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |           \
+               IS_DOUBLE_PROXY | IS_ITERATOR | IS_CALLABLE | IS_ERROR))
+
 static int
 JsProxy_clear(PyObject* self)
 {
@@ -272,7 +321,8 @@ finally:
 PyObject*
 JsProxy_bind_sig(PyObject* self, PyObject* sig)
 {
-  return JsProxy_create_with_this(JsProxy_VAL(self), JsMethod_THIS(self), sig);
+  return JsProxy_create_with_this(
+    JsProxy_VAL(self), JsMethod_THIS(self), sig, JsProxy_is_py_json(self));
 }
 
 static PyMethodDef JsProxy_bind_sig_MethodDef = {
@@ -363,13 +413,138 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   return nullToUndefined(result);
 });
 
+// JsMethodCallSingleton is a special structure which we return from
+// JsProxy_GetMethod. The purpose of it is to optimize method calls
+// `jsproxy.f()`. When we execute JsProxy_GetMethod(jsproxy, f_unicode), we
+// stuff the JS function `jsproxy.f`, the JS object `jsproxy`, and the method
+// signature into one of these structs and return it. Then the call is routed to
+// this struct which avoids making a JsProxy.
+//
+// As an additional optimization, we observe that the pattern is always:
+//
+// method = PyObject_GetMethod(obj, method_name);
+// result = PyObject_Call(method, obj, ... other args)
+// Py_DECREF(method);
+//
+// In other words, the return value of `_PyObject_GetMethod` is used exactly
+// once. To save on allocations, we make a global called method_call_singleton
+// and reuse it if the reference count is 1 (since then the only reference to it
+// is our reference). Otherwise we allocate a new one. We shouldn't have to
+// allocate a new `method_call_singleton` except when third party code uses
+// `_PyObject_GetMethod`.
+
+typedef struct
+{
+  PyObject_HEAD;
+  JsRef func;
+  JsRef this_;
+  PyObject* signature;
+  vectorcallfunc vectorcall;
+} JsMethodCallSingleton;
+
+static PyTypeObject JsMethodCallSingletonType;
+static JsMethodCallSingleton* method_call_singleton;
+
+static PyObject*
+JsMethodCallSingleton_Vectorcall(PyObject* o,
+                                 PyObject* const* pyargs,
+                                 size_t nargsf,
+                                 PyObject* kwnames)
+{
+  JsMethodCallSingleton* self = (JsMethodCallSingleton*)o;
+  if (self->func == NULL) {
+    PyErr_SetString(PyExc_SystemError, "Expected self->func not to be NULL");
+    return NULL;
+  }
+  JsVal func = hiwire_get(self->func);
+  JsVal this_ = hiwire_get(self->this_);
+  PyObject* sig = self->signature;
+  return JsMethod_Vectorcall_impl(func, this_, sig, pyargs, nargsf, kwnames);
+}
+
+static JsMethodCallSingleton*
+make_method_call_singleton()
+{
+  JsMethodCallSingleton* result =
+    (JsMethodCallSingleton*)JsMethodCallSingletonType.tp_alloc(
+      &JsMethodCallSingletonType, 0);
+  if (result == NULL) {
+    return NULL;
+  }
+  result->vectorcall = JsMethodCallSingleton_Vectorcall;
+  result->func = NULL;
+  result->this_ = NULL;
+  result->signature = NULL;
+  return result;
+}
+
+static int
+JsMethodCallSingleton_clear(JsMethodCallSingleton* o)
+{
+  JsMethodCallSingleton* self = (JsMethodCallSingleton*)o;
+  hiwire_CLEAR(self->func);
+  hiwire_CLEAR(self->this_);
+  Py_CLEAR(self->signature);
+  return 0;
+}
+
+// This isn't static so we can call it from conftest.py to prevent leak check
+// false positives
+EMSCRIPTEN_KEEPALIVE void
+clear_method_call_singleton(void)
+{
+  if (Py_REFCNT(method_call_singleton) == 1) {
+    // We hold the only reference count so we can reuse it.
+    // Clear it out first.
+    JsMethodCallSingleton_clear(method_call_singleton);
+  } else {
+    // Oops, someone held on to the previous method_call_singleton or otherwise
+    // used it in an unexpected way. Make another!
+    // This should never happen except when third party code uses
+    // `_PyObject_GetMethod`.
+    Py_SETREF(method_call_singleton, make_method_call_singleton());
+  }
+}
+
+static void
+JsMethodCallSingleton_dealloc(PyObject* self)
+{
+  JsMethodCallSingleton_clear((JsMethodCallSingleton*)self);
+  Py_TYPE(self)->tp_free(self);
+}
+
+static PyTypeObject JsMethodCallSingletonType = {
+  .tp_name = "_pyodide.JsMethodCallSingleton",
+  .tp_basicsize = sizeof(JsMethodCallSingleton),
+  .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_VECTORCALL,
+  .tp_vectorcall_offset = offsetof(JsMethodCallSingleton, vectorcall),
+  .tp_call = (PyCFunctionWithKeywords)PyObject_Vectorcall,
+  .tp_doc = "A hacky type to avoid temporaries",
+  .tp_dealloc = JsMethodCallSingleton_dealloc,
+};
+
+static PyObject*
+JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method);
+
+PyObject*
+JsProxy_GetMethod(PyObject* self, PyObject* attr)
+{
+  return JsProxy_GetAttr_helper(self, attr, true);
+}
+
+PyObject*
+JsProxy_GetAttr(PyObject* self, PyObject* attr)
+{
+  return JsProxy_GetAttr_helper(self, attr, false);
+}
+
 /**
  * getattr overload, first checks whether the attribute exists in the JsProxy
  * dict, and if so returns that. Otherwise, it attempts lookup on the wrapped
  * object.
  */
 static PyObject*
-JsProxy_GetAttr(PyObject* self, PyObject* attr)
+JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
 {
   PyObject* result = _PyObject_GenericGetAttrWithDict(self, attr, NULL, 1);
   if (result != NULL || PyErr_Occurred()) {
@@ -415,7 +590,8 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
       FAIL();
     }
     if (got_converter) {
-      return Js2PyConverter_convert(sig, jsresult, JS_NULL);
+      pyresult = Js2PyConverter_convert(sig, jsresult, JS_NULL);
+      goto success;
     }
     if (!Py_IsNone(sig)) {
       attr_sig = Py_XNewRef(sig);
@@ -425,10 +601,28 @@ JsProxy_GetAttr(PyObject* self, PyObject* attr)
   // TODO: maybe allow being strict and requiring that we get a sig?
   if (pyproxy_Check(jsresult)) {
     pyresult = js2python(jsresult);
-  } else if (JsvFunction_Check(jsresult)) {
-    pyresult = JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig);
+    FAIL_IF_NULL(pyresult);
+    goto success;
+  }
+  if (is_method) {
+    if (!JsvFunction_Check(jsresult)) {
+      // Not callable, this should be an error...
+      PyErr_SetString(PyExc_TypeError, "Expected callable");
+      FAIL();
+    }
+    clear_method_call_singleton();
+    pyresult = Py_NewRef(method_call_singleton);
+    method_call_singleton->func = hiwire_new(jsresult);
+    method_call_singleton->this_ = JsProxy_REF(self);
+    hiwire_incref(method_call_singleton->this_);
+    method_call_singleton->signature = Py_NewRef(attr_sig);
+    goto success;
+  }
+  if (JsvFunction_Check(jsresult)) {
+    pyresult =
+      JsProxy_create_with_this(jsresult, JsProxy_VAL(self), attr_sig, false);
   } else if (attr_sig) {
-    pyresult = JsProxy_create_with_this(jsresult, JS_NULL, attr_sig);
+    pyresult = JsProxy_create_with_this(jsresult, JS_NULL, attr_sig, false);
   } else {
     pyresult = js2python(jsresult);
   }
@@ -552,7 +746,7 @@ JsProxy_GetIter(PyObject* self)
 {
   JsVal iter = JsProxy_GetIter_js(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(iter);
-  return js2python(iter);
+  return js2python_objmap(iter, JsProxy_get_objmap_flags(self));
 finally:
   return NULL;
 }
@@ -582,7 +776,7 @@ handle_next_result_js,
 });
 
 PySendResult
-handle_next_result(JsVal next_res, PyObject** result, bool obj_map_hereditary){
+handle_next_result(JsVal next_res, PyObject** result, int objmap_flags){
   PySendResult res = PYGEN_ERROR;
   char* msg = NULL;
   *result = NULL;
@@ -604,7 +798,7 @@ handle_next_result(JsVal next_res, PyObject** result, bool obj_map_hereditary){
   // so pyvalue will be set to Py_None.
   *result = js2python_immutable(jsresult);
   if (!*result) {
-    *result = JsProxy_create_objmap(jsresult, obj_map_hereditary);
+    *result = JsProxy_create_objmap(jsresult, objmap_flags);
   }
   FAIL_IF_NULL(*result);
   if(pyproxy_Check(jsresult)) {
@@ -635,7 +829,7 @@ JsProxy_am_send(PyObject* self, PyObject* arg, PyObject** result)
   JsVal next_res =
     JsvObject_CallMethodId_OneArg(JsProxy_VAL(self), &JsId_next, jsarg);
   FAIL_IF_JS_NULL(next_res);
-  ret = handle_next_result(next_res, result, JsObjMap_HEREDITARY(self));
+  ret = handle_next_result(next_res, result, JsProxy_get_objmap_flags(self));
 finally:
   if (arg) {
     destroy_proxies(proxies, &PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL);
@@ -864,7 +1058,7 @@ JsGenerator_throw_inner(PyObject* self,
   PyObject* result = NULL;
   JsVal throw_res = process_throw_args(self, typ, val, tb);
   FAIL_IF_JS_NULL(throw_res);
-  PySendResult ret = handle_next_result(throw_res, &result, false);
+  PySendResult ret = handle_next_result(throw_res, &result, 0);
   if (ret == PYGEN_RETURN) {
     if (Py_IsNone(result)) {
       PyErr_SetNone(PyExc_StopIteration);
@@ -1383,7 +1577,7 @@ JsArray_subscript(PyObject* self, PyObject* item)
       }
       FAIL();
     }
-    pyresult = js2python(jsresult);
+    pyresult = js2python_objmap(jsresult, JsProxy_get_objmap_flags(self));
     goto success;
   }
   if (PySlice_Check(item)) {
@@ -1401,7 +1595,7 @@ JsArray_subscript(PyObject* self, PyObject* item)
         JsvArray_slice(JsProxy_VAL(self), slicelength, start, stop, step);
     }
     FAIL_IF_JS_NULL(jsresult);
-    pyresult = js2python(jsresult);
+    pyresult = js2python_objmap(jsresult, JsProxy_get_objmap_flags(self));
     goto success;
   }
   PyErr_Format(PyExc_TypeError,
@@ -2858,6 +3052,25 @@ static PyMethodDef JsProxy_as_object_map_MethodDef = {
   METH_FASTCALL | METH_KEYWORDS
 };
 
+static PyObject*
+JsProxy_as_py_json(PyObject* self, PyObject* _unused)
+{
+  int flags = JsProxy_getflags(self);
+  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+    flags |= IS_PY_JSON_SEQUENCE;
+  } else {
+    flags |= IS_PY_JSON_DICT;
+  }
+  return JsProxy_create_with_type(
+    flags, JsProxy_VAL(self), JsMethod_THIS(self), NULL);
+}
+
+static PyMethodDef JsProxy_as_py_json_MethodDef = {
+  "as_py_json",
+  (PyCFunction)JsProxy_as_py_json,
+  METH_NOARGS
+};
+
 EM_JS_VAL(JsVal, JsObjMap_GetIter_js, (JsVal obj), {
   return Module.iterObject(obj);
 })
@@ -2915,7 +3128,7 @@ JsObjMap_subscript(PyObject* self, PyObject* pyidx)
   }
   pyresult = js2python_immutable(result);
   if (pyresult == NULL) {
-    pyresult = JsProxy_create_objmap(result, JsObjMap_HEREDITARY(self));
+    pyresult = JsProxy_create_objmap(result, JsProxy_get_objmap_flags(self));
   }
 
 finally:
@@ -3092,7 +3305,7 @@ JsMethod_descr_get(PyObject* self, PyObject* obj, PyObject* type)
 
   JsVal jsobj = python2js(obj);
   FAIL_IF_JS_NULL(jsobj);
-  result = JsProxy_create_with_this(JsProxy_VAL(self), jsobj, NULL);
+  result = JsProxy_create_with_this(JsProxy_VAL(self), jsobj, NULL, false);
 
 finally:
   return result;
@@ -3631,14 +3844,14 @@ JsProxy_create_subtype(int flags)
 
   int tp_flags = Py_TPFLAGS_DEFAULT;
 
-  bool obj_map = (flags & IS_OBJECT_MAP);
+  bool objmap = (flags & (IS_OBJECT_MAP | IS_PY_JSON_DICT));
   int mapping_flags = HAS_GET | HAS_LENGTH | IS_ITERABLE;
   bool mapping = (flags & mapping_flags) == mapping_flags;
   bool mutable_mapping = mapping && (flags & HAS_SET);
   char* type_name = "pyodide.ffi.JsProxy";
   int basicsize = sizeof(JsProxy);
-  mapping = mapping || obj_map;
-  mutable_mapping = mutable_mapping || obj_map;
+  mapping = mapping || objmap;
+  mutable_mapping = mutable_mapping || objmap;
 
   if (mapping) {
     methods[cur_method++] = JsMap_keys_MethodDef;
@@ -3654,7 +3867,7 @@ JsProxy_create_subtype(int flags)
     methods[cur_method++] = JsMap_setdefault_MethodDef;
   }
 
-  if (flags & IS_OBJECT_MAP) {
+  if (objmap) {
     slots[cur_slot++] =
       (PyType_Slot){ .slot = Py_tp_iter, .pfunc = (void*)JsObjMap_GetIter };
     slots[cur_slot++] =
@@ -3870,9 +4083,12 @@ skip_container_slots:
   if (flags & IS_DOUBLE_PROXY) {
     methods[cur_method++] = JsDoubleProxy_unwrap_MethodDef;
   }
-  if (!(flags & (IS_ARRAY | IS_TYPEDARRAY | IS_NODE_LIST | IS_BUFFER |
-                 IS_DOUBLE_PROXY | IS_ITERATOR))) {
+  if (INCLUDE_OBJMAP_METHODS(flags)) {
     methods[cur_method++] = JsProxy_as_object_map_MethodDef;
+    methods[cur_method++] = JsProxy_as_py_json_MethodDef;
+  }
+  if (flags & (IS_ARRAY | IS_NODE_LIST)) {
+    methods[cur_method++] = JsProxy_as_py_json_MethodDef;
   }
   if (flags & IS_ERROR) {
     type_name = "pyodide.ffi.JsException";
@@ -4042,7 +4258,7 @@ finally:
 #define SET_FLAG_IF_HAS_METHOD(flag, meth)                                     \
   SET_FLAG_IF(flag, hasMethod(obj, meth))
 
-EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj), {
+EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj, bool is_py_json), {
   let type_flags = 0;
   // clang-format off
   if (API.isPyProxy(obj) && !pyproxyIsAlive(obj)) {
@@ -4115,6 +4331,14 @@ EM_JS_NUM(int, JsProxy_compute_typeflags, (JsVal obj), {
         || constructorName === "DOMException"
       )
     ) && !(type_flags & (IS_CALLABLE | IS_BUFFER)));
+
+  if (is_py_json && (type_flags & (IS_ARRAY | IS_NODE_LIST | IS_ITERATOR))) {
+    // tagging IS_PY_JSON_SEQUENCE on IS_ITERATOR is a bit of a hack
+    type_flags |= IS_PY_JSON_SEQUENCE;
+  }
+  if (is_py_json && INCLUDE_OBJMAP_METHODS(type_flags)) {
+    type_flags |= IS_PY_JSON_DICT;
+  }
   // clang-format on
   return type_flags;
 });
@@ -4163,16 +4387,6 @@ finally:
   return result;
 }
 
-PyObject*
-JsProxy_create_objmap(JsVal object, bool objmap)
-{
-  int typeflags = JsProxy_compute_typeflags(object);
-  if (typeflags == 0 && objmap) {
-    typeflags |= IS_OBJECT_MAP;
-  }
-  return JsProxy_create_with_type(typeflags, object, JS_NULL, NULL);
-}
-
 EM_JS_BOOL(bool, is_comlink_proxy, (JsVal obj), {
   return !!(API.Comlink && value[API.Comlink.createEndpoint]);
 });
@@ -4184,14 +4398,17 @@ EM_JS_BOOL(bool, is_comlink_proxy, (JsVal obj), {
  * appropriate flags, then we get the appropriate type with JsProxy_get_subtype.
  */
 PyObject*
-JsProxy_create_with_this(JsVal object, JsVal this, PyObject* sig)
+JsProxy_create_with_this(JsVal object,
+                         JsVal this,
+                         PyObject* sig,
+                         bool is_py_json)
 {
   int type_flags = 0;
   if (is_comlink_proxy(object)) {
     // Comlink proxies are weird and break our feature detection pretty badly.
     type_flags = IS_CALLABLE | IS_AWAITABLE | IS_ARRAY;
   } else {
-    type_flags = JsProxy_compute_typeflags(object);
+    type_flags = JsProxy_compute_typeflags(object, is_py_json);
     if (type_flags == -1) {
       fail_test();
       PyErr_SetString(internal_error,
@@ -4205,7 +4422,18 @@ JsProxy_create_with_this(JsVal object, JsVal this, PyObject* sig)
 EMSCRIPTEN_KEEPALIVE PyObject*
 JsProxy_create(JsVal object)
 {
-  return JsProxy_create_with_this(object, JS_NULL, NULL);
+  return JsProxy_create_with_this(object, JS_NULL, NULL, false);
+}
+
+PyObject*
+JsProxy_create_objmap(JsVal object, int flags)
+{
+  bool is_py_json = !!(flags & OBJMAP_PY_JSON);
+  int typeflags = JsProxy_compute_typeflags(object, is_py_json);
+  if ((flags & OBJMAP_HEREDITARY) && INCLUDE_OBJMAP_METHODS(typeflags)) {
+    typeflags |= IS_OBJECT_MAP;
+  }
+  return JsProxy_create_with_type(typeflags, object, JS_NULL, NULL);
 }
 
 EMSCRIPTEN_KEEPALIVE bool
@@ -4471,6 +4699,8 @@ jsproxy_init(PyObject* core_module)
   AddFlag(IS_ASYNC_GENERATOR);
   AddFlag(IS_ASYNC_ITERATOR);
   AddFlag(IS_ERROR);
+  AddFlag(IS_PY_JSON_DICT);
+  AddFlag(IS_PY_JSON_SEQUENCE);
 
 #undef AddFlag
   FAIL_IF_MINUS_ONE(PyObject_SetAttrString(core_module, "js_flags", flag_dict));
@@ -4490,6 +4720,8 @@ jsproxy_init(PyObject* core_module)
   FAIL_IF_NULL(JsException);
   FAIL_IF_MINUS_ONE(
     PyObject_SetAttrString(core_module, "JsException", JsException));
+  FAIL_IF_MINUS_ONE(PyType_Ready(&JsMethodCallSingletonType));
+  method_call_singleton = make_method_call_singleton();
 
   success = true;
 finally:

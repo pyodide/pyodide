@@ -14,6 +14,8 @@ thread_msg = "no thread support"
 todo_signature_mismatch_msg = "TODO signature mismatch"
 todo_memory_corruption_msgt = "TODO memory corruption"
 todo_genuine_difference_msg = "TODO genuine difference to be investigated"
+todo_fp_exception_msg = "TODO did not raise maybe no floating point exception support?"
+
 
 tests_to_mark = [
     # scipy/_lib/tests
@@ -130,17 +132,13 @@ tests_to_mark = [
     # scipy/sparse/tests
     ("test_arpack.py::test_parallel_threads", xfail, thread_msg),
     ("test_array_api.py::test_sparse_dense_divide", xfail, fp_exception_msg),
-    # TODO remove when scipy 1.13 is packaged in Pyodide
-    (
-        "test_base.py.+(COO|DIA|BSR).+multiple_ellipsis_slicing",
-        xfail,
-        "DeprecationWarning for scipy 1.13 not raised not important",
-    ),
     ("test_linsolve.py::TestSplu.test_threads_parallel", xfail, thread_msg),
     ("test_propack", skip, todo_signature_mismatch_msg),
     ("test_sparsetools.py::test_threads", xfail, thread_msg),
     # scipy/sparse/csgraph/tests
     ("test_shortest_path.py::test_gh_17782_segfault", xfail, thread_msg),
+    # scipy/sparse/linalg/tests
+    ("test_svds.py::Test_SVDS_PROPACK", skip, todo_signature_mismatch_msg),
     # scipy/spatial/tests
     (
         "test_kdtree.py::test_query_ball_point_multithreading",
@@ -168,6 +166,28 @@ tests_to_mark = [
         "test_distributions.py::TestBeta.test_boost_eval_issue_14606",
         skip,
         "TODO C++ exception that causes a Pyodide fatal error",
+    ),
+    # The following four tests do not raise the required
+    # <class 'scipy.special._sf_error.SpecialFunctionError'>
+    (
+        "test_basic.py::test_error_raising",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::test_errstate_pyx_basic",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::test_errstate_cpp_scipy_special",
+        xfail,
+        todo_fp_exception_msg,
+    ),
+    (
+        "test_sf_error.py::test_errstate_cpp_alt_ufunc_machinery",
+        xfail,
+        todo_fp_exception_msg,
     ),
     (
         "test_kdeoth.py::test_kde_[12]d",
@@ -220,7 +240,7 @@ tests_to_mark = [
     (
         "test_qmc.py::TestMultivariateNormalQMC.test_validations",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_qmc.py::TestMultivariateNormalQMC.test_MultivariateNormalQMCDegenerate",
@@ -237,12 +257,12 @@ tests_to_mark = [
     (
         "test_stats.py::TestKSTwoSamples.test_some_code_paths",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_stats.py::TestGeometricStandardDeviation.test_raises_value_error",
         xfail,
-        "TODO did not raise maybe no floating point exception support?",
+        todo_fp_exception_msg,
     ),
     (
         "test_stats.py::TestBrunnerMunzel.test_brunnermunzel_normal_dist",

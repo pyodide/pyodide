@@ -1,0 +1,20 @@
+package:
+  name: arro3-compute
+  version: 0.3.0
+  top-level:
+    - "arro3.compute"
+source:
+  url: https://github.com/kylebarron/arro3/releases/download/py-v0.3.0/arro3_compute-0.3.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: 0753b631c43c674dfa8651366c3e9f9a3221c13c1dab7c9da6606f45264a5f56
+requirements:
+  run:
+    - arro3-core
+extra:
+  recipe-maintainers:
+    - kylebarron
+
+about:
+  home: https://github.com/kylebarron/arro3
+  PyPI: https://pypi.org/project/arro3-compute
+  summary: Compute kernels for Apache Arrow memory.
+  license: MIT

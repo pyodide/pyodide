@@ -21,6 +21,14 @@ myst:
   timezone handling.
   {pr}`4889`
 
+- {{ Enhancement }} `HttpStatusError` now store their the corresponding request
+  `status`, `status_message` and `url`
+  {pr}`4974`.
+
+- {{ Breaking }} Shared libraries are now loaded locally. This means that packages that
+  depend on shared libraries link to the shared libraries explicitly.
+  {pr}`4876`
+
 - {{ Enhancement }} Added implementation to abort `pyfetch` and `FetchResponse`
   manually or automatically.
   {pr}`4846`
@@ -31,14 +39,51 @@ myst:
 - {{ Enhancement }} Updated stack switching support to handle new JSPI.
   {pr}`4982`
 
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4961`
+
+- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
+  not included in the cross-build env anymore.
+  {pr}`4995`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
+- {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
+  JSON (Arrays and Objects). to Python JSON (lists and dicts).
+  {pr}`4666`
+
+- {{ Enhancement }} `find_imports("import pkg.module.submodule")` will now
+  return `["pkg", "pkg.module", "pkg.module.submodule"]`. This improves support
+  for namespace packages.
+  {pr}`5039`
+
 ### Packages
 
-- Upgraded `scikit-learn` to 1.5 {pr}`4823`
+- Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `bokeh` to 3.4.2 {pr}`4888`
+- Upgraded `certifi` to 2024.7.4 {pr}`5035`
+- Upgraded `bokeh` to 3.5.2 {pr}`4888`, {pr}`5047`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `protobuf` to 5.27.3 {pr}`4601`
+- Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
+- Upgraded `scikit-image` to 0.24.0 {pr}`5003`
+- Upgraded `contourpy` to 1.3.0 {pr}`5048`
+- Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
+- Upgraded `duckdb` to 1.1.0 {pr}`5078`
+- Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
+- Added `pyarrow` 17.0.0 {pr}`4950`
+- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
+- Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
+- Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0 {pr}`5020`
 
 ## Version 0.26.2
 

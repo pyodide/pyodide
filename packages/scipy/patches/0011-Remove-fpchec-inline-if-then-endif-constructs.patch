@@ -1,0 +1,94 @@
+From b43a231f8326d6953929030131c3fb6b2cb163bd Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Wed, 15 May 2024 21:29:02 +0530
+Subject: [PATCH 11/18] Remove fpchec inline if-then-endif constructs
+
+This PR removes the single-line if-then-endif constructs in fpchec.f
+that were causing syntactical errors when compiling with f2c, possibly
+because fpchec uses some dated, punch-card FORTRAN syntax. It converts
+them to statements split over multiple lines.
+
+This patch has been upstreamed via https://github.com/scipy/scipy/pull/21365
+and it can be safely removed once SciPy v1.15.0 is released and is being
+integrated in Pyodide.
+
+---
+ scipy/interpolate/fitpack/fpchec.f | 42 +++++++++++++++++++++++-------
+ 1 file changed, 32 insertions(+), 10 deletions(-)
+
+diff --git a/scipy/interpolate/fitpack/fpchec.f b/scipy/interpolate/fitpack/fpchec.f
+index 75a58c40ec..215f38f31f 100644
+--- a/scipy/interpolate/fitpack/fpchec.f
++++ b/scipy/interpolate/fitpack/fpchec.f
+@@ -29,36 +29,58 @@ c  ..
+       nk2 = nk1+1
+       ier = 10
+ c  check condition no 1
+-      if(nk1.lt.k1 .or. nk1.gt.m)then; ier=10; go to 80; endif
++      if (nk1.lt.k1 .or. nk1.gt.m) then
++          ier = 10
++          go to 80
++      endif
+ c  check condition no 2
+       j = n
+       do 20 i=1,k
+-        if(t(i).gt.t(i+1))then; ier=20; go to 80; endif
+-        if(t(j).lt.t(j-1))then; ier=20; go to 80; endif
++        if (t(i) .gt. t(i+1)) then
++            ier = 20
++            go to 80
++        endif
++        if (t(j) .lt. t(j-1)) then
++            ier = 20
++            go to 80
++        endif
+         j = j-1
+   20  continue
+ c  check condition no 3
+       do 30 i=k2,nk2
+-        if(t(i).le.t(i-1))then; ier=30; go to 80; endif
++        if (t(i) .le. t(i-1)) then
++            ier = 30
++            go to 80
++        endif
+   30  continue
+ c  check condition no 4
+-      if(x(1).lt.t(k1) .or. x(m).gt.t(nk2))then; ier=40; go to 80;
++      if (x(1).lt.t(k1) .or. x(m).gt.t(nk2)) then
++          ier = 40
++          go to 80
+       endif
+ c  check condition no 5
+-      if(x(1).ge.t(k2) .or. x(m).le.t(nk1))then; ier=50; go to 80;
++      if (x(1).ge.t(k2) .or. x(m).le.t(nk1)) then
++          ier = 50
++          go to 80
+       endif
+       i = 1
+       l = k2
+       nk3 = nk1-1
+-      if(nk3.lt.2) go to 70
++      if (nk3 .lt. 2) go to 70
+       do 60 j=2,nk3
+         tj = t(j)
+         l = l+1
+         tl = t(l)
+   40    i = i+1
+-        if(i.ge.m)then; ier=50; go to 80; endif
+-        if(x(i).le.tj) go to 40
+-        if(x(i).ge.tl)then; ier=50; go to 80; endif
++        if (i .ge. m) then
++            ier = 50
++            go to 80
++        endif
++        if (x(i) .le. tj) go to 40
++        if (x(i) .ge. tl) then
++            ier = 50
++            go to 80
++        endif
+   60  continue
+   70  ier = 0
+   80  return
+-- 
+2.39.3 (Apple Git-146)
+
