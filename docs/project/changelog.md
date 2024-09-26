@@ -36,6 +36,9 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
 - {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
   {pr}`4961`
 
