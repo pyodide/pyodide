@@ -1,0 +1,26 @@
+package:
+  name: pynormaliz
+  version: "2.18"
+  top-level:
+    - PyNormaliz
+requirements:
+  host:
+    - libgmp
+    - e_antic
+    - normaliz
+source:
+  url: https://files.pythonhosted.org/packages/64/83/df4ba4800c3a082339a3557f275228aeaf2d656ecec655d7cc3af592b01a/PyNormaliz-2.18.tar.gz
+  sha256: 359218cf35f400c43f338a132b7887f6a2affb05057c4e7eaa315a9f2b6a8b39
+build:
+  cxxflags: |
+    -I$(WASM_LIBRARY_DIR)/include -Wno-unused-but-set-variable -Wno-return-type -Wno-deprecated-declarations
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib -leanticxx -leantic -lflint -lmpfr -lgmpxx -lgmp
+about:
+  home: https://github.com/Normaliz/PyNormaliz
+  PyPI: https://pypi.org/project/pynormaliz
+  summary: An interface to Normaliz
+  license: "GPL v2+"
+extra:
+  recipe-maintainers:
+    - mkoeppe
