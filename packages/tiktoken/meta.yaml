@@ -1,0 +1,21 @@
+package:
+  name: tiktoken
+  version: 0.6.0
+  top-level:
+    - tiktoken
+    - tiktoken_ext
+source:
+  url: https://files.pythonhosted.org/packages/3a/7b/a8f49a8fb3f7dd70c77ab1d90b0514ab534db43cbcf8ac0a7ece57c64d87/tiktoken-0.6.0.tar.gz
+  sha256: ace62a4ede83c75b0374a2ddfa4b76903cf483e9cb06247f566be3bf14e6beed
+requirements:
+  run:
+    - regex
+    - requests
+  executable:
+    - rustup
+    - cargo
+about:
+  home: https://github.com/openai/tiktoken
+  PyPI: https://pypi.org/project/tiktoken
+  summary: tiktoken is a fast BPE tokeniser for use with OpenAI's models
+  license: "MIT"

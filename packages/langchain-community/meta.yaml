@@ -1,0 +1,29 @@
+package:
+  name: langchain-community
+  version: 0.0.21
+  top-level:
+    - langchain_community
+source:
+  url: https://files.pythonhosted.org/packages/2f/39/e4998914febe29c91953ab8c50fe793ca6e2780f4744e92a83ad261bf637/langchain_community-0.0.21-py3-none-any.whl
+  sha256: 120977485d244eb472ad3618a31222fe6c2bce08026f4caa96bd6dae2e316ac0
+requirements:
+  run:
+    - aiohttp
+    - numpy
+    - requests
+    - tenacity
+    - langchain-core
+    - sqlalchemy
+about:
+  home: https://github.com/langchain-ai/langchain
+  PyPI: https://pypi.org/project/langchain_community
+  summary: Community contributed LangChain integrations.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
+test:
+  imports:
+    - langchain_community
+    - langchain_community.chat_message_histories
+    - langchain_community.utilities
