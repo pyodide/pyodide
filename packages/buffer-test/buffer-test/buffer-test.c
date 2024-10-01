@@ -4,7 +4,7 @@
 // clang-format off
 typedef struct
 {
-  PyObject_HEAD 
+  PyObject_HEAD
   Py_ssize_t byteLength; // invariant: byteLength should be equal to length * itemsize
   Py_ssize_t length;
   char data[16];
