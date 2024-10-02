@@ -69,7 +69,6 @@ myst:
 - {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
   {pr}`5092`
 
-
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
