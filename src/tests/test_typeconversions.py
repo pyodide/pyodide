@@ -1618,6 +1618,7 @@ def test_buffer_format_string(selenium):
         assert array_name == expected_array_name
 
 
+@pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["buffer-test"])
 def test_zerod_buffers(selenium):
     from buffer_test import ZeroDBuffer
