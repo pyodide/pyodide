@@ -84,6 +84,7 @@ myst:
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 - Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0 {pr}`5020`
+- Upgraded `arro3-core`, `arro3-io`, and `arro3-compute` 0.4.0 {pr}`5095`
 
 ## Version 0.26.2
 
