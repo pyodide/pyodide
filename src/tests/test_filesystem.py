@@ -434,6 +434,7 @@ async def test_nativefs_dup(selenium, runner):
     file.close()
 
 
+@pytest.mark.requires_dynamic_linking
 def test_trackingDelegate(selenium_standalone):
     selenium = selenium_standalone
 
