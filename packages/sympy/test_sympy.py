@@ -16,7 +16,6 @@ def test_sympy(selenium):
 
 @run_in_pyodide(packages=["sympy", "python-flint"])
 def test_sympy_and_python_flint(selenium):
-
     for package in ["sympy", "python-flint"]:
         if not package_is_built(package):
             pytest.skip(f"{package} not built")
