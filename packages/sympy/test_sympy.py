@@ -1,8 +1,7 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 from conftest import package_is_built
-
-import pytest
 
 
 def skip_if_not_installed(packages):
