@@ -5,6 +5,5 @@ from pytest_pyodide import run_in_pyodide
 def test_tree_sitter(selenium):
     import tree_sitter
 
-
     assert hasattr(tree_sitter, "Language")
     assert hasattr(tree_sitter, "Node")
