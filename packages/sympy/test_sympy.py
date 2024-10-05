@@ -4,12 +4,6 @@ from pytest_pyodide import run_in_pyodide
 from conftest import package_is_built
 
 
-def skip_if_not_installed(packages):
-    for package in packages:
-        if not package_is_built(package):
-            pytest.skip(f"{package} not built")
-
-
 @run_in_pyodide(packages=["sympy"])
 def test_sympy(selenium):
     import sympy
@@ -22,17 +16,16 @@ def test_sympy(selenium):
 
 @run_in_pyodide(packages=["sympy", "python-flint"])
 def test_sympy_and_python_flint(selenium):
-    skip_if_not_installed(["sympy", "python-flint"])
 
-    @run_in_pyodide(packages=["sympy", "python-flint"])
-    def run(selenium):
-        import sympy
-        from sympy.external.gmpy import GROUND_TYPES
+    for package in ["sympy", "python-flint"]:
+        if not package_is_built(package):
+            pytest.skip(f"{package} not built")
 
-        assert GROUND_TYPES == "flint"
+    import sympy
+    from sympy.external.gmpy import GROUND_TYPES
 
-        # Use python-flint for factorisation:
-        x = sympy.symbols("x")
-        assert (x**2 - 1).factor() == (x + 1) * (x - 1)
+    assert GROUND_TYPES == "flint"
 
-    run()
+    # Use python-flint for factorisation:
+    x = sympy.symbols("x")
+    assert (x**2 - 1).factor() == (x + 1) * (x - 1)
