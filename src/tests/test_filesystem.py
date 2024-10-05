@@ -432,3 +432,30 @@ async def test_nativefs_dup(selenium, runner):
     close(fd2)
     assert file.read() == "hello_read"
     file.close()
+
+
+def test_trackingDelegate(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        """
+        assert (() => typeof pyodide.FS.trackingDelegate !== "undefined")
+
+        globalThis.writeResult = ""
+        pyodide.FS.trackingDelegate["onWriteToFile"] = (path, bytesWritten) => { globalThis.writeResult = path }
+        """
+    )
+
+    selenium.run(
+        """
+        f = open("/hello", "w")
+        f.write("helloworld")
+        f.close()
+        """
+    )
+
+    selenium.run_js(
+        """
+        assert (() => globalThis.writeResult === "/hello")
+        """
+    )
