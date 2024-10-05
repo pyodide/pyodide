@@ -20,6 +20,7 @@ def test_sympy(selenium):
     assert c.subs({a: 3, b: 4}) == 5
 
 
+@run_in_pyodide(packages=["sympy", "python-flint"])
 def test_sympy_and_python_flint(selenium):
     skip_if_not_installed(["sympy", "python-flint"])
 
