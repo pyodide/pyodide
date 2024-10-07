@@ -19,6 +19,9 @@ test:
   imports:
     - b2d
     - b2d.testbed
+about:
+  home: https://github.com/pyb2d/pyb2d
+  license: MIT
 extra:
   recipe-maintainers:
     - DerThorsten

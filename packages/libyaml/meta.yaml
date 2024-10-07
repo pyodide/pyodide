@@ -20,3 +20,6 @@ build:
     emmake make install
     rm -f ${INSTALL_DIR}/lib/libyaml.a
     ln -s ${INSTALL_DIR}/lib/libyaml_static.a ${INSTALL_DIR}/lib/libyaml.a
+about:
+  home: https://pyyaml.org/wiki/LibYAML
+  license: MIT

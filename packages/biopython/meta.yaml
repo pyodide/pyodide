@@ -16,3 +16,5 @@ about:
   home: https://biopython.org/
   PyPI: https://pypi.org/project/biopython
   summary: Freely available tools for computational molecular biology.
+about:
+  license: Biopython (MIT-like)
