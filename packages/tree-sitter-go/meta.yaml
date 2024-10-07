@@ -1,0 +1,21 @@
+package:
+  name: tree-sitter-go
+  version: 0.23.1
+  top-level:
+    - tree_sitter_go
+source:
+  url: https://files.pythonhosted.org/packages/0d/48/d168f527a0c7d00c2c40e46c52ff62e8916777d3f2d7c2a1325b1f8706a8/tree_sitter_go-0.23.1.tar.gz
+  sha256: a413bfb3d77a47fd84618e01849a6b4b35f794d694493c0b58dbb4a5da82f916
+requirements:
+  run:
+    - tree-sitter
+  host:
+    - tree-sitter
+about:
+  home: https://github.com/tree-sitter/tree-sitter-go
+  PyPI: https://pypi.org/project/tree-sitter-go
+  summary: Go grammar for tree-sitter
+  license: MIT
+extra:
+  recipe-maintainers:
+    - ericwb

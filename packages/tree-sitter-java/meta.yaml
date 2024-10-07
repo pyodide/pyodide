@@ -1,0 +1,21 @@
+package:
+  name: tree-sitter-java
+  version: 0.23.2
+  top-level:
+    - tree_sitter_java
+source:
+  url: https://files.pythonhosted.org/packages/43/f5/c3afaf20ef8fb6427b46c87439821c2efea3efaf091828499834d5f3a5d8/tree_sitter_java-0.23.2.tar.gz
+  sha256: f9969e75c79e5ab449ef5e2f9ae666b04a9266ba4d5d3127a0c1303926549406
+requirements:
+  run:
+    - tree-sitter
+  host:
+    - tree-sitter
+about:
+  home: https://github.com/tree-sitter/tree-sitter-java
+  PyPI: https://pypi.org/project/tree-sitter-java
+  summary: Java grammar for tree-sitter
+  license: MIT
+extra:
+  recipe-maintainers:
+    - ericwb
