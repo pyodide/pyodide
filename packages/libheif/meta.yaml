@@ -31,4 +31,4 @@ build:
     cp ${WASM_LIBRARY_DIR}/lib/libheif.so ${DISTDIR}
 about:
   home: https://github.com/strukturag/libheif
-  license: LGPL
+  license: LGPLv3

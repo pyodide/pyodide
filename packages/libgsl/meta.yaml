@@ -18,4 +18,4 @@ build:
     emmake make install
 about:
   home: https://www.gnu.org/software/gsl/
-  license: GPL
+  license: GPLv3
