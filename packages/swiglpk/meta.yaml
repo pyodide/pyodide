@@ -19,4 +19,4 @@ requirements:
 about:
   home: https://github.com/opencobra/swiglpk
   PyPI: https://pypi.org/project/swiglpk/
-  license: GPLv3
+  license: GPL-3.0

@@ -10,4 +10,4 @@ about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
   summary: HTML5 backends for Matplotlib compatible with Pyodide
-  license: MPL2
+  license: MPL-2.0

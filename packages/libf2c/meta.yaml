@@ -43,4 +43,4 @@ build:
     cp F2CLIBS/libf2c.a ${WASM_LIBRARY_DIR}/lib
 about:
   home: https://www.netlib.org/clapack/
-  license: BSD-3-clause
+  license: BSD-3-Clause

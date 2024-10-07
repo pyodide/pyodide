@@ -35,4 +35,4 @@ build:
     cp libcrypto.so libssl.so ${DISTDIR}
 about:
   home: https://www.openssl.org
-  license: Apache
+  license: Apache-2.0

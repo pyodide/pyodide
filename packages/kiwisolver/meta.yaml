@@ -8,4 +8,4 @@ source:
   url: https://files.pythonhosted.org/packages/b9/2d/226779e405724344fc678fcc025b812587617ea1a48b9442628b688e85ea/kiwisolver-1.4.5.tar.gz
 about:
   home: https://github.com/nucleic/kiwi
-  license: BSD-3-clause
+  license: BSD-3-Clause

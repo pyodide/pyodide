@@ -44,4 +44,4 @@ requirements:
     - libf2c
 about:
   home: https://www.openblas.net/
-  license: BSD-3-clause
+  license: BSD-3-Clause

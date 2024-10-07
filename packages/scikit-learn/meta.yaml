@@ -64,7 +64,7 @@ about:
   home: http://scikit-learn.org
   PyPI: https://pypi.org/project/scikit-learn
   summary: A set of python modules for machine learning and data mining
-  license: new BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - lesteve

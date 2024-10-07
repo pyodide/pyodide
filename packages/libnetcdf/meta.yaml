@@ -47,4 +47,4 @@ build:
     cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}
 about:
   home: https://github.com/Unidata/netcdf-c
-  license: BSD-3-clause
+  license: BSD-3-Clause

@@ -10,7 +10,7 @@ about:
   home: https://github.com/sagemath/memory_allocator
   PyPI: https://pypi.org/project/memory_allocator
   summary: An extension class to allocate memory easily with cython
-  license: GPLv3
+  license: GPL-3.0
 extra:
   recipe-maintainers:
     - mkoeppe

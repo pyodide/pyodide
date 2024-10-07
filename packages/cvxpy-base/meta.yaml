@@ -18,7 +18,7 @@ about:
   summary:
     A domain-specific language for modeling convex optimization problems in
     Python.
-  license: Apache License, Version 2.0
+  license: Apache-2.0
 extra:
   recipe-maintainers:
     - phschiele

@@ -53,4 +53,4 @@ build:
     cp -P ${WASM_LIBRARY_DIR}/lib/libhdf* ${DISTDIR}
 about:
   home: https://github.com/HDFGroup/hdf5
-  license: BSD-3-clause
+  license: BSD-3-Clause

@@ -10,4 +10,4 @@ about:
   home: https://pygments.org/
   PyPI: https://pypi.org/project/Pygments
   summary: Pygments is a syntax highlighting package written in Python.
-  license: BSD License
+  license: BSD-2-Clause

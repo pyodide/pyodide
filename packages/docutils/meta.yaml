@@ -10,4 +10,4 @@ about:
   home: https://docutils.sourceforge.io/
   PyPI: https://pypi.org/project/docutils
   summary: Docutils -- Python Documentation Utilities
-  license: public domain, Python, 2-Clause BSD, GPL 3 (see COPYING.txt)
+  license: Mixed public domain, Python, BSD-2-Clause, GPL-3.0 (see COPYING.txt)

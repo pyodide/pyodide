@@ -20,4 +20,4 @@ build:
     emmake make install
 about:
   home: https://www.gnu.org/software/libiconv/
-  license: LGPLv2.1
+  license: LGPL-2.1

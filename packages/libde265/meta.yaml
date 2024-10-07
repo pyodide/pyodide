@@ -25,4 +25,4 @@ build:
     emmake make install
 about:
   home: https://github.com/strukturag/libde265
-  license: LGPLv3
+  license: LGPL-3.0

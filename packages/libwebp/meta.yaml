@@ -28,4 +28,4 @@ build:
     emmake make install
 about:
   home: https://chromium.googlesource.com/webm/libwebp
-  license: BSD-3-clause
+  license: BSD-3-Clause

@@ -13,4 +13,4 @@ source:
   sha256: 4d7844ff45e5e870dc7996b4cc61636eabd33c32cc8663cf2cd21e3f4f893abc
 about:
   home: https://github.com/wolever/python-cffi-example
-  license: BSD-2-clause
+  license: BSD-2-Clause

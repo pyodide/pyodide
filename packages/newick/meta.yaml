@@ -10,4 +10,4 @@ about:
   home: https://github.com/dlce-eva/python-newick
   PyPI: https://pypi.org/project/newick
   summary: A python module to read and write the Newick format
-  license: Apache 2
+  license: Apache-2.0

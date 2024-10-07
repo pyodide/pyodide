@@ -27,4 +27,4 @@ build:
     emmake make install
 about:
   home: https://ffmpeg.org/
-  license: LGPL v2.1+
+  license: LGPL-2.1+

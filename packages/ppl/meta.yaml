@@ -30,7 +30,7 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
 about:
-  license: GPL v3+
+  license: GPL-3.0+
 extra:
   recipe-maintainers:
     - mkoeppe

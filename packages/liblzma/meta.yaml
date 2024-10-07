@@ -27,4 +27,4 @@ build:
     emmake make install
 about:
   home: https://github.com/tukaani-project/xz
-  license: BSD-0-clause
+  license: BSD-0-Clause

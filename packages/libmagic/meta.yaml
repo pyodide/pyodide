@@ -27,4 +27,4 @@ build:
     cp .libs/libmagic.so ${DISTDIR}/libmagic.so
 about:
   home: https://www.darwinsys.com/file/
-  license: BSD-2-clause
+  license: BSD-2-Clause
