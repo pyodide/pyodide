@@ -1,5 +1,5 @@
 package:
-  name: python_solvespace
+  name: python-solvespace
   version: 3.0.8
   top-level:
     - python_solvespace

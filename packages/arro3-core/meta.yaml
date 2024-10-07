@@ -1,11 +1,11 @@
 package:
   name: arro3-core
-  version: 0.3.0
+  version: 0.4.0
   top-level:
     - "arro3.core"
 source:
-  url: https://github.com/kylebarron/arro3/releases/download/py-v0.3.0/arro3_core-0.3.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
-  sha256: 3ddeb31980f94e72a882bcdafe65cf7eb0bd2dce7bf306c327ef7dec6a72ec87
+  url: https://github.com/kylebarron/arro3/releases/download/py-v0.4.0/arro3_core-0.4.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: 67d315996d16787352b77859b2d5372f9eb037aca13b1bb9bc03b480869ce846
 extra:
   recipe-maintainers:
     - kylebarron
