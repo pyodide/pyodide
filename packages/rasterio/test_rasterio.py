@@ -8,7 +8,7 @@ def test_drivers(selenium):
 
     with rasterio.Env() as m:
         assert driver_count() > 0
-        assert type(m) == rasterio.Env
+        assert isinstance(m, rasterio.Env)
     assert driver_count() > 0
 
 
