@@ -441,8 +441,7 @@ def test_trackingDelegate(selenium_standalone):
         """
         assert (() => typeof pyodide.FS.trackingDelegate !== "undefined")
 
-        globalThis.writeResult = ""
-        pyodide.FS.trackingDelegate["onWriteToFile"] = (path, bytesWritten) => { globalThis.writeResult = path }
+        pyodide.FS.trackingDelegate["onCloseFile"] = (path) => { console.log(`CALLED ${path}`) }
         """
     )
 
@@ -454,8 +453,5 @@ def test_trackingDelegate(selenium_standalone):
         """
     )
 
-    selenium.run_js(
-        """
-        assert (() => globalThis.writeResult === "/hello")
-        """
-    )
+    logs = selenium.logs
+    assert "CALLED /hello" in logs
