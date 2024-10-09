@@ -18,3 +18,4 @@ about:
   home: https://github.com/pypa/setuptools
   PyPI: https://pypi.org/project/setuptools
   summary: Easily download, build, install, upgrade, and uninstall Python packages
+  license: MIT

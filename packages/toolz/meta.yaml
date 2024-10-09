@@ -11,4 +11,4 @@ about:
   home: https://github.com/pytoolz/toolz/
   PyPI: https://pypi.org/project/toolz
   summary: List processing tools and functional utilities
-  license: BSD
+  license: BSD-3-Clause

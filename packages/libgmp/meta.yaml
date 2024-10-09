@@ -20,3 +20,6 @@ build:
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://gmplib.org/
+  license: GPL-2.0 OR LGPL-3.0

@@ -16,7 +16,7 @@ requirements:
     - pure_eval
     - Pygments
     - six
-    - stack_data
+    - stack-data
     - traitlets
     - sqlite3
     - wcwidth

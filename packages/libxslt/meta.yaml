@@ -26,3 +26,6 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://github.com/GNOME/libxslt
+  license: MIT

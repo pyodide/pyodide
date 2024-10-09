@@ -26,4 +26,4 @@ about:
   summary:
     Powerful and Pythonic XML processing library combining libxml2/libxslt
     with the ElementTree API.
-  license: BSD
+  license: BSD-3-Clause

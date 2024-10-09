@@ -14,7 +14,7 @@ about:
   home: http://github.com/scikit-hep/iminuit
   PyPI: https://pypi.org/project/iminuit
   summary: Jupyter-friendly Python frontend for MINUIT2 in C++
-  license: MIT+LGPL
+  license: Mixed MIT, LGPL-2.0
 extra:
   recipe-maintainers:
     - henryiii

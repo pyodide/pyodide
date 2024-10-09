@@ -14,4 +14,4 @@ about:
   home: https://github.com/mapbox/cligj
   PyPI: https://pypi.org/project/cligj
   summary: Click params for command line interfaces to GeoJSON
-  license: BSD
+  license: BSD-3-Clause

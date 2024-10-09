@@ -19,4 +19,4 @@ about:
   home: https://github.com/microsoft/LightGBM
   PyPI: https://pypi.org/project/lightgbm
   summary: LightGBM Python Package
-  license: The MIT License (Microsoft)
+  license: MIT

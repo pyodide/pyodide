@@ -24,7 +24,7 @@ about:
   home: https://github.com/sagemath/pplpy
   PyPI: https://pypi.org/project/pplpy
   summary: Python PPL wrapper
-  license: GPL v3
+  license: GPL-3.0
 extra:
   recipe-maintainers:
     - mkoeppe
