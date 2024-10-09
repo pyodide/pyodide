@@ -12,7 +12,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    # packages=["fpcast_test"],
     ext_modules=[Extension("buffer_test", ["buffer-test.c"])],
-    # python_requires='>=3.6',
 )
