@@ -1,5 +1,6 @@
-from pytest_pyodide import run_in_pyodide
 import pytest
+from pytest_pyodide import run_in_pyodide
+
 
 @pytest.mark.requires_dynamic_linking
 @run_in_pyodide(packages=["buffer-test"])
