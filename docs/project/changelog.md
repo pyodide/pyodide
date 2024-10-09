@@ -30,6 +30,12 @@ myst:
 - {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
   {pr}`4993`
 
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
+
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
+
 ## Version 0.26.2
 
 _July 26, 2024_
