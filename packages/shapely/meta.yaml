@@ -33,4 +33,4 @@ about:
   home: https://github.com/shapely/shapely
   PyPI: https://pypi.org/project/shapely
   summary: Geometric objects, predicates, and operations
-  license: BSD
+  license: BSD-3-Clause

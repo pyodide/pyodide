@@ -37,3 +37,6 @@ build:
        ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
        ${WASM_LIBRARY_DIR}/lib/libspqr.so \
        ${DISTDIR}
+about:
+  home: https://github.com/DrTimothyAldenDavis/SuiteSparse
+  license: Mixed, see https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/dev/LICENSE.txt

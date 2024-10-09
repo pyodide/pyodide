@@ -10,4 +10,4 @@ about:
   home: https://github.com/micheles/decorator
   PyPI: https://pypi.org/project/decorator
   summary: Decorators for Humans
-  license: new BSD License
+  license: BSD-3-Clause

@@ -25,3 +25,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3} libmagic.la \
       LDFLAGS="-avoid-version -Xcompiler '${SIDE_MODULE_LDFLAGS}'"
     cp .libs/libmagic.so ${DISTDIR}/libmagic.so
+about:
+  home: https://www.darwinsys.com/file/
+  license: BSD-2-Clause

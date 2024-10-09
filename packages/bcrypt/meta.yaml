@@ -13,4 +13,4 @@ about:
   home: https://github.com/pyca/bcrypt/
   PyPI: https://pypi.org/project/bcrypt
   summary: Modern password hashing for your software and your servers
-  license: Apache License, Version 2.0
+  license: Apache-2.0

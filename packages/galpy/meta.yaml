@@ -39,7 +39,7 @@ about:
   home: http://github.com/jobovy/galpy
   PyPI: https://pypi.org/project/galpy
   summary: Galactic Dynamics in python
-  license: New BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - jobovy

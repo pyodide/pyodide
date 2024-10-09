@@ -10,4 +10,4 @@ about:
   home: https://github.com/prompt-toolkit/python-prompt-toolkit
   PyPI: https://pypi.org/project/prompt_toolkit
   summary: Library for building powerful interactive command lines in Python
-  license: ""
+  license: BSD-3-Clause

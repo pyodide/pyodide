@@ -10,4 +10,4 @@ about:
   home: https://github.com/SimonSapin/python-webencodings
   PyPI: https://pypi.org/project/webencodings
   summary: Character encoding aliases for legacy web content
-  license: BSD
+  license: BSD-3-Clause

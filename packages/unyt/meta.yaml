@@ -15,4 +15,4 @@ about:
   home: https://github.com/yt-project/unyt
   PyPI: https://pypi.org/project/unyt
   summary: A package for handling numpy arrays with units
-  license: BSD license
+  license: BSD-3-Clause

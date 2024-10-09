@@ -80,11 +80,13 @@ myst:
 - Upgraded `contourpy` to 1.3.0 {pr}`5048`
 - Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
+- Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 - Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
-- Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0 {pr}`5020`, {pr}`5095`
+- Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
+- Added `tree-sitter` 0.23.0 {pr}`5099`
 
 ## Version 0.26.2
 

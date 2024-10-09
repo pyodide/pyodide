@@ -10,4 +10,4 @@ about:
   home: http://github.com/RonnyPfannschmidt/iniconfig
   PyPI: https://pypi.org/project/iniconfig
   summary: "iniconfig: brain-dead simple config-ini parsing"
-  license: MIT License
+  license: MIT

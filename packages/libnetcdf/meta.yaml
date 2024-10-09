@@ -45,3 +45,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3} install
 
     cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}
+about:
+  home: https://github.com/Unidata/netcdf-c
+  license: BSD-3-Clause
