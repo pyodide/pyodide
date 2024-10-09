@@ -21,7 +21,7 @@ about:
   home: http://casadi.org
   PyPI: https://pypi.org/project/casadi
   summary: CasADi -- framework for algorithmic differentiation and numeric optimization
-  license: GNU Lesser General Public License v3 or later (LGPLv3+)
+  license: LGPL-3.0+
 extra:
   recipe-maintainers:
     - agriyakhetarpal

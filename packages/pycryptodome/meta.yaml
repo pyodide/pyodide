@@ -12,4 +12,4 @@ about:
   home: https://www.pycryptodome.org
   PyPI: https://pypi.org/project/pycryptodome
   summary: Cryptographic library for Python
-  license: BSD, Public Domain
+  license: Mixed BSD-2-Clause, Public Domain

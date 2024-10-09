@@ -10,4 +10,4 @@ about:
   home: https://github.com/hukkin/tomli-w
   PyPI: https://pypi.org/project/tomli-w
   summary: "A lil' TOML writer"
-  license: "MIT License"
+  license: MIT

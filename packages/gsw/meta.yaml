@@ -17,4 +17,4 @@ about:
   home: https://github.com/TEOS-10/GSW-python
   PyPI: https://pypi.org/project/gsw
   summary: Gibbs Seawater Oceanographic Package of TEOS-10
-  license: BSD
+  license: BSD-3-Clause

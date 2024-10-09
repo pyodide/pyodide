@@ -10,7 +10,7 @@ about:
   home: http://github.com/fsspec/filesystem_spec
   PyPI: https://pypi.org/project/fsspec
   summary: File-system specification
-  license: BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - joemarshall

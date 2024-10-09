@@ -14,7 +14,7 @@ about:
   home: https://github.com/protocolbuffers/protobuf
   PyPI: https://pypi.org/project/protobuf
   summary: Protocol Buffers are a language-neutral, platform-neutral extensible mechanism for serializing structured data
-  license: Custom
+  license: BSD-3-Clause
 
 build:
   cflags: "-Wno-int-conversion"

@@ -13,4 +13,4 @@ about:
   home: https://github.com/dateutil/dateutil
   PyPI: https://pypi.org/project/python-dateutil
   summary: Extensions to the standard Python datetime module
-  license: Dual License
+  license: BSD-3-Clause

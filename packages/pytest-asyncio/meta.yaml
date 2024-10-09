@@ -16,7 +16,7 @@ about:
   home: https://github.com/pytest-dev/pytest-asyncio
   PyPI: https://pypi.org/project/pytest-asyncio
   summary: Pytest support for asyncio
-  license: Apache 2.0
+  license: Apache-2.0
 extra:
   recipe-maintainers:
     - agriyakhetarpal

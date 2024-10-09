@@ -26,3 +26,6 @@ build:
 
     mkdir -p dist
     cp ${WASM_LIBRARY_DIR}/lib/libgeos* dist/
+about:
+  home: https://libgeos.org/
+  license: LGPL-2.1

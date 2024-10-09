@@ -12,4 +12,4 @@ about:
   summary:
     Library for developers to extract data from Microsoft Excel (tm) .xls spreadsheet
     files
-  license: BSD
+  license: BSD-3-Clause

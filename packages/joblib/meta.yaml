@@ -11,4 +11,4 @@ about:
   home: https://joblib.readthedocs.io
   PyPI: https://pypi.org/project/joblib
   summary: Lightweight pipelining with Python functions
-  license: BSD
+  license: BSD-3-Clause

@@ -17,3 +17,6 @@ build:
       --enable-static
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://www.gnu.org/software/glpk/
+  license: GPL-3.0

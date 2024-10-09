@@ -14,7 +14,7 @@ about:
   home: https://sympy.org
   PyPI: https://pypi.org/project/sympy
   summary: Computer algebra system (CAS) in Python
-  license: BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - oscarbenjamin

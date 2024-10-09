@@ -10,4 +10,4 @@ about:
   home: https://github.com/scrapy/cssselect
   PyPI: https://pypi.org/project/cssselect
   summary: cssselect parses CSS3 Selectors and translates them to XPath 1.0
-  license: BSD
+  license: BSD-3-Clause

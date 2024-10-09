@@ -11,7 +11,7 @@ test:
     - urllib3
     - urllib3.contrib.emscripten
 about:
-  home: ""
+  home: https://github.com/urllib3/urllib3
   PyPI: https://pypi.org/project/urllib3
   summary: HTTP library with thread-safe connection pooling, file post, and more.
-  license: ""
+  license: MIT

@@ -32,7 +32,7 @@ about:
   home: https://www.statsmodels.org/
   PyPI: https://pypi.org/project/statsmodels
   summary: Statistical computations and models for Python
-  license: BSD License
+  license: BSD-3-Clause
 
 extra:
   recipe-maintainers:
