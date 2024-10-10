@@ -12,6 +12,7 @@ export function getExpectedKeys() {
     API,
     scheduleCallback,
     API,
+    {},
   ];
 }
 
