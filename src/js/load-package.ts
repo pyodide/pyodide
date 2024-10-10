@@ -4,9 +4,11 @@ import {
   PackageData,
   InternalPackageData,
   PackageLoadMetadata,
+  type Module,
+  type API,
 } from "./types";
 import { IN_NODE } from "./environments";
-import { PyProxy } from "generated/pyproxy";
+import type { PyProxy } from "generated/pyproxy";
 import { createResolvable } from "./common/resolveable";
 import { createLock } from "./common/lock";
 import {
@@ -21,6 +23,7 @@ import {
   initNodeModules,
 } from "./compat";
 import { loadDynlibsFromPackage } from "./dynload";
+import { ConfigType } from "./pyodide";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -92,12 +95,31 @@ export async function initializePackageIndex(
 
 const DEFAULT_CHANNEL = "default channel";
 
+// Subset of the API and Module that the package manager needs
+/**
+ * @hidden
+ */
+export type PackageManagerAPI = Pick<
+  API,
+  | "importlib"
+  | "package_loader"
+  | "lockfile_packages"
+  | "bootstrapFinalizedPromise"
+> & {
+  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+};
+/**
+ * @hidden
+ */
+export type PackageManagerModule = Pick<Module, "reportUndefinedSymbols">;
+
 /**
  * @hidden
  * The package manager is responsible for installing and managing Pyodide packages.
  */
-class PackageManager {
-  // TODO: Add API and Module as properties
+export class PackageManager {
+  private api: PackageManagerAPI;
+  private pyodideModule: PackageManagerModule;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -115,6 +137,11 @@ class PackageManager {
   public loadedPackages: Record<string, string> = {};
 
   private _lock = createLock();
+
+  constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
+    this.api = api;
+    this.pyodideModule = pyodideModule;
+  }
 
   /**
    * Load packages from the Pyodide distribution or Python wheels by URL.
@@ -165,7 +192,14 @@ class PackageManager {
     const loadedPackageData = new Set<InternalPackageData>();
     const messageCallback = options.messageCallback || console.log;
     const errorCallback = options.errorCallback || console.error;
-    if (names instanceof PyProxy) {
+
+    // originally, this condition was "names instanceof PyProxy",
+    // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
+    // this change is required to run unit tests against this file, when global API or Module is not available.
+    // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
+    // @ts-ignore
+    if (typeof names.toJs === "function") {
+      // @ts-ignore
       names = names.toJs();
     }
     if (!Array.isArray(names)) {
@@ -231,7 +265,7 @@ class PackageManager {
       // fills in the GOT. There can be segfaults if we leave it out.
       // See https://github.com/emscripten-core/emscripten/issues/22052
       // TODO: Fix Emscripten so this isn't needed
-      Module.reportUndefinedSymbols();
+      this.pyodideModule.reportUndefinedSymbols();
       if (loadedPackageData.size > 0) {
         const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
           .sort()
@@ -250,7 +284,7 @@ class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
-      API.importlib.invalidate_caches();
+      this.api.importlib.invalidate_caches();
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
       releaseLock();
@@ -272,7 +306,7 @@ class PackageManager {
     if (toLoad.has(normalizedName)) {
       return;
     }
-    const pkgInfo = API.lockfile_packages[normalizedName];
+    const pkgInfo = this.api.lockfile_packages[normalizedName];
     if (!pkgInfo) {
       throw new Error(`No known package with name '${name}'`);
     }
@@ -368,7 +402,7 @@ class PackageManager {
   ): Promise<Uint8Array> {
     let installBaseUrl: string;
     if (IN_NODE) {
-      installBaseUrl = API.config.packageCacheDir;
+      installBaseUrl = this.api.config.packageCacheDir;
       // Ensure that the directory exists before trying to download files into it.
       try {
         // Check if the `installBaseUrl` directory exists
@@ -380,15 +414,15 @@ class PackageManager {
         });
       }
     } else {
-      installBaseUrl = API.config.indexURL;
+      installBaseUrl = this.api.config.indexURL;
     }
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === DEFAULT_CHANNEL) {
-      if (!(pkg.normalizedName in API.lockfile_packages)) {
+      if (!(pkg.normalizedName in this.api.lockfile_packages)) {
         throw new Error(`Internal error: no entry for package named ${name}`);
       }
-      const lockfilePackage = API.lockfile_packages[pkg.normalizedName];
+      const lockfilePackage = this.api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
 
       uri = resolvePath(fileName, installBaseUrl);
@@ -431,17 +465,17 @@ class PackageManager {
     metadata: PackageLoadMetadata,
     buffer: Uint8Array,
   ) {
-    let pkg = API.lockfile_packages[metadata.normalizedName];
+    let pkg = this.api.lockfile_packages[metadata.normalizedName];
     if (!pkg) {
       pkg = metadata.packageData;
     }
 
     const filename = pkg.file_name;
     // This Python helper function unpacks the buffer and lists out any .so files in it.
-    const installDir: string = API.package_loader.get_install_dir(
+    const installDir: string = this.api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    const dynlibs: string[] = API.package_loader.unpack_buffer.callKwargs({
+    const dynlibs: string[] = this.api.package_loader.unpack_buffer.callKwargs({
       buffer,
       filename,
       extract_dir: installDir,
@@ -490,7 +524,7 @@ class PackageManager {
           : Promise.resolve();
       });
       // Can't install until bootstrap is finalized.
-      await API.bootstrapFinalizedPromise;
+      await this.api.bootstrapFinalizedPromise;
 
       // wait until all dependencies are installed
       await Promise.all(installPromiseDependencies);
@@ -522,26 +556,32 @@ function filterPackageData({
   return { name, version, fileName: file_name, packageType: package_type };
 }
 
-const singletonPackageManager = new PackageManager();
+export let loadPackage: typeof PackageManager.prototype.loadPackage;
+export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
 
-export const loadPackage = singletonPackageManager.loadPackage.bind(
-  singletonPackageManager,
-);
+if (typeof API !== "undefined" && typeof Module !== "undefined") {
+  const singletonPackageManager = new PackageManager(API, Module);
 
-/**
- * The list of packages that Pyodide has loaded.
- * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
- * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
- * install location for a particular ``package_name``.
- */
-export const loadedPackages = singletonPackageManager.loadedPackages;
+  loadPackage = singletonPackageManager.loadPackage.bind(
+    singletonPackageManager,
+  );
 
-// TODO: Find a better way to register these functions
-API.recursiveDependencies = singletonPackageManager.recursiveDependencies.bind(
-  singletonPackageManager,
-);
-API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(singletonPackageManager);
+  /**
+   * The list of packages that Pyodide has loaded.
+   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
+   * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
+   * install location for a particular ``package_name``.
+   */
+  loadedPackages = singletonPackageManager.loadedPackages;
 
-if (API.lockFilePromise) {
-  API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+  // TODO: Find a better way to register these functions
+  API.recursiveDependencies =
+    singletonPackageManager.recursiveDependencies.bind(singletonPackageManager);
+  API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
+    singletonPackageManager,
+  );
+
+  if (API.lockFilePromise) {
+    API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
+  }
 }
