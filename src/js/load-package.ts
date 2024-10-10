@@ -559,10 +559,7 @@ function filterPackageData({
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
 export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
 
-if (
-  typeof API !== "undefined" &&
-  typeof Module !== "undefined"
-) {
+if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);
 
   loadPackage = singletonPackageManager.loadPackage.bind(
