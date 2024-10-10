@@ -1,11 +1,11 @@
 package:
   name: arro3-compute
-  version: 0.3.0
+  version: 0.4.1
   top-level:
     - "arro3.compute"
 source:
-  url: https://github.com/kylebarron/arro3/releases/download/py-v0.3.0/arro3_compute-0.3.0-cp312-cp312-emscripten_3_1_58_wasm32.whl
-  sha256: 0753b631c43c674dfa8651366c3e9f9a3221c13c1dab7c9da6606f45264a5f56
+  url: https://github.com/kylebarron/arro3/releases/download/py-v0.4.1/arro3_compute-0.4.1-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: 4501c0e9814a03e06e66988aab3bdb25d46594b6693d907158b67311ab29d7df
 requirements:
   run:
     - arro3-core

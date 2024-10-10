@@ -26,3 +26,6 @@ build:
       ../
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://chromium.googlesource.com/webm/libwebp
+  license: BSD-3-Clause

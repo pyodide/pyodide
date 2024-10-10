@@ -14,4 +14,4 @@ about:
   home: https://py.readthedocs.io/
   PyPI: https://pypi.org/project/py
   summary: library with cross-python path, ini-parsing, io, code, log facilities
-  license: MIT license
+  license: MIT

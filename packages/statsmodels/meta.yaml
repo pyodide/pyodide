@@ -1,23 +1,22 @@
 package:
   name: statsmodels
-  version: 0.14.2
+  version: 0.14.4
   top-level:
     - statsmodels
 source:
-  url: https://files.pythonhosted.org/packages/25/a3/4a7a240e9bc9e146fbd9f0c410ecac328a899ca0c4467c72d9b8aa1e4015/statsmodels-0.14.2.tar.gz
-  sha256: 890550147ad3a81cda24f0ba1a5c4021adc1601080bd00e191ae7cd6feecd6ad
+  url: https://files.pythonhosted.org/packages/1f/3b/963a015dd8ea17e10c7b0e2f14d7c4daec903baf60a017e756b57953a4bf/statsmodels-0.14.4.tar.gz
+  sha256: 5d69e0f39060dc72c067f9bb6e8033b6dccdb0bae101d76a7ef0bcc94e898b67
 
 build:
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
+  unvendor-tests: false # for better testing
 requirements:
   host:
     - numpy
     - scipy
-      # TODO: Check that pandas and patsy really host dependencies
-    - pandas
-    - patsy
+    - setuptools
   run:
     - numpy
     - scipy
@@ -33,4 +32,8 @@ about:
   home: https://www.statsmodels.org/
   PyPI: https://pypi.org/project/statsmodels
   summary: Statistical computations and models for Python
-  license: BSD License
+  license: BSD-3-Clause
+
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal

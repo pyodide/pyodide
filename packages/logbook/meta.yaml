@@ -16,4 +16,4 @@ about:
   home: http://logbook.pocoo.org/
   PyPI: https://pypi.org/project/logbook
   summary: A logging replacement for Python
-  license: BSD
+  license: BSD-3-Clause

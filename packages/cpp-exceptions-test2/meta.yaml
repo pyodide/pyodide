@@ -9,3 +9,5 @@ source:
 build:
   cxxflags: -fexceptions
   ldflags: -fexceptions
+about:
+  license: MPL-2.0

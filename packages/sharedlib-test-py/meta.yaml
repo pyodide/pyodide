@@ -22,3 +22,5 @@ build:
     -I$(PKGDIR)/../sharedlib-test/src/include
   ldflags: |
     $(PKGDIR)/../sharedlib-test/build/sharedlib-test-1.0/dist/sharedlib-test.so
+about:
+  license: MPL-2.0

@@ -13,4 +13,4 @@ about:
     Certifi provides Mozilla’s carefully curated collection of Root Certificates
     for validating the trustworthiness of SSL certificates while verifying the identity
     of TLS hosts.
-  license: "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+  license: MPL-2.0

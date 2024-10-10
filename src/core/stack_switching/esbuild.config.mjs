@@ -4,37 +4,9 @@
  */
 
 import { build } from "esbuild";
-import { readFileSync } from "node:fs";
-import loadWabt from "../../js/node_modules/wabt/index.js";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(new URL(import.meta.url).pathname);
-
-const { parseWat } = await loadWabt();
-
-/**
- * An esbuild plugin to handle wat imports. It uses the wasm binary toolkit to
- * assemble the wat source and returns the assembled binary.
- * esbuild automatically base 64 encodes/decodes the result for us.
- */
-function watPlugin() {
-  return {
-    name: "watPlugin",
-    setup(build) {
-      build.onLoad({ filter: /.wat$/ }, async (args) => {
-        const wasmModule = parseWat(
-          args.path,
-          readFileSync(args.path, { encoding: "utf8" }),
-        );
-        const contents = wasmModule.toBinary({}).buffer;
-        return {
-          contents,
-          loader: "binary",
-        };
-      });
-    },
-  };
-}
 
 const outfile = join(__dirname, "stack_switching.out.js");
 const globalName = "StackSwitching";
@@ -44,7 +16,6 @@ const config = {
   outfile,
   format: "iife",
   bundle: true,
-  plugins: [watPlugin()],
   globalName,
   metafile: true,
 };

@@ -32,7 +32,7 @@ about:
   home: https://scikit-image.org
   PyPI: https://pypi.org/project/scikit-image
   summary: Image processing in Python
-  license: Modified BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - lagru

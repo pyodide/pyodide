@@ -15,4 +15,4 @@ about:
   home: https://github.com/mozilla/bleach
   PyPI: https://pypi.org/project/bleach
   summary: An easy safelist-based HTML-sanitizing tool.
-  license: Apache Software License
+  license: Apache-2.0

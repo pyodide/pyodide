@@ -9,3 +9,5 @@ source:
 about:
   PyPI: https://pypi.org/project/tomli
   summary: A lil' TOML parser
+  license: MIT
+  home: https://github.com/hukkin/tomli

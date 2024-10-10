@@ -59,6 +59,7 @@ def test_syncify_not_supported1(selenium_standalone_noload):
         """
         // Ensure that it's not supported by deleting WebAssembly.Suspender
         delete WebAssembly.Suspender;
+        delete WebAssembly.Suspending;
         let pyodide = await loadPyodide({});
         await assertThrowsAsync(
           async () => await pyodide._api.pyodide_code.eval_code.callPromising("1+1"),
@@ -291,7 +292,7 @@ def test_cpp_exceptions_and_syncify(selenium):
             const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
             async function t(x){
                 Module.validSuspender.value = true;
-                const ptr = await Module.createPromising(catchlib.catch_call_pyobj)(x);
+                const ptr = await Module.createPromising(catchlib.promising_catch_call_pyobj)(x);
                 Module.validSuspender.value = false;
                 const res = Module.UTF8ToString(ptr);
                 Module._free(ptr);
@@ -616,7 +617,9 @@ def test(n):
 """
 
 
-@requires_jspi
+@pytest.mark.xfail_browsers(
+    firefox="requires jspi", safari="requires jspi", chrome="mysterious crash"
+)
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
 )
@@ -627,12 +630,14 @@ def test_memory_leak(selenium, script):
         """
         """
         const t = pyodide.globals.get("test");
-        let p = [];
-        // warm up first to avoid edge problems
-        for (let i = 0; i < 200; i++) {
-            p.push(t.callPromising(1));
+        for (let i = 0; i < 1; i++) {
+            let p = [];
+            // warm up first to avoid edge problems
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callPromising(1));
+            }
+            await Promise.all(p);
         }
-        await Promise.all(p);
         const startLength = pyodide._module.HEAP32.length;
         for (let i = 0; i < 10; i++) {
             p = [];

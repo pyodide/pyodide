@@ -40,3 +40,6 @@ test:
     - networkx.readwrite
     - networkx.readwrite.json_graph
     - networkx.utils
+about:
+  home: https://networkx.org/
+  license: BSD-3-Clause

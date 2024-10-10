@@ -40,4 +40,4 @@ about:
   summary:
     Python interface to PROJ (cartographic projections and coordinate transformations
     library)
-  license: "License :: OSI Approved :: MIT License"
+  license: MIT

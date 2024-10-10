@@ -12,4 +12,4 @@ about:
   home: https://github.com/eliben/pycparser
   PyPI: https://pypi.org/project/pycparser
   summary: C parser in Python
-  license: BSD
+  license: BSD-3-Clause
