@@ -201,7 +201,7 @@ export async function loadDynlibsFromPackage(
   }
 }
 
-if (typeof globalThis.API !== "undefined") {
+if (typeof API !== "undefined") {
   API.loadDynlib = loadDynlib;
   API.loadDynlibsFromPackage = loadDynlibsFromPackage;
 }

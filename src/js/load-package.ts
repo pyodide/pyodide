@@ -560,8 +560,8 @@ export let loadPackage: typeof PackageManager.prototype.loadPackage;
 export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
 
 if (
-  typeof globalThis.API !== "undefined" &&
-  typeof globalThis.Module !== "undefined"
+  typeof API !== "undefined" &&
+  typeof Module !== "undefined"
 ) {
   const singletonPackageManager = new PackageManager(API, Module);
 
