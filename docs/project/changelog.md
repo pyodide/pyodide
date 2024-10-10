@@ -66,6 +66,11 @@ myst:
   for namespace packages.
   {pr}`5039`
 
+- {{ Enhancement }} Enabled `pyodide.FS.trackingDelegate` which can be used to track
+  file system operations. See
+  [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
+  for more information.
+
 - {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
   {pr}`5092`
 
