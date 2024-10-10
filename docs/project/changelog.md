@@ -58,6 +58,9 @@ myst:
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
   {pr}`4666`
 
+- {{ Enhancement }} `pyodide.loadPackage` will now install data files inside the wheel.
+  {pr}`5034`
+
 - {{ Enhancement }} `find_imports("import pkg.module.submodule")` will now
   return `["pkg", "pkg.module", "pkg.module.submodule"]`. This improves support
   for namespace packages.

@@ -423,28 +423,19 @@ class PackageManager {
 
   /**
    * Install the package into the file system.
-   * @param normalizedName The normalized name of the package
+   * @param metadata The package metadata
    * @param buffer The binary data returned by downloadPackage
    * @private
    */
   private async installPackage(
-    normalizedName: string,
+    metadata: PackageLoadMetadata,
     buffer: Uint8Array,
-    channel: string,
   ) {
-    let pkg = API.lockfile_packages[normalizedName];
+    let pkg = API.lockfile_packages[metadata.normalizedName];
     if (!pkg) {
-      pkg = {
-        name: "",
-        version: "",
-        file_name: ".whl",
-        install_dir: "site",
-        sha256: "",
-        package_type: "package",
-        imports: [],
-        depends: [],
-      };
+      pkg = metadata.packageData;
     }
+
     const filename = pkg.file_name;
     // This Python helper function unpacks the buffer and lists out any .so files in it.
     const installDir: string = API.package_loader.get_install_dir(
@@ -456,7 +447,8 @@ class PackageManager {
       extract_dir: installDir,
       calculate_dynlibs: true,
       installer: "pyodide.loadPackage",
-      source: channel === DEFAULT_CHANNEL ? "pyodide" : channel,
+      source:
+        metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
     });
 
     if (DEBUG) {
@@ -503,7 +495,7 @@ class PackageManager {
       // wait until all dependencies are installed
       await Promise.all(installPromiseDependencies);
 
-      await this.installPackage(pkg.normalizedName, buffer, pkg.channel);
+      await this.installPackage(pkg, buffer);
 
       loaded.add(pkg.packageData);
       loadedPackages[pkg.name] = pkg.channel;
