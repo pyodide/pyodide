@@ -87,6 +87,7 @@ myst:
 - Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
+- Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
