@@ -441,7 +441,14 @@ def test_trackingDelegate(selenium_standalone):
         """
         assert (() => typeof pyodide.FS.trackingDelegate !== "undefined")
 
-        pyodide.FS.trackingDelegate["onCloseFile"] = (path) => { console.log(`CALLED ${path}`) }
+        if (typeof window !== "undefined") {
+            global = window
+        } else {
+            global = globalThis
+        }
+
+        global.trackingLog = ""
+        pyodide.FS.trackingDelegate["onCloseFile"] = (path) => { global.trackingLog = `CALLED ${path}` }
         """
     )
 
@@ -450,8 +457,12 @@ def test_trackingDelegate(selenium_standalone):
         f = open("/hello", "w")
         f.write("helloworld")
         f.close()
+
+        import js
+
+        assert "CALLED /hello" in js.trackingLog
         """
     )
 
-    logs = selenium.logs
-    assert "CALLED /hello" in logs
+    # logs = selenium.logs
+    # assert "CALLED /hello" in logs
