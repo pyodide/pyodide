@@ -13,4 +13,4 @@ about:
   home: https://github.com/nedbat/coveragepy
   PyPI: https://pypi.org/project/coverage
   summary: Code coverage measurement for Python
-  license: Apache 2.0
+  license: Apache-2.0

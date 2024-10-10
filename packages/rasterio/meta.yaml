@@ -37,7 +37,7 @@ about:
   home: https://github.com/rasterio/rasterio
   PyPI: https://pypi.org/project/rasterio
   summary: Fast and direct raster I/O for use with Numpy and SciPy
-  license: BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - kjmalek

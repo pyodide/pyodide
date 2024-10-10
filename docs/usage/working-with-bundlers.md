@@ -27,7 +27,8 @@ using a Vite plugin:
 ```js
 import { defineConfig } from "vite";
 import { copyFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 export default defineConfig({
   optimizeDeps: { exclude: ["pyodide"] },
@@ -43,9 +44,10 @@ export default defineConfig({
           "pyodide.asm.wasm",
           "python_stdlib.zip",
         ];
+        const modulePath = fileURLToPath(import.meta.resolve("pyodide"));
         for (const file of files) {
           await copyFile(
-            join("node_modules/pyodide", file),
+            join(dirname(modulePath), file),
             join(assetsDir, file),
           );
         }

@@ -10,7 +10,7 @@ requirements:
   run:
     - bitarray
 about:
-  home: ""
+  home: https://github.com/scott-griffiths/bitstring
   PyPI: https://pypi.org/project/bitstring
   summary: Simple construction, analysis and modification of binary data.
-  license: ""
+  license: MIT

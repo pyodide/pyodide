@@ -10,7 +10,7 @@ about:
   home: https://github.com/ICRAR/crc32c
   PyPI: https://pypi.org/project/crc32c
   summary: A python package implementing the crc32c algorithm in hardware and software
-  license: LGPL-2.1-or-later
+  license: LGPL-2.1+
 extra:
   recipe-maintainers:
     - agriyakhetarpal

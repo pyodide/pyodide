@@ -16,4 +16,4 @@ about:
   summary:
     A Python package for describing statistical models and for building design
     matrices.
-  license: 2-clause BSD
+  license: BSD-2-Clause

@@ -23,3 +23,6 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://github.com/strukturag/libde265
+  license: LGPL-3.0

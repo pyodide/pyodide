@@ -10,4 +10,4 @@ about:
   home: https://github.com/aio-libs/frozenlist
   PyPI: https://pypi.org/project/frozenlist
   summary: A list-like structure which implements collections.abc.MutableSequence
-  license: Apache 2
+  license: Apache-2.0

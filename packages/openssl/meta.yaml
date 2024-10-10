@@ -33,3 +33,6 @@ build:
     rm -f ${WASM_LIBRARY_DIR}/lib/{libcrypto.a,libssl.a}
     cp libcrypto.so libssl.so ${WASM_LIBRARY_DIR}/lib
     cp libcrypto.so libssl.so ${DISTDIR}
+about:
+  home: https://www.openssl.org
+  license: Apache-2.0

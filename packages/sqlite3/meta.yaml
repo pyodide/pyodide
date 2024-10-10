@@ -39,3 +39,5 @@ build:
        -sUSE_SQLITE3 -lsqlite3
 
     cd Lib && tar --exclude=test -cf - sqlite3 | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

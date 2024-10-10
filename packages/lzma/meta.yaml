@@ -27,3 +27,5 @@ build:
 requirements:
   host:
     - liblzma
+about:
+  license: PSF
