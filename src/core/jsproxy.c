@@ -3353,7 +3353,7 @@ Buffer_cinit(Buffer* self,
   return 0;
 }
 
-void
+static void
 Buffer_dealloc(PyObject* self)
 {
   PyMem_Free(((Buffer*)self)->data);
