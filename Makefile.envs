@@ -11,7 +11,7 @@ export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446e
 # to your fork to test the changes are working as expected.
 
 # v0.27.3
-export PYODIDE_BUILD_COMMIT=e6928ea61533989063f4ca97138a5dc684144b3d
+export PYODIDE_BUILD_COMMIT=e07ccf47564b4edc3e7bff92b3fd7b4ad792dd34
 export PYODIDE_BUILD_REPO=https://github.com/hoodmane/pyodide-build
 
 ifdef CPYTHON_DEBUG
