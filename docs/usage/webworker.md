@@ -86,7 +86,7 @@ self.onmessage = async (event) => {
   const globals = dict(Object.entries(context));
   try {
     // Execute the python code in this context
-    const result = await pyodide.runPythonAsync(python, {globals});
+    const result = await pyodide.runPythonAsync(python, { globals });
     self.postMessage({ result, id });
   } catch (error) {
     self.postMessage({ error: error.message, id });
@@ -98,7 +98,7 @@ self.onmessage = async (event) => {
 
 Now that we established what the two sides need and how they operate, let's
 connect them using an API that wraps the message passing code into an
-asynchronous function. 
+asynchronous function.
 
 ```js
 // workerApi.mjs
@@ -129,7 +129,7 @@ function requestResponse(worker, msg) {
     // This listener is done so remove it.
     worker.removeEventListener("message", listener);
     // Filter the id out of the result
-    const {id, ...result} = data;
+    const { id, ...result } = data;
     resolve(result);
   });
   worker.postMessage({ id, ...msg });
