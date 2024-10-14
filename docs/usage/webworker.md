@@ -152,4 +152,3 @@ export function asyncRun(script, context) {
 
 [worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
 [worker constructor]: https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
-
