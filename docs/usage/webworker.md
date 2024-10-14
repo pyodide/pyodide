@@ -5,17 +5,21 @@
 This document includes an example demonstrating how to use Pyodide to execute
 Python scripts asynchronously in a web worker.
 
-Let's start with [the definition][worker api].
+Let's start with [the definition of a worker][worker api].
 
 > A worker is an object created using a constructor (e.g. [Worker()][worker constructor])
 > that runs a named JavaScript file — this file contains the code
 > that will run in the worker thread; workers run in another global context that
 > is different from the current window.
 
-A lot of Python code does long running synchronous computations. Running them in
-the main thread will block the UI. Using a web worker is advantageous because
-the Python code runs in a separate thread from your UI and does not impact your
+A lot of Python programs do long-running synchronous computations. Running them
+in the main thread blocks the UI. Using a web worker is advantageous because the
+Python code runs in a separate thread from your UI and does not impact your
 application's responsiveness.
+
+On the other hand, since workers run in a separate global context, you cannot
+directly share globals between a worker and the main thread. In particular, a
+worker cannot directly manipulate the DOM.
 
 ## Detailed example
 
@@ -78,7 +82,7 @@ let pyodideReadyPromise = loadPyodide();
 self.onmessage = async (event) => {
   // make sure loading is done
   const pyodide = await pyodideReadyPromise;
-  const { id, python, ...context } = event.data;
+  const { id, python, context } = event.data;
   // Now load any packages we need, run the code, and send the result back.
   await pyodide.loadPackagesFromImports(python);
   // make a Python dictionary with the data from `context`
@@ -129,8 +133,8 @@ function requestResponse(worker, msg) {
     // This listener is done so remove it.
     worker.removeEventListener("message", listener);
     // Filter the id out of the result
-    const { id, ...result } = data;
-    resolve(result);
+    const { id, ...rest } = data;
+    resolve(rest);
   });
   worker.postMessage({ id, ...msg });
   return promise;
@@ -140,7 +144,7 @@ const pyodideWorker = new Worker("./webworker.mjs", { type: "module" });
 
 export function asyncRun(script, context) {
   return requestResponse(pyodideWorker, {
-    ...context,
+    context,
     python: script,
   });
 }
@@ -149,11 +153,3 @@ export function asyncRun(script, context) {
 [worker api]: https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API
 [worker constructor]: https://developer.mozilla.org/en-US/docs/Web/API/Worker/Worker
 
-## Caveats
-
-There are some limitations, however. Pyodide does not support sharing the Python
-interpreter and packages between multiple workers or with your main thread.
-Since workers run in a separate global context distinct from the main thread,
-you cannot directly share globals between a worker and your main thread. In
-particular, the worker cannot directly manipulate the DOM. Finally, although the
-worker is separate from your main thread, the worker is itself single threaded.
