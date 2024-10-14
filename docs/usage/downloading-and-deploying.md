@@ -87,4 +87,3 @@ deployments](https://emscripten.org/docs/compiling/Deploying-Pages.html).
 | pyodide.mjs.map | Source maps to improve tracebacks. Not really that useful to people outside of the project, probably should be only included in debug builds.                                                        |
 | \*-tests.tar    | Unvendored tests from wheels. If a wheel includes a test folder, we take them out and put them here.                                                                                                 |
 | console.html    | The Pyodide repl.                                                                                                                                                                                    |
-| webworker.js    | Mentioned in the docs. Developers should probably implement their own Web Worker.                                                                                                                    |
