@@ -4,8 +4,8 @@ import {
   PackageData,
   InternalPackageData,
   PackageLoadMetadata,
-  type Module,
-  type API,
+  PackageManagerAPI,
+  PackageManagerModule,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -22,8 +22,7 @@ import {
   resolvePath,
   initNodeModules,
 } from "./compat";
-import { loadDynlibsFromPackage } from "./dynload";
-import { ConfigType } from "./pyodide";
+import { DynlibLoader } from "./dynload";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -95,24 +94,6 @@ export async function initializePackageIndex(
 
 const DEFAULT_CHANNEL = "default channel";
 
-// Subset of the API and Module that the package manager needs
-/**
- * @hidden
- */
-export type PackageManagerAPI = Pick<
-  API,
-  | "importlib"
-  | "package_loader"
-  | "lockfile_packages"
-  | "bootstrapFinalizedPromise"
-> & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
-};
-/**
- * @hidden
- */
-export type PackageManagerModule = Pick<Module, "reportUndefinedSymbols">;
-
 /**
  * @hidden
  * The package manager is responsible for installing and managing Pyodide packages.
@@ -120,6 +101,7 @@ export type PackageManagerModule = Pick<Module, "reportUndefinedSymbols">;
 export class PackageManager {
   private api: PackageManagerAPI;
   private pyodideModule: PackageManagerModule;
+  private dynlibLoader: DynlibLoader;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -141,6 +123,7 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.api = api;
     this.pyodideModule = pyodideModule;
+    this.dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
   /**
@@ -491,7 +474,7 @@ export class PackageManager {
       );
     }
 
-    await loadDynlibsFromPackage(pkg, dynlibs);
+    await this.dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
 
   /**

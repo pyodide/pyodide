@@ -1,8 +1,10 @@
 import {
   PackageManager,
+} from "../../load-package.ts";
+import {
   PackageManagerAPI,
   PackageManagerModule,
-} from "../../load-package.ts";
+} from "../../types.ts";
 
 describe("PackageManager", () => {
   // TODO: add more unittests
@@ -24,10 +26,36 @@ describe("PackageManager", () => {
       },
       lockfile_packages: {},
       bootstrapFinalizedPromise: Promise.resolve(),
+      sitepackages: "",
+      defaultLdLibraryPath: [],
     };
     const mockMod: PackageManagerModule = {
       reportUndefinedSymbols: () => {},
+      loadDynamicLibrary: () => {},
+      LDSO: {
+        loadedLibsByName: {},
+      },
+      PATH: {},
+      FS: {
+        readdir: (path: string) => [],
+        isDir: (mode: number) => true,
+        findObject: (path: string, dontResolveLastLink?: boolean) => {},
+        readFile: (path: string) => new Uint8Array(),
+        lookupPath: (path: string, options?: {
+          follow_mount?: boolean;
+        }) => {
+          return {
+            node: {
+              timestamp: 1,
+              rdev: 2,
+              contents: new Uint8Array(),
+              mode: 3,
+            }
+          }
+        }
+      },
     };
+
 
     const _ = new PackageManager(mockApi, mockMod);
   });
