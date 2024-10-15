@@ -2,14 +2,10 @@
 
 declare var DEBUG: boolean;
 
-import {
-  PackageManagerAPI,
-  PackageManagerModule,
-} from "./types";
+import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
 import { LoadDynlibFS, ReadFileType, InternalPackageData } from "./types";
-
 
 export class DynlibLoader {
   private api: PackageManagerAPI;
@@ -22,107 +18,115 @@ export class DynlibLoader {
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.api = api;
-    this.pyodideModule = pyodideModule
+    this.pyodideModule = pyodideModule;
   }
 
   /**
- * Recursively get all subdirectories of a directory
- *
- * @param dir The absolute path to the directory
- * @returns A list of absolute paths to the subdirectories
- * @private
- */
-public *getSubDirs(dir: string): Generator<string> {
-  const dirs = this.pyodideModule.FS.readdir(dir);
+   * Recursively get all subdirectories of a directory
+   *
+   * @param dir The absolute path to the directory
+   * @returns A list of absolute paths to the subdirectories
+   * @private
+   */
+  public *getSubDirs(dir: string): Generator<string> {
+    const dirs = this.pyodideModule.FS.readdir(dir);
 
-  for (const d of dirs) {
-    if (d === "." || d === "..") {
-      continue;
+    for (const d of dirs) {
+      if (d === "." || d === "..") {
+        continue;
+      }
+
+      const subdir: string = this.pyodideModule.PATH.join2(dir, d);
+      const lookup = this.pyodideModule.FS.lookupPath(subdir);
+      if (lookup.node === null) {
+        continue;
+      }
+
+      const mode = lookup.node.mode;
+      if (!this.pyodideModule.FS.isDir(mode)) {
+        continue;
+      }
+
+      yield subdir;
+      yield* this.getSubDirs(subdir);
     }
-
-    const subdir: string = this.pyodideModule.PATH.join2(dir, d);
-    const lookup = this.pyodideModule.FS.lookupPath(subdir);
-    if (lookup.node === null) {
-      continue;
-    }
-
-    const mode = lookup.node.mode;
-    if (!this.pyodideModule.FS.isDir(mode)) {
-      continue;
-    }
-
-    yield subdir;
-    yield* this.getSubDirs(subdir);
   }
-}
 
-/**
- * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule
- * which helps searching for libraries
- *
- * @param lib The path to the library to load
- * @param searchDirs The list of directories to search for the library
- * @returns A filesystem-like object
- * @private
- */
-public createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
-  const dirname = lib.substring(0, lib.lastIndexOf("/"));
+  /**
+   * Creates a filesystem-like object to be passed to Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+   * which helps searching for libraries
+   *
+   * @param lib The path to the library to load
+   * @param searchDirs The list of directories to search for the library
+   * @returns A filesystem-like object
+   * @private
+   */
+  public createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
+    const dirname = lib.substring(0, lib.lastIndexOf("/"));
 
-  let _searchDirs = searchDirs || [];
-  _searchDirs = _searchDirs.concat(this.api.defaultLdLibraryPath, [dirname]);
+    let _searchDirs = searchDirs || [];
+    _searchDirs = _searchDirs.concat(this.api.defaultLdLibraryPath, [dirname]);
 
-  // TODO: add rpath to Emscripten dsos and remove this logic
-  const resolvePath = (path: string) => {
-    if (DEBUG) {
-      if (this.pyodideModule.PATH.basename(path) !== this.pyodideModule.PATH.basename(lib)) {
-        console.debug(`Searching a library from ${path}, required by ${lib}.`);
-      }
-    }
-
-    // If the path is absolute, we don't need to search for it.
-    if (this.pyodideModule.PATH.isAbs(path)) {
-      return path;
-    }
-
-    // Step 1) Try to find the library in the search directories
-    for (const dir of _searchDirs) {
-      const fullPath = this.pyodideModule.PATH.join2(dir, path);
-
-      if (this.pyodideModule.FS.findObject(fullPath) !== null) {
-        return fullPath;
-      }
-    }
-
-    // Step 2) try to find the library by searching child directories of the library directory
-    //         (This should not be necessary in most cases, but some libraries have dependencies in the child directories)
-    for (const childDir of this.getSubDirs(dirname)) {
-      const fullPath = this.pyodideModule.PATH.join2(childDir, path);
-      if (this.pyodideModule.FS.findObject(fullPath) !== null) {
-        return fullPath;
-      }
-    }
-
-    return path;
-  };
-
-  const readFile: ReadFileType = (path: string) =>
-    this.pyodideModule.FS.readFile(resolvePath(path));
-
-  const fs: LoadDynlibFS = {
-    findObject: (path: string, dontResolveLastLink: boolean) => {
-      let obj = this.pyodideModule.FS.findObject(resolvePath(path), dontResolveLastLink);
+    // TODO: add rpath to Emscripten dsos and remove this logic
+    const resolvePath = (path: string) => {
       if (DEBUG) {
-        if (obj === null) {
-          console.debug(`Failed to find a library: ${resolvePath(path)}`);
+        if (
+          this.pyodideModule.PATH.basename(path) !==
+          this.pyodideModule.PATH.basename(lib)
+        ) {
+          console.debug(
+            `Searching a library from ${path}, required by ${lib}.`,
+          );
         }
       }
-      return obj;
-    },
-    readFile: readFile,
-  };
 
-  return fs;
-}
+      // If the path is absolute, we don't need to search for it.
+      if (this.pyodideModule.PATH.isAbs(path)) {
+        return path;
+      }
+
+      // Step 1) Try to find the library in the search directories
+      for (const dir of _searchDirs) {
+        const fullPath = this.pyodideModule.PATH.join2(dir, path);
+
+        if (this.pyodideModule.FS.findObject(fullPath) !== null) {
+          return fullPath;
+        }
+      }
+
+      // Step 2) try to find the library by searching child directories of the library directory
+      //         (This should not be necessary in most cases, but some libraries have dependencies in the child directories)
+      for (const childDir of this.getSubDirs(dirname)) {
+        const fullPath = this.pyodideModule.PATH.join2(childDir, path);
+        if (this.pyodideModule.FS.findObject(fullPath) !== null) {
+          return fullPath;
+        }
+      }
+
+      return path;
+    };
+
+    const readFile: ReadFileType = (path: string) =>
+      this.pyodideModule.FS.readFile(resolvePath(path));
+
+    const fs: LoadDynlibFS = {
+      findObject: (path: string, dontResolveLastLink: boolean) => {
+        let obj = this.pyodideModule.FS.findObject(
+          resolvePath(path),
+          dontResolveLastLink,
+        );
+        if (DEBUG) {
+          if (obj === null) {
+            console.debug(`Failed to find a library: ${resolvePath(path)}`);
+          }
+        }
+        return obj;
+      },
+      readFile: readFile,
+    };
+
+    return fs;
+  }
 
   /**
    * Load a dynamic library. This is an async operation and Python imports are
@@ -135,11 +139,7 @@ public createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
    * @param searchDirs Directories to search for the library.
    * @private
    */
-  public async loadDynlib(
-    lib: string,
-    global: boolean,
-    searchDirs?: string[],
-  ) {
+  public async loadDynlib(lib: string, global: boolean, searchDirs?: string[]) {
     const releaseDynlibLock = await this._lock();
 
     if (DEBUG) {
@@ -175,7 +175,11 @@ public createDynlibFS(lib: string, searchDirs?: string[]): LoadDynlibFS {
         }
       }
     } catch (e: any) {
-      if (e && e.message && e.message.includes("need to see wasm magic number")) {
+      if (
+        e &&
+        e.message &&
+        e.message.includes("need to see wasm magic number")
+      ) {
         console.warn(
           `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`,
         );
@@ -222,7 +226,6 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
 
   // TODO: Find a better way to register these functions
   API.loadDynlib = singletonDynlibLoader.loadDynlib.bind(singletonDynlibLoader);
-  API.loadDynlibsFromPackage = singletonDynlibLoader.loadDynlibsFromPackage.bind(
-    singletonDynlibLoader,
-  );
+  API.loadDynlibsFromPackage =
+    singletonDynlibLoader.loadDynlibsFromPackage.bind(singletonDynlibLoader);
 }

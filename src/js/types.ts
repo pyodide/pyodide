@@ -502,10 +502,7 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  | "reportUndefinedSymbols"
-  | "PATH"
-  | "loadDynamicLibrary"
-  | "LDSO"
+  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
 > & {
   FS: Pick<FS, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
 };
