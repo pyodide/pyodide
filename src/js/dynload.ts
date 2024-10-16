@@ -65,7 +65,7 @@ export class DynlibLoader {
     const dirname = lib.substring(0, lib.lastIndexOf("/"));
 
     let _searchDirs = searchDirs || [];
-    _searchDirs = _searchDirs.concat(this.api.defaultLdLibraryPath, [dirname]);
+    _searchDirs = _searchDirs.concat(this.#api.defaultLdLibraryPath, [dirname]);
 
     // TODO: add rpath to Emscripten dsos and remove this logic
     const resolvePath = (path: string) => {
