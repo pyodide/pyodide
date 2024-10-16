@@ -71,8 +71,7 @@ export class DynlibLoader {
     const resolvePath = (path: string) => {
       if (DEBUG) {
         if (
-          this.#module.PATH.basename(path) !==
-          this.#module.PATH.basename(lib)
+          this.#module.PATH.basename(path) !== this.#module.PATH.basename(lib)
         ) {
           console.debug(
             `Searching a library from ${path}, required by ${lib}.`,

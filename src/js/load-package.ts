@@ -458,15 +458,17 @@ export class PackageManager {
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs({
-      buffer,
-      filename,
-      extract_dir: installDir,
-      calculate_dynlibs: true,
-      installer: "pyodide.loadPackage",
-      source:
-        metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
-    });
+    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
+      {
+        buffer,
+        filename,
+        extract_dir: installDir,
+        calculate_dynlibs: true,
+        installer: "pyodide.loadPackage",
+        source:
+          metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
+      },
+    );
 
     if (DEBUG) {
       console.debug(
