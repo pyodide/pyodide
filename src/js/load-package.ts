@@ -4,8 +4,8 @@ import {
   PackageData,
   InternalPackageData,
   PackageLoadMetadata,
-  type Module,
-  type API,
+  PackageManagerAPI,
+  PackageManagerModule,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -22,8 +22,7 @@ import {
   resolvePath,
   initNodeModules,
 } from "./compat";
-import { loadDynlibsFromPackage } from "./dynload";
-import { ConfigType } from "./pyodide";
+import { DynlibLoader } from "./dynload";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -95,31 +94,14 @@ export async function initializePackageIndex(
 
 const DEFAULT_CHANNEL = "default channel";
 
-// Subset of the API and Module that the package manager needs
-/**
- * @hidden
- */
-export type PackageManagerAPI = Pick<
-  API,
-  | "importlib"
-  | "package_loader"
-  | "lockfile_packages"
-  | "bootstrapFinalizedPromise"
-> & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
-};
-/**
- * @hidden
- */
-export type PackageManagerModule = Pick<Module, "reportUndefinedSymbols">;
-
 /**
  * @hidden
  * The package manager is responsible for installing and managing Pyodide packages.
  */
 export class PackageManager {
-  private api: PackageManagerAPI;
-  private pyodideModule: PackageManagerModule;
+  #api: PackageManagerAPI;
+  #module: PackageManagerModule;
+  #dynlibLoader: DynlibLoader;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -139,8 +121,9 @@ export class PackageManager {
   private _lock = createLock();
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-    this.api = api;
-    this.pyodideModule = pyodideModule;
+    this.#api = api;
+    this.#module = pyodideModule;
+    this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
   /**
@@ -265,7 +248,7 @@ export class PackageManager {
       // fills in the GOT. There can be segfaults if we leave it out.
       // See https://github.com/emscripten-core/emscripten/issues/22052
       // TODO: Fix Emscripten so this isn't needed
-      this.pyodideModule.reportUndefinedSymbols();
+      this.#module.reportUndefinedSymbols();
       if (loadedPackageData.size > 0) {
         const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
           .sort()
@@ -284,7 +267,7 @@ export class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
-      this.api.importlib.invalidate_caches();
+      this.#api.importlib.invalidate_caches();
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
       releaseLock();
@@ -306,7 +289,7 @@ export class PackageManager {
     if (toLoad.has(normalizedName)) {
       return;
     }
-    const pkgInfo = this.api.lockfile_packages[normalizedName];
+    const pkgInfo = this.#api.lockfile_packages[normalizedName];
     if (!pkgInfo) {
       throw new Error(`No known package with name '${name}'`);
     }
@@ -402,7 +385,7 @@ export class PackageManager {
   ): Promise<Uint8Array> {
     let installBaseUrl: string;
     if (IN_NODE) {
-      installBaseUrl = this.api.config.packageCacheDir;
+      installBaseUrl = this.#api.config.packageCacheDir;
       // Ensure that the directory exists before trying to download files into it.
       try {
         // Check if the `installBaseUrl` directory exists
@@ -414,15 +397,15 @@ export class PackageManager {
         });
       }
     } else {
-      installBaseUrl = this.api.config.indexURL;
+      installBaseUrl = this.#api.config.indexURL;
     }
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === DEFAULT_CHANNEL) {
-      if (!(pkg.normalizedName in this.api.lockfile_packages)) {
+      if (!(pkg.normalizedName in this.#api.lockfile_packages)) {
         throw new Error(`Internal error: no entry for package named ${name}`);
       }
-      const lockfilePackage = this.api.lockfile_packages[pkg.normalizedName];
+      const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
 
       uri = resolvePath(fileName, installBaseUrl);
@@ -465,25 +448,27 @@ export class PackageManager {
     metadata: PackageLoadMetadata,
     buffer: Uint8Array,
   ) {
-    let pkg = this.api.lockfile_packages[metadata.normalizedName];
+    let pkg = this.#api.lockfile_packages[metadata.normalizedName];
     if (!pkg) {
       pkg = metadata.packageData;
     }
 
     const filename = pkg.file_name;
     // This Python helper function unpacks the buffer and lists out any .so files in it.
-    const installDir: string = this.api.package_loader.get_install_dir(
+    const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    const dynlibs: string[] = this.api.package_loader.unpack_buffer.callKwargs({
-      buffer,
-      filename,
-      extract_dir: installDir,
-      calculate_dynlibs: true,
-      installer: "pyodide.loadPackage",
-      source:
-        metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
-    });
+    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
+      {
+        buffer,
+        filename,
+        extract_dir: installDir,
+        calculate_dynlibs: true,
+        installer: "pyodide.loadPackage",
+        source:
+          metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
+      },
+    );
 
     if (DEBUG) {
       console.debug(
@@ -491,7 +476,7 @@ export class PackageManager {
       );
     }
 
-    await loadDynlibsFromPackage(pkg, dynlibs);
+    await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
 
   /**
@@ -524,7 +509,7 @@ export class PackageManager {
           : Promise.resolve();
       });
       // Can't install until bootstrap is finalized.
-      await this.api.bootstrapFinalizedPromise;
+      await this.#api.bootstrapFinalizedPromise;
 
       // wait until all dependencies are installed
       await Promise.all(installPromiseDependencies);

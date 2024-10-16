@@ -481,3 +481,28 @@ export interface API {
 
   LiteralMap: any;
 }
+
+// Subset of the API and Module that the package manager needs
+/**
+ * @hidden
+ */
+export type PackageManagerAPI = Pick<
+  API,
+  | "importlib"
+  | "package_loader"
+  | "lockfile_packages"
+  | "bootstrapFinalizedPromise"
+  | "sitepackages"
+  | "defaultLdLibraryPath"
+> & {
+  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+};
+/**
+ * @hidden
+ */
+export type PackageManagerModule = Pick<
+  Module,
+  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
+> & {
+  FS: Pick<FS, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
+};
