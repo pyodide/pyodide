@@ -8,8 +8,8 @@ import { createLock } from "./common/lock";
 import { LoadDynlibFS, ReadFileType, InternalPackageData } from "./types";
 
 export class DynlibLoader {
-  private api: PackageManagerAPI;
-  private pyodideModule: PackageManagerModule;
+  #api: PackageManagerAPI;
+  #module: PackageManagerModule;
 
   // Emscripten has a lock in the corresponding code in library_browser.js. I
   // don't know why we need it, but quite possibly bad stuff will happen without
@@ -17,8 +17,8 @@ export class DynlibLoader {
   private _lock = createLock();
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-    this.api = api;
-    this.pyodideModule = pyodideModule;
+    this.#api = api;
+    this.#module = pyodideModule;
   }
 
   /**
@@ -29,21 +29,21 @@ export class DynlibLoader {
    * @private
    */
   public *getSubDirs(dir: string): Generator<string> {
-    const dirs = this.pyodideModule.FS.readdir(dir);
+    const dirs = this.#module.FS.readdir(dir);
 
     for (const d of dirs) {
       if (d === "." || d === "..") {
         continue;
       }
 
-      const subdir: string = this.pyodideModule.PATH.join2(dir, d);
-      const lookup = this.pyodideModule.FS.lookupPath(subdir);
+      const subdir: string = this.#module.PATH.join2(dir, d);
+      const lookup = this.#module.FS.lookupPath(subdir);
       if (lookup.node === null) {
         continue;
       }
 
       const mode = lookup.node.mode;
-      if (!this.pyodideModule.FS.isDir(mode)) {
+      if (!this.#module.FS.isDir(mode)) {
         continue;
       }
 
@@ -71,8 +71,8 @@ export class DynlibLoader {
     const resolvePath = (path: string) => {
       if (DEBUG) {
         if (
-          this.pyodideModule.PATH.basename(path) !==
-          this.pyodideModule.PATH.basename(lib)
+          this.#module.PATH.basename(path) !==
+          this.#module.PATH.basename(lib)
         ) {
           console.debug(
             `Searching a library from ${path}, required by ${lib}.`,
@@ -81,15 +81,15 @@ export class DynlibLoader {
       }
 
       // If the path is absolute, we don't need to search for it.
-      if (this.pyodideModule.PATH.isAbs(path)) {
+      if (this.#module.PATH.isAbs(path)) {
         return path;
       }
 
       // Step 1) Try to find the library in the search directories
       for (const dir of _searchDirs) {
-        const fullPath = this.pyodideModule.PATH.join2(dir, path);
+        const fullPath = this.#module.PATH.join2(dir, path);
 
-        if (this.pyodideModule.FS.findObject(fullPath) !== null) {
+        if (this.#module.FS.findObject(fullPath) !== null) {
           return fullPath;
         }
       }
@@ -97,8 +97,8 @@ export class DynlibLoader {
       // Step 2) try to find the library by searching child directories of the library directory
       //         (This should not be necessary in most cases, but some libraries have dependencies in the child directories)
       for (const childDir of this.getSubDirs(dirname)) {
-        const fullPath = this.pyodideModule.PATH.join2(childDir, path);
-        if (this.pyodideModule.FS.findObject(fullPath) !== null) {
+        const fullPath = this.#module.PATH.join2(childDir, path);
+        if (this.#module.FS.findObject(fullPath) !== null) {
           return fullPath;
         }
       }
@@ -107,11 +107,11 @@ export class DynlibLoader {
     };
 
     const readFile: ReadFileType = (path: string) =>
-      this.pyodideModule.FS.readFile(resolvePath(path));
+      this.#module.FS.readFile(resolvePath(path));
 
     const fs: LoadDynlibFS = {
       findObject: (path: string, dontResolveLastLink: boolean) => {
-        let obj = this.pyodideModule.FS.findObject(
+        let obj = this.#module.FS.findObject(
           resolvePath(path),
           dontResolveLastLink,
         );
@@ -150,7 +150,7 @@ export class DynlibLoader {
     const localScope = global ? null : {};
 
     try {
-      await this.pyodideModule.loadDynamicLibrary(
+      await this.#module.loadDynamicLibrary(
         lib,
         {
           loadAsync: true,
@@ -166,12 +166,12 @@ export class DynlibLoader {
       // However, since emscripten dylink metadata only contains the name of the
       // library not the full path, we need to update it manually in order to
       // prevent loading same library twice.
-      if (this.pyodideModule.PATH.isAbs(lib)) {
-        const libName: string = this.pyodideModule.PATH.basename(lib);
-        const dso: any = this.pyodideModule.LDSO.loadedLibsByName[libName];
+      if (this.#module.PATH.isAbs(lib)) {
+        const libName: string = this.#module.PATH.basename(lib);
+        const dso: any = this.#module.LDSO.loadedLibsByName[libName];
         if (!dso) {
-          this.pyodideModule.LDSO.loadedLibsByName[libName] =
-            this.pyodideModule.LDSO.loadedLibsByName[lib];
+          this.#module.LDSO.loadedLibsByName[libName] =
+            this.#module.LDSO.loadedLibsByName[lib];
         }
       }
     } catch (e: any) {
@@ -211,7 +211,7 @@ export class DynlibLoader {
   ) {
     // assume that shared libraries of a package are located in <package-name>.libs directory,
     // following the convention of auditwheel.
-    const auditWheelLibDir = `${this.api.sitepackages}/${
+    const auditWheelLibDir = `${this.#api.sitepackages}/${
       pkg.file_name.split("-")[0]
     }.libs`;
 
