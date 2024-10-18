@@ -75,7 +75,7 @@ Here is the worker code:
 
 ```js
 // webworker.mjs
-import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.mjs";
+import { loadPyodide } from "{{PYODIDE_CDN_URL}}pyodide.mjs";
 
 let pyodideReadyPromise = loadPyodide();
 
