@@ -23,7 +23,6 @@ import {
   initNodeModules,
 } from "./compat";
 import { DynlibLoader } from "./dynload";
-import debug from "./common/debug";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -452,7 +451,7 @@ export class PackageManager {
       },
     );
 
-    debug(`Found ${dynlibs.length} dynamic libraries inside ${filename}`)
+    DEBUG && console.debug(`Found ${dynlibs.length} dynamic libraries inside ${filename}`)
 
     await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }

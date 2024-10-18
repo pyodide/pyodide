@@ -4,7 +4,6 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
 import { LoadDynlibFS, ReadFileType, InternalPackageData } from "./types";
-import debug from "./common/debug";
 
 export class DynlibLoader {
   #api: PackageManagerAPI;
@@ -69,12 +68,8 @@ export class DynlibLoader {
     // TODO: add rpath to Emscripten dsos and remove this logic
     const resolvePath = (path: string) => {
       
-      if (DEBUG) {
-        if (
-          this.#module.PATH.basename(path) !== this.#module.PATH.basename(lib)
-        ) {
-          debug(`Searching a library from ${path}, required by ${lib}.`);
-        }
+      if (DEBUG && this.#module.PATH.basename(path) !== this.#module.PATH.basename(lib)) {
+          console.debug(`Searching a library from ${path}, required by ${lib}.`);
       }
 
       // If the path is absolute, we don't need to search for it.
@@ -112,11 +107,7 @@ export class DynlibLoader {
           resolvePath(path),
           dontResolveLastLink,
         );
-        if (DEBUG) {
-          if (obj === null) {
-            console.debug(`Failed to find a library: ${resolvePath(path)}`);
-          }
-        }
+        if (DEBUG && obj === null) { console.debug(`Failed to find a library: ${resolvePath(path)}`); };
         return obj;
       },
       readFile: readFile,
@@ -139,7 +130,7 @@ export class DynlibLoader {
   public async loadDynlib(lib: string, global: boolean, searchDirs?: string[]) {
     const releaseDynlibLock = await this._lock();
 
-    debug(`Loading a dynamic library ${lib} (global: ${global})`);
+    DEBUG && console.debug(`Loading a dynamic library ${lib} (global: ${global})`);
 
     const fs = this.createDynlibFS(lib, searchDirs);
     const localScope = global ? null : {};
