@@ -102,7 +102,7 @@ myst:
 - Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
-- Added `Narwhals` 1.9.4 {pr}`1521`
+- Added `Narwhals` 1.9.4 {pr}`5121`
 
 ## Version 0.26.2
 
