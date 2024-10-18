@@ -1,5 +1,14 @@
-diff --git a/Lib/zoneinfo/_common.pyold b/Lib/zoneinfo/_common.py
-index 98cdfe37..75f8fd2b 100644
+From 2643d68535a5ab6c8b4d9105257e53f3a2498b46 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 25 Jul 2024 14:28:57 +0200
+Subject: [PATCH 6/7] Warn if ZoneInfo is imported without tzdata
+
+---
+ Lib/zoneinfo/_common.py | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Lib/zoneinfo/_common.py b/Lib/zoneinfo/_common.py
+index 98cdfe37ca6..35d19eae9f0 100644
 --- a/Lib/zoneinfo/_common.py
 +++ b/Lib/zoneinfo/_common.py
 @@ -11,6 +11,12 @@ def load_tzdata(key):
@@ -15,3 +24,6 @@ index 98cdfe37..75f8fd2b 100644
          # There are three types of exception that can be raised that all amount
          # to "we cannot find this key":
          #
+-- 
+2.34.1
+

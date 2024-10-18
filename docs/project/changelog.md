@@ -14,6 +14,28 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4963`
+
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
+
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
+
 ## Version 0.26.2
 
 _July 26, 2024_

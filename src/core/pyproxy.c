@@ -14,10 +14,10 @@
 
 #define Py_ENTER()                                                             \
   _check_gil();                                                                \
-  const $$s = Module.validSuspender.value;                                     \
-  Module.validSuspender.value = false;
+  const $$s = validSuspender.value;                                            \
+  validSuspender.value = false;
 
-#define Py_EXIT() Module.validSuspender.value = $$s;
+#define Py_EXIT() validSuspender.value = $$s;
 
 EM_JS(void, throw_no_gil, (), {
   throw new API.NoGilError("Attempted to use PyProxy when Python GIL not held");
@@ -822,6 +822,9 @@ exit_cframe(_PyCFrame* frame);
 void
 restore_cframe(_PyCFrame* frame);
 
+void
+set_suspender(JsVal suspender);
+
 /**
  * call _pyproxy_apply but save the error flag into the argument so it can't be
  * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
@@ -829,13 +832,15 @@ restore_cframe(_PyCFrame* frame);
  * test_stack_switching.test_throw_from_switcher for a detailed explanation.
  */
 EMSCRIPTEN_KEEPALIVE JsVal
-_pyproxy_apply_promising(PyObject* callable,
+_pyproxy_apply_promising(JsVal suspender,
+                         PyObject* callable,
                          JsVal jsargs,
                          size_t numposargs,
                          JsVal jskwnames,
                          size_t numkwargs,
                          PyObject** exc)
 {
+  set_suspender(suspender);
   _PyCFrame* cur = get_cframe();
   _PyCFrame frame;
   set_new_cframe(&frame);

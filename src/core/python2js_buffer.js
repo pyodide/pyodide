@@ -175,17 +175,21 @@ Module.python2js_buffer_1d_noncontiguous = function (
  * @private
  */
 Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
+  const { shape, strides, ndim, converter, itemsize, suboffsets } = bufferData;
   // Stride and suboffset are signed, n is unsigned.
-  let n = DEREF_U32(bufferData.shape, curdim);
-  let stride = DEREF_I32(bufferData.strides, curdim);
+  let n = DEREF_U32(shape, curdim);
+  let stride = DEREF_I32(strides, curdim);
   let suboffset = -1;
-  if (bufferData.suboffsets !== 0) {
-    suboffset = DEREF_I32(bufferData.suboffsets, curdim);
+  if (ndim === 0) {
+    return converter(Module.python2js_buffer_1d_contiguous(ptr, itemsize, 1));
   }
-  if (curdim === bufferData.ndim - 1) {
+  if (suboffsets !== 0) {
+    suboffset = DEREF_I32(suboffsets, curdim);
+  }
+  if (curdim === ndim - 1) {
     // Last dimension, use appropriate 1d converter
     let arraybuffer;
-    if (stride === bufferData.itemsize && suboffset < 0) {
+    if (stride === itemsize && suboffset < 0) {
       arraybuffer = Module.python2js_buffer_1d_contiguous(ptr, stride, n);
     } else {
       arraybuffer = Module.python2js_buffer_1d_noncontiguous(
@@ -193,10 +197,10 @@ Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
         stride,
         suboffset,
         n,
-        bufferData.itemsize,
+        itemsize,
       );
     }
-    return bufferData.converter(arraybuffer);
+    return converter(arraybuffer);
   }
 
   let result = [];

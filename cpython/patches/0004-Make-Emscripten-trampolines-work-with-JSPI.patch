@@ -1,7 +1,7 @@
-From ed163b0cf72c4cae56274db02b44b7f7bc8e6d2d Mon Sep 17 00:00:00 2001
+From a3f1217f7527907c237085c5e900c950c7d2603a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
-Subject: [PATCH 5/6] Make Emscripten trampolines work with JSPI
+Subject: [PATCH 4/7] Make Emscripten trampolines work with JSPI
 
 There is a WIP proposal to enable webassembly stack switching which have been
 implemented in v8:
@@ -25,7 +25,6 @@ was negatively affected.
 
 Upstreamed here:
 https://github.com/python/cpython/pull/106219
-
 ---
  .../internal/pycore_emscripten_trampoline.h   | 67 +++++++++++++++++
  Include/internal/pycore_object.h              | 28 +------
@@ -43,7 +42,7 @@ https://github.com/python/cpython/pull/106219
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 new file mode 100644
-index 0000000000..900d527e48
+index 00000000000..900d527e48d
 --- /dev/null
 +++ b/Include/internal/pycore_emscripten_trampoline.h
 @@ -0,0 +1,67 @@
@@ -115,7 +114,7 @@ index 0000000000..900d527e48
 +#endif // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 +#endif // ndef Py_EMSCRIPTEN_SIGNAL_H
 diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
-index 7a2f13a21b..3d8ad0c7f2 100644
+index 7a2f13a21bd..3d8ad0c7f21 100644
 --- a/Include/internal/pycore_object.h
 +++ b/Include/internal/pycore_object.h
 @@ -10,6 +10,7 @@ extern "C" {
@@ -161,7 +160,7 @@ index 7a2f13a21b..3d8ad0c7f2 100644
  }
  #endif
 diff --git a/Include/internal/pycore_runtime.h b/Include/internal/pycore_runtime.h
-index 99c4b0760b..8ceb6b72ec 100644
+index 99c4b0760bf..8ceb6b72ec1 100644
 --- a/Include/internal/pycore_runtime.h
 +++ b/Include/internal/pycore_runtime.h
 @@ -77,6 +77,11 @@ typedef struct pyruntimestate {
@@ -177,7 +176,7 @@ index 99c4b0760b..8ceb6b72ec 100644
         is called again.
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 72ac470394..c62672d619 100644
+index 72ac4703949..c62672d6196 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
 @@ -2,6 +2,7 @@
@@ -216,7 +215,7 @@ index 72ac470394..c62672d619 100644
  static void
  descr_dealloc(PyDescrObject *descr)
 diff --git a/Objects/methodobject.c b/Objects/methodobject.c
-index 51752dec3d..af4794a913 100644
+index 51752dec3dd..af4794a9137 100644
 --- a/Objects/methodobject.c
 +++ b/Objects/methodobject.c
 @@ -550,10 +550,3 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
@@ -232,7 +231,7 @@ index 51752dec3d..af4794a913 100644
 -#endif
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
 new file mode 100644
-index 0000000000..8d29393bd8
+index 00000000000..8d29393bd87
 --- /dev/null
 +++ b/Python/emscripten_trampoline.c
 @@ -0,0 +1,74 @@
@@ -311,7 +310,7 @@ index 0000000000..8d29393bd8
 +
 +#endif
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
-index a0130fde15..aec638e85e 100644
+index a0130fde15d..aec638e85eb 100644
 --- a/Python/pylifecycle.c
 +++ b/Python/pylifecycle.c
 @@ -4,6 +4,7 @@
@@ -333,7 +332,7 @@ index a0130fde15..aec638e85e 100644
  
  
 diff --git a/Python/pystate.c b/Python/pystate.c
-index 1337516aa5..1043e1f2fe 100644
+index 1337516aa59..1043e1f2fee 100644
 --- a/Python/pystate.c
 +++ b/Python/pystate.c
 @@ -2,6 +2,7 @@
@@ -353,7 +352,7 @@ index 1337516aa5..1043e1f2fe 100644
  
  PyStatus
 diff --git a/configure b/configure
-index 99dd1fe595..fe73b21a62 100755
+index 99dd1fe5958..fe73b21a62d 100755
 --- a/configure
 +++ b/configure
 @@ -17432,8 +17432,8 @@ PLATFORM_OBJS=
@@ -368,7 +367,7 @@ index 99dd1fe595..fe73b21a62 100755
    *) :
       ;;
 diff --git a/configure.ac b/configure.ac
-index bd2be94b47..6bb201e0b3 100644
+index bd2be94b47c..6bb201e0b3b 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -4811,8 +4811,8 @@ PLATFORM_OBJS=
@@ -383,5 +382,5 @@ index bd2be94b47..6bb201e0b3 100644
  )
  AC_SUBST([PLATFORM_HEADERS])
 -- 
-2.25.1
+2.34.1
 

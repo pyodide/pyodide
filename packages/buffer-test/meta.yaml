@@ -1,0 +1,10 @@
+package:
+  name: buffer-test
+  version: "0.1.1"
+  tag:
+    - core
+    - pyodide.test
+  top-level:
+    - buffer_test
+source:
+  path: buffer-test
