@@ -21,6 +21,7 @@ import {
   loadBinaryFile,
   resolvePath,
   initNodeModules,
+  ensureDirNode,
 } from "./compat";
 import { DynlibLoader } from "./dynload";
 
@@ -379,7 +380,7 @@ export class PackageManager {
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
     const installBaseUrl = IN_NODE ? this.#api.config.packageCacheDir : this.#api.config.indexURL;
-    await this.ensureCacheDirNode(installBaseUrl);
+    await ensureDirNode(installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === this.defaultChannel) {
@@ -522,32 +523,12 @@ export class PackageManager {
     return channel;
   }
 
-  /**
-   * Ensure that the directory exists before trying to download files into it (Node.js only).
-   * @param dir The directory to ensure exists
-   */
-  public async ensureCacheDirNode(dir: string) {
-    if (!IN_NODE) {
-      return;
-    }
-
-    try {
-      // Check if the `installBaseUrl` directory exists
-      await nodeFsPromisesMod.stat(dir); // Use `.stat()` which works even on ASAR archives of Electron apps, while `.access` doesn't.
-    } catch {
-      // If it doesn't exist, make it. Call mkdir() here only when necessary after checking the existence to avoid an error on read-only file systems. See https://github.com/pyodide/pyodide/issues/4736
-      await nodeFsPromisesMod.mkdir(dir, {
-        recursive: true,
-      });
-    }
+  public logStdout(message: string, logger?: (message: string) => void) {
+    logger ? logger(message) : this.stdout(message);
   }
 
-  public logStdout(message: string, callback?: (message: string) => void) {
-    callback ? callback(message) : this.stdout(message);
-  }
-
-  public logStderr(message: string, callback?: (message: string) => void) {
-    callback ? callback(message) : this.stderr(message);
+  public logStderr(message: string, logger?: (message: string) => void) {
+    logger ? logger(message) : this.stderr(message);
   }
 }
 
