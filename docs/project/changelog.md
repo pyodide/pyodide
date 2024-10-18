@@ -582,8 +582,7 @@ _September 13, 2023_
   deprecation {pr}`3635`, cachetools {pr}`3635`, xyzservices {pr}`3786`,
   simplejson {pr}`3801`, protobuf {pr}`3813`, peewee {pr}`3897`, Cartopy
   {pr}`3909`, pyshp {pr}`3909`, netCDF4 {pr}`3910`, igraph {pr}`3991`, CoolProp
-  {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`, orjson {pr}`4036`,
-  Narwhals {pr}`5121`.
+  {pr}`4028`, contourpy {pr}`4102`, awkward-cpp {pr}`4101`, orjson {pr}`4036`.
 
 - Upgraded numpy to 1.25.2 {pr}`4125`
 
