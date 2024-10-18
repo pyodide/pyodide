@@ -6,29 +6,29 @@ import * as os from "os";
 import { ensureDirNode, initNodeModules } from "../../compat";
 
 describe("ensureDirNode", () => {
-    it("Should create the dir if it does not exist", async () => {
-      await initNodeModules();
+  it("Should create the dir if it does not exist", async () => {
+    await initNodeModules();
 
-      const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'foo-'));
-      
-      const notExistDir = path.join(baseDir, "notExistDir");
+    const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), "foo-"));
 
-      chai.assert.isFalse(fs.existsSync(notExistDir));
+    const notExistDir = path.join(baseDir, "notExistDir");
 
-      await ensureDirNode(notExistDir);
+    chai.assert.isFalse(fs.existsSync(notExistDir));
 
-      chai.assert.isTrue(fs.existsSync(notExistDir));
-    });
+    await ensureDirNode(notExistDir);
 
-    it("Should not throw if the dir already exists", async () => {
-        await initNodeModules();
+    chai.assert.isTrue(fs.existsSync(notExistDir));
+  });
 
-        const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), 'foo-'));
+  it("Should not throw if the dir already exists", async () => {
+    await initNodeModules();
 
-        chai.assert.isTrue(fs.existsSync(baseDir));
+    const baseDir = fs.mkdtempSync(path.join(os.tmpdir(), "foo-"));
 
-        await ensureDirNode(baseDir);
-    
-        chai.assert.isTrue(fs.existsSync(baseDir));
-    });
+    chai.assert.isTrue(fs.existsSync(baseDir));
+
+    await ensureDirNode(baseDir);
+
+    chai.assert.isTrue(fs.existsSync(baseDir));
+  });
 });
