@@ -36,23 +36,9 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
-- {{ Enhancement }} Updated stack switching support to handle new JSPI.
-  {pr}`4982`
-
-- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
-  {pr}`4961`
-
-- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
-  method has no arguments and no return value, it is about 80% faster. The
-  speedup for methods with arguments is less drastic but still quite a lot.
-  {pr}`4961`
-
 - {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
   not included in the cross-build env anymore.
   {pr}`4995`
-
-- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
-  {pr}`4993`
 
 - {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
@@ -70,12 +56,6 @@ myst:
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
-
-- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
-  {pr}`5092`
-
-- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
-  {pr}`5092`
 
 ### Packages
 
@@ -102,6 +82,30 @@ myst:
 - Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
+
+## Version 0.26.3
+
+_October 19, 2024_
+
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4963`
+
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
+
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
 
 ## Version 0.26.2
 
