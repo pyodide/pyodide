@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
@@ -72,8 +73,7 @@ def test_load_relative_url(
     test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
     (tmp_path / "test_temp.html").write_text(test_html)
     pytz_wheel = get_pytz_wheel_name()
-    pytz1_wheel = pytz_wheel.replace("pytz", "pytz1")
-    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz1_wheel)
+    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz_wheel)
 
     with (
         spawn_web_server(tmp_path) as web_server,
@@ -97,9 +97,9 @@ def test_load_relative_url(
         selenium.restore_state()
         if selenium.browser == "node":
             selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
-        selenium.load_package(pytz1_wheel)
+        selenium.load_package(pytz_wheel)
         selenium.run(
-            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz1)"
+            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz)"
         )
 
 
@@ -456,6 +456,87 @@ def test_get_dynlibs():
         assert sorted(get_dynlibs(t, ".zip", Path("/p"))) == so_files
 
 
+def test_find_wheel_metadata_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import find_wheel_metadata_dir
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("a.dist-info/METADATA", "")
+        z.writestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        assert find_wheel_metadata_dir(z, ".dist-info") == "a.dist-info"
+        assert find_wheel_metadata_dir(z, ".some-info") == "b.some-info"
+        assert find_wheel_metadata_dir(z, ".not-exist") is None
+
+
+def test_wheel_dist_info_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import UnsupportedWheel, wheel_dist_info_dir
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        with pytest.raises(
+            UnsupportedWheel, match=".dist-info directory not found in wheel"
+        ):
+            wheel_dist_info_dir(z, "pkg-name")
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("pkg_name.dist-info/METADATA", "")
+        z.writestr("b.some-info/METADATA", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_dist_info_dir(z, "pkg_name") == "pkg_name.dist-info"
+        assert wheel_dist_info_dir(z, "pkg-name") == "pkg_name.dist-info"
+
+        with pytest.raises(UnsupportedWheel, match="does not start with 'not-package'"):
+            wheel_dist_info_dir(z, "not-package")
+
+
+def test_wheel_data_file_dir():
+    from tempfile import NamedTemporaryFile
+    from zipfile import ZipFile
+
+    from pyodide._package_loader import wheel_data_file_dir
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("anythingelse", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_data_file_dir(z, "pkg_name") is None
+
+    with NamedTemporaryFile(suffix=".whl") as t:
+        z = ZipFile(t, mode="w")
+        z.writestr("pkg_name.data/etc/hostname", "")
+        z.writestr("pkg_name.data/etc/hosts", "")
+
+        z.close()
+        t.flush()
+
+        assert wheel_data_file_dir(z, "pkg_name") == "pkg_name.data"
+        assert wheel_data_file_dir(z, "pkg-name") == "pkg_name.data"
+
+        assert wheel_data_file_dir(z, "not-package") is None
+
+
 class DummyDistribution:
     def __init__(
         self,
@@ -630,3 +711,39 @@ def test_normalized_name(selenium_standalone, load_name, normalized_name, real_n
         assert(() => loadEndMsgs.some((msg) => msg.includes("{real_name}")));
         """
     )
+
+
+def test_data_files_support(selenium_standalone, httpserver):
+    selenium = selenium_standalone
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+    test_file_data = test_file_path.read_bytes()
+
+    httpserver.expect_oneshot_request("/" + test_file_name).respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    request_url = httpserver.url_for("/" + test_file_name)
+
+    selenium.run_js(
+        f"""
+        await pyodide.loadPackage("{request_url}");
+        """
+    )
+
+    @run_in_pyodide
+    def _run(selenium):
+        import sys
+        from pathlib import Path
+
+        import dummy_pkg
+
+        assert dummy_pkg
+
+        assert (Path(sys.prefix) / "share" / "datafile").is_file(), "datafile not found"
+        assert (Path(sys.prefix) / "etc" / "datafile2").is_file(), "datafile2 not found"
+
+    _run(selenium)

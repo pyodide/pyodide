@@ -58,6 +58,9 @@ myst:
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
   {pr}`4666`
 
+- {{ Enhancement }} `pyodide.loadPackage` will now install data files inside the wheel.
+  {pr}`5034`
+
 - {{ Enhancement }} `find_imports("import pkg.module.submodule")` will now
   return `["pkg", "pkg.module", "pkg.module.submodule"]`. This improves support
   for namespace packages.
@@ -68,13 +71,24 @@ myst:
   their own code.
   {pr}`5114`
 
+- {{ Enhancement }} Enabled `pyodide.FS.trackingDelegate` which can be used to track
+  file system operations. See
+  [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
+  for more information.
+
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
+
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `certifi` to 2024.7.4 {pr}`5035`
-- Upgraded `bokeh` to 3.5.2 {pr}`4888`, {pr}`5047`
+- Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `protobuf` to 5.27.3 {pr}`4601`
@@ -86,6 +100,7 @@ myst:
 - Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
+- Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
