@@ -63,6 +63,11 @@ myst:
   for namespace packages.
   {pr}`5039`
 
+- {{ Breaking }} Removed `webworker.js` from the distribution files. It was a
+  pretty small file, if someone is using it for something they can just copy it into
+  their own code.
+  {pr}`5114`
+
 ### Packages
 
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
