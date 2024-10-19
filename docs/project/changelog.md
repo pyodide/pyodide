@@ -14,7 +14,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.26.3
+
+_October 19, 2024_
 
 - {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
   {pr}`4961`
