@@ -197,6 +197,7 @@ JsvPromise_Check(JsVal obj);
 JsVal
 JsvPromise_Resolve(JsVal obj);
 
+// Defined in suspenders.c
 JsVal
 JsvPromise_Syncify(JsVal promise);
 
