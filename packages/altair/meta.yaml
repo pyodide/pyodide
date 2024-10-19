@@ -1,11 +1,11 @@
 package:
   name: altair
-  version: 5.3.0
+  version: 5.4.1
   top-level:
     - altair
 source:
-  url: https://files.pythonhosted.org/packages/46/30/2118537233fa72c1d91a81f5908a7e843a6601ccc68b76838ebc4951505f/altair-5.3.0-py3-none-any.whl
-  sha256: 7084a1dab4d83c5e7e5246b92dc1b4451a6c68fd057f3716ee9d315c8980e59a
+  url: https://files.pythonhosted.org/packages/9b/52/4a86a4fa1cc2aae79137cc9510b7080c3e5aede2310d14fae5486feec7f7/altair-5.4.1-py3-none-any.whl
+  sha256: 0fb130b8297a569d08991fb6fe763582e7569f8a04643bbd9212436e3be04aef
 about:
   home: https://altair-viz.github.io/
   PyPI: https://pypi.org/project/altair
@@ -19,7 +19,5 @@ requirements:
     - typing-extensions
     - Jinja2
     - jsonschema
-    - numpy
-    - pandas
-    - toolz
     - packaging
+    - narwhals
