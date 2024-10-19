@@ -66,6 +66,11 @@ myst:
   for namespace packages.
   {pr}`5039`
 
+- {{ Breaking }} Removed `webworker.js` from the distribution files. It was a
+  pretty small file, if someone is using it for something they can just copy it into
+  their own code.
+  {pr}`5114`
+
 - {{ Enhancement }} Enabled `pyodide.FS.trackingDelegate` which can be used to track
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
