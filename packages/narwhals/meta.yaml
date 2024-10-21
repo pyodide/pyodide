@@ -1,0 +1,16 @@
+package:
+  name: narwhals
+  version: 1.10.0
+  top-level:
+    - narwhals
+source:
+  url: https://files.pythonhosted.org/packages/82/45/6bb08a5e5ac2d9a95f4116567d0aafb1e5f86c4bbcf982e209e5ae872b3d/narwhals-1.10.0-py3-none-any.whl
+  sha256: c83a378960651c391e5f3d68af3a821eda74c9713073518fe0c39aefc5ad8f8e
+about:
+  home: https://github.com/narwhals-dev/narwhals
+  PyPI: https://pypi.org/project/narwhals
+  summary: Extremely lightweight compatibility layer between dataframe libraries
+  license: MIT
+extra:
+  recipe-maintainers:
+    - MarcoGorelli
