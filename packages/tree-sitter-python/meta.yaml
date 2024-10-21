@@ -4,8 +4,10 @@ package:
   top-level:
     - tree_sitter_python
 source:
-  url: https://files.pythonhosted.org/packages/fe/fe/34663adbaeb139410f7fc5fbab7c16391c56458cc8083a91e85bb768fc39/tree_sitter_python-0.23.2.tar.gz
-  sha256: da6abb90a8061d70651f170403e19aed1db4e6e5bcf4b9396245421899c94070
+  # Have to use github url to work around broken sdist:
+  # https://github.com/tree-sitter/tree-sitter-python/pull/285
+  url: https://github.com/tree-sitter/tree-sitter-python/archive/refs/tags/v0.23.2.tar.gz
+  sha256: b38e5b1f5237377b506109978af76422975bda5859165835e3c7b5afee987383
 requirements:
   run:
     - tree-sitter

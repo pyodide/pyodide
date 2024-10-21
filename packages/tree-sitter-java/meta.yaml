@@ -4,8 +4,10 @@ package:
   top-level:
     - tree_sitter_java
 source:
-  url: https://files.pythonhosted.org/packages/43/f5/c3afaf20ef8fb6427b46c87439821c2efea3efaf091828499834d5f3a5d8/tree_sitter_java-0.23.2.tar.gz
-  sha256: f9969e75c79e5ab449ef5e2f9ae666b04a9266ba4d5d3127a0c1303926549406
+  # Have to use github url to work around broken sdist:
+  # https://github.com/tree-sitter/tree-sitter-java/pull/188
+  url: https://github.com/tree-sitter/tree-sitter-java/archive/refs/tags/v0.23.2.tar.gz
+  sha256: 062fe5746deb4e362ccb987228e7b41bfc017eb2b91a0413a7447719abaa07b2
 requirements:
   run:
     - tree-sitter

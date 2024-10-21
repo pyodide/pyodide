@@ -4,8 +4,10 @@ package:
   top-level:
     - tree_sitter_go
 source:
-  url: https://files.pythonhosted.org/packages/0d/48/d168f527a0c7d00c2c40e46c52ff62e8916777d3f2d7c2a1325b1f8706a8/tree_sitter_go-0.23.1.tar.gz
-  sha256: a413bfb3d77a47fd84618e01849a6b4b35f794d694493c0b58dbb4a5da82f916
+  # Have to use github source to work around broken sdist
+  # https://github.com/tree-sitter/tree-sitter-go/pull/151
+  url: https://github.com/tree-sitter/tree-sitter-go/archive/refs/tags/v0.23.1.tar.gz
+  sha256: 4173bafc4c59be78642a0faf1bed8cb3854458aa59c506e8f51001a9f28da09b
 requirements:
   run:
     - tree-sitter
