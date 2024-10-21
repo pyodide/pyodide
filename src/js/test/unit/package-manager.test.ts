@@ -53,7 +53,7 @@ describe("logStdout and logStderr", () => {
 });
 
 describe("toStringArray", () => {
-  it("Should conver string to array of strings", () => {
+  it("Should convert string to array of strings", () => {
     chai.assert.deepEqual(toStringArray("hello"), ["hello"]);
   });
 
@@ -65,7 +65,7 @@ describe("toStringArray", () => {
   });
 
   it("Should convert PyProxy to array of strings", () => {
-    // TOOD: use real PyProxy
+    // TODO: use real PyProxy
     const pyProxyMock = {
       toJs: () => "hello",
     };
