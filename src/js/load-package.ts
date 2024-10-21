@@ -188,18 +188,18 @@ export class PackageManager {
     const toLoad = this.recursiveDependencies(pkgNames, errorCallback);
 
     for (const [_, { name, normalizedName, channel }] of toLoad) {
-      const loaded = this.getLoadedPackage(name);
-      if (!loaded) continue;
+      const loadedChannel = this.getLoadedPackage(name);
+      if (!loadedChannel) continue;
 
       toLoad.delete(normalizedName);
       // If uri is from the default channel, we assume it was added as a
       // dependency, which was previously overridden.
-      if (loaded === channel || channel === this.defaultChannel) {
-        this.logStdout(`${name} already loaded from ${loaded}`, messageCallback);
+      if (loadedChannel === channel || channel === this.defaultChannel) {
+        this.logStdout(`${name} already loaded from ${loadedChannel}`, messageCallback);
       } else {
         this.logStderr(
           `URI mismatch, attempting to load package ${name} from ${channel} ` +
-            `while it is already loaded from ${loaded}. To override a dependency, ` +
+            `while it is already loaded from ${loadedChannel}. To override a dependency, ` +
             `load the custom package first.`,
           errorCallback,
         );
@@ -546,15 +546,20 @@ function filterPackageData({
  * @private
  */
 export function toStringArray(str: string | PyProxy | Array<string>): Array<string> {
-  if (Array.isArray(str)) {
-    return str;
+  // originally, this condition was "names instanceof PyProxy",
+  // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
+  // this change is required to run unit tests against this file, when global API or Module is not available.
+  // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
+  // @ts-ignore
+  if (typeof str.toJs === "function") {
+    // @ts-ignore
+    str = str.toJs();
+  }
+  if (!Array.isArray(str)) {
+    str = [str as string];
   }
 
-  if (typeof str === "string") {
-    return [str];
-  }
-
-  return [str.toJs()];
+  return str
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
