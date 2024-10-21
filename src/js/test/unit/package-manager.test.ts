@@ -50,7 +50,7 @@ describe("logStdout and logStderr", () => {
     chai.assert.isTrue(stdoutLogger.calledWith("stdout"));
     chai.assert.isTrue(stderrLogger.calledWith("stderr"));
   });
-})
+});
 
 describe("toStringArray", () => {
   it("Should conver string to array of strings", () => {
@@ -58,14 +58,17 @@ describe("toStringArray", () => {
   });
 
   it("Should return the array if it is already an array", () => {
-    chai.assert.deepEqual(toStringArray(["hello", "world"]), ["hello", "world"]);
+    chai.assert.deepEqual(toStringArray(["hello", "world"]), [
+      "hello",
+      "world",
+    ]);
   });
 
   it("Should convert PyProxy to array of strings", () => {
     // TOOD: use real PyProxy
     const pyProxyMock = {
       toJs: () => "hello",
-    }
+    };
 
     chai.assert.deepEqual(toStringArray(pyProxyMock), ["hello"]);
   });
@@ -78,8 +81,8 @@ describe("getLoadedPackage", () => {
 
     const pm = new PackageManager(mockApi, mockMod);
     pm.loadedPackages = {
-      "package": "channel",
-    }
+      package: "channel",
+    };
 
     const loadedPackage = pm.getLoadedPackage("package");
     chai.assert.equal(loadedPackage, "channel");

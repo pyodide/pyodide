@@ -120,7 +120,7 @@ export class PackageManager {
   public loadedPackages: Record<string, string> = {};
 
   private _lock = createLock();
-  
+
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
@@ -183,7 +183,7 @@ export class PackageManager {
   ): Promise<Array<PackageData>> {
     const loadedPackageData = new Set<InternalPackageData>();
     const { messageCallback, errorCallback } = options;
-    const pkgNames = toStringArray(names)
+    const pkgNames = toStringArray(names);
 
     const toLoad = this.recursiveDependencies(pkgNames, errorCallback);
 
@@ -194,8 +194,16 @@ export class PackageManager {
       toLoad.delete(normalizedName);
       // If uri is from the default channel, we assume it was added as a
       // dependency, which was previously overridden.
+<<<<<<< HEAD
       if (loadedChannel === channel || channel === this.defaultChannel) {
         this.logStdout(`${name} already loaded from ${loadedChannel}`, messageCallback);
+=======
+      if (loaded === channel || channel === this.defaultChannel) {
+        this.logStdout(
+          `${name} already loaded from ${loaded}`,
+          messageCallback,
+        );
+>>>>>>> cea51e58dbad8fb87edc5b892d23d895f8bd5367
       } else {
         this.logStderr(
           `URI mismatch, attempting to load package ${name} from ${channel} ` +
@@ -255,7 +263,10 @@ export class PackageManager {
         const failedNames = Array.from(failed.keys()).sort().join(", ");
         this.logStdout(`Failed to load ${failedNames}`, messageCallback);
         for (const [name, err] of failed) {
-          this.logStderr(`The following error occurred while loading ${name}:`, errorCallback);
+          this.logStderr(
+            `The following error occurred while loading ${name}:`,
+            errorCallback,
+          );
           this.logStderr(err.message, errorCallback);
         }
       }
@@ -379,7 +390,9 @@ export class PackageManager {
     pkg: PackageLoadMetadata,
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
-    const installBaseUrl = IN_NODE ? this.#api.config.packageCacheDir : this.#api.config.indexURL;
+    const installBaseUrl = IN_NODE
+      ? this.#api.config.packageCacheDir
+      : this.#api.config.indexURL;
     await ensureDirNode(installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
@@ -448,11 +461,16 @@ export class PackageManager {
         calculate_dynlibs: true,
         installer: "pyodide.loadPackage",
         source:
-          metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
+          metadata.channel === this.defaultChannel
+            ? "pyodide"
+            : metadata.channel,
       },
     );
 
-    DEBUG && console.debug(`Found ${dynlibs.length} dynamic libraries inside ${filename}`)
+    DEBUG &&
+      console.debug(
+        `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
+      );
 
     await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
@@ -511,7 +529,7 @@ export class PackageManager {
 
   /**
    * getLoadedPackage returns the channel from which a package was loaded.
-   * if the package is not loaded, it returns null. 
+   * if the package is not loaded, it returns null.
    * @param pkg package name
    */
   public getLoadedPackage(pkg: string): string | null {
