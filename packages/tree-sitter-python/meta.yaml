@@ -1,0 +1,23 @@
+package:
+  name: tree-sitter-python
+  version: 0.23.2
+  top-level:
+    - tree_sitter_python
+source:
+  # Have to use github url to work around broken sdist:
+  # https://github.com/tree-sitter/tree-sitter-python/pull/285
+  url: https://github.com/tree-sitter/tree-sitter-python/archive/refs/tags/v0.23.2.tar.gz
+  sha256: b38e5b1f5237377b506109978af76422975bda5859165835e3c7b5afee987383
+requirements:
+  run:
+    - tree-sitter
+  host:
+    - tree-sitter
+about:
+  home: https://github.com/tree-sitter/tree-sitter-python
+  PyPI: https://pypi.org/project/tree-sitter-python
+  summary: Python grammar for tree-sitter
+  license: MIT
+extra:
+  recipe-maintainers:
+    - ericwb
