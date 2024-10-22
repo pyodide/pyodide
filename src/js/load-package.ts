@@ -196,7 +196,7 @@ export class PackageManager {
       // dependency, which was previously overridden.
       if (loadedChannel === channel || channel === this.defaultChannel) {
         this.logStdout(
-          `${name} already loaded from ${loadedChannel}`, 
+          `${name} already loaded from ${loadedChannel}`,
           messageCallback,
         );
       } else {
@@ -558,7 +558,9 @@ function filterPackageData({
  * Converts a string or PyProxy to an array of strings.
  * @private
  */
-export function toStringArray(str: string | PyProxy | Array<string>): Array<string> {
+export function toStringArray(
+  str: string | PyProxy | Array<string>,
+): Array<string> {
   // originally, this condition was "names instanceof PyProxy",
   // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
   // this change is required to run unit tests against this file, when global API or Module is not available.
@@ -572,7 +574,7 @@ export function toStringArray(str: string | PyProxy | Array<string>): Array<stri
     str = [str as string];
   }
 
-  return str
+  return str;
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
