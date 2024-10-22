@@ -10,6 +10,7 @@ import {
   createInvoke,
 } from "./create_invokes.mjs";
 import { initSuspenders } from "./suspenders.mjs";
+import { calculateWasmFuncNargsFallback } from "./calculate_wasm_func_nargs_fallback.mjs";
 
 export {
   promisingApply,
@@ -47,4 +48,8 @@ if (jspiSupported) {
   Module.adjustWasmImports = adjustWasmImports;
   Module.wrapException = wrapException;
   Module.createInvoke = createInvoke;
+}
+
+if (newJspiSupported) {
+  Module.PyEM_CountArgsFallback = calculateWasmFuncNargsFallback;
 }
