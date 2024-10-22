@@ -194,16 +194,11 @@ export class PackageManager {
       toLoad.delete(normalizedName);
       // If uri is from the default channel, we assume it was added as a
       // dependency, which was previously overridden.
-<<<<<<< HEAD
       if (loadedChannel === channel || channel === this.defaultChannel) {
-        this.logStdout(`${name} already loaded from ${loadedChannel}`, messageCallback);
-=======
-      if (loaded === channel || channel === this.defaultChannel) {
         this.logStdout(
-          `${name} already loaded from ${loaded}`,
+          `${name} already loaded from ${loadedChannel}`, 
           messageCallback,
         );
->>>>>>> cea51e58dbad8fb87edc5b892d23d895f8bd5367
       } else {
         this.logStderr(
           `URI mismatch, attempting to load package ${name} from ${channel} ` +
