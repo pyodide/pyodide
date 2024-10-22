@@ -68,7 +68,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          submodules: recursive
       - name: Cache ccache output
         uses: actions/cache@v4
         with:
