@@ -31,7 +31,12 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
-const PYODIDE_EXCLUDE = ["!**/package.json", "!**/*.{md,html}", "!**/*.d.ts"];
+const PYODIDE_EXCLUDE = [
+  "!**/*.{md,html}",
+  "!**/*.d.ts",
+  "!**/*.whl",
+  "!**/node_modules",
+];
 
 export function viteStaticCopyPyodide() {
   const pyodideDir = dirname(fileURLToPath(import.meta.resolve("pyodide")));
