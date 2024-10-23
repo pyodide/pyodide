@@ -54,7 +54,8 @@ function getPyEmCountArgs() {
   if ("Function" in WebAssembly) {
     if (WebAssembly.Function.type) {
       // Node v20
-      return (func) => WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
+      return (func) =>
+        WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
     } else {
       // Node >= 22, v8-based browsers
       return (func) => wasmTable.get(func).type().parameters.length;
