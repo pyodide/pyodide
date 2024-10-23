@@ -34,6 +34,25 @@ RUN pip3 --no-cache-dir install -r requirements.txt \
     && pip3 --no-cache-dir install -r requirements-doc.txt \
     && rm -rf requirements.txt requirements-doc.txt
 
+RUN cd / \
+    && git clone --recursive https://github.com/WebAssembly/wabt \
+    && cd wabt \
+    && git submodule update --init \
+    && make install-gcc-release-no-tests \
+    && cd ~  \
+    && rm -rf /wabt
+
+COPY --from=node-image /usr/local/bin/node /usr/local/bin/
+COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
+
+RUN npm install -g \
+  jsdoc \
+  prettier \
+  rollup \
+  rollup-plugin-terser
+
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
 ARG CHROME_VERSION="latest"
@@ -98,25 +117,6 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
   && echo "Using Chrome version: $(google-chrome --version)" \
   && echo "Using Chrome Driver version: $(chromedriver --version)"
-
-COPY --from=node-image /usr/local/bin/node /usr/local/bin/
-COPY --from=node-image /usr/local/lib/node_modules /usr/local/lib/node_modules
-RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
-    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
-
-RUN npm install -g \
-  jsdoc \
-  prettier \
-  rollup \
-  rollup-plugin-terser
-
-RUN cd / \
-    && git clone --recursive https://github.com/WebAssembly/wabt \
-    && cd wabt \
-    && git submodule update --init \
-    && make install-gcc-release-no-tests \
-    && cd ~  \
-    && rm -rf /wabt
 
 CMD ["/bin/sh"]
 WORKDIR /src
