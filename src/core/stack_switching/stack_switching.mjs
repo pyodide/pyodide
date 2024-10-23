@@ -50,6 +50,20 @@ if (jspiSupported) {
   Module.createInvoke = createInvoke;
 }
 
-if (newJspiSupported) {
-  Module.PyEM_CountArgsFallback = calculateWasmFuncNargsFallback;
+function getPyEmCountArgs() {
+  if ("Function" in WebAssembly) {
+    if (WebAssembly.Function.type) {
+      // Node v20
+      return (func) => WebAssembly.Function.type(wasmTable.get(func)).parameters.length;
+    } else {
+      // Node >= 22, v8-based browsers
+      return (func) => wasmTable.get(func).type().parameters.length;
+    }
+  }
+  if ("Suspending" in WebAssembly) {
+    return Module.calculateWasmFuncNargsFallback;
+  }
+  return undefined;
 }
+
+Module.PyEM_CountArgs = getPyEmCountArgs();
