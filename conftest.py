@@ -32,7 +32,6 @@ def set_configs():
         pytest_pyodide_config.get_flags("chrome")
         + [
             "--enable-features=WebAssemblyExperimentalJSPI",
-            "--enable-experimental-webassembly-features",
         ],
     )
 
