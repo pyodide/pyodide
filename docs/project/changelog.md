@@ -64,6 +64,7 @@ myst:
 
 ### Packages
 
+- Upgraded `protobuf` to 5.28.3 {pr}`5136`
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
