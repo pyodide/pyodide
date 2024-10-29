@@ -62,7 +62,7 @@ function getPyEmCountArgs() {
     }
   }
   if ("Suspending" in WebAssembly) {
-    return Module.calculateWasmFuncNargsFallback;
+    return calculateWasmFuncNargsFallback;
   }
   return undefined;
 }
