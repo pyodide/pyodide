@@ -83,6 +83,7 @@ myst:
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
+- Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
