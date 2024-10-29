@@ -185,9 +185,9 @@ index 5afc93b5d9..7ac5f80fb9 100644
  
  #include <stdlib.h>
  
++#undef complex
 +#include "f2c.h"
-+
-+
++#define complex singlecomplex
  /*
   * Support routines
   */
