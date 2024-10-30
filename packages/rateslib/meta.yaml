@@ -2,10 +2,9 @@ package:
   name: rateslib
   version: 1.5.0
   top-level:
-  - rateslib
+    - rateslib
 source:
-  url: 
-    https://files.pythonhosted.org/packages/02/d7/7695bb1b6a240ecfae77804d3fc242e30582fd83973f76dda03b23d921a6/rateslib-1.5.0.tar.gz
+  url: https://files.pythonhosted.org/packages/02/d7/7695bb1b6a240ecfae77804d3fc242e30582fd83973f76dda03b23d921a6/rateslib-1.5.0.tar.gz
   sha256: 7c7af2707f20974a70403689f84905757a4ed084e4c92229388d2fc30b331b04
 requirements:
   host:
@@ -19,11 +18,11 @@ requirements:
   executable:
     - rustup
 about:
-  home: https://github.com/attack68/rateslib 
+  home: https://github.com/attack68/rateslib
   PyPI: https://pypi.org/project/rateslib
   summary: A fixed income library for trading interest rates
   license: Creative Commons Attribution, Non-Commercial, No-Derivatives 4.0 International Licence
 extra:
   recipe-maintainers:
-  - attack68
-  - NickAltmann
+    - attack68
+    - NickAltmann
