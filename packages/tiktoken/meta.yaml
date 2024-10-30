@@ -1,0 +1,37 @@
+package:
+  name: tiktoken
+  version: 0.8.0
+  top-level:
+    - tiktoken
+    - tiktoken_ext
+source:
+  url: https://files.pythonhosted.org/packages/37/02/576ff3a6639e755c4f70997b2d315f56d6d71e0d046f4fb64cb81a3fb099/tiktoken-0.8.0.tar.gz
+  sha256: 9ccbb2740f24542534369c5635cfd9b2b3c2490754a78ac8831d99f89f94eeb2
+requirements:
+  executable:
+    - rustup
+  run:
+    - regex
+    - requests
+about:
+  home: null
+  PyPI: https://pypi.org/project/tiktoken
+  summary: tiktoken is a fast BPE tokeniser for use with OpenAI's models
+  license:
+    'MIT License  Copyright (c) 2022 OpenAI, Shantanu Jain  Permission is hereby
+    granted, free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to permit persons
+    to whom the Software is furnished to do so, subject to the following conditions:  The
+    above copyright notice and this permission notice shall be included in all copies
+    or substantial portions of the Software.  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT
+    WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO
+    EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES
+    OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+    FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+    THE SOFTWARE. '
+extra:
+  recipe-maintainers:
+    - riyavsinha
