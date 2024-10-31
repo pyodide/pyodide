@@ -1,0 +1,16 @@
+package:
+  name: rpds-py
+  version: 0.18.0
+  top-level:
+    - rpds
+source:
+  url: https://files.pythonhosted.org/packages/55/ba/ce7b9f0fc5323f20ffdf85f682e51bee8dc03e9b54503939ebb63d1d0d5e/rpds_py-0.18.0.tar.gz
+  sha256: 42821446ee7a76f5d9f71f9e33a4fb2ffd724bb3e7f93386150b61a43115788d
+requirements:
+  executable:
+    - rustup
+about:
+  home:
+  PyPI: https://pypi.org/project/rpds-py
+  summary: Python bindings to Rust's persistent data structures (rpds)
+  license: MIT

@@ -1,6 +1,6 @@
 package:
   name: bokeh
-  version: 3.3.4
+  version: 3.6.0
   top-level:
     - bokeh
 requirements:
@@ -16,10 +16,13 @@ requirements:
     - pyyaml
     - xyzservices
 source:
-  sha256: ad7b6f89d0a7c2be01eff1db0ca24e2755ac41de14539db919a62e791809c309
-  url: https://files.pythonhosted.org/packages/39/ba/aefd7aacc9e086e2c7f3bb42e99cb8e2a8f24dcb4bf78519ef25a9102988/bokeh-3.3.4-py3-none-any.whl
+  sha256: 0032dc1e76ad097b07626e51584685ff48c65481fbaaad105663b1046165867a
+  url: https://files.pythonhosted.org/packages/0a/80/99ea2e9c63c9f3994ec2ff2451720de533c0b88565cb12c1a45a18556518/bokeh-3.6.0.tar.gz
 about:
   home: https://github.com/bokeh/bokeh
   PyPI: https://pypi.org/project/bokeh
   summary: Interactive plots and applications in the browser from Python
   license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - ianthomas23

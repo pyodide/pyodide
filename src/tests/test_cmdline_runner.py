@@ -11,7 +11,7 @@ import pytest
 
 import pyodide
 from pyodide_build.build_env import emscripten_version, get_pyodide_root
-from pyodide_build.install_xbuildenv import _download_xbuildenv, install_xbuildenv
+from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -287,6 +287,7 @@ def clean_pkg_install_stdout(stdout: str) -> str:
     stdout = re.sub(r"^  .*?\n", "", stdout, flags=re.MULTILINE)
     stdout = re.sub(r"^\[notice\].*?\n", "", stdout, flags=re.MULTILINE)
     stdout = re.sub(r"^.*cached.*?\n", "", stdout, flags=re.MULTILINE)
+    stdout = re.sub(r"^.*Downloading.*?\n", "", stdout, flags=re.MULTILINE)
     # Remove version numbers
     stdout = re.sub(r"(?<=[<>=_-])[\d+](\.?_?[\d+])*", "*", stdout)
     stdout = re.sub(r" /[a-zA-Z0-9/]*/dist", " .../dist", stdout)
@@ -408,7 +409,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-emscripten_*_wasm32.whl
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
             Installing collected packages: regex
             Successfully installed regex-*
             """
@@ -437,23 +438,23 @@ def test_pip_install_from_pyodide(selenium, venv):
     )
 
 
-def test_pypa_index(tmp_path):
+def test_package_index(tmp_path):
     """Test that installing packages from the python package index works as
     expected."""
     path = Path(tmp_path)
-    version = "0.21.0"  # just need some version that already exists
-    _download_xbuildenv(version, path)
+    version = "0.26.0"  # just need some version that already exists + contains pyodide-lock.json
 
-    # We don't need host dependencies for this test so zero them out
-    (path / "xbuildenv/requirements.txt").write_text("")
+    mgr = CrossBuildEnvManager(path)
+    mgr.install(version, skip_install_cross_build_packages=True)
 
-    install_xbuildenv(version, path)
+    env_path = mgr.symlink_dir.resolve()
+
     pip_opts = [
         "--index-url",
-        "file:" + str((path / "xbuildenv/pyodide-root/pypa_index").resolve()),
-        "--platform=emscripten_3_1_14_wasm32",
+        "file:" + str((env_path / "xbuildenv/pyodide-root/package_index").resolve()),
+        "--platform=pyodide_2024_0_wasm32",
         "--only-binary=:all:",
-        "--python-version=310",
+        "--python-version=312",
         "-t",
         str(path / "temp_lib"),
     ]
@@ -475,15 +476,12 @@ def test_pypa_index(tmp_path):
         capture_output=True,
         encoding="utf8",
     )
-    print("\n\nstdout:")
-    print(result.stdout)
-    print("\n\nstderr:")
-    print(result.stderr)
+
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
         stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* sharedlib-test-py-*"
+        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
     )
 
 
@@ -504,3 +502,19 @@ def test_sys_exit(selenium, venv):
     assert result.returncode == 12
     assert result.stdout == ""
     assert result.stderr == ""
+
+
+def test_cpp_exceptions(selenium, venv):
+    result = install_pkg(venv, "cpp-exceptions-test2")
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0
+    result = subprocess.run(
+        [venv / "bin/python", "-c", "import cpp_exceptions_test2"],
+        capture_output=True,
+        encoding="utf-8",
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 1
+    assert "ImportError: oops" in result.stderr

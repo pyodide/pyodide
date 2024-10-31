@@ -1,11 +1,11 @@
 package:
   name: patsy
-  version: 0.5.3
+  version: 0.5.6
   top-level:
     - patsy
 source:
-  url: https://files.pythonhosted.org/packages/2c/93/3b7db0bb8f1143f8ddb84f931719e7a538e3092c6898e5cdf65e1ed44fcb/patsy-0.5.3.tar.gz
-  sha256: bdc18001875e319bc91c812c1eb6a10be4bb13cb81eb763f466179dca3b67277
+  url: https://files.pythonhosted.org/packages/c6/18/12e76e52d589c4a812a2f1fb2406b486c226b7ac263ac8ef4b5f4bb04058/patsy-0.5.6.tar.gz
+  sha256: 95c6d47a7222535f84bff7f63d7303f2e297747a598db89cf5c67f0c0c7d2cdb
 requirements:
   run:
     - numpy
@@ -16,4 +16,4 @@ about:
   summary:
     A Python package for describing statistical models and for building design
     matrices.
-  license: 2-clause BSD
+  license: BSD-2-Clause

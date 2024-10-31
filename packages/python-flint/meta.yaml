@@ -22,3 +22,7 @@ about:
   PyPI: https://pypi.org/project/python-flint
   summary: Bindings for FLINT and Arb
   license: MIT
+extra:
+  recipe-maintainers:
+    - mkoeppe
+    - oscarbenjamin

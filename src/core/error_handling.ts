@@ -1,7 +1,8 @@
-import ErrorStackParser from "../js/node_modules/error-stack-parser/error-stack-parser";
+import ErrorStackParser, {
+  StackFrame,
+} from "../js/vendor/stackframe/error-stack-parser";
 import "types";
 
-declare var Module: any;
 declare var Tests: any;
 
 function ensureCaughtObjectIsError(e: any): Error {
@@ -208,7 +209,7 @@ API.fatal_loading_error = function (...args: string[]) {
   throw new FatalPyodideError(message);
 };
 
-function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
+function isPyodideFrame(frame: StackFrame): boolean {
   if (!frame) {
     return false;
   }
@@ -234,7 +235,7 @@ function isPyodideFrame(frame: ErrorStackParser.StackFrame): boolean {
   return true;
 }
 
-function isErrorStart(frame: ErrorStackParser.StackFrame): boolean {
+function isErrorStart(frame: StackFrame): boolean {
   return isPyodideFrame(frame) && frame.functionName === "new_error";
 }
 
@@ -242,7 +243,7 @@ Module.handle_js_error = function (e: any) {
   if (e && e.pyodide_fatal_error) {
     throw e;
   }
-  if (e instanceof Module._PropagatePythonError) {
+  if (e instanceof _PropagatePythonError) {
     // Python error indicator is already set in this case. If this branch is
     // not taken, Python error indicator should be unset, and we have to set
     // it. In this case we don't want to tamper with the traceback.
@@ -297,7 +298,7 @@ Module.handle_js_error = function (e: any) {
  * In order to reduce the risk of large memory leaks, the :js:class:`PythonError`
  * contains no reference to the Python exception that caused it. You can find
  * the actual Python exception that caused this error as
- * :py:data:`sys.last_value`.
+ * :py:data:`sys.last_exc`.
  *
  * See :ref:`type translations of errors <type-translations-errors>` for more
  * information.
@@ -306,7 +307,7 @@ Module.handle_js_error = function (e: any) {
  *    :class: warning
  *
  *    If you make a :js:class:`~pyodide.ffi.PyProxy` of
- *    :py:data:`sys.last_value`, you should be especially careful to
+ *    :py:data:`sys.last_exc`, you should be especially careful to
  *    :js:meth:`~pyodide.ffi.PyProxy.destroy` it when you are done. You may leak a large
  *    amount of memory including the local variables of all the stack frames in
  *    the traceback if you don't. The easiest way is to only handle the
@@ -317,7 +318,7 @@ Module.handle_js_error = function (e: any) {
 export class PythonError extends Error {
   /**
    * The address of the error we are wrapping. We may later compare this
-   * against sys.last_value.
+   * against sys.last_exc.
    * WARNING: we don't own a reference to this pointer, dereferencing it
    * may be a use-after-free error!
    * @private
@@ -338,12 +339,16 @@ export class PythonError extends Error {
   }
 }
 API.PythonError = PythonError;
-// A special marker. If we call a CPython API from an EM_JS function and the
-// CPython API sets an error, we might want to return an error status back to
-// C keeping the current Python error flag. This signals to the EM_JS wrappers
-// that the Python error flag is set and to leave it alone and return the
-// appropriate error value (either NULL or -1).
-class _PropagatePythonError extends Error {
+
+/**
+ * A special marker. If we call a CPython API from an EM_JS function and the
+ * CPython API sets an error, we might want to return an error status back to
+ * C keeping the current Python error flag. This signals to the EM_JS wrappers
+ * that the Python error flag is set and to leave it alone and return the
+ * appropriate error value (either NULL or -1).
+ * @hidden
+ */
+export class _PropagatePythonError extends Error {
   constructor() {
     super(
       "If you are seeing this message, an internal Pyodide error has " +
@@ -368,8 +373,6 @@ class NoGilError extends Error {}
   NoGilError,
 ].forEach(setName);
 API.NoGilError = NoGilError;
-
-Module._PropagatePythonError = _PropagatePythonError;
 
 // Stolen from:
 // https://github.com/sindresorhus/serialize-error/blob/main/error-constructors.js

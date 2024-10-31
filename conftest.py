@@ -14,45 +14,93 @@ import pytest
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = ROOT_PATH / "dist"
 
-sys.path.append(str(ROOT_PATH / "pyodide-build"))
 sys.path.append(str(ROOT_PATH / "src" / "py"))
 
-import pytest_pyodide.runner
-
 # importing this fixture has a side effect of making the safari webdriver reused during the session
+from pytest_pyodide import get_global_config
 from pytest_pyodide.runner import use_global_safari_service  # noqa: F401
 from pytest_pyodide.utils import package_is_built as _package_is_built
 
 os.environ["IN_PYTEST"] = "1"
-pytest_pyodide.runner.CHROME_FLAGS.extend(
-    [
-        "--enable-features=WebAssemblyExperimentalJSPI",
-        "--enable-experimental-webassembly-features",
-    ]
-)
-pytest_pyodide.runner.NODE_FLAGS.extend(["--experimental-wasm-stack-switching"])
 
-# There are a bunch of global objects that occasionally enter the hiwire cache
-# but never leave. The refcount checks get angry about them if they aren't preloaded.
-# We need to go through and touch them all once to keep everything okay.
-pytest_pyodide.runner.INITIALIZE_SCRIPT = """
-    pyodide.globals.get;
-    pyodide.runPython("import pyodide_js._api; del pyodide_js");
-    pyodide._api.importlib.invalidate_caches;
-    pyodide._api.package_loader.unpack_buffer;
-    pyodide._api.package_loader.get_dynlibs;
-    pyodide._api.pyodide_code.eval_code;
-    pyodide._api.pyodide_code.eval_code_async;
-    pyodide._api.pyodide_code.find_imports;
-    pyodide._api.pyodide_ffi.register_js_module;
-    pyodide._api.pyodide_ffi.unregister_js_module;
-    pyodide.pyimport("pyodide.ffi.wrappers").destroy();
-    pyodide.pyimport("pyodide.http").destroy();
-    pyodide.pyimport("pyodide_js._api");
-"""
+
+def set_configs():
+    pytest_pyodide_config = get_global_config()
+
+    pytest_pyodide_config.set_flags(
+        "chrome",
+        pytest_pyodide_config.get_flags("chrome")
+        + [
+            "--enable-features=WebAssemblyExperimentalJSPI",
+            "--enable-experimental-webassembly-features",
+        ],
+    )
+
+    pytest_pyodide_config.set_flags(
+        "node",
+        pytest_pyodide_config.get_flags("node")
+        + ["--experimental-wasm-stack-switching"],
+    )
+
+    # There are a bunch of global objects that occasionally enter the hiwire cache
+    # but never leave. The refcount checks get angry about them if they aren't preloaded.
+    # We need to go through and touch them all once to keep everything okay.
+    pytest_pyodide_config.set_initialize_script("""
+        pyodide.globals.get;
+        pyodide.runPython("import pyodide_js._api.config; del pyodide_js");
+        pyodide._api.importlib.invalidate_caches;
+        pyodide._api.package_loader.get_install_dir;
+        pyodide._api.package_loader.unpack_buffer;
+        pyodide._api.package_loader.get_dynlibs;
+        pyodide._api.pyodide_code.eval_code;
+        pyodide._api.pyodide_code.eval_code_async;
+        pyodide._api.pyodide_code.relaxed_call
+        pyodide._api.pyodide_code.find_imports;
+        pyodide._api.pyodide_ffi.register_js_module;
+        pyodide._api.pyodide_ffi.unregister_js_module;
+        pyodide.pyimport("pyodide.ffi.wrappers").destroy();
+        pyodide.pyimport("pyodide.http").destroy();
+        pyodide.pyimport("pyodide_js._api");
+    """)
+
+    pytest_pyodide_config.set_load_pyodide_script(
+        "chrome",
+        """
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            enableRunUntilComplete: true,
+        });
+        """,
+    )
+
+    pytest_pyodide_config.set_load_pyodide_script(
+        "node",
+        """
+        const {readFileSync} = require("fs");
+        let snap = readFileSync("snapshot.bin");
+        snap = new Uint8Array(snap.buffer);
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals: self,
+            _loadSnapshot: snap,
+            enableRunUntilComplete: true,
+        });
+        """,
+    )
+
+
+set_configs()
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
+)
+only_chrome = pytest.mark.xfail_browsers(
+    node="chrome only", firefox="chrome only", safari="chrome only"
+)
+
+requires_jspi = pytest.mark.xfail_browsers(
+    firefox="requires jspi", safari="requires jspi"
 )
 
 
@@ -219,10 +267,12 @@ def pytest_runtest_call(item):
     trace_hiwire_refs = (
         trace_pyproxies and pytest.mark.skip_refcount_check.mark not in item.own_markers
     )
-    yield from extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies)
+    yield from extra_checks_test_wrapper(
+        browser, trace_hiwire_refs, trace_pyproxies, item
+    )
 
 
-def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
+def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies, item):
     """Extra conditions for test to pass:
     1. No explicit request for test to fail
     2. No leaked JsRefs
@@ -244,12 +294,28 @@ def extra_checks_test_wrapper(browser, trace_hiwire_refs, trace_pyproxies):
         with contextlib.suppress(Exception) if err else contextlib.nullcontext():
             browser.disable_pyproxy_tracing()
             browser.restore_state()
+            # The method_call_singleton holds onto the last called JS method,
+            # clear it so we don't fail refcount check
+            browser.run_js("pyodide._module._clear_method_call_singleton();")
 
     if browser.force_test_fail:
         raise Exception("Test failure explicitly requested but no error was raised.")
     if trace_pyproxies and trace_hiwire_refs:
         delta_proxies = browser.get_num_proxies() - init_num_proxies
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys
+        if delta_proxies > 0:
+            pxs = browser.run_js(
+                """
+                return Array.from(pyodide._module.pyproxy_alloc_map.entries(), ([x, s]) => [x.type, x.toString(), "Traceback at creation:" + s.replace("Error", "")])
+                """
+            )
+            capman = item.config.pluginmanager.getplugin("capturemanager")
+            with capman.item_capture("call", item):
+                print("\n" + "!" * 40)
+                print("leaked proxies:")
+                for row in pxs:
+                    print(*row)
+
         assert (delta_proxies, delta_keys) == (0, 0) or delta_keys < 0
     if trace_hiwire_refs:
         delta_keys = browser.get_num_hiwire_keys() - init_num_keys

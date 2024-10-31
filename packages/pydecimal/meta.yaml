@@ -6,9 +6,14 @@ package:
   top-level:
     - _pydecimal
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
   script: |
-    cp Lib/_pydecimal.py $DISTDIR
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}
+
+    cp Lib/_pydecimal.py ${PKG_BUILD_DIR}/_pydecimal.py
+about:
+  license: PSF

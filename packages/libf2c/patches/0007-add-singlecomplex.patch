@@ -1,0 +1,10 @@
+--- a/INCLUDE/f2c.h
++++ b/INCLUDE/f2c.h
+@@ -14,6 +14,7 @@ typedef short int shortint;
+ typedef float real;
+ typedef double doublereal;
+ typedef struct { real r, i; } complex;
++typedef struct { real r, i; } singlecomplex;
+ typedef struct { doublereal r, i; } doublecomplex;
+ typedef long int logical;
+ typedef short int shortlogical;

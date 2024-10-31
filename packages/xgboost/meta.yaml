@@ -1,21 +1,20 @@
 package:
   name: xgboost
-  _disabled: true
-  version: 1.6.1
+  version: 2.1.0.dev0
   top-level:
     - xgboost
 source:
-  url: https://files.pythonhosted.org/packages/0e/8c/19309bcaf9a88b0bab34b88935925153f3f3f646163acaae9aa148cf72bb/xgboost-1.6.1.tar.gz
-  sha256: 24072028656f3428e7b8aabf77340ece057f273e41f7f85d67ccaefb7454bb18
+  # temporary URL until xgboost makes a release
+  url: https://github.com/ryanking13/xgboost/releases/download/2.1.0.dev0/xgboost-2.1.0.dev0.tar.gz
+  sha256: 0695165010555807a6d3817b0f3ce05efeac74ede8e1d1f74853db944ad0e9f7
   patches:
-    - patches/0001-Add-missing-template-type.patch
-    - patches/0002-Add-library-loading-path.patch
-    - patches/0003-Fix-type-mismatch-for-CSR-conversion-in-c_api.patch
+    - patches/0001-Fix-compilation-on-32-bit-platforms.patch
 build:
+  # DMLC_LOG_STACK_TRACE=0 is to handle https://github.com/dmlc/xgboost/issues/8595
   cflags: |
     -DDMLC_USE_FOPEN64=0
     -DDMLC_ENABLE_STD_THREAD=0
-    -DDMLC_CXX11_THREAD_LOCAL=0
+    -DDMLC_LOG_STACK_TRACE=0
     -DUSE_OPENMP=0
   exports: requested
 requirements:
@@ -28,4 +27,3 @@ about:
   PyPI: https://pypi.org/project/xgboost
   summary: XGBoost Python Package
   license: Apache-2.0
-# Note: this package cannot be updated until we add support for building with meson

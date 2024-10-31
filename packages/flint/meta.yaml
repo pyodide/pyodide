@@ -25,3 +25,6 @@ build:
         --with-mpfr=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://flintlib.org/
+  license: GPL-3.0 OR LGPL-3.0

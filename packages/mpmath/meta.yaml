@@ -10,4 +10,4 @@ about:
   home: http://mpmath.org/
   PyPI: https://pypi.org/project/mpmath
   summary: Python library for arbitrary-precision floating-point arithmetic
-  license: BSD
+  license: BSD-3-Clause

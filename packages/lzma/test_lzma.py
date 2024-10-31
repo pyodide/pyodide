@@ -5,8 +5,9 @@ from pytest_pyodide import run_in_pyodide
 def test_lzma(selenium):
     # TODO: libregrtest.main(["test_lzma"]) doesn't collect any tests for some unknown reason.
 
-    import test.test_lzma
     import unittest
+
+    import test.test_lzma
 
     suite = unittest.TestSuite(
         [unittest.TestLoader().loadTestsFromModule(test.test_lzma)]

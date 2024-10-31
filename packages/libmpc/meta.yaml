@@ -23,3 +23,6 @@ build:
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://gitlab.inria.fr/mpc/mpc
+  license: MIT

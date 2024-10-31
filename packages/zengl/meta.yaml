@@ -1,17 +1,19 @@
 package:
   name: zengl
-  version: 2.2.0
+  version: 2.5.0
   top-level:
     - zengl
     - _zengl
-    - _zengl_js
 
 source:
-  url: https://files.pythonhosted.org/packages/6a/35/e5a21145ec6b79a56c8e8947f9027d89da5c1c46163aec3edc4ba520a71d/zengl-2.2.0.tar.gz
-  sha256: d1cc530dd5a8035c4be3e2f025bb49c2f4fdb60ace5f7b0dc60139ae471bba23
+  url: https://files.pythonhosted.org/packages/19/e9/cc96f1d5bea0e88239852cd9c72178c1eef7f813e24512808d1be66e1ed0/zengl-2.5.0.tar.gz
+  sha256: 7dde6e9bd861ec7c896d592d8308c2beafc48551973f9578a99884125d8ac6af
 
 about:
   home: https://github.com/szabolcsdombi/zengl/
   PyPI: https://pypi.org/project/zengl
-  summary: Self-Contained OpenGL Rendering Pipelines for Python
+  summary: OpenGL Pipelines for Python
   license: MIT
+extra:
+  recipe-maintainers:
+    - szabolcsdombi

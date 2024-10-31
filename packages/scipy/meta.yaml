@@ -1,6 +1,6 @@
 package:
   name: scipy
-  version: 1.11.2
+  version: 1.14.1
   tag:
     - min-scipy-stack
   top-level:
@@ -17,19 +17,28 @@ package:
 # subroutine. Try deleting it.
 
 source:
-  url: https://files.pythonhosted.org/packages/9c/ef/87a5565907645998d7c62e76b84b0ca9f0b7c25cd433f5617a968051cec3/scipy-1.11.2.tar.gz
-  sha256: b29318a5e39bd200ca4381d80b065cdf3076c7d7281c5e36569e99273867f61d
+  url: https://files.pythonhosted.org/packages/62/11/4d44a1f274e002784e4dbdb81e0ea96d2de2d1045b2132d5af62cc31fd28/scipy-1.14.1.tar.gz
+  sha256: 5a275584e726026a5699459aa72f828a610821006228e841b94275c4a7c08417
 
   patches:
     - patches/0001-Fix-dstevr-in-special-lapack_defs.h.patch
     - patches/0002-int-to-string.patch
-    - patches/0003-fix-fotran-files-minpack.patch
-    - patches/0004-gemm_-no-const.patch
-    - patches/0005-make-int-return-values.patch
-    - patches/0006-Rename-_page_trend_test.py-to-prevent-test-unvendori.patch
-    - patches/0008-Remove-test-modules-that-fails-to-build.patch
-    - patches/0009-Fix-fitpack.patch
-    - patches/0010-Fix-gees-calls.patch
+    - patches/0003-gemm_-no-const.patch
+    - patches/0004-make-int-return-values.patch
+    - patches/0005-Fix-fitpack.patch
+    - patches/0006-Fix-gees-calls.patch
+    - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
+    - patches/0008-Mark-mvndst-functions-recursive.patch
+    - patches/0009-Make-sreorth-recursive.patch
+    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
+    - patches/0011-Remove-fpchec-inline-if-then-endif-constructs.patch # remove with SciPy v1.15.0
+    - patches/0012-Remove-chla_transtype.patch
+    - patches/0013-Set-wrapper-return-type-to-int.patch
+    - patches/0014-Skip-svd_gesdd-test.patch # remove with SciPy v1.15.0
+    - patches/0015-Remove-f2py-generators.patch
+    - patches/0016-Make-sf_error_state_lib-a-static-library.patch
+    - patches/0017-Remove-test-modules-that-fail-to-build.patch
+    - patches/0018-Fix-lapack-larfg-function-signature.patch
 
 build:
   cflags: |
@@ -44,6 +53,14 @@ build:
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
     -fexceptions
+
+  # Exclude tests via Meson's install tags functionality.
+  unvendor-tests: true
+  # install-args=--tags=runtime,python-runtime,devel
+  # Disable when running tests, enable when a PR is ready, i.e., building for distribution.
+  backend-flags: |
+    build-dir=build
+
   # IMPORTANT: Other locations important in scipy build process:
   # There are two files built in the "capture" pass that need patching:
   #    _blas_subroutines.h, and _cython
@@ -51,10 +68,14 @@ build:
   # pyodide-build/pyodide_build/_f2c_fixes.py.
   script: |
     set -x
+    git clone https://github.com/hoodmane/f2c.git --depth 1
+    (cd f2c/src && cp makefile.u makefile && sed -i "s/gram.c:/gram.c1:/" makefile && make)
+    export F2C_PATH=$(pwd)/f2c/src/f2c
+
+    echo F2C_PATH: $F2C_PATH
     export NPY_BLAS_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
     export NPY_LAPACK_LIBS="-I$WASM_LIBRARY_DIR/include $WASM_LIBRARY_DIR/lib/libopenblas.so"
 
-    sed -i 's/recursive //g' scipy/integrate/quadpack/* scipy/interpolate/fitpack/*
     sed -i 's/void DQA/int DQA/g' scipy/integrate/__quadpack.h
 
     # Change many functions that return void into functions that return int
@@ -68,6 +89,7 @@ build:
     # sed -i 's/void F_FUNC/int F_FUNC/g' scipy/linalg/_lapack_subroutines.h
     sed -i 's/extern void/extern int/g' scipy/optimize/__minpack.h
     sed -i 's/void/int/g' scipy/linalg/cython_blas_signatures.txt
+    sed -i 's/void/int/g' scipy/linalg/cython_lapack_signatures.txt
     sed -i 's/^void/int/g' scipy/interpolate/src/_fitpackmodule.c
 
     sed -i 's/extern void/extern int/g' scipy/sparse/linalg/_dsolve/SuperLU/SRC/*.{c,h}
@@ -79,6 +101,7 @@ build:
 
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/^void/int/g' scipy/optimize/_trlib/trlib/trlib_private.h
+    sed -i 's/^void/int/g' scipy/_build_utils/src/wrap_dummy_g77_abi.c
     sed -i 's/, int)/)/g' scipy/optimize/_trlib/trlib_private.h
     sed -i 's/, 1)/)/g' scipy/optimize/_trlib/trlib_private.h
 
@@ -88,6 +111,10 @@ build:
 
     # Input error causes "duplicate symbol" linker errors. Empty out the file.
     echo "" > scipy/sparse/linalg/_dsolve/SuperLU/SRC/input_error.c
+
+  _retain-test-patterns:
+    - "*_page_trend_test.py"
+    - "*bws_test.py"
 
   cross-build-env: true
   cross-build-files:
@@ -104,7 +131,6 @@ requirements:
     - openblas
   executable:
     - gfortran
-    - f2c
 
 test:
   imports:
@@ -149,4 +175,9 @@ about:
   home: https://www.scipy.org
   PyPI: https://pypi.org/project/scipy
   summary: "SciPy: Scientific Library for Python"
-  license: BSD
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - lesteve
+    - steppi
+    - agriyakhetarpal

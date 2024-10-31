@@ -46,7 +46,6 @@ Version History:
 
 """
 
-
 LOOPS = 50000
 
 from time import perf_counter

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyodide-py"
-version = "0.26.0.dev0"
+version = "0.27.0.dev0"
 authors = [{name = "Pyodide developers"}]
 description = "A Python package providing core interpreter functionality for Pyodide"
 classifiers = [
@@ -12,7 +12,7 @@ classifiers = [
     "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 
 [project.readme]
 file = "README.md"

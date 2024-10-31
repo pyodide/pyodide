@@ -1,24 +1,18 @@
 package:
   name: cryptography
-  version: 42.0.1
+  version: 42.0.5
   top-level:
     - cryptography
 source:
-  url: https://files.pythonhosted.org/packages/3f/ed/a233522ab5201b988a482cbb19ae3b63bef8ad2ad3e11fc5216b7053b2e4/cryptography-42.0.1.tar.gz
-  sha256: fd33f53809bb363cf126bebe7a99d97735988d9b0131a2be59fbf83e1259a5b7
+  url: https://files.pythonhosted.org/packages/13/9e/a55763a32d340d7b06d045753c186b690e7d88780cafce5f88cb931536be/cryptography-42.0.5.tar.gz
+  sha256: 6fe07eec95dfd477eb9530aef5bead34fec819b3aaf6c5bd6d20565da607bfe1
   patches:
     - patches/0001-Tell-rust-lang-libc-that-time_t-is-64-bits.patch
 build:
   script: |
-    export OPENSSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix openssl)
-    export OPENSSL_LIBRARY_PATH=$(pkg-config --libs-only-L --dont-define-prefix openssl)
     export OPENSSL_DIR=$WASM_LIBRARY_DIR
-  cflags: |
-    -Wno-implicit-function-declaration
-    $(OPENSSL_INCLUDE_PATH)
-  ldflags: |
-    $(OPENSSL_LIBRARY_PATH)
-    -Wl,--no-entry
+    # Allow linking to native libraries, otherwise libssl and libcrypto will be not linked to the final binary
+    export RUSTFLAGS="-Z link-native-libraries=yes"
 requirements:
   run:
     - openssl

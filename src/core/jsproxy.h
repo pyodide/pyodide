@@ -14,13 +14,16 @@
  *
  */
 int
-JsProxy_compute_typeflags(JsVal obj);
+JsProxy_compute_typeflags(JsVal obj, bool is_json_adaptor);
 
 PyObject*
-JsProxy_create_with_type(int type_flags, JsVal object, JsVal this);
+JsProxy_create_with_type(int type_flags,
+                         JsVal object,
+                         JsVal this,
+                         PyObject* sig);
 
 PyObject*
-JsProxy_create_objmap(JsVal object, bool objmap);
+JsProxy_create_objmap(JsVal object, int flags);
 
 /**
  * Make a new JsProxy.
@@ -30,7 +33,10 @@ JsProxy_create_objmap(JsVal object, bool objmap);
  * @return The Python object wrapping the JavaScript object.
  */
 PyObject*
-JsProxy_create_with_this(JsVal object, JsVal this);
+JsProxy_create_with_this(JsVal object,
+                         JsVal this,
+                         PyObject* sig,
+                         bool is_json_adaptor);
 
 /**
  * Make a new JsProxy.
@@ -51,8 +57,14 @@ JsProxy_Check(PyObject* x);
 JsVal
 JsProxy_Val(PyObject* x);
 
+PyObject*
+wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter);
+
 /** Initialize global state for JsProxy functionality. */
 int
 JsProxy_init(PyObject* core_module);
+
+PyObject*
+js2python_as_py_json(JsVal jsval);
 
 #endif /* JSPROXY_H */

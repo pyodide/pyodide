@@ -1,16 +1,19 @@
 package:
   name: biopython
-  version: "1.81"
+  version: "1.83"
   top-level:
     - Bio
     - BioSQL
+source:
+  sha256: 78e6bfb78de63034037afd35fe77cb6e0a9e5b62706becf78a7d922b16ed83f7
+  url: https://files.pythonhosted.org/packages/cc/d4/3d8848191a7a37187704c382e6dfda4d6a47d05a14cd64f004c55a3cd5a1/biopython-1.83.tar.gz
+  patches:
+    - "patches/0001-Remove-error-message-if-wheel-is-not-installed.patch"
 requirements:
   run:
     - numpy
-source:
-  sha256: 2cf38112b6d8415ad39d6a611988cd11fb5f33eb09346666a87263beba9614e0
-  url: https://files.pythonhosted.org/packages/ad/a4/237edd5f5e5b68d9543c79bcd695ef881e6317fbd0eae1b1e53e694f9d54/biopython-1.81.tar.gz
 about:
   home: https://biopython.org/
   PyPI: https://pypi.org/project/biopython
   summary: Freely available tools for computational molecular biology.
+  license: Biopython

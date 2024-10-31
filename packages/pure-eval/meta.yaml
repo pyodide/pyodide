@@ -1,0 +1,16 @@
+package:
+  name: pure-eval
+  version: 0.2.3
+  top-level:
+    - pure_eval
+source:
+  url: https://files.pythonhosted.org/packages/8e/37/efad0257dc6e593a18957422533ff0f87ede7c9c6ea010a2177d738fb82f/pure_eval-0.2.3-py3-none-any.whl
+  sha256: 1db8e35b67b3d218d818ae653e27f06c3aa420901fa7b081ca98cbedc874e0d0
+about:
+  home: http://github.com/alexmojaki/pure_eval
+  PyPI: https://pypi.org/project/pure-eval
+  summary: Safely evaluate AST nodes without side effects
+  license: MIT
+extra:
+  recipe-maintainers:
+    - ryanking13

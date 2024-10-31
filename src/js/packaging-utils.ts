@@ -44,3 +44,17 @@ export function uriToPackageData(
     };
   }
 }
+
+/**
+ * @private
+ */
+export function base16ToBase64(b16: string): string {
+  return btoa(
+    b16
+      .match(/\w{2}/g)!
+      .map(function (a) {
+        return String.fromCharCode(parseInt(a, 16));
+      })
+      .join(""),
+  );
+}

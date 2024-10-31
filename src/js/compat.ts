@@ -1,4 +1,4 @@
-import ErrorStackParser from "error-stack-parser";
+import ErrorStackParser from "./vendor/stackframe/error-stack-parser";
 import {
   IN_NODE,
   IN_NODE_ESM,
@@ -6,17 +6,20 @@ import {
   IN_BROWSER_WEB_WORKER,
   IN_NODE_COMMONJS,
 } from "./environments";
+import { Lockfile } from "./types";
 
-let nodeUrlMod: any;
-let nodePath: any;
-let nodeVmMod: any;
+let nodeUrlMod: typeof import("node:url");
+let nodePath: typeof import("node:path");
+let nodeVmMod: typeof import("node:vm");
 /** @private */
-export let nodeFsPromisesMod: any;
+export let nodeFSMod: typeof import("node:fs");
+/** @private */
+export let nodeFsPromisesMod: typeof import("node:fs/promises");
 
 declare var globalThis: {
   importScripts: (url: string) => void;
-  document?: any;
-  fetch?: any;
+  document?: typeof document;
+  fetch?: typeof fetch;
 };
 
 /**
@@ -29,12 +32,13 @@ export async function initNodeModules() {
     return;
   }
   // @ts-ignore
-  nodeUrlMod = (await import("url")).default;
-  nodeFsPromisesMod = await import("fs/promises");
+  nodeUrlMod = (await import("node:url")).default;
+  nodeFSMod = await import("node:fs");
+  nodeFsPromisesMod = await import("node:fs/promises");
 
   // @ts-ignore
-  nodeVmMod = (await import("vm")).default;
-  nodePath = await import("path");
+  nodeVmMod = (await import("node:vm")).default;
+  nodePath = await import("node:path");
   pathSep = nodePath.sep;
 
   // Emscripten uses `require`, so if it's missing (because we were imported as
@@ -48,10 +52,10 @@ export async function initNodeModules() {
   // These are all the packages required in pyodide.asm.js. You can get this
   // list with:
   // $ grep -o 'require("[a-z]*")' pyodide.asm.js  | sort -u
-  const fs = await import("fs");
-  const crypto = await import("crypto");
+  const fs = nodeFSMod;
+  const crypto = await import("node:crypto");
   const ws = await import("ws");
-  const child_process = await import("child_process");
+  const child_process = await import("node:child_process");
   const node_modules: { [mode: string]: any } = {
     fs,
     crypto,
@@ -228,30 +232,12 @@ async function nodeLoadScript(url: string) {
   }
 }
 
-// consider dropping this this once we drop support for node 14?
-function nodeBase16ToBase64(b16: string): string {
-  return Buffer.from(b16, "hex").toString("base64");
-}
-
-function browserBase16ToBase64(b16: string): string {
-  return btoa(
-    b16
-      .match(/\w{2}/g)!
-      .map(function (a) {
-        return String.fromCharCode(parseInt(a, 16));
-      })
-      .join(""),
-  );
-}
-
-export const base16ToBase64 = IN_NODE
-  ? nodeBase16ToBase64
-  : browserBase16ToBase64;
-
-export async function loadLockFile(lockFileURL: string): Promise<any> {
+export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
   if (IN_NODE) {
     await initNodeModules();
-    const package_string = await nodeFsPromisesMod.readFile(lockFileURL);
+    const package_string = await nodeFsPromisesMod.readFile(lockFileURL, {
+      encoding: "utf8",
+    });
     return JSON.parse(package_string);
   } else {
     let response = await fetch(lockFileURL);
@@ -276,9 +262,13 @@ export async function calculateDirname(): Promise<string> {
   }
   let fileName = ErrorStackParser.parse(err)[0].fileName!;
 
+  if (IN_NODE && !fileName.startsWith("file://")) {
+    fileName = `file://${fileName}`; // Error stack filenames are not starting with `file://` in `Bun`
+  }
+
   if (IN_NODE_ESM) {
-    const nodePath = await import("path");
-    const nodeUrl = await import("url");
+    const nodePath = await import("node:path");
+    const nodeUrl = await import("node:url");
 
     // FIXME: We would like to use import.meta.url here,
     // but mocha seems to mess with compiling typescript files to ES6.

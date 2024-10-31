@@ -1,7 +1,0 @@
-package:
-  name: pkg_test_disabled_child
-  version: 1.0.0
-  _disabled: true
-source:
-  sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-  url: https://dummy-url-that-not-exists.com/pkg_test_disabled_child.tar.gz

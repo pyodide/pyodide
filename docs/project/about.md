@@ -45,7 +45,7 @@ list from there with "The Pyodide development team" like in the example below:
   month        = aug,
   year         = 2021,
   publisher    = {Zenodo},
-  version      = {0.25.0},
+  version      = {0.26.0},
   doi          = {10.5281/zenodo.5156931},
   url          = {https://doi.org/10.5281/zenodo.5156931}
 }
@@ -55,9 +55,9 @@ list from there with "The Pyodide development team" like in the example below:
 
 - Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
-- Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
+- Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
 ## Donations
 

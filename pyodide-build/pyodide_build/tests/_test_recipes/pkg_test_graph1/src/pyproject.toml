@@ -1,8 +1,0 @@
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "pkg_test_graph1"
-version = "1.0.0"
-authors = []

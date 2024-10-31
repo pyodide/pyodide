@@ -16,3 +16,7 @@ build:
 requirements:
   host:
     - glpk
+about:
+  home: https://github.com/opencobra/swiglpk
+  PyPI: https://pypi.org/project/swiglpk/
+  license: GPL-3.0

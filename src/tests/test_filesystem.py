@@ -4,6 +4,9 @@ for a basic nodejs-based test, see src/js/test/filesystem.test.js
 """
 
 import pytest
+from pytest_pyodide import run_in_pyodide
+
+from conftest import only_chrome, only_node
 
 
 @pytest.mark.skip_refcount_check
@@ -22,7 +25,7 @@ def test_idbfs_persist_code(selenium_standalone):
         f"""
         let mountDir = '{mount_dir}';
         pyodide.FS.mkdir(mountDir);
-        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, "{mount_dir}");
+        pyodide.FS.mount(pyodide.FS.filesystems.{fstype}, {{root : "."}}, mountDir);
         """
     )
     # create file in mount
@@ -109,9 +112,7 @@ def test_idbfs_persist_code(selenium_standalone):
 
 
 @pytest.mark.requires_dynamic_linking
-@pytest.mark.xfail_browsers(
-    node="Not available", firefox="Not available", safari="Not available"
-)
+@only_chrome
 def test_nativefs_dir(request, selenium_standalone):
     # Note: Using *real* native file system requires
     # user interaction so it is not available in headless mode.
@@ -254,3 +255,214 @@ def test_nativefs_dir(request, selenium_standalone):
         pyodide.FS.unmount("/mnt/nativefs");
         """
     )
+
+
+@only_chrome
+def test_nativefs_errors(selenium):
+    selenium.run_js(
+        """
+        const root = await navigator.storage.getDirectory();
+        const handle = await root.getDirectoryHandle("dir", { create: true });
+
+        await pyodide.mountNativeFS("/mnt1/nativefs", handle);
+        await assertThrowsAsync(
+          async () => await pyodide.mountNativeFS("/mnt1/nativefs", handle),
+          "Error",
+          "path '/mnt1/nativefs' is already a file system mount point",
+        );
+
+        pyodide.FS.mkdirTree("/mnt2");
+        pyodide.FS.writeFile("/mnt2/some_file", "contents");
+        await assertThrowsAsync(
+          async () => await pyodide.mountNativeFS("/mnt2/some_file", handle),
+          "Error",
+          "path '/mnt2/some_file' points to a file not a directory",
+        );
+        // Check we didn't overwrite the file.
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt2/some_file", { encoding: "utf8" }) === "contents",
+        );
+
+        pyodide.FS.mkdirTree("/mnt3/nativefs");
+        pyodide.FS.writeFile("/mnt3/nativefs/a.txt", "contents");
+        await assertThrowsAsync(
+          async () => await pyodide.mountNativeFS("/mnt3/nativefs", handle),
+          "Error",
+          "directory '/mnt3/nativefs' is not empty",
+        );
+        // Check directory wasn't changed
+        const { node } = pyodide.FS.lookupPath("/mnt3/nativefs/");
+        assert(() => Object.entries(node.contents).length === 1);
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt3/nativefs/a.txt", { encoding: "utf8" }) ===
+            "contents",
+        );
+
+        const [r1, r2] = await Promise.allSettled([
+          pyodide.mountNativeFS("/mnt4/nativefs", handle),
+          pyodide.mountNativeFS("/mnt4/nativefs", handle),
+        ]);
+        assert(() => r1.status === "fulfilled");
+        assert(() => r2.status === "rejected");
+        assert(
+          () =>
+            r2.reason.message === "path '/mnt4/nativefs' is already a file system mount point",
+        );
+        """
+    )
+
+
+@only_node
+def test_mount_nodefs(selenium):
+    selenium.run_js(
+        """
+        pyodide.mountNodeFS("/mnt1/nodefs", ".");
+        assertThrows(
+          () => pyodide.mountNodeFS("/mnt1/nodefs", "."),
+          "Error",
+          "path '/mnt1/nodefs' is already a file system mount point"
+        );
+
+        assertThrows(
+          () =>
+            pyodide.mountNodeFS(
+              "/mnt2/nodefs",
+              "/thispath/does-not/exist/ihope"
+            ),
+          "Error",
+          "hostPath '/thispath/does-not/exist/ihope' does not exist"
+        );
+
+        const os = require("os");
+        const fs = require("fs");
+        const path = require("path");
+        const crypto = require("crypto");
+        const tmpdir = path.join(os.tmpdir(), crypto.randomUUID());
+        fs.mkdirSync(tmpdir);
+        const apath = path.join(tmpdir, "a");
+        fs.writeFileSync(apath, "xyz");
+        pyodide.mountNodeFS("/mnt3/nodefs", tmpdir);
+        assert(
+          () =>
+            pyodide.FS.readFile("/mnt3/nodefs/a", { encoding: "utf8" }) ===
+            "xyz"
+        );
+
+        assertThrows(
+          () => pyodide.mountNodeFS("/mnt4/nodefs", apath),
+          "Error",
+          `hostPath '${apath}' is not a directory`
+        );
+        """
+    )
+
+
+@pytest.fixture
+def browser(selenium):
+    return selenium.browser
+
+
+@pytest.fixture
+def runner(request):
+    return request.config.option.runner
+
+
+@run_in_pyodide
+def test_fs_dup(selenium, browser):
+    from os import close, dup
+    from pathlib import Path
+
+    from pyodide.code import run_js
+
+    if browser == "node":
+        fstype = "NODEFS"
+    else:
+        fstype = "IDBFS"
+
+    mount_dir = Path("/mount_test")
+    mount_dir.mkdir(exist_ok=True)
+    run_js(
+        """
+        (fstype, mountDir) =>
+            pyodide.FS.mount(pyodide.FS.filesystems[fstype], {root : "."}, mountDir);
+        """
+    )(fstype, str(mount_dir))
+
+    file = open("/mount_test/a.txt", "w")
+    fd2 = dup(file.fileno())
+    close(fd2)
+    file.write("abcd")
+    file.close()
+
+
+@pytest.mark.requires_dynamic_linking
+@only_chrome
+@run_in_pyodide
+async def test_nativefs_dup(selenium, runner):
+    from os import close, dup
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    # Note: Using *real* native file system requires
+    # user interaction so it is not available in headless mode.
+    # So in this test we use OPFS (Origin Private File System)
+    # which is part of File System Access API but uses indexDB as a backend.
+
+    if runner == "playwright":
+        pytest.xfail("Playwright doesn't support file system access APIs")
+
+    await run_js(
+        """
+        async () => {
+            root = await navigator.storage.getDirectory();
+            testFileHandle = await root.getFileHandle('test_read', { create: true });
+            writable = await testFileHandle.createWritable();
+            await writable.write("hello_read");
+            await writable.close();
+            await pyodide.mountNativeFS("/mnt/nativefs", root);
+        }
+        """
+    )()
+    file = open("/mnt/nativefs/test_read")
+    fd2 = dup(file.fileno())
+    close(fd2)
+    assert file.read() == "hello_read"
+    file.close()
+
+
+def test_trackingDelegate(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        """
+        assert (() => typeof pyodide.FS.trackingDelegate !== "undefined")
+
+        if (typeof window !== "undefined") {
+            global = window
+        } else {
+            global = globalThis
+        }
+
+        global.trackingLog = ""
+        pyodide.FS.trackingDelegate["onCloseFile"] = (path) => { global.trackingLog = `CALLED ${path}` }
+        """
+    )
+
+    selenium.run(
+        """
+        f = open("/hello", "w")
+        f.write("helloworld")
+        f.close()
+
+        import js
+
+        assert "CALLED /hello" in js.trackingLog
+        """
+    )
+
+    # logs = selenium.logs
+    # assert "CALLED /hello" in logs

@@ -1,0 +1,41 @@
+From cf62f7f89a6a96321b07e1646b0d757848e10ea4 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Tue, 21 May 2024 07:48:46 -0400
+Subject: [PATCH] Add Pyodide compatibility
+
+We are changing our wheel platform tag to pyodide_2024_0 so we need to teach
+packaging to map Emscripten platform to this.
+---
+ src/packaging/tags.py | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/packaging/tags.py b/src/packaging/tags.py
+index 6667d29..1c6d07a 100644
+--- a/src/packaging/tags.py
++++ b/src/packaging/tags.py
+@@ -502,6 +502,13 @@ def _linux_platforms(is_32bit: bool = _32_BIT_INTERPRETER) -> Iterator[str]:
+         yield f"linux_{arch}"
+ 
+ 
++def _emscripten_platforms() -> Iterator[str]:
++    pyodide_abi_version = sysconfig.get_config_var("PYODIDE_ABI_VERSION")
++    if pyodide_abi_version:
++        yield f"pyodide_{pyodide_abi_version}_wasm32"
++    yield from _generic_platforms()
++
++
+ def _generic_platforms() -> Iterator[str]:
+     yield _normalize_string(sysconfig.get_platform())
+ 
+@@ -514,6 +521,8 @@ def platform_tags() -> Iterator[str]:
+         return mac_platforms()
+     elif platform.system() == "Linux":
+         return _linux_platforms()
++    elif platform.system() == "Emscripten":
++        return _emscripten_platforms()
+     else:
+         return _generic_platforms()
+ 
+-- 
+2.34.1
+

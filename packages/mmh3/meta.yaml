@@ -1,0 +1,16 @@
+package:
+  name: mmh3
+  version: 4.1.0
+source:
+  url: https://files.pythonhosted.org/packages/63/96/aa247e82878b123468f0079ce2ac77e948315bab91ce45d2934a62e0af95/mmh3-4.1.0.tar.gz
+  sha256: a1cf25348b9acd229dda464a094d6170f47d2850a1fcb762a3b6172d2ce6ca4a
+about:
+  PyPI: https://pypi.org/project/mmh3
+  home: https://github.com/hajimes/mmh3
+  summary:
+    Python extension for MurmurHash (MurmurHash3), a set of fast and robust
+    hash functions.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - bitsondatadev

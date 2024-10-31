@@ -1,13 +1,16 @@
 package:
   name: memory-allocator
-  version: 0.1.3
+  version: 0.1.4
   top-level:
     - memory_allocator
 source:
-  url: https://files.pythonhosted.org/packages/b0/10/368adbcb611c2d1c018f0dc5f4643414f8678a5b9a14f42f44f78c74a56a/memory_allocator-0.1.3.tar.gz
-  sha256: 13805c2ae1c01b7489fab5e8eac9361662b4f2c02412e3652eece48ff6953162
+  url: https://files.pythonhosted.org/packages/3c/2b/76131d23cb1fa30d1ba0e1ee00fd65c541ab68a45f69127cb016d5d7c72c/memory_allocator-0.1.4.tar.gz
+  sha256: d609216b03031967e2b45a804b12ff9029578f4ec019fde42cf6aed6ca09efe4
 about:
   home: https://github.com/sagemath/memory_allocator
   PyPI: https://pypi.org/project/memory_allocator
   summary: An extension class to allocate memory easily with cython
-  license: GPLv3
+  license: GPL-3.0
+extra:
+  recipe-maintainers:
+    - mkoeppe

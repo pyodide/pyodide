@@ -29,3 +29,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
     cp ${WASM_LIBRARY_DIR}/lib/libheif.so ${DISTDIR}
+about:
+  home: https://github.com/strukturag/libheif
+  license: LGPL-3.0

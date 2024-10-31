@@ -1,11 +1,11 @@
 package:
   name: Cartopy
-  version: 0.22.0
+  version: 0.23.0
   top-level:
     - cartopy
 source:
-  url: https://files.pythonhosted.org/packages/c8/99/e2ad8a60df598de02904867ec83bc9d785b6534a503aecc9426889aa807e/Cartopy-0.22.0.tar.gz
-  sha256: b300f90120931d43f11ef87c064ea1dacec1b59a4940aa76ebf82cf09548bb49
+  url: https://files.pythonhosted.org/packages/a5/00/fed048eeb80129908f8bd5f5762e230864abc8a8fbbc493740bafcb696bd/Cartopy-0.23.0.tar.gz
+  sha256: 231f37b35701f2ba31d94959cca75e6da04c2eea3a7f14ce1c75ee3b0eae7676
 test:
   imports:
     - cartopy
@@ -34,4 +34,4 @@ about:
   home: http://scitools.org.uk/cartopy
   PyPI: https://pypi.org/project/Cartopy/
   summary: A library providing cartographic tools for python
-  license: LGPL-3.0-or-later
+  license: LGPL-3.0+

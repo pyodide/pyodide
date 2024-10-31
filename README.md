@@ -5,7 +5,7 @@
 </div>
 
 [![NPM Latest Release](https://img.shields.io/npm/v/pyodide)](https://www.npmjs.com/package/pyodide)
-[![PyPI Latest Release](https://img.shields.io/pypi/v/pyodide-build.svg)](https://pypi.org/project/pyodide-build/)
+[![PyPI Latest Release](https://img.shields.io/pypi/v/pyodide-py.svg)](https://pypi.org/project/pyodide-py/)
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
 
@@ -16,7 +16,7 @@ Pyodide is a Python distribution for the browser and Node.js based on WebAssembl
 Pyodide is a port of CPython to WebAssembly/[Emscripten](https://emscripten.org/).
 
 Pyodide makes it possible to install and run Python packages in the browser with
-[micropip](https://pyodide.org/en/stable/usage/api/micropip-api.html). Any pure
+[micropip](https://micropip.pyodide.org/). Any pure
 Python package with a wheel available on PyPi is supported. Many packages with C
 extensions have also been ported for use with Pyodide. These include many
 general-purpose packages such as regex, PyYAML, lxml and scientific Python
@@ -77,9 +77,9 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 
 - Blog: [blog.pyodide.org](https://blog.pyodide.org/)
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
-- Gitter: [gitter.im/pyodide/community](https://gitter.im/pyodide/community)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
+- Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
 ## License
 

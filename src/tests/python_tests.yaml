@@ -325,7 +325,8 @@
 - test_dictcomps
 - test_dictviews
 - test_difflib
-- test_dis
+- test_dis:
+    xfail-safari: safaridriver unexpectedly exited
 - test_doctest:
     xfail: subprocess
 - test_doctest2
@@ -478,7 +479,10 @@
 - test_importlib.extension.test_loader:
     xfail: "TODO: why does it fail?"
 - test_importlib.extension.test_path_hook
-- test_importlib.frozen.test_finder
+- test_importlib.frozen.test_finder:
+    skip:
+      # incompatible with wheel
+      - "*FindSpecTests*"
 - test_importlib.frozen.test_loader
 - test_importlib.import_.test___loader__
 - test_importlib.import_.test___package__
@@ -617,7 +621,8 @@
       - test_resize_past_pos
 - test_modulefinder:
     xfail: takes a long time
-- test_monitoring
+- test_monitoring:
+    xfail-safari: safaridriver unexpectedly exited
 - test_msilib
 - test_multibytecodec
 - test_multiprocessing_fork.test_manager
@@ -710,9 +715,11 @@
 - test_pow
 - test_pprint
 - test_print
-- test_profile
+- test_profile:
+    xfail-safari: safaridriver unexpectedly exited
 - test_property
-- test_pstats
+- test_pstats:
+    xfail-safari: safaridriver unexpectedly exited
 - test_pty
 - test_pulldom
 - test_pwd
@@ -921,10 +928,12 @@
 - test_trace:
     xfail: slow, sometimes times out
 - test_traceback:
+    xfail-safari: safaridriver unexpectedly exited
     skip:
       - test_encoded_file # fork
       - test_import_from* # tries to write to stdlib but it's in a zip
-- test_tracemalloc
+- test_tracemalloc:
+    xfail-safari: safaridriver unexpectedly exited
 - test_ttk.test_extensions
 - test_ttk.test_style
 - test_ttk.test_widgets

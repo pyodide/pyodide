@@ -51,3 +51,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3} install
 
     cp -P ${WASM_LIBRARY_DIR}/lib/libhdf* ${DISTDIR}
+about:
+  home: https://github.com/HDFGroup/hdf5
+  license: BSD-3-Clause

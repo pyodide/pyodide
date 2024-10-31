@@ -1,0 +1,16 @@
+package:
+  name: crc32c
+  version: "2.4"
+  top-level:
+    - crc32c
+source:
+  url: https://files.pythonhosted.org/packages/6f/19/47ac8d1d5b81a83272fe56d4cf425274437fd619ed0af9a5f9805484748c/crc32c-2.4.tar.gz
+  sha256: d985c4d9b1a1fd16c593d83f8735a8e4e156790a95338a1e0b199aac51ca1e5e
+about:
+  home: https://github.com/ICRAR/crc32c
+  PyPI: https://pypi.org/project/crc32c
+  summary: A python package implementing the crc32c algorithm in hardware and software
+  license: LGPL-2.1+
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal

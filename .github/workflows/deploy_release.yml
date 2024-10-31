@@ -4,37 +4,6 @@ on:
   release:
     types: [published]
 jobs:
-  deploy-pyodide-build-pypi:
-    runs-on: ubuntu-latest
-    environment: PyPi
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: python -m pip install build twine
-
-      - name: Build wheel
-        run: |
-          cd pyodide-build/
-          python -m build .
-
-      - name: Check wheel
-        run: |
-          twine check pyodide-build/dist/*
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: pyodide-build/dist/
-
   deploy-pyodide-py-pypi:
     runs-on: ubuntu-latest
     environment: PyPi
@@ -43,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
