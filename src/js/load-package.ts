@@ -196,7 +196,7 @@ export class PackageManager {
       // dependency, which was previously overridden.
       if (loadedChannel === channel || channel === this.defaultChannel) {
         this.logStdout(
-          `${name} already loaded from ${loadedChannel}`, 
+          `${name} already loaded from ${loadedChannel}`,
           messageCallback,
         );
       } else {
@@ -572,7 +572,7 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
     str = [str as string];
   }
 
-  return str
+  return str;
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
