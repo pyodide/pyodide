@@ -188,7 +188,7 @@ export class PackageManager {
     const toLoad = this.recursiveDependencies(pkgNames, errorCallback);
 
     for (const [_, { name, normalizedName, channel }] of toLoad) {
-      const loadedChannel = this.getLoadedPackage(name);
+      const loadedChannel = this.getLoadedPackageChannel(name);
       if (!loadedChannel) continue;
 
       toLoad.delete(normalizedName);
@@ -222,7 +222,7 @@ export class PackageManager {
     try {
       this.logStdout(`Loading ${packageNames}`, messageCallback);
       for (const [_, pkg] of toLoad) {
-        if (this.getLoadedPackage(pkg.name)) {
+        if (this.getLoadedPackageChannel(pkg.name)) {
           // Handle the race condition where the package was loaded between when
           // we did dependency resolution and when we acquired the lock.
           toLoad.delete(pkg.normalizedName);
@@ -308,7 +308,7 @@ export class PackageManager {
     // If the package is already loaded, we don't add dependencies, but warn
     // the user later. This is especially important if the loaded package is
     // from a custom url, in which case adding dependencies is wrong.
-    if (this.getLoadedPackage(pkgInfo.name)) {
+    if (this.getLoadedPackageChannel(pkgInfo.name)) {
       return;
     }
 
@@ -523,11 +523,11 @@ export class PackageManager {
   }
 
   /**
-   * getLoadedPackage returns the channel from which a package was loaded.
+   * getLoadedPackageChannel returns the channel from which a package was loaded.
    * if the package is not loaded, it returns null.
    * @param pkg package name
    */
-  public getLoadedPackage(pkg: string): string | null {
+  public getLoadedPackageChannel(pkg: string): string | null {
     const channel = this.loadedPackages[pkg];
     if (channel === undefined) {
       return null;
@@ -558,7 +558,7 @@ function filterPackageData({
  * Converts a string or PyProxy to an array of strings.
  * @private
  */
-export function toStringArray(str: string | PyProxy | Array<string>): Array<string> {
+export function toStringArray(str: string | PyProxy | string[]): string[] {
   // originally, this condition was "names instanceof PyProxy",
   // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
   // this change is required to run unit tests against this file, when global API or Module is not available.

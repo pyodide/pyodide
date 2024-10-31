@@ -67,14 +67,14 @@ describe("toStringArray", () => {
   it("Should convert PyProxy to array of strings", () => {
     // TODO: use real PyProxy
     const pyProxyMock = {
-      toJs: () => "hello",
+      toJs: () => ["hello", "world"],
     };
 
-    chai.assert.deepEqual(toStringArray(pyProxyMock), ["hello"]);
+    chai.assert.deepEqual(toStringArray(pyProxyMock), ["hello", "world"]);
   });
 });
 
-describe("getLoadedPackage", () => {
+describe("getLoadedPackageChannel", () => {
   it("Should return the loaded package from loadedPackages obj", () => {
     const mockApi = genMockAPI();
     const mockMod = genMockModule();
@@ -84,10 +84,10 @@ describe("getLoadedPackage", () => {
       package: "channel",
     };
 
-    const loadedPackage = pm.getLoadedPackage("package");
+    const loadedPackage = pm.getLoadedPackageChannel("package");
     chai.assert.equal(loadedPackage, "channel");
 
-    const notLoadedPackage = pm.getLoadedPackage("notLoadedPackage");
+    const notLoadedPackage = pm.getLoadedPackageChannel("notLoadedPackage");
     chai.assert.equal(notLoadedPackage, null);
   });
 });
