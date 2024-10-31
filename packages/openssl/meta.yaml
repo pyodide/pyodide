@@ -3,6 +3,7 @@ package:
   version: 1.1.1w
   tag:
     - library
+    - shared_library
 source:
   url: https://www.openssl.org/source/openssl-1.1.1w.tar.gz
   sha256: cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
