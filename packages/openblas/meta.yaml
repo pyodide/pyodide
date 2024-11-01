@@ -3,6 +3,7 @@ package:
   version: 0.3.26
   tag:
     - library
+    - shared_library
 source:
   sha256: 4e6e4f5cb14c209262e33e6816d70221a2fe49eb69eaf0a06f065598ac602c68
   url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.26/OpenBLAS-0.3.26.tar.gz

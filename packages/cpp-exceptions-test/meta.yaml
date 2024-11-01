@@ -5,6 +5,7 @@ package:
     - core
     - pyodide.test
     - library
+    - shared_library
 source:
   path: src
 build:

@@ -4,6 +4,7 @@ package:
   tag:
     - pyodide.test
     - library
+    - shared_library
 source:
   path: src
 

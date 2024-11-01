@@ -3,6 +3,7 @@ package:
   version: 0.2.1
   tag:
     - library
+    - static_library
 source:
   url: https://github.com/yaml/libyaml/archive/0.2.1.zip
   sha256: 56070c9d4bf244a8dcc68e04613e5bbce5c8411ed97cdccc1f4b5fb46aebe5a8

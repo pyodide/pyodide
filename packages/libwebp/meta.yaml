@@ -3,6 +3,7 @@ package:
   version: 1.2.2
   tag:
     - library
+    - static_library
 source:
   url: https://github.com/webmproject/libwebp/archive/refs/tags/v1.2.2.tar.gz
   sha256: 51e9297aadb7d9eb99129fe0050f53a11fcce38a0848fb2b0389e385ad93695e
