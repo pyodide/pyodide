@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Upgrade to Python 3.13.1.
+  {pr}`????`
+
 - {{ Enhancement }} Upgrade to Python 3.12.7.
   {pr}`5149`
 

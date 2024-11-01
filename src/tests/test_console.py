@@ -131,7 +131,7 @@ def test_interactive_console():
             'File "<console>", line 1',
             "1+",
             "^",
-            "SyntaxError: <errormsg>",
+            "_IncompleteInputError: incomplete input",
         ]
 
         fut = shell.push("raise Exception('hi')")
