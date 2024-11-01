@@ -579,10 +579,26 @@ workflows:
               only: /.*/
 
       - build-packages:
+          name: build-static-libraries
+          packages: "tag:static_library"
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
+
+      - build-packages:
           name: build-libraries
           packages: "tag:library"
           requires:
             - build-core
+            - build-static-libraries
           filters:
             tags:
               only: /.*/

@@ -3,6 +3,7 @@ package:
   version: 5.11.0
   tag:
     - library
+    - shared_library
 source:
   sha256: fdd957ed06019465f7de73ce931afaf5d40e96e14ae57d91f60868b8c123c4c8
   url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
