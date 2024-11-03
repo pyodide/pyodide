@@ -68,6 +68,7 @@ myst:
 
 ### Packages
 
+- Added `soundfile` 0.12.1 in {pr}`5154`
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
 - Upgraded `rebound` to 4.4.3 {pr}`5163`
 - Upgraded `reboundx` to 4.3.0 {pr}`5163`
