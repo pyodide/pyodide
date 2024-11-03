@@ -64,6 +64,8 @@ myst:
 
 ### Packages
 
+- Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
+- Upgraded `pydantic` to 2.9.2 {pr}`5151`
 - Upgraded `msgpack` to 1.1.0 {pr}`5144`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Upgraded `protobuf` to 5.28.3 {pr}`5136`
