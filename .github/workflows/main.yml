@@ -27,6 +27,8 @@ jobs:
     needs: get_python_version
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
@@ -34,6 +36,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
+          make pyodide_build
           python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Run tests
         shell: bash -l {0}
@@ -169,6 +172,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -186,6 +191,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt -r requirements-deploy.txt
+          make pyodide_build
 
       - uses: pyodide/pyodide-actions/install-browser@v2
         with:
