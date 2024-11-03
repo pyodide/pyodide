@@ -64,6 +64,8 @@ myst:
 
 ### Packages
 
+- Upgraded `msgpack` to 1.1.0 {pr}`5144`
+- Added `tiktoken` v0.8.0 in {pr}`5147`
 - Upgraded `protobuf` to 5.28.3 {pr}`5136`
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
