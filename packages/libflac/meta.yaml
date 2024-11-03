@@ -1,0 +1,26 @@
+package:
+  name: libflac
+  version: 1.4.2
+  tag:
+    - library
+    - static_library
+source:
+  url: https://github.com/xiph/flac/releases/download/1.4.2/flac-1.4.2.tar.xz
+  sha256: e322d58a1f48d23d9dd38f432672865f6f79e73a6f9cc5a5f57fcaa83eb5a8e4
+
+build:
+  type: static_library
+  script: |
+    # Use official emscripten libogg port
+    embuilder build ogg --pic
+    export CPPFLAGS="--use-port=ogg"
+    export LDFLAGS="--use-port=ogg"
+    emconfigure ./configure --with-pic --disable-shared --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://xiph.org/flac/
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - swnf

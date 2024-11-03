@@ -1,0 +1,22 @@
+package:
+  name: libmp3lame
+  version: "3.100"
+  tag:
+    - library
+    - static_library
+source:
+  url: https://sourceforge.net/projects/lame/files/lame/3.100/lame-3.100.tar.gz
+  sha256: ddfe36cab873794038ae2c1210557ad34857a4b6bdc515785d1da9e175b1da1e
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure --with-pic --disable-shared --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://lame.sourceforge.io/
+  license: LGPL-2.0
+extra:
+  recipe-maintainers:
+    - swnf

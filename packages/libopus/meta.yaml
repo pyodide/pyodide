@@ -1,0 +1,22 @@
+package:
+  name: libopus
+  version: 1.3.1
+  tag:
+    - library
+    - static_library
+source:
+  url: https://downloads.xiph.org/releases/opus/opus-1.3.1.tar.gz
+  sha256: 65b58e1e25b2a114157014736a3d9dfeaad8d41be1c8179866f144a2fb44ff9d
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure --with-pic --disable-shared --prefix=${WASM_LIBRARY_DIR} --disable-rtcd --disable-stack-protector
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://opus-codec.org/
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - swnf

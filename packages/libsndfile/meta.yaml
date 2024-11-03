@@ -1,0 +1,47 @@
+package:
+  name: libsndfile
+  version: 1.2.0
+  tag:
+    - library
+    - static_library
+source:
+  url: https://github.com/libsndfile/libsndfile/releases/download/1.2.0/libsndfile-1.2.0.tar.xz
+  sha256: 0e30e7072f83dc84863e2e55f299175c7e04a5902ae79cfb99d4249ee8f6d60a
+
+requirements:
+  host:
+    - libflac
+    - libopus
+    - libmp3lame
+
+build:
+  type: static_library
+  script: |
+    # Use official emscripten libogg, libvorbis, and libmpg123 ports
+    embuilder build ogg vorbis mpg123 --pic
+    export OGG_CFLAGS="--use-port=ogg"
+    export OGG_LIBS="--use-port=ogg"
+    export VORBIS_CFLAGS="--use-port=vorbis"
+    export VORBIS_LIBS="--use-port=vorbis"
+    export MPG123_CFLAGS="--use-port=mpg123"
+    export MPG123_LIBS="--use-port=mpg123"
+    # It seems like emscripten's libvorbis contains the libvorbisenc symbols
+    export VORBISENC_CFLAGS="--use-port=vorbis"
+    export VORBISENC_LIBS="--use-port=vorbis"
+    # If we would build libogg ourselves, this would not be necessary.
+    # But we use emscripten's libogg port which has no pkg-config files.
+    # FLAC depends on libogg, so its pkg-config dependency resolution will also fail.
+    export FLAC_CFLAGS="-I${WASM_LIBRARY_DIR}/include/"
+    export FLAC_LIBS="-lFLAC"
+    # Only required to find libmp3lame because it has no pkg-config
+    export CPPFLAGS="-I${WASM_LIBRARY_DIR}/include/"
+    export LDFLAGS="-L${WASM_LIBRARY_DIR}/lib/"
+    emconfigure ./configure --with-pic --disable-full-suite --disable-shared --disable-sqlite --disable-alsa --prefix=${WASM_LIBRARY_DIR}
+    emmake make -j ${PYODIDE_JOBS:-3} src/libsndfile.la
+    emmake make install
+about:
+  home: https://libsndfile.github.io/libsndfile/
+  license: LGPL-2.1
+extra:
+  recipe-maintainers:
+    - swnf
