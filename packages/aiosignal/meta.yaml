@@ -15,4 +15,4 @@ about:
   home: https://github.com/aio-libs/aiosignal
   PyPI: https://pypi.org/project/aiosignal
   summary: "aiosignal: a list of registered asynchronous callbacks"
-  license: Apache 2.0
+  license: Apache-2.0

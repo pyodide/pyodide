@@ -21,4 +21,4 @@ about:
   home: https://github.com/aio-libs/aiohttp
   PyPI: https://pypi.org/project/aiohttp
   summary: Async http client/server framework (asyncio)
-  license: Apache 2
+  license: Apache-2.0

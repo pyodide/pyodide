@@ -11,7 +11,7 @@ about:
   home: https://github.com/ipython/matplotlib-inline
   PyPI: https://pypi.org/project/matplotlib-inline
   summary: Inline Matplotlib backend for Jupyter
-  license: BSD 3-Clause
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - mhochsteger

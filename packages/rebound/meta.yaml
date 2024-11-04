@@ -24,7 +24,7 @@ about:
   home: https://github.com/hannorein/rebound/
   PyPI: https://pypi.org/project/rebound
   summary: An open-source multi-purpose N-body code
-  license: GPL
+  license: GPL-3.0
 extra:
   recipe-maintainers:
     - hannorein

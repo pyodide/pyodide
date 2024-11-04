@@ -10,7 +10,7 @@ requirements:
   host:
     - numpy
 about:
-  home: ""
+  home: https://github.com/yt-project/ewah_bool_utils
   PyPI: https://pypi.org/project/ewah_bool_utils
   summary: EWAH Bool Array utils for yt
-  license: BSD
+  license: BSD-3-Clause

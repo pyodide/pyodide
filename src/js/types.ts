@@ -3,12 +3,8 @@ import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideInterface } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
-import {
-  type PackageData,
-  type InternalPackageData,
-  type PackageLoadMetadata,
-} from "./load-package";
 import { SnapshotConfig } from "./snapshot";
+import { ResolvablePromise } from "./common/resolveable";
 
 export type TypedArray =
   | Int8Array
@@ -349,6 +345,49 @@ export type Lockfile = {
   packages: Record<string, InternalPackageData>;
 };
 
+export type PackageType =
+  | "package"
+  | "cpython_module"
+  | "shared_library"
+  | "static_library";
+
+// Package data inside pyodide-lock.json
+
+export interface PackageData {
+  name: string;
+  version: string;
+  fileName: string;
+  /** @experimental */
+  packageType: PackageType;
+}
+
+/**
+ * @hidden
+ */
+export type InternalPackageData = {
+  name: string;
+  version: string;
+  file_name: string;
+  package_type: PackageType;
+  install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+};
+
+/**
+ * @hidden
+ */
+export type PackageLoadMetadata = {
+  name: string;
+  normalizedName: string;
+  channel: string;
+  depends: string[];
+  done: ResolvablePromise;
+  installPromise?: Promise<void>;
+  packageData: InternalPackageData;
+};
+
 export interface API {
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
@@ -430,12 +469,40 @@ export interface API {
   os: PyProxy;
 
   restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
-  makeSnapshot(): Uint8Array;
+  makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
-  finalizeBootstrap: (fromSnapshot?: SnapshotConfig) => PyodideInterface;
+  finalizeBootstrap: (
+    fromSnapshot?: SnapshotConfig,
+    snapshotDeserializer?: (obj: any) => any,
+  ) => PyodideInterface;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
 
   LiteralMap: any;
 }
+
+// Subset of the API and Module that the package manager needs
+/**
+ * @hidden
+ */
+export type PackageManagerAPI = Pick<
+  API,
+  | "importlib"
+  | "package_loader"
+  | "lockfile_packages"
+  | "bootstrapFinalizedPromise"
+  | "sitepackages"
+  | "defaultLdLibraryPath"
+> & {
+  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+};
+/**
+ * @hidden
+ */
+export type PackageManagerModule = Pick<
+  Module,
+  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
+> & {
+  FS: Pick<FS, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
+};

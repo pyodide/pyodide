@@ -56,28 +56,49 @@ export function makeGlobalsProxy(
   });
 }
 
+type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
+
 export type SnapshotConfig = {
-  hiwireKeys: (string[] | null)[];
+  hiwireKeys: SerializedHiwireValue[];
   immortalKeys: string[];
 };
 
 const SNAPSHOT_MAGIC = 0x706e7300; // "\x00snp"
-// TODO: Make SNAPSHOT_BUILD_ID distinct for each build of pyodide.asm.js / pyodide.asm.wasm
-const SNAPSHOT_BUILD_ID = 0;
-const HEADER_SIZE = 4 * 4;
+const HEADER_SIZE_IN_BYTES =
+  4 /* magic */ +
+  4 /* offset to binary */ +
+  4 /* json length */ +
+  4 /* padding */ +
+  32; /* build id */
+
+function encodeBuildId(buildId: string, buffer: Uint32Array): void {
+  if (buffer.length !== 8) {
+    throw new Error("Expected 256 bit buffer");
+  }
+  for (let i = 0; i < 32; i++) {
+    buffer[i] = parseInt(buildId.slice(i * 8, (i + 1) * 8), 16);
+  }
+}
+
+function decodeBuildId(buffer: Uint32Array): string {
+  if (buffer.length !== 8) {
+    throw new Error("Expected 256 bit buffer");
+  }
+  return Array.from(buffer, (n) => n.toString(16).padStart(8, "0")).join("");
+}
 
 // The expected index of the deduplication map in the immortal externref table.
 // We double check that this is still right in makeSnapshot (when creating the
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
 const MAP_INDEX = 5;
 
-API.makeSnapshot = function (): Uint8Array {
+API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
   if (!API.config._makeSnapshot) {
     throw new Error(
       "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
     );
   }
-  const hiwireKeys: (string[] | null)[] = [];
+  const hiwireKeys: SerializedHiwireValue[] = [];
   const expectedKeys = getExpectedKeys();
   for (let i = 0; i < expectedKeys.length; i++) {
     let value;
@@ -117,11 +138,29 @@ API.makeSnapshot = function (): Uint8Array {
       hiwireKeys.push(value);
       continue;
     }
-    const accessorList = value[getAccessorList];
-    if (!accessorList) {
-      throw new Error(`Can't serialize object at index ${i}`);
+    const path = value[getAccessorList];
+    if (path) {
+      hiwireKeys.push({ path });
+      continue;
     }
-    hiwireKeys.push(accessorList);
+    if (serializer) {
+      const serialized = serializer(value);
+      try {
+        JSON.stringify(serialized);
+      } catch (e) {
+        console.warn(
+          `Serializer returned result that cannot be JSON.stringify'd at index ${i}.`,
+        );
+        console.warn("  Input: ", value);
+        console.warn("  Output:", serialized);
+        throw new Error(
+          `Serializer returned result that cannot be JSON.stringify'd at index ${i}.`,
+        );
+      }
+      hiwireKeys.push({ serialized });
+      continue;
+    }
+    throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
   const shouldBeAMap = Module.__hiwire_immortal_get(MAP_INDEX);
@@ -145,20 +184,21 @@ API.makeSnapshot = function (): Uint8Array {
     immortalKeys,
   };
   const snapshotConfigString = JSON.stringify(snapshotConfig);
-  let snapshotOffset = HEADER_SIZE + 2 * snapshotConfigString.length;
-  // align to 8 bytes
-  snapshotOffset = Math.ceil(snapshotOffset / 8) * 8;
+  let snapshotOffset = HEADER_SIZE_IN_BYTES + 2 * snapshotConfigString.length;
+  // align to 16 bytes
+  snapshotOffset = Math.ceil(snapshotOffset / 16) * 16;
   const snapshot = new Uint8Array(snapshotOffset + Module.HEAP8.length);
   const encoder = new TextEncoder();
   const { written: jsonLength } = encoder.encodeInto(
     snapshotConfigString,
-    snapshot.subarray(HEADER_SIZE),
+    snapshot.subarray(HEADER_SIZE_IN_BYTES),
   );
   const uint32View = new Uint32Array(snapshot.buffer);
   uint32View[0] = SNAPSHOT_MAGIC;
-  uint32View[1] = SNAPSHOT_BUILD_ID;
-  uint32View[2] = snapshotOffset;
-  uint32View[3] = jsonLength!;
+  uint32View[1] = snapshotOffset;
+  uint32View[2] = jsonLength!;
+  uint32View[3] = 0; // padding
+  encodeBuildId(API.config.BUILD_ID, uint32View.subarray(4, 4 + 8));
   snapshot.subarray(snapshotOffset).set(Module.HEAP8);
   return snapshot;
 };
@@ -172,13 +212,21 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
   if (uint32View[0] !== SNAPSHOT_MAGIC) {
     throw new Error("Snapshot has invalid magic number");
   }
-  if (uint32View[1] !== SNAPSHOT_BUILD_ID) {
-    throw new Error("Snapshot has invalid BUILD_ID");
+  const snapshotOffset = uint32View[1];
+  const jsonLength = uint32View[2];
+  const buildId = decodeBuildId(uint32View.subarray(4, 4 + 8));
+  if (buildId !== API.config.BUILD_ID) {
+    throw new Error(
+      "Snapshot build id mismatch\n" +
+        `expected: ${API.config.BUILD_ID}\n` +
+        `got     : ${buildId}\n`,
+    );
   }
-  const snpOffset = uint32View[2];
-  const jsonSize = uint32View[3];
-  const jsonBuf = snapshot.subarray(HEADER_SIZE, HEADER_SIZE + jsonSize);
-  snapshot = snapshot.subarray(snpOffset);
+  const jsonBuf = snapshot.subarray(
+    HEADER_SIZE_IN_BYTES,
+    HEADER_SIZE_IN_BYTES + jsonLength,
+  );
+  snapshot = snapshot.subarray(snapshotOffset);
   const jsonStr = new TextDecoder().decode(jsonBuf);
   const snapshotConfig: SnapshotConfig = JSON.parse(jsonStr);
   // @ts-ignore
@@ -231,11 +279,24 @@ function tableSet(idx: number, val: any): void {
 export function syncUpSnapshotLoad2(
   jsglobals: any,
   snapshotConfig: SnapshotConfig,
+  deserializer?: (serialized: any) => any,
 ) {
   const expectedKeys = getExpectedKeys();
   expectedKeys.forEach((v, idx) => tableSet(idx, v));
   snapshotConfig.hiwireKeys.forEach((e, idx) => {
-    const x = e?.reduce((x, y) => x[y], jsglobals) || null;
+    let x;
+    if (!e) {
+      x = e;
+    } else if ("path" in e) {
+      x = e.path.reduce((x, y) => x[y], jsglobals) || null;
+    } else {
+      if (!deserializer) {
+        throw new Error(
+          "You must pass an appropriate deserializer as _snapshotDeserializer",
+        );
+      }
+      x = deserializer(e.serialized);
+    }
     // @ts-ignore
     tableSet(expectedKeys.length + idx, x);
   });

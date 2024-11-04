@@ -13,10 +13,11 @@ from _pyodide_core import (
     JsFuncSignature,
     Py2JsConverter,
     create_promise_converter,
+    js2py_as_py_json,
     js2py_deep,
     js2py_default,
     js2py_default_call_result,
-    py2js_as_json_adaptor,
+    py2js_as_js_json,
     py2js_deep,
     py2js_default,
 )
@@ -62,7 +63,8 @@ def js2py_bind(x):
 
 
 class Json:
-    py2js = py2js_as_json_adaptor
+    py2js = py2js_as_js_json
+    js2py = js2py_as_py_json
 
 
 class Deep:

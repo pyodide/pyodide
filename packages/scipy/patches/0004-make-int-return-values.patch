@@ -1,7 +1,7 @@
 From a86a2304fd925f815bbb0e0753e46a7b863e2de2 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 4/15] make int return values
+Subject: [PATCH 4/18] make int return values
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are

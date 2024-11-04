@@ -12,12 +12,7 @@ about:
   summary:
     A concrete syntax tree with AST-like properties for Python 3.0 through
     3.12 programs.
-  license:
-    All contributions towards LibCST are MIT licensed.  Some Python files have
-    been derived from the standard library and are therefore PSF licensed. Modifications
-    on these files are dual licensed (both MIT and PSF). Some Python files have been
-    taken from dataclasses and are therefore Apache licensed. Modifications on these
-    files are licensed under Apache 2.0 license.
+  license: Mixed, MIT, PSF, and Apache-2.0
 extra:
   recipe-maintainers:
     - zsol

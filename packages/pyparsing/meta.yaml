@@ -6,3 +6,6 @@ package:
 source:
   sha256: f9db75911801ed778fe61bb643079ff86601aca99fcae6345aa67292038fb742
   url: https://files.pythonhosted.org/packages/9d/ea/6d76df31432a0e6fdf81681a895f009a4bb47b3c39036db3e1b528191d52/pyparsing-3.1.2-py3-none-any.whl
+about:
+  home: https://github.com/pyparsing/pyparsing/
+  license: MIT

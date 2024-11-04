@@ -3,6 +3,7 @@ package:
   version: 2.9.10
   tag:
     - library
+    - static_library
 source:
   sha256: aafee193ffb8fe0c82d4afef6ef91972cbaf5feea100edc2f262750611b4be1f
   url: http://xmlsoft.org/sources/libxml2-2.9.10.tar.gz
@@ -26,3 +27,6 @@ build:
         --prefix=${WASM_LIBRARY_DIR}
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+about:
+  home: https://github.com/GNOME/libxml2
+  license: MIT

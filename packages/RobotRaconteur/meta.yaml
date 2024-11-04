@@ -58,7 +58,9 @@ build:
       $WASM_LIBRARY_DIR/lib/libboost_regex.a \
       $WASM_LIBRARY_DIR/lib/libboost_system.a \
       -o out/Python3/RobotRaconteur/_RobotRaconteurPython.so
-
+about:
+  home: https://github.com/robotraconteur/robotraconteur
+  license: Apache-2.0
 extra:
   recipe-maintainers:
     - johnwason

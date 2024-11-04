@@ -17,4 +17,4 @@ about:
   home: https://github.com/Unidata/cftime
   PyPI: https://pypi.org/project/cftime
   summary: Time-handling functionality from netcdf4-python
-  license: "License :: OSI Approved :: MIT License"
+  license: MIT

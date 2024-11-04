@@ -1,11 +1,11 @@
 package:
   name: certifi
-  version: 2024.2.2
+  version: 2024.7.4
   top-level:
     - certifi
 source:
-  url: https://files.pythonhosted.org/packages/ba/06/a07f096c664aeb9f01624f858c3add0a4e913d6c96257acb4fce61e7de14/certifi-2024.2.2-py3-none-any.whl
-  sha256: dc383c07b76109f368f6106eee2b593b04a011ea4d55f652c6ca24a754d1cdd1
+  url: https://files.pythonhosted.org/packages/1c/d5/c84e1a17bf61d4df64ca866a1c9a913874b4e9bdc131ec689a0ad013fb36/certifi-2024.7.4-py3-none-any.whl
+  sha256: c198e21b1289c2ab85ee4e67bb4b4ef3ead0892059901a8d5b622f24a1101e90
 about:
   home: https://github.com/certifi/python-certifi
   PyPI: https://pypi.org/project/certifi
@@ -13,4 +13,4 @@ about:
     Certifi provides Mozilla’s carefully curated collection of Root Certificates
     for validating the trustworthiness of SSL certificates while verifying the identity
     of TLS hosts.
-  license: "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
+  license: MPL-2.0

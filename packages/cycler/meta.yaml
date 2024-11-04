@@ -13,4 +13,4 @@ about:
   home: https://github.com/matplotlib/cycler
   PyPI: https://pypi.org/project/cycler
   summary: Composable style cycles
-  license: BSD
+  license: BSD-3-Clause
