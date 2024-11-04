@@ -60,7 +60,7 @@ folder](https://github.com/pyodide/pyodide/tree/main/packages).
 First clone the Pyodide git repository:
 
 ```bash
-git clone https://github.com/pyodide/pyodide
+git clone --recursive https://github.com/pyodide/pyodide
 cd pyodide
 ```
 
