@@ -7,10 +7,6 @@ source:
   url: https://files.pythonhosted.org/packages/02/d7/7695bb1b6a240ecfae77804d3fc242e30582fd83973f76dda03b23d921a6/rateslib-1.5.0.tar.gz
   sha256: 7c7af2707f20974a70403689f84905757a4ed084e4c92229388d2fc30b331b04
 requirements:
-  host:
-    - numpy
-    - pandas
-    - matplotlib
   run:
     - numpy
     - pandas
