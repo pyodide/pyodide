@@ -90,6 +90,7 @@ myst:
 - Upgraded `xarray` to 2024.10.0 {pr}`4925`
 - Upgraded `zarr` to 2.18.3 {pr}`4925`
 - Upgraded `h5py` to 3.12.1 {pr}`4925`
+- Upgraded `tskit` to 0.6.0 {pr}`5157`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
 - Upgraded `msgpack` to 1.1.0 {pr}`5144`
