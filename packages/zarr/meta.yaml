@@ -1,11 +1,11 @@
 package:
   name: zarr
-  version: 2.16.1
+  version: 2.18.3
   top-level:
     - zarr
 source:
-  sha256: 4276cf4b4a653431042cd53ff2282bc4d292a6842411e88529964504fb073286
-  url: https://files.pythonhosted.org/packages/76/70/c31a48c6591ed7ff76fdefee7495352a9072546a89362551cb0cc6816798/zarr-2.16.1.tar.gz
+  sha256: 2580d8cb6dd84621771a10d31c4d777dca8a27706a1a89b29f42d2d37e2df5ce
+  url: https://files.pythonhosted.org/packages/23/c4/187a21ce7cf7c8f00c060dd0e04c2a81139bb7b1ab178bba83f2e1134ce2/zarr-2.18.3.tar.gz
   patches:
     - patches/0001-Fix-zarr-sync.patch
 requirements:
