@@ -69,6 +69,26 @@ myst:
 - Upgraded `gsw` to 3.6.19 {pr}`4925`
 - Upgraded `opencv-python` to 4.10.0.84 {pr}`4925`
 - Upgraded `yt` to 4.3.1 {pr}`4925`
+- Upgraded `xgboost` to 2.1.2 {pr}`4925`
+- Upgraded `autograd` to 1.7.0 {pr}`4925`
+- Upgraded `sisl` to 0.15.1 {pr}`4925`
+- Upgraded `cartopy` to 0.24.1 {pr}`4925`
+- Upgraded `astropy` to 6.1.4 {pr}`4925`
+- Upgraded `biopython` to 1.84 {pr}`4925`
+- Upgraded `fastparquet` to 2024.5.0 {pr}`4925`
+- Upgraded `geopandas` to 1.0.1 {pr}`4925`
+- Upgraded `imageio` to 2.36.0 {pr}`4925`
+- Upgraded `lightgbm` to 4.5.0 {pr}`4925`
+- Upgraded `netcdf4` to 1.7.2 {pr}`4925`
+- Upgraded `networkx` to 3.4.2 {pr}`4925`
+- Upgraded `numcodecs` to 0.13.1 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4925`
+- Upgraded `pywavelets` to 1.7.0 {pr}`4925`
+- Upgraded `shapely` to 2.0.6 {pr}`4925`
+- Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
+- Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `xarray` to 2024.10.0 {pr}`4925`
+- Upgraded `zarr` to 2.18.3 {pr}`4925`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
 - Upgraded `msgpack` to 1.1.0 {pr}`5144`
@@ -93,10 +113,10 @@ myst:
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
-- Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
+- Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
 - Added `pyarrow` 17.0.0 {pr}`4950`
-- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
-- Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
+- Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
+- Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
 - Added `tree-sitter-go` 0.23.1 {pr}`5102`
