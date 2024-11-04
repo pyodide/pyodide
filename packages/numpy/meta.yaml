@@ -1,13 +1,13 @@
 package:
   name: numpy
-  version: 2.1.0
+  version: 2.1.3
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/54/a4/f8188c4f3e07f7737683588210c073478abcb542048cf4ab6fedad0b458a/numpy-2.1.0.tar.gz
-  sha256: 7dc90da0081f7e1da49ec4e398ede6a8e9cc4f5ebe5f9e06b443ed889ee9aaa2
+  url: https://files.pythonhosted.org/packages/25/ca/1166b75c21abd1da445b97bf1fa2f14f423c6cfb4fc7c4ef31dccf9f6a94/numpy-2.1.3.tar.gz
+  sha256: aa08e04e08aaf974d4458def539dece0d28146d866a39da5639596f4921fd761
 
 build:
   # numpy uses vendored meson, so we need to pass the cross file manually
