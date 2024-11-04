@@ -3,6 +3,7 @@ package:
   version: "1.2"
   tag:
     - library
+    - static_library
 source:
   url: https://mirrors.mit.edu/sage/spkg/upstream/ppl/ppl-1.2.tar.bz2
   sha256: 2d470b0c262904f190a19eac57fb5c2387b1bfc3510de25a08f3c958df62fdf1
