@@ -9,11 +9,11 @@ def test_altair(selenium):
 
     data = alt.Data(
         values=[
-            {'a': 'A', 'b': 5},
-            {'a': 'B', 'b': 3},
-            {'a': 'C', 'b': 6},
-            {'a': 'D', 'b': 7},
-            {'a': 'E', 'b': 2}
+            {"a": "A", "b": 5},
+            {"a": "B", "b": 3},
+            {"a": "C", "b": 6},
+            {"a": "D", "b": 7},
+            {"a": "E", "b": 2},
         ]
     )
     c = alt.Chart(data).mark_bar().encode(x="a:N", y="b:Q").to_dict()
