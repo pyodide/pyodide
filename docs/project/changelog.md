@@ -95,7 +95,7 @@ myst:
 - Upgraded `ewah_bool_utils` to 1.2.2 {pr}`4925`
 - Upgraded `galpy` to 1.10.1 {pr}`4925`
 - Upgraded `mne-python` to 1.8.0 {pr}`4925`
-
+- Upgraded `msprime` to 1.3.3 {pr}`4925`
 - Upgraded `tskit` to 0.6.0 {pr}`5157`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
