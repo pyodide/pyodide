@@ -6,8 +6,6 @@ package:
 source:
   sha256: 2580d8cb6dd84621771a10d31c4d777dca8a27706a1a89b29f42d2d37e2df5ce
   url: https://files.pythonhosted.org/packages/23/c4/187a21ce7cf7c8f00c060dd0e04c2a81139bb7b1ab178bba83f2e1134ce2/zarr-2.18.3.tar.gz
-  patches:
-    - patches/0001-Fix-zarr-sync.patch
 requirements:
   run:
     - numpy
