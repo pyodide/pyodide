@@ -1,0 +1,99 @@
+From 983ea3d49b2834e044ca5b492cfb80181e49666f Mon Sep 17 00:00:00 2001
+From: swnf <50806201+swnf@users.noreply.github.com>
+Date: Sun, 3 Nov 2024 10:36:47 +0100
+Subject: [PATCH] Fix function signature mismatches
+
+
+diff --git a/libsoxr/src/fft4g32.c b/libsoxr/src/fft4g32.c
+index 7a31ba4..31aebca 100644
+--- a/libsoxr/src/fft4g32.c
++++ b/libsoxr/src/fft4g32.c
+@@ -9,11 +9,12 @@
+ 
+ #if WITH_CR32
+ #include "rdft_t.h"
+-static void * null(void) {return 0;}
+-static void forward (int length, void * setup, double * H) {lsx_safe_rdft_f(length,  1, H); (void)setup;}
+-static void backward(int length, void * setup, double * H) {lsx_safe_rdft_f(length, -1, H); (void)setup;}
++static void * null(int length) {return 0; (void)length;}
++static void nothing(void * setup) {(void)setup;}
++static void forward(int length, void * setup, void * H, void * scratch) {lsx_safe_rdft_f(length, 1, (double * ) H); (void)setup; (void)scratch;}
++static void backward(int length, void * setup, void * H, void * scratch) {lsx_safe_rdft_f(length, -1, (double * ) H); (void)setup; (void)scratch;}
+ static int multiplier(void) {return 2;}
+-static void nothing(void) {}
++static void nothing2(int length, void * setup, void * H, void * scratch) {(void)length; (void)setup; (void)H; (void)scratch;}
+ static int flags(void) {return 0;}
+ 
+ fn_t _soxr_rdft32_cb[] = {
+@@ -27,7 +28,7 @@ fn_t _soxr_rdft32_cb[] = {
+   (fn_t)_soxr_ordered_convolve_f,
+   (fn_t)_soxr_ordered_partial_convolve_f,
+   (fn_t)multiplier,
+-  (fn_t)nothing,
++  (fn_t)nothing2,
+   (fn_t)malloc,
+   (fn_t)calloc,
+   (fn_t)free,
+diff --git a/libsoxr/src/fft4g32s.c b/libsoxr/src/fft4g32s.c
+index 8ce9726..f00c97c 100644
+--- a/libsoxr/src/fft4g32s.c
++++ b/libsoxr/src/fft4g32s.c
+@@ -5,11 +5,12 @@
+ #include "util32s.h"
+ #include "rdft_t.h"
+ 
+-static void * null(void) {return 0;}
+-static void nothing(void) {}
+-static void forward (int length, void * setup, float * H) {lsx_safe_rdft_f(length,  1, H); (void)setup;}
+-static void backward(int length, void * setup, float * H) {lsx_safe_rdft_f(length, -1, H); (void)setup;}
++static void * null(int length) {return 0; (void)length;}
++static void nothing(void * setup) {(void)setup;}
++static void forward (int length, void * setup, void * H, void * scratch) {lsx_safe_rdft_f(length,  1, (float*)H); (void)setup; (void)scratch;}
++static void backward(int length, void * setup, void * H, void * scratch) {lsx_safe_rdft_f(length, -1, (float*)H); (void)setup; (void)scratch;}
+ static int multiplier(void) {return 2;}
++static void nothing2(int length, void * setup, void * H, void * scratch) {(void)length; (void)setup; (void)H; (void)scratch;}
+ static int flags(void) {return RDFT_IS_SIMD;}
+ 
+ fn_t _soxr_rdft32s_cb[] = {
+@@ -23,7 +24,7 @@ fn_t _soxr_rdft32s_cb[] = {
+   (fn_t)ORDERED_CONVOLVE_SIMD,
+   (fn_t)ORDERED_PARTIAL_CONVOLVE_SIMD,
+   (fn_t)multiplier,
+-  (fn_t)nothing,
++  (fn_t)nothing2,
+   (fn_t)SIMD_ALIGNED_MALLOC,
+   (fn_t)SIMD_ALIGNED_CALLOC,
+   (fn_t)SIMD_ALIGNED_FREE,
+diff --git a/libsoxr/src/fft4g64.c b/libsoxr/src/fft4g64.c
+index 0018516..5798fd7 100644
+--- a/libsoxr/src/fft4g64.c
++++ b/libsoxr/src/fft4g64.c
+@@ -7,11 +7,12 @@
+ #include "soxr-config.h"
+ 
+ #if WITH_CR64
+-static void * null(void) {return 0;}
+-static void nothing(void) {}
+-static void forward (int length, void * setup, double * H) {lsx_safe_rdft(length,  1, H); (void)setup;}
+-static void backward(int length, void * setup, double * H) {lsx_safe_rdft(length, -1, H); (void)setup;}
++static void * null(int length) {return 0; (void)length;}
++static void nothing(void * setup) {(void)setup;}
++static void forward (int length, void * setup, void * H, void * scratch) {lsx_safe_rdft(length,  1, (double*)H); (void)setup; (void)scratch;}
++static void backward(int length, void * setup, void * H, void * scratch) {lsx_safe_rdft(length, -1, (double*)H); (void)setup; (void)scratch;}
+ static int multiplier(void) {return 2;}
++static void nothing2(int length, void * setup, void * H, void * scratch) {(void)length; (void)setup; (void)H; (void)scratch;}
+ static int flags(void) {return 0;}
+ 
+ typedef void (* fn_t)(void);
+@@ -26,7 +27,7 @@ fn_t _soxr_rdft64_cb[] = {
+   (fn_t)_soxr_ordered_convolve,
+   (fn_t)_soxr_ordered_partial_convolve,
+   (fn_t)multiplier,
+-  (fn_t)nothing,
++  (fn_t)nothing2,
+   (fn_t)malloc,
+   (fn_t)calloc,
+   (fn_t)free,
+-- 
+2.43.0
+
