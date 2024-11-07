@@ -64,6 +64,7 @@ myst:
 
 ### Packages
 
+- Upgraded `msprime` to 1.3.3 {pr}`5159`
 - Upgraded `tskit` to 0.6.0 {pr}`5157`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
@@ -86,6 +87,7 @@ myst:
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
+- Upgraded `altair` to 5.4.1 {pr}`5124`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
