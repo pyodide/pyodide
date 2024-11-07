@@ -1,0 +1,49 @@
+From 90723d5083293ec9ced4085d1b6b8c8a68772fba Mon Sep 17 00:00:00 2001
+From: Hanno Rein <hanno@hanno-rein.de>
+Date: Thu, 7 Nov 2024 09:40:09 -0500
+Subject: [PATCH 4/4] no emscripten
+
+---
+ src/rebound.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/src/rebound.c b/src/rebound.c
+index 82f6ac60..accea978 100644
+--- a/src/rebound.c
++++ b/src/rebound.c
+@@ -665,7 +665,7 @@ int reb_check_exit(struct reb_simulation* const r, const double tmax, double* la
+     while(r->status == REB_STATUS_PAUSED || r->status == REB_STATUS_SCREENSHOT){
+         // Wait for user to disable paused simulation
+ #ifdef __EMSCRIPTEN__
+-        emscripten_sleep(100);
++        // emscripten_sleep(100);
+ #else
+         usleep(1000);
+ #endif 
+@@ -820,16 +820,16 @@ static void* reb_simulation_integrate_raw(void* args){
+     }
+     reb_run_heartbeat(r);
+ #ifdef __EMSCRIPTEN__
+-    double t0 = emscripten_performance_now();
++//    double t0 = emscripten_performance_now();
+ #endif
+     while(reb_check_exit(r,thread_info->tmax,&last_full_dt)<0){
+ #ifdef __EMSCRIPTEN__
+-        double t1 = emscripten_performance_now();
+-        if (t1-t0>1000./120.){ // max framerate 120Hz
+-            t0 = t1;
+-            emscripten_sleep(0); // allow drawing and event handling
+-        }
+-
++//        double t1 = emscripten_performance_now();
++//        if (t1-t0>1000./120.){ // max framerate 120Hz
++//            t0 = t1;
++//            emscripten_sleep(0); // allow drawing and event handling
++//        }
++//
+ #endif 
+ #ifdef OPENGL
+         if (r->display_data){
+-- 
+2.39.5 (Apple Git-154)
+

@@ -17,6 +17,7 @@ source:
   patches:
     - patches/0001-fix-install_name.patch
     - patches/0002-fix-output.patch
+    - patches/0003-no-emscripten.patch
 
 requirements:
   run:
