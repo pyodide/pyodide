@@ -22,7 +22,10 @@ class JsFinder(MetaPathFinder):
     ) -> ModuleSpec | None:
         [parent, _, child] = fullname.rpartition(".")
         if parent:
-            parent_module = sys.modules[parent]
+            try:
+                parent_module = sys.modules[parent]
+            except KeyError:
+                return None
             if not isinstance(parent_module, JsProxy):
                 # Not one of us.
                 return None
