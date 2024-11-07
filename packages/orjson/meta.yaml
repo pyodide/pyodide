@@ -10,7 +10,12 @@ requirements:
   executable:
     - rustup
 build:
-  script: export RUSTFLAGS="-Z link-native-libraries=yes"
+  script: |
+    # This config.toml points us to vendored packages. But we inject -Zbuild-std
+    # which depends on compiler_builtins which is missing from the vendored packages.
+    # Delete it and resolve from crates.io
+    rm .cargo/config.toml
+    export RUSTFLAGS="-Z link-native-libraries=yes"
 about:
   home: https://github.com/ijl/orjson
   PyPI: https://pypi.org/project/orjson
