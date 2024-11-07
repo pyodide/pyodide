@@ -1,0 +1,56 @@
+package:
+  name: zfpy
+  version: 1.6.0
+  top-level:
+    - zfpy
+source:
+  # There's no sdist for zfpy on PyPI, so we get the tarball from the GitHub release instead
+  url: https://github.com/LLNL/zfp/archive/refs/tags/1.0.1.tar.gz
+  sha256: 4984db6a55bc919831966dd17ba5e47ca7ac58668f4fd278ebd98cd2200da66f
+  patches:
+    - patches/0001-Fix-syntax-errors-for-extension-module.patch
+    # - patches/0002-Fix-FindPython.patch ## is making things harder a bit
+
+requirements:
+  host:
+    - numpy
+  run:
+    - numpy
+build:
+  cflags: -fexceptions
+  cxxflags: -fexceptions
+  ldflags: -fexceptions
+  # -DPYTHON_NUMPY_INCLUDE_DIRS=$NUMPY_INCLUDE_DIR \
+  script: |
+    mkdir build_for_wasm
+    cd build_for_wasm
+    # We'll need to install cython ourselves
+    pip install cython
+    emconfigure ./configure
+    emcmake cmake ${CMAKE_ARGS}                                                                             \
+      -DBUILD_CFP=ON                                                                                        \
+      -DBUILD_UTILITIES=ON                                                                                  \
+      -DBUILD_ZFPY=ON                                                                                       \
+      -DCMAKE_BUILD_TYPE=Release                                                                            \
+      -DBUILD_TESTING=OFF                                                                                   \
+      -DZFP_WITH_OPENMP=OFF                                                                                 \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR}                                                            \
+      -DCMAKE_INSTALL_LIBDIR=lib                                                                            \
+      -DPYTHON_INCLUDE_DIR=$PYTHONINCLUDE                                                                   \
+      -DPYTHON_LIBRARY=$PYTHONINCLUDE/../libpython$PYMAJOR.$PYMINOR.a                                       \
+      -DPYTHON_VERSION_MAJOR=$PYMAJOR                                                                       \
+      -DPYTHON_VERSION_MINOR=$PYMINOR                                                                       \
+      -DNumPy_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/     \
+      ..
+
+    emmake -j ${PYODIDE_JOBS:-3}
+    emmake make install
+
+about:
+  home: https://zfp.llnl.gov/
+  PyPI: https://pypi.org/project/zfpy/
+  summary: zfp compression in Python
+  license: BSD-3-Clause
+# extra:
+#   recipe-maintainers:
+#     - PUT_YOUR_GITHUB_USERNAME_HERE
