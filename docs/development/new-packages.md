@@ -196,7 +196,7 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["<package-name>-tests", "pytest"])
 def test_mytestname(selenium):
   import pytest
-  pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...])
+  assert pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...]) == 0
 ```
 
 you can put whatever command line arguments you would pass to `pytest` as
