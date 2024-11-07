@@ -95,14 +95,15 @@ myst:
 - Upgraded `ewah_bool_utils` to 1.2.2 {pr}`4925`
 - Upgraded `galpy` to 1.10.1 {pr}`4925`
 - Upgraded `mne-python` to 1.8.0 {pr}`4925`
-- Upgraded `msprime` to 1.3.3 {pr}`4925`
 - Upgraded `pyxirr` to 0.10.6 {pr}`4925`
 - Upgraded `regex` to 2024.9.11 {pr}`4925`
+- Upgraded `rebound` to 4.4.3 {pr}`5163`
+- Upgraded `reboundx` to 4.3.0 {pr}`5163`
+- Upgraded `msprime` to 1.3.3 {pr}`5159`
 - Upgraded `tskit` to 0.6.0 {pr}`5157`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
 - Upgraded `msgpack` to 1.1.0 {pr}`5144`
-- Added `tiktoken` v0.8.0 in {pr}`5147`
 - Upgraded `protobuf` to 5.28.3 {pr}`5136`
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
@@ -121,8 +122,11 @@ myst:
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
+- Upgraded `altair` to 5.4.1 {pr}`5124`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
+- Added `soxr` 0.5.0.post1 {pr}`5150`
+- Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`

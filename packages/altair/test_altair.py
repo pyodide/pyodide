@@ -6,17 +6,19 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["altair"])
 def test_altair(selenium):
     import altair as alt
-    import pandas as pd
 
-    data = pd.DataFrame(
-        {
-            "a": ["A", "B", "C", "D", "E", "F", "G", "H", "I"],
-            "b": [28, 55, 43, 91, 81, 53, 19, 87, 52],
-        }
+    data = alt.Data(
+        values=[
+            {"a": "A", "b": 5},
+            {"a": "B", "b": 3},
+            {"a": "C", "b": 6},
+            {"a": "D", "b": 7},
+            {"a": "E", "b": 2},
+        ]
     )
-    c = alt.Chart(data).mark_bar().encode(x="a", y="b").to_dict()
+    c = alt.Chart(data).mark_bar().encode(x="a:N", y="b:Q").to_dict()
 
     assert c["mark"]["type"] == "bar"
     assert c["encoding"]["x"]["field"] == "a"
     assert c["encoding"]["y"]["type"] == "quantitative"
-    assert "name" in c["data"]
+    assert "values" in c["data"]

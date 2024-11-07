@@ -445,7 +445,7 @@ def test_package_index(tmp_path):
     version = "0.26.0"  # just need some version that already exists + contains pyodide-lock.json
 
     mgr = CrossBuildEnvManager(path)
-    mgr.install(version, skip_install_cross_build_packages=True)
+    mgr.install(version, skip_install_cross_build_packages=True, force_install=True)
 
     env_path = mgr.symlink_dir.resolve()
 
