@@ -22,6 +22,7 @@ def test_sqlite3_basic(selenium):
 
     with sqlite3.connect(":memory:") as conn:
         c = conn.cursor()
+        c.enable_load_extension(True)
         c.execute(
             """
             CREATE TABLE people (
