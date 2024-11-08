@@ -1,10 +1,16 @@
-From a864adde1e316835f146d0677139ce2a0418f489 Mon Sep 17 00:00:00 2001
+From f36ef86e67185b16b65445092c40a3d75d0be45c Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Fri, 8 Nov 2024 02:46:00 +0530
 Subject: [PATCH] Modernise packaging
 
+This patch introduces a PEP 517/518 compliant build system using setuptools and
+declarative metadata in pyproject.toml, and fixes syntax errors in setup.py. The
+sources for the extension module are correctly specified as Cython source files.
+
 Some part of the credits go to the upstream
 PR at https://github.com/LLNL/zfp/pull/234
+
+Co-Authored-By: David M. Rogers <2243447+frobnitzem@users.noreply.github.com>
 ---
  pyproject.toml | 13 +++++++++++++
  setup.py       | 18 +++++++++---------
