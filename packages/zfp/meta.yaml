@@ -11,10 +11,7 @@ build:
   # cflags: -fexceptions
   # cxxflags: -fexceptions
   # ldflags: -fexceptions
-  # Let's build a static target for now
   type: static_library
-  # -DPYTHON_NUMPY_INCLUDE_DIRS=$NUMPY_INCLUDE_DIR \
-  # -DBIT_STREAM_WORD_TYPE=uint64               \
   exports: requested
   script: |
     mkdir -p pyodide_build
@@ -38,6 +35,3 @@ about:
   PyPI: https://pypi.org/project/zfpy/
   summary: zfp compression in Python
   license: BSD-3-Clause
-# extra:
-#   recipe-maintainers:
-#     - PUT_YOUR_GITHUB_USERNAME_HERE
