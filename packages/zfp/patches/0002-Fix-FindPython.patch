@@ -1,0 +1,87 @@
+# Attributed to the conda-forge zfpy maintainers; sourced from the feedstock
+# at https://github.com/conda-forge/zfpy-feedstock/blob/188462e24b22339f090fffae7da4b11f679766b9/recipe/fix_find_python_stuff.patch
+
+
+# This can probably be deleted since we don't use it now.
+
+diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
+index 9410ddd..8fcb45f 100644
+--- a/python/CMakeLists.txt
++++ b/python/CMakeLists.txt
+@@ -3,15 +3,19 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.27.0)
+ endif ()
+ 
+ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/scikit-build-cmake)
+-include(UseCython)
+-include(FindPythonExtensions)
+-include(FindNumPy)
+ 
+-find_package(PythonInterp REQUIRED)
+-find_package(PythonLibs REQUIRED)
+-find_package(PythonExtensions REQUIRED)
++find_package(Python COMPONENTS Interpreter Development NumPy REQUIRED)
++# They use the old find_package(PythonInterp) which expects a few other
++# variables
++set(PYTHONINTERP_FOUND TRUE)
++set(PYTHONLIBS_FOUND TRUE)
++set(PYTHON_EXECUTABLE ${Python_EXECUTABLE})
++set(PYTHON_VERSION_MAJOR ${Python_VERSION_MAJOR})
++set(PYTHON_INCLUDE_DIRS ${Python_INCLUDE_DIRS})
++set(PYTHON_LIBRARIES ${Python_LIBRARIES})
+ find_package(Cython 0.28 REQUIRED) # >= v0.28 required for const memoryview support
+-find_package(NumPy REQUIRED)
++find_package(PythonExtensions REQUIRED)
++set(NumPy_INCLUDE_DIR ${Python_NumPy_INCLUDE_DIRS})
+ 
+ include_directories(${ZFP_SOURCE_DIR}/include)
+ include_directories(${NumPy_INCLUDE_DIR})
+@@ -26,5 +30,4 @@ set(PYLIB_BUILD_DIR "${CMAKE_BINARY_DIR}/bin" CACHE PATH "Directory where zfp py
+ set_target_properties(zfpy PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PYLIB_BUILD_DIR})
+ 
+ # Install to the typical python module directory
+-set(python_install_lib_dir "lib/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages/")
+-install(TARGETS zfpy LIBRARY DESTINATION ${python_install_lib_dir})
++install(TARGETS zfpy LIBRARY DESTINATION ${Python_SITELIB})
+diff --git a/python/scikit-build-cmake/FindPythonExtensions.cmake b/python/scikit-build-cmake/FindPythonExtensions.cmake
+index 59b30c2..926ce9a 100644
+--- a/python/scikit-build-cmake/FindPythonExtensions.cmake
++++ b/python/scikit-build-cmake/FindPythonExtensions.cmake
+@@ -242,19 +242,10 @@
+ # limitations under the License.
+ #=============================================================================
+ 
+-find_package(PythonInterp REQUIRED)
+-if(SKBUILD AND NOT PYTHON_LIBRARY)
+-  set(PYTHON_LIBRARY "no-library-required")
+-  find_package(PythonLibs)
+-  unset(PYTHON_LIBRARY)
+-  unset(PYTHON_LIBRARIES)
+-else()
+-  find_package(PythonLibs)
+-endif()
+ include(targetLinkLibrariesWithDynamicLookup)
+ 
+ set(_command "
+-import distutils.sysconfig
++import sysconfig
+ import itertools
+ import os
+ import os.path
+@@ -266,7 +257,7 @@ rel_result = None
+ candidate_lists = []
+ 
+ try:
+-    candidate_lists.append((distutils.sysconfig.get_python_lib(),))
++    candidate_lists.append((sysconfig.get_paths()['purelib'],))
+ except AttributeError: pass
+ 
+ try:
+@@ -293,7 +284,7 @@ sys.stdout.write(\";\".join((
+     sys.prefix,
+     result,
+     rel_result,
+-    distutils.sysconfig.get_config_var('EXT_SUFFIX')
++    sysconfig.get_config_var('EXT_SUFFIX')
+ )))
+ ")
+ 

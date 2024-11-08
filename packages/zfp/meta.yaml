@@ -1,0 +1,44 @@
+package:
+  name: zfp
+  version: 1.0.1
+
+source:
+  # There's no sdist for zfpy on PyPI, so we get the tarball from the GitHub release instead
+  url: https://github.com/LLNL/zfp/archive/refs/tags/1.0.1.tar.gz
+  sha256: 4984db6a55bc919831966dd17ba5e47ca7ac58668f4fd278ebd98cd2200da66f
+
+build:
+  # cflags: -fexceptions
+  # cxxflags: -fexceptions
+  # ldflags: -fexceptions
+  # Let's build a static target for now
+  type: static_library
+  # -DPYTHON_NUMPY_INCLUDE_DIRS=$NUMPY_INCLUDE_DIR \
+  # -DBIT_STREAM_WORD_TYPE=uint64               \
+  exports: requested
+  script: |
+    mkdir -p pyodide_build
+    cd pyodide_build
+    emcmake cmake ${CMAKE_ARGS}                   \
+      -DBUILD_CFP=ON                              \
+      -DBUILD_UTILITIES=OFF                       \
+      -DBUILD_TESTING=ON                         \
+      -DBUILD_SHARED_LIBS=OFF                     \
+      -DZFP_ENABLE_PIC=OFF                        \
+      -DCMAKE_BUILD_TYPE=Release                  \
+      -DCMAKE_C_FLAGS="-s WASM=1"                 \
+      -DZFP_WITH_OPENMP=OFF                       \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR}  \
+      ..
+
+    emmake make -j ${PYODIDE_JOBS:-3} install
+
+
+about:
+  home: https://zfp.llnl.gov/
+  PyPI: https://pypi.org/project/zfpy/
+  summary: zfp compression in Python
+  license: BSD-3-Clause
+# extra:
+#   recipe-maintainers:
+#     - PUT_YOUR_GITHUB_USERNAME_HERE
