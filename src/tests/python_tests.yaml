@@ -46,7 +46,8 @@
     xfail: multiprocessing
 - test__locale:
     xfail: locale
-- test__opcode
+- test__opcode:
+    xfail-safari: Python 3.12.7
 - test__osx_support:
     xfail: platform-specific
 - test__xxinterpchannels
