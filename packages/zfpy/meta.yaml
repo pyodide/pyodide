@@ -7,6 +7,9 @@ package:
 requirements:
   host:
     - zfp
+    - numpy
+  run:
+    - numpy
 
 test:
   imports:
