@@ -62,10 +62,9 @@
     xfail: slow, sometimes times out
 - test_array
 - test_asdl_parser
-- test_ast:
-    xfail-safari: Stack overflow
+- test_ast.test_ast:
     skip:
-      - test_stdlib_validates # incompatible with zipimport
+        - "*_recursion_*"
 - test_asyncgen:
     xfail: async
 - test_asyncio.test_base_events:
@@ -102,6 +101,7 @@
     xfail: async
 - test_asyncio.test_ssl
 - test_asyncio.test_sslproto
+- test_asyncio.test_staggered
 - test_asyncio.test_streams:
     xfail: async
 - test_asyncio.test_subprocess:
@@ -121,7 +121,7 @@
 - test_asyncio.test_windows_utils
 - test_atexit:
     skip:
-      - test_general # fork
+    - test_general   # fork
 - test_audioop
 - test_audit:
     xfail: all tests fork
@@ -131,22 +131,22 @@
 - test_bdb:
     skip:
       # incompatible with zipimport
-      - test_bp_after_last_statement
-      - test_bp_condition
-      - test_bp_exception_on_condition_evaluation
-      - test_bp_ignore_count
-      - test_clear_two_bp_on_same_line
-      - test_disabled_temporary_bp
-      - test_ignore_count_on_disabled_bp
-      - test_temporary_bp
-      - test_next_command_in_generator_for_loop
-      - test_next_command_in_generator_with_subiterator
-      - test_next_until_return_in_generator
-      - test_return_command_in_generator_with_subiterator
-      - test_step_at_return_with_no_trace_in_caller
-      - test_runeval_step
-      - test_next_over_import
-      - test_skip
+    - test_bp_after_last_statement
+    - test_bp_condition
+    - test_bp_exception_on_condition_evaluation
+    - test_bp_ignore_count
+    - test_clear_two_bp_on_same_line
+    - test_disabled_temporary_bp
+    - test_ignore_count_on_disabled_bp
+    - test_temporary_bp
+    - test_next_command_in_generator_for_loop
+    - test_next_command_in_generator_with_subiterator
+    - test_next_until_return_in_generator
+    - test_return_command_in_generator_with_subiterator
+    - test_step_at_return_with_no_trace_in_caller
+    - test_runeval_step
+    - test_next_over_import
+    - test_skip
 - test_bigaddrspace
 - test_bigmem
 - test_binascii
@@ -157,12 +157,12 @@
 - test_bufio
 - test_builtin:
     skip:
-      - test_open_non_inheritable
-      - test_compile_top_level_await
+    - test_open_non_inheritable
+    - test_compile_top_level_await
 - test_bytes
 - test_bz2:
     skip:
-      - testThreading
+    - testThreading
 - test_c_locale_coercion
 - test_calendar
 - test_call:
@@ -183,18 +183,23 @@
 - test_capi.test_mem
 - test_capi.test_misc:
     skip:
-      - "*subinterpreter*" # Should we disable _xxsubinterpreters in Setup.local?
+    - '*subinterpreter*'   # Should we disable _xxsubinterpreters in Setup.local?
+- test_capi.test_number
+- test_capi.test_run
 - test_capi.test_set
 - test_capi.test_structmembers
 - test_capi.test_sys
+- test_capi.test_tuple
 - test_capi.test_unicode
 - test_capi.test_watchers
 - test_cgi:
     skip:
-      - test_log # OSError: [Errno 70] Invalid seek
+    - test_log   # OSError: [Errno 70] Invalid seek
 - test_cgitb
 - test_charmapcodec
-- test_class
+- test_class:
+    skip:
+    - testSFBug532646   # Maximum call stack size exceeded
 - test_clinic
 - test_cmath
 - test_cmd
@@ -216,12 +221,15 @@
 - test_codecmaps_tw
 - test_codecs:
     skip:
-      - test_write # frozen encodings.utf_8
+    - test_write   # frozen encodings.utf_8
 - test_codeop
 - test_collections
 - test_colorsys
 - test_compare
-- test_compile
+- test_compile:
+    skip:
+    - test_compiler_recursion_limit
+    - test_extended_arg
 - test_compileall:
     xfail: multiprocessing
 - test_compiler_assemble
@@ -239,11 +247,15 @@
 - test_contains
 - test_context:
     skip:
-      - test_context_threads_1
+    - test_context_threads_1
 - test_contextlib
 - test_contextlib_async:
     xfail: async
-- test_copy
+- test_copy:
+    skip:
+    - test_deepcopy_reflexive_dict
+    - test_deepcopy_reflexive_list
+    - test_deepcopy_reflexive_tuple
 - test_copyreg:
     xfail: dbm
 - test_coroutines:
@@ -255,7 +267,9 @@
 - test_ctypes.test_anon
 - test_ctypes.test_array_in_pointer
 - test_ctypes.test_arrays
-- test_ctypes.test_as_parameter
+- test_ctypes.test_as_parameter:
+    skip:
+    - test_recursive_as_param
 - test_ctypes.test_bitfields
 - test_ctypes.test_buffers
 - test_ctypes.test_bytes
@@ -298,7 +312,9 @@
 - test_ctypes.test_struct_fields
 - test_ctypes.test_structures:
     skip:
-      - test_array_in_struct_registers # needs https://github.com/libffi/libffi/pull/818
+    - test_array_in_struct
+    - test_array_in_struct_registers   # needs https://github.com/libffi/libffi/pull/818
+    - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
 - test_ctypes.test_values
@@ -325,16 +341,19 @@
     xfail: stack overflow
 - test_descrtut
 - test_devpoll
-- test_dict
+- test_dict:
+    skip:
+    - test_repr_deep
 - test_dict_version
 - test_dictcomps
-- test_dictviews
+- test_dictviews:
+    skip:
+      - test_deeply_nested_repr
 - test_difflib
 - test_dis:
     xfail-safari: safaridriver unexpectedly exited
-- test_doctest:
-    xfail: subprocess
-- test_doctest2
+- test_doctest.test_doctest
+- test_doctest.test_doctest2
 - test_docxmlrpc:
     xfail: socket
 - test_dtrace:
@@ -350,7 +369,7 @@
 - test_email.test_defect_handling
 - test_email.test_email:
     skip:
-      - test_make_msgid_collisions # fork
+    - test_make_msgid_collisions   # fork
 - test_email.test_generator
 - test_email.test_headerregistry
 - test_email.test_inversion
@@ -361,18 +380,21 @@
 - test_email.test_utils
 - test_embed:
     skip:
-      - test_set_config # fork
+    - test_set_config   # fork
 - test_ensurepip:
     xfail: nonsense
 - test_enum:
     skip:
-      - test_unique_composite # fork
+    - test_unique_composite   # fork
 - test_enumerate
 - test_eof
 - test_epoll
 - test_errno
 - test_except_star
-- test_exception_group
+- test_exception_group:
+    skip:
+      - test_deep_split
+      - test_deep_subgroup
 - test_exception_hierarchy
 - test_exception_variations
 - test_exceptions:
@@ -381,9 +403,9 @@
 - test_faulthandler:
     skip:
       # fork
-      - test_disabled_by_default
-      - test_sys_xoptions
-      - test_env_var
+    - test_disabled_by_default
+    - test_sys_xoptions
+    - test_env_var
 - test_fcntl
 - test_file
 - test_file_eintr:
@@ -393,7 +415,7 @@
 - test_fileio:
     skip:
       # stack overflow in v8
-      - "*Recursive*"
+    - '*Recursive*'
 - test_fileutils
 - test_finalization
 - test_float
@@ -407,14 +429,15 @@
 - test_frozen:
     skip:
       # frozen modules are disabled in runtime
-      - test_unfrozen_submodule_in_frozen_package
+    - test_unfrozen_submodule_in_frozen_package
 - test_fstring
 - test_ftplib:
     xfail: socket
 - test_funcattrs
 - test_functools:
     skip:
-      - "*threaded*"
+      - '*threaded*'
+      - test_recursive_pickle
 - test_future_stmt.test_future
 - test_future_stmt.test_future_flags
 - test_future_stmt.test_future_multiple_features
@@ -422,8 +445,8 @@
 - test_future_stmt.test_future_single_import
 - test_gc:
     skip:
-      - test_garbage_at_shutdown
-      - test_trashcan_threads
+    - test_garbage_at_shutdown
+    - test_trashcan_threads
 - test_gdb.test_backtrace
 - test_gdb.test_cfunction
 - test_gdb.test_cfunction_full
@@ -436,9 +459,9 @@
 - test_genericclass
 - test_genericpath:
     skip:
-      - test_samefile_on_link
-      - test_samestat_on_link
-      - test_exists_fd
+    - test_samefile_on_link
+    - test_samestat_on_link
+    - test_exists_fd
 - test_genexps
 - test_getopt
 - test_getpass
@@ -447,7 +470,7 @@
 - test_glob:
     skip:
       # RecursionError: maximum recursion depth exceeded while calling a Python object
-      - test_selflink
+    - test_selflink
 - test_global
 - test_grammar
 - test_graphlib
@@ -456,7 +479,7 @@
 - test_hash
 - test_hashlib:
     skip:
-      - test_threaded_hashing
+    - test_threaded_hashing
 - test_heapq
 - test_hmac
 - test_html
@@ -466,9 +489,9 @@
 - test_httplib:
     skip:
       # sockets
-      - test_response_fileno
-      - testHTTPConnectionSourceAddress
-      - testTimeoutAttribute
+    - test_response_fileno
+    - testHTTPConnectionSourceAddress
+    - testTimeoutAttribute
 - test_httpservers:
     xfail: threads
 - test_idle
@@ -480,14 +503,14 @@
 - test_importlib.extension.test_case_sensitivity
 - test_importlib.extension.test_finder:
     skip:
-      - "*FinderTests.test_module"
+    - '*FinderTests.test_module'
 - test_importlib.extension.test_loader:
-    xfail: "TODO: why does it fail?"
+    xfail: 'TODO: why does it fail?'
 - test_importlib.extension.test_path_hook
 - test_importlib.frozen.test_finder:
     skip:
       # incompatible with wheel
-      - "*FindSpecTests*"
+    - '*FindSpecTests*'
 - test_importlib.frozen.test_loader
 - test_importlib.import_.test___loader__
 - test_importlib.import_.test___package__
@@ -517,7 +540,7 @@
 - test_importlib.test_api:
     skip:
       # incompatible with zipimport
-      - test_reload_missing_loader
+    - test_reload_missing_loader
 - test_importlib.test_lazy
 - test_importlib.test_locks:
     xfail: threading
@@ -538,14 +561,17 @@
 - test_interpreters:
     skip:
       # threads
-      - test_main
-      - "*thread*"
+    - test_main
+    - '*thread*'
 - test_io:
     xfail: segfault-outofmemory in test_large_file_ops ("Array buffer allocation failed")
     # The remaining test_io tests seem to hang too
 - test_ioctl
 - test_ipaddress
-- test_isinstance
+- test_isinstance:
+    skip:
+      - "*recursion*"
+      - "*infinite*"
 - test_iter
 - test_iterlen
 - test_itertools
@@ -560,7 +586,8 @@
 - test_json.test_pass1
 - test_json.test_pass2
 - test_json.test_pass3
-- test_json.test_recursion
+- test_json.test_recursion:
+    xfail: Stack overflow
 - test_json.test_scanstring
 - test_json.test_separators
 - test_json.test_speedups
@@ -590,15 +617,17 @@
 - test_linecache:
     skip:
       # incompatible with zipimport
-      - test_clearcache
-      - test_getline
-      - test_memoryerror
-- test_list
+    - test_clearcache
+    - test_getline
+    - test_memoryerror
+- test_list:
+    skip:
+    - test_repr_deep
 - test_listcomps
 - test_lltrace
 - test_locale:
     skip:
-      - "*diacritic*"
+    - '*diacritic*'
 - test_logging:
     xfail: threading
 - test_long
@@ -608,7 +637,7 @@
     xfail: fs
 - test_mailcap:
     skip:
-      - test_test # not sure why it fails...
+    - test_test   # not sure why it fails...
 - test_marshal
 - test_math
 - test_math_property
@@ -619,11 +648,11 @@
 - test_minidom
 - test_mmap:
     skip:
-      - "*large*" # segfault-outofmemory Invalid typed array length: 6442450944"
+    - '*large*'   # segfault-outofmemory Invalid typed array length: 6442450944"
         # resizing mmap doesn't work (raises [Errno 48] Out of memory)
-      - test_basic
-      - test_offset
-      - test_resize_past_pos
+    - test_basic
+    - test_offset
+    - test_resize_past_pos
 - test_modulefinder:
     xfail: takes a long time
 - test_monitoring:
@@ -650,11 +679,11 @@
 - test_ntpath:
     # same set of failures as in test_posixpath
     skip:
-      - test_exists_fd
-      - test_samestat_on_link
-      - test_samefile_on_link
-      - test_sameopenfile
-      - test_nonascii_abspath
+    - test_exists_fd
+    - test_samestat_on_link
+    - test_samefile_on_link
+    - test_sameopenfile
+    - test_nonascii_abspath
 - test_numeric_tower
 - test_opcache
 - test_opcodes
@@ -671,13 +700,13 @@
 - test_osx_env
 - test_pathlib:
     skip:
-      - test_hardlink_to
-      - test_home
-      - test_link_to
-      - test_is_socket_true
-      - test_readlink
-      - test_open_mode
-      - test_touch_mode
+    - test_hardlink_to
+    - test_home
+    - test_link_to
+    - test_is_socket_true
+    - test_readlink
+    - test_open_mode
+    - test_touch_mode
 - test_patma
 - test_pdb:
     xfail: 21/51 use subprocess
@@ -699,7 +728,7 @@
 - test_pkgutil
 - test_platform:
     skip:
-      - test_architecture_via_symlink # fork
+    - test_architecture_via_symlink   # fork
 - test_plistlib:
     xfail: stack overflow
 - test_poll:
@@ -713,10 +742,10 @@
     xfail: missing pwd module
 - test_posixpath:
     skip:
-      - test_exists_fd
-      - test_samestat_on_link
-      - test_samefile_on_link
-      - test_nonascii_abspath
+    - test_exists_fd
+    - test_samestat_on_link
+    - test_samefile_on_link
+    - test_nonascii_abspath
 - test_pow
 - test_pprint
 - test_print
@@ -730,26 +759,26 @@
 - test_pwd
 - test_py_compile:
     skip:
-      - test_stdin # fork
+    - test_stdin   # fork
 - test_pyclbr
-- test_pydoc:
-    xfail: pydoc_data unvendored
+- test_pydoc.test_pydoc:
+    xfail: Missing doc data
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
     xfail: threads
 - test_quopri:
     skip:
-      - test_scriptdecode # fork
-      - test_scriptencode # fork
+    - test_scriptdecode   # fork
+    - test_scriptencode   # fork
 - test_raise
 - test_random:
     skip:
-      - test_after_fork
+    - test_after_fork
 - test_range
 - test_re:
     skip:
-      - "*locale*"
+    - '*locale*'
 - test_readline
 - test_regrtest:
     xfail: All tests fork
@@ -764,28 +793,28 @@
     xfail: socket
 - test_runpy:
     skip:
-      - test_pymain_run* # fork
+    - test_pymain_run*   # fork
         # incompatible with zipimport
-      - test_run_module
-      - test_run_module_alter_sys
-      - test_run_module_in_namespace_package
-      - test_run_name
-      - test_run_namespace_package
-      - test_run_namespace_package_in_namespace_package
-      - test_run_package
-      - test_run_package_alter_sys
-      - test_run_package_in_namespace_package
+    - test_run_module
+    - test_run_module_alter_sys
+    - test_run_module_in_namespace_package
+    - test_run_name
+    - test_run_namespace_package
+    - test_run_namespace_package_in_namespace_package
+    - test_run_package
+    - test_run_package_alter_sys
+    - test_run_package_in_namespace_package
 
 - test_sax
 - test_sched:
     skip:
-      - "*concurrent" # threads
+    - '*concurrent'   # threads
 - test_scope
 - test_script_helper
 - test_secrets
 - test_select:
     skip:
-      - test_select # fork
+    - test_select   # fork
 - test_selectors:
     xfail: networking
 - test_set
@@ -795,15 +824,15 @@
 - test_shlex
 - test_shutil:
     skip:
-      - test_copy2_symlinks
-      - test_copy_symlinks
-      - test_copymode_symlink_to_symlink
-      - test_copystat_symlinks
-      - test_dont_copy_file_onto_link_to_itself
-      - test_copytree_dangling_symlinks
-      - test_copytree_symlink_dir
-      - test_copytree_symlinks
-      - test_copyfile_nonexistent_dir
+    - test_copy2_symlinks
+    - test_copy_symlinks
+    - test_copymode_symlink_to_symlink
+    - test_copystat_symlinks
+    - test_dont_copy_file_onto_link_to_itself
+    - test_copytree_dangling_symlinks
+    - test_copytree_symlink_dir
+    - test_copytree_symlinks
+    - test_copyfile_nonexistent_dir
 
 - test_signal:
     xfail: emscripten signals implementation isn't very complete
@@ -821,7 +850,7 @@
 - test_sort
 - test_source_encoding:
     skip:
-      - test_20731
+    - test_20731
 - test_spwd
 - test_sqlite3.test_backup
 - test_sqlite3.test_cli
@@ -840,14 +869,14 @@
 - test_statistics
 - test_strftime:
     skip:
-      - test_strftime # strftime has some bugs
+    - test_strftime   # strftime has some bugs
 - test_string
 - test_string_literals
 - test_stringprep
 - test_strptime:
     skip:
-      - test_week_of_year_and_day_of_week_calculation
-      - test_timezone
+    - test_week_of_year_and_day_of_week_calculation
+    - test_timezone
 - test_strtod
 - test_struct
 - test_structseq
@@ -873,20 +902,22 @@
 - test_tabnanny
 - test_tarfile:
     skip:
-      - test_chains
-      - test_deep_symlink
-      - test_sly_relative*
-      - test_extractall*
-      - test_parent_symlink*
+    - test_chains
+    - test_deep_symlink
+    - test_sly_relative*
+    - test_extractall*
+    - test_parent_symlink*
+    - test_overwrite_broken_file_symlink_as_file
+    - test_overwrite_file_as_implicit_dir
 - test_tcl
 - test_telnetlib:
     xfail: 7/19 fail with sockets
 - test_tempfile:
     skip:
-      - test_non_directory # setup failure Errno 2: Permission Denied
-      - test_process_awareness # fork
-      - test_truncate_with_size_parameter # setup failure FileNotFoundError: [Errno 44] No such file or directory
-      - test_noinherit # self.assertEqual(os.get_inheritable(file.fd), False) ==> AssertionError: True != False
+    - test_non_directory   # setup failure Errno 2: Permission Denied
+    - test_process_awareness   # fork
+    - test_truncate_with_size_parameter   # setup failure FileNotFoundError: [Errno 44] No such file or directory
+    - test_noinherit   # self.assertEqual(os.get_inheritable(file.fd), False) ==> AssertionError: True != False
 - test_termios
 - test_textwrap
 - test_thread:
@@ -901,13 +932,13 @@
     xfail: threading
 - test_time:
     skip:
-      - test_thread_time # setup failure: OSError: [Errno 28] Invalid argument
-      - test_time_ns_type # setup failure: OSError: [Errno 28] Invalid argument
-      - test_localtime_timezone # pyodide.asm.js:4222 AssertionError: 'Pacific Standard Time' != 'Pacific S'
-      - test_4dyear # '%4Y' != '0001'
-      - test_ctime # '1941' != '-100'
-      - test_monotonic # self.assertTrue(0.450 <= dt) fails
-      - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
+    - test_thread_time   # setup failure: OSError: [Errno 28] Invalid argument
+    - test_time_ns_type   # setup failure: OSError: [Errno 28] Invalid argument
+    - test_localtime_timezone   # pyodide.asm.js:4222 AssertionError: 'Pacific Standard Time' != 'Pacific S'
+    - test_4dyear   # '%4Y' != '0001'
+    - test_ctime   # '1941' != '-100'
+    - test_monotonic   # self.assertTrue(0.450 <= dt) fails
+    - test_pthread_getcpuclockid   #  time.pthread_getcpuclockid(threading.get_ident()) fails
 - test_timeit
 - test_timeout
 - test_tix
@@ -928,6 +959,7 @@
 - test_tomllib.test_misc
 - test_tools.test_freeze
 - test_tools.test_i18n
+- test_tools.test_makefile
 - test_tools.test_reindent
 - test_tools.test_sundry
 - test_trace:
@@ -935,8 +967,8 @@
 - test_traceback:
     xfail-safari: safaridriver unexpectedly exited
     skip:
-      - test_encoded_file # fork
-      - test_import_from* # tries to write to stdlib but it's in a zip
+    - test_encoded_file   # fork
+    - test_import_from*   # tries to write to stdlib but it's in a zip
 - test_tracemalloc:
     xfail-safari: safaridriver unexpectedly exited
 - test_ttk.test_extensions
@@ -957,7 +989,7 @@
 - test_typing:
     skip:
       # stack overflow in v8
-      - "*recursion*"
+    - '*recursion*'
 - test_ucn
 - test_unary
 - test_unicode
@@ -979,6 +1011,7 @@
 - test_unittest.test_setups
 - test_unittest.test_skipping
 - test_unittest.test_suite
+- test_unittest.test_util
 - test_univnewlines
 - test_unpack
 - test_unpack_ex
@@ -987,22 +1020,24 @@
     xfail-safari: Doesn't work
 - test_urllib2:
     skip:
-      - test_http_body_pipe # fork
+    - test_http_body_pipe   # fork
 - test_urllib2_localnet:
     xfail: socket
 - test_urllib2net
 - test_urllib_response
 - test_urllibnet
 - test_urlparse
-- test_userdict
-- test_userlist
+- test_userdict:
+    xfail: Stack overflow
+- test_userlist:
+    xfail: Stack overflow
 - test_userstring
 - test_utf8_mode
 - test_utf8source
 - test_uu
 - test_uuid:
     skip:
-      - testIssue8621
+    - testIssue8621
 - test_venv:
     xfail: nonsense
 - test_wait3:
@@ -1015,6 +1050,7 @@
 - test_weakset
 - test_webbrowser:
     xfail: replaced
+- test_winapi
 - test_winconsoleio
 - test_winreg
 - test_winsound
@@ -1026,7 +1062,7 @@
 - test_xml_etree:
     skip:
       # stack overflow in v8
-      - test_recursive_repr
+    - test_recursive_repr
 - test_xml_etree_c
 - test_xmlrpc:
     xfail: networking
@@ -1041,7 +1077,7 @@
     xfail: Times out
     skip:
       # NotADirectoryError: [Errno 54] Not a directory: '/proc/self/fd'
-      - test_many_opens
+    - test_many_opens
 
 - test_zipfile64
 - test_zipimport
