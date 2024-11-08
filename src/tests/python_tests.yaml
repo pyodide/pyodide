@@ -34,7 +34,8 @@
 #   system function that doesn't behave as one would expect.
 # - crash-chrome: Same as crash but only affecting Chrome
 # - crash-firefox: Same as crash but only affecting Firefox
-- leakers.test_ctypes
+- leakers.test_ctypes:
+    xfail: Python 3.12.7
 - leakers.test_selftype
 - regrtestdata.import_from_tests.test_regrtest_a:
     xfail: didn't correctly embed test data
