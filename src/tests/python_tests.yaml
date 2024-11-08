@@ -34,10 +34,8 @@
 #   system function that doesn't behave as one would expect.
 # - crash-chrome: Same as crash but only affecting Chrome
 # - crash-firefox: Same as crash but only affecting Firefox
-- leakers.test_ctypes:
-    xfail-safari: Python 3.12.7
-- leakers.test_selftype:
-    xfail-safari: Python 3.12.7
+- leakers.test_ctypes
+- leakers.test_selftype
 - regrtestdata.import_from_tests.test_regrtest_a:
     xfail: didn't correctly embed test data
 - regrtestdata.import_from_tests.test_regrtest_c:
@@ -46,16 +44,13 @@
     xfail: multiprocessing
 - test__locale:
     xfail: locale
-- test__opcode:
-    xfail-safari: Python 3.12.7
+- test__opcode
 - test__osx_support:
     xfail: platform-specific
-- test__xxinterpchannels:
-    xfail-safari: Python 3.12.7
+- test__xxinterpchannels
 - test__xxsubinterpreters:
     xfail: hits Py_FatalError("not the last thread") inside Py_EndInterpreter
-- test_abc:
-    xfail-safari: Python 3.12.7
+- test_abc
 - test_abstract_numbers
 - test_aifc
 - test_argparse:
