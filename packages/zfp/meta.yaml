@@ -33,7 +33,6 @@ build:
 
     emmake make -j ${PYODIDE_JOBS:-3} install
 
-
 about:
   home: https://zfp.llnl.gov/
   PyPI: https://pypi.org/project/zfpy/
