@@ -1520,8 +1520,7 @@ def test_array_slice_assign_2(selenium):
 
     assert exc_info_1a.value.args == exc_info_1b.value.args
     assert exc_info_2a.value.args == exc_info_2b.value.args
-    assert exc_info_3a.value.args == ("must assign iterable to extended slice",)
-    assert exc_info_3b.value.args == ("can only assign an iterable",)
+    assert exc_info_3a.value.args == exc_info_3b.value.args
 
 
 @std_hypothesis_settings
