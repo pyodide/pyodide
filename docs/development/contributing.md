@@ -29,7 +29,7 @@ To contribute code, see the following steps,
 
 3. Clone your fork of Pyodide
    ```
-   git clone https://github.com/<your-username>/pyodide.git
+   git clone --recursive https://github.com/<your-username>/pyodide.git
    ```
    and add the upstream remote,
    ```

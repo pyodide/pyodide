@@ -5,15 +5,6 @@ export PYODIDE_ABI_VERSION ?= 2024_0
 
 export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
 
-# Update the following variables when you want to update the version of the
-# pyodide-build version used in the build process. If you want to make breaking
-# changes in pyodide-build, it is also useful to change the repository URL
-# to your fork to test the changes are working as expected.
-
-# v0.27.3
-export PYODIDE_BUILD_COMMIT=fac0109aa2acf14469320b049d710dd42639bf94
-export PYODIDE_BUILD_REPO=https://github.com/pyodide/pyodide-build
-
 ifdef CPYTHON_DEBUG
 	export CPYTHON_ABI_FLAGS=d
 endif
