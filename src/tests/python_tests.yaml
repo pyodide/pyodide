@@ -54,7 +54,8 @@
     xfail-safari: Python 3.12.7
 - test__xxsubinterpreters:
     xfail: hits Py_FatalError("not the last thread") inside Py_EndInterpreter
-- test_abc
+- test_abc:
+    xfail-safari: Python 3.12.7
 - test_abstract_numbers
 - test_aifc
 - test_argparse:
