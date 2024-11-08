@@ -50,7 +50,8 @@
     xfail-safari: Python 3.12.7
 - test__osx_support:
     xfail: platform-specific
-- test__xxinterpchannels
+- test__xxinterpchannels:
+    xfail-safari: Python 3.12.7
 - test__xxsubinterpreters:
     xfail: hits Py_FatalError("not the last thread") inside Py_EndInterpreter
 - test_abc
