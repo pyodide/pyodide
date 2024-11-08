@@ -21,6 +21,8 @@ def test_sqlite3_basic(selenium):
     import sqlite3
 
     with sqlite3.connect(":memory:") as conn:
+        # this call does not do anything but check that we compile
+        # with PY_SQLITE_ENABLE_LOAD_EXTENSION defined
         conn.enable_load_extension(True)
         c = conn.cursor()
         c.execute(
