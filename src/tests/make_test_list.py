@@ -3,9 +3,9 @@ Generate a list of test modules in the CPython distribution.
 """
 
 import os
+import subprocess
 from pathlib import Path
 from typing import Any
-import subprocess
 
 import ruamel.yaml
 
