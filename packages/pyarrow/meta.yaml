@@ -11,6 +11,9 @@ requirements:
     - numpy
     - pandas
     - pyodide-unix-timezones
+about:
+  home: https://github.com/apache/arrow
+  license: Apache-2.0
 extra:
   recipe-maintainers:
     - joemarshall

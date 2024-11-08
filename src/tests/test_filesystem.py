@@ -432,3 +432,37 @@ async def test_nativefs_dup(selenium, runner):
     close(fd2)
     assert file.read() == "hello_read"
     file.close()
+
+
+def test_trackingDelegate(selenium_standalone):
+    selenium = selenium_standalone
+
+    selenium.run_js(
+        """
+        assert (() => typeof pyodide.FS.trackingDelegate !== "undefined")
+
+        if (typeof window !== "undefined") {
+            global = window
+        } else {
+            global = globalThis
+        }
+
+        global.trackingLog = ""
+        pyodide.FS.trackingDelegate["onCloseFile"] = (path) => { global.trackingLog = `CALLED ${path}` }
+        """
+    )
+
+    selenium.run(
+        """
+        f = open("/hello", "w")
+        f.write("helloworld")
+        f.close()
+
+        import js
+
+        assert "CALLED /hello" in js.trackingLog
+        """
+    )
+
+    # logs = selenium.logs
+    # assert "CALLED /hello" in logs

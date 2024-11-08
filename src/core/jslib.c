@@ -373,7 +373,7 @@ EM_JS_VAL(JsVal, JsvPromise_Resolve, (JsVal obj), {
 
 // clang-format off
 EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
-  const dtypes_str = ["b", "B", "h", "H", "i", "I", "f", "d"].join(
+  const dtypes_str = Array.from("bBhHiIqQfd").join(
     String.fromCharCode(0)
   );
   const dtypes_ptr = stringToNewUTF8(dtypes_str);
@@ -391,6 +391,8 @@ EM_JS_NUM(errcode, jslib_init_buffers_js, (), {
     ["Uint32Array", [dtypes_map["I"], 4, true]],
     ["Float32Array", [dtypes_map["f"], 4, true]],
     ["Float64Array", [dtypes_map["d"], 8, true]],
+    ["BigInt64Array", [dtypes_map["q"], 8, true]],
+    ["BigUint64Array", [dtypes_map["Q"], 8, true]],
     // These last two default to Uint8. They have checked : false to allow use
     // with other types.
     ["DataView", [dtypes_map["B"], 1, false]],

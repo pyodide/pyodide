@@ -17,4 +17,4 @@ about:
   home: https://github.com/pyca/pynacl/
   PyPI: https://pypi.org/project/pynacl
   summary: Python binding to the Networking and Cryptography (NaCl) library
-  license: Apache License 2.0
+  license: Apache-2.0
