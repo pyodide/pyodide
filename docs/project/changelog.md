@@ -92,7 +92,7 @@ myst:
 - Upgraded `altair` to 5.4.1 {pr}`5124`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
-- Upgraded `pillow-heif` to 0.18.0 {pr}`5087`
+- Upgraded `pillow-heif` to 0.20.0 {pr}`5087`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
