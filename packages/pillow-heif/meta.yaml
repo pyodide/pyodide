@@ -1,11 +1,11 @@
 package:
   name: pillow-heif
-  version: 0.18.0
+  version: 0.20.0
 source:
-  url: https://files.pythonhosted.org/packages/c9/bb/e7797fe7f5cad447bb470f916ead38f0929e8d28bdf6bd5d9f31dfe1ac26/pillow_heif-0.18.0.tar.gz
-  sha256: 70318dad9faa76121c6592ac0ab59881ff0dac6ab791a922e70d82c7706cce88
-  patches:
-    - patches/0001-Remove-include-path-check.patch
+  url: https://files.pythonhosted.org/packages/eb/82/d8eb6a8b5d7dd88e887f977eb6f5deedafd85be53343dcc761f363658db8/pillow_heif-0.20.0.tar.gz
+  sha256: cac19c4434ab776f833160d61f3cbeddb347bd8ed2f82205b243eba5c572fa33
+  # patches:
+  #   - patches/0001-Remove-include-path-check.patch
 requirements:
   run:
     - cffi
@@ -16,8 +16,7 @@ requirements:
     - libheif
 build:
   script: |
-    sed -i "s@include_dirs = \[@include_dirs = ['\\${WASM_LIBRARY_DIR}/include', @" libheif/build.py
-    sed -i "s@library_dirs = \[@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib', @" libheif/build.py
+    export LIBHEIF_ROOT=${WASM_LIBRARY_DIR}
 test:
   imports:
     - pillow_heif

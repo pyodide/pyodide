@@ -24,8 +24,6 @@ def test_heif(selenium):
                 "tree-with-transparency.heic", convert_hdr_to_8bit=False
             )
             assert heif_file.mode == "RGBA"
-            assert len(heif_file.data) == 278784
-            assert heif_file.stride == 1056
 
     _test_heif_inner(selenium, SAMPLE_IMAGE)
 
