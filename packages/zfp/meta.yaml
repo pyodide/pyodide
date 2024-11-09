@@ -16,8 +16,8 @@ build:
   type: static_library
   exports: requested
   script: |
-    mkdir -p pyodide_build
-    cd pyodide_build
+    mkdir -p build
+    cd build
     emcmake cmake ${CMAKE_ARGS}                   \
       -DBUILD_CFP=ON                              \
       -DBUILD_UTILITIES=OFF                       \
