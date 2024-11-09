@@ -59,6 +59,7 @@ repos:
     rev: "v1.11.0"
     hooks:
       - id: mypy
+        stages: [pre-push, manual]
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
         exclude: (setup.py|.*test.*)
         args: []
