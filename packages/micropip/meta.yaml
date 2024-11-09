@@ -1,19 +1,19 @@
 package:
   name: micropip
-  # This version needs to be consistent with docs/requirements-doc.txt
-  version: 0.6.0
+  version: 0.7.0
   tag:
     - always
   top-level:
     - micropip
 
 source:
-  sha256: d6ebd9581a2f446141f782f813c3b9a41efdebedddd9d2e0cc11b2cee3d23761
-  url: https://files.pythonhosted.org/packages/98/aa/080602cd5f4cba1e6db3a0b9a3b1e756802029e6d9b30650e027c3a84c47/micropip-0.6.0-py3-none-any.whl
+  sha256: ba4f01cb4c2420ee050f54e145f9905fc25aee48ef5ddeb6e669a62cde13da06
+  url: https://files.pythonhosted.org/packages/09/64/a1503f271060151616eea4552854a6191130551f2bf908ff2f7edfe87918/micropip-0.7.0-py3-none-any.whl
 
 requirements:
   run:
     - packaging
 about:
   home: https://github.com/pyodide/micropip
+  PyPI: https://pypi.org/project/micropip
   license: MPL-2.0
