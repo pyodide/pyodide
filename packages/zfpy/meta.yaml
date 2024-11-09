@@ -4,17 +4,6 @@ package:
   top-level:
     - zfpy
 
-requirements:
-  host:
-    - zfp
-    - numpy
-  run:
-    - numpy
-
-test:
-  imports:
-    - zfpy
-
 source:
   # There's no sdist for zfpy on PyPI, so we get the tarball from the GitHub release instead
   url: https://github.com/LLNL/zfp/archive/refs/tags/1.0.1.tar.gz
@@ -29,6 +18,17 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
+
+requirements:
+  host:
+    - zfp
+    - numpy
+  run:
+    - numpy
+
+test:
+  imports:
+    - zfpy
 
 about:
   home: https://zfp.llnl.gov/

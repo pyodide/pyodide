@@ -10,9 +10,6 @@ source:
   sha256: 4984db6a55bc919831966dd17ba5e47ca7ac58668f4fd278ebd98cd2200da66f
 
 build:
-  # cflags: -fexceptions
-  # cxxflags: -fexceptions
-  # ldflags: -fexceptions
   type: static_library
   exports: requested
   script: |
