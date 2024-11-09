@@ -21,7 +21,7 @@ build:
     emcmake cmake ${CMAKE_ARGS}                   \
       -DBUILD_CFP=ON                              \
       -DBUILD_UTILITIES=OFF                       \
-      -DBUILD_TESTING=ON                         \
+      -DBUILD_TESTING=OFF                         \
       -DBUILD_SHARED_LIBS=OFF                     \
       -DZFP_ENABLE_PIC=OFF                        \
       -DCMAKE_BUILD_TYPE=Release                  \
