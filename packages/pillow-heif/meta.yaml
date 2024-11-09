@@ -4,8 +4,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/eb/82/d8eb6a8b5d7dd88e887f977eb6f5deedafd85be53343dcc761f363658db8/pillow_heif-0.20.0.tar.gz
   sha256: cac19c4434ab776f833160d61f3cbeddb347bd8ed2f82205b243eba5c572fa33
-  patches:
-    - patches/0001-Remove-include-path-check.patch
+  patches: # temp disable for debug
+    - patches/Set-LIBHEIF_ROOT-correctly.patch
 requirements:
   run:
     - cffi
@@ -15,9 +15,28 @@ requirements:
     - cffi
     - libheif
 build:
+  # Don't use the header from libheif, use the one pillow-heif provides
+  # cflags: -I
+  # ldflags: -L${WASM_LIBRARY_DIR}/lib
+  cflags: -I./libheif
+  cxxflags: -I./libheif
+  ldflags: -L./libheif -L./libheif/lib
   script: |
-    sed -i "s@include_dirs = \[@include_dirs = ['\\${WASM_LIBRARY_DIR}/include', @" libheif/build.py
-    sed -i "s@library_dirs = \[@library_dirs = ['\\${WASM_LIBRARY_DIR}/lib', @" libheif/build.py
+    # do not use the header from libheif, use the one pillow-heif provides
+    # so we unset the WASM_LIBRARY_DIR environment variable
+      unset WASM_LIBRARY_DIR
+      # debug: list current directory
+      echo $PWD
+      echo $LIBHEIF_ROOT
+      echo "AGRIYA DEBUG"
+      ls -la
+      export LIBHEIF_ROOT=$PWD
+      echo "LIBHEIF_ROOT: $LIBHEIF_ROOT"
+      # cflags, cppflags, ldflags are respected by the build, let's use them
+      export CFLAGS="$CFLAGS -I$LIBHEIF_ROOT/libheif/include"
+      export CPPFLAGS="$CPPFLAGS -I$LIBHEIF_ROOT/libheif/include"
+      export LDFLAGS="$LDFLAGS -L$LIBHEIF_ROOT/libheif/lib"
+      # !!! packages/pillow-heif/build/pillow-heif-0.20.0/libheif/include/heif.h is here after the patch
 test:
   imports:
     - pillow_heif
