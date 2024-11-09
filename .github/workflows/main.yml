@@ -27,6 +27,8 @@ jobs:
     needs: get_python_version
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
@@ -34,8 +36,8 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -43,7 +45,7 @@ jobs:
               --junitxml=test-results/junit.xml \
               --verbose \
               --runtime=host \
-              --cov=pyodide_build --cov=pyodide \
+              --cov=pyodide \
               src packages/_tests tools/
       - uses: codecov/codecov-action@v4
         with:
@@ -68,7 +70,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          submodules: recursive
       - name: Cache ccache output
         uses: actions/cache@v4
         with:
@@ -169,6 +172,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download build artifact
         uses: actions/download-artifact@v4

@@ -193,8 +193,27 @@ note to update them independently.
 
 ## Updating pyodide-build
 
-to change the version of pyodide-build, update the PYODIDE_BUILD_REPO and PYODIDE_BUILD_COMMIT
-variables in `Makefile.envs`.
+to change the version of pyodide-build, change the commit of the pyodide-build submodule.
+
+```bash
+cd pyodide-build
+git checkout "<COMMIT HASH>"
+```
+
+to test with the fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
+
+```ini
+# .gitmodules
+[submodule "pyodide-build"]
+	path = pyodide-build
+	url = https://github.com/<yourfork>/pyodide-build
+```
+
+```bash
+git submodule sync
+cd pyodide-build
+git checkout "<COMMIT HASH"
+```
 
 ## Upgrading pyodide to a new version of CPython
 

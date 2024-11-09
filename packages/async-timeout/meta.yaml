@@ -10,4 +10,4 @@ about:
   home: https://github.com/aio-libs/async-timeout
   PyPI: https://pypi.org/project/async-timeout
   summary: Timeout context manager for asyncio programs
-  license: Apache 2
+  license: Apache-2.0

@@ -23,7 +23,7 @@ about:
   home: https://github.com/online-ml/river
   PyPI: https://pypi.org/project/river
   summary: Online machine learning in Python
-  license: BSD-3
+  license: BSD-3-Clause
 
 test:
   imports:

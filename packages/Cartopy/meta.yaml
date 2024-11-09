@@ -34,4 +34,4 @@ about:
   home: http://scitools.org.uk/cartopy
   PyPI: https://pypi.org/project/Cartopy/
   summary: A library providing cartographic tools for python
-  license: LGPL-3.0-or-later
+  license: LGPL-3.0+

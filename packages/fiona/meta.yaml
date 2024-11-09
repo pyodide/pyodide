@@ -45,5 +45,5 @@ about:
   home: http://github.com/Toblerity/Fiona
   PyPI: https://pypi.org/project/fiona
   summary: Fiona reads and writes spatial data files
-  license: BSD
+  license: BSD-3-Clause
 # Note: this package needs to be manually upgraded to the next version

@@ -22,3 +22,6 @@ requirements:
 
 build:
   cxxflags: -std=c++11
+about:
+  home: https://github.com/stevengj/nlopt
+  license: LGPL-2.1+

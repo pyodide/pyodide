@@ -10,4 +10,4 @@ about:
   home: https://github.com/GrahamDumpleton/wrapt
   PyPI: https://pypi.org/project/wrapt
   summary: Module for decorators, wrappers and monkey patching.
-  license: BSD
+  license: BSD-2-Clause

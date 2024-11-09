@@ -85,3 +85,5 @@ build:
       tar --exclude=__pycache__ -cf - \
       test \
       | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

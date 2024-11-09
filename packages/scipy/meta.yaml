@@ -175,7 +175,7 @@ about:
   home: https://www.scipy.org
   PyPI: https://pypi.org/project/scipy
   summary: "SciPy: Scientific Library for Python"
-  license: BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - lesteve

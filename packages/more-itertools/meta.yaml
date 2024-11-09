@@ -7,5 +7,7 @@ source:
   sha256: 686b06abe565edfab151cb8fd385a05651e1fdf8f0a14191e4439283421f8684
   url: https://files.pythonhosted.org/packages/50/e2/8e10e465ee3987bb7c9ab69efb91d867d93959095f4807db102d07995d94/more_itertools-10.2.0-py3-none-any.whl
 about:
+  home: https://github.com/more-itertools/more-itertools
   PyPI: https://pypi.org/project/more-itertools
   summary: More routines for operating on iterables, beyond itertools
+  license: MIT
