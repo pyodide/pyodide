@@ -1,7 +1,9 @@
 package:
   name: zfp
   version: 1.0.1
-
+  tag:
+    - library
+    - static_library
 source:
   # There's no sdist for zfpy on PyPI, so we get the tarball from the GitHub release instead
   url: https://github.com/LLNL/zfp/archive/refs/tags/1.0.1.tar.gz
