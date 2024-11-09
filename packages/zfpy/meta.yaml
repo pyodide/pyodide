@@ -21,7 +21,7 @@ build:
 
 requirements:
   host:
-    - zfp
+    - libzfp
     - numpy
   run:
     - numpy
