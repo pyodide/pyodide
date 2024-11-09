@@ -64,6 +64,7 @@ myst:
 
 ### Packages
 
+- Upgraded `crc32c` to 2.7.1 {pr}`5169`
 - Upgraded `rebound` to 4.4.3 {pr}`5163`
 - Upgraded `reboundx` to 4.3.0 {pr}`5163`
 - Upgraded `msprime` to 1.3.3 {pr}`5159`
