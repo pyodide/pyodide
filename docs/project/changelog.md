@@ -105,6 +105,7 @@ myst:
 - Added `tree-sitter-java` 0.23.2 {pr}`5102`
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
+- Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 
 ## Version 0.26.3
 
