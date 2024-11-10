@@ -17,10 +17,14 @@ def test_clingo(selenium):
         print(m)
 
     ctl = Control()
-    ctl.add("base", [], """
+    ctl.add(
+        "base",
+        [],
+        """
     p(@inc(10)).
     q(@seq(1,2)).
-    """)
+    """,
+    )
 
     ctl.ground([("base", [])], context=Context())
     solution = ctl.solve(on_model=on_model)
