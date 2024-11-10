@@ -17,7 +17,7 @@ def test_clingo(selenium):
         print(m)
 
     ctl = Control()
-    program = '\n'.join(['p(@inc(10)).', 'q(@seq(1,2)).'])
+    program = "\n".join(["p(@inc(10)).", "q(@seq(1,2))."])
     ctl.add("base", [], program)
 
     ctl.ground([("base", [])], context=Context())
