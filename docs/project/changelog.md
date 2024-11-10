@@ -229,7 +229,7 @@ _June 7, 2024_
 
 ### Packages
 
-- New Packages: `pytest-asyncio` {pr}`4819`
+- New Packages: `pytest-asyncio` {pr}`4819`, `vega-datasets` {pr}`5183`
 
 ## Version 0.26.0
 
