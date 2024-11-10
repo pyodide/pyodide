@@ -1,0 +1,19 @@
+package:
+  name: vega-datasets
+  version: 0.9.0
+  top-level:
+    - vega_datasets
+source:
+  url: https://files.pythonhosted.org/packages/e6/9f/ca52771fe972e0dcc5167fedb609940e01516066938ff2ee28b273ae4f29/vega_datasets-0.9.0-py3-none-any.whl
+  sha256: 3d7c63917be6ca9b154b565f4779a31fedce57b01b5b9d99d8a34a7608062a1d
+about:
+  home: http://github.com/altair-viz/vega_datasets
+  PyPI: https://pypi.org/project/vega-datasets
+  summary: A Python package for offline access to Vega datasets
+  license: MIT
+extra:
+  recipe-maintainers:
+    - peter-gy
+requirements:
+  run:
+    - pandas
