@@ -1,6 +1,8 @@
 package:
   name: pillow-heif
   version: 0.20.0
+  top-level:
+    - pillow_heif
 source:
   url: https://files.pythonhosted.org/packages/eb/82/d8eb6a8b5d7dd88e887f977eb6f5deedafd85be53343dcc761f363658db8/pillow_heif-0.20.0.tar.gz
   sha256: cac19c4434ab776f833160d61f3cbeddb347bd8ed2f82205b243eba5c572fa33

@@ -10,7 +10,7 @@ SAMPLE_IMAGE = base64.b64encode(
 
 
 def test_heif(selenium):
-    @run_in_pyodide(packages=["Pillow", "pillow_heif"])
+    @run_in_pyodide(packages=["Pillow", "pillow-heif"])
     def _test_heif_inner(selenium, image_base64):
         import base64
 
@@ -29,7 +29,7 @@ def test_heif(selenium):
 
 
 def test_pillow(selenium):
-    @run_in_pyodide(packages=["Pillow", "pillow_heif"])
+    @run_in_pyodide(packages=["Pillow", "pillow-heif"])
     def _test_pillow_inner(selenium, image_base64):
         import base64
 
