@@ -425,7 +425,8 @@
     skip:
       # frozen modules are disabled in runtime
       - test_unfrozen_submodule_in_frozen_package
-- test_fstring
+- test_fstring:
+    xfail-chrome: times out on Python 3.12.7
 - test_ftplib:
     xfail: socket
 - test_funcattrs
