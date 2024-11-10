@@ -2,7 +2,7 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 
-@pytest.mark.xfail_browsers(firefox="slow")
+@pytest.mark.driver_timeout(30)
 @run_in_pyodide(packages=["vega_datasets"])
 def test_vega_datasets(selenium):
     from vega_datasets import data

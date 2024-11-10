@@ -106,6 +106,7 @@ myst:
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `vega-datasets` 0.9.0 {pr}`5183`
 
 ## Version 0.26.3
 
@@ -229,7 +230,7 @@ _June 7, 2024_
 
 ### Packages
 
-- New Packages: `pytest-asyncio` {pr}`4819`, `vega-datasets` {pr}`5183`
+- New Packages: `pytest-asyncio` {pr}`4819`
 
 ## Version 0.26.0
 

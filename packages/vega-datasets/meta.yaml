@@ -11,9 +11,9 @@ about:
   PyPI: https://pypi.org/project/vega-datasets
   summary: A Python package for offline access to Vega datasets
   license: MIT
-extra:
-  recipe-maintainers:
-    - peter-gy
 requirements:
   run:
     - pandas
+extra:
+  recipe-maintainers:
+    - peter-gy
