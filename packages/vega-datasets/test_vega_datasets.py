@@ -11,7 +11,13 @@ def test_vega_datasets(selenium):
 
     df = data.iris()
 
-    assert set(df.columns) == {'species', 'petalLength', 'sepalLength', 'petalWidth', 'sepalWidth'}
+    assert set(df.columns) == {
+        "species",
+        "petalLength",
+        "sepalLength",
+        "petalWidth",
+        "sepalWidth",
+    }
     assert data.iris.url is not None
     assert data.iris.filepath is not None
     assert data.iris.description is not None
