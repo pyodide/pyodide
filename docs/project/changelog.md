@@ -64,6 +64,7 @@ myst:
 
 ### Packages
 
+- Upgraded `crc32c` to 2.7.1 {pr}`5169`
 - Upgraded `rebound` to 4.4.3 {pr}`5163`
 - Upgraded `reboundx` to 4.3.0 {pr}`5163`
 - Upgraded `msprime` to 1.3.3 {pr}`5159`
@@ -104,6 +105,7 @@ myst:
 - Added `tree-sitter-java` 0.23.2 {pr}`5102`
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
+- Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 
 ## Version 0.26.3
 
