@@ -48,6 +48,8 @@ jobs:
           branch: update-cross-build-metadata-${{ env.version }}
           base: main
           branch-suffix: timestamp
+          push-to-fork: agriyakhetarpal/pyodide
+          labels: metadata
           draft: true
 
       - name: Create an issue if the update fails
