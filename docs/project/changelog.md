@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Version 0.26.4
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
 ## Version 0.26.3
 
 _October 19, 2024_
