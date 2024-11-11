@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number"
+        description: "Version number to update to. This should not contain the 'v' prefix, since our releases on GitHub do not have it."
         required: true
 
 env:
