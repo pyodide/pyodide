@@ -1962,12 +1962,27 @@ def test_object_map_mapping_methods(selenium):
 @run_in_pyodide
 def test_as_object_map_heritable(selenium):
     import pytest
+    from _pyodide_core import js_flags
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsMutableMap
+
+    flag = js_flags["IS_OBJECT_MAP"]
 
     o = run_js("({1:{2: 9, 3: 77}, 3:{6: 5, 12: 3, 2: 9}})")
     mh = o.as_object_map(hereditary=True)
     mn = o.as_object_map(hereditary=False)
+
+    assert mh._js_type_flags & flag != 0
+    assert mn._js_type_flags & flag != 0
+    assert isinstance(mh, JsMutableMap)
+    assert isinstance(mn, JsMutableMap)
+
+    assert mh["1"]._js_type_flags & flag != 0
+    assert mn["1"]._js_type_flags & flag == 0
+    assert isinstance(mh["1"], JsMutableMap)
+    assert not isinstance(mn["1"], JsMutableMap)
+
     assert mh["1"]["3"] == 77
 
     with pytest.raises(TypeError):
@@ -1982,6 +1997,99 @@ def test_as_object_map_heritable(selenium):
 
     n = mh.pop("1")
     assert n["3"] == 77
+
+    o = run_js(
+        """({0:[], 1:new Uint8Array(), 2:new Error(), 3:new ArrayBuffer()})"""
+    ).as_object_map(hereditary=True)
+    assert o["0"]._js_type_flags & flag == 0
+    assert o["1"]._js_type_flags & flag == 0
+    assert o["2"]._js_type_flags & flag == 0
+    assert o["3"]._js_type_flags & flag == 0
+
+    o = run_js("""({1:{get(){}, 2: 1}, 2:new Map([["a", 1]])})""").as_object_map(
+        hereditary=True
+    )
+    assert o["1"]._js_type_flags & flag != 0
+    assert o["2"]._js_type_flags & flag != 0
+    assert "2" in o["1"]
+    assert "a" not in o["2"]
+
+
+@run_in_pyodide
+def test_as_object_map_presence(selenium):
+    from pyodide.code import run_js
+
+    for meth in ["[Symbol.iterator]", "get", "set"]:
+        o = run_js(
+            "({ %s(){} })" % meth,
+        )
+        assert hasattr(o, "as_object_map")
+        assert hasattr(o, "as_py_json")
+
+    o = run_js("[]")
+    assert not hasattr(o, "as_object_map")
+    assert hasattr(o, "as_py_json")
+
+    for s in [
+        "({ next(){} })",
+        "new Uint8Array()",
+        "new ArrayBuffer()",
+        "new Error()",
+        "() => {}",
+    ]:
+        o = run_js(s)
+        assert not hasattr(o, "as_object_map")
+        assert not hasattr(o, "as_py_json")
+
+
+@run_in_pyodide
+def test_as_py_json(selenium):
+    from _pyodide_core import js_flags
+
+    from js import JSON
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsMap, JsProxy
+
+    dict_flag = js_flags["IS_PY_JSON_DICT"]
+    seq_flag = js_flags["IS_PY_JSON_SEQUENCE"]
+    either_flag = dict_flag | seq_flag
+
+    o = run_js("({a: [1,2, {b: 7}]})").as_py_json()
+    assert o._js_type_flags & dict_flag
+    assert isinstance(o, JsMap)
+    assert "a" in o
+    assert len(o) == 1
+    assert o["a"]._js_type_flags & seq_flag != 0
+    assert len(o["a"]) == 3
+    assert o["a"][0] == 1
+    assert o["a"][-1]._js_type_flags & dict_flag != 0
+    assert len(o["a"][-1]) == 1
+    assert o["a"][-1]["b"] == 7
+
+    assert list(o.keys()) == ["a"]
+    assert [(k, v.to_py()) for (k, v) in o.items()] == [("a", [1, 2, {"b": 7}])]
+
+    o2 = run_js("([[1, 2], ()=>{}])").as_py_json()
+    assert o2._js_type_flags & seq_flag != 0
+    assert o2[0]._js_type_flags & seq_flag != 0
+    assert o2[1]._js_type_flags & either_flag == 0
+
+    a = run_js("([{b: 1}, {b: 3}, {b: 7}])").as_py_json()
+    l = [e["b"] for e in a]
+    assert l == [1, 3, 7]
+    import json
+
+    def default(obj):
+        if isinstance(obj, JsProxy):
+            if isinstance(obj, JsArray):
+                return list(obj)
+            if isinstance(obj, JsMap):
+                return dict(obj)
+        raise NotImplementedError
+
+    for x in [o, a]:
+        assert json.dumps(x, default=default).replace(" ", "") == JSON.stringify(x)
+        assert json.loads(json.dumps(x, default=default)) == x.to_py()
 
 
 @run_in_pyodide

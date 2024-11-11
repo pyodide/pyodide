@@ -6,3 +6,6 @@ package:
 source:
   sha256: e57e563a57fb22a142da34f38acc2fc1a5c864bc29ca1517a88abc963e60d6ec
   url: https://files.pythonhosted.org/packages/b9/2d/226779e405724344fc678fcc025b812587617ea1a48b9442628b688e85ea/kiwisolver-1.4.5.tar.gz
+about:
+  home: https://github.com/nucleic/kiwi
+  license: BSD-3-Clause

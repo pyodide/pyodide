@@ -10,3 +10,5 @@ build:
 requirements:
   executable:
     - rustup
+about:
+  license: MPL-2.0

@@ -1,12 +1,12 @@
 package:
   name: contourpy
-  version: 1.2.1
+  version: 1.3.0
   top-level:
     - contourpy
 
 source:
-  url: https://files.pythonhosted.org/packages/8d/9e/e4786569b319847ffd98a8326802d5cf8a5500860dbfc2df1f0f4883ed99/contourpy-1.2.1.tar.gz
-  sha256: 4d8908b3bee1c889e547867ca4cdc54e5ab6be6d3e078556814a22457f49423c
+  url: https://files.pythonhosted.org/packages/f5/f6/31a8f28b4a2a4fa0e01085e542f3081ab0588eff8e589d39d775172c9792/contourpy-1.3.0.tar.gz
+  sha256: 7ffa0db17717a8ffb127efd0c95a4362d996b892c2904db72428d5b52e1938a4
 
 requirements:
   run:

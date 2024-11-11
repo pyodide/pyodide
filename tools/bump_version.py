@@ -6,7 +6,7 @@ import functools
 import itertools
 import pathlib
 import re
-from ast import Str
+from ast import Constant
 from collections import namedtuple
 from collections.abc import Callable
 
@@ -81,7 +81,7 @@ JS_TARGETS = [
 
 
 @functools.lru_cache
-def python_version_to_js_version(version: str) -> Str:
+def python_version_to_js_version(version: str) -> Constant:
     """
     Convert Python version name to JS version name
     These two are different in prerelease or dev versions.

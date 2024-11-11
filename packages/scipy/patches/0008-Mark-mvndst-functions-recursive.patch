@@ -1,0 +1,38 @@
+From c11745d763407d9a2bb195a21e2a8afaf7635248 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 6 Jul 2024 22:38:55 +0200
+Subject: [PATCH 8/18] Mark mvndst functions recursive
+
+---
+ scipy/stats/mvndst.f | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/scipy/stats/mvndst.f b/scipy/stats/mvndst.f
+index 41afa7e74..5065a15ff 100644
+--- a/scipy/stats/mvndst.f
++++ b/scipy/stats/mvndst.f
+@@ -21,8 +21,8 @@
+ *          Pullman, WA 99164-3113
+ *          Email : alangenz@wsu.edu
+ *
+-      SUBROUTINE mvnun(d, n, lower, upper, means, covar, maxpts, 
+-     &                   abseps, releps, value, inform)
++      RECURSIVE SUBROUTINE mvnun(d, n, lower, upper, means, covar, 
++     &                   maxpts, abseps, releps, value, inform)
+ *  Parameters
+ *
+ *   d       integer, dimensionality of the data
+@@ -88,8 +88,8 @@
+       END 
+ 
+ 
+-      SUBROUTINE mvnun_weighted(d, n, lower, upper, means, weights,
+-     &                          covar, maxpts, abseps, releps, 
++      recursive SUBROUTINE mvnun_weighted(d, n, lower, upper, means, 
++     &                          weights, covar, maxpts, abseps, releps,
+      &                           value, inform)
+ *  Parameters
+ *
+-- 
+2.34.1
+

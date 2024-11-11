@@ -1,13 +1,13 @@
 package:
   name: scikit-learn
-  version: 1.5.0
+  version: 1.5.2
   tag:
     - min-scipy-stack
   top-level:
     - sklearn
 source:
-  url: https://files.pythonhosted.org/packages/bf/8a/06e499bca463905000f50e461c9445e949aafdd33ea3b62024aa2238b83d/scikit_learn-1.5.0.tar.gz
-  sha256: 789e3db01c750ed6d496fa2db7d50637857b451e57bcae863bff707c1247bef7
+  url: https://files.pythonhosted.org/packages/37/59/44985a2bdc95c74e34fef3d10cb5d93ce13b0e2a7baefffe1b53853b502d/scikit_learn-1.5.2.tar.gz
+  sha256: b4237ed7b3fdd0a4882792e68ef2545d5baa50aca3bb45aa7df468138ad8f94d
 
 build:
   cflags: -Wno-implicit-function-declaration
@@ -64,7 +64,7 @@ about:
   home: http://scikit-learn.org
   PyPI: https://pypi.org/project/scikit-learn
   summary: A set of python modules for machine learning and data mining
-  license: new BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - lesteve

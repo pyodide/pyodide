@@ -15,3 +15,5 @@ build:
     cd Python-${PYVERSION}/Lib
 
     tar --exclude=__pycache__ -cf - pydoc_data | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

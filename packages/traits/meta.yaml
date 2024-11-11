@@ -10,4 +10,4 @@ about:
   home: http://docs.enthought.com/traits
   PyPI: https://pypi.org/project/traits
   summary: Observable typed attributes for Python classes
-  license: BSD
+  license: BSD-3-Clause

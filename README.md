@@ -79,7 +79,7 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 - Mailing list: [mail.python.org/mailman3/lists/pyodide.python.org/](https://mail.python.org/mailman3/lists/pyodide.python.org/)
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
-- Discord: [Pyodide Discord](https://discord.gg/cRxMCG5kJQ)
+- Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
 ## License
 

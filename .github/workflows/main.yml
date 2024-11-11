@@ -8,6 +8,9 @@ concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 3
+
 jobs:
   get_python_version:
     runs-on: ubuntu-latest
@@ -24,6 +27,8 @@ jobs:
     needs: get_python_version
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
@@ -31,8 +36,8 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir test-results
-          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -40,7 +45,7 @@ jobs:
               --junitxml=test-results/junit.xml \
               --verbose \
               --runtime=host \
-              --cov=pyodide_build --cov=pyodide \
+              --cov=pyodide \
               src packages/_tests tools/
       - uses: codecov/codecov-action@v4
         with:
@@ -65,7 +70,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          submodules: recursive
       - name: Cache ccache output
         uses: actions/cache@v4
         with:
@@ -166,6 +172,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -185,7 +193,7 @@ jobs:
           pip install -r requirements.txt -r requirements-deploy.txt
           make pyodide_build
 
-      - uses: pyodide/pyodide-actions/install-browser@v1
+      - uses: pyodide/pyodide-actions/install-browser@v2
         with:
           runner: ${{ matrix.runner }}
           browser: ${{ matrix.browser }}
@@ -239,9 +247,20 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
-      - id: check-build-trigger
-        name: Check build trigger
-        run: bash tools/check_build_trigger.sh
+      - name: Check build trigger
+        id: check-build-trigger
+        shell: bash
+        run: |
+          set -e -x
+
+          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+
+          # The scipy tests will be triggered on push or on pull_request when the commit
+          # message contains "[scipy]"
+          if [[ "$GITHUB_EVENT_NAME" == push ||
+                "$COMMIT_MSG" =~ \[scipy\] ]]; then
+              echo "trigger=true" >> "$GITHUB_OUTPUT"
+          fi
 
   test-scipy:
     runs-on: ${{ matrix.os }}

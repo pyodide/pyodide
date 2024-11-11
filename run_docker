@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 PYODIDE_IMAGE_REPO="pyodide"
-PYODIDE_IMAGE_TAG="20240312-chrome122-firefox122"
+PYODIDE_IMAGE_TAG="20241028-chrome130-firefox131"
 DEFAULT_PYODIDE_DOCKER_IMAGE="${PYODIDE_IMAGE_REPO}/pyodide-env:${PYODIDE_IMAGE_TAG}"
 DEFAULT_PYODIDE_SYSTEM_PORT="none"
 DOCKER_COMMAND="/bin/bash"
@@ -18,6 +18,14 @@ USER_FLAG=("--user" "$USER_ID:$USER_GID")
 HEALTHCHECK_MESSAGE="Done initialization"
 
 set -eo pipefail
+
+# If docker does not exist, podman is used instead.
+if ! command -v docker &> /dev/null; then
+    USER_FLAG=()
+    docker() {
+      podman "$@"
+    }
+fi
 
 
 function usage() {
@@ -137,6 +145,23 @@ mkdir -p .docker_home
 
 # Start a detached container as root, add the host uname and uid to /etc/passwd,
 # then run forever
+cat << EOF >.docker_home/entrypoint.sh
+groupadd --gid '$USER_GID' '$USER_NAME';
+useradd\
+  --home '$USER_HOME'\
+  --uid '$USER_ID'\
+  --gid '$USER_GID'\
+  --comment '$USER_COMMENT_FIELD'\
+  --shell '$USER_INTERPRETER'\
+  --groups sudo\
+  $USER_NAME\
+;
+echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile;
+echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ;
+echo '$HEALTHCHECK_MESSAGE';
+tail -f /dev/null
+EOF
+
 CONTAINER=$(\
   docker run \
     "${PORT_CONFIGURATION_LINE[@]}" \
@@ -146,22 +171,7 @@ CONTAINER=$(\
     --shm-size 2g \
     --platform $DOCKER_PLATFORM \
     "${PYODIDE_DOCKER_IMAGE}" \
-    /bin/bash -c " \
-      groupadd --gid '$USER_GID' '$USER_NAME'; \
-      useradd \
-        --home '$USER_HOME' \
-        --uid '$USER_ID' \
-        --gid '$USER_GID' \
-        --comment '$USER_COMMENT_FIELD' \
-        --shell '$USER_INTERPRETER' \
-        --groups sudo  \
-        $USER_NAME \
-      ; \
-      echo 'export PATH=\$PATH:$USER_HOME/.local/bin' >> /etc/profile; \
-      echo '%sudo ALL=(ALL:ALL) NOPASSWD:ALL' >> /etc/sudoers ; \
-      echo '$HEALTHCHECK_MESSAGE'; \
-      tail -f /dev/null \
-    " \
+    /bin/bash .docker_home/entrypoint.sh \
 )
 
 until docker logs "$CONTAINER" 2>&1 | grep -q "$HEALTHCHECK_MESSAGE"; do

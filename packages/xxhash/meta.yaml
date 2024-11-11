@@ -10,7 +10,7 @@ about:
   home: https://github.com/ifduyue/python-xxhash
   PyPI: https://pypi.org/project/xxhash
   summary: Python binding for xxHash
-  license: BSD
+  license: BSD-2-Clause
 extra:
   recipe-maintainers:
     - ifduyue

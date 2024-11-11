@@ -1,0 +1,295 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/jquery.terminal.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/unix_formatting.min.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/css/jquery.terminal.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      .terminal {
+        --size: 1.5;
+        --color: rgba(255, 255, 255, 0.8);
+      }
+
+      .noblink {
+        --animation: terminal-none;
+      }
+
+      body {
+        background-color: black;
+      }
+
+      #jquery-terminal-logo {
+        color: white;
+        border-color: white;
+        position: absolute;
+        top: 7px;
+        right: 18px;
+        z-index: 2;
+      }
+
+      #jquery-terminal-logo a {
+        color: gray;
+        text-decoration: none;
+        font-size: 0.7em;
+      }
+
+      #loading {
+        display: inline-block;
+        width: 50px;
+        height: 50px;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        border: 3px solid rgba(172, 237, 255, 0.5);
+        border-radius: 50%;
+        border-top-color: #fff;
+        animation: spin 1s ease-in-out infinite;
+        -webkit-animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      @-webkit-keyframes spin {
+        to {
+          -webkit-transform: rotate(360deg);
+        }
+      }
+
+      #description-header {
+        background-color: #fff;
+        width: 100%;
+        max-width: 80ch;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        padding: 4px;
+      }
+      #description-header h1 {
+        font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="jquery-terminal-logo">
+      <a href="https://terminal.jcubic.pl/">jQuery Terminal</a>
+    </div>
+    <div id="description-header">
+      <h1>Webworker console</h1>
+      <p>
+        This example runs Pyodide in a web-worker, and sends javascript calls
+        from the console to the web-worker. This means that long running python
+        calls don't hang the main window Javascript. Really useful for things
+        like running pytest tests, where you want to see output as it happens.
+      </p>
+      <p>
+        HTML Code:
+        <a href="console_webworker.html" download>console_webworker.html</a>
+      </p>
+      <p>
+        Worker Code:
+        <a href="console_webworker.js" download>console_webworker.js</a>
+      </p>
+    </div>
+    <div id="loading"></div>
+    <script>
+      "use strict";
+
+      function sleep(s) {
+        return new Promise((resolve) => setTimeout(resolve, s));
+      }
+      function initWorker() {
+        var resultPromiseResolver;
+        var completedPromiseResolver;
+        var clearPromiseResolver;
+        globalThis.pyodide_worker = new Worker("console_webworker.js", {
+          type: "module",
+        });
+        pyodide_worker.onmessage = async function (e) {
+          const data = e.data;
+          if (data.type === "init") {
+            main(data["banner"]);
+          } else if (data.type === "echo") {
+            term.echo(
+              data["msg"]
+                .replaceAll("]]", "&rsqb;&rsqb;")
+                .replaceAll("[[", "&lsqb;&lsqb;"),
+              ...data["opts"],
+            );
+          } else if (data.type === "error") {
+            term.error(data["str"]);
+          } else if (data.type === "result") {
+            if (resultPromiseResolver) {
+              resultPromiseResolver(data);
+            } else {
+              console.log("Result message while not waiting?");
+            }
+          } else if (data.type === "clear") {
+            if (clearPromiseResolver) {
+              clearPromiseResolver(data);
+            } else {
+              console.log("Cleared message while not waiting?");
+            }
+          } else if (data.type === "complete") {
+            if (completedPromiseResolver) {
+              completedPromiseResolver(data.result);
+            } else {
+              console.log("Completion message while not waiting?");
+            }
+          } else if (data.type === "fatal") {
+            if (e.name === "Exit") {
+              term.error(e);
+              term.error("Pyodide exited and can no longer be used.");
+            } else {
+              term.error(
+                "Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.",
+              );
+              term.error("The cause of the fatal error was:");
+              term.error(e);
+              term.error("Look in the browser console for more details.");
+            }
+          }
+        };
+        globalThis.do_push = async function (str) {
+          let promise = new Promise((resolve, reject) => {
+            resultPromiseResolver = resolve;
+          });
+          pyodide_worker.postMessage({ type: "push", value: str });
+          let retval = await promise;
+          resultPromiseResolver = undefined;
+          return await promise;
+        };
+        globalThis.do_complete = async function (str) {
+          let promise = new Promise((resolve, reject) => {
+            completedPromiseResolver = resolve;
+          });
+          pyodide_worker.postMessage({ type: "complete", value: str });
+          let retval = await promise;
+          completedPromiseResolver = undefined;
+          return retval;
+        };
+        globalThis.do_clear = async function () {
+          let promise = new Promise((resolve, reject) => {
+            clearPromiseResolver = resolve;
+          });
+          pyodide_worker.postMessage({ type: "clear", value: str });
+          let retval = await promise;
+          clearPromiseResolver = undefined;
+          return await promise;
+        };
+      }
+      async function main(pyodide_version_banner) {
+        const ps1 = ">>> ";
+        const ps2 = "... ";
+
+        async function lock() {
+          let resolve;
+          const ready = term.ready;
+          term.ready = new Promise((res) => (resolve = res));
+          await ready;
+          return resolve;
+        }
+
+        async function interpreter(command) {
+          const unlock = await lock();
+          term.pause();
+          // multiline should be split (useful when pasting)
+          for (const c of command.split("\n")) {
+            const escaped = c.replaceAll(/\u00a0/g, " ");
+            const fut = await do_push(escaped);
+            term.set_prompt(fut.syntax_check === "incomplete" ? ps2 : ps1);
+            switch (fut.syntax_check) {
+              case "syntax-error":
+                term.error(fut.formatted_error.trimEnd());
+                continue;
+              case "incomplete":
+                continue;
+              case "complete":
+                break;
+              default:
+                throw new Error(`Unexpected type ${ty}`);
+            }
+          }
+          term.resume();
+          await sleep(10);
+          unlock();
+        }
+
+        globalThis.term = $("body").terminal(interpreter, {
+          greetings: pyodide_version_banner,
+          prompt: ps1,
+          completionEscape: false,
+          completion: function (command, callback) {
+            do_complete(command).then((result) => callback(result));
+          },
+          keymap: {
+            "CTRL+C": async function (event, original) {
+              await do_clear();
+              term.enter();
+              echo("KeyboardInterrupt");
+              term.set_command("");
+              term.set_prompt(ps1);
+            },
+            TAB: (event, original) => {
+              const command = term.before_cursor();
+              // Disable completion for whitespaces.
+              if (command.trim() === "") {
+                term.insert("\t");
+                return false;
+              }
+              return original(event);
+            },
+          },
+        });
+        window.term = term;
+        term.ready = Promise.resolve();
+
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.has("noblink")) {
+          $(".cmd-cursor").addClass("noblink");
+        }
+
+        let idbkvPromise;
+        async function getIDBKV() {
+          if (!idbkvPromise) {
+            idbkvPromise = await import(
+              "https://unpkg.com/idb-keyval@5.0.2/dist/esm/index.js"
+            );
+          }
+          return idbkvPromise;
+        }
+
+        async function mountDirectory(pyodideDirectory, directoryKey) {
+          if (pyodide.FS.analyzePath(pyodideDirectory).exists) {
+            return;
+          }
+          const { get, set } = await getIDBKV();
+          const opts = {
+            id: "mountdirid",
+            mode: "readwrite",
+          };
+          let directoryHandle = await get(directoryKey);
+          if (!directoryHandle) {
+            directoryHandle = await showDirectoryPicker(opts);
+            await set(directoryKey, directoryHandle);
+          }
+          const permissionStatus =
+            await directoryHandle.requestPermission(opts);
+          if (permissionStatus !== "granted") {
+            throw new Error("readwrite access to directory not granted");
+          }
+          await pyodide.mountNativeFS(pyodideDirectory, directoryHandle);
+        }
+        globalThis.mountDirectory = mountDirectory;
+      }
+      window.console_ready = initWorker();
+    </script>
+  </body>
+</html>

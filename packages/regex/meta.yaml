@@ -13,4 +13,4 @@ about:
   home: https://github.com/mrabarnett/mrab-regex
   PyPI: https://pypi.org/project/regex
   summary: Alternative regular expression module, to replace re.
-  license: Apache Software License
+  license: Apache-2.0

@@ -1,0 +1,3 @@
+[submodule "pyodide-build"]
+	path = pyodide-build
+	url = https://github.com/pyodide/pyodide-build
