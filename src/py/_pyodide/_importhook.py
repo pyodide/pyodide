@@ -25,6 +25,9 @@ class JsFinder(MetaPathFinder):
             try:
                 parent_module = sys.modules[parent]
             except KeyError:
+                # Note: This will never happen when we're called from importlib,
+                # but pytest hits this codepath. See
+                # `test_importhook_called_from_pytest`.
                 return None
             if not isinstance(parent_module, JsProxy):
                 # Not one of us.

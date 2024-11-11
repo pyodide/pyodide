@@ -1516,6 +1516,27 @@ def test_module_not_found_note(selenium_standalone):
     assert len(e.value.__notes__) == 1
 
 
+@run_in_pyodide
+def test_importhook_called_from_pytest(selenium):
+    """
+    Whenever importlib itself resolves `import a.b`, it splits on the . and
+    first imports `a` and then `a.b`. However, pytest does not, it calls
+    `find_spec("a.b")` directly here:
+    https://github.com/pytest-dev/pytest/blob/ea0fa639445ae08616edd2c15189a1a76168f018/src/_pytest/pathlib.py#L693-L698
+
+    This previously could lead to crashes in `JsFinder`.
+    """
+    import sys
+
+    def _import_module_using_spec(module_name):
+        """Modeled on a fragment of _pytest.pathlib._import_module_using_spec"""
+        for meta_importer in sys.meta_path:
+            spec = meta_importer.find_spec(module_name, path=[])
+
+    # Assertion: This should not raise KeyError.
+    _import_module_using_spec("a.b")
+
+
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert selenium.run_js(
