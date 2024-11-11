@@ -61,6 +61,10 @@ myst:
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
+  {pr}`5100`
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
 
 ### Packages
 
