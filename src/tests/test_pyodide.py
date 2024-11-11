@@ -1531,7 +1531,7 @@ def test_importhook_called_from_pytest(selenium):
     def _import_module_using_spec(module_name):
         """Modeled on a fragment of _pytest.pathlib._import_module_using_spec"""
         for meta_importer in sys.meta_path:
-            meta_importer.find_spec(module_name, path=[])
+            meta_importer.find_spec(module_name, [])
 
     # Assertion: This should not raise KeyError.
     _import_module_using_spec("a.b")
