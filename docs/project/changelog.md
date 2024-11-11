@@ -117,6 +117,10 @@ myst:
 - Added `Narwhals` 1.9.4 {pr}`5121`
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 - Added `clingo` 5.7.1 {pr}`5184`
+- Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
+- Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
+- Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
+- Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
 
 ## Version 0.26.3
 
