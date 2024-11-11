@@ -69,6 +69,9 @@ myst:
 - {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
   {pr}`5186`
 
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
+
 ### Packages
 
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
