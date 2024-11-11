@@ -19,6 +19,9 @@ myst:
 - {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
   {pr}`5129`
 
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
 ## Version 0.26.3
 
 _October 19, 2024_
