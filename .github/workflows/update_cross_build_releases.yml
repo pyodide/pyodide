@@ -9,6 +9,9 @@ on:
         description: "Version number"
         required: true
 
+env:
+  version: ${{ github.event_name == 'release' && github.event.release.name || github.event.inputs.version }}
+
 jobs:
   update_cross_build_releases:
     runs-on: ubuntu-latest
