@@ -21,6 +21,7 @@ import {
   loadBinaryFile,
   resolvePath,
   initNodeModules,
+  ensureDirNode,
 } from "./compat";
 import { DynlibLoader } from "./dynload";
 
@@ -120,6 +121,14 @@ export class PackageManager {
 
   private _lock = createLock();
 
+  /**
+   * The function to use for stdout and stderr, defaults to console.log and console.error
+   */
+  private stdout: (message: string) => void = console.log;
+  private stderr: (message: string) => void = console.error;
+
+  private defaultChannel: string = DEFAULT_CHANNEL;
+
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
@@ -173,46 +182,35 @@ export class PackageManager {
     },
   ): Promise<Array<PackageData>> {
     const loadedPackageData = new Set<InternalPackageData>();
-    const messageCallback = options.messageCallback || console.log;
-    const errorCallback = options.errorCallback || console.error;
+    const { messageCallback, errorCallback } = options;
+    const pkgNames = toStringArray(names);
 
-    // originally, this condition was "names instanceof PyProxy",
-    // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
-    // this change is required to run unit tests against this file, when global API or Module is not available.
-    // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
-    // @ts-ignore
-    if (typeof names.toJs === "function") {
-      // @ts-ignore
-      names = names.toJs();
-    }
-    if (!Array.isArray(names)) {
-      names = [names as string];
-    }
-
-    const toLoad = this.recursiveDependencies(names, errorCallback);
+    const toLoad = this.recursiveDependencies(pkgNames, errorCallback);
 
     for (const [_, { name, normalizedName, channel }] of toLoad) {
-      const loaded = loadedPackages[name];
-      if (loaded === undefined) {
-        continue;
-      }
+      const loadedChannel = this.getLoadedPackageChannel(name);
+      if (!loadedChannel) continue;
 
       toLoad.delete(normalizedName);
-      // If uri is from the DEFAULT_CHANNEL, we assume it was added as a
+      // If uri is from the default channel, we assume it was added as a
       // dependency, which was previously overridden.
-      if (loaded === channel || channel === DEFAULT_CHANNEL) {
-        messageCallback(`${name} already loaded from ${loaded}`);
+      if (loadedChannel === channel || channel === this.defaultChannel) {
+        this.logStdout(
+          `${name} already loaded from ${loadedChannel}`,
+          messageCallback,
+        );
       } else {
-        errorCallback(
+        this.logStderr(
           `URI mismatch, attempting to load package ${name} from ${channel} ` +
-            `while it is already loaded from ${loaded}. To override a dependency, ` +
+            `while it is already loaded from ${loadedChannel}. To override a dependency, ` +
             `load the custom package first.`,
+          errorCallback,
         );
       }
     }
 
     if (toLoad.size === 0) {
-      messageCallback("No new packages to load");
+      this.logStdout("No new packages to load", messageCallback);
       return [];
     }
 
@@ -222,9 +220,9 @@ export class PackageManager {
     const failed = new Map<string, Error>();
     const releaseLock = await this._lock();
     try {
-      messageCallback(`Loading ${packageNames}`);
+      this.logStdout(`Loading ${packageNames}`, messageCallback);
       for (const [_, pkg] of toLoad) {
-        if (loadedPackages[pkg.name]) {
+        if (this.getLoadedPackageChannel(pkg.name)) {
           // Handle the race condition where the package was loaded between when
           // we did dependency resolution and when we acquired the lock.
           toLoad.delete(pkg.normalizedName);
@@ -253,15 +251,18 @@ export class PackageManager {
         const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
           .sort()
           .join(", ");
-        messageCallback(`Loaded ${successNames}`);
+        this.logStdout(`Loaded ${successNames}`, messageCallback);
       }
 
       if (failed.size > 0) {
         const failedNames = Array.from(failed.keys()).sort().join(", ");
-        messageCallback(`Failed to load ${failedNames}`);
+        this.logStdout(`Failed to load ${failedNames}`, messageCallback);
         for (const [name, err] of failed) {
-          errorCallback(`The following error occurred while loading ${name}:`);
-          errorCallback(err.message);
+          this.logStderr(
+            `The following error occurred while loading ${name}:`,
+            errorCallback,
+          );
+          this.logStderr(err.message, errorCallback);
         }
       }
 
@@ -297,7 +298,7 @@ export class PackageManager {
     toLoad.set(normalizedName, {
       name: pkgInfo.name,
       normalizedName,
-      channel: DEFAULT_CHANNEL,
+      channel: this.defaultChannel,
       depends: pkgInfo.depends,
       installPromise: undefined,
       done: createResolvable(),
@@ -307,7 +308,7 @@ export class PackageManager {
     // If the package is already loaded, we don't add dependencies, but warn
     // the user later. This is especially important if the loaded package is
     // from a custom url, in which case adding dependencies is wrong.
-    if (loadedPackages[pkgInfo.name] !== undefined) {
+    if (this.getLoadedPackageChannel(pkgInfo.name)) {
       return;
     }
 
@@ -324,7 +325,7 @@ export class PackageManager {
    */
   public recursiveDependencies(
     names: string[],
-    errorCallback: (err: string) => void,
+    errorCallback?: (err: string) => void,
   ): Map<string, PackageLoadMetadata> {
     const toLoad: Map<string, PackageLoadMetadata> = new Map();
     for (let name of names) {
@@ -338,10 +339,11 @@ export class PackageManager {
       const channel = name;
 
       if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
-        errorCallback(
+        this.logStderr(
           `Loading same package ${pkgname} from ${channel} and ${
             toLoad.get(pkgname)!.channel
           }`,
+          errorCallback,
         );
         continue;
       }
@@ -383,25 +385,13 @@ export class PackageManager {
     pkg: PackageLoadMetadata,
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
-    let installBaseUrl: string;
-    if (IN_NODE) {
-      installBaseUrl = this.#api.config.packageCacheDir;
-      // Ensure that the directory exists before trying to download files into it.
-      try {
-        // Check if the `installBaseUrl` directory exists
-        await nodeFsPromisesMod.stat(installBaseUrl); // Use `.stat()` which works even on ASAR archives of Electron apps, while `.access` doesn't.
-      } catch {
-        // If it doesn't exist, make it. Call mkdir() here only when necessary after checking the existence to avoid an error on read-only file systems. See https://github.com/pyodide/pyodide/issues/4736
-        await nodeFsPromisesMod.mkdir(installBaseUrl, {
-          recursive: true,
-        });
-      }
-    } else {
-      installBaseUrl = this.#api.config.indexURL;
-    }
+    const installBaseUrl = IN_NODE
+      ? this.#api.config.packageCacheDir
+      : this.#api.config.indexURL;
+    await ensureDirNode(installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
-    if (pkg.channel === DEFAULT_CHANNEL) {
+    if (pkg.channel === this.defaultChannel) {
       if (!(pkg.normalizedName in this.#api.lockfile_packages)) {
         throw new Error(`Internal error: no entry for package named ${name}`);
       }
@@ -421,7 +411,7 @@ export class PackageManager {
     try {
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
-      if (!IN_NODE || pkg.channel !== DEFAULT_CHANNEL) {
+      if (!IN_NODE || pkg.channel !== this.defaultChannel) {
         throw e;
       }
     }
@@ -466,15 +456,16 @@ export class PackageManager {
         calculate_dynlibs: true,
         installer: "pyodide.loadPackage",
         source:
-          metadata.channel === DEFAULT_CHANNEL ? "pyodide" : metadata.channel,
+          metadata.channel === this.defaultChannel
+            ? "pyodide"
+            : metadata.channel,
       },
     );
 
-    if (DEBUG) {
+    DEBUG &&
       console.debug(
         `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
       );
-    }
 
     await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
@@ -530,6 +521,28 @@ export class PackageManager {
   public setCdnUrl(url: string) {
     this.cdnURL = url;
   }
+
+  /**
+   * getLoadedPackageChannel returns the channel from which a package was loaded.
+   * if the package is not loaded, it returns null.
+   * @param pkg package name
+   */
+  public getLoadedPackageChannel(pkg: string): string | null {
+    const channel = this.loadedPackages[pkg];
+    if (channel === undefined) {
+      return null;
+    }
+
+    return channel;
+  }
+
+  public logStdout(message: string, logger?: (message: string) => void) {
+    logger ? logger(message) : this.stdout(message);
+  }
+
+  public logStderr(message: string, logger?: (message: string) => void) {
+    logger ? logger(message) : this.stderr(message);
+  }
 }
 
 function filterPackageData({
@@ -539,6 +552,27 @@ function filterPackageData({
   package_type,
 }: InternalPackageData): PackageData {
   return { name, version, fileName: file_name, packageType: package_type };
+}
+
+/**
+ * Converts a string or PyProxy to an array of strings.
+ * @private
+ */
+export function toStringArray(str: string | PyProxy | string[]): string[] {
+  // originally, this condition was "names instanceof PyProxy",
+  // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
+  // this change is required to run unit tests against this file, when global API or Module is not available.
+  // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
+  // @ts-ignore
+  if (typeof str.toJs === "function") {
+    // @ts-ignore
+    str = str.toJs();
+  }
+  if (!Array.isArray(str)) {
+    str = [str as string];
+  }
+
+  return str;
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;

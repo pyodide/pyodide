@@ -36,23 +36,9 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
-- {{ Enhancement }} Updated stack switching support to handle new JSPI.
-  {pr}`4982`
-
-- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
-  {pr}`4961`
-
-- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
-  method has no arguments and no return value, it is about 80% faster. The
-  speedup for methods with arguments is less drastic but still quite a lot.
-  {pr}`4961`
-
 - {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
   not included in the cross-build env anymore.
   {pr}`4995`
-
-- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
-  {pr}`4993`
 
 - {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
   JSON (Arrays and Objects). to Python JSON (lists and dicts).
@@ -66,19 +52,27 @@ myst:
   for namespace packages.
   {pr}`5039`
 
+- {{ Breaking }} Removed `webworker.js` from the distribution files. It was a
+  pretty small file, if someone is using it for something they can just copy it into
+  their own code.
+  {pr}`5114`
+
 - {{ Enhancement }} Enabled `pyodide.FS.trackingDelegate` which can be used to track
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
 
-- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
-  {pr}`5092`
-
-- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
-  {pr}`5092`
-
 ### Packages
 
+- Upgraded `crc32c` to 2.7.1 {pr}`5169`
+- Upgraded `rebound` to 4.4.3 {pr}`5163`
+- Upgraded `reboundx` to 4.3.0 {pr}`5163`
+- Upgraded `msprime` to 1.3.3 {pr}`5159`
+- Upgraded `tskit` to 0.6.0 {pr}`5157`
+- Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
+- Upgraded `pydantic` to 2.9.2 {pr}`5151`
+- Upgraded `msgpack` to 1.1.0 {pr}`5144`
+- Upgraded `protobuf` to 5.28.3 {pr}`5136`
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
@@ -96,12 +90,47 @@ myst:
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
+- Upgraded `altair` to 5.4.1 {pr}`5124`
+- Upgraded `PyYAML` to 6.0.2 {pr}`5137`
+- Upgraded `duckdb` to 1.1.2 {pr}`5142`
+- Added `soxr` 0.5.0.post1 {pr}`5150`
+- Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
 - Added `pyarrow` 17.0.0 {pr}`4950`
 - Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
 - Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
+- Added `tree-sitter-go` 0.23.1 {pr}`5102`
+- Added `tree-sitter-java` 0.23.2 {pr}`5102`
+- Added `tree-sitter-python` 0.23.2 {pr}`5102`
+- Added `Narwhals` 1.9.4 {pr}`5121`
+- Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `clingo` 5.7.1 {pr}`5184`
+
+## Version 0.26.3
+
+_October 19, 2024_
+
+- {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
+  {pr}`4961`
+
+- {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
+  method has no arguments and no return value, it is about 80% faster. The
+  speedup for methods with arguments is less drastic but still quite a lot.
+  {pr}`4963`
+
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
+
+- {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
+  {pr}`4993`
+
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
+
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
 
 ## Version 0.26.2
 

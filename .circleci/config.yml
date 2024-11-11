@@ -29,6 +29,8 @@ jobs:
       - DISABLE_DYLINK: << parameters.disable_dylink >>
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - restore_cache:
           keys:
@@ -132,6 +134,8 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -190,6 +194,8 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -219,6 +225,8 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -246,6 +254,8 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -579,10 +589,26 @@ workflows:
               only: /.*/
 
       - build-packages:
+          name: build-static-libraries
+          packages: "tag:static_library"
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
+
+      - build-packages:
           name: build-libraries
           packages: "tag:library"
           requires:
             - build-core
+            - build-static-libraries
           filters:
             tags:
               only: /.*/
