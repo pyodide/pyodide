@@ -1,0 +1,19 @@
+package:
+  name: amici
+  version: 0.28.0
+  top-level:
+    - PUT_TOP_LEVEL_IMPORT_NAMES_HERE
+source:
+  url: https://files.pythonhosted.org/packages/34/df/47b3e2e5b9fbe6503566e5c6c35f48eccae6cac661edcd752787760c1e94/amici-0.28.0.tar.gz
+  sha256: 46c970640d07a23ad94850d3d7477c6e33f32ef81286489ce90a22ebc0245540
+about:
+  home: null
+  PyPI: https://pypi.org/project/amici
+  summary: Advanced multi-language Interface to CVODES and IDAS
+  license: BSD 3-Clause License
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
+requirements:
+  host:
+    - cmake-build-extension
