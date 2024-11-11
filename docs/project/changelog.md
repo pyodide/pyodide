@@ -62,6 +62,9 @@ myst:
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
 
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
 ### Packages
 
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
