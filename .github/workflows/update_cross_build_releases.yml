@@ -49,8 +49,6 @@ jobs:
           base: main
           branch-suffix: timestamp
           draft: true
-          add-paths: |
-            pyodide-cross-build-environments.json
 
       - name: Create an issue if the update fails
         if: failure() || steps.update_cross_build_metadata.outcome == 'failure'
