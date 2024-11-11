@@ -19,6 +19,12 @@ build:
   post: |
     rm -rf numpy/distutils/__pycache__
   cflags: |
+    # NumPy 2.1 disabled visibility for symbols outside of extension modules
+    # by default, so this breaks SciPy tests from modules that use f2py to
+    # build because they rely on the visibility of symbols in NumPy. This flag
+    # is currently used as a stop-gap measure. For more information, please
+    # see numpy/numpy#26286 and numpy/numpy#26103.
+    -DNPY_API_SYMBOL_ATTRIBUTE=__attribute__((visibility("default")))
     -Wno-return-type
   cross-build-env: true
   cross-build-files:
