@@ -61,9 +61,20 @@ myst:
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
+  {pr}`5100`
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
 
 ### Packages
 
+- Upgraded `crc32c` to 2.7.1 {pr}`5169`
+- Upgraded `rebound` to 4.4.3 {pr}`5163`
+- Upgraded `reboundx` to 4.3.0 {pr}`5163`
+- Upgraded `msprime` to 1.3.3 {pr}`5159`
 - Upgraded `tskit` to 0.6.0 {pr}`5157`
 - Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
 - Upgraded `pydantic` to 2.9.2 {pr}`5151`
@@ -86,6 +97,7 @@ myst:
 - Upgraded `duckdb` to 1.1.0 {pr}`5078`
 - Upgraded `sympy` to 1.13.3 {pr}`5098`
 - Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
+- Upgraded `altair` to 5.4.1 {pr}`5124`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
@@ -100,6 +112,8 @@ myst:
 - Added `tree-sitter-java` 0.23.2 {pr}`5102`
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
+- Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `clingo` 5.7.1 {pr}`5184`
 
 ## Version 0.26.3
 

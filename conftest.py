@@ -31,8 +31,13 @@ def set_configs():
         "chrome",
         pytest_pyodide_config.get_flags("chrome")
         + [
+            # Note: in Chrome > 128 (or so?) WebAssemblyExperimentalJSPI no
+            # longer implies type reflection. If we passed
+            # `--enable-experimental-webassembly-features`
+            # here it would enable type reflection. We'd like to make sure that
+            # everything works in the configuration where JSPI exists but type
+            # reflection does not, so we don't pass it.
             "--enable-features=WebAssemblyExperimentalJSPI",
-            "--enable-experimental-webassembly-features",
         ],
     )
 
