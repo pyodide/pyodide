@@ -1524,14 +1524,14 @@ def test_importhook_called_from_pytest(selenium):
     `find_spec("a.b")` directly here:
     https://github.com/pytest-dev/pytest/blob/ea0fa639445ae08616edd2c15189a1a76168f018/src/_pytest/pathlib.py#L693-L698
 
-    This previously could lead to crashes in `JsFinder`.
+    This previously could lead to KeyError being raised in `JsFinder`.
     """
     import sys
 
     def _import_module_using_spec(module_name):
         """Modeled on a fragment of _pytest.pathlib._import_module_using_spec"""
         for meta_importer in sys.meta_path:
-            spec = meta_importer.find_spec(module_name, path=[])
+            meta_importer.find_spec(module_name, path=[])
 
     # Assertion: This should not raise KeyError.
     _import_module_using_spec("a.b")
