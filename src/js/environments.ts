@@ -33,7 +33,7 @@ export const IN_BROWSER_MAIN_THREAD =
   typeof window === "object" &&
   typeof document === "object" &&
   typeof document.createElement === "function" &&
-  typeof sessionStorage === "object" &&
+  "sessionStorage" in window &&
   typeof importScripts !== "function";
 
 /** @private */
