@@ -31,6 +31,7 @@ jobs:
           make pyodide_build
 
       - name: Update cross-build metadata file
+        id: update_cross_build_metadata
         working-directory: tools
         run: |
           python update_cross_build_releases.py "${{ env.version }}"
@@ -50,3 +51,22 @@ jobs:
           draft: true
           add-paths: |
             pyodide-cross-build-environments.json
+
+      - name: Create an issue if the update fails
+        if: failure() || steps.update_cross_build_metadata.outcome == 'failure'
+        uses: dacbd/create-issue-action@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: Update cross-build metadata file for version ${{ env.VERSION }} failed
+          body: |
+            ## Description
+
+            The update of the cross-build metadata file for version ${{ env.VERSION }} failed.
+
+            ## Additional information
+
+            Please check the logs at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            for more information and update the metadata file manually if necessary.
+
+          labels:
+          assignees: ${{ github.actor }}
