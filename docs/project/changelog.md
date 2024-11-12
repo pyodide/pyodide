@@ -69,6 +69,9 @@ myst:
 - {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
   {pr}`5186`
 
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
+
 ### Packages
 
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
@@ -115,6 +118,10 @@ myst:
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 - Added `vega-datasets` 0.9.0 {pr}`5183`
 - Added `clingo` 5.7.1 {pr}`5184`
+- Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
+- Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
+- Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
+- Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
 
 ## Version 0.26.3
 
