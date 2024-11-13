@@ -21,7 +21,7 @@ RUN wget -q -O - https://sh.rustup.rs | \
     RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
 # install autoconf 2.71, required by upstream libffi
-RUN wget https://mirrors.sarata.com/gnu/autoconf/autoconf-2.71.tar.xz \
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && tar -xf autoconf-2.71.tar.xz \
     && cd autoconf-2.71 \
     && ./configure \

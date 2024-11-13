@@ -1,13 +1,13 @@
 package:
   name: tree-sitter-java
-  version: 0.23.2
+  version: 0.23.4
   top-level:
     - tree_sitter_java
 source:
   # Have to use github url to work around broken sdist:
   # https://github.com/tree-sitter/tree-sitter-java/pull/188
-  url: https://github.com/tree-sitter/tree-sitter-java/archive/refs/tags/v0.23.2.tar.gz
-  sha256: 062fe5746deb4e362ccb987228e7b41bfc017eb2b91a0413a7447719abaa07b2
+  url: https://github.com/tree-sitter/tree-sitter-java/archive/refs/tags/v0.23.4.tar.gz
+  sha256: f255c5f53c8c550c77993fb129bf50a99732850ae0a3031bec148106a8ea5596
 requirements:
   run:
     - tree-sitter
