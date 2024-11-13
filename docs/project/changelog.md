@@ -61,6 +61,16 @@ myst:
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
+  {pr}`5100`
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
 
 ### Packages
 
@@ -106,6 +116,12 @@ myst:
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `vega-datasets` 0.9.0 {pr}`5183`
+- Added `clingo` 5.7.1 {pr}`5184`
+- Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
+- Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
+- Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
+- Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
 
 ## Version 0.26.3
 
