@@ -339,7 +339,8 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
+            # TODO(cclauss): Re-add 'firefox' below.
+            pytest -s benchmark/stack_usage.py --rt node,chrome | sed -n 's/## //pg'
 
   test-js:
     <<: *defaults
