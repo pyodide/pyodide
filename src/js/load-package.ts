@@ -36,7 +36,7 @@ async function initializePackageIndex(lockFilePromise: Promise<Lockfile>) {
   if (lockfile.info.version !== API.version) {
     throw new Error(
       "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${API.lockfile_info.version}\n` +
+        `   lockfile version: ${lockfile.info.version}\n` +
         `   pyodide  version: ${API.version}`,
     );
   }
