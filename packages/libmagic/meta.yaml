@@ -3,6 +3,7 @@ package:
   version: "5.42"
   tag:
     - library
+    - shared_library
 source:
   url: https://github.com/file/file/archive/refs/tags/FILE5_42.tar.gz
   sha256: d7374d06451154a628831df58e835fa3263825d0ad593df0fb8a911418d27863
