@@ -63,15 +63,6 @@ myst:
   for more information.
   {pr}`5100`
 
-- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
-  {pr}`5129`
-
-- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
-  {pr}`5186`
-
-- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
-  {pr}`5170`
-
 ### Packages
 
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
@@ -122,6 +113,19 @@ myst:
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+
+## Version 0.26.4
+
+_November 15, 2024_
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
 
 ## Version 0.26.3
 
