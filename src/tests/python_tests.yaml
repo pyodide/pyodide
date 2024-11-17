@@ -57,10 +57,9 @@
     xfail: slow, sometimes times out
 - test_array
 - test_asdl_parser
-- test_ast:
-    xfail-safari: Stack overflow
+- test_ast.test_ast:
     skip:
-      - test_stdlib_validates # incompatible with zipimport
+      - "*_recursion_*"
 - test_asyncgen:
     xfail: async
 - test_asyncio.test_base_events:
@@ -97,6 +96,7 @@
     xfail: async
 - test_asyncio.test_ssl
 - test_asyncio.test_sslproto
+- test_asyncio.test_staggered
 - test_asyncio.test_streams:
     xfail: async
 - test_asyncio.test_subprocess:
@@ -179,9 +179,12 @@
 - test_capi.test_misc:
     skip:
       - "*subinterpreter*" # Should we disable _xxsubinterpreters in Setup.local?
+- test_capi.test_number
+- test_capi.test_run
 - test_capi.test_set
 - test_capi.test_structmembers
 - test_capi.test_sys
+- test_capi.test_tuple
 - test_capi.test_unicode
 - test_capi.test_watchers
 - test_cgi:
@@ -189,7 +192,9 @@
       - test_log # OSError: [Errno 70] Invalid seek
 - test_cgitb
 - test_charmapcodec
-- test_class
+- test_class:
+    skip:
+      - testSFBug532646 # Maximum call stack size exceeded
 - test_clinic
 - test_cmath
 - test_cmd
@@ -216,7 +221,10 @@
 - test_collections
 - test_colorsys
 - test_compare
-- test_compile
+- test_compile:
+    skip:
+      - test_compiler_recursion_limit
+      - test_extended_arg
 - test_compileall:
     xfail: multiprocessing
 - test_compiler_assemble
@@ -238,7 +246,11 @@
 - test_contextlib
 - test_contextlib_async:
     xfail: async
-- test_copy
+- test_copy:
+    skip:
+      - test_deepcopy_reflexive_dict
+      - test_deepcopy_reflexive_list
+      - test_deepcopy_reflexive_tuple
 - test_copyreg:
     xfail: dbm
 - test_coroutines:
@@ -250,7 +262,9 @@
 - test_ctypes.test_anon
 - test_ctypes.test_array_in_pointer
 - test_ctypes.test_arrays
-- test_ctypes.test_as_parameter
+- test_ctypes.test_as_parameter:
+    skip:
+      - test_recursive_as_param
 - test_ctypes.test_bitfields
 - test_ctypes.test_buffers
 - test_ctypes.test_bytes
@@ -293,7 +307,9 @@
 - test_ctypes.test_struct_fields
 - test_ctypes.test_structures:
     skip:
+      - test_array_in_struct
       - test_array_in_struct_registers # needs https://github.com/libffi/libffi/pull/818
+      - test_issue18060*
 - test_ctypes.test_unaligned_structures
 - test_ctypes.test_unicode
 - test_ctypes.test_values
@@ -320,16 +336,19 @@
     xfail: stack overflow
 - test_descrtut
 - test_devpoll
-- test_dict
+- test_dict:
+    skip:
+      - test_repr_deep
 - test_dict_version
 - test_dictcomps
-- test_dictviews
+- test_dictviews:
+    skip:
+      - test_deeply_nested_repr
 - test_difflib
 - test_dis:
     xfail-safari: safaridriver unexpectedly exited
-- test_doctest:
-    xfail: subprocess
-- test_doctest2
+- test_doctest.test_doctest
+- test_doctest.test_doctest2
 - test_docxmlrpc:
     xfail: socket
 - test_dtrace:
@@ -367,7 +386,10 @@
 - test_epoll
 - test_errno
 - test_except_star
-- test_exception_group
+- test_exception_group:
+    skip:
+      - test_deep_split
+      - test_deep_subgroup
 - test_exception_hierarchy
 - test_exception_variations
 - test_exceptions:
@@ -403,13 +425,15 @@
     skip:
       # frozen modules are disabled in runtime
       - test_unfrozen_submodule_in_frozen_package
-- test_fstring
+- test_fstring:
+    xfail-chrome: times out on Python 3.12.7
 - test_ftplib:
     xfail: socket
 - test_funcattrs
 - test_functools:
     skip:
       - "*threaded*"
+      - test_recursive_pickle
 - test_future_stmt.test_future
 - test_future_stmt.test_future_flags
 - test_future_stmt.test_future_multiple_features
@@ -540,7 +564,10 @@
     # The remaining test_io tests seem to hang too
 - test_ioctl
 - test_ipaddress
-- test_isinstance
+- test_isinstance:
+    skip:
+      - "*recursion*"
+      - "*infinite*"
 - test_iter
 - test_iterlen
 - test_itertools
@@ -555,7 +582,8 @@
 - test_json.test_pass1
 - test_json.test_pass2
 - test_json.test_pass3
-- test_json.test_recursion
+- test_json.test_recursion:
+    xfail: Stack overflow
 - test_json.test_scanstring
 - test_json.test_separators
 - test_json.test_speedups
@@ -588,7 +616,9 @@
       - test_clearcache
       - test_getline
       - test_memoryerror
-- test_list
+- test_list:
+    skip:
+      - test_repr_deep
 - test_listcomps
 - test_lltrace
 - test_locale:
@@ -727,8 +757,8 @@
     skip:
       - test_stdin # fork
 - test_pyclbr
-- test_pydoc:
-    xfail: pydoc_data unvendored
+- test_pydoc.test_pydoc:
+    xfail: Missing doc data
 - test_pyexpat
 - test_queue:
     # More than half of these make a thread
@@ -873,6 +903,8 @@
       - test_sly_relative*
       - test_extractall*
       - test_parent_symlink*
+      - test_overwrite_broken_file_symlink_as_file
+      - test_overwrite_file_as_implicit_dir
 - test_tcl
 - test_telnetlib:
     xfail: 7/19 fail with sockets
@@ -923,6 +955,7 @@
 - test_tomllib.test_misc
 - test_tools.test_freeze
 - test_tools.test_i18n
+- test_tools.test_makefile
 - test_tools.test_reindent
 - test_tools.test_sundry
 - test_trace:
@@ -974,6 +1007,7 @@
 - test_unittest.test_setups
 - test_unittest.test_skipping
 - test_unittest.test_suite
+- test_unittest.test_util
 - test_univnewlines
 - test_unpack
 - test_unpack_ex
@@ -989,8 +1023,10 @@
 - test_urllib_response
 - test_urllibnet
 - test_urlparse
-- test_userdict
-- test_userlist
+- test_userdict:
+    xfail: Stack overflow
+- test_userlist:
+    xfail: Stack overflow
 - test_userstring
 - test_utf8_mode
 - test_utf8source
@@ -1010,6 +1046,7 @@
 - test_weakset
 - test_webbrowser:
     xfail: replaced
+- test_winapi
 - test_winconsoleio
 - test_winreg
 - test_winsound

@@ -280,7 +280,10 @@ def test_relaxed_call():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         relaxed_call(f4, a=2, b=7)
 
@@ -342,7 +345,10 @@ def test_relaxed_wrap():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         f4(a=2, b=7)
 

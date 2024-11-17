@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Upgrade to Python 3.12.7.
+  {pr}`5149`
+
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
   timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
   timezone handling.
