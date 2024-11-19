@@ -19,13 +19,10 @@ build:
       mkdir build
       cd build
 
-      emcmake cmake .. -DBUILD_ARKCODE=OFF -DBUILD_CVODE=OFF -DEXAMPLES_ENABLE_C=OFF -DENABLE_KLU=ON -DEXAMPLES_INSTALL=OFF
+      emcmake cmake .. -DBUILD_ARKCODE=OFF -DBUILD_CVODE=OFF -DEXAMPLES_ENABLE_C=OFF -DENABLE_KLU=ON -DEXAMPLES_INSTALL=OFF -DKLU_LIBRARY_DIR=${WASM_LIBRARY_DIR}/lib/ -DKLU_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include
 
       emmake make -j ${PYODIDE_JOBS:-3} install \
       LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
       BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       INSTALL=${WASM_LIBRARY_DIR} 
-
-      cp ${WASM_LIBRARY_DIR}/lib/lib*so ${DISTDIR}
-

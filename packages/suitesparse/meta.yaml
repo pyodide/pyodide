@@ -30,7 +30,6 @@ build:
       LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
       INSTALL=${WASM_LIBRARY_DIR} 
 
-    ls -l ${WASM_LIBRARY_DIR}/lib/*
     cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
        ${WASM_LIBRARY_DIR}/lib/libamd.so \
        ${WASM_LIBRARY_DIR}/lib/libcamd.so \
