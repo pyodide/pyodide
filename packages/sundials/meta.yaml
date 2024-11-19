@@ -1,0 +1,31 @@
+package:
+  name: sundials
+  version: 7.1.1
+
+source:
+  url: https://github.com/LLNL/sundials/releases/download/v7.1.1/sundials-7.1.1.tar.gz
+
+  sha256: ea7d6edfb52448ddfdc1ec48f89a721fe6c0a259c10f8ef56f60fcded87a94bb
+
+
+requirements:
+  host:
+    - openblas
+    - suitesparse
+
+build:
+  type: shared_library
+  script: |
+      mkdir build
+      cd build
+
+      emcmake cmake .. -DBUILD_ARKCODE=OFF -DBUILD_CVODE=OFF -DEXAMPLES_ENABLE_C=OFF -DENABLE_KLU=ON -DEXAMPLES_INSTALL=OFF
+
+      emmake make -j ${PYODIDE_JOBS:-3} install \
+      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
+      BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      INSTALL=${WASM_LIBRARY_DIR} 
+
+      cp ${WASM_LIBRARY_DIR}/lib/lib*so ${DISTDIR}
+
