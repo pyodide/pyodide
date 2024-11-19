@@ -1,0 +1,13 @@
+diff --git a/Makefile b/Makefile
+index 6af48982..ed722693 100644
+--- a/Makefile
++++ b/Makefile
+@@ -51,6 +51,8 @@ install: metisinstall
+ 	( cd AMD && $(MAKE) install )
+ 	( cd CAMD && $(MAKE) install )
+ 	( cd CCOLAMD && $(MAKE) install )
++	( cd BTF && $(MAKE) install )
++	( cd KLU && $(MAKE) install )
+ 	( cd COLAMD && $(MAKE) install )
+ 	( cd CHOLMOD && $(MAKE) install )
+ 	( cd SPQR && $(MAKE) install )
