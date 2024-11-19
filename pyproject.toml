@@ -1,3 +1,6 @@
+[project]
+requires-python = "3.12.7"  # Format must be an exact major.minor.micro version specification.
+
 [tool.mypy]
 python_version = "3.12"
 mypy_path = ["src/py", "pyodide-build"]
