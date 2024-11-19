@@ -4,6 +4,7 @@ Generate a list of test modules in the CPython distribution.
 
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -23,8 +24,8 @@ def get_makefile_envs():
     )
 
     if result.returncode != 0:
-        logger.error("ERROR: Failed to load environment variables from Makefile.envs")
-        exit_with_stdio(result)
+        print("ERROR: Failed to load environment variables from Makefile.envs")
+        sys.exit(1)
 
     environment = {}
     for line in result.stdout.splitlines():
