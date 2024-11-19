@@ -6,8 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version number"
+        description: "Version number to update to. This should not contain the 'v' prefix, since our releases on GitHub do not have it."
         required: true
+
+env:
+  version: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}
 
 jobs:
   update_cross_build_releases:
@@ -27,32 +30,41 @@ jobs:
           python -m pip install --upgrade pip
           make pyodide_build
 
-      - name: Get version number (release)
-        if: github.event_name == 'release'
-        run: |
-          echo "VERSION=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
-
-      - name: Get version number (workflow_dispatch)
-        if: github.event_name == 'workflow_dispatch'
-        run: |
-          echo "VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
-
       - name: Update cross-build metadata file
+        id: update_cross_build_metadata
         working-directory: tools
         run: |
-          python update_cross_build_releases.py "${{ env.VERSION }}"
+          python update_cross_build_releases.py "${{ env.version }}"
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: Update cross-build metadata file for version ${{ env.VERSION }} [skip ci]
-          title: Update cross-build metadata file for version ${{ env.VERSION }}
+          commit-message: Update cross-build metadata file for version ${{ env.version }} [skip ci]
+          title: Update cross-build metadata file for version ${{ env.version }}
           body: |
-            This PR updates the cross-build metadata file for version ${{ env.VERSION }}
-          branch: update-cross-build-metadata-${{ env.VERSION }}
+            This PR updates the cross-build metadata file for the new version ${{ env.version }}.
+            Requesting a review from the @pyodide/core team.
+          branch: update-cross-build-metadata-${{ env.version }}
           base: main
           branch-suffix: timestamp
           draft: true
-          add-paths: |
-            pyodide-cross-build-environments.json
+
+      - name: Create an issue if the update fails
+        if: failure() || steps.update_cross_build_metadata.outcome == 'failure'
+        uses: dacbd/create-issue-action@v2.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: Update cross-build metadata file for version ${{ env.VERSION }} failed
+          body: |
+            ## Description
+
+            The update of the cross-build metadata file for version ${{ env.VERSION }} failed.
+
+            ## Additional information
+
+            Please check the logs at ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            for more information and update the metadata file manually if necessary.
+
+          labels:
+          assignees: ${{ github.actor }}
