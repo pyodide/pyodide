@@ -8,6 +8,14 @@
       "emscripten_version": "3.1.58",
       "min_pyodide_build_version": "0.26.0"
     },
+    "0.26.4": {
+      "version": "0.26.4",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.26.4/xbuildenv-0.26.4.tar.bz2",
+      "sha256": "ba0943309768b1f562a98538b4082b8b1a0b9fd77234d0f95a7f06f20a813dee",
+      "python_version": "3.12.1",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "0.26.3": {
       "version": "0.26.3",
       "url": "https://github.com/pyodide/pyodide/releases/download/0.26.3/xbuildenv-0.26.3.tar.bz2",

@@ -16,10 +16,13 @@ jobs:
   update_cross_build_releases:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      # Note: we check out the main branch so that the cross-build metadata
+      # file is always updated on top of the latest state of the repository.
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: main
 
       - uses: actions/setup-python@v5
         with:
