@@ -94,7 +94,7 @@ export async function initializePackageIndex(
 }
 
 const DEFAULT_CHANNEL = "default channel";
-const INSTALLER = "pyodide.loadPackage"
+const INSTALLER = "pyodide.loadPackage";
 
 /**
  * @hidden
@@ -445,7 +445,7 @@ export class PackageManager {
     }
 
     const filename = pkg.file_name;
-    
+
     // This Python helper function unpacks the buffer and lists out any .so files in it.
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
@@ -457,7 +457,7 @@ export class PackageManager {
       installDir,
       INSTALLER,
       metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
-    )
+    );
   }
 
   /**

@@ -11,41 +11,42 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
  * - installing data files
  */
 export class Installer {
-    #api: PackageManagerAPI;
-    #dynlibLoader: DynlibLoader;
+  #api: PackageManagerAPI;
+  #dynlibLoader: DynlibLoader;
 
-    constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-        this.#api = api;
-        this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
-    }
+  constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
+    this.#api = api;
+    this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
+  }
 
-    async install(
-        buffer: Uint8Array,
-        filename: string,
-        installDir: string,
-        installer: string,
-        source: string,
-    ) {
-        const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
-            {
-                buffer,
-                filename,
-                extract_dir: installDir,
-                installer,
-                source,
-                calculate_dynlibs: true,
-            },
-        );
+  async install(
+    buffer: Uint8Array,
+    filename: string,
+    installDir: string,
+    installer: string,
+    source: string,
+  ) {
+    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
+      {
+        buffer,
+        filename,
+        extract_dir: installDir,
+        installer,
+        source,
+        calculate_dynlibs: true,
+      },
+    );
 
-        const pkgname = uriToPackageData(filename)?.name ?? "";
+    DEBUG &&
+      console.debug(
+        `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
+      );
 
-        DEBUG &&
-            console.debug(
-                `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
-            );
-
-        await this.#dynlibLoader.loadDynlibsFromPackage(pkgname, dynlibs);
-    }
+    await this.#dynlibLoader.loadDynlibsFromPackage(
+      { file_name: filename },
+      dynlibs,
+    );
+  }
 }
 
 export let install: typeof Installer.prototype.install;
@@ -53,9 +54,7 @@ export let install: typeof Installer.prototype.install;
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonInstaller = new Installer(API, Module);
 
-  install = singletonInstaller.install.bind(
-    singletonInstaller,
-  );
+  install = singletonInstaller.install.bind(singletonInstaller);
 
   // TODO: Find a better way to register these functions
   API.install = install;
