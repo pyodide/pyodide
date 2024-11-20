@@ -458,6 +458,13 @@ export interface API {
     pkgname: string,
     dynlibPaths: string[],
   ) => Promise<void>;
+  install: (
+    buffer: Uint8Array,
+    filename: string,
+    installDir: string,
+    installer: string,
+    source: string,
+  ) => Promise<void>;
   recursiveDependencies: (
     names: string[],
     errorCallback: (err: string) => void,

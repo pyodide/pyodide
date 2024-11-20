@@ -11,7 +11,6 @@ from zipfile import ZipFile
 
 try:
     from pyodide_js import loadedPackages
-    from pyodide_js._api import loadDynlibsFromPackage
 except ImportError:
     loadedPackages = None
 
@@ -60,45 +59,6 @@ DATA_FILES_DIR_SUFFIX = ".data"
 DATA_FILES_SCHEME = "data"
 
 
-async def install(
-    buffer: JsBuffer,
-    *,
-    filename: str = "",
-    format: str | None = None,
-    extract_dir: str | None = None,
-    installer: str | None = None,
-    source: str | None = None,
-):
-    """
-    Installs a Python package (wheel file) or a shared library (zip file with .so files)
-
-    This function is a public interface for installing a package *properly* to make it work
-    in the Pyodide environment. Including,
-
-    - loading shared libraries (TODO)
-    - installing data files
-    - installing shared libraries in a proper directory.
-
-    This function is intended to be used in Pyodide projects including
-    - pyodide.loadPackage
-    - micropip.install
-    """
-
-    # TODO(@ryanking13): implement more features
-    dynlibs = unpack_buffer(
-        buffer,
-        filename=filename,
-        format=format,
-        extract_dir=extract_dir,
-        calculate_dynlibs=True,
-        installer=installer,
-        source=source,
-    )
-
-    pkgname = parse_wheel_name(filename)[0] if is_wheelfile(filename) else ""
-    await loadDynlibsFromPackage(pkgname, dynlibs)
-
-
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
     tokens = filename.split("-")
     # TODO: support optional build tags in the filename (cf PEP 427)
@@ -107,10 +67,6 @@ def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
     version, python_tag, abi_tag, platform = tokens[-4:]
     name = "-".join(tokens[:-4])
     return name, version, python_tag, abi_tag, platform
-
-
-def is_wheelfile(filename: str) -> bool:
-    return filename.endswith(".whl")
 
 
 # Vendored from packaging
