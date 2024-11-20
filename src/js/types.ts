@@ -455,7 +455,7 @@ export interface API {
     readFileFunc?: (path: string) => Uint8Array,
   ) => Promise<void>;
   loadDynlibsFromPackage: (
-    pkg: InternalPackageData,
+    pkgname: string,
     dynlibPaths: string[],
   ) => Promise<void>;
   recursiveDependencies: (

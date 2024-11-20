@@ -23,7 +23,6 @@ import {
   initNodeModules,
   ensureDirNode,
 } from "./compat";
-import { DynlibLoader } from "./dynload";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -102,7 +101,6 @@ const DEFAULT_CHANNEL = "default channel";
 export class PackageManager {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
-  #dynlibLoader: DynlibLoader;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -132,7 +130,6 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
   /**
@@ -448,12 +445,11 @@ export class PackageManager {
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
+    await this.#api.package_loader.install.callKwargs(
       {
         buffer,
         filename,
         extract_dir: installDir,
-        calculate_dynlibs: true,
         installer: "pyodide.loadPackage",
         source:
           metadata.channel === this.defaultChannel
@@ -461,13 +457,6 @@ export class PackageManager {
             : metadata.channel,
       },
     );
-
-    DEBUG &&
-      console.debug(
-        `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
-      );
-
-    await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
 
   /**

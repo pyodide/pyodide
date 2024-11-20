@@ -192,19 +192,17 @@ export class DynlibLoader {
    * - The dynlib metadata inside a wasm module only contains the library name, not the path.
    *   So we need to handle them carefully to avoid loading the same library twice.
    *
-   * @param pkg The package metadata
+   * @param pkgname normalized pkgname (= the directory name where the package is installed)
    * @param dynlibPaths The list of dynamic libraries inside a package
    * @private
    */
   public async loadDynlibsFromPackage(
-    pkg: InternalPackageData,
+    pkgname: string,
     dynlibPaths: string[],
   ) {
     // assume that shared libraries of a package are located in <package-name>.libs directory,
     // following the convention of auditwheel.
-    const auditWheelLibDir = `${this.#api.sitepackages}/${
-      pkg.file_name.split("-")[0]
-    }.libs`;
+    const auditWheelLibDir = `${this.#api.sitepackages}/${pkgname}.libs`;
 
     for (const path of dynlibPaths) {
       await this.loadDynlib(path, false, [auditWheelLibDir]);
