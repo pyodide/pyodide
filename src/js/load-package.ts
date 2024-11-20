@@ -445,18 +445,14 @@ export class PackageManager {
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    await this.#api.package_loader.install.callKwargs(
-      {
-        buffer,
-        filename,
-        extract_dir: installDir,
-        installer: "pyodide.loadPackage",
-        source:
-          metadata.channel === this.defaultChannel
-            ? "pyodide"
-            : metadata.channel,
-      },
-    );
+    await this.#api.package_loader.install.callKwargs({
+      buffer,
+      filename,
+      extract_dir: installDir,
+      installer: "pyodide.loadPackage",
+      source:
+        metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
+    });
   }
 
   /**

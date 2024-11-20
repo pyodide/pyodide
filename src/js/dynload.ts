@@ -196,10 +196,7 @@ export class DynlibLoader {
    * @param dynlibPaths The list of dynamic libraries inside a package
    * @private
    */
-  public async loadDynlibsFromPackage(
-    pkgname: string,
-    dynlibPaths: string[],
-  ) {
+  public async loadDynlibsFromPackage(pkgname: string, dynlibPaths: string[]) {
     // assume that shared libraries of a package are located in <package-name>.libs directory,
     // following the convention of auditwheel.
     const auditWheelLibDir = `${this.#api.sitepackages}/${pkgname}.libs`;
