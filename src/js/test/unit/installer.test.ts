@@ -11,27 +11,36 @@ describe("Installer", () => {
   });
 
   it("should call package_loader.unpack_buffer.callKwargs", async () => {
-
     // @ts-ignore
-    globalThis.DEBUG = false
+    globalThis.DEBUG = false;
 
     const mockApi = genMockAPI();
     const mockMod = genMockModule();
     const installer = new Installer(mockApi, mockMod);
 
-    const unpackBufferSpy = sinon.stub(mockApi.package_loader.unpack_buffer, "callKwargs").returns([]);
+    const unpackBufferSpy = sinon
+      .stub(mockApi.package_loader.unpack_buffer, "callKwargs")
+      .returns([]);
 
-    await installer.install(new Uint8Array(), "filename", "installDir", "installer", "source");
+    await installer.install(
+      new Uint8Array(),
+      "filename",
+      "installDir",
+      "installer",
+      "source",
+    );
 
     chai.assert.isTrue(unpackBufferSpy.calledOnce);
-    chai.assert.isTrue(unpackBufferSpy.calledWith({
-      buffer: new Uint8Array(),
-      filename: "filename",
-      extract_dir: "installDir",
-      installer: "installer",
-      source: "source",
-      calculate_dynlibs: true,
-    }));
+    chai.assert.isTrue(
+      unpackBufferSpy.calledWith({
+        buffer: new Uint8Array(),
+        filename: "filename",
+        extract_dir: "installDir",
+        installer: "installer",
+        source: "source",
+        calculate_dynlibs: true,
+      }),
+    );
 
     unpackBufferSpy.restore();
   });
