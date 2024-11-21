@@ -8,6 +8,7 @@
 [![PyPI Latest Release](https://img.shields.io/pypi/v/pyodide-py.svg)](https://pypi.org/project/pyodide-py/)
 [![Build Status](https://circleci.com/gh/pyodide/pyodide.png)](https://circleci.com/gh/pyodide/pyodide)
 [![Documentation Status](https://readthedocs.org/projects/pyodide/badge/?version=stable)](https://pyodide.readthedocs.io/?badge=stable)
+[![Gurubase](https://img.shields.io/badge/Gurubase-Ask%20Pyodide%20Guru-006BFF)](https://gurubase.io/g/pyodide)
 
 Pyodide is a Python distribution for the browser and Node.js based on WebAssembly.
 
