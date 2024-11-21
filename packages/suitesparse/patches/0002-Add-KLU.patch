@@ -2,12 +2,37 @@ diff --git a/Makefile b/Makefile
 index 6af48982..ed722693 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -51,6 +51,8 @@ install: metisinstall
+@@ -44,31 +44,16 @@ endif
+ #       sudo make install INSTALL=/usr/local
+ # See SuiteSparse/README.md for more details.
+ # (note that CSparse is not installed; CXSparse is installed instead)
+-install: metisinstall gbinstall moninstall
++install: metisinstall
+ 	( cd SuiteSparse_config && $(MAKE) install )
+-	# ( cd Mongoose  && $(MAKE) CMAKE_OPTIONS='$(CMAKE_OPTIONS)' install )
  	( cd AMD && $(MAKE) install )
  	( cd CAMD && $(MAKE) install )
  	( cd CCOLAMD && $(MAKE) install )
  	( cd COLAMD && $(MAKE) install )
- 	( cd CHOLMOD && $(MAKE) install )
- 	( cd SPQR && $(MAKE) install )
 +	( cd BTF && $(MAKE) install )
 +	( cd KLU && $(MAKE) install )
+ 	( cd CHOLMOD && $(MAKE) install )
+ 	( cd SPQR && $(MAKE) install )
+-	# ( cd GraphBLAS && $(MAKE) JOBS=$(JOBS) CMAKE_OPTIONS='$(CMAKE_OPTIONS)' install )
+-#	( cd PIRO_BAND && $(MAKE) install )
+-#	( cd SKYLINE_SVD && $(MAKE) install )
+-	( cd SLIP_LU && $(MAKE) install )
+-	$(CP) README.md $(INSTALL_DOC)/SuiteSparse_README.md
+-	chmod 644 $(INSTALL_DOC)/SuiteSparse_README.md
+-
+ metisinstall: metis
+ ifeq (,$(MY_METIS_LIB))
+ 	@mkdir -p $(INSTALL_LIB)
+ 	@mkdir -p $(INSTALL_INCLUDE)
+ 	@mkdir -p $(INSTALL_DOC)
+ 	- $(CP) lib/libmetis.* $(INSTALL_LIB)
+-	- $(CP) metis-5.1.0/manual/manual.pdf $(INSTALL_DOC)/METIS_manual.pdf
+-	- $(CP) metis-5.1.0/README.txt $(INSTALL_DOC)/METIS_README.txt
+         # the following is needed only on the Mac, so *.dylib is hardcoded:
+ 	$(SO_INSTALL_NAME) $(INSTALL_LIB)/libmetis.dylib $(INSTALL_LIB)/libmetis.dylib
+ 	- $(CP) include/metis.h $(INSTALL_INCLUDE)
