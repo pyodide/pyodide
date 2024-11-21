@@ -1,0 +1,11 @@
+package:
+  name: spacy
+  version: 2.3.2
+source:
+  patches:
+  - patches/numpy-emscripten.patch
+  sha256: 818de26e0e383f64ccbe3db185574920de05923d8deac8bbb12113b9e33cee1f
+  url: https://files.pythonhosted.org/packages/18/db/499f374339b522b6618234b93f25d2990692795ccce3152519ccc508586c/spacy-2.3.2.tar.gz
+test:
+  imports:
+  - spacy
