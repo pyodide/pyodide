@@ -6,6 +6,12 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/62/ca/c498394cb9daef16028c20c1df70df884e6cb68556828a191e5df44e1347/river-0.21.2.tar.gz
   sha256: 359d5e9b267b07e025f0dee1e2621c6fa587a73152054387a506877e2d8f68be
+  patches:
+    # This patch helps build against NumPy v2 and can be removed with version
+    # 0.22.0. It's sourced from https://github.com/online-ml/river/pull/1632,
+    # but it isn't a verbatim copy and is instead a backport of the patch
+    # to target the tag for version 0.21.2.
+    - patches/0001-NumPy-v2-compatibility.patch
 requirements:
   executable:
     - rustup
