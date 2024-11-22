@@ -1,13 +1,11 @@
 package:
   name: river
-  version: 0.19.0
+  version: 0.21.2
   top-level:
     - river
-
 source:
-  url: https://files.pythonhosted.org/packages/79/89/2ff0fd93d8f1e3f3e47392e12a14463147de49b6b25df617835e7da894b9/river-0.19.0.tar.gz
-  sha256: 6b2192e27636334dd29eb43d6c46a53f9d7eef38eb8479a0797412b7c8c46020
-
+  url: https://files.pythonhosted.org/packages/62/ca/c498394cb9daef16028c20c1df70df884e6cb68556828a191e5df44e1347/river-0.21.2.tar.gz
+  sha256: 359d5e9b267b07e025f0dee1e2621c6fa587a73152054387a506877e2d8f68be
 requirements:
   executable:
     - rustup
@@ -16,19 +14,16 @@ requirements:
   run:
     - numpy
     - pandas
-    - pytest # can remove in 0.20
     - scipy
-
+test:
+  imports:
+    - river
+    - river.api
 about:
   home: https://github.com/online-ml/river
   PyPI: https://pypi.org/project/river
   summary: Online machine learning in Python
   license: BSD-3-Clause
-
-test:
-  imports:
-    - river
-    - river.api
 extra:
   recipe-maintainers:
     - MaxHalford
