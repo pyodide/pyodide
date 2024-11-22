@@ -134,9 +134,7 @@
 - test_capi.test_tuple
 - test_capi.test_unicode
 - test_capi.test_watchers
-- test_cgi:
-    skip:
-      - test_log # OSError: [Errno 70] Invalid seek
+- test_cgi
 - test_cgitb
 - test_charmapcodec
 - test_class:
@@ -522,10 +520,7 @@
 - test_listcomps
 - test_lltrace
 - test_locale
-- test_logging:
-    skip:
-      # UnsupportedOperation: underlying stream is not seekable
-      - test_should_not_rollover_non_file
+- test_logging
 - test_long
 - test_longexp
 - test_lzma

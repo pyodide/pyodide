@@ -1,7 +1,7 @@
 From 137dae4dbdf9a192551582cdae827b085510956f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 2 Jun 2023 11:59:32 -0700
-Subject: [PATCH 1/6] Add back fs.findObject and fs.readFile in loadLibData
+Subject: [PATCH 1/7] Add back fs.findObject and fs.readFile in loadLibData
 
 See upstream PR:
 https://github.com/emscripten-core/emscripten/pull/19513
