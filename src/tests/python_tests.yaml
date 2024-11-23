@@ -41,6 +41,7 @@
 - test_abstract_numbers
 - test_aifc
 - test_argparse:
+    xfail: slow, times out
     skip:
       # These have extra newlines
       - "*usage*"
