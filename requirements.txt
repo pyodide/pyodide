@@ -6,13 +6,10 @@ build~=1.2.0
 sphinx-click
 hypothesis
 mypy==1.11.0
-# (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
-pytest<8.0.0
+pytest
 pytest-asyncio
 pytest-cov
 pytest-httpserver
 pytest-benchmark
 pytest-pyodide==0.58.3
 setuptools; python_version >= '3.12'
-# TODO(cclauss): Remove the Selenium line.
-selenium==4.25.0
