@@ -116,6 +116,7 @@ myst:
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `xarray` to 2024.11.0 {pr}`5224`
 
 ## Version 0.26.4
 
