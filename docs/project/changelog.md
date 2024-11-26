@@ -116,6 +116,7 @@ myst:
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 
 ## Version 0.26.4
 
