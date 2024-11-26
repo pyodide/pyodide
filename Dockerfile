@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.1-slim-bookworm
+FROM python:3.12.7-slim-bookworm
 
 # Requirements for building packages
 RUN apt-get update \
@@ -19,7 +19,7 @@ RUN wget -q -O - https://sh.rustup.rs | \
     RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
 # install autoconf 2.71, required by upstream libffi
-RUN wget https://mirrors.sarata.com/gnu/autoconf/autoconf-2.71.tar.xz \
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && tar -xf autoconf-2.71.tar.xz \
     && cd autoconf-2.71 \
     && ./configure \
@@ -104,7 +104,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
   else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
   fi \
-  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
+  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb." \
   && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt-get update \
