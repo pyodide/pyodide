@@ -1,11 +1,11 @@
 package:
   name: river
-  version: 0.21.2
+  version: 0.22.0
   top-level:
     - river
 source:
-  url: https://files.pythonhosted.org/packages/62/ca/c498394cb9daef16028c20c1df70df884e6cb68556828a191e5df44e1347/river-0.21.2.tar.gz
-  sha256: 359d5e9b267b07e025f0dee1e2621c6fa587a73152054387a506877e2d8f68be
+  url: https://files.pythonhosted.org/packages/31/23/4e4d1c99e38767c0afb4d6bcbe9a36157bf365578320d1b3356054e1fc79/river-0.22.0.tar.gz
+  sha256: 8b06840e0d832dbd1064145e56e3f75492402716f5eb733753da3099194a3a68
 requirements:
   executable:
     - rustup
