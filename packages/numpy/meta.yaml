@@ -1,13 +1,13 @@
 package:
   name: numpy
-  version: 2.1.3
+  version: 2.0.2
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/25/ca/1166b75c21abd1da445b97bf1fa2f14f423c6cfb4fc7c4ef31dccf9f6a94/numpy-2.1.3.tar.gz
-  sha256: aa08e04e08aaf974d4458def539dece0d28146d866a39da5639596f4921fd761
+  url: https://files.pythonhosted.org/packages/a9/75/10dd1f8116a8b796cb2c737b674e02d02e80454bda953fa7e65d8c12b016/numpy-2.0.2.tar.gz
+  sha256: 883c987dee1880e2a864ab0dc9892292582510604156762362d9326444636e78
 
 build:
   # numpy uses vendored meson, so we need to pass the cross file manually
@@ -18,14 +18,7 @@ build:
   # It breaks our test because there is a .pyc in the directory.
   post: |
     rm -rf numpy/distutils/__pycache__
-  # NumPy 2.1 disabled visibility for symbols outside of extension modules
-  # by default, so this breaks SciPy tests from modules that use f2py to
-  # build because they rely on the visibility of symbols in NumPy. This flag
-  # is currently used as a stop-gap measure. For more information, please see
-  # 1. https://github.com/numpy/numpy/pull/26286, and
-  # 2. https://github.com/numpy/numpy/pull/26103.
   cflags: |
-    -DNPY_API_SYMBOL_ATTRIBUTE=__attribute__((visibility("default")))
     -Wno-return-type
   cross-build-env: true
   cross-build-files:
