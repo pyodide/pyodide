@@ -14,5 +14,3 @@ pytest-httpserver
 pytest-benchmark
 pytest-pyodide==0.58.3
 setuptools; python_version >= '3.12'
-# TODO(cclauss): Remove the Selenium line.
-selenium==4.25.0
