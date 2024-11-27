@@ -13,3 +13,4 @@ pytest-cov
 pytest-httpserver
 pytest-benchmark
 pytest-pyodide==0.58.3
+setuptools; python_version >= '3.12'

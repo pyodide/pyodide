@@ -15,6 +15,7 @@ from pyodide_build.xbuildenv_releases import (
     CrossBuildEnvReleaseSpec,
 )
 
+# This file must be called from the root of the repository for the path to work
 METADATA_FILE = Path(__file__).parents[1] / "pyodide-cross-build-environments.json"
 
 BASE_URL = "https://github.com/pyodide/pyodide/releases/download/{version}/xbuildenv-{version}.tar.bz2"

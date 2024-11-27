@@ -60,7 +60,7 @@ folder](https://github.com/pyodide/pyodide/tree/main/packages).
 First clone the Pyodide git repository:
 
 ```bash
-git clone https://github.com/pyodide/pyodide
+git clone --recursive https://github.com/pyodide/pyodide
 cd pyodide
 ```
 
@@ -196,7 +196,7 @@ from pytest_pyodide import run_in_pyodide
 @run_in_pyodide(packages=["<package-name>-tests", "pytest"])
 def test_mytestname(selenium):
   import pytest
-  pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...])
+  assert pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...]) == 0
 ```
 
 you can put whatever command line arguments you would pass to `pytest` as

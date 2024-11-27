@@ -51,6 +51,7 @@ build:
       _testcapi/code.c \
       _testcapi/buffer.c \
       _testcapi/pyos.c \
+      _testcapi/run.c \
       _testcapi/file.c \
       _testcapi/codec.c \
       _testcapi/immortal.c \
