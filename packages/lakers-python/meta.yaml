@@ -1,11 +1,11 @@
 package:
   name: lakers-python
-  version: 0.3.3
+  version: 0.4.1
   top-level:
     - lakers
 source:
-  url: https://files.pythonhosted.org/packages/0b/53/4c942f81eb87be878f82331b63c04c7bff6268a837403837a07dfe129e7a/lakers_python-0.3.3.tar.gz
-  sha256: c0b3cfbc82478bde7dedcf06db275bdce328656361660bae7f527e6de617550c
+  url: https://files.pythonhosted.org/packages/0e/82/41fcc21dfaeda9646067c403b7e8112fd012766e463ce7d7b7839245d063/lakers_python-0.4.1.tar.gz
+  sha256: eb0d6e32b75ade0a6d6478c2f1d21af6da130a3aefee667433c5dde2ac2e21f8
 requirements:
   executable:
     - rustup
