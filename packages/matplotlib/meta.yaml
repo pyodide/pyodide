@@ -14,6 +14,7 @@ source:
     - patches/0001-Disable-macOS-X-backend.patch
     - patches/0002-Disable-timer.patch
     - patches/0003-Hardcode-font-cache-path.patch
+    - patches/0004-Adapt-to-NumPy-v2.patch # remove when upgrading to Matplotlib 3.8.4 or later
   extras:
     - - extras/setup.cfg
       - ./mplsetup.cfg

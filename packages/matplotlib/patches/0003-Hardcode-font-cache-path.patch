@@ -1,7 +1,7 @@
 From 18a7e03bd12dc86f8b221dbea68fef680c14f4b1 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Wed, 27 Nov 2024 23:37:11 +0530
-Subject: [PATCH 3/3] Hardcode font cache path
+Subject: [PATCH 3/4] Hardcode font cache path
 
 In Pyodide, font list (see packages/matplotlib/src/fontlist.json)
 is manually pushed in the matplotlib's directory (see meta.yaml)
