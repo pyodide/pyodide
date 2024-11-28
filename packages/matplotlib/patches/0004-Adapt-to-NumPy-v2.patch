@@ -446,7 +446,7 @@ index 330d0d4305..de58449d72 100644
          "certifi>=2020.06.20",
 -        "numpy>=1.17",
 +        "numpy>=2",
-         "setuptools_scm>=4",
+         "setuptools_scm>=4,<7",
          "setuptools_scm_git_archive",
      ],
 @@ -323,7 +323,7 @@ setup(  # Finally, pass this all along to setuptools to do the heavy lifting.
