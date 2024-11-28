@@ -4,10 +4,10 @@ package:
   top-level:
     - matplotlib_pyodide
 source:
-  url: https://files.pythonhosted.org/packages/36/8e/f28cdc02d2eb5d9a711876c39be72701b09ec80ce9ea3a6b67a7f08d8212/matplotlib_pyodide-0.2.2-py3-none-any.whl
-  sha256: 712a1bd8a06875393f25b0dc7a35cff1ecde2df36446d1290aaa846fd225a5df
+  url: https://files.pythonhosted.org/packages/5e/1d/7b706e1f529b055a975d359ac3357c0257260a77ab75744c34f35e51b7d6/matplotlib-pyodide-0.2.2.tar.gz
+  sha256: c1f285208e891112d30e3825bb5a6f5c3a846a5f4080460a518962e2d73aa325
   patches:
-    - patches/0001-Replace-maxdict-with-lru_cache.patch # remove with 0.2.3
+    - patches/0001-Replace-maxdict-with-lru_cache.patch # Can be removed when updating to 0.2.3
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
