@@ -316,7 +316,7 @@ class FetchResponse:
             it should be in a directory that exists. Otherwise, will raise
             an ``OSError``
         """
-        with open(path, "x") as f:
+        with open(path, "x") as f:  # noqa: ASYNC230
             await self._into_file(f)
 
     @_abort_on_cancel

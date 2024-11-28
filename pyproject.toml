@@ -49,26 +49,32 @@ ignore_missing_imports = true
 
 [tool.ruff]
 lint.select = [
+  "ASYNC",   # flake8-async
   "B0",     # bugbear (all B0* checks enabled by default)
   "B904",   # bugbear (Within an except clause, raise exceptions with raise ... from err)
   "B905",   # bugbear (zip() without an explicit strict= parameter set.)
+  "C4",     # flake8-comprehensions
   "C9",     # mccabe complexity
   "E",      # pycodestyles
-  "W",      # pycodestyles
   "F",      # pyflakes
   "I",      # isort
+  "PERF",   # Perflint
   "PGH",    # pygrep-hooks
-  "PLC",    # pylint conventions
-  "PLE",    # pylint errors
+  "PL",     # Pylint
   "UP",     # pyupgrade
+  "W",      # pycodestyles
 ]
-lint.ignore = ["E402", "E501", "E731", "E741", "UP031", "UP038"]
+lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031"]
+lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments = true
 # line-length = 219  # E501: Recommended goal is 88 to match black
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint.per-file-ignores]
 "src/py/_pyodide/_base.py" = [
   "PGH001",  # No builtin `eval()` allowed
+]
+"src/tests/test_*" = [
+  "PLR0915",  # Too many statements (x > 50)
 ]
 "src/tests/test_jsproxy.py" = [
   "PGH001",  # No builtin `eval()` allowed
@@ -80,7 +86,15 @@ target-version = "py311"
   "B008",  # Do not perform function call `typer.Optional` in argument defaults
 ]
 "packages/*" = [
+  "ASYNC",   # flake8-async
+  "C4",      # flake8-comprehensions
+  "PERF",    # Perflint
   "PLC2401", # Unicode argument names are valid
+  "PLR",     # Pylint refactoring
+  "PLW",     # Pylint warnings
+]
+"packages/rasterio/test_rasterio.py" = [
+  "E721",  # Use `is` and `is not` for type comparisons, or `isinstance()`
 ]
 
 [tool.ruff.lint.flake8-bugbear]
@@ -102,6 +116,11 @@ known-third-party = [
 
 [tool.ruff.lint.mccabe]
 max-complexity = 31  # C901: Recommended goal is 10
+
+[tool.ruff.lint.pylint]
+allow-magic-value-types = ["bytes", "float", "int", "str"]
+max-args = 9         # Default is 5
+max-branches = 16    # Default is 12
 
 [tool.pytest.ini_options]
 norecursedirs = [

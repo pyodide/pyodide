@@ -427,7 +427,7 @@ async def test_nativefs_dup(selenium, runner):
         }
         """
     )()
-    file = open("/mnt/nativefs/test_read")
+    file = open("/mnt/nativefs/test_read")  # noqa: ASYNC230
     fd2 = dup(file.fileno())
     close(fd2)
     assert file.read() == "hello_read"
