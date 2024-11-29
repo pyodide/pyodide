@@ -8,6 +8,7 @@ source:
   sha256: c1f285208e891112d30e3825bb5a6f5c3a846a5f4080460a518962e2d73aa325
   patches:
     - patches/0001-Replace-maxdict-with-lru_cache.patch # Can be removed when updating to 0.2.3
+    - patches/0002-Check-existence-of-toolbar.patch # Can be removed when updating to 0.2.3
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
