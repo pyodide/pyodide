@@ -1,0 +1,167 @@
+From 7e9e0fa471f8739b58bcc3e8c6f3d4c80e8931c2 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Sat, 30 Nov 2024 04:38:54 +0530
+Subject: [PATCH] Use path-based MathTextParser
+
+Some inspiration derived from https://https://github.com/ipython/ipython/pull/12889
+and from the Matplotlib docs at
+https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.4.0.html#mathtextparser-bitmap-is-deprecated
+
+---
+ matplotlib_pyodide/html5_canvas_backend.py | 98 +++++++++++++++-------
+ 1 file changed, 68 insertions(+), 30 deletions(-)
+
+diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
+index ac3afd5..c81634c 100644
+--- a/matplotlib_pyodide/html5_canvas_backend.py
++++ b/matplotlib_pyodide/html5_canvas_backend.py
+@@ -3,14 +3,16 @@ import io
+ import math
+ from functools import lru_cache
+ 
++import matplotlib.pyplot as plt
+ import numpy as np
+-from matplotlib import __version__, interactive
++from matplotlib import __version__, figure, interactive
+ from matplotlib.backend_bases import (
+     FigureManagerBase,
+     GraphicsContextBase,
+     RendererBase,
+     _Backend,
+ )
++from matplotlib.backends import backend_agg
+ from matplotlib.colors import colorConverter, rgb2hex
+ from matplotlib.font_manager import findfont
+ from matplotlib.ft2font import LOAD_NO_HINTING, FT2Font
+@@ -204,7 +206,11 @@ class RendererHTMLCanvas(RendererBase):
+         self.ctx.width = self.width
+         self.ctx.height = self.height
+         self.dpi = dpi
+-        self.mathtext_parser = MathTextParser("bitmap")
++
++        # Create path-based math text parser; as the bitmap parser
++        # was deprecated in 3.4 and removed after 3.5
++        self.mathtext_parser = MathTextParser("path")
++
+         self._get_font_helper = lru_cache(maxsize=50)(self._get_font_helper)
+ 
+         # Keep the state of fontfaces that are loading
+@@ -240,6 +246,51 @@ class RendererHTMLCanvas(RendererBase):
+ 
+         return CSS_color
+ 
++    def _math_to_rgba(self, s, prop, rgb):
++        """Convert math text to an RGBA array using path parser and figure"""
++        from io import BytesIO
++
++        # Get the text dimensions
++        width, height, depth, _, _ = self.mathtext_parser.parse(s, dpi=72, prop=prop)
++
++        # Create a figure of the right size
++        fig = figure.Figure(figsize=(width / 72, height / 72))
++
++        # Add text to the figure
++        # Note: depth/height gives us the baseline position
++        fig.text(0, depth / height, s, fontproperties=prop, color=rgb)
++
++        # Set up the Agg backend
++        backend_agg.FigureCanvasAgg(fig)
++
++        # Render to PNG
++        buf = BytesIO()
++        fig.savefig(buf, dpi=self.dpi, format="png", transparent=True)
++        buf.seek(0)
++
++        # Read back the image
++        rgba = plt.imread(buf)
++        return rgba, depth
++
++    def _draw_math_text(self, gc, x, y, s, prop, angle):
++        # Get color from graphics context
++        rgb = gc.get_rgb()
++
++        # Get RGBA array using the new method
++        rgba, depth = self._math_to_rgba(s, prop, rgb)
++
++        angle = math.radians(angle)
++        if angle != 0:
++            self.ctx.save()
++            self.ctx.translate(x, y)
++            self.ctx.rotate(-angle)
++            self.ctx.translate(-x, -y)
++
++        self.draw_image(gc, x, -y - depth, np.flipud(rgba))
++
++        if angle != 0:
++            self.ctx.restore()
++
+     def _set_style(self, gc, rgbFace=None):
+         if rgbFace is not None:
+             self.ctx.fillStyle = self._matplotlib_color_to_CSS(
+@@ -330,9 +381,11 @@ class RendererHTMLCanvas(RendererBase):
+         w: float
+         h: float
+         if ismath:
+-            image, d = self.mathtext_parser.parse(s, self.dpi, prop)
+-            image_arr = np.asarray(image)
+-            h, w = image_arr.shape
++            # Use the path parser to get exact metrics
++            width, height, depth, _, _ = self.mathtext_parser.parse(
++                s, dpi=72, prop=prop
++            )
++            return width, height, depth
+         else:
+             font, _ = self._get_font(prop)
+             font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
+@@ -340,31 +393,7 @@ class RendererHTMLCanvas(RendererBase):
+             w /= 64.0
+             h /= 64.0
+             d = font.get_descent() / 64.0
+-        return w, h, d
+-
+-    def _draw_math_text(self, gc, x, y, s, prop, angle):
+-        rgba, descent = self.mathtext_parser.to_rgba(
+-            s, gc.get_rgb(), self.dpi, prop.get_size_in_points()
+-        )
+-        height, width, _ = rgba.shape
+-        angle = math.radians(angle)
+-        if angle != 0:
+-            self.ctx.save()
+-            self.ctx.translate(x, y)
+-            self.ctx.rotate(-angle)
+-            self.ctx.translate(-x, -y)
+-        self.draw_image(gc, x, -y - descent, np.flipud(rgba))
+-        if angle != 0:
+-            self.ctx.restore()
+-
+-    def load_font_into_web(self, loaded_face, font_url):
+-        fontface = loaded_face.result()
+-        document.fonts.add(fontface)
+-        self.fonts_loading.pop(font_url, None)
+-
+-        # Redraw figure after font has loaded
+-        self.fig.draw()
+-        return fontface
++            return w, h, d
+ 
+     def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
+         if ismath:
+@@ -421,6 +450,15 @@ class RendererHTMLCanvas(RendererBase):
+         if angle != 0:
+             self.ctx.restore()
+ 
++    def load_font_into_web(self, loaded_face, font_url):
++        fontface = loaded_face.result()
++        document.fonts.add(fontface)
++        self.fonts_loading.pop(font_url, None)
++
++        # Redraw figure after font has loaded
++        self.fig.draw()
++        return fontface
++
+ 
+ class FigureManagerHTMLCanvas(FigureManagerBase):
+     def __init__(self, canvas, num):
+-- 
+2.39.5 (Apple Git-154)
+
