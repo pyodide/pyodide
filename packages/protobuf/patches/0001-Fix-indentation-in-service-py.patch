@@ -1,7 +1,7 @@
-diff --git a/protobuf-5.29.0/google/protobuf/service.py b/protobuf-5.29.0/google/protobuf/service.py
+diff --git a/google/protobuf/service.py b/google/protobuf/service.py
 index 8002c04..795b602 100644
---- a/protobuf-5.29.0/google/protobuf/service.py
-+++ b/protobuf-5.29.0/google/protobuf/service.py
+--- a/google/protobuf/service.py
++++ b/google/protobuf/service.py
 @@ -75,7 +75,7 @@ class Service(object):
       Further details about the failure can be found by querying the
       RpcController.
