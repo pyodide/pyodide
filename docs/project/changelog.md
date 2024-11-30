@@ -84,7 +84,7 @@ myst:
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `protobuf` to 5.27.3 {pr}`4601`
+- Upgraded `protobuf` to 5.29.0 {pr}`5233`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
