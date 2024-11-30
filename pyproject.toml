@@ -49,7 +49,6 @@ ignore_missing_imports = true
 
 [tool.ruff]
 lint.select = [
-  "ASYNC",   # flake8-async
   "B0",     # bugbear (all B0* checks enabled by default)
   "B904",   # bugbear (Within an except clause, raise exceptions with raise ... from err)
   "B905",   # bugbear (zip() without an explicit strict= parameter set.)
@@ -86,7 +85,6 @@ target-version = "py312"
   "B008",  # Do not perform function call `typer.Optional` in argument defaults
 ]
 "packages/*" = [
-  "ASYNC",   # flake8-async
   "C4",      # flake8-comprehensions
   "PERF",    # Perflint
   "PLC2401", # Unicode argument names are valid
