@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20240928-chrome127-firefox128
+    - image: pyodide/pyodide-env:20241106-chrome130-firefox132
   environment:
     - EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -339,7 +339,8 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
+            # TODO(cclauss): Re-add 'firefox' below.
+            pytest -s benchmark/stack_usage.py --rt node,chrome | sed -n 's/## //pg'
 
   test-js:
     <<: *defaults

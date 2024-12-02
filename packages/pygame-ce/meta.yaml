@@ -31,6 +31,7 @@ build:
     -sUSE_LIBPNG=1
     -sUSE_GIFLIB=1
     -sUSE_HARFBUZZ=1
+    -Wno-unreachable-code-fallthrough
   ldflags: |
     -sRELOCATABLE=1
     -sUSE_SDL=2

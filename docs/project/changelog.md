@@ -16,6 +16,9 @@ myst:
 
 ## Unreleased
 
+- {{ Enhancement }} Upgrade to Python 3.12.7.
+  {pr}`5149`
+
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
   timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
   timezone handling.
@@ -61,6 +64,7 @@ myst:
   file system operations. See
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
+  {pr}`5100`
 
 ### Packages
 
@@ -76,11 +80,11 @@ myst:
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `certifi` to 2024.7.4 {pr}`5035`
+- Upgraded `certifi` to 2024.8.30 {pr}`5227`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `protobuf` to 5.27.3 {pr}`4601`
+- Upgraded `protobuf` to 5.29.0 {pr}`5233`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
@@ -106,6 +110,26 @@ myst:
 - Added `tree-sitter-python` 0.23.2 {pr}`5102`
 - Added `Narwhals` 1.9.4 {pr}`5121`
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `vega-datasets` 0.9.0 {pr}`5183`
+- Added `clingo` 5.7.1 {pr}`5184`
+- Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
+- Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
+- Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
+- Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `lakers-python` to 0.4.1 {pr}`5225`
+
+## Version 0.26.4
+
+_November 15, 2024_
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
 
 ## Version 0.26.3
 
