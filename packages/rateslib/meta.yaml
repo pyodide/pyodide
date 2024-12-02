@@ -13,6 +13,9 @@ requirements:
     - matplotlib
   executable:
     - rustup
+build:
+  script: |
+    export RUSTFLAGS="${RUSTFLAGS} -Znext-lockfile-bump"    
 about:
   home: https://rateslib.readthedocs.io/en/1.6.x/
   PyPI: https://pypi.org/project/rateslib
