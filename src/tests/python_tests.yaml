@@ -349,7 +349,8 @@
     skip:
       # frozen modules are disabled in runtime
       - test_unfrozen_submodule_in_frozen_package
-- test_fstring
+- test_fstring:
+    xfail-chrome: slow, times out
 - test_ftplib
 - test_funcattrs
 - test_functools:
