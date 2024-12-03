@@ -197,7 +197,8 @@ export class DynlibLoader {
    * @private
    */
   public async loadDynlibsFromPackage(
-    pkg: InternalPackageData,
+    // TODO: Simplify the type of pkg after removing usage of this function in micropip.
+    pkg: { file_name: string },
     dynlibPaths: string[],
   ) {
     // assume that shared libraries of a package are located in <package-name>.libs directory,
