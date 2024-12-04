@@ -36,8 +36,8 @@ def test_pillow(selenium):
         with open("tree-with-transparency.heic", "wb") as f:
             f.write(base64.b64decode(image_base64))
 
-        from PIL import Image
         from pi_heif import register_heif_opener
+        from PIL import Image
 
         register_heif_opener()
 
