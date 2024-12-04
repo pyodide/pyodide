@@ -1,4 +1,4 @@
-From 7e9e0fa471f8739b58bcc3e8c6f3d4c80e8931c2 Mon Sep 17 00:00:00 2001
+From bf8f1f18ea3648aa3e26977cab3b7da018c1c593 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 30 Nov 2024 04:38:54 +0530
 Subject: [PATCH] Use path-based MathTextParser
@@ -7,15 +7,17 @@ Some inspiration derived from https://https://github.com/ipython/ipython/pull/12
 and from the Matplotlib docs at
 https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.4.0.html#mathtextparser-bitmap-is-deprecated
 
+Co-Authored-By: Gyeongjae Choi <def6488@gmail.com>
+
 ---
- matplotlib_pyodide/html5_canvas_backend.py | 98 +++++++++++++++-------
- 1 file changed, 68 insertions(+), 30 deletions(-)
+ matplotlib_pyodide/html5_canvas_backend.py | 126 +++++++++++++++------
+ 1 file changed, 94 insertions(+), 32 deletions(-)
 
 diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
-index ac3afd5..c81634c 100644
+index ac3afd5..8a2138b 100644
 --- a/matplotlib_pyodide/html5_canvas_backend.py
 +++ b/matplotlib_pyodide/html5_canvas_backend.py
-@@ -3,14 +3,16 @@ import io
+@@ -3,14 +3,17 @@ import io
  import math
  from functools import lru_cache
  
@@ -23,6 +25,7 @@ index ac3afd5..c81634c 100644
  import numpy as np
 -from matplotlib import __version__, interactive
 +from matplotlib import __version__, figure, interactive
++from matplotlib._enums import CapStyle
  from matplotlib.backend_bases import (
      FigureManagerBase,
      GraphicsContextBase,
@@ -33,7 +36,39 @@ index ac3afd5..c81634c 100644
  from matplotlib.colors import colorConverter, rgb2hex
  from matplotlib.font_manager import findfont
  from matplotlib.ft2font import LOAD_NO_HINTING, FT2Font
-@@ -204,7 +206,11 @@ class RendererHTMLCanvas(RendererBase):
+@@ -144,12 +147,31 @@ class GraphicsContextHTMLCanvas(GraphicsContextBase):
+         self.renderer.ctx.restore()
+ 
+     def set_capstyle(self, cs):
++        """
++        Set the cap style for lines in the graphics context.
++
++        Parameters
++        ----------
++        cs : CapStyle or str
++            The cap style to use. Can be a CapStyle enum value or a string
++            that can be converted to a CapStyle.
++        """
++        if isinstance(cs, str):
++            cs = CapStyle(cs)
++
++        # Convert the JoinStyle enum to its name if needed
++        if hasattr(cs, "name"):
++            cs = cs.name.lower()
++
+         if cs in ["butt", "round", "projecting"]:
+             self._capstyle = cs
+             self.renderer.ctx.lineCap = _capstyle_d[cs]
+         else:
+             raise ValueError(f"Unrecognized cap style. Found {cs}")
+ 
++    def get_capstyle(self):
++        return self._capstyle
++
+     def set_clip_rectangle(self, rectangle):
+         self.renderer.ctx.save()
+         if not rectangle:
+@@ -204,7 +226,11 @@ class RendererHTMLCanvas(RendererBase):
          self.ctx.width = self.width
          self.ctx.height = self.height
          self.dpi = dpi
@@ -46,7 +81,7 @@ index ac3afd5..c81634c 100644
          self._get_font_helper = lru_cache(maxsize=50)(self._get_font_helper)
  
          # Keep the state of fontfaces that are loading
-@@ -240,6 +246,51 @@ class RendererHTMLCanvas(RendererBase):
+@@ -240,14 +266,63 @@ class RendererHTMLCanvas(RendererBase):
  
          return CSS_color
  
@@ -98,7 +133,21 @@ index ac3afd5..c81634c 100644
      def _set_style(self, gc, rgbFace=None):
          if rgbFace is not None:
              self.ctx.fillStyle = self._matplotlib_color_to_CSS(
-@@ -330,9 +381,11 @@ class RendererHTMLCanvas(RendererBase):
+                 rgbFace, gc.get_alpha(), gc.get_forced_alpha()
+             )
+ 
+-        if gc.get_capstyle():
+-            self.ctx.lineCap = _capstyle_d[gc.get_capstyle()]
++        capstyle = gc.get_capstyle()
++        if capstyle:
++            # Get the string name if it's an enum
++            if hasattr(capstyle, "name"):
++                capstyle = capstyle.name.lower()
++            self.ctx.lineCap = _capstyle_d[capstyle]
+ 
+         self.ctx.strokeStyle = self._matplotlib_color_to_CSS(
+             gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
+@@ -330,9 +405,11 @@ class RendererHTMLCanvas(RendererBase):
          w: float
          h: float
          if ismath:
@@ -113,7 +162,7 @@ index ac3afd5..c81634c 100644
          else:
              font, _ = self._get_font(prop)
              font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
-@@ -340,31 +393,7 @@ class RendererHTMLCanvas(RendererBase):
+@@ -340,31 +417,7 @@ class RendererHTMLCanvas(RendererBase):
              w /= 64.0
              h /= 64.0
              d = font.get_descent() / 64.0
@@ -146,7 +195,7 @@ index ac3afd5..c81634c 100644
  
      def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
          if ismath:
-@@ -421,6 +450,15 @@ class RendererHTMLCanvas(RendererBase):
+@@ -421,6 +474,15 @@ class RendererHTMLCanvas(RendererBase):
          if angle != 0:
              self.ctx.restore()
  
