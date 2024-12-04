@@ -184,7 +184,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          # Only one build artifact is expected for macOS
+          pattern: core-build-${{ runner.os }}
           path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v3
@@ -283,7 +284,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          pattern: core-build-${{ runner.os }}_*scipy*
           path: ./dist/
 
       - name: run scipy tests inside node
@@ -344,7 +345,8 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          pattern: core-build-${{ runner.os }}_*matplotlib*
+          path: ./dist/
 
       # Now we run the Matplotlib tests inside a browser (and not in Node.js)
       - uses: pyodide/pyodide-actions/install-browser@v2
@@ -406,7 +408,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          pattern: core-build-${{ runner.os }}
           path: ./dist/
 
       - name: install test requirements
