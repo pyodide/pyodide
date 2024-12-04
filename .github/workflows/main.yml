@@ -354,12 +354,13 @@ jobs:
           runner: selenium
           browser: chrome
 
-      - name: run matplotlib tests
+      - name: Run Matplotlib tests
         shell: bash -l {0}
         run: |
           make pyodide_build
           pip install -r requirements.txt -r requirements-deploy.txt
           pip install pytest pytest-pyodide
+          pip install dist/*.whl
 
           pytest packages/matplotlib/test_matplotlib.py -svra --rt chrome
 
@@ -378,7 +379,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          name: core-build-${{ runner.os }}_tag_core_numpy
           path: ./dist/
 
       - uses: oven-sh/setup-bun@v2
@@ -408,7 +409,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: core-build-${{ runner.os }}
+          pattern: core-build-${{ runner.os }}_tag_core_numpy
           path: ./dist/
 
       - name: install test requirements
