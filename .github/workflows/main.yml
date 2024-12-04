@@ -58,6 +58,9 @@ jobs:
         include:
           - os: ubuntu-latest
             pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
+            # Temporary for this PR: remove this when merging
+          - os: ubuntu-latest
+            pyodide_packages: "tag:core,numpy${{ needs.test-matplotlib-trigger.outputs.test-matplotlib == 'true' && ',matplotlib' || '' }}"
           - os: macos-14
             pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
