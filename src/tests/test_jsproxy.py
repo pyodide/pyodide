@@ -224,7 +224,7 @@ def test_jsproxy_map(selenium):
     with pytest.raises(KeyError):
         del TEST["y"]
 
-    assert TEST == TEST
+    assert TEST == TEST  # noqa: PLR0124
     assert TEST != "foo"
 
     TEST = run_js("({foo: 'bar', baz: 'bap'})")
@@ -2891,7 +2891,7 @@ def test_bind_self_reference(selenium):
     a = run_js("({f() { return this; }})")
     a.a = a
 
-    global A
+    global A  # noqa: PLW0603
 
     class A(BindClass):
         a: "A"

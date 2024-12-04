@@ -21,6 +21,7 @@ def get_makefile_envs():
         capture_output=True,
         text=True,
         env={"PYODIDE_ROOT": str(PYODIDE_ROOT)},
+        check=False,
     )
 
     if result.returncode != 0:

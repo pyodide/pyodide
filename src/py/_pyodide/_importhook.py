@@ -195,7 +195,7 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     Note that this finder must be placed in the end of meta_paths
     in order to prevent any unexpected side effects.
     """
-    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
-    global UNVENDORED_STDLIBS_AND_TEST
+    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME  # noqa: PLW0603
+    global UNVENDORED_STDLIBS_AND_TEST  # noqa: PLW0603
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
     UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())
