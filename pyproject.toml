@@ -129,7 +129,7 @@ markers = [
 
 [tool._pyodide]
 
-[tool.pyodide]
+[tool.pyodide.build]
 rust_toolchain = "nightly-2024-12-01"
 
 [tool.codespell]
