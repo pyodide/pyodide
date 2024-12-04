@@ -145,6 +145,32 @@ jobs:
           PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
           ccache -s
 
+      - name: Build Matplotlib
+        if: contains(matrix.pyodide_packages, 'matplotlib')
+        shell: bash -l {0}
+        run: |
+          # This is necessary to use the ccache from emsdk
+          source pyodide_env.sh
+          ccache -z
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
+          ccache -s
+
+      - uses: pyodide/pyodide-actions/install-browser@v2
+        with:
+          runner: selenium
+          browser: chrome
+
+      - name: Test Matplotlib
+        if: contains(matrix.pyodide_packages, 'matplotlib')
+        shell: bash -l {0}
+        run: |
+          pyodide venv .venv-pyodide
+          source .venv-pyodide/bin/activate
+          pip install pytest pytest-pyodide
+
+          pip install dist/*.whl
+          pytest -svra packages/matplotlib/test_matplotlib.py --rt chrome
+
       - name: check-size
         shell: bash -l {0}
         run: |
@@ -328,41 +354,6 @@ jobs:
                 "$COMMIT_MSG" =~ \[matplotlib\] ]]; then
               echo "trigger=true" >> "$GITHUB_OUTPUT"
           fi
-
-  # Temporary for this PR: remove this job when merging
-  test-matplotlib:
-    runs-on: ${{ matrix.os }}
-    needs: [test-matplotlib-trigger, build-core]
-    if: needs.test-matplotlib-trigger.outputs.test-matplotlib
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: core-build-${{ runner.os }}_*matplotlib*
-          path: ./dist/
-
-      # Now we run the Matplotlib tests inside a browser (and not in Node.js)
-      - uses: pyodide/pyodide-actions/install-browser@v2
-        with:
-          runner: selenium
-          browser: chrome
-
-      - name: Run Matplotlib tests
-        shell: bash -l {0}
-        run: |
-          make pyodide_build
-          pip install -r requirements.txt -r requirements-deploy.txt
-          pip install pytest pytest-pyodide
-          pip install dist/*.whl
-
-          pytest packages/matplotlib/test_matplotlib.py -svra --rt chrome
 
   test-bun:
     runs-on: ${{ matrix.os }}
