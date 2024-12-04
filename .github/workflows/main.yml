@@ -153,10 +153,13 @@ jobs:
           pip install brotli
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
+      # Temporary for this PR: remove this when merging
+      - run: echo "PYODIDE_ARTIFACT_SUFFIX=$(echo '${{ matrix.pyodide_packages }}' | tr ':,' '_')" >> "$GITHUB_ENV"
+
       - name: Store artifacts build
         uses: actions/upload-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          name: core-build-${{ runner.os }}_${{ env.PYODIDE_ARTIFACT_SUFFIX }}
           path: ./dist/
           retention-days: 60
 
