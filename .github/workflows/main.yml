@@ -295,6 +295,66 @@ jobs:
 
           node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
 
+  # Temporary for this PR: remove this job when merging
+  test-matplotlib-trigger:
+    name: test-matplotlib-trigger
+    runs-on: ubuntu-latest
+    outputs:
+      test-matplotlib: ${{ steps.check-build-trigger.outputs.trigger }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check build trigger
+        id: check-build-trigger
+        shell: bash
+        run: |
+          set -e -x
+
+          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+
+          # The matplotlib tests will be triggered on push or on pull_request when the commit
+          # message contains "[matplotlib]"
+          if [[ "$GITHUB_EVENT_NAME" == push ||
+                "$COMMIT_MSG" =~ \[matplotlib\] ]]; then
+              echo "trigger=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Temporary for this PR: remove this job when merging
+  test-matplotlib:
+    runs-on: ${{ matrix.os }}
+    needs: [test-matplotlib-trigger, build-core]
+    if: needs.test-matplotlib-trigger.outputs.test-matplotlib
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+
+      # Now we run the Matplotlib tests inside a browser (and not in Node.js)
+      - uses: pyodide/pyodide-actions/install-browser@v2
+        with:
+          runner: selenium
+          browser: chrome
+
+      - name: run matplotlib tests
+        shell: bash -l {0}
+        run: |
+          make pyodide_build
+          pip install -r requirements.txt -r requirements-deploy.txt
+          pip install pytest pytest-pyodide
+
+          pytest packages/matplotlib/test_matplotlib.py -svra --rt chrome
+
   test-bun:
     runs-on: ${{ matrix.os }}
 
