@@ -156,6 +156,7 @@ jobs:
           ccache -s
 
       - uses: pyodide/pyodide-actions/install-browser@v2
+        if: matrix.os == 'ubuntu-latest'
         with:
           runner: selenium
           browser: chrome
@@ -164,11 +165,7 @@ jobs:
         if: contains(matrix.pyodide_packages, 'matplotlib')
         shell: bash -l {0}
         run: |
-          pyodide venv .venv-pyodide
-          source .venv-pyodide/bin/activate
-          pip install pytest pytest-pyodide
-
-          pip install dist/*.whl
+          which pytest
           pytest -svra packages/matplotlib/test_matplotlib.py --rt chrome
 
       - name: check-size
