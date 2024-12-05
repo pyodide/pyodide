@@ -1,7 +1,7 @@
 From 590c95874589b1d4d0e4432d5379a17c6b879f9f Mon Sep 17 00:00:00 2001
 From: casatir <romain.casati@basthon.fr>
 Date: Wed, 27 Nov 2024 23:38:03 +0530
-Subject: [PATCH 1/2] Disable timer
+Subject: [PATCH 2/3] Disable timer
 
 threading.Timer is not yet supported in Pyodide.
 ---
