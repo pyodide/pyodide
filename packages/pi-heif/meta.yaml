@@ -25,4 +25,6 @@ about:
   PyPI: https://pypi.org/project/pi_heif
   summary: Python 3.6+ interface to libheif library
   license: LGPL-2.1
-# Note: this package needs to be manually upgraded to the next version
+extra:
+  recipe-maintainers:
+    - airen1986
