@@ -1,16 +1,17 @@
 package:
   name: RobotRaconteur
-  version: 1.2.0
+  version: 1.2.2
 
 source:
-  url: https://github.com/robotraconteur/robotraconteur/releases/download/v1.2.0/RobotRaconteur-1.2.0-Source.tar.gz
-  sha256: "305cc0dc1f0e51181999247c14ac8b93d53aca755d9e7bccb78a5a3ef87ed86f"
+  url: https://github.com/robotraconteur/robotraconteur/releases/download/v1.2.2/RobotRaconteur-1.2.2-Source.tar.gz
+  sha256: "837710102b5ee6ad81a22e14b313b1dd09995c3da3e7846355866553b3c52715"
 
 requirements:
   run:
     - numpy
   host:
     - boost-cpp
+    - openssl
     - numpy
 
 build:
@@ -22,11 +23,11 @@ build:
     echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)" > ForceStaticLib.cmake
     emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_GEN=OFF -DBUILD_TESTING=OFF -DBUILD_PYTHON3=ON \
     -DCMAKE_PROJECT_INCLUDE=ForceStaticLib.cmake \
-    -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/ \
+    -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/_core/include/ \
     -DPYTHON3_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON3_EXECUTABLE=python$PYMAJOR.$PYMINOR \
     -DPYTHON3_LIBRARY=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR.a \
     -DCMAKE_CXX_FLAGS="-fPIC -fexceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1 -Wno-enum-constexpr-conversion" \
-    -DBOOST_INCLUDEDIR=$WASM_LIBRARY_DIR/include -DBOOST_LIBRARYDIR=$WASM_LIBRARY_DIR/lib \
+    -DBoost_INCLUDE_DIR=$WASM_LIBRARY_DIR/include -DBoost_LIBRARY_DIR=$WASM_LIBRARY_DIR/lib \
     -DBoost_DATE_TIME_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_date_time.a \
     -DBoost_DATE_TIME_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_date_time.a \
     -DBoost_FILESYSTEM_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_filesystem.a \
@@ -41,6 +42,9 @@ build:
     -DBoost_RANDOM_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_random.a \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_program_options.a \
     -DBoost_PROGRAM_OPTIONS_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_program_options.a \
+    -DOpenSSL_CRYPTO_LIBRARY=$WASM_LIBRARY_DIR/lib/libcrypto.a \
+    -DOpenSSL_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+    -DOpenSSL_USE_STATIC_LIBS=ON \
     -DUSE_PREGENERATED_SOURCE=ON \
      .
     emmake make -j ${PYODIDE_JOBS:-3}
@@ -57,3 +61,6 @@ build:
 about:
   home: https://github.com/robotraconteur/robotraconteur
   license: Apache-2.0
+extra:
+  recipe-maintainers:
+    - johnwason

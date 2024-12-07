@@ -1,12 +1,12 @@
 package:
   name: sisl
-  version: 0.14.3
+  version: 0.15.1
   top-level:
     - sisl_toolbox
     - sisl
 source:
-  url: https://files.pythonhosted.org/packages/8d/03/6f788dd49c4740397e962f2607f811b8e3d80f8e6f47a794a313393267ee/sisl-0.14.3.tar.gz
-  sha256: caeb30b36bff9b45c5730d25da49ebc64452de86bc8799555a9f0606b83dced3
+  url: https://files.pythonhosted.org/packages/44/05/1b8e13f19c4fddd2abad41102f7e86e6dbaacfc3bba674735157cbcfe4df/sisl-0.15.1.tar.gz
+  sha256: 52268cfe4db7cc939c6e640470d9b9f5a131610d6a0d2bc057bf9a24cdd01d99
 
 about:
   home: ""

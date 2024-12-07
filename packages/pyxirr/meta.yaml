@@ -1,11 +1,11 @@
 package:
   name: pyxirr
-  version: 0.10.3
+  version: 0.10.6
   top-level:
     - pyxirr
 source:
-  url: https://files.pythonhosted.org/packages/cf/a6/12dcf55acbdbed3c246724fd6fc6673c0ad090f394b0a49fa5a4c6f9184e/pyxirr-0.10.3.tar.gz
-  sha256: 8065865c327afef271dd5cd8561af22f407ccfde352b15860fe5aa0daee0af5d
+  url: https://files.pythonhosted.org/packages/c5/4a/3d2dc1bf565605a4f0e3ae6d5592518bb26698f4d929140d3ea16a4bb478/pyxirr-0.10.6.tar.gz
+  sha256: f0ed1fc8607f0769c238ffaf85f0bd3ddac7d383c125f1d9ff16d3a4b86a3cdf
 about:
   home: https://github.com/Anexen/pyxirr
   PyPI: https://pypi.org/project/pyxirr

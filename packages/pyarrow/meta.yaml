@@ -3,6 +3,9 @@ package:
   version: 17.0.0
   top-level:
     - pyarrow
+  # FIXME: build Pyodide against NumPy 2 + newer Pyodide version
+  # after this PR is merged
+  _disabled: true
 source:
   url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.26.2/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
   sha256: ffa61d6410f960829727efe0a23a934da88972d993c13601351abbbc1f57ee2a

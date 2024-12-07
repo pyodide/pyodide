@@ -1,9 +1,9 @@
 package:
   name: iminuit
-  version: 2.29.1
+  version: 2.30.1
 source:
-  url: https://files.pythonhosted.org/packages/0b/88/e77fc2370468be58303c131fa19cbe70ff478df13d762eef9502874da6fa/iminuit-2.29.1.tar.gz
-  sha256: 474d10eb2f924b9320f6f7093e4c149d0a38c124d0419c12a07a3eca942de025
+  url: https://files.pythonhosted.org/packages/9c/2f/885810178ce831150059e658394afb8d5256ee13713308221dd48c003682/iminuit-2.30.1.tar.gz
+  sha256: 2815bfdeb8e7f78185f316b75e2d4b19d0f6993bdc5ff03352ed37b70a796360
 test:
   imports:
     - iminuit
