@@ -1,7 +1,7 @@
 From 44983793a7f67009c228c5c95899f6fe735fd1c5 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sat, 20 Jan 2024 19:02:32 +0900
-Subject: [PATCH 5/6] Raise when no argument is given
+Subject: [PATCH 5/7] Raise when no argument is given
 
 Emscripten 3.1.51 does not raise an error when no argument is given.
 Some build tools (e.g. ffmpeg) relies on this behavior, so we should
