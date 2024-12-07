@@ -1,0 +1,52 @@
+From 86520d899015a77fdc4d4946ee46cd1b283fdf74 Mon Sep 17 00:00:00 2001
+From: swnf <50806201+swnf@users.noreply.github.com>
+Date: Sat, 2 Nov 2024 19:44:18 +0100
+Subject: [PATCH] Remove custom wheel tag logic
+
+
+diff --git a/setup.py b/setup.py
+index ef99bcc..af45176 100644
+--- a/setup.py
++++ b/setup.py
+@@ -56,38 +56,6 @@ class PyTest(TestCommand):
+ 
+ cmdclass = {'test': PyTest}
+ 
+-try:
+-    from wheel.bdist_wheel import bdist_wheel
+-except ImportError:
+-    pass
+-else:
+-
+-    class bdist_wheel_half_pure(bdist_wheel):
+-        """Create OS-dependent, but Python-independent wheels."""
+-
+-        def get_tag(self):
+-            pythons = 'py2.py3'
+-            if platform == 'darwin':
+-                if architecture0 == 'x86_64':
+-                    oses = 'macosx_10_9_x86_64'
+-                else:
+-                    oses = 'macosx_11_0_arm64'
+-            elif platform == 'win32':
+-                if architecture0 == '32bit':
+-                    oses = 'win32'
+-                else:
+-                    oses = 'win_amd64'
+-            elif platform == 'linux':
+-                # the oldest mainline github runner available is ubuntu 20.04,
+-                # which runs glibc 2.31:
+-                oses = 'manylinux_2_31_x86_64'
+-            else:
+-                pythons = 'py2.py3'
+-                oses = 'any'
+-            return pythons, 'none', oses
+-
+-    cmdclass['bdist_wheel'] = bdist_wheel_half_pure
+-
+ with open('soundfile.py') as f:
+     for line in f:
+         if line.startswith('__version__'):
+-- 
+2.43.0
+

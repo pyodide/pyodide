@@ -1,0 +1,39 @@
+package:
+  name: soundfile
+  version: 0.12.1
+  top-level:
+    - soundfile
+requirements:
+  run:
+    - cffi
+    - numpy
+  host:
+    - cffi
+    # These dependencies are all listed explicitly because we also explicitly use each one in ffibuilder.set_source()
+    - libflac
+    - libopus
+    - libmp3lame
+    - libsndfile
+source:
+  url: https://files.pythonhosted.org/packages/6f/96/5ff33900998bad58d5381fd1acfcdac11cbea4f08fc72ac1dc25ffb13f6a/soundfile-0.12.1.tar.gz
+  sha256: e8e1017b2cf1dda767aef19d2fd9ee5ebe07e050d430f77a0a7c66ba08b8cdae
+  patches:
+    - patches/0001-Remove-custom-wheel-tag-logic.patch
+    - patches/0001-Compile-using-API-mode-instead-of-ABI-mode.patch
+build:
+  script: |
+    # Use official emscripten libogg, libvorbis, and libmpg123 ports
+    # We need to call embuilder here again to ensure they are still available
+    # The CI pipeline seems to clean them up after building libsndfile
+    embuilder build ogg vorbis mpg123 --pic
+about:
+  home: https://github.com/bastibe/python-soundfile
+  PyPI: https://pypi.org/project/soundfile
+  summary: An audio library based on libsndfile, CFFI and NumPy
+  license: BSD-3-Clause
+test:
+  imports:
+    - soundfile
+extra:
+  recipe-maintainers:
+    - swnf
