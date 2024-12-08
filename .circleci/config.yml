@@ -39,9 +39,14 @@ jobs:
             - -core-v20220915
 
       - run:
+          name: pip install uv
+          command: |
+            pip install uv
+
+      - run:
           name: calculate build hash for ccache
           command: |
-            pip install pathspec
+            uv pip install pathspec
             ./tools/calculate_build_cache_key.py > build_hash.txt
 
       - run:
@@ -85,7 +90,7 @@ jobs:
           command: |
             du dist/ -abh --max-depth 1  | sort -k 2
 
-            pip install brotli
+            uv pip install brotli
             ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - save_cache:
@@ -263,7 +268,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            pip install -r requirements.txt
+            uv pip install -r requirements.txt
             make pyodide_build
 
       - run:
@@ -309,7 +314,7 @@ jobs:
           command: |
             make npm-link
             mkdir test-results
-            pip install -r requirements.txt
+            uv pip install -r requirements.txt
             make pyodide_build
             if [ -z "<< parameters.cache-dir >>" ]; then
               export CACHE_DIR=".test_cache/.pytest_cache_$(echo $RANDOM | md5sum | head -c 10)"
@@ -338,7 +343,7 @@ jobs:
           name: stack-size
           command: |
             make npm-link
-            pip install -r requirements.txt
+            uv pip install -r requirements.txt
             # TODO(cclauss): Re-add 'firefox' below.
             pytest -s benchmark/stack_usage.py --rt node,chrome | sed -n 's/## //pg'
 
@@ -405,9 +410,9 @@ jobs:
 
             cd zope.interface
             pyodide build
-            pip install dist/*.whl
+            uv pip install dist/*.whl
             cd ../attrs
-            pip install .[tests]
+            uv pip install .[tests]
             python -m pytest -k 'not mypy'
 
   benchmark:
@@ -421,7 +426,7 @@ jobs:
           name: install requirements
           command: |
             pip3 install numpy matplotlib pandas
-            pip install -r requirements.txt
+            uv pip install -r requirements.txt
       - run:
           name: benchmark
           command: |
@@ -456,7 +461,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            python3 -m pip install -r requirements-deploy.txt
+            uv pip install -r requirements-deploy.txt
 
             wget https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz
             tar xzf ghr_v0.16.2_linux_amd64.tar.gz
@@ -532,7 +537,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
-            python3 -m pip install -r requirements-deploy.txt
+            uv pip install -r requirements-deploy.txt
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
