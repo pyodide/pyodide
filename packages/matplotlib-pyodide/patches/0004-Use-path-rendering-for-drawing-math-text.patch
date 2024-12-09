@@ -1,0 +1,149 @@
+From 3133aa90d3d85e0c51767ee3c54496652ba58139 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 9 Dec 2024 17:30:56 +0530
+Subject: [PATCH] Use path rendering for drawing math text
+
+---
+ matplotlib_pyodide/html5_canvas_backend.py | 111 +++++++++++++++++++--
+ 1 file changed, 100 insertions(+), 11 deletions(-)
+
+diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
+index 8a2138b..dfd17b7 100644
+--- a/matplotlib_pyodide/html5_canvas_backend.py
++++ b/matplotlib_pyodide/html5_canvas_backend.py
+@@ -292,25 +292,113 @@ class RendererHTMLCanvas(RendererBase):
+         rgba = plt.imread(buf)
+         return rgba, depth
+ 
+-    def _draw_math_text(self, gc, x, y, s, prop, angle):
+-        # Get color from graphics context
+-        rgb = gc.get_rgb()
++    def _draw_math_text_path(self, gc, x, y, s, prop, angle):
++        """Draw mathematical text using paths directly on the canvas.
+ 
+-        # Get RGBA array using the new method
+-        rgba, depth = self._math_to_rgba(s, prop, rgb)
++        This method renders math text by drawing the actual glyph paths
++        onto the canvas, rather than creating a temporary image.
+ 
+-        angle = math.radians(angle)
++        Parameters
++        ----------
++        gc : GraphicsContextHTMLCanvas
++            The graphics context to use for drawing
++        x, y : float
++            The position of the text baseline in pixels
++        s : str
++            The text string to render
++        prop : FontProperties
++            The font properties to use for rendering
++        angle : float
++            The rotation angle in degrees
++        """
++        # Parse the math text to get paths and metrics
++        width, height, depth, glyphs, rects = self.mathtext_parser.parse(
++            s, dpi=self.dpi, prop=prop
++        )
++
++        # Save the canvas state
++        self.ctx.save()
++
++        # Move to text position and apply rotation if needed
++        self.ctx.translate(x, self.height - y)
+         if angle != 0:
++            self.ctx.rotate(-math.radians(angle))
++
++        # Set up text rendering style
++        self.ctx.fillStyle = self._matplotlib_color_to_CSS(
++            gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
++        )
++
++        # Draw each glyph in the mathematical expression
++        for font, fontsize, num, ox, oy in glyphs:
++            # Move to glyph position
+             self.ctx.save()
+-            self.ctx.translate(x, y)
+-            self.ctx.rotate(-angle)
+-            self.ctx.translate(-x, -y)
++            self.ctx.translate(ox, -oy)
+ 
+-        self.draw_image(gc, x, -y - depth, np.flipud(rgba))
++            # Get the glyph's path data
++            font.set_size(fontsize, self.dpi)
++            glyph = font.load_char(num, flags=LOAD_NO_HINTING)
++
++            # Convert the glyph to a Path object
++            path = Path()
++            path.commands = glyph.path.commands
++            path.vertices = glyph.path.vertices * fontsize / font.units_per_EM
++
++            # Draw the path
++            transform = Affine2D().scale(1.0, -1.0)
++            self._path_helper(self.ctx, path, transform)
++            self.ctx.fill()
+ 
+-        if angle != 0:
+             self.ctx.restore()
+ 
++        # Draw rectangles (fraction bars, roots, etc.)
++        for x1, y1, x2, y2 in rects:
++            self.ctx.fillRect(x1, -y2, x2 - x1, y2 - y1)
++
++        # Restore the canvas state
++        self.ctx.restore()
++
++    def _draw_math_text(self, gc, x, y, s, prop, angle):
++        """Draw mathematical text using the most appropriate method.
++
++        This method tries direct path rendering first, and falls back to
++        the image-based approach if needed.
++
++        Parameters
++        ----------
++        gc : GraphicsContextHTMLCanvas
++            The graphics context to use for drawing
++        x, y : float
++            The position of the text baseline in pixels
++        s : str
++            The text string to render
++        prop : FontProperties
++            The font properties to use for rendering
++        angle : float
++            The rotation angle in degrees
++        """
++        try:
++            # Try rendering directly with paths first
++            self._draw_math_text_path(gc, x, y, s, prop, angle)
++        except Exception as e:
++            # If path rendering fails, fall back to image-based approach
++            print(f"Path rendering failed, falling back to image: {str(e)}")
++
++            # Get RGBA array using the existing image-based method
++            rgba, depth = self._math_to_rgba(s, prop, gc.get_rgb())
++
++            angle = math.radians(angle)
++            if angle != 0:
++                self.ctx.save()
++                self.ctx.translate(x, y)
++                self.ctx.rotate(-angle)
++                self.ctx.translate(-x, -y)
++
++            self.draw_image(gc, x, -y - depth, np.flipud(rgba))
++
++            if angle != 0:
++                self.ctx.restore()
++
+     def _set_style(self, gc, rgbFace=None):
+         if rgbFace is not None:
+             self.ctx.fillStyle = self._matplotlib_color_to_CSS(
+@@ -404,6 +492,7 @@ class RendererHTMLCanvas(RendererBase):
+     def get_text_width_height_descent(self, s, prop, ismath):
+         w: float
+         h: float
++        d: float
+         if ismath:
+             # Use the path parser to get exact metrics
+             width, height, depth, _, _ = self.mathtext_parser.parse(
+-- 
+2.39.5 (Apple Git-154)
+

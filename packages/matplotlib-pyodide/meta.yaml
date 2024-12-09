@@ -10,6 +10,7 @@ source:
     - patches/0001-Replace-maxdict-with-lru_cache.patch # Can be removed when updating to 0.2.3
     - patches/0002-Check-existence-of-toolbar.patch # Can be removed when updating to 0.2.3
     - patches/0003-Use-path-based-MathTextParser.patch # Can be removed when updating to 0.2.3
+    - patches/0004-Use-path-rendering-for-drawing-math-text.patch # Can be removed when updating to 0.2.3
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
