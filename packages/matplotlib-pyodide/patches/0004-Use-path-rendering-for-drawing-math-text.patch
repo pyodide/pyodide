@@ -1,17 +1,17 @@
-From 3133aa90d3d85e0c51767ee3c54496652ba58139 Mon Sep 17 00:00:00 2001
+From 7dd71c338bbd47fe0846db87aea98d4b58e00e4c Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 9 Dec 2024 17:30:56 +0530
 Subject: [PATCH] Use path rendering for drawing math text
 
 ---
- matplotlib_pyodide/html5_canvas_backend.py | 111 +++++++++++++++++++--
- 1 file changed, 100 insertions(+), 11 deletions(-)
+ matplotlib_pyodide/html5_canvas_backend.py | 112 +++++++++++++++++++--
+ 1 file changed, 101 insertions(+), 11 deletions(-)
 
 diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
-index 8a2138b..dfd17b7 100644
+index 8a2138b..b8bbe31 100644
 --- a/matplotlib_pyodide/html5_canvas_backend.py
 +++ b/matplotlib_pyodide/html5_canvas_backend.py
-@@ -292,25 +292,113 @@ class RendererHTMLCanvas(RendererBase):
+@@ -292,25 +292,114 @@ class RendererHTMLCanvas(RendererBase):
          rgba = plt.imread(buf)
          return rgba, depth
  
@@ -73,9 +73,10 @@ index 8a2138b..dfd17b7 100644
 +            glyph = font.load_char(num, flags=LOAD_NO_HINTING)
 +
 +            # Convert the glyph to a Path object
-+            path = Path()
-+            path.commands = glyph.path.commands
-+            path.vertices = glyph.path.vertices * fontsize / font.units_per_EM
++            path = Path(
++                vertices=glyph.path.vertices * fontsize / font.units_per_EM,
++                codes=glyph.path.commands,
++            )
 +
 +            # Draw the path
 +            transform = Affine2D().scale(1.0, -1.0)
@@ -136,7 +137,7 @@ index 8a2138b..dfd17b7 100644
      def _set_style(self, gc, rgbFace=None):
          if rgbFace is not None:
              self.ctx.fillStyle = self._matplotlib_color_to_CSS(
-@@ -404,6 +492,7 @@ class RendererHTMLCanvas(RendererBase):
+@@ -404,6 +493,7 @@ class RendererHTMLCanvas(RendererBase):
      def get_text_width_height_descent(self, s, prop, ismath):
          w: float
          h: float
