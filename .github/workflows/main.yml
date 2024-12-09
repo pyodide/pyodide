@@ -186,6 +186,19 @@ jobs:
           path: ./dist/
           retention-days: 60
 
+      # Temporary for this PR: remove this when merging
+      - name: Store Pyodide distribution
+        if: contains(matrix.pyodide_packages, 'matplotlib')
+        run: tar cjf pyodide-with-matplotlib.tar.gz dist/
+
+      # Temporary for this PR: remove this when merging
+      - name: Upload Pyodide distribution with Matplotlib (temporary)
+        if: contains(matrix.pyodide_packages, 'matplotlib')
+        uses: actions/upload-artifact@v4
+        with:
+          name: pyodide-with-matplotlib
+          path: pyodide-with-matplotlib.tar.gz
+
   test-core:
     runs-on: ${{ matrix.os }}
     env:
