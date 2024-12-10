@@ -1,17 +1,17 @@
-From 7dd71c338bbd47fe0846db87aea98d4b58e00e4c Mon Sep 17 00:00:00 2001
+From 2e9310100f2b99370cf31956f574adaf5c548fad Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 9 Dec 2024 17:30:56 +0530
 Subject: [PATCH] Use path rendering for drawing math text
 
 ---
- matplotlib_pyodide/html5_canvas_backend.py | 112 +++++++++++++++++++--
- 1 file changed, 101 insertions(+), 11 deletions(-)
+ matplotlib_pyodide/html5_canvas_backend.py | 111 +++++++++++++++++++--
+ 1 file changed, 100 insertions(+), 11 deletions(-)
 
 diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
-index 8a2138b..b8bbe31 100644
+index 8a2138b..af7fd46 100644
 --- a/matplotlib_pyodide/html5_canvas_backend.py
 +++ b/matplotlib_pyodide/html5_canvas_backend.py
-@@ -292,25 +292,114 @@ class RendererHTMLCanvas(RendererBase):
+@@ -292,25 +292,113 @@ class RendererHTMLCanvas(RendererBase):
          rgba = plt.imread(buf)
          return rgba, depth
  
@@ -59,7 +59,7 @@ index 8a2138b..b8bbe31 100644
 +        )
 +
 +        # Draw each glyph in the mathematical expression
-+        for font, fontsize, num, ox, oy in glyphs:
++        for font, fontsize, _, ox, oy in glyphs:
 +            # Move to glyph position
              self.ctx.save()
 -            self.ctx.translate(x, y)
@@ -70,13 +70,12 @@ index 8a2138b..b8bbe31 100644
 -        self.draw_image(gc, x, -y - depth, np.flipud(rgba))
 +            # Get the glyph's path data
 +            font.set_size(fontsize, self.dpi)
-+            glyph = font.load_char(num, flags=LOAD_NO_HINTING)
++            verts, codes = font.get_path()
++
++            verts = verts * fontsize / font.units_per_EM
 +
 +            # Convert the glyph to a Path object
-+            path = Path(
-+                vertices=glyph.path.vertices * fontsize / font.units_per_EM,
-+                codes=glyph.path.commands,
-+            )
++            path = Path(verts, codes)
 +
 +            # Draw the path
 +            transform = Affine2D().scale(1.0, -1.0)
@@ -137,7 +136,7 @@ index 8a2138b..b8bbe31 100644
      def _set_style(self, gc, rgbFace=None):
          if rgbFace is not None:
              self.ctx.fillStyle = self._matplotlib_color_to_CSS(
-@@ -404,6 +493,7 @@ class RendererHTMLCanvas(RendererBase):
+@@ -404,6 +492,7 @@ class RendererHTMLCanvas(RendererBase):
      def get_text_width_height_descent(self, s, prop, ismath):
          w: float
          h: float
