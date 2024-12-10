@@ -1,7 +1,3 @@
-from pathlib import Path
-from typing import cast
-
-import pytest
 from pytest_pyodide import run_in_pyodide
 
 
@@ -15,7 +11,7 @@ async def apsw_test_helper(selenium):
     connection.execute("create table point(x,y,z)")
     connection.execute("insert into point values(1, 2, 3)")
     row = connection.execute("select * from point").fetchone()
-    assert row == (1,2,3)
+    assert row == (1, 2, 3)
 
 
 def test_apsw(selenium):
