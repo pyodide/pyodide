@@ -13,7 +13,7 @@ about:
   home: https://github.com/rogerbinns/apsw
   PyPI: https://pypi.org/project/apsw
   summary: Another Python SQLite Wrapper
-  license: OSI Approved
+  license: any-OSI
 extra:
   recipe-maintainers:
     - airen1986

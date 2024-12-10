@@ -112,6 +112,7 @@ myst:
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 - Added `vega-datasets` 0.9.0 {pr}`5183`
 - Added `clingo` 5.7.1 {pr}`5184`
+- Added `apsw` 3.47.2.0 {pr}`5251`
 - Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
