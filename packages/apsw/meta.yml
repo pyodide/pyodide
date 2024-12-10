@@ -1,0 +1,19 @@
+package:
+  name: apsw
+  version: 3.27.2.0
+  top-level:
+    - apsw
+source:
+  url: https://files.pythonhosted.org/packages/e8/0b/de1376f0ffaec714eff65a203d1b86a3ff6aac3ef61ca70be63f0b516da2/apsw-3.47.2.0.tar.gz
+  sha256: 95d03c1236bb247d7b2241eda229bc9025fb6edb2b49257fc52a0ee64f5b36bc
+test:
+  imports:
+    - apsw
+about:
+  home: https://github.com/rogerbinns/apsw
+  PyPI: https://pypi.org/project/apsw
+  summary: Another Python SQLite Wrapper
+  license: OSI Approved
+extra:
+  recipe-maintainers:
+    - airen1986
