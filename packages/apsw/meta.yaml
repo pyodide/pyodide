@@ -1,6 +1,6 @@
 package:
   name: apsw
-  version: 3.27.2.0
+  version: 3.47.2.0
   top-level:
     - apsw
 source:
