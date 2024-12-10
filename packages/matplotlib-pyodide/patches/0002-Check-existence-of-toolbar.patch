@@ -1,0 +1,33 @@
+From a66137d02fc9b60caedd6f3049c08f66be679561 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Sat, 30 Nov 2024 01:14:30 +0530
+Subject: [PATCH] Check existence of toolbar
+
+Co-Authored-By: Gyeongjae Choi <def6488@gmail.com>
+---
+ matplotlib_pyodide/browser_backend.py | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/matplotlib_pyodide/browser_backend.py b/matplotlib_pyodide/browser_backend.py
+index a135846..130c6f1 100644
+--- a/matplotlib_pyodide/browser_backend.py
++++ b/matplotlib_pyodide/browser_backend.py
+@@ -180,8 +180,13 @@ class FigureCanvasWasm(FigureCanvasBase):
+ 
+         # The bottom bar, with toolbar and message display
+         bottom = document.createElement("div")
+-        toolbar = self.toolbar.get_element()
+-        bottom.appendChild(toolbar)
++
++        # Check if toolbar exists before trying to get its element
++        # c.f. https://github.com/pyodide/pyodide/pull/4510
++        if self.toolbar is not None:
++            toolbar = self.toolbar.get_element()
++            bottom.appendChild(toolbar)
++
+         message = document.createElement("div")
+         message.id = self._id + "message"
+         message.setAttribute("style", "min-height: 1.5em")
+-- 
+2.39.5 (Apple Git-154)
+
