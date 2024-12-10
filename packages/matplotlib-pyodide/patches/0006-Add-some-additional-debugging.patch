@@ -1,0 +1,78 @@
+From 334d6d18abdbcc99017e376cc13dafe720113eed Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Tue, 10 Dec 2024 13:56:42 +0530
+Subject: [PATCH] Add some additional debugging
+
+---
+ matplotlib_pyodide/html5_canvas_backend.py | 33 ++++++++++++++++++++++
+ 1 file changed, 33 insertions(+)
+
+diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
+index af7fd46..2d56f41 100644
+--- a/matplotlib_pyodide/html5_canvas_backend.py
++++ b/matplotlib_pyodide/html5_canvas_backend.py
+@@ -32,6 +32,7 @@ except ImportError as err:
+         "html5_canvas_backend is only supported in the browser in the main thread"
+     ) from err
+ from pyodide.ffi import create_proxy
++from pyodide.ffi.wrappers import set_timeout
+ 
+ _capstyle_d = {"projecting": "square", "butt": "butt", "round": "round"}
+ 
+@@ -311,14 +312,28 @@ class RendererHTMLCanvas(RendererBase):
+         angle : float
+             The rotation angle in degrees
+         """
++        import sys
++
++        print(f"Drawing math text: '{s}' at ({x}, {y})", file=sys.stderr)  # noqa: B907
++
+         # Parse the math text to get paths and metrics
+         width, height, depth, glyphs, rects = self.mathtext_parser.parse(
+             s, dpi=self.dpi, prop=prop
+         )
+ 
++        print(
++            f"Parsed text dimensions: {width}x{height} (depth: {depth})",
++            file=sys.stderr,
++        )
++        print(f"Number of glyphs: {len(glyphs)}", file=sys.stderr)
++        print(f"Number of rectangles: {len(rects)}", file=sys.stderr)
++
+         # Save the canvas state
+         self.ctx.save()
+ 
++        baseline_y = self.height - y + depth
++        self.ctx.translate(x, baseline_y)
++
+         # Move to text position and apply rotation if needed
+         self.ctx.translate(x, self.height - y)
+         if angle != 0:
+@@ -377,6 +392,24 @@ class RendererHTMLCanvas(RendererBase):
+         angle : float
+             The rotation angle in degrees
+         """
++
++        def check_fonts_loaded():
++            for url in self.fonts_loading:
++                if url in self.fonts_loading:
++                    return False
++            return True
++
++        if not check_fonts_loaded():
++            # if fonts aren't loaded, we shall schedule a redraw
++            def redraw_when_ready():
++                if check_fonts_loaded():
++                    self.fig.draw()
++                else:
++                    set_timeout(redraw_when_ready, 50)
++
++            set_timeout(redraw_when_ready, 50)
++            return
++
+         try:
+             # Try rendering directly with paths first
+             self._draw_math_text_path(gc, x, y, s, prop, angle)
+-- 
+2.39.5 (Apple Git-154)
+

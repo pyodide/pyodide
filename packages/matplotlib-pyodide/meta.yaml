@@ -12,6 +12,7 @@ source:
     - patches/0003-Use-path-based-MathTextParser.patch # Can be removed when updating to 0.2.3
     - patches/0004-Use-path-rendering-for-drawing-math-text.patch # Can be removed when updating to 0.2.3
     - patches/0005-Temporarily-disable-event-listeners.patch # Can be removed when updating to 0.2.3
+    - patches/0006-Add-some-additional-debugging.patch # Can be removed when updating to 0.2.3
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
