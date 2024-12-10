@@ -1,7 +1,7 @@
 From 18cd638fb0b70078c0e6bedc4a98331ac7652f33 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 14:27:43 +0200
-Subject: [PATCH 01/19] Replace maxdict with lru_cache (#52)
+Subject: [PATCH 1/5] Replace maxdict with lru_cache (#52)
 
 Matplotlib removed maxdict:
 https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.6.0.html#miscellaneous-internals

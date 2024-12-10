@@ -1,7 +1,7 @@
 From 2e9310100f2b99370cf31956f574adaf5c548fad Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 9 Dec 2024 17:30:56 +0530
-Subject: [PATCH] Use path rendering for drawing math text
+Subject: [PATCH 4/5] Use path rendering for drawing math text
 
 ---
  matplotlib_pyodide/html5_canvas_backend.py | 111 +++++++++++++++++++--

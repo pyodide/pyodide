@@ -1,0 +1,38 @@
+From 09abbb4e38f37926e7efb4181e031443b52b5853 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Tue, 10 Dec 2024 12:34:54 +0530
+Subject: [PATCH 5/5] Temporarily disable event listeners
+
+---
+ matplotlib_pyodide/browser_backend.py | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/matplotlib_pyodide/browser_backend.py b/matplotlib_pyodide/browser_backend.py
+index 130c6f1..51e79b7 100644
+--- a/matplotlib_pyodide/browser_backend.py
++++ b/matplotlib_pyodide/browser_backend.py
+@@ -164,13 +164,14 @@ class FigureCanvasWasm(FigureCanvasBase):
+         rubberband.setAttribute("tabindex", "0")
+         # Event handlers are added to the canvas "on top", even though most of
+         # the activity happens in the canvas below.
+-        add_event_listener(rubberband, "mousemove", self.onmousemove)
+-        add_event_listener(rubberband, "mouseup", self.onmouseup)
+-        add_event_listener(rubberband, "mousedown", self.onmousedown)
+-        add_event_listener(rubberband, "mouseenter", self.onmouseenter)
+-        add_event_listener(rubberband, "mouseleave", self.onmouseleave)
+-        add_event_listener(rubberband, "keyup", self.onkeyup)
+-        add_event_listener(rubberband, "keydown", self.onkeydown)
++        # Temporarily disable event listeners for rubberband canvas
++        # add_event_listener(rubberband, "mousemove", self.onmousemove)
++        # add_event_listener(rubberband, "mouseup", self.onmouseup)
++        # add_event_listener(rubberband, "mousedown", self.onmousedown)
++        # add_event_listener(rubberband, "mouseenter", self.onmouseenter)
++        # add_event_listener(rubberband, "mouseleave", self.onmouseleave)
++        # add_event_listener(rubberband, "keyup", self.onkeyup)
++        # add_event_listener(rubberband, "keydown", self.onkeydown)
+         context = rubberband.getContext("2d")
+         context.strokeStyle = "#000000"
+         context.setLineDash([2, 2])
+-- 
+2.39.5 (Apple Git-154)
+

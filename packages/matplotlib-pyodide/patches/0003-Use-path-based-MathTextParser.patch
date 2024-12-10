@@ -1,7 +1,7 @@
 From bf8f1f18ea3648aa3e26977cab3b7da018c1c593 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 30 Nov 2024 04:38:54 +0530
-Subject: [PATCH] Use path-based MathTextParser
+Subject: [PATCH 3/5] Use path-based MathTextParser
 
 Some inspiration derived from https://https://github.com/ipython/ipython/pull/12889
 and from the Matplotlib docs at
