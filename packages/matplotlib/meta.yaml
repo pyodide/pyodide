@@ -1,6 +1,6 @@
 package:
   name: matplotlib
-  version: 3.5.2
+  version: 3.8.4
   tag:
     - min-scipy-stack
   top-level:
@@ -8,14 +8,12 @@ package:
     - mpl_toolkits
     - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/2f/be/7d6e073a3eb740ebeba43a69f5de2b141fea50b801e24e0ae024ac94d4ac/matplotlib-3.5.2.tar.gz
-  sha256: 48cf850ce14fa18067f2d9e0d646763681948487a8080ec0af2686468b4607a2
-
+  url: https://files.pythonhosted.org/packages/38/4f/8487737a74d8be4ab5fbe6019b0fae305c1604cf7209500969b879b5f462/matplotlib-3.8.4.tar.gz
+  sha256: 8aac397d5e9ec158960e31c381c5ffc52ddd52bd9a47717e2a694038167dffea
   patches:
-    - patches/disable_macosx_backend.patch
-    - patches/hardcoded-font-cache.patch
-    - patches/fix-threading.patch
-
+    - patches/0001-Disable-macOS-X-backend.patch
+    - patches/0002-Disable-timer.patch
+    - patches/0003-Hardcode-font-cache-path.patch
   extras:
     - - extras/setup.cfg
       - ./mplsetup.cfg
@@ -48,6 +46,7 @@ requirements:
   host:
     - numpy
   run:
+    - contourpy
     - cycler
     - fonttools
     - kiwisolver

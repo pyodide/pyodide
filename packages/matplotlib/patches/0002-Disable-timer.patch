@@ -1,18 +1,18 @@
-From b82445488de21258ba2a72dfb0853eb1c6514658 Mon Sep 17 00:00:00 2001
+From 590c95874589b1d4d0e4432d5379a17c6b879f9f Mon Sep 17 00:00:00 2001
 From: casatir <romain.casati@basthon.fr>
-Date: Mon, 12 Dec 2022 18:26:01 -0800
-Subject: [PATCH 2/3] fix threading
+Date: Wed, 27 Nov 2024 23:38:03 +0530
+Subject: [PATCH 2/3] Disable timer
 
 threading.Timer is not yet supported in Pyodide.
 ---
- lib/matplotlib/font_manager.py | 8 +++-----
- 1 file changed, 3 insertions(+), 5 deletions(-)
+ lib/matplotlib/font_manager.py | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/lib/matplotlib/font_manager.py b/lib/matplotlib/font_manager.py
-index a5742ef88f..7eb183ab00 100644
+index d9560ec0cc..a842ed1817 100644
 --- a/lib/matplotlib/font_manager.py
 +++ b/lib/matplotlib/font_manager.py
-@@ -1093,10 +1093,8 @@ class FontManager:
+@@ -1036,10 +1036,9 @@ class FontManager:
          self.afmlist = []
          self.ttflist = []
  
@@ -21,11 +21,12 @@ index a5742ef88f..7eb183ab00 100644
 -            'Matplotlib is building the font cache; this may take a moment.'))
 -        timer.start()
 +        _log.warning(
-+            'Matplotlib is building the font cache; this may take a moment.')
++            'Matplotlib is building the font cache; this may take a moment.'
++        )
          try:
              for fontext in ["afm", "ttf"]:
                  for path in [*findSystemFonts(paths, fontext=fontext),
-@@ -1109,7 +1107,7 @@ class FontManager:
+@@ -1052,7 +1051,7 @@ class FontManager:
                          _log.info("Failed to extract font properties from %s: "
                                    "%s", path, exc)
          finally:
@@ -35,5 +36,5 @@ index a5742ef88f..7eb183ab00 100644
      def addfont(self, path):
          """
 -- 
-2.25.1
+2.39.5 (Apple Git-154)
 
