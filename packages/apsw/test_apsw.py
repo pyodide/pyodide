@@ -5,7 +5,7 @@ from pytest_pyodide import run_in_pyodide
 async def apsw_test_helper(selenium):
     import apsw
 
-    assert apsw.using_amalgamation == True
+    assert apsw.using_amalgamation
 
     connection = apsw.Connection(":memory:")
     connection.execute("create table point(x,y,z)")
