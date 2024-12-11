@@ -1,3 +1,4 @@
+import pathlib
 from pytest_pyodide import run_in_pyodide
 
 SAMPLE_LP = pathlib.Path(__file__).parent / "test_data" / "WhiskasModel.lp"
