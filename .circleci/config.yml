@@ -42,6 +42,7 @@ jobs:
           name: pip install uv
           command: |
             pip install uv
+            uv venv
 
       - run:
           name: calculate build hash for ccache
