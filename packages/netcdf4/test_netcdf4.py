@@ -416,7 +416,7 @@ def test_netCDF4_tutorial(selenium):
     data = np.empty(len(y) * len(x), object)
     for n in range(len(y) * len(x)):
         data[n] = np.arange(rng.integers(1, 10), dtype="int32") + 1
-    data = np.reshape(data, (len(y), len(x)))
+    data = np.reshape(data, (len(y), len(x)))  # type: ignore[assignment]
     vlvar[:] = data
     assert_print(vlvar)
     assert_print("vlen variable =\n", vlvar[:])
