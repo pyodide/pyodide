@@ -1,5 +1,6 @@
 FROM node:20.11-bookworm-slim AS node-image
 FROM python:3.12.7-slim-bookworm
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Requirements for building packages
 RUN apt-get update \
