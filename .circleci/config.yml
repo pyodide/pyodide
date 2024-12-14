@@ -47,6 +47,7 @@ jobs:
       - run:
           name: calculate build hash for ccache
           command: |
+            source .venv/bin/activate
             uv pip install pathspec
             ./tools/calculate_build_cache_key.py > build_hash.txt
 
@@ -54,6 +55,7 @@ jobs:
           name: build emsdk
           no_output_timeout: 20m
           command: |
+            source .venv/bin/activate
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
 
@@ -68,6 +70,7 @@ jobs:
           name: build cpython
           no_output_timeout: 20m
           command: |
+            source .venv/bin/activate
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
 
@@ -79,6 +82,7 @@ jobs:
           name: build pyodide core
           no_output_timeout: 20m
           command: |
+            source .venv/bin/activate
             # This is necessary to use the ccache from emsdk
             source pyodide_env.sh
 
@@ -89,6 +93,7 @@ jobs:
       - run:
           name: check-size
           command: |
+            source .venv/bin/activate
             du dist/ -abh --max-depth 1  | sort -k 2
 
             uv pip install brotli
@@ -112,6 +117,7 @@ jobs:
       - run:
           name: Zip build directory
           command: |
+            source .venv/bin/activate
             tar cjf pyodide.tar.gz dist
             tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
             tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
@@ -154,6 +160,7 @@ jobs:
           name: build packages
           no_output_timeout: 60m
           command: |
+            source .venv/bin/activate
             source pyodide_env.sh
 
             # Set mtime for EM_CONFIG to avoid ccache cache misses
@@ -209,6 +216,7 @@ jobs:
       - run:
           name: build pyodide debug
           command: |
+            source .venv/bin/activate
             cp -r dist dist-release
             rm dist/pyodide.asm.js
             source pyodide_env.sh
@@ -240,6 +248,7 @@ jobs:
       - run:
           name: create xbuild environment
           command: |
+            source .venv/bin/activate
             make pyodide_build
             python tools/create_xbuildenv.py .
 
@@ -269,12 +278,14 @@ jobs:
       - run:
           name: Install requirements
           command: |
+            source .venv/bin/activate
             uv pip install -r requirements.txt
             make pyodide_build
 
       - run:
           name: Py-compile packages
           command: |
+            source .venv/bin/activate
             make py-compile
             rm -f dist/snapshot.bin
             make dist/snapshot.bin
@@ -282,6 +293,7 @@ jobs:
       - run:
           name: Test import of py-compiled packages
           command: |
+            source .venv/bin/activate
             tools/pytest_wrapper.py \
               --junitxml=test-results/junit.xml \
               --verbose \
@@ -313,6 +325,7 @@ jobs:
       - run:
           name: test
           command: |
+            source .venv/bin/activate
             make npm-link
             mkdir test-results
             uv pip install -r requirements.txt
@@ -343,6 +356,7 @@ jobs:
       - run:
           name: stack-size
           command: |
+            source .venv/bin/activate
             make npm-link
             uv pip install -r requirements.txt
             # TODO(cclauss): Re-add 'firefox' below.
@@ -393,6 +407,7 @@ jobs:
           name: test
           command: |
             set -x
+            source .venv/bin/activate
             export PYODIDE_ROOT=$(pwd)
             echo $PYODIDE_ROOT
             source pyodide_env.sh
@@ -426,11 +441,13 @@ jobs:
       - run:
           name: install requirements
           command: |
-            pip3 install numpy matplotlib pandas
+            source .venv/bin/activate
+            uv pip install numpy matplotlib pandas
             uv pip install -r requirements.txt
       - run:
           name: benchmark
           command: |
+            source .venv/bin/activate
             python benchmark/benchmark.py all --output dist/benchmarks.json
 
       - store_artifacts:
@@ -446,6 +463,7 @@ jobs:
       - run:
           name: check-release-version
           command: |
+            source .venv/bin/activate
             ./tools/bump_version.py --check --new-version ${CIRCLE_TAG}
 
   deploy-release:
@@ -462,6 +480,7 @@ jobs:
       - run:
           name: Install requirements
           command: |
+            source .venv/bin/activate
             uv pip install -r requirements-deploy.txt
 
             wget https://github.com/tcnksm/ghr/releases/download/v0.16.2/ghr_v0.16.2_linux_amd64.tar.gz
@@ -471,6 +490,7 @@ jobs:
       - run:
           name: Deploy Github Releases
           command: |
+            source .venv/bin/activate
             make clean-dist-dir
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
@@ -506,6 +526,7 @@ jobs:
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            source .venv/bin/activate
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/pyc/" make dist/console.html
             cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/v${CIRCLE_TAG}/debug/" make dist/console.html
@@ -514,14 +535,17 @@ jobs:
       - run:
           name: Deploy to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist/ "v${CIRCLE_TAG}/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
           name: Deploy debug version to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist-debug/ "v${CIRCLE_TAG}/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
       - run:
           name: Deploy the pyc version to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist-pyc/ "v${CIRCLE_TAG}/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=30758400, immutable, public'
 
   deploy-dev:
@@ -538,10 +562,12 @@ jobs:
       - run:
           name: Install requirements
           command: |
+            source .venv/bin/activate
             uv pip install -r requirements-deploy.txt
       - run:
           name: Set PYODIDE_BASE_URL
           command: |
+            source .venv/bin/activate
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/pyc/" make dist/console.html
             cp dist/console.html dist-pyc/console.html
             PYODIDE_BASE_URL="https://cdn.jsdelivr.net/pyodide/dev/debug/" make dist/console.html
@@ -551,20 +577,24 @@ jobs:
       - run:
           name: Deploy to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist/ "dev/full/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
       - run:
           name: Deploy debug version to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist-debug/ "dev/debug/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
       - run:
           name: Deploy pyc version to S3
           command: |
+            source .venv/bin/activate
             python3 tools/deploy_s3.py dist-pyc/ "dev/pyc/" --bucket "pyodide-cdn2.iodide.io" --cache-control 'max-age=3600, public' --rm-remote-prefix
 
       - run:
           # Unlike the release version, we upload the dev version to S3 not to GitHub.
           name: Deploy release files to S3
           command: |
+            source .venv/bin/activate
             make clean-dist-dir
             mkdir -p /tmp/ghr/dist
             cp -r dist /tmp/ghr/pyodide
