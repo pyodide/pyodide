@@ -1,0 +1,27 @@
+package:
+  name: hdbscan
+  version: 0.8.33
+  top-level:
+    - hdbscan
+requirements:
+  host:
+    - setuptools
+    - scikit-learn
+    - joblib
+    - numpy
+  run:
+    - scikit-learn
+    - joblib
+    - six
+    - numpy
+source:
+  url: https://files.pythonhosted.org/packages/44/2c/b6bb84999f1c82cf0abd28595ff8aff2e495e18f8718b6b18bb11a012de4/hdbscan-0.8.33.tar.gz
+  sha256: 57fabc5f0e45f48d2407b35c731192abc896376411fe7e4bb836ffa03d38f90d
+about:
+  home: http://github.com/scikit-learn-contrib/hdbscan
+  PyPI: https://pypi.org/project/hdbscan
+  summary: Clustering based on density with variable density clusters
+  license: BSD
+extra:
+  recipe-maintainers:
+    - type9
