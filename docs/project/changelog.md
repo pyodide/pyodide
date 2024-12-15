@@ -118,6 +118,7 @@ myst:
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
+- Upgraded `cffi` to 1.17.1 {pr}`5261`
 
 ## Version 0.26.4
 
@@ -332,8 +333,8 @@ _May 27, 2024_
   {pr}`4666`
 
 - {{ Enhancement }} Added a new `callRelaxed` to PyProxies of callables that
-  discards extra arguments rather than raising a `TypeError``.
-{pr}`4392`
+  discards extra arguments rather than raising a ` TypeError``.
+{pr} `4392`
 
 - {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of
   callables.
