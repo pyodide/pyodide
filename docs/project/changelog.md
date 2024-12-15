@@ -333,8 +333,8 @@ _May 27, 2024_
   {pr}`4666`
 
 - {{ Enhancement }} Added a new `callRelaxed` to PyProxies of callables that
-  discards extra arguments rather than raising a ` TypeError``.
-{pr} `4392`
+  discards extra arguments rather than raising a `TypeError``.
+{pr}`4392`
 
 - {{ Enhancement }} A new `callWithOptions` method was added to PyProxies of
   callables.
