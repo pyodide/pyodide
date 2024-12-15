@@ -1,6 +1,8 @@
+import pytest
 from pytest_pyodide.decorator import run_in_pyodide
 
 
+@pytest.mark.xfail_browsers(firefox="times out")
 @run_in_pyodide(packages=["bokeh"])
 def test_bokeh(selenium):
     """

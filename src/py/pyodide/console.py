@@ -92,11 +92,15 @@ class _Compile(Compile):
         return_mode: ReturnMode = "last_expr",
         quiet_trailing_semicolon: bool = True,
         flags: int = 0x0,
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         super().__init__()
         self.flags |= flags
         self.return_mode = return_mode
         self.quiet_trailing_semicolon = quiet_trailing_semicolon
+        self.dont_inherit = dont_inherit
+        self.optimize = optimize
 
     def __call__(  # type: ignore[override]
         self, source: str, filename: str, symbol: str, *, incomplete_input: bool = True
@@ -119,6 +123,8 @@ class _Compile(Compile):
             filename=filename,
             return_mode=return_mode,
             flags=self.flags,
+            dont_inherit=self.dont_inherit,
+            optimize=self.optimize,
         ).compile()
         assert code_runner.code
         for feature in _features:
@@ -146,11 +152,15 @@ class _CommandCompiler(CommandCompiler):
         return_mode: ReturnMode = "last_expr",
         quiet_trailing_semicolon: bool = True,
         flags: int = 0x0,
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         self.compiler = _Compile(
             return_mode=return_mode,
             quiet_trailing_semicolon=quiet_trailing_semicolon,
             flags=flags,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
         )
 
     def __call__(  # type: ignore[override]
@@ -237,6 +247,16 @@ class Console:
     filename :
 
         The file name to report in error messages. Defaults to ``"<console>"``.
+
+    dont_inherit :
+
+        Whether to inherit ``__future__`` imports from the outer code.
+        See the documentation for the built-in :external:py:func:`compile` function.
+
+    optimize :
+
+        Specifies the optimization level of the compiler. See the documentation
+        for the built-in :external:py:func:`compile` function.
     """
 
     globals: dict[str, Any]
@@ -270,6 +290,8 @@ class Console:
         stderr_callback: Callable[[str], None] | None = None,
         persistent_stream_redirection: bool = False,
         filename: str = "<console>",
+        dont_inherit: bool = False,
+        optimize: int = -1,
     ) -> None:
         if globals is None:
             globals = {"__name__": "__console__", "__doc__": None}
@@ -283,9 +305,9 @@ class Console:
         self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator: Generator[
-            None, None, None
-        ] | None = None  # track persistent stream redirection
+        self._stream_generator: Generator[None, None, None] | None = (
+            None  # track persistent stream redirection
+        )
         if persistent_stream_redirection:
             self.persistent_redirect_streams()
         self._completer = rlcompleter.Completer(self.globals)
@@ -294,7 +316,11 @@ class Console:
         self.completer_word_break_characters = (
             """ \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?"""
         )
-        self._compile = _CommandCompiler(flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        self._compile = _CommandCompiler(
+            flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT,
+            dont_inherit=dont_inherit,
+            optimize=optimize,
+        )
 
     def persistent_redirect_streams(self) -> None:
         """Redirect :py:data:`~sys.stdin`/:py:data:`~sys.stdout`/:py:data:`~sys.stdout` persistently"""
@@ -379,18 +405,21 @@ class Console:
                 res.set_result(fut.result())
             res = None
 
-        ensure_future(self.runcode(source, code)).add_done_callback(done_cb)
+        ensure_future(self._runcode_with_lock(source, code)).add_done_callback(done_cb)
         return res
+
+    async def _runcode_with_lock(self, source: str, code: CodeRunner) -> Any:
+        async with self._lock:
+            return await self.runcode(source, code)
 
     async def runcode(self, source: str, code: CodeRunner) -> Any:
         """Execute a code object and return the result."""
-        async with self._lock:
-            with self.redirect_streams():
-                try:
-                    return await code.run_async(self.globals)
-                finally:
-                    sys.stdout.flush()
-                    sys.stderr.flush()
+        with self.redirect_streams():
+            try:
+                return await code.run_async(self.globals)
+            finally:
+                sys.stdout.flush()
+                sys.stderr.flush()
 
     def formatsyntaxerror(self, e: Exception) -> str:
         """Format the syntax error that just occurred.
@@ -398,6 +427,7 @@ class Console:
         This doesn't include a stack trace because there isn't one. The actual
         error object is stored into :py:data:`sys.last_value`.
         """
+        sys.last_exc = e
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = None
@@ -408,7 +438,7 @@ class Console:
         kept_frames = 0
         # Try to trim out stack frames inside our code
         for frame, _ in traceback.walk_tb(tb):
-            keep_frames = keep_frames or frame.f_code.co_filename == "<console>"
+            keep_frames = keep_frames or frame.f_code.co_filename == self.filename
             keep_frames = keep_frames or frame.f_code.co_filename == "<exec>"
             if keep_frames:
                 kept_frames += 1
@@ -419,6 +449,7 @@ class Console:
 
         The actual error object is stored into :py:data:`sys.last_value`.
         """
+        sys.last_exc = e
         sys.last_type = type(e)
         sys.last_value = e
         sys.last_traceback = e.__traceback__

@@ -73,6 +73,3 @@ _python2js_buffer(PyObject* x)
   PyBuffer_Release(&view);
   return result;
 }
-
-#include "include_js_file.h"
-#include "python2js_buffer.js"

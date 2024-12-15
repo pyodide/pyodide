@@ -6,12 +6,15 @@ package:
   top-level:
     - test
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
+  unvendor-tests: false # Obviously :)
   script: |
-    cat $(PYODIDE_ROOT)/cpython/patches/* | patch -p1
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}
+
     export TEST_EXTENSIONS="\
       _testinternalcapi.so \
       _testbuffer.so \
@@ -48,6 +51,7 @@ build:
       _testcapi/code.c \
       _testcapi/buffer.c \
       _testcapi/pyos.c \
+      _testcapi/run.c \
       _testcapi/file.c \
       _testcapi/codec.c \
       _testcapi/immortal.c \
@@ -72,13 +76,15 @@ build:
     done
 
     export TEST_CAPI_OBJECTS=( "${TEST_CAPI_SRCS[@]/#/Modules/}" )
-    emcc  ${SIDE_MODULE_LDFLAGS} ${TEST_CAPI_OBJECTS[@]//.c/.o} -o ${DISTDIR}/_testcapi.so
+    emcc  ${SIDE_MODULE_LDFLAGS} ${TEST_CAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testcapi.so
 
     for testname in ${TEST_EXTENSIONS}; do \
-      emcc Modules/${testname/.so/.o} -o ${DISTDIR}/$testname ${SIDE_MODULE_LDFLAGS}
+      emcc Modules/${testname/.so/.o} -o ${PKG_BUILD_DIR}/$testname ${SIDE_MODULE_LDFLAGS}
     done
 
     cd Lib && \
       tar --exclude=__pycache__ -cf - \
-      test test/test_sqlite3/ \
-      | tar -C $DISTDIR -xf -
+      test \
+      | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

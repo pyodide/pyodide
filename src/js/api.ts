@@ -1,14 +1,23 @@
-declare var Module: any;
-import "./module";
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { PackageData, loadPackage, loadedPackages } from "./load-package";
+import { loadPackage, loadedPackages } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
-import { loadBinaryFile } from "./compat";
+import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
-import { TypedArray } from "./types";
+import { scheduleCallback } from "./scheduler";
+import { TypedArray, PackageData } from "./types";
+import { IN_NODE, detectEnvironment } from "./environments";
+// @ts-ignore
+import LiteralMap from "./common/literal-map";
+import abortSignalAny from "./common/abortSignalAny";
+import {
+  makeGlobalsProxy,
+  SnapshotConfig,
+  syncUpSnapshotLoad1,
+  syncUpSnapshotLoad2,
+} from "./snapshot";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -39,7 +48,7 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
-/** @private */
+/** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
 };
@@ -49,6 +58,42 @@ API.saveState = () => API.pyodide_py._state.save_state();
 
 /** @private */
 API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
+
+// Used in webloop
+/** @private */
+API.scheduleCallback = scheduleCallback;
+
+/** @private */
+API.detectEnvironment = detectEnvironment;
+
+// @ts-ignore
+if (AbortSignal.any) {
+  /** @private */
+  // @ts-ignore
+  API.abortSignalAny = AbortSignal.any;
+} else {
+  /** @private */
+  API.abortSignalAny = abortSignalAny;
+}
+
+API.LiteralMap = LiteralMap;
+
+function ensureMountPathExists(path: string): void {
+  Module.FS.mkdirTree(path);
+  const { node } = Module.FS.lookupPath(path, {
+    follow_mount: false,
+  });
+
+  if (FS.isMountpoint(node)) {
+    throw new Error(`path '${path}' is already a file system mount point`);
+  }
+  if (!FS.isDir(node.mode)) {
+    throw new Error(`path '${path}' points to a file not a directory`);
+  }
+  for (const _ in node.contents) {
+    throw new Error(`directory '${path}' is not empty`);
+  }
+}
 
 /**
  * Why is this a class rather than an object?
@@ -104,7 +149,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as any;
+  static FS = {} as typeof Module.FS;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -283,41 +328,6 @@ export class PyodideAPI {
       options.globals = API.globals;
     }
     return await API.pyodide_code.eval_code_async.callKwargs(code, options);
-  }
-
-  /**
-   * Runs a Python code string like :js:func:`pyodide.runPython` but with stack
-   * switching enabled. Code executed in this way can use
-   * :py:meth:`PyodideFuture.syncify() <pyodide.webloop.PyodideFuture.syncify>`
-   * to block until a :py:class:`~asyncio.Future` or :js:class:`Promise` is
-   * resolved. Only works in runtimes with JS Promise Integration enabled.
-   *
-   * .. admonition:: Experimental
-   *    :class: warning
-   *
-   *    This feature is not yet stable.
-   *
-   * @experimental
-   * @param code The Python code to run
-   * @param options
-   * @param options.globals An optional Python dictionary to use as the globals.
-   * Defaults to :js:attr:`pyodide.globals`.
-   * @param options.locals An optional Python dictionary to use as the locals.
-   *        Defaults to the same as ``globals``.
-   * @param options.filename An optional string to use as the file name.
-   *        Defaults to ``"<exec>"``. If a custom file name is given, the
-   *        traceback for any exception that is thrown will show source lines
-   *        (unless the given file name starts with ``<`` and ends with ``>``).
-   * @returns The result of the Python code translated to JavaScript.
-   */
-  static async runPythonSyncifying(
-    code: string,
-    options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
-  ): Promise<any> {
-    if (!options.globals) {
-      options.globals = API.globals;
-    }
-    return API.pyodide_code.eval_code.callSyncifyingKwargs(code, options);
   }
 
   /**
@@ -517,12 +527,15 @@ export class PyodideAPI {
 
   /**
    * Mounts a :js:class:`FileSystemDirectoryHandle` into the target directory.
+   * Currently it's only possible to acquire a
+   * :js:class:`FileSystemDirectoryHandle` in Chrome.
    *
    * @param path The absolute path in the Emscripten file system to mount the
-   * native directory. If the directory does not exist, it will be created. If it
-   * does exist, it must be empty.
-   * @param fileSystemHandle A handle returned by :js:func:`navigator.storage.getDirectory() <getDirectory>`
-   * or :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
+   * native directory. If the directory does not exist, it will be created. If
+   * it does exist, it must be empty.
+   * @param fileSystemHandle A handle returned by
+   * :js:func:`navigator.storage.getDirectory() <getDirectory>` or
+   * :js:func:`window.showDirectoryPicker() <showDirectoryPicker>`.
    */
   static async mountNativeFS(
     path: string,
@@ -535,14 +548,11 @@ export class PyodideAPI {
         `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
       );
     }
-
-    if (Module.FS.findObject(path) == null) {
-      Module.FS.mkdirTree(path);
-    }
+    ensureMountPathExists(path);
 
     Module.FS.mount(
       Module.FS.filesystems.NATIVEFS_ASYNC,
-      { fileSystemHandle: fileSystemHandle },
+      { fileSystemHandle },
       path,
     );
 
@@ -554,6 +564,36 @@ export class PyodideAPI {
       syncfs: async () =>
         new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
     };
+  }
+
+  /**
+   * Mounts a host directory into Pyodide file system. Only works in node.
+   *
+   * @param emscriptenPath The absolute path in the Emscripten file system to
+   * mount the native directory. If the directory does not exist, it will be
+   * created. If it does exist, it must be empty.
+   * @param hostPath The host path to mount. It must be a directory that exists.
+   */
+  static mountNodeFS(emscriptenPath: string, hostPath: string): void {
+    if (!IN_NODE) {
+      throw new Error("mountNodeFS only works in Node");
+    }
+    ensureMountPathExists(emscriptenPath);
+    let stat;
+    try {
+      stat = nodeFSMod.lstatSync(hostPath);
+    } catch (e) {
+      throw new Error(`hostPath '${hostPath}' does not exist`);
+    }
+    if (!stat.isDirectory()) {
+      throw new Error(`hostPath '${hostPath}' is not a directory`);
+    }
+
+    Module.FS.mount(
+      Module.FS.filesystems.NODEFS,
+      { root: hostPath },
+      emscriptenPath,
+    );
   }
 
   /**
@@ -584,7 +624,7 @@ export class PyodideAPI {
    * purpose you like.
    */
   static setInterruptBuffer(interrupt_buffer: TypedArray) {
-    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = !!interrupt_buffer;
+    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = +!!interrupt_buffer;
     Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
   }
 
@@ -625,9 +665,22 @@ export class PyodideAPI {
     API.debug_ffi = debug;
     return orig;
   }
+
+  static makeMemorySnapshot({
+    serializer,
+  }: {
+    serializer?: (obj: any) => any;
+  } = {}): Uint8Array {
+    if (!API.config._makeSnapshot) {
+      throw new Error(
+        "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
+      );
+    }
+    return API.makeSnapshot(serializer);
+  }
 }
 
-/** @hidetype */
+/** @hidden */
 export type PyodideInterface = typeof PyodideAPI;
 
 /** @private */
@@ -679,6 +732,20 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+export function jsFinderHook(o: object) {
+  if ("__all__" in o) {
+    return;
+  }
+  Object.defineProperty(o, "__all__", {
+    get: () =>
+      API.public_api.toPy(
+        Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
+      ),
+    enumerable: false,
+    configurable: true,
+  });
+}
+
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -686,7 +753,13 @@ API.bootstrapFinalizedPromise = new Promise<void>(
  * the core `pyodide` apis. (But package loading is not ready quite yet.)
  * @private
  */
-API.finalizeBootstrap = function (): PyodideInterface {
+API.finalizeBootstrap = function (
+  snapshotConfig?: SnapshotConfig,
+  snapshotDeserializer?: (obj: any) => any,
+): PyodideInterface {
+  if (snapshotConfig) {
+    syncUpSnapshotLoad1();
+  }
   let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
     API.fatal_loading_error(
@@ -703,7 +776,6 @@ API.finalizeBootstrap = function (): PyodideInterface {
   let import_module = API.importlib.import_module;
 
   API.sys = import_module("sys");
-  API.sys.path.insert(0, API.config.env.HOME);
   API.os = import_module("os");
 
   // Set up globals
@@ -717,24 +789,18 @@ API.finalizeBootstrap = function (): PyodideInterface {
 
   // Set up key Javascript modules.
   let importhook = API._pyodide._importhook;
-  function jsFinderHook(o: object) {
-    if ("__all__" in o) {
-      return;
-    }
-    Object.defineProperty(o, "__all__", {
-      get: () =>
-        pyodide.toPy(
-          Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-        ),
-      enumerable: false,
-      configurable: true,
-    });
-  }
-  importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
-  importhook.register_js_module("js", API.config.jsglobals);
-
   let pyodide = makePublicAPI();
-  importhook.register_js_module("pyodide_js", pyodide);
+  if (API.config._makeSnapshot) {
+    API.config.jsglobals = makeGlobalsProxy(API.config.jsglobals);
+  }
+  const jsglobals = API.config.jsglobals;
+  if (snapshotConfig) {
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
+  } else {
+    importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+    importhook.register_js_module("js", jsglobals);
+    importhook.register_js_module("pyodide_js", pyodide);
+  }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of

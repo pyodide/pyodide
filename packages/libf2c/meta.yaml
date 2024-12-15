@@ -9,6 +9,7 @@ package:
   version: CLAPACK-3.2.1
   tag:
     - library
+    - static_library
 source:
   sha256: 6dc4c382164beec8aaed8fd2acc36ad24232c406eda6db462bd4c41d5e455fac
   url: http://www.netlib.org/clapack/clapack.tgz
@@ -22,6 +23,7 @@ source:
     # In CLAPACK's F2CLIBS/libf2c Makefile, some commands are mistakenly (?) hardcoded
     # instead of using the right variables
     - patches/0006-adjust-ld-ar-ranlib.patch
+    - patches/0007-add-singlecomplex.patch
 
   extras:
     - [extras/make.inc, make.inc]
@@ -40,3 +42,6 @@ build:
     mkdir -p ${WASM_LIBRARY_DIR}/{lib,include}
     cp INCLUDE/f2c.h ${WASM_LIBRARY_DIR}/include
     cp F2CLIBS/libf2c.a ${WASM_LIBRARY_DIR}/lib
+about:
+  home: https://www.netlib.org/clapack/
+  license: BSD-3-Clause

@@ -1,0 +1,20 @@
+package:
+  name: iminuit
+  version: 2.29.1
+source:
+  url: https://files.pythonhosted.org/packages/0b/88/e77fc2370468be58303c131fa19cbe70ff478df13d762eef9502874da6fa/iminuit-2.29.1.tar.gz
+  sha256: 474d10eb2f924b9320f6f7093e4c149d0a38c124d0419c12a07a3eca942de025
+test:
+  imports:
+    - iminuit
+requirements:
+  run:
+    - numpy # runtime only
+about:
+  home: http://github.com/scikit-hep/iminuit
+  PyPI: https://pypi.org/project/iminuit
+  summary: Jupyter-friendly Python frontend for MINUIT2 in C++
+  license: Mixed MIT, LGPL-2.0
+extra:
+  recipe-maintainers:
+    - henryiii

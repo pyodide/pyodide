@@ -2,6 +2,7 @@ import asyncio
 import time
 
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 from pyodide.code import eval_code_async
 
@@ -421,3 +422,24 @@ def test_await_pyproxy_async_def(selenium):
         return (!!packages.packages) && (!!packages.info);
         """
     )
+
+
+@run_in_pyodide
+async def inner_test_cancellation(selenium):
+    from asyncio import ensure_future, sleep
+
+    from js import fetch
+
+    async def f():
+        while True:
+            await fetch("/")
+
+    fut = ensure_future(f())
+    await sleep(0.01)
+    fut.cancel()
+    await sleep(0.1)
+
+
+def test_cancellation(selenium):
+    inner_test_cancellation(selenium)
+    assert "InvalidStateError" not in selenium.logs

@@ -46,6 +46,9 @@ Instead, it is better to load individual modules as needed using
   Pyodide includes some method stubs based on browser APIs:
   `webbrowser.open()`, `webbrowser.open_new()`, `webbrowser.open_new_tab()`.
 
+- zoneinfo: The zoneinfo package will only work if you install the timezone data using
+  the tzdata package (i.e. by calling `pyodide.loadPackage("tzdata")`)
+
 ### Synchronous HTTP requests support
 
 Packages for `urllib3` and `requests` are included in pyodide. In browser, these

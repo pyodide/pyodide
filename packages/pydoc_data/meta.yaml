@@ -6,10 +6,14 @@ package:
   top-level:
     - pydoc_data
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
   script: |
-    cd Lib
-    tar --exclude=__pycache__ -cf - pydoc_data | tar -C $DISTDIR -xf -
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}/Lib
+
+    tar --exclude=__pycache__ -cf - pydoc_data | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

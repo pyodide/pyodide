@@ -1,11 +1,11 @@
 package:
   name: aiohttp
-  version: 3.9.2
+  version: 3.9.5
   top-level:
     - aiohttp
 source:
-  url: https://files.pythonhosted.org/packages/07/2f/27c9ae85646de72784529a86d2a98c7cfae4ff9eab0004becf47da66c7ec/aiohttp-3.9.2.tar.gz
-  sha256: b0ad0a5e86ce73f5368a164c10ada10504bf91869c05ab75d982c6048217fbf7
+  url: https://files.pythonhosted.org/packages/04/a4/e3679773ea7eb5b37a2c998e25b017cc5349edf6ba2739d1f32855cfb11b/aiohttp-3.9.5.tar.gz
+  sha256: edea7d15772ceeb29db4aff55e482d4bcfb6ae160ce144f2682de02f6d693551
 
 requirements:
   run:
@@ -21,4 +21,4 @@ about:
   home: https://github.com/aio-libs/aiohttp
   PyPI: https://pypi.org/project/aiohttp
   summary: Async http client/server framework (asyncio)
-  license: Apache 2
+  license: Apache-2.0

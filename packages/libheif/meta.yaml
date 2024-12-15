@@ -3,9 +3,10 @@ package:
   version: 1.12.0
   tag:
     - library
+    - shared_library
 source:
-  url: https://github.com/strukturag/libheif/releases/download/v1.12.0/libheif-1.12.0.tar.gz
-  sha256: e1ac2abb354fdc8ccdca71363ebad7503ad731c84022cf460837f0839e171718
+  url: https://github.com/strukturag/libheif/releases/download/v1.17.3/libheif-1.17.3.tar.gz
+  sha256: 8d5b6292e7931324f81f871f250ecbb9f874aa3c66b4f6f35ceb0bf3163b53ea
 
 requirements:
   host:
@@ -21,6 +22,8 @@ build:
       -DCMAKE_CXX_FLAGS="-fPIC" \
       -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
       -DWITH_EXAMPLES=OFF \
+      -DWITH_X265=OFF \
+      -DBUILD_TESTING=OFF \
       -DBUILD_SHARED_LIBS=ON \
       -DLIBDE265_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
       -DLIBDE265_LIBRARY=${WASM_LIBRARY_DIR}/lib/libde265.a \
@@ -29,3 +32,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
     cp ${WASM_LIBRARY_DIR}/lib/libheif.so ${DISTDIR}
+about:
+  home: https://github.com/strukturag/libheif
+  license: LGPL-3.0

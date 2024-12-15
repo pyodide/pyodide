@@ -5,12 +5,15 @@ package:
     - core
     - pyodide.test
     - library
+    - shared_library
 source:
   path: src
 build:
   type: shared_library
   script: |
-    em++ -c throw.cpp -o throw.o ${SIDE_MODULE_CFLAGS} -fexceptions -I${PYTHONINCLUDE} -flto -fno-lto
-    em++ -c catch.cpp -o catch.o ${SIDE_MODULE_CFLAGS} -fexceptions -I${PYTHONINCLUDE} -flto -fno-lto
-    em++ throw.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-throw.so -fexceptions
-    em++ catch.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/cpp-exceptions-test-catch.so -fexceptions
+    em++ ${SIDE_MODULE_CFLAGS} -fexceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c throw.cpp -o throw.o
+    em++ ${SIDE_MODULE_CFLAGS} -fexceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c catch.cpp -o catch.o -mreference-types
+    em++ ${SIDE_MODULE_LDFLAGS} -fexceptions  -o ${DISTDIR}/cpp-exceptions-test-throw.so throw.o
+    em++ ${SIDE_MODULE_LDFLAGS} -fexceptions  -o ${DISTDIR}/cpp-exceptions-test-catch.so catch.o
+about:
+  license: MPL-2.0

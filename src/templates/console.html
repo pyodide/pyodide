@@ -2,6 +2,14 @@
 <html>
   <head>
     <meta charset="UTF-8" />
+    <meta
+      http-equiv="origin-trial"
+      content="Aq6vv/4syIkcyMszFgCc9LlH0kX88jdE7SXfCFnh2RQN0nhhL8o6PCQ2oE3a7n3mC7+d9n89Repw5HYBtjarDw4AAAB3eyJvcmlnaW4iOiJodHRwczovL3B5b2RpZGUub3JnOjQ0MyIsImZlYXR1cmUiOiJXZWJBc3NlbWJseUpTUHJvbWlzZUludGVncmF0aW9uIiwiZXhwaXJ5IjoxNzMwMjQ2Mzk5LCJpc1N1YmRvbWFpbiI6dHJ1ZX0="
+    />
+    <meta
+      http-equiv="origin-trial"
+      content="Ai8IXb0XqedlM/Q2guWXFfBkKiYY9uaPZpdjHqc8y0ZvpAfK9SKzp/dIuFH+txG/HEKxt59uIkk39hhWrhNgbw4AAABieyJvcmlnaW4iOiJodHRwOi8vbG9jYWxob3N0OjgwMDAiLCJmZWF0dXJlIjoiV2ViQXNzZW1ibHlKU1Byb21pc2VJbnRlZ3JhdGlvbiIsImV4cGlyeSI6MTczMDI0NjM5OX0="
+    />
     <script src="https://cdn.jsdelivr.net/npm/jquery"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/jquery.terminal.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery.terminal@2.35.2/js/unix_formatting.min.js"></script>
@@ -253,6 +261,39 @@
         if (searchParams.has("noblink")) {
           $(".cmd-cursor").addClass("noblink");
         }
+
+        let idbkvPromise;
+        async function getIDBKV() {
+          if (!idbkvPromise) {
+            idbkvPromise = await import(
+              "https://unpkg.com/idb-keyval@5.0.2/dist/esm/index.js"
+            );
+          }
+          return idbkvPromise;
+        }
+
+        async function mountDirectory(pyodideDirectory, directoryKey) {
+          if (pyodide.FS.analyzePath(pyodideDirectory).exists) {
+            return;
+          }
+          const { get, set } = await getIDBKV();
+          const opts = {
+            id: "mountdirid",
+            mode: "readwrite",
+          };
+          let directoryHandle = await get(directoryKey);
+          if (!directoryHandle) {
+            directoryHandle = await showDirectoryPicker(opts);
+            await set(directoryKey, directoryHandle);
+          }
+          const permissionStatus =
+            await directoryHandle.requestPermission(opts);
+          if (permissionStatus !== "granted") {
+            throw new Error("readwrite access to directory not granted");
+          }
+          await pyodide.mountNativeFS(pyodideDirectory, directoryHandle);
+        }
+        globalThis.mountDirectory = mountDirectory;
       }
       window.console_ready = main();
     </script>

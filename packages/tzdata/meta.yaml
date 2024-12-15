@@ -1,0 +1,13 @@
+package:
+  name: tzdata
+  version: "2024.1"
+  top-level:
+    - tzdata
+source:
+  url: https://files.pythonhosted.org/packages/65/58/f9c9e6be752e9fcb8b6a0ee9fb87e6e7a1f6bcab2cdc73f02bb7ba91ada0/tzdata-2024.1-py2.py3-none-any.whl
+  sha256: 9068bc196136463f5245e51efda838afa15aaeca9903f49050dfa2679db4d252
+about:
+  home: https://github.com/python/tzdata
+  PyPI: https://pypi.org/project/tzdata
+  summary: Provider of IANA time zone data
+  license: Apache-2.0

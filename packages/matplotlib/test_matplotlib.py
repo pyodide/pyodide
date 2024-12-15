@@ -152,7 +152,7 @@ def test_font_manager(selenium):
     # get fontlist from build
     fontlist_built = json.loads(json.dumps(fm.FontManager(), cls=fm._JSONEncoder))
 
-    # reodering list to compare
+    # reordering list to compare
     for list in ("afmlist", "ttflist"):
         for fontlist in (fontlist_vendor, fontlist_built):
             fontlist[list].sort(key=lambda x: x["fname"])

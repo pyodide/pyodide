@@ -7,11 +7,14 @@ package:
     - sqlite3
     - _sqlite3
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
   script: |
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}
+
     export FILES=(
       "Modules/_sqlite/blob.c"
       "Modules/_sqlite/connection.c"
@@ -32,7 +35,9 @@ build:
     done
 
     OBJECT_FILES=$(find Modules/_sqlite/ -name "*.o")
-    emcc $OBJECT_FILES -o $DISTDIR/_sqlite3.so $SIDE_MODULE_LDFLAGS \
+    emcc $OBJECT_FILES -o ${PKG_BUILD_DIR}/_sqlite3.so $SIDE_MODULE_LDFLAGS \
        -sUSE_SQLITE3 -lsqlite3
 
-    cd Lib && tar --exclude=test -cf - sqlite3 | tar -C $DISTDIR -xf -
+    cd Lib && tar --exclude=test -cf - sqlite3 | tar -C ${PKG_BUILD_DIR} -xf -
+about:
+  license: PSF

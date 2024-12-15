@@ -1,7 +1,7 @@
-From 01bca73a051f2ba1a56fb9455a11d6dcecb0b034 Mon Sep 17 00:00:00 2001
+From 45a31145679c83f2719b6420f234d484b9459697 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 18 Mar 2022 16:25:39 -0700
-Subject: [PATCH 01/10] Fix dstevr in special/lapack_defs.h
+Subject: [PATCH 1/18] Fix dstevr in special/lapack_defs.h
 
 ---
  scipy/special/lapack_defs.h | 5 ++---
@@ -28,5 +28,5 @@ index 0d20ba1ca..d4325f71f 100644
 +                      w, z, ldz, isuppz, work, lwork, iwork, liwork, info);
  }
 -- 
-2.25.1
+2.34.1
 

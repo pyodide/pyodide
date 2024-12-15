@@ -54,6 +54,8 @@ def test_cpython_core(main_test, selenium, request):
                 res = None
                 import platform
                 from test.libregrtest.main import main
+                import sys
+                sys.excepthook = sys.__excepthook__
 
                 platform.platform(aliased=True)
                 import _testcapi

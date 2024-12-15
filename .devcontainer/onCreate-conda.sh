@@ -29,7 +29,7 @@ ln -sf "$PYODIDE_RECIPE_BUILD_DIR" packages/.build || echo "Note: Could not crea
 conda run -n pyodide-env --live-stream pip install -r requirements.txt
 
 # https://pyodide.org/en/stable/development/new-packages.html#prerequisites
-conda run -n pyodide-env --live-stream pip install -e ./pyodide-build
+make pyodide_build
 
 # Building emsdk and cpython takes a few minutes to run, so we do not run it here.
 #

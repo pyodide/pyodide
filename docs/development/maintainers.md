@@ -191,6 +191,30 @@ to update all packages and make a pull request with these changes. There will be
 build/test failures, revert the packages that fail the build or tests and make a
 note to update them independently.
 
+## Updating pyodide-build
+
+to change the version of pyodide-build, change the commit of the pyodide-build submodule.
+
+```bash
+cd pyodide-build
+git checkout "<COMMIT HASH>"
+```
+
+to test with the fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
+
+```ini
+# .gitmodules
+[submodule "pyodide-build"]
+	path = pyodide-build
+	url = https://github.com/<yourfork>/pyodide-build
+```
+
+```bash
+git submodule sync
+cd pyodide-build
+git checkout "<COMMIT HASH"
+```
+
 ## Upgrading pyodide to a new version of CPython
 
 ### Prerequisites
@@ -222,7 +246,6 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    - `docs/development/building-and-testing-packages.md`
    - `environment.yml`
    - `.pre-commit-config.yaml`
-   - `pyodide-build/pyodide_build/tools/pyo3_config.ini` (two places)
    - `pyproject.toml`
 
    (TODO: make this list shorter.)

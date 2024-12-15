@@ -1,10 +1,10 @@
 package:
   name: RobotRaconteur
-  version: 0.15.1
+  version: 1.2.0
 
 source:
-  url: https://github.com/robotraconteur/robotraconteur_pyodide/releases/download/v0.15.1-pyodide/RobotRaconteur-pyodide-0.15.1-post1-Source.tar.gz
-  sha256: 224427d0922dcb34d17221c1f3b8b5e94ebddc109f24f8e9a3f7f5d090386dc6
+  url: https://github.com/robotraconteur/robotraconteur/releases/download/v1.2.0/RobotRaconteur-1.2.0-Source.tar.gz
+  sha256: "305cc0dc1f0e51181999247c14ac8b93d53aca755d9e7bccb78a5a3ef87ed86f"
 
 requirements:
   run:
@@ -20,10 +20,11 @@ build:
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
 
     echo "set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)" > ForceStaticLib.cmake
-    emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_PYTHON=ON \
+    emcmake cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DBUILD_GEN=OFF -DBUILD_TESTING=OFF -DBUILD_PYTHON3=ON \
     -DCMAKE_PROJECT_INCLUDE=ForceStaticLib.cmake \
     -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/core/include/ \
-    -DPYTHON_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON_EXECUTABLE=python$PYMAJOR.$PYMINOR \
+    -DPYTHON3_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON3_EXECUTABLE=python$PYMAJOR.$PYMINOR \
+    -DPYTHON3_LIBRARY=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR.a \
     -DCMAKE_CXX_FLAGS="-fPIC -fexceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1 -Wno-enum-constexpr-conversion" \
     -DBOOST_INCLUDEDIR=$WASM_LIBRARY_DIR/include -DBOOST_LIBRARYDIR=$WASM_LIBRARY_DIR/lib \
     -DBoost_DATE_TIME_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_date_time.a \
@@ -44,7 +45,7 @@ build:
      .
     emmake make -j ${PYODIDE_JOBS:-3}
     emcc ${SIDE_MODULE_LDFLAGS} -fexceptions out/lib/libRobotRaconteurCore.a \
-      out/Python/RobotRaconteur/_RobotRaconteurPython.a \
+      out/Python3/RobotRaconteur/_RobotRaconteurPython.a \
       $WASM_LIBRARY_DIR/lib/libboost_chrono.a \
       $WASM_LIBRARY_DIR/lib/libboost_date_time.a \
       $WASM_LIBRARY_DIR/lib/libboost_filesystem.a \
@@ -52,4 +53,7 @@ build:
       $WASM_LIBRARY_DIR/lib/libboost_random.a \
       $WASM_LIBRARY_DIR/lib/libboost_regex.a \
       $WASM_LIBRARY_DIR/lib/libboost_system.a \
-      -o out/Python/RobotRaconteur/_RobotRaconteurPython.so
+      -o out/Python3/RobotRaconteur/_RobotRaconteurPython.so
+about:
+  home: https://github.com/robotraconteur/robotraconteur
+  license: Apache-2.0

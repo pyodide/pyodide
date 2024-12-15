@@ -1,14 +1,14 @@
 package:
   name: screed
-  version: 1.1.2
+  version: 1.1.3
   top-level:
     - bigtests
     - screed
 source:
-  url: https://files.pythonhosted.org/packages/a6/c1/e33d75369bffaf304b891afa34aa8b9765f117931673cdf8837eba9b0efb/screed-1.1.2-py2.py3-none-any.whl
-  sha256: 413e9cfce4b4908d0fa1fe69dcd2c523641a02a856eb196f9ce2183657f342dc
+  url: https://files.pythonhosted.org/packages/88/fb/0dedd2e7b596d9a7a2b59e3c54e85f8640c88a5806e11783785b4fa58861/screed-1.1.3.tar.gz
+  sha256: 37e81697c7dba95a053554e5b5a86aff329705e1cf5dfc5e7b8da586dee072b8
 about:
   home: https://github.com/dib-lab/screed
   PyPI: https://pypi.org/project/screed
   summary: a Python library for loading FASTA and FASTQ sequences
-  license: BSD 3-clause
+  license: BSD-3-Clause

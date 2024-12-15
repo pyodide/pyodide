@@ -3,6 +3,7 @@ package:
   version: 4.9.2
   tag:
     - library
+    - static_library
 source:
   sha256: bc104d101278c68b303359b3dc4192f81592ae8640f1aee486921138f7f88cb7
   url: https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
@@ -16,26 +17,35 @@ requirements:
     - libxml
 
 build:
-  type: shared_library
+  type: static_library
   script: |
     export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
+
+    embuilder build zlib --pic
 
     # dap + byterange: no libcurl
 
     emconfigure ./configure \
+      --host=none \
       --prefix=${WASM_LIBRARY_DIR} \
       --disable-doxygen \
       --enable-netcdf-4 \
       --disable-dap \
+      --disable-nczarr \
       --disable-byterange \
       --disable-dap-remote-tests \
       --disable-examples \
       --disable-utilities \
       --disable-testsets \
-      CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include" \
-      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include"
+      --disable-shared \
+      CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
+      CXXFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include -s USE_ZLIB=1" \
+      LDFLAGS="-fPIC -s USE_ZLIB=1"
 
     emmake make -j ${PYODIDE_JOBS:-3} LDFLAGS="-avoid-version -L${WASM_LIBRARY_DIR}/lib"
     emmake make -j ${PYODIDE_JOBS:-3} install
 
     cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}
+about:
+  home: https://github.com/Unidata/netcdf-c
+  license: BSD-3-Clause

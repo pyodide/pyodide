@@ -5,6 +5,7 @@ Get the current versions of Chrome and Firefox to aid in tagging Docker images.
 Old Docker image tag: 20230411-chromelatest-firefoxlatest
 New Docker image tag: 20230411-chrome112-firefox112-py311
 """
+
 from datetime import date
 from sys import version_info
 

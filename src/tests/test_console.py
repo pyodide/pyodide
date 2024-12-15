@@ -119,8 +119,7 @@ def test_interactive_console():
         assert await get_result("") is None
         assert await get_result("factorial(10)") == 3628800
 
-        assert await get_result("import pytz") is None
-        assert await get_result("pytz.utc.zone") == "UTC"
+        assert await get_result("import pathlib") is None
 
         fut = shell.push("1+")
         assert fut.syntax_check == "syntax-error"
@@ -287,6 +286,42 @@ def test_nonpersistent_redirection(safe_sys_redirections):
         assert await get_result("sys.stderr.isatty()")
 
     asyncio.run(test())
+
+
+@pytest.mark.asyncio
+async def test_compile_optimize():
+    from pyodide.console import Console
+
+    console = Console(optimize=2)
+    await console.push("assert 0")
+
+    await console.push("def f():")
+    await console.push("    '''docstring'''\n\n")
+
+    assert await console.push("f.__doc__") is None
+
+
+@pytest.mark.asyncio
+async def test_console_filename():
+    from pyodide.console import Console
+
+    for filename in ("<console>", "<exec>", "other"):
+        future = Console(filename=filename).push("assert 0")
+        with pytest.raises(AssertionError):
+            await future
+        assert isinstance(future.formatted_error, str)
+        assert f'File "{filename}", line 1, in <module>' in future.formatted_error
+
+
+@pytest.mark.skip_refcount_check
+@run_in_pyodide
+async def test_pyodide_console_runcode_locked(selenium):
+    from pyodide.console import PyodideConsole
+
+    console = PyodideConsole()
+
+    console.push("import micropip")
+    await console.push("micropip")
 
 
 @pytest.mark.skip_refcount_check

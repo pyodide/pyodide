@@ -10,7 +10,7 @@ about:
   home: https://github.com/dimpase/primecountpy
   PyPI: https://pypi.org/project/primecountpy
   summary: Cython interface for C++ primecount library
-  license: GPLv3
+  license: GPL-3.0
 requirements:
   host:
     - primecount
@@ -23,3 +23,6 @@ build:
     -I$(WASM_LIBRARY_DIR)/include
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
+extra:
+  recipe-maintainers:
+    - mkoeppe

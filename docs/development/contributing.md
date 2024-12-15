@@ -29,7 +29,7 @@ To contribute code, see the following steps,
 
 3. Clone your fork of Pyodide
    ```
-   git clone https://github.com/<your-username>/pyodide.git
+   git clone --recursive https://github.com/<your-username>/pyodide.git
    ```
    and add the upstream remote,
    ```
@@ -79,9 +79,9 @@ Pyodide follows [semantic versioning](http://semver.org/) - major versions for
 breaking changes (x.0.0), minor versions for new features (0.x.0), and patches
 for bug fixes (0.0.x).
 
-We keep a file, {ref}`docs/changelog.md <changelog>`, outlining changes to
-Pyodide in each release. We like to think of the audience for changelogs as
-non-developers who primarily run the latest stable. So the change log will
+We keep a file, {ref}`docs/project/changelog.md <changelog>`, outlining changes
+to Pyodide in each release. We like to think of the audience for changelogs
+as non-developers who primarily run the latest stable. So the change log will
 primarily outline user-visible changes such as new features and deprecations,
 and will exclude things that might otherwise be inconsequential to the end user
 experience, such as infrastructure or refactoring.
@@ -196,10 +196,6 @@ This is considered a "weak copyleft" license. Check out the [tl;drLegal entry][]
 information, as well as Mozilla's
 [MPL 2.0 FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/) if you need further
 clarification on what is and isn't permitted.
-
-## Get in Touch
-
-- **Gitter:** [#pyodide](https://gitter.im/pyodide/community) channel at gitter.im
 
 [tl;drlegal entry]: https://tldrlegal.com/license/mozilla-public-license-2.0-(mpl-2)
 

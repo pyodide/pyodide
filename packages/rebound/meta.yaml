@@ -1,6 +1,6 @@
 package:
   name: rebound
-  version: 3.24.2
+  version: 4.4.3
   top-level:
     - rebound
 build:
@@ -12,10 +12,12 @@ build:
     cp librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
 
 source:
-  url: https://files.pythonhosted.org/packages/5c/66/7564ac591bb088d7f35a59d560b5c26426bb8ef5415522232819fe11c45a/rebound-3.24.2.tar.gz
-  sha256: a3c5d4c6a10b9c1538e1051edcd6341ef3d13142b698ee9c4a1f112d9684d803
+  url: https://files.pythonhosted.org/packages/9d/f5/93f5abaf2c796e35b775e6fd395c2fd3729c17701fcb90fb4ed052fdd465/rebound-4.4.3.tar.gz
+  sha256: 8dd2fc69f4db4609abeb50048583d0428c716cd3eab11df868358f5384d826cf
   patches:
     - patches/0001-fix-install_name.patch
+    - patches/0002-fix-output.patch
+    - patches/0003-no-emscripten.patch
 
 requirements:
   run:
@@ -24,4 +26,7 @@ about:
   home: https://github.com/hannorein/rebound/
   PyPI: https://pypi.org/project/rebound
   summary: An open-source multi-purpose N-body code
-  license: GPL
+  license: GPL-3.0
+extra:
+  recipe-maintainers:
+    - hannorein

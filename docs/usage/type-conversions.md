@@ -616,11 +616,11 @@ blocks. At the boundary between Python and JavaScript, errors are caught,
 converted between languages, and rethrown.
 
 JavaScript errors are wrapped in a {py:class}`~pyodide.ffi.JsException`.
-Python exceptions are converted to a {js:class}`~pyodide.PythonError`.
+Python exceptions are converted to a {js:class}`~pyodide.ffi.PythonError`.
 At present if an exception crosses between Python and JavaScript several times,
 the resulting error message won't be as useful as one might hope.
 
-In order to reduce memory leaks, the {js:class}`~pyodide.PythonError` has a
+In order to reduce memory leaks, the {js:class}`~pyodide.ffi.PythonError` has a
 formatted traceback, but no reference to the original Python exception. The
 original exception has references to the stack frame and leaking it will leak
 all the local variables from that stack frame. The actual Python exception will
@@ -740,7 +740,7 @@ pyodide.runPython(`
 console.log(my_js_namespace.y); // 7
 ```
 
-If the JavaScript object's name is a reserved Python keyword, the {py:func}`setattr` function can be used to access the object by name within the js module::
+If the JavaScript object's name is a reserved Python keyword, the {py:func}`getattr` function can be used to access the object by name within the js module::
 
 ```pyodide
 lambda = (x) => {return x + 1};

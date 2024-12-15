@@ -53,7 +53,7 @@ _python2js_addto_postprocess_list,
 EM_JS(void, _python2js_handle_postprocess_list, (JsVal list, JsVal cache), {
   for (const [parent, key, ptr] of list) {
     let val = cache.get(ptr);
-    if (parent.constructor.name === "Map") {
+    if (parent.constructor.name === "LiteralMap") {
       parent.set(key, val)
     } else {
       // This is unfortunately a bit of a hack, if user does something weird
@@ -234,14 +234,31 @@ static JsVal
 _python2js_dict(ConversionContext* context, PyObject* x)
 {
   bool success = false;
+  PyObject* items = NULL;
+  PyObject* iter = NULL;
+  PyObject* item = NULL;
 
+  _Py_IDENTIFIER(items);
   JsVal jsdict = context->dict_new(context);
   FAIL_IF_JS_NULL(jsdict);
   FAIL_IF_MINUS_ONE(
     _python2js_add_to_cache(hiwire_get(context->cache), x, Jsv_novalue));
-  PyObject *pykey, *pyval;
-  Py_ssize_t pos = 0;
-  while (PyDict_Next(x, &pos, &pykey, &pyval)) {
+
+  // PyDict_Next may or may not work on dict subclasses, so get the `.items()`
+  // and iterate that instead. See issue #4636.
+  items = _PyObject_CallMethodIdNoArgs(x, &PyId_items);
+  FAIL_IF_NULL(items);
+  iter = PyObject_GetIter(items);
+  FAIL_IF_NULL(iter);
+  while ((item = PyIter_Next(iter))) {
+    if (!PyTuple_Check(item)) {
+      PyErr_SetString(PyExc_TypeError, "expected tuple");
+      FAIL();
+    }
+    PyObject* pykey = PyTuple_GetItem(item, 0);
+    FAIL_IF_NULL(pykey);
+    PyObject* pyval = PyTuple_GetItem(item, 1);
+    FAIL_IF_NULL(pyval);
     JsVal jskey = _python2js_immutable(pykey);
     if (JsvNull_Check(jskey) || JsvNoValue_Check(jskey)) {
       FAIL_IF_ERR_OCCURRED();
@@ -258,7 +275,9 @@ _python2js_dict(ConversionContext* context, PyObject* x)
       FAIL_IF_MINUS_ONE(
         context->dict_add_keyvalue(context, jsdict, jskey, jsval));
     }
+    Py_CLEAR(item);
   }
+  FAIL_IF_ERR_OCCURRED();
   if (context->dict_postprocess) {
     jsdict = context->dict_postprocess(context, jsdict);
     FAIL_IF_JS_NULL(jsdict);
@@ -267,6 +286,9 @@ _python2js_dict(ConversionContext* context, PyObject* x)
     _python2js_add_to_cache(hiwire_get(context->cache), x, jsdict));
   success = true;
 finally:
+  Py_CLEAR(items);
+  Py_CLEAR(iter);
+  Py_CLEAR(item);
   return success ? jsdict : JS_NULL;
 }
 
@@ -476,7 +498,7 @@ finally:
  *
  */
 JsVal
-python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register)
+python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register, bool is_json_adaptor)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
@@ -484,7 +506,7 @@ python2js_inner(PyObject* x, JsVal proxies, bool track_proxies, bool gc_register
     PyErr_SetString(conversion_error, "No conversion known for x.");
     FAIL();
   }
-  JsVal proxy = pyproxy_new_ex(x, false, false, gc_register);
+  JsVal proxy = pyproxy_new_ex(x, false, false, gc_register, is_json_adaptor);
   FAIL_IF_JS_NULL(proxy);
   if (track_proxies) {
     JsvArray_Push(proxies, proxy);
@@ -514,7 +536,7 @@ finally:
 JsVal
 python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register)
 {
-  return python2js_inner(x, proxies, true, gc_register);
+  return python2js_inner(x, proxies, true, gc_register, false);
 }
 
 /**
@@ -524,14 +546,14 @@ python2js_track_proxies(PyObject* x, JsVal proxies, bool gc_register)
 EMSCRIPTEN_KEEPALIVE JsVal
 python2js(PyObject* x)
 {
-  return python2js_inner(x, JS_NULL, false, true);
+  return python2js_inner(x, JS_NULL, false, true, false);
 }
 
 // taking function pointers to EM_JS functions leads to linker errors.
 static JsVal
 _JsMap_New(ConversionContext *context)
 {
-  return JsvMap_New();
+  return JsvLiteralMap_New();
 }
 
 static int

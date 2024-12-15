@@ -1,9 +1,0 @@
-package:
-  name: pkg_test_disabled
-  version: 1.0.0
-source:
-  sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-  url: https://dummy-url-that-not-exists.com/pkg_test_disabled.tar.gz
-requirements:
-  run:
-    - pkg_test_disabled_child

@@ -1,0 +1,13 @@
+package:
+  name: duckdb
+  version: 1.1.2
+  top-level:
+    - duckdb
+source:
+  url: https://duckdb.github.io/duckdb-pyodide/wheels/duckdb-1.1.2-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: aa794366f7acb924ddd1ecb32a349148a3c1343219a7d9d84812d3dcf47a4404
+about:
+  home: https://github.com/duckdb/duckdb
+  PyPI: https://pypi.org/project/duckdb
+  summary: A fast in-process analytical database
+  license: MIT

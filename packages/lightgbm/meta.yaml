@@ -1,12 +1,12 @@
 package:
   name: lightgbm
-  version: 3.3.5
+  version: 4.3.0
 source:
-  url: https://files.pythonhosted.org/packages/98/1f/fc5c183012f5fdd23e65d54ee09312d8b4dc9e4e39c227236f61942ef293/lightgbm-3.3.5.tar.gz
-  sha256: 10b8fbdcf851e4f68a1f02f38d99bdc44c7c7fb9b1a62dcf924a0d29ff73395c
+  url: https://files.pythonhosted.org/packages/74/d1/2e4b02e4611ab36647639c4eea8c4520bb90f948563e00a3bec583a9f9f5/lightgbm-4.3.0.tar.gz
+  sha256: 006f5784a9bcee43e5a7e943dc4f02de1ba2ee7a7af1ee5f190d383f3b6c9ebe
 build:
-  backend-flags: --build-option=--nomp
-  exports: whole_archive # FIXME: using "requested" fails with SIGKILL, not sure why
+  backend-flags: cmake.define.USE_OPENMP=OFF
+  exports: requested
 requirements:
   run:
     - numpy
@@ -19,4 +19,7 @@ about:
   home: https://github.com/microsoft/LightGBM
   PyPI: https://pypi.org/project/lightgbm
   summary: LightGBM Python Package
-  license: The MIT License (Microsoft)
+  license: MIT
+extra:
+  recipe-maintainers:
+    - jameslamb

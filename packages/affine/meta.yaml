@@ -1,0 +1,16 @@
+package:
+  name: affine
+  version: 2.4.0
+  top-level:
+    - affine
+source:
+  url: https://files.pythonhosted.org/packages/0b/f7/85273299ab57117850cc0a936c64151171fac4da49bc6fba0dad984a7c5f/affine-2.4.0-py3-none-any.whl
+  sha256: 8a3df80e2b2378aef598a83c1392efd47967afec4242021a0b06b4c7cbc61a92
+about:
+  home: https://github.com/rasterio/affine
+  PyPI: https://pypi.org/project/affine
+  summary: Matrices describing affine transformation of the plane
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - kjmalek

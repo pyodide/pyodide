@@ -1,7 +1,9 @@
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from textwrap import dedent
 from typing import Any
 
@@ -22,7 +24,7 @@ def test_find_imports():
         import matplotlib.pyplot as plt
         """
     )
-    assert set(res) == {"numpy", "scipy", "matplotlib"}
+    assert set(res) == {"numpy", "scipy", "matplotlib", "matplotlib.pyplot"}
 
     # If there is a syntax error in the code, find_imports should return empty
     # list.
@@ -59,6 +61,35 @@ def test_pyimport2(selenium):
         platform.destroy();
         """
     )
+
+
+def test_pyimport3():
+    from _pyodide._base import eval_code, pyimport_impl
+
+    with TemporaryDirectory() as tempdir:
+        Path(tempdir, "aaa").mkdir()
+        Path(tempdir, "aaa", "bbb.py").write_text("ccc = 1")
+        sys.path.insert(0, tempdir)
+
+        aaa = pyimport_impl("aaa")
+        pyimport_impl("aaa.bbb")
+        del aaa.bbb.ccc
+
+        # case 1 unload parent module
+        del sys.modules["aaa"]
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 2 delete child module
+        del aaa.bbb
+        assert pyimport_impl("aaa.bbb") == eval_code("from aaa import bbb; bbb")
+
+        # case 3 recover deleted value
+        with pytest.raises(ModuleNotFoundError):
+            pyimport_impl("aaa.bbb.ccc")
+        del sys.modules["aaa.bbb"]
+        assert pyimport_impl("aaa.bbb.ccc") == 1
+
+        sys.path.remove(tempdir)
 
 
 def test_code_runner():
@@ -249,7 +280,10 @@ def test_relaxed_call():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         relaxed_call(f4, a=2, b=7)
 
@@ -311,7 +345,10 @@ def test_relaxed_wrap():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         f4(a=2, b=7)
 
@@ -531,6 +568,7 @@ def test_run_python_last_exc(selenium):
         } catch(e){}
         pyodide.runPython(`
             import sys
+            assert sys.last_exc is x
             assert sys.last_value is x
             assert sys.last_type is type(x)
             assert sys.last_traceback is x.__traceback__
@@ -766,41 +804,37 @@ def test_run_python_locals(selenium):
     )
 
 
+@run_in_pyodide
 def test_create_once_callable(selenium):
-    selenium.run_js(
-        """
-        self.call7 = function call7(f){
-            return f(7);
-        }
-        pyodide.runPython(`
-            from pyodide.ffi import create_once_callable, JsException
-            from js import call7;
-            from unittest import TestCase
-            raises = TestCase().assertRaisesRegex
-            class Square:
-                def __call__(self, x):
-                    return x*x
+    import sys
 
-                def __del__(self):
-                    global destroyed
-                    destroyed = True
+    from pytest import raises
 
-            f = Square()
-            import sys
-            assert sys.getrefcount(f) == 2
-            proxy = create_once_callable(f)
-            assert sys.getrefcount(f) == 3
-            assert call7(proxy) == 49
-            assert sys.getrefcount(f) == 2
-            with raises(JsException, "can only be called once"):
-                call7(proxy)
-            destroyed = False
-            del f
-            assert destroyed == True
-            del proxy
-        `);
-        """
-    )
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException, create_once_callable
+
+    destroyed = False
+
+    class Square:
+        def __call__(self, x):
+            return x * x
+
+        def __del__(self):
+            nonlocal destroyed
+            destroyed = True
+
+    f = Square()
+    assert sys.getrefcount(f) == 2
+    proxy = create_once_callable(f)
+    assert sys.getrefcount(f) == 3
+
+    call7 = run_js("(f) => f(7)")
+    assert call7(proxy) == 49
+    assert sys.getrefcount(f) == 2
+    with raises(JsException, match="can only be called once"):
+        call7(proxy)
+    del f
+    assert destroyed
 
 
 @run_in_pyodide
@@ -839,7 +873,7 @@ def test_create_proxy(selenium):
     assert sys.getrefcount(f) == 2
     proxy = create_proxy(f)
     assert sys.getrefcount(f) == 3
-    assert proxy() == 7  # type:ignore[operator]
+    assert proxy() == 7
     testAddListener(proxy)
     assert sys.getrefcount(f) == 3
     assert testCallListener() == 7
@@ -893,7 +927,7 @@ def test_return_destroyed_value(selenium):
     from pyodide.ffi import JsException, create_proxy
 
     f = run_js("(function(x){ return x; })")
-    p = create_proxy([])
+    p = create_proxy([])  # type: ignore[var-annotated]
     p.destroy()
     with pytest.raises(JsException, match="Object has already been destroyed"):
         f(p)
@@ -922,7 +956,7 @@ def test_docstrings_b(selenium):
     ds_then_should_equal = dedent_docstring(jsproxy.then.__doc__)
     sig_then_should_equal = "(onfulfilled, onrejected=None)"
     ds_once_should_equal = dedent_docstring(create_once_callable.__doc__)
-    sig_once_should_equal = "(obj, /)"
+    sig_once_should_equal = "(obj, /, *, _may_syncify=False)"
     selenium.run_js("self.a = Promise.resolve();")
     [ds_then, sig_then, ds_once, sig_once] = selenium.run(
         """
@@ -1277,10 +1311,11 @@ def test_restore_error(selenium):
                 f()
             except Exception as e:
                 assert err == e
+                assert e == sys.last_exc
                 assert e == sys.last_value
             finally:
                 del err
-            assert sys.getrefcount(sys.last_value) == 2
+            assert sys.getrefcount(sys.last_exc) == 3
         `);
         """
     )
@@ -1487,30 +1522,52 @@ def test_module_not_found_note(selenium_standalone):
     assert len(e.value.__notes__) == 1
 
 
+@run_in_pyodide
+def test_importhook_called_from_pytest(selenium):
+    """
+    Whenever importlib itself resolves `import a.b`, it splits on the . and
+    first imports `a` and then `a.b`. However, pytest does not, it calls
+    `find_spec("a.b")` directly here:
+    https://github.com/pytest-dev/pytest/blob/ea0fa639445ae08616edd2c15189a1a76168f018/src/_pytest/pathlib.py#L693-L698
+
+    This previously could lead to KeyError being raised in `JsFinder`.
+    """
+    import sys
+
+    def _import_module_using_spec(module_name):
+        """Modeled on a fragment of _pytest.pathlib._import_module_using_spec"""
+        for meta_importer in sys.meta_path:
+            meta_importer.find_spec(module_name, [])
+
+    # Assertion: This should not raise KeyError.
+    _import_module_using_spec("a.b")
+
+
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert selenium.run_js(
         """
-            self.stdoutStrings = [];
-            self.stderrStrings = [];
-            function stdout(s){
-                stdoutStrings.push(s);
-            }
-            function stderr(s){
-                stderrStrings.push(s);
-            }
-            let pyodide = await loadPyodide({
-                fullStdLib: false,
-                jsglobals : self,
-                stdout,
-                stderr,
-                args: ['-c', 'print([x*x+1 for x in range(10)])']
-            });
-            self.pyodide = pyodide;
-            globalThis.pyodide = pyodide;
-            pyodide._module._run_main();
-            return stdoutStrings.pop()
-            """
+        self.stdoutStrings = [];
+        self.stderrStrings = [];
+        function stdout(s){
+            stdoutStrings.push(s);
+        }
+        function stderr(s){
+            stderrStrings.push(s);
+        }
+        let pyodide = await loadPyodide({
+            fullStdLib: false,
+            jsglobals : self,
+            stdout,
+            stderr,
+            args: ['-c', 'print([x*x+1 for x in range(10)])'],
+            env: { PYTHONINSPECT: "" },
+        });
+        self.pyodide = pyodide;
+        globalThis.pyodide = pyodide;
+        pyodide._module._run_main();
+        return stdoutStrings.pop()
+        """
     ) == repr([x * x + 1 for x in range(10)])
 
 
@@ -1857,3 +1914,41 @@ def test_hiwire_invalid_ref(selenium):
         _hiwire_decref(77)
     assert _api.fail_test
     _api.fail_test = False
+
+
+def test_system_exit(selenium):
+    """Make sure nothing weird happens when we throw SystemExit"""
+    for _ in range(3):
+        selenium.run_js(
+            """
+            assertThrows(
+                () =>
+                    pyodide.runPython(`
+                        exit(1)
+                    `),
+                "PythonError",
+                "SystemExit: 1",
+            );
+            """
+        )
+
+
+@run_in_pyodide
+async def test_bug_4861(selenium):
+    """In version 0.26.1, there was a regression that makes this raise
+    "KeyError: '__builtins__'".
+
+    I don't really understand what this reproducer does, what the problem was,
+    or why the fix prevents the problem.
+    """
+    import collections
+
+    from pyodide.code import run_js
+
+    class ChainMap(collections.ChainMap, dict):  # type:ignore[misc, type-arg]
+        pass
+
+    def g(x):
+        return eval("x()", ChainMap({}, {"x": x}))
+
+    await g(run_js("async () => {}"))

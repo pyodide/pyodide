@@ -1,0 +1,345 @@
+From a86a2304fd925f815bbb0e0753e46a7b863e2de2 Mon Sep 17 00:00:00 2001
+From: Joe Marshall <joe.marshall@nottingham.ac.uk>
+Date: Wed, 6 Apr 2022 21:25:13 -0700
+Subject: [PATCH 4/18] make int return values
+
+The return values of f2c functions are insignificant in most cases, so often it
+is treated as returning void, when it really should return int (values are
+"returned" by writing to pointers passed as an argument, but an obscure feature
+known as alternative returns can cause the return value to be significant).
+
+There's a big change to scipy/linalg/_cython_wrapper_generators.py, which is
+called on build to generate python wrappers for lapack and BLAS. The change
+makes everything call direct to CLAPACK with the correct function signatures
+and also fixes some fortran -> c linking oddities that occur because f2py assumes
+different function signatures to f2c, which in turn creates different function
+signatures compared to what has been done in CLAPACK.
+
+f2py is patched in numpy to make subroutines return int.
+
+emscripten is very strict about void vs int returns and function signatures, so
+we change everything to return int from subroutines, and signatures are altered
+to be consistent.
+
+Co-Developed-by: Joe Marshall <joe.marshall@nottingham.ac.uk>
+Co-Authored-By: Joe Marshall <joe.marshall@nottingham.ac.uk>
+---
+ scipy/_build_utils/src/wrap_g77_abi.c         | 16 ++++++------
+ scipy/integrate/_odepackmodule.c              |  8 +++---
+ scipy/odr/__odrpack.c                         |  2 +-
+ .../_dsolve/SuperLU/SRC/ilu_cdrop_row.c       |  8 +++---
+ .../_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c   |  2 +-
+ .../_dsolve/SuperLU/SRC/scipy_slu_config.h    |  3 +++
+ .../linalg/_dsolve/SuperLU/SRC/sgssvx.c       |  7 ++---
+ .../linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h |  5 +++-
+ .../linalg/_dsolve/SuperLU/SRC/slu_scomplex.h |  5 ++--
+ scipy/sparse/linalg/_dsolve/_superlu_utils.c  |  4 +--
+ .../linalg/_eigen/arpack/ARPACK/SRC/debug.h   | 20 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/stat.h    | 26 +++++++++----------
+ 12 files changed, 57 insertions(+), 49 deletions(-)
+
+diff --git a/scipy/_build_utils/src/wrap_g77_abi.c b/scipy/_build_utils/src/wrap_g77_abi.c
+index f35c94f984..1872d335aa 100644
+--- a/scipy/_build_utils/src/wrap_g77_abi.c
++++ b/scipy/_build_utils/src/wrap_g77_abi.c
+@@ -71,7 +71,7 @@ double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n, double_complex *zx, \
+     return ret;
+ }
+ 
+-void BLAS_FUNC(sladiv)(float *xr, float *xi, float *yr, float *yi, \
++int BLAS_FUNC(sladiv)(float *xr, float *xi, float *yr, float *yi, \
+     float *retr, float *reti);
+ float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
+     float_complex ret;
+@@ -83,7 +83,7 @@ float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
+     return ret;
+ }
+ 
+-void BLAS_FUNC(dladiv)(double *xr, double *xi, double *yr, double *yi, \
++int BLAS_FUNC(dladiv)(double *xr, double *xi, double *yr, double *yi, \
+     double *retr, double *reti);
+ double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
+     double_complex ret;
+@@ -95,31 +95,31 @@ double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
+     return ret;
+ }
+ 
+-void F_FUNC(cdotcwrp,WCDOTCWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
++int F_FUNC(cdotcwrp,WCDOTCWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
+         CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+     *ret = F_FUNC(wcdotc,WCDOTC)(n, cx, incx, cy, incy);
+ }
+ 
+-void F_FUNC(zdotcwrp,WZDOTCWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
++int F_FUNC(zdotcwrp,WZDOTCWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
+         CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+     *ret = F_FUNC(wzdotc,WZDOTC)(n, zx, incx, zy, incy);
+ }
+ 
+-void F_FUNC(cdotuwrp,CDOTUWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
++int F_FUNC(cdotuwrp,CDOTUWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
+         CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+     *ret = F_FUNC(wcdotu,WCDOTU)(n, cx, incx, cy, incy);
+ }
+ 
+-void F_FUNC(zdotuwrp,ZDOTUWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
++int F_FUNC(zdotuwrp,ZDOTUWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
+         CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+     *ret = F_FUNC(wzdotu,WZDOTU)(n, zx, incx, zy, incy);
+ }
+ 
+-void F_FUNC(cladivwrp,CLADIVWRP)(float_complex *ret, float_complex *x, float_complex *y){
++int F_FUNC(cladivwrp,CLADIVWRP)(float_complex *ret, float_complex *x, float_complex *y){
+     *ret = F_FUNC(wcladiv,WCLADIV)(x, y);
+ }
+ 
+-void F_FUNC(zladivwrp,ZLADIVWRP)(double_complex *ret, double_complex *x, double_complex *y){
++int F_FUNC(zladivwrp,ZLADIVWRP)(double_complex *ret, double_complex *x, double_complex *y){
+     *ret = F_FUNC(wzladiv,WZLADIV)(x, y);
+ }
+ 
+diff --git a/scipy/integrate/_odepackmodule.c b/scipy/integrate/_odepackmodule.c
+index 0c8067e652..d085939859 100644
+--- a/scipy/integrate/_odepackmodule.c
++++ b/scipy/integrate/_odepackmodule.c
+@@ -156,17 +156,17 @@ static PyObject *odepack_error;
+     #endif
+ #endif
+ 
+-typedef void lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
++typedef int lsoda_f_t(F_INT *n, double *t, double *y, double *ydot);
+ typedef int lsoda_jac_t(F_INT *n, double *t, double *y, F_INT *ml, F_INT *mu,
+                         double *pd, F_INT *nrowpd);
+ 
+-void LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
++int LSODA(lsoda_f_t *f, F_INT *neq, double *y, double *t, double *tout, F_INT *itol,
+            double *rtol, double *atol, F_INT *itask, F_INT *istate, F_INT *iopt,
+            double *rwork, F_INT *lrw, F_INT *iwork, F_INT *liw, lsoda_jac_t *jac,
+            F_INT *jt);
+ 
+ /*
+-void ode_function(int *n, double *t, double *y, double *ydot)
++int ode_function(int *n, double *t, double *y, double *ydot)
+ {
+   ydot[0] = -0.04*y[0] + 1e4*y[1]*y[2];
+   ydot[2] = 3e7*y[1]*y[1];
+@@ -175,7 +175,7 @@ void ode_function(int *n, double *t, double *y, double *ydot)
+ }
+ */
+ 
+-void
++int
+ ode_function(F_INT *n, double *t, double *y, double *ydot)
+ {
+     /*
+diff --git a/scipy/odr/__odrpack.c b/scipy/odr/__odrpack.c
+index c806e33fbf..c4b822eb92 100644
+--- a/scipy/odr/__odrpack.c
++++ b/scipy/odr/__odrpack.c
+@@ -13,7 +13,7 @@
+ #include "odrpack.h"
+ 
+ 
+-void F_FUNC(dodrc,DODRC)(void (*fcn)(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *ldm,
++void F_FUNC(dodrc,DODRC)(int (*fcn)(F_INT *n, F_INT *m, F_INT *np, F_INT *nq, F_INT *ldn, F_INT *ldm,
+             F_INT *ldnp, double *beta, double *xplusd, F_INT *ifixb, F_INT *ifixx,
+             F_INT *ldifx, F_INT *ideval, double *f, double *fjacb, double *fjacd,
+             F_INT *istop),
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+index c1dc7fcf8f..d1903db4a6 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_cdrop_row.c
+@@ -23,10 +23,10 @@ at the top-level directory.
+ #include <stdlib.h>
+ #include "slu_cdefs.h"
+ 
+-extern void cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int cswap_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern int caxpy_(int *, singlecomplex *, singlecomplex [], int *, singlecomplex [], int *);
++extern int ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ extern float scasum_(int *, singlecomplex *, int *);
+ extern float scnrm2_(int *, singlecomplex *, int *);
+ extern double dnrm2_(int *, double [], int *);
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+index 4e2654e8ac..d5b955d40e 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/ilu_scopy_to_ucol.c
+@@ -26,7 +26,7 @@ at the top-level directory.
+ int num_drop_U;
+ #endif
+ 
+-extern void scopy_(int *, float [], int *, float [], int *);
++extern int scopy_(int *, float [], int *, float [], int *);
+ 
+ #if 0
+ static float *A;  /* used in _compare_ only */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+index 5afc93b5d9..7ac5f80fb9 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/scipy_slu_config.h
+@@ -3,6 +3,9 @@
+ 
+ #include <stdlib.h>
+ 
++#include "f2c.h"
++
++
+ /*
+  * Support routines
+  */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
+index 1395752d4c..7f5538140d 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/sgssvx.c
+@@ -21,6 +21,8 @@ at the top-level directory.
+  */
+ #include "slu_sdefs.h"
+ 
++extern float slangs(char *, SuperMatrix *);
++
+ /*! \brief
+  *
+  * <pre>
+@@ -377,8 +379,6 @@ sgssvx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+     double    t0;      /* temporary time */
+     double    *utime;
+ 
+-    /* External functions */
+-    extern float slangs(char *, SuperMatrix *);
+ 
+     Bstore = B->Store;
+     Xstore = X->Store;
+@@ -573,7 +573,8 @@ printf("dgssvx: Fact=%4d, Trans=%4d, equed=%c\n",
+         } else {
+ 	    *(unsigned char *)norm = 'I';
+         }
+-        anorm = slangs(norm, AA);
++        anorm = slangs(norm, AA);    /* External functions */
++        extern float slangs(char *, SuperMatrix *);
+         sgscon(norm, L, U, anorm, rcond, stat, &info1);
+         utime[RCOND] = SuperLU_timer_() - t0;
+     }
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
+index 67e83bcc77..e5757d5c4d 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_dcomplex.h
+@@ -28,7 +28,10 @@ at the top-level directory.
+ #ifndef DCOMPLEX_INCLUDE
+ #define DCOMPLEX_INCLUDE
+ 
+-typedef struct { double r, i; } doublecomplex;
++#include"scipy_slu_config.h"
++
++// defined in clapack
++//typedef struct { double r, i; } doublecomplex;
+ 
+ 
+ /* Macro definitions */
+diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+index 83be8c971f..047a07ce9c 100644
+--- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
++++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
+@@ -27,8 +27,9 @@ at the top-level directory.
+ 
+ #ifndef SCOMPLEX_INCLUDE
+ #define SCOMPLEX_INCLUDE
+-
+-typedef struct { float r, i; } singlecomplex;
++#include"scipy_slu_config.h"
++// defined in  CLAPACK
++//typedef struct { float r, i; } singlecomplex;
+ 
+ 
+ /* Macro definitions */
+diff --git a/scipy/sparse/linalg/_dsolve/_superlu_utils.c b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
+index 49b928a431..0822687719 100644
+--- a/scipy/sparse/linalg/_dsolve/_superlu_utils.c
++++ b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
+@@ -243,12 +243,12 @@ int input_error(char *srname, int *info)
+  * Stubs for Harwell Subroutine Library functions that SuperLU tries to call.
+  */
+ 
+-void mc64id_(int *a)
++int mc64id_(int *a)
+ {
+     superlu_python_module_abort("chosen functionality not available");
+ }
+ 
+-void mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
++int mc64ad_(int *a, int *b, int *c, int d[], int e[], double f[],
+ 	     int *g, int h[], int *i, int j[], int *k, double l[],
+ 	     int m[], int n[])
+ {
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+index 5eb0bb1b3d..81a6efafb9 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/debug.h
+@@ -1,16 +1,16 @@
+-c
++
+ c\SCCS Information: @(#) 
+ c FILE: debug.h   SID: 2.3   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+ c     %---------------------------------%
+ c     | See debug.doc for documentation |
+ c     %---------------------------------%
+-      integer  logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+-      common /debug/ 
+-     &         logfil, ndigit, mgetv0,
+-     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
+-     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
+-     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      integer  logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
++c      common /debug/
++c     &         logfil, ndigit, mgetv0,
++c     &         msaupd, msaup2, msaitr, mseigt, msapps, msgets, mseupd,
++c     &         mnaupd, mnaup2, mnaitr, mneigh, mnapps, mngets, mneupd,
++c     &         mcaupd, mcaup2, mcaitr, mceigh, mcapps, mcgets, mceupd
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+index 66a8e9f87f..81d49c3bd2 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/stat.h
+@@ -5,17 +5,17 @@ c
+ c\SCCS Information: @(#) 
+ c FILE: stat.h   SID: 2.2   DATE OF SID: 11/16/95   RELEASE: 2 
+ c
+-      real       t0, t1, t2, t3, t4, t5
+-      save       t0, t1, t2, t3, t4, t5
++c      real       t0, t1, t2, t3, t4, t5
++c      save       t0, t1, t2, t3, t4, t5
+ c
+-      integer    nopx, nbx, nrorth, nitref, nrstrt
+-      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
+-      common /timing/ 
+-     &           nopx, nbx, nrorth, nitref, nrstrt,
+-     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
+-     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
+-     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
+-     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      integer    nopx, nbx, nrorth, nitref, nrstrt
++c      real       tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
++c      common /timing/
++c     &           nopx, nbx, nrorth, nitref, nrstrt,
++c     &           tsaupd, tsaup2, tsaitr, tseigt, tsgets, tsapps, tsconv,
++c     &           tnaupd, tnaup2, tnaitr, tneigh, tngets, tnapps, tnconv,
++c     &           tcaupd, tcaup2, tcaitr, tceigh, tcgets, tcapps, tcconv,
++c     &           tmvopx, tmvbx, tgetv0, titref, trvec
+-- 
+2.34.1
+

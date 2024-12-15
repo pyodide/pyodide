@@ -13,4 +13,7 @@ about:
   home: https://github.com/sagemath/cysignals
   PyPI: https://pypi.org/project/cysignals
   summary: Interrupt and signal handling for Cython
-  license: LGPL v3
+  license: LGPL-3.0
+extra:
+  recipe-maintainers:
+    - mkoeppe

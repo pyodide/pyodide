@@ -7,19 +7,25 @@ package:
     - lzma
     - _lzma
 source:
-  sha256: $(PYTHON_ARCHIVE_SHA256)
-  url: $(PYTHON_ARCHIVE_URL)
+  path: src
 build:
   type: cpython_module
   script: |
-    emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o Modules/_lzmamodule.o \
+    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
+    tar -xf Python-${PYVERSION}.tgz
+    cd Python-${PYVERSION}
+
+    emcc $STDLIB_MODULE_CFLAGS -c Modules/_lzmamodule.c -o _lzmamodule.o \
       $(pkg-config --cflags --dont-define-prefix liblzma)
 
-    emcc Modules/_lzmamodule.o -o $DISTDIR/_lzma.so $SIDE_MODULE_LDFLAGS \
+    emcc _lzmamodule.o -o _lzma.so $SIDE_MODULE_LDFLAGS \
       $(pkg-config --libs --dont-define-prefix liblzma)
 
-    cp Lib/lzma.py $DISTDIR
+    cp _lzma.so ${PKG_BUILD_DIR}/_lzma.so
+    cp Lib/lzma.py ${PKG_BUILD_DIR}/lzma.py
 
 requirements:
   host:
     - liblzma
+about:
+  license: PSF

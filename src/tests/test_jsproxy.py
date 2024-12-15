@@ -1,4 +1,7 @@
 # See also test_typeconversions, and test_python.
+
+from typing import no_type_check
+
 import pytest
 from hypothesis import example, given
 from hypothesis import strategies as st
@@ -1286,13 +1289,10 @@ def test_js_id(selenium):
 
 @run_in_pyodide
 def test_object_with_null_constructor(selenium):
-    from unittest import TestCase
-
     from pyodide.code import run_js
 
     o = run_js("Object.create(null)")
-    with TestCase().assertRaises(TypeError):
-        repr(o)
+    assert repr(o) == "[object Object]"
 
 
 @pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
@@ -1780,7 +1780,7 @@ def test_jsarray_remove(selenium):
         a.remove(78)
     assert a.to_py() == l
     l.append([])  # type:ignore[arg-type]
-    p = create_proxy([], roundtrip=False)
+    p = create_proxy([], roundtrip=False)  # type:ignore[var-annotated]
     a.append(p)
     assert a.to_py() == l
     l.remove([])  # type:ignore[arg-type]
@@ -1962,12 +1962,27 @@ def test_object_map_mapping_methods(selenium):
 @run_in_pyodide
 def test_as_object_map_heritable(selenium):
     import pytest
+    from _pyodide_core import js_flags
 
     from pyodide.code import run_js
+    from pyodide.ffi import JsMutableMap
+
+    flag = js_flags["IS_OBJECT_MAP"]
 
     o = run_js("({1:{2: 9, 3: 77}, 3:{6: 5, 12: 3, 2: 9}})")
     mh = o.as_object_map(hereditary=True)
     mn = o.as_object_map(hereditary=False)
+
+    assert mh._js_type_flags & flag != 0
+    assert mn._js_type_flags & flag != 0
+    assert isinstance(mh, JsMutableMap)
+    assert isinstance(mn, JsMutableMap)
+
+    assert mh["1"]._js_type_flags & flag != 0
+    assert mn["1"]._js_type_flags & flag == 0
+    assert isinstance(mh["1"], JsMutableMap)
+    assert not isinstance(mn["1"], JsMutableMap)
+
     assert mh["1"]["3"] == 77
 
     with pytest.raises(TypeError):
@@ -1982,6 +1997,99 @@ def test_as_object_map_heritable(selenium):
 
     n = mh.pop("1")
     assert n["3"] == 77
+
+    o = run_js(
+        """({0:[], 1:new Uint8Array(), 2:new Error(), 3:new ArrayBuffer()})"""
+    ).as_object_map(hereditary=True)
+    assert o["0"]._js_type_flags & flag == 0
+    assert o["1"]._js_type_flags & flag == 0
+    assert o["2"]._js_type_flags & flag == 0
+    assert o["3"]._js_type_flags & flag == 0
+
+    o = run_js("""({1:{get(){}, 2: 1}, 2:new Map([["a", 1]])})""").as_object_map(
+        hereditary=True
+    )
+    assert o["1"]._js_type_flags & flag != 0
+    assert o["2"]._js_type_flags & flag != 0
+    assert "2" in o["1"]
+    assert "a" not in o["2"]
+
+
+@run_in_pyodide
+def test_as_object_map_presence(selenium):
+    from pyodide.code import run_js
+
+    for meth in ["[Symbol.iterator]", "get", "set"]:
+        o = run_js(
+            "({ %s(){} })" % meth,
+        )
+        assert hasattr(o, "as_object_map")
+        assert hasattr(o, "as_py_json")
+
+    o = run_js("[]")
+    assert not hasattr(o, "as_object_map")
+    assert hasattr(o, "as_py_json")
+
+    for s in [
+        "({ next(){} })",
+        "new Uint8Array()",
+        "new ArrayBuffer()",
+        "new Error()",
+        "() => {}",
+    ]:
+        o = run_js(s)
+        assert not hasattr(o, "as_object_map")
+        assert not hasattr(o, "as_py_json")
+
+
+@run_in_pyodide
+def test_as_py_json(selenium):
+    from _pyodide_core import js_flags
+
+    from js import JSON
+    from pyodide.code import run_js
+    from pyodide.ffi import JsArray, JsMap, JsProxy
+
+    dict_flag = js_flags["IS_PY_JSON_DICT"]
+    seq_flag = js_flags["IS_PY_JSON_SEQUENCE"]
+    either_flag = dict_flag | seq_flag
+
+    o = run_js("({a: [1,2, {b: 7}]})").as_py_json()
+    assert o._js_type_flags & dict_flag
+    assert isinstance(o, JsMap)
+    assert "a" in o
+    assert len(o) == 1
+    assert o["a"]._js_type_flags & seq_flag != 0
+    assert len(o["a"]) == 3
+    assert o["a"][0] == 1
+    assert o["a"][-1]._js_type_flags & dict_flag != 0
+    assert len(o["a"][-1]) == 1
+    assert o["a"][-1]["b"] == 7
+
+    assert list(o.keys()) == ["a"]
+    assert [(k, v.to_py()) for (k, v) in o.items()] == [("a", [1, 2, {"b": 7}])]
+
+    o2 = run_js("([[1, 2], ()=>{}])").as_py_json()
+    assert o2._js_type_flags & seq_flag != 0
+    assert o2[0]._js_type_flags & seq_flag != 0
+    assert o2[1]._js_type_flags & either_flag == 0
+
+    a = run_js("([{b: 1}, {b: 3}, {b: 7}])").as_py_json()
+    l = [e["b"] for e in a]
+    assert l == [1, 3, 7]
+    import json
+
+    def default(obj):
+        if isinstance(obj, JsProxy):
+            if isinstance(obj, JsArray):
+                return list(obj)
+            if isinstance(obj, JsMap):
+                return dict(obj)
+        raise NotImplementedError
+
+    for x in [o, a]:
+        assert json.dumps(x, default=default).replace(" ", "") == JSON.stringify(x)
+        assert json.loads(json.dumps(x, default=default)) == x.to_py()
 
 
 @run_in_pyodide
@@ -2557,3 +2665,249 @@ def test_js_proxy_attribute(selenium):
     assert x.c is None
     with pytest.raises(AttributeError):
         x.d  # noqa: B018
+
+
+@run_in_pyodide
+async def test_js_proxy_str(selenium):
+    import re
+
+    import pytest
+
+    from js import Array
+    from pyodide.code import run_js
+    from pyodide.ffi import JsException
+
+    assert (
+        re.sub(r"\s+", " ", str(Array).replace("\n", " "))
+        == "function Array() { [native code] }"
+    )
+    assert str(run_js("[1,2,3]")) == "1,2,3"
+    assert str(run_js("Object.create(null)")) == "[object Object]"
+    mod = await run_js("import('data:text/javascript,')")
+    assert str(mod) == "[object Module]"
+    # accessing toString fails, should fall back to Object.prototype.toString.call
+    x = run_js(
+        """
+        ({
+          get toString() {
+            throw new Error();
+          },
+          [Symbol.toStringTag] : "SomeTag"
+        })
+        """
+    )
+    assert str(x) == "[object SomeTag]"
+    # accessing toString succeeds but toString call throws, let exception propagate
+    x = run_js(
+        """
+        ({
+          toString() {
+            throw new Error("hi!");
+          },
+        })
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # No toString method, so we fall back to Object.prototype.toString.call
+    # which throws, let error propagate
+    x = run_js(
+        """
+        ({
+          get [Symbol.toStringTag]() {
+            throw new Error("hi!");
+          },
+        });
+        """
+    )
+    with pytest.raises(JsException, match="hi!"):
+        str(x)
+
+    # accessing toString fails, so fall back to Object.prototype.toString.call
+    # which also throws, let error propagate
+    px = run_js("(p = Proxy.revocable({}, {})); p.revoke(); p.proxy")
+    with pytest.raises(
+        JsException,
+        match="revoked",
+    ):
+        str(px)
+
+
+@run_in_pyodide
+def test_bind_jsfunc_sig(selenium):
+    from _pyodide.jsbind import func_to_sig_inner
+
+    def f(
+        a: dict[str, int],
+        /,
+    ) -> list[int]:
+        raise NotImplementedError
+
+    assert (
+        repr(func_to_sig_inner(f))
+        == "<JsSignature (a: dict[str, int], /) -> list[int]>"
+    )
+
+
+@run_in_pyodide
+def test_bind_func_illegal_sigs(selenium):
+    from typing import no_type_check
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    jsfunc = run_js("(...args) => pyodide.toPy(args)")
+
+    def func(a):
+        pass
+
+    with pytest.raises(RuntimeError, match="Don't currently handle POS_OR_KWD args"):
+        jsfunc.bind_sig(func)(1)
+
+    @no_type_check
+    def get_bound(sig):
+        d = {}
+        exec(f"def func({sig}): ...", d)
+        func = d.pop("func")
+        return jsfunc.bind_sig(func)
+
+    func = get_bound("*," + ", ".join([f"a{n}" for n in range(65)]))
+    with pytest.raises(
+        RuntimeError, match="Cannot handle function with more than 64 kwonly args"
+    ):
+        func()  # type:ignore[call-arg]
+
+    kwargs = {f"a{n}": 0 for n in range(64)}
+    func = get_bound("*," + ", ".join([f"a{n}" for n in range(64)]))
+    assert func(**kwargs) == [kwargs]
+    del kwargs["a63"]
+    with pytest.raises(
+        TypeError, match="func.. missing 1 required keyword-only argument: 'a63'"
+    ):
+        func(**kwargs)
+
+
+@no_type_check
+@pytest.mark.parametrize(
+    "sig",
+    [
+        "",
+        "a, /",
+        "a, b, /",
+        "a=7, /",
+        "a, b=7, /",
+        "a, b=7, /, *, c",
+        "a, b=7, /, *, c=None",
+        "a, b=7, /, *, c=2",
+        "a, b=7, /, **kwargs",
+        "a, b=7, /, **kwargs",
+        "a, b=7, /, *, c=None, **kwargs",
+        "a, b=7, /, *, c, **kwargs",
+    ],
+)
+@run_in_pyodide
+def test_bind_arg_checking(selenium, sig):
+    from inspect import Parameter, signature
+
+    import pytest
+
+    from pyodide.code import run_js
+
+    d = {}
+    exec(f"def func({sig}): ...", d)
+    func = d.pop("func")
+
+    f = run_js("(...args) => pyodide.toPy(args)").bind_sig(func)
+
+    def check(*args, **kwargs):
+        err = None
+        try:
+            try:
+                func(*args, **kwargs)
+            except TypeError as e:
+                err = e
+
+            if err:
+                with pytest.raises(TypeError) as e:
+                    f(*args, **kwargs)
+                assert e.value.args[0] == err.args[0]
+                return
+
+            sig = signature(func)
+            # rename positional parameters to work around bug in bind
+            # https://github.com/python/cpython/issues/87106
+            new_params = []
+            for p in sig.parameters.values():
+                if p.kind == Parameter.POSITIONAL_ONLY:
+                    p = p.replace(name=f"__{p.name}")
+                new_params.append(p)
+            sig = sig.replace(parameters=new_params)
+            res = sig.bind(*args, **kwargs)
+            res.apply_defaults()
+            expected = [*res.args]
+            reskwargs = dict(res.kwargs)
+            if reskwargs:
+                expected.append(reskwargs)
+            for k, v in list(reskwargs.items()):
+                if v is None:
+                    del reskwargs[k]
+            assert f(*args, **kwargs) == expected
+        finally:
+            err = None
+
+    check()
+    check(1)
+    check(1, 2)
+    check(1, 2, 3)
+
+    check(x=1)
+    check(1, x=1)
+    check(1, 2, 3, x=1)
+
+    check(x=1, y=1)
+    check(1, x=1, y=1)
+    check(1, 2, x=1, y=1)
+
+    check(a=1)
+    check(1, b=1)
+    check(1, a=1)
+
+    check(c=2)
+    check(1, c=2)
+    check(1, 2, c=2)
+    check(1, 2, 3, c=2)
+
+    check(1, 2, b=2)
+    check(1, b=2, c=2)
+
+
+@run_in_pyodide
+def test_bind_self_reference(selenium):
+    from _pyodide.jsbind import BindClass
+    from pyodide.code import run_js
+
+    a = run_js("({f() { return this; }})")
+    a.a = a
+
+    global A
+
+    class A(BindClass):
+        a: "A"
+
+        @staticmethod
+        def f() -> "A":
+            return A()
+
+    # Hack to fix type name resolution. Once we merge
+    # https://github.com/pyodide/pytest-pyodide/pull/133
+    # it won't be needed anymore.
+    A.A = A  # type:ignore[attr-defined]
+
+    a = a.bind_sig(A)
+
+    assert a._sig == A
+    assert a.a._sig == A
+    assert a.a.a._sig == A
+    assert a.f()._sig == A

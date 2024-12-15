@@ -1,0 +1,37 @@
+From 434770dc707c5192159249d098e6dbc660fa6556 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Thu, 20 Jun 2024 12:31:15 -0700
+Subject: [PATCH] Remove error message if wheel is not installed
+
+Since pypa/setuptools#4369 was merged, wheel is vendored into setuptools and no
+longer needs to be installed for `bdist_wheel` to work.
+
+Upstream PR:
+https://github.com/biopython/biopython/pull/4749
+---
+ setup.py | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 530b413a9..6cfc48de5 100644
+--- a/setup.py
++++ b/setup.py
+@@ -37,15 +37,6 @@ except ImportError:
+         "Try running: python -m ensurepip"
+     )
+ 
+-if "bdist_wheel" in sys.argv:
+-    try:
+-        import wheel  # noqa: F401
+-    except ImportError:
+-        sys.exit(
+-            "We need both setuptools AND wheel packages installed "
+-            "for bdist_wheel to work. Try running: pip install wheel"
+-        )
+-
+ 
+ # Make sure we have the right Python version.
+ MIN_PY_VER = (3, 9)
+-- 
+2.34.1
+

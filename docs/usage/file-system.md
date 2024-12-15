@@ -9,10 +9,11 @@ API](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-ap
 
 **Example: Reading from the file system**
 
-```js
+```pyodide
 pyodide.runPython(`
-  with open("/hello.txt", "w") as fh:
-      fh.write("hello world!")
+  from pathlib import Path
+
+  Path("/hello.txt").write_text("hello world!")
 `);
 
 let file = pyodide.FS.readFile("/hello.txt", { encoding: "utf8" });
@@ -21,13 +22,13 @@ console.log(file); // ==> "hello world!"
 
 **Example: Writing to the file system**
 
-```js
+```pyodide
 let data = "hello world!";
 pyodide.FS.writeFile("/hello.txt", data, { encoding: "utf8" });
 pyodide.runPython(`
-  with open("/hello.txt", "r") as fh:
-        data = fh.read()
-  print(data)
+  from pathlib import Path
+
+  print(Path("/hello.txt").read_text())
 `);
 ```
 
@@ -44,17 +45,17 @@ For instance, to store data persistently between page reloads, one could mount
 a folder with the
 [IDBFS file system](https://emscripten.org/docs/api_reference/Filesystem-API.html#filesystem-api-idbfs)
 
-```js
+```pyodide
 let mountDir = "/mnt";
-pyodide.FS.mkdir(mountDir);
-pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, { root: "." }, mountDir);
+pyodide.FS.mkdirTree(mountDir);
+pyodide.FS.mount(pyodide.FS.filesystems.IDBFS, {}, mountDir);
 ```
 
 If you are using Node.js you can access the native file system by mounting `NODEFS`.
 
-```js
+```pyodide
 let mountDir = "/mnt";
-pyodide.FS.mkdir(mountDir);
+pyodide.FS.mkdirTree(mountDir);
 pyodide.FS.mount(pyodide.FS.filesystems.NODEFS, { root: "." }, mountDir);
 pyodide.runPython("import os; print(os.listdir('/mnt'))");
 // ==> The list of files in the Node working directory
@@ -78,15 +79,14 @@ The File System Access API is only supported in Chromium based browsers: Chrome 
 Pyodide provides an API {js:func}`pyodide.mountNativeFS` which mounts a
 {js:class}`FileSystemDirectoryHandle` into the Pyodide Python file system.
 
-```js
+```pyodide
 const dirHandle = await showDirectoryPicker();
+const permissionStatus = await dirHandle.requestPermission({
+  mode: "readwrite",
+});
 
-if ((await dirHandle.queryPermission({ mode: "readwrite" })) !== "granted") {
-  if (
-    (await dirHandle.requestPermission({ mode: "readwrite" })) !== "granted"
-  ) {
-    throw Error("Unable to read and write directory");
-  }
+if (permissionStatus !== "granted") {
+  throw new Error("readwrite access to directory not granted");
 }
 
 const nativefs = await pyodide.mountNativeFS("/mount_dir", dirHandle);
@@ -103,7 +103,7 @@ Due to browser limitations, the changes in the mounted file system
 is not synchronized by default. In order to persist any operations
 to an native file system, you must call
 
-```js
+```pyodide
 // nativefs is the returned from: await pyodide.mountNativeFS('/mount_dir', dirHandle)
 pyodide.runPython(`
   with open('/mount_dir/new_file.txt', 'w') as f:

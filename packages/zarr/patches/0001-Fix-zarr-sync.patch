@@ -1,40 +1,31 @@
-From 07c5440677066f82794df6e5ce9ad685e191407e Mon Sep 17 00:00:00 2001
+From a6155a58d14e2819bb2a0b81b7344d39d073eae1 Mon Sep 17 00:00:00 2001
 From: Wei Ouyang <oeway007@gmail.com>
 Date: Mon, 12 Dec 2022 18:42:20 -0800
 Subject: [PATCH] Fix zarr sync
 
 This patch removes fasteners and disables zarr.sync which uses process and thread
----
- setup.py         | 1 -
- zarr/__init__.py | 2 +-
- zarr/sync.py     | 3 +--
- 3 files changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/setup.py b/setup.py
-index 79ff649d..8dee4cd5 100644
---- a/setup.py
-+++ b/setup.py
-@@ -9,7 +9,6 @@ with open('README.md') as f:
+Upstream PR:
+https://github.com/zarr-developers/zarr-python/pull/1663
+
+---
+ pyproject.toml | 2 +-
+ zarr/sync.py   | 3 +--
+ 2 files changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 292bfddd..6d252925 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -14,7 +14,7 @@ requires-python = ">=3.8"
  dependencies = [
      'asciitree',
-     'numpy>=1.7',
+     'numpy>=1.20,!=1.21.0',
 -    'fasteners',
++    'fasteners; sys_platform != "emscripten"',
      'numcodecs>=0.10.0',
  ]
- 
-diff --git a/zarr/__init__.py b/zarr/__init__.py
-index 4d2c992d..900c7f92 100644
---- a/zarr/__init__.py
-+++ b/zarr/__init__.py
-@@ -15,7 +15,7 @@ from zarr.storage import (ABSStore, DBMStore, DictStore, DirectoryStore,
-                           KVStore, LMDBStore, LRUStoreCache, MemoryStore, MongoDBStore,
-                           NestedDirectoryStore, RedisStore, SQLiteStore,
-                           TempStore, ZipStore)
--from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
-+# from zarr.sync import ProcessSynchronizer, ThreadSynchronizer
- from zarr.version import version as __version__
- 
- # in case setuptools scm screw up and find version to be 0.0.0
+ dynamic = [
 diff --git a/zarr/sync.py b/zarr/sync.py
 index 49684a51..0ce4baa7 100644
 --- a/zarr/sync.py

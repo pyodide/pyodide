@@ -497,3 +497,20 @@ async def test_inprogress(selenium):
         loop._no_in_progress_handler = None
         loop._keyboard_interrupt_handler = None
         loop._system_exit_handler = None
+
+
+@run_in_pyodide
+async def test_zero_timeout(selenium):
+    import asyncio
+    import time
+
+    now = time.time()
+
+    for _ in range(1000):
+        await asyncio.sleep(0)
+
+    done = time.time()
+    elapsed = done - now
+
+    # Very rough check, we hope it's less than 4s (1000 * 4ms [setTimeout delay in most browsers])
+    assert elapsed < 4, f"elapsed: {elapsed}s"

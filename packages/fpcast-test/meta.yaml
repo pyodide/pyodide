@@ -8,3 +8,5 @@ package:
     - fpcast_test
 source:
   path: fpcast-test
+about:
+  license: MPL-2.0

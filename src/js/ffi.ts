@@ -18,10 +18,12 @@ export type {
   PySequence,
   PyMutableSequence,
 } from "generated/pyproxy";
+export type { PythonError } from "generated/error_handling";
+// These need to be imported for their side effects at startup
+import "generated/js2python";
+import "generated/python2js_buffer";
 
 export type { TypedArray } from "./types";
-
-export type { PythonError } from "../core/error_handling";
 
 import {
   PyProxy,

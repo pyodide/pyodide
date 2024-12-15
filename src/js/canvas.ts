@@ -1,5 +1,3 @@
-declare var Module: any;
-
 /**
  * This interface contains the helper functions for using the HTML5 canvas.
  *

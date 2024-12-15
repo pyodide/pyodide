@@ -8,6 +8,9 @@ concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 3
+
 jobs:
   get_python_version:
     runs-on: ubuntu-latest
@@ -19,22 +22,22 @@ jobs:
         id: get_python_version
         run: |
           echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-
   test-python:
     runs-on: ubuntu-latest
     needs: get_python_version
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python ${{ needs.get_python_version.outputs.PYVERSION }}
-        uses: actions/setup-python@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
           mkdir test-results
-          cd pyodide-build && python3 -m pip install -e ".[test,deploy]" && cd ..
-          python3 -m pip install pytest-cov hypothesis pytz
+          make pyodide_build
+          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -42,9 +45,9 @@ jobs:
               --junitxml=test-results/junit.xml \
               --verbose \
               --runtime=host \
-              --cov=pyodide_build --cov=pyodide \
-              src pyodide-build packages/micropip/ packages/_tests tools/
-      - uses: codecov/codecov-action@v3
+              --cov=pyodide \
+              src packages/_tests tools/
+      - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: false
 
@@ -52,8 +55,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
+          - os: macos-14
+            pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
+    needs: [test-scipy-trigger]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -62,25 +70,30 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
+        with:
+          submodules: recursive
       - name: Cache ccache output
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
           environment-file: environment.yml
           channels: conda-forge
 
-      - name: Check Python versions
+      - name: Check Versions
         shell: bash -l {0}
         run: |
           python --version
+          node --version
+          npm --version
           which python
+          which node
+          which npm
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
@@ -120,13 +133,13 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide core + numpy
+      - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES="tag:core,numpy" make
+          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
           ccache -s
 
       - name: check-size
@@ -138,7 +151,7 @@ jobs:
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
       - name: Store artifacts build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
@@ -153,21 +166,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-latest, macos-latest] # FIXME: macos + playwright is very unstable.
-        os: [ubuntu-latest]
-        runner: [playwright]
-        browser: [chrome]
+        os: [macos-14]
+        runner: [selenium]
+        browser: [safari]
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - name: Download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
           python-version: "3.12"
@@ -176,11 +190,13 @@ jobs:
       - name: install test requirements
         shell: bash -l {0}
         run: |
-          pip install -r requirements.txt
-          pip install -e ./pyodide-build
-          # FIXME: pytest-pyodide hangs in playwright==1.40, chromium
-          pip install "playwright<1.40"
-          python -m playwright install
+          pip install -r requirements.txt -r requirements-deploy.txt
+          make pyodide_build
+
+      - uses: pyodide/pyodide-actions/install-browser@v2
+        with:
+          runner: ${{ matrix.runner }}
+          browser: ${{ matrix.browser }}
 
       - name: run core tests
         env:
@@ -190,8 +206,9 @@ jobs:
         run: |
           ls -lh
           ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ \
+          tools/pytest_wrapper.py src packages/micropip/ tools/ \
             -v \
+            -k "not webworker" \
             --runtime="${BROWSER}-no-host" \
             --runner "${RUNNER}" \
             --durations 50 \
@@ -219,6 +236,95 @@ jobs:
           paths: "test-results/*.xml"
         if: always()
 
+  test-scipy-trigger:
+    name: test-scipy-trigger
+    runs-on: ubuntu-latest
+    outputs:
+      test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Check build trigger
+        id: check-build-trigger
+        shell: bash
+        run: |
+          set -e -x
+
+          COMMIT_MSG=$(git log --no-merges -1 --oneline)
+
+          # The scipy tests will be triggered on push or on pull_request when the commit
+          # message contains "[scipy]"
+          if [[ "$GITHUB_EVENT_NAME" == push ||
+                "$COMMIT_MSG" =~ \[scipy\] ]]; then
+              echo "trigger=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  test-scipy:
+    runs-on: ${{ matrix.os }}
+    needs: [test-scipy-trigger, build-core]
+    if: needs.test-scipy-trigger.outputs.test-scipy
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - name: run scipy tests inside node
+        shell: bash -l {0}
+        run: |
+          npm install pyodide
+          cp -f dist/* node_modules/pyodide
+
+          # This uses conftest.py on the current working directory to
+          # skip/xfail tests in scipy
+          cd packages/scipy
+          # XXX for some unknown reason adding a conftest.py in the repo throws off the
+          # other tests trying to import from conftest they find the scipy one ...
+          mv scipy-conftest.py conftest.py
+
+          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
+
+  test-bun:
+    runs-on: ${{ matrix.os }}
+
+    needs: [build-core]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: install test requirements
+        working-directory: src/test-bun
+        run: |
+          bun --version
+          bun install
+
+      - name: run bun tests
+        working-directory: src/test-bun
+        run: bun smoke-test.js
+
   test-deno:
     runs-on: ${{ matrix.os }}
 
@@ -232,7 +338,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Download build artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/

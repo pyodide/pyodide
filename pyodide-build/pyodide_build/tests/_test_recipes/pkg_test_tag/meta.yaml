@@ -1,8 +1,0 @@
-package:
-  name: pkg_test_tag
-  version: 1.0.0
-  tag:
-    - test_tag
-source:
-  sha256: deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-  url: https://dummy-url-that-not-exists.com/pkg_test_tag.tar.gz

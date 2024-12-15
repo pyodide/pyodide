@@ -1,15 +1,15 @@
 package:
   name: openblas
-  version: 0.3.23
+  version: 0.3.26
   tag:
     - library
+    - shared_library
 source:
-  sha256: 5d9491d07168a5d00116cdc068a40022c3455bf9293c7cb86a65b1054d7e5114
-  url: https://github.com/xianyi/OpenBLAS/releases/download/v0.3.23/OpenBLAS-0.3.23.tar.gz
+  sha256: 4e6e4f5cb14c209262e33e6816d70221a2fe49eb69eaf0a06f065598ac602c68
+  url: https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.26/OpenBLAS-0.3.26.tar.gz
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
     - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
-    - patches/0003-fix-cmake-ar-use.patch
 
 build:
   type: shared_library
@@ -43,3 +43,6 @@ build:
 requirements:
   host:
     - libf2c
+about:
+  home: https://www.openblas.net/
+  license: BSD-3-Clause

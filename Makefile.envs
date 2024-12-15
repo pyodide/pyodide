@@ -1,7 +1,9 @@
-export PYVERSION ?= 3.12.1
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.52
+export PYVERSION ?= 3.12.7
+export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.58
+export PYODIDE_VERSION ?= 0.27.0.dev0
+export PYODIDE_ABI_VERSION ?= 2024_0
 
-export PYTHON_ARCHIVE_SHA256=d01ec6a33bc10009b09c17da95cc2759af5a580a7316b3a446eb4190e13f97b2
+export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
 
 ifdef CPYTHON_DEBUG
 	export CPYTHON_ABI_FLAGS=d
@@ -39,13 +41,6 @@ export SYSCONFIGDATA_DIR=$(CPYTHONINSTALL)/sysconfigdata/
 export CPYTHONBUILD=$(CPYTHONROOT)/build/Python-$(PYVERSION)/
 
 export TARGETINSTALLDIR=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)
-export HOSTINSTALLDIR=$(PYODIDE_ROOT)/packages/.artifacts
-export HOSTSITEPACKAGES=$(PYODIDE_ROOT)/packages/.artifacts/lib/python$(PYMAJOR).$(PYMINOR)/site-packages
-export WASM_LIBRARY_DIR=$(PYODIDE_ROOT)/packages/.libs
-
-# Using PKG_CONFIG_LIBDIR instead of PKG_CONFIG_PATH because
-# we don't want pkg-config to search system paths
-export PKG_CONFIG_LIBDIR=$(PYODIDE_ROOT)/packages/.libs/lib/pkgconfig
 
 export PYTHONINCLUDE=$(PYODIDE_ROOT)/cpython/installs/python-$(PYVERSION)/include/python$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS)
 
@@ -59,16 +54,35 @@ export PYODIDE_ZIP_COMPRESSION_LEVEL?=6
 
 export PIP_CONSTRAINT=$(PYODIDE_ROOT)/tools/constraints.txt
 
-# For packages that depend on numpy.
-# TODO: maybe move this somewhere else?
-export NUMPY_LIB=$(HOSTSITEPACKAGES)/numpy/
+# List of modules to exclude from the zipped standard library
+export PYZIP_EXCLUDE_FILES=\
+	ensurepip/ \
+	venv/ \
+	lib2to3/ \
+	_osx_support.py \
+	_aix_support.py \
+	curses/ \
+	dbm/ \
+	idlelib/ \
+	tkinter/ \
+	turtle.py \
+	turtledemo/ \
+	test/ \
+	sqlite3/ \
+	ssl.py \
+	lzma.py \
+	_pydecimal.py \
+	pydoc_data/
 
+# List of modules that we replace with a stub in the zipped standard library
+export PYZIP_JS_STUBS=\
+	webbrowser.py
 
-# This environment variable is used for packages to detect if they are built
-# for pyodide during build time
-export PYODIDE=1
-# This is the legacy environment variable used for the aforementioned purpose
-export PYODIDE_PACKAGE_ABI=1
+export PYCOMPILE_EXCLUDE_FILES=\
+	RobotRaconteur- \
+	astropy- \
+	opencv_python- \
+	test-
 
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
@@ -117,7 +131,6 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
-export SIDE_MODULE_LDFLAGS=	$(LDFLAGS_BASE) -s SIDE_MODULE=1
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
@@ -126,18 +139,20 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
-	-s DEMANGLE_SUPPORT=1 \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
 	-s FORCE_FILESYSTEM=1 \
-	-s TOTAL_MEMORY=20971520 \
+	-s INITIAL_MEMORY=20971520 \
 	-s ALLOW_MEMORY_GROWTH=1 \
+	-s MAXIMUM_MEMORY=4GB \
 	-s EXPORT_ALL=1 \
+	-s FS_DEBUG=1 \
 	-s STACK_SIZE=5MB \
 	-s AUTO_JS_LIBRARIES=0 \
 	-s AUTO_NATIVE_LIBRARIES=0 \
 	-s NODEJS_CATCH_EXIT=0 \
 	-s NODEJS_CATCH_REJECTION=0 \
+	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -153,54 +168,61 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lGL \
 	-legl.js \
 	-lwebgl.js \
+	-lhtml5.js \
 	-lhtml5_webgl.js \
+	-lsdl.js \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
+
+EXPORTS=_main \
+   ,_free \
+   \
+   ,_hiwire_new \
+   ,_hiwire_intern \
+   ,_hiwire_num_refs \
+   ,_hiwire_get \
+   ,_hiwire_incref \
+   ,_hiwire_decref \
+   ,_hiwire_pop \
+   ,__hiwire_get \
+   ,__hiwire_set \
+   ,__hiwire_immortal_get \
+   ,__hiwire_immortal_add \
+   ,_jslib_init \
+   ,_init_pyodide_proxy \
+   \
+   ,_PyBuffer_Release \
+   ,_Py_DecRef \
+   ,_PyDict_New \
+   ,_PyDict_SetItem \
+   ,__PyErr_CheckSignals \
+   ,_PyErr_CheckSignals \
+   ,_PyErr_Clear \
+   ,_PyErr_Occurred \
+   ,_PyErr_Print \
+   ,_PyErr_SetRaisedException \
+   ,_PyErr_SetString \
+   ,_PyEval_SaveThread \
+   ,_PyEval_RestoreThread \
+   ,_PyFloat_FromDouble \
+   ,_PyGILState_Check \
+   ,_Py_IncRef \
+   ,_PyList_New \
+   ,_PyList_SetItem \
+   ,__PyLong_FromByteArray \
+   ,_PyLong_FromDouble \
+   ,_PyMem_Free \
+   ,_PyObject_GetAIter \
+   ,_PyObject_GetIter \
+   ,_PyObject_Size \
+   ,_PyRun_SimpleString \
+   ,_PySet_Add \
+   ,_PySet_New \
+   ,__PyTraceback_Add \
+   ,_PyUnicode_Data \
+   ,_PyUnicode_New \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
-
-	EXPORTS= _main\
-			\
-			,_free \
-			\
-			,_hiwire_new \
-			,_hiwire_intern \
-			,_hiwire_num_refs \
-			,_hiwire_get \
-			,_hiwire_incref \
-			,_hiwire_decref \
-			,_hiwire_pop \
-			\
-			,_PyBuffer_Release \
-			,_Py_DecRef \
-			,_PyDict_New \
-			,_PyDict_SetItem \
-			,__PyErr_CheckSignals \
-			,_PyErr_CheckSignals \
-			,_PyErr_Clear \
-			,_PyErr_Occurred \
-			,_PyErr_Print \
-			,_PyErr_SetString \
-			,_PyEval_SaveThread \
-			,_PyEval_RestoreThread \
-			,_PyFloat_FromDouble \
-			,_PyGILState_Check \
-			,_Py_IncRef \
-			,_PyList_New \
-			,_PyList_SetItem \
-			,__PyLong_FromByteArray \
-			,_PyLong_FromDouble \
-			,_PyMem_Free \
-			,_PyObject_GetAIter \
-			,_PyObject_GetIter \
-			,_PyObject_Size \
-			,_PyRun_SimpleString \
-			,_PySet_Add \
-			,_PySet_New \
-			,__PyTraceback_Add \
-			,_PyUnicode_Data \
-			,_PyUnicode_New \
-
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
@@ -209,10 +231,12 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
 		-s FORCE_FILESYSTEM=1 \
-		-s TOTAL_MEMORY=20971520 \
+		-s INITIAL_MEMORY=20971520 \
 		-s ALLOW_MEMORY_GROWTH=1 \
+		-s MAXIMUM_MEMORY=4GB \
 		-s STACK_SIZE=5MB \
 		-s ALLOW_TABLE_GROWTH \
+		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
 		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
@@ -223,9 +247,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 
 endif
 
-export SIDE_MODULE_CXXFLAGS = $(CXXFLAGS_BASE)
-
-export SIDE_MODULE_CFLAGS= $(CFLAGS_BASE) -I$(PYTHONINCLUDE)
 export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Wall \
 	-Wno-warn-absolute-paths \
@@ -238,21 +259,6 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/.. \
 	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
-
-export STDLIB_MODULE_CFLAGS= $(SIDE_MODULE_CFLAGS) -I Include/ -I . -I Include/internal/
-
-# For RUST
-export CARGO_BUILD_TARGET=wasm32-unknown-emscripten
-export CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_LINKER=emcc
-export RUST_TOOLCHAIN=nightly-2023-04-29
-export PYO3_CROSS_LIB_DIR=${CPYTHONINSTALL}/lib
-export PYO3_CROSS_INCLUDE_DIR=${PYTHONINCLUDE}
-
-# idealy we could automatically include all SIDE_MODULE_LDFLAGS here
-export RUSTFLAGS= \
-	-C link-arg=-sSIDE_MODULE=2 \
-	-C link-arg=-sWASM_BIGINT \
-	-Z link-native-libraries=no
 
 .output_vars:
 	set

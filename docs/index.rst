@@ -44,12 +44,14 @@ Using Pyodide
    usage/downloading-and-deploying.md
    usage/index.md
    usage/loading-packages.md
-   usage/type-conversions.md
+   usage/accessing-files.md
    usage/wasm-constraints.md
+   usage/type-conversions.md
    usage/keyboard-interrupts.md
    usage/streams.md
    usage/api-reference.md
    usage/faq.md
+   usage/examples.md
 
 Development
 ^^^^^^^^^^^

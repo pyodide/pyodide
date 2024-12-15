@@ -3,6 +3,7 @@ package:
   version: 3.12.1
   tag:
     - library
+    - shared_library
 source:
   url: https://github.com/libgeos/geos/releases/download/3.12.1/geos-3.12.1.tar.bz2
   sha256: d6ea7e492224b51193e8244fe3ec17c4d44d0777f3c32ca4fb171140549a0d03
@@ -26,3 +27,6 @@ build:
 
     mkdir -p dist
     cp ${WASM_LIBRARY_DIR}/lib/libgeos* dist/
+about:
+  home: https://libgeos.org/
+  license: LGPL-2.1

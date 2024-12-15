@@ -1,0 +1,17 @@
+{
+  "name": "test-bun",
+  "module": "smoke-test.js",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch smoke-test.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "pyodide": "../../dist/"
+  }
+}

@@ -8,22 +8,27 @@ CC=emcc
 CXX=em++
 
 
-all: check \
+all: \
+	all-but-packages \
+	dist/pyodide-lock.json \
+	dist/console.html \
+	dist/pyodide.d.ts \
+	dist/snapshot.bin \
+
+
+all-but-packages: \
+	check \
 	check-emcc \
+	$(CPYTHONINSTALL)/.installed-pyodide \
 	dist/pyodide.asm.js \
 	dist/pyodide.js \
-	dist/pyodide.d.ts \
+	 \
 	dist/package.json \
 	dist/python \
-	dist/console.html \
-	dist/pyodide-lock.json \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
-	dist/webworker.js \
-	dist/webworker_dev.js \
-	dist/module_webworker_dev.js
-	echo -e "\nSUCCESS!"
+
 
 src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
@@ -76,33 +81,52 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 	rm tmp.dat
 	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
 
-dist/libpyodide.a: \
+src/core/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
 	src/core/hiwire.o \
 	src/core/_pyodide_core.o \
 	src/core/js2python.o \
 	src/core/jsproxy.o \
+	src/core/jsproxy_call.o \
+	src/core/jsbind.o \
 	src/core/pyproxy.o \
 	src/core/python2js_buffer.o \
 	src/core/jslib.o \
+	src/core/jsbind.o \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
 	src/core/pyversion.o \
-	src/core/stack_switching/pystate.o
-	emar rcs dist/libpyodide.a $(filter %.o,$^)
+	src/core/stack_switching/pystate.o \
+	src/core/stack_switching/suspenders.o
+	emar rcs src/core/libpyodide.a $(filter %.o,$^)
+
+
+$(CPYTHONINSTALL)/include/pyodide/.installed: src/core/*.h
+	mkdir -p $(@D)
+	cp $? $(@D)
+	touch $@
+
+$(CPYTHONINSTALL)/lib/libpyodide.a: src/core/libpyodide.a
+	mkdir -p $(@D)
+	cp $< $@
+
+$(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.installed $(CPYTHONINSTALL)/lib/libpyodide.a
+	touch $@
 
 
 dist/pyodide.asm.js: \
 	src/core/main.o  \
 	$(wildcard src/py/lib/*.py) \
-	libgl \
 	$(CPYTHONLIB) \
-	dist/libpyodide.a
-	date +"[%F %T] Building pyodide.asm.js..."
+	$(CPYTHONINSTALL)/.installed-pyodide
+	@date +"[%F %T] Building pyodide.asm.js..."
 	[ -d dist ] || mkdir dist
-	$(CXX) -o dist/pyodide.asm.js dist/libpyodide.a src/core/main.o $(MAIN_MODULE_LDFLAGS)
+   # TODO(ryanking13): Link libgl to a side module not to the main module.
+   # For unknown reason, a side module cannot see symbols when libGL is linked to it.
+	embuilder build libgl
+	$(CXX) -o dist/pyodide.asm.js -lpyodide src/core/main.o $(MAIN_MODULE_LDFLAGS)
 
 	if [[ -n $${PYODIDE_SOURCEMAP+x} ]] || [[ -n $${PYODIDE_SYMBOLS+x} ]] || [[ -n $${PYODIDE_DEBUG_JS+x} ]]; then \
 		cd dist && npx prettier -w pyodide.asm.js ; \
@@ -120,7 +144,7 @@ dist/pyodide.asm.js: \
 	# Sed nonsense from https://stackoverflow.com/a/13383331
 	sed -i -n -e :a -e '1,4!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
-	date +"[%F %T] done building pyodide.asm.js."
+	@date +"[%F %T] done building pyodide.asm.js."
 
 
 env:
@@ -130,10 +154,24 @@ env:
 node_modules/.installed : src/js/package.json src/js/package-lock.json
 	cd src/js && npm ci
 	ln -sfn src/js/node_modules/ node_modules
-	touch node_modules/.installed
+	touch $@
 
-dist/pyodide.js src/js/generated/_pyodide.out.js: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
-	cd src/js && npm run build && cd -
+src/js/generated/_pyodide.out.js:            \
+		src/js/*.ts                          \
+		src/js/common/*                      \
+		src/js/vendor/*                      \
+		src/js/generated/pyproxy.ts          \
+		src/js/generated/python2js_buffer.js \
+		src/js/generated/js2python.js        \
+		node_modules/.installed
+	cd src/js && npm run build-inner && cd -
+
+dist/pyodide.js:                             \
+		src/js/pyodide.ts                    \
+		src/js/compat.ts                     \
+		src/js/emscripten-settings.ts        \
+		src/js/version.ts
+	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
 	node src/core/stack_switching/esbuild.config.mjs
@@ -152,8 +190,10 @@ dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts
 	python3 tools/fixup-type-definitions.py dist/ffi.d.ts
 
 
-src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
-	# We can't input pyproxy.js directly because CC will be unhappy about the file
+define preprocess-js
+
+src/js/generated/$1: src/core/$1 src/core/pyproxy.c src/core/*.h
+	# We can't input a js/ts file directly because CC will be unhappy about the file
 	# extension. Instead cat it and have CC read from stdin.
 	# -E : Only apply prepreocessor
 	# -C : Leave comments alone (this allows them to be preserved in typescript
@@ -167,26 +207,45 @@ src/js/generated/pyproxy.ts : src/core/pyproxy.* src/core/*.h
 	# and documentation generation. The result of processing the type
 	# declarations with the macro processor is a type error, so we snip them
 	# out.
+	rm -f $$@
 	mkdir -p src/js/generated
-	rm -f $@
-	echo "// This file is generated by applying the C preprocessor to core/pyproxy.ts" >> $@
-	echo "// It uses the macros defined in core/pyproxy.c" >> $@
-	echo "// Do not edit it directly!" >> $@
-	cat src/core/pyproxy.ts | \
+	echo "// This file is generated by applying the C preprocessor to src/core/$1" >> $$@
+	echo "// Do not edit it directly!" >> $$@
+	cat src/core/$1 | \
 		sed '/^\/\/\s*pyodide-skip/,/^\/\/\s*end-pyodide-skip/d' | \
 		$(CC) -E -C -P -imacros src/core/pyproxy.c $(MAIN_MODULE_CFLAGS) - | \
 		sed 's/^#pragma clang.*//g' \
-		>> $@
+		>> $$@
+endef
 
-pyodide_build: ./pyodide-build/pyodide_build/**
-	$(HOSTPYTHON) -m pip install -e ./pyodide-build
-	which pyodide >/dev/null
 
-dist/python_stdlib.zip: pyodide_build $(CPYTHONLIB)
-	pyodide create-zipfile $(CPYTHONLIB) src/py --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
+$(eval $(call preprocess-js,pyproxy.ts))
+$(eval $(call preprocess-js,python2js_buffer.js))
+$(eval $(call preprocess-js,js2python.js))
+
+.PHONY: pyodide_build
+pyodide_build:
+	@echo "Ensuring pyodide-build is installed"
+	pip install -e ./pyodide-build
+	@which pyodide >/dev/null
+
+
+# Recursive wildcard
+rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
+
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
+	make pyodide_build
+	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
 	cp $< $@
+
+dist/makesnap.mjs: src/templates/makesnap.mjs
+	cp $< $@
+
+dist/snapshot.bin: all-but-packages dist/pyodide-lock.json dist/makesnap.mjs
+	cd dist && node --experimental-wasm-stack-switching makesnap.mjs
+
 
 dist/module_test.html: src/templates/module_test.html
 	cp $< $@
@@ -199,23 +258,20 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-.PHONY: dist/webworker.js
-dist/webworker.js: src/templates/webworker.js
-	cp $< $@
 
-.PHONY: dist/module_webworker_dev.js
-dist/module_webworker_dev.js: src/templates/module_webworker.js
-	cp $< $@
+# Prepare the dist directory for the release by removing unneeded files
+.PHONY: clean-dist-dir
+clean-dist-dir:
+	# Remove snapshot files
+	rm dist/makesnap.mjs
+	rm dist/snapshot.bin
+	rm dist/module_test.html dist/test.html
 
-.PHONY: dist/webworker_dev.js
-dist/webworker_dev.js: src/templates/webworker.js
-	cp $< $@
+	# TODO: Source maps aren't useful outside of debug builds I don't think. But
+	# removing them adds "missing sourcemap" warnings to JS console. We should
+	# not generate them in the first place?
+	# rm dist/*.map
 
-.PHONY: libgl
-libgl:
-	# TODO(ryanking13): Link this to a side module not to the main module.
-	# For unknown reason, a side module cannot see symbols when libGL is linked to it.
-	embuilder build libgl
 
 .PHONY: lint
 lint:
@@ -252,21 +308,22 @@ src/core/jslib_asm.o: src/core/jslib_asm.s
 
 
 $(CPYTHONLIB): emsdk/emsdk/.complete
-	date +"[%F %T] Building cpython..."
+	@date +"[%F %T] Building cpython..."
 	make -C $(CPYTHONROOT)
-	date +"[%F %T] done building cpython..."
+	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE pyodide_build
-	date +"[%F %T] Building packages..."
+dist/pyodide-lock.json: FORCE
+	make pyodide_build
+	@date +"[%F %T] Building packages..."
 	make -C packages
-	date +"[%F %T] done building packages..."
+	@date +"[%F %T] done building packages..."
 
 
 emsdk/emsdk/.complete:
-	date +"[%F %T] Building emsdk..."
+	@date +"[%F %T] Building emsdk..."
 	make -C emsdk
-	date +"[%F %T] done building emsdk."
+	@date +"[%F %T] done building emsdk."
 
 
 rust:
@@ -279,13 +336,17 @@ FORCE:
 
 
 check:
-	./tools/dependency-check.sh
+	@./tools/dependency-check.sh
 
 
 check-emcc: emsdk/emsdk/.complete
-	python3 tools/check_ccache.py
+	@python3 tools/check_ccache.py
 
 
 debug :
 	EXTRA_CFLAGS+=" -D DEBUG_F" \
 	make
+
+.PHONY: py-compile
+py-compile:
+	pyodide py-compile --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --exclude "$(PYCOMPILE_EXCLUDE_FILES)" dist/

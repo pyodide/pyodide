@@ -2,8 +2,8 @@ import { IN_NODE } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
-const fs: any = IN_NODE ? require("fs") : undefined;
-const tty: any = IN_NODE ? require("tty") : undefined;
+const fs: any = IN_NODE ? require("node:fs") : undefined;
+const tty: any = IN_NODE ? require("node:tty") : undefined;
 
 function nodeFsync(fd: number): void {
   try {
@@ -38,7 +38,7 @@ declare var FS: typeof Module.FS;
 
 // The type of the function we expect the user to give us. make_get_char takes
 // one of these and turns it into a GetCharType function for us.
-/** @private */
+/** @hidden */
 export type InFuncType = () =>
   | null
   | undefined

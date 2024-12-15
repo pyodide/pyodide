@@ -1,13 +1,13 @@
 package:
   name: setuptools
-  version: 68.1.2
+  version: 69.5.1
   top-level:
     - _distutils_hack
     - pkg_resources
     - setuptools
 source:
-  url: https://files.pythonhosted.org/packages/4f/ab/0bcfebdfc3bfa8554b2b2c97a555569c4c1ebc74ea288741ea8326c51906/setuptools-68.1.2-py3-none-any.whl
-  sha256: 3d8083eed2d13afc9426f227b24fd1659489ec107c0e86cec2ffdde5c92e790b
+  url: https://files.pythonhosted.org/packages/f7/29/13965af254e3373bceae8fb9a0e6ea0d0e571171b80d6646932131d6439b/setuptools-69.5.1-py3-none-any.whl
+  sha256: c636ac361bc47580504644275c9ad802c50415c7522212252c033bd15f301f32
 build:
   post: |
     find . -name '*.exe' -delete
@@ -18,3 +18,4 @@ about:
   home: https://github.com/pypa/setuptools
   PyPI: https://pypi.org/project/setuptools
   summary: Easily download, build, install, upgrade, and uninstall Python packages
+  license: MIT

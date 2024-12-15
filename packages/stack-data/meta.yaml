@@ -1,0 +1,18 @@
+package:
+  name: stack-data
+  version: 0.6.3
+  top-level:
+    - stack_data
+source:
+  url: https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl
+  sha256: d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695
+requirements:
+  run:
+    - executing
+    - asttokens
+    - pure-eval
+about:
+  home: http://github.com/alexmojaki/stack_data
+  PyPI: https://pypi.org/project/stack_data
+  summary: Extract data from python stack frames and tracebacks for informative displays
+  license: MIT

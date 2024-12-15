@@ -3,6 +3,7 @@ package:
   version: "7.9"
   tag:
     - library
+    - static_library
 source:
   url: https://github.com/kimwalisch/primecount/archive/refs/tags/v7.9.tar.gz
   sha256: 872975ba2cbb43f5cc1ff5f5fda9ec4ec3f2be1eb3e3e906abe5d0b29a997f5b
@@ -25,3 +26,6 @@ build:
           .
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
+extra:
+  recipe-maintainers:
+    - mkoeppe
