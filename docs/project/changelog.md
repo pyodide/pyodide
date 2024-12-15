@@ -55,7 +55,7 @@ myst:
 
 - Upgraded `libproj` to 9.3.1, `pyproj` to 3.6.1, `h5py` to 3.10.0 {pr}`4426`,
   `packaging` to 23.2, `typing-extensions` to 4.9 {pr}`4428`, `bokeh` to 3.3.4 {pr}`4493`,
-  `zengl` to 2.4.1 {pr}`4509`
+  `zengl` to 2.4.1 {pr}`4509`, `cffi` to 1.17.1 {pr}`5260`
 
 ## Version 0.25.0
 
