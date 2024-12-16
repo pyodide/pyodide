@@ -58,13 +58,10 @@ jobs:
         include:
           - os: ubuntu-latest
             pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
-            # Temporary for this PR: remove this when merging
-          - os: ubuntu-latest
-            pyodide_packages: "tag:core,numpy${{ needs.test-matplotlib-trigger.outputs.test-matplotlib == 'true' && ',matplotlib' || '' }}"
           - os: macos-14
             pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger, test-matplotlib-trigger]
+    needs: [test-scipy-trigger]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
@@ -145,29 +142,6 @@ jobs:
           PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
           ccache -s
 
-      - name: Build Matplotlib
-        if: contains(matrix.pyodide_packages, 'matplotlib')
-        shell: bash -l {0}
-        run: |
-          # This is necessary to use the ccache from emsdk
-          source pyodide_env.sh
-          ccache -z
-          PYODIDE_DEBUG=1 PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
-          ccache -s
-
-      - uses: pyodide/pyodide-actions/install-browser@v2
-        if: matrix.os == 'ubuntu-latest'
-        with:
-          runner: selenium
-          browser: chrome
-
-      - name: Test Matplotlib
-        if: contains(matrix.pyodide_packages, 'matplotlib')
-        shell: bash -l {0}
-        run: |
-          which pytest
-          pytest -svra packages/matplotlib/test_matplotlib.py --rt chrome
-
       - name: check-size
         shell: bash -l {0}
         run: |
@@ -176,28 +150,12 @@ jobs:
           pip install brotli
           ./tools/check_compressed_size.py dist/pyodide.asm.* dist/python_stdlib*
 
-      # Temporary for this PR: remove this when merging
-      - run: echo "PYODIDE_ARTIFACT_SUFFIX=$(echo '${{ matrix.pyodide_packages }}' | tr ':,' '_')" >> "$GITHUB_ENV"
-
       - name: Store artifacts build
         uses: actions/upload-artifact@v4
         with:
-          name: core-build-${{ runner.os }}_${{ env.PYODIDE_ARTIFACT_SUFFIX }}
+          name: core-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
-
-      # Temporary for this PR: remove this when merging
-      - name: Store Pyodide distribution
-        if: contains(matrix.pyodide_packages, 'matplotlib')
-        run: tar cjf pyodide-with-matplotlib.tar.gz dist/
-
-      # Temporary for this PR: remove this when merging
-      - name: Upload Pyodide distribution with Matplotlib (temporary)
-        if: contains(matrix.pyodide_packages, 'matplotlib')
-        uses: actions/upload-artifact@v4
-        with:
-          name: pyodide-with-matplotlib
-          path: pyodide-with-matplotlib.tar.gz
 
   test-core:
     runs-on: ${{ matrix.os }}
@@ -220,8 +178,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          # Only one build artifact is expected for macOS
-          pattern: core-build-${{ runner.os }}
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
       - uses: conda-incubator/setup-miniconda@v3
@@ -320,7 +277,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: core-build-${{ runner.os }}_*scipy*
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
       - name: run scipy tests inside node
@@ -338,33 +295,6 @@ jobs:
 
           node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
 
-  # Temporary for this PR: remove this job when merging
-  test-matplotlib-trigger:
-    name: test-matplotlib-trigger
-    runs-on: ubuntu-latest
-    outputs:
-      test-matplotlib: ${{ steps.check-build-trigger.outputs.trigger }}
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Check build trigger
-        id: check-build-trigger
-        shell: bash
-        run: |
-          set -e -x
-
-          COMMIT_MSG=$(git log --no-merges -1 --oneline)
-
-          # The matplotlib tests will be triggered on push or on pull_request when the commit
-          # message contains "[matplotlib]"
-          if [[ "$GITHUB_EVENT_NAME" == push ||
-                "$COMMIT_MSG" =~ \[matplotlib\] ]]; then
-              echo "trigger=true" >> "$GITHUB_OUTPUT"
-          fi
-
   test-bun:
     runs-on: ${{ matrix.os }}
 
@@ -380,7 +310,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}_tag_core_numpy
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
       - uses: oven-sh/setup-bun@v2
@@ -410,7 +340,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          pattern: core-build-${{ runner.os }}_tag_core_numpy
+          name: core-build-${{ runner.os }}
           path: ./dist/
 
       - name: install test requirements
