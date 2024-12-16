@@ -46,6 +46,7 @@ requirements:
   host:
     - numpy
   run:
+    - contourpy
     - cycler
     - fonttools
     - kiwisolver
