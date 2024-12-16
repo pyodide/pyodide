@@ -1,7 +1,7 @@
-From 528e93ea79bf49e76e5cf24a52357707b88b2a8f Mon Sep 17 00:00:00 2001
+From 6e2b8dc45aaa42cf90a08824780763d8ead8ad7e Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Mon, 16 Dec 2024 17:37:56 +0530
-Subject: [PATCH 4/5] Redirect HTMLCanvas backend to WASM backend
+Subject: [PATCH 5/5] Redirect HTMLCanvas backend to WASM backend
 
 ---
  matplotlib_pyodide/html5_canvas_backend.py | 9 +++++++--

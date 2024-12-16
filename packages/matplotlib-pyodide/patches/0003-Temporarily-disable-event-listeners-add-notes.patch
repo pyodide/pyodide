@@ -1,7 +1,7 @@
 From 56a32407ca20c0fc2227a66640ff3eded4fd22c9 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Tue, 10 Dec 2024 12:34:54 +0530
-Subject: [PATCH 2/5] Temporarily disable event listeners, add notes
+Subject: [PATCH 3/5] Temporarily disable event listeners, add notes
 
 ---
  matplotlib_pyodide/browser_backend.py | 16 +++++++++-------

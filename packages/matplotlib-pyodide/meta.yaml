@@ -8,11 +8,11 @@ source:
   sha256: c1f285208e891112d30e3825bb5a6f5c3a846a5f4080460a518962e2d73aa325
   patches:
     # All five of these can be removed when updating to version 0.2.3
-    - patches/0001-Check-existence-of-toolbar.patch
-    - patches/0002-Temporarily-disable-event-listeners-add-notes.patch
-    - patches/0003-Use-path-based-MathTextParser-to-render-math-text.patch
-    - patches/0004-Redirect-HTMLCanvas-backend-to-WASM-backend.patch
-    - patches/0005-Add-note-about-current-state-of-HTML5-backend.patch
+    - patches/0001-Replace-maxdict-with-lru_cache.patch
+    - patches/0002-Check-existence-of-toolbar.patch
+    - patches/0003-Temporarily-disable-event-listeners-add-notes.patch
+    - patches/0004-Use-path-based-MathTextParser-to-render-math-text.patch
+    - patches/0005-Redirect-HTMLCanvas-backend-to-WASM-backend.patch
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide

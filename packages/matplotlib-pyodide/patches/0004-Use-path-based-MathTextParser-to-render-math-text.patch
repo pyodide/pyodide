@@ -1,12 +1,11 @@
-From 6a665128fc18d861f7d26171a53fa6642d5e0c12 Mon Sep 17 00:00:00 2001
+From 99cbb620d37acc936deef7fce91aa193127f84e4 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 30 Nov 2024 04:38:54 +0530
-Subject: [PATCH 3/5] Use path-based MathTextParser to render math text
+Subject: [PATCH 4/5] Use path-based MathTextParser to render math text
 
 ---
  matplotlib_pyodide/html5_canvas_backend.py | 199 +++++++++++++++++----
- tests/conftest.py                          |   3 +-
- 2 files changed, 169 insertions(+), 33 deletions(-)
+ 1 file changed, 167 insertions(+), 32 deletions(-)
 
 diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
 index ac3afd5..6e5b81a 100644
@@ -280,22 +279,6 @@ index ac3afd5..6e5b81a 100644
  
  class FigureManagerHTMLCanvas(FigureManagerBase):
      def __init__(self, canvas, num):
-diff --git a/tests/conftest.py b/tests/conftest.py
-index 75d5b7b..57c32ba 100644
---- a/tests/conftest.py
-+++ b/tests/conftest.py
-@@ -19,9 +19,10 @@ def matplotlib_test_decorator(f):
- @pytest.fixture(scope="module")
- def wheel_path(tmp_path_factory):
-     # Build a micropip wheel for testing
--    import build
-     from build.env import DefaultIsolatedEnv
- 
-+    import build
-+
-     output_dir = tmp_path_factory.mktemp("wheel")
- 
-     with DefaultIsolatedEnv() as env:
 -- 
 2.39.5 (Apple Git-154)
 
