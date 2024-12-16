@@ -1,7 +1,7 @@
-From a66137d02fc9b60caedd6f3049c08f66be679561 Mon Sep 17 00:00:00 2001
+From c373c570af117de7b4722444395e277a6e2eeffa Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 30 Nov 2024 01:14:30 +0530
-Subject: [PATCH 2/5] Check existence of toolbar
+Subject: [PATCH 1/5] Check existence of toolbar
 
 Co-Authored-By: Gyeongjae Choi <def6488@gmail.com>
 ---

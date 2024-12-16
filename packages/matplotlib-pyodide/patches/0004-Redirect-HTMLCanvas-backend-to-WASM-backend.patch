@@ -1,0 +1,32 @@
+From 528e93ea79bf49e76e5cf24a52357707b88b2a8f Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 16 Dec 2024 17:37:56 +0530
+Subject: [PATCH 4/5] Redirect HTMLCanvas backend to WASM backend
+
+---
+ matplotlib_pyodide/html5_canvas_backend.py | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
+index 6e5b81a..9d83af5 100644
+--- a/matplotlib_pyodide/html5_canvas_backend.py
++++ b/matplotlib_pyodide/html5_canvas_backend.py
+@@ -578,8 +578,13 @@ class FigureManagerHTMLCanvas(FigureManagerBase):
+ 
+ @_Backend.export
+ class _BackendHTMLCanvas(_Backend):
+-    FigureCanvas = FigureCanvasHTMLCanvas
+-    FigureManager = FigureManagerHTMLCanvas
++    # FigureCanvas = FigureCanvasHTMLCanvas
++    # FigureManager = FigureManagerHTMLCanvas
++    # Note: with release 0.2.3, we've redirected the HTMLCanvas backend to use the WASM backend
++    # for now, as the changes to the HTMLCanvas backend are not yet fully functional.
++    # This will be updated in a future release.
++    FigureCanvas = FigureCanvasWasm
++    FigureManager = FigureManagerBase
+ 
+     @staticmethod
+     def show(*args, **kwargs):
+-- 
+2.39.5 (Apple Git-154)
+

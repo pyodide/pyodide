@@ -1,20 +1,15 @@
-From bf8f1f18ea3648aa3e26977cab3b7da018c1c593 Mon Sep 17 00:00:00 2001
+From 6a665128fc18d861f7d26171a53fa6642d5e0c12 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 30 Nov 2024 04:38:54 +0530
-Subject: [PATCH 3/5] Use path-based MathTextParser
-
-Some inspiration derived from https://https://github.com/ipython/ipython/pull/12889
-and from the Matplotlib docs at
-https://matplotlib.org/stable/api/prev_api_changes/api_changes_3.4.0.html#mathtextparser-bitmap-is-deprecated
-
-Co-Authored-By: Gyeongjae Choi <def6488@gmail.com>
+Subject: [PATCH 3/5] Use path-based MathTextParser to render math text
 
 ---
- matplotlib_pyodide/html5_canvas_backend.py | 126 +++++++++++++++------
- 1 file changed, 94 insertions(+), 32 deletions(-)
+ matplotlib_pyodide/html5_canvas_backend.py | 199 +++++++++++++++++----
+ tests/conftest.py                          |   3 +-
+ 2 files changed, 169 insertions(+), 33 deletions(-)
 
 diff --git a/matplotlib_pyodide/html5_canvas_backend.py b/matplotlib_pyodide/html5_canvas_backend.py
-index ac3afd5..8a2138b 100644
+index ac3afd5..6e5b81a 100644
 --- a/matplotlib_pyodide/html5_canvas_backend.py
 +++ b/matplotlib_pyodide/html5_canvas_backend.py
 @@ -3,14 +3,17 @@ import io
@@ -81,7 +76,7 @@ index ac3afd5..8a2138b 100644
          self._get_font_helper = lru_cache(maxsize=50)(self._get_font_helper)
  
          # Keep the state of fontfaces that are loading
-@@ -240,14 +266,63 @@ class RendererHTMLCanvas(RendererBase):
+@@ -240,14 +266,135 @@ class RendererHTMLCanvas(RendererBase):
  
          return CSS_color
  
@@ -89,46 +84,118 @@ index ac3afd5..8a2138b 100644
 +        """Convert math text to an RGBA array using path parser and figure"""
 +        from io import BytesIO
 +
-+        # Get the text dimensions
++        # Get the text dimensions and generate a figure
++        # of the right rize.
 +        width, height, depth, _, _ = self.mathtext_parser.parse(s, dpi=72, prop=prop)
 +
-+        # Create a figure of the right size
 +        fig = figure.Figure(figsize=(width / 72, height / 72))
 +
 +        # Add text to the figure
 +        # Note: depth/height gives us the baseline position
 +        fig.text(0, depth / height, s, fontproperties=prop, color=rgb)
 +
-+        # Set up the Agg backend
 +        backend_agg.FigureCanvasAgg(fig)
 +
-+        # Render to PNG
-+        buf = BytesIO()
++        buf = BytesIO()  # render to PNG
 +        fig.savefig(buf, dpi=self.dpi, format="png", transparent=True)
 +        buf.seek(0)
 +
-+        # Read back the image
 +        rgba = plt.imread(buf)
 +        return rgba, depth
 +
-+    def _draw_math_text(self, gc, x, y, s, prop, angle):
-+        # Get color from graphics context
-+        rgb = gc.get_rgb()
++    def _draw_math_text_path(self, gc, x, y, s, prop, angle):
++        """Draw mathematical text using paths directly on the canvas.
 +
-+        # Get RGBA array using the new method
-+        rgba, depth = self._math_to_rgba(s, prop, rgb)
++        This method renders math text by drawing the actual glyph paths
++        onto the canvas, rather than creating a temporary image.
 +
-+        angle = math.radians(angle)
++        Parameters
++        ----------
++        gc : GraphicsContextHTMLCanvas
++            The graphics context to use for drawing
++        x, y : float
++            The position of the text baseline in pixels
++        s : str
++            The text string to render
++        prop : FontProperties
++            The font properties to use for rendering
++        angle : float
++            The rotation angle in degrees
++        """
++        width, height, depth, glyphs, rects = self.mathtext_parser.parse(
++            s, dpi=self.dpi, prop=prop
++        )
++
++        self.ctx.save()
++
++        self.ctx.translate(x, self.height - y)
 +        if angle != 0:
++            self.ctx.rotate(-math.radians(angle))
++
++        self.ctx.fillStyle = self._matplotlib_color_to_CSS(
++            gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
++        )
++
++        for font, fontsize, _, ox, oy in glyphs:
 +            self.ctx.save()
-+            self.ctx.translate(x, y)
-+            self.ctx.rotate(-angle)
-+            self.ctx.translate(-x, -y)
++            self.ctx.translate(ox, -oy)
 +
-+        self.draw_image(gc, x, -y - depth, np.flipud(rgba))
++            font.set_size(fontsize, self.dpi)
++            verts, codes = font.get_path()
 +
-+        if angle != 0:
++            verts = verts * fontsize / font.units_per_EM
++
++            path = Path(verts, codes)
++
++            transform = Affine2D().scale(1.0, -1.0)
++            self._path_helper(self.ctx, path, transform)
++            self.ctx.fill()
++
 +            self.ctx.restore()
++
++        for x1, y1, x2, y2 in rects:
++            self.ctx.fillRect(x1, -y2, x2 - x1, y2 - y1)
++
++        self.ctx.restore()
++
++    def _draw_math_text(self, gc, x, y, s, prop, angle):
++        """Draw mathematical text using the most appropriate method.
++
++        This method tries direct path rendering first, and falls back to
++        the image-based approach if needed.
++
++        Parameters
++        ----------
++        gc : GraphicsContextHTMLCanvas
++            The graphics context to use for drawing
++        x, y : float
++            The position of the text baseline in pixels
++        s : str
++            The text string to render
++        prop : FontProperties
++            The font properties to use for rendering
++        angle : float
++            The rotation angle in degrees
++        """
++        try:
++            self._draw_math_text_path(gc, x, y, s, prop, angle)
++        except Exception as e:
++            # If path rendering fails, we fall back to image-based approach
++            print(f"Path rendering failed, falling back to image: {str(e)}")
++
++            rgba, depth = self._math_to_rgba(s, prop, gc.get_rgb())
++
++            angle = math.radians(angle)
++            if angle != 0:
++                self.ctx.save()
++                self.ctx.translate(x, y)
++                self.ctx.rotate(-angle)
++                self.ctx.translate(-x, -y)
++
++            self.draw_image(gc, x, -y - depth, np.flipud(rgba))
++
++            if angle != 0:
++                self.ctx.restore()
 +
      def _set_style(self, gc, rgbFace=None):
          if rgbFace is not None:
@@ -147,9 +214,11 @@ index ac3afd5..8a2138b 100644
  
          self.ctx.strokeStyle = self._matplotlib_color_to_CSS(
              gc.get_rgb(), gc.get_alpha(), gc.get_forced_alpha()
-@@ -330,9 +405,11 @@ class RendererHTMLCanvas(RendererBase):
+@@ -329,10 +476,13 @@ class RendererHTMLCanvas(RendererBase):
+     def get_text_width_height_descent(self, s, prop, ismath):
          w: float
          h: float
++        d: float
          if ismath:
 -            image, d = self.mathtext_parser.parse(s, self.dpi, prop)
 -            image_arr = np.asarray(image)
@@ -162,7 +231,7 @@ index ac3afd5..8a2138b 100644
          else:
              font, _ = self._get_font(prop)
              font.set_text(s, 0.0, flags=LOAD_NO_HINTING)
-@@ -340,31 +417,7 @@ class RendererHTMLCanvas(RendererBase):
+@@ -340,31 +490,7 @@ class RendererHTMLCanvas(RendererBase):
              w /= 64.0
              h /= 64.0
              d = font.get_descent() / 64.0
@@ -195,7 +264,7 @@ index ac3afd5..8a2138b 100644
  
      def draw_text(self, gc, x, y, s, prop, angle, ismath=False, mtext=None):
          if ismath:
-@@ -421,6 +474,15 @@ class RendererHTMLCanvas(RendererBase):
+@@ -421,6 +547,15 @@ class RendererHTMLCanvas(RendererBase):
          if angle != 0:
              self.ctx.restore()
  
@@ -211,6 +280,22 @@ index ac3afd5..8a2138b 100644
  
  class FigureManagerHTMLCanvas(FigureManagerBase):
      def __init__(self, canvas, num):
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 75d5b7b..57c32ba 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -19,9 +19,10 @@ def matplotlib_test_decorator(f):
+ @pytest.fixture(scope="module")
+ def wheel_path(tmp_path_factory):
+     # Build a micropip wheel for testing
+-    import build
+     from build.env import DefaultIsolatedEnv
+ 
++    import build
++
+     output_dir = tmp_path_factory.mktemp("wheel")
+ 
+     with DefaultIsolatedEnv() as env:
 -- 
 2.39.5 (Apple Git-154)
 

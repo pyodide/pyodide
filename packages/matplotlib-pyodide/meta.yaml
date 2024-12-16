@@ -7,13 +7,12 @@ source:
   url: https://files.pythonhosted.org/packages/5e/1d/7b706e1f529b055a975d359ac3357c0257260a77ab75744c34f35e51b7d6/matplotlib-pyodide-0.2.2.tar.gz
   sha256: c1f285208e891112d30e3825bb5a6f5c3a846a5f4080460a518962e2d73aa325
   patches:
-    - patches/0001-Replace-maxdict-with-lru_cache.patch # Can be removed when updating to 0.2.3
-    - patches/0002-Check-existence-of-toolbar.patch # Can be removed when updating to 0.2.3
-    - patches/0003-Use-path-based-MathTextParser.patch # Can be removed when updating to 0.2.3
-    - patches/0004-Use-path-rendering-for-drawing-math-text.patch # Can be removed when updating to 0.2.3
-    - patches/0005-Temporarily-disable-event-listeners.patch # Can be removed when updating to 0.2.3
-    - patches/0006-Add-some-additional-debugging.patch # Can be removed when updating to 0.2.3
-    - patches/0007-Yet-some-more-debugging.patch # Can be removed when updating to 0.2.3
+    # All five of these can be removed when updating to version 0.2.3
+    - patches/0001-Check-existence-of-toolbar.patch
+    - patches/0002-Temporarily-disable-event-listeners-add-notes.patch
+    - patches/0003-Use-path-based-MathTextParser-to-render-math-text.patch
+    - patches/0004-Redirect-HTMLCanvas-backend-to-WASM-backend.patch
+    - patches/0005-Add-note-about-current-state-of-HTML5-backend.patch
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
