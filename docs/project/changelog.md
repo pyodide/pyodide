@@ -119,6 +119,7 @@ myst:
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
+- Upgraded `cffi` to 1.17.1 {pr}`5261`
 
 ## Version 0.26.4
 
