@@ -85,7 +85,7 @@ myst:
 - Upgraded `autograd` to 1.7.0 {pr}`4925`
 - Upgraded `sisl` to 0.15.1 {pr}`4925`
 - Upgraded `cartopy` to 0.24.1 {pr}`4925`
-- Upgraded `astropy` to 6.1.4 {pr}`4925`
+- Upgraded `astropy` to 7.0.0 {pr}`4925`
 - Upgraded `biopython` to 1.84 {pr}`4925`
 - Upgraded `fastparquet` to 2024.5.0 {pr}`4925`
 - Upgraded `geopandas` to 1.0.1 {pr}`4925`
