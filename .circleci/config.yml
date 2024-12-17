@@ -8,14 +8,14 @@ defaults: &defaults
     #       (e.g. `rg -F --hidden <old_tag>`)
     - image: pyodide/pyodide-env:20241106-chrome130-firefox132
   environment:
-    - EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      # Make sure the ccache dir is consistent between core and package builds
-      # (it's not the case otherwise)
-      CCACHE_DIR: /root/.ccache/
-      # Disable the compression of wheels, so they are better compressed by the CDN
-      PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+    EMSDK_NUM_CORES: 3
+    EMCC_CORES: 3
+    PYODIDE_JOBS: 3
+    # Make sure the ccache dir is consistent between core and package builds
+    # (it's not the case otherwise)
+    CCACHE_DIR: /root/.ccache/
+    # Disable the compression of wheels, so they are better compressed by the CDN
+    PYODIDE_ZIP_COMPRESSION_LEVEL: 0
 
 jobs:
   build-core:
@@ -574,7 +574,6 @@ jobs:
               --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
-  version: 2
   build-and-deploy:
     jobs:
       - build-core:

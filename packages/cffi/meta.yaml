@@ -1,16 +1,14 @@
 package:
   name: cffi
-  version: 1.16.0
+  version: 1.17.1
   top-level:
     - cffi
 requirements:
   run:
     - pycparser
 source:
-  url: https://files.pythonhosted.org/packages/68/ce/95b0bae7968c65473e1298efb042e10cafc7bafc14d9e4f154008241c91d/cffi-1.16.0.tar.gz
-  sha256: bcb3ef43e58665bbda2fb198698fcae6776483e0c4a631aa5647806c25e02cc0
-  patches:
-    - patches/0001-Use-libffi-in-emscripten.patch
+  url: https://files.pythonhosted.org/packages/fc/97/c783634659c2920c3fc70419e3af40972dbaf758daa229a7d6ea6135c90d/cffi-1.17.1.tar.gz
+  sha256: 1c39c6016c32bc48dd54561950ebd6836e1670f2ae46128f67cf49e789c52824
 build:
   cross-build-env: true
 about:
