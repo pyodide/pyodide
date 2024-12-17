@@ -76,7 +76,7 @@ myst:
 
 ### Packages
 
-- Upgraded `numpy` to 2.1.3 {pr}`4925`
+- Upgraded `numpy` to 2.0.2 {pr}`4925`
 - Upgraded `RobotRaconteur` to 1.2.2 {pr}`4925`
 - Upgraded `gsw` to 3.6.19 {pr}`4925`
 - Upgraded `opencv-python` to 4.10.0.84 {pr}`4925`
