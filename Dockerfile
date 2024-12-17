@@ -78,6 +78,7 @@ ARG GECKODRIVER_VERSION="0.34.0"
 
 RUN \
   # Handle GeckoDriver architecture
+  set -e -x && \
   if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
     GECKODRIVER_ARCH="linux64"; \
   elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
@@ -101,9 +102,9 @@ RUN \
     FIREFOX_VERSION="nightly-latest"; \
     FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64-aarch64&lang=en-US"; \
   fi \
-  && wget --no-verbose -O /tmp/firefox.tar.bz2 $FIREFOX_DOWNLOAD_URL \
-  && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
-  && rm /tmp/firefox.tar.bz2 \
+  && wget --no-verbose -O /tmp/firefox.tar.xz $FIREFOX_DOWNLOAD_URL \
+  && tar -C /opt -xf /tmp/firefox.tar.xz \
+  && rm /tmp/firefox.tar.xz \
   && mv /opt/firefox /opt/firefox-$FIREFOX_VERSION \
   && ln -fs /opt/firefox-$FIREFOX_VERSION/firefox /usr/local/bin/firefox \
   && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-$GECKODRIVER_ARCH.tar.gz \
