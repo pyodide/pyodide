@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.1-slim-bookworm
+FROM python:3.12.7-slim-bookworm
 
 ARG TARGETPLATFORM
 
@@ -132,24 +132,23 @@ RUN \
   if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
     echo "Chrome and Chrome web driver aren't currently supported on arm64, skipping installation"; \
   else \
-    if [ "$CHROME_VERSION" = "latest" ]; then \
-      CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
-    else \
-      CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
+    if [ $CHROME_VERSION = "latest" ]; \
+    then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
+    else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
     fi \
-    && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION_FULL}-1_amd64.deb" \
+    && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb." \
     && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
-    && wget --no-verbose -O /tmp/google-chrome.deb "${CHROME_DOWNLOAD_URL}" \
+    && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
     && apt-get update \
     && apt install -qqy /tmp/google-chrome.deb \
     && rm -f /tmp/google-chrome.deb \
     && rm -rf /var/lib/apt/lists/* \
-    && wget --no-verbose -O /tmp/chromedriver-linux64.zip "${CHROMEDRIVER_DOWNLOAD_URL}" \
+    && wget --no-verbose -O /tmp/chromedriver-linux64.zip ${CHROMEDRIVER_DOWNLOAD_URL} \
     && unzip /tmp/chromedriver-linux64.zip -d /opt/ \
     && rm /tmp/chromedriver-linux64.zip \
     && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && echo "Using Chrome version: $(google-chrome --version)" \
-    && echo "Using Chrome Driver version: $(chromedriver --version)"; \
+    && echo "Using Chrome Driver version: $(chromedriver --version)" \
   fi
 
 CMD ["/bin/sh"]
