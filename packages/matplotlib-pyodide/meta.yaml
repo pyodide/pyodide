@@ -4,10 +4,10 @@ package:
   top-level:
     - matplotlib_pyodide
 source:
-  url: https://files.pythonhosted.org/packages/1a/f9/b5f36d3221e8e211f366544ccc817c61e8f5c2bcc912fe1e1bf9a6044909/matplotlib_pyodide-0.2.3.tar.gz
-  sha256: 05a0042957f26ac77f824aa3d11ae25f3c0d05f93f78f3ed507d11a577da2ce9
+  url: https://files.pythonhosted.org/packages/5b/9a/f2d911a8ae68f71366288c54d72271332419c1ed1ced64543d8213d9ff5b/matplotlib_pyodide-0.2.3-py3-none-any.whl
+  sha256: e0f8c342a038316c89fe8e7a2bcbf4ef11b08344d72cd18ded38a1cddd41c8a6
 about:
   home: https://github.com/pyodide/matplotlib-pyodide
   PyPI: https://pypi.org/project/matplotlib-pyodide
-  summary: HTML5 backends for Matplotlib compatible with Pyodide
+  summary: WASM and HTML5 backends for Matplotlib compatible with Pyodide
   license: MPL-2.0
