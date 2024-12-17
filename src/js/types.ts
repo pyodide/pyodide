@@ -454,9 +454,17 @@ export interface API {
     searchDirs?: string[] | undefined,
     readFileFunc?: (path: string) => Uint8Array,
   ) => Promise<void>;
+  // TODO: Remove this from the API after migrating micropip to use the `install` API instead.
   loadDynlibsFromPackage: (
-    pkg: InternalPackageData,
+    pkg: { file_name: string },
     dynlibPaths: string[],
+  ) => Promise<void>;
+  install: (
+    buffer: Uint8Array,
+    filename: string,
+    installDir: string,
+    installer: string,
+    source: string,
   ) => Promise<void>;
   recursiveDependencies: (
     names: string[],

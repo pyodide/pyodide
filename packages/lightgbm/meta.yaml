@@ -23,3 +23,6 @@ about:
   PyPI: https://pypi.org/project/lightgbm
   summary: LightGBM Python Package
   license: MIT
+extra:
+  recipe-maintainers:
+    - jameslamb

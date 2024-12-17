@@ -23,7 +23,7 @@ import {
   initNodeModules,
   ensureDirNode,
 } from "./compat";
-import { DynlibLoader } from "./dynload";
+import { Installer } from "./installer";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -94,6 +94,7 @@ export async function initializePackageIndex(
 }
 
 const DEFAULT_CHANNEL = "default channel";
+const INSTALLER = "pyodide.loadPackage";
 
 /**
  * @hidden
@@ -102,7 +103,7 @@ const DEFAULT_CHANNEL = "default channel";
 export class PackageManager {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;
-  #dynlibLoader: DynlibLoader;
+  #installer: Installer;
 
   /**
    * Only used in Node. If we can't find a package in node_modules, we'll use this
@@ -132,7 +133,7 @@ export class PackageManager {
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-    this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
+    this.#installer = new Installer(api, pyodideModule);
   }
 
   /**
@@ -444,30 +445,19 @@ export class PackageManager {
     }
 
     const filename = pkg.file_name;
+
     // This Python helper function unpacks the buffer and lists out any .so files in it.
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
-    const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
-      {
-        buffer,
-        filename,
-        extract_dir: installDir,
-        calculate_dynlibs: true,
-        installer: "pyodide.loadPackage",
-        source:
-          metadata.channel === this.defaultChannel
-            ? "pyodide"
-            : metadata.channel,
-      },
+
+    await this.#installer.install(
+      buffer,
+      filename,
+      installDir,
+      INSTALLER,
+      metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
     );
-
-    DEBUG &&
-      console.debug(
-        `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
-      );
-
-    await this.#dynlibLoader.loadDynlibsFromPackage(pkg, dynlibs);
   }
 
   /**

@@ -1,7 +1,7 @@
 From 590c95874589b1d4d0e4432d5379a17c6b879f9f Mon Sep 17 00:00:00 2001
-From: Gyeongjae Choi <def6488@gmail.com>
+From: casatir <romain.casati@basthon.fr>
 Date: Wed, 27 Nov 2024 23:38:03 +0530
-Subject: [PATCH 2/4] Disable timer
+Subject: [PATCH 2/3] Disable timer
 
 threading.Timer is not yet supported in Pyodide.
 ---
@@ -17,7 +17,7 @@ index d9560ec0cc..a842ed1817 100644
          self.ttflist = []
  
 -        # Delay the warning by 5s.
--        timer = Timer(5, lambda: _log.warning(
+-        timer = threading.Timer(5, lambda: _log.warning(
 -            'Matplotlib is building the font cache; this may take a moment.'))
 -        timer.start()
 +        _log.warning(

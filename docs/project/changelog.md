@@ -66,6 +66,14 @@ myst:
   for more information.
   {pr}`5100`
 
+- {{ Breaking }} The WASM backend is now the default backend for `matplotlib-pyodide` and
+  the HTML5 backend has been disabled, temporarily redirecting to it. Power users
+  might see minor incompatibilities and subtle differences. Please see
+  https://github.com/pyodide/matplotlib-pyodide/issues/64 and
+  https://github.com/pyodide/matplotlib-pyodide/issues/65
+  for more information and if you wish to contribute to the discussion.
+  {pr}`4510`
+
 ### Packages
 
 - Upgraded `numpy` to 2.1.3 {pr}`4925`
@@ -113,11 +121,11 @@ myst:
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `certifi` to 2024.7.4 {pr}`5035`
+- Upgraded `certifi` to 2024.8.30 {pr}`5227`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `pandas` to 2.2.2 {pr}`4893`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `protobuf` to 5.27.3 {pr}`4601`
+- Upgraded `protobuf` to 5.29.0 {pr}`5233`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
@@ -130,6 +138,8 @@ myst:
 - Upgraded `altair` to 5.4.1 {pr}`5124`
 - Upgraded `PyYAML` to 6.0.2 {pr}`5137`
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
+- Upgraded `matplotlib` to 3.8.4 {pr}`4510`
+- Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
@@ -149,6 +159,9 @@ myst:
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `lakers-python` to 0.4.1 {pr}`5225`
+- Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
+- Upgraded `cffi` to 1.17.1 {pr}`5261`
 
 ## Version 0.26.4
 
