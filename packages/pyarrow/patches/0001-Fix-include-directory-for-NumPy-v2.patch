@@ -1,0 +1,26 @@
+From 48b75dbacee6bae365f91e55af302e3234b3bebd Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Thu, 19 Dec 2024 02:11:43 +0530
+Subject: [PATCH] Fix include directory for NumPy v2
+
+NumPy 2.0 changed the location of the header files
+---
+ python/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/python/CMakeLists.txt b/python/CMakeLists.txt
+index c39a1129ac..6171d1b0f3 100644
+--- a/python/CMakeLists.txt
++++ b/python/CMakeLists.txt
+@@ -166,7 +166,7 @@ if($ENV{PYODIDE})
+   # modules (at least under Pyodide it does).
+   set(Python3_INCLUDE_DIR $ENV{PYTHONINCLUDE})
+   set(Python3_LIBRARY $ENV{CPYTHONLIB})
+-  set(Python3_NumPy_INCLUDE_DIR $ENV{NUMPY_LIB}/core/include)
++  set(Python3_NumPy_INCLUDE_DIR $ENV{NUMPY_LIB}/_core/include)
+   set(Python3_EXECUTABLE)
+   set(ENV{_PYTHON_SYSCONFIGDATA_NAME} $ENV{SYSCONFIG_NAME})
+   # we set the c and cxx compiler manually to bypass pywasmcross
+-- 
+2.39.5 (Apple Git-154)
+

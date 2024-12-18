@@ -8,6 +8,7 @@ source:
   sha256: 2dc8da5f8796afe213ecc5e5aba85bb82d91520eff3cf315784a52d0fa61d7fc
   patches:
     - patches/autoload_timezones.patch
+    - patches/0001-Fix-include-directory-for-NumPy-v2.patch
 build:
   script: |
     # move things around so that the top level folder is the python folder
