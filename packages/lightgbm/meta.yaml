@@ -7,6 +7,9 @@ source:
 build:
   backend-flags: cmake.define.USE_OPENMP=OFF
   exports: requested
+  script: |
+    sed -i 's/cmake.verbose = false/cmake.verbose = true/g' pyproject.toml
+    sed -i 's/logging.level = "INFO"/logging.level = "DEBUG"/g' pyproject.toml
 requirements:
   run:
     - numpy
