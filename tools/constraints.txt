@@ -1,4 +1,2 @@
-# https://github.com/pyodide/pyodide/issues/5131
-meson < 1.6
 # https://github.com/pyodide/pyodide/issues/5221
 cysignals < 1.12.0
