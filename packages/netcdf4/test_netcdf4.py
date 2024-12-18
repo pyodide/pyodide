@@ -98,9 +98,17 @@ def test_netCDF4_tutorial(selenium):
             return DATETIME_FORMAT
 
     def assert_print(*args):
-        output = DATETIME_PATTERN.sub(
-            replace_netcdf_datetime, " ".join(str(a) for a in args)
-        )
+        output = " ".join(str(a) for a in args)
+
+        # Clean up string representations to match the expected format
+        # by replacing quoted class representations with unquoted ones.
+        # I am not sure why this is necessary, but it seems to be a difference
+        # in how CPython is stricter about quotes in string representations.
+        output = output.replace("\"<class '", "<class '")
+        output = output.replace('>"', ">")
+
+        output = DATETIME_PATTERN.sub(replace_netcdf_datetime, output)
+
         expected = stdouts.pop(0)
 
         if output != expected:
