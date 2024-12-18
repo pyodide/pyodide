@@ -9,7 +9,7 @@ build:
   exports: requested
   script: |
     sed -i 's/cmake.verbose = false/cmake.verbose = true/g' pyproject.toml
-    # sed -i 's/build.verbose = false/build.verbose = true/g' pyproject.toml
+    sed -i 's/build.verbose = false/build.verbose = true/g' pyproject.toml
 requirements:
   run:
     - numpy
