@@ -32,7 +32,7 @@ export PYSTABLEVERSION=$(PYMAJOR).$(PYMINOR).$(PYMICRO)
 export HOSTPYTHONROOT=$(shell python${PYMAJOR}.${PYMINOR} -c "import sys; print(sys.prefix)")
 export HOSTPYTHON=$(HOSTPYTHONROOT)/bin/python$(PYMAJOR).$(PYMINOR)
 
-export PYTHON_ARCHIVE_URL=https://registry.npmmirror.com/-/binary/python/$(PYSTABLEVERSION)/Python-$(PYVERSION).tgz
+export PYTHON_ARCHIVE_URL=https://www.python.org/ftp/python/$(PYSTABLEVERSION)/Python-$(PYVERSION).tgz
 
 export CPYTHONROOT=$(PYODIDE_ROOT)/cpython
 export CPYTHONINSTALL=$(CPYTHONROOT)/installs/python-$(PYVERSION)
