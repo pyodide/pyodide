@@ -1,22 +1,54 @@
 package:
   name: pyarrow
-  version: 17.0.0
+  version: 18.1.0
   top-level:
     - pyarrow
-  # FIXME: build Pyodide against NumPy 2 + newer Pyodide version
-  # after this PR is merged
-  _disabled: true
 source:
-  url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.26.2/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
-  sha256: ffa61d6410f960829727efe0a23a934da88972d993c13601351abbbc1f57ee2a
+  url: https://github.com/apache/arrow/releases/download/apache-arrow-18.1.0/apache-arrow-18.1.0.tar.gz
+  sha256: 2dc8da5f8796afe213ecc5e5aba85bb82d91520eff3cf315784a52d0fa61d7fc
+  patches:
+    - patches/autoload_timezones.patch
+build:
+  script: |
+    # move things around so that the top level folder is the python folder
+    # with the pyproject.toml, so pyodide build works
+    cd ..
+    # build libarrow as static library without the pyodide toolchain file
+    # because that does bad things to the build
+    BACKUP_TOOLCHAIN=${CMAKE_TOOLCHAIN_FILE}
+    unset CMAKE_TOOLCHAIN_FILE
+    if [ ! -d "${PKG_BUILD_DIR}_cpp" ]; then
+      mv $PKG_BUILD_DIR ${PKG_BUILD_DIR}_cpp
+      cp -r ${PKG_BUILD_DIR}_cpp/python $PKG_BUILD_DIR
+      # build arrow cpp library and install to emscripten sysroot
+      # n.b. the if statements below mean that you can call pyodide build-packages-no-deps
+      # pyarrow --continue to debug build errors without having to do a full rebuild
+      mkdir cppbuild
+      cd cppbuild
+      emcmake cmake --preset ninja-release-emscripten ${PKG_BUILD_DIR}_cpp/cpp
+    else
+      cd cppbuild
+    fi
+    cmake --build . --target=protobuf_ep_host -j 4
+    cmake --build . --target=install -j 4
+    cd ${PKG_BUILD_DIR}
+    export CMAKE_TOOLCHAIN_FILE=${BACKUP_TOOLCHAIN}
+    rm -f CMakeCache.txt
+    rm -rf CMakeFiles
+  cross-script: |
+    cmake --version
+about:
+  home: https://arrow.apache.org/
+  PyPI: https://pypi.org/project/pyarrow
+  summary: Python library for Apache Arrow
+  license: Apache-2.0
 requirements:
   run:
     - numpy
     - pandas
     - pyodide-unix-timezones
-about:
-  home: https://github.com/apache/arrow
-  license: Apache-2.0
+  host:
+    - numpy
 extra:
   recipe-maintainers:
     - joemarshall
