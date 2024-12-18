@@ -772,8 +772,7 @@ workflows:
 
       - test-main:
           name: test-packages-chrome
-          # Temporary for this PR: remove --skip-passed to run all tests
-          test-params: --runtime=chrome-no-host packages/*/test*.py
+          test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
             - test-packages-chrome-no-numpy-dependents
@@ -799,8 +798,7 @@ workflows:
 
       - test-main:
           name: test-packages-firefox
-          # Temporary for this PR: remove --skip-passed to run all tests
-          test-params: --runtime=firefox-no-host packages/*/test*.py
+          test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
             - test-packages-firefox-no-numpy-dependents
@@ -826,8 +824,7 @@ workflows:
 
       - test-main:
           name: test-packages-node
-          # Temporary for this PR: remove --skip-passed to run all tests
-          test-params: --runtime=node-no-host packages/*/test*.py
+          test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
             - test-packages-node-no-numpy-dependents
