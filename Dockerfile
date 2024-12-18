@@ -129,15 +129,17 @@ RUN \
 #       97
 #============================================
 
-RUN \
-  if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-    echo "Chrome and Chrome web driver aren't currently supported on arm64, skipping installation"; \
-  else \
-    if [ $CHROME_VERSION = "latest" ]; \
-    then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
-    else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
+RUN set -e -x \
+    && if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        echo "Chrome and Chrome web driver aren't currently supported on arm64, skipping installation" \
+        && exit 0; \
     fi \
-    && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb." \
+    && if [ "$CHROME_VERSION" = "latest" ]; then \
+        CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
+    else \
+        CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
+    fi \
+    && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
     && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
     && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
     && apt-get update \
@@ -149,8 +151,7 @@ RUN \
     && rm /tmp/chromedriver-linux64.zip \
     && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
     && echo "Using Chrome version: $(google-chrome --version)" \
-    && echo "Using Chrome Driver version: $(chromedriver --version)" \
-  fi
+    && echo "Using Chrome Driver version: $(chromedriver --version)"
 
 CMD ["/bin/sh"]
 WORKDIR /src
