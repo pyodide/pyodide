@@ -3,6 +3,9 @@ package:
   version: 18.1.0
   top-level:
     - pyarrow
+  # FIXME: build Pyodide against NumPy 2 + newer Pyodide version
+  # after this PR is merged
+  _disabled: true
 source:
   # TODO: Rebuild via https://github.com/joemarshall/pyarrow-pyodide/ once 0.27 xbuildenvs are available
   url: https://github.com/pyodide/pyodide-numpy-2.0-rebuilds/releases/download/v1.0.0/pyarrow-18.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl
