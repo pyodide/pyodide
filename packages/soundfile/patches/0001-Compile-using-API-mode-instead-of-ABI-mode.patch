@@ -1,0 +1,98 @@
+From 91607da9eda52b2bc65969dec5c556faae52dc3a Mon Sep 17 00:00:00 2001
+From: swnf <50806201+swnf@users.noreply.github.com>
+Date: Sat, 2 Nov 2024 20:26:31 +0100
+Subject: [PATCH] Compile using API mode instead of ABI mode
+
+
+diff --git a/soundfile.py b/soundfile.py
+index cc13192..932f068 100644
+--- a/soundfile.py
++++ b/soundfile.py
+@@ -13,8 +13,7 @@ __version__ = "0.12.1"
+ import os as _os
+ import sys as _sys
+ from os import SEEK_SET, SEEK_CUR, SEEK_END
+-from ctypes.util import find_library as _find_library
+-from _soundfile import ffi as _ffi
++from _soundfile import ffi as _ffi, lib as _snd
+ 
+ try:
+     _unicode = unicode  # doesn't exist in Python 3.x
+@@ -145,52 +144,6 @@ _ffi_types = {
+     'int16': 'short'
+ }
+ 
+-try:  # packaged lib (in _soundfile_data which should be on python path)
+-    if _sys.platform == 'darwin':
+-        from platform import machine as _machine
+-        _packaged_libname = 'libsndfile_' + _machine() + '.dylib'
+-    elif _sys.platform == 'win32':
+-        from platform import architecture as _architecture
+-        _packaged_libname = 'libsndfile_' + _architecture()[0] + '.dll'
+-    elif _sys.platform == 'linux':
+-        from platform import machine as _machine
+-        _packaged_libname = 'libsndfile_' + _machine() + '.so'
+-    else:
+-        raise OSError('no packaged library for this platform')
+-
+-    import _soundfile_data  # ImportError if this doesn't exist
+-    _path = _os.path.dirname(_soundfile_data.__file__)  # TypeError if __file__ is None
+-    _full_path = _os.path.join(_path, _packaged_libname)
+-    _snd = _ffi.dlopen(_full_path)  # OSError if file doesn't exist or can't be loaded
+-
+-except (OSError, ImportError, TypeError):
+-    try:  # system-wide libsndfile:
+-        _libname = _find_library('sndfile')
+-        if _libname is None:
+-            raise OSError('sndfile library not found using ctypes.util.find_library')
+-        _snd = _ffi.dlopen(_libname)
+-
+-    except OSError:
+-        # Try explicit file name, if the general does not work (e.g. on nixos)
+-        if _sys.platform == 'darwin':
+-            _explicit_libname = 'libsndfile.dylib'
+-        elif _sys.platform == 'win32':
+-            _explicit_libname = 'libsndfile.dll'
+-        elif _sys.platform == 'linux':
+-            _explicit_libname = 'libsndfile.so'
+-        else:
+-            raise
+-
+-        # Homebrew on Apple M1 uses a `/opt/homebrew/lib` instead of
+-        # `/usr/local/lib`. We are making sure we pick that up.
+-        from platform import machine as _machine
+-        if _sys.platform == 'darwin' and _machine() == 'arm64':
+-            _hbrew_path = '/opt/homebrew/lib/' if _os.path.isdir('/opt/homebrew/lib/') \
+-                else '/usr/local/lib/'
+-            _snd = _ffi.dlopen(_os.path.join(_hbrew_path, _explicit_libname))
+-        else:
+-            _snd = _ffi.dlopen(_explicit_libname)
+-
+ __libsndfile_version__ = _ffi.string(_snd.sf_version_string()).decode('utf-8', 'replace')
+ if __libsndfile_version__.startswith('libsndfile-'):
+     __libsndfile_version__ = __libsndfile_version__[len('libsndfile-'):]
+diff --git a/soundfile_build.py b/soundfile_build.py
+index 774fd9b..76c4783 100644
+--- a/soundfile_build.py
++++ b/soundfile_build.py
+@@ -3,7 +3,16 @@ import sys
+ from cffi import FFI
+ 
+ ffibuilder = FFI()
+-ffibuilder.set_source("_soundfile", None)
++ffibuilder.set_source(
++    "_soundfile",
++    "#include <sndfile.h>",
++    library_dirs=[os.environ["WASM_LIBRARY_DIR"] + "/lib"],
++    # The libraries need to be in reverse dependency order
++    libraries=["sndfile", "mp3lame", "mpg123", "opus", "FLAC", "vorbis", "ogg"],
++    include_dirs=[os.environ["WASM_LIBRARY_DIR"] + "/include"],
++    extra_compile_args=["--use-port=ogg", "--use-port=vorbis", "--use-port=mpg123"],
++    extra_link_args=["--use-port=ogg", "--use-port=vorbis", "--use-port=mpg123"]
++)
+ ffibuilder.cdef("""
+ enum
+ {
+-- 
+2.43.0
+
