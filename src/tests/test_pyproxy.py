@@ -387,7 +387,7 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         assert check
         if fmt.lower() == "q":
             assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
-        elif fmt == "f" or fmt == "d":
+        elif fmt in {"d", "f"}:
             from math import isclose, isnan
 
             for a, b in zip(result, list(mv.cast(fmt)), strict=False):

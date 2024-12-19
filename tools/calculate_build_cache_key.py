@@ -42,18 +42,13 @@ def main():
             hash_candidates.extend(list(target.glob("**/*")))
 
     hash_candidates_filtered = sorted(
-        list(
-            filter(
-                lambda file: file.is_file() and not ignore_spec.match_file(str(file)),
-                hash_candidates,
-            )
+        filter(
+            lambda file: file.is_file() and not ignore_spec.match_file(str(file)),
+            hash_candidates,
         )
     )
 
-    hashes = []
-    for file in hash_candidates_filtered:
-        hashes.append(hash_file(file))
-
+    hashes = (hash_file(file) for file in hash_candidates_filtered)
     print("".join(hashes))
 
 

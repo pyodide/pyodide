@@ -658,7 +658,7 @@ def find_imports(source: str) -> list[str]:
             if module_name is None:
                 continue
             _add_prefixes(imports, module_name)
-    return list(sorted(imports))
+    return sorted(imports)
 
 
 def pyimport_impl(path: str) -> Any:

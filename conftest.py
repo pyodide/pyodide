@@ -181,7 +181,7 @@ def pytest_configure(config):
     it to reduce the verbosity of the test names in the table.  This leaves
     enough room to see the information about the test failure in the summary.
     """
-    global CONFIG
+    global CONFIG  # noqa: PLW0602
 
     old_cwd_relative_nodeid = config.cwd_relative_nodeid
 
