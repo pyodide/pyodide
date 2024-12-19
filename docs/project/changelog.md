@@ -140,6 +140,7 @@ myst:
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Upgraded `matplotlib` to 3.8.4 {pr}`4510`
 - Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
+- Upgraded `cysignals` to 1.12.2 {pr}`5267`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
