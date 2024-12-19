@@ -1,0 +1,22 @@
+package:
+  name: highspy
+  version: 1.8.1
+  top-level:
+    - highspy
+source:
+  url: https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v1.8.1.tar.gz
+  sha256: a0d09371fadb56489497996b28433be1ef91a705e3811fcb1f50a107c7d427d1
+requirements:
+  run:
+    - numpy
+test:
+  imports:
+    - highspy
+about:
+  home: https://highs.dev/
+  PyPI: https://pypi.org/project/highspy
+  summary: A thin set of pybind11 wrappers to HiGHS.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - airen1986
