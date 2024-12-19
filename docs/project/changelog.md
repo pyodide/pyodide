@@ -94,7 +94,7 @@ myst:
 - Upgraded `netcdf4` to 1.7.2 {pr}`4925`
 - Upgraded `networkx` to 3.4.2 {pr}`4925`
 - Upgraded `numcodecs` to 0.13.1 {pr}`4925`
-- Upgraded `pandas` to 2.2.3 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4893`, {pr}`4925`
 - Upgraded `pywavelets` to 1.7.0 {pr}`4925`
 - Upgraded `shapely` to 2.0.6 {pr}`4925`
 - Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
@@ -123,7 +123,7 @@ myst:
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
 - Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
-- Upgraded `pandas` to 2.2.2 {pr}`4893`
+- Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
 - Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
