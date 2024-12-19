@@ -1,0 +1,21 @@
+commit ecdb62c90a3767b440800dcf2c49589e890a53b1
+Author: Matthias Koeppe <mkoeppe@math.ucdavis.edu>
+Date:   Tue Aug 8 17:03:32 2023 -0700
+
+    full_cone.cpp: Remove debug output
+
+diff --git a/source/libnormaliz/full_cone.cpp b/source/libnormaliz/full_cone.cpp
+index 0fd906b3..cb2cce2b 100644
+--- a/source/libnormaliz/full_cone.cpp
++++ b/source/libnormaliz/full_cone.cpp
+@@ -3447,8 +3447,8 @@ void Full_Cone<Integer>::build_cone_dynamic() {
+     // if they aren't in a hyperplane anyway
+     if(IntHullNorm.size() > 0){
+ #pragma omp parallel for
+-        for(size_t i = 0; i< OriGens.nr_of_rows(); ++i){
+-             cout << "i " << i << " -- " <<   OriGensFloat[i];
++        for (size_t i = 0; i< OriGens.nr_of_rows(); ++i){
++            // cout << "i " << i << " -- " <<   OriGensFloat[i];
+             nmz_float norm = v_scalar_product(OriGensFloat[i], IntHullNormFloat);
+             v_scalar_division(OriGensFloat[i], norm);
+         }
