@@ -10,6 +10,9 @@ source:
 build:
   backend-flags: cmake.define.USE_OPENMP=OFF
   exports: requested
+  script: |
+    sed -i 's/build.verbose = false/build.verbose = true/g' pyproject.toml
+    export CMAKE_GENERATOR="Unix Makefiles"
 requirements:
   run:
     - numpy
