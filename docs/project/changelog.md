@@ -143,7 +143,7 @@ myst:
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
-- Added `pyarrow` 17.0.0 {pr}`4950`
+- Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
 - Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
