@@ -18,7 +18,9 @@ from pytest_pyodide import run_in_pyodide
         ("coordinates", "test_erfa_astrom.py"),
         ("coordinates", "test_frames_with_velocity.py"),
         ("coordinates", "test_icrs_observed_transformations.py"),
-        ("coordinates", "test_matching.py"),
+        # Needs SciPy but optional dependency not declared, can be re-enabled
+        # later when we unvendor recipes
+        # ("coordinates", "test_matching.py"),
         ("coordinates", "test_representation.py and not test_unitphysics"),
         ("coordinates", "test_sky_coord.py"),
         ("coordinates", "test_sky_coord_velocities.py"),
