@@ -2,12 +2,14 @@ package:
   name: lightgbm
   version: 4.5.0
 source:
-  # TODO: Rebuild natively and drop release when intermittent build failures are resolved
-  url: https://github.com/pyodide/pyodide-numpy-2.0-rebuilds/releases/download/v1.0.0/lightgbm-4.5.0-py3-none-pyodide_2024_0_wasm32.whl
-  sha256: aeb50524b667ace2331b9e7cd6c4b316abd768778cc344283ddcb4d6a2929554
-# build:
-#   backend-flags: cmake.define.USE_OPENMP=OFF
-#   exports: requested
+  url: https://files.pythonhosted.org/packages/4d/e6/41be1f8642257e21b4170e798c9a84e4268656ebfa3019586d82bfd281c9/lightgbm-4.5.0.tar.gz
+  sha256: e1cd7baf0318d4e308a26575a63a4635f08df866ad3622a9d8e3d71d9637a1ba
+build:
+  backend-flags: cmake.define.USE_OPENMP=OFF
+  exports: requested
+  script: |
+    sed -i 's/build.verbose = false/build.verbose = true/g' pyproject.toml
+    export CMAKE_GENERATOR="Unix Makefiles"
 requirements:
   run:
     - numpy
