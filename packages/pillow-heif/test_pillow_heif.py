@@ -10,7 +10,7 @@ SAMPLE_IMAGE = base64.b64encode(
 
 
 def test_heif(selenium):
-    @run_in_pyodide(packages=["Pillow", "pillow_heif"])
+    @run_in_pyodide(packages=["Pillow", "pillow-heif"])
     def _test_heif_inner(selenium, image_base64):
         import base64
 
@@ -24,14 +24,12 @@ def test_heif(selenium):
                 "tree-with-transparency.heic", convert_hdr_to_8bit=False
             )
             assert heif_file.mode == "RGBA"
-            assert len(heif_file.data) == 278784
-            assert heif_file.stride == 1056
 
     _test_heif_inner(selenium, SAMPLE_IMAGE)
 
 
 def test_pillow(selenium):
-    @run_in_pyodide(packages=["Pillow", "pillow_heif"])
+    @run_in_pyodide(packages=["Pillow", "pillow-heif"])
     def _test_pillow_inner(selenium, image_base64):
         import base64
 

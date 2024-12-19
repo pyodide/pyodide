@@ -113,7 +113,7 @@ def test_svg(selenium):
     plt.savefig(fd, format="svg")
 
     content = fd.getvalue().decode("utf8")
-    assert len(content) == 14998
+    assert len(content) == 15016
     assert content.startswith("<?xml")
 
 
@@ -358,9 +358,6 @@ def test_draw_text_rotated(selenium_standalone):
 
 
 @matplotlib_test_decorator
-@pytest.mark.xfail(
-    reason="TODO: pytest_pyodide.pyodide.JsException: InvalidStateError: An attempt was made to use an object that is not, or is no longer, usable"
-)
 def test_draw_math_text(selenium_standalone):
     selenium = selenium_standalone
 

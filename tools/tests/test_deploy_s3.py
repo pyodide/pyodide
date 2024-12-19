@@ -49,7 +49,7 @@ def test_deploy_to_s3_overwrite(tmp_path, capsys):
 
     def get_object_list():
         response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix="dev/full/")
-        return set(obj["Key"] for obj in response["Contents"])
+        return {obj["Key"] for obj in response["Contents"]}
 
     assert get_object_list() == {"dev/full/a.whl", "dev/full/b.tar", "dev/full/c.zip"}
 
