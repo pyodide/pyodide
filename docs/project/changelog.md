@@ -76,6 +76,39 @@ myst:
 
 ### Packages
 
+- Upgraded `numpy` to 2.0.2 {pr}`4925`
+- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4925`
+- Upgraded `gsw` to 3.6.19 {pr}`4925`
+- Upgraded `opencv-python` to 4.10.0.84 {pr}`4925`
+- Upgraded `yt` to 4.3.1 {pr}`4925`
+- Upgraded `xgboost` to 2.1.2 {pr}`4925`
+- Upgraded `autograd` to 1.7.0 {pr}`4925`
+- Upgraded `sisl` to 0.15.1 {pr}`4925`
+- Upgraded `cartopy` to 0.24.1 {pr}`4925`
+- Upgraded `astropy` to 7.0.0 {pr}`4925`
+- Upgraded `biopython` to 1.84 {pr}`4925`
+- Upgraded `fastparquet` to 2024.5.0 {pr}`4925`
+- Upgraded `geopandas` to 1.0.1 {pr}`4925`
+- Upgraded `imageio` to 2.36.0 {pr}`4925`
+- Upgraded `lightgbm` to 4.5.0 {pr}`4925`
+- Upgraded `netcdf4` to 1.7.2 {pr}`4925`
+- Upgraded `networkx` to 3.4.2 {pr}`4925`
+- Upgraded `numcodecs` to 0.13.1 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4925`
+- Upgraded `pywavelets` to 1.7.0 {pr}`4925`
+- Upgraded `shapely` to 2.0.6 {pr}`4925`
+- Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
+- Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `xarray` to 2024.10.0 {pr}`4925`
+- Upgraded `zarr` to 2.18.3 {pr}`4925`
+- Upgraded `h5py` to 3.12.1 {pr}`4925`
+- Upgraded `cftime` to 1.6.4.post1 {pr}`4925`
+- Upgraded `clarabel` to 0.9.0 {pr}`4925`
+- Upgraded `ewah_bool_utils` to 1.2.2 {pr}`4925`
+- Upgraded `galpy` to 1.10.1 {pr}`4925`
+- Upgraded `mne-python` to 1.8.0 {pr}`4925`
+- Upgraded `pyxirr` to 0.10.6 {pr}`4925`
+- Upgraded `regex` to 2024.9.11 {pr}`4925`
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
 - Upgraded `rebound` to 4.4.3 {pr}`5163`
 - Upgraded `reboundx` to 4.3.0 {pr}`5163`
@@ -109,10 +142,10 @@ myst:
 - Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
-- Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
+- Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
 - Added `pyarrow` 17.0.0 {pr}`4950`
-- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
-- Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
+- Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
+- Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
 - Added `tree-sitter-go` 0.23.1 {pr}`5102`
