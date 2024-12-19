@@ -1,11 +1,13 @@
 package:
   name: urllib3
-  version: 2.2.1
+  version: 2.2.3
   top-level:
     - urllib3
 source:
-  url: https://files.pythonhosted.org/packages/7a/50/7fd50a27caa0652cd4caf224aa87741ea41d3265ad13f010886167cfcc79/urllib3-2.2.1.tar.gz
-  sha256: d0570876c61ab9e520d776c38acbbb5b05a776d3f9ff98a5c8fd5162a444cf19
+  url: https://files.pythonhosted.org/packages/ed/63/22ba4ebfe7430b76388e7cd448d5478814d3032121827c12a2cc287e2260/urllib3-2.2.3.tar.gz
+  sha256: e7d814a81dad81e6caf2ec9fdedb284ecc9c73076b62654547cc64ccdcae26e9
+  patches:
+    - patches/0001-Add-support-for-JavaScript-Promise-Integration-3427.patch
 test:
   imports:
     - urllib3
