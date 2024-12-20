@@ -17,7 +17,7 @@ repos:
       - id: trailing-whitespace
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.5.0"
+    rev: "v0.8.1"
     hooks:
       - id: ruff
         args: [--fix]
@@ -53,7 +53,7 @@ repos:
             "--ignore-words-list",
             "ags,aray,asend,ba,crate,falsy,feld,inflight,lits,nd,slowy,te,oint,conveniant,atmost",
           ]
-        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json)$
+        exclude: ^(benchmark/benchmarks/pystone_benchmarks/pystone\.py|src/js/package-lock\.json|packages/matplotlib/extras/fontlist\.json)$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.11.0"
@@ -82,7 +82,7 @@ repos:
         name: mypy-tests
         args: [--ignore-missing-imports]
         files: ^(packages/|docs|/conftest.py|src/tests)
-        exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$)
+        exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$|^packages/zfpy/test_zfpy.py$)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-prettier

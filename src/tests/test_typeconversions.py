@@ -1657,234 +1657,6 @@ def test_dict_and_default_converter(selenium):
     assert res.a == 2
 
 
-@pytest.mark.parametrize("n", [1 << 31, 1 << 32, 1 << 33, 1 << 63, 1 << 64, 1 << 65])
-@run_in_pyodide
-def test_very_large_length(selenium, n):
-    from unittest import TestCase
-
-    from pyodide.code import run_js
-
-    raises = TestCase().assertRaises(
-        OverflowError, msg=f"length {n} of object is larger than INT_MAX (2147483647)"
-    )
-
-    o = run_js(f"({{length : {n}}})")
-    with raises:
-        len(o)
-
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a very large length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
-    with raises:
-        a[-1]
-
-
-@pytest.mark.parametrize(
-    "n", [-1, -2, -3, -100, -1 << 31, -1 << 32, -1 << 33, -1 << 63, -1 << 64, -1 << 65]
-)
-@run_in_pyodide
-def test_negative_length(selenium, n):
-    from unittest import TestCase
-
-    from pyodide.code import run_js
-
-    raises = TestCase().assertRaises(
-        ValueError, msg=f"length {n} of object is negative"
-    )
-
-    o = run_js(f"({{length : {n}}})")
-    with raises:
-        len(o)
-
-    # 1. Set toStringTag to NodeList to force JsProxy to feature detect this object
-    # as an array
-    # 2. Return a negative length
-    # 3. JsProxy_subscript_array should successfully handle this and propagate the error.
-    a = run_js(f"({{[Symbol.toStringTag] : 'NodeList', length: {n}}})")
-    with raises:
-        a[-1]
-
-
-@std_hypothesis_settings
-@given(l=st.lists(st.integers()), slice=st.slices(50))
-@example(l=[0, 1], slice=slice(None, None, -1))
-@example(l=list(range(4)), slice=slice(None, None, -2))
-@example(l=list(range(10)), slice=slice(-1, 12))
-@example(l=list(range(10)), slice=slice(12, -1))
-@example(l=list(range(10)), slice=slice(12, -1, -1))
-@example(l=list(range(10)), slice=slice(-1, 12, 2))
-@example(l=list(range(10)), slice=slice(12, -1, -1))
-@example(l=list(range(10)), slice=slice(12, -1, -2))
-@run_in_pyodide
-def test_array_slices(selenium, l, slice):
-    expected = l[slice]
-    from pyodide.ffi import JsArray, to_js
-
-    jsl = to_js(l)
-    assert isinstance(jsl, JsArray)
-    result = jsl[slice]
-    assert result.to_py() == expected
-
-
-@std_hypothesis_settings
-@given(l=st.lists(st.integers()), slice=st.slices(50))
-@example(l=[0, 1], slice=slice(None, None, -1))
-@example(l=list(range(4)), slice=slice(None, None, -2))
-@example(l=list(range(10)), slice=slice(-1, 12))
-@example(l=list(range(10)), slice=slice(12, -1))
-@example(l=list(range(10)), slice=slice(12, -1, -1))
-@example(l=list(range(10)), slice=slice(-1, 12, 2))
-@example(l=list(range(10)), slice=slice(12, -1, -1))
-@example(l=list(range(10)), slice=slice(12, -1, -2))
-@run_in_pyodide
-def test_array_slice_del(selenium, l, slice):
-    from pyodide.ffi import JsArray, to_js
-
-    jsl = to_js(l)
-    assert isinstance(jsl, JsArray)
-    del l[slice]
-    del jsl[slice]
-    assert jsl.to_py() == l
-
-
-@st.composite
-def list_slice_and_value(draw):
-    l = draw(st.lists(st.integers()))
-    step_one = draw(st.booleans())
-    if step_one:
-        start = draw(st.integers(0, max(len(l) - 1, 0)) | st.none())
-        stop = draw(st.integers(start, len(l)) | st.none())
-        if draw(st.booleans()) and start is not None:
-            start -= len(l)
-        if draw(st.booleans()) and stop is not None:
-            stop -= len(l)
-        s = slice(start, stop)
-        vals = draw(st.lists(st.integers()))
-    else:
-        s = draw(st.slices(50))
-        vals_len = len(l[s])
-        vals = draw(st.lists(st.integers(), min_size=vals_len, max_size=vals_len))
-    return (l, s, vals)
-
-
-@std_hypothesis_settings
-@given(lsv=list_slice_and_value())
-@example(lsv=(list(range(5)), slice(5, 2), []))
-@example(lsv=(list(range(5)), slice(2, 5, -1), []))
-@example(lsv=(list(range(5)), slice(5, 2), [-1, -2, -3]))
-@run_in_pyodide
-def test_array_slice_assign_1(selenium, lsv):
-    from pyodide.ffi import JsArray, to_js
-
-    [l, s, v] = lsv
-    jsl = to_js(l)
-    assert isinstance(jsl, JsArray)
-    l[s] = v
-    jsl[s] = v
-    assert jsl.to_py() == l
-
-
-@run_in_pyodide
-def test_array_slice_assign_2(selenium):
-    import pytest
-
-    from pyodide.ffi import JsArray, to_js
-
-    l = list(range(10))
-    with pytest.raises(ValueError) as exc_info_1a:
-        l[0:4:2] = [1, 2, 3, 4]
-
-    jsl = to_js(l)
-    assert isinstance(jsl, JsArray)
-    with pytest.raises(ValueError) as exc_info_1b:
-        jsl[0:4:2] = [1, 2, 3, 4]
-
-    l = list(range(10))
-    with pytest.raises(ValueError) as exc_info_2a:
-        l[0:4:2] = []
-
-    with pytest.raises(ValueError) as exc_info_2b:
-        jsl[0:4:2] = []
-
-    with pytest.raises(TypeError) as exc_info_3a:
-        l[:] = 1  # type: ignore[call-overload]
-
-    with pytest.raises(TypeError) as exc_info_3b:
-        jsl[:] = 1  # type: ignore[call-overload]
-
-    assert exc_info_1a.value.args == exc_info_1b.value.args
-    assert exc_info_2a.value.args == exc_info_2b.value.args
-    assert exc_info_3a.value.args == exc_info_3b.value.args
-
-
-@std_hypothesis_settings
-@given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
-@example(l1=[], l2=[])
-@example(l1=[], l2=[1])
-@run_in_pyodide
-def test_array_extend(selenium_module_scope, l1, l2):
-    from pyodide.ffi import to_js
-
-    l1js1 = to_js(l1)
-    l1js1.extend(l2)
-
-    l1js2 = to_js(l1)
-    l1js2 += l2
-
-    l1.extend(l2)
-
-    assert l1 == l1js1.to_py()
-    assert l1 == l1js2.to_py()
-
-
-@run_in_pyodide
-def test_typed_array(selenium):
-    from pyodide.code import run_js
-
-    a = run_js("self.a = new Uint8Array([1,2,3,4]); a")
-    assert a[0] == 1
-    assert a[-1] == 4
-    a[-2] = 7
-    assert run_js("self.a[2]") == 7
-
-    import pytest
-
-    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
-        del a[0]
-
-    msg = "Slice subscripting isn't implemented for typed arrays"
-    with pytest.raises(NotImplementedError, match=msg):
-        a[:]
-
-    msg = "Slice assignment isn't implemented for typed arrays"
-    with pytest.raises(NotImplementedError, match=msg):
-        a[:] = [-1, -2, -3, -4]
-
-    assert not hasattr(a, "extend")
-    with pytest.raises(TypeError):
-        a += [1, 2, 3]
-
-
-@pytest.mark.xfail_browsers(node="No document in node")
-@run_in_pyodide
-def test_html_array(selenium):
-    from pyodide.code import run_js
-
-    x = run_js("document.querySelectorAll('*')")
-    assert run_js("(a, b) => a === b[0]")(x[0], x)
-    assert run_js("(a, b) => a === Array.from(b).pop()")(x[-1], x)
-
-    import pytest
-
-    with pytest.raises(TypeError, match="does ?n[o']t support item assignment"):
-        x[0] = 0
-
-    with pytest.raises(TypeError, match="does ?n[o']t support item deletion"):
-        del x[0]
-
-
 @run_in_pyodide
 def test_bind_attrs(selenium):
     from typing import Annotated
@@ -2107,8 +1879,9 @@ async def test_bind_async2(selenium):
 
     from _pyodide.jsbind import Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
-    jsfunc = run_js(
+    jsfunc: JsProxy = run_js(
         """
         (async function () {
             return [1, 2, 3]
@@ -2136,6 +1909,7 @@ async def test_bind_async3(selenium):
 
     from _pyodide.jsbind import BindClass, Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
     class A(BindClass):
         x: Annotated[list[int], Deep]
@@ -2146,7 +1920,7 @@ async def test_bind_async3(selenium):
     def f2() -> Future[A]:
         raise NotImplementedError
 
-    jsfunc = run_js(
+    jsfunc: JsProxy = run_js(
         """
         (async function() {
             return {
@@ -2170,8 +1944,9 @@ def test_bind_pre_convert(selenium):
     from _pyodide.jsbind import Deep, Py2JsConverterMeta
     from js import Headers  # type:ignore[attr-defined]
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
-    ajs = run_js("(x) => [x.toString(), JSON.stringify(Array.from(x))]")
+    ajs: JsProxy = run_js("(x) => [x.toString(), JSON.stringify(Array.from(x))]")
 
     class ToHeaders(metaclass=Py2JsConverterMeta):
         @staticmethod
@@ -2190,16 +1965,57 @@ def test_bind_pre_convert(selenium):
 
 @run_in_pyodide
 def test_bind_construct(selenium):
-    from pyodide.code import run_js
+    from typing import Annotated, Any, NotRequired, TypedDict
 
-    A = run_js("(class {})")
+    from _pyodide.jsbind import Default, Json
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class Inner(TypedDict):
+        b: int
+        c: NotRequired[str]
+
+    class Outer(TypedDict):
+        a: list[Inner]
+        x: int
+
+    ajs: JsProxy = run_js("(x) => x")
+
+    def a_shape(x: Annotated[Any, Default], /) -> Annotated[Outer, Json]:
+        raise NotImplementedError
+
+    # pyright infers abound has same type as a_shape,
+    a = ajs.bind_sig(a_shape)
+    o = run_js("({x: 7, a : [{b: 1, c: 'xyz'},{b: 2},{b: 3}]})")
+
+    res = a(o)
+    assert res["x"] == 7
+    res["x"] = 9
+    assert o.x == 9
+    assert res["a"][0]["b"] == 1
+    assert res["a"][0]["c"]
+    assert "c" in res["a"][0]
+    assert res["a"][0]["c"] == "xyz"
+    assert res["a"][1]["b"] == 2
+    assert "c" not in res["a"][1]
+    res["a"][1]["c"] = "s"
+    assert o.a[1].c == "s"
+
+
+@run_in_pyodide
+def test_bind_py_json(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    A: JsProxy = run_js("(class {x = 7})")
 
     class A_sig:
-        pass
+        x: int
 
-    A = A.bind_sig(A_sig)
+    Abound = A.bind_sig(A_sig)
 
-    A()
+    res = Abound()
+    assert res.x == 7
 
 
 @run_in_pyodide

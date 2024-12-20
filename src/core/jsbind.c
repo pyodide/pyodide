@@ -313,7 +313,7 @@ python2js_inner(PyObject* x,
                 bool is_json_adaptor);
 
 static JsVal
-Py2Js_func_as_json_adaptor(PyObject* self, PyObject* pyval, JsVal proxies)
+Py2Js_func_as_js_json(PyObject* self, PyObject* pyval, JsVal proxies)
 {
   return python2js_inner(pyval,
                          proxies,
@@ -365,6 +365,14 @@ static PyObject*
 Js2Py_func_deep(PyObject* self, JsVal jsval, JsVal proxies)
 {
   PyObject* result = js2python_convert(jsval, -1, Jsv_undefined);
+  maybe_destroy_proxies(jsval, proxies);
+  return result;
+}
+
+static PyObject*
+Js2Py_func_as_py_json(PyObject* self, JsVal jsval, JsVal proxies)
+{
+  PyObject* result = js2python_as_py_json(jsval);
   maybe_destroy_proxies(jsval, proxies);
   return result;
 }
@@ -629,11 +637,12 @@ jsbind_init(PyObject* core_mod)
   ADD_TYPE(Py2JsConverter);
   ADD_TYPE(Js2PyConverter);
 
-  ADD_PY2JS(as_json_adaptor);
+  ADD_PY2JS(as_js_json);
   ADD_PY2JS(deep);
   ADD_PY2JS(default);
 
   ADD_JS2PY(deep);
+  ADD_JS2PY(as_py_json);
   ADD_JS2PY(default);
   ADD_JS2PY(default_call_result);
   ADD_JS2PY(promise);

@@ -16,6 +16,7 @@
 
 declare var Tests: any;
 declare var Module: any;
+declare var validSuspender: { value: boolean };
 
 import { TypedArray } from "types";
 
@@ -2920,7 +2921,7 @@ export class PyBufferMethods {
       let alignment = parseInt(ArrayType.name.replace(/[^0-9]/g, "")) / 8 || 1;
       if (bigEndian && alignment > 1) {
         throw new Error(
-          "Javascript has no native support for big endian buffers. " +
+          "JavaScript has no native support for big endian buffers. " +
             "In this case, you can pass an explicit type argument. " +
             "For instance, `getBuffer('dataview')` will return a `DataView`" +
             "which has native support for reading big endian data. " +

@@ -16,6 +16,34 @@ chromium-based browser (e.g., chrome) for debugging. They are better at it.
 Before doing any debugger I strongly recommend running
 `npx prettier -w pyodide.asm.js`. This makes everything much easier.
 
+(build-with-symbols)=
+
+## Building with symbols or source maps
+
+Building with symbols retains the names of all internal functions, but will not
+prevent function calls from being inlined away and does not retain a source map
+to the original C code. Symbols do not cause much of a slowdown and only cause a
+minor increase in code size. Building with source maps disables many
+optimizations such as inlining and slows down execution by quite a lot.
+
+To rebuild with symbols you can use the following:
+
+```sh
+touch src/core/jsproxy.h
+PYODIDE_SYMBOLS=1 make -C cpython rebuild-all
+PYODIDE_SYMBOLS=1 make all-but-packages
+```
+
+To use source maps, use `PYODIDE_SOURCEMAPS=1` instead of `PYODIDE_SYMBOLS=1`.
+To get the benefits of source maps, you need the
+[C/C++ devtoools support Chrome extension](https://chromewebstore.google.com/detail/cc++-devtools-support-dwa/pdcpmagijalfljmkmjngeonclgbbannb?pli=1).
+
+When source maps are present and the devtools extension is enabled, you will not
+be able to see the raw disassembly, which makes it hard to inspect the state of
+the program in the debugger because there is no support for executing C
+expressions. The extension provides no way to see the raw assembly without
+disabling the extension and refreshing the page.
+
 ## Linker error: function signature mismatch
 
 You may get linker errors as follows:
@@ -73,10 +101,8 @@ With enough diligence you can locate the problem.
 
 ## Debugging RuntimeError: function signature mismatch
 
-First recompile with `-g2`. `-g2` keeps symbols but won't try to use C source
-maps which mostly make our life harder (though it may be helpful to link one
-copy with `-g2` and one with `-g3` and run them at the same time cf
-{ref}`source-maps`).
+First recompile with a source map as suggested in {ref}`build-with-symbols`, and
+disable the C/C++ DevTools extension (if it's enabled).
 
 The browser console will show something like the following. Click on the
 innermost stack trace:
@@ -85,8 +111,9 @@ innermost stack trace:
 
 Clicking the offset will (hopefully) take you to the corresponding wasm
 instruction, which should be a `call_indirect`. If the offset is too large
-(somewhere between `0x0200000` and `0x0300000`) you will instead see `;; text is truncated due to size`, see {ref}`text-truncated-due-to-size`. In this example
-we see the following:
+(somewhere between `0x0200000` and `0x0300000`) you will instead see
+`;; text is truncated due to size`, see {ref}`text-truncated-due-to-size`. In
+this example we see the following:
 
 ![wasm bad call_indirect instruction](./signature-mismatch2.png "wasm bad call_indirect instruction")
 
@@ -204,33 +231,3 @@ and then you can start a version of chrome using the modified devtools:
 ```
 chrome --custom-devtools-frontend=http://localhost:<some_port>/
 ```
-
-(source-maps)=
-
-## Using C source maps
-
-[Chromium has support for DWARF
-info](https://developer.chrome.com/blog/wasm-debugging-2020/) which can be very
-helpful for debugging in certain circumstances.
-
-I haven't used this very much because it is often not very beneficial. The
-biggest issue is that I have found no way to toggle between viewing the C source
-and the WebAssembly. In particular, if source maps are available, the debugger
-gives no way to view the current line in the wasm. What's worse is that even if
-it fails to find the source map, it won't fall back to displaying the source
-map. To _prevent_ this, relink the code with `-g2`.
-
-Typically once I have isolated the interesting line of C code, I need to see
-what is going on at an instruction-level. This limitation means that it is
-generally easier to work directly with instructions. One work around is to load
-a copy of Pyodide with the source maps next to one without the source maps. This
-situation is rapidly improving both on Emscripten's side and on the browser
-side. To build Pyodide with DWARF, you should set `DBGFLAGS="-g3 -gseparate-dwarf"`.
-
-If you are building in the docker image, you will get error 404s when the
-browser tries to look up the source maps because the path `/src/cpython/...`
-doesn't exist. One dumb solution is `sudo ln -s $(pwd) /src`. It might not be
-the best idea to link some random directory into root, if you manage to destroy
-your computer with this please don't blame me. In particular, if you later want
-to remove this link make sure not to remove `/srv` instead! The correct solution
-is to use `--source-map-base`, but I can't seem to get it to work.

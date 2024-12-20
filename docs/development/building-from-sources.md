@@ -24,6 +24,23 @@ Pyodide can be built from sources on different platforms,
 
 ## Build instructions
 
+The Pyodide repository has a git submodule called `pyodide-build`. Make sure to
+do a recursive clone:
+
+```bash
+git clone --recursive https://github.com/pyodide/pyodide
+```
+
+or if you have already cloned the Pyodide repository without the `--recursive`
+flag, you may initialize the submodule with:
+
+```bash
+git submodule update --init
+```
+
+If you change git branches, make sure you update `pyodide-build` with
+`git submodule update`.
+
 ### Using Docker
 
 We provide a Debian-based x86_64 Docker image

@@ -56,8 +56,10 @@ export function makeGlobalsProxy(
   });
 }
 
+type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
+
 export type SnapshotConfig = {
-  hiwireKeys: (string[] | null)[];
+  hiwireKeys: SerializedHiwireValue[];
   immortalKeys: string[];
 };
 
@@ -90,13 +92,13 @@ function decodeBuildId(buffer: Uint32Array): string {
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
 const MAP_INDEX = 5;
 
-API.makeSnapshot = function (): Uint8Array {
+API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
   if (!API.config._makeSnapshot) {
     throw new Error(
       "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
     );
   }
-  const hiwireKeys: (string[] | null)[] = [];
+  const hiwireKeys: SerializedHiwireValue[] = [];
   const expectedKeys = getExpectedKeys();
   for (let i = 0; i < expectedKeys.length; i++) {
     let value;
@@ -136,11 +138,29 @@ API.makeSnapshot = function (): Uint8Array {
       hiwireKeys.push(value);
       continue;
     }
-    const accessorList = value[getAccessorList];
-    if (!accessorList) {
-      throw new Error(`Can't serialize object at index ${i}`);
+    const path = value[getAccessorList];
+    if (path) {
+      hiwireKeys.push({ path });
+      continue;
     }
-    hiwireKeys.push(accessorList);
+    if (serializer) {
+      const serialized = serializer(value);
+      try {
+        JSON.stringify(serialized);
+      } catch (e) {
+        console.warn(
+          `Serializer returned result that cannot be JSON.stringify'd at index ${i}.`,
+        );
+        console.warn("  Input: ", value);
+        console.warn("  Output:", serialized);
+        throw new Error(
+          `Serializer returned result that cannot be JSON.stringify'd at index ${i}.`,
+        );
+      }
+      hiwireKeys.push({ serialized });
+      continue;
+    }
+    throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
   const shouldBeAMap = Module.__hiwire_immortal_get(MAP_INDEX);
@@ -259,11 +279,24 @@ function tableSet(idx: number, val: any): void {
 export function syncUpSnapshotLoad2(
   jsglobals: any,
   snapshotConfig: SnapshotConfig,
+  deserializer?: (serialized: any) => any,
 ) {
   const expectedKeys = getExpectedKeys();
   expectedKeys.forEach((v, idx) => tableSet(idx, v));
   snapshotConfig.hiwireKeys.forEach((e, idx) => {
-    const x = e?.reduce((x, y) => x[y], jsglobals) || null;
+    let x;
+    if (!e) {
+      x = e;
+    } else if ("path" in e) {
+      x = e.path.reduce((x, y) => x[y], jsglobals) || null;
+    } else {
+      if (!deserializer) {
+        throw new Error(
+          "You must pass an appropriate deserializer as _snapshotDeserializer",
+        );
+      }
+      x = deserializer(e.serialized);
+    }
     // @ts-ignore
     tableSet(expectedKeys.length + idx, x);
   });

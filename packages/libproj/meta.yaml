@@ -3,6 +3,7 @@ package:
   version: 9.3.1
   tag:
     - library
+    - static_library
 source:
   sha256: b0f919cb9e1f42f803a3e616c2b63a78e4d81ecfaed80978d570d3a5e29d10bc
   url: https://download.osgeo.org/proj/proj-9.3.1.tar.gz
@@ -36,3 +37,6 @@ build:
         -DCMAKE_C_FLAGS="-fPIC" \
         -DCMAKE_CXX_FLAGS="-fPIC";
     emmake make -j ${PYODIDE_JOBS:-3} install;
+about:
+  home: https://proj.org/en/9.5/
+  license: MIT

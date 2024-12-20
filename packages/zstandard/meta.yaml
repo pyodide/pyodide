@@ -16,7 +16,7 @@ about:
   home: https://github.com/indygreg/python-zstandard
   PyPI: https://pypi.org/project/zstandard
   summary: Zstandard bindings for Python
-  license: BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - agriyakhetarpal

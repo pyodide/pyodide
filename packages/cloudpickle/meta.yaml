@@ -10,4 +10,4 @@ about:
   home: https://github.com/cloudpipe/cloudpickle
   PyPI: https://pypi.org/project/cloudpickle
   summary: Extended pickling support for Python objects
-  license: BSD 3-Clause License
+  license: BSD-3-Clause

@@ -1,11 +1,11 @@
 package:
   name: unyt
-  version: 3.0.2
+  version: 3.0.3
   top-level:
     - unyt
 source:
-  url: https://files.pythonhosted.org/packages/83/62/a1aecb79e11874d87eb1ecada0baae77e91d86dad5e5dac7babf8baaa833/unyt-3.0.2-py3-none-any.whl
-  sha256: b9c7bc592de452f6b5c7c3aa6ba0ce1f206c1128ec4d39d190eadfd82796a151
+  url: https://files.pythonhosted.org/packages/a3/94/c57834b6d12ad776de0223d439d12a387747835b5f85c12d76955731f331/unyt-3.0.3-py3-none-any.whl
+  sha256: 8feea1b893e2608fde64a5f90a0f66426e762cd11e25a6c54cfcf974227a457b
 requirements:
   run:
     - numpy
@@ -15,4 +15,4 @@ about:
   home: https://github.com/yt-project/unyt
   PyPI: https://pypi.org/project/unyt
   summary: A package for handling numpy arrays with units
-  license: BSD license
+  license: BSD-3-Clause

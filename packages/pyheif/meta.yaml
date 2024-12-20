@@ -1,9 +1,9 @@
 package:
   name: pyheif
-  version: 0.7.1
+  version: 0.8.0
 source:
-  url: https://files.pythonhosted.org/packages/f3/2f/0492ad16c6936944bf9575a789e2dd6af4a27eb2475a04fb02cf84b2a5db/pyheif-0.7.1.tar.gz
-  sha256: 86a5c5174379d7146b5ed1a68892faf7268a135fb7f5039a011bfb7a6e903200
+  url: https://files.pythonhosted.org/packages/ec/11/d63f215d8c9c416409e2d665bf7594a8886780629296b4f0d35857561c9b/pyheif-0.8.0.tar.gz
+  sha256: e9b4c11ebad482fc25a0804ce295b44b660cbf7829a228f56b071f325f9e0de4
 requirements:
   run:
     - cffi
@@ -22,3 +22,4 @@ about:
   home: https://github.com/carsales/pyheif
   PyPI: https://pypi.org/project/pyheif
   summary: Python 3.6+ interface to libheif library
+  license: Apache-2.0

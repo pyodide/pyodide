@@ -1,18 +1,18 @@
 package:
   name: protobuf
-  version: 4.24.4
+  version: 5.29.1
   top-level:
     - google
 
 source:
-  url: https://files.pythonhosted.org/packages/52/5c/f2c0778278259089952f94b0884ca27a001a17ffbd992ebe30c841085f4c/protobuf-4.24.4.tar.gz
-  sha256: 5a70731910cd9104762161719c3d883c960151eea077134458503723b60e3667
+  url: https://files.pythonhosted.org/packages/d2/4f/1639b7b1633d8fd55f216ba01e21bf2c43384ab25ef3ddb35d85a52033e8/protobuf-5.29.1.tar.gz
+  sha256: 683be02ca21a6ffe80db6dd02c0b5b2892322c59ca57fd6c872d652cb80549cb
 
 about:
   home: https://github.com/protocolbuffers/protobuf
   PyPI: https://pypi.org/project/protobuf
   summary: Protocol Buffers are a language-neutral, platform-neutral extensible mechanism for serializing structured data
-  license: Custom
+  license: BSD-3-Clause
 
 build:
   cflags: "-Wno-int-conversion"

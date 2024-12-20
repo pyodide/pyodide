@@ -1,16 +1,16 @@
 package:
   name: regex
-  version: 2024.4.16
+  version: 2024.9.11
   tag:
     - core
     - min-scipy-stack
   top-level:
     - regex
 source:
-  sha256: fa454d26f2e87ad661c4f0c5a5fe4cf6aab1e307d1b94f16ffdfcb089ba685c0
-  url: https://files.pythonhosted.org/packages/14/40/033a8339e9b2ab82eaf29c07d74f1fd6aaa62f7f8c994261be60a6c97b30/regex-2024.4.16.tar.gz
+  sha256: 6c188c307e8433bcb63dc1915022deb553b4203a70722fc542c363bf120a01fd
+  url: https://files.pythonhosted.org/packages/f9/38/148df33b4dbca3bd069b963acab5e0fa1a9dbd6820f8c322d0dd6faeff96/regex-2024.9.11.tar.gz
 about:
   home: https://github.com/mrabarnett/mrab-regex
   PyPI: https://pypi.org/project/regex
   summary: Alternative regular expression module, to replace re.
-  license: Apache Software License
+  license: Apache-2.0

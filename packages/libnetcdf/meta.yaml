@@ -3,6 +3,7 @@ package:
   version: 4.9.2
   tag:
     - library
+    - static_library
 source:
   sha256: bc104d101278c68b303359b3dc4192f81592ae8640f1aee486921138f7f88cb7
   url: https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
@@ -45,3 +46,6 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3} install
 
     cp -P ${WASM_LIBRARY_DIR}/lib/libnetcdf* ${DISTDIR}
+about:
+  home: https://github.com/Unidata/netcdf-c
+  license: BSD-3-Clause

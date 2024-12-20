@@ -1,11 +1,11 @@
 package:
   name: shapely
-  version: 2.0.2
+  version: 2.0.6
   top-level:
     - shapely
 source:
-  url: https://files.pythonhosted.org/packages/01/c0/ef2c5eff1e8381710e211a063d0aa3e7215cea9e6fd8c31e75bf5f93df85/shapely-2.0.2.tar.gz
-  sha256: 1713cc04c171baffc5b259ba8531c58acc2a301707b7f021d88a15ed090649e7
+  url: https://files.pythonhosted.org/packages/4a/89/0d20bac88016be35ff7d3c0c2ae64b477908f1b1dfa540c5d69ac7af07fe/shapely-2.0.6.tar.gz
+  sha256: 997f6159b1484059ec239cacaa53467fd8b5564dabe186cd84ac2944663b0bf6
 build:
   vendor-sharedlib: true
   script: |
@@ -33,4 +33,4 @@ about:
   home: https://github.com/shapely/shapely
   PyPI: https://pypi.org/project/shapely
   summary: Geometric objects, predicates, and operations
-  license: BSD
+  license: BSD-3-Clause
