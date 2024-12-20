@@ -1,7 +1,7 @@
-From 3fe0bfb78022df996fb88da1791d1c8410c07610 Mon Sep 17 00:00:00 2001
+From 7d3d9a7c0a94cd1956fc2077e0f28252692f791f Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
-Subject: [PATCH 1/8] Public pymain_run_python
+Subject: [PATCH 1/6] Public pymain_run_python
 
 Discussion here:
 https://discuss.python.org/t/unstable-api-for-pymain-run-python-run-python-cli-but-dont-finalize-interpreter/44675
@@ -10,10 +10,10 @@ https://discuss.python.org/t/unstable-api-for-pymain-run-python-run-python-cli-b
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Modules/main.c b/Modules/main.c
-index 1b189b45616..8c082f3b65e 100644
+index 15ea49a1bad..9c77f870052 100644
 --- a/Modules/main.c
 +++ b/Modules/main.c
-@@ -546,7 +546,7 @@ pymain_repl(PyConfig *config, int *exitcode)
+@@ -611,7 +611,7 @@ pymain_repl(PyConfig *config, int *exitcode)
  }
  
  

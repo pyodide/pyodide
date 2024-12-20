@@ -155,7 +155,7 @@ runs-on: ubuntu-22.04 # or ubuntu-latest
   - uses: actions/checkout@v4
   - uses: actions/setup-python@v5
     with:
-       python-version: 3.12
+       python-version: 3.13
   - run: |
       pip install pyodide-build>=0.28.0
       echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
