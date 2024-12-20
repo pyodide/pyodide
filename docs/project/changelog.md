@@ -94,7 +94,7 @@ myst:
 - Upgraded `netcdf4` to 1.7.2 {pr}`4925`
 - Upgraded `networkx` to 3.4.2 {pr}`4925`
 - Upgraded `numcodecs` to 0.13.1 {pr}`4925`
-- Upgraded `pandas` to 2.2.3 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4893`, {pr}`4925`
 - Upgraded `pywavelets` to 1.7.0 {pr}`4925`
 - Upgraded `shapely` to 2.0.6 {pr}`4925`
 - Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
@@ -121,11 +121,11 @@ myst:
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `certifi` to 2024.8.30 {pr}`5227`
+- Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
-- Upgraded `pandas` to 2.2.2 {pr}`4893`
+- Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `protobuf` to 5.29.0 {pr}`5233`
+- Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
@@ -140,10 +140,11 @@ myst:
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Upgraded `matplotlib` to 3.8.4 {pr}`4510`
 - Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
+- Upgraded `cysignals` to 1.12.2 {pr}`5267`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
-- Added `pyarrow` 17.0.0 {pr}`4950`
+- Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
 - Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
@@ -159,6 +160,7 @@ myst:
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `xarray` to 2024.11.0 {pr}`5224`
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
 - Upgraded `cffi` to 1.17.1 {pr}`5261`
