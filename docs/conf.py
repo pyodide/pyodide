@@ -21,19 +21,19 @@ project = "Pyodide"
 copyright = "2019-2024, Pyodide contributors and Mozilla"
 
 nitpicky = True
-nitpick_ignore = []
+nitpick_ignore: list[tuple[str, str]] = []
 
 
 def ignore_typevars():
     """These are all intentionally broken. Disable the warnings about it."""
-    PY_TYPEVARS_TO_IGNORE = ["T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co"]
-    JS_TYPEVARS_TO_IGNORE = ["TResult", "TResult1", "TResult2", "U"]
+    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co")
+    JS_TYPEVARS_TO_IGNORE = ("TResult", "TResult1", "TResult2", "U")
 
-    for typevar in PY_TYPEVARS_TO_IGNORE:
-        nitpick_ignore.append(("py:obj", f"_pyodide._core_docs.{typevar}"))
-
-    for typevar in JS_TYPEVARS_TO_IGNORE:
-        nitpick_ignore.append(("js:func", typevar))
+    nitpick_ignore.extend(
+        ("py:obj", f"_pyodide._core_docs.{typevar}")
+        for typevar in PY_TYPEVARS_TO_IGNORE
+    )
+    nitpick_ignore.extend(("js:func", typevar) for typevar in JS_TYPEVARS_TO_IGNORE)
 
 
 ignore_typevars()
@@ -292,7 +292,7 @@ def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
         return
     if IN_READTHEDOCS:
-        subprocess.run(["npm", "ci"], cwd="../src/js")
+        subprocess.run(["npm", "ci"], cwd="../src/js", check=True)
         Path("../node_modules").symlink_to("../src/js/node_modules")
     if shutil.which("typedoc"):
         return

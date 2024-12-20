@@ -13,7 +13,7 @@ requirements:
     - executing
     - matplotlib-inline
     - prompt_toolkit
-    - pure_eval
+    - pure-eval
     - Pygments
     - six
     - stack-data

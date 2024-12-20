@@ -1,1 +1,6 @@
-meson < 1.6
+# This file is used to track build constraints for packages
+# via pyodide-build.
+#
+# Add any upper bounds for packages here to ensure that
+# their builds succeed, or those for packages that rely
+# on them at build time.

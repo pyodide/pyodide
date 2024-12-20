@@ -4,7 +4,9 @@ import sys
 
 
 def main():
-    result = subprocess.run(["emcc", "--version"], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        ["emcc", "--version"], capture_output=True, encoding="utf8", check=False
+    )
     if result.returncode == 0:
         return 0
     if re.search("GLIBC.*not found.*ccache", result.stderr):

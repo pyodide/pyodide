@@ -87,8 +87,8 @@ class TypeConverter:
                 return None
             e0 = x.__args__[0]
             e1 = x.__args__[1]
-            e0isNone = e0 == type(None)
-            e1isNone = e1 == type(None)
+            e0isNone = e0 == type(None)  # noqa: E721
+            e1isNone = e1 == type(None)  # noqa: E721
             if (not e0isNone) and (not e1isNone):
                 return None
             if e0isNone:
