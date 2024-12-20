@@ -1,11 +1,11 @@
 package:
   name: mne
-  version: 1.7.0
+  version: 1.8.0
   top-level:
     - mne
 source:
-  sha256: dd3e0b13748b000d11b841316d7f544a1b16af611df80ac2bfe6ade6b8b92fa6
-  url: https://files.pythonhosted.org/packages/7d/b4/1e8e700ef8f14d0901b311bc2388f8749d2a325e1b2d359d70755c87ca1b/mne-1.7.0-py3-none-any.whl
+  sha256: 8398695e2bf754a33cafe10668edb515297dc32014dec94e646491095fa959ab
+  url: https://files.pythonhosted.org/packages/c8/35/f6b8325e97917578122c9e8326aca751118f465540b7ddefc13e99ea932b/mne-1.8.0-py3-none-any.whl
 requirements:
   run:
     - numpy

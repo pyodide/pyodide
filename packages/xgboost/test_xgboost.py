@@ -223,7 +223,7 @@ def test_pandas_categorical(selenium):
     X_0 = ["f", "o", "o"]
     X_1 = [4, 3, 2]
     X = pd.DataFrame({"feat_0": X_0, "feat_1": X_1})
-    X["feat_0"] = X["feat_0"].astype("category")  # type: ignore[call-overload]
+    X["feat_0"] = X["feat_0"].astype("category")  # type: ignore[call-overload, index]
     transformed, _, feature_types = xgb.data._transform_pandas_df(
         X, enable_categorical=True
     )
@@ -232,7 +232,7 @@ def test_pandas_categorical(selenium):
 
     # test missing value
     X = pd.DataFrame({"f0": ["a", "b", np.nan]})
-    X["f0"] = X["f0"].astype("category")  # type: ignore[call-overload]
+    X["f0"] = X["f0"].astype("category")  # type: ignore[call-overload, index]
     arr, _, _ = xgb.data._transform_pandas_df(X, enable_categorical=True)
     assert not np.any(arr == -1.0)
 
