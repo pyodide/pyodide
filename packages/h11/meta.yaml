@@ -1,0 +1,16 @@
+package:
+  name: h11
+  version: 0.14.0
+  top-level:
+    - h11
+source:
+  url: https://files.pythonhosted.org/packages/95/04/ff642e65ad6b90db43e668d70ffb6736436c7ce41fcc549f4e9472234127/h11-0.14.0-py3-none-any.whl
+  sha256: e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761
+about:
+  home: https://github.com/python-hyper/h11
+  PyPI: https://pypi.org/project/h11
+  summary: A pure-Python, bring-your-own-I/O implementation of HTTP/1.1
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE
