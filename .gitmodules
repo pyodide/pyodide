@@ -1,3 +1,7 @@
+# [submodule "pyodide-build"]
+# 	path = pyodide-build
+# 	url = https://github.com/pyodide/pyodide-build
 [submodule "pyodide-build"]
 	path = pyodide-build
-	url = https://github.com/pyodide/pyodide-build
+	url = https://github.com/agriyakhetarpal/pyodide-build
+	branch = pyodide-gh-4186
