@@ -129,6 +129,7 @@ myst:
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
+- Upgraded `tqdm` to 4.66.5 {pr}`5024`
 - Upgraded `statsmodels` to 0.14.4 {pr}`5058`
 - Upgraded `contourpy` to 1.3.0 {pr}`5048`
 - Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
