@@ -37,10 +37,10 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 
 class redirect_stdin(_RedirectStream[Any]):
-    _stream = "stdin"
+    _Stream = "stdin"
 
 
-class _StdioFile(TextIOBase):
+class _Stream(TextIOBase):
     def __init__(self, name: str, encoding: str = "utf-8", errors: str = "strict"):
         self._name = name
         self._encoding = encoding
@@ -62,7 +62,7 @@ class _StdioFile(TextIOBase):
         return True
 
 
-class _StdOutputFile(_StdioFile):
+class _WriteStream(_Stream):
     def __init__(
         self,
         write_handler: Callable[[str], int | None],
@@ -87,7 +87,7 @@ class _StdOutputFile(_StdioFile):
         return written
 
 
-class _StdInputFile(_StdioFile):
+class _ReadStream(_Stream):
     def __init__(
         self,
         read_handler: Callable[[int], str],
@@ -412,15 +412,15 @@ class Console:
         redirects: list[Any] = []
         if self.stdin_callback:
             stdin_name = getattr(sys.stdin, "name", "<stdin>")
-            stdin_stream = _StdInputFile(self.stdin_callback, name=stdin_name)
+            stdin_stream = _ReadStream(self.stdin_callback, name=stdin_name)
             redirects.append(redirect_stdin(stdin_stream))
         if self.stdout_callback:
             stdout_name = getattr(sys.stdout, "name", "<stdout>")
-            stdout_stream = _StdOutputFile(self.stdout_callback, name=stdout_name)
+            stdout_stream = _WriteStream(self.stdout_callback, name=stdout_name)
             redirects.append(redirect_stdout(stdout_stream))
         if self.stderr_callback:
             stderr_name = getattr(sys.stderr, "name", "<stderr>")
-            stderr_stream = _StdOutputFile(self.stderr_callback, name=stderr_name)
+            stderr_stream = _WriteStream(self.stderr_callback, name=stderr_name)
             redirects.append(redirect_stderr(stderr_stream))
         try:
             self._streams_redirected = True
