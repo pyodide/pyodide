@@ -1,0 +1,55 @@
+--- a/source/libnormaliz/vector_operations.h
++++ b/source/libnormaliz/vector_operations.h
+@@ -547,7 +547,10 @@
+ 
+     fmpq_poly_fit_length(flp, n);
+     for (size_t i = 0; i < poly_vector.size(); ++i) {
+-        fmpq_poly_set_coeff_mpq(flp, (slong)i, poly_vector[i].get_mpq_t());
++        fmpq_t fcurrent_coeff;
++        fmpq_init(fcurrent_coeff);
++        fmpq_set_mpq(fcurrent_coeff, poly_vector[i].get_mpq_t());
++        fmpq_poly_set_coeff_fmpq(flp, (slong)i, fcurrent_coeff);
+     }
+ }
+ 
+@@ -560,8 +563,11 @@
+     poly_vector.resize(length);
+     for (slong i = 0; i < length; i++) {
+         mpq_t current_coeff;
++        fmpq_t fcurrent_coeff;
+         mpq_init(current_coeff);
+-        fmpq_poly_get_coeff_mpq(current_coeff, flp, (slong)i);
++        fmpq_init(fcurrent_coeff);
++        fmpq_poly_get_coeff_fmpq(fcurrent_coeff, flp, (slong)i);
++        fmpq_get_mpq(current_coeff, fcurrent_coeff);
+         poly_vector[i] = mpq_class(current_coeff);
+     }
+ }
+--- a/source/libnormaliz/HilbertSeries.cpp
++++ b/source/libnormaliz/HilbertSeries.cpp
+@@ -72,7 +72,10 @@
+     slong n = (slong)nmzp.size();
+     fmpz_poly_fit_length(flp, n);
+     for (size_t i = 0; i < nmzp.size(); ++i) {
+-        fmpz_poly_set_coeff_mpz(flp, (slong)i, nmzp[i].get_mpz_t());
++        fmpz_t fc;
++        fmpz_init(fc);
++        fmpz_set_mpz(fc, nmzp[i].get_mpz_t());
++        fmpz_poly_set_coeff_fmpz(flp, (slong)i, fc);
+     }
+ }
+ 
+@@ -80,9 +83,12 @@
+     size_t n = (size_t)fmpz_poly_length(flp);
+     nmzp.resize(n);
+     mpz_t c;
++    fmpz_t fc;
+     mpz_init(c);
++    fmpz_init(fc);
+     for (size_t i = 0; i < nmzp.size(); ++i) {
+-        fmpz_poly_get_coeff_mpz(c, flp, i);
++        fmpz_poly_get_coeff_fmpz(fc, flp, i);
++        fmpz_get_mpz(c, fc);
+         nmzp[i] = mpz_class(c);
+     }
+     mpz_clear(c);
