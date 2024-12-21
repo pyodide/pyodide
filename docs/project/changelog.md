@@ -66,6 +66,12 @@ myst:
   for more information.
   {pr}`5100`
 
+- {{ Enhancement }} When using the Pyodide console, the standard streams inherit
+  `TextIOBase` and behave more like normal IO streams. In particular, they have
+  methods like `writelines()` and `readlines()`. They still don't have file
+  descriptors though.
+  {pr}`5056`
+
 ### Packages
 
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`

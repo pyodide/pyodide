@@ -37,7 +37,7 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 
 class redirect_stdin(_RedirectStream[Any]):
-    _Stream = "stdin"
+    _stream = "stdin"
 
 
 class _Stream(TextIOBase):
