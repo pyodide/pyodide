@@ -41,12 +41,15 @@ def test_write_stream():
         nonlocal my_buffer
         my_buffer += string
 
-    my_stream = console._WriteStream(callback)
+    my_stream = console._WriteStream(callback, name="blah")
 
     print("foo", file=my_stream)
     assert my_buffer == "foo\n"
     print("bar", file=my_stream)
     assert my_buffer == "foo\nbar\n"
+    my_stream.writelines(["a\n", "b\n", "c\n"])
+    assert my_buffer == "foo\nbar\na\nb\nc\n"
+    assert my_stream.name == "blah"
 
 
 def test_repr():
