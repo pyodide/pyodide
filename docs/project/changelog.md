@@ -147,6 +147,7 @@ myst:
 - Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
 - Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
+- Added `rateslib` 1.6.0 {pr}`5146`, {pr}`5235`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
 - Added `tree-sitter-go` 0.23.1 {pr}`5102`
