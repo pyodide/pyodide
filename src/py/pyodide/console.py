@@ -124,7 +124,7 @@ class _ReadStream(_Stream):
         self._buffer = got[size:]
         return result + got[:size]
 
-    def readline(self, size: int = -1) -> str:
+    def readline(self, size: int | None = -1) -> str:  # type:ignore[override]
         if not isinstance(size, int):
             # For some reason sys.stdin.read(None) works, but
             # sys.stdin.readline(None) raises a TypeError
