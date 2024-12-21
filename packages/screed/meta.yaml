@@ -11,4 +11,4 @@ about:
   home: https://github.com/dib-lab/screed
   PyPI: https://pypi.org/project/screed
   summary: a Python library for loading FASTA and FASTQ sequences
-  license: BSD 3-clause
+  license: BSD-3-Clause

@@ -13,4 +13,4 @@ about:
   home: http://deprecation.readthedocs.io/
   PyPI: https://pypi.org/project/deprecation
   summary: A library to handle automated deprecations
-  license: Apache 2
+  license: Apache-2.0

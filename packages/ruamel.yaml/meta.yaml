@@ -15,4 +15,4 @@ about:
   summary:
     ruamel.yaml is a YAML parser/emitter that supports roundtrip preservation
     of comments, seq/map flow style, and map key order
-  license: MIT license
+  license: MIT

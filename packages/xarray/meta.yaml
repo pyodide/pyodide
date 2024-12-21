@@ -16,4 +16,4 @@ about:
   home: https://github.com/pydata/xarray
   PyPI: https://pypi.org/project/xarray
   summary: N-D labeled arrays and datasets in Python
-  license: Apache
+  license: Apache-2.0

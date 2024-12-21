@@ -13,4 +13,4 @@ about:
   home: https://github.com/gristlabs/asttokens
   PyPI: https://pypi.org/project/asttokens
   summary: Annotate AST trees with source code positions
-  license: Apache 2.0
+  license: Apache-2.0

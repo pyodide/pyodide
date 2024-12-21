@@ -1,27 +1,20 @@
 package:
   name: iminuit
-  version: 2.28.0
+  version: 2.29.1
 source:
-  url: https://files.pythonhosted.org/packages/d8/c3/9385361c5f115928c1490422d9d824581141f8f444096a6ed00009add74e/iminuit-2.28.0.tar.gz
-  sha256: "6646ae0b66a4760e02cd73711d460a6cf2375382b78ce8344141751595596aad"
-  patches:
-    # Remove when updating iminuit
-    - patches/0001-Set-PYBIND11_FINDPYTHON-ON-for-FindPython.patch
+  url: https://files.pythonhosted.org/packages/0b/88/e77fc2370468be58303c131fa19cbe70ff478df13d762eef9502874da6fa/iminuit-2.29.1.tar.gz
+  sha256: 474d10eb2f924b9320f6f7093e4c149d0a38c124d0419c12a07a3eca942de025
 test:
   imports:
     - iminuit
 requirements:
   run:
     - numpy # runtime only
-    - packaging
-build:
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
 about:
   home: http://github.com/scikit-hep/iminuit
   PyPI: https://pypi.org/project/iminuit
   summary: Jupyter-friendly Python frontend for MINUIT2 in C++
-  license: MIT+LGPL
+  license: Mixed MIT, LGPL-2.0
 extra:
   recipe-maintainers:
     - henryiii

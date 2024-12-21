@@ -13,10 +13,10 @@ requirements:
     - executing
     - matplotlib-inline
     - prompt_toolkit
-    - pure_eval
+    - pure-eval
     - Pygments
     - six
-    - stack_data
+    - stack-data
     - traitlets
     - sqlite3
     - wcwidth

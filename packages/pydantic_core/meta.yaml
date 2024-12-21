@@ -1,14 +1,11 @@
 package:
   name: pydantic_core
-  version: 2.18.1
+  version: 2.25.1
   top-level:
     - pydantic_core
 source:
-  url: https://files.pythonhosted.org/packages/3d/28/d693aab237fca82da327990a88a983b2b84b890032076ee4a87e18038dbb/pydantic_core-2.18.1.tar.gz
-  sha256: de9d3e8717560eb05e28739d1b35e4eac2e458553a52a301e51352a7ffc86a35
-requirements:
-  executable:
-    - rustup
+  url: https://github.com/pydantic/pydantic-core/releases/download/v2.25.1/pydantic_core-2.25.1-cp312-cp312-emscripten_3_1_58_wasm32.whl
+  sha256: f4b77016b1511e54a8c6bd833bb68e190b96989ba9997f9e0f023cfb0f8a16c2
 about:
   home: https://github.com/pydantic/pydantic-core
   PyPI: https://pypi.org/project/pydantic_core

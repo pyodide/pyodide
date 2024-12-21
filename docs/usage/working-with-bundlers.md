@@ -10,48 +10,49 @@ project.
 ## Vite
 
 ```{note}
-The following instructions have been tested with Pyodide 0.26.0 and Vite 5.2.13.
+The following instructions have been tested with Pyodide 0.26.2, Vite 5.4.9, and
+vite-plugin-pyodide 2.0.0.
 ```
 
-First, install the Pyodide npm package:
+First, install the Pyodide and vite-plugin-pyodide npm packages:
 
 ```
-$ npm install pyodide
+$ npm install pyodide vite-plugin-static-copy
 ```
 
-Then, in your `vite.config.js` file, exclude Pyodide from [Vite's dependency
+Then, in your `vite.config.mjs` file, exclude Pyodide from [Vite's dependency
 pre-bundling][optimizedeps] by setting `optimizeDeps.exclude` and ensure that
 all Pyodide files will be available in `dist/assets` for production builds by
 using a Vite plugin:
 
 ```js
 import { defineConfig } from "vite";
-import { copyFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { viteStaticCopy } from "vite-plugin-static-copy";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const PYODIDE_EXCLUDE = [
+  "!**/*.{md,html}",
+  "!**/*.d.ts",
+  "!**/*.whl",
+  "!**/node_modules",
+];
+
+export function viteStaticCopyPyodide() {
+  const pyodideDir = dirname(fileURLToPath(import.meta.resolve("pyodide")));
+  return viteStaticCopy({
+    targets: [
+      {
+        src: [join(pyodideDir, "*")].concat(PYODIDE_EXCLUDE),
+        dest: "assets",
+      },
+    ],
+  });
+}
 
 export default defineConfig({
   optimizeDeps: { exclude: ["pyodide"] },
-  plugins: [
-    {
-      name: "vite-plugin-pyodide",
-      generateBundle: async () => {
-        const assetsDir = "dist/assets";
-        await mkdir(assetsDir, { recursive: true });
-        const files = [
-          "pyodide-lock.json",
-          "pyodide.asm.js",
-          "pyodide.asm.wasm",
-          "python_stdlib.zip",
-        ];
-        for (const file of files) {
-          await copyFile(
-            join("node_modules/pyodide", file),
-            join(assetsDir, file),
-          );
-        }
-      },
-    },
-  ],
+  plugins: [viteStaticCopyPyodide()],
 });
 ```
 
@@ -62,12 +63,12 @@ You can test your setup with this `index.html` file:
 <html lang="en">
   <head>
     <title>Vite + Pyodide</title>
-    <script type="module" src="/src/main.js"></script>
+    <script type="module" src="main.mjs"></script>
   </head>
 </html>
 ```
 
-And this `src/main.js` file:
+And this `src/main.mjs` file:
 
 ```js
 import { loadPyodide } from "pyodide";

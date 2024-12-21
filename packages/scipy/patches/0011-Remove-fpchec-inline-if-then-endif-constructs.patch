@@ -1,7 +1,7 @@
 From b43a231f8326d6953929030131c3fb6b2cb163bd Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Wed, 15 May 2024 21:29:02 +0530
-Subject: [PATCH 11/17] Remove fpchec inline if-then-endif constructs
+Subject: [PATCH 11/18] Remove fpchec inline if-then-endif constructs
 
 This PR removes the single-line if-then-endif constructs in fpchec.f
 that were causing syntactical errors when compiling with f2c, possibly

@@ -1,0 +1,16 @@
+package:
+  name: tree-sitter
+  version: 0.23.2
+  top-level:
+    - tree_sitter
+source:
+  url: https://files.pythonhosted.org/packages/0f/50/fd5fafa42b884f741b28d9e6fd366c3f34e15d2ed3aa9633b34e388379e2/tree-sitter-0.23.2.tar.gz
+  sha256: 66bae8dd47f1fed7bdef816115146d3a41c39b5c482d7bad36d9ba1def088450
+about:
+  home: https://tree-sitter.github.io/tree-sitter
+  PyPI: https://pypi.org/project/tree-sitter
+  summary: Python bindings to the Tree-sitter parsing library
+  license: MIT
+extra:
+  recipe-maintainers:
+    - ericwb

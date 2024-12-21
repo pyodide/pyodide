@@ -4,6 +4,7 @@ package:
   tag:
     - pyodide.test
     - library
+    - shared_library
 source:
   path: src
 
@@ -17,3 +18,5 @@ build:
     emcc dep2.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/sharedlib-test-dep2.so
     emcc dep.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep2.so -o ${DISTDIR}/sharedlib-test-dep.so
     emcc main.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep.so -o ${DISTDIR}/sharedlib-test.so
+about:
+  license: MPL-2.0

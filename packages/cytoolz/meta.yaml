@@ -13,4 +13,4 @@ about:
   home: https://github.com/pytoolz/cytoolz
   PyPI: https://pypi.org/project/cytoolz
   summary: "Cython implementation of Toolz: High performance functional utilities"
-  license: BSD
+  license: BSD-3-Clause

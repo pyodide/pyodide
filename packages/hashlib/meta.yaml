@@ -27,3 +27,5 @@ requirements:
     - openssl
   host:
     - openssl
+about:
+  license: PSF

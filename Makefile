@@ -28,9 +28,6 @@ all-but-packages: \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/module_test.html \
-	dist/webworker.js \
-	dist/webworker_dev.js \
-	dist/module_webworker_dev.js \
 
 
 src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
@@ -101,7 +98,8 @@ src/core/libpyodide.a: \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
 	src/core/pyversion.o \
-	src/core/stack_switching/pystate.o
+	src/core/stack_switching/pystate.o \
+	src/core/stack_switching/suspenders.o
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
 
 
@@ -227,8 +225,8 @@ $(eval $(call preprocess-js,js2python.js))
 
 .PHONY: pyodide_build
 pyodide_build:
-	@echo "Ensuring required pyodide-build version is installed"
-	./tools/check_and_install_pyodide_build.py "$(PYODIDE_BUILD_COMMIT)" --repo "$(PYODIDE_BUILD_REPO)"
+	@echo "Ensuring pyodide-build is installed"
+	pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 
 
@@ -260,15 +258,6 @@ dist/console.html: src/templates/console.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-dist/webworker.js: src/templates/webworker.js
-	cp $< $@
-
-dist/module_webworker_dev.js: src/templates/module_webworker.js
-	cp $< $@
-
-dist/webworker_dev.js: src/templates/webworker.js
-	cp $< $@
-
 
 # Prepare the dist directory for the release by removing unneeded files
 .PHONY: clean-dist-dir
@@ -277,8 +266,6 @@ clean-dist-dir:
 	rm dist/makesnap.mjs
 	rm dist/snapshot.bin
 	rm dist/module_test.html dist/test.html
-	# TODO: Remove webworker.js too? Would require updating the docs I think.
-	rm dist/module_webworker_dev.js  dist/webworker_dev.js
 
 	# TODO: Source maps aren't useful outside of debug builds I don't think. But
 	# removing them adds "missing sourcemap" warnings to JS console. We should

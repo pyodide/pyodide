@@ -231,7 +231,7 @@ JsProxy_getflags(PyObject* self)
 #define OBJMAP_HEREDITARY 1
 #define OBJMAP_PY_JSON 2
 
-int
+static int
 JsProxy_get_objmap_flags(PyObject* self)
 {
   int flags = JsProxy_getflags(self);
@@ -253,7 +253,7 @@ JsProxy_is_py_json(PyObject* self)
   return !!(JsProxy_getflags(self) & (IS_PY_JSON_DICT | IS_PY_JSON_SEQUENCE));
 }
 
-PyObject*
+static PyObject*
 js2python_objmap(JsVal jsval, int flags)
 {
   PyObject* result = NULL;
@@ -263,6 +263,12 @@ js2python_objmap(JsVal jsval, int flags)
     return result;
   }
   return JsProxy_create_objmap(jsval, flags);
+}
+
+PyObject*
+js2python_as_py_json(JsVal jsval)
+{
+  return js2python_objmap(jsval, OBJMAP_PY_JSON);
 }
 
 #define INCLUDE_OBJMAP_METHODS(flags)                                          \
@@ -1692,7 +1698,7 @@ JsArray_ass_subscript(PyObject* self, PyObject* item, PyObject* pyvalue)
     slicelength = PySlice_AdjustIndices(length, &start, &stop, step);
 
     if (pyvalue != NULL) {
-      seq = PySequence_Fast(pyvalue, "can only assign an iterable");
+      seq = PySequence_Fast(pyvalue, "must assign iterable to extended slice");
       FAIL_IF_NULL(seq);
     }
     if (pyvalue != NULL && step != 1 &&
@@ -3347,7 +3353,7 @@ Buffer_cinit(Buffer* self,
   return 0;
 }
 
-void
+static void
 Buffer_dealloc(PyObject* self)
 {
   PyMem_Free(((Buffer*)self)->data);
@@ -4599,7 +4605,7 @@ finally:
   return pyresult;
 }
 
-EM_JS(int, can_run_sync_js, (), { return !!Module.validSuspender.value; });
+EM_JS(int, can_run_sync_js, (), { return !!validSuspender.value; });
 
 PyObject*
 can_run_sync(PyObject* _mod, PyObject* _null)
@@ -4641,7 +4647,7 @@ jsproxy_init(PyObject* core_module)
     PyObject_GetAttrString(_pyodide_core_docs, "_JsProxyMetaClass");
   FAIL_IF_NULL(JsProxy_metaclass);
 
-  bool jspiSupported = EM_ASM_INT({ return Module.jspiSupported; });
+  bool jspiSupported = EM_ASM_INT({ return jspiSupported; });
   if (jspiSupported) {
     run_sync_MethodDef->ml_meth = (PyCFunction)run_sync;
   } else {
