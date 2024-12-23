@@ -1,5 +1,4 @@
 import "./constants";
-
 import { IN_NODE } from "./environments";
 import {
   nodeFsPromisesMod,
@@ -116,6 +115,7 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
+/** @hidden */
 export type PackageType =
   | "package"
   | "cpython_module"

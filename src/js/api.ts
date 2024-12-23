@@ -651,7 +651,7 @@ export class PyodideAPI {
     API.debug_ffi = debug;
     return orig;
   }
-
+  /** */
   static makeMemorySnapshot(): Uint8Array {
     if (!API.config._makeSnapshot) {
       throw new Error(
@@ -714,6 +714,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+/** @private */
 export function jsFinderHook(o: object) {
   if ("__all__" in o) {
     return;

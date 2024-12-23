@@ -32,6 +32,14 @@ DATA = {
         "TextDecoder": "$global/",
         "DataView": "$global/",
         "Uint8Array": "$global/",
+        "Int8Array": "$global/",
+        "Uint16Array": "$global/",
+        "Int16Array": "$global/",
+        "Uint32Array": "$global/",
+        "Int32Array": "$global/",
+        "Uint8ClampedArray": "$global/",
+        "Float32Array": "$global/",
+        "Float64Array": "$global/",
         "Map": "$global/",
         "Set": "$global/",
         # the JavaScript domain has no exception type for some reason...
@@ -156,11 +164,24 @@ for type, entries in DATA.items():
             USE_NAME_AS_LINK_TEXT,
         )
 
-for key, url in [
-    ("void", "https://www.typescriptlang.org/docs/handbook/2/functions.html#void"),
-    ("any", "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any"),
+for ty, key, url in [
+    (
+        "js:data",
+        "void",
+        "https://www.typescriptlang.org/docs/handbook/2/functions.html#void",
+    ),
+    (
+        "js:data",
+        "any",
+        "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any",
+    ),
+    (
+        "js:class",
+        "Record",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type",
+    ),
 ]:
-    INVDATA["js:data"][key] = (
+    INVDATA[ty][key] = (
         "typescript docs",
         "",
         url,
