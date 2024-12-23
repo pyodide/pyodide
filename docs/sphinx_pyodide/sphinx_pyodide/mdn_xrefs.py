@@ -17,6 +17,8 @@ DATA = {
         "showDirectoryPicker": "API/Window/",
     },
     "js:class": {
+        "AbortController": "API/",
+        "AbortSignal": "API/",
         "Array": "$global/",
         "NodeList": "API/",
         "XMLHttpRequest": "API/",
@@ -41,6 +43,7 @@ DATA = {
         "Float32Array": "$global/",
         "Float64Array": "$global/",
         "Map": "$global/",
+        "Response": "API/",
         "Set": "$global/",
         # the JavaScript domain has no exception type for some reason...
         "Error": "$global/",
