@@ -6,6 +6,7 @@ import {
   PackageLoadMetadata,
   PackageManagerAPI,
   PackageManagerModule,
+  LoadedPackages,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -118,7 +119,7 @@ export class PackageManager {
    *
    * TODO: Make this private and expose a setter
    */
-  public loadedPackages: Record<string, string> = {};
+  public loadedPackages: LoadedPackages = {};
 
   private _lock = createLock();
 
@@ -566,7 +567,14 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
-export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
+/** 
+ * An object whose keys are the names of the loaded packages and whose values
+ * are the install sources of the packages. Use
+ * `Object.keys(pyodide.loadedPackages)` to get the list of names of loaded
+ * packages, and `pyodide.loadedPackages[package_name]` to access the install
+ * source for a particular `package_name`.
+ */
+export let loadedPackages: LoadedPackages;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);

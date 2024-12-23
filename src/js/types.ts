@@ -171,6 +171,7 @@ declare global {
   export const __iscoroutinefunction: (a: number) => number;
 }
 
+/** @hidden */
 export type FSNode = {
   timestamp: number;
   rdev: number;
@@ -178,6 +179,7 @@ export type FSNode = {
   mode: number;
 };
 
+/** @hidden */
 export type FSStream = {
   tty?: boolean;
   seekable?: boolean;
@@ -185,8 +187,10 @@ export type FSStream = {
   node: FSNode;
 };
 
+/** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
 
+/** @hidden */
 export type FSStreamOpsGen<T> = {
   open: (a: T) => void;
   close: (a: T) => void;
@@ -207,6 +211,7 @@ export type FSStreamOpsGen<T> = {
   ) => number;
 };
 
+/** @hidden */
 export interface FS {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
@@ -256,13 +261,15 @@ export interface FS {
   readFile(a: string): Uint8Array;
 }
 
-/** @private */
+/** @hidden */
 export type PreRunFunc = (Module: Module) => void;
 
+/** @hidden */
 export type ReadFileType = (path: string) => Uint8Array;
 
 // File System-like type which can be passed to
 // Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+/** @hidden */
 export type LoadDynlibFS = {
   readFile: ReadFileType;
   findObject: (path: string, dontResolveLastLink: boolean) => any;
@@ -270,12 +277,14 @@ export type LoadDynlibFS = {
 
 type DSO = any;
 
+/** @hidden */
 export interface LDSO {
   loadedLibsByName: {
     [key: string]: DSO;
   };
 }
 
+/** @hidden */
 export interface Module {
   API: API;
   locateFile: (file: string) => string;
@@ -340,12 +349,13 @@ type LockfileInfo = {
   python: string;
 };
 
+/** @hidden */
 export type Lockfile = {
   info: LockfileInfo;
   packages: Record<string, InternalPackageData>;
 };
 
-/** @private */
+/** @hidden */
 export type PackageType =
   | "package"
   | "cpython_module"
@@ -361,6 +371,9 @@ export interface PackageData {
   /** @experimental */
   packageType: PackageType;
 }
+
+/** @hidden */
+export type LoadedPackages = Record<string, string>;
 
 /**
  * @hidden
@@ -389,6 +402,7 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
+/** @hidden */
 export interface API {
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;

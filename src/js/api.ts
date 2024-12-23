@@ -666,6 +666,11 @@ export class PyodideAPI {
     return orig;
   }
 
+  /**
+   * 
+   * @param param0 
+   * @returns 
+   */
   static makeMemorySnapshot({
     serializer,
   }: {

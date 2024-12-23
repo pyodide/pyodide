@@ -5,7 +5,7 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
 import { createLock } from "./common/lock";
 import { LoadDynlibFS, ReadFileType, InternalPackageData } from "./types";
 
-/** @private */
+/** @hidden */
 export class DynlibLoader {
   #api: PackageManagerAPI;
   #module: PackageManagerModule;

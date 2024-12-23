@@ -60,7 +60,7 @@ export function makeGlobalsProxy(
 type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
 
 /**
- * @private
+ * @hidden
  */
 export type SnapshotConfig = {
   hiwireKeys: SerializedHiwireValue[];
