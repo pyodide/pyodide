@@ -50,6 +50,7 @@ export class Installer {
   }
 }
 
+/** @hidden */
 export let install: typeof Installer.prototype.install;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
