@@ -34,8 +34,8 @@
     "sinon": "^18.0.0",
     "ts-mocha": "^9.0.2",
     "tsd": "^0.24.1",
-    "typedoc": "^0.25.1",
-    "typescript": "5.4",
+    "typedoc": "^0.27.5",
+    "typescript": "5.7",
     "wabt": "^1.0.32"
   },
   "main": "pyodide.js",

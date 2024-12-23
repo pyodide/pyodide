@@ -100,7 +100,7 @@ function ensureMountPathExists(path: string): void {
  * 1. It causes documentation items to be created for the entries so we can copy
  *    the definitions here rather than having to export things just so that they
  *    appear in the docs.
- * 2. We can use @warnOnce decorators (currently can only decorate class
+ * 2. We can use `@warnOnce` decorators (currently can only decorate class
  *    methods)
  * 3. It allows us to rebind names `PyBuffer` etc without causing
  *    `dts-bundle-generator` to generate broken type declarations.
@@ -200,7 +200,6 @@ export class PyodideAPI {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @async
    */
   static async loadPackagesFromImports(
     code: string,
@@ -318,7 +317,6 @@ export class PyodideAPI {
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript.
-   * @async
    */
   static async runPythonAsync(
     code: string,
