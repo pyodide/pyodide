@@ -350,6 +350,7 @@ def typehints_formatter(annotation, config):
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
     except ValueError:
+        assert annotation == Ellipsis
         return None
     full_name = f"{module}.{class_name}"
     if full_name == "typing.TypeVar":
@@ -358,6 +359,11 @@ def typehints_formatter(annotation, config):
         return f"``{annotation.__name__}``"
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
+    # TODO: perhaps a more consistent way to handle JS xrefs / type annotations?
+    if full_name == "pyodide.http.AbortController":
+        return ":js:class:`AbortController`"
+    if full_name == "pyodide.http.AbortSignal":
+        return ":js:class:`AbortSignal`"
     return None
 
 

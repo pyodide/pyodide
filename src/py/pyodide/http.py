@@ -19,6 +19,16 @@ if IN_BROWSER:
         from js import XMLHttpRequest
     except ImportError:
         pass
+else:
+    # Hack for documentation xrefs, we replace these with links to mdn in the
+    # sphinx conf.py. TODO: Maybe come up with some better / more systematic way
+    # to handle this situation.
+    class AbortController:  # type:ignore[no-redef]
+        pass
+
+    class AbortSignal:  # type:ignore[no-redef]
+        pass
+
 
 __all__ = [
     "open_url",
@@ -135,9 +145,13 @@ class FetchResponse:
     Parameters
     ----------
     url
-        URL to fetch
+        URL that was fetched
     js_response
-        A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
+        A :py:class:`~pyodide.ffi.JsProxy` of the fetch :js:class:`Response`.
+    abort_controller
+        The abort controller that may be used to cancel the fetch request.
+    abort_signal
+        The abort signal that was used for the fetch request.
     """
 
     def __init__(
