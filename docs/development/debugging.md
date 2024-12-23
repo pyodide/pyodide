@@ -153,10 +153,10 @@ Now we basically know the cause of the trouble. You can look up `cfunction_call`
 in the CPython source code with the help of ripgrep and locate the line that
 generates this call, and look up `one` in the appropriate source and find the
 signature. Another approach to locate the call site would be to recompile with
-`-g3` and use source maps {ref}`source-maps` to locate the problematic source
-code. With the same process of reproduce crash ==> click innermost stack frame
-==> see source file and line where the error occurs. In this case we see that
-the crash is on the line:
+`-g3` and use source maps {ref}`build-with-symbols` to locate the problematic
+source code. With the same process of reproduce crash ==> click innermost stack
+frame ==> see source file and line where the error occurs. In this case we see
+that the crash is on the line:
 
 ```C
 result = _PyCFunction_TrampolineCall(meth, self, args);
