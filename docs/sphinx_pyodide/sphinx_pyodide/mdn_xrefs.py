@@ -165,9 +165,21 @@ for type, entries in DATA.items():
         )
 
 for ty, key, url in [
-    ("js:data", "void", "https://www.typescriptlang.org/docs/handbook/2/functions.html#void"),
-    ("js:data", "any", "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any"),
-    ("js:class", "Record", "https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type")
+    (
+        "js:data",
+        "void",
+        "https://www.typescriptlang.org/docs/handbook/2/functions.html#void",
+    ),
+    (
+        "js:data",
+        "any",
+        "https://www.typescriptlang.org/docs/handbook/2/everyday-types.html#any",
+    ),
+    (
+        "js:class",
+        "Record",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#recordkeys-type",
+    ),
 ]:
     INVDATA[ty][key] = (
         "typescript docs",

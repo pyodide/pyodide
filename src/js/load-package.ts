@@ -567,7 +567,7 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
-/** 
+/**
  * An object whose keys are the names of the loaded packages and whose values
  * are the install sources of the packages. Use
  * `Object.keys(pyodide.loadedPackages)` to get the list of names of loaded
