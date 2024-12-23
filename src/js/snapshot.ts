@@ -58,6 +58,9 @@ export function makeGlobalsProxy(
 
 type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
 
+/**
+ * @private
+ */
 export type SnapshotConfig = {
   hiwireKeys: SerializedHiwireValue[];
   immortalKeys: string[];
@@ -245,6 +248,7 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
  * This code is quite sensitive to the details of our setup, so it might break
  * if we move stuff around far away in the code base. Ideally over time we can
  * structure the code to make it less brittle.
+ * @private
  */
 export function syncUpSnapshotLoad1() {
   // hiwire init puts a null at the beginning of both the mortal and immortal tables.
@@ -275,6 +279,7 @@ function tableSet(idx: number, val: any): void {
 
 /**
  * Fill in the JsRef table.
+ * @private
  */
 export function syncUpSnapshotLoad2(
   jsglobals: any,
