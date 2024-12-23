@@ -34,10 +34,28 @@ __all__ = [
     "open_url",
     "pyfetch",
     "FetchResponse",
+    "HttpStatusError",
+    "BodyUsedError",
+    "AbortError",
 ]
 
 
 class HttpStatusError(OSError):
+    """A subclass of :py:exc:`OSError` raised by :py:meth:`FetchResponse.raise_for_status`
+    if the response status is 4XX or 5XX.
+
+    Parameters
+    ----------
+    status :
+       The http status code of the request
+
+    status_text :
+       The http status text of the request
+
+    url :
+        The url that was requested
+    """
+
     status: int
     status_text: str
     url: str
@@ -237,7 +255,7 @@ class FetchResponse:
             raise BodyUsedError
 
     def raise_for_status(self) -> None:
-        """Raise an :py:exc:`HttpStatusError` if the status of the response is an error (4xx or 5xx)"""
+        """Raise an :py:exc:`~pyodide.http.HttpStatusError` if the status of the response is an error (4xx or 5xx)"""
         if 400 <= self.status < 600:
             raise HttpStatusError(self.status, self.status_text, self.url)
 
