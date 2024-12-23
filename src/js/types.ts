@@ -345,6 +345,7 @@ export type Lockfile = {
   packages: Record<string, InternalPackageData>;
 };
 
+/** @private */
 export type PackageType =
   | "package"
   | "cpython_module"
