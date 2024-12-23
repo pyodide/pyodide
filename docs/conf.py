@@ -26,7 +26,7 @@ nitpick_ignore: list[tuple[str, str]] = []
 
 def ignore_typevars():
     """These are all intentionally broken. Disable the warnings about it."""
-    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co")
+    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co", "P")
     JS_TYPEVARS_TO_IGNORE = ("TResult", "TResult1", "TResult2", "U")
 
     nitpick_ignore.extend(
