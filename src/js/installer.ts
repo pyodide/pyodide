@@ -9,6 +9,7 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
  * - storing metadata about the Package
  * - loading shared libraries
  * - installing data files
+ * @private
  */
 export class Installer {
   #api: PackageManagerAPI;

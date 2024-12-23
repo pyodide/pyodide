@@ -732,6 +732,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+/** @private */
 export function jsFinderHook(o: object) {
   if ("__all__" in o) {
     return;

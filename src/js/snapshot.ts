@@ -3,6 +3,7 @@ import { scheduleCallback } from "./scheduler";
 
 declare var Module: any;
 
+/** @private */
 export function getExpectedKeys() {
   return [
     null,
