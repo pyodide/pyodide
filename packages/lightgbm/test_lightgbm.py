@@ -15,7 +15,12 @@ def test_train_predict(selenium):
     # use min_data_in_bin=1 for lgb.Dataset() and min_data_in_leaf=1 for lgb.train(),
     # to ensure at least some splits are made
     train_data = lgb.Dataset(data, label=label, params={"min_data_in_bin": 1})
-    param = {"num_leaves": 11, "objective": "binary", "metric": "auc", "min_data_in_leaf": 1}
+    param = {
+        "num_leaves": 11,
+        "objective": "binary",
+        "metric": "auc",
+        "min_data_in_leaf": 1,
+    }
     num_round = 10
     bst = lgb.train(param, train_data, num_boost_round=num_round)
 
@@ -33,7 +38,4 @@ def test_train_predict(selenium):
     assert "objective=binary" in model_str
 
     # model should successfully survive serialization-deserialization roundtrip
-    np.testing.assert_allclose(
-        lgb.Booster(model_str=model_str).predict(data),
-        ypred
-    )
+    np.testing.assert_allclose(lgb.Booster(model_str=model_str).predict(data), ypred)
