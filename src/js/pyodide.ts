@@ -60,8 +60,6 @@ export type ConfigType = {
  * Load the main Pyodide wasm module and initialize it.
  *
  * @returns The :ref:`js-api-pyodide` module.
- * @memberof globalThis
- * @async
  * @example
  * async function main() {
  *   const pyodide = await loadPyodide({

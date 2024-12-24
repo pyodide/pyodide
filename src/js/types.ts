@@ -211,7 +211,11 @@ export type FSStreamOpsGen<T> = {
   ) => number;
 };
 
-/** @hidden */
+/**
+ * TODO: Consider renaming the type to FSType to avoid collisions between FS and
+ * FSType.
+ * @hidden
+ */
 export interface FS {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
@@ -284,7 +288,11 @@ export interface LDSO {
   };
 }
 
-/** @hidden */
+/**
+ * TODO: consider renaming the type to ModuleType to avoid name collisions
+ * between Module and ModuleType?
+ * @hidden
+ */
 export interface Module {
   API: API;
   locateFile: (file: string) => string;
