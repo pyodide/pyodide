@@ -1,0 +1,32 @@
+From 7c9bbff42991351bb714bbccab395cf296491987 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Julian=20R=C3=BCth?= <julian.rueth@fsfe.org>
+Date: Thu, 6 Apr 2023 22:11:44 +0200
+Subject: [PATCH] Do not run prerequisites.sh
+
+---
+ bin/BuildPackages.sh | 9 ---------
+ 1 file changed, 9 deletions(-)
+
+diff --git a/bin/BuildPackages.sh b/bin/BuildPackages.sh
+index fb17bec8..d22d09da 100755
+--- a/bin/BuildPackages.sh
++++ b/bin/BuildPackages.sh
+@@ -224,15 +224,6 @@ build_one_package() {
+   (  # start subshell
+   set -e
+   cd "$CURDIR/$PKG"
+-  if [[ -x prerequisites.sh ]]
+-  then
+-    ./prerequisites.sh "$GAPROOT"
+-  elif [[ -x build-normaliz.sh ]]
+-  then
+-    # used in NormalizInterface; to be replaced by prerequisites.sh in future
+-    # versions
+-    ./build-normaliz.sh "$GAPROOT"
+-  fi
+   case "$PKG" in
+     # All but the last lines should end by '&&', otherwise (for some reason)
+     # some packages that fail to build will not get reported in the logs.
+-- 
+2.20.1
+
