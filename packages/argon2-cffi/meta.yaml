@@ -7,10 +7,10 @@ source:
   url: https://files.pythonhosted.org/packages/a4/6a/e8a041599e78b6b3752da48000b14c8d1e8a04ded09c88c714ba047f34f5/argon2_cffi-23.1.0-py3-none-any.whl
   sha256: c670642b78ba29641818ab2e68bd4e6a78ba53b7eff7b4c3815ae16abf91c7ea
 about:
-  home: ""
+  home: "https://github.com/hynek/argon2-cffi/"
   PyPI: https://pypi.org/project/argon2-cffi
   summary: Argon2 for Python
-  license: ""
+  license: "MIT"
 extra:
   recipe-maintainers:
     - alarmfox
