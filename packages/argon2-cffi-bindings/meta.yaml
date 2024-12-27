@@ -18,4 +18,4 @@ requirements:
   run:
     - cffi
 build:
-  cflags: -msimd128
+  cflags: -mrelaxed-simd
