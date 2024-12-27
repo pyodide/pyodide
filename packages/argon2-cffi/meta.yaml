@@ -17,3 +17,6 @@ extra:
 requirements:
   run:
     - cffi
+test:
+  imports:
+    - argon2
