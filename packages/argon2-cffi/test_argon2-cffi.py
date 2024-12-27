@@ -14,5 +14,6 @@ async def argon2_cffi_helper(selenium):
     with pytest.raises(argon2.exceptions.Argon2Error):
         argon2.PasswordHasher(parallelism=2).hash("test")
 
+
 def test_argon2(selenium):
     argon2_cffi_helper(selenium)
