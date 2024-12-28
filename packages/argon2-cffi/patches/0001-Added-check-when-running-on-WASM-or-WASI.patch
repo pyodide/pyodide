@@ -1,0 +1,251 @@
+From bee8705ea31a1905638f0d62e45d1e5901d37a87 Mon Sep 17 00:00:00 2001
+From: giuseppe <capassog97@gmail.com>
+Date: Sat, 28 Dec 2024 16:28:58 +0100
+Subject: [PATCH 1/2] Added check when running on WASM or WASI
+
+---
+ src/argon2/_password_hasher.py | 133 ++++++++++++++++++++++-----------
+ 1 file changed, 88 insertions(+), 45 deletions(-)
+
+diff --git a/src/argon2/_password_hasher.py b/src/argon2/_password_hasher.py
+index 2b945c6..2ba174d 100644
+--- a/src/argon2/_password_hasher.py
++++ b/src/argon2/_password_hasher.py
+@@ -3,21 +3,34 @@
+ from __future__ import annotations
+ 
+ import os
++import platform
++import sys
+ 
+-from typing import ClassVar
++from typing import ClassVar, Literal
+ 
+-from ._typing import Literal
+ from ._utils import Parameters, _check_types, extract_parameters
+-from .exceptions import InvalidHashError
++from .exceptions import InvalidHashError, UnsupportedParamsError
+ from .low_level import Type, hash_secret, verify_secret
+ from .profiles import RFC_9106_LOW_MEMORY
+ 
+ 
++# this is a function because tests injects machine and platform
++# in PasswordHasher class. A global variable will be populated once and
++# we will need to import the file each time so that the mocking will be
++# effective. The function is used during initialization so it will not be
++# an overhead
++def is_wasm() -> bool:
++    return sys.platform == "emscripten" or platform.machine() in [
++        "wasm32",
++        "wasm64",
++    ]
++
++
+ DEFAULT_RANDOM_SALT_LENGTH = RFC_9106_LOW_MEMORY.salt_len
+ DEFAULT_HASH_LENGTH = RFC_9106_LOW_MEMORY.hash_len
+ DEFAULT_TIME_COST = RFC_9106_LOW_MEMORY.time_cost
+ DEFAULT_MEMORY_COST = RFC_9106_LOW_MEMORY.memory_cost
+-DEFAULT_PARALLELISM = RFC_9106_LOW_MEMORY.parallelism
++DEFAULT_PARALLELISM = 1 if is_wasm() else RFC_9106_LOW_MEMORY.parallelism
+ 
+ 
+ def _ensure_bytes(s: bytes | str, encoding: str) -> bytes:
+@@ -33,27 +46,36 @@ class PasswordHasher:
+     r"""
+     High level class to hash passwords with sensible defaults.
+ 
+-    Uses Argon2\ **id** by default and always uses a random salt_ for hashing.
+-    But it can verify any type of Argon2 as long as the hash is correctly
+-    encoded.
++    Uses Argon2\ **id** by default and uses a random salt_ for hashing. But it
++    can verify any type of Argon2 as long as the hash is correctly encoded.
+ 
+     The reason for this being a class is both for convenience to carry
+     parameters and to verify the parameters only *once*.  Any unnecessary
+-    slowdown when hashing is a tangible advantage for a brute force attacker.
+-
+-    :param int time_cost: Defines the amount of computation realized and
+-        therefore the execution time, given in number of iterations.
+-    :param int memory_cost: Defines the memory usage, given in kibibytes_.
+-    :param int parallelism: Defines the number of parallel threads (*changes*
+-        the resulting hash value).
+-    :param int hash_len: Length of the hash in bytes.
+-    :param int salt_len: Length of random salt to be generated for each
+-        password.
+-    :param str encoding: The Argon2 C library expects bytes.  So if
+-        :meth:`hash` or :meth:`verify` are passed a ``str``, it will be
+-        encoded using this encoding.
+-    :param Type type: Argon2 type to use.  Only change for interoperability
+-        with legacy systems.
++    slowdown when hashing is a tangible advantage for a brute-force attacker.
++
++    Args:
++        time_cost:
++            Defines the amount of computation realized and therefore the
++            execution time, given in number of iterations.
++
++        memory_cost: Defines the memory usage, given in kibibytes_.
++
++        parallelism:
++            Defines the number of parallel threads (*changes* the resulting
++            hash value).
++
++        hash_len: Length of the hash in bytes.
++
++        salt_len: Length of random salt to be generated for each password.
++
++        encoding:
++            The Argon2 C library expects bytes.  So if :meth:`hash` or
++            :meth:`verify` are passed a ``str``, it will be encoded using this
++            encoding.
++
++        type:
++            Argon2 type to use.  Only change for interoperability with legacy
++            systems.
+ 
+     .. versionadded:: 16.0.0
+     .. versionchanged:: 18.2.0
+@@ -70,6 +92,7 @@ class PasswordHasher:
+     .. _salt: https://en.wikipedia.org/wiki/Salt_(cryptography)
+     .. _kibibytes: https://en.wikipedia.org/wiki/Binary_prefix#kibi
+     """
++
+     __slots__ = ["_parameters", "encoding"]
+ 
+     _parameters: Parameters
+@@ -97,8 +120,7 @@ class PasswordHasher:
+         if e:
+             raise TypeError(e)
+ 
+-        # Cache a Parameters object for check_needs_rehash.
+-        self._parameters = Parameters(
++        params = Parameters(
+             type=type,
+             version=19,
+             salt_len=salt_len,
+@@ -107,6 +129,13 @@ class PasswordHasher:
+             memory_cost=memory_cost,
+             parallelism=parallelism,
+         )
++
++        # verify params before accepting
++        if is_wasm() and parallelism != 1:
++            raise UnsupportedParamsError
++
++        # Cache a Parameters object for check_needs_rehash.
++        self._parameters = params
+         self.encoding = encoding
+ 
+     @classmethod
+@@ -114,8 +143,14 @@ class PasswordHasher:
+         """
+         Construct a `PasswordHasher` from *params*.
+ 
++        Returns:
++            A `PasswordHasher` instance with the parameters from *params*.
++
+         .. versionadded:: 21.2.0
+         """
++        # verify params before accepting
++        if is_wasm() and params.parallelism != 1:
++            raise UnsupportedParamsError
+         ph = cls()
+         ph._parameters = params
+ 
+@@ -149,11 +184,11 @@ class PasswordHasher:
+         """
+         Hash *password* and return an encoded hash.
+ 
+-        Parameters:
+-
++        Args:
+             password: Password to hash.
+ 
+-            salt: If None, a random salt is securely created.
++            salt:
++                If None, a random salt is securely created.
+ 
+                 .. danger::
+ 
+@@ -161,11 +196,9 @@ class PasswordHasher:
+                     you are doing.
+ 
+         Raises:
+-
+             argon2.exceptions.HashingError: If hashing fails.
+ 
+         Returns:
+-
+             Hashed *password*.
+ 
+         .. versionadded:: 23.1.0 *salt* parameter
+@@ -198,23 +231,25 @@ class PasswordHasher:
+             other parsing than the determination of the hash type is done by
+             *argon2-cffi*.
+ 
+-        :param hash: An encoded hash as returned from
+-            :meth:`PasswordHasher.hash`.
+-        :type hash: ``bytes`` or ``str``
++        Args:
++            hash: An encoded hash as returned from :meth:`PasswordHasher.hash`.
+ 
+-        :param password: The password to verify.
+-        :type password: ``bytes`` or ``str``
++            password: The password to verify.
+ 
+-        :raises argon2.exceptions.VerifyMismatchError: If verification fails
+-            because *hash* is not valid for *password*.
+-        :raises argon2.exceptions.VerificationError: If verification fails for
+-            other reasons.
+-        :raises argon2.exceptions.InvalidHashError: If *hash* is so clearly
+-            invalid, that it couldn't be passed to Argon2.
++        Raises:
++            argon2.exceptions.VerifyMismatchError:
++                If verification fails because *hash* is not valid for
++                *password*.
+ 
+-        :return: ``True`` on success, raise
+-            :exc:`~argon2.exceptions.VerificationError` otherwise.
+-        :rtype: bool
++            argon2.exceptions.VerificationError:
++                If verification fails for other reasons.
++
++            argon2.exceptions.InvalidHashError:
++                If *hash* is so clearly invalid, that it couldn't be passed to
++                Argon2.
++
++        Returns:
++            ``True`` on success, otherwise an exception is raised.
+ 
+         .. versionchanged:: 16.1.0
+             Raise :exc:`~argon2.exceptions.VerifyMismatchError` on mismatches
+@@ -231,7 +266,7 @@ class PasswordHasher:
+             hash, _ensure_bytes(password, self.encoding), hash_type
+         )
+ 
+-    def check_needs_rehash(self, hash: str) -> bool:
++    def check_needs_rehash(self, hash: str | bytes) -> bool:
+         """
+         Check whether *hash* was created using the instance's parameters.
+ 
+@@ -244,8 +279,16 @@ class PasswordHasher:
+         Therefore it's best practice to check -- and if necessary rehash --
+         passwords after each successful authentication.
+ 
+-        :rtype: bool
++        Args:
++            hash: An encoded Argon2 password hash.
++
++        Returns:
++            Whether *hash* was created using the instance's parameters.
+ 
+         .. versionadded:: 18.2.0
++        .. versionchanged:: 24.1.0 Accepts bytes for *hash*.
+         """
++        if isinstance(hash, bytes):
++            hash = hash.decode("ascii")
++
+         return self._parameters != extract_parameters(hash)
+-- 
+2.47.1
+
