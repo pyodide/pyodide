@@ -1772,7 +1772,7 @@ export class PySequenceMethods {
    * contains the key/value pairs for each index in the ``Sequence``.
    * @returns A new iterator object.
    */
-  entries() {
+  entries(): IterableIterator<[number, any]> {
     return Array.prototype.entries.call(this);
   }
   /**
@@ -1780,7 +1780,7 @@ export class PySequenceMethods {
    * contains the keys for each index in the ``Sequence``.
    * @returns A new iterator object.
    */
-  keys() {
+  keys(): IterableIterator<number> {
     return Array.prototype.keys.call(this);
   }
   /**
