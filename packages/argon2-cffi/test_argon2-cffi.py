@@ -1,3 +1,4 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
@@ -10,8 +11,13 @@ def argon2_cffi_helper(selenium):
 
     assert ph.verify(hash, "test") is True
 
-    # with pytest.raises(argon2.exceptions.UnsupportedParamsError):
-    #     argon2.PasswordHasher(parallelism=2).hash("test")
+    with pytest.raises(argon2.exceptions.UnsupportedParamsError) as exinfo:
+        argon2.PasswordHasher(parallelism=2).hash("test")
+
+    assert (
+        str(exinfo.value)
+        == "within wasm/wasi environments `parallelism` must be set to 1"
+    )
 
     # test default params
     ph = argon2.PasswordHasher()

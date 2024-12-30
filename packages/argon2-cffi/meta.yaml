@@ -7,8 +7,7 @@ source:
   url: https://files.pythonhosted.org/packages/31/fa/57ec2c6d16ecd2ba0cf15f3c7d1c3c2e7b5fcb83555ff56d7ab10888ec8f/argon2_cffi-23.1.0.tar.gz
   sha256: 879c3e79a2729ce768ebb7d36d4609e3a78a4ca2ec3a9f12286ca057e3d0db08
   patches:
-    - patches/0001-Added-check-when-running-on-WASM-or-WASI.patch
-    - patches/0002-Added-UnsupportedParamsError.patch
+    - ./patches/0001-Added-platform-check-for-parallelism-since-WASM-does.patch
 requirements:
   run:
     - argon2-cffi-bindings
