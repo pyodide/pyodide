@@ -1788,7 +1788,7 @@ export class PySequenceMethods {
    * contains the values for each index in the ``Sequence``.
    * @returns A new iterator object.
    */
-  values() {
+  values(): IterableIterator<any> {
     return Array.prototype.values.call(this);
   }
   /**
