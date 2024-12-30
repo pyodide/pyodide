@@ -20,6 +20,7 @@ panels_add_bootstrap_css = False
 project = "Pyodide"
 copyright = "2019-2024, Pyodide contributors and Mozilla"
 
+suppress_warnings = ["config.cache"]
 nitpicky = True
 nitpick_ignore: list[tuple[str, str]] = []
 

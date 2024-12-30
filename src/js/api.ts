@@ -160,8 +160,9 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * See :ref:`js-api-pyodide-canvas`.
-   * @hidetype
+   * APIs to set a canvas for rendering graphics.
+   * @summaryLink :ref:`canvas <js-api-pyodide-canvas>`
+   * @omitFromAutoModule
    */
   static canvas: CanvasInterface = canvas;
 
