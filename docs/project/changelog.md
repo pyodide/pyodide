@@ -99,6 +99,7 @@ myst:
 - Upgraded `shapely` to 2.0.6 {pr}`4925`
 - Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
 - Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `pyxel` to 2.2.10 {pr}`5283`
 - Upgraded `xarray` to 2024.10.0 {pr}`4925`
 - Upgraded `zarr` to 2.18.3 {pr}`4925`
 - Upgraded `h5py` to 3.12.1 {pr}`4925`
