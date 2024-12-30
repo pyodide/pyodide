@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 from pytest_pyodide import run_in_pyodide
 
 

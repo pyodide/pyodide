@@ -30,7 +30,7 @@ import { Installer } from "./installer";
  * Initialize the packages index. This is called as early as possible in
  * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
  * operations.
- * @param lockFileURL
+ * @param lockFilePromise
  * @private
  */
 export async function initializePackageIndex(
@@ -170,7 +170,6 @@ export class PackageManager {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @async
    * @returns The loaded package data.
    */
   public async loadPackage(
