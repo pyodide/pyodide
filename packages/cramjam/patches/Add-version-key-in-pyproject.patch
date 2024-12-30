@@ -1,0 +1,23 @@
+From 7a993e9d4418a5e44c0c775a11c438f248b333c7 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 30 Dec 2024 19:49:23 +0530
+Subject: [PATCH] Add a `version` key in the `[project]` table
+
+---
+ pyproject.toml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index 038e21a..acb2a18 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,5 +1,6 @@
+ [project]
+ name = "cramjam"
++version = "2.9.1"
+ keywords = ["compression", "decompression", "snappy", "zstd", "bz2", "gzip", "lz4", "brotli", "deflate", "blosc2"]
+ requires-python = ">=3.8"
+ license = { file = "LICENSE" }
+-- 
+2.47.1
+
