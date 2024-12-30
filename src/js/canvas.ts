@@ -27,7 +27,7 @@ export function setCanvas2D(canvas: HTMLCanvasElement): void {
   }
 
   Module.canvas = canvas;
-};
+}
 
 /**
  * Get the HTML5 canvas element used for 2D rendering. For now,
@@ -36,7 +36,7 @@ export function setCanvas2D(canvas: HTMLCanvasElement): void {
  */
 export function getCanvas2D(): HTMLCanvasElement | undefined {
   return Module.canvas;
-};
+}
 /**
  * Set the HTML5 canvas element to use for 3D rendering. For now,
  * Emscripten only supports one canvas element, so setCanvas2D and setCanvas3D
@@ -44,7 +44,7 @@ export function getCanvas2D(): HTMLCanvasElement | undefined {
  */
 export function setCanvas3D(canvas: HTMLCanvasElement): void {
   setCanvas2D(canvas);
-};
+}
 /**
  * Get the HTML5 canvas element used for 3D rendering. For now,
  * Emscripten only supports one canvas element, so getCanvas2D and getCanvas3D
@@ -52,7 +52,7 @@ export function setCanvas3D(canvas: HTMLCanvasElement): void {
  */
 export function getCanvas3D(): HTMLCanvasElement | undefined {
   return getCanvas2D();
-};
+}
 
 /**
  * @private
