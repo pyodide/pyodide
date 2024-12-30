@@ -19,7 +19,7 @@ export interface CanvasInterface {
  * Emscripten only supports one canvas element, so setCanvas2D and setCanvas3D
  * are the same.
  */
-export const setCanvas2D = (canvas: HTMLCanvasElement) => {
+export function setCanvas2D(canvas: HTMLCanvasElement): void {
   if (canvas.id !== "canvas") {
     console.warn(
       "If you are using canvas element for SDL library, it should have id 'canvas' to work properly.",
@@ -27,31 +27,32 @@ export const setCanvas2D = (canvas: HTMLCanvasElement) => {
   }
 
   Module.canvas = canvas;
-};
+}
+
 /**
  * Get the HTML5 canvas element used for 2D rendering. For now,
  * Emscripten only supports one canvas element, so getCanvas2D and getCanvas3D
  * are the same.
  */
-export const getCanvas2D = (): HTMLCanvasElement | undefined => {
+export function getCanvas2D(): HTMLCanvasElement | undefined {
   return Module.canvas;
-};
+}
 /**
  * Set the HTML5 canvas element to use for 3D rendering. For now,
  * Emscripten only supports one canvas element, so setCanvas2D and setCanvas3D
  * are the same.
  */
-export const setCanvas3D = (canvas: HTMLCanvasElement) => {
+export function setCanvas3D(canvas: HTMLCanvasElement): void {
   setCanvas2D(canvas);
-};
+}
 /**
  * Get the HTML5 canvas element used for 3D rendering. For now,
  * Emscripten only supports one canvas element, so getCanvas2D and getCanvas3D
  * are the same.
  */
-export const getCanvas3D = (): HTMLCanvasElement | undefined => {
+export function getCanvas3D(): HTMLCanvasElement | undefined {
   return getCanvas2D();
-};
+}
 
 /**
  * @private
