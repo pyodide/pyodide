@@ -469,3 +469,19 @@ pyodide.runPython(`
     print(js_lambda, js_lambda_, js_lambda__) # 7, 7, 8
 `);
 ```
+
+## Can i use multi-threading/processing?
+
+Due to the limitation of current [wasm](https://pyodide.org/en/stable/usage/wasm-constraints.html)
+all packages that uses parallelism (eg. rely on _fork_ and _pthread_)
+**may not work**. Accepting the performance degradation, a workaround
+consists of locking the number of threads down to `1` like shown below:
+
+```py
+is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
+
+if is_wasm:
+  # set n_threads = 1
+```
+
+Ultimately, developers will need to add specific support for the platform.
