@@ -82,7 +82,7 @@ repos:
         name: mypy-tests
         args: [--ignore-missing-imports]
         files: ^(packages/|docs|/conftest.py|src/tests)
-        exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$|^packages/zfpy/test_zfpy.py$)
+        exclude: (^packages/.*/setup.py|/src|^packages/aiohttp/aiohttp_patch.py$|^packages/zfpy/test_zfpy.py$|^packages/netcdf4/test_netcdf4.py$)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-prettier
