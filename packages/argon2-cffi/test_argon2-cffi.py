@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["argon2-cffi"])
-def argon2_cffi_helper(selenium):
+def test_argon2(selenium):
     import argon2
 
     ph = argon2.PasswordHasher(parallelism=1)
