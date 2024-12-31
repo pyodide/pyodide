@@ -484,4 +484,3 @@ if is_wasm:
   # set n_threads = 1
 ```
 
-Ultimately, developers will need to add specific support for the platform.
