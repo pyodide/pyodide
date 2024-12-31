@@ -28,7 +28,7 @@ def test_polars_operations(selenium):
     assert df["nums"].null_count() == 1
 
     result = (
-        df.groupby("groups")
+        df.group_by("groups")
         .agg(pl.col("nums").mean())
         .sort("groups")
         .to_dict(as_series=False)
