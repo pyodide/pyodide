@@ -20,7 +20,7 @@ case by trying `micropip.install("package-name")`.
 Due to [current limitations of WebAssembly](https://pyodide.org/en/stable/usage/wasm-constraints.html),
 packages that make heavy use of multi-threading and multi-processing **may not** work
 without explicit support from maintainers. A workaround could be to avoid creating multiple
-threads when on wasm using a check like:
+threads when on WASM using a check like:
 
 ```py
 is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
