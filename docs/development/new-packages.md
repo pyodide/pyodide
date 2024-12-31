@@ -17,7 +17,7 @@ Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
 case by trying `micropip.install("package-name")`.
 
-Due to [current limitations of webassemly](https://pyodide.org/en/stable/usage/wasm-constraints.html),
+Due to [current limitations of WebAssembly](https://pyodide.org/en/stable/usage/wasm-constraints.html),
 packages that make heavy use of multi-threading and multi-processing **may not** work
 without explicit support from maintainers. A workaround could be to avoid creating multiple
 threads when on wasm using a check like:
