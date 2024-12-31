@@ -24,7 +24,7 @@ packages that use threading or multiprocessing will not work without a patch to 
 is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
 
 if is_wasm:
-  # set n_threads = 1
+  n_threads = 1
 ```
 
 If there is no wheel on PyPI, but you believe there is nothing preventing it (it
