@@ -145,6 +145,7 @@ myst:
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
 - Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
+- Added `polars` 1.18.0 {pr}`5282`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
 - Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `rateslib` 1.6.0 {pr}`5146`, {pr}`5235`
