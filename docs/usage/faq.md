@@ -483,4 +483,3 @@ is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm
 if is_wasm:
   # set n_threads = 1
 ```
-
