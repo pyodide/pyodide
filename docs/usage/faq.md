@@ -470,7 +470,7 @@ pyodide.runPython(`
 `);
 ```
 
-## Can I use multi-threading/processing?
+## Can I use threading/multiprocessing/subprocess?
 
 Due to the limitation of current [wasm](https://pyodide.org/en/stable/usage/wasm-constraints.html)
 all packages that use parallelism (eg. rely on _fork_ and _pthread_)
