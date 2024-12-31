@@ -14,7 +14,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.27.0
+
+_January 1, 2025_
 
 - {{ Enhancement }} Upgrade to Python 3.12.7.
   {pr}`5149`
