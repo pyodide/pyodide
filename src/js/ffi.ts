@@ -49,8 +49,11 @@ import {
 import { PythonError } from "../core/error_handling";
 
 /**
- * See :ref:`js-api-pyodide-ffi`
+ * Foreign function interface classes. Can be used for typescript type
+ * annotations or at runtime for `instanceof` checks.
+ * @summaryLink :ref:`ffi <js-api-pyodide-ffi>`
  * @hidetype
+ * @omitFromAutoModule
  */
 export const ffi = {
   PyProxy,
