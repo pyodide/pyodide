@@ -472,10 +472,7 @@ pyodide.runPython(`
 
 ## Can I use threading/multiprocessing/subprocess?
 
-Due to the limitation of current [wasm](https://pyodide.org/en/stable/usage/wasm-constraints.html)
-all packages that use parallelism (eg. rely on _fork_ and _pthread_)
-**may not work**. Accepting the performance degradation, a workaround
-consists of locking the number of threads down to `1` like shown below:
+No, fork and pthreads do not work in Pyodide. Attempts to use `threading`, `multiprocessing`, or `subprocess` will raise an `OSError`. You may be able to work around this by setting the number of threads to 1:
 
 ```py
 is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
