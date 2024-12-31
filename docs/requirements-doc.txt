@@ -20,4 +20,4 @@ pyodide-build>=0.27.3
 micropip==0.7.1
 jinja2>=3.0
 ruamel.yaml
-sphinx-js @ git+https://github.com/hoodmane/sphinx-js-fork@f190046dae100611b9101000e5524c330e3ca105
+sphinx-js @ git+https://github.com/hoodmane/sphinx-js@f190046dae100611b9101000e5524c330e3ca105
