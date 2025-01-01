@@ -31,6 +31,9 @@
 - [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
 - [quarto-live](https://github.com/r-wasm/quarto-live) uses Pyodide
   to create interactive Python code cells and exercises in [Quarto](https://quarto.org/) documents.
+- [Online Laboratory for Climate Science and Meteorology](https://github.com/climet-eu/lab) is a
+  JupyterLite-based environment that comes with additional packages from the weather and climate
+  community, and patches to support loading and working with large (remote) datasets.
 
 ## Workarounds for common WASM and browser limitations
 
