@@ -175,6 +175,7 @@ _January 1, 2025_
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
 - Upgraded `cffi` to 1.17.1 {pr}`5261`
+- Upgraded `pillow-heif` to 0.20.0 and `pyheif` 0.8.0 {pr}`5178`
 
 ## Version 0.26.4
 
