@@ -18,13 +18,14 @@ export interface EmscriptenSettings {
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
   readonly arguments: readonly string[];
-  readonly instantiateWasm?: (
+  readonly wasmBinary?: ArrayBuffer | Uint8Array;
+  readonly instantiateWasm?: false | ((
     imports: { [key: string]: any },
     successCallback: (
       instance: WebAssembly.Instance,
       module: WebAssembly.Module,
     ) => void,
-  ) => void;
+  ) => void);
   readonly API: API;
   readonly locateFile: (file: string) => string;
 
@@ -66,9 +67,11 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     // means dependency resolution has already failed and we want to throw an
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
-    instantiateWasm: getInstantiateWasmFunc(config.indexURL),
+    instantiateWasm: (config.emscriptenSettings?.wasmBinary ? false : getInstantiateWasmFunc(config.indexURL)),
   };
-  return settings;
+  return config.emscriptenSettings
+    ? Object.assign(settings, config.emscriptenSettings)
+    : settings;
 }
 
 /**
