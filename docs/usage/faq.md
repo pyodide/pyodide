@@ -472,11 +472,45 @@ pyodide.runPython(`
 
 ## Can I use threading/multiprocessing/subprocess?
 
-No, fork and pthreads do not work in Pyodide. Attempts to use `threading`, `multiprocessing`, or `subprocess` will raise an `OSError`. You may be able to work around this by setting the number of threads to 1:
+No, fork and pthreads do not work in Pyodide (see more [here](https://pyodide.org/en/stable/usage/wasm-constraints.html)).
+Attempts to use `threading`, `multiprocessing`, or `subprocess` will raise a `RuntimeError`.
+You may be able to work around this by setting the number of threads to 1:
 
 ```py
-is_wasm = sys.platform == "emscripten" or platform.machine() in ["wasm32", "wasm64"]
+def _can_start_thread() -> bool:
+    if sys.platform == "emscripten":
+        return sys._emscripten_info.pthreads
+    return platform.machine() not in ("wasm32", "wasm64")
 
-if is_wasm:
+can_start_thread = _can_start_thread()
+
+if not can_start_thread:
   # set n_threads = 1
+```
+
+Bear in mind that you can still import the packages and use the general info API, but you cannot
+start any asynchronous work without receiving a `RuntimeError`.
+
+```pycon
+>>> import threading
+>>> current = threading.current_thread()
+>>> current.name
+'MainThread'
+>>> current.daemon
+False
+>>> current.is_alive()
+True
+>>> def target(nums):
+...     print(sum(nums))
+...
+>>> t = threading.Thread(target=target, args=([1, 2, 3], ))
+>>> t.run()
+6
+>>> t.start()
+Traceback (most recent call last):
+  File "<console>", line 1, in <module>
+  File "/lib/python312.zip/threading.py", line 994, in start
+    _start_new_thread(self._bootstrap, ())
+RuntimeError: can't start new thread
+>>>
 ```
