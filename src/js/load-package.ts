@@ -284,26 +284,26 @@ export class PackageManager {
   ) {
     const metadata: PackageLoadMetadata = {
       name,
-      normalizedName: '---',
+      normalizedName: "---",
       channel: this.defaultChannel,
       depends: [],
       done: createResolvable(),
       installPromise: undefined,
       packageData: {
         name,
-        version: '1.0.0',
-        file_name: name + '-1.0.0-py3-none-any.' + (format || 'whl'),
-        install_dir: 'site',
-        sha256: '',
-        package_type: 'package',
+        version: "1.0.0",
+        file_name: name + "-1.0.0-py3-none-any." + (format || "whl"),
+        install_dir: "site",
+        sha256: "",
+        package_type: "package",
         imports: [],
-        depends: []
-      }
+        depends: [],
+      },
     };
 
     await this.installPackage(
       metadata,
-      this.#api.typedArrayAsUint8Array(buffer)
+      this.#api.typedArrayAsUint8Array(buffer),
     );
   }
 
@@ -596,7 +596,7 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
   return str;
 }
 
-export let loadPackage:       typeof PackageManager.prototype.loadPackage;
+export let loadPackage: typeof PackageManager.prototype.loadPackage;
 export let loadBinaryPackage: typeof PackageManager.prototype.loadBinaryPackage;
 /**
  * An object whose keys are the names of the loaded packages and whose values
