@@ -7,6 +7,7 @@ import {
   PackageManagerAPI,
   PackageManagerModule,
   LoadedPackages,
+  TypedArray,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -278,7 +279,7 @@ export class PackageManager {
 
   public async loadBinaryPackage(
     name: string,
-    buffer: ArrayBuffer | Uint8Array,
+    buffer: TypedArray | ArrayBuffer,
     format?: string,
   ) {
     const metadata: PackageLoadMetadata = {
@@ -300,7 +301,10 @@ export class PackageManager {
       }
     };
 
-    await this.installPackage(metadata, new Uint8Array(buffer));
+    await this.installPackage(
+      metadata,
+      this.#api.typedArrayAsUint8Array(buffer)
+    );
   }
 
   /**
