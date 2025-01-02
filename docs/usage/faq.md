@@ -485,7 +485,7 @@ def _can_start_thread() -> bool:
 can_start_thread = _can_start_thread()
 
 if not can_start_thread:
-  # set n_threads = 1
+  n_threads = 1
 ```
 
 You can still import the packages and use the general info API, but you cannot
