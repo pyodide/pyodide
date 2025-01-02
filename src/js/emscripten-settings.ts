@@ -69,6 +69,12 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     locateFile: (path: string) => config.indexURL + path,
     instantiateWasm: (config.emscriptenSettings?.wasmBinary ? false : getInstantiateWasmFunc(config.indexURL)),
   };
+  if (config.emscriptenSettings?.preRun) {
+    settings.preRun.push(
+      ...config.emscriptenSettings.preRun
+    );
+    delete config.emscriptenSettings.preRun;
+  }
   return config.emscriptenSettings
     ? Object.assign(settings, config.emscriptenSettings)
     : settings;
