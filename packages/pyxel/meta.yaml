@@ -1,9 +1,9 @@
 package:
   name: pyxel
-  version: 1.9.10
+  version: 2.2.10
 source:
-  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
-  sha256: e23a0c52daaa9c4967c402b3ad2c623f33c4a01e36c4b37b884d7b8c726521f4
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v2.2.10.tar.gz
+  sha256: 978a911d3be5beeea1eee7cbc187fd763608f0b51daa5ed9a0bca1835c1623db
 build:
   script: |
     embuilder build sdl2 --pic

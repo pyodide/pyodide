@@ -6,8 +6,13 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/0d/f2/a7c127e61dcb7878f3ec5bf07fbf472805ea8108fd63335a51ab0bd1a432/cramjam-2.8.3.tar.gz
   sha256: 6b1fa0a6ea8183831d04572597c182bd6cece62d583a36cde1e6a86e72ce2389
+  patches:
+    # Drop when upgrading to the next version, i.e., when
+    # https://github.com/milesgranger/cramjam/pull/196
+    # makes it into a release
+    - packages/cramjam/patches/Add-version-key-in-pyproject.patch
 about:
-  home: ""
+  home: https://github.com/milesgranger/cramjam
   PyPI: https://pypi.org/project/cramjam
   summary: Thin Python bindings to de/compression algorithms in Rust
   license: MIT

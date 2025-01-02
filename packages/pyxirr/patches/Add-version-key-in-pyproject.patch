@@ -1,0 +1,23 @@
+From b72f4cf08beeb0b1c790259eed5aa2c313e102a4 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 30 Dec 2024 17:13:48 +0530
+Subject: [PATCH] Add a `version` key in `[project]` table
+
+---
+ pyproject.toml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index be1a7b7..7205d8d 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,5 +1,6 @@
+ [project]
+ name = "pyxirr"
++version = "0.10.6"
+ description-content-type = "text/markdown; charset=UTF-8; variant=GFM"
+ requires-python = ">=3.7,<3.14"
+ classifiers = [
+-- 
+2.47.1
+
