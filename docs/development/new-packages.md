@@ -30,7 +30,7 @@ def _can_start_thread() -> bool:
 can_start_thread = _can_start_thread()
 
 if not can_start_thread:
-  # set n_threads = 1
+  n_threads = 1
 ```
 
 If there is no wheel on PyPI, but you believe there is nothing preventing it (it
