@@ -488,7 +488,7 @@ if not can_start_thread:
   # set n_threads = 1
 ```
 
-Bear in mind that you can still import the packages and use the general info API, but you cannot
+You can still import the packages and use the general info API, but you cannot
 start any asynchronous work without receiving a `RuntimeError`.
 
 ```pycon
