@@ -276,6 +276,33 @@ export class PackageManager {
     }
   }
 
+  public async loadBinaryPackage(
+    name: string,
+    buffer: ArrayBuffer | Uint8Array,
+    format?: string,
+  ) {
+    const metadata: PackageLoadMetadata = {
+      name,
+      normalizedName: '---',
+      channel: this.defaultChannel,
+      depends: [],
+      done: createResolvable(),
+      installPromise: undefined,
+      packageData: {
+        name,
+        version: '1.0.0',
+        file_name: name + '-1.0.0-py3-none-any.' + (format || 'whl'),
+        install_dir: 'site',
+        sha256: '',
+        package_type: 'package',
+        imports: [],
+        depends: []
+      }
+    };
+
+    await this.installPackage(metadata, new Uint8Array(buffer));
+  }
+
   /**
    * Recursively add a package and its dependencies to toLoad.
    * A helper function for recursiveDependencies.
@@ -565,7 +592,8 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
   return str;
 }
 
-export let loadPackage: typeof PackageManager.prototype.loadPackage;
+export let loadPackage:       typeof PackageManager.prototype.loadPackage;
+export let loadBinaryPackage: typeof PackageManager.prototype.loadBinaryPackage;
 /**
  * An object whose keys are the names of the loaded packages and whose values
  * are the install sources of the packages. Use
@@ -579,6 +607,10 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);
 
   loadPackage = singletonPackageManager.loadPackage.bind(
+    singletonPackageManager,
+  );
+
+  loadBinaryPackage = singletonPackageManager.loadBinaryPackage.bind(
     singletonPackageManager,
   );
 
