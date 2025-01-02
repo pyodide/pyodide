@@ -17,6 +17,22 @@ Most pure Python packages can be installed directly from PyPI with
 {func}`micropip.install` if they have a pure Python wheel. Check if this is the
 case by trying `micropip.install("package-name")`.
 
+Because Pyodide [does not support threading or multiprocessing](https://pyodide.org/en/stable/usage/wasm-constraints.html),
+packages that use threading or multiprocessing will not work without a patch to disable it. For example,
+the following snippet will determine if the platform supports creating new threads.
+
+```py
+def _can_start_thread() -> bool:
+    if sys.platform == "emscripten":
+        return sys._emscripten_info.pthreads
+    return platform.machine() not in ("wasm32", "wasm64")
+
+can_start_thread = _can_start_thread()
+
+if not can_start_thread:
+  n_threads = 1
+```
+
 If there is no wheel on PyPI, but you believe there is nothing preventing it (it
 is a Python package without C extensions):
 
