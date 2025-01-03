@@ -1,7 +1,7 @@
 From 8b06e7fef50327f84140cb09a3d9237e18b38a35 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Thu, 5 Sep 2024 21:14:20 +0530
-Subject: [PATCH 18/18] Fix lapack larfg function signature
+Subject: [PATCH 15/15] Fix lapack larfg function signature
 
 This patch fixes the signature of the LAPACK routine larfg. Please
 see https://github.com/pyodide/pyodide/issues/3379 for more details.
@@ -14,12 +14,12 @@ Suggested-by: Hood Chatham <roberthoodchatham@gmail.com>
  1 file changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/scipy/linalg/flapack_other.pyf.src b/scipy/linalg/flapack_other.pyf.src
-index 99d4886558..bf7256e605 100644
+index d1a87f182..c6851fff7 100644
 --- a/scipy/linalg/flapack_other.pyf.src
 +++ b/scipy/linalg/flapack_other.pyf.src
-@@ -2310,13 +2310,12 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
-     <ftype2> dimension(m+1),intent(cache,hide) :: work
- end function <prefix2c>lange
+@@ -2355,13 +2355,12 @@ function <prefix>lantr(norm, uplo, diag, m, n, a, lda, work) result(n2)
+ 
+ end subroutine <prefix>lantr
  
 -subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
 +subroutine <prefix>larfg(n, alpha, x, incx, tau)

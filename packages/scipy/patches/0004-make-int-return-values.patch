@@ -1,7 +1,7 @@
 From a86a2304fd925f815bbb0e0753e46a7b863e2de2 Mon Sep 17 00:00:00 2001
 From: Joe Marshall <joe.marshall@nottingham.ac.uk>
 Date: Wed, 6 Apr 2022 21:25:13 -0700
-Subject: [PATCH 4/18] make int return values
+Subject: [PATCH 4/15] make int return values
 
 The return values of f2c functions are insignificant in most cases, so often it
 is treated as returning void, when it really should return int (values are
@@ -240,21 +240,20 @@ index 67e83bcc77..e5757d5c4d 100644
  
  /* Macro definitions */
 diff --git a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-index 83be8c971f..047a07ce9c 100644
+index 1e53fbca5..b35313ccb 100644
 --- a/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
 +++ b/scipy/sparse/linalg/_dsolve/SuperLU/SRC/slu_scomplex.h
-@@ -27,8 +27,9 @@ at the top-level directory.
- 
+@@ -28,7 +28,9 @@ at the top-level directory.
  #ifndef SCOMPLEX_INCLUDE
  #define SCOMPLEX_INCLUDE
--
+ 
 -typedef struct { float r, i; } singlecomplex;
-+#include"scipy_slu_config.h"
++#include "scipy_slu_config.h"
 +// defined in  CLAPACK
 +//typedef struct { float r, i; } singlecomplex;
  
- 
- /* Macro definitions */
+ #if defined(SUPERLU_TYPEDEF_COMPLEX) || DOXYGEN
+ //! \brief backward compatibility with older versions of SuperLU
 diff --git a/scipy/sparse/linalg/_dsolve/_superlu_utils.c b/scipy/sparse/linalg/_dsolve/_superlu_utils.c
 index 49b928a431..0822687719 100644
 --- a/scipy/sparse/linalg/_dsolve/_superlu_utils.c

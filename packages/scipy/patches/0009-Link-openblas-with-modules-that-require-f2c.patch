@@ -1,7 +1,7 @@
 From ccbb0fa0884d567c6139eeed7dc2dc9f8db4db3a Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sun, 28 Jul 2024 18:15:17 +0900
-Subject: [PATCH 10/18] Link openblas with modules that require f2c
+Subject: [PATCH 9/15] Link openblas with modules that require f2c
 
 Some fortran modules require symbols from f2c, which is provided by
 openblas.
@@ -29,10 +29,10 @@ index 23a715dd58..e5cd9ad4c8 100644
    install: true,
    link_language: 'fortran',
 diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
-index d6c20d3d53..d7f0284b5b 100644
+index 519755e24..0b1e84250 100644
 --- a/scipy/optimize/meson.build
 +++ b/scipy/optimize/meson.build
-@@ -125,7 +125,7 @@ py3.extension_module('_cobyla',
+@@ -90,7 +90,7 @@ py3.extension_module('_cobyla',
    c_args: [Wno_unused_variable],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,
@@ -41,16 +41,7 @@ index d6c20d3d53..d7f0284b5b 100644
    install: true,
    link_language: 'fortran',
    subdir: 'scipy/optimize'
-@@ -135,7 +135,7 @@ py3.extension_module('_minpack2',
-   [f2py_gen.process('minpack2/minpack2.pyf'), 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
-   fortran_args: fortran_ignore_warnings,
-   link_args: version_link_args,
--  dependencies: [fortranobject_dep],
-+  dependencies: [lapack, fortranobject_dep],
-   override_options: ['b_lto=false'],
-   install: true,
-   link_language: 'fortran',
-@@ -146,7 +146,7 @@ py3.extension_module('_slsqp',
+@@ -100,7 +100,7 @@ py3.extension_module('_slsqp',
    [f2py_gen.process('slsqp/slsqp.pyf'), 'slsqp/slsqp_optmz.f'],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,

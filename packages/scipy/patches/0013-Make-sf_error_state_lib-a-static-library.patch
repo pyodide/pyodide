@@ -1,7 +1,7 @@
 From 9d93ca19f4ad0ca327964b6234316547d774b17f Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Sat, 17 Aug 2024 01:12:28 +0530
-Subject: [PATCH 16/18] Make `sf_error_state_lib` a static library
+Subject: [PATCH 13/15] Make `sf_error_state_lib` a static library
 
 wasm.ld does not support linkage with shared libraries. This patch
 changes `sf_error_state_lib` to a static one.

@@ -1,7 +1,7 @@
 From 848c94e218e89d866978fbc883cbb2d919f56ce9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 31 Jul 2024 10:29:47 +0200
-Subject: [PATCH 12/18] Remove chla_transtype
+Subject: [PATCH 10/15] Remove chla_transtype
 
 The signature should probably be `int chla_transtype(char* res, int *trans)`.
 This just deletes it entirely due to laziness.
@@ -11,7 +11,7 @@ This just deletes it entirely due to laziness.
  1 file changed, 1 deletion(-)
 
 diff --git a/scipy/linalg/cython_lapack_signatures.txt b/scipy/linalg/cython_lapack_signatures.txt
-index 1f3dc226ab..28aa8b8c22 100644
+index 5aa59d96e..afdc9480f 100644
 --- a/scipy/linalg/cython_lapack_signatures.txt
 +++ b/scipy/linalg/cython_lapack_signatures.txt
 @@ -108,7 +108,6 @@ void chetrs(char *uplo, int *n, int *nrhs, c *a, int *lda, int *ipiv, c *b, int

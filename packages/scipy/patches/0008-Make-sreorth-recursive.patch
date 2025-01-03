@@ -1,7 +1,7 @@
 From e4d1a570fa8bd4c710e10400822f60232e6408eb Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 6 Jul 2024 22:33:51 +0200
-Subject: [PATCH 9/18] Make sreorth recursive
+Subject: [PATCH 8/15] Make sreorth recursive
 
 ---
  complex16/zreorth.F | 6 +++---

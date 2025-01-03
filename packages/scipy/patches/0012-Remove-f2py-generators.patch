@@ -1,7 +1,7 @@
 From 9b670bd5330bd7834d157a9ec3087a97b71d6516 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Fri, 16 Aug 2024 22:59:26 +0530
-Subject: [PATCH 15/18] Remove f2py generators
+Subject: [PATCH 12/15] Remove f2py generators
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -134,10 +134,10 @@ index 60f71c6968..89a9cf69ba 100644
    ],
    c_args: [Wno_unused_variable],
 diff --git a/scipy/meson.build b/scipy/meson.build
-index a0857848a2..ff47bde52e 100644
+index 73168d859..46ade2cb8 100644
 --- a/scipy/meson.build
 +++ b/scipy/meson.build
-@@ -144,30 +144,6 @@ fortranobject_dep = declare_dependency(
+@@ -199,29 +199,6 @@ fortranobject_dep = declare_dependency(
    compile_args: _f2py_c_args,
  )
  
@@ -155,44 +155,23 @@ index a0857848a2..ff47bde52e 100644
 -  error(f'Found f2py executable is too old: @f2py_version@')
 -endif
 -
--# Note: this generato cannot handle:
+-# Note: this generator cannot handle:
 -# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
 -# 2. targets with #include's (due to no `depend_files` - see feature request
 -#    at meson#8295)
 -f2py_gen = generator(generate_f2pymod,
--  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+-  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'] + f2py_freethreading_arg,
 -  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
 -)
 -
--
+ 
  # TODO: 64-bit BLAS and LAPACK
  #
- # Note that this works as long as BLAS and LAPACK are detected properly via
 diff --git a/scipy/optimize/meson.build b/scipy/optimize/meson.build
-index 50d62ef68b..6cef85027a 100644
+index 0b1e84250..958440c0c 100644
 --- a/scipy/optimize/meson.build
 +++ b/scipy/optimize/meson.build
-@@ -92,12 +92,18 @@ py3.extension_module('_zeros',
-   subdir: 'scipy/optimize'
- )
- 
-+lbfgsb_module = custom_target('lbfgsb_module',
-+  output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
-+  input: 'lbfgsb_src/lbfgsb.pyf',
-+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-+)
-+
- py3.extension_module('_lbfgsb',
-   [
-     'lbfgsb_src/lbfgsb.f',
-     'lbfgsb_src/linpack.f',
-     'lbfgsb_src/timer.f',
--    f2py_gen.process('lbfgsb_src/lbfgsb.pyf'),
-+    lbfgsb_module,
-   ],
-   fortran_args: fortran_ignore_warnings,
-   link_args: version_link_args,
-@@ -120,6 +126,12 @@ py3.extension_module('_moduleTNC',
+@@ -85,8 +85,14 @@ py3.extension_module('_moduleTNC',
    subdir: 'scipy/optimize'
  )
  
@@ -206,23 +185,9 @@ index 50d62ef68b..6cef85027a 100644
 -  [f2py_gen.process('cobyla/cobyla.pyf'), 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
 +  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
    c_args: [Wno_unused_variable],
-@@ -131,8 +143,14 @@ py3.extension_module('_cobyla',
-   subdir: 'scipy/optimize'
- )
- 
-+minpack2_module = custom_target('minpack2_module',
-+  output: ['_minpack2module.c'],
-+  input: 'minpack2/minpack2.pyf',
-+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-+)
-+
- py3.extension_module('_minpack2',
--  [f2py_gen.process('minpack2/minpack2.pyf'), 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
-+  [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,
-   dependencies: [lapack, fortranobject_dep],
-@@ -142,8 +160,14 @@ py3.extension_module('_minpack2',
+@@ -96,8 +102,14 @@ py3.extension_module('_cobyla',
    subdir: 'scipy/optimize'
  )
  
@@ -237,7 +202,7 @@ index 50d62ef68b..6cef85027a 100644
 +  [slsqp_module, 'slsqp/slsqp_optmz.f'],
    fortran_args: fortran_ignore_warnings,
    link_args: version_link_args,
-   dependencies: [fortranobject_dep],
+   dependencies: [lapack, fortranobject_dep],
 diff --git a/scipy/sparse/linalg/_propack/meson.build b/scipy/sparse/linalg/_propack/meson.build
 index 6714724958..df358df651 100644
 --- a/scipy/sparse/linalg/_propack/meson.build
@@ -279,7 +244,7 @@ index 358279a93b..7c973b1cf3 100644
    # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
    fortran_args: [fortran_ignore_warnings, _fflag_Wno_surprising],
 diff --git a/tools/generate_f2pymod.py b/tools/generate_f2pymod.py
-index b6bc02eb04..3da75c14d1 100644
+index a29eee94b..f2d774b38 100644
 --- a/tools/generate_f2pymod.py
 +++ b/tools/generate_f2pymod.py
 @@ -9,6 +9,7 @@ import argparse
@@ -290,15 +255,15 @@ index b6bc02eb04..3da75c14d1 100644
  
  
  # START OF CODE VENDORED FROM `numpy.distutils.from_template`
-@@ -283,7 +284,7 @@ def main():
- 
+@@ -291,7 +292,7 @@ def main():
      # Now invoke f2py to generate the C API module file
      if args.infile.endswith(('.pyf.src', '.pyf')):
--        p = subprocess.Popen(['f2py', fname_pyf,
-+        p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
-                             '--build-dir', outdir_abs], #'--quiet'],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             cwd=os.getcwd())
+         p = subprocess.Popen(
+-            ['f2py', fname_pyf, '--build-dir', outdir_abs] + nogil_arg,
++            [sys.executable, '-m', 'numpy.f2py', fname_pyf, '--build-dir', outdir_abs] + nogil_arg,
+             stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=os.getcwd()
+         )
+         out, err = p.communicate()
 -- 
 2.39.3 (Apple Git-146)
 
