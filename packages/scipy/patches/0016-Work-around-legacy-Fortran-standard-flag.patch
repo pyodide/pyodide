@@ -1,0 +1,43 @@
+From 7345347f3f36b7b5a8ccf0d4a1c91df7348aaf79 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Sat, 4 Jan 2025 00:43:02 +0530
+Subject: [PATCH 16/16] Work around legacy Fortran standard flag
+
+---
+ meson.build | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/meson.build b/meson.build
+index 94ffaeb68..57aafc5c5 100644
+--- a/meson.build
++++ b/meson.build
+@@ -9,6 +9,7 @@ project(
+     'b_ndebug=if-release',
+     'c_std=c17',
+     'cpp_std=c++17',
++    'fortran_std=legacy',
+     'blas=openblas',
+     'lapack=openblas'
+   ],
+@@ -79,12 +80,12 @@ endif
+ # Adding at project level causes many spurious -lgfortran flags.
+ add_languages('fortran', native: false)
+ ff = meson.get_compiler('fortran')
+-if ff.get_id() == 'gcc'
+-  # -std=legacy is not supported by all Fortran compilers, but very useful with
+-  # gfortran since it avoids a ton of warnings that we don't care about.
+-  # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+-  add_project_arguments('-std=legacy', language: 'fortran')
+-endif
++# if ff.get_id() == 'gcc'
++#   # -std=legacy is not supported by all Fortran compilers, but very useful with
++#   # gfortran since it avoids a ton of warnings that we don't care about.
++#   # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
++#   add_project_arguments('-std=legacy', language: 'fortran')
++# endif
+ 
+ if ff.has_argument('-Wno-conversion')
+   add_project_arguments('-Wno-conversion', language: 'fortran')
+-- 
+2.47.1
+

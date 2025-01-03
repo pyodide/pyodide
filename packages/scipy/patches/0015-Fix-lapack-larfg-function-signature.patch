@@ -1,7 +1,7 @@
 From 8b06e7fef50327f84140cb09a3d9237e18b38a35 Mon Sep 17 00:00:00 2001
 From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
 Date: Thu, 5 Sep 2024 21:14:20 +0530
-Subject: [PATCH 15/15] Fix lapack larfg function signature
+Subject: [PATCH 15/16] Fix lapack larfg function signature
 
 This patch fixes the signature of the LAPACK routine larfg. Please
 see https://github.com/pyodide/pyodide/issues/3379 for more details.
