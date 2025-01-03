@@ -6,6 +6,8 @@ Subject: [PATCH 10/15] Remove chla_transtype
 The signature should probably be `int chla_transtype(char* res, int *trans)`.
 This just deletes it entirely due to laziness.
 
+Note: this patch file has LF line endings, similar to the file it patches.
+
 ---
  scipy/linalg/cython_lapack_signatures.txt | 1 -
  1 file changed, 1 deletion(-)
