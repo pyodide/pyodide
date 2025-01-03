@@ -36,7 +36,7 @@ source:
     - patches/0013-Make-sf_error_state_lib-a-static-library.patch
     - patches/0014-Remove-test-modules-that-fail-to-build.patch
     - patches/0015-Fix-lapack-larfg-function-signature.patch
-    - patches/0016-Work-around-legacy-Fortran-standard-flag.patch # TODO; investigate this properly
+    - patches/0016-Use-legacy-Fortran-standard-flag-for-Emscripten.patch # TODO; investigate this properly
 
 build:
   # NumPy 2.1 disabled visibility for symbols outside of extension modules

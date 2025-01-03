@@ -1,0 +1,25 @@
+From 7345347f3f36b7b5a8ccf0d4a1c91df7348aaf79 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Sat, 4 Jan 2025 00:43:02 +0530
+Subject: [PATCH 16/16] Use legacy Fortran standard flag for Emscripten
+
+---
+ meson.build | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/meson.build b/meson.build
+index 94ffaeb68..10a79e30d 100644
+--- a/meson.build
++++ b/meson.build
+@@ -79,7 +79,7 @@ endif
+ # Adding at project level causes many spurious -lgfortran flags.
+ add_languages('fortran', native: false)
+ ff = meson.get_compiler('fortran')
+-if ff.get_id() == 'gcc'
++if ff.get_id() == 'gcc' or ff.get_id() == 'emscripten'
+   # -std=legacy is not supported by all Fortran compilers, but very useful with
+   # gfortran since it avoids a ton of warnings that we don't care about.
+   # Needs fixing in Meson, see https://github.com/mesonbuild/meson/issues/11633.
+-- 
+2.47.1
+
