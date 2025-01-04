@@ -14,6 +14,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Packages
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+
 ## Version 0.27.0
 
 _January 1, 2025_
