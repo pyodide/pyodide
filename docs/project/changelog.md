@@ -113,6 +113,7 @@ _January 1, 2025_
 - Upgraded `shapely` to 2.0.6 {pr}`4925`
 - Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
 - Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `pyxel` to 2.2.10 {pr}`5283`
 - Upgraded `xarray` to 2024.10.0 {pr}`4925`
 - Upgraded `zarr` to 2.18.3 {pr}`4925`
 - Upgraded `h5py` to 3.12.1 {pr}`4925`
@@ -139,6 +140,7 @@ _January 1, 2025_
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
 - Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `orjson` to 3.10.13 {pr}`5283`
 - Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
