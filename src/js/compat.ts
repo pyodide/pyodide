@@ -183,7 +183,6 @@ export async function loadBinaryFile(
 /**
  * Currently loadScript is only used once to load `pyodide.asm.js`.
  * @param url
- * @async
  * @private
  */
 export let loadScript: (url: string) => Promise<void>;

@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 """Used in test_aiohttp.py"""
 
 from collections.abc import Iterable
