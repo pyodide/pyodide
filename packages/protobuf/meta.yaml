@@ -1,14 +1,12 @@
 package:
   name: protobuf
-  version: 5.29.0
+  version: 5.29.2
   top-level:
     - google
 
 source:
-  url: https://files.pythonhosted.org/packages/6a/bb/8e59a30b83102a37d24f907f417febb58e5f544d4f124dd1edcd12e078bf/protobuf-5.29.0.tar.gz
-  sha256: 445a0c02483869ed8513a585d80020d012c6dc60075f96fa0563a724987b1001
-  patches:
-    - patches/0001-Fix-indentation-in-service-py.patch
+  url: https://files.pythonhosted.org/packages/a5/73/4e6295c1420a9d20c9c351db3a36109b4c9aa601916cb7c6871e3196a1ca/protobuf-5.29.2.tar.gz
+  sha256: b2cc8e8bb7c9326996f0e160137b0861f1a82162502658df2951209d0cb0309e
 
 about:
   home: https://github.com/protocolbuffers/protobuf

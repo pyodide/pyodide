@@ -893,6 +893,12 @@ class JsAsyncGenerator(JsAsyncIterable[T_co], Generic[T_co, T_contra, V_co]):
 
 
 class JsCallable(JsProxy, Generic[P, T]):
+    """A JavaScript callable
+
+    A JavaScript object is treated as a callable if `typeof x` returns
+    `"function"`.
+    """
+
     _js_type_flags = ["IS_CALLABLE"]
 
     __call__: Callable[P, T]
@@ -1175,6 +1181,13 @@ class JsMutableMap(
 
 
 class JsOnceCallable(JsCallable[P, T], Generic[P, T]):
+    """A JavaScript handle for a Python function which can be called at most
+    once.
+
+    After it is called, the reference to the underlying Python object is
+    released and attempting to call it again will raise an `Error`.
+    """
+
     def destroy(self):
         pass
 
@@ -1603,6 +1616,7 @@ __all__ = [
     "JsProxy",
     "JsDomElement",
     "JsCallable",
+    "JsOnceCallable",
     "JsTypedArray",
     "run_sync",
     "can_run_sync",

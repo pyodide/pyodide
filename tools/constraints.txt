@@ -1,4 +1,8 @@
-# https://github.com/pyodide/pyodide/issues/5131
-meson < 1.6
-# https://github.com/pyodide/pyodide/issues/5221
-cysignals < 1.12.0
+# This file is used to track build constraints for packages
+# via pyodide-build.
+#
+# Add any upper bounds for packages here to ensure that
+# their builds succeed, or those for packages that rely
+# on them at build time.
+
+maturin<1.8

@@ -20,20 +20,21 @@ panels_add_bootstrap_css = False
 project = "Pyodide"
 copyright = "2019-2024, Pyodide contributors and Mozilla"
 
+suppress_warnings = ["config.cache"]
 nitpicky = True
-nitpick_ignore = []
+nitpick_ignore: list[tuple[str, str]] = []
 
 
 def ignore_typevars():
     """These are all intentionally broken. Disable the warnings about it."""
-    PY_TYPEVARS_TO_IGNORE = ["T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co"]
-    JS_TYPEVARS_TO_IGNORE = ["TResult", "TResult1", "TResult2", "U"]
+    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co", "P")
+    JS_TYPEVARS_TO_IGNORE = ("TResult", "TResult1", "TResult2", "U")
 
-    for typevar in PY_TYPEVARS_TO_IGNORE:
-        nitpick_ignore.append(("py:obj", f"_pyodide._core_docs.{typevar}"))
-
-    for typevar in JS_TYPEVARS_TO_IGNORE:
-        nitpick_ignore.append(("js:func", typevar))
+    nitpick_ignore.extend(
+        ("py:obj", f"_pyodide._core_docs.{typevar}")
+        for typevar in PY_TYPEVARS_TO_IGNORE
+    )
+    nitpick_ignore.extend(("js:func", typevar) for typevar in JS_TYPEVARS_TO_IGNORE)
 
 
 ignore_typevars()
@@ -292,7 +293,7 @@ def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
         return
     if IN_READTHEDOCS:
-        subprocess.run(["npm", "ci"], cwd="../src/js")
+        subprocess.run(["npm", "ci"], cwd="../src/js", check=True)
         Path("../node_modules").symlink_to("../src/js/node_modules")
     if shutil.which("typedoc"):
         return
@@ -350,6 +351,7 @@ def typehints_formatter(annotation, config):
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
     except ValueError:
+        assert annotation == Ellipsis
         return None
     full_name = f"{module}.{class_name}"
     if full_name == "typing.TypeVar":
@@ -358,6 +360,11 @@ def typehints_formatter(annotation, config):
         return f"``{annotation.__name__}``"
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
+    # TODO: perhaps a more consistent way to handle JS xrefs / type annotations?
+    if full_name == "pyodide.http.AbortController":
+        return ":js:class:`AbortController`"
+    if full_name == "pyodide.http.AbortSignal":
+        return ":js:class:`AbortSignal`"
     return None
 
 

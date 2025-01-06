@@ -19,15 +19,43 @@ if IN_BROWSER:
         from js import XMLHttpRequest
     except ImportError:
         pass
+else:
+    # Hack for documentation xrefs, we replace these with links to mdn in the
+    # sphinx conf.py. TODO: Maybe come up with some better / more systematic way
+    # to handle this situation.
+    class AbortController:  # type:ignore[no-redef]
+        pass
+
+    class AbortSignal:  # type:ignore[no-redef]
+        pass
+
 
 __all__ = [
     "open_url",
     "pyfetch",
     "FetchResponse",
+    "HttpStatusError",
+    "BodyUsedError",
+    "AbortError",
 ]
 
 
 class HttpStatusError(OSError):
+    """A subclass of :py:exc:`OSError` raised by :py:meth:`FetchResponse.raise_for_status`
+    if the response status is 4XX or 5XX.
+
+    Parameters
+    ----------
+    status :
+       The http status code of the request
+
+    status_text :
+       The http status text of the request
+
+    url :
+        The url that was requested
+    """
+
     status: int
     status_text: str
     url: str
@@ -135,9 +163,13 @@ class FetchResponse:
     Parameters
     ----------
     url
-        URL to fetch
+        URL that was fetched
     js_response
-        A :py:class:`~pyodide.ffi.JsProxy` of the fetch response
+        A :py:class:`~pyodide.ffi.JsProxy` of the fetch :js:class:`Response`.
+    abort_controller
+        The abort controller that may be used to cancel the fetch request.
+    abort_signal
+        The abort signal that was used for the fetch request.
     """
 
     def __init__(
@@ -223,7 +255,7 @@ class FetchResponse:
             raise BodyUsedError
 
     def raise_for_status(self) -> None:
-        """Raise an :py:exc:`HttpStatusError` if the status of the response is an error (4xx or 5xx)"""
+        """Raise an :py:exc:`~pyodide.http.HttpStatusError` if the status of the response is an error (4xx or 5xx)"""
         if 400 <= self.status < 600:
             raise HttpStatusError(self.status, self.status_text, self.url)
 

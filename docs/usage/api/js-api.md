@@ -24,10 +24,24 @@ Backward compatibility of the API is not guaranteed at this point.
 
 ## pyodide.ffi
 
+Foreign function interface classes. Can be used for typescript type annotations
+or at runtime for `instanceof` checks.
+
 To import types from `pyodide.ffi` you can use for example
 
-```js
+```ts
 import type { PyProxy } from "pyodide/ffi";
+```
+
+If you want to do an instance check, you'll need to access the type via the
+Pyodide API returned from {js:func}`~globalThis.loadPyodide`:
+
+```js
+const pyodide = loadPyodide();
+const result = pyodide.runPython("... code here");
+if (result instanceof pyodide.ffi.PyProxy) {
+  // Do something
+}
 ```
 
 ```{eval-rst}
