@@ -6,8 +6,6 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/13/a3/a812df4e2dd5696d1f351d58b8fe16a405b234ad2886a0dab9183fb78109/pycparser-2.22-py3-none-any.whl
   sha256: c3702b6d3dd8c7abc1afa565d7e63d53a1d0bd86cdc24edd75470f4de499cfcc
-build:
-  cross-build-env: true
 about:
   home: https://github.com/eliben/pycparser
   PyPI: https://pypi.org/project/pycparser
