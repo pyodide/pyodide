@@ -132,7 +132,7 @@ _January 1, 2025_
 - Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
 - Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
