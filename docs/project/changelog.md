@@ -16,6 +16,14 @@ myst:
 
 ## Unreleased
 
+### Packages
+
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+
+## Version 0.27.0
+
+_January 1, 2025_
+
 - {{ Enhancement }} Upgrade to Python 3.12.7.
   {pr}`5149`
 
@@ -65,6 +73,12 @@ myst:
   [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
   for more information.
   {pr}`5100`
+
+- {{ Enhancement }} When using the Pyodide console, the standard streams inherit
+  `TextIOBase` and behave more like normal IO streams. In particular, they have
+  methods like `writelines()` and `readlines()`. They still don't have file
+  descriptors though.
+  {pr}`5056`
 
 - {{ Breaking }} The WASM backend is now the default backend for `matplotlib-pyodide` and
   the HTML5 backend has been disabled, temporarily redirecting to it. Power users
@@ -124,7 +138,7 @@ myst:
 - Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
 - Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
@@ -145,6 +159,7 @@ myst:
 - Added `tiktoken` v0.8.0 in {pr}`5147`
 - Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
 - Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
+- Added `polars` 1.18.0 {pr}`5282`
 - Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
 - Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
 - Added `rateslib` 1.6.0 {pr}`5146`, {pr}`5235`
@@ -157,6 +172,7 @@ myst:
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 - Added `vega-datasets` 0.9.0 {pr}`5183`
 - Added `clingo` 5.7.1 {pr}`5184`
+- Added `argon2-cffi` `argon2-cffi-bindings` 23.1.0 {pr}`5281`
 - Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
@@ -165,6 +181,7 @@ myst:
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
 - Upgraded `cffi` to 1.17.1 {pr}`5261`
+- Upgraded `pillow-heif` to 0.20.0 and `pyheif` 0.8.0 {pr}`5178`
 
 ## Version 0.26.4
 

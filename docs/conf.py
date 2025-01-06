@@ -20,13 +20,14 @@ panels_add_bootstrap_css = False
 project = "Pyodide"
 copyright = "2019-2024, Pyodide contributors and Mozilla"
 
+suppress_warnings = ["config.cache"]
 nitpicky = True
 nitpick_ignore: list[tuple[str, str]] = []
 
 
 def ignore_typevars():
     """These are all intentionally broken. Disable the warnings about it."""
-    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co")
+    PY_TYPEVARS_TO_IGNORE = ("T", "T_co", "T_contra", "V_co", "KT", "VT", "VT_co", "P")
     JS_TYPEVARS_TO_IGNORE = ("TResult", "TResult1", "TResult2", "U")
 
     nitpick_ignore.extend(
@@ -350,6 +351,7 @@ def typehints_formatter(annotation, config):
         module = get_annotation_module(annotation)
         class_name = get_annotation_class_name(annotation, module)
     except ValueError:
+        assert annotation == Ellipsis
         return None
     full_name = f"{module}.{class_name}"
     if full_name == "typing.TypeVar":
@@ -358,6 +360,11 @@ def typehints_formatter(annotation, config):
         return f"``{annotation.__name__}``"
     if full_name == "ast.Module":
         return "`Module <https://docs.python.org/3/library/ast.html#module-ast>`_"
+    # TODO: perhaps a more consistent way to handle JS xrefs / type annotations?
+    if full_name == "pyodide.http.AbortController":
+        return ":js:class:`AbortController`"
+    if full_name == "pyodide.http.AbortSignal":
+        return ":js:class:`AbortSignal`"
     return None
 
 

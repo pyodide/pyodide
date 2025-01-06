@@ -6,6 +6,7 @@ import {
   PackageLoadMetadata,
   PackageManagerAPI,
   PackageManagerModule,
+  LoadedPackages,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -29,7 +30,7 @@ import { Installer } from "./installer";
  * Initialize the packages index. This is called as early as possible in
  * loadPyodide so that fetching pyodide-lock.json can occur in parallel with other
  * operations.
- * @param lockFileURL
+ * @param lockFilePromise
  * @private
  */
 export async function initializePackageIndex(
@@ -118,7 +119,7 @@ export class PackageManager {
    *
    * TODO: Make this private and expose a setter
    */
-  public loadedPackages: Record<string, string> = {};
+  public loadedPackages: LoadedPackages = {};
 
   private _lock = createLock();
 
@@ -169,7 +170,6 @@ export class PackageManager {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @async
    * @returns The loaded package data.
    */
   public async loadPackage(
@@ -566,7 +566,14 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
-export let loadedPackages: typeof PackageManager.prototype.loadedPackages;
+/**
+ * An object whose keys are the names of the loaded packages and whose values
+ * are the install sources of the packages. Use
+ * `Object.keys(pyodide.loadedPackages)` to get the list of names of loaded
+ * packages, and `pyodide.loadedPackages[package_name]` to access the install
+ * source for a particular `package_name`.
+ */
+export let loadedPackages: LoadedPackages;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);

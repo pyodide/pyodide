@@ -9,6 +9,7 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
  * - storing metadata about the Package
  * - loading shared libraries
  * - installing data files
+ * @hidden
  */
 export class Installer {
   #api: PackageManagerAPI;
@@ -49,6 +50,7 @@ export class Installer {
   }
 }
 
+/** @hidden */
 export let install: typeof Installer.prototype.install;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
