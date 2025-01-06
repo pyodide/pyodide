@@ -17,6 +17,7 @@ myst:
 ## Unreleased
 
 ### Packages
+- Added `httpx` 0.28.1 {pr}`5302`
 
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
 
