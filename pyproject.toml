@@ -148,6 +148,7 @@ markers = [
 
 [tool.pyodide.build]
 rust_toolchain = "nightly-2024-12-01"
+_build_dependency_fallback_to_pypi = "0"
 
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
