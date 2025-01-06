@@ -177,14 +177,15 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
 function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
-  if (SOURCEMAP) {
+  // @ts-ignore
+  if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
     // According to the docs:
     //
     // "Sanitizers or source map is currently not supported if overriding
     // WebAssembly instantiation with Module.instantiateWasm."
     // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
     //
-    // I haven't checked if this is actually a problem in practice.
+    // typeof WasmOffsetConverter !== "undefined" checks for asan.
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
@@ -204,13 +205,6 @@ function getInstantiateWasmFunc(
           res = await WebAssembly.instantiate(await binary, imports);
         }
         const { instance, module } = res;
-        // When overriding instantiateWasm, in asan builds, we also need
-        // to take care of creating the WasmOffsetConverter
-        // @ts-ignore
-        if (typeof WasmOffsetConverter !== "undefined") {
-          // @ts-ignore
-          wasmOffsetConverter = new WasmOffsetConverter(wasmBinary, module);
-        }
         successCallback(instance, module);
       } catch (e) {
         console.warn("wasm instantiation failed!");
