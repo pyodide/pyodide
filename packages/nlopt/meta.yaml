@@ -1,12 +1,12 @@
 package:
   name: nlopt
-  version: 2.7.0
+  version: 2.9.1
   top-level:
     - nlopt
 
 source:
-  url: https://github.com/stevengj/nlopt/archive/v2.7.0.tar.gz
-  sha256: b881cc2a5face5139f1c5a30caf26b7d3cb43d69d5e423c9d78392f99844499f
+  url: https://github.com/stevengj/nlopt/archive/v2.9.1.tar.gz
+  sha256: 1e6c33f8cbdc4138d525f3326c231f14ed50d99345561e85285638c49b64ee93
 
   extras:
     - - extras/setup.py
