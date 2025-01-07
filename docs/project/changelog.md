@@ -19,6 +19,7 @@ myst:
 ### Packages
 
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `css_inline` 0.14.6 {pr}`5304`
 
 ## Version 0.27.0
 
