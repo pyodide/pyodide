@@ -19,6 +19,7 @@ myst:
 ### Packages
 
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `apsw` 3.47.2.0 {pr}`5251`
 
 ## Version 0.27.0
 
