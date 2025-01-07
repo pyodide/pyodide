@@ -21,6 +21,7 @@ _January 23, 2025_
 ### Packages
 
 - Added `httpx` 0.28.1 {pr}`5302`
+- Added `apsw` 3.47.2.0 {pr}`5251`
 - Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
