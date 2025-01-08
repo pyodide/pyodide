@@ -24,7 +24,7 @@ def test_find_imports():
         import matplotlib.pyplot as plt
         """
     )
-    assert set(res) == {"numpy", "scipy", "matplotlib"}
+    assert set(res) == {"numpy", "scipy", "matplotlib", "matplotlib.pyplot"}
 
     # If there is a syntax error in the code, find_imports should return empty
     # list.
@@ -280,7 +280,10 @@ def test_relaxed_call():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         relaxed_call(f4, a=2, b=7)
 
@@ -342,7 +345,10 @@ def test_relaxed_wrap():
         return [a, args, b]
 
     with pytest.raises(
-        TypeError, match="'a' parameter is positional only, but was passed as a keyword"
+        TypeError,
+        match=re.escape(
+            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
+        ),
     ):
         f4(a=2, b=7)
 
@@ -1168,11 +1174,10 @@ def test_js_stackframes(selenium):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
-            if (
-                re.fullmatch(r"\:[0-9]*", file)
-                or file == "evalmachine.<anonymous>"
-                or file == "debugger eval code"
-            ):
+            if re.fullmatch(r"\:[0-9]*", file) or file in {
+                "debugger eval code",
+                "evalmachine.<anonymous>",
+            }:
                 file = "test.html"
             res.append([file, name])
         return res
@@ -1516,6 +1521,27 @@ def test_module_not_found_note(selenium_standalone):
     assert len(e.value.__notes__) == 1
 
 
+@run_in_pyodide
+def test_importhook_called_from_pytest(selenium):
+    """
+    Whenever importlib itself resolves `import a.b`, it splits on the . and
+    first imports `a` and then `a.b`. However, pytest does not, it calls
+    `find_spec("a.b")` directly here:
+    https://github.com/pytest-dev/pytest/blob/ea0fa639445ae08616edd2c15189a1a76168f018/src/_pytest/pathlib.py#L693-L698
+
+    This previously could lead to KeyError being raised in `JsFinder`.
+    """
+    import sys
+
+    def _import_module_using_spec(module_name):
+        """Modeled on a fragment of _pytest.pathlib._import_module_using_spec"""
+        for meta_importer in sys.meta_path:
+            meta_importer.find_spec(module_name, [])
+
+    # Assertion: This should not raise KeyError.
+    _import_module_using_spec("a.b")
+
+
 def test_args(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     assert selenium.run_js(
@@ -1561,7 +1587,7 @@ def test_args_OO(selenium_standalone_noload):
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    subprocess.run(["node", "-v"], encoding="utf8", check=True)
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
@@ -1582,6 +1608,7 @@ def test_relative_index_url(selenium, tmp_path):
         cwd=ROOT_PATH,
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     import textwrap
 
@@ -1609,7 +1636,9 @@ def test_index_url_calculation_source_map(selenium):
 
     node_options = ["--enable-source-maps"]
 
-    result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8", check=True
+    )
 
     DIST_DIR = str(Path.cwd() / "dist")
 
@@ -1632,6 +1661,7 @@ def test_index_url_calculation_source_map(selenium):
         env=env,
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
 
     assert f"indexURL: {DIST_DIR}" in result.stdout
@@ -1666,6 +1696,7 @@ def test_default_index_url_calculation_node(selenium, tmp_path, filename, import
         capture_output=True,
         encoding="utf8",
         cwd=tmp_path,
+        check=False,
     )
 
     assert f"indexURL: {DIST_PATH}" in result.stdout

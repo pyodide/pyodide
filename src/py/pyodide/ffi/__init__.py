@@ -46,6 +46,7 @@ __all__ = [
     "JsIterator",
     "JsMap",
     "JsMutableMap",
+    "JsOnceCallable",
     "JsPromise",
     "JsProxy",
     "JsDomElement",

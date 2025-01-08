@@ -1,11 +1,11 @@
 package:
   name: galpy
-  version: 1.9.2
+  version: 1.10.1
   top-level:
     - galpy
 source:
-  url: https://files.pythonhosted.org/packages/7c/78/884c468c43679ee6f3d59d14773677aa0095dde13be0cdb9c8aafb07affd/galpy-1.9.2.tar.gz
-  sha256: cf13e166b046e07cdcc663acf5412dd2f2649a5ae06985ee040f109325a92e5a
+  url: https://files.pythonhosted.org/packages/e4/5b/b5f1a021046684b803f374026d5d5f9bf343c43bd31beb8170cb93ad1263/galpy-1.10.1.tar.gz
+  sha256: a674b9e38b2188efa716b34a4ab49035396049a2523166dcd1f0ffe068753067
 build:
   script:
     export LIBGSL_INCLUDE_PATH=$(pkg-config --cflags-only-I --dont-define-prefix
@@ -39,7 +39,7 @@ about:
   home: http://github.com/jobovy/galpy
   PyPI: https://pypi.org/project/galpy
   summary: Galactic Dynamics in python
-  license: New BSD
+  license: BSD-3-Clause
 extra:
   recipe-maintainers:
     - jobovy

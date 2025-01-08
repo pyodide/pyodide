@@ -608,6 +608,14 @@ async def eval_code_async(
     )
 
 
+def _add_prefixes(s: set[str], mod: str) -> None:
+    [current, *rest] = mod.split(".")
+    s.add(current)
+    for part in rest:
+        current += f".{part}"
+        s.add(current)
+
+
 def find_imports(source: str) -> list[str]:
     """
     Finds the imports in a Python source code string
@@ -619,14 +627,18 @@ def find_imports(source: str) -> list[str]:
 
     Returns
     -------
-        A list of module names that are imported in ``source``. If ``source`` is not
-        syntactically correct Python code (after dedenting), returns an empty list.
+        A list of module names that are imported in ``source``. If ``source`` is
+        not syntactically correct Python code (after dedenting), returns an
+        empty list.
+
+        Given `import package.module`, `find_imports` will include both
+        `"package"` and `"package.module"` in the result.
 
     Examples
     --------
     >>> source = "import numpy as np; import scipy.stats"
     >>> find_imports(source)
-    ['numpy', 'scipy']
+    ['numpy', 'scipy', 'scipy.stats']
     """
     # handle mis-indented input from multi-line strings
     source = dedent(source)
@@ -635,18 +647,18 @@ def find_imports(source: str) -> list[str]:
         mod = ast.parse(source)
     except SyntaxError:
         return []
-    imports = set()
+    imports: set[str] = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
             for name in node.names:
                 node_name = name.name
-                imports.add(node_name.split(".")[0])
+                _add_prefixes(imports, node_name)
         elif isinstance(node, ast.ImportFrom):
             module_name = node.module
             if module_name is None:
                 continue
-            imports.add(module_name.split(".")[0])
-    return list(sorted(imports))
+            _add_prefixes(imports, module_name)
+    return sorted(imports)
 
 
 def pyimport_impl(path: str) -> Any:

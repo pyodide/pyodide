@@ -31,6 +31,7 @@ build:
     -sUSE_LIBPNG=1
     -sUSE_GIFLIB=1
     -sUSE_HARFBUZZ=1
+    -Wno-unreachable-code-fallthrough
   ldflags: |
     -sRELOCATABLE=1
     -sUSE_SDL=2
@@ -91,4 +92,4 @@ about:
   home: https://www.pygame.org
   PyPI: https://pypi.org/project/pygame
   summary: Python Game Development
-  license: LGPL
+  license: LGPL-2.1

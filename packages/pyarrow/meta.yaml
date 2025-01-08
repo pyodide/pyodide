@@ -1,16 +1,20 @@
 package:
   name: pyarrow
-  version: 17.0.0
+  version: 18.1.0
   top-level:
     - pyarrow
 source:
-  url: https://github.com/joemarshall/pyarrow-pyodide/releases/download/0.26.2/pyarrow-17.0.0-cp312-cp312-pyodide_2024_0_wasm32.whl
-  sha256: ffa61d6410f960829727efe0a23a934da88972d993c13601351abbbc1f57ee2a
+  # TODO: Rebuild via https://github.com/joemarshall/pyarrow-pyodide/ once 0.27 xbuildenvs are available
+  url: https://github.com/pyodide/pyodide-numpy-2.0-rebuilds/releases/download/v1.0.0/pyarrow-18.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: a01eed6b96e645c31bff9af941632e0a75e00aa7762211c74b5abca275e99020
 requirements:
   run:
     - numpy
     - pandas
     - pyodide-unix-timezones
+about:
+  home: https://github.com/apache/arrow
+  license: Apache-2.0
 extra:
   recipe-maintainers:
     - joemarshall

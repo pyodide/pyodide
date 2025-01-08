@@ -16,6 +16,20 @@ myst:
 
 ## Unreleased
 
+### Packages
+
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `apsw` 3.47.2.0 {pr}`5251`
+- Added `css_inline` 0.14.6 {pr}`5304`
+- Upgraded `nlopt` 2.9.1 {pr}`5305`
+
+## Version 0.27.0
+
+_January 1, 2025_
+
+- {{ Enhancement }} Upgrade to Python 3.12.7.
+  {pr}`5149`
+
 - {{ Enhancement }} Add unix-timezones module, which installs Unix compatible
   timezone data in /usr/share/zoneinfo, for use with C/C++ libraries which do
   timezone handling.
@@ -36,41 +50,178 @@ myst:
 - {{ Enhancement }} Unvendored stdlibs are now packaged in a wheel format
   {pr}`4902`
 
+- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
+  not included in the cross-build env anymore.
+  {pr}`4995`
+
+- {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
+  JSON (Arrays and Objects). to Python JSON (lists and dicts).
+  {pr}`4666`
+
+- {{ Enhancement }} `pyodide.loadPackage` will now install data files inside the wheel.
+  {pr}`5034`
+
+- {{ Enhancement }} `find_imports("import pkg.module.submodule")` will now
+  return `["pkg", "pkg.module", "pkg.module.submodule"]`. This improves support
+  for namespace packages.
+  {pr}`5039`
+
+- {{ Breaking }} Removed `webworker.js` from the distribution files. It was a
+  pretty small file, if someone is using it for something they can just copy it into
+  their own code.
+  {pr}`5114`
+
+- {{ Enhancement }} Enabled `pyodide.FS.trackingDelegate` which can be used to track
+  file system operations. See
+  [Emscripten docs](https://emscripten.org/docs/api_reference/Filesystem-API.html#FS.trackingDelegate[callback%20name])
+  for more information.
+  {pr}`5100`
+
+- {{ Enhancement }} When using the Pyodide console, the standard streams inherit
+  `TextIOBase` and behave more like normal IO streams. In particular, they have
+  methods like `writelines()` and `readlines()`. They still don't have file
+  descriptors though.
+  {pr}`5056`
+
+- {{ Breaking }} The WASM backend is now the default backend for `matplotlib-pyodide` and
+  the HTML5 backend has been disabled, temporarily redirecting to it. Power users
+  might see minor incompatibilities and subtle differences. Please see
+  https://github.com/pyodide/matplotlib-pyodide/issues/64 and
+  https://github.com/pyodide/matplotlib-pyodide/issues/65
+  for more information and if you wish to contribute to the discussion.
+  {pr}`4510`
+
+### Packages
+
+- Upgraded `numpy` to 2.0.2 {pr}`4925`
+- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4925`
+- Upgraded `gsw` to 3.6.19 {pr}`4925`
+- Upgraded `opencv-python` to 4.10.0.84 {pr}`4925`
+- Upgraded `yt` to 4.3.1 {pr}`4925`
+- Upgraded `xgboost` to 2.1.2 {pr}`4925`
+- Upgraded `autograd` to 1.7.0 {pr}`4925`
+- Upgraded `sisl` to 0.15.1 {pr}`4925`
+- Upgraded `cartopy` to 0.24.1 {pr}`4925`
+- Upgraded `astropy` to 7.0.0 {pr}`4925`
+- Upgraded `biopython` to 1.84 {pr}`4925`
+- Upgraded `fastparquet` to 2024.5.0 {pr}`4925`
+- Upgraded `geopandas` to 1.0.1 {pr}`4925`
+- Upgraded `imageio` to 2.36.0 {pr}`4925`
+- Upgraded `lightgbm` to 4.5.0 {pr}`4925`
+- Upgraded `netcdf4` to 1.7.2 {pr}`4925`
+- Upgraded `networkx` to 3.4.2 {pr}`4925`
+- Upgraded `numcodecs` to 0.13.1 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4893`, {pr}`4925`
+- Upgraded `pywavelets` to 1.7.0 {pr}`4925`
+- Upgraded `shapely` to 2.0.6 {pr}`4925`
+- Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
+- Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `xarray` to 2024.10.0 {pr}`4925`
+- Upgraded `zarr` to 2.18.3 {pr}`4925`
+- Upgraded `h5py` to 3.12.1 {pr}`4925`
+- Upgraded `cftime` to 1.6.4.post1 {pr}`4925`
+- Upgraded `clarabel` to 0.9.0 {pr}`4925`
+- Upgraded `ewah_bool_utils` to 1.2.2 {pr}`4925`
+- Upgraded `galpy` to 1.10.1 {pr}`4925`
+- Upgraded `mne-python` to 1.8.0 {pr}`4925`
+- Upgraded `pyxirr` to 0.10.6 {pr}`4925`
+- Upgraded `regex` to 2024.9.11 {pr}`4925`
+- Upgraded `crc32c` to 2.7.1 {pr}`5169`
+- Upgraded `rebound` to 4.4.3 {pr}`5163`
+- Upgraded `reboundx` to 4.3.0 {pr}`5163`
+- Upgraded `msprime` to 1.3.3 {pr}`5159`
+- Upgraded `tskit` to 0.6.0 {pr}`5157`
+- Upgraded `pydantic_core` to 2.25.1 {pr}`5151`
+- Upgraded `pydantic` to 2.9.2 {pr}`5151`
+- Upgraded `msgpack` to 1.1.0 {pr}`5144`
+- Upgraded `protobuf` to 5.28.3 {pr}`5136`
+- Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
+- Upgraded `libcst` to 1.4.0 {pr}`4856`
+- Upgraded `lakers` to 0.3.3 {pr}`4885`
+- Upgraded `certifi` to 2024.12.14 {pr}`5257`
+- Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
+- Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
+- Upgraded `protobuf` to 5.29.1 {pr}`5257`
+- Upgraded `sourmash` to 4.8.11 {pr}`4980`
+- Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
+- Upgraded `scikit-image` to 0.24.0 {pr}`5003`
+- Upgraded `statsmodels` to 0.14.4 {pr}`5058`
+- Upgraded `contourpy` to 1.3.0 {pr}`5048`
+- Upgraded `boost-histogram` to 1.5.0 {pr}`5074`
+- Upgraded `duckdb` to 1.1.0 {pr}`5078`
+- Upgraded `sympy` to 1.13.3 {pr}`5098`
+- Upgraded `tree-sitter` to 0.23.1 {pr}`5110`
+- Upgraded `altair` to 5.4.1 {pr}`5124`
+- Upgraded `PyYAML` to 6.0.2 {pr}`5137`
+- Upgraded `duckdb` to 1.1.2 {pr}`5142`
+- Upgraded `matplotlib` to 3.8.4 {pr}`4510`
+- Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
+- Upgraded `cysignals` to 1.12.2 {pr}`5267`
+- Added `soxr` 0.5.0.post1 {pr}`5150`
+- Added `tiktoken` v0.8.0 in {pr}`5147`
+- Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
+- Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
+- Added `polars` 1.18.0 {pr}`5282`
+- Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
+- Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
+- Added `rateslib` 1.6.0 {pr}`5146`, {pr}`5235`
+- Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
+- Added `tree-sitter` 0.23.0 {pr}`5099`
+- Added `tree-sitter-go` 0.23.1 {pr}`5102`
+- Added `tree-sitter-java` 0.23.2 {pr}`5102`
+- Added `tree-sitter-python` 0.23.2 {pr}`5102`
+- Added `Narwhals` 1.9.4 {pr}`5121`
+- Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
+- Added `vega-datasets` 0.9.0 {pr}`5183`
+- Added `clingo` 5.7.1 {pr}`5184`
+- Added `argon2-cffi` `argon2-cffi-bindings` 23.1.0 {pr}`5281`
+- Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
+- Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
+- Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
+- Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `xarray` to 2024.11.0 {pr}`5224`
+- Upgraded `lakers-python` to 0.4.1 {pr}`5225`
+- Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
+- Upgraded `cffi` to 1.17.1 {pr}`5261`
+- Upgraded `pillow-heif` to 0.20.0 and `pyheif` 0.8.0 {pr}`5178`
+
+## Version 0.26.4
+
+_November 15, 2024_
+
+- {{ Fix }} JSPI support now works with support for new JSPI and no WebAssembly type reflection.
+  {pr}`5129`
+
+- {{ Fix }} Fix sessionStorage-related crash when running in sandboxed iframe.
+  {pr}`5186`
+
+- {{ Fix }} `JsFinder.find_spec()` no longer crashes when called during pytest test collection.
+  {pr}`5170`
+
+## Version 0.26.3
+
+_October 19, 2024_
+
 - {{ Performance }} Attribute lookup on a `JsProxy` is now about 40% faster.
   {pr}`4961`
 
 - {{ Performance }} Method calls on a `JsProxy` are now much faster. If the
   method has no arguments and no return value, it is about 80% faster. The
   speedup for methods with arguments is less drastic but still quite a lot.
-  {pr}`4961`
+  {pr}`4963`
 
-- {{ Breaking }} Prebuilt third-party libraries like `openblas`, `openssl`, `zlib` are
-  not included in the cross-build env anymore.
-  {pr}`4995`
+- {{ Enhancement }} Updated stack switching support to handle new JSPI.
+  {pr}`4982`
 
 - {{ Fix }} `pyimport("a.b")` won't fail when `a` is removed by `del sys.modules["a"]`
   {pr}`4993`
 
-- {{ Enhancement }} Added `JsProxy.as_py_json` method to adapt from JavaScript
-  JSON (Arrays and Objects). to Python JSON (lists and dicts).
-  {pr}`4666`
+- {{ Fix }} It now works to convert a 0d Python buffer to JavaScript.
+  {pr}`5092`
 
-### Packages
-
-- Upgraded `scikit-learn` to 1.5.1 {pr}`4823`, {pr}`5016`
-- Upgraded `libcst` to 1.4.0 {pr}`4856`
-- Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `certifi` to 2024.7.4 {pr}`5035`
-- Upgraded `bokeh` to 3.4.2 {pr}`4888`
-- Upgraded `pandas` to 2.2.2 {pr}`4893`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `sourmash` to 4.8.11 {pr}`4980`
-- Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
-- Upgraded `scikit-image` to 0.24.0 {pr}`5003`
-- Added `casadi` 3.6.5 {pr}`4936`
-- Added `pyarrow` 17.0.0 {pr}`4950`
-- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
-- Added `iminuit` 2.28.0 {pr}`4767`
+- {{ Fix }} It now works to convert buffers of 64 bit signed or unsigned integers to JavaScript.
+  {pr}`5092`
 
 ## Version 0.26.2
 

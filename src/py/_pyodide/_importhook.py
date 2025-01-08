@@ -22,7 +22,13 @@ class JsFinder(MetaPathFinder):
     ) -> ModuleSpec | None:
         [parent, _, child] = fullname.rpartition(".")
         if parent:
-            parent_module = sys.modules[parent]
+            try:
+                parent_module = sys.modules[parent]
+            except KeyError:
+                # Note: This will never happen when we're called from importlib,
+                # but pytest hits this codepath. See
+                # `test_importhook_called_from_pytest`.
+                return None
             if not isinstance(parent_module, JsProxy):
                 # Not one of us.
                 return None
@@ -189,7 +195,7 @@ def register_module_not_found_hook(packages: Any, unvendored: Any) -> None:
     Note that this finder must be placed in the end of meta_paths
     in order to prevent any unexpected side effects.
     """
-    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME
-    global UNVENDORED_STDLIBS_AND_TEST
+    global REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME  # noqa: PLW0603
+    global UNVENDORED_STDLIBS_AND_TEST  # noqa: PLW0603
     REPODATA_PACKAGES_IMPORT_TO_PACKAGE_NAME = packages.to_py()
     UNVENDORED_STDLIBS_AND_TEST = set(unvendored.to_py())

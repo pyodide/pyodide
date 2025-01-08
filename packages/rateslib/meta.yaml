@@ -1,0 +1,24 @@
+package:
+  name: rateslib
+  version: 1.6.0
+  top-level:
+    - rateslib
+source:
+  url: https://files.pythonhosted.org/packages/99/f4/a375025da7b557504ce168854de0fb0cf8f387061494d2c92c5b0978f675/rateslib-1.6.0.tar.gz
+  sha256: 736fcb57af26d49137f2fe4f82b94e569f0470c6752a00eb90609a59df97e850
+requirements:
+  run:
+    - numpy
+    - pandas
+    - matplotlib
+  executable:
+    - rustup
+about:
+  home: https://rateslib.readthedocs.io/en/1.6.x/
+  PyPI: https://pypi.org/project/rateslib
+  summary: A fixed income library for trading interest rates
+  license: CC-BY-NC-ND-4.0
+extra:
+  recipe-maintainers:
+    - NickAltmann
+    - attack68
