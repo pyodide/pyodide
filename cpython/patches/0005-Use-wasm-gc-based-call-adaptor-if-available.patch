@@ -1,4 +1,4 @@
-From 75263afe71bbaf5704d49e88362853bb39471642 Mon Sep 17 00:00:00 2001
+From 5cee2c3136a8bc9037eeff9be59b634324b546b5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 15:16:03 +0200
 Subject: [PATCH 5/8] Use wasm-gc based call adaptor if available
@@ -24,10 +24,11 @@ function.
 Upstream PR: https://github.com/python/cpython/pull/128628
 ---
  .../internal/pycore_emscripten_trampoline.h   |  25 +--
- Python/emscripten_trampoline.c                | 200 +++++++++++++++---
+ Include/internal/pycore_runtime.h             |   2 +-
+ Python/emscripten_trampoline.c                | 208 +++++++++++++++---
  Python/pylifecycle.c                          |   1 -
  Python/pystate.c                              |   2 -
- 4 files changed, 173 insertions(+), 55 deletions(-)
+ 5 files changed, 182 insertions(+), 56 deletions(-)
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 index 900d527e48d..99afde3fa86 100644
@@ -73,13 +74,28 @@ index 900d527e48d..99afde3fa86 100644
  #define _PyCFunction_TrampolineCall(meth, self, args) \
      (meth)((self), (args))
  #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
+diff --git a/Include/internal/pycore_runtime.h b/Include/internal/pycore_runtime.h
+index 8ceb6b72ec1..6a30264aa33 100644
+--- a/Include/internal/pycore_runtime.h
++++ b/Include/internal/pycore_runtime.h
+@@ -79,7 +79,7 @@ typedef struct pyruntimestate {
+ 
+ #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+     /* Choose between trampoline based on type reflection vs based on EM_JS */
+-    int wasm_type_reflection_available;
++    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
+ #endif
+ 
+     /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
-index 8d29393bd87..fa976f0430e 100644
+index 8d29393bd87..de69d405485 100644
 --- a/Python/emscripten_trampoline.c
 +++ b/Python/emscripten_trampoline.c
-@@ -5,19 +5,13 @@
+@@ -4,59 +4,205 @@
+ #include <Python.h>
  #include "pycore_runtime.h"         // _PyRuntime
  
++#define EMSCRIPTEN_COUNT_ARGS_OFFSET 20
  
 -/**
 - * This is the GoogleChromeLabs approved way to feature detect type-reflection:
@@ -88,24 +104,27 @@ index 8d29393bd87..fa976f0430e 100644
 -EM_JS(int, _PyEM_detect_type_reflection, (), {
 -  return "Function" in WebAssembly;
 -});
--
++_Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function) == EMSCRIPTEN_COUNT_ARGS_OFFSET);
+ 
 -void
 -_Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
 -{
 -  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
 -}
-+typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
++// Enable macro expanding in the body of EM_JS
++#define EM_JS_MACROS(ret, func_name, args, body...)                            \
++  EM_JS(ret, func_name, args, body)
+ 
 +// We have to be careful to work correctly with memory snapshots. Even if we are
 +// loading a memory snapshot, we need to perform the JS initialization work.
 +// That means we can't call the initialization code from C. Instead, we export
 +// this function pointer to JS and then fill it in a preRun function which runs
 +// unconditionally.
-+EMSCRIPTEN_KEEPALIVE CountArgsFunc _PyEM_CountFuncParams = NULL;
- 
  /**
   * Backwards compatible trampoline works with all JS runtimes
-@@ -25,37 +19,181 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
- EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
+  */
+-EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
++EM_JS_MACROS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
      return wasmTable.get(func)(arg1, arg2, arg3);
  }
 -);
@@ -281,7 +300,7 @@ index 8d29393bd87..fa976f0430e 100644
 -_PyEM_CountFuncParams.cache = new Map();
 -)
 -
-+  HEAP32[__PyEM_CountFuncParams/4] = ptr;
++  HEAP32[__PyRuntime/4 + EMSCRIPTEN_COUNT_ARGS_OFFSET] = ptr;
 +});
 +);
  
@@ -290,7 +309,9 @@ index 8d29393bd87..fa976f0430e 100644
  typedef PyObject* (*two_arg)(PyObject*, PyObject*);
  typedef PyObject* (*three_arg)(PyObject*, PyObject*, PyObject*);
  
--
++typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
++
+ 
  PyObject*
 -_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
@@ -298,12 +319,15 @@ index 8d29393bd87..fa976f0430e 100644
                PyObject* args,
                PyObject* kw)
  {
-+  if (_PyEM_CountFuncParams == 0) {
+-  switch (_PyEM_CountFuncParams(func)) {
++  CountArgsFunc count_args = _PyRuntime.emscripten_count_args_function;
++  if (count_args == 0) {
 +    return _PyEM_TrampolineCall_JS(func, self, args, kw);
 +  }
-   switch (_PyEM_CountFuncParams(func)) {
++  switch (count_args(func)) {
      case 0:
        return ((zero_arg)func)();
+     case 1:
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
 index f1510f32790..51eab2a8fee 100644
 --- a/Python/pylifecycle.c
