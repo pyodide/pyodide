@@ -1,4 +1,4 @@
-From f8783ed26de7a4199ccf9784fc13859f19c3dc7e Mon Sep 17 00:00:00 2001
+From 255d4b53a678c7a111b68a48e2ab576358946873 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:41:37 +0200
 Subject: [PATCH 8/8] Add call to `JsProxy_GetMethod` to help remove temporary
