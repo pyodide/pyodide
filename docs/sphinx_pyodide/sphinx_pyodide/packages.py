@@ -63,7 +63,7 @@ def get_packages_summary_directive(app):
 
             pattern = re.search(r"PYODIDE_PREBUILT_PACKAGES_LOCKFILE=(.*)", envs.stdout)
             if not pattern:
-                raise RuntimeError("Failed find lockfile URL in Makefile.envs")
+                raise RuntimeError("Failed to find lockfile URL in Makefile.envs")
 
             url = pattern.group(1)
             return url
