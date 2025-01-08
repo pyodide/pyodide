@@ -1,0 +1,31 @@
+package:
+  name: h5py
+  version: 3.12.1
+  top-level:
+    - h5py
+source:
+  url: https://files.pythonhosted.org/packages/cc/0c/5c2b0a88158682aeafb10c1c2b735df5bc31f165bfe192f2ee9f2a23b5f1/h5py-3.12.1.tar.gz
+  sha256: 326d70b53d31baa61f00b8aa5f95c2fcb9621a3ee8365d770c551a13dbbcbfdf
+  patches:
+    - patches/0001-Fix-incompatible-pointer-type.patch
+    - patches/configure.patch
+about:
+  home: ""
+  PyPI: https://pypi.org/project/h5py
+  summary: Read and write HDF5 files from Python
+  license: BSD-3-Clause
+
+requirements:
+  run:
+    - numpy
+    - pkgconfig
+  host:
+    - libhdf5
+
+build:
+  vendor-sharedlib: true
+  script: |
+    export HDF5_MPI=OFF
+    export H5PY_SETUP_REQUIRES="0"
+    export HDF5_VERSION=1.12.1
+    export HDF5_DIR=${WASM_LIBRARY_DIR}

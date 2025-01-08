@@ -1,0 +1,37 @@
+package:
+  name: libheif
+  version: 1.12.0
+  tag:
+    - library
+    - shared_library
+source:
+  url: https://github.com/strukturag/libheif/releases/download/v1.17.3/libheif-1.17.3.tar.gz
+  sha256: 8d5b6292e7931324f81f871f250ecbb9f874aa3c66b4f6f35ceb0bf3163b53ea
+
+requirements:
+  host:
+    - libde265
+
+build:
+  type: shared_library
+  script: |
+    # Build options are adapted from https://github.com/strukturag/libheif/blob/v1.12.0/build-emscripten.sh
+    # heif_emscripten.h is for building js APIs, but we don't want them.
+    sed -i 's@#include "heif_emscripten.h"@@' libheif/heif.cc
+    emcmake cmake \
+      -DCMAKE_CXX_FLAGS="-fPIC" \
+      -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+      -DWITH_EXAMPLES=OFF \
+      -DWITH_X265=OFF \
+      -DBUILD_TESTING=OFF \
+      -DBUILD_SHARED_LIBS=ON \
+      -DLIBDE265_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
+      -DLIBDE265_LIBRARY=${WASM_LIBRARY_DIR}/lib/libde265.a \
+      ./
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+    cp ${WASM_LIBRARY_DIR}/lib/libheif.so ${DISTDIR}
+about:
+  home: https://github.com/strukturag/libheif
+  license: LGPL-3.0

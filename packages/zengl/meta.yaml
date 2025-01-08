@@ -1,0 +1,19 @@
+package:
+  name: zengl
+  version: 2.7.1
+  top-level:
+    - zengl
+    - _zengl
+
+source:
+  url: https://files.pythonhosted.org/packages/fd/ee/3585dc99b43bc33c457b203edbd258f386d97e60b955259c0d410c8ed891/zengl-2.7.1.tar.gz
+  sha256: 39cda9a5a9c0c67466e2bb9a105e97b05436308a89d5d29f839cac9a01a42995
+
+about:
+  home: https://github.com/szabolcsdombi/zengl/
+  PyPI: https://pypi.org/project/zengl
+  summary: OpenGL Pipelines for Python
+  license: MIT
+extra:
+  recipe-maintainers:
+    - szabolcsdombi

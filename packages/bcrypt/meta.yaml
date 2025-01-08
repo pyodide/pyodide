@@ -1,0 +1,16 @@
+package:
+  name: bcrypt
+  version: 4.1.2
+  top-level:
+    - bcrypt
+source:
+  url: https://files.pythonhosted.org/packages/72/07/6a6f2047a9dc9d012b7b977e4041d37d078b76b44b7ee4daf331c1e6fb35/bcrypt-4.1.2.tar.gz
+  sha256: 33313a1200a3ae90b75587ceac502b048b840fc69e7f7a0905b5f87fac7a1258
+requirements:
+  executable:
+    - rustup
+about:
+  home: https://github.com/pyca/bcrypt/
+  PyPI: https://pypi.org/project/bcrypt
+  summary: Modern password hashing for your software and your servers
+  license: Apache-2.0

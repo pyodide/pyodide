@@ -1,0 +1,26 @@
+package:
+  name: numcodecs
+  version: 0.13.1
+  top-level:
+    - numcodecs
+source:
+  sha256: a3cf37881df0898f3a9c0d4477df88133fe85185bffe57ba31bcc2fa207709bc
+  url: https://files.pythonhosted.org/packages/85/56/8895a76abe4ec94ebd01eeb6d74f587bc4cddd46569670e1402852a5da13/numcodecs-0.13.1.tar.gz
+  patches:
+    - patches/fixblosc.patch
+    - patches/fixzlib.patch
+build:
+  script: |
+    export DISABLE_NUMCODECS_SSE2=1
+    export DISABLE_NUMCODECS_AVX2=1
+requirements:
+  run:
+    - numpy
+    - msgpack
+about:
+  home: https://github.com/zarr-developers/numcodecs
+  PyPI: https://pypi.org/project/numcodecs
+  summary:
+    A Python package providing buffer compression and transformation codecs
+    for use in data storage and communication applications.
+  license: MIT

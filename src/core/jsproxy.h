@@ -64,4 +64,7 @@ wrap_promise(JsVal promise, JsVal done_callback, PyObject* js2py_converter);
 int
 JsProxy_init(PyObject* core_module);
 
+PyObject*
+js2python_as_py_json(JsVal jsval);
+
 #endif /* JSPROXY_H */

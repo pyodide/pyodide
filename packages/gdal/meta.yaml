@@ -1,0 +1,117 @@
+package:
+  name: gdal
+  version: 3.8.3
+  tag:
+    - library
+    - shared_library
+source:
+  url: https://github.com/OSGeo/gdal/releases/download/v3.8.3/gdal-3.8.3.tar.gz
+  sha256: f7a30387a8239e9da26200f787a02136df2ee6473e86b36d05ad682761a049ea
+requirements:
+  host:
+    - libtiff
+    - libproj
+    - libiconv
+    - geos
+  run:
+    - geos
+
+build:
+  type: shared_library
+  script: |
+    export EMSCRIPTEN_SYSROOT=$(em-config CACHE)/sysroot
+    export EMSCRIPTEN_INCLUDE=$EMSCRIPTEN_SYSROOT/include
+    export EMSCRIPTEN_BIN=$EMSCRIPTEN_SYSROOT/bin
+    export EMSCRIPTEN_LIB=$EMSCRIPTEN_SYSROOT/lib/wasm32-emscripten/pic
+
+    embuilder build zlib --pic
+    embuilder build libjpeg --pic
+    embuilder build libpng --pic
+    embuilder build sqlite3 --pic
+
+    # LLVM bundled with Emscripten >= 3.1.47 has a parser bug regarding
+    # the comment. Until the bug is fixed, this is a temporary workaround to avoid the bug (removing comments).
+    # See: https://github.com/llvm/llvm-project/issues/67979
+    sed -i -e 's|//.*||' -e 's|/\*.*\*/||' alg/gdalgeoloc.cpp
+    sed -i -e 's|//.*||' -e 's|/\*.*\*/||' frmts/pds/pds4vector.cpp
+
+    mkdir -p build
+    cd build && emcmake cmake .. \
+      -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=True \
+      -DBUILD_APPS=OFF \
+      -DCMAKE_C_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
+      -DCMAKE_CXX_FLAGS="${SIDE_MODULE_CFLAGS} -Wno-deprecated-declarations -Wno-single-bit-bitfield-constant-conversion" \
+      -DCMAKE_SHARED_LINKER_FLAGS="-sSIDE_MODULE=1 -sWASM_BIGINT" \
+      -DGDAL_USE_EXTERNAL_LIBS=OFF \
+      -DGDAL_USE_INTERNAL_LIBS=OFF \
+      \
+      -DPROJ_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DPROJ_LIBRARY=$WASM_LIBRARY_DIR/lib/libproj.a \
+      \
+      -DGDAL_USE_ICONV=ON \
+      -DIconv_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DIconv_LIBRARY=$WASM_LIBRARY_DIR/lib/libiconv.a \
+      \
+      -DGDAL_USE_TIFF=ON \
+      -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
+      \
+      -DGDAL_USE_GEOS=ON \
+      -DGEOS_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+      -DGEOS_LIBRARY=$WASM_LIBRARY_DIR/lib/libgeos.so \
+      \
+      -DGDAL_USE_ZLIB=ON \
+      -DZLIB_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DZLIB_LIBRARY=$EMSCRIPTEN_LIB/libz.a \
+      \
+      -DGDAL_USE_PNG=ON \
+      -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng.a \
+      \
+      -DGDAL_USE_JPEG=ON \
+      -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DJPEG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libjpeg.a \
+      \
+      -DGDAL_USE_SQLITE3=ON \
+      -DSQLite3_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
+      -DSQLite3_LIBRARY=$EMSCRIPTEN_LIB/libsqlite3.a \
+      -DACCEPT_MISSING_SQLITE3_MUTEX_ALLOC=ON \
+      \
+      -DGDAL_USE_GEOTIFF_INTERNAL=ON \
+      -DGDAL_USE_QHULL_INTERNAL=ON \
+      -DGDAL_USE_LERC_INTERNAL=ON \
+      -DGDAL_USE_JSONC_INTERNAL=ON \
+      -DGDAL_USE_PCRE2=OFF \
+      -DBUILD_TESTING=OFF \
+      -DBUILD_PYTHON_BINDINGS=OFF
+
+
+    # Note:
+    # CMake tries to link the same libraries multiple times at the final link time.
+    # This is probably because the same libraries are used in multiple submodules.
+    # This behavior is okay when those libraries are "shared" libraries,
+    # but we often build static libraries and linking static libraries
+    # multiple times results in a duplicated symbol error.
+    # I wasn't able to find a way to prevent CMake from emitting duplicated libraries.
+    # This is a hack which removes all duplicated appearances of static libs at the final link time.
+
+    export LINKLIBS=$(pwd)/CMakeFiles/GDAL.dir/link.txt
+    cat ${LINKLIBS} | grep -o '\S*' | grep "\.a$" | sort | uniq | tr "\n" " " > linked_static_libs.txt
+    cat ${LINKLIBS} | grep -o '\S*' | grep -v "\.a$" | tr "\n" " " > link_cmd.txt
+    cat link_cmd.txt > ${LINKLIBS}
+    cat linked_static_libs.txt >> ${LINKLIBS}
+
+    emmake make -j ${PYODIDE_JOBS:-16}
+    emmake make install
+
+    cp ${WASM_LIBRARY_DIR}/lib/libgdal.so ${DISTDIR}
+
+# Note: this package needs to be manually upgraded to the next version
+about:
+  home: https://gdal.org/
+  license: MIT
+extra:
+  recipe-maintainers:
+    - jobovy

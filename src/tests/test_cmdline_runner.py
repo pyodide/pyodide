@@ -35,7 +35,9 @@ script_path = pyodide_root / "dist/python"
 
 @only_node
 def test_python_version(selenium):
-    result = subprocess.run([script_path, "-V"], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        [script_path, "-V"], capture_output=True, encoding="utf8", check=False
+    )
     assert result.returncode == 0
     assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
     assert result.stderr == ""
@@ -51,6 +53,7 @@ def test_dash_c(selenium):
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stdout.strip() == pyodide.__version__
@@ -73,6 +76,7 @@ asyncio.ensure_future(test())
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""
@@ -93,6 +97,7 @@ print("c", end="")
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""
@@ -105,6 +110,7 @@ def test_dash_m(selenium):
         [script_path, "-m", "platform"],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""
@@ -124,6 +130,7 @@ def test_dash_m_pip(selenium, monkeypatch, tmp_path):
         [script_path, "-m", "pip", "install", "pytest"],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stderr == ""
@@ -132,7 +139,9 @@ def test_dash_m_pip(selenium, monkeypatch, tmp_path):
 
 @only_node
 def test_invalid_cmdline_option(selenium):
-    result = subprocess.run([script_path, "-c"], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        [script_path, "-c"], capture_output=True, encoding="utf8", check=False
+    )
     assert result.returncode != 0
     assert result.stdout == ""
     assert (
@@ -158,13 +167,13 @@ def test_extra_mounts(selenium, tmp_path, monkeypatch):
     tmp_path_b.write_text("print('hello 2')")
     monkeypatch.setenv("_PYODIDE_EXTRA_MOUNTS", f"{dir_a}:{dir_b}")
     result = subprocess.run(
-        [script_path, tmp_path_a], capture_output=True, encoding="utf8"
+        [script_path, tmp_path_a], capture_output=True, encoding="utf8", check=False
     )
     assert result.returncode == 0
     assert result.stdout == "hello 1\n"
     assert result.stderr == ""
     result = subprocess.run(
-        [script_path, tmp_path_b], capture_output=True, encoding="utf8"
+        [script_path, tmp_path_b], capture_output=True, encoding="utf8", check=False
     )
     assert result.returncode == 0
     assert result.stdout == "hello 2\n"
@@ -234,7 +243,10 @@ def test_venv_fail_log(selenium, capsys):
 @only_node
 def test_venv_version(selenium, venv):
     result = subprocess.run(
-        [venv / "bin/python", "--version"], capture_output=True, encoding="utf8"
+        [venv / "bin/python", "--version"],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
@@ -251,6 +263,7 @@ def test_venv_pyodide_version(selenium, venv):
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stdout.strip() == pyodide.__version__
@@ -267,6 +280,7 @@ def install_pkg(venv, pkgname):
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
 
 
@@ -349,6 +363,7 @@ def test_pip_install_from_pypi_nodeps(selenium, venv):
         ],
         capture_output=True,
         encoding="utf-8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stdout == str([[0, 1, 2], [3, 4, 5], [6, 7, 8]]) + "\n"
@@ -430,6 +445,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         ],
         capture_output=True,
         encoding="utf-8",
+        check=False,
     )
     assert result.returncode == 0
     assert (
@@ -445,7 +461,7 @@ def test_package_index(tmp_path):
     version = "0.26.0"  # just need some version that already exists + contains pyodide-lock.json
 
     mgr = CrossBuildEnvManager(path)
-    mgr.install(version, skip_install_cross_build_packages=True)
+    mgr.install(version, skip_install_cross_build_packages=True, force_install=True)
 
     env_path = mgr.symlink_dir.resolve()
 
@@ -475,6 +491,7 @@ def test_package_index(tmp_path):
         ],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
 
     assert result.returncode == 0
@@ -490,6 +507,7 @@ def test_sys_exit(selenium, venv):
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
         capture_output=True,
         encoding="utf-8",
+        check=False,
     )
     assert result.returncode == 0
     assert result.stdout == ""
@@ -498,6 +516,7 @@ def test_sys_exit(selenium, venv):
         [venv / "bin/python", "-c", "import sys; sys.exit(12)"],
         capture_output=True,
         encoding="utf-8",
+        check=False,
     )
     assert result.returncode == 12
     assert result.stdout == ""
@@ -513,6 +532,7 @@ def test_cpp_exceptions(selenium, venv):
         [venv / "bin/python", "-c", "import cpp_exceptions_test2"],
         capture_output=True,
         encoding="utf-8",
+        check=False,
     )
     print(result.stdout)
     print(result.stderr)

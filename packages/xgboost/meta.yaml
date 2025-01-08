@@ -1,0 +1,26 @@
+package:
+  name: xgboost
+  version: 2.1.2
+  top-level:
+    - xgboost
+source:
+  url: https://files.pythonhosted.org/packages/d2/d5/8d93a950a379b34767ac118cf5653977048e291c6695713a60863532ec08/xgboost-2.1.2.tar.gz
+  sha256: 151071c22d0f5637739ccaf057f57d05983caaba557cc3d8191c2cb8ce8ae659
+build:
+  # DMLC_LOG_STACK_TRACE=0 is to handle https://github.com/dmlc/xgboost/issues/8595
+  cflags: |
+    -DDMLC_USE_FOPEN64=0
+    -DDMLC_ENABLE_STD_THREAD=0
+    -DDMLC_LOG_STACK_TRACE=0
+    -DUSE_OPENMP=0
+  exports: requested
+requirements:
+  run:
+    - numpy
+    - scipy
+    - setuptools
+about:
+  home: https://github.com/dmlc/xgboost
+  PyPI: https://pypi.org/project/xgboost
+  summary: XGBoost Python Package
+  license: Apache-2.0

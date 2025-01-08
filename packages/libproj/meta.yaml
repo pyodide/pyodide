@@ -1,0 +1,42 @@
+package:
+  name: libproj
+  version: 9.3.1
+  tag:
+    - library
+    - static_library
+source:
+  sha256: b0f919cb9e1f42f803a3e616c2b63a78e4d81ecfaed80978d570d3a5e29d10bc
+  url: https://download.osgeo.org/proj/proj-9.3.1.tar.gz
+  patches:
+    - patches/0001-stod-empty-zero.patch
+
+requirements:
+  host:
+    - libtiff
+  executable:
+    - sqlite3
+
+build:
+  type: static_library
+  script: |
+    mkdir -p build
+
+    embuilder build zlib --pic
+    embuilder build sqlite3 --pic
+
+    cd build \
+        && LDFLAGS="-s NODERAWFS=1 -sFORCE_FILESYSTEM=1" emcmake cmake ../ \
+        -DCMAKE_INSTALL_PREFIX=$WASM_LIBRARY_DIR \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_CURL=OFF \
+        -DBUILD_APPS=OFF \
+        -DBUILD_SHARED_LIBS=OFF \
+        -DBUILD_TESTING=OFF \
+        -DTIFF_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
+        -DTIFF_LIBRARY=$WASM_LIBRARY_DIR/lib/libtiff.a \
+        -DCMAKE_C_FLAGS="-fPIC" \
+        -DCMAKE_CXX_FLAGS="-fPIC";
+    emmake make -j ${PYODIDE_JOBS:-3} install;
+about:
+  home: https://proj.org/en/9.5/
+  license: MIT

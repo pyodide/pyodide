@@ -1,0 +1,13 @@
+package:
+  name: docutils
+  version: 0.21.1
+  top-level:
+    - docutils
+source:
+  sha256: 14c8d34a55b46c88f9f714adb29cefbdd69fb82f3fef825e59c5faab935390d8
+  url: https://files.pythonhosted.org/packages/ea/6a/1c934b70bc12be40be886060709317c2ad5a5fe2180469410bd9344f5235/docutils-0.21.1-py3-none-any.whl
+about:
+  home: https://docutils.sourceforge.io/
+  PyPI: https://pypi.org/project/docutils
+  summary: Docutils -- Python Documentation Utilities
+  license: Mixed public domain, Python, BSD-2-Clause, GPL-3.0 (see COPYING.txt)

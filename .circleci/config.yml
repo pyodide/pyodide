@@ -6,19 +6,19 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20240312-chrome122-firefox122
+    - image: pyodide/pyodide-env:20241106-chrome130-firefox132
   environment:
-    - EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      # Make sure the ccache dir is consistent between core and package builds
-      # (it's not the case otherwise)
-      CCACHE_DIR: /root/.ccache/
-      # Disable the compression of wheels, so they are better compressed by the CDN
-      PYODIDE_ZIP_COMPRESSION_LEVEL: 0
-      # For maintainers: set this to 0 if you are making an ABI break, and
-      # reset to 1 after updating the packages to the new ABI.
-      USE_PREBUILT_PACKAGES: 1
+    EMSDK_NUM_CORES: 3
+    EMCC_CORES: 3
+    PYODIDE_JOBS: 3
+    # Make sure the ccache dir is consistent between core and package builds
+    # (it's not the case otherwise)
+    CCACHE_DIR: /root/.ccache/
+    # Disable the compression of wheels, so they are better compressed by the CDN
+    PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+    # For maintainers: set this to 0 if you are making an ABI break, and
+    # reset to 1 after updating the packages to the new ABI.
+    USE_PREBUILT_PACKAGES: 1
 
 jobs:
   build-core:
@@ -32,6 +32,8 @@ jobs:
       - DISABLE_DYLINK: << parameters.disable_dylink >>
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - restore_cache:
           keys:
@@ -139,6 +141,8 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -197,6 +201,8 @@ jobs:
     resource_class: large
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -226,6 +232,8 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -253,6 +261,8 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - run: git submodule sync
+      - run: git submodule update --init
 
       - attach_workspace:
           at: .
@@ -336,7 +346,8 @@ jobs:
           command: |
             make npm-link
             pip install -r requirements.txt
-            pytest -s benchmark/stack_usage.py --rt node,chrome,firefox | sed -n 's/## //pg'
+            # TODO(cclauss): Re-add 'firefox' below.
+            pytest -s benchmark/stack_usage.py --rt node,chrome | sed -n 's/## //pg'
 
   test-js:
     <<: *defaults
@@ -570,7 +581,6 @@ jobs:
               --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
-  version: 2
   build-and-deploy:
     jobs:
       - build-core:
@@ -618,7 +628,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome-nodylink
-          test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core-nodylink
           filters:
@@ -627,7 +637,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox-nodylink
-          test-params: --runtime=firefox-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=firefox-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core-nodylink
           filters:
@@ -636,7 +646,7 @@ workflows:
 
       - test-main:
           name: test-core-node-nodylink
-          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=node-no-host -m 'not requires_dynamic_linking' -k "not cmdline_runner" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core-nodylink
           filters:
@@ -645,7 +655,7 @@ workflows:
 
       - test-main:
           name: test-core-chrome
-          test-params: --runtime=chrome-no-host -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=chrome-no-host -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core
           filters:
@@ -654,7 +664,7 @@ workflows:
 
       - test-main:
           name: test-core-firefox
-          test-params: --runtime=firefox-no-host -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=firefox-no-host -k "not webworker" src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core
           filters:
@@ -663,7 +673,7 @@ workflows:
 
       - test-main:
           name: test-core-node
-          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/
+          test-params: --runtime=node-no-host src packages/micropip packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
           requires:
             - build-core
           filters:

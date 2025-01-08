@@ -1,0 +1,70 @@
+package:
+  name: scikit-learn
+  version: 1.5.2
+  tag:
+    - min-scipy-stack
+  top-level:
+    - sklearn
+source:
+  url: https://files.pythonhosted.org/packages/37/59/44985a2bdc95c74e34fef3d10cb5d93ce13b0e2a7baefffe1b53853b502d/scikit_learn-1.5.2.tar.gz
+  sha256: b4237ed7b3fdd0a4882792e68ef2545d5baa50aca3bb45aa7df468138ad8f94d
+
+build:
+  cflags: -Wno-implicit-function-declaration
+
+requirements:
+  host:
+    - numpy
+    - scipy
+  run:
+    - scipy
+    - joblib
+    - threadpoolctl
+
+test:
+  imports:
+    - sklearn
+    - sklearn.calibration
+    - sklearn.cluster
+    - sklearn.compose
+    - sklearn.covariance
+    - sklearn.cross_decomposition
+    - sklearn.datasets
+    - sklearn.decomposition
+    - sklearn.discriminant_analysis
+    - sklearn.dummy
+    - sklearn.ensemble
+    - sklearn.exceptions
+    - sklearn.externals
+    - sklearn.feature_extraction
+    - sklearn.feature_selection
+    - sklearn.gaussian_process
+    - sklearn.impute
+    - sklearn.isotonic
+    - sklearn.kernel_approximation
+    - sklearn.kernel_ridge
+    - sklearn.linear_model
+    - sklearn.manifold
+    - sklearn.metrics
+    - sklearn.mixture
+    - sklearn.model_selection
+    - sklearn.multiclass
+    - sklearn.multioutput
+    - sklearn.naive_bayes
+    - sklearn.neighbors
+    - sklearn.neural_network
+    - sklearn.pipeline
+    - sklearn.preprocessing
+    - sklearn.random_projection
+    - sklearn.semi_supervised
+    - sklearn.svm
+    - sklearn.tree
+    - sklearn.utils
+about:
+  home: http://scikit-learn.org
+  PyPI: https://pypi.org/project/scikit-learn
+  summary: A set of python modules for machine learning and data mining
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - lesteve

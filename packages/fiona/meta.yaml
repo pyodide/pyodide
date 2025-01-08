@@ -1,0 +1,49 @@
+package:
+  name: fiona
+  version: 1.9.5
+source:
+  url: https://files.pythonhosted.org/packages/83/a0/6b870864ceebcd046d2e952b0d18932812ff7a48d3b05670af3f702d9c01/fiona-1.9.5.tar.gz
+  sha256: 99e2604332caa7692855c2ae6ed91e1fffdf9b59449aa8032dd18e070e59a2f7
+test:
+  imports:
+    - fiona
+    - fiona.fio
+requirements:
+  host:
+    - gdal
+    - geos
+  run:
+    - attrs
+    - certifi
+    - setuptools
+    - six
+    - click
+    - cligj
+      # - click-plugins  # only for fiona CLI?
+
+build:
+  vendor-sharedlib: true
+  script: |
+    export PACKAGE_DATA=1
+    export GDAL_CONFIG=${WASM_LIBRARY_DIR}/bin/gdal-config
+    export GDAL_DATA=${WASM_LIBRARY_DIR}/share/gdal
+    export PROJ_LIB=${WASM_LIBRARY_DIR}/share/proj
+    echo ${GDAL_CONFIG}
+    echo ${GDAL_DATA}
+    echo ${PROJ_LIB}
+    rm tests/test_fio* # CLI tests
+    rm tests/test_data_paths.py # CLI tests
+    rm tests/test_datetime.py # CLI tests
+    rm tests/test_vfs.py # No module named "boto3"
+    rm tests/test_env.py # No module named "boto3"
+
+    mkdir fiona-tests
+    mv tests fiona-tests
+    tar -cf ${DISTDIR}/fiona-tests.tar fiona-tests
+
+about:
+  home: http://github.com/Toblerity/Fiona
+  PyPI: https://pypi.org/project/fiona
+  summary: Fiona reads and writes spatial data files
+  license: BSD-3-Clause
+# Note: this package needs to be manually upgraded to the next version

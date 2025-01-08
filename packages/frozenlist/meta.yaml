@@ -1,0 +1,13 @@
+package:
+  name: frozenlist
+  version: 1.4.1
+  top-level:
+    - frozenlist
+source:
+  url: https://files.pythonhosted.org/packages/cf/3d/2102257e7acad73efc4a0c306ad3953f68c504c16982bbdfee3ad75d8085/frozenlist-1.4.1.tar.gz
+  sha256: c037a86e8513059a2613aaba4d817bb90b9d9b6b69aace3ce9c877e8c8ed402b
+about:
+  home: https://github.com/aio-libs/frozenlist
+  PyPI: https://pypi.org/project/frozenlist
+  summary: A list-like structure which implements collections.abc.MutableSequence
+  license: Apache-2.0

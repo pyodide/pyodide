@@ -20,8 +20,8 @@ SKIP = {"fft", "hyantes"}
 def print_entry(name, res):
     print(" - ", name)
     print(" " * 4, end="")
-    for name, dt in res.items():
-        print(f"{name}: {dt:.6f}  ", end="")
+    for res_name, dt in res.items():
+        print(f"{res_name}: {dt:.6f}  ", end="")
     print("")
 
 

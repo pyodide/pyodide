@@ -1,0 +1,13 @@
+package:
+  name: idna
+  version: "3.7"
+  top-level:
+    - idna
+source:
+  url: https://files.pythonhosted.org/packages/e5/3e/741d8c82801c347547f8a2a06aa57dbb1992be9e948df2ea0eda2c8b79e8/idna-3.7-py3-none-any.whl
+  sha256: 82fee1fc78add43492d3a1898bfa6d8a904cc97d8427f683ed8e798d07761aa0
+about:
+  home: https://github.com/kjd/idna
+  PyPI: https://pypi.org/project/idna
+  summary: Internationalized Domain Names in Applications (IDNA)
+  license: BSD-3-Clause

@@ -1,0 +1,30 @@
+package:
+  name: pplpy
+  version: 0.8.10
+  top-level:
+    - ppl
+source:
+  url: https://files.pythonhosted.org/packages/92/d0/664f5ee65a8d9d071c2cdbfc8e42e0476b5b8c5ceefaa5fc9c2e1cd6fa5e/pplpy-0.8.10.tar.gz
+  sha256: d42a216c82914dcf4d7c000debc98bb336b8f83e026ba5d952cccd9f8074effd
+requirements:
+  host:
+    - libgmp
+    - ppl
+    - gmpy2
+  run:
+    - gmpy2
+    - cysignals
+build:
+  cxxflags: |
+    -std=c++11
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+about:
+  home: https://github.com/sagemath/pplpy
+  PyPI: https://pypi.org/project/pplpy
+  summary: Python PPL wrapper
+  license: GPL-3.0
+extra:
+  recipe-maintainers:
+    - mkoeppe

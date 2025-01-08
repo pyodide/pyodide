@@ -1,0 +1,19 @@
+package:
+  name: boost-histogram
+  version: 1.5.0
+  top-level:
+    - boost_histogram
+source:
+  url: https://files.pythonhosted.org/packages/8d/51/96712ed4e1d64618d3e76aac2d1f96e2f4856120012f0dad51adf42c78e4/boost_histogram-1.5.0.tar.gz
+  sha256: 0623f010e6c52e5d018767723959686090db07fc30f0d1d8475b5d663c5ddb2c
+requirements:
+  run:
+    - numpy # runtime only
+about:
+  home: https://github.com/scikit-hep/boost-histogram
+  PyPI: https://pypi.org/project/boost-histogram
+  summary: The Boost::Histogram Python wrapper.
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - henryiii

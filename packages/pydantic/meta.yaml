@@ -1,0 +1,18 @@
+package:
+  name: pydantic
+  version: 2.9.2
+  top-level:
+    - pydantic
+source:
+  sha256: d155cef71265d1e9807ed1c32b4c8deec042a44a50a4188b25ac67ecd81a9c0f
+  url: https://files.pythonhosted.org/packages/a9/b7/d9e3f12af310e1120c21603644a1cd86f59060e040ec5c3a80b8f05fae30/pydantic-2.9.2.tar.gz
+requirements:
+  run:
+    - typing-extensions
+    - pydantic_core
+    - annotated-types
+about:
+  home: https://github.com/samuelcolvin/pydantic
+  PyPI: https://pypi.org/project/pydantic
+  summary: Data validation and settings management using python type hints
+  license: MIT

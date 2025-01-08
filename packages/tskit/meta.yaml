@@ -1,0 +1,21 @@
+package:
+  name: tskit
+  version: 0.6.0
+  top-level:
+    - tskit
+source:
+  url: https://files.pythonhosted.org/packages/01/dc/6962a28d6e2eac38f088fced8b0e62fff683bd5fa7e6c25bd38306ea6433/tskit-0.6.0.tar.gz
+  sha256: 9dda2acc84ae8dab3484dfedcb721807a4efe48e159f74f24b07789404b54106
+requirements:
+  run:
+    - numpy
+    - svgwrite
+    - jsonschema
+    - rpds-py
+  host:
+    - numpy
+about:
+  home: https://tskit.dev/tskit
+  PyPI: https://pypi.org/project/tskit
+  summary: The tree sequence toolkit.
+  license: MIT

@@ -1,0 +1,21 @@
+package:
+  name: geopandas
+  version: 1.0.1
+  top-level:
+    - geopandas
+source:
+  url: https://files.pythonhosted.org/packages/c4/64/7d344cfcef5efddf9cf32f59af7f855828e9d74b5f862eddf5bfd9f25323/geopandas-1.0.1-py3-none-any.whl
+  sha256: 01e147d9420cc374d26f51fc23716ac307f32b49406e4bd8462c07e82ed1d3d6
+requirements:
+  run:
+    - shapely
+    - fiona
+    - pyproj
+    - packaging
+    - pandas
+      # - matplotlib # matplotlib is not a hard dependency
+about:
+  home: http://geopandas.org
+  PyPI: https://pypi.org/project/geopandas
+  summary: Geographic pandas extensions
+  license: BSD-3-Clause

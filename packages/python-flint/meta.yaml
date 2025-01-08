@@ -1,0 +1,28 @@
+package:
+  name: python-flint
+  version: 0.6.0
+  top-level:
+    - flint
+requirements:
+  host:
+    - flint
+    - libgmp
+    - libmpfr
+source:
+  url: https://files.pythonhosted.org/packages/16/3a/d129f056475191377a823efe9876656a81d563bb7463d0f8568ebee81ef6/python-flint-0.6.0.tar.gz
+  sha256: f829e00774534891b38de41bc511cf6c7d6d216544a6a84b92d9e1f159de0878
+build:
+  cflags: |
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib -lflint -lmpfr -lgmp
+  unvendor-tests: false
+about:
+  home: https://github.com/flintlib/python-flint
+  PyPI: https://pypi.org/project/python-flint
+  summary: Bindings for FLINT and Arb
+  license: MIT
+extra:
+  recipe-maintainers:
+    - mkoeppe
+    - oscarbenjamin

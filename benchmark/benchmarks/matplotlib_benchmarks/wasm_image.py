@@ -8,7 +8,7 @@ import numpy as np
 
 matplotlib.use("module://matplotlib_pyodide.wasm_backend")
 
-import matplotlib.cm as cm  # noqa: E402
+from matplotlib import cm  # noqa: E402
 from matplotlib import pyplot as plt  # noqa: E402
 
 

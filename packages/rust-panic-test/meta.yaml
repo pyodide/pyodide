@@ -1,0 +1,14 @@
+package:
+  name: rust-panic-test
+  version: "1.0"
+source:
+  path: src
+build:
+  script: |
+    rustup toolchain install ${RUST_TOOLCHAIN} && rustup default ${RUST_TOOLCHAIN}
+    rustup target add wasm32-unknown-emscripten --toolchain ${RUST_TOOLCHAIN}
+requirements:
+  executable:
+    - rustup
+about:
+  license: MPL-2.0

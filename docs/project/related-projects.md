@@ -31,6 +31,9 @@
 - [PyCafe](https://py.cafe) lets you host, edit, and share Python apps in your browser with a single click.
 - [quarto-live](https://github.com/r-wasm/quarto-live) uses Pyodide
   to create interactive Python code cells and exercises in [Quarto](https://quarto.org/) documents.
+- [Online Laboratory for Climate Science and Meteorology](https://github.com/climet-eu/lab) is a
+  JupyterLite-based environment that comes with additional packages from the weather and climate
+  community, and patches to support loading and working with large (remote) datasets.
 
 ## Workarounds for common WASM and browser limitations
 
@@ -54,3 +57,4 @@
 - [SymPy Beta](https://github.com/eagleoflqj/sympy_beta) is a fork of SymPy
   Gamma. It's an in-browser answer engine with a Pyodide backend.
 - [react-py](https://github.com/elilambnz/react-py) is a library that allows for easy integration of Pyodide in React applications. It provides convenient hooks for running Python code.
+- [inseri core](https://wordpress.org/plugins/inseri-core/) is a WordPress plugin that introduces scientific and interactive Gutenberg blocks to facilitate open science. The [Python Code block](https://docs.inseri.swiss/blocks/python/) allows to run Python code in the browser using Pyodide.

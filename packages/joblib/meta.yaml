@@ -1,0 +1,14 @@
+package:
+  name: joblib
+  version: 1.4.0
+  top-level:
+    - joblib
+
+source:
+  url: https://files.pythonhosted.org/packages/7c/c3/94c9e4886e8f33832690ab48fdac4a121a7bfec3e2c044c9f2762aa9068e/joblib-1.4.0.tar.gz
+  sha256: 1eb0dc091919cd384490de890cb5dfd538410a6d4b3b54eef09fb8c50b409b1c
+about:
+  home: https://joblib.readthedocs.io
+  PyPI: https://pypi.org/project/joblib
+  summary: Lightweight pipelining with Python functions
+  license: BSD-3-Clause

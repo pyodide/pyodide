@@ -1,0 +1,46 @@
+This patch adds missing headers in vendored zlib as done in numcodecs.js
+
+---
+ internal-complibs/zlib-1.3.1/gzlib.c   | 1 +
+ internal-complibs/zlib-1.3.1/gzread.c  | 1 +
+ internal-complibs/zlib-1.3.1/gzwrite.c | 1 +
+ 3 files changed, 3 insertions(+)
+
+diff --git a/internal-complibs/zlib-1.3.1/gzlib.c b/internal-complibs/zlib-1.3.1/gzlib.c
+index 983153c..0941754 100644
+--- a/c-blosc/internal-complibs/zlib-1.3.1/gzlib.c
++++ b/c-blosc/internal-complibs/zlib-1.3.1/gzlib.c
+@@ -3,6 +3,7 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ #if defined(_WIN32) && !defined(__BORLANDC__)
+diff --git a/internal-complibs/zlib-1.3.1/gzread.c b/internal-complibs/zlib-1.3.1/gzread.c
+index 4168cbc..1abc1f9 100644
+--- a/c-blosc/internal-complibs/zlib-1.3.1/gzread.c
++++ b/c-blosc/internal-complibs/zlib-1.3.1/gzread.c
+@@ -3,6 +3,7 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ /* Use read() to load a buffer -- return -1 on error, otherwise 0.  Read from
+diff --git a/internal-complibs/zlib-1.3.1/gzwrite.c b/internal-complibs/zlib-1.3.1/gzwrite.c
+index 435b462..cabc703 100644
+--- a/c-blosc/internal-complibs/zlib-1.3.1/gzwrite.c
++++ b/c-blosc/internal-complibs/zlib-1.3.1/gzwrite.c
+@@ -3,6 +3,7 @@
+  * For conditions of distribution and use, see copyright notice in zlib.h
+  */
+ 
++#include <unistd.h>
+ #include "gzguts.h"
+ 
+ /* Initialize state for writing a gzip file.  Mark initialization by setting
+-- 
+2.45.1

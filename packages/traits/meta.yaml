@@ -1,0 +1,13 @@
+package:
+  name: traits
+  version: 6.4.3
+  top-level:
+    - traits
+source:
+  sha256: a9bbfd9e0c08b7de07e86ef64e69cb96a29c2105a43bf832cd8b162fa1e22f44
+  url: https://files.pythonhosted.org/packages/b1/08/ab5a95c4e3f7ebff53c4b58cdeee5ad161a8a285e02620928ff566185a48/traits-6.4.3.tar.gz
+about:
+  home: http://docs.enthought.com/traits
+  PyPI: https://pypi.org/project/traits
+  summary: Observable typed attributes for Python classes
+  license: BSD-3-Clause
