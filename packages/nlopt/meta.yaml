@@ -25,3 +25,7 @@ build:
 about:
   home: https://github.com/stevengj/nlopt
   license: LGPL-2.1+
+extra:
+  recipe-maintainers:
+    - mgreminger
+    - tom-dudley
