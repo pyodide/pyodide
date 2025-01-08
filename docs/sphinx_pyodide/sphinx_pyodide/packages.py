@@ -56,6 +56,7 @@ def get_packages_summary_directive(app):
                 capture_output=True,
                 text=True,
                 env={"PYODIDE_ROOT": str(base_dir)},
+                check=False,
             )
 
             if envs.returncode != 0:
