@@ -1,4 +1,4 @@
-From f9b7a02aba3bf050189f3347dce5fcd39bf7dc8d Mon Sep 17 00:00:00 2001
+From 484b3e7ff5f174929820dd7fea78d28e1c4d50ca Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:41:37 +0200
 Subject: [PATCH 8/8] Add call to `JsProxy_GetMethod` to help remove temporary
@@ -21,10 +21,10 @@ See the definition of `JsProxy_GetMethod` in `jsproxy.c` and particularly
  1 file changed, 17 insertions(+)
 
 diff --git a/Objects/object.c b/Objects/object.c
-index aac707d6a26..91fb068eab3 100644
+index 6b2e0aeaab9..9240b33b08a 100644
 --- a/Objects/object.c
 +++ b/Objects/object.c
-@@ -1279,6 +1279,18 @@ _PyObject_NextNotImplemented(PyObject *self)
+@@ -1280,6 +1280,18 @@ _PyObject_NextNotImplemented(PyObject *self)
  }
  
  
@@ -43,7 +43,7 @@ index aac707d6a26..91fb068eab3 100644
  /* Specialized version of _PyObject_GenericGetAttrWithDict
     specifically for the LOAD_METHOD opcode.
  
-@@ -1303,6 +1315,11 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
+@@ -1304,6 +1316,11 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
          }
      }
  
