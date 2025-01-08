@@ -221,6 +221,7 @@ EXPORTS=_main \
    ,_PyObject_GetIter \
    ,_PyObject_Size \
    ,_PyRun_SimpleString \
+   ,__PyRuntime \
    ,_PySet_Add \
    ,_PySet_New \
    ,__PyTraceback_Add \
