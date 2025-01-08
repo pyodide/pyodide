@@ -1,4 +1,4 @@
-From 79898b6cbc0dce258c1c8e011e37549276652686 Mon Sep 17 00:00:00 2001
+From 7e9328348d7d79ec392f2340f0828c39e6d5cdcd Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
 Subject: [PATCH 7/8] Warn if ZoneInfo is imported without tzdata

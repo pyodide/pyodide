@@ -1,7 +1,7 @@
-From ff5379d490e601394719a93de6095caf90b7fec8 Mon Sep 17 00:00:00 2001
+From 75263afe71bbaf5704d49e88362853bb39471642 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 15:16:03 +0200
-Subject: [PATCH 5/5] Use wasm-gc based call adaptor if available
+Subject: [PATCH 5/8] Use wasm-gc based call adaptor if available
 
 Part of the ongoing quest to support JSPI. The JSPI spec removed its dependence on
 JS type reflection, and now the plan is for runtimes to ship JSPI while keeping
@@ -20,12 +20,14 @@ This code also has to be written carefully to interact properly with memory snap
 Importantly, no JS initialization code can be called from the C initialization code.
 For this reason, we make a C function pointer to fill from JS and fill it in a preRun
 function.
+
+Upstream PR: https://github.com/python/cpython/pull/128628
 ---
  .../internal/pycore_emscripten_trampoline.h   |  25 +--
- Python/emscripten_trampoline.c                | 195 +++++++++++++++---
+ Python/emscripten_trampoline.c                | 200 +++++++++++++++---
  Python/pylifecycle.c                          |   1 -
  Python/pystate.c                              |   2 -
- 4 files changed, 168 insertions(+), 55 deletions(-)
+ 4 files changed, 173 insertions(+), 55 deletions(-)
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 index 900d527e48d..99afde3fa86 100644
@@ -72,10 +74,10 @@ index 900d527e48d..99afde3fa86 100644
      (meth)((self), (args))
  #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
-index 8d29393bd87..3b6eb284de7 100644
+index 8d29393bd87..fa976f0430e 100644
 --- a/Python/emscripten_trampoline.c
 +++ b/Python/emscripten_trampoline.c
-@@ -5,19 +5,8 @@
+@@ -5,19 +5,13 @@
  #include "pycore_runtime.h"         // _PyRuntime
  
  
@@ -93,11 +95,16 @@ index 8d29393bd87..3b6eb284de7 100644
 -  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
 -}
 +typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
++// We have to be careful to work correctly with memory snapshots. Even if we are
++// loading a memory snapshot, we need to perform the JS initialization work.
++// That means we can't call the initialization code from C. Instead, we export
++// this function pointer to JS and then fill it in a preRun function which runs
++// unconditionally.
 +EMSCRIPTEN_KEEPALIVE CountArgsFunc _PyEM_CountFuncParams = NULL;
  
  /**
   * Backwards compatible trampoline works with all JS runtimes
-@@ -25,37 +14,181 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
+@@ -25,37 +19,181 @@ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
  EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
      return wasmTable.get(func)(arg1, arg2, arg3);
  }
