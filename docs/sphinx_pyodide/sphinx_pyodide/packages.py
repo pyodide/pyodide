@@ -13,7 +13,6 @@ from sphinx import addnodes
 base_dir = pathlib.Path(__file__).resolve().parents[3]
 
 
-# FIXME: Change to parse package lists from pyodide-lock.json
 def get_packages_summary_directive(app):
     class PyodidePackagesSummary(Directive):
         """A directive that dumps the full list of packages included in Pyodide in place."""
@@ -56,6 +55,7 @@ def get_packages_summary_directive(app):
                 capture_output=True,
                 text=True,
                 env={"PYODIDE_ROOT": str(base_dir)},
+                check=False,
             )
 
             if envs.returncode != 0:
@@ -63,7 +63,7 @@ def get_packages_summary_directive(app):
 
             pattern = re.search(r"PYODIDE_PREBUILT_PACKAGES_LOCKFILE=(.*)", envs.stdout)
             if not pattern:
-                raise RuntimeError("Failed find lockfile URL in Makefile.envs")
+                raise RuntimeError("Failed to find lockfile URL in Makefile.envs")
 
             url = pattern.group(1)
             return url

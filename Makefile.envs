@@ -6,7 +6,7 @@ export PYODIDE_ABI_VERSION ?= 2024_0
 export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/20240824
+export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/20250107
 export PYODIDE_PREBUILT_PACKAGES_URL=$(PYODIDE_PREBUILT_PACKAGES_BASE)/packages.tar.bz2
 export PYODIDE_PREBUILT_PACKAGES_LOCKFILE=$(PYODIDE_PREBUILT_PACKAGES_BASE)/pyodide-lock.json
 export ENABLE_PREBUILT_PACKAGES ?= 0
