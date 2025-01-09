@@ -1,0 +1,13 @@
+package:
+  name: MarkupSafe
+  version: 2.1.5
+  top-level:
+    - markupsafe
+source:
+  sha256: d283d37a890ba4c1ae73ffadf8046435c76e7bc2247bbb63c00bd1a709c6544b
+  url: https://files.pythonhosted.org/packages/87/5b/aae44c6655f3801e81aa3eef09dbbf012431987ba564d7231722f68df02d/MarkupSafe-2.1.5.tar.gz
+about:
+  home: https://palletsprojects.com/p/markupsafe/
+  PyPI: https://pypi.org/project/MarkupSafe
+  summary: Safely add untrusted strings to HTML/XML markup.
+  license: BSD-3-Clause
