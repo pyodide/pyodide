@@ -50,7 +50,7 @@ def test_mytestname(selenium):
 ```
 
 you can put whatever command line arguments you would pass to `pytest` as
-separate entries in the list. 
+separate entries in the list.
 
 ```{note}
 As pyodide-recipes repository contains more than 250 packages in total,
@@ -71,5 +71,5 @@ A good example of this is [PyArrow](https://github.com/pyodide/pyodide-recipes/b
 PyArrow takes more than 30 minutes to build, so building it in the `pyodide-recipes`
 repository would slow down the CI process significantly.
 
-Therefore, it is built in a separate repository and the built wheel is added in the 
+Therefore, it is built in a separate repository and the built wheel is added in the
 recipe file, without building the package from source.

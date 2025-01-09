@@ -12,12 +12,12 @@ Pyodide provides a tool for this, `pyodide-build`, which allows you to build pac
 Before starting to build packages for Pyodide, please check if it is necessary.
 
 1. If the package is a pure Python package and does not use any C extensions,
-you can simply install it from PyPI with {func}`micropip.install` in Pyodide.
-Try `micropip.install("package-name")` to see if it works.
+   you can simply install it from PyPI with {func}`micropip.install` in Pyodide.
+   Try `micropip.install("package-name")` to see if it works.
 
 2. There are lots of packages already built for Pyodide. Check the
-[`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) repository to see
-if the package you need is already built and available.
+   [`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) repository to see
+   if the package you need is already built and available.
 
 ## Prerequisites
 
@@ -47,7 +47,6 @@ pyodide xbuildenv search -a
 to find the compatible Python version and update the local Python version to match the target Pyodide version.
 
 3. Setup [Emscripten](https://github.com/emscripten-core/emscripten):
-
 
 You need to download and activate the Emscripten developer toolkit that matches the target Pyodide version.
 
