@@ -1,14 +1,14 @@
-(building-and-testing-packages-out-of-tree)=
+(building-packages-from-source)=
 
-# Building and testing Python packages out of tree
+# Building Python Packages from Source
 
 This is some information about how to build and test Python packages against
-Pyodide out of tree (for instance in your package's CI or for use with private
-packages).
+Pyodide, for instance in your package's CI or for use with private
+packages.
 
-Pyodide currently only supports Linux for out of tree builds, though there is a
-good change it will work in MacOS too. If you are using Windows, try Windows
-Subsystem for Linux.
+Pyodide currently only supports building packages in Linux environments officially,
+though there is a good change it will work in MacOS too.
+If you are using Windows, try Windows Subsystem for Linux.
 
 ## Building binary packages for Pyodide
 
@@ -19,36 +19,10 @@ For binary packages, the manual steps are detailed below. In addition,
 [cibuildwheel](https://cibuildwheel.pypa.io/en/stable/) 2.19 or later provides
 support for building binary wheels with Pyodide as a target.
 
-### Install pyodide-build
-
-```sh
-pip install pyodide-build
-```
-
-### Set up Emscripten
-
-You need to download the Emscripten developer toolkit:
-
-```sh
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-```
-
-then you can install the appropriate version of Emscripten:
-
-```sh
-PYODIDE_EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version)
-./emsdk install ${PYODIDE_EMSCRIPTEN_VERSION}
-./emsdk activate ${PYODIDE_EMSCRIPTEN_VERSION}
-source emsdk_env.sh
-```
-
-If you restart your shell, you will need to run `source emsdk_env.sh` again.
-
 ### Build the WASM/Emscripten wheel
 
-Change directory into the package folder where the `setup.py` or
-`pyproject.toml` file is located. You should be in a shell session where you ran
+Change directory into the package folder where the `pyproject.toml` or `setup.py`
+file is located. You should be in a shell session where you ran
 `source emsdk_env.sh`. Then run
 
 ```sh
@@ -76,22 +50,22 @@ If you run into problems, make sure that building a native wheel with
 
 ### Serve the wheel
 
-Serve the wheel via a file server e.g., `python3.10 -m http.server --directory dist`.
+Serve the wheel via a file server e.g., `python -m http.server --directory dist`.
 Then you can install it with `pyodide.loadPackage` or `micropip.install` by URL.
 
 ### Notes
 
 - the resulting package wheels have a file name of the form
-  `*-cp310-cp310-emscripten_3_1_27_wasm32.whl` and are compatible only for a
-  given Python and Emscripten versions. In the Pyodide distribution, Python and
+  `*-cp312-cp312-pyodide_2024_0_wasm_32.whl` and are compatible only for a
+  given Pyodide versions. In the Pyodide distribution, Python and
   Emscripten are updated simultaneously.
-- for now, PyPi does not support emscripten/wasm32 wheels so you will not be able to upload
+- for now, PyPI does not support emscripten/wasm32 wheels so you will not be able to upload
   them there.
 
 ## Testing packages against Pyodide
 
 Pyodide provides an experimental command line runner for testing packages
-against Pyodide. Using it requires nodejs version 14 or newer.
+against Pyodide. Using it requires nodejs version 20 or newer.
 
 The way it works is simple: you can create a virtual environment with:
 
@@ -124,7 +98,7 @@ work with binary packages.
 # Build the binary package
 pyodide build
 # Install it
-pip install dist/the_wheel-cp310-cp310-emscripten_3_1_20_wasm32.whl[tests]
+pip install dist/the_wheel-cp312-cp312-pyodide_2024_0_wasm32.whl[tests]
 ```
 
 To test, you can generally run the same script as you would usually do. For many
@@ -157,7 +131,7 @@ runs-on: ubuntu-22.04 # or ubuntu-latest
     with:
        python-version: 3.12
   - run: |
-      pip install pyodide-build>=0.28.0
+      pip install pyodide-build>=0.29.2
       echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV
   - uses: mymindstorm/setup-emsdk@v14
     with:

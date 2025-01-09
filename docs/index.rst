@@ -64,8 +64,7 @@ development process including making packages to support third party libraries.
    :caption: Development
 
    development/building-from-sources.md
-   development/new-packages.md
-   development/building-and-testing-packages.md
+   development/building-packages.md
    development/contributing.md
    development/testing.md
    development/debugging.md
