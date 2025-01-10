@@ -1,4 +1,4 @@
-From bcc0651cef7c7c367d116baa0e333335c3b02305 Mon Sep 17 00:00:00 2001
+From 53df4f511704a22c53c00bb067e41fb03d25296a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 15:16:03 +0200
 Subject: [PATCH 5/8] Use wasm-gc based call adaptor if available
@@ -24,11 +24,11 @@ function.
 Upstream PR: https://github.com/python/cpython/pull/128628
 ---
  .../internal/pycore_emscripten_trampoline.h   |  25 +-
- Include/internal/pycore_runtime.h             |   2 +-
- Python/emscripten_trampoline.c                | 213 +++++++++++++++---
+ Include/internal/pycore_runtime.h             |  11 +-
+ Python/emscripten_trampoline.c                | 228 +++++++++++++++---
  Python/pylifecycle.c                          |   1 -
  Python/pystate.c                              |   7 +-
- 5 files changed, 196 insertions(+), 52 deletions(-)
+ 5 files changed, 212 insertions(+), 60 deletions(-)
 
 diff --git a/Include/internal/pycore_emscripten_trampoline.h b/Include/internal/pycore_emscripten_trampoline.h
 index 900d527e48d..5479c9d2605 100644
@@ -76,27 +76,43 @@ index 900d527e48d..5479c9d2605 100644
      (meth)((self), (args))
  #define _PyCFunctionWithKeywords_TrampolineCall(meth, self, args, kw) \
 diff --git a/Include/internal/pycore_runtime.h b/Include/internal/pycore_runtime.h
-index 8ceb6b72ec1..6a30264aa33 100644
+index 8ceb6b72ec1..7195ff2f932 100644
 --- a/Include/internal/pycore_runtime.h
 +++ b/Include/internal/pycore_runtime.h
-@@ -79,7 +79,7 @@ typedef struct pyruntimestate {
+@@ -77,11 +77,6 @@ typedef struct pyruntimestate {
+     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
+     int initialized;
  
- #if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
-     /* Choose between trampoline based on type reflection vs based on EM_JS */
+-#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
+-    /* Choose between trampoline based on type reflection vs based on EM_JS */
 -    int wasm_type_reflection_available;
-+    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
- #endif
- 
+-#endif
+-
      /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
+        is called again.
+ 
+@@ -161,6 +156,12 @@ typedef struct pyruntimestate {
+     struct _Py_unicode_runtime_state unicode_state;
+     struct _types_runtime_state types;
+ 
++#if defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
++    // Used in "Python/emscripten_trampoline.c" to choose between type
++    // reflection trampoline and EM_JS trampoline.
++    int (*emscripten_count_args_function)(PyCFunctionWithKeywords func);
++#endif
++
+     /* All the objects that are shared by the runtime's interpreters. */
+     struct _Py_static_objects static_objects;
+     struct _Py_cached_objects cached_objects;
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
-index 8d29393bd87..a9dbd3de9e8 100644
+index 8d29393bd87..f51cd53896f 100644
 --- a/Python/emscripten_trampoline.c
 +++ b/Python/emscripten_trampoline.c
-@@ -4,59 +4,214 @@
+@@ -4,59 +4,221 @@
  #include <Python.h>
  #include "pycore_runtime.h"         // _PyRuntime
  
-+#define EMSCRIPTEN_COUNT_ARGS_OFFSET 20
++typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
  
 -/**
 - * This is the GoogleChromeLabs approved way to feature detect type-reflection:
@@ -104,15 +120,21 @@ index 8d29393bd87..a9dbd3de9e8 100644
 - */
 -EM_JS(int, _PyEM_detect_type_reflection, (), {
 -  return "Function" in WebAssembly;
-+_Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function) == EMSCRIPTEN_COUNT_ARGS_OFFSET);
++// Offset of emscripten_count_args_function in _PyRuntimeState. There's a couple
++// of alternatives:
++// 1. Just make emscripten_count_args_function a real C global variable instead
++//    of a field of _PyRuntimeState. This would violate our rule against mutable
++//    globals.
++// 2. #define a preprocessor constant equal to a hard coded number and make a
++//    _Static_assert(offsetof(_PyRuntimeState, emscripten_count_args_function)
++//    == OURCONSTANT) This has the disadvantage that we have to update the hard
++//    coded constant when _PyRuntimeState changes
++//
++// So putting the mutable constant in _PyRuntime and using a immutable global to
++// record the offset so we can access it from JS is probably the best way.
++EMSCRIPTEN_KEEPALIVE const int _PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET = offsetof(_PyRuntimeState, emscripten_count_args_function);
 +
-+typedef int (*CountArgsFunc)(PyCFunctionWithKeywords func);
-+
-+// Enable macro expanding in the body of EM_JS
-+#define EM_JS_MACROS(ret, func_name, args, body...)                            \
-+  EM_JS(ret, func_name, args, body)
-+
-+EM_JS_MACROS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
++EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
 +  return Module._PyEM_CountArgsPtr; // initialized below
 +}
 +// Binary module for the checks. It has to be done in web assembly because
@@ -125,60 +147,60 @@ index 8d29393bd87..a9dbd3de9e8 100644
 +// gets us the output we need.
 +//
 +// (module
-+//     (type $type0 (func (param) (result i32)))
-+//     (type $type1 (func (param i32) (result i32)))
-+//     (type $type2 (func (param i32 i32) (result i32)))
-+//     (type $type3 (func (param i32 i32 i32) (result i32)))
-+//     (type $type4 (func (param i32 i32 i32 i32) (result i32)))
-+//     (type $blocktype (func (param i32) (result)))
-+//     (table $funcs (import "e" "t") 0 funcref)
-+//     (export "f" (func $f))
-+//     (func $f (param $fptr i32) (result i32)
-+//              (local $fref funcref)
-+//         local.get $fptr
-+//         table.get $funcs
-+//         local.tee $fref
-+//         ref.test $type4
-+//         (block $b (type $blocktype)
-+//             i32.eqz
-+//             br_if $b
-+//             i32.const 4
-+//             return
-+//         )
-+//         local.get $fref
-+//         ref.test $type3
-+//         (block $b (type $blocktype)
-+//             i32.eqz
-+//             br_if $b
-+//             i32.const 3
-+//             return
-+//         )
-+//         local.get $fref
-+//         ref.test $type2
-+//         (block $b (type $blocktype)
-+//             i32.eqz
-+//             br_if $b
-+//             i32.const 2
-+//             return
-+//         )
-+//         ref.test $type1
-+//         i32.const 1
-+//         (block $b (type $blocktype)
-+//             i32.eqz
-+//             br_if $b
-+//             i32.const 1
-+//             return
-+//         )
-+//         ref.test $type0
-+//         i32.const 0
-+//         (block $b (type $blocktype)
-+//             i32.eqz
-+//             br_if $b
-+//             i32.const 0
-+//             return
-+//         )
-+//         i32.const -1
++//   (type $type0 (func (param) (result i32)))
++//   (type $type1 (func (param i32) (result i32)))
++//   (type $type2 (func (param i32 i32) (result i32)))
++//   (type $type3 (func (param i32 i32 i32) (result i32)))
++//   (type $type4 (func (param i32 i32 i32 i32) (result i32)))
++//   (type $blocktype (func (param i32) (result)))
++//   (table $funcs (import "e" "t") 0 funcref)
++//   (export "f" (func $f))
++//   (func $f (param $fptr i32) (result i32)
++//            (local $fref funcref)
++//     local.get $fptr
++//     table.get $funcs
++//     local.tee $fref
++//     ref.test $type4
++//     (block $b (type $blocktype)
++//       i32.eqz
++//       br_if $b
++//       i32.const 4
++//       return
 +//     )
++//     local.get $fref
++//     ref.test $type3
++//     (block $b (type $blocktype)
++//       i32.eqz
++//       br_if $b
++//       i32.const 3
++//       return
++//     )
++//     local.get $fref
++//     ref.test $type2
++//     (block $b (type $blocktype)
++//       i32.eqz
++//       br_if $b
++//       i32.const 2
++//       return
++//     )
++//     local.get $fref
++//     ref.test $type1
++//     (block $b (type $blocktype)
++//       i32.eqz
++//       br_if $b
++//       i32.const 1
++//       return
++//     )
++//     local.get $fref
++//     ref.test $type0
++//     (block $b (type $blocktype)
++//       i32.eqz
++//       br_if $b
++//       i32.const 0
++//       return
++//     )
++//     i32.const -1
++//   )
 +// )
 +addOnPreRun(() => {
 +  // Try to initialize countArgsFunc
@@ -272,7 +294,8 @@ index 8d29393bd87..a9dbd3de9e8 100644
 +    // back to the JS trampoline.
 +  }
 +  Module._PyEM_CountArgsPtr = ptr;
-+  HEAP32[__PyRuntime/4 + EMSCRIPTEN_COUNT_ARGS_OFFSET] = ptr;
++  const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET/4];
++  HEAP32[__PyRuntime/4 + offset] = ptr;
  });
 +);
  
@@ -280,7 +303,7 @@ index 8d29393bd87..a9dbd3de9e8 100644
  _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
  {
 -  runtime->wasm_type_reflection_available = _PyEM_detect_type_reflection();
-+    runtime->emscripten_count_args_function = _PyEM_GetCountArgsPtr();
++  runtime->emscripten_count_args_function = _PyEM_GetCountArgsPtr();
  }
  
 +// We have to be careful to work correctly with memory snapshots. Even if we are
@@ -292,7 +315,7 @@ index 8d29393bd87..a9dbd3de9e8 100644
   * Backwards compatible trampoline works with all JS runtimes
   */
  EM_JS(PyObject*, _PyEM_TrampolineCall_JS, (PyCFunctionWithKeywords func, PyObject *arg1, PyObject *arg2, PyObject *arg3), {
-     return wasmTable.get(func)(arg1, arg2, arg3);
+-    return wasmTable.get(func)(arg1, arg2, arg3);
 -}
 -);
 -
@@ -312,6 +335,7 @@ index 8d29393bd87..a9dbd3de9e8 100644
 -_PyEM_CountFuncParams.cache = new Map();
 -)
 -
++  return wasmTable.get(func)(arg1, arg2, arg3);
 +});
  
  typedef PyObject* (*zero_arg)(void);
@@ -322,10 +346,13 @@ index 8d29393bd87..a9dbd3de9e8 100644
 -
  PyObject*
 -_PyEM_TrampolineCall_Reflection(PyCFunctionWithKeywords func,
+-              PyObject* self,
+-              PyObject* args,
+-              PyObject* kw)
 +_PyEM_TrampolineCall(PyCFunctionWithKeywords func,
-               PyObject* self,
-               PyObject* args,
-               PyObject* kw)
++                     PyObject* self,
++                     PyObject* args,
++                     PyObject* kw)
  {
 -  switch (_PyEM_CountFuncParams(func)) {
 +  CountArgsFunc count_args = _PyRuntime.emscripten_count_args_function;
