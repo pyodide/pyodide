@@ -20,6 +20,8 @@ myst:
 
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
 - Added `apsw` 3.47.2.0 {pr}`5251`
+- Added `css_inline` 0.14.6 {pr}`5304`
+- Upgraded `nlopt` 2.9.1 {pr}`5305`
 
 ## Version 0.27.0
 
