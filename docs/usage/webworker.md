@@ -125,18 +125,18 @@ function getId() {
 // When we get such a response, use it to resolve the promise.
 function requestResponse(worker, msg) {
   const { promise, resolve } = getPromiseAndResolve();
-  const id = getId();
+  const idWorker = getId();
   worker.addEventListener("message", function listener(event) {
-    if (event.data?.id !== id) {
+    if (event.data?.id !== idWorker) {
       return;
     }
     // This listener is done so remove it.
     worker.removeEventListener("message", listener);
     // Filter the id out of the result
-    const { id, ...rest } = data;
+    const { id, ...rest } = event.data;
     resolve(rest);
   });
-  worker.postMessage({ id, ...msg });
+  worker.postMessage({ id: idWorker, ...msg });
   return promise;
 }
 
