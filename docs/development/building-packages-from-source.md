@@ -7,7 +7,7 @@ Pyodide, for instance in your package's CI or for use with private
 packages.
 
 Pyodide currently only supports building packages in Linux environments officially,
-though there is a good change it will work in MacOS too.
+though there is a good chance it will work in MacOS too.
 If you are using Windows, try Windows Subsystem for Linux.
 
 ## Building binary packages for Pyodide
