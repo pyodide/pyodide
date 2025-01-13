@@ -124,6 +124,7 @@ export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	-fPIC \
+	-fwasm-exceptions \
 	$(EXTRA_CFLAGS)
 
 
@@ -144,6 +145,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
 	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
@@ -266,7 +268,6 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/.. \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 .output_vars:
 	set
