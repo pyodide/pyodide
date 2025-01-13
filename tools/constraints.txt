@@ -5,4 +5,5 @@
 # their builds succeed, or those for packages that rely
 # on them at build time.
 
-maturin<1.8
+maturin<1.8 # https://github.com/pyodide/pyodide/pull/5283
+pyo3<0.23.4 # https://github.com/pyodide/pyodide/issues/5321
