@@ -15,8 +15,8 @@ requirements:
     - numpy
 
 build:
-  cxxflags: -fexceptions -fPIC -DBOOST_SP_DISABLE_THREADS=1 -O2
-  ldflags: -fexceptions
+  cxxflags: -fwasm-exceptions -fPIC -DBOOST_SP_DISABLE_THREADS=1 -O2
+  ldflags: -fwasm-exceptions
   script: |
     export INSTALL_DIR=${WASM_LIBRARY_DIR}
 
@@ -26,7 +26,7 @@ build:
     -DNUMPY_INCLUDE_DIR=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/_core/include/ \
     -DPYTHON3_INCLUDE_DIR=$PYTHONINCLUDE -DPYTHON3_EXECUTABLE=python$PYMAJOR.$PYMINOR \
     -DPYTHON3_LIBRARY=$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR.a \
-    -DCMAKE_CXX_FLAGS="-fPIC -fexceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1 -Wno-enum-constexpr-conversion" \
+    -DCMAKE_CXX_FLAGS="-fPIC -fwasm-exceptions -DBOOST_AP_DISABLE_THREADS=1 -O2 -DBOOST_BIND_GLOBAL_PLACEHOLDERS=1 -Wno-enum-constexpr-conversion" \
     -DBoost_INCLUDE_DIR=$WASM_LIBRARY_DIR/include -DBoost_LIBRARY_DIR=$WASM_LIBRARY_DIR/lib \
     -DBoost_DATE_TIME_LIBRARY_RELEASE=$WASM_LIBRARY_DIR/lib/libboost_date_time.a \
     -DBoost_DATE_TIME_LIBRARY_DEBUG=$WASM_LIBRARY_DIR/lib/libboost_date_time.a \
@@ -48,7 +48,7 @@ build:
     -DUSE_PREGENERATED_SOURCE=ON \
      .
     emmake make -j ${PYODIDE_JOBS:-3}
-    emcc ${SIDE_MODULE_LDFLAGS} -fexceptions out/lib/libRobotRaconteurCore.a \
+    emcc ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions out/lib/libRobotRaconteurCore.a \
       out/Python3/RobotRaconteur/_RobotRaconteurPython.a \
       $WASM_LIBRARY_DIR/lib/libboost_chrono.a \
       $WASM_LIBRARY_DIR/lib/libboost_date_time.a \

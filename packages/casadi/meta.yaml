@@ -12,11 +12,11 @@ requirements:
 build:
   exports: requested
   cflags: |
-    -fexceptions -frtti
+    -fwasm-exceptions -frtti
   cxxflags: |
-    -fexceptions -frtti
+    -fwasm-exceptions -frtti
   ldflags: |
-    -fexceptions
+    -fwasm-exceptions
 about:
   home: http://casadi.org
   PyPI: https://pypi.org/project/casadi

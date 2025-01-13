@@ -143,7 +143,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
+	-fwasm-exceptions \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
