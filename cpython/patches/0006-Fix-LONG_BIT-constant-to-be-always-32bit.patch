@@ -1,4 +1,4 @@
-From 30de7f996c4590c26c3e8fbbdf2f7f705f28e32e Mon Sep 17 00:00:00 2001
+From d9e6867695c02c07420d8a15d4ae1b96ea41f553 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 12 Jan 2024 00:52:57 +0900
 Subject: [PATCH 6/8] Fix LONG_BIT constant to be always 32bit
