@@ -1,4 +1,4 @@
-From a3f1217f7527907c237085c5e900c950c7d2603a Mon Sep 17 00:00:00 2001
+From b86ebf295ad48ade5810032e83f98edb0e642abf Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
 Subject: [PATCH 4/8] Make Emscripten trampolines work with JSPI
@@ -114,7 +114,7 @@ index 00000000000..900d527e48d
 +#endif // defined(__EMSCRIPTEN__) && defined(PY_CALL_TRAMPOLINE)
 +#endif // ndef Py_EMSCRIPTEN_SIGNAL_H
 diff --git a/Include/internal/pycore_object.h b/Include/internal/pycore_object.h
-index 7a2f13a21bd..3d8ad0c7f21 100644
+index 546f98d96d3..766ede570d6 100644
 --- a/Include/internal/pycore_object.h
 +++ b/Include/internal/pycore_object.h
 @@ -10,6 +10,7 @@ extern "C" {
@@ -125,7 +125,7 @@ index 7a2f13a21bd..3d8ad0c7f21 100644
  #include "pycore_interp.h"        // PyInterpreterState.gc
  #include "pycore_pystate.h"       // _PyInterpreterState_GET()
  #include "pycore_runtime.h"       // _PyRuntime
-@@ -410,33 +411,6 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
+@@ -417,33 +418,6 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
  
  PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, PyObject *);
  
@@ -176,7 +176,7 @@ index 99c4b0760bf..8ceb6b72ec1 100644
         is called again.
  
 diff --git a/Objects/descrobject.c b/Objects/descrobject.c
-index 72ac4703949..c62672d6196 100644
+index a6c90e7ac13..2cf1908b6a1 100644
 --- a/Objects/descrobject.c
 +++ b/Objects/descrobject.c
 @@ -2,6 +2,7 @@
@@ -310,7 +310,7 @@ index 00000000000..8d29393bd87
 +
 +#endif
 diff --git a/Python/pylifecycle.c b/Python/pylifecycle.c
-index a0130fde15d..aec638e85eb 100644
+index 6d580c6d489..f1510f32790 100644
 --- a/Python/pylifecycle.c
 +++ b/Python/pylifecycle.c
 @@ -4,6 +4,7 @@
@@ -332,7 +332,7 @@ index a0130fde15d..aec638e85eb 100644
  
  
 diff --git a/Python/pystate.c b/Python/pystate.c
-index 1337516aa59..1043e1f2fee 100644
+index d0651fbd592..a7981bc4877 100644
 --- a/Python/pystate.c
 +++ b/Python/pystate.c
 @@ -2,6 +2,7 @@
@@ -352,10 +352,10 @@ index 1337516aa59..1043e1f2fee 100644
  
  PyStatus
 diff --git a/configure b/configure
-index 99dd1fe5958..fe73b21a62d 100755
+index 1c75810d9e8..86c3214939c 100755
 --- a/configure
 +++ b/configure
-@@ -17432,8 +17432,8 @@ PLATFORM_OBJS=
+@@ -17457,8 +17457,8 @@ PLATFORM_OBJS=
  case $ac_sys_system in #(
    Emscripten) :
  
@@ -367,10 +367,10 @@ index 99dd1fe5958..fe73b21a62d 100755
    *) :
       ;;
 diff --git a/configure.ac b/configure.ac
-index bd2be94b47c..6bb201e0b3b 100644
+index d0d54050286..85c6d2f71ae 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -4811,8 +4811,8 @@ PLATFORM_OBJS=
+@@ -4837,8 +4837,8 @@ PLATFORM_OBJS=
  
  AS_CASE([$ac_sys_system],
    [Emscripten], [
