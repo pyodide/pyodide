@@ -147,7 +147,7 @@ markers = [
 [tool._pyodide]
 
 [tool.pyodide.build]
-rust_toolchain = "emscripten_2025-01-13_052ba16"
+rust_toolchain = "emscripten_2025-01-13_724fd8dedf1"
 
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
