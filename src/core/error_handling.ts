@@ -42,7 +42,11 @@ function ensureCaughtObjectIsError(e: any): Error {
 
 class CppException extends Error {
   ty: string;
-  constructor(ty: string, msg: string | undefined, e: any /* WebAssembly.Exception */) {
+  constructor(
+    ty: string,
+    msg: string | undefined,
+    e: any /* WebAssembly.Exception */,
+  ) {
     // @ts-ignore
     const ptr = Module.getCppExceptionThrownObjectFromWebAssemblyException(e);
     if (!msg) {
