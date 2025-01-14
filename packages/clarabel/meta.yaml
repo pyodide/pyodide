@@ -1,6 +1,7 @@
 package:
   name: clarabel
   version: 0.9.0
+  _disabled: true
   top-level:
     - clarabel
 source:
