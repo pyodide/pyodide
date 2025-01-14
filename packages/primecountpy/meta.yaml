@@ -1,6 +1,7 @@
 package:
   name: primecountpy
   version: 0.1.0
+  _disabled: true
   top-level:
     - primecountpy
 source:
