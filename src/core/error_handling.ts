@@ -42,7 +42,9 @@ function ensureCaughtObjectIsError(e: any): Error {
 
 class CppException extends Error {
   ty: string;
-  constructor(ty: string, msg: string | undefined, ptr: number) {
+  constructor(ty: string, msg: string | undefined, e: any /* WebAssembly.Exception */) {
+    // @ts-ignore
+    const ptr = Module.getCppExceptionThrownObjectFromWebAssemblyException(e);
     if (!msg) {
       msg = `The exception is an object of type ${ty} at address ${ptr} which does not inherit from std::exception`;
     }
@@ -56,19 +58,10 @@ Object.defineProperty(CppException.prototype, "name", {
   },
 });
 
-// As a fallback for when Wasm EH is not available, use an empty function.
-// The fallback ensures instanceof always returns false.
-const wasmException = (WebAssembly as any).Exception || function () {};
-const isWasmException = (e: any) => e instanceof wasmException;
+const WasmException = (WebAssembly as any).Exception;
+const isWasmException = (e: any) => e instanceof WasmException;
 
 function convertCppException(e: any) {
-  if (isWasmException(e)) {
-    if (e.is(Module.jsWrapperTag)) {
-      e = e.getArg(Module.jsWrapperTag, 0);
-    } else {
-      return e;
-    }
-  }
   let [ty, msg]: [string, string] = Module.getExceptionMessage(e);
   return new CppException(ty, msg, e);
 }
