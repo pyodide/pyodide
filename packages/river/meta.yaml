@@ -15,6 +15,10 @@ requirements:
     - numpy
     - pandas
     - scipy
+build:
+  script: |
+    # https://github.com/pyodide/pyodide/issues/5321
+    cargo update -p pyo3 --precise 0.23.1
 test:
   imports:
     - river
