@@ -1,5 +1,6 @@
 package:
   name: arro3-core
+  _disabled: true
   version: 0.4.1
   top-level:
     - "arro3.core"

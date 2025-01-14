@@ -1,5 +1,6 @@
 package:
   name: css-inline
+  _disabled: true
   version: 0.14.6
   top-level:
     - css_inline

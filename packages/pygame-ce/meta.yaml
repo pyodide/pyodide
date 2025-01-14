@@ -1,5 +1,6 @@
 package:
   name: pygame-ce
+  _disabled: true
   version: 2.4.1
   top-level:
     - pygame

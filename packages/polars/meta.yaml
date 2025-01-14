@@ -1,5 +1,6 @@
 package:
   name: polars
+  _disabled: true
   version: 1.18.0
   top-level:
     - polars
