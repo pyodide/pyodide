@@ -1,7 +1,6 @@
 package:
   name: primecountpy
   version: 0.1.0
-  _disabled: true
   top-level:
     - primecountpy
 source:
@@ -22,6 +21,7 @@ build:
   cxxflags: |
     -std=c++17
     -I$(WASM_LIBRARY_DIR)/include
+    -mllvm -wasm-enable-sjlj=false
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
 extra:
