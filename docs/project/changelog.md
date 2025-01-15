@@ -16,6 +16,8 @@ myst:
 
 ## Version 0.27.1
 
+_January 15, 2025_
+
 - {{ Enhancement }} Improve stack switching performance by using a wasm-gc based
   function signature adaptor when it is available. {pr}`5310`
 
