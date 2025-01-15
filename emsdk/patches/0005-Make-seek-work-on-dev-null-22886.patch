@@ -1,7 +1,7 @@
-From 238cb4a6570a81621a02c0ef41db1eb1a8a5e6a7 Mon Sep 17 00:00:00 2001
+From 39d9b5dfb133e73680f2a1aa4c0c1366f9560013 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 18 Nov 2024 20:55:25 +0100
-Subject: [PATCH 7/7] Make seek work on `/dev/null` (#22886)
+Subject: [PATCH 5/5] Make seek work on `/dev/null` (#22886)
 
 Seeking `/dev/null` should work and do nothing instead of returning
 `EPIPE`. This fixes it.
@@ -12,10 +12,10 @@ This can be removed when we update to Emscripten 3.1.72.
  1 file changed, 1 insertion(+)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 20a724a0a..f23ea50ec 100644
+index d6744ace3..dc8f52895 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
-@@ -1343,6 +1343,7 @@ FS.staticInit();` +
+@@ -1349,6 +1349,7 @@ FS.staticInit();` +
        FS.registerDevice(FS.makedev(1, 3), {
          read: () => 0,
          write: (stream, buffer, offset, length, pos) => length,
