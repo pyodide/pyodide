@@ -1,6 +1,8 @@
 package:
   name: clarabel
   version: 0.9.0
+  # Clarabel is broken against the rust main branch since 2024-12-15. Re-enable
+  # when they fix it. See oxfordcontrol/Clarabel.rs#154
   _disabled: true
   top-level:
     - clarabel

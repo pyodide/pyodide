@@ -1,0 +1,24 @@
+package:
+  name: httpx
+  version: 0.28.1
+  top-level:
+    - httpx
+
+source:
+  # Until the PR for emscripten support gets merged, build it from the PR source
+  url: https://github.com/joemarshall/httpx/archive/refs/heads/pyodide_0_28_1.zip
+  sha256: 0d9f57da2f5859df7ca147dc32334ee64bc133d2ea9d240964f3c4665c0e0072
+
+test:
+  imports:
+    - httpx
+
+about:
+  home: https://https://github.com/encode/httpx/
+  PyPI: https://pypi.org/project/httpx
+  summary: A next generation HTTP client for Python.
+  license: BSD-3-Clause
+
+extra:
+  recipe-maintainers:
+    - joemarshall
