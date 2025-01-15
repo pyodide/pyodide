@@ -12,7 +12,7 @@ emsdk/.complete: ../Makefile.envs $(wildcard patches/*.patch)
 	cd emsdk && ./emsdk activate --embedded --build=Release $(PYODIDE_EMSCRIPTEN_VERSION)
 
 	# Check that generated_struct_info is up to date.
-	cmp --silent emsdk/upstream/emscripten/src/struct_info_generated.json ../src/js/struct_info_generated.json || \
+	git diff --no-index --ignore-all-space emsdk/upstream/emscripten/src/struct_info_generated.json ../src/js/struct_info_generated.json > /dev/null || \
 		( \
 			echo "" && \
 			echo "The vendored copy of struct_info_generated.json does not match the copy in Emscripten" && \
