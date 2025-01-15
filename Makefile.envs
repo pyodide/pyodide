@@ -5,7 +5,7 @@ export PYODIDE_ABI_VERSION ?= 2025_0
 
 export RUST_TOOLCHAIN ?= nightly-2025-01-15
 export RUST_EMSCRIPTEN_TARGET_URL ?= http://pyodide-cache.s3-website-us-east-1.amazonaws.com/rustc-emscripten-target/${RUST_TOOLCHAIN}.tar.bz2
-export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT -Z link-native-libraries=no -Z emscripten-wasm-eh
+export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z emscripten-wasm-eh
 
 export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
 
