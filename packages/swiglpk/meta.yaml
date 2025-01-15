@@ -16,6 +16,8 @@ build:
 requirements:
   host:
     - glpk
+  executable:
+    - swig
 about:
   home: https://github.com/opencobra/swiglpk
   PyPI: https://pypi.org/project/swiglpk/
