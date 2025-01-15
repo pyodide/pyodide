@@ -1,6 +1,8 @@
 package:
   name: pyarrow
   version: 18.1.0
+  # TODO: reenable once we have a build for abi 2025_0
+  _disabled: true
   top-level:
     - pyarrow
 source:
