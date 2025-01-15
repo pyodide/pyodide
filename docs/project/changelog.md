@@ -20,7 +20,6 @@ myst:
 
 - Added `httpx` 0.28.1 {pr}`5302`
 
-
 ## Version 0.27.1
 
 _January 15, 2025_
