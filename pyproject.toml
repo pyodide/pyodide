@@ -146,9 +146,6 @@ markers = [
 
 [tool._pyodide]
 
-[tool.pyodide.build]
-rust_toolchain = "emscripten_2025-01-13_724fd8dedf1"
-
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
 skip = 'benchmark/benchmarks/pystone_benchmarks/pystone.py,src/js/package-lock.json,tools/codespell_ignore_words.txt'
