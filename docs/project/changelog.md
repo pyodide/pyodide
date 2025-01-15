@@ -14,6 +14,22 @@ myst:
 
 # Change Log
 
+## Version 0.27.1
+
+_January 15, 2025_
+
+- {{ Enhancement }} Improve stack switching performance by using a wasm-gc based
+  function signature adaptor when it is available. {pr}`5310`
+
+### Packages
+
+- {{ Fix }} PyArrow was accidentally missing from 0.27.0. Now it's really
+  available. {pr}`5300`
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `css_inline` 0.14.6 {pr}`5304`
+- Upgraded `nlopt` to 2.9.1 {pr}`5305`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
+
 ## Version 0.27.0
 
 _January 1, 2025_
@@ -132,7 +148,7 @@ _January 1, 2025_
 - Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
 - Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
 - Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
