@@ -20,7 +20,23 @@ myst:
 
 - Added `httpx` 0.28.1 {pr}`5302`
 
+
+## Version 0.27.1
+
+_January 15, 2025_
+
+- {{ Enhancement }} Improve stack switching performance by using a wasm-gc based
+  function signature adaptor when it is available. {pr}`5310`
+
+### Packages
+
+- {{ Fix }} PyArrow was accidentally missing from 0.27.0. Now it's really
+  available. {pr}`5300`
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `apsw` 3.47.2.0 {pr}`5251`
+- Added `css_inline` 0.14.6 {pr}`5304`
+- Upgraded `nlopt` to 2.9.1 {pr}`5305`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
 
 ## Version 0.27.0
 

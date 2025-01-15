@@ -14,6 +14,8 @@ build:
     export DISABLE_NUMCODECS_SSE2=1
     export DISABLE_NUMCODECS_AVX2=1
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - msgpack
