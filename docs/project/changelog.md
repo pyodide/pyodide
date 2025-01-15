@@ -1522,7 +1522,8 @@ _August 29, 2022_
 
 _August 22, 2022_
 
-- New packages: the standard library lzma module {pr}`2939`
+- New packages: the standard library lzma module {pr}`2939`,
+  websockets {pr}`2967`
 
 - {{ Enhancement }} Pyodide now shows more helpful error messages when importing
   unvendored or removed stdlib modules fails.
