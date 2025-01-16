@@ -38,9 +38,9 @@ def test_integrate(selenium):
     ts = numpy.linspace(0.0, 100.0, 1001)
     o = Orbit()
     o.integrate(ts, MWPotential2014)
-    assert (
-        numpy.fabs(numpy.std(o.E(ts)) / numpy.mean(o.E(ts))) < 1e-10
-    ), "Orbit integration does not conserve energy"
+    assert numpy.fabs(numpy.std(o.E(ts)) / numpy.mean(o.E(ts))) < 1e-10, (
+        "Orbit integration does not conserve energy"
+    )
     return None
 
 
@@ -61,12 +61,12 @@ def test_actionAngle(selenium):
     all_os = o(ts)
     jrs = all_os.jr(pot=MWPotential2014)
     jzs = all_os.jz(pot=MWPotential2014)
-    assert (
-        numpy.fabs(numpy.std(jrs) / numpy.mean(jrs)) < 1e-4
-    ), "Actions not conserved during orbit integration"
-    assert (
-        numpy.fabs(numpy.std(jzs) / numpy.mean(jzs)) < 1e-3
-    ), "Actions not conserved during orbit integration"
+    assert numpy.fabs(numpy.std(jrs) / numpy.mean(jrs)) < 1e-4, (
+        "Actions not conserved during orbit integration"
+    )
+    assert numpy.fabs(numpy.std(jzs) / numpy.mean(jzs)) < 1e-3, (
+        "Actions not conserved during orbit integration"
+    )
     return None
 
 
@@ -113,7 +113,9 @@ def test_isotropic_hernquist_sigmar(selenium):
                     samp_sigr[ii] / jeans.sigmar(pot, br, beta=beta, dens=dens) - 1.0
                 )
                 < tol
-            ), "sigma_r(r) from samples does not agree with that obtained from the Jeans equation"
+            ), (
+                "sigma_r(r) from samples does not agree with that obtained from the Jeans equation"
+            )
         return None
 
     pot = potential.HernquistPotential(amp=2.3, a=1.3)
