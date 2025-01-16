@@ -1,0 +1,6 @@
+[build-system]
+requires = ["setuptools", "numpy"]
+
+[project]
+name = "RobotRaconteur"
+version = "1.2.2"
