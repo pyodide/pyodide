@@ -1,7 +1,7 @@
 package:
   name: primecount
-  _disabled: true
   version: "7.9"
+  _disabled: true
   tag:
     - library
     - static_library

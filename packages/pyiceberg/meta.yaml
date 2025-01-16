@@ -1,7 +1,7 @@
 package:
   name: pyiceberg
-  _disabled: true
   version: 0.6.0
+  _disabled: true
   top-level:
     - pyiceberg
 #build:
