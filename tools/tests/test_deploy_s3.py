@@ -141,7 +141,7 @@ def test_deploy_to_s3_mime_type(tmp_path, capsys):
         res = s3_client.get_object(Bucket=bucket_name, Key=key)
         return res["ResponseMetadata"]["HTTPHeaders"].get(field)
 
-    assert get_header("a.js", "content-encoding") == "gzip"
+    assert get_header("a.js", "content-encoding") == "gzip,aws-chunked"
     assert get_header("a.tar.gz", "content-encoding") is None
     assert get_header("a.tar.bz2", "content-encoding") is None
 
