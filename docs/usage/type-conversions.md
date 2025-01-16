@@ -328,7 +328,7 @@ proxy.destroy();
 ```
 As an alternative, if you wish to assert that the object should be fully
 converted and no proxies should be created, you can use
-`proxy.toJs({create_proxies : false})`. If a proxy would be created, a
+`proxy.toJs({create_pyproxies : false})`. If a proxy would be created, a
 {py:exc}`~pyodide.ffi.ConversionError` is raised instead.
 ````
 

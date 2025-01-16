@@ -1,5 +1,7 @@
 import pytest
 
+from conftest import requires_jspi
+
 
 def test_make_snapshot_requires_arg(selenium):
     match = "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide"
@@ -231,3 +233,25 @@ def test_snapshot_serializer_need_deserializer(selenium_standalone_noload):
             const py2 = await loadPyodide({_loadSnapshot: snapshot });
             """
         )
+
+
+@requires_jspi
+def test_syncify_in_snapshot_load(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        const py1 = await loadPyodide({_makeSnapshot: true});
+        py1.runPython(`
+            from asyncio import sleep
+            from pyodide.ffi import run_sync
+        `);
+        const snapshot = py1.makeMemorySnapshot();
+        const py2 = await loadPyodide({_loadSnapshot: snapshot});
+        await py2.runPythonAsync(`
+            async def func():
+                await sleep(0.2)
+                return 7
+            assert run_sync(func()) == 7
+        `)
+        """
+    )

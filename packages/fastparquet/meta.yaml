@@ -4,9 +4,11 @@ package:
   top-level:
     - fastparquet
 requirements:
-  run:
-    - cramjam
+  host:
     - numpy
+  run:
+    - numpy
+    - cramjam
     - pandas
     - fsspec
     - packaging
