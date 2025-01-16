@@ -1,5 +1,6 @@
 package:
   name: polars
+  # TODO: reenable once we have a build for abi 2025_0
   _disabled: true
   version: 1.18.0
   top-level:
