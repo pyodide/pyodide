@@ -12,12 +12,6 @@ RUN apt-get update \
         ninja-build jq xxd \
   && rm -rf /var/lib/apt/lists/*
 
-# Normally, it is a bad idea to install rustup and cargo in
-# system directories (it should not be shared between users),
-# but this docker image is only for building packages, so I hope it is ok.
-RUN wget -q -O - https://sh.rustup.rs | \
-    RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
-
 # install autoconf 2.71, required by upstream libffi
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && tar -xf autoconf-2.71.tar.xz \
@@ -52,6 +46,12 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+# Normally, it is a bad idea to install rustup and cargo in
+# system directories (it should not be shared between users),
+# but this docker image is only for building packages, so I hope it is ok.
+RUN wget -q -O  -  https://sh.rustup.rs | \
+  RUSTUP_UPDATE_ROOT=https://dev-static.rust-lang.org/rustup RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
@@ -104,7 +104,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
   else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
   fi \
-  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb." \
+  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
   && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt-get update \
