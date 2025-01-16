@@ -31,9 +31,9 @@ def test_pillow(selenium):
             img.save(imgfile, format=ext.upper())
             _img = Image.open(imgfile)
             assert _img
-            assert (
-                imgfile.getvalue()[:4] == signature
-            ), f"Wrong signature on image format: {ext}"
+            assert imgfile.getvalue()[:4] == signature, (
+                f"Wrong signature on image format: {ext}"
+            )
 
 
 @run_in_pyodide(
