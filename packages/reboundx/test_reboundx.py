@@ -23,7 +23,7 @@ def test_modifymass(selenium):
     sim.particles[0].params["tau_mass"] = -1000
     sim.integrate(10.0)
 
-    assert (
-        numpy.fabs(sim.particles[0].m - 0.9900498312740409) < 1e-10
-    ), "Modify mass module in REBOUNDx is not working"
+    assert numpy.fabs(sim.particles[0].m - 0.9900498312740409) < 1e-10, (
+        "Modify mass module in REBOUNDx is not working"
+    )
     return None

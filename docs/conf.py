@@ -289,7 +289,8 @@ def write_examples(app):
 def ensure_typedoc_on_path():
     if shutil.which("typedoc"):
         return
-    os.environ["PATH"] += f':{str(Path("../src/js/node_modules/.bin").resolve())}'
+    typedoc_dir = Path("../src/js/node_modules/.bin").resolve()
+    os.environ["PATH"] += ":" + str(typedoc_dir)
     print(os.environ["PATH"])
     if shutil.which("typedoc"):
         return
