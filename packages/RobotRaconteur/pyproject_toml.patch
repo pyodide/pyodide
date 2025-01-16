@@ -1,0 +1,12 @@
+diff --git a/pyproject.toml b/pyproject.toml
+new file mode 100644
+index 00000000..4db86d0b
+--- /dev/null
++++ b/pyproject.toml
+@@ -0,0 +1,6 @@
++[build-system]
++requires = ["setuptools", "numpy"]
++
++[project]
++name = "RobotRaconteur"
++version = "1.2.2"
