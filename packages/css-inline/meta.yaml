@@ -1,6 +1,8 @@
 package:
   name: css-inline
   version: 0.14.6
+  # TODO: re-enable once we have a build for abi 2025_0
+  _disabled: true
   top-level:
     - css_inline
 source:
