@@ -19,6 +19,7 @@ myst:
 ### Packages
 
 - Added `httpx` 0.28.1 {pr}`5302`
+- Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
 
 ## Version 0.27.1
 
