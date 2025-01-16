@@ -468,9 +468,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         documentation for details about context).
         """
         if handler is not None and not callable(handler):
-            raise TypeError(
-                f"A callable object or None is expected, " f"got {handler!r}"
-            )
+            raise TypeError(f"A callable object or None is expected, got {handler!r}")
         self._exception_handler = handler
 
     def default_exception_handler(self, context):

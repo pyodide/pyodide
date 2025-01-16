@@ -568,10 +568,13 @@ class DummyDistribution:
             if value is not None:
                 (dist_info_dir / key).write_text(value)
         with (dist_info_dir / "METADATA").open("w") as f:
+            # fmt: off
             f.write(
-                f"Metadata-Version: 2.1\nName: {self.name}\n"
+                "Metadata-Version: 2.1\n"
+                f"Name: {self.name}\n"
                 f"Version: {self.version}\n"
             )
+            # fmt: on
 
     def __repr__(self):
         return self.name
@@ -785,9 +788,9 @@ def test_install_api(selenium_standalone, httpserver):
 
         d = pathlib.Path(pkg_dir)
         assert d.is_dir(), f"Directory {d} not found"
-        assert (
-            d / "dummy_pkg-0.1.0.dist-info"
-        ).is_dir(), "dist-info directory not found"
+        assert (d / "dummy_pkg-0.1.0.dist-info").is_dir(), (
+            "dist-info directory not found"
+        )
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
     _run(selenium, install_dir)
