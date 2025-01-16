@@ -139,9 +139,9 @@ def test_dblquad(selenium):
     unit_square_area = scipy.integrate.dblquad(
         lambda y, x: 1, 0, 1, lambda x: 0, lambda x: 1
     )
-    assert (
-        abs(unit_square_area[0] - 1) < unit_square_area[1]
-    ), f"Unit square area calculated using scipy.integrate.dblquad of {unit_square_area[0]} (+- {unit_square_area[0]}) is too far from 1.0"
+    assert abs(unit_square_area[0] - 1) < unit_square_area[1], (
+        f"Unit square area calculated using scipy.integrate.dblquad of {unit_square_area[0]} (+- {unit_square_area[0]}) is too far from 1.0"
+    )
 
 
 import shutil
