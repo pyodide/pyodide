@@ -570,9 +570,7 @@ class DummyDistribution:
         with (dist_info_dir / "METADATA").open("w") as f:
             f.write(
                 # fmt: off
-                "Metadata-Version: 2.1\n"
-                f"Name: {self.name}\n"
-                f"Version: {self.version}\n"
+                f"Metadata-Version: 2.1\nName: {self.name}\nVersion: {self.version}\n"
                 # fmt: on
             )
 
