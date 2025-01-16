@@ -568,11 +568,13 @@ class DummyDistribution:
             if value is not None:
                 (dist_info_dir / key).write_text(value)
         with (dist_info_dir / "METADATA").open("w") as f:
+            # fmt: off
             f.write(
-                # fmt: off
-                f"Metadata-Version: 2.1\nName: {self.name}\nVersion: {self.version}\n"
-                # fmt: on
+                "Metadata-Version: 2.1\n"
+                f"Name: {self.name}\n"
+                f"Version: {self.version}\n"
             )
+            # fmt: on
 
     def __repr__(self):
         return self.name
