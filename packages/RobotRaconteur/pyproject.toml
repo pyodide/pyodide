@@ -1,6 +1,8 @@
 [build-system]
-requires = ["setuptools", "numpy"]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "RobotRaconteur"
 version = "1.2.2"
+dependencies = ["numpy"]
