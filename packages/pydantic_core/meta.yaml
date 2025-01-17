@@ -1,6 +1,8 @@
 package:
   name: pydantic_core
   version: 2.25.1
+  # TODO: reenable once we have a build for abi 2025_0
+  _disabled: true
   top-level:
     - pydantic_core
 source:
