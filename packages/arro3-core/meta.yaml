@@ -1,7 +1,7 @@
 package:
   name: arro3-core
   version: 0.4.1
-  # TODO: reenable once we have a build for abi 2025_0
+  # TODO: re-enable once we have a build for abi 2025_0
   _disabled: true
   top-level:
     - "arro3.core"
