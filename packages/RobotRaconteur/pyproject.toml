@@ -1,8 +1,12 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools", "numpy"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "RobotRaconteur"
 version = "1.2.2"
 dependencies = ["numpy"]
+authors = [
+    {name = "John Wason", email = "wason@wasontech.com"}
+]
+license = "Apache-2.0"
