@@ -1,4 +1,4 @@
-From 5a2c98d6273f5ca9683be80bf1744abe70cd273b Mon Sep 17 00:00:00 2001
+From 936f05cb4e041c01d2c7e435a027ccfb8a5f9fbe Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH 3/6] Changes for JSPI
@@ -45,7 +45,7 @@ index 216a1362e..e8c812fab 100644
  #endif
  #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.mjs b/src/parseTools.mjs
-index 7f20321c3..118a32078 100644
+index a22dd55a3..15dcf5941 100644
 --- a/src/parseTools.mjs
 +++ b/src/parseTools.mjs
 @@ -581,7 +581,7 @@ function makeThrow(excPtr) {

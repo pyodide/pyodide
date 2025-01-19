@@ -1,4 +1,4 @@
-From 4e6df798a1d98e4c568ffa93a33cc5fa013a5953 Mon Sep 17 00:00:00 2001
+From 35df36d7ac35fe2307c6275f7c7860b8b9878e14 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 18 Nov 2024 20:55:25 +0100
 Subject: [PATCH 6/6] Make seek work on `/dev/null` (#22886)
@@ -12,7 +12,7 @@ This can be removed when we update to Emscripten 3.1.72.
  1 file changed, 1 insertion(+)
 
 diff --git a/src/library_fs.js b/src/library_fs.js
-index 20a724a0a..f23ea50ec 100644
+index cd9562d07..6e18be78e 100644
 --- a/src/library_fs.js
 +++ b/src/library_fs.js
 @@ -1343,6 +1343,7 @@ FS.staticInit();` +
