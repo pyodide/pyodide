@@ -295,6 +295,7 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
 
 8. Run
+
    ```sh
    python tools/make_test_list.py
    ```
