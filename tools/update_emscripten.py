@@ -27,8 +27,8 @@ def setup_emscripten(oldtag: str):
             cwd=EMSCRIPTEN.parent,
         )
     run(["git", "fetch", "origin", "--tags", "--force"], cwd=EMSCRIPTEN)
-    run(["git", "config", "rerere.enabled", "true"])
-    run(["git", "config", "rerere.autoupdate", "true"])
+    run(["git", "config", "rerere.enabled", "true"], cwd=EMSCRIPTEN)
+    run(["git", "config", "rerere.autoupdate", "true"], cwd=EMSCRIPTEN)
 
 
 def rebase(oldtag: str, newtag: str):
@@ -43,8 +43,7 @@ def rebase(oldtag: str, newtag: str):
         if result.returncode == 0:
             return
         result = run(
-            ["git", "diff", "--exit-code"],
-            capture_output=True,
+            ["git", "diff", "--quiet"],
             check=False,
             cwd=EMSCRIPTEN,
         )

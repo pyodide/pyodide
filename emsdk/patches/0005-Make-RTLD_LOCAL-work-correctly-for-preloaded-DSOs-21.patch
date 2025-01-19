@@ -1,4 +1,4 @@
-From 43e48564c49b467ed539ac8c8834a1bb62fbb4e6 Mon Sep 17 00:00:00 2001
+From 00dd2ba1c3214a0046369ce43cb33236020eca46 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Morten=20Johan=20S=C3=B8rvig?=
  <msorvig@users.noreply.github.com>
 Date: Wed, 12 Jun 2024 20:10:35 +0200
@@ -19,7 +19,7 @@ from the .so file type preload handler.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index e8c812fab..8d93d016f 100644
+index 7df33f2f4..9e3e9d147 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -26,7 +26,7 @@ var LibraryDylink = {
@@ -31,7 +31,7 @@ index e8c812fab..8d93d016f 100644
              (exports) => {
  #if DYLINK_DEBUG
                dbg(`registering preloadedWasm: ${name}`);
-@@ -884,7 +884,7 @@ var LibraryDylink = {
+@@ -881,7 +881,7 @@ var LibraryDylink = {
      if (flags.loadAsync) {
        return metadata.neededDynlibs
          .reduce((chain, dynNeeded) => chain.then(() =>
