@@ -11,8 +11,8 @@ from typing import Any
 import ruamel.yaml
 
 yaml = ruamel.yaml.YAML()
-PYODIDE_ROOT = Path(__file__).parents[2]
-PYTHON_TESTS_YAML = Path(__file__).parent / "python_tests.yaml"
+PYODIDE_ROOT = Path(__file__).parents[1]
+PYTHON_TESTS_YAML = PYODIDE_ROOT / "src/tests/python_tests.yaml"
 
 
 def get_makefile_envs():
