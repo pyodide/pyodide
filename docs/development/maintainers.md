@@ -294,10 +294,9 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    figure out how to fix it:
    https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
 
-8. In the virtual environment with the new Python version, run
-
+8. Run
    ```sh
-   python src/tests/make_test_list.py
+   python tools/make_test_list.py
    ```
 
    Then run the core tests `pytest src/tests/test_core_python.py` and either fix
