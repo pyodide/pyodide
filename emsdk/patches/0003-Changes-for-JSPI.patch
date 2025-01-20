@@ -1,7 +1,7 @@
-From 01754ab08b96fb7e969becf6fb3d3863f19f8114 Mon Sep 17 00:00:00 2001
+From 936f05cb4e041c01d2c7e435a027ccfb8a5f9fbe Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
-Subject: [PATCH 3/5] Changes for JSPI
+Subject: [PATCH 3/6] Changes for JSPI
 
 ---
  src/library.js        | 2 +-
@@ -11,10 +11,10 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 130cd3c73..71a384e3c 100644
+index 289255c12..e5d87d492 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -1008,7 +1008,7 @@ addToLibrary({
+@@ -1268,7 +1268,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
@@ -24,7 +24,7 @@ index 130cd3c73..71a384e3c 100644
    },
  #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index 5b51d6a3a..9e3e9d147 100644
+index 216a1362e..e8c812fab 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -73,6 +73,7 @@ var LibraryDylink = {
@@ -32,10 +32,10 @@ index 5b51d6a3a..9e3e9d147 100644
    $createInvokeFunction__internal: true,
    $createInvokeFunction__deps: ['$dynCall', 'setThrew', '$stackSave', '$stackRestore'],
 +  $createInvokeFunction__postset: "if(!Module.createInvoke) { Module.createInvoke = Module.createInvokeFunction; }",
-   $createInvokeFunction: (sig) => (ptr, ...args) => {
-     var sp = stackSave();
-     try {
-@@ -129,7 +130,7 @@ var LibraryDylink = {
+   $createInvokeFunction: (sig) => {
+     return function() {
+       var sp = stackSave();
+@@ -131,7 +132,7 @@ var LibraryDylink = {
      // Asm.js-style exception handling: invoke wrapper generation
      else if (symName.startsWith('invoke_')) {
        // Create (and cache) new invoke_ functions on demand.
@@ -58,7 +58,7 @@ index a22dd55a3..15dcf5941 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index 50db7db23..f465b68c5 100644
+index 3f3b4db45..c0515125e 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -18,6 +18,10 @@
@@ -72,7 +72,7 @@ index 50db7db23..f465b68c5 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -926,6 +930,9 @@ function getWasmImports() {
+@@ -944,6 +948,9 @@ function getWasmImports() {
  // Receives the wasm imports, returns the exports.
  function createWasm() {
    var info = getWasmImports();
