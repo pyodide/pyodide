@@ -1,4 +1,4 @@
-From caf8d7a75cd3470517ceaec02cb1ed37e2c651b8 Mon Sep 17 00:00:00 2001
+From fdaaacb8f7c37efe14c3b22dc9ef4060125069ff Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 18 Nov 2024 20:55:25 +0100
 Subject: [PATCH 5/5] Make seek work on `/dev/null` (#22886)
