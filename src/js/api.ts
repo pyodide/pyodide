@@ -520,7 +520,7 @@ export class PyodideAPI {
       buffer,
       format,
       extract_dir,
-      installer: "pyodide.unpackArchive",
+      metadata: new Map([["INSTALLER", "pyodide.unpackArchive"]]),
     });
   }
 
