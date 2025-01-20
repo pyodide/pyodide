@@ -457,7 +457,12 @@ export class PackageManager {
       installDir,
       new Map([
         ["INSTALLER", INSTALLER],
-        ["PYODIDE_SOURCE", metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel],
+        [
+          "PYODIDE_SOURCE",
+          metadata.channel === this.defaultChannel
+            ? "pyodide"
+            : metadata.channel,
+        ],
       ]),
     );
   }
