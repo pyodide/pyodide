@@ -246,7 +246,8 @@ def test_jsproxy_iter(selenium):
         }
         self.ITER = makeIterator([1, 2, 3]);"""
     )
-    assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
+    selenium.run("from js import ITER")
+    assert selenium.run("list(ITER)") == [1, 2, 3]
 
 
 def test_jsproxy_implicit_iter(selenium):
@@ -255,15 +256,10 @@ def test_jsproxy_implicit_iter(selenium):
         self.ITER = [1, 2, 3];
         """
     )
-    assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
-    assert selenium.run("from js import ITER, Object\n" "list(ITER.values())") == [
-        1,
-        2,
-        3,
-    ]
-    assert selenium.run(
-        "from js import ITER, Object\n" "list(Object.values(ITER))"
-    ) == [1, 2, 3]
+    selenium.run("from js import ITER, Object")
+    assert selenium.run("list(ITER)") == [1, 2, 3]
+    assert selenium.run("list(ITER.values())") == [1, 2, 3]
+    assert selenium.run("list(Object.values(ITER))") == [1, 2, 3]
 
 
 def test_jsproxy_call1(selenium):

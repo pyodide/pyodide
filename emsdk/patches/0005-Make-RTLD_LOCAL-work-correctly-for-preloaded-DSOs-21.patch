@@ -1,8 +1,8 @@
-From 30c4c9dedb49776de04d1609c4dead636498c992 Mon Sep 17 00:00:00 2001
+From 43e48564c49b467ed539ac8c8834a1bb62fbb4e6 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Morten=20Johan=20S=C3=B8rvig?=
  <msorvig@users.noreply.github.com>
 Date: Wed, 12 Jun 2024 20:10:35 +0200
-Subject: [PATCH 6/7] Make RTLD_LOCAL work correctly for preloaded DSOs
+Subject: [PATCH 5/6] Make RTLD_LOCAL work correctly for preloaded DSOs
  (#21985)
 
 Copied from: https://github.com/emscripten-core/emscripten/pull/21985
@@ -19,7 +19,7 @@ from the .so file type preload handler.
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index e0fa4721c..6dea031b1 100644
+index e8c812fab..8d93d016f 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -26,7 +26,7 @@ var LibraryDylink = {
@@ -31,7 +31,7 @@ index e0fa4721c..6dea031b1 100644
              (exports) => {
  #if DYLINK_DEBUG
                dbg(`registering preloadedWasm: ${name}`);
-@@ -882,7 +882,7 @@ var LibraryDylink = {
+@@ -884,7 +884,7 @@ var LibraryDylink = {
      if (flags.loadAsync) {
        return metadata.neededDynlibs
          .reduce((chain, dynNeeded) => chain.then(() =>

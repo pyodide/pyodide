@@ -31,7 +31,7 @@ __all__ = ["Console", "PyodideConsole", "BANNER", "repr_shorten", "ConsoleFuture
 
 
 BANNER = f"""
-Python {python_version()} ({', '.join(python_build())}) on WebAssembly/Emscripten
+Python {python_version()} ({", ".join(python_build())}) on WebAssembly/Emscripten
 Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
 
