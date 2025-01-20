@@ -1,4 +1,4 @@
-From 795760dbdaa1a3644db292ecc16ceffebe3335e4 Mon Sep 17 00:00:00 2001
+From 1897ec0e4116cb3163cf752b49bd7120d489c1ab Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
 Subject: [PATCH 2/6] Add useful error when symbol resolution fails
@@ -19,10 +19,10 @@ symbol.
  1 file changed, 3 insertions(+)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index e4f0dc804..216a1362e 100644
+index 50eb34773..3ea5f4be8 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
-@@ -715,6 +715,9 @@ var LibraryDylink = {
+@@ -712,6 +712,9 @@ var LibraryDylink = {
              var resolved;
              stubs[prop] = (...args) => {
                resolved ||= resolveSymbol(prop);
