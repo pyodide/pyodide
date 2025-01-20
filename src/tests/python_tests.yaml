@@ -1,4 +1,4 @@
-# This list is updated with test/make_test_list.py script, which needs
+# This list is updated with tools/make_test_list.py script, which needs
 # to be re-run after each CPython update.
 
 # Test modules can have:
