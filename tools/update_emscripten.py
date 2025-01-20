@@ -4,6 +4,7 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from common import PYODIDE_ROOT, get_makefile_envs
 
@@ -12,7 +13,7 @@ EMSCRIPTEN = EMSDK / "emscripten"
 PATCHES = EMSDK / "patches"
 
 
-def run(args: list[str | Path], check=True, **kwargs):
+def run(args: list[str | Path], check: bool = True, **kwargs: Any) -> subprocess.CompletedProcess[Any]:
     print(" ".join(str(x) for x in args))
     result = subprocess.run(args, check=False, text=True, **kwargs)
     if check and result.returncode:
@@ -20,7 +21,7 @@ def run(args: list[str | Path], check=True, **kwargs):
     return result
 
 
-def setup_emscripten(oldtag: str):
+def setup_emscripten(oldtag: str) -> None:
     if not EMSCRIPTEN.exists():
         run(
             ["git", "clone", "git@github.com:emscripten-core/emscripten.git"],
@@ -31,7 +32,7 @@ def setup_emscripten(oldtag: str):
     run(["git", "config", "rerere.autoupdate", "true"], cwd=EMSCRIPTEN)
 
 
-def rebase(oldtag: str, newtag: str):
+def rebase(oldtag: str, newtag: str) -> None:
     run(["git", "checkout", oldtag, "--quiet"], cwd=EMSCRIPTEN)
     run(["git", "switch", "-C", f"pyodide-{newtag}"], cwd=EMSCRIPTEN)
     patches = sorted(PATCHES.glob("*"))
@@ -55,7 +56,7 @@ def rebase(oldtag: str, newtag: str):
         result = run(["git", "rebase", "--continue"], check=False, cwd=EMSCRIPTEN)
 
 
-def update_patches(newtag: str):
+def update_patches(newtag: str) -> None:
     # First delete existing patches
     for file in PATCHES.glob("*"):
         file.unlink()
@@ -63,9 +64,16 @@ def update_patches(newtag: str):
     run(["git", "format-patch", newtag, "-o", PATCHES], cwd=EMSCRIPTEN)
 
 
-def update_makefile_envs(newtag):
-    # TODO: Implement me!
-    pass
+def update_makefile_envs(oldtag: str, newtag: str) -> None:
+    file = PYODIDE_ROOT / "Makefile.envs"
+    content = file.read_text()
+    template = "export PYODIDE_EMSCRIPTEN_VERSION ?= {}"
+    content = content.replace(template.format(oldtag), template.format(newtag))
+    file.write_text(content)
+
+
+def update_struct_info() -> None:
+    run(["make", "update_struct_info"], cwd=EMSDK)
 
 
 def parse_args():
@@ -81,7 +89,8 @@ def main():
     setup_emscripten(oldtag)
     rebase(oldtag, newtag)
     update_patches(newtag)
-    update_makefile_envs(newtag)
+    update_makefile_envs(oldtag, newtag)
+    update_struct_info()
 
 
 if __name__ == "__main__":

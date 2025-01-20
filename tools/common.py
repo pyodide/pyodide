@@ -5,7 +5,7 @@ from pathlib import Path
 PYODIDE_ROOT = Path(__file__).parents[1]
 
 
-def get_makefile_envs():
+def get_makefile_envs() -> dict[str, str]:
     result = subprocess.run(
         ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
         capture_output=True,
