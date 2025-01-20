@@ -12,6 +12,7 @@ EMSDK = PYODIDE_ROOT / "emsdk"
 EMSCRIPTEN = EMSDK / "emscripten"
 PATCHES = EMSDK / "patches"
 
+
 def run(
     args: list[str | Path], check: bool = True, **kwargs: Any
 ) -> subprocess.CompletedProcess[Any]:
