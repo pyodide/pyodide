@@ -226,9 +226,9 @@ def test_bouncing_ball(selenium, integrator_type):
         s_current = s_end
 
     # adding some basic verifications
-    assert (
-        len(t_log) == num_steps + 1
-    ), f"Expected {num_steps + 1} time steps, got {len(t_log)}"
+    assert len(t_log) == num_steps + 1, (
+        f"Expected {num_steps + 1} time steps, got {len(t_log)}"
+    )
     assert all(h >= 0 for h in h_log), "Height should never be negative"
     assert abs(h_log[0] - h0) < 1e-6, "Initial height should match h0"
     assert abs(v_log[0] - v0) < 1e-6, "Initial velocity should match v0"

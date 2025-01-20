@@ -11,8 +11,6 @@ source:
 build:
   script: |
     export OPENSSL_DIR=$WASM_LIBRARY_DIR
-    # Allow linking to native libraries, otherwise libssl and libcrypto will be not linked to the final binary
-    export RUSTFLAGS="-Z link-native-libraries=yes"
 requirements:
   run:
     - openssl
