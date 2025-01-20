@@ -13,7 +13,9 @@ EMSCRIPTEN = EMSDK / "emscripten"
 PATCHES = EMSDK / "patches"
 
 
-def run(args: list[str | Path], check: bool = True, **kwargs: Any) -> subprocess.CompletedProcess[Any]:
+def run(
+    args: list[str | Path], check: bool = True, **kwargs: Any
+) -> subprocess.CompletedProcess[Any]:
     print(" ".join(str(x) for x in args))
     result = subprocess.run(args, check=False, text=True, **kwargs)
     if check and result.returncode:
