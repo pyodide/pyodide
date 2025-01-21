@@ -24,7 +24,7 @@ export class Installer {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    metadata?: Map<string, string>,
+    metadata?: readonly Map<string, string>,
   ) {
     const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
       {
