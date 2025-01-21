@@ -27,6 +27,7 @@ cpython/build.log
 dist*/
 docs/_build/
 emsdk/emsdk
+emsdk/emscripten
 geckodriver.log
 node_modules
 packages/.artifacts
@@ -35,7 +36,6 @@ packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
-pyodide-build/**/build.log
 xbuildenv/
 pytest-pyodide
 tools/symlinks
