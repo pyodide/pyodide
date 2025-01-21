@@ -626,23 +626,6 @@ workflows:
                   - ./packages
                   - ./dist
 
-      - build-packages:
-          name: build-prebuilt-packages
-          enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
-          packages: "*"
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-          # TODO: enable this when we remove other package build jobs
-          # post-steps:
-          #   - persist_to_workspace:
-          #       root: .
-          #       paths:
-          #         - ./packages/
-          #         - ./dist
-
       - test-main:
           name: test-core-chrome-nodylink
           test-params: --runtime=chrome-no-host -m 'not requires_dynamic_linking' -k "not webworker" src packages/micropip  packages/fpcast-test packages/sharedlib-test-py/ packages/cpp-exceptions-test/ packages/buffer-test/
@@ -741,6 +724,15 @@ workflows:
           cache-dir: .pytest_cache_node
           requires:
             - build-core-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-chrome
+          test-params: --runtime=chrome-no-host packages/_tests
+          requires:
+            - build-full-packages
           filters:
             tags:
               only: /.*/
