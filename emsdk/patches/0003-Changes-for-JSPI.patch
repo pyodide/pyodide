@@ -1,4 +1,4 @@
-From 8df3f44aad720ebc7be47ca95c772f95cf0070e6 Mon Sep 17 00:00:00 2001
+From 8ad9f46351d18c7466eccd3a2f998bfac90335ea Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH 3/5] Changes for JSPI
@@ -11,10 +11,10 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 130cd3c73..71a384e3c 100644
+index 9ef9bc0de..d630bbe48 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -1008,7 +1008,7 @@ addToLibrary({
+@@ -1019,7 +1019,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
