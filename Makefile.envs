@@ -3,11 +3,10 @@ export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.61
 export PYODIDE_VERSION ?= 0.28.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
 
-export RUST_TOOLCHAIN ?= nightly-2025-01-15
-export RUST_EMSCRIPTEN_TARGET_URL ?= http://pyodide-cache.s3-website-us-east-1.amazonaws.com/rustc-emscripten-target/${RUST_TOOLCHAIN}.tar.bz2
-
 export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
 
+export RUST_TOOLCHAIN ?= nightly-2025-01-15
+export RUST_EMSCRIPTEN_TARGET_URL ?= http://pyodide-cache.s3-website-us-east-1.amazonaws.com/rustc-emscripten-target/${RUST_TOOLCHAIN}.tar.bz2
 # I'm not really sure what this explicit -Z link-native-libraries=yes is for,
 # `rustc -Z help` shows that `link-native-libraries=yes` is the default. But it
 # seems to be necessary...
