@@ -9,6 +9,7 @@ declare global {
   export const SOURCEMAP: boolean;
 }
 
-
 /** @hidden */
-export const unpackArchiveMetadata = new Map([["INSTALLER", "pyodide.unpackArchive"]]);
+export const unpackArchiveMetadata = new Map([
+  ["INSTALLER", "pyodide.unpackArchive"],
+]);
