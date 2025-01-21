@@ -26,7 +26,7 @@ function toDefines(o, path = "") {
   });
 }
 
-const cdefsFile = join(__dirname, "generated_struct_info32.json");
+const cdefsFile = join(__dirname, "struct_info_generated.json");
 const origConstants = JSON.parse(readFileSync(cdefsFile));
 const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines };
 const DEFINES = Object.fromEntries(toDefines(constants));
