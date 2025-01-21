@@ -25,6 +25,7 @@ XFAIL_PACKAGES: dict[str, str] = {
 
 lockfile_path = ROOT_PATH / "dist" / "pyodide-lock.json"
 
+
 class TestCase(TypedDict):
     name: str
     imports: list[str]
@@ -79,4 +80,3 @@ def test_import(selenium_standalone, testcase: TestCase):
 
     for import_name in imports:
         selenium_standalone.run_async(f"import {import_name}")
-
