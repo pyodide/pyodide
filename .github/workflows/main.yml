@@ -46,7 +46,7 @@ jobs:
               --verbose \
               --runtime=host \
               --cov=pyodide \
-              src packages/_tests tools/
+              src tools/
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: false
