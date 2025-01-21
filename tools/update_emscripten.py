@@ -38,7 +38,10 @@ def rebase(oldtag: str, newtag: str) -> None:
     run(["git", "checkout", oldtag, "--quiet"], cwd=EMSCRIPTEN)
     run(["git", "switch", "-C", f"pyodide-{newtag}"], cwd=EMSCRIPTEN)
     patches = sorted(PATCHES.glob("*"))
-    run(["git", "am", *patches], cwd=EMSCRIPTEN)
+    result = run(["git", "am", *patches], cwd=EMSCRIPTEN, check=False)
+    if result.returncode:
+        run(["git", "am", "--quit"], cwd=EMSCRIPTEN, check=False)
+        sys.exit(result.returncode)
     result = run(
         ["git", "rebase", oldtag, "--onto", newtag], cwd=EMSCRIPTEN, check=False
     )

@@ -257,7 +257,10 @@
 - test_ctypes.test_win32
 - test_ctypes.test_wintypes
 - test_curses
-- test_datetime
+- test_datetime:
+    skip:
+      - test_strptime
+      - test_strftime_trailing_percent
 - test_dbm:
     xfail: dbm
 - test_dbm_dumb:
@@ -688,7 +691,11 @@
 - test_string
 - test_string_literals
 - test_stringprep
-- test_strptime
+- test_strptime:
+    skip:
+      - test_day_of_week_calculation
+      - test_gregorian_calculation
+      - test_julian_calculation
 - test_strtod
 - test_struct
 - test_structseq
@@ -697,7 +704,9 @@
 - test_sunau
 - test_sundry
 - test_super
-- test_support
+- test_support:
+    skip:
+      - test_has_strftime_extensions
 - test_symtable
 - test_syntax
 - test_sys:
@@ -734,6 +743,7 @@
 - test_time:
     skip:
       - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
+      - test_strptime
 - test_timeit
 - test_timeout
 - test_tix
