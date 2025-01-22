@@ -22,12 +22,13 @@ describe("Installer", () => {
       .stub(mockApi.package_loader.unpack_buffer, "callKwargs")
       .returns([]);
 
+    const metadata = new Map<string, string>();
+    metadata.set("key", "value");
     await installer.install(
       new Uint8Array(),
       "filename",
       "installDir",
-      "installer",
-      "source",
+      metadata,
     );
 
     chai.assert.isTrue(unpackBufferSpy.calledOnce);
@@ -36,8 +37,7 @@ describe("Installer", () => {
         buffer: new Uint8Array(),
         filename: "filename",
         extract_dir: "installDir",
-        installer: "installer",
-        source: "source",
+        metadata,
         calculate_dynlibs: true,
       }),
     );
