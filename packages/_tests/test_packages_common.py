@@ -46,7 +46,10 @@ def normalize_import_name(name: str):
 def generate_test_list(lockfile: PyodideLockSpec) -> list[ImportTestCase]:
     packages = lockfile.packages
     testcases: list[ImportTestCase] = [
-        {"name": package.name, "imports": [normalize_import_name(name) for name in package.imports]}
+        {
+            "name": package.name,
+            "imports": [normalize_import_name(name) for name in package.imports],
+        }
         for package in packages.values()
         if package.package_type in ("package", "cpython_module")
     ]
