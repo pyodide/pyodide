@@ -58,6 +58,8 @@ DATA_FILES_DIR_SUFFIX = ".data"
 # https://github.com/pypa/pip/blob/81041f7f573e89361e6ed934436adb6bf40ea3bc/src/pip/_internal/models/scheme.py#L10
 DATA_FILES_SCHEME = "data"
 
+PYODIDE_SOURCE_METADATA_FILE = "PYODIDE_SOURCE"
+
 
 def parse_wheel_name(filename: str) -> tuple[str, str, str, str, str]:
     tokens = filename.split("-")
@@ -192,8 +194,7 @@ def unpack_buffer(
     format: str | None = None,
     extract_dir: str | None = None,
     calculate_dynlibs: bool = False,
-    installer: str | None = None,
-    source: str | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> JsArray[str] | None:
     """Used to install a package either into sitepackages or into the standard
     library.
@@ -231,6 +232,11 @@ def unpack_buffer(
         binaries in `load-pyodide.js`. These paths point to the unpacked
         locations of the .so files.
 
+    metadata
+        A dictionary of metadata to be stored in the package's dist-info directory.
+        The keys are the names of the metadata files and the values are the contents
+        of the files.
+
     Returns
     -------
         If calculate_dynlibs is True, a Javascript Array of dynamic libraries.
@@ -253,7 +259,9 @@ def unpack_buffer(
         suffix = Path(f.name).suffix
         if suffix == ".whl":
             z = ZipFile(f)
-            set_wheel_installer(filename, z, extract_path, installer, source)
+            if metadata:
+                set_wheel_metadata(filename, z, extract_path, metadata)
+
             install_datafiles(filename, z, extract_path)
 
         if calculate_dynlibs:
@@ -284,20 +292,16 @@ def should_load_dynlib(path: str | Path) -> bool:
     return not PLATFORM_TAG_REGEX.match(tag)
 
 
-def set_wheel_installer(
+def set_wheel_metadata(
     filename: str,
     archive: ZipFile,
     target_dir: Path,
-    installer: str | None,
-    source: str | None,
+    metadata: dict[str, str],
 ) -> None:
-    """Record the installer and source of a wheel into the `dist-info`
-    directory.
+    """Record the metadata of a wheel into the target directory.
 
-    We put the installer into an INSTALLER file according to the packaging spec:
+    Common metadata includes the installer file according to the packaging spec:
     packaging.python.org/en/latest/specifications/recording-installed-packages/#the-dist-info-directory
-
-    We put the source into PYODIDE_SORUCE.
 
     The packaging spec allows us to make custom files. It also allows wheels to
     include custom files in their .dist-info directory. The spec has no attempt
@@ -325,10 +329,8 @@ def set_wheel_installer(
     wheel_name = parse_wheel_name(filename)[0]
     dist_info_name = wheel_dist_info_dir(archive, wheel_name)
     dist_info = target_dir / dist_info_name
-    if installer:
-        (dist_info / "INSTALLER").write_text(installer)
-    if source:
-        (dist_info / "PYODIDE_SOURCE").write_text(source)
+    for key, value in metadata.items():
+        (dist_info / key).write_text(value)
 
 
 def install_datafiles(
@@ -401,7 +403,7 @@ def get_dist_source(dist_path: Path) -> tuple[str, str]:
         else:
             raise ValueError(f"Package name not found in {dist_path.name} METADATA")
 
-    source_path = dist_path / "PYODIDE_SOURCE"
+    source_path = dist_path / PYODIDE_SOURCE_METADATA_FILE
     if source_path.exists():
         source = source_path.read_text().strip()
         if source == "pyodide":

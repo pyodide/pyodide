@@ -776,8 +776,7 @@ def test_install_api(selenium_standalone, httpserver):
           wheelDataArr,
           "{test_file_name}",
           "{install_dir}",
-          "pytest",
-          "pytest",
+          new Map([["INSTALLER", "pytest"]])
         );
         """
     )
@@ -790,6 +789,9 @@ def test_install_api(selenium_standalone, httpserver):
         assert d.is_dir(), f"Directory {d} not found"
         assert (d / "dummy_pkg-0.1.0.dist-info").is_dir(), (
             "dist-info directory not found"
+        )
+        assert (d / "dummy_pkg-0.1.0.dist-info" / "INSTALLER").is_file(), (
+            "INSTALLER file not found"
         )
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
