@@ -26,7 +26,7 @@ XFAIL_PACKAGES: dict[str, str] = {
 lockfile_path = ROOT_PATH / "dist" / "pyodide-lock.json"
 
 
-class TestCase(TypedDict):
+class ImportTestCase(TypedDict):
     name: str
     imports: list[str]
 
@@ -38,10 +38,15 @@ def load_lockfile() -> PyodideLockSpec:
         raise Exception(f"Failed to load lockfile from {lockfile_path}") from e
 
 
-def generate_test_list(lockfile: PyodideLockSpec) -> list[TestCase]:
+def normalize_import_name(name: str):
+    # TODO: normalize imports the pyodide-build side.
+    return name.replace("-", "_").replace(".", "_")
+
+
+def generate_test_list(lockfile: PyodideLockSpec) -> list[ImportTestCase]:
     packages = lockfile.packages
-    testcases: list[TestCase] = [
-        {"name": package.name, "imports": package.imports}
+    testcases: list[ImportTestCase] = [
+        {"name": package.name, "imports": [normalize_import_name(name) for name in package.imports]}
         for package in packages.values()
         if package.package_type in ("package", "cpython_module")
     ]
@@ -63,7 +68,7 @@ def idfn(testcase):
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(120)
 @pytest.mark.parametrize("testcase", build_testcases(), ids=idfn)
-def test_import(selenium_standalone, testcase: TestCase):
+def test_import(selenium_standalone, testcase: ImportTestCase):
     name = testcase["name"]
     imports = testcase["imports"]
 
