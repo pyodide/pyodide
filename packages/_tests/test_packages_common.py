@@ -38,7 +38,7 @@ def load_lockfile() -> PyodideLockSpec:
         raise Exception(f"Failed to load lockfile from {lockfile_path}") from e
 
 
-def normalize_import_name(name: str):
+def normalize_import_name(name: str) -> str:
     # TODO: normalize imports the pyodide-build side.
     return name.replace("-", "_").replace(".", "_")
 
@@ -63,7 +63,7 @@ def build_testcases():
     return generate_test_list(lockfile)
 
 
-def idfn(testcase):
+def idfn(testcase: ImportTestCase) -> str:
     # help pytest to display the name of the test case
     return testcase["name"]
 
