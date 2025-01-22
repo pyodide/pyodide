@@ -6,6 +6,9 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/fc/01/f3e5ac5e7c25833db5eb555f7b7ab24cd6f8c322d3a3ad2d67a952dc0abc/pydantic_core-2.27.2.tar.gz
   sha256: eb026e5a4c1fee05726072337ff51d1efb6f59090b7da90d30ea58625b1ffb39
+requirements:
+  executable:
+    - rustup
 about:
   home: https://github.com/pydantic/pydantic-core
   PyPI: https://pypi.org/project/pydantic_core
