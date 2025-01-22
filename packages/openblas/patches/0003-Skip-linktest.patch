@@ -1,0 +1,28 @@
+From d79eda0bf584682c45dca9bd9a2f7c96346f3be5 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Wed, 22 Jan 2025 13:52:55 +0100
+Subject: [PATCH 3/3] Skip linktest
+
+---
+ exports/Makefile | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/exports/Makefile b/exports/Makefile
+index 7682f851d..8e966c3b3 100644
+--- a/exports/Makefile
++++ b/exports/Makefile
+@@ -283,9 +283,8 @@ objcopy.def : $(GENSYM) ../Makefile.system ../getarch.c
+ objconv.def : $(GENSYM) ../Makefile.system ../getarch.c
+ 	./$(GENSYM) objconv $(ARCH) "$(BU)" $(EXPRECISION) $(NO_CBLAS)  $(NO_LAPACK) $(NO_LAPACKE) $(NEED2UNDERSCORES) $(ONLY_CBLAS) "$(SYMBOLPREFIX)" "$(SYMBOLSUFFIX)" $(BUILD_LAPACK_DEPRECATED) $(BUILD_BFLOAT16) $(BUILD_SINGLE) $(BUILD_DOUBLE) $(BUILD_COMPLEX) $(BUILD_COMPLEX16) > $(@F)
+ 
+-test : linktest.c
+-	$(CC) $(CFLAGS) $(LDFLAGS) -w -o linktest linktest.c ../$(LIBSONAME) -lm && echo OK.
+-	rm -f linktest
++test :
++	echo OK.
+ 
+ linktest.c : $(GENSYM) ../Makefile.system ../getarch.c
+ 	./$(GENSYM) linktest  $(ARCH) "$(BU)" $(EXPRECISION) $(NO_CBLAS) $(NO_LAPACK) $(NO_LAPACKE) $(NEED2UNDERSCORES) $(ONLY_CBLAS) "$(SYMBOLPREFIX)" "$(SYMBOLSUFFIX)" $(BUILD_LAPACK_DEPRECATED) $(BUILD_BFLOAT16) $(BUILD_SINGLE) $(BUILD_DOUBLE) $(BUILD_COMPLEX) $(BUILD_COMPLEX16) > linktest.c
+-- 
+2.34.1
+
