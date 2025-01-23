@@ -5,6 +5,7 @@ from pytest_pyodide import run_in_pyodide
 def test_pydantic(selenium):
     import json
     from datetime import datetime
+
     import pydantic
 
     class NestedModel(pydantic.BaseModel):
