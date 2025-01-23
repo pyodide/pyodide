@@ -22,6 +22,7 @@ myst:
 - Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
+- Upgraded `packaging` to 24.2 {pr}`5370`
 
 ## Version 0.27.1
 
