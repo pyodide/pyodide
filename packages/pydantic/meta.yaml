@@ -1,6 +1,8 @@
 package:
   name: pydantic
   version: 2.10.5
+  # Warning: pydantic has a pin on pydantic_core, they need to be updated
+  # together
   top-level:
     - pydantic
 source:
@@ -16,3 +18,6 @@ about:
   PyPI: https://pypi.org/project/pydantic
   summary: Data validation and settings management using python type hints
   license: MIT
+extra:
+  recipe-maintainers:
+    - samuelcolvin

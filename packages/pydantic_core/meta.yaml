@@ -1,6 +1,8 @@
 package:
   name: pydantic_core
   version: 2.27.2
+  # Warning: pydantic has a pin on pydantic_core, they need to be updated
+  # together
   top-level:
     - pydantic_core
 source:
@@ -14,3 +16,6 @@ about:
   PyPI: https://pypi.org/project/pydantic_core
   summary: ""
   license: MIT
+extra:
+  recipe-maintainers:
+    - samuelcolvin
