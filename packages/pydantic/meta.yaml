@@ -37,7 +37,7 @@ test:
     - pydantic.json
     - pydantic.json_schema
     - pydantic.main
-    # - pydantic.mypy # Requires extra mypy depdendency
+    # - pydantic.mypy # Requires extra mypy dependency
     - pydantic.networks
     - pydantic.parse
     - pydantic.plugin
