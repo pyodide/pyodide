@@ -87,4 +87,5 @@ def test_import(selenium_standalone, testcase: ImportTestCase):
         return
 
     for import_name in imports:
-        selenium_standalone.run_async(f"import {import_name}")
+        selenium_standalone.load_package(name)
+        selenium_standalone.run(f"import {import_name}")
