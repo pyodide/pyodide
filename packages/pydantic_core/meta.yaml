@@ -1,13 +1,21 @@
 package:
   name: pydantic_core
-  version: 2.25.1
+  version: 2.27.2
+  # Warning: pydantic has a pin on pydantic_core, they need to be updated
+  # together
   top-level:
     - pydantic_core
 source:
-  url: https://github.com/pydantic/pydantic-core/releases/download/v2.25.1/pydantic_core-2.25.1-cp312-cp312-emscripten_3_1_58_wasm32.whl
-  sha256: f4b77016b1511e54a8c6bd833bb68e190b96989ba9997f9e0f023cfb0f8a16c2
+  url: https://files.pythonhosted.org/packages/fc/01/f3e5ac5e7c25833db5eb555f7b7ab24cd6f8c322d3a3ad2d67a952dc0abc/pydantic_core-2.27.2.tar.gz
+  sha256: eb026e5a4c1fee05726072337ff51d1efb6f59090b7da90d30ea58625b1ffb39
+requirements:
+  executable:
+    - rustup
 about:
   home: https://github.com/pydantic/pydantic-core
   PyPI: https://pypi.org/project/pydantic_core
   summary: ""
   license: MIT
+extra:
+  recipe-maintainers:
+    - samuelcolvin
