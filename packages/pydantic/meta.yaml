@@ -13,6 +13,45 @@ requirements:
     - typing-extensions
     - pydantic_core
     - annotated-types
+test:
+  imports:
+    - aliases
+    - alias_generators
+    - annotated_handlers
+    - class_validators
+    - color
+    - config
+    - dataclasses
+    - datetime_parse
+    - decorator
+    - deprecated
+    - env_settings
+    - errors
+    - error_wrappers
+    - experimental
+    - fields
+    - functional_serializers
+    - functional_validators
+    - generics
+    - json
+    - json_schema
+    - main
+    - mypy
+    - networks
+    - parse
+    - plugin
+    - root_model
+    - schema
+    - tools
+    - type_adapter
+    - types
+    - typing
+    - utils
+    - v1
+    - validate_call_decorator
+    - validators
+    - version
+    - warnings
 about:
   home: https://github.com/samuelcolvin/pydantic
   PyPI: https://pypi.org/project/pydantic
