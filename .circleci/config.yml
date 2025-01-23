@@ -596,90 +596,10 @@ workflows:
               only: /.*/
 
       - build-packages:
-          name: build-static-libraries
-          packages: "tag:static_library"
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-libraries
-          packages: "tag:library"
-          requires:
-            - build-core
-            - build-static-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-no-numpy-dependents
-          packages: "*,no-numpy-dependents"
-          requires:
-            - build-core
-            - build-libraries
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages-opencv-python
-          packages: opencv-python
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages/opencv-python/build
-                  - ./packages/opencv-python/dist
-                  - ./packages/build-logs/opencv*
-                  - ./dist/opencv*
-
-      - build-packages:
-          name: build-packages-numpy-dependents
-          packages: "*,!opencv-python"
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./packages
-                  - ./dist
-
-      - build-packages:
-          name: build-packages
+          name: build-core-packages
           packages: "*"
           requires:
-            - build-packages-numpy-dependents
-            - build-packages-opencv-python
+            - build-core
           filters:
             tags:
               only: /.*/
@@ -687,25 +607,24 @@ workflows:
             - persist_to_workspace:
                 root: .
                 paths:
-                  - ./packages/.artifacts
+                  - ./packages
                   - ./dist
 
       - build-packages:
-          name: build-prebuilt-packages
+          name: build-full-packages
           enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
           packages: "*"
           requires:
-            - build-core
+            - build-core-packages
           filters:
             tags:
               only: /.*/
-          # TODO: enable this when we remove other package build jobs
-          # post-steps:
-          #   - persist_to_workspace:
-          #       root: .
-          #       paths:
-          #         - ./packages/
-          #         - ./dist
+          post-steps:
+            - persist_to_workspace:
+                root: .
+                paths:
+                  - ./packages
+                  - ./dist
 
       - test-main:
           name: test-core-chrome-nodylink
@@ -780,79 +699,40 @@ workflows:
               only: /.*/
 
       - test-main:
-          name: test-packages-chrome-no-numpy-dependents
-          test-params: --runtime=chrome-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_chrome
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-chrome
+          name: test-core-packages-chrome
           test-params: --runtime=chrome-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_chrome
           requires:
-            - test-packages-chrome-no-numpy-dependents
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-firefox-no-numpy-dependents
-          test-params: --runtime=firefox-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_firefox
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-firefox
+          name: test-core-packages-firefox
           test-params: --runtime=firefox-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_firefox
           requires:
-            - test-packages-firefox-no-numpy-dependents
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-main:
-          name: test-packages-node-no-numpy-dependents
-          test-params: --runtime=node-no-host packages/*/test*.py
-          cache-dir: .pytest_cache_node
-          requires:
-            - build-packages-no-numpy-dependents
-          filters:
-            tags:
-              only: /.*/
-          post-steps:
-            - persist_to_workspace:
-                root: .
-                paths:
-                  - ./.test_cache
-
-      - test-main:
-          name: test-packages-node
+          name: test-core-packages-node
           test-params: --runtime=node-no-host packages/*/test*.py --skip-passed
           cache-dir: .pytest_cache_node
           requires:
-            - test-packages-node-no-numpy-dependents
-            - build-packages
+            - build-core-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-chrome
+          test-params: --runtime=chrome-no-host packages/_tests
+          requires:
+            - build-full-packages
           filters:
             tags:
               only: /.*/
@@ -873,35 +753,35 @@ workflows:
 
       - benchmark:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - create-xbuild-env:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - test-cmdline-runner:
           requires:
-            - build-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - build-pyodide-debug:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
 
       - build-test-pyc-packages:
           requires:
-            - build-packages
+            - build-core-packages
           filters:
             tags:
               only: /.*/
@@ -916,8 +796,8 @@ workflows:
       - deploy-release:
           requires:
             - check-release-version
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
@@ -930,8 +810,8 @@ workflows:
             - s3-deployment
       - deploy-dev:
           requires:
+            - build-full-packages
             - test-core-firefox
-            - test-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages

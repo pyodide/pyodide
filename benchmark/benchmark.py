@@ -170,7 +170,7 @@ def main():
         # TODO: matplotlib benchmark occasionally fails after https://github.com/pyodide/pyodide/pull/3130
         #       but it is not clear why.
         # "matplotlib": get_matplotlib_benchmarks,
-        "pandas": get_pandas_benchmarks,
+        # "pandas": get_pandas_benchmarks,
     }
 
     args = parse_args(list(BENCHMARKS.keys()))
