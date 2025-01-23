@@ -14,7 +14,9 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.27.1
+
+_January 23, 2025_
 
 ### Packages
 
