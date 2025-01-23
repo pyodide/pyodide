@@ -24,16 +24,14 @@ export class Installer {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    installer: string,
-    source: string,
+    metadata?: ReadonlyMap<string, string>,
   ) {
     const dynlibs: string[] = this.#api.package_loader.unpack_buffer.callKwargs(
       {
         buffer,
         filename,
         extract_dir: installDir,
-        installer,
-        source,
+        metadata,
         calculate_dynlibs: true,
       },
     );

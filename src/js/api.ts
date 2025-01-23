@@ -18,6 +18,7 @@ import {
   syncUpSnapshotLoad1,
   syncUpSnapshotLoad2,
 } from "./snapshot";
+import { unpackArchiveMetadata } from "./constants";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -520,7 +521,7 @@ export class PyodideAPI {
       buffer,
       format,
       extract_dir,
-      installer: "pyodide.unpackArchive",
+      metadata: unpackArchiveMetadata,
     });
   }
 

@@ -455,8 +455,15 @@ export class PackageManager {
       buffer,
       filename,
       installDir,
-      INSTALLER,
-      metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel,
+      new Map([
+        ["INSTALLER", INSTALLER],
+        [
+          "PYODIDE_SOURCE",
+          metadata.channel === this.defaultChannel
+            ? "pyodide"
+            : metadata.channel,
+        ],
+      ]),
     );
   }
 
