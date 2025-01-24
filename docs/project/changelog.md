@@ -16,12 +16,21 @@ myst:
 
 ## Unreleased
 
+- ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
+  {pr}`5334` {pr}`5363`
+
+## Version 0.27.1
+
+_January 23, 2025_
+
 ### Packages
 
 - Added `httpx` 0.28.1 {pr}`5302`
+- Added `apsw` 3.47.2.0 {pr}`5251`
 - Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
+- Upgraded `packaging` to 24.2 {pr}`5370`
 
 ## Version 0.27.1
 
@@ -35,7 +44,6 @@ _January 15, 2025_
 - {{ Fix }} PyArrow was accidentally missing from 0.27.0. Now it's really
   available. {pr}`5300`
 - Upgraded `protobuf` to 5.29.2 {pr}`5298`
-- Added `apsw` 3.47.2.0 {pr}`5251`
 - Added `css_inline` 0.14.6 {pr}`5304`
 - Upgraded `nlopt` to 2.9.1 {pr}`5305`
 - Upgraded `zengl` to 2.7.1 {pr}`5258`
