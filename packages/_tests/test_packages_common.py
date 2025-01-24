@@ -84,8 +84,9 @@ def test_import(selenium_standalone, testcase: ImportTestCase):
         )
 
     if not imports:
+        # nothing to test
         return
 
     for import_name in imports:
-        selenium_standalone.load_package(name)
+        selenium_standalone.load_package([name])
         selenium_standalone.run(f"import {import_name}")
