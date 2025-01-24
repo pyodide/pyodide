@@ -21,6 +21,7 @@ if "CI" in os.environ:
 
 XFAIL_PACKAGES: dict[str, str] = {
     "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
+    "cpp-exceptions-test2": "Intentional",
 }
 
 lockfile_path = ROOT_PATH / "dist" / "pyodide-lock.json"
@@ -71,7 +72,7 @@ def idfn(testcase: ImportTestCase) -> str:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(120)
 @pytest.mark.parametrize("testcase", build_testcases(), ids=idfn)
-def test_import(selenium_standalone, testcase: ImportTestCase):
+def test_import(selenium_standalone, testcase: ImportTestCase) -> None:
     name = testcase["name"]
     imports = testcase["imports"]
 
