@@ -8,7 +8,7 @@ source:
   sha256: a11a29cb3bf0a28a387fe5122cdb649816a957cd9261dcedf8c9f1fef33eacf6
 requirements:
   run:
-  - wcwidth
+    - wcwidth
 about:
   home: https://github.com/prompt-toolkit/python-prompt-toolkit
   PyPI: https://pypi.org/project/prompt_toolkit
