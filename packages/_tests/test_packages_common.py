@@ -1,6 +1,6 @@
 import functools
 import os
-from typing import TypedDict
+from typing import Any, TypedDict
 
 import pytest
 from pyodide_lock import PyodideLockSpec
@@ -72,7 +72,7 @@ def idfn(testcase: ImportTestCase) -> str:
 @pytest.mark.skip_refcount_check
 @pytest.mark.driver_timeout(120)
 @pytest.mark.parametrize("testcase", build_testcases(), ids=idfn)
-def test_import(selenium_standalone, testcase: ImportTestCase) -> None:
+def test_import(selenium_standalone: Any, testcase: ImportTestCase) -> None:
     name = testcase["name"]
     imports = testcase["imports"]
 
