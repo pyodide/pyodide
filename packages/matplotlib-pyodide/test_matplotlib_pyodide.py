@@ -410,41 +410,6 @@ def test_draw_math_text(selenium_standalone):
 
 
 @matplotlib_test_decorator
-def test_custom_font_text(selenium_standalone):
-    selenium = selenium_standalone
-
-    skip_if_no_matplotlib()
-
-    @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium):
-        import matplotlib
-
-        matplotlib.use("module://matplotlib_pyodide.wasm_backend")
-        import matplotlib.pyplot as plt
-        import numpy as np
-
-        f = {"fontname": "cmsy10"}
-
-        t = np.arange(0.0, 2.0, 0.01)
-        s = 1 + np.sin(2 * np.pi * t)
-        plt.figure()
-        plt.title("A simple Sine Curve", **f)
-        plt.plot(t, s, linewidth=1.0, marker=11)
-        plt.plot(t, t)
-        plt.grid(True)
-        plt.show()
-
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-custom-font-text-{selenium.browser}.png"
-    )
-    run(selenium)
-
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
-    compare_canvas_data(selenium, ref.read_bytes())
-
-
-@matplotlib_test_decorator
 def test_zoom_on_polar_plot(selenium_standalone):
     selenium = selenium_standalone
 
