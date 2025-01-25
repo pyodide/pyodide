@@ -95,7 +95,7 @@ def test_rendering(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-    ref = (REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png")
+    ref = REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -136,7 +136,7 @@ def test_draw_image(selenium_standalone):
         )
         plt.show()
 
-    ref = (REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png")
+    ref = REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -214,9 +214,7 @@ def test_draw_image_affine_transform(selenium_standalone):
 
         plt.show()
 
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
-    )
+    ref = REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -268,9 +266,7 @@ def test_draw_text_rotated(selenium_standalone):
 
         plt.show()
 
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
-    )
+    ref = REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -399,9 +395,7 @@ def test_draw_math_text(selenium_standalone):
 
         doall()
 
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
-    )
+    ref = REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -442,9 +436,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
         ax.set_rlim([0, 5])
         plt.show()
 
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
-    )
+    ref = REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
@@ -482,9 +474,7 @@ def test_transparency(selenium_standalone):
 
         plt.show()
 
-    ref = (
-        REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
-    )
+    ref = REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
     run(selenium)
 
     # uncomment to generate data instead of comparing it
