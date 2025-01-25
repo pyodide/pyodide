@@ -1,6 +1,8 @@
 package:
   name: python-flint
   version: 0.6.0
+  # TypeError: expected str, bytes or os.PathLike object, not NoneType
+  _disabled: true
   top-level:
     - flint
 requirements:
