@@ -99,8 +99,8 @@ def test_rendering(selenium_standalone):
     run(selenium)
 
     # uncomment to generate data instead of comparing it
-    save_canvas_data(selenium, ref)
-    # compare_canvas_data(selenium, ref.read_bytes())
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -110,7 +110,7 @@ def test_draw_image(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -136,11 +136,12 @@ def test_draw_image(selenium_standalone):
         )
         plt.show()
 
-        handle.compare(ref)
+    ref = (REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png")
+    run(selenium)
 
-    ref = (REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png").read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -150,7 +151,7 @@ def test_draw_image_affine_transform(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -213,13 +214,14 @@ def test_draw_image_affine_transform(selenium_standalone):
 
         plt.show()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -229,7 +231,7 @@ def test_draw_text_rotated(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -266,13 +268,14 @@ def test_draw_text_rotated(selenium_standalone):
 
         plt.show()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -282,7 +285,7 @@ def test_draw_math_text(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -396,13 +399,14 @@ def test_draw_math_text(selenium_standalone):
 
         doall()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -412,7 +416,7 @@ def test_custom_font_text(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -430,13 +434,14 @@ def test_custom_font_text(selenium_standalone):
         plt.grid(True)
         plt.show()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-custom-font-text-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -446,7 +451,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -472,13 +477,14 @@ def test_zoom_on_polar_plot(selenium_standalone):
         ax.set_rlim([0, 5])
         plt.show()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
 
 
 @matplotlib_test_decorator
@@ -488,7 +494,7 @@ def test_transparency(selenium_standalone):
     skip_if_no_matplotlib()
 
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
-    def run(selenium, handle, ref):
+    def run(selenium):
         import matplotlib
 
         matplotlib.use("module://matplotlib_pyodide.wasm_backend")
@@ -511,10 +517,11 @@ def test_transparency(selenium_standalone):
 
         plt.show()
 
-        handle.compare(ref)
-
     ref = (
         REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
-    ).read_bytes()
-    handle = compare_func_handle(selenium)
-    run(selenium, handle, ref)
+    )
+    run(selenium)
+
+    # uncomment to generate data instead of comparing it
+    # save_canvas_data(selenium, ref)
+    compare_canvas_data(selenium, ref.read_bytes())
