@@ -19,6 +19,13 @@ myst:
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
 
+### Packages
+
+- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374`
+
 ## Version 0.27.1
 
 _January 23, 2025_
