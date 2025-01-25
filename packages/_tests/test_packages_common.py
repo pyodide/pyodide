@@ -22,6 +22,7 @@ if "CI" in os.environ:
 XFAIL_PACKAGES: dict[str, str] = {
     "soupsieve": "Importing soupsieve without installing beautifulsoup4 fails.",
     "cpp-exceptions-test2": "Intentional",
+    "matplotlib-inline": "circular dependency with IPython",
 }
 
 lockfile_path = ROOT_PATH / "dist" / "pyodide-lock.json"
