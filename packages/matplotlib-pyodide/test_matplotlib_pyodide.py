@@ -43,7 +43,7 @@ def save_canvas_data(selenium, output_path):
     output_path.write_bytes(canvas_png)
 
 
-def compare_canvas_data(selenium, expected_data: bytes):
+def compare_canvas_data(selenium, expected_data):
     @run_in_pyodide(packages=["matplotlib", "matplotlib-pyodide"])
     def compare(selenium, expected_data):
         import base64
