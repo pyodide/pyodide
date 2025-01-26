@@ -1,12 +1,11 @@
 package:
   name: awkward-cpp
-  version: '44'
+  version: "44"
   top-level:
-  - awkward_cpp
+    - awkward_cpp
 
 source:
-  url: 
-    https://files.pythonhosted.org/packages/a0/9c/d7655969d075f99edb4d3d0e57ea63d4742af3bfff4953ed54c7224dfca5/awkward_cpp-44.tar.gz
+  url: https://files.pythonhosted.org/packages/a0/9c/d7655969d075f99edb4d3d0e57ea63d4742af3bfff4953ed54c7224dfca5/awkward_cpp-44.tar.gz
   sha256: 8dc499288d6d16b2ea20b51a27d5047e51a247b6aacfcbcb3b302cad6d3c87d8
 
 build:
@@ -14,11 +13,11 @@ build:
 
 requirements:
   run:
-  - numpy
+    - numpy
 
 test:
   imports:
-  - awkward_cpp
+    - awkward_cpp
 
 about:
   home: https://pypi.org/project/awkward-cpp/
@@ -26,4 +25,4 @@ about:
   license: BSD-3-Clause
 extra:
   recipe-maintainers:
-  - agoose77
+    - agoose77
