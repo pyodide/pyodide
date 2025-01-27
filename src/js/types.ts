@@ -485,8 +485,7 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    installer: string,
-    source: string,
+    metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
   recursiveDependencies: (
     names: string[],
