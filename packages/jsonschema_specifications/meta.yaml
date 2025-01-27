@@ -6,6 +6,9 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/ee/07/44bd408781594c4d0a027666ef27fab1e441b109dc3b76b4f836f8fd04fe/jsonschema_specifications-2023.12.1-py3-none-any.whl
   sha256: 87e4fdf3a94858b8a2ba2778d9ba57d8a9cafca7c7489c46ba0d30a8bc6a9c3c
+requirements:
+  run:
+    - referencing
 about:
   home: ""
   PyPI: https://pypi.org/project/jsonschema_specifications
