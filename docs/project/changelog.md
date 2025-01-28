@@ -19,7 +19,7 @@ myst:
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
 
-## Version 0.27.1
+## Version 0.27.2
 
 _January 23, 2025_
 
