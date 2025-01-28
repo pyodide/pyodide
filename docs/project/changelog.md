@@ -14,7 +14,7 @@ myst:
 
 # Change Log
 
-## Version 0.27.1
+## Version 0.27.2
 
 _January 23, 2025_
 
