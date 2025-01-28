@@ -1,7 +1,6 @@
 package:
   name: optlang
   version: 1.8.1
-  _disabled: true
   top-level:
     - optlang
 source:

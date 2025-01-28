@@ -1,7 +1,6 @@
 package:
   name: swiglpk
   version: 5.0.10
-  _disabled: true
   top-level:
     - swiglpk
 

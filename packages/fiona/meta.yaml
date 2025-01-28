@@ -1,7 +1,6 @@
 package:
   name: fiona
   version: 1.9.5
-  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/83/a0/6b870864ceebcd046d2e952b0d18932812ff7a48d3b05670af3f702d9c01/fiona-1.9.5.tar.gz
   sha256: 99e2604332caa7692855c2ae6ed91e1fffdf9b59449aa8032dd18e070e59a2f7
