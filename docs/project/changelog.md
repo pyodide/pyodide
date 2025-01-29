@@ -31,6 +31,7 @@ _January 23, 2025_
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
 - Upgraded `packaging` to 24.2 {pr}`5370`
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`
 
 ## Version 0.27.1
 
