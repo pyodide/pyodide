@@ -348,6 +348,8 @@ export interface Module {
   jsWrapperTag: any; // Should be WebAssembly.Tag
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
 }
 
 type LockfileInfo = {

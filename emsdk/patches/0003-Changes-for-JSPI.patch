@@ -1,7 +1,7 @@
-From 9d011ab859bed51f21b6d1c8f08716d372f6a791 Mon Sep 17 00:00:00 2001
+From e4722918f5b669d528580dd2a3af987c6e0dedef Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
-Subject: [PATCH 3/5] Changes for JSPI
+Subject: [PATCH 3/6] Changes for JSPI
 
 ---
  src/library.js        | 2 +-
@@ -11,10 +11,10 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 9ef9bc0de..d630bbe48 100644
+index 12cbc8cba..e9b30a155 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -1019,7 +1019,7 @@ addToLibrary({
+@@ -496,7 +496,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
@@ -24,7 +24,7 @@ index 9ef9bc0de..d630bbe48 100644
    },
  #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index 5b51d6a3a..9e3e9d147 100644
+index 4af38948f..5b0ef30f9 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -73,6 +73,7 @@ var LibraryDylink = {
@@ -45,10 +45,10 @@ index 5b51d6a3a..9e3e9d147 100644
  #endif
  #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.mjs b/src/parseTools.mjs
-index a22dd55a3..15dcf5941 100644
+index da4f8dbea..e512ec515 100644
 --- a/src/parseTools.mjs
 +++ b/src/parseTools.mjs
-@@ -581,7 +581,7 @@ function makeThrow(excPtr) {
+@@ -585,7 +585,7 @@ function makeThrow(excPtr) {
      }
      return `assert(false, '${assertInfo}');`;
    }
@@ -58,7 +58,7 @@ index a22dd55a3..15dcf5941 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index 50db7db23..f465b68c5 100644
+index dd1429ed5..0fd2273de 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -18,6 +18,10 @@
@@ -72,7 +72,7 @@ index 50db7db23..f465b68c5 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -926,6 +930,9 @@ function getWasmImports() {
+@@ -933,6 +937,9 @@ function getWasmImports() {
  // Receives the wasm imports, returns the exports.
  function createWasm() {
    var info = getWasmImports();
