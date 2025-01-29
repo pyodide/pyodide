@@ -14,6 +14,14 @@ myst:
 
 # Change Log
 
+## Version 0.27.4
+
+_March 17, 2025_
+
+### Packages
+
+- {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
+
 ## Version 0.27.3
 
 _February 26, 2025_
@@ -29,6 +37,7 @@ _February 26, 2025_
   broken wasm-gc support. Pyodide feature detects whether the runtime supports
   wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
   detection but wasm-gc doesn't work as expected. {pr}`5445`
+- Upgraded `micropip` to 0.9.0 {pr}`5461`
 
 ### Packages
 
