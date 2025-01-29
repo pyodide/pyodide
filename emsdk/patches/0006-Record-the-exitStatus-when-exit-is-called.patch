@@ -3,6 +3,9 @@ From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 29 Jan 2025 11:05:27 +0100
 Subject: [PATCH 6/6] Record the exitStatus when exit is called
 
+Upstream issue:
+https://github.com/emscripten-core/emscripten/issues/23528
+
 ---
  src/shell.js | 2 ++
  1 file changed, 2 insertions(+)
