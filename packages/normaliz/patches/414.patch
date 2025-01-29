@@ -1,0 +1,103 @@
+From 8298182c76c945152cf50206155744ceb3fb3221 Mon Sep 17 00:00:00 2001
+From: Benjamin Lorenz <lorenz@math.tu-berlin.de>
+Date: Fri, 12 Jan 2024 12:48:56 +0100
+Subject: [PATCH 1/2] add fmpz.h include for fmpz_init
+
+needed when using flint 3.0
+---
+ source/libnormaliz/HilbertSeries.cpp | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/source/libnormaliz/HilbertSeries.cpp b/source/libnormaliz/HilbertSeries.cpp
+index 1420f6d7..e4b98b5d 100644
+--- a/source/libnormaliz/HilbertSeries.cpp
++++ b/source/libnormaliz/HilbertSeries.cpp
+@@ -42,6 +42,7 @@
+ 
+ #ifdef NMZ_FLINT
+ #include "flint/flint.h"
++#include "flint/fmpz.h"
+ #include "flint/fmpz_poly.h"
+ #endif
+ 
+
+From 3b5e756f99b815c1205210f0e863ec848fd8512c Mon Sep 17 00:00:00 2001
+From: Benjamin Lorenz <lorenz@math.tu-berlin.de>
+Date: Fri, 12 Jan 2024 12:50:21 +0100
+Subject: [PATCH 2/2] move sys/time.h / timeval def to header for StartTime
+ declaration
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+to fix errors like this when building for musl:
+
+libnormaliz/general.cpp:168:16: error: aggregate ‘libnormaliz::timeval libnormaliz::TIME_global_begin’ has incomplete type and cannot be defined
+ struct timeval TIME_global_begin, TIME_step_begin;
+                ^~~~~~~~~~~~~~~~~
+libnormaliz/general.cpp:168:35: error: aggregate ‘libnormaliz::timeval libnormaliz::TIME_step_begin’ has incomplete type and cannot be defined
+ struct timeval TIME_global_begin, TIME_step_begin;
+                                   ^~~~~~~~~~~~~~~
+libnormaliz/general.cpp: In function ‘void libnormaliz::StartTime(libnormaliz::timeval&)’:
+libnormaliz/general.cpp:174:36: error: cannot convert ‘libnormaliz::timeval*’ to ‘timeval*’ for argument ‘1’ to ‘int gettimeofday(timeval*, void*)’
+     gettimeofday(&var_TIME_begin, 0);
+                                    ^
+In file included from libnormaliz/general.cpp:26:0:
+./libnormaliz/general.h:153:23: note: class type ‘libnormaliz::timeval’ is incomplete
+ void StartTime(struct timeval& var_TIME_begin);
+                       ^~~~~~~
+---
+ source/libnormaliz/general.cpp | 14 +-------------
+ source/libnormaliz/general.h   | 14 ++++++++++++++
+ 2 files changed, 15 insertions(+), 13 deletions(-)
+
+diff --git a/source/libnormaliz/general.cpp b/source/libnormaliz/general.cpp
+index 6f578be5..226d6474 100644
+--- a/source/libnormaliz/general.cpp
++++ b/source/libnormaliz/general.cpp
+@@ -25,19 +25,7 @@
+ #include <csignal>
+ #include "libnormaliz/general.h"
+ 
+-#ifndef _MSC_VER
+-#include <sys/time.h>
+-#else
+-#define WIN32_LEAN_AND_MEAN
+-#include <Windows.h>
+-#include <stdint.h> // portable: uint64_t   MSVC: __int64
+-
+-// MSVC defines this in winsock2.h!?
+-typedef struct timeval {
+-    long tv_sec;
+-    long tv_usec;
+-} timeval;
+-
++#ifdef _MSC_VER
+ int gettimeofday(struct timeval * tp, struct timezone * tzp)
+ {
+     // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+diff --git a/source/libnormaliz/general.h b/source/libnormaliz/general.h
+index b87624f0..bc425f35 100644
+--- a/source/libnormaliz/general.h
++++ b/source/libnormaliz/general.h
+@@ -31,6 +31,20 @@
+ #include <string>
+ #include <vector>
+ 
++#ifndef _MSC_VER
++#include <sys/time.h>
++#else
++#define WIN32_LEAN_AND_MEAN
++#include <Windows.h>
++#include <stdint.h> // portable: uint64_t   MSVC: __int64
++
++// MSVC defines this in winsock2.h!?
++typedef struct timeval {
++    long tv_sec;
++    long tv_usec;
++} timeval;
++#endif
++
+ #include <libnormaliz/dynamic_bitset.h>
+ 
+ #ifndef NMZ_MAKEFILE_CLASSIC
