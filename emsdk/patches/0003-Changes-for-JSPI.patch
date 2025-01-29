@@ -1,7 +1,7 @@
 From e4722918f5b669d528580dd2a3af987c6e0dedef Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
-Subject: [PATCH 3/5] Changes for JSPI
+Subject: [PATCH 3/6] Changes for JSPI
 
 ---
  src/library.js        | 2 +-

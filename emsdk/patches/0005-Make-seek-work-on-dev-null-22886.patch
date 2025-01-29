@@ -1,7 +1,7 @@
 From 24466e93a8e3f255bd2a38421cc37d7073267a02 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 18 Nov 2024 20:55:25 +0100
-Subject: [PATCH 5/5] Make seek work on `/dev/null` (#22886)
+Subject: [PATCH 5/6] Make seek work on `/dev/null` (#22886)
 
 Seeking `/dev/null` should work and do nothing instead of returning
 `EPIPE`. This fixes it.

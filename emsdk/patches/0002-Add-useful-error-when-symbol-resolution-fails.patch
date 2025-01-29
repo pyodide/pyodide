@@ -1,7 +1,7 @@
 From 687fd5c6582703eb919033e290513052a259b8de Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
-Subject: [PATCH 2/5] Add useful error when symbol resolution fails
+Subject: [PATCH 2/6] Add useful error when symbol resolution fails
 
 Currently if symbol resolution fails, we get:
 ```js
