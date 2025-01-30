@@ -14,11 +14,13 @@ myst:
 
 # Change Log
 
-## Unreleased
+## Version 0.27.5
+
+_Insert Date Here_
 
 ### Packages
 
-- Added `osqp` 1.0.0 {pr}`5510`
+- Added `jiter` 0.8.2 {pr}`5388`
 
 ## Version 0.27.4
 
