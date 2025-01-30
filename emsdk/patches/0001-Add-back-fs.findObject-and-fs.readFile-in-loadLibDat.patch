@@ -1,4 +1,4 @@
-From 24f7e1b67c1aa80d4c28e2543b72d06983999149 Mon Sep 17 00:00:00 2001
+From b2cb343f843580827b4bbed9ab2d3141ac19fa68 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 2 Jun 2023 11:59:32 -0700
 Subject: [PATCH 1/6] Add back fs.findObject and fs.readFile in loadLibData

@@ -1,4 +1,4 @@
-From 122070a19adbbadad8268a6d17bbe068ee5ceca1 Mon Sep 17 00:00:00 2001
+From f632e28ec43e5bcb27eabda3c6ffd716ee6fe46d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 29 Jan 2025 11:05:27 +0100
 Subject: [PATCH 6/6] Record the exitStatus when exit is called

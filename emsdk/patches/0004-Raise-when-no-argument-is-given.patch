@@ -1,4 +1,4 @@
-From a55cd2d9b0d19843414b3279b153ab1e4dfce6be Mon Sep 17 00:00:00 2001
+From 8401900a8e0d3c6f9ac6e00257784668ebf4d555 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sat, 20 Jan 2024 19:02:32 +0900
 Subject: [PATCH 4/6] Raise when no argument is given
