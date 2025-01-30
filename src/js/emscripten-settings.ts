@@ -16,6 +16,7 @@ export interface EmscriptenSettings {
   readonly preRun: readonly PreRunFunc[];
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
+  readonly onExit?: (code: number) => void;
   readonly arguments: readonly string[];
   readonly instantiateWasm?: (
     imports: { [key: string]: any },
@@ -29,6 +30,7 @@ export interface EmscriptenSettings {
 
   noInitialRun?: boolean;
   INITIAL_MEMORY?: number;
+  exitCode?: number;
 }
 
 /**
@@ -44,6 +46,9 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     preRun: getFileSystemInitializationFuncs(config),
     print: config.stdout,
     printErr: config.stderr,
+    onExit(code) {
+      settings.exitCode = code;
+    },
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument

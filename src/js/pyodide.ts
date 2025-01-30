@@ -262,8 +262,8 @@ export async function loadPyodide(
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   const Module = await _createPyodideModule(emscriptenSettings);
   // Handle early exit
-  if (Module.exitCode !== undefined) {
-    throw new Module.ExitStatus(Module.exitCode);
+  if (emscriptenSettings.exitCode !== undefined) {
+    throw new Module.ExitStatus(emscriptenSettings.exitCode);
   }
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
