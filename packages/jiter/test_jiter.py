@@ -12,6 +12,6 @@ def test_jiter(selenium):
 
     json_string = b'{"name": "Alice", "age": 30, "city": "New'
 
-    json_data = jiter.from_json(json_string, partial_mode='trailing-strings')
+    json_data = jiter.from_json(json_string, partial_mode="trailing-strings")
 
     assert json_data == {"name": "Alice", "age": 30, "city": "New"}
