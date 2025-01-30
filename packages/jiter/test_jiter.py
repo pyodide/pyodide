@@ -2,7 +2,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["jiter"])
-def test_orjson(selenium):
+def test_jiter(selenium):
     import jiter
 
     json_string = b'{"name": "Alice", "age": 30, "city": "New York"}'
