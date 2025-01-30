@@ -20,6 +20,7 @@ _March 17, 2025_
 
 ### Packages
 
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
 - {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
 
 ## Version 0.27.3
