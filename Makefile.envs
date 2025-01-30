@@ -132,6 +132,7 @@ export CFLAGS_BASE=\
 	$(DBGFLAGS) \
 	-fPIC \
 	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP \
 	$(EXTRA_CFLAGS)
 
 
@@ -142,6 +143,7 @@ export LDFLAGS_BASE=\
 	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
 	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP \
 	$(EXTRA_LDFLAGS) \
 
 export CXXFLAGS_BASE=
@@ -152,7 +154,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
-	-sSUPPORT_LONGJMP \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
