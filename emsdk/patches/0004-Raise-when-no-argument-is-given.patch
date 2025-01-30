@@ -1,4 +1,4 @@
-From ff328e27c20389d794268245db4f1643899b1a61 Mon Sep 17 00:00:00 2001
+From a55cd2d9b0d19843414b3279b153ab1e4dfce6be Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sat, 20 Jan 2024 19:02:32 +0900
 Subject: [PATCH 4/6] Raise when no argument is given
@@ -13,7 +13,7 @@ Upstream issue: https://github.com/emscripten-core/emscripten/issues/21116
  1 file changed, 3 insertions(+)
 
 diff --git a/emcc.py b/emcc.py
-index d02adb34d..0abe0da83 100644
+index 8ac79fd5e..7bc27aef8 100644
 --- a/emcc.py
 +++ b/emcc.py
 @@ -642,6 +642,9 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
