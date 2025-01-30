@@ -1,7 +1,7 @@
-From c745ab7eb3160b8701ad718b95ebbab19eadc024 Mon Sep 17 00:00:00 2001
+From 86ecaa8d44125ee49d5c891dfdf560591baf3744 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
-Subject: [PATCH 2/6] Add useful error when symbol resolution fails
+Subject: [PATCH 2/5] Add useful error when symbol resolution fails
 
 Currently if symbol resolution fails, we get:
 ```js
@@ -19,10 +19,10 @@ symbol.
  1 file changed, 3 insertions(+)
 
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index 608be951e..81a2b03f7 100644
+index 7173a77c6..e2ee18f9f 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
-@@ -714,6 +714,9 @@ var LibraryDylink = {
+@@ -723,6 +723,9 @@ var LibraryDylink = {
              var resolved;
              stubs[prop] = (...args) => {
                resolved ||= resolveSymbol(prop);
