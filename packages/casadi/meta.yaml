@@ -1,6 +1,8 @@
 package:
   name: casadi
   version: 3.6.7
+  # undefined exported symbol: "_AddIdentity"
+  _disabled: true
   top-level:
     - casadi
 source:

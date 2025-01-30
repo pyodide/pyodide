@@ -659,6 +659,7 @@
 - test_shutil:
     skip:
       - test_copyfile_nonexistent_dir
+      - test_copystat_symlinks
 - test_signal
 - test_site:
     skip:

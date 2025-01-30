@@ -347,6 +347,8 @@ export interface Module {
   _init_pyodide_proxy(): number;
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
 }
 
 type LockfileInfo = {

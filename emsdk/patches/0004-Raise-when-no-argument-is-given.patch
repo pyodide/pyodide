@@ -1,7 +1,7 @@
-From b0eb8bea162ae1c0103cdd39978ccc6716b99c89 Mon Sep 17 00:00:00 2001
+From 8401900a8e0d3c6f9ac6e00257784668ebf4d555 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Sat, 20 Jan 2024 19:02:32 +0900
-Subject: [PATCH 4/5] Raise when no argument is given
+Subject: [PATCH 4/6] Raise when no argument is given
 
 Emscripten 3.1.51 does not raise an error when no argument is given.
 Some build tools (e.g. ffmpeg) relies on this behavior, so we should
@@ -13,10 +13,10 @@ Upstream issue: https://github.com/emscripten-core/emscripten/issues/21116
  1 file changed, 3 insertions(+)
 
 diff --git a/emcc.py b/emcc.py
-index e546629c3..52af8b9e1 100644
+index 8ac79fd5e..7bc27aef8 100644
 --- a/emcc.py
 +++ b/emcc.py
-@@ -640,6 +640,9 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
+@@ -642,6 +642,9 @@ There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR P
        print(libname)
      return 0
  

@@ -81,6 +81,19 @@ def update_struct_info() -> None:
     run(["make", "update_struct_info"], cwd=EMSDK)
 
 
+def commit(newtag) -> None:
+    paths_to_commit = [
+        "emsdk/patches",
+        "Makefile.envs",
+        "src/js/struct_info_generated.json",
+    ]
+    run(
+        ["git", "add", *paths_to_commit],
+        cwd=PYODIDE_ROOT,
+    )
+    run(["git", "commit", "-m", f"Emscripten {newtag}"], cwd=PYODIDE_ROOT)
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Update the Emscripten version")
     parser.add_argument("newtag")
@@ -96,6 +109,7 @@ def main():
     update_patches(newtag)
     update_makefile_envs(oldtag, newtag)
     update_struct_info()
+    commit(newtag)
 
 
 if __name__ == "__main__":

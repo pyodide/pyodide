@@ -14,9 +14,9 @@ export interface EmscriptenSettings {
   readonly noAudioDecoding?: boolean;
   readonly noWasmDecoding?: boolean;
   readonly preRun: readonly PreRunFunc[];
-  readonly quit: (status: number, toThrow: Error) => void;
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
+  readonly onExit?: (code: number) => void;
   readonly arguments: readonly string[];
   readonly instantiateWasm?: (
     imports: { [key: string]: any },
@@ -28,9 +28,9 @@ export interface EmscriptenSettings {
   readonly API: API;
   readonly locateFile: (file: string) => string;
 
-  exited?: { readonly status: number; readonly toThrow: Error };
   noInitialRun?: boolean;
   INITIAL_MEMORY?: number;
+  exitCode?: number;
 }
 
 /**
@@ -44,14 +44,11 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     noAudioDecoding: true,
     noWasmDecoding: false,
     preRun: getFileSystemInitializationFuncs(config),
-    quit(status: number, toThrow: Error) {
-      // It's a little bit hacky that we set this on the settings object but
-      // it's not that easy to get access to the Module object from here.
-      settings.exited = { status, toThrow };
-      throw toThrow;
-    },
     print: config.stdout,
     printErr: config.stderr,
+    onExit(code) {
+      settings.exitCode = code;
+    },
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument
