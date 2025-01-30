@@ -14,6 +14,14 @@ myst:
 
 # Change Log
 
+## Version 0.27.3
+
+_February 26, 2025_
+
+### Packages
+
+- Upgraded `narwhals` to 1.24.1 {pr}`5386`
+
 ## Version 0.27.2
 
 _January 23, 2025_
