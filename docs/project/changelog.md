@@ -18,6 +18,7 @@ myst:
 
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
+- Added `jiter` 0.8.2 {pr}`5388`
 
 ## Version 0.27.2
 
