@@ -20,6 +20,10 @@ myst:
   {pr}`5334` {pr}`5363`
 - Added `jiter` 0.8.2 {pr}`5388`
 
+### Packages
+
+- Upgraded `narwhals` to 1.24.1 {pr}`5386`
+
 ## Version 0.27.2
 
 _January 23, 2025_
