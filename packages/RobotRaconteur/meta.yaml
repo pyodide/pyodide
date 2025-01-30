@@ -2,7 +2,6 @@ package:
   name: RobotRaconteur
   version: 1.2.2
 
-  _disabled: true
 source:
   url: https://github.com/robotraconteur/robotraconteur/releases/download/v1.2.2/RobotRaconteur-1.2.2-Source.tar.gz
   sha256: 837710102b5ee6ad81a22e14b313b1dd09995c3da3e7846355866553b3c52715
@@ -47,6 +46,8 @@ build:
     -DOpenSSL_INCLUDE_DIR=$WASM_LIBRARY_DIR/include \
     -DOpenSSL_USE_STATIC_LIBS=ON \
     -DUSE_PREGENERATED_SOURCE=ON \
+    -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
      .
     emmake make -j ${PYODIDE_JOBS:-3}
     emcc ${SIDE_MODULE_LDFLAGS} -fexceptions out/lib/libRobotRaconteurCore.a \
