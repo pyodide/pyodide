@@ -1,4 +1,4 @@
-From 86ecaa8d44125ee49d5c891dfdf560591baf3744 Mon Sep 17 00:00:00 2001
+From 26ac6d4493a03a2c4aded68782f8d196aa4fe27b Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
 Subject: [PATCH 2/6] Add useful error when symbol resolution fails

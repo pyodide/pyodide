@@ -1,12 +1,10 @@
-From b234f241e1a9937d4697b6a421c9d154197b6e55 Mon Sep 17 00:00:00 2001
+From 086808760eab056fff72e12e40c7e4e52bf3ce5a Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jan 2025 11:42:59 +0100
 Subject: [PATCH 6/6] sdl2_image wasm-sjlj variant
 
-
 Upstream PR:
 https://github.com/emscripten-core/emscripten/pull/23554
-
 ---
  tools/ports/sdl2_image.py | 15 ++++++++++-----
  1 file changed, 10 insertions(+), 5 deletions(-)
