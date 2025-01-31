@@ -120,6 +120,7 @@ def test_run_tests(selenium_sdl):
             "and not testLoadBytesIO "  # can't access resource on platform
             "and not VisualTests "  # cannot block
             "and not test_load_from_invalid_sized_file_obj "  # can't access resource on platform
+            "and not GeneralSurfaceTests" # "No convert format" does not match "Parameter 'surface' is invalid"
         ),
         # Following tests are ignored
         [
