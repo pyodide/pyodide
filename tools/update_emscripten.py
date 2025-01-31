@@ -87,6 +87,7 @@ def commit(newtag) -> None:
         "Makefile.envs",
         "src/js/struct_info_generated.json",
     ]
+    run(["git", "switch", "-c", f"emscripten-{newtag}"], cwd=PYODIDE_ROOT)
     run(
         ["git", "add", *paths_to_commit],
         cwd=PYODIDE_ROOT,
