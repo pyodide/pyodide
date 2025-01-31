@@ -68,13 +68,13 @@ build:
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
       -lSDL2 \
-      -lSDL2_image_bmp-gif-jpg-png \
+      -lSDL2_image_bmp-gif-jpg-png-wasm-sjlj \
       -lSDL2_ttf \
       -lSDL2_mixer_mid-mod-mpg-ogg \
       -lSDL2_gfx \
-      -lfreetype \
+      -lfreetype-wasm-sjlj \
       -lharfbuzz \
-      -lpng \
+      -lpng-wasm-sjlj \
       -ljpeg \
       -lgif \
       -lvorbis \
@@ -84,6 +84,7 @@ build:
       -lhtml5 \
       ${STATIC_OBJS} \
       ${SHARED_LIBS} \
+      -sSUPPORT_LONGJMP=wasm \
       -o pygame_static.so
 
     # Remove duplicated static.so module
