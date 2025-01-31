@@ -1,7 +1,7 @@
-From bd18a45671f7c4c705d5a332f39bf69515695871 Mon Sep 17 00:00:00 2001
+From ee21a7dece76d5b247fda13d842b1c20142cf092 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
-Subject: [PATCH 3/5] Changes for JSPI
+Subject: [PATCH 3/6] Changes for JSPI
 
 ---
  src/library.js        | 2 +-
@@ -11,7 +11,7 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 38487c9fc..5ea1e5023 100644
+index ef05b8791..eb94b222b 100644
 --- a/src/library.js
 +++ b/src/library.js
 @@ -494,7 +494,7 @@ addToLibrary({
