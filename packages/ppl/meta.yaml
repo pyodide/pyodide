@@ -1,7 +1,6 @@
 package:
   name: ppl
   version: "1.2"
-  _disabled: true
   tag:
     - library
     - static_library
@@ -21,8 +20,8 @@ build:
     emconfigure ./configure \
         CFLAGS="-fPIC -Wno-reserved-identifier -Wno-reserved-macro-identifier" \
         CPPFLAGS="-I${WASM_LIBRARY_DIR}/include" \
-        CXXFLAGS="-std=c++11 -fPIC -Wno-reserved-identifier -Wno-zero-as-null-pointer-constant -Wno-double-promotion -Wno-unsafe-buffer-usage -Wno-extra-semi-stmt -Wno-shadow -Wno-implicit-fallthrough -Wno-deprecated-literal-operator -Wno-suggest-override -Wno-suggest-destructor-override -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-copy-with-user-provided-copy -Wno-unused-template -Wno-comma -Wno-unreachable-code-return -Wno-deprecated-declarations -Wno-unreachable-code-break -Wno-format-nonliteral -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-weak-vtables -Wno-old-style-cast -Wno-header-hygiene -Wno-undef" \
-        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib" \
+        CXXFLAGS="-fwasm-exceptions -std=c++11 -fPIC -Wno-reserved-identifier -Wno-zero-as-null-pointer-constant -Wno-double-promotion -Wno-unsafe-buffer-usage -Wno-extra-semi-stmt -Wno-shadow -Wno-implicit-fallthrough -Wno-deprecated-literal-operator -Wno-suggest-override -Wno-suggest-destructor-override -Wno-deprecated-copy-with-user-provided-dtor -Wno-deprecated-copy-with-user-provided-copy -Wno-unused-template -Wno-comma -Wno-unreachable-code-return -Wno-deprecated-declarations -Wno-unreachable-code-break -Wno-format-nonliteral -Wno-missing-variable-declarations -Wno-missing-prototypes -Wno-weak-vtables -Wno-old-style-cast -Wno-header-hygiene -Wno-undef" \
+        LDFLAGS="-L${WASM_LIBRARY_DIR}/lib -fwasm-exceptions -sSUPPORT_LONGJMP" \
         --disable-dependency-tracking \
         --enable-coefficients=mpz --disable-fpmath \
         --enable-interfaces=c,c++ \
