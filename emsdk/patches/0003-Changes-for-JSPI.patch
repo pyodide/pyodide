@@ -1,4 +1,4 @@
-From 80d5198a5278a30c692bb30eb225ad4dcfb0ce7b Mon Sep 17 00:00:00 2001
+From bd18a45671f7c4c705d5a332f39bf69515695871 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH 3/5] Changes for JSPI
@@ -11,10 +11,10 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index ebcf7b789..37a74c0a5 100644
+index 38487c9fc..5ea1e5023 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -495,7 +495,7 @@ addToLibrary({
+@@ -494,7 +494,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
@@ -58,7 +58,7 @@ index 0a9fb43b1..eaa9021a9 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index d37cb9fe7..b181c4401 100644
+index 3a6aee9c9..8c50c1013 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -72,7 +72,7 @@ index d37cb9fe7..b181c4401 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -931,6 +935,9 @@ function getWasmImports() {
+@@ -929,6 +933,9 @@ function getWasmImports() {
  // Receives the wasm imports, returns the exports.
  function createWasm() {
    var info = getWasmImports();
