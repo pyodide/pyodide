@@ -1,6 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include <emscripten.h>
+#include <emscripten/eventloop.h>
+
 #include <stdbool.h>
 
 #define FAIL_IF_STATUS_EXCEPTION(status)                                       \
@@ -63,7 +65,9 @@ main(int argc, char** argv)
   // no status code to check.
   PyImport_AppendInittab("_pyodide_core", PyInit__pyodide_core);
   initialize_python(argc, argv);
-  emscripten_exit_with_live_runtime();
+  // Normally the runtime would exit when main() returns, don't let that
+  // happen.
+  emscripten_runtime_keepalive_push();
   return 0;
 }
 
@@ -74,6 +78,12 @@ EMSCRIPTEN_KEEPALIVE int
 run_main()
 {
   int exitcode;
+  // run_python may call exit() if `-h` or `-V` have been passed. If we stop it
+  // from exiting, we'll segfault. So pop the keep alive, so that exit() will
+  // call onExit and shut down the runtime. We notice this in pyodide.ts and
+  // throw a ExitStatus error.
+  emscripten_runtime_keepalive_pop();
   pymain_run_python(&exitcode);
+  emscripten_runtime_keepalive_push();
   return exitcode;
 }
