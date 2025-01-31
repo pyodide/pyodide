@@ -21,7 +21,6 @@ build:
   cxxflags: |
     -std=c++17
     -I$(WASM_LIBRARY_DIR)/include
-    -mllvm -wasm-enable-sjlj=false
   ldflags: |
     -L$(WASM_LIBRARY_DIR)/lib
 extra:
