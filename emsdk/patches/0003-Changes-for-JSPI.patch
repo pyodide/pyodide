@@ -1,17 +1,17 @@
-From 66f4951f3ca8e75c4d71e71acc8f11592e33f1b7 Mon Sep 17 00:00:00 2001
+From d4210b8a3a483bef0edce7cf6fed1c889e447e05 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
-Subject: [PATCH 3/6] Changes for JSPI
+Subject: [PATCH 3/5] Changes for JSPI
 
 ---
  src/library.js        | 2 +-
  src/library_dylink.js | 3 ++-
  src/parseTools.mjs    | 2 +-
- src/preamble.js       | 7 +++++++
- 4 files changed, 11 insertions(+), 3 deletions(-)
+ src/preamble.js       | 5 +++++
+ 4 files changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 78368ba2b..636353c49 100644
+index 59f530db8..8c8121624 100644
 --- a/src/library.js
 +++ b/src/library.js
 @@ -494,7 +494,7 @@ addToLibrary({
@@ -24,7 +24,7 @@ index 78368ba2b..636353c49 100644
    },
  #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index e2ee18f9f..10282f229 100644
+index b3440d9dc..5cbd4c487 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -73,6 +73,7 @@ var LibraryDylink = {
@@ -45,7 +45,7 @@ index e2ee18f9f..10282f229 100644
  #endif
  #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.mjs b/src/parseTools.mjs
-index 0a9fb43b1..eaa9021a9 100644
+index ca474affa..300f38e38 100644
 --- a/src/parseTools.mjs
 +++ b/src/parseTools.mjs
 @@ -585,7 +585,7 @@ function makeThrow(excPtr) {
@@ -58,7 +58,7 @@ index 0a9fb43b1..eaa9021a9 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index d37cb9fe7..b181c4401 100644
+index d924c4ab9..f80aae1ff 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -72,16 +72,14 @@ index d37cb9fe7..b181c4401 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -931,6 +935,9 @@ function getWasmImports() {
- // Receives the wasm imports, returns the exports.
- function createWasm() {
+@@ -1054,6 +1058,7 @@ function createWasm() {
+ #endif // WASM_ASYNC_COMPILATION
+ 
    var info = getWasmImports();
-+  if (Module.adjustWasmImports) {
-+    Module.adjustWasmImports(info);
-+  }
-   // Load the wasm module and create an instance of using native support in the JS engine.
-   // handle a generated wasm instance, receiving its exports and
-   // performing other necessary setup
++  Module.adjustWasmImports?.(info);
+ 
+ #if expectToReceiveOnModule('instantiateWasm')
+   // User shell pages can write their own Module.instantiateWasm = function(imports, successCallback) callback
 -- 
 2.34.1
 
