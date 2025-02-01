@@ -147,6 +147,7 @@ markers = [
 [tool._pyodide]
 
 [tool.pyodide.build]
+_build_dependency_fallback_to_pypi = "0"
 rust_toolchain = "nightly-2025-01-15"
 
 [tool.codespell]
