@@ -1,4 +1,4 @@
-From 086808760eab056fff72e12e40c7e4e52bf3ce5a Mon Sep 17 00:00:00 2001
+From 032aed724e075a673bef37e97a9c1d5dfccb80b9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jan 2025 11:42:59 +0100
 Subject: [PATCH 6/6] sdl2_image wasm-sjlj variant
