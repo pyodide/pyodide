@@ -1,4 +1,4 @@
-From f917723823e81581edf8d6554edb054d28761fec Mon Sep 17 00:00:00 2001
+From 4fb563293d2d52072b6a16b5b7d18021a339eaee Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jan 2025 11:42:59 +0100
 Subject: [PATCH 5/5] sdl2_image wasm-sjlj variant
@@ -10,7 +10,7 @@ https://github.com/emscripten-core/emscripten/pull/23554
  1 file changed, 5 insertions(+)
 
 diff --git a/tools/ports/sdl2_image.py b/tools/ports/sdl2_image.py
-index 70fa1499a..ed5ad679b 100644
+index e36344eed..7a7d0aadd 100644
 --- a/tools/ports/sdl2_image.py
 +++ b/tools/ports/sdl2_image.py
 @@ -46,6 +46,8 @@ def get_lib_name(settings):
@@ -22,7 +22,7 @@ index 70fa1499a..ed5ad679b 100644
    return libname + '.a'
  
  
-@@ -78,6 +80,9 @@ def get(ports, settings, shared):
+@@ -77,6 +79,9 @@ def get(ports, settings, shared):
      if settings.PTHREADS:
        flags += ['-pthread']
  

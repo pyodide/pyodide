@@ -1,4 +1,4 @@
-From 3d483b35ff7ed6dbb8c438f08e5a3579725fe304 Mon Sep 17 00:00:00 2001
+From d03c660e0a5ca58581c173f877ef9264a568adb1 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH 3/5] Changes for JSPI
@@ -11,7 +11,7 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index c7f26d291..caca8ff7d 100644
+index 607e18e68..cfa2e49a1 100644
 --- a/src/library.js
 +++ b/src/library.js
 @@ -492,7 +492,7 @@ addToLibrary({
@@ -24,7 +24,7 @@ index c7f26d291..caca8ff7d 100644
    },
  #elif !SUPPORT_LONGJMP
 diff --git a/src/library_dylink.js b/src/library_dylink.js
-index b3440d9dc..5cbd4c487 100644
+index 31ae90318..f06f00904 100644
 --- a/src/library_dylink.js
 +++ b/src/library_dylink.js
 @@ -73,6 +73,7 @@ var LibraryDylink = {
@@ -45,7 +45,7 @@ index b3440d9dc..5cbd4c487 100644
  #endif
  #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.mjs b/src/parseTools.mjs
-index ca474affa..300f38e38 100644
+index fa6da8556..5a0a48548 100644
 --- a/src/parseTools.mjs
 +++ b/src/parseTools.mjs
 @@ -585,7 +585,7 @@ function makeThrow(excPtr) {
@@ -58,7 +58,7 @@ index ca474affa..300f38e38 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index d924c4ab9..f80aae1ff 100644
+index d097c857f..6a217e022 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -72,7 +72,7 @@ index d924c4ab9..f80aae1ff 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -1054,6 +1058,7 @@ function createWasm() {
+@@ -1038,6 +1042,7 @@ function getWasmImports() {
  #endif // WASM_ASYNC_COMPILATION
  
    var info = getWasmImports();
