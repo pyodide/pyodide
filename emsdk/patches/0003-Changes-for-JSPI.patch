@@ -1,4 +1,4 @@
-From d03c660e0a5ca58581c173f877ef9264a568adb1 Mon Sep 17 00:00:00 2001
+From 4e69d2ad44d6b1a4bf0707827cdd2442bca7fdb5 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 22 Jun 2023 18:53:22 -0700
 Subject: [PATCH 3/5] Changes for JSPI
@@ -11,10 +11,10 @@ Subject: [PATCH 3/5] Changes for JSPI
  4 files changed, 9 insertions(+), 3 deletions(-)
 
 diff --git a/src/library.js b/src/library.js
-index 607e18e68..cfa2e49a1 100644
+index 14c45f6b1..be4d780d3 100644
 --- a/src/library.js
 +++ b/src/library.js
-@@ -492,7 +492,7 @@ addToLibrary({
+@@ -460,7 +460,7 @@ addToLibrary({
  #if EXCEPTION_STACK_TRACES
      throw new EmscriptenSjLj;
  #else
@@ -45,10 +45,10 @@ index 31ae90318..f06f00904 100644
  #endif
  #if !DISABLE_EXCEPTION_CATCHING
 diff --git a/src/parseTools.mjs b/src/parseTools.mjs
-index fa6da8556..5a0a48548 100644
+index a57593562..976168049 100644
 --- a/src/parseTools.mjs
 +++ b/src/parseTools.mjs
-@@ -585,7 +585,7 @@ function makeThrow(excPtr) {
+@@ -589,7 +589,7 @@ function makeThrow(excPtr) {
      }
      return `assert(false, '${assertInfo}');`;
    }
@@ -58,7 +58,7 @@ index fa6da8556..5a0a48548 100644
  
  function storeException(varName, excPtr) {
 diff --git a/src/preamble.js b/src/preamble.js
-index d097c857f..6a217e022 100644
+index 2a422c490..0fd120445 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
 @@ -14,6 +14,10 @@
@@ -72,7 +72,7 @@ index d097c857f..6a217e022 100644
  #if RELOCATABLE
  {{{ makeModuleReceiveWithVar('dynamicLibraries', undefined, '[]', true) }}}
  #endif
-@@ -1038,6 +1042,7 @@ function getWasmImports() {
+@@ -1012,6 +1016,7 @@ function getWasmImports() {
  #endif // WASM_ASYNC_COMPILATION
  
    var info = getWasmImports();
