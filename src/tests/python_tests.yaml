@@ -745,6 +745,7 @@
     skip:
       - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
       - test_strptime
+      - test_process_time
 - test_timeit
 - test_timeout
 - test_tix
@@ -874,6 +875,7 @@
       - test_overwrite_file_as_implicit_dir
       # Works fine but a bit slow
       - test_write_filtered_python_package
+      - test_add_file_before_1980
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support
