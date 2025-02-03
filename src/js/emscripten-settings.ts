@@ -111,10 +111,10 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
 }
 
 function computeVersionTuple(Module: Module): [number, number, number] {
- const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
-  const major = (versionInt >>> 24) & 0xFF;
-  const minor = (versionInt >>> 16) & 0xFF;
-  const micro = (versionInt >>> 8) & 0xFF;
+  const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+  const major = (versionInt >>> 24) & 0xff;
+  const minor = (versionInt >>> 16) & 0xff;
+  const micro = (versionInt >>> 8) & 0xff;
   return [major, minor, micro];
 }
 /**
