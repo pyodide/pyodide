@@ -193,19 +193,19 @@ function getInstantiateWasmFunc(
       module: WebAssembly.Module,
     ) => void,
   ) {
-      try {
-        let res: WebAssembly.WebAssemblyInstantiatedSource;
-        if (response) {
-          res = await WebAssembly.instantiateStreaming(response, imports);
-        } else {
-          res = await WebAssembly.instantiate(await binary, imports);
-        }
-        const { instance, module } = res;
-        successCallback(instance, module);
-        return instance.exports;
-      } catch (e) {
-        console.warn("wasm instantiation failed!");
-        console.warn(e);
+    try {
+      let res: WebAssembly.WebAssemblyInstantiatedSource;
+      if (response) {
+        res = await WebAssembly.instantiateStreaming(response, imports);
+      } else {
+        res = await WebAssembly.instantiate(await binary, imports);
       }
+      const { instance, module } = res;
+      successCallback(instance, module);
+      return instance.exports;
+    } catch (e) {
+      console.warn("wasm instantiation failed!");
+      console.warn(e);
+    }
   };
 }
