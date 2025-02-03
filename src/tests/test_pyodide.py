@@ -1770,9 +1770,10 @@ def test_python_version(selenium):
     selenium.run_js(
         """
         sys = pyodide.pyimport("sys");
-        assert(() => sys.version_info.major === pyodide._module._py_version_major());
-        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
-        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        const [major, minor, micro] = pyodide._api.pyVersionTuple;
+        assert(() => sys.version_info.major === major);
+        assert(() => sys.version_info.minor === minor);
+        assert(() => sys.version_info.micro === micro);
         sys.destroy();
         """
     )
