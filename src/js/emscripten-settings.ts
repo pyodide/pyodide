@@ -3,7 +3,7 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { API, PreRunFunc } from "./types";
+import { API, PreRunFunc, type Module } from "./types";
 
 /**
  * @private
@@ -110,6 +110,13 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
   };
 }
 
+function computeVersionTuple(Module: Module): [number, number, number] {
+  const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+  const major = (versionInt >>> 24) & 0xff;
+  const minor = (versionInt >>> 16) & 0xff;
+  const micro = (versionInt >>> 8) & 0xff;
+  return [major, minor, micro];
+}
 /**
  * Install the Python standard library to the virtual file system.
  *
@@ -125,12 +132,9 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
  */
 function installStdlib(stdlibURL: string): PreRunFunc {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
-  return (Module) => {
-    /* @ts-ignore */
-    const pymajor = Module._py_version_major();
-    /* @ts-ignore */
-    const pyminor = Module._py_version_minor();
-
+  return (Module: Module) => {
+    Module.API.pyVersionTuple = computeVersionTuple(Module);
+    const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
     Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
 

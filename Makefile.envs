@@ -234,6 +234,7 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
+   ,_Py_Version \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
