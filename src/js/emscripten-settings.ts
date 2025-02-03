@@ -111,14 +111,12 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
 }
 
 function computeVersionTuple(Module: Module): [number, number, number] {
-  const versionHex = Module.HEAPU32[Module._Py_Version / 4].toString(16);
-  const res = versionHex
-    .padStart(8, "0")
-    .match(/.{1,2}/g)!
-    .map((x) => parseInt(x, 16));
-  return res as any;
+ const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+  const major = (versionInt >>> 24) & 0xFF;
+  const minor = (versionInt >>> 16) & 0xFF;
+  const micro = (versionInt >>> 8) & 0xFF;
+  return [major, minor, micro];
 }
-
 /**
  * Install the Python standard library to the virtual file system.
  *
