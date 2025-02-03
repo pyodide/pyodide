@@ -340,6 +340,7 @@ export interface Module {
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
   HEAP8: Uint8Array;
+  HEAPU32: Uint32Array;
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
@@ -350,6 +351,7 @@ export interface Module {
   handle_js_error(e: any): void;
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
+  _Py_Version: number;
 }
 
 type LockfileInfo = {
@@ -510,7 +512,7 @@ export interface API {
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
-
+  pyVersionTuple: [number, number, number];
   LiteralMap: any;
 }
 
