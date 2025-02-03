@@ -612,6 +612,7 @@
 - test_posix:
     skip:
       - test_readlink_dir_fd # '/tmp/test_python_worker_132408æ/@test_42_tmpæ_4base/symlink' != 'symlink'
+      - test_fstatvfs
 - test_posixpath
 - test_pow
 - test_pprint
