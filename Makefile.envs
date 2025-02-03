@@ -240,6 +240,7 @@ EXPORTS=_main \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
    ,_emscripten_stack_get_current \
+   ,_Py_Version \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
