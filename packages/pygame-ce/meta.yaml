@@ -68,7 +68,7 @@ build:
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
       -lSDL2 \
-      -lSDL2_image_bmp-gif-jpg-png \
+      -lSDL2_image-bmp-gif-jpg-png \
       -lSDL2_ttf \
       -lSDL2_mixer_mid-mod-mpg-ogg \
       -lSDL2_gfx \
