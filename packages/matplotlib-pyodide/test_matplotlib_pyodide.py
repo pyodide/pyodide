@@ -32,7 +32,7 @@ def save_canvas_data(selenium, output_path):
 
     # save the canvas data to output_path.
     # This function can be used to generate the test data
-    canvas_data = selenium.run(
+    canvas_data = selenium.run(  # type: ignore[unreachable]
         """
         import base64
         import matplotlib.pyplot as plt
