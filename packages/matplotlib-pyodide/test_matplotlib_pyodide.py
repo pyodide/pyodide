@@ -27,6 +27,9 @@ def matplotlib_test_decorator(f):
 
 
 def save_canvas_data(selenium, output_path):
+    # comment out `return` to generate test data instead of comparing it
+    return
+
     # save the canvas data to output_path.
     # This function can be used to generate the test data
     canvas_data = selenium.run(
@@ -98,8 +101,7 @@ def test_rendering(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -139,8 +141,7 @@ def test_draw_image(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-image-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -217,8 +218,7 @@ def test_draw_image_affine_transform(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-image-affine-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -269,8 +269,7 @@ def test_draw_text_rotated(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-text-rotated-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -398,8 +397,7 @@ def test_draw_math_text(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-math-text-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -439,8 +437,7 @@ def test_zoom_on_polar_plot(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-polar-zoom-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
 
 
@@ -477,6 +474,5 @@ def test_transparency(selenium_standalone):
     ref = REFERENCE_IMAGES_PATH / f"canvas-transparency-{selenium.browser}.png"
     run(selenium)
 
-    # uncomment to generate data instead of comparing it
-    # save_canvas_data(selenium, ref)
+    save_canvas_data(selenium, ref)
     compare_canvas_data(selenium, ref.read_bytes())
