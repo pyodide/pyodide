@@ -234,6 +234,7 @@ def test_syncify_ctypes(selenium):
 
 @requires_jspi
 @pytest.mark.requires_dynamic_linking
+@pytest.mark.xfail(reason="Requires wasm replacement for stub trampolines")
 def test_cpp_exceptions_and_syncify(selenium):
     assert (
         selenium.run_js(

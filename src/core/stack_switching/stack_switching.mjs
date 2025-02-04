@@ -3,12 +3,6 @@
  * See esbuild.config.mjs.
  */
 
-import {
-  jsWrapperTag,
-  wrapException,
-  adjustWasmImports,
-  createInvoke,
-} from "./create_invokes.mjs";
 import { initSuspenders } from "./suspenders.mjs";
 
 export {
@@ -18,7 +12,6 @@ export {
   suspenderGlobal,
 } from "./suspenders.mjs";
 export { StackState } from "./stack_state.mjs";
-export { jsWrapperTag };
 
 let canConstructWasm = true;
 try {
@@ -44,7 +37,4 @@ Module.jspiSupported = jspiSupported;
 
 if (jspiSupported) {
   Module.preRun.push(initSuspenders);
-  Module.adjustWasmImports = adjustWasmImports;
-  Module.wrapException = wrapException;
-  Module.createInvoke = createInvoke;
 }

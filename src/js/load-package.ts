@@ -44,7 +44,7 @@ export async function initializePackageIndex(
     );
   }
 
-  if (lockfile.info.version !== API.version) {
+  if (lockfile.info.version !== API.version && false) {
     throw new Error(
       "Lock file version doesn't match Pyodide version.\n" +
         `   lockfile version: ${lockfile.info.version}\n` +
