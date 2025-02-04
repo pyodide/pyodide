@@ -29,7 +29,12 @@ WHERE table_b.id = :id_2
 ORDER BY table_a.id DESC"""
 
 
-@pytest.mark.parametrize("input_sql, output_sql", [INPUT_SQL, OUTPUT_SQL])
+@pytest.mark.parametrize(
+    "input_sql, output_sql",
+    [
+        (INPUT_SQL, OUTPUT_SQL),
+    ],
+)
 @run_in_pyodide(packages=["sqlparse"])
 def test_resample(selenium, input_sql, output_sql):
     import sqlparse
