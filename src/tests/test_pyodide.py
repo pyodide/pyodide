@@ -1957,3 +1957,18 @@ async def test_bug_4861(selenium):
         return eval("x()", ChainMap({}, {"x": x}))
 
     await g(run_js("async () => {}"))
+
+
+@run_in_pyodide
+def test_lockfile_api(selenium):
+    from pyodide_js import getLockfileInfo, getLockfilePackages
+
+    lockfile_info = getLockfileInfo()
+    lockfile_packages = getLockfilePackages()
+
+    assert lockfile_info is not None
+    assert lockfile_info.abi_version is not None
+    assert lockfile_info.version is not None
+    assert lockfile_info.python is not None
+
+    assert lockfile_packages.micropip is not None
