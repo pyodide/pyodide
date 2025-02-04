@@ -24,6 +24,8 @@ myst:
 
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- Upgraded `micropip` to 0.9.0 {pr}`5404`
 
 ## Version 0.27.2
 
@@ -37,7 +39,6 @@ _January 23, 2025_
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
 - Upgraded `packaging` to 24.2 {pr}`5370`
-- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
 
 ## Version 0.27.1
 
