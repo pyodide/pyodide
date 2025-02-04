@@ -28,7 +28,7 @@ build:
     emcc ${SIDE_MODULE_LDFLAGS} libcrypto.a -o libcrypto.so
     emcc ${SIDE_MODULE_LDFLAGS} libssl.a libcrypto.so -o libssl.so
 
-    make install_sw
+    make install_dev install_engines
     mkdir -p ${WASM_LIBRARY_DIR}/lib
     # remove static libraries, we will use shared one
     rm -f ${WASM_LIBRARY_DIR}/lib/{libcrypto.a,libssl.a}
