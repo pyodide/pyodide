@@ -688,7 +688,7 @@ export class PyodideAPI {
    * Returns the `info` section of the pyodide lockfile used to load the current Pyodide instance.
    * The format of the lockfile is defined in the `pyodide/pyodide-lock
    * <https://github.com/pyodide/pyodide-lock`_ repository.
-   * 
+   *
    * .. admonition:: Pyodide Lockfile
    *    :class: warning
    *
@@ -702,7 +702,7 @@ export class PyodideAPI {
    * Returns the `packages` section of the pyodide lockfile used to load the current Pyodide instance.
    * The format of the lockfile is defined in the `pyodide/pyodide-lock
    * <https://github.com/pyodide/pyodide-lock`_ repository.
-   * 
+   *
    * .. admonition:: Pyodide Lockfile
    *    :class: warning
    *
