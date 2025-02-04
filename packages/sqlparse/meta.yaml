@@ -1,0 +1,18 @@
+package:
+  name: "sqlparse"
+  version: "0.5.3"
+  top-level:
+    - "sqlparse"
+source:
+  url: https://files.pythonhosted.org/packages/e5/40/edede8dd6977b0d3da179a342c198ed100dd2aba4be081861ee5911e4da4/sqlparse-0.5.3.tar.gz
+  sha256: 09f67787f56a0b16ecdbde1bfc7f5d9c3371ca683cfeaa8e6ff60b4807ec9272
+
+about:
+  home: https://github.com/andialbrecht/sqlparse
+  PyPI: https://pypi.org/project/sqlparse/
+  summary:
+    sqlparse is a non-validating SQL parser for Python. It provides support for parsing, splitting and formatting SQL statements.
+    The module is compatible with Python 3.8+ and released under the terms of the New BSD license.
+    Visit the project page at https://github.com/andialbrecht/sqlparse for further information about this project.
+    for Python 3.3+
+  license: BSD-3-Clause
