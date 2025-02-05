@@ -16,6 +16,8 @@ build:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 test:
   imports:
     - pyxel
