@@ -1,0 +1,1255 @@
+From b1f2a063c21cfd0951082af2c702a5094126484f Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 6 Jan 2025 17:38:59 +0530
+Subject: [PATCH 16/16] Drop unsupported array constructors in ARPACK
+
+Fortran array constructors were introduced in the
+ARPACK-NG update from 3.3.0 to 3.9.1 via
+https://github.com/scipy/scipy/pull/21110/
+and are not compatible with https://github.com/hoodmane/f2c/, so
+we remove them in this patch for now until
+ARPACK is being rewritten in/ported to C. Please see
+https://github.com/scipy/scipy/issues/18566 for more
+information.
+---
+ .../linalg/_eigen/arpack/ARPACK/SRC/cgetv0.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/cnaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/cnapps.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/cnaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/cnaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/cneupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/cngets.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dgetv0.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/dnaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/dnapps.f     | 16 ++++++++--------
+ .../linalg/_eigen/arpack/ARPACK/SRC/dnaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/dnaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dneupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dngets.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dsaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/dsapps.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/dsaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/dsaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dseupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/dsgets.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/sgetv0.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/snaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/snapps.f     | 16 ++++++++--------
+ .../linalg/_eigen/arpack/ARPACK/SRC/snaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/snaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/sneupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/sngets.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/ssaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/ssapps.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/ssaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/ssaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/sseupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/ssgets.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/zgetv0.f     |  6 +++---
+ .../linalg/_eigen/arpack/ARPACK/SRC/znaitr.f     |  8 ++++----
+ .../linalg/_eigen/arpack/ARPACK/SRC/znapps.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/znaup2.f     | 14 +++++++-------
+ .../linalg/_eigen/arpack/ARPACK/SRC/znaupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/zneupd.f     |  4 ++--
+ .../linalg/_eigen/arpack/ARPACK/SRC/zngets.f     |  4 ++--
+ 40 files changed, 150 insertions(+), 150 deletions(-)
+
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cgetv0.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cgetv0.f
+index c231eadcb..fc4b24b92 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cgetv0.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cgetv0.f
+@@ -361,9 +361,9 @@ c     | Check for further orthogonalization. |
+ c     %--------------------------------------%
+ c
+       if (msglvl .gt. 2) then
+-          call svout (logfil, 1, [rnorm0], ndigit,
++          call svout (logfil, 1, rnorm0, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm0 is')
+-          call svout (logfil, 1, [rnorm], ndigit,
++          call svout (logfil, 1, rnorm, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm is')
+       end if
+ c
+@@ -394,7 +394,7 @@ c
+    50 continue
+ c
+       if (msglvl .gt. 0) then
+-         call svout (logfil, 1, [rnorm], ndigit,
++         call svout (logfil, 1, rnorm, ndigit,
+      &        '_getv0: B-norm of initial / restarted starting vector')
+       end if
+       if (msglvl .gt. 2) then
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaitr.f
+index 3759760df..61574e646 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaitr.f
+@@ -378,9 +378,9 @@ c     %--------------------------------------------------------------%
+  1000 continue
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_naitr: generating Arnoldi vector number')
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &                  '_naitr: B-norm of the current residual is')
+          end if
+ c
+@@ -400,7 +400,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_naitr: ****** RESTART AT STEP ******')
+             end if
+ c
+@@ -729,7 +729,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0 ) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_naitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 rtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnapps.f
+index c3a55623f..fdf878d85 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnapps.f
+@@ -268,9 +268,9 @@ c
+          sigma = shift(jj)
+ c
+          if (msglvl .gt. 2 ) then
+-            call ivout (logfil, 1, [jj], ndigit,
++            call ivout (logfil, 1, jj, ndigit,
+      &               '_napps: shift number.')
+-            call cvout (logfil, 1, [sigma], ndigit,
++            call cvout (logfil, 1, sigma, ndigit,
+      &               '_napps: Value of the shift ')
+          end if
+ c
+@@ -291,9 +291,9 @@ c
+             if ( abs(real(h(i+1,i)))
+      &           .le. max(ulp*tst1, smlnum) )  then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_napps: matrix splitting at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_napps: matrix splitting with shift number.')
+                   call cvout (logfil, 1, h(i+1,i), ndigit,
+      &                 '_napps: off diagonal element.')
+@@ -307,9 +307,9 @@ c
+    40    continue
+ c
+          if (msglvl .gt. 2) then
+-             call ivout (logfil, 1, [istart], ndigit,
++             call ivout (logfil, 1, istart, ndigit,
+      &                   '_napps: Start of current block ')
+-             call ivout (logfil, 1, [iend], ndigit,
++             call ivout (logfil, 1, iend, ndigit,
+      &                   '_napps: End of current block ')
+          end if
+ c
+@@ -485,7 +485,7 @@ c
+      &        '_napps: sigmak = (e_{kev+p}^T*Q)*e_{kev}')
+          call cvout (logfil, 1, h(kev+1,kev), ndigit,
+      &        '_napps: betak = e_{kev+1}^T*H*e_{kev}')
+-         call ivout (logfil, 1, [kev], ndigit,
++         call ivout (logfil, 1, kev, ndigit,
+      &               '_napps: Order of the final Hessenberg matrix ')
+          if (msglvl .gt. 2) then
+             call cmout (logfil, kev, kev, h, ldh, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaup2.f
+index e36154247..51de7f502 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaup2.f
+@@ -389,7 +389,7 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_naup2: **** Start of major iteration number ****')
+          end if
+ c
+@@ -402,9 +402,9 @@ c
+          np  = kplusp - nev
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_naup2: The length of the current Arnoldi factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_naup2: Extend the Arnoldi factorization by')
+          end if
+ c
+@@ -430,7 +430,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &           '_naup2: Corresponding B-norm of the residual')
+          end if
+ c
+@@ -658,7 +658,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_naup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -698,7 +698,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_naup2: The number of shifts to apply ')
+             call cvout (logfil, np, ritz, ndigit,
+      &                  '_naup2: values of the shifts')
+@@ -762,7 +762,7 @@ c
+          cnorm = .false.
+ c
+          if (msglvl .gt. 2) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &      '_naup2: B-norm of residual for compressed factorization')
+             call cmout (logfil, nev, nev, h, ldh, ndigit,
+      &        '_naup2: Compressed upper Hessenberg matrix H')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaupd.f
+index 57be328bf..7bf37fd19 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cnaupd.f
+@@ -601,9 +601,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_naupd: Number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_naupd: Number of wanted "converged" Ritz values')
+          call cvout (logfil, np, workl(ritz), ndigit,
+      &               '_naupd: The final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cneupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cneupd.f
+index 29154ce37..6f36f4d4c 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cneupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cneupd.f
+@@ -536,9 +536,9 @@ c        | caused by incorrect passing of the dnaupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_neupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_neupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cngets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cngets.f
+index 20626a2d5..7686e133a 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cngets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/cngets.f
+@@ -161,8 +161,8 @@ c
+       tcgets = tcgets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_ngets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_ngets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_ngets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_ngets: NP is')
+          call cvout (logfil, kev+np, ritz, ndigit,
+      &        '_ngets: Eigenvalues of current H matrix ')
+          call cvout (logfil, kev+np, bounds, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dgetv0.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dgetv0.f
+index 1d6dc01bd..fbb4fe2a7 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dgetv0.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dgetv0.f
+@@ -366,9 +366,9 @@ c     | Check for further orthogonalization. |
+ c     %--------------------------------------%
+ c
+       if (msglvl .gt. 2) then
+-          call dvout (logfil, 1, [rnorm0], ndigit,
++          call dvout (logfil, 1, rnorm0, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm0 is')
+-          call dvout (logfil, 1, [rnorm], ndigit,
++          call dvout (logfil, 1, rnorm, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm is')
+       end if
+ c
+@@ -399,7 +399,7 @@ c
+    50 continue
+ c
+       if (msglvl .gt. 0) then
+-         call dvout (logfil, 1, [rnorm], ndigit,
++         call dvout (logfil, 1, rnorm, ndigit,
+      &        '_getv0: B-norm of initial / restarted starting vector')
+       end if
+       if (msglvl .gt. 3) then
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaitr.f
+index c02cd3909..baaec0387 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaitr.f
+@@ -371,9 +371,9 @@ c     %--------------------------------------------------------------%
+  1000 continue
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_naitr: generating Arnoldi vector number')
+-            call dvout (logfil, 1, [rnorm], ndigit,
++            call dvout (logfil, 1, rnorm, ndigit,
+      &                  '_naitr: B-norm of the current residual is')
+          end if
+ c
+@@ -393,7 +393,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_naitr: ****** RESTART AT STEP ******')
+             end if
+ c
+@@ -721,7 +721,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_naitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 xtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnapps.f
+index 1cf372569..fc09ccb2c 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnapps.f
+@@ -266,11 +266,11 @@ c
+          sigmai = shifti(jj)
+ c
+          if (msglvl .gt. 2 ) then
+-            call ivout (logfil, 1, [jj], ndigit,
++            call ivout (logfil, 1, jj, ndigit,
+      &               '_napps: shift number.')
+-            call dvout (logfil, 1, [sigmar], ndigit,
++            call dvout (logfil, 1, sigmar, ndigit,
+      &               '_napps: The real part of the shift ')
+-            call dvout (logfil, 1, [sigmai], ndigit,
++            call dvout (logfil, 1, sigmai, ndigit,
+      &               '_napps: The imaginary part of the shift ')
+          end if
+ c
+@@ -335,9 +335,9 @@ c
+      &         tst1 = dlanhs( '1', kplusp-jj+1, h, ldh, workl )
+             if( abs( h( i+1,i ) ).le.max( ulp*tst1, smlnum ) ) then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_napps: matrix splitting at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_napps: matrix splitting with shift number.')
+                   call dvout (logfil, 1, h(i+1,i), ndigit,
+      &                 '_napps: off diagonal element.')
+@@ -351,9 +351,9 @@ c
+    40    continue
+ c
+          if (msglvl .gt. 2) then
+-             call ivout (logfil, 1, [istart], ndigit,
++             call ivout (logfil, 1, istart, ndigit,
+      &                   '_napps: Start of current block ')
+-             call ivout (logfil, 1, [iend], ndigit,
++             call ivout (logfil, 1, iend, ndigit,
+      &                   '_napps: End of current block ')
+          end if
+ c
+@@ -627,7 +627,7 @@ c
+      &        '_napps: sigmak = (e_{kev+p}^T*Q)*e_{kev}')
+          call dvout (logfil, 1, h(kev+1,kev), ndigit,
+      &        '_napps: betak = e_{kev+1}^T*H*e_{kev}')
+-         call ivout (logfil, 1, [kev], ndigit,
++         call ivout (logfil, 1, kev, ndigit,
+      &               '_napps: Order of the final Hessenberg matrix ')
+          if (msglvl .gt. 2) then
+             call dmout (logfil, kev, kev, h, ldh, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaup2.f
+index 86375a646..6f65aac40 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaup2.f
+@@ -388,7 +388,7 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_naup2: **** Start of major iteration number ****')
+          end if
+ c
+@@ -401,9 +401,9 @@ c
+          np  = kplusp - nev
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_naup2: The length of the current Arnoldi factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_naup2: Extend the Arnoldi factorization by')
+          end if
+ c
+@@ -435,7 +435,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call dvout  (logfil, 1, [rnorm], ndigit,
++            call dvout  (logfil, 1, rnorm, ndigit,
+      &           '_naup2: Corresponding B-norm of the residual')
+          end if
+ c
+@@ -689,7 +689,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_naup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -741,7 +741,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_naup2: The number of shifts to apply ')
+             call dvout  (logfil, np, ritzr, ndigit,
+      &                  '_naup2: Real part of the shifts')
+@@ -807,7 +807,7 @@ c
+          cnorm = .false.
+ c
+          if (msglvl .gt. 2) then
+-            call dvout  (logfil, 1, [rnorm], ndigit,
++            call dvout  (logfil, 1, rnorm, ndigit,
+      &      '_naup2: B-norm of residual for compressed factorization')
+             call dmout  (logfil, nev, nev, h, ldh, ndigit,
+      &        '_naup2: Compressed upper Hessenberg matrix H')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaupd.f
+index 0b4cbb0d8..457610495 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dnaupd.f
+@@ -628,9 +628,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_naupd: Number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_naupd: Number of wanted "converged" Ritz values')
+          call dvout  (logfil, np, workl(ritzr), ndigit,
+      &               '_naupd: Real part of the final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dneupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dneupd.f
+index 860ceb856..ae97dccce 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dneupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dneupd.f
+@@ -601,9 +601,9 @@ c        | caused by incorrect passing of the dnaupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_neupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_neupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dngets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dngets.f
+index 47d3ac2ce..a31455069 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dngets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dngets.f
+@@ -212,8 +212,8 @@ c
+       tngets = tngets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_ngets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_ngets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_ngets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_ngets: NP is')
+          call dvout (logfil, kev+np, ritzr, ndigit,
+      &        '_ngets: Eigenvalues of current H matrix -- real part')
+          call dvout (logfil, kev+np, ritzi, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaitr.f
+index 3460d990c..00dabfd27 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaitr.f
+@@ -364,9 +364,9 @@ c
+  1000 continue
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_saitr: generating Arnoldi vector no.')
+-            call dvout (logfil, 1, [rnorm], ndigit,
++            call dvout (logfil, 1, rnorm, ndigit,
+      &                  '_saitr: B-norm of the current residual =')
+          end if
+ c
+@@ -384,7 +384,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_saitr: ****** restart at step ******')
+             end if
+ c
+@@ -735,7 +735,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_saitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 xtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsapps.f
+index f84ef8389..12108d0fc 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsapps.f
+@@ -261,9 +261,9 @@ c
+             big   = abs(h(i,2)) + abs(h(i+1,2))
+             if (h(i+1,1) .le. epsmch*big) then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_sapps: deflation at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_sapps: occurred before shift number.')
+                   call dvout (logfil, 1, h(i+1,1), ndigit,
+      &                 '_sapps: the corresponding off diagonal element')
+@@ -432,7 +432,7 @@ c
+          big   = abs(h(i,2)) + abs(h(i+1,2))
+          if (h(i+1,1) .le. epsmch*big) then
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [i], ndigit,
++               call ivout (logfil, 1, i, ndigit,
+      &              '_sapps: deflation at row/column no.')
+                call dvout (logfil, 1, h(i+1,1), ndigit,
+      &              '_sapps: the corresponding off diagonal element')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaup2.f
+index fd4143f53..cb9a075eb 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaup2.f
+@@ -402,13 +402,13 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_saup2: **** Start of major iteration number ****')
+          end if
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_saup2: The length of the current Lanczos factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_saup2: Extend the Lanczos factorization by')
+          end if
+ c
+@@ -446,7 +446,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call dvout (logfil, 1, [rnorm], ndigit,
++            call dvout (logfil, 1, rnorm, ndigit,
+      &           '_saup2: Current B-norm of residual for factorization')
+          end if
+ c
+@@ -695,7 +695,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_saup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -743,7 +743,7 @@ c
+          if (ishift .eq. 0) call dcopy (np, workl, 1, ritz, 1)
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_saup2: The number of shifts to apply ')
+             call dvout (logfil, np, workl, ndigit,
+      &                  '_saup2: shifts selected')
+@@ -810,7 +810,7 @@ c
+   130    continue
+ c
+          if (msglvl .gt. 2) then
+-            call dvout (logfil, 1, [rnorm], ndigit,
++            call dvout (logfil, 1, rnorm, ndigit,
+      &      '_saup2: B-norm of residual for NEV factorization')
+             call dvout (logfil, nev, h(1,2), ndigit,
+      &           '_saup2: main diagonal of compressed H matrix')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaupd.f
+index 81a0ce52c..2d0640109 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsaupd.f
+@@ -628,9 +628,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_saupd: number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_saupd: number of "converged" Ritz values')
+          call dvout  (logfil, np, workl(Ritz), ndigit,
+      &               '_saupd: final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dseupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dseupd.f
+index ae123a207..e89fdccfb 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dseupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dseupd.f
+@@ -513,9 +513,9 @@ c        | caused by incorrect passing of the _saupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_seupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_seupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsgets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsgets.f
+index 436a4fe84..800a02f4b 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsgets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/dsgets.f
+@@ -202,8 +202,8 @@ c
+       tsgets = tsgets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_sgets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_sgets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_sgets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_sgets: NP is')
+          call dvout (logfil, kev+np, ritz, ndigit,
+      &        '_sgets: Eigenvalues of current H matrix')
+          call dvout (logfil, kev+np, bounds, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sgetv0.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sgetv0.f
+index d861b2d6d..c768daaef 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sgetv0.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sgetv0.f
+@@ -366,9 +366,9 @@ c     | Check for further orthogonalization. |
+ c     %--------------------------------------%
+ c
+       if (msglvl .gt. 2) then
+-          call svout (logfil, 1, [rnorm0], ndigit,
++          call svout (logfil, 1, rnorm0, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm0 is')
+-          call svout (logfil, 1, [rnorm], ndigit,
++          call svout (logfil, 1, rnorm, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm is')
+       end if
+ c
+@@ -399,7 +399,7 @@ c
+    50 continue
+ c
+       if (msglvl .gt. 0) then
+-         call svout (logfil, 1, [rnorm], ndigit,
++         call svout (logfil, 1, rnorm, ndigit,
+      &        '_getv0: B-norm of initial / restarted starting vector')
+       end if
+       if (msglvl .gt. 3) then
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaitr.f
+index 8a5d795be..5ecdebb7a 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaitr.f
+@@ -371,9 +371,9 @@ c     %--------------------------------------------------------------%
+  1000 continue
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_naitr: generating Arnoldi vector number')
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &                  '_naitr: B-norm of the current residual is')
+          end if
+ c
+@@ -393,7 +393,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_naitr: ****** RESTART AT STEP ******')
+             end if
+ c
+@@ -721,7 +721,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_naitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 xtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snapps.f
+index 33b036108..ef08af22b 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snapps.f
+@@ -266,11 +266,11 @@ c
+          sigmai = shifti(jj)
+ c
+          if (msglvl .gt. 2 ) then
+-            call ivout (logfil, 1, [jj], ndigit,
++            call ivout (logfil, 1, jj, ndigit,
+      &               '_napps: shift number.')
+-            call svout (logfil, 1, [sigmar], ndigit,
++            call svout (logfil, 1, sigmar, ndigit,
+      &               '_napps: The real part of the shift ')
+-            call svout (logfil, 1, [sigmai], ndigit,
++            call svout (logfil, 1, sigmai, ndigit,
+      &               '_napps: The imaginary part of the shift ')
+          end if
+ c
+@@ -335,9 +335,9 @@ c
+      &         tst1 = slanhs( '1', kplusp-jj+1, h, ldh, workl )
+             if( abs( h( i+1,i ) ).le.max( ulp*tst1, smlnum ) ) then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_napps: matrix splitting at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_napps: matrix splitting with shift number.')
+                   call svout (logfil, 1, h(i+1,i), ndigit,
+      &                 '_napps: off diagonal element.')
+@@ -351,9 +351,9 @@ c
+    40    continue
+ c
+          if (msglvl .gt. 2) then
+-             call ivout (logfil, 1, [istart], ndigit,
++             call ivout (logfil, 1, istart, ndigit,
+      &                   '_napps: Start of current block ')
+-             call ivout (logfil, 1, [iend], ndigit,
++             call ivout (logfil, 1, iend, ndigit,
+      &                   '_napps: End of current block ')
+          end if
+ c
+@@ -625,7 +625,7 @@ c
+      &        '_napps: sigmak = (e_{kev+p}^T*Q)*e_{kev}')
+          call svout (logfil, 1, h(kev+1,kev), ndigit,
+      &        '_napps: betak = e_{kev+1}^T*H*e_{kev}')
+-         call ivout (logfil, 1, [kev], ndigit,
++         call ivout (logfil, 1, kev, ndigit,
+      &               '_napps: Order of the final Hessenberg matrix ')
+          if (msglvl .gt. 2) then
+             call smout (logfil, kev, kev, h, ldh, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaup2.f
+index e3be754ea..2d0f4d9a5 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaup2.f
+@@ -388,7 +388,7 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_naup2: **** Start of major iteration number ****')
+          end if
+ c
+@@ -401,9 +401,9 @@ c
+          np  = kplusp - nev
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_naup2: The length of the current Arnoldi factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_naup2: Extend the Arnoldi factorization by')
+          end if
+ c
+@@ -435,7 +435,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &           '_naup2: Corresponding B-norm of the residual')
+          end if
+ c
+@@ -690,7 +690,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_naup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -742,7 +742,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_naup2: The number of shifts to apply ')
+             call svout (logfil, np, ritzr, ndigit,
+      &                  '_naup2: Real part of the shifts')
+@@ -808,7 +808,7 @@ c
+          cnorm = .false.
+ c
+          if (msglvl .gt. 2) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &      '_naup2: B-norm of residual for compressed factorization')
+             call smout (logfil, nev, nev, h, ldh, ndigit,
+      &        '_naup2: Compressed upper Hessenberg matrix H')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaupd.f
+index d6fad3386..ea6b12306 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/snaupd.f
+@@ -628,9 +628,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_naupd: Number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_naupd: Number of wanted "converged" Ritz values')
+          call svout (logfil, np, workl(ritzr), ndigit,
+      &               '_naupd: Real part of the final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sneupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sneupd.f
+index 1c2c7ce16..ed3799518 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sneupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sneupd.f
+@@ -601,9 +601,9 @@ c        | caused by incorrect passing of the dnaupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_neupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_neupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sngets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sngets.f
+index 7e48c0bb1..800282f85 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sngets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sngets.f
+@@ -212,8 +212,8 @@ c
+       tngets = tngets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_ngets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_ngets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_ngets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_ngets: NP is')
+          call svout (logfil, kev+np, ritzr, ndigit,
+      &        '_ngets: Eigenvalues of current H matrix -- real part')
+          call svout (logfil, kev+np, ritzi, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaitr.f
+index a5df2c2ec..721bdb58b 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaitr.f
+@@ -364,9 +364,9 @@ c
+  1000 continue
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_saitr: generating Arnoldi vector no.')
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &                  '_saitr: B-norm of the current residual =')
+          end if
+ c
+@@ -384,7 +384,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_saitr: ****** restart at step ******')
+             end if
+ c
+@@ -735,7 +735,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_saitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 xtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssapps.f
+index 77bd9d52c..c8143111d 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssapps.f
+@@ -261,9 +261,9 @@ c
+             big   = abs(h(i,2)) + abs(h(i+1,2))
+             if (h(i+1,1) .le. epsmch*big) then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_sapps: deflation at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_sapps: occurred before shift number.')
+                   call svout (logfil, 1, h(i+1,1), ndigit,
+      &                 '_sapps: the corresponding off diagonal element')
+@@ -432,7 +432,7 @@ c
+          big   = abs(h(i,2)) + abs(h(i+1,2))
+          if (h(i+1,1) .le. epsmch*big) then
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [i], ndigit,
++               call ivout (logfil, 1, i, ndigit,
+      &              '_sapps: deflation at row/column no.')
+                call svout (logfil, 1, h(i+1,1), ndigit,
+      &              '_sapps: the corresponding off diagonal element')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaup2.f
+index 504f28fb0..d259a2468 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaup2.f
+@@ -402,13 +402,13 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_saup2: **** Start of major iteration number ****')
+          end if
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_saup2: The length of the current Lanczos factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_saup2: Extend the Lanczos factorization by')
+          end if
+ c
+@@ -446,7 +446,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &           '_saup2: Current B-norm of residual for factorization')
+          end if
+ c
+@@ -694,7 +694,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_saup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -742,7 +742,7 @@ c
+          if (ishift .eq. 0) call scopy (np, workl, 1, ritz, 1)
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_saup2: The number of shifts to apply ')
+             call svout (logfil, np, workl, ndigit,
+      &                  '_saup2: shifts selected')
+@@ -809,7 +809,7 @@ c
+   130    continue
+ c
+          if (msglvl .gt. 2) then
+-            call svout (logfil, 1, [rnorm], ndigit,
++            call svout (logfil, 1, rnorm, ndigit,
+      &      '_saup2: B-norm of residual for NEV factorization')
+             call svout (logfil, nev, h(1,2), ndigit,
+      &           '_saup2: main diagonal of compressed H matrix')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaupd.f
+index 975681527..0ff113910 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssaupd.f
+@@ -628,9 +628,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_saupd: number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_saupd: number of "converged" Ritz values')
+          call svout (logfil, np, workl(Ritz), ndigit,
+      &               '_saupd: final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sseupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sseupd.f
+index 03ba7ac50..9b94ed7c7 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sseupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/sseupd.f
+@@ -513,9 +513,9 @@ c        | caused by incorrect passing of the _saupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_seupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_seupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssgets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssgets.f
+index f40ca76a8..ce84d673c 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssgets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/ssgets.f
+@@ -202,8 +202,8 @@ c
+       tsgets = tsgets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_sgets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_sgets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_sgets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_sgets: NP is')
+          call svout (logfil, kev+np, ritz, ndigit,
+      &        '_sgets: Eigenvalues of current H matrix')
+          call svout (logfil, kev+np, bounds, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zgetv0.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zgetv0.f
+index 1fbd50851..6b13b485e 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zgetv0.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zgetv0.f
+@@ -361,9 +361,9 @@ c     | Check for further orthogonalization. |
+ c     %--------------------------------------%
+ c
+       if (msglvl .gt. 2) then
+-          call dvout (logfil, 1, [rnorm0], ndigit,
++          call dvout (logfil, 1, rnorm0, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm0 is')
+-          call dvout (logfil, 1, [rnorm], ndigit,
++          call dvout (logfil, 1, rnorm, ndigit,
+      &                '_getv0: re-orthonalization ; rnorm is')
+       end if
+ c
+@@ -394,7 +394,7 @@ c
+    50 continue
+ c
+       if (msglvl .gt. 0) then
+-         call dvout (logfil, 1, [rnorm], ndigit,
++         call dvout (logfil, 1, rnorm, ndigit,
+      &        '_getv0: B-norm of initial / restarted starting vector')
+       end if
+       if (msglvl .gt. 2) then
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaitr.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaitr.f
+index 240412ca0..37341754f 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaitr.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaitr.f
+@@ -378,9 +378,9 @@ c     %--------------------------------------------------------------%
+  1000 continue
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &                  '_naitr: generating Arnoldi vector number')
+-            call dvout (logfil, 1, [rnorm], ndigit,
++            call dvout (logfil, 1, rnorm, ndigit,
+      &                  '_naitr: B-norm of the current residual is')
+          end if
+ c
+@@ -400,7 +400,7 @@ c           | basis and continue the iteration.                 |
+ c           %---------------------------------------------------%
+ c
+             if (msglvl .gt. 0) then
+-               call ivout (logfil, 1, [j], ndigit,
++               call ivout (logfil, 1, j, ndigit,
+      &                     '_naitr: ****** RESTART AT STEP ******')
+             end if
+ c
+@@ -729,7 +729,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0 .and. iter .gt. 0 ) then
+-            call ivout (logfil, 1, [j], ndigit,
++            call ivout (logfil, 1, j, ndigit,
+      &           '_naitr: Iterative refinement for Arnoldi residual')
+             if (msglvl .gt. 2) then
+                 rtemp(1) = rnorm
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znapps.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znapps.f
+index 792fe6168..e59b5ae6b 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znapps.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znapps.f
+@@ -268,9 +268,9 @@ c
+          sigma = shift(jj)
+ c
+          if (msglvl .gt. 2 ) then
+-            call ivout (logfil, 1, [jj], ndigit,
++            call ivout (logfil, 1, jj, ndigit,
+      &               '_napps: shift number.')
+-            call zvout (logfil, 1, [sigma], ndigit,
++            call zvout (logfil, 1, sigma, ndigit,
+      &               '_napps: Value of the shift ')
+          end if
+ c
+@@ -291,9 +291,9 @@ c
+             if ( abs(dble(h(i+1,i)))
+      &           .le. max(ulp*tst1, smlnum) )  then
+                if (msglvl .gt. 0) then
+-                  call ivout (logfil, 1, [i], ndigit,
++                  call ivout (logfil, 1, i, ndigit,
+      &                 '_napps: matrix splitting at row/column no.')
+-                  call ivout (logfil, 1, [jj], ndigit,
++                  call ivout (logfil, 1, jj, ndigit,
+      &                 '_napps: matrix splitting with shift number.')
+                   call zvout (logfil, 1, h(i+1,i), ndigit,
+      &                 '_napps: off diagonal element.')
+@@ -307,9 +307,9 @@ c
+    40    continue
+ c
+          if (msglvl .gt. 2) then
+-             call ivout (logfil, 1, [istart], ndigit,
++             call ivout (logfil, 1, istart, ndigit,
+      &                   '_napps: Start of current block ')
+-             call ivout (logfil, 1, [iend], ndigit,
++             call ivout (logfil, 1, iend, ndigit,
+      &                   '_napps: End of current block ')
+          end if
+ c
+@@ -485,7 +485,7 @@ c
+      &        '_napps: sigmak = (e_{kev+p}^T*Q)*e_{kev}')
+          call zvout (logfil, 1, h(kev+1,kev), ndigit,
+      &        '_napps: betak = e_{kev+1}^T*H*e_{kev}')
+-         call ivout (logfil, 1, [kev], ndigit,
++         call ivout (logfil, 1, kev, ndigit,
+      &               '_napps: Order of the final Hessenberg matrix ')
+          if (msglvl .gt. 2) then
+             call zmout (logfil, kev, kev, h, ldh, ndigit,
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaup2.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaup2.f
+index 0ab01dd0e..c914347a2 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaup2.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaup2.f
+@@ -389,7 +389,7 @@ c
+          iter = iter + 1
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [iter], ndigit,
++            call ivout (logfil, 1, iter, ndigit,
+      &           '_naup2: **** Start of major iteration number ****')
+          end if
+ c
+@@ -402,9 +402,9 @@ c
+          np  = kplusp - nev
+ c
+          if (msglvl .gt. 1) then
+-            call ivout (logfil, 1, [nev], ndigit,
++            call ivout (logfil, 1, nev, ndigit,
+      &     '_naup2: The length of the current Arnoldi factorization')
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &           '_naup2: Extend the Arnoldi factorization by')
+          end if
+ c
+@@ -430,7 +430,7 @@ c
+          update = .false.
+ c
+          if (msglvl .gt. 1) then
+-            call dvout  (logfil, 1, [rnorm], ndigit,
++            call dvout  (logfil, 1, rnorm, ndigit,
+      &           '_naup2: Corresponding B-norm of the residual')
+          end if
+ c
+@@ -658,7 +658,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 0) then
+-            call ivout (logfil, 1, [nconv], ndigit,
++            call ivout (logfil, 1, nconv, ndigit,
+      &           '_naup2: no. of "converged" Ritz values at this iter.')
+             if (msglvl .gt. 1) then
+                kp(1) = nev
+@@ -698,7 +698,7 @@ c
+          end if
+ c
+          if (msglvl .gt. 2) then
+-            call ivout (logfil, 1, [np], ndigit,
++            call ivout (logfil, 1, np, ndigit,
+      &                  '_naup2: The number of shifts to apply ')
+             call zvout  (logfil, np, ritz, ndigit,
+      &                  '_naup2: values of the shifts')
+@@ -762,7 +762,7 @@ c
+          cnorm = .false.
+ c
+          if (msglvl .gt. 2) then
+-            call dvout  (logfil, 1, [rnorm], ndigit,
++            call dvout  (logfil, 1, rnorm, ndigit,
+      &      '_naup2: B-norm of residual for compressed factorization')
+             call zmout  (logfil, nev, nev, h, ldh, ndigit,
+      &        '_naup2: Compressed upper Hessenberg matrix H')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaupd.f
+index c7d58aaab..779eb2bc4 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/znaupd.f
+@@ -601,9 +601,9 @@ c
+       if (info .eq. 2) info = 3
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [mxiter], ndigit,
++         call ivout (logfil, 1, mxiter, ndigit,
+      &               '_naupd: Number of update iterations taken')
+-         call ivout (logfil, 1, [np], ndigit,
++         call ivout (logfil, 1, np, ndigit,
+      &               '_naupd: Number of wanted "converged" Ritz values')
+          call zvout  (logfil, np, workl(ritz), ndigit,
+      &               '_naupd: The final Ritz values')
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zneupd.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zneupd.f
+index 92e7dc998..426051a9e 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zneupd.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zneupd.f
+@@ -536,9 +536,9 @@ c        | caused by incorrect passing of the dnaupd data.           |
+ c        %-----------------------------------------------------------%
+ c
+          if (msglvl .gt. 2) then
+-             call ivout(logfil, 1, [numcnv], ndigit,
++             call ivout(logfil, 1, numcnv, ndigit,
+      &            '_neupd: Number of specified eigenvalues')
+-             call ivout(logfil, 1, [nconv], ndigit,
++             call ivout(logfil, 1, nconv, ndigit,
+      &            '_neupd: Number of "converged" eigenvalues')
+          end if
+ c
+diff --git a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zngets.f b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zngets.f
+index e7d243349..27f258039 100644
+--- a/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zngets.f
++++ b/scipy/sparse/linalg/_eigen/arpack/ARPACK/SRC/zngets.f
+@@ -161,8 +161,8 @@ c
+       tcgets = tcgets + (t1 - t0)
+ c
+       if (msglvl .gt. 0) then
+-         call ivout (logfil, 1, [kev], ndigit, '_ngets: KEV is')
+-         call ivout (logfil, 1, [np], ndigit, '_ngets: NP is')
++         call ivout (logfil, 1, kev, ndigit, '_ngets: KEV is')
++         call ivout (logfil, 1, np, ndigit, '_ngets: NP is')
+          call zvout (logfil, kev+np, ritz, ndigit,
+      &        '_ngets: Eigenvalues of current H matrix ')
+          call zvout (logfil, kev+np, bounds, ndigit,
+-- 
+2.47.1
+
