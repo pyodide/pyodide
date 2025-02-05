@@ -1,7 +1,7 @@
 From a78ddf84eaa8770734277f444e85329ce9748f58 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 31 Jan 2025 11:42:59 +0100
-Subject: [PATCH 5/6] sdl2_image wasm-sjlj variant
+Subject: [PATCH 5/7] sdl2_image wasm-sjlj variant
 
 Upstream PR:
 https://github.com/emscripten-core/emscripten/pull/23554

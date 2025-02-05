@@ -1,7 +1,7 @@
-From ef544d6ac7158e6678d4cb43bf1778e89975e370 Mon Sep 17 00:00:00 2001
+From 668dfb0ad8dc23a7e95e0edac0a648587ab0bab4 Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Wed, 5 Feb 2025 11:55:11 -0800
-Subject: [PATCH 6/6] Skip the search for dynamic libraries when static library
+Subject: [PATCH 7/7] Skip the search for dynamic libraries when static library
  exists (#23593)
 
 This is a fix for a regression caused by #23336.
