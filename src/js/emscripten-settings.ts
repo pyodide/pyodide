@@ -190,29 +190,26 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  return function (
+  return async function (
     imports: { [key: string]: any },
     successCallback: (
       instance: WebAssembly.Instance,
       module: WebAssembly.Module,
     ) => void,
   ) {
-    (async function () {
-      try {
-        let res: WebAssembly.WebAssemblyInstantiatedSource;
-        if (response) {
-          res = await WebAssembly.instantiateStreaming(response, imports);
-        } else {
-          res = await WebAssembly.instantiate(await binary, imports);
-        }
-        const { instance, module } = res;
-        successCallback(instance, module);
-      } catch (e) {
-        console.warn("wasm instantiation failed!");
-        console.warn(e);
+    try {
+      let res: WebAssembly.WebAssemblyInstantiatedSource;
+      if (response) {
+        res = await WebAssembly.instantiateStreaming(response, imports);
+      } else {
+        res = await WebAssembly.instantiate(await binary, imports);
       }
-    })();
-
-    return {}; // Compiling asynchronously, no exports.
+      const { instance, module } = res;
+      successCallback(instance, module);
+      return instance.exports;
+    } catch (e) {
+      console.warn("wasm instantiation failed!");
+      console.warn(e);
+    }
   };
 }
