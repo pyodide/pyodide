@@ -4,5 +4,3 @@
 # Add any upper bounds for packages here to ensure that
 # their builds succeed, or those for packages that rely
 # on them at build time.
-
-maturin<1.8

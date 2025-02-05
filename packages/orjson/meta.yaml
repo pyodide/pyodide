@@ -9,6 +9,8 @@ source:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 build:
   script: export RUSTFLAGS="-Z link-native-libraries=yes"
 about:
