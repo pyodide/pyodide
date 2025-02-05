@@ -1,0 +1,70 @@
+From ef544d6ac7158e6678d4cb43bf1778e89975e370 Mon Sep 17 00:00:00 2001
+From: Sam Clegg <sbc@chromium.org>
+Date: Wed, 5 Feb 2025 11:55:11 -0800
+Subject: [PATCH 6/6] Skip the search for dynamic libraries when static library
+ exists (#23593)
+
+This is a fix for a regression caused by #23336.
+
+Prior to #23336 all `-l` flags were expanded by emcc to full filenames,
+with `.a` files being searched for first. After #23336 we only expand
+the the paths of fake shared libraries which wasm-ld itself don't look
+for.
+
+Fixes: #23591
+---
+ test/test_other.py | 16 +++++++++++++++-
+ tools/link.py      |  3 ++-
+ 2 files changed, 17 insertions(+), 2 deletions(-)
+
+diff --git a/test/test_other.py b/test/test_other.py
+index 754b0f35a..014edc9a8 100644
+--- a/test/test_other.py
++++ b/test/test_other.py
+@@ -6681,7 +6681,7 @@ This locale is not the C locale.
+       if be_clean:
+         assert len(clutter) == 0, 'should not leave clutter ' + str(clutter)
+       else:
+-         assert len(clutter) == 2, 'should leave .o files'
++        assert len(clutter) == 2, 'should leave .o files'
+     test(['-o', 'c.so', '-r'], True)
+     test(['-o', 'c.js'], True)
+     test(['-o', 'c.html'], True)
+@@ -9189,6 +9189,20 @@ int main() {
+     self.run_process([EMCC, test_file('hello_world.c'), '-sSIDE_MODULE', '-o', 'subdir/libside2.so', '-L', 'subdir', '-lside1'])
+     self.run_process([EMCC, test_file('hello_world.c'), '-sMAIN_MODULE', '-o', 'main.js', '-L', 'subdir', '-lside2'])
+ 
++  @crossplatform
++  def test_side_module_ignore(self):
++    self.run_process([EMCC, test_file('hello_world.c'), '-sSIDE_MODULE', '-o', 'libside.so'])
++
++    # Attempting to link statically against a side module (libside.so) should fail.
++    err = self.expect_fail([EMCC, '-L.', '-lside'])
++    self.assertContained('error: attempted static link of dynamic object ./libside.so', err)
++
++    # But a static library in the same location (libside.a) should take precedence.
++    self.run_process([EMCC, test_file('hello_world.c'), '-c'])
++    self.run_process([EMAR, 'cr', 'libside.a', 'hello_world.o'])
++    self.run_process([EMCC, '-L.', '-lside'])
++    self.assertContained('hello, world!', self.run_js('a.out.js'))
++
+   @is_slow_test
+   @parameterized({
+     '': ([],),
+diff --git a/tools/link.py b/tools/link.py
+index e5508f8c8..cdf0cdbae 100644
+--- a/tools/link.py
++++ b/tools/link.py
+@@ -2830,7 +2830,8 @@ def process_libraries(state):
+       settings.JS_LIBRARIES.append(os.path.abspath(path))
+       continue
+ 
+-    if not settings.RELOCATABLE:
++    static_lib = f'lib{lib}.a'
++    if not settings.RELOCATABLE and not find_library(static_lib, state.lib_dirs):
+       # Normally we can rely on the native linker to expand `-l` args.
+       # However, emscripten also supports `.so` files that are actually just
+       # regular object file.  This means we need to support `.so` files even
+-- 
+2.34.1
+
