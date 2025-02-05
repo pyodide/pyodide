@@ -96,7 +96,14 @@ def get_tests() -> list[tuple[str, dict[str, Any]]]:
     with open(Path(__file__).parent / "python_tests.yaml") as file:
         data = yaml.load(file, Loader)
 
-    return [get_test_info(test) for test in data]
+    test_info = [get_test_info(test) for test in data]
+    only_tests = []
+    for [name, info] in test_info:
+        if info.get("only"):
+            only_tests.append((name, info))
+    if only_tests:
+        return only_tests
+    return test_info
 
 
 def pytest_generate_tests(metafunc):
