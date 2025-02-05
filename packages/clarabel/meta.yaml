@@ -21,6 +21,8 @@ requirements:
     - scipy
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 extra:
   recipe-maintainers:
     - phschiele

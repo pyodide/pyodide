@@ -9,6 +9,8 @@ source:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 about:
   home: ""
   PyPI: https://pypi.org/project/nh3
