@@ -685,21 +685,12 @@ export class PyodideAPI {
   }
 
   /**
-   * Returns the `info` section of the pyodide lockfile used to load the current Pyodide instance.
+   * Returns the pyodide lockfile used to load the current Pyodide instance.
    * The format of the lockfile is defined in the `pyodide/pyodide-lock
-   * <https://github.com/pyodide/pyodide-lock`_ repository.
+   * <https://github.com/pyodide/pyodide-lock>`_ repository.
    */
-  static getLockfileInfo() {
-    return API.lockfile_info;
-  }
-
-  /**
-   * Returns the `packages` section of the pyodide lockfile used to load the current Pyodide instance.
-   * The format of the lockfile is defined in the `pyodide/pyodide-lock
-   * <https://github.com/pyodide/pyodide-lock`_ repository.
-   */
-  static getLockfilePackages() {
-    return API.lockfile_packages;
+  static get lockfile() {
+    return API.lockfile;
   }
 }
 

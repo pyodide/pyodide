@@ -1961,10 +1961,10 @@ async def test_bug_4861(selenium):
 
 @run_in_pyodide
 def test_lockfile_api(selenium):
-    from pyodide_js import getLockfileInfo, getLockfilePackages
+    from pyodide_js import lockfile
 
-    lockfile_info = getLockfileInfo()
-    lockfile_packages = getLockfilePackages()
+    lockfile_info = lockfile.info
+    lockfile_packages = lockfile.packages
 
     assert lockfile_info is not None
     assert lockfile_info.abi_version is not None
