@@ -1,7 +1,7 @@
 {
   "name": "test",
   "devDependencies": {
-    "mocha": "^9.0.2",
+    "mocha": "^11.1.0",
     "ts-node": "^10.4.0"
   },
   "scripts": {
