@@ -12,6 +12,8 @@ build:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 about:
   home: https://github.com/chrysn/cbor-diag-py
   PyPI: https://pypi.org/project/cbor-diag/
