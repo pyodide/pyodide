@@ -1,9 +1,9 @@
 package:
   name: pyxel
-  version: 2.3.6
+  version: 1.9.10
 source:
-  url: https://github.com/kitao/pyxel/archive/refs/tags/v2.3.6.tar.gz
-  sha256: 1f0a3df02a6c7beb4567711f2d59f2d4a409f3f3de933ae18be17bae61cda84f
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
+  sha256: fee625e7a0d10570174fe3f228b9d56ffee625e6f388009af65533b3f2c3efd7
 build:
   script: |
     embuilder build sdl2 --pic
@@ -16,6 +16,8 @@ build:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 test:
   imports:
     - pyxel
