@@ -25,7 +25,7 @@ XFAIL_PACKAGES: dict[str, str] = {
     "matplotlib-inline": "circular dependency with IPython",
 }
 
-lockfile_path = ROOT_PATH / "dist" / "pyodide-lock.json"
+LOCKFILE_PATH = ROOT_PATH / "dist" / "pyodide-lock.json"
 
 
 class ImportTestCase(TypedDict):
@@ -35,9 +35,9 @@ class ImportTestCase(TypedDict):
 
 def load_lockfile() -> PyodideLockSpec:
     try:
-        return PyodideLockSpec.from_json(lockfile_path)
+        return PyodideLockSpec.from_json(LOCKFILE_PATH)
     except Exception as e:
-        raise Exception(f"Failed to load lockfile from {lockfile_path}") from e
+        raise FileNotFoundError(f"Failed to load lockfile from {LOCKFILE_PATH}") from e
 
 
 def normalize_import_name(name: str) -> str:
@@ -61,7 +61,10 @@ def generate_test_list(lockfile: PyodideLockSpec) -> list[ImportTestCase]:
 
 @functools.cache
 def build_testcases():
-    lockfile = load_lockfile()
+    try:
+        lockfile = load_lockfile()
+    except FileNotFoundError:
+        return [{"name": "no-lockfile-found"}]
     return generate_test_list(lockfile)
 
 
@@ -75,6 +78,8 @@ def idfn(testcase: ImportTestCase) -> str:
 @pytest.mark.parametrize("testcase", build_testcases(), ids=idfn)
 def test_import(selenium_standalone: Any, testcase: ImportTestCase) -> None:
     name = testcase["name"]
+    if name == "no-lockfile-found":
+        pytest.skip(f"Failed to load lockfile from {LOCKFILE_PATH}")
     imports = testcase["imports"]
 
     if name in XFAIL_PACKAGES:
