@@ -109,11 +109,18 @@ def get_tests() -> list[tuple[str, dict[str, Any]]]:
 def pytest_generate_tests(metafunc):
     if "main_test" in metafunc.fixturenames:
         tests = get_tests()
+        params = []
+        for t in tests:
+            if timeout := t[1].get("driver_timeout"):
+                marks = [
+                    pytest.mark.requires_dynamic_linking,
+                    pytest.mark.driver_timeout(timeout),
+                ]
+            else:
+                marks = [pytest.mark.requires_dynamic_linking]
+            params.append(pytest.param(t, marks=marks))
         metafunc.parametrize(
             "main_test",
-            [
-                pytest.param(t, marks=pytest.mark.requires_dynamic_linking)
-                for t in tests
-            ],
+            params,
             ids=[t[0] for t in tests],
         )
