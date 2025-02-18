@@ -683,6 +683,15 @@ export class PyodideAPI {
     }
     return API.makeSnapshot(serializer);
   }
+
+  /**
+   * Returns the pyodide lockfile used to load the current Pyodide instance.
+   * The format of the lockfile is defined in the `pyodide/pyodide-lock
+   * <https://github.com/pyodide/pyodide-lock>`_ repository.
+   */
+  static get lockfile() {
+    return API.lockfile;
+  }
 }
 
 /** @hidden */
