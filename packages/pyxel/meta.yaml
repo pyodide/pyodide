@@ -3,7 +3,7 @@ package:
   version: 1.9.10
 source:
   url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
-  sha256: e23a0c52daaa9c4967c402b3ad2c623f33c4a01e36c4b37b884d7b8c726521f4
+  sha256: a784221be6f32fd57bdc6a1a8f30e8f68c78f83d8c84790beaf6ec2be062982f
 build:
   script: |
     embuilder build sdl2 --pic
