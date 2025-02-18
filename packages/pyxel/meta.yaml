@@ -1,11 +1,12 @@
 package:
   name: pyxel
-  version: 1.9.10
+  version: 2.3.6
 source:
-  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
-  sha256: a784221be6f32fd57bdc6a1a8f30e8f68c78f83d8c84790beaf6ec2be062982f
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v2.3.6.tar.gz
+  sha256: 1f0a3df02a6c7beb4567711f2d59f2d4a409f3f3de933ae18be17bae61cda84f
 build:
   script: |
+    cd python
     embuilder build sdl2 --pic
     export RUSTFLAGS="\
       $RUSTFLAGS \
