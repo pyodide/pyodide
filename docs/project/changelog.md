@@ -18,6 +18,8 @@ myst:
 
 _February 26, 2025_
 
+- Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+
 ### Packages
 
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
