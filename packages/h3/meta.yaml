@@ -3,9 +3,6 @@ package:
   version: 4.2.1
   top-level:
     - h3
-  tag:
-    - library
-    - shared_library
 source:
   url: https://files.pythonhosted.org/packages/f5/d0/b59eb261d3a597624788eeb0a0d17c1bba75eeb6a6d544d244f721206b5a/h3-4.2.1.tar.gz
   sha256: e64afe4166a6e31b06df71f0da6039683b04d88c2fec8c73d7bf4d5f36d7cb23
