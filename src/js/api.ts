@@ -559,24 +559,26 @@ export class PyodideAPI {
     // sync native ==> browser
     await new Promise<void>((resolve, reject) => {
       Module.FS.syncfs(true, (err: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
       });
     });
 
     return {
       // sync browser ==> native
       syncfs: async () =>
-        new Promise((resolve, reject) => Module.FS.syncfs(false, (err: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        })),
+        new Promise((resolve, reject) =>
+          Module.FS.syncfs(false, (err: any) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          }),
+        ),
     };
   }
 
