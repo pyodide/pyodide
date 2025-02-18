@@ -15,10 +15,3 @@ extra:
   recipe-maintainers:
     - isaacbrodsky
     - ajfriend
-requirements:
-  host:
-    # Dependencies that are needed to build the package
-    - cffi
-  run:
-    # Dependencies that are needed to run the package
-    - cffi
