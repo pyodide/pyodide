@@ -43,10 +43,12 @@ def test_cpython_core(main_test, selenium, request):
     possibly_skip_test(request, info)
 
     ignore_tests = info.get("skip", [])
+    timeout = info.get("timeout", 30)
     if not isinstance(ignore_tests, list):
         raise Exception("Invalid python_tests.yaml entry: 'skip' should be a list")
 
     selenium.load_package(["test"])
+    selenium.set_script_timeout(timeout)
     try:
         res = selenium.run(
             dedent(
