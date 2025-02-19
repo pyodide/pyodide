@@ -180,6 +180,7 @@ dist/package.json : src/js/package.json
 
 .PHONY: npm-link
 npm-link: dist/package.json
+	source .venv/bin/activate
 	cd src/test-js && npm ci && npm link ../../dist
 
 dist/pyodide.d.ts dist/pyodide/ffi.d.ts: src/js/*.ts src/js/generated/pyproxy.ts node_modules/.installed
