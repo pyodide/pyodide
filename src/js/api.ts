@@ -19,6 +19,7 @@ import {
   syncUpSnapshotLoad2,
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
+import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -557,26 +558,11 @@ export class PyodideAPI {
     );
 
     // sync native ==> browser
-    await new Promise<void>((resolve, reject) => {
-      Module.FS.syncfs(true, (err: any) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
-      });
-    });
+    await syncRemoteToLocal(Module);
 
     return {
       // sync browser ==> native
-      syncfs: async () =>
-        new Promise((resolve, reject) => Module.FS.syncfs(false, (err: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        })),
+      syncfs: async () => await syncLocalToRemote(Module),
     };
   }
 
