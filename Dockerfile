@@ -1,8 +1,11 @@
-FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.7-slim-bookworm
+FROM node:20.18-bookworm-slim AS node-image
+FROM python:3.12.8-slim-bookworm
+# https://docs.astral.sh/uv/guides/integration/docker/#installing-uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Requirements for building packages
-RUN apt-get update \
+RUN uv venv \
+  && apt-get update \
   && apt-get install -y --no-install-recommends \
         bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
