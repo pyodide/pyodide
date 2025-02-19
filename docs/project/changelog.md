@@ -22,6 +22,7 @@ _February 26, 2025_
 
 ### Packages
 
+- Added `h3` 4.2.1 {pr}`5436`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 
 ## Version 0.27.2
