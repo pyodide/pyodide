@@ -23,6 +23,7 @@ myst:
 
 ### Packages
 
+- Upgraded `pyxel` to 2.3.6 {pr}`5435`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
