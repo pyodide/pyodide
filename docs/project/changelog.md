@@ -23,6 +23,7 @@ _February 26, 2025_
 ### Packages
 
 - Added `h3` 4.2.1 {pr}`5436`
+- Added `pcodec` 0.3.3 {pr}`5432`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 
 ## Version 0.27.2
