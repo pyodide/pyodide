@@ -26,6 +26,7 @@ myst:
 - Added `h3` 4.2.1 {pr}`5436`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Added `pcodec` 0.3.3 {pr}`5432`
 
 ## Version 0.27.2
 
