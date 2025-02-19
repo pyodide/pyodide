@@ -28,6 +28,11 @@ myst:
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `pcodec` 0.3.3 {pr}`5432`
 
+- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374`
+
 ## Version 0.27.2
 
 _January 23, 2025_
