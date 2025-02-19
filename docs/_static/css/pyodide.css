@@ -87,3 +87,7 @@ code.literal {
   color: #fff;
   background-color: #dc3545;
 }
+
+a {
+  text-decoration: none;
+}

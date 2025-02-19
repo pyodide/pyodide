@@ -101,7 +101,7 @@ def doclet_is_private(doclet: ir.TopLevel) -> bool:
         # this via a @private decorator in the documentation comment.
         return True
 
-    if filename in ["module.", "compat.", "types."]:
+    if filename in ["module.", "compat."]:
         return True
 
     if filename == "pyproxy." and toplevelname.endswith("Methods"):

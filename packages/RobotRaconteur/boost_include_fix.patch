@@ -1,0 +1,60 @@
+diff --git a/RobotRaconteurCore/include/RobotRaconteur/AsyncUtils.h b/RobotRaconteurCore/include/RobotRaconteur/AsyncUtils.h
+index e310cf9f..dabafb26 100644
+--- a/RobotRaconteurCore/include/RobotRaconteur/AsyncUtils.h
++++ b/RobotRaconteurCore/include/RobotRaconteur/AsyncUtils.h
+@@ -24,6 +24,7 @@
+ #include <boost/bind/placeholders.hpp>
+ #include <boost/scope_exit.hpp>
+ #include <boost/system/error_code.hpp>
++#include <boost/bind.hpp>
+
+ #include "RobotRaconteur/Error.h"
+ #include "RobotRaconteur/DataTypes.h"
+diff --git a/RobotRaconteurCore/include/RobotRaconteur/DataTypes.h b/RobotRaconteurCore/include/RobotRaconteur/DataTypes.h
+index e1cddb2e..6c05cbdb 100644
+--- a/RobotRaconteurCore/include/RobotRaconteur/DataTypes.h
++++ b/RobotRaconteurCore/include/RobotRaconteur/DataTypes.h
+@@ -62,6 +62,7 @@
+ #include <boost/variant.hpp>
+
+ #include <boost/date_time/posix_time/ptime.hpp>
++#include "boost/date_time/posix_time/posix_time_types.hpp"
+
+ #pragma once
+
+diff --git a/RobotRaconteurCore/include/RobotRaconteur/RobotRaconteurEmscripten.h b/RobotRaconteurCore/include/RobotRaconteur/RobotRaconteurEmscripten.h
+index 7b05a09c..07a18826 100644
+--- a/RobotRaconteurCore/include/RobotRaconteur/RobotRaconteurEmscripten.h
++++ b/RobotRaconteurCore/include/RobotRaconteur/RobotRaconteurEmscripten.h
+@@ -3,6 +3,7 @@
+ #include <boost/date_time/posix_time/ptime.hpp>
+ #include <boost/function.hpp>
+ #include <boost/system/error_code.hpp>
++#include <boost/shared_ptr.hpp>
+
+ namespace RobotRaconteur
+ {
+diff --git a/RobotRaconteurCore/src/Message.cpp b/RobotRaconteurCore/src/Message.cpp
+index 056907ea..f0d38dcc 100644
+--- a/RobotRaconteurCore/src/Message.cpp
++++ b/RobotRaconteurCore/src/Message.cpp
+@@ -26,6 +26,7 @@
+ #include <boost/foreach.hpp>
+ #include <boost/range.hpp>
+ #include <boost/range/algorithm.hpp>
++#include <boost/bind.hpp>
+
+ namespace RobotRaconteur
+ {
+diff --git a/RobotRaconteurCore/src/RobotRaconteurEmscripten.cpp b/RobotRaconteurCore/src/RobotRaconteurEmscripten.cpp
+index 72a0a2c1..53b2b813 100644
+--- a/RobotRaconteurCore/src/RobotRaconteurEmscripten.cpp
++++ b/RobotRaconteurCore/src/RobotRaconteurEmscripten.cpp
+@@ -6,6 +6,7 @@
+ #include <boost/date_time/posix_time/posix_time.hpp>
+
+ #include "RobotRaconteur/Timer.h"
++#include "RobotRaconteur/RobotRaconteurNode.h"
+
+ namespace boost
+ {

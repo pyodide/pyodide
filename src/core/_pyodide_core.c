@@ -46,14 +46,11 @@ static struct PyModuleDef core_module_def = {
 
 void
 pyodide_export(void);
-int
-py_version_major(void);
 void
 set_new_cframe(void* frame);
-// Force _pyodide_core.o, _pyodide_pre.gen.o, and pystate.o to be included by
+// Force _pyodide_pre.gen.o, and pystate.o to be included by
 // using a symbol from each of them.
 void* pyodide_export_ = pyodide_export;
-void* py_version_major_ = py_version_major;
 void* set_new_cframe_ = set_new_cframe;
 
 // clang-format off

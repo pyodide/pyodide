@@ -97,7 +97,6 @@ src/core/libpyodide.a: \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
@@ -138,11 +137,11 @@ dist/pyodide.asm.js: \
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	sed -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
 	sed -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 4 lines of pyodide.asm.js, see issue #2282
+	# Remove last 7 lines of pyodide.asm.js, see issue #2282
 	# Hopefully we will remove this after emscripten fixes it, upstream issue
 	# emscripten-core/emscripten#16518
 	# Sed nonsense from https://stackoverflow.com/a/13383331
-	sed -i -n -e :a -e '1,4!{P;N;D;};N;ba' dist/pyodide.asm.js
+	sed -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 	@date +"[%F %T] done building pyodide.asm.js."
 

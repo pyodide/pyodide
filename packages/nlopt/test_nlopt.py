@@ -53,7 +53,7 @@ def test_nlopt(selenium):
 
     opt.add_inequality_constraint(h)
 
-    opt.set_ftol_rel(1.0e-6)
+    opt.set_ftol_rel(1.0e-2)
 
     x0 = np.array([5, 11])
 

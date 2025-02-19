@@ -7,7 +7,7 @@ import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray, PackageData } from "./types";
+import { TypedArray, PackageData, type FS } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
@@ -18,6 +18,7 @@ import {
   syncUpSnapshotLoad1,
   syncUpSnapshotLoad2,
 } from "./snapshot";
+import { unpackArchiveMetadata } from "./constants";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -100,7 +101,7 @@ function ensureMountPathExists(path: string): void {
  * 1. It causes documentation items to be created for the entries so we can copy
  *    the definitions here rather than having to export things just so that they
  *    appear in the docs.
- * 2. We can use @warnOnce decorators (currently can only decorate class
+ * 2. We can use `@warnOnce` decorators (currently can only decorate class
  *    methods)
  * 3. It allows us to rebind names `PyBuffer` etc without causing
  *    `dts-bundle-generator` to generate broken type declarations.
@@ -149,7 +150,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as typeof Module.FS;
+  static FS = {} as FS;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -160,8 +161,9 @@ export class PyodideAPI {
   static PATH = {} as any;
 
   /**
-   * See :ref:`js-api-pyodide-canvas`.
-   * @hidetype
+   * APIs to set a canvas for rendering graphics.
+   * @summaryLink :ref:`canvas <js-api-pyodide-canvas>`
+   * @omitFromAutoModule
    */
   static canvas: CanvasInterface = canvas;
 
@@ -200,7 +202,6 @@ export class PyodideAPI {
    *    (optional)
    * @param options.checkIntegrity If true, check the integrity of the downloaded
    *    packages (default: true)
-   * @async
    */
   static async loadPackagesFromImports(
     code: string,
@@ -318,7 +319,6 @@ export class PyodideAPI {
    *        traceback for any exception that is thrown will show source lines
    *        (unless the given file name starts with ``<`` and ends with ``>``).
    * @returns The result of the Python code translated to JavaScript.
-   * @async
    */
   static async runPythonAsync(
     code: string,
@@ -521,7 +521,7 @@ export class PyodideAPI {
       buffer,
       format,
       extract_dir,
-      installer: "pyodide.unpackArchive",
+      metadata: unpackArchiveMetadata,
     });
   }
 
@@ -666,6 +666,11 @@ export class PyodideAPI {
     return orig;
   }
 
+  /**
+   *
+   * @param param0
+   * @returns
+   */
   static makeMemorySnapshot({
     serializer,
   }: {
@@ -677,6 +682,15 @@ export class PyodideAPI {
       );
     }
     return API.makeSnapshot(serializer);
+  }
+
+  /**
+   * Returns the pyodide lockfile used to load the current Pyodide instance.
+   * The format of the lockfile is defined in the `pyodide/pyodide-lock
+   * <https://github.com/pyodide/pyodide-lock>`_ repository.
+   */
+  static get lockfile() {
+    return API.lockfile;
   }
 }
 
@@ -732,6 +746,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
+/** @private */
 export function jsFinderHook(o: object) {
   if ("__all__" in o) {
     return;

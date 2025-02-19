@@ -1,18 +1,20 @@
 package:
   name: fastparquet
-  version: 2024.2.0
+  version: 2024.5.0
   top-level:
     - fastparquet
 requirements:
-  run:
-    - cramjam
+  host:
     - numpy
+  run:
+    - numpy
+    - cramjam
     - pandas
     - fsspec
     - packaging
 source:
-  url: https://files.pythonhosted.org/packages/b7/e1/94252db46f6c87ca696221bf12130f0f11df891925ed678aca4701755ad8/fastparquet-2024.2.0.tar.gz
-  sha256: 81a8f60c51793eb2436b4fdbbf115ff8578a4a457a179240bc08f9d9573d57a4
+  url: https://files.pythonhosted.org/packages/39/c5/07a2fabdd57708da09014386051469415600d52eb582f0217d0ba09647d8/fastparquet-2024.5.0.tar.gz
+  sha256: dffd1d0ac6e89e31c5b6dacf67a8d299d4afbbcf0bf8b797373904c819c48f51
 about:
   home: https://github.com/dask/fastparquet/
   PyPI: https://pypi.org/project/fastparquet

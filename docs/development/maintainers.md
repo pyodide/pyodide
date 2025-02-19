@@ -215,6 +215,28 @@ cd pyodide-build
 git checkout "<COMMIT HASH"
 ```
 
+## Updating the Emscripten version
+
+To update Emscripten requires the following three steps:
+
+1. Rebase the patches in `emsdk/patches` onto the new Emscripten version.
+2. Update the Emscripten version in `Makefile.envs`
+3. Update the `struct_info` json file in `src/js/` to match the version of the
+   file in Emscripten.
+
+All three of these steps are automated by `tools/update_emscripten.py`. To
+update, you can say: `./tools/update_emscripten.py new_version`. If there are
+rebase conflicts, you will have to manually finish the rebase. Once the rebase
+is completed, you can rerun `update_emscripten.py`. It will start over the
+rebase from scratch but reuse your conflict resolutions using the git rerere
+feature.
+
+Updating Emscripten is an ABI break so all platformed wheels that are downloaded
+from an external URL need to be disabled until they are rebuilt.
+
+After this is done, commit all the changes and open a PR. There are frequently
+complicated CI failures.
+
 ## Upgrading pyodide to a new version of CPython
 
 ### Prerequisites
@@ -294,10 +316,10 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    figure out how to fix it:
    https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
 
-8. In the virtual environment with the new Python version, run
+8. Run
 
    ```sh
-   python src/tests/make_test_list.py
+   python tools/make_test_list.py
    ```
 
    Then run the core tests `pytest src/tests/test_core_python.py` and either fix

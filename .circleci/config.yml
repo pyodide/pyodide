@@ -6,16 +6,19 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20241106-chrome130-firefox132
+    - image: pyodide/pyodide-env:20250116-chrome132-firefox134
   environment:
-    - EMSDK_NUM_CORES: 3
-      EMCC_CORES: 3
-      PYODIDE_JOBS: 3
-      # Make sure the ccache dir is consistent between core and package builds
-      # (it's not the case otherwise)
-      CCACHE_DIR: /root/.ccache/
-      # Disable the compression of wheels, so they are better compressed by the CDN
-      PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+    EMSDK_NUM_CORES: 3
+    EMCC_CORES: 3
+    PYODIDE_JOBS: 3
+    # Make sure the ccache dir is consistent between core and package builds
+    # (it's not the case otherwise)
+    CCACHE_DIR: /root/.ccache/
+    # Disable the compression of wheels, so they are better compressed by the CDN
+    PYODIDE_ZIP_COMPRESSION_LEVEL: 0
+    # For maintainers: set this to 0 if you are making an ABI break, and
+    # reset to 1 after updating the packages to the new ABI.
+    USE_PREBUILT_PACKAGES: 1
 
 jobs:
   build-core:
@@ -130,6 +133,10 @@ jobs:
       packages:
         description: The packages to be built.
         type: string
+      enable_prebuilt_packages:
+        default: "0"
+        description: Use prebuilt packages instead of actually building packages.
+        type: string
     <<: *defaults
     resource_class: large
     steps:
@@ -154,7 +161,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
+            ENABLE_PREBUILT_PACKAGES='<< parameters.enable_prebuilt_packages >>' PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
             ccache -s
           environment:
             PYODIDE_JOBS: 5
@@ -574,7 +581,6 @@ jobs:
               --access-key-env "AWS_ACCESS_KEY_ID_CACHE" --secret-key-env "AWS_SECRET_ACCESS_KEY_CACHE"
 
 workflows:
-  version: 2
   build-and-deploy:
     jobs:
       - build-core:
@@ -683,6 +689,23 @@ workflows:
                 paths:
                   - ./packages/.artifacts
                   - ./dist
+
+      - build-packages:
+          name: build-prebuilt-packages
+          enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
+          packages: "*"
+          requires:
+            - build-core
+          filters:
+            tags:
+              only: /.*/
+          # TODO: enable this when we remove other package build jobs
+          # post-steps:
+          #   - persist_to_workspace:
+          #       root: .
+          #       paths:
+          #         - ./packages/
+          #         - ./dist
 
       - test-main:
           name: test-core-chrome-nodylink

@@ -1,11 +1,13 @@
 package:
   name: netcdf4
-  version: 1.6.5
+  version: 1.7.2
+  # symbol type mismatch
+  _disabled: true
   top-level:
     - netCDF4
 source:
-  url: https://files.pythonhosted.org/packages/da/f2/b7307966bf174559c80c0bdaaccebe1538efa3aef8e996d18229b01e9760/netCDF4-1.6.5.tar.gz
-  sha256: 824881d0aacfde5bd982d6adedd8574259c85553781e7b83e0ce82b890bfa0ef
+  url: https://files.pythonhosted.org/packages/71/ed/4d27fcfa40ebfdad3d2088a3de7ee48dbff7f35163e815ec1870d2a7398c/netcdf4-1.7.2.tar.gz
+  sha256: a4c6375540b19989896136943abb6d44850ff6f1fa7d3f063253b1ad3f8b7fce
 requirements:
   host:
     - libhdf5

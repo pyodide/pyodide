@@ -2,6 +2,7 @@ import argparse
 import logging
 import shutil
 import subprocess
+import sys
 import textwrap
 from pathlib import Path
 
@@ -10,10 +11,10 @@ try:
         get_build_flag,
         get_unisolated_packages,
     )
-    from pyodide_build.recipe import load_all_recipes
+    from pyodide_build.recipe.loader import load_all_recipes
 except ImportError:
     print("Requires pyodide-build package to be installed")
-    exit(1)
+    sys.exit(1)
 
 
 def _copy_xbuild_files(
@@ -104,6 +105,7 @@ def create(
         ["pip", "freeze", "--path", get_build_flag("HOSTSITEPACKAGES")],
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     if res.returncode != 0:
         logging.error("Failed to run pip freeze:")
@@ -113,7 +115,7 @@ def create(
         if res.stderr:
             logging.error("  stderr:")
             logging.error(textwrap.indent(res.stderr, "    "))
-        exit(1)
+        sys.exit(1)
 
     (xbuildenv_path / "requirements.txt").write_text(res.stdout)
     (xbuildenv_root / "unisolated.txt").write_text("\n".join(get_unisolated_packages()))
