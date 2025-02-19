@@ -38,6 +38,10 @@ jobs:
           mkdir test-results
           make pyodide_build
           python3 -m pip install -r requirements.txt -r requirements-deploy.txt
+      - name: Check test collection
+        shell: bash -l {0}
+        run: |
+          PYODIDE_ROOT=. pytest --collect-only
       - name: Run tests
         shell: bash -l {0}
         run: |
@@ -46,7 +50,7 @@ jobs:
               --verbose \
               --runtime=host \
               --cov=pyodide \
-              src packages/_tests tools/
+              src tools/
       - uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: false

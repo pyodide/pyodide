@@ -3,7 +3,7 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { API, PreRunFunc } from "./types";
+import { API, PreRunFunc, type Module } from "./types";
 
 /**
  * @private
@@ -14,9 +14,9 @@ export interface EmscriptenSettings {
   readonly noAudioDecoding?: boolean;
   readonly noWasmDecoding?: boolean;
   readonly preRun: readonly PreRunFunc[];
-  readonly quit: (status: number, toThrow: Error) => void;
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
+  readonly onExit?: (code: number) => void;
   readonly arguments: readonly string[];
   readonly instantiateWasm?: (
     imports: { [key: string]: any },
@@ -28,9 +28,9 @@ export interface EmscriptenSettings {
   readonly API: API;
   readonly locateFile: (file: string) => string;
 
-  exited?: { readonly status: number; readonly toThrow: Error };
   noInitialRun?: boolean;
   INITIAL_MEMORY?: number;
+  exitCode?: number;
 }
 
 /**
@@ -44,14 +44,11 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     noAudioDecoding: true,
     noWasmDecoding: false,
     preRun: getFileSystemInitializationFuncs(config),
-    quit(status: number, toThrow: Error) {
-      // It's a little bit hacky that we set this on the settings object but
-      // it's not that easy to get access to the Module object from here.
-      settings.exited = { status, toThrow };
-      throw toThrow;
-    },
     print: config.stdout,
     printErr: config.stderr,
+    onExit(code) {
+      settings.exitCode = code;
+    },
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument
@@ -113,6 +110,13 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
   };
 }
 
+function computeVersionTuple(Module: Module): [number, number, number] {
+  const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+  const major = (versionInt >>> 24) & 0xff;
+  const minor = (versionInt >>> 16) & 0xff;
+  const micro = (versionInt >>> 8) & 0xff;
+  return [major, minor, micro];
+}
 /**
  * Install the Python standard library to the virtual file system.
  *
@@ -128,12 +132,9 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
  */
 function installStdlib(stdlibURL: string): PreRunFunc {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
-  return (Module) => {
-    /* @ts-ignore */
-    const pymajor = Module._py_version_major();
-    /* @ts-ignore */
-    const pyminor = Module._py_version_minor();
-
+  return (Module: Module) => {
+    Module.API.pyVersionTuple = computeVersionTuple(Module);
+    const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
     Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
 
@@ -177,14 +178,15 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
 function getInstantiateWasmFunc(
   indexURL: string,
 ): EmscriptenSettings["instantiateWasm"] {
-  if (SOURCEMAP) {
+  // @ts-ignore
+  if (SOURCEMAP || typeof WasmOffsetConverter !== "undefined") {
     // According to the docs:
     //
     // "Sanitizers or source map is currently not supported if overriding
     // WebAssembly instantiation with Module.instantiateWasm."
     // https://emscripten.org/docs/api_reference/module.html?highlight=instantiatewasm#Module.instantiateWasm
     //
-    // I haven't checked if this is actually a problem in practice.
+    // typeof WasmOffsetConverter !== "undefined" checks for asan.
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
@@ -204,13 +206,6 @@ function getInstantiateWasmFunc(
           res = await WebAssembly.instantiate(await binary, imports);
         }
         const { instance, module } = res;
-        // When overriding instantiateWasm, in asan builds, we also need
-        // to take care of creating the WasmOffsetConverter
-        // @ts-ignore
-        if (typeof WasmOffsetConverter !== "undefined") {
-          // @ts-ignore
-          wasmOffsetConverter = new WasmOffsetConverter(wasmBinary, module);
-        }
         successCallback(instance, module);
       } catch (e) {
         console.warn("wasm instantiation failed!");

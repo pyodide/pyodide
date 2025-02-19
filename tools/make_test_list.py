@@ -1,43 +1,18 @@
+#!/usr/bin/env python3
+
 """
 Generate a list of test modules in the CPython distribution.
 """
 
 import os
-import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
 import ruamel.yaml
+from common import PYODIDE_ROOT, get_makefile_envs
 
 yaml = ruamel.yaml.YAML()
-PYODIDE_ROOT = Path(__file__).parents[2]
-PYTHON_TESTS_YAML = Path(__file__).parent / "python_tests.yaml"
-
-
-def get_makefile_envs():
-    result = subprocess.run(
-        ["make", "-f", str(PYODIDE_ROOT / "Makefile.envs"), ".output_vars"],
-        capture_output=True,
-        text=True,
-        env={"PYODIDE_ROOT": str(PYODIDE_ROOT)},
-    )
-
-    if result.returncode != 0:
-        print("ERROR: Failed to load environment variables from Makefile.envs")
-        sys.exit(1)
-
-    environment = {}
-    for line in result.stdout.splitlines():
-        equalPos = line.find("=")
-        if equalPos != -1:
-            varname = line[0:equalPos]
-
-            value = line[equalPos + 1 :]
-            value = value.strip("'").strip()
-            environment[varname] = value
-
-    return environment
+PYTHON_TESTS_YAML = PYODIDE_ROOT / "src/tests/python_tests.yaml"
 
 
 def get_old_yaml():

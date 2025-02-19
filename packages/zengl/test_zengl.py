@@ -3,6 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.driver_timeout(60)
+@pytest.mark.skip_pyproxy_check
 @pytest.mark.xfail_browsers(node="this supposed to render into a canvas DOM element")
 @run_in_pyodide(packages=["zengl"])
 def test_render_with_webgl2(selenium):

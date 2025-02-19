@@ -16,6 +16,50 @@ myst:
 
 ## Unreleased
 
+- ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
+  {pr}`5334` {pr}`5363`
+- Added `jiter` 0.8.2 {pr}`5388`
+- Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+
+### Packages
+
+- Upgraded `narwhals` to 1.24.1 {pr}`5386`
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
+
+## Version 0.27.2
+
+_January 23, 2025_
+
+### Packages
+
+- Added `httpx` 0.28.1 {pr}`5302`
+- Added `apsw` 3.47.2.0 {pr}`5251`
+- Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
+- Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
+  `pydantic_core` {pr}`5368`
+- Upgraded `packaging` to 24.2 {pr}`5370`
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+
+## Version 0.27.1
+
+_January 15, 2025_
+
+- {{ Enhancement }} Improve stack switching performance by using a wasm-gc based
+  function signature adaptor when it is available. {pr}`5310`
+
+### Packages
+
+- {{ Fix }} PyArrow was accidentally missing from 0.27.0. Now it's really
+  available. {pr}`5300`
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Added `css_inline` 0.14.6 {pr}`5304`
+- Upgraded `nlopt` to 2.9.1 {pr}`5305`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
+
+## Version 0.27.0
+
+_January 1, 2025_
+
 - {{ Enhancement }} Upgrade to Python 3.12.7.
   {pr}`5149`
 
@@ -66,6 +110,12 @@ myst:
   for more information.
   {pr}`5100`
 
+- {{ Enhancement }} When using the Pyodide console, the standard streams inherit
+  `TextIOBase` and behave more like normal IO streams. In particular, they have
+  methods like `writelines()` and `readlines()`. They still don't have file
+  descriptors though.
+  {pr}`5056`
+
 - {{ Breaking }} The WASM backend is now the default backend for `matplotlib-pyodide` and
   the HTML5 backend has been disabled, temporarily redirecting to it. Power users
   might see minor incompatibilities and subtle differences. Please see
@@ -76,6 +126,39 @@ myst:
 
 ### Packages
 
+- Upgraded `numpy` to 2.0.2 {pr}`4925`
+- Upgraded `RobotRaconteur` to 1.2.2 {pr}`4925`
+- Upgraded `gsw` to 3.6.19 {pr}`4925`
+- Upgraded `opencv-python` to 4.10.0.84 {pr}`4925`
+- Upgraded `yt` to 4.3.1 {pr}`4925`
+- Upgraded `xgboost` to 2.1.2 {pr}`4925`
+- Upgraded `autograd` to 1.7.0 {pr}`4925`
+- Upgraded `sisl` to 0.15.1 {pr}`4925`
+- Upgraded `cartopy` to 0.24.1 {pr}`4925`
+- Upgraded `astropy` to 7.0.0 {pr}`4925`
+- Upgraded `biopython` to 1.84 {pr}`4925`
+- Upgraded `fastparquet` to 2024.5.0 {pr}`4925`
+- Upgraded `geopandas` to 1.0.1 {pr}`4925`
+- Upgraded `imageio` to 2.36.0 {pr}`4925`
+- Upgraded `lightgbm` to 4.5.0 {pr}`4925`
+- Upgraded `netcdf4` to 1.7.2 {pr}`4925`
+- Upgraded `networkx` to 3.4.2 {pr}`4925`
+- Upgraded `numcodecs` to 0.13.1 {pr}`4925`
+- Upgraded `pandas` to 2.2.3 {pr}`4893`, {pr}`4925`
+- Upgraded `pywavelets` to 1.7.0 {pr}`4925`
+- Upgraded `shapely` to 2.0.6 {pr}`4925`
+- Upgraded `threadpoolctl` to 3.5.0 {pr}`4925`
+- Upgraded `unyt` to 3.0.3 {pr}`4925`
+- Upgraded `xarray` to 2024.10.0 {pr}`4925`
+- Upgraded `zarr` to 2.18.3 {pr}`4925`
+- Upgraded `h5py` to 3.12.1 {pr}`4925`
+- Upgraded `cftime` to 1.6.4.post1 {pr}`4925`
+- Upgraded `clarabel` to 0.9.0 {pr}`4925`
+- Upgraded `ewah_bool_utils` to 1.2.2 {pr}`4925`
+- Upgraded `galpy` to 1.10.1 {pr}`4925`
+- Upgraded `mne-python` to 1.8.0 {pr}`4925`
+- Upgraded `pyxirr` to 0.10.6 {pr}`4925`
+- Upgraded `regex` to 2024.9.11 {pr}`4925`
 - Upgraded `crc32c` to 2.7.1 {pr}`5169`
 - Upgraded `rebound` to 4.4.3 {pr}`5163`
 - Upgraded `reboundx` to 4.3.0 {pr}`5163`
@@ -88,11 +171,11 @@ myst:
 - Upgraded `scikit-learn` to 1.5.2 {pr}`4823`, {pr}`5016`, {pr}`5072`
 - Upgraded `libcst` to 1.4.0 {pr}`4856`
 - Upgraded `lakers` to 0.3.3 {pr}`4885`
-- Upgraded `certifi` to 2024.8.30 {pr}`5227`
+- Upgraded `certifi` to 2024.12.14 {pr}`5257`
 - Upgraded `bokeh` to 3.6.0 {pr}`4888`, {pr}`5047`, {pr}`5118`
-- Upgraded `pandas` to 2.2.2 {pr}`4893`
-- Upgraded `zengl` to 2.5.0 {pr}`4894`
-- Upgraded `protobuf` to 5.29.0 {pr}`5233`
+- Upgraded `awkward-cpp` to 43 {pr}`5214`, {pr}`5247`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
+- Upgraded `protobuf` to 5.29.1 {pr}`5257`
 - Upgraded `sourmash` to 4.8.11 {pr}`4980`
 - Upgraded `scipy` to 1.14.1 {pr}`4719`, {pr}`5011`, {pr}`5012`, {pr}`5031`
 - Upgraded `scikit-image` to 0.24.0 {pr}`5003`
@@ -107,12 +190,15 @@ myst:
 - Upgraded `duckdb` to 1.1.2 {pr}`5142`
 - Upgraded `matplotlib` to 3.8.4 {pr}`4510`
 - Upgraded `matplotlib-pyodide` to 0.2.3 {pr}`4510`
+- Upgraded `cysignals` to 1.12.2 {pr}`5267`
 - Added `soxr` 0.5.0.post1 {pr}`5150`
 - Added `tiktoken` v0.8.0 in {pr}`5147`
-- Added `casadi` 3.6.6 {pr}`4936`, {pr}`5057`
-- Added `pyarrow` 17.0.0 {pr}`4950`
-- Added `rasterio` 1.13.10, `affine` 2.4.0 {pr}`4983`
-- Added `iminuit` 2.29.1 {pr}`4767`, {pr}`5072`
+- Added `casadi` 3.6.7 {pr}`4936`, {pr}`5057`, {pr}`4925`
+- Added `pyarrow` 18.1.0 {pr}`4950`, {pr}`5266`
+- Added `polars` 1.18.0 {pr}`5282`
+- Added `rasterio` 1.4.2, `affine` 2.4.0 {pr}`4983`, {pr}`4925`
+- Added `iminuit` 2.30.1 {pr}`4767`, {pr}`5072`, {pr}`4925`
+- Added `rateslib` 1.6.0 {pr}`5146`, {pr}`5235`
 - Added `arro3-core`, `arro3-io`, and `arro3-compute` 0.3.0, 0.4.0, 0.4.1 {pr}`5020`, {pr}`5095`, {pr}`5104`
 - Added `tree-sitter` 0.23.0 {pr}`5099`
 - Added `tree-sitter-go` 0.23.1 {pr}`5102`
@@ -122,13 +208,16 @@ myst:
 - Added `libzfp` and `zfpy` 1.0.1 {pr}`5172`
 - Added `vega-datasets` 0.9.0 {pr}`5183`
 - Added `clingo` 5.7.1 {pr}`5184`
+- Added `argon2-cffi` `argon2-cffi-bindings` 23.1.0 {pr}`5281`
 - Upgraded `tree-sitter` to 0.23.2 {pr}`5185`
 - Upgraded `tree-sitter-go` to 0.23.3 {pr}`5185`
 - Upgraded `tree-sitter-java` to 0.23.4 {pr}`5185`
 - Upgraded `tree-sitter-python` to 0.23.4 {pr}`5185`
+- Upgraded `xarray` to 2024.11.0 {pr}`5224`
 - Upgraded `lakers-python` to 0.4.1 {pr}`5225`
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
 - Upgraded `cffi` to 1.17.1 {pr}`5261`
+- Upgraded `pillow-heif` to 0.20.0 and `pyheif` 0.8.0 {pr}`5178`
 
 ## Version 0.26.4
 

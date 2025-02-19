@@ -5,7 +5,7 @@ import sys
 import time
 import traceback
 from asyncio import Future, Task
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from typing import Any, TypeVar, overload
 
 from .ffi import IN_BROWSER, create_once_callable, run_sync
@@ -407,7 +407,13 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(self, coro, *, name=None):  # type: ignore[override]
+    def create_task(
+        self,
+        coro: Coroutine[T, Any, Any],
+        *,
+        name: str | None = None,
+        context: contextvars.Context | None = None,
+    ) -> Task[T]:
         """Schedule a coroutine object.
 
         Return a task object.
@@ -416,7 +422,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = PyodideTask(coro, loop=self, name=name)
+            task = PyodideTask(coro, loop=self, name=name, context=context)
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -468,9 +474,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         documentation for details about context).
         """
         if handler is not None and not callable(handler):
-            raise TypeError(
-                f"A callable object or None is expected, " f"got {handler!r}"
-            )
+            raise TypeError(f"A callable object or None is expected, got {handler!r}")
         self._exception_handler = handler
 
     def default_exception_handler(self, context):

@@ -14,12 +14,6 @@ RUN apt-get update \
         ninja-build jq xxd \
   && rm -rf /var/lib/apt/lists/*
 
-# Normally, it is a bad idea to install rustup and cargo in
-# system directories (it should not be shared between users),
-# but this docker image is only for building packages, so I hope it is ok.
-RUN wget -q -O - https://sh.rustup.rs | \
-    RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
-
 # install autoconf 2.71, required by upstream libffi
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && tar -xf autoconf-2.71.tar.xz \
@@ -54,6 +48,16 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+# Normally, it is a bad idea to install rustup and cargo in
+# system directories (it should not be shared between users),
+# but this docker image is only for building packages, so I hope it is ok.
+# Setting RUSTUP_UPDATE_ROOT gives us a beta rustup.
+# TODO: Remove when Rustup 1.28.0 is released.
+RUN wget -q -O  -  https://sh.rustup.rs | \
+  RUSTUP_UPDATE_ROOT=https://dev-static.rust-lang.org/rustup \
+  RUSTUP_HOME=/usr CARGO_HOME=/usr \
+  sh -s -- -y --profile minimal --no-modify-path
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 

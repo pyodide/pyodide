@@ -60,8 +60,6 @@ export type ConfigType = {
  * Load the main Pyodide wasm module and initialize it.
  *
  * @returns The :ref:`js-api-pyodide` module.
- * @memberof globalThis
- * @async
  * @example
  * async function main() {
  *   const pyodide = await loadPyodide({
@@ -264,8 +262,8 @@ export async function loadPyodide(
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   const Module = await _createPyodideModule(emscriptenSettings);
   // Handle early exit
-  if (emscriptenSettings.exited) {
-    throw emscriptenSettings.exited.toThrow;
+  if (emscriptenSettings.exitCode !== undefined) {
+    throw new Module.ExitStatus(emscriptenSettings.exitCode);
   }
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);

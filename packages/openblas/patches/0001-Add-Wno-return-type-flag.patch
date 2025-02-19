@@ -1,21 +1,20 @@
-From 09fd1aa0aa6a98e1cebaa6e34fca1e424dab8f48 Mon Sep 17 00:00:00 2001
+From 3111f04db010f53a2634db4f4e8e35a2d9a2957b Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
 Date: Fri, 9 Dec 2022 16:40:13 +0100
-Subject: [PATCH 1/2] Add -Wno-return-type flag
+Subject: [PATCH 1/3] Add -Wno-return-type flag
 
 This is needed because we are changing many signatures to return int instead of
 void with some regex expressions but we are not modifying the returned value
  which would potentially be a lot more tricky.
-
 ---
  Makefile.rule | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile.rule b/Makefile.rule
-index 5f787a9c..6890046a 100644
+index daf2d958d..6595d4271 100644
 --- a/Makefile.rule
 +++ b/Makefile.rule
-@@ -228,7 +228,7 @@ NO_AFFINITY = 1
+@@ -231,7 +231,7 @@ NO_AFFINITY = 1
  # Common Optimization Flag;
  # The default -O2 is enough.
  # Flags for POWER8 are defined in Makefile.power. Don't modify COMMON_OPT

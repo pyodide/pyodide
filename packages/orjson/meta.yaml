@@ -9,8 +9,8 @@ source:
 requirements:
   executable:
     - rustup
-build:
-  script: export RUSTFLAGS="-Z link-native-libraries=yes"
+  constraint:
+    - maturin < 1.8
 about:
   home: https://github.com/ijl/orjson
   PyPI: https://pypi.org/project/orjson

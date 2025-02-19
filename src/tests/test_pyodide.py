@@ -1174,11 +1174,10 @@ def test_js_stackframes(selenium):
                 file = file.rpartition("/")[-1]
             if file.endswith(".py"):
                 file = "/".join(file.split("/")[-2:])
-            if (
-                re.fullmatch(r"\:[0-9]*", file)
-                or file == "evalmachine.<anonymous>"
-                or file == "debugger eval code"
-            ):
+            if re.fullmatch(r"\:[0-9]*", file) or file in {
+                "debugger eval code",
+                "evalmachine.<anonymous>",
+            }:
                 file = "test.html"
             res.append([file, name])
         return res
@@ -1588,7 +1587,7 @@ def test_args_OO(selenium_standalone_noload):
 @pytest.mark.xfail_browsers(chrome="Node only", firefox="Node only", safari="Node only")
 def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
-    subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    subprocess.run(["node", "-v"], encoding="utf8", check=True)
 
     shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
@@ -1609,6 +1608,7 @@ def test_relative_index_url(selenium, tmp_path):
         cwd=ROOT_PATH,
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
     import textwrap
 
@@ -1636,7 +1636,9 @@ def test_index_url_calculation_source_map(selenium):
 
     node_options = ["--enable-source-maps"]
 
-    result = subprocess.run(["node", "-v"], capture_output=True, encoding="utf8")
+    result = subprocess.run(
+        ["node", "-v"], capture_output=True, encoding="utf8", check=True
+    )
 
     DIST_DIR = str(Path.cwd() / "dist")
 
@@ -1659,6 +1661,7 @@ def test_index_url_calculation_source_map(selenium):
         env=env,
         capture_output=True,
         encoding="utf8",
+        check=False,
     )
 
     assert f"indexURL: {DIST_DIR}" in result.stdout
@@ -1693,6 +1696,7 @@ def test_default_index_url_calculation_node(selenium, tmp_path, filename, import
         capture_output=True,
         encoding="utf8",
         cwd=tmp_path,
+        check=False,
     )
 
     assert f"indexURL: {DIST_PATH}" in result.stdout
@@ -1766,9 +1770,10 @@ def test_python_version(selenium):
     selenium.run_js(
         """
         sys = pyodide.pyimport("sys");
-        assert(() => sys.version_info.major === pyodide._module._py_version_major());
-        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
-        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        const [major, minor, micro] = pyodide._api.pyVersionTuple;
+        assert(() => sys.version_info.major === major);
+        assert(() => sys.version_info.minor === minor);
+        assert(() => sys.version_info.micro === micro);
         sys.destroy();
         """
     )
@@ -1952,3 +1957,18 @@ async def test_bug_4861(selenium):
         return eval("x()", ChainMap({}, {"x": x}))
 
     await g(run_js("async () => {}"))
+
+
+@run_in_pyodide
+def test_lockfile_api(selenium):
+    from pyodide_js import lockfile
+
+    lockfile_info = lockfile.info
+    lockfile_packages = lockfile.packages
+
+    assert lockfile_info is not None
+    assert lockfile_info.abi_version is not None
+    assert lockfile_info.version is not None
+    assert lockfile_info.python is not None
+
+    assert lockfile_packages.micropip is not None

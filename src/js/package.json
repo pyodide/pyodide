@@ -1,6 +1,6 @@
 {
   "name": "pyodide",
-  "version": "0.27.0-dev.0",
+  "version": "0.28.0-dev.0",
   "description": "The Pyodide JavaScript package",
   "keywords": [
     "python",
@@ -25,7 +25,7 @@
     "chai-as-promised": "^7.1.1",
     "cross-env": "^7.0.3",
     "dts-bundle-generator": "^8.1.1",
-    "esbuild": "^0.17.12",
+    "esbuild": "^0.25.0",
     "express": "^4.17.3",
     "mocha": "^9.0.2",
     "npm-run-all": "^4.1.5",
@@ -34,8 +34,8 @@
     "sinon": "^18.0.0",
     "ts-mocha": "^9.0.2",
     "tsd": "^0.24.1",
-    "typedoc": "^0.25.1",
-    "typescript": "^4.6.4",
+    "typedoc": "^0.27.6",
+    "typescript": "5.7",
     "wabt": "^1.0.32"
   },
   "main": "pyodide.js",

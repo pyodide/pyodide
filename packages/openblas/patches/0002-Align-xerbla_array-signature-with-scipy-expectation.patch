@@ -1,7 +1,7 @@
-From fb8f9ec54121a889783cce3d42ea841cc513a22e Mon Sep 17 00:00:00 2001
+From 8ce75f14b82ed67eaf0eaceea0c8092851af00c2 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Lo=C3=AFc=20Est=C3=A8ve?= <loic.esteve@ymail.com>
 Date: Fri, 7 Apr 2023 10:27:59 +0200
-Subject: [PATCH 2/2] Align xerbla_array signature with scipy expectation
+Subject: [PATCH 2/3] Align xerbla_array signature with scipy expectation
 
 ---
  lapack-netlib/SRC/xerbla_array.c | 2 +-

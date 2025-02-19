@@ -171,6 +171,7 @@ declare global {
   export const __iscoroutinefunction: (a: number) => number;
 }
 
+/** @hidden */
 export type FSNode = {
   timestamp: number;
   rdev: number;
@@ -178,6 +179,7 @@ export type FSNode = {
   mode: number;
 };
 
+/** @hidden */
 export type FSStream = {
   tty?: boolean;
   seekable?: boolean;
@@ -185,8 +187,10 @@ export type FSStream = {
   node: FSNode;
 };
 
+/** @hidden */
 export type FSStreamOps = FSStreamOpsGen<FSStream>;
 
+/** @hidden */
 export type FSStreamOpsGen<T> = {
   open: (a: T) => void;
   close: (a: T) => void;
@@ -207,6 +211,11 @@ export type FSStreamOpsGen<T> = {
   ) => number;
 };
 
+/**
+ * TODO: Consider renaming the type to FSType to avoid collisions between FS and
+ * FSType.
+ * @hidden
+ */
 export interface FS {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
@@ -256,13 +265,15 @@ export interface FS {
   readFile(a: string): Uint8Array;
 }
 
-/** @private */
+/** @hidden */
 export type PreRunFunc = (Module: Module) => void;
 
+/** @hidden */
 export type ReadFileType = (path: string) => Uint8Array;
 
 // File System-like type which can be passed to
 // Module.loadDynamicLibrary or Module.loadWebAssemblyModule
+/** @hidden */
 export type LoadDynlibFS = {
   readFile: ReadFileType;
   findObject: (path: string, dontResolveLastLink: boolean) => any;
@@ -270,12 +281,18 @@ export type LoadDynlibFS = {
 
 type DSO = any;
 
+/** @hidden */
 export interface LDSO {
   loadedLibsByName: {
     [key: string]: DSO;
   };
 }
 
+/**
+ * TODO: consider renaming the type to ModuleType to avoid name collisions
+ * between Module and ModuleType?
+ * @hidden
+ */
 export interface Module {
   API: API;
   locateFile: (file: string) => string;
@@ -323,6 +340,7 @@ export interface Module {
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
   HEAP8: Uint8Array;
+  HEAPU32: Uint32Array;
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
@@ -331,6 +349,9 @@ export interface Module {
   jsWrapperTag: any; // Should be WebAssembly.Tag
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
+  _Py_Version: number;
 }
 
 type LockfileInfo = {
@@ -340,11 +361,13 @@ type LockfileInfo = {
   python: string;
 };
 
+/** @hidden */
 export type Lockfile = {
   info: LockfileInfo;
   packages: Record<string, InternalPackageData>;
 };
 
+/** @hidden */
 export type PackageType =
   | "package"
   | "cpython_module"
@@ -360,6 +383,9 @@ export interface PackageData {
   /** @experimental */
   packageType: PackageType;
 }
+
+/** @hidden */
+export type LoadedPackages = Record<string, string>;
 
 /**
  * @hidden
@@ -388,6 +414,7 @@ export type PackageLoadMetadata = {
   packageData: InternalPackageData;
 };
 
+/** @hidden */
 export interface API {
   fatal_error: (e: any) => never;
   isPyProxy: (e: any) => e is PyProxy;
@@ -438,6 +465,7 @@ export interface API {
   lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
+  lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;
@@ -463,8 +491,7 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    installer: string,
-    source: string,
+    metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
   recursiveDependencies: (
     names: string[],
@@ -486,7 +513,7 @@ export interface API {
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
-
+  pyVersionTuple: [number, number, number];
   LiteralMap: any;
 }
 

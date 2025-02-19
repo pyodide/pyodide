@@ -557,7 +557,6 @@ def test(n):
     pass
 """
 
-#
 LEAK_SCRIPT2 = """
 from pyodide.ffi import run_sync
 from js import sleep
