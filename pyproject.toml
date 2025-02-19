@@ -150,7 +150,7 @@ markers = [
 [tool._pyodide]
 
 [tool.pyodide.build]
-rust_toolchain = "nightly-2025-01-15"
+rust_toolchain = "nightly-2025-02-18"
 
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'
