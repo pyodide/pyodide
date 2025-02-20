@@ -1,117 +1,32 @@
-(new-packages)=
+(building-packages-using-recipe)=
 
-# Creating a Pyodide package
+# Building Packages Using Recipe
 
-It is recommended to look into how other similar packages are built in Pyodide.
-If you encounter difficulties in building your package after trying the steps
-listed here, open a [new Pyodide issue](https://github.com/pyodide/pyodide/issues).
+While you can build Python packages from source (see {ref}`building-packages-from-source`),
+you can also build multiple Python packages at once using conda-style recipes.
 
-## Determining if creating a Pyodide package is necessary
+Using a recipe is also required to include the package in the Pyodide distribution.
+We are maintaining a repository of recipes for Pyodide packages at
+[`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) and you can
+contribute your own recipes there. The recipes in this repository will be included
+in the Pyodide distribution.
 
-If you wish to use a package in Pyodide that is not already included in the
-[`packages` folder](https://github.com/pyodide/pyodide/tree/main/packages), first you
-need to determine whether it is necessary to package it for Pyodide. Ideally,
-you should start this process with package dependencies.
-
-Most pure Python packages can be installed directly from PyPI with
-{func}`micropip.install` if they have a pure Python wheel. Check if this is the
-case by trying `micropip.install("package-name")`.
-
-Because Pyodide [does not support threading or multiprocessing](https://pyodide.org/en/stable/usage/wasm-constraints.html),
-packages that use threading or multiprocessing will not work without a patch to disable it. For example,
-the following snippet will determine if the platform supports creating new threads.
-
-```py
-def _can_start_thread() -> bool:
-    if sys.platform == "emscripten":
-        return sys._emscripten_info.pthreads
-    return platform.machine() not in ("wasm32", "wasm64")
-
-can_start_thread = _can_start_thread()
-
-if not can_start_thread:
-  n_threads = 1
-```
-
-If there is no wheel on PyPI, but you believe there is nothing preventing it (it
-is a Python package without C extensions):
-
-- you can create the wheel yourself by running
-  ```sh
-  python -m pip install build
-  python -m build
-  ```
-  from within the package folder where the `setup.py` are located. See the
-  [Python packaging guide](https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives)
-  for more details. Then upload the wheel file somewhere (not to PyPI) and
-  install it with micropip via its URL.
-- please open an issue in the package repository asking the authors to upload
-  the wheel.
-
-If however the package has C extensions or its code requires patching, then
-continue to the next steps.
-
-If you are on Windows, you will need to use WSL 2.
-
-```{note}
-To determine if a package has C extensions, check if its `setup.py` contains
-any compilation commands.
-```
-
-## Building Python wheels (out of tree)
-
-Starting with Pyodide 0.22.0, it is now possible to build Python wheels for Pyodide
-for many packages separately from the Pyodide package tree. See {ref}`building-and-testing-packages-out-of-tree` for more details.
-
-## Building a Python package (in tree)
-
-This section documents how to add a new package to the Pyodide distribution.
+## Building Packages from Recipe
 
 As a starting point, you may want to look at the `meta.yaml` files for some
-other Pyodide packages in the [`packages/`
-folder](https://github.com/pyodide/pyodide/tree/main/packages).
-
-### Prerequisites
-
-First clone the Pyodide git repository:
-
-```bash
-git clone --recursive https://github.com/pyodide/pyodide
-cd pyodide
-```
-
-If you have trouble with missing dependencies (or are not running linux) you can
-use the `pyodide-env` docker container with:
-
-```bash
-./run_docker
-```
-
-This will mount the current working directory as `/src` within the container so
-if you build the package within the container the files created will persist in
-the directory after you exit the container.
-
-If you want to build the package, you will need to build Python which you can do
-as follows:
-
-```bash
-make -C emsdk
-make -C cpython
-make pyodide_build
-```
-
-This also builds the appropriate version of Emscripten.
+other Pyodide packages in the
+[`packages/` folder](https://github.com/pyodide/pyodide-recipes/tree/main/packages).
 
 ### Creating the `meta.yaml` file
 
 To build a Python package in tree, you need to create a `meta.yaml` file that
-defines a "recipe" which may include build commands and "patches" (source code
+defines a recipe which may include build commands and patches (source code
 edits), amongst other things.
 
 If your package is on PyPI, the easiest place to start is with the
 `pyodide skeleton pypi` command. Run
 
-```
+```bash
 pyodide skeleton pypi <package-name>
 ```
 
@@ -126,11 +41,11 @@ those yourself in the `requirements` section of the `meta.yaml` file.
 requirements:
   host:
     # Dependencies that are needed to build the package
-    - cffi
+    - numpy
   run:
     # Dependencies that are needed to run the package
-    - cffi
     - numpy
+    - scikit-learn
 ```
 
 ```{note}
@@ -157,17 +72,19 @@ pyodide build-recipes <package-name> --install
 
 and see if there are any errors.
 
-### Loading the package
+The `--install` flag will install the built package into the `/dist` directory.
 
-If the build succeeds you can try to load the package:
+### Testing the package
 
-1. Build pyodide via `PYODIDE_PACKAGES=tag:core make`.
-2. Serve the dist directory with `python -m http.server --directory ./dist`.
-   If you use docker, you can execute this either outside of the docker container or
-   make sure to forward a port by setting the environment variable
-   PYODIDE_SYSTEM_PORT or starting docker with `./run_docker -p <port>`.
-3. Open `localhost:8000/console.html` and try to import the package.
-4. You can test the package in the repl.
+If the build succeeds you can try to load the package in the Pyodide environment.
+
+1. Build Pyodide or download the latest release from the GitHub repository.
+2. Copy everything built in the `/dist` directory to the downloaded Pyodide
+   directory. This should include the `pyodide-lock.json` file and the
+   wheel files that were built.
+3. Serve the Pyodide directory with `python -m http.server --directory ./dist`.
+4. Open `localhost:8000/console.html` and try to import the package.
+5. You can test the package in the repl.
 
 ### Fixing build issues
 
@@ -185,39 +102,9 @@ You can also inject extra compile and link flags with the `cflags` and `ldflags`
 keys. You can modify the wheel after it is built with the `post:` key.
 
 If you need to patch the package's source to fix build issues, see the section
-on Generating patches below.
+on {ref}`generating-patches` below.
 
-### Writing tests for your package
-
-The tests should go in one or more files like
-`packages/<package-name>/test_xxx.py`. Most packages have one test file named
-`test_<package-name>.py`. The tests should look like:
-
-```py
-from pytest_pyodide import run_in_pyodide
-
-@run_in_pyodide(packages=["<package-name>"])
-def test_mytestname(selenium):
-  import <package-name>
-  assert package.do_something() == 5
-  # ...
-```
-
-If you want to run your package's full pytest test suite and your package
-vendors tests you can do it like:
-
-```py
-from pytest_pyodide import run_in_pyodide
-
-@run_in_pyodide(packages=["<package-name>-tests", "pytest"])
-def test_mytestname(selenium):
-  import pytest
-  assert pytest.main(["--pyargs", "<package-name>", "-k", "some_filter", ...]) == 0
-```
-
-you can put whatever command line arguments you would pass to `pytest` as
-separate entries in the list. For more info on `run_in_pyodide` see
-[pytest-pyodide](https://github.com/pyodide/pytest-pyodide).
+(generating-patches)=
 
 ### Generating patches
 
@@ -233,7 +120,7 @@ If the package has a git repository, the easiest way to make a patch is usually:
    in the future, particularly when migrating patches or trying to decide if
    they are no longer needed. The first line of each commit message will also be
    used in the patch file name.
-4. Use `git format-patch <version> -o <pyodide-root>/packages/<package-name>/patches/`
+4. Use `git format-patch <version> -o packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
 5. You also need to add the patches to the `meta.yaml` file:
@@ -278,14 +165,14 @@ patches. To do this:
    `git clone --depth 1 --branch <version-tag>`.
 2. Make a new branch with `git checkout -b pyodide-old-version` (e.g.,
    `pyodide-1.21.4`).
-3. Apply the current patches with `git am <pyodide-root>/packages/<package-name>/patches/*`.
+3. Apply the current patches with `git am packages/<package-name>/patches/*`.
 4. Make a new branch `git checkout -b pyodide-new-version` (e.g.,
    `pyodide-1.22.0`)
 5. Rebase the patches with `git rebase old-version --onto new-version` (e.g.,
    `git rebase pyodide-1.21.4 --onto pyodide-1.22.0`). Resolve any rebase
    conflicts. If a patch has been upstreamed, you can drop it with `git rebase --skip`.
-6. Remove old patches with `rm <pyodide-root>/packages/<package-name>/patches/*`.
-7. Use `git format-patch <version-tag> -o <pyodide-root>/packages/<package-name>/patches/`
+6. Remove old patches with `rm packages/<package-name>/patches/*`.
+7. Use `git format-patch <version-tag> -o packages/<package-name>/patches/`
    to generate new patch files.
 
 ### Upstream your patches!
@@ -348,11 +235,13 @@ patch.
 Some Python packages depend on certain C libraries, e.g. `lxml` depends on
 `libxml`.
 
-To package a C library, create a directory in `packages/` for the C library. In
-the directory, you should write `meta.yaml` that specifies metadata about the
-library. See {ref}`meta-yaml-spec` for more details.
+To package a C library, create a directory for it and add `meta.yaml` file
+similar to the one for Python packages. However, unlike the Python package, you
+need to specify a build script that builds the C library.
+See {ref}`meta-yaml-spec` for more details.
 
-The minimal example of `meta.yaml` for a C library is:
+The minimal example of `meta.yaml` for a C library that uses `configure` and
+`make` is:
 
 ```yaml
 package:
@@ -371,11 +260,11 @@ build:
   type: static_library
   script: |
     emconfigure ./configure
-    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make
 ```
 
 You can use the `meta.yaml` of other C libraries such as
-[libxml](https://github.com/pyodide/pyodide/blob/main/packages/libxml/meta.yaml)
+[libxml](https://github.com/pyodide/pyodide-recipes/blob/main/packages/libxml/meta.yaml)
 as a starting point.
 
 After packaging a C library, it can be added as a dependency of a Python package
@@ -401,13 +290,6 @@ Wheels are just zip archives, and to install them we unzip them into the
 them at install time: WebAssembly must be loaded asynchronously, but Python
 imports are synchronous so it is impossible to load `.so` files lazily.
 
-```{eval-rst}
-.. toctree::
-   :hidden:
-
-   meta-yaml.md
-```
-
 ### Rust/PyO3 Packages
 
 We currently build `cryptography` which is a Rust extension built with PyO3 and
@@ -415,7 +297,7 @@ We currently build `cryptography` which is a Rust extension built with PyO3 and
 If you want to build a package with Rust extension, you will need Rust >= 1.41,
 and you need to set the rustup toolchain to `nightly`, and the target to
 `wasm32-unknown-emscripten` in the build script
-[as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
+[as shown here](https://github.com/pyodide/pyodide-recipes/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
 
 As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-1154655224),
@@ -423,3 +305,10 @@ by default certain wasm-related `RUSTFLAGS` are set during `build.script`
 and can be removed with `export RUSTFLAGS=""`.
 
 If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
+
+```{eval-rst}
+.. toctree::
+   :hidden:
+
+   meta-yaml.md
+```
