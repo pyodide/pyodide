@@ -2,7 +2,8 @@ autodocsumm
 docutils>=0.21.2
 myst-parser>=4.0
 packaging   # required by micropip at import time
-sphinx>=5.3.0
+# 8.2.0 has build issue: https://github.com/pyodide/pyodide/issues/5443
+sphinx>=5.3.0,<8.2.0
 sphinx-argparse-cli>=1.6.0
 sphinx_book_theme
 sphinx-issues
