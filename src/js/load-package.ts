@@ -541,6 +541,14 @@ export class PackageManager {
   public logStderr(message: string, logger?: (message: string) => void) {
     logger ? logger(message) : this.stderr(message);
   }
+
+  public setStdout(logger: (message: string) => void) {
+    this.stdout = logger;
+  }
+
+  public setStderr(logger: (message: string) => void) {
+    this.stderr = logger;
+  }
 }
 
 function filterPackageData({
@@ -582,6 +590,8 @@ export let loadPackage: typeof PackageManager.prototype.loadPackage;
  * source for a particular `package_name`.
  */
 export let loadedPackages: LoadedPackages;
+export let loadPackageSetStdout: typeof PackageManager.prototype.setStdout;
+export let loadPackageSetStderr: typeof PackageManager.prototype.setStderr;
 
 if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);
@@ -597,6 +607,13 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
    * install location for a particular ``package_name``.
    */
   loadedPackages = singletonPackageManager.loadedPackages;
+
+  loadPackageSetStdout = singletonPackageManager.setStdout.bind(
+    singletonPackageManager,
+  );
+  loadPackageSetStderr = singletonPackageManager.setStderr.bind(
+    singletonPackageManager,
+  );
 
   // TODO: Find a better way to register these functions
   API.recursiveDependencies =
