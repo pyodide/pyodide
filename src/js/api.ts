@@ -1,7 +1,7 @@
 import { ffi } from "./ffi";
 import { CanvasInterface, canvas } from "./canvas";
 
-import { loadPackage, loadedPackages } from "./load-package";
+import { loadPackage, loadedPackages, loadPackageSetStderr, loadPackageSetStdout } from "./load-package";
 import { type PyProxy, type PyDict } from "generated/pyproxy";
 import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
@@ -115,9 +115,13 @@ export class PyodideAPI {
   /** @hidden */
   static version = version;
   /** @hidden */
-  static loadPackage = loadPackage;
+  static loadPackage = loadPackage;  
   /** @hidden */
   static loadedPackages = loadedPackages;
+  /** @hidden */
+  static loadPackageSetStdout = loadPackageSetStdout;
+  /** @hidden */
+  static loadPackageSetStderr = loadPackageSetStderr;
   /** @hidden */
   static ffi = ffi;
   /** @hidden */
