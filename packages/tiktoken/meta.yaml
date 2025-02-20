@@ -1,6 +1,8 @@
 package:
   name: tiktoken
   version: 0.8.0
+  tag:
+    - rust
   top-level:
     - tiktoken
     - tiktoken_ext

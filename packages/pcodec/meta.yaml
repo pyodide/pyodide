@@ -1,6 +1,8 @@
 package:
   name: pcodec
   version: 0.3.3
+  tag:
+    - rust
   top-level:
     - pcodec
 source:
@@ -11,7 +13,7 @@ requirements:
     - rustup
     - cargo
   constraint:
-    - maturin <2.0
+    - maturin < 2.0
   run:
     - numpy
 test:

@@ -1,6 +1,8 @@
 package:
   name: sourmash
   version: 4.8.11
+  tag:
+    - rust
   top-level:
     - sourmash
 requirements:

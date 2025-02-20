@@ -201,10 +201,19 @@ the core test suite is installed, including "micropip", "pyparsing", "pytz",
 meta-package. Other supported meta-packages are,
 
 - "tag:min-scipy-stack": includes the "core" meta-package as well as some
-  core packages from the scientific python stack and their dependencies:
+  core packages from the Scientific Python stack and their dependencies:
   "numpy", "scipy", "pandas", "matplotlib", "scikit-learn", "joblib",
   "pytest". This option is non exhaustive and is mainly intended to make build
   faster while testing a diverse set of scientific packages.
+- "tag:library": includes all shared and static libraries.
+- "tag:shared_library": includes all shared libraries. Added in conjunction with
+  the "library" tag.
+- "tag:static_library": includes all static libraries. Added in conjunction with
+  the "library" tag.
+- "tag:pyodide-test": includes all packages built to test the Pyodide build
+  system's behaviour.
+- "tag:rust": includes all packages that require a Rust toolchain to build,
+  and their dependencies.
 - "\*" builds all packages
 - You can exclude a package by prefixing it with "!".
 

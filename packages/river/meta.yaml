@@ -1,6 +1,8 @@
 package:
   name: river
   version: 0.22.0
+  tag:
+    - rust
   top-level:
     - river
 source:

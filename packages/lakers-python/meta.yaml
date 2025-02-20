@@ -1,6 +1,8 @@
 package:
   name: lakers-python
   version: 0.4.1
+  tag:
+    - rust
   top-level:
     - lakers
 source:

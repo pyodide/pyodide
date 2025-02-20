@@ -1,6 +1,8 @@
 package:
   name: rateslib
   version: 1.7.0
+  tag:
+    - rust
   top-level:
     - rateslib
 source:

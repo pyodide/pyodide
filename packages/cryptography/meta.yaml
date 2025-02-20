@@ -1,6 +1,8 @@
 package:
   name: cryptography
   version: 42.0.5
+  tag:
+    - rust
   top-level:
     - cryptography
 source:
