@@ -542,12 +542,26 @@ export class PackageManager {
     logger ? logger(message) : this.stderr(message);
   }
 
-  public setStdout(logger: (message: string) => void) {
-    this.stdout = logger;
+  /**
+   * Sets the default output handler that is used during package loading.
+   * By default, the handler is set to `console.log`.
+   *
+   * @param handler The handler is called with a string whenver an output
+   * message is emitted during package loading.
+   */
+  public setStdout(handler: (message: string) => void) {
+    this.stdout = handler;
   }
 
-  public setStderr(logger: (message: string) => void) {
-    this.stderr = logger;
+  /**
+   * Sets the default error handler that is used during package loading.
+   * By default, the handler is set to `console.error`.
+   *
+   * @param handler The handler is called with a string whenver an error
+   * message is emitted during package loading.
+   */
+  public setStderr(handler: (message: string) => void) {
+    this.stderr = handler;
   }
 }
 
