@@ -546,7 +546,7 @@ export class PackageManager {
    * Sets the default output handler that is used during package loading.
    * By default, the handler is set to `console.log`.
    *
-   * @param handler The handler is called with a string whenver an output
+   * @param handler The handler is called with a string whenever an output
    * message is emitted during package loading.
    */
   public setStdout(handler: (message: string) => void) {
@@ -557,7 +557,7 @@ export class PackageManager {
    * Sets the default error handler that is used during package loading.
    * By default, the handler is set to `console.error`.
    *
-   * @param handler The handler is called with a string whenver an error
+   * @param handler The handler is called with a string whenever an error
    * message is emitted during package loading.
    */
   public setStderr(handler: (message: string) => void) {
