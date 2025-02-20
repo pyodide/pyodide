@@ -79,7 +79,7 @@ export function initializeNativeFS(module: Module) {
         entries[PATH.join2(mount.mountpoint, path)] = {
           timestamp:
             handle.kind === "file"
-              ? (await handle.getFile()).lastModifiedDate
+              ? new Date((await handle.getFile()).lastModified)
               : new Date(),
           mode:
             handle.kind === "file"
@@ -135,7 +135,7 @@ export function initializeNativeFS(module: Module) {
         return {
           contents: new Uint8Array(await file.arrayBuffer()),
           mode: nativeFSAsync.FILE_MODE,
-          timestamp: file.lastModifiedDate,
+          timestamp: new Date(file.lastModified),
         };
       } else if (handle.kind === "directory") {
         return {
