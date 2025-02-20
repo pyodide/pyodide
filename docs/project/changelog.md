@@ -20,6 +20,8 @@ myst:
   {pr}`5334` {pr}`5363`
 - Added `jiter` 0.8.2 {pr}`5388`
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+- Added the `loadPackageSetStdout` and `loadPackageSetStderr` functions to override the
+  default output handlers during package loading {pr}`5442`
 
 ### Packages
 
