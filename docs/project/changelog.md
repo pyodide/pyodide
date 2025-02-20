@@ -21,7 +21,7 @@ myst:
 - Added `jiter` 0.8.2 {pr}`5388`
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
 
-- {{ Fixed }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
 
 ### Packages
 
