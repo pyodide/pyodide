@@ -1,7 +1,7 @@
-From 2d2732b55d57008545e818fc1b5ef4dca5625b9e Mon Sep 17 00:00:00 2001
+From 4973dd56cf6e46973ef8cf879d65d82e38b3f90d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 15:16:03 +0200
-Subject: [PATCH 5/8] Use wasm-gc based call adaptor if available
+Subject: [PATCH 5/9] Use wasm-gc based call adaptor if available
 
 Part of the ongoing quest to support JSPI. The JSPI spec removed its dependence on
 JS type reflection, and now the plan is for runtimes to ship JSPI while keeping
@@ -408,5 +408,5 @@ index a7981bc4877..ab03729266c 100644
  
  PyStatus
 -- 
-2.34.1
+2.48.1
 

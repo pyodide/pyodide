@@ -1,7 +1,7 @@
-From b86ebf295ad48ade5810032e83f98edb0e642abf Mon Sep 17 00:00:00 2001
+From 1b2b71618ae201dc14382b7b589d898afe80f670 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Wed, 28 Jun 2023 10:46:19 -0700
-Subject: [PATCH 4/8] Make Emscripten trampolines work with JSPI
+Subject: [PATCH 4/9] Make Emscripten trampolines work with JSPI
 
 There is a WIP proposal to enable webassembly stack switching which have been
 implemented in v8:
@@ -382,5 +382,5 @@ index d0d54050286..85c6d2f71ae 100644
  )
  AC_SUBST([PLATFORM_HEADERS])
 -- 
-2.34.1
+2.48.1
 

@@ -1,0 +1,33 @@
+From 40e14aaf37dd758c457a12754a89fa5a17bfe7bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C5=81ukasz=20Langa?= <lukasz@langa.pl>
+Date: Fri, 21 Feb 2025 19:24:41 +0100
+Subject: [PATCH 9/9] Skip wasm-gc on iOS Safari where it's broken
+
+As of iOS 18.3.1, enabling wasm-gc is making the interpreter fail to load.
+Downstream pyodide issue: pyodide/pyodide#5428.
+
+macOS Safari 18.3 does not surface the issue.
+
+Confirmed on device that disabling this restores interpreter function.
+---
+ Python/emscripten_trampoline.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
+index e78a94e5e99..a6dbc4637f6 100644
+--- a/Python/emscripten_trampoline.c
++++ b/Python/emscripten_trampoline.c
+@@ -80,6 +80,10 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+ //     )
+ // )
+ addOnPreRun(() => {
++    let isIOS = /iPad|iPhone|iPod/.test(navigator.platform);
++    if (isIOS) {
++        return;
++    }
+     // Try to initialize countArgsFunc
+     const code = new Uint8Array([
+         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
+-- 
+2.48.1
+
