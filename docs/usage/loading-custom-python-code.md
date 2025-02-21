@@ -22,7 +22,7 @@ install the package. See {ref}`loading_packages` for more information.
 :class: warning
 
 If your Python code contains C extensions,
-it needs to be built in a specialized way (See {ref}`new-packages`).
+it needs to be built in a specialized way (See {ref}`building-packages`).
 ```
 
 ## Loading then importing Python code

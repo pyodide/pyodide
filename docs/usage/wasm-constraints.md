@@ -108,3 +108,21 @@ The following are present but cannot be imported due to a dependency on the term
 
 - pty
 - tty
+
+#### Threading and multiprocessing
+
+Because Pyodide does not support threading or multiprocessing,
+packages that use threading or multiprocessing will not work without a patch to disable it. For example,
+the following snippet will determine if the platform supports creating new threads.
+
+```py
+def _can_start_thread() -> bool:
+    if sys.platform == "emscripten":
+        return sys._emscripten_info.pthreads
+    return platform.machine() not in ("wasm32", "wasm64")
+
+can_start_thread = _can_start_thread()
+
+if not can_start_thread:
+  n_threads = 1
+```
