@@ -20,6 +20,8 @@ _February 26, 2025_
 
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
 
+- {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+
 ### Packages
 
 - Added `h3` 4.2.1 {pr}`5436`
