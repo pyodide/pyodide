@@ -10,8 +10,10 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.build_env import emscripten_version, get_pyodide_root
+from pyodide_build.build_env import emscripten_version, get_pyodide_root, get_build_environment_vars
 from pyodide_build.xbuildenv import CrossBuildEnvManager
+
+PYVERSION = get_build_environment_vars(get_pyodide_root())["PYVERSION"]
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -39,7 +41,7 @@ def test_python_version(selenium):
         [script_path, "-V"], capture_output=True, encoding="utf8", check=False
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
@@ -249,7 +251,7 @@ def test_venv_version(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
