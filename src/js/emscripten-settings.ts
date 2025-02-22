@@ -17,6 +17,7 @@ export interface EmscriptenSettings {
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
   readonly onExit?: (code: number) => void;
+  readonly thisProgram?: string;
   readonly arguments: readonly string[];
   readonly instantiateWasm?: (
     imports: { [key: string]: any },
@@ -49,6 +50,7 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     onExit(code) {
       settings.exitCode = code;
     },
+    thisProgram: config.sysExecutable,
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument
