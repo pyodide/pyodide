@@ -10,11 +10,12 @@ What is Pyodide?
 Pyodide is a port of CPython to WebAssembly/`Emscripten <https://emscripten.org/>`_.
 
 Pyodide makes it possible to install and run Python packages in the browser with
-`micropip <https://pyodide.org/en/stable/usage/api/micropip-api.html>`_. Any pure
-Python package with a wheel available on PyPI is supported. Many packages with C
-extensions have also been ported for use with Pyodide. These include many
-general-purpose packages such as regex, pyyaml, lxml and scientific Python
-packages including numpy, pandas, scipy, matplotlib, and scikit-learn.
+`micropip <https://pyodide.org/en/stable/usage/api/micropip-api.html>`_. Any
+pure Python package with a wheel available on PyPi is supported. Many packages
+with C, C++, and Rust extensions have also been ported for use with Pyodide.
+These include many general-purpose packages such as regex, PyYAML, and
+cryptography, and scientific Python packages including NumPy, pandas, SciPy,
+Matplotlib, and scikit-learn.
 
 Pyodide comes with a robust Javascript ⟺ Python foreign function interface so
 that you can freely mix these two languages in your code with minimal
