@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.build_env import emscripten_version, get_pyodide_root, get_build_environment_vars
+from pyodide_build.build_env import (
+    emscripten_version,
+    get_build_environment_vars,
+    get_pyodide_root,
+)
 from pyodide_build.xbuildenv import CrossBuildEnvManager
 
 PYVERSION = get_build_environment_vars(get_pyodide_root())["PYVERSION"]
