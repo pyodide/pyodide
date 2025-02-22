@@ -284,8 +284,8 @@ Module.handle_js_error = function (e: any) {
     if (isPyodideFrame(frame)) {
       break;
     }
-    const funcnameAddr = stringToNewUTF8(frame.functionName || "???");
-    const fileNameAddr = stringToNewUTF8(frame.fileName || "???.js");
+    const funcnameAddr = stringToNewUTF8(frame.functionName || "<unknown JS frame>");
+    const fileNameAddr = stringToNewUTF8(frame.fileName || "<unknown JS file>.js");
     __PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
     _free(funcnameAddr);
     _free(fileNameAddr);
