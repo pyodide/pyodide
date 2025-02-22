@@ -3,8 +3,11 @@ set -e
 
 if [[ $1 == "-m" ]] && [[ $2 == "pip" ]]; then
     # redirect python -m pip to execute in host environment
-    shift 1
-    exec $@
+    shift 2
+    which $(dirname $0)/pip > /dev/null || { \
+        >&2 echo "Cannot find pyodide pip. Make a pyodide venv first?" && exit 1; \
+    }
+    exec $(dirname $0)/pip $@
 fi
 
 which node > /dev/null  || { \
