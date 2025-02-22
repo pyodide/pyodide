@@ -1,7 +1,7 @@
 From da79a0ddc090407c1ea1d8e25da67931d1863642 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Dec 2022 09:09:14 -0800
-Subject: [PATCH 3/8] Allow multiprocessing.connection top level import
+Subject: [PATCH 3/9] Allow multiprocessing.connection top level import
 
 Upstream PR:
 https://github.com/python/cpython/pull/114808
