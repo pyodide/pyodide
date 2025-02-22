@@ -288,7 +288,7 @@ Module.handle_js_error = function (e: any) {
       frame.functionName || "<unknown JS frame>",
     );
     const fileNameAddr = stringToNewUTF8(
-      frame.fileName || "<unknown JS file>.js",
+      frame.fileName || "<unknown JS file>",
     );
     __PyTraceback_Add(funcnameAddr, fileNameAddr, frame.lineNumber);
     _free(funcnameAddr);
