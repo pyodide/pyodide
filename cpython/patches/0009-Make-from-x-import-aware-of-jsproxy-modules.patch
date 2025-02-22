@@ -1,4 +1,4 @@
-From 09050f5fd76efe37a71b681d1cd6b7109a88ad74 Mon Sep 17 00:00:00 2001
+From af6348a8b84e67a2b74a877cf2ce77be579f2fd0 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 22 Feb 2025 13:18:18 +0100
 Subject: [PATCH 9/9] Make `from x import *` aware of jsproxy modules
@@ -8,7 +8,7 @@ Subject: [PATCH 9/9] Make `from x import *` aware of jsproxy modules
  1 file changed, 8 insertions(+)
 
 diff --git a/Python/intrinsics.c b/Python/intrinsics.c
-index c6f5ac5402d..3194d775bea 100644
+index c6f5ac5402d..ca11f335c24 100644
 --- a/Python/intrinsics.c
 +++ b/Python/intrinsics.c
 @@ -33,6 +33,11 @@ print_expr(PyThreadState* tstate, PyObject *value)
@@ -27,7 +27,7 @@ index c6f5ac5402d..3194d775bea 100644
      if (_PyObject_LookupAttr(v, &_Py_ID(__all__), &all) < 0) {
          return -1; /* Unexpected error */
      }
-+    if (JsModule_GetAll(v, &all) == -1) {
++    if (all == NULL && JsModule_GetAll(v, &all) == -1) {
 +        return -1; /* Unexpected error */
 +    }
      if (all == NULL) {
