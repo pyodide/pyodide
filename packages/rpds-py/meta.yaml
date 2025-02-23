@@ -1,6 +1,8 @@
 package:
   name: rpds-py
   version: 0.18.0
+  tag:
+    - rust
   top-level:
     - rpds
 source:
@@ -9,8 +11,10 @@ source:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 about:
-  home:
+  home: https://rpds.readthedocs.io
   PyPI: https://pypi.org/project/rpds-py
   summary: Python bindings to Rust's persistent data structures (rpds)
   license: MIT

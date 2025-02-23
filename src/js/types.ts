@@ -464,6 +464,7 @@ export interface API {
   lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
+  lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;

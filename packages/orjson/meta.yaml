@@ -1,6 +1,8 @@
 package:
   name: orjson
   version: 3.10.1
+  tag:
+    - rust
   top-level:
     - orjson
 source:
@@ -9,6 +11,8 @@ source:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 about:
   home: https://github.com/ijl/orjson
   PyPI: https://pypi.org/project/orjson

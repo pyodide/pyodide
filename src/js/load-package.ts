@@ -52,6 +52,7 @@ export async function initializePackageIndex(
     );
   }
 
+  API.lockfile = lockfile;
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];

@@ -257,10 +257,7 @@
 - test_ctypes.test_win32
 - test_ctypes.test_wintypes
 - test_curses
-- test_datetime:
-    skip:
-      - test_strptime
-      - test_strftime_trailing_percent
+- test_datetime
 - test_dbm:
     xfail: dbm
 - test_dbm_dumb:
@@ -381,10 +378,7 @@
 - test_getpass
 - test_getpath
 - test_gettext
-- test_glob:
-    skip:
-      # RecursionError: maximum recursion depth exceeded while calling a Python object
-      - test_selflink
+- test_glob
 - test_global
 - test_grammar
 - test_graphlib
@@ -578,9 +572,7 @@
       - "test_utime*"
 - test_ossaudiodev
 - test_osx_env
-- test_pathlib:
-    skip:
-      - test_readlink
+- test_pathlib
 - test_patma
 - test_pdb:
     skip:
@@ -609,9 +601,7 @@
 - test_popen
 - test_poplib
 - test_positional_only_arg
-- test_posix:
-    skip:
-      - test_readlink_dir_fd # '/tmp/test_python_worker_132408æ/@test_42_tmpæ_4base/symlink' != 'symlink'
+- test_posix
 - test_posixpath
 - test_pow
 - test_pprint
@@ -659,7 +649,6 @@
 - test_shutil:
     skip:
       - test_copyfile_nonexistent_dir
-      - test_copystat_symlinks
 - test_signal
 - test_site:
     skip:
@@ -692,11 +681,7 @@
 - test_string
 - test_string_literals
 - test_stringprep
-- test_strptime:
-    skip:
-      - test_day_of_week_calculation
-      - test_gregorian_calculation
-      - test_julian_calculation
+- test_strptime
 - test_strtod
 - test_struct
 - test_structseq
@@ -721,19 +706,12 @@
 - test_syslog
 - test_tabnanny
 - test_tarfile:
+    timeout: 120
     skip:
-      - test_chains
-      - test_deep_symlink
-      - test_sly_relative*
-      - test_extractall*
-      - test_parent_symlink*
-      - test_overwrite_broken_file_symlink_as_file
-      - test_overwrite_file_as_implicit_dir
+      - test_sly_relative0
 - test_tcl
 - test_telnetlib
-- test_tempfile:
-    skip:
-      - test_non_directory # setup failure Errno 2: Permission Denied
+- test_tempfile
 - test_termios
 - test_textwrap
 - test_thread
@@ -744,7 +722,6 @@
 - test_time:
     skip:
       - test_pthread_getcpuclockid #  time.pthread_getcpuclockid(threading.get_ident()) fails
-      - test_strptime
       - test_process_time
 - test_timeit
 - test_timeout
@@ -867,14 +844,6 @@
 - test_zipfile._path.test_path
 - test_zipfile.test_core:
     skip:
-      # NotADirectoryError: [Errno 54] Not a directory: '/proc/self/fd'
-      - test_many_opens
-      # FileExistsError: [Errno 20] File exists: '@test_42_tmpæ/test'
-      - test_overwrite_broken_file_symlink_as_file
-      # PermissionError: [Errno 2] Permission denied: '@test_42_tmpæ/test/file'
-      - test_overwrite_file_as_implicit_dir
-      # Works fine but a bit slow
-      - test_write_filtered_python_package
       - test_add_file_before_1980
 - test_zipfile64
 - test_zipimport

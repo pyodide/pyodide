@@ -19,6 +19,7 @@ import {
   syncUpSnapshotLoad2,
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
+import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -557,12 +558,11 @@ export class PyodideAPI {
     );
 
     // sync native ==> browser
-    await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+    await syncRemoteToLocal(Module);
 
     return {
       // sync browser ==> native
-      syncfs: async () =>
-        new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+      syncfs: async () => await syncLocalToRemote(Module),
     };
   }
 
@@ -682,6 +682,15 @@ export class PyodideAPI {
       );
     }
     return API.makeSnapshot(serializer);
+  }
+
+  /**
+   * Returns the pyodide lockfile used to load the current Pyodide instance.
+   * The format of the lockfile is defined in the `pyodide/pyodide-lock
+   * <https://github.com/pyodide/pyodide-lock>`_ repository.
+   */
+  static get lockfile() {
+    return API.lockfile;
   }
 }
 

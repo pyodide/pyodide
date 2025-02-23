@@ -1,6 +1,8 @@
 package:
   name: cramjam
   version: 2.8.3
+  tag:
+    - rust
   top-level:
     - cramjam
 source:
@@ -15,6 +17,8 @@ requirements:
   executable:
     - rustup
     - cargo
+  constraint:
+    - maturin < 1.8
 test:
   imports:
     - cramjam

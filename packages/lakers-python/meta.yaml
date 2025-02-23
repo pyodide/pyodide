@@ -1,6 +1,8 @@
 package:
   name: lakers-python
   version: 0.4.1
+  tag:
+    - rust
   top-level:
     - lakers
 source:
@@ -9,6 +11,8 @@ source:
 requirements:
   executable:
     - rustup
+  constraint:
+    - maturin < 1.8
 about:
   home: https://github.com/openwsn-berkeley/lakers/
   PyPI: https://pypi.org/project/lakers-python/
