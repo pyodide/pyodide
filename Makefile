@@ -24,6 +24,7 @@ all-but-packages: \
 	 \
 	dist/package.json \
 	dist/python \
+	dist/python_cli_entry.js \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/console.html \
@@ -250,6 +251,9 @@ dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
 dist/python: src/templates/python
+	cp $< $@
+
+dist/python_cli_entry.js: src/templates/python_cli_entry.js
 	cp $< $@
 
 .PHONY: dist/console.html
