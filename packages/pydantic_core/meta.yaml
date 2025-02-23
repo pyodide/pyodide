@@ -1,6 +1,8 @@
 package:
   name: pydantic_core
   version: 2.27.2
+  tag:
+    - rust
   # Warning: pydantic has a pin on pydantic_core, they need to be updated
   # together
   top-level:
