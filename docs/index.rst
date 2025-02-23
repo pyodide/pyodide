@@ -59,8 +59,9 @@ Using Pyodide
    usage/quickstart.md
    usage/downloading-and-deploying.md
    usage/index.md
-   usage/loading-packages.md
    usage/accessing-files.md
+   usage/loading-packages.md
+   usage/building-and-testing-packages.md
    usage/wasm-constraints.md
    usage/type-conversions.md
    usage/keyboard-interrupts.md
@@ -79,12 +80,12 @@ development process including making packages to support third party libraries.
    :maxdepth: 1
    :caption: Development
 
-   development/building-from-sources.md
    development/new-packages.md
-   development/building-and-testing-packages.md
-   development/contributing.md
+   development/building-from-sources.md
    development/testing.md
    development/debugging.md
+   development/contributing.md
+
 
 
 Project
