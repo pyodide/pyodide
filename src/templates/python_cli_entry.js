@@ -10,16 +10,16 @@ const fs = require("fs");
  * am not sure why but if we link tmp then the process silently fails.
  */
 function rootDirsToMount() {
-    const skipDirs = ["dev", "lib", "proc", "tmp"];
-    return fs
-        .readdirSync("/")
-        .filter((dir) => !skipDirs.includes(dir))
-        .map((dir) => "/" + dir);
+  const skipDirs = ["dev", "lib", "proc", "tmp"];
+  return fs
+    .readdirSync("/")
+    .filter((dir) => !skipDirs.includes(dir))
+    .map((dir) => "/" + dir);
 }
 
 function dirsToMount() {
-    extra_mounts = process.env["_PYODIDE_EXTRA_MOUNTS"] || "";
-    return rootDirsToMount().concat(extra_mounts.split(":").filter(s => s))
+  extra_mounts = process.env["_PYODIDE_EXTRA_MOUNTS"] || "";
+  return rootDirsToMount().concat(extra_mounts.split(":").filter((s) => s));
 }
 
 const thisProgramFlag = "--this-program=";
@@ -27,59 +27,65 @@ const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
 );
 const args = process.argv.slice(thisProgramIndex + 1);
-const _sysExecutable = process.argv[thisProgramIndex].slice(thisProgramFlag.length);
+const _sysExecutable = process.argv[thisProgramIndex].slice(
+  thisProgramFlag.length,
+);
 
 async function main() {
-    try {
-        py = await loadPyodide({
-            args,
-            _sysExecutable,
-            env: Object.assign({
-                PYTHONINSPECT: "",
-            }, process.env, { HOME: process.cwd() }),
-            fullStdLib: false,
-            _node_mounts: dirsToMount(),
-            // Strip out messages written to stderr while loading
-            // After Pyodide is loaded we will replace stdstreams with setupStreams.
-            stderr(e) {
-                if (
-                    [
-                        "warning: no blob constructor, cannot create blobs with mimetypes",
-                        "warning: no BlobBuilder",
-                    ].includes(e.trim())
-                ) {
-                    return;
-                }
-                console.warn(e);
-            }
-        });
-    } catch (e) {
-        if (e.constructor.name !== "ExitStatus") {
-            throw e;
+  try {
+    py = await loadPyodide({
+      args,
+      _sysExecutable,
+      env: Object.assign(
+        {
+          PYTHONINSPECT: "",
+        },
+        process.env,
+        { HOME: process.cwd() },
+      ),
+      fullStdLib: false,
+      _node_mounts: dirsToMount(),
+      // Strip out messages written to stderr while loading
+      // After Pyodide is loaded we will replace stdstreams with setupStreams.
+      stderr(e) {
+        if (
+          [
+            "warning: no blob constructor, cannot create blobs with mimetypes",
+            "warning: no BlobBuilder",
+          ].includes(e.trim())
+        ) {
+          return;
         }
-        // If the user passed `--help`, `--version`, or a set of command line
-        // arguments that is invalid in some way, we will exit here.
-        process.exit(e.status);
+        console.warn(e);
+      },
+    });
+  } catch (e) {
+    if (e.constructor.name !== "ExitStatus") {
+      throw e;
     }
-    py.setStdout();
-    py.setStderr();
-    let sideGlobals = py.runPython("{}");
-    function handleExit(code) {
-        if (code === undefined) {
-            code = 0;
-        }
-        if (py._module._Py_FinalizeEx() < 0) {
-            code = 120;
-        }
-        // It's important to call `process.exit` immediately after
-        // `_Py_FinalizeEx` because otherwise any asynchronous tasks still
-        // scheduled will segfault.
-        process.exit(code);
-    };
-    sideGlobals.set("handleExit", handleExit);
+    // If the user passed `--help`, `--version`, or a set of command line
+    // arguments that is invalid in some way, we will exit here.
+    process.exit(e.status);
+  }
+  py.setStdout();
+  py.setStderr();
+  let sideGlobals = py.runPython("{}");
+  function handleExit(code) {
+    if (code === undefined) {
+      code = 0;
+    }
+    if (py._module._Py_FinalizeEx() < 0) {
+      code = 120;
+    }
+    // It's important to call `process.exit` immediately after
+    // `_Py_FinalizeEx` because otherwise any asynchronous tasks still
+    // scheduled will segfault.
+    process.exit(code);
+  }
+  sideGlobals.set("handleExit", handleExit);
 
-    py.runPython(
-        `
+  py.runPython(
+    `
         from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
         from pyodide.ffi import to_js
         import re
@@ -88,25 +94,25 @@ async function main() {
             if should_load_dynlib(path)
         ])
         `,
-        { globals: sideGlobals }
-    );
-    const dynlibs = sideGlobals.get("dynlibs_to_load");
-    for (const dynlib of dynlibs) {
-        try {
-            await py._module.API.loadDynlib(dynlib);
-        } catch(e) {
-            console.error("Failed to load lib ", dynlib);
-            console.error(e);
-        }
+    { globals: sideGlobals },
+  );
+  const dynlibs = sideGlobals.get("dynlibs_to_load");
+  for (const dynlib of dynlibs) {
+    try {
+      await py._module.API.loadDynlib(dynlib);
+    } catch (e) {
+      console.error("Failed to load lib ", dynlib);
+      console.error(e);
     }
-    // Warning: this sounds like it might not do anything important, but it
-    // fills in the GOT. There can be segfaults if we leave it out.
-    // See https://github.com/emscripten-core/emscripten/issues/22052
-    // TODO: Fix Emscripten so this isn't needed
-    py._module.reportUndefinedSymbols();
+  }
+  // Warning: this sounds like it might not do anything important, but it
+  // fills in the GOT. There can be segfaults if we leave it out.
+  // See https://github.com/emscripten-core/emscripten/issues/22052
+  // TODO: Fix Emscripten so this isn't needed
+  py._module.reportUndefinedSymbols();
 
-    py.runPython(
-        `
+  py.runPython(
+    `
         import asyncio
         # Keep the event loop alive until all tasks are finished, or SystemExit or
         # KeyboardInterupt is raised.
@@ -131,24 +137,24 @@ async function main() {
             return os.terminal_size((columns, rows))
         shutil.get_terminal_size = get_terminal_size
         `,
-        { globals: sideGlobals }
-    );
+    { globals: sideGlobals },
+  );
 
-    let errcode;
-    try {
-        errcode = py._module._run_main();
-    } catch (e) {
-        if (e.constructor.name === "ExitStatus") {
-            process.exit(e.status);
-        }
-        py._api.fatal_error(e);
+  let errcode;
+  try {
+    errcode = py._module._run_main();
+  } catch (e) {
+    if (e.constructor.name === "ExitStatus") {
+      process.exit(e.status);
     }
-    if (errcode) {
-        process.exit(errcode);
-    }
-    py.runPython("loop._decrement_in_progress()", { globals: sideGlobals });
+    py._api.fatal_error(e);
+  }
+  if (errcode) {
+    process.exit(errcode);
+  }
+  py.runPython("loop._decrement_in_progress()", { globals: sideGlobals });
 }
 main().catch((e) => {
-    console.error(e);
-    process.exit(1);
+  console.error(e);
+  process.exit(1);
 });
