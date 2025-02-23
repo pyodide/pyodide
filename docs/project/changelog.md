@@ -19,7 +19,8 @@ myst:
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
-  Rust panics, and setjmp/longjmp. {pr}`5320`
+  Rust panics, and setjmp/longjmp. Projects and build system helpers that have previously set the
+`-fexceptions` compilation flag **must** switch to using `-fwasm-exceptions`. {pr}`5320`
 - Added `jiter` 0.8.2 {pr}`5388`
 
 ### Packages
