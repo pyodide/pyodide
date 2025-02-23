@@ -11,7 +11,6 @@ CXX=em++
 all: \
 	all-but-packages \
 	dist/pyodide-lock.json \
-	dist/console.html \
 	dist/pyodide.d.ts \
 	dist/snapshot.bin \
 
@@ -27,6 +26,7 @@ all-but-packages: \
 	dist/python \
 	dist/python_stdlib.zip \
 	dist/test.html \
+	dist/console.html \
 	dist/module_test.html \
 
 
