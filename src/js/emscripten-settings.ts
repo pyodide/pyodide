@@ -50,7 +50,7 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     onExit(code) {
       settings.exitCode = code;
     },
-    thisProgram: config.sysExecutable,
+    thisProgram: config._sysExecutable,
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument

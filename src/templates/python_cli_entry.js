@@ -27,13 +27,13 @@ const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
 );
 const args = process.argv.slice(thisProgramIndex + 1);
-const sysExecutable = process.argv[thisProgramIndex].slice(thisProgramFlag.length);
+const _sysExecutable = process.argv[thisProgramIndex].slice(thisProgramFlag.length);
 
 async function main() {
     try {
         py = await loadPyodide({
             args,
-            sysExecutable,
+            _sysExecutable,
             env: Object.assign({
                 PYTHONINSPECT: "",
             }, process.env, { HOME: process.cwd() }),
