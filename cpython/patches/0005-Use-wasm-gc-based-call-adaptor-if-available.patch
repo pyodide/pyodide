@@ -1,4 +1,4 @@
-From 4973dd56cf6e46973ef8cf879d65d82e38b3f90d Mon Sep 17 00:00:00 2001
+From 13370805f9652e70bc19447381443afde82c9b93 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Tue, 22 Oct 2024 15:16:03 +0200
 Subject: [PATCH 5/9] Use wasm-gc based call adaptor if available

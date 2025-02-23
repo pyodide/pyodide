@@ -1,4 +1,4 @@
-From c985e31543257173ce4c2f094c9154d01b5b17ef Mon Sep 17 00:00:00 2001
+From 32155f0ed7043dde694b7910db46f4c97f2e41d9 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 19 Dec 2022 09:09:14 -0800
 Subject: [PATCH 3/9] Allow multiprocessing.connection top level import
