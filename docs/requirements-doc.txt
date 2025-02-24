@@ -18,7 +18,7 @@ pydantic
 # TODO: separate document for pyodide-build?
 pyodide-build>=0.27.3
 # Version should be consistent with packages/micropip/meta.yaml
-micropip==0.9.0
+micropip==0.7.1
 jinja2>=3.0
 ruamel.yaml
 sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@781dc61870a802222051bcc8f6b2a592cd5eec7b
