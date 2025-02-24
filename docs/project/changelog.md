@@ -21,6 +21,10 @@ _February 26, 2025_
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
 
 - {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} Since 0.27.1, Pyodide has been broken in iOS because iOS ships
+  broken wasm-gc support. Pyodide feature detects whether the runtime supports
+  wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
+  detection but wasm-gc doesn't work as expected. {pr}`5445`
 
 ### Packages
 
