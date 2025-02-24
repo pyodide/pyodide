@@ -20,14 +20,18 @@ myst:
   {pr}`5334` {pr}`5363`
 - Added `jiter` 0.8.2 {pr}`5388`
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
-
 - {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} Since 0.27.1, Pyodide has been broken in iOS because iOS ships
+  broken wasm-gc support. Pyodide feature detects whether the runtime supports
+  wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
+  detection but wasm-gc doesn't work as expected. {pr}`5445`
 
 ### Packages
 
 - Added `h3` 4.2.1 {pr}`5436`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded Pyxel to 2.3.6 {pr}`5427`
 - Added `pcodec` 0.3.3 {pr}`5432`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
