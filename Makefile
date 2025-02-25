@@ -11,7 +11,6 @@ CXX=em++
 all: \
 	all-but-packages \
 	dist/pyodide-lock.json \
-	dist/console.html \
 	dist/pyodide.d.ts \
 	dist/snapshot.bin \
 
@@ -25,8 +24,10 @@ all-but-packages: \
 	 \
 	dist/package.json \
 	dist/python \
+	dist/python_cli_entry.js \
 	dist/python_stdlib.zip \
 	dist/test.html \
+	dist/console.html \
 	dist/module_test.html \
 
 
@@ -252,6 +253,9 @@ dist/module_test.html: src/templates/module_test.html
 dist/python: src/templates/python
 	cp $< $@
 
+dist/python_cli_entry.js: src/templates/python_cli_entry.js
+	cp $< $@
+
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
 	cp $< $@
@@ -312,7 +316,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE
+dist/pyodide-lock.json:
 	make pyodide_build
 	@date +"[%F %T] Building packages..."
 	make -C packages

@@ -1,4 +1,4 @@
-From ff4534318481437542f2e49348033a00354a069d Mon Sep 17 00:00:00 2001
+From f09bfe83d146697b936799d97d8fe0110c61b86d Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:41:37 +0200
 Subject: [PATCH 8/9] Add call to `JsProxy_GetMethod` to help remove temporary
@@ -56,5 +56,5 @@ index 6b2e0aeaab9..9240b33b08a 100644
          *method = PyObject_GetAttr(obj, name);
          return 0;
 -- 
-2.34.1
+2.48.1
 
