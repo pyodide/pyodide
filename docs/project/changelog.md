@@ -20,7 +20,10 @@ myst:
   {pr}`5334` {pr}`5363`
 - Added `jiter` 0.8.2 {pr}`5388`
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+
 - {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} `registerJsModule()` now works with non-extensible JS objects, such
+  as ES6 modules. {pr}`5452`
 - {{ Fix }} Since 0.27.1, Pyodide has been broken in iOS because iOS ships
   broken wasm-gc support. Pyodide feature detects whether the runtime supports
   wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature

@@ -1612,8 +1612,14 @@ JsArray_sq_item(PyObject* o, Py_ssize_t i)
   PyObject* pyresult = NULL;
 
   JsVal jsresult = JsvArray_Get(JsProxy_VAL(o), i);
-  FAIL_IF_JS_NULL(jsresult);
+  if (JsvNull_Check(jsresult)) {
+    if (!PyErr_Occurred()) {
+      PyErr_SetString(PyExc_IndexError, "array index out of range");
+    }
+    FAIL();
+  }
   pyresult = js2python(jsresult);
+  FAIL_IF_NULL(pyresult);
 finally:
   return pyresult;
 }
@@ -3244,6 +3250,39 @@ JsProxy_cinit(PyObject* obj, JsVal val, PyObject* sig)
   }
 #endif
   return 0;
+}
+
+EM_JS_VAL(JsVal, JsModule_GetAll_js, (JsVal o), {
+  return Object.getOwnPropertyNames(o);
+});
+
+// This is used by `from x import *` to look up the attributes of the Js module.
+// Three possibilities:
+//  - Set exception and return -1 to raise an exception
+//  - Return 0 and do not set *all when it wasn't a JS object to allow the
+//    normal "from x import *" logic to proceed
+//  - Return 0 and set *all when it is a JsProxy and we successfully find the
+//    attributes.
+//
+// See: cpython/patches/0009-Make-from-x-import-aware-of-jsproxy-modules.patch
+int
+JsModule_GetAll(PyObject* self, PyObject** all)
+{
+  if (!JsProxy_Check(self)) {
+    return 0;
+  }
+  PyObject* pyresult;
+  int success = -1;
+
+  JsVal jsresult = JsModule_GetAll_js(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  pyresult = js2python(jsresult);
+  FAIL_IF_NULL(pyresult);
+  *all = pyresult;
+
+  success = 0;
+finally:
+  return success;
 }
 
 ////////////////////////////////////////////////////////////
