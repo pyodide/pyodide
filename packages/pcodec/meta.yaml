@@ -1,0 +1,26 @@
+package:
+  name: pcodec
+  version: 0.3.3
+  tag:
+    - rust
+  top-level:
+    - pcodec
+source:
+  url: https://files.pythonhosted.org/packages/source/p/pcodec/pcodec-0.3.3.tar.gz
+  sha256: 759505b08db98a28ef8964b23044cc73b137df133d5b07225a6c8ee9540286bf
+requirements:
+  executable:
+    - rustup
+    - cargo
+  constraint:
+    - maturin < 2.0
+  run:
+    - numpy
+test:
+  imports:
+    - pcodec
+about:
+  home: https://github.com/mwlon/pcodec
+  PyPI: https://pypi.org/project/pcodec
+  summary: Good compression for numerical sequences
+  license: Apache-2.0
