@@ -3257,7 +3257,7 @@ EM_JS_VAL(JsVal, JsModule_GetAll_js, (JsVal o), {
 });
 
 // This is used by `from x import *` to look up the attributes of the Js module.
-// Three posibilities:
+// Three possibilities:
 //  - Set exception and return -1 to raise an exception
 //  - Return 0 and do not set *all when it wasn't a JS object to allow the
 //    normal "from x import *" logic to proceed
