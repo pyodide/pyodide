@@ -31,7 +31,6 @@ myst:
 - Added `h3` 4.2.1 {pr}`5436`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
-- Upgraded Pyxel to 2.3.6 {pr}`5427`
 - Added `pcodec` 0.3.3 {pr}`5432`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
