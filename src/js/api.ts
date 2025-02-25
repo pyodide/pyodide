@@ -19,6 +19,7 @@ import {
   syncUpSnapshotLoad2,
 } from "./snapshot";
 import { unpackArchiveMetadata } from "./constants";
+import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
 
 // Exported for micropip
 API.loadBinaryFile = loadBinaryFile;
@@ -557,12 +558,11 @@ export class PyodideAPI {
     );
 
     // sync native ==> browser
-    await new Promise((resolve, _) => Module.FS.syncfs(true, resolve));
+    await syncRemoteToLocal(Module);
 
     return {
       // sync browser ==> native
-      syncfs: async () =>
-        new Promise((resolve, _) => Module.FS.syncfs(false, resolve)),
+      syncfs: async () => await syncLocalToRemote(Module),
     };
   }
 
@@ -683,6 +683,15 @@ export class PyodideAPI {
     }
     return API.makeSnapshot(serializer);
   }
+
+  /**
+   * Returns the pyodide lockfile used to load the current Pyodide instance.
+   * The format of the lockfile is defined in the `pyodide/pyodide-lock
+   * <https://github.com/pyodide/pyodide-lock>`_ repository.
+   */
+  static get lockfile() {
+    return API.lockfile;
+  }
 }
 
 /** @hidden */
@@ -737,21 +746,6 @@ API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
 );
 
-/** @private */
-export function jsFinderHook(o: object) {
-  if ("__all__" in o) {
-    return;
-  }
-  Object.defineProperty(o, "__all__", {
-    get: () =>
-      API.public_api.toPy(
-        Object.getOwnPropertyNames(o).filter((name) => name !== "__all__"),
-      ),
-    enumerable: false,
-    configurable: true,
-  });
-}
-
 /**
  * This function is called after the emscripten module is finished initializing,
  * so eval_code is newly available.
@@ -803,7 +797,7 @@ API.finalizeBootstrap = function (
   if (snapshotConfig) {
     syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
   } else {
-    importhook.register_js_finder.callKwargs({ hook: jsFinderHook });
+    importhook.register_js_finder();
     importhook.register_js_module("js", jsglobals);
     importhook.register_js_module("pyodide_js", pyodide);
   }

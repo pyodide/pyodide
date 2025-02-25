@@ -1,7 +1,7 @@
-From a35c57ed8c7f2657a7a82d900184ebe649dedfdf Mon Sep 17 00:00:00 2001
+From 566d1c20df2370c4a47f21561086fb7e5f51299c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Thu, 25 Jul 2024 14:28:57 +0200
-Subject: [PATCH 7/8] Warn if ZoneInfo is imported without tzdata
+Subject: [PATCH 7/9] Warn if ZoneInfo is imported without tzdata
 
 ---
  Lib/zoneinfo/_common.py | 6 ++++++
@@ -25,5 +25,5 @@ index 98cdfe37ca6..35d19eae9f0 100644
          # to "we cannot find this key":
          #
 -- 
-2.34.1
+2.48.1
 

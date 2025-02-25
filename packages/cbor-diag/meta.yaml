@@ -1,6 +1,8 @@
 package:
   name: cbor-diag
   version: 1.0.1
+  tag:
+    - rust
   top-level:
     - cbor_diag
 source:
