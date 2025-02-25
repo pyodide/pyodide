@@ -807,6 +807,24 @@ def test_register_jsmodule_docs_example(selenium_standalone):
     )
 
 
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_register_non_extendable_jsmodule(selenium_standalone):
+    selenium_standalone.run_js(
+        """
+        pyodide.registerJsModule("x", Object.preventExtensions({aaa: 2, bbb: 7}))
+        """
+    )
+
+    @run_in_pyodide
+    def check_import_star(selenium):
+        a = {}  # type:ignore[var-annotated]
+        exec("from x import *", a)
+        assert set(a).issuperset({"aaa", "bbb"})
+
+    check_import_star(selenium_standalone)
+
+
 @run_in_pyodide
 def test_object_entries_keys_values(selenium):
     from pyodide.code import run_js
