@@ -161,7 +161,7 @@ jobs:
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
 
             ccache -z
-            ENABLE_PREBUILT_PACKAGES='<< parameters.enable_prebuilt_packages >>' PYODIDE_PACKAGES='<< parameters.packages >>' make dist/pyodide-lock.json
+            ENABLE_PREBUILT_PACKAGES='<< parameters.enable_prebuilt_packages >>' PYODIDE_PACKAGES='<< parameters.packages >>' make -B dist/pyodide-lock.json
             ccache -s
           environment:
             PYODIDE_JOBS: 5
