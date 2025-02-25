@@ -1,5 +1,5 @@
-const { loadPyodide } = require("./pyodide");
-const fs = require("fs");
+import { loadPyodide } from "./pyodide.mjs";
+import { readdirSync } from "fs";
 
 /**
  * Determine which native top level directories to mount into the Emscripten
@@ -11,14 +11,13 @@ const fs = require("fs");
  */
 function rootDirsToMount() {
   const skipDirs = ["dev", "lib", "proc", "tmp"];
-  return fs
-    .readdirSync("/")
+  return readdirSync("/")
     .filter((dir) => !skipDirs.includes(dir))
     .map((dir) => "/" + dir);
 }
 
 function dirsToMount() {
-  extra_mounts = process.env["_PYODIDE_EXTRA_MOUNTS"] || "";
+  const extra_mounts = process.env["_PYODIDE_EXTRA_MOUNTS"] || "";
   return rootDirsToMount().concat(extra_mounts.split(":").filter((s) => s));
 }
 
@@ -32,6 +31,7 @@ const _sysExecutable = process.argv[thisProgramIndex].slice(
 );
 
 async function main() {
+  let py;
   try {
     py = await loadPyodide({
       args,
