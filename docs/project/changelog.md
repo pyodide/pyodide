@@ -22,6 +22,8 @@ myst:
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
 
 - {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} `registerJsModule()` now works with non-extensible JS objects, such
+  as ES6 modules. {pr}`5452`
 
 ### Packages
 
