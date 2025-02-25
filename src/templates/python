@@ -43,4 +43,4 @@ fi
 
 RESOLVED_DIR=$(dirname $(realpath "$0"))
 
-exec node "$ARGS" $RESOLVED_DIR/python_cli_entry.js --this-program="$($REALPATH "$0")" "$@"
+exec node "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
