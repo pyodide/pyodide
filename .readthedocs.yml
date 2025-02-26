@@ -17,6 +17,10 @@ python:
   install:
     - requirements: docs/requirements-doc.txt
 
+submodules:
+  include:
+    - pyodide-build
+
 build:
   os: ubuntu-20.04
   tools:
