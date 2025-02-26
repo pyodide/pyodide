@@ -41,30 +41,14 @@ def run(
     return result
 
 
-def fetch_needs_backport_pr_numbers(args) -> tuple[int, ...]:
-    """Use gh cli to collect the set of PRs that are labeled as needs_backport.
-
-    Then cache them to disk. This is the implementation for fetch-backports.
-    """
+@functools.cache
+def get_needs_backport_pr_numbers() -> tuple[int, ...]:
+    """Use gh cli to collect the set of PRs that are labeled as needs_backport."""
     result = run(
         ["gh", "pr", "list", "--label", "needs backport", "--state", "closed"],
         capture_output=True,
     )
     lines = [line.split("\t", 1)[0] for line in result.stdout.splitlines()]
-    NEEDS_BACKPORTS_CACHE.write_text("\n".join(lines) + "\n")
-
-
-@functools.cache
-def get_needs_backport_pr_numbers() -> tuple[int, ...]:
-    """Read the set of backports we need to make from disk."""
-    if not NEEDS_BACKPORTS_CACHE.exists():
-        print(
-            f"error: {NEEDS_BACKPORTS_CACHE} does not exist. First run:\n"
-            + "   ./tools/backport.py fetch-backports",
-            file=sys.stdout,
-        )
-        sys.exit(1)
-    lines = NEEDS_BACKPORTS_CACHE.read_text().splitlines()
     return tuple(int(line) for line in lines)
 
 
@@ -642,12 +626,6 @@ def parse_args():
     )
     add_backport_parser.add_argument("pr_number")
     add_backport_parser.set_defaults(func=add_backport_pr)
-
-    fetch_backports_parser = subparsers.add_parser(
-        "fetch-backports",
-        help="Fetch the list of PRs with the 'needs backport' label and cache to disk. Must be run first.",
-    )
-    fetch_backports_parser.set_defaults(func=fetch_needs_backport_pr_numbers)
 
     missing_changelogs_parser = subparsers.add_parser(
         "missing-changelogs",
