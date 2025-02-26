@@ -214,7 +214,7 @@ class ChangelogSection:
 
     header: list[str] = field(default_factory=list)
     paragraphs: list[ChangelogParagraph] = field(default_factory=list)
-    cur_subsubsection: ChangelogParagraph = field(default_factory=ChangelogParagraph)
+    cur_paragraph: ChangelogParagraph = field(default_factory=ChangelogParagraph)
 
     def get_text(self) -> str:
         """Unparse the subsection"""
@@ -230,27 +230,27 @@ class ChangelogSection:
         return res
 
     def __bool__(self) -> bool:
-        return bool(self.header or self.paragraphs or self.cur_subsubsection)
+        return bool(self.header or self.paragraphs or self.cur_paragraph)
 
     def append(self, line: str) -> None:
         """Main parsing logic."""
         if line.strip() == "":
-            if self.cur_subsubsection:
+            if self.cur_paragraph:
                 self.finish_subsubsection()
             else:
                 self.header.append(line)
             return
-        if self.cur_subsubsection or line.startswith("-"):
-            self.cur_subsubsection.append(line)
+        if self.cur_paragraph or line.startswith("-"):
+            self.cur_paragraph.append(line)
         else:
             self.header.append(line)
 
     def finish_subsubsection(self) -> None:
-        """If cur_subsubsection is nonempty, add it to entries. Then empty out cur_subsubsection"""
-        if self.cur_subsubsection:
-            self.cur_subsubsection.finish_entry()
-            self.paragraphs.append(self.cur_subsubsection)
-            self.cur_subsubsection = ChangelogParagraph()
+        """If cur_paragraph is nonempty, add it to entries. Then empty out cur_paragraph"""
+        if self.cur_paragraph:
+            self.cur_paragraph.finish_entry()
+            self.paragraphs.append(self.cur_paragraph)
+            self.cur_paragraph = ChangelogParagraph()
 
 
 PrChangelogIndex = namedtuple(
