@@ -208,7 +208,7 @@ class ChangelogSection:
     paragraphs:
         The list of paragraphs.
 
-    paragraph:
+    cur_paragraph:
         Parser state.
     """
 
