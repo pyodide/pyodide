@@ -316,7 +316,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json:
+dist/pyodide-lock.json: FORCE
 	make pyodide_build
 	@date +"[%F %T] Building packages..."
 	make -C packages

@@ -19,6 +19,21 @@ myst:
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
 - Added `jiter` 0.8.2 {pr}`5388`
+
+### Packages
+
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+
+- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374`
+
+## Version 0.27.3
+
+_February 26, 2025_
+
 - Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
 
 - {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
@@ -36,14 +51,7 @@ myst:
 - Added `h3` 4.2.1 {pr}`5436`
 - Added `pcodec` 0.3.3 {pr}`5432`
 - Upgraded `narwhals` to 1.24.1 {pr}`5386`
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `awkward-cpp` to 44 {pr}`5376`
-- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
-
-- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
-  Users who want to use `matplotlib-pyodide` need to explicitly call
-  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
-  {pr}`5374`
 
 ## Version 0.27.2
 
