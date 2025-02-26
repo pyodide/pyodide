@@ -50,7 +50,11 @@ def get_needs_backport_pr_numbers() -> tuple[int, ...]:
         capture_output=True,
     )
     lines = [line.split("\t", 1)[0] for line in result.stdout.splitlines()]
-    return tuple(int(line) for line in lines)
+    return tuple(sorted(int(line) for line in lines))
+
+@functools.cache
+def get_needs_backport_prs_strings() -> tuple[str, ...]:
+    return tuple(str(pr) for pr in get_needs_backport_pr_numbers())
 
 
 #
@@ -449,22 +453,29 @@ class Changelog:
 
 
 def add_backport_pr(args):
-    pr_number_str = args.pr_number
-    run(
-        [
-            "gh",
-            "pr",
-            "edit",
-            pr_number_str.removeprefix("#"),
-            "--add-label",
-            "needs backport",
-        ]
-    )
+    for pr_number in args.pr_numbers:
+        run(
+            [
+                "gh",
+                "pr",
+                "edit",
+                pr_number,
+                "--add-label",
+                "needs backport",
+            ]
+        )
 
 
-def remove_needs_backport_labels(args) -> None:
-    for pr_number in get_needs_backport_pr_numbers():
+def clear_backport_prs(args) -> None:
+    needs_backport_prs = get_needs_backport_prs_strings()
+    print("Removing the needs-backport label from the following PRs:")
+    print("  ", ", ".join(needs_backport_prs), "\n")
+    if not args.yes:
+        input("Press enter to continue")
+    for pr_number in needs_backport_prs:
         run(["gh", "pr", "edit", str(pr_number), "--remove-label", "needs backport"])
+    print("To reverse this, run")
+    print(f"  ./tools/backport.py add-backport-pr {" ".join(needs_backport_prs)}")
 
 
 def show_missing_changelogs(args) -> None:
@@ -511,7 +522,8 @@ def diff_old_new_branch(branch_name):
     if not branch_exists(branch_name_old):
         return
     if os.isatty(sys.stdout.fileno()):
-        input("\nWill show diff between previous branch and new branch")
+        print("\nWill show diff between previous branch and new branch.")
+        input("Press enter to continue.")
     run(["git", "diff", branch_name_old, branch_name])
 
 
@@ -621,7 +633,7 @@ def open_release_prs(args):
             f"Backports for v{version}",
             "--body",
             INSERT_ACTUAL_DATE + MERGE_DONT_SQUASH,
-            "--web",
+            "--web",clear_backport_prs
         ]
     )
 
@@ -650,8 +662,14 @@ def parse_args():
     add_backport_parser = subparsers.add_parser(
         "add-backport-pr", help="Add the needs-backport label to a PR"
     )
-    add_backport_parser.add_argument("pr_number")
+    add_backport_parser.add_argument("pr_numbers", nargs="+", action="extend")
     add_backport_parser.set_defaults(func=add_backport_pr)
+
+    clear_backport_prs_parser = subparsers.add_parser(
+        "clear-backport-prs", help="Remove the needs-backport label from all PRs with the label"
+    )
+    clear_backport_prs_parser.add_argument("-y", "--yes", action="store_true", help="Don't prompt for whether to continue")
+    clear_backport_prs_parser.set_defaults(func=clear_backport_prs)
 
     missing_changelogs_parser = subparsers.add_parser(
         "missing-changelogs",
