@@ -136,6 +136,11 @@ Assume for concreteness that we are releasing version 0.27.2.
    git push -f
    ```
    Then merge the two PRs.
+9. Run
+   ```
+   ./tools/backport.py clear-backport-prs
+   ```
+   to clear all the "needs backport" labels.
 
 #### Releasing
 
