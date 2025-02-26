@@ -16,6 +16,7 @@ entries.
 
 import argparse
 import functools
+import os
 import re
 import subprocess
 import sys
@@ -459,7 +460,6 @@ def add_backport_pr(args):
             "needs backport",
         ]
     )
-    fetch_needs_backport_pr_numbers(None)
 
 
 def remove_needs_backport_labels(args) -> None:
@@ -493,21 +493,45 @@ def get_date(args):
     return "Insert Date Here"
 
 
+def branch_exists(branch_name: str) -> bool:
+    res = run(["git", "branch", "--list", branch_name], capture_output=True)
+    return bool(res.stdout.strip())
+
+
+def force_branch_update(branch_name):
+    branch_name_old = branch_name + "-old"
+    branch_already_exists = branch_exists(branch_name)
+    if branch_already_exists:
+        run(["git", "branch", "-f", branch_name_old, branch_name])
+    run(["git", "switch", "-C", branch_name])
+
+
+def diff_old_new_branch(branch_name):
+    branch_name_old = branch_name + "-old"
+    if not branch_exists(branch_name_old):
+        return
+    if os.isatty(sys.stdout.fileno()):
+        input("\nWill show diff between previous branch and new branch")
+    run(["git", "diff", branch_name_old, branch_name])
+
+
 def make_changelog_branch(args) -> None:
     commits = get_commits()
     prs = commits_to_prs(commits)
     version = args.new_version
     date = get_date(args)
     run(["git", "fetch", "upstream", "main:main"])
+    run(["git", "switch", "main"])
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
-    run(["git", "switch", "main"])
-    run(["git", "switch", "-C", f"changelog-for-{version}-tmp"])
+    branch_name = f"changelog-for-{version}"
+    force_branch_update(branch_name)
     changelog.set_patch_release_notes(version, prs, date)
     changelog.remove_release_notes_from_unreleased_section(prs)
     changelog.write_text()
     run(["git", "add", CHANGELOG])
     run(["git", "commit", "-m", f"Update changelog for v{version}"])
+    diff_old_new_branch(branch_name)
 
 
 def make_backport_branch(args) -> None:
@@ -532,11 +556,13 @@ def make_backport_branch(args) -> None:
     run(["git", "fetch", "upstream", "stable:stable"])
     run(["git", "config", "rerere.enabled", "true"])
     run(["git", "config", "rerere.autoupdate", "true"])
+    run(["git", "switch", "main"])
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
     run(["git", "switch", "stable"])
     run(["git", "submodule", "update"])
-    run(["git", "switch", "-C", f"backports-for-{version}-tmp"])
+    branch_name = f"backports-for-{version}"
+    force_branch_update(branch_name)
     for n, cur_commit in enumerate(commits):
         result = run(
             ["git", "-c", "core.editor=true", "cherry-pick", cur_commit.shorthash],
@@ -573,15 +599,15 @@ def make_backport_branch(args) -> None:
                 )
                 sys.exit(result2.returncode)
 
-    commits = get_commits()
+    diff_old_new_branch(branch_name)
 
 
 def open_release_prs(args):
     version = args.new_version
     INSERT_ACTUAL_DATE = "- [ ] Insert the actual date in the changelog\n"
     MERGE_DONT_SQUASH = "- [] Merge, don't squash"
-    BACKPORTS_BRANCH = f"backports-for-{version}-tmp"
-    CHANGELOG_BRANCH = f"changelog-for-{version}-tmp"
+    BACKPORTS_BRANCH = f"backports-for-{version}"
+    CHANGELOG_BRANCH = f"changelog-for-{version}"
 
     run(["git", "switch", BACKPORTS_BRANCH])
     run(
