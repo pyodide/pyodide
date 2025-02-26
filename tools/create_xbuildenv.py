@@ -11,7 +11,7 @@ try:
         get_build_flag,
         get_unisolated_packages,
     )
-    from pyodide_build.recipe import load_all_recipes
+    from pyodide_build.recipe.loader import load_all_recipes
 except ImportError:
     print("Requires pyodide-build package to be installed")
     sys.exit(1)

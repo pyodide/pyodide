@@ -1,0 +1,38 @@
+From af6348a8b84e67a2b74a877cf2ce77be579f2fd0 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 22 Feb 2025 13:18:18 +0100
+Subject: [PATCH 9/9] Make `from x import *` aware of jsproxy modules
+
+---
+ Python/intrinsics.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/Python/intrinsics.c b/Python/intrinsics.c
+index c6f5ac5402d..ca11f335c24 100644
+--- a/Python/intrinsics.c
++++ b/Python/intrinsics.c
+@@ -33,6 +33,11 @@ print_expr(PyThreadState* tstate, PyObject *value)
+     return PyObject_CallOneArg(hook, value);
+ }
+ 
++int __attribute__((weak))
++JsModule_GetAll(PyObject* self, PyObject** all) {
++    return 0;
++}
++
+ static int
+ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
+ {
+@@ -43,6 +48,9 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
+     if (_PyObject_LookupAttr(v, &_Py_ID(__all__), &all) < 0) {
+         return -1; /* Unexpected error */
+     }
++    if (all == NULL && JsModule_GetAll(v, &all) == -1) {
++        return -1; /* Unexpected error */
++    }
+     if (all == NULL) {
+         if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &dict) < 0) {
+             return -1;
+-- 
+2.34.1
+

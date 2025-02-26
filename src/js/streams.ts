@@ -9,7 +9,11 @@ function nodeFsync(fd: number): void {
   try {
     fs.fsyncSync(fd);
   } catch (e: any) {
-    if (e && e.code === "EINVAL") {
+    if (e?.code === "EINVAL") {
+      return;
+    }
+    // On mac, calling fsync on stdout/stderr when not isatty returns ENOTSUP
+    if (e?.code === "ENOTSUP" && (fd === 1 || fd === 2)) {
       return;
     }
     throw e;
