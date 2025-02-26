@@ -16,6 +16,7 @@ Assume for concreteness that we are releasing version 0.20.0.
 
 1. Make a tracking issue with a title like "0.20.0 release planning". Add the
    checklist:
+
    - [ ] Update packages
    - [ ] Look for open PRs to add to the release milestone
    - [ ] Make sure all PRs in the release milestone are merged
@@ -27,17 +28,18 @@ Assume for concreteness that we are releasing version 0.20.0.
 
 3. Generate the list of contributors for the release at the end of the release
    notes blog post with:
+
    ```sh
    git shortlog -s 0.19.0.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
    ```
-   where `0.19.0` is the tag for the last major release. 
+
+   where `0.19.0` is the tag for the last major release.
 
 4. Read the changelog and tidy it up by adding subsections, organizing, and proof
    reading it. Make a pull request with these changes titled "Rearrange changelog
    for 0.20.0 release" and merge it.
 
 5. Make sure all the PRs that we want to release are merged and that the release notes are ready.
-
 
 #### Releasing
 
@@ -63,6 +65,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git branch 0.20.X stable
    git push -u upstream 0.20.X
    ```
+
 7. Create a new `stable` branch:
 
    ```sh
@@ -70,6 +73,7 @@ Assume for concreteness that we are releasing version 0.20.0.
    git switch -C stable
    git push upstream stable --force
    ```
+
 8. Set the version back to next development version with:
    ```sh
    git switch main
@@ -86,14 +90,17 @@ Assume for concreteness that we are releasing version 0.27.2.
 1. Go through the commits on the main branch since the last release, find ones
    you want to backport and add the "needs backport" label to the pull requests.
    You can do this manually in the web interface on the github PR or you can use
+
    ```sh
    ./tools/backports.py add-backport-pr <pr-number>
    ```
 
 2. List out the `needs backport` PRs that are missing changelog entries with
+
    ```sh
    ./tools/backports.py missing-changelogs
    ```
+
    and double check that every PR that should have a changelog does have one.
 
 3. Read the changelog and tidy it up by adding subsections, organizing, and
@@ -101,16 +108,19 @@ Assume for concreteness that we are releasing version 0.27.2.
    "Rearrange changelog for 0.27.2 release" and merge it.
 
 4. Make the backport branch (on top of stable):
+
    ```
    ./tools/backports.py backport-branch 0.27.2
    ```
 
 5. Make the update-changelog branch (on top of main) with:
+
    ```
    ./tools/backports.py changelog-branch 0.27.2
    ```
 
 6. Open PRs for these two branches with:
+
    ```
    ./tools/backports.py open-release-prs 0.27.2
    ```
