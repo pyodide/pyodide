@@ -52,6 +52,7 @@ def get_needs_backport_pr_numbers() -> tuple[int, ...]:
     lines = [line.split("\t", 1)[0] for line in result.stdout.splitlines()]
     return tuple(sorted(int(line) for line in lines))
 
+
 @functools.cache
 def get_needs_backport_prs_strings() -> tuple[str, ...]:
     return tuple(str(pr) for pr in get_needs_backport_pr_numbers())
@@ -118,10 +119,11 @@ class ChangelogEntry:
     """A changelog entry, represented as a list of strings.
 
     An entry is started by a line beginning with `-`. It ends when there is a
-    line starting with `#` (begins a new section/subsection), a blank line
-    (begins a new subsubsection) or `-` (begins a new entry).
+    line starting with `##` (begins a new version) `###` (begins a new
+    subsection), a blank line (begins a new paragraph) or `-` (begins a new
+    entry).
 
-    This is nearly the same thing as it's content.
+    This is nearly the same thing as its content.
     """
 
     content: list[str] = field(default_factory=list)
@@ -139,13 +141,27 @@ class ChangelogEntry:
 
 
 @dataclass
-class ChangelogSubSubSection:
+class ChangelogParagraph:
+    """A paragraph grouping of changelog entries separated by blank lines.
+
+    Introduced by a line starting with a -. Ended by a blank line, or ### or ##.
+
+    header:
+        Probably empty?
+
+    entries:
+        The list of entries.
+
+    cur_entry:
+        Parser state.
+    """
+
     header: list[str] = field(default_factory=list)
     entries: list[ChangelogEntry] = field(default_factory=list)
     cur_entry: ChangelogEntry = field(default_factory=ChangelogEntry)
 
     def get_text(self) -> str:
-        """Unparse the subsubsection"""
+        """Unparse the paragraph"""
         header = ""
         if self.header:
             header = "\n".join(self.header) + "\n"
@@ -177,35 +193,35 @@ class ChangelogSubSubSection:
 
 
 @dataclass
-class ChangelogSubSection:
-    """A changelog subsection
+class ChangelogSection:
+    """A section of the changelog for a particular version of Pyodide
 
     Introduced by ### or ##. Ends when there is another line with ### or ##.
 
     header:
         Consists of all the lines starting with and the subsection start "###"
-        line and including all content lines that do not start with -. Generally
-        this will be ### plus one or more empty lines.
+        line and including all content lines up untile the first line that
+        starts with -. Generally this will be a heading like "### Packages" plus
+        one or more empty lines. The first `ChangelogSection` in a
+        `ChangelogVersion` may have an empty heading.
 
-    subsubsection:
-        The list of subsubsections.
+    paragraphs:
+        The list of paragraphs.
 
-    subsubsection:
+    paragraph:
         Parser state.
     """
 
     header: list[str] = field(default_factory=list)
-    subsubsections: list[ChangelogSubSubSection] = field(default_factory=list)
-    cur_subsubsection: ChangelogSubSubSection = field(
-        default_factory=ChangelogSubSubSection
-    )
+    paragraphs: list[ChangelogParagraph] = field(default_factory=list)
+    cur_subsubsection: ChangelogParagraph = field(default_factory=ChangelogParagraph)
 
     def get_text(self) -> str:
         """Unparse the subsection"""
         header = ""
         if self.header:
             header = "\n".join(self.header) + "\n"
-        res = header + "".join(x.get_text() for x in self.subsubsections)
+        res = header + "".join(x.get_text() for x in self.paragraphs)
         # Special case: if the last entry already ends in a blank line, we don't
         # add another one. This keeps the spacing more consistent with the
         # backported entries.
@@ -214,7 +230,7 @@ class ChangelogSubSection:
         return res
 
     def __bool__(self) -> bool:
-        return bool(self.header or self.subsubsections or self.cur_subsubsection)
+        return bool(self.header or self.paragraphs or self.cur_subsubsection)
 
     def append(self, line: str) -> None:
         """Main parsing logic."""
@@ -233,18 +249,18 @@ class ChangelogSubSection:
         """If cur_subsubsection is nonempty, add it to entries. Then empty out cur_subsubsection"""
         if self.cur_subsubsection:
             self.cur_subsubsection.finish_entry()
-            self.subsubsections.append(self.cur_subsubsection)
-            self.cur_subsubsection = ChangelogSubSubSection()
+            self.paragraphs.append(self.cur_subsubsection)
+            self.cur_subsubsection = ChangelogParagraph()
 
 
 PrChangelogIndex = namedtuple(
-    "PrChangelogIndex", ["subsection", "subsubsection", "entry", "is_unique"]
+    "PrChangelogIndex", ["subsection", "paragraph", "entry", "is_unique"]
 )
 
 
 @dataclass
-class ChangelogSection:
-    """A changelog subsection
+class ChangelogVersion:
+    """The changelog information for a particular release of Pyodide.
 
     Introduced by ##. Ends when there is a ##.
 
@@ -257,10 +273,10 @@ class ChangelogSection:
         up to the first entry or subsection. So that should include just the `##
         Unreleased` line and a blank line or two.
 
-    subsections:
-        The list of subsections.
+    sections:
+        The list of sections.
 
-    cur_subsection:
+    cur_section:
         Parser state.
 
     pr_index:
@@ -269,8 +285,8 @@ class ChangelogSection:
     """
 
     header: list[str] = field(default_factory=list)
-    subsections: list[ChangelogSubSection] = field(default_factory=list)
-    cur_subsection: ChangelogSubSection = field(default_factory=ChangelogSubSection)
+    sections: list[ChangelogSection] = field(default_factory=list)
+    cur_section: ChangelogSection = field(default_factory=ChangelogSection)
     pr_index: dict[int, PrChangelogIndex] = field(default_factory=dict)
 
     def get_text(self) -> str:
@@ -278,14 +294,14 @@ class ChangelogSection:
         header = ""
         if self.header:
             header = "\n".join(self.header) + "\n"
-        return header + "".join(x.get_text() for x in self.subsections)
+        return header + "".join(x.get_text() for x in self.sections)
 
     def append(self, line: str) -> None:
         """Main parsing logic."""
         if line.startswith("### "):
             self.finish_subsection()
-        if self.cur_subsection or line.startswith(("-", "### ")):
-            self.cur_subsection.append(line)
+        if self.cur_section or line.startswith(("-", "### ")):
+            self.cur_section.append(line)
         else:
             self.header.append(line)
 
@@ -294,35 +310,33 @@ class ChangelogSection:
             self.append(line)
 
     def finish_subsection(self) -> None:
-        """If cur_subsection is nonempty, add it to entries. Then empty out cur_entry"""
-        if self.cur_subsection:
-            self.cur_subsection.finish_subsubsection()
-            self.subsections.append(self.cur_subsection)
-            self.cur_subsection = ChangelogSubSection()
+        """If cur_section is nonempty, add it to entries. Then empty out cur_entry"""
+        if self.cur_section:
+            self.cur_section.finish_subsubsection()
+            self.sections.append(self.cur_section)
+            self.cur_section = ChangelogSection()
 
     def create_pr_index(self) -> None:
         PR_NUMBER_RE = re.compile(r"{pr}`[0-9]+`")
-        for subsection_idx, subsection in enumerate(self.subsections):
-            for subsubsection_idx, subsubsection in enumerate(
-                subsection.subsubsections
-            ):
-                for entry_idx, entry in enumerate(subsubsection.entries):
+        for subsection_idx, subsection in enumerate(self.sections):
+            for paragraph_idx, paragraph in enumerate(subsection.paragraphs):
+                for entry_idx, entry in enumerate(paragraph.entries):
                     pr_strs = PR_NUMBER_RE.findall(entry.get_text())
                     is_unique = len(pr_strs) == 1
                     for pr_str in pr_strs:
                         pr = int(pr_str[5:-1])
                         self.pr_index[pr] = PrChangelogIndex(
-                            subsection_idx, subsubsection_idx, entry_idx, is_unique
+                            subsection_idx, paragraph_idx, entry_idx, is_unique
                         )
 
     def delete_entry(self, pr_changelog_index: PrChangelogIndex) -> None:
-        subsection = self.subsections[pr_changelog_index.subsection]
-        subsubsection = subsection.subsubsections[pr_changelog_index.subsubsection]
-        del subsubsection.entries[pr_changelog_index.entry]
-        if not subsubsection.entries:
-            del subsection.subsubsections[pr_changelog_index.subsubsection]
-        if not subsection.subsubsections:
-            del self.subsections[pr_changelog_index.subsection]
+        subsection = self.sections[pr_changelog_index.subsection]
+        paragraph = subsection.paragraphs[pr_changelog_index.paragraph]
+        del paragraph.entries[pr_changelog_index.entry]
+        if not paragraph.entries:
+            del subsection.paragraphs[pr_changelog_index.paragraph]
+        if not subsection.paragraphs:
+            del self.sections[pr_changelog_index.subsection]
 
 
 @dataclass
@@ -330,10 +344,10 @@ class Changelog:
     """Class for keeping track of an item in inventory."""
 
     file: Path | None = None
-    prelude: ChangelogSection = field(default_factory=ChangelogSection)
-    unreleased: ChangelogSection = field(default_factory=ChangelogSection)
-    patch_release: ChangelogSection = field(default_factory=ChangelogSection)
-    rest: ChangelogSection = field(default_factory=ChangelogSection)
+    prelude: ChangelogVersion = field(default_factory=ChangelogVersion)
+    unreleased: ChangelogVersion = field(default_factory=ChangelogVersion)
+    patch_release: ChangelogVersion = field(default_factory=ChangelogVersion)
+    rest: ChangelogVersion = field(default_factory=ChangelogVersion)
 
     @classmethod
     def from_file(cls, file):
@@ -381,7 +395,7 @@ class Changelog:
         self.file.write_text(self.get_text(include_unreleased=include_unreleased))
 
     def set_patch_release_notes(
-        self, version: str, pr_numbers: list[int], date: str
+        self, version: str, pr_numbers: list[int], date: str = "Insert Date Here"
     ) -> None:
         """Given a list of PRs, check if they have a changelog entry in
         "Unreleased".
@@ -389,7 +403,7 @@ class Changelog:
         If so add the entry to the patch_release section. Don't remove the entry
         from the unreleased section, just duplicate it.
         """
-        self.patch_release = ChangelogSection()
+        self.patch_release = ChangelogVersion()
         self.patch_release.append_lines([f"## Version {version}", "", f"_{date}_", ""])
         backport_subsections = {}
         backport_subsubsections = {}
@@ -403,29 +417,29 @@ class Changelog:
 
         changelog_indices = sorted(
             changelog_indices,
-            key=lambda idx: (idx.subsection, idx.subsubsection, idx.entry),
+            key=lambda idx: (idx.subsection, idx.paragraph, idx.entry),
         )
         for pr_index in changelog_indices:
-            subsection = self.unreleased.subsections[pr_index.subsection]
+            subsection = self.unreleased.sections[pr_index.subsection]
             if pr_index.subsection in backport_subsections:
                 backport_subsection = backport_subsections[pr_index.subsection]
             else:
                 backport_subsection = deepcopy(subsection)
-                backport_subsection.subsubsections = []
+                backport_subsection.paragraphs = []
                 backport_subsections[pr_index.subsection] = backport_subsection
-                self.patch_release.subsections.append(backport_subsection)
+                self.patch_release.sections.append(backport_subsection)
 
-            subsubsection = subsection.subsubsections[pr_index.subsubsection]
-            subsub_index = (pr_index.subsection, pr_index.subsubsection)
+            paragraph = subsection.paragraphs[pr_index.paragraph]
+            subsub_index = (pr_index.subsection, pr_index.paragraph)
             if subsub_index in backport_subsubsections:
                 backport_subsubsection = backport_subsubsections[subsub_index]
             else:
-                backport_subsubsection = deepcopy(subsubsection)
+                backport_subsubsection = deepcopy(paragraph)
                 backport_subsubsection.entries = []
                 backport_subsubsections[subsub_index] = backport_subsubsection
-                backport_subsection.subsubsections.append(backport_subsubsection)
+                backport_subsection.paragraphs.append(backport_subsubsection)
 
-            entry = subsubsection.entries[pr_index.entry]
+            entry = paragraph.entries[pr_index.entry]
             backport_subsubsection.entries.append(entry)
 
     def remove_release_notes_from_unreleased_section(
@@ -442,7 +456,7 @@ class Changelog:
         # 2. Sort by reverse order of appearance and then delete.
         for idx in sorted(
             indices_to_delete,
-            key=lambda idx: (-idx.subsection, -idx.subsubsection, -idx.entry),
+            key=lambda idx: (-idx.subsection, -idx.paragraph, -idx.entry),
         ):
             self.unreleased.delete_entry(idx)
 
@@ -475,7 +489,7 @@ def clear_backport_prs(args) -> None:
     for pr_number in needs_backport_prs:
         run(["gh", "pr", "edit", str(pr_number), "--remove-label", "needs backport"])
     print("To reverse this, run")
-    print(f"  ./tools/backport.py add-backport-pr {" ".join(needs_backport_prs)}")
+    print(f"  ./tools/backport.py add-backport-pr {' '.join(needs_backport_prs)}")
 
 
 def show_missing_changelogs(args) -> None:
@@ -547,7 +561,7 @@ def make_changelog_branch(args) -> None:
 
 
 def make_backport_branch(args) -> None:
-    """ "
+    """
     To make the backport branch, first we query the set of PRs that are tagged with
     'needs-backport'. Then we sort them in chronological order by date merged.
     (This was annoying to do manually -- the github interface lets you sort PRs
@@ -633,7 +647,8 @@ def open_release_prs(args):
             f"Backports for v{version}",
             "--body",
             INSERT_ACTUAL_DATE + MERGE_DONT_SQUASH,
-            "--web",clear_backport_prs
+            "--web",
+            clear_backport_prs,
         ]
     )
 
@@ -666,9 +681,12 @@ def parse_args():
     add_backport_parser.set_defaults(func=add_backport_pr)
 
     clear_backport_prs_parser = subparsers.add_parser(
-        "clear-backport-prs", help="Remove the needs-backport label from all PRs with the label"
+        "clear-backport-prs",
+        help="Remove the needs-backport label from all PRs with the label",
     )
-    clear_backport_prs_parser.add_argument("-y", "--yes", action="store_true", help="Don't prompt for whether to continue")
+    clear_backport_prs_parser.add_argument(
+        "-y", "--yes", action="store_true", help="Don't prompt for whether to continue"
+    )
     clear_backport_prs_parser.set_defaults(func=clear_backport_prs)
 
     missing_changelogs_parser = subparsers.add_parser(

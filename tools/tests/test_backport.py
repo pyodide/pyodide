@@ -7,9 +7,9 @@ sys.path.append(str(Path(__file__).parents[1]))
 from backport import (
     Changelog,
     ChangelogEntry,
+    ChangelogParagraph,
     ChangelogSection,
-    ChangelogSubSection,
-    ChangelogSubSubSection,
+    ChangelogVersion,
     PrChangelogIndex,
 )
 
@@ -47,14 +47,14 @@ def make_entry(*lines):
     return ChangelogEntry(content=list(lines))
 
 
-def make_subsubsection(*entries):
-    return ChangelogSubSubSection(entries=list(entries))
+def make_paragraph(*entries):
+    return ChangelogParagraph(entries=list(entries))
 
 
 def get_expected_changelog():
-    unlabeled = ChangelogSubSection(
-        subsubsections=[
-            make_subsubsection(
+    unlabeled = ChangelogSection(
+        paragraphs=[
+            make_paragraph(
                 make_entry(
                     "- ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350`",
                 ),
@@ -62,7 +62,7 @@ def get_expected_changelog():
                     "- Added `jiter` 0.8.2 {pr}`5388`",
                 ),
             ),
-            make_subsubsection(
+            make_paragraph(
                 make_entry(
                     "- {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`",
                 ),
@@ -75,10 +75,10 @@ def get_expected_changelog():
             ),
         ],
     )
-    packages = ChangelogSubSection(
+    packages = ChangelogSection(
         header=["### Packages", ""],
-        subsubsections=[
-            make_subsubsection(
+        paragraphs=[
+            make_paragraph(
                 make_entry(
                     "- Added `h3` 4.2.1 {pr}`5436`",
                 ),
@@ -86,7 +86,7 @@ def get_expected_changelog():
                     "- Added `pcodec` 0.3.3 {pr}`5432`",
                 ),
             ),
-            make_subsubsection(
+            make_paragraph(
                 make_entry(
                     "- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.",
                     "Users who want to use `matplotlib-pyodide` need to explicitly call",
@@ -97,12 +97,12 @@ def get_expected_changelog():
         ],
     )
     return Changelog(
-        prelude=ChangelogSection(header=["# Change Log", ""]),
-        unreleased=ChangelogSection(
+        prelude=ChangelogVersion(header=["# Change Log", ""]),
+        unreleased=ChangelogVersion(
             header=["## Unreleased", ""],
-            subsections=[unlabeled, packages],
+            sections=[unlabeled, packages],
         ),
-        rest=ChangelogSection(header=["## Version 0.27.2"]),
+        rest=ChangelogVersion(header=["## Version 0.27.2"]),
     )
 
 
@@ -119,13 +119,13 @@ def test_parsed():
 def test_unparse():
     changelog = get_expected_changelog()
     unreleased = changelog.unreleased
-    [unlabeled, packages] = unreleased.subsections
-    assert unlabeled.subsubsections[0].entries[0].get_text() == dedent(
+    [unlabeled, packages] = unreleased.sections
+    assert unlabeled.paragraphs[0].entries[0].get_text() == dedent(
         """\
         - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350`
         """
     )
-    assert unlabeled.subsubsections[0].get_text() == dedent(
+    assert unlabeled.paragraphs[0].get_text() == dedent(
         """\
         - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350`
         - Added `jiter` 0.8.2 {pr}`5388`
