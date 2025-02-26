@@ -21,8 +21,8 @@ import subprocess
 import sys
 from collections import namedtuple
 from copy import deepcopy
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
@@ -391,7 +391,9 @@ class Changelog:
         assert self.file
         self.file.write_text(self.get_text(include_unreleased=include_unreleased))
 
-    def set_patch_release_notes(self, version: str, pr_numbers: list[int], date: str) -> None:
+    def set_patch_release_notes(
+        self, version: str, pr_numbers: list[int], date: str
+    ) -> None:
         """Given a list of PRs, check if they have a changelog entry in
         "Unreleased".
 
@@ -399,9 +401,7 @@ class Changelog:
         from the unreleased section, just duplicate it.
         """
         self.patch_release = ChangelogSection()
-        self.patch_release.append_lines(
-            [f"## Version {version}", "", f"_{date}_", ""]
-        )
+        self.patch_release.append_lines([f"## Version {version}", "", f"_{date}_", ""])
         backport_subsections = {}
         backport_subsubsections = {}
 
@@ -498,8 +498,10 @@ def show_missing_changelogs(args) -> None:
         else:
             print(commit.pr_number, commit.shorthash, commit.shortlog)
 
+
 def today():
     return datetime.today().strftime("%B %d, %Y")
+
 
 def get_date(args):
     if args.today:
@@ -567,7 +569,9 @@ def make_backport_branch(args) -> None:
                 ["git", "checkout", cur_commit.shorthash, "--", path],
                 capture_output=True,
             )
-        changelog.set_patch_release_notes(version, commits_to_prs(commits[: n + 1]), date)
+        changelog.set_patch_release_notes(
+            version, commits_to_prs(commits[: n + 1]), date
+        )
         changelog.write_text(include_unreleased=False)
         run(["git", "add", "docs/project/changelog.md"])
         if result.returncode == 0:
