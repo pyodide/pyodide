@@ -18,6 +18,11 @@ myst:
 
 _March 17, 2025_
 
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
+  environment variable as flags to node when starting. {pr}`5478`
+
 ### Packages
 
 - Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
