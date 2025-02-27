@@ -1,0 +1,34 @@
+package:
+  name: blosc2
+  version: 3.2.0
+  top-level:
+  - blosc2
+source:
+  url: https://files.pythonhosted.org/packages/source/b/blosc2/blosc2-3.2.0.tar.gz
+  sha256: db38f2265cd7938cbdc7b029420d2d5b65fcb8f91ce00bb6d6bdac63194d62cc
+about:
+  home: https://github.com/Blosc/python-blosc2
+  PyPI: https://pypi.org/project/blosc2
+  summary: A fast & compressed ndarray library with a flexible compute engine.
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+  - FrancescAlted
+requirements:
+  host:
+    # Dependencies that are needed to build the package
+    #- cython    # TODO: this is not present
+    - numpy
+  run:
+    # Dependencies that are needed to run the package
+    - numpy
+    #- ndindex  # TODO: this is not present
+    - msgpack
+    #- platformsdir  # TODO: this is not present
+    - requests
+build:
+  script: |
+    export WITH_OPTIM=OFF   # TODO: not sure how to pass -DWITH_OPTIM to cmake (used indirectly by scikit-build-core) 
+  #cflags: |
+  #  -DWITH_OPTIM=OFF
+
