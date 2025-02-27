@@ -33,7 +33,7 @@ describe("logStdout and logStderr", () => {
     errorSpy.restore();
   });
 
-  it("Should use the provided logger if one is provided", () => {
+  it("Should be overwrited when setCallbacks is called", () => {
     const mockApi = genMockAPI();
     const mockMod = genMockModule();
 
@@ -42,8 +42,10 @@ describe("logStdout and logStderr", () => {
     const stdoutLogger = sinon.spy();
     const stderrLogger = sinon.spy();
 
-    pm.logStdout("stdout", stdoutLogger);
-    pm.logStderr("stderr", stderrLogger);
+    pm.setCallbacks(stdoutLogger, stderrLogger)(() => {
+      pm.logStdout("stdout");
+      pm.logStderr("stderr");
+    })()
 
     chai.assert.isTrue(stdoutLogger.calledOnce);
     chai.assert.isTrue(stderrLogger.calledOnce);
