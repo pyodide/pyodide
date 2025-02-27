@@ -236,7 +236,7 @@ class ChangelogSection:
         """Main parsing logic."""
         if line.strip() == "":
             if self.cur_paragraph:
-                self.finish_subsubsection()
+                self.finish_paragraph()
             else:
                 self.header.append(line)
             return
@@ -245,7 +245,7 @@ class ChangelogSection:
         else:
             self.header.append(line)
 
-    def finish_subsubsection(self) -> None:
+    def finish_paragraph(self) -> None:
         """If cur_paragraph is nonempty, add it to entries. Then empty out cur_paragraph"""
         if self.cur_paragraph:
             self.cur_paragraph.finish_entry()
@@ -299,7 +299,7 @@ class ChangelogVersion:
     def append(self, line: str) -> None:
         """Main parsing logic."""
         if line.startswith("### "):
-            self.finish_subsection()
+            self.finish_section()
         if self.cur_section or line.startswith(("-", "### ")):
             self.cur_section.append(line)
         else:
@@ -309,10 +309,10 @@ class ChangelogVersion:
         for line in lines:
             self.append(line)
 
-    def finish_subsection(self) -> None:
+    def finish_section(self) -> None:
         """If cur_section is nonempty, add it to entries. Then empty out cur_entry"""
         if self.cur_section:
-            self.cur_section.finish_subsubsection()
+            self.cur_section.finish_paragraph()
             self.sections.append(self.cur_section)
             self.cur_section = ChangelogSection()
 
@@ -370,7 +370,7 @@ class Changelog:
         # Parse unreleased section
         for line in it:
             if line.startswith("## "):
-                self.unreleased.finish_subsection()
+                self.unreleased.finish_section()
                 self.rest.header.append(line)
                 break
             self.unreleased.append(line)
