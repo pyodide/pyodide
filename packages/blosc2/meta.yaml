@@ -1,5 +1,5 @@
 package:
-  name: blosc2
+  name: python-blosc2
   version: 3.2.0
   top-level:
   - blosc2
