@@ -187,7 +187,7 @@ export class PackageManager {
     const loadPackageWithCallbacks = this.setCallbacks(
       options.messageCallback,
       options.errorCallback,
-    )(this.loadPackageInner);
+    )(this.loadPackageInner).bind(this);
     return loadPackageWithCallbacks(names, options);
   }
 
