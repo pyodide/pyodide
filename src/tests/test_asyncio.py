@@ -1,5 +1,7 @@
 import asyncio
+import re
 import time
+from textwrap import dedent
 
 import pytest
 from pytest_pyodide import run_in_pyodide
@@ -424,22 +426,47 @@ def test_await_pyproxy_async_def(selenium):
     )
 
 
-@run_in_pyodide
-async def inner_test_cancellation(selenium):
-    from asyncio import ensure_future, sleep
-
-    from js import fetch
-
-    async def f():
-        while True:
-            await fetch("/")
-
-    fut = ensure_future(f())
-    await sleep(0.01)
-    fut.cancel()
-    await sleep(0.1)
-
-
 def test_cancellation(selenium):
-    inner_test_cancellation(selenium)
+    @run_in_pyodide
+    async def inner(selenium):
+        from asyncio import ensure_future, sleep
+
+        from js import fetch
+
+        async def f():
+            while True:
+                await fetch("/")
+
+        fut = ensure_future(f())
+        await sleep(0.01)
+        fut.cancel()
+        await sleep(0.1)
+
+    inner(selenium)
     assert "InvalidStateError" not in selenium.logs
+
+
+def test_uncaught_exception(selenium):
+    @run_in_pyodide
+    async def inner(selenium):
+        import asyncio
+
+        async def f():
+            1 / 0  # noqa: B018
+
+        asyncio.create_task(f())
+        await asyncio.sleep(0)
+
+    inner(selenium)
+    expected_message = dedent(
+        """\
+        Unhandled exception in event loop
+        Traceback (most recent call last):
+
+          File "/home/rchatham/Documents/programming/pyodide/src/tests/test_asyncio.py", line xxx, in f
+
+        ZeroDivisionError: division by zero
+        """
+    )
+
+    assert expected_message in re.sub("line [0-9]+", "line xxx", selenium.logs)
