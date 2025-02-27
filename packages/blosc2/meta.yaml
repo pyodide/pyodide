@@ -2,7 +2,7 @@ package:
   name: python-blosc2
   version: 3.2.0
   top-level:
-  - blosc2
+    - blosc2
 source:
   url: https://files.pythonhosted.org/packages/source/b/blosc2/blosc2-3.2.0.tar.gz
   sha256: db38f2265cd7938cbdc7b029420d2d5b65fcb8f91ce00bb6d6bdac63194d62cc
@@ -13,7 +13,7 @@ about:
   license: BSD-3-Clause
 extra:
   recipe-maintainers:
-  - FrancescAlted
+    - FrancescAlted
 requirements:
   host:
     # Dependencies that are needed to build the package
@@ -28,7 +28,6 @@ requirements:
     - requests
 build:
   script: |
-    export WITH_OPTIM=OFF   # TODO: not sure how to pass -DWITH_OPTIM to cmake (used indirectly by scikit-build-core) 
+    export WITH_OPTIM=OFF   # TODO: not sure how to pass -DWITH_OPTIM to cmake (used indirectly by scikit-build-core)
   #cflags: |
   #  -DWITH_OPTIM=OFF
-
