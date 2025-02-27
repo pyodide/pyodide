@@ -42,10 +42,13 @@ describe("logStdout and logStderr", () => {
     const stdoutLogger = sinon.spy();
     const stderrLogger = sinon.spy();
 
-    pm.setCallbacks(stdoutLogger, stderrLogger)(() => {
+    pm.setCallbacks(
+      stdoutLogger,
+      stderrLogger,
+    )(() => {
       pm.logStdout("stdout");
       pm.logStderr("stderr");
-    })()
+    })();
 
     chai.assert.isTrue(stdoutLogger.calledOnce);
     chai.assert.isTrue(stderrLogger.calledOnce);
