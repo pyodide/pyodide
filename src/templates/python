@@ -43,4 +43,7 @@ fi
 
 RESOLVED_DIR=$(dirname $(realpath "$0"))
 
-exec node "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
+# Compute our own path, not following symlinks and pass it in so that
+# node_entry.mjs can set sys.executable correctly.
+# Intentionally allow word splitting on $NODEFLAGS.
+exec node $NODEFLAGS "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
