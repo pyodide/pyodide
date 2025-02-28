@@ -6,8 +6,8 @@ from textwrap import dedent
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from pyodide.code import eval_code_async
 from conftest import PYODIDE_ROOT
+from pyodide.code import eval_code_async
 
 
 def test_await_jsproxy(selenium):
