@@ -29,6 +29,8 @@ myst:
 - {{ Fix }} The Pyodide CLI entrypoint now mounts the `/tmp` directory. In old
   versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console.
 
 ### Packages
 
