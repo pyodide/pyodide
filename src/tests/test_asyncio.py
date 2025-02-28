@@ -7,6 +7,7 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 from pyodide.code import eval_code_async
+from pyodide_build.build_env import get_pyodide_root
 
 
 def test_await_jsproxy(selenium):
@@ -463,10 +464,12 @@ def test_uncaught_exception(selenium):
         Unhandled exception in event loop
         Traceback (most recent call last):
 
-          File "/home/rchatham/Documents/programming/pyodide/src/tests/test_asyncio.py", line xxx, in f
+          File "$PYODIDE_ROOT/src/tests/test_asyncio.py", line xxx, in f
 
         ZeroDivisionError: division by zero
         """
     )
 
-    assert expected_message in re.sub("line [0-9]+", "line xxx", selenium.logs)
+    assert expected_message in re.sub("line [0-9]+", "line xxx", selenium.logs).replace(
+        str(get_pyodide_root()), "$PYODIDE_ROOT"
+    )
