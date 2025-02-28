@@ -314,7 +314,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE .pyodide_build_installed
+dist/pyodide-lock.json: .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
 	make -C packages
 	@date +"[%F %T] done building packages..."
@@ -331,8 +331,6 @@ rust:
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
-
-FORCE:
 
 
 check:
