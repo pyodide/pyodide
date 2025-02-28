@@ -11,7 +11,7 @@ source:
 build:
   type: static_library
   script: |
-    CFLAGS="-fPIC" emconfigure ./configure \
+    CFLAGS="-fPIC -sSUPPORT_LONGJMP=wasm" LDFLAGS="-sSUPPORT_LONGJMP=wasm" emconfigure ./configure \
       --prefix=${WASM_LIBRARY_DIR} \
       --disable-dependency-tracking \
       --disable-shared \
