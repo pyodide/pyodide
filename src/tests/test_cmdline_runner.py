@@ -10,8 +10,14 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.build_env import emscripten_version, get_pyodide_root
+from pyodide_build.build_env import (
+    emscripten_version,
+    get_build_environment_vars,
+    get_pyodide_root,
+)
 from pyodide_build.xbuildenv import CrossBuildEnvManager
+
+PYVERSION = get_build_environment_vars(get_pyodide_root())["PYVERSION"]
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -39,7 +45,7 @@ def test_python_version(selenium):
         [script_path, "-V"], capture_output=True, encoding="utf8", check=False
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
@@ -249,7 +255,7 @@ def test_venv_version(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
@@ -538,3 +544,52 @@ def test_cpp_exceptions(selenium, venv):
     print(result.stderr)
     assert result.returncode == 1
     assert "ImportError: oops" in result.stderr
+
+
+@only_node
+def test_pip_install_sys_platform_condition_kept(selenium, venv):
+    """impure Python package built with Pyodide"""
+    result = install_pkg(venv, "regex; sys_platform == 'emscripten'")
+    assert result.returncode == 0
+    assert (
+        clean_pkg_install_stdout(result.stdout)
+        == dedent(
+            """
+            Looking in links: .../dist
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: regex
+            Successfully installed regex-*
+            """
+        ).strip()
+    )
+
+    result = subprocess.run(
+        [
+            venv / "bin/python",
+            "-c",
+            dedent(
+                r"""
+                import regex
+                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
+                print(m.capturesdict())
+                """
+            ),
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert (
+        result.stdout
+        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
+    )
+
+
+@only_node
+def test_pip_install_sys_platform_condition_skipped(selenium, venv):
+    """impure Python package built with Pyodide"""
+    result = install_pkg(venv, "regex; sys_platform != 'emscripten'")
+    assert result.returncode == 0
+    ignoring = """Ignoring regex: markers 'sys_platform != "emscripten"' don't match your environment"""
+    assert ignoring in result.stdout

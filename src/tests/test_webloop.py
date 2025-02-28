@@ -514,3 +514,22 @@ async def test_zero_timeout(selenium):
 
     # Very rough check, we hope it's less than 4s (1000 * 4ms [setTimeout delay in most browsers])
     assert elapsed < 4, f"elapsed: {elapsed}s"
+
+
+@run_in_pyodide
+async def test_create_task_context(selenium):
+    import asyncio as aio
+    from contextvars import ContextVar, copy_context
+
+    cvar = ContextVar("test_create_task_context", default=0)
+    cvar.set(1)
+    ctx_with_1 = copy_context()
+    cvar.set(2)
+
+    async def get_cvar() -> int:
+        return cvar.get()
+
+    assert await get_cvar() == 2  # Sanity check
+
+    task = aio.create_task(get_cvar(), context=ctx_with_1)
+    assert await task == 1

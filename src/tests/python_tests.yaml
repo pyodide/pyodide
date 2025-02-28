@@ -708,6 +708,7 @@
 - test_syslog
 - test_tabnanny
 - test_tarfile:
+    timeout: 120
     skip:
       - test_sly_relative0
 - test_tcl

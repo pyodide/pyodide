@@ -16,9 +16,9 @@ source:
       - ./pyproject.toml
 
 build:
-  cflags: -fexceptions
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
+  cflags: -fwasm-exceptions
+  cxxflags: -fwasm-exceptions
+  ldflags: -fwasm-exceptions
 
 requirements:
   run:

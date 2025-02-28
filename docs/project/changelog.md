@@ -18,12 +18,51 @@ myst:
 
 - ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363`
-- Added `jiter` 0.8.2 {pr}`5388`
+- ABI break: Switched to using WebAssembly exception handling for C++ errors,
+  Rust panics, and setjmp/longjmp. Projects and build system helpers that have
+  previously set the `-fexceptions` compilation flag **must** switch to using
+  `-fwasm-exceptions`. Furthermore, if a project uses `setjmp`/`longjmp`, they
+  must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
+  compile time and link time.
+  {pr}`5320`
+
+- {{ Fix }} The Pyodide CLI entrypoint now mounts the `/tmp` directory. In old
+  versions of Emscripten this would crash but was fixed over a year ago.
+  {pr}`5477`
 
 ### Packages
 
-- Upgraded `narwhals` to 1.24.1 {pr}`5386`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- Added `jiter` 0.8.2 {pr}`5388`
+
+- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374`
+
+## Version 0.27.3
+
+_February 26, 2025_
+
+- Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+
+- {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} `registerJsModule()` now works with non-extensible JS objects, such
+  as ES6 modules. {pr}`5452`
+- {{ Fix }} The Pyodide CLI runner now works correctly on macs when stdout is
+  not a tty. {pr}`5430`
+- {{ Fix }} Since 0.27.1, Pyodide has been broken in iOS because iOS ships
+  broken wasm-gc support. Pyodide feature detects whether the runtime supports
+  wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
+  detection but wasm-gc doesn't work as expected. {pr}`5445`
+
+### Packages
+
+- Added `h3` 4.2.1 {pr}`5436`
+- Added `pcodec` 0.3.3 {pr}`5432`
+- Upgraded `narwhals` to 1.24.1 {pr}`5386`
+- Upgraded `awkward-cpp` to 44 {pr}`5376`
 
 ## Version 0.27.2
 
@@ -37,7 +76,6 @@ _January 23, 2025_
 - Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
   `pydantic_core` {pr}`5368`
 - Upgraded `packaging` to 24.2 {pr}`5370`
-- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
 
 ## Version 0.27.1
 

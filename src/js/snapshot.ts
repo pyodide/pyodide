@@ -1,4 +1,3 @@
-import { jsFinderHook } from "./api";
 import { scheduleCallback } from "./scheduler";
 
 declare var Module: any;
@@ -7,7 +6,6 @@ declare var Module: any;
 export function getExpectedKeys() {
   return [
     null,
-    jsFinderHook,
     API.config.jsglobals,
     API.public_api,
     API,

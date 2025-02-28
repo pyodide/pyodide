@@ -25,13 +25,13 @@ build:
     -s USE_FREETYPE=1
     -s USE_LIBPNG=1
     -s USE_ZLIB=1
-    -fexceptions
+    -fwasm-exceptions
     -fno-lto
   cxxflags: |
     -std=c++14
-    -fexceptions
+    -fwasm-exceptions
   ldflags: |
-    -fexceptions
+    -fwasm-exceptions
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
     rm -rf matplotlib/backends/qt_editor
@@ -39,8 +39,6 @@ build:
     rm -rf sphinxext
     cp $PKGDIR/extras/fontlist.json matplotlib
     cp $PKGDIR/extras/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
-    mkdir -p $PKGDIR/../../dist/fonts
-    cp matplotlib/mpl-data/fonts/ttf/* $PKGDIR/../../dist/fonts/
 
 requirements:
   host:
@@ -56,7 +54,6 @@ requirements:
     - pyparsing
     - python-dateutil
     - pytz
-    - matplotlib-pyodide
 
 about:
   home: https://matplotlib.org

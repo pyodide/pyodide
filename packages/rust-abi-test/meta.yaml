@@ -1,6 +1,8 @@
 package:
   name: rust-abi-test
   version: "1.0"
+  tag:
+    - rust
 source:
   path: src
 requirements:
