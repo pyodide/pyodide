@@ -1,0 +1,18 @@
+package:
+  name: platformdirs
+  version: 4.3.6
+  top-level:
+  - platformdirs
+source:
+  url: 
+    https://files.pythonhosted.org/packages/py3/p/platformdirs/platformdirs-4.3.6-py3-none-any.whl
+  sha256: 73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb
+about:
+  home: https://github.com/tox-dev/platformdirs
+  PyPI: https://pypi.org/project/platformdirs
+  summary: A small Python package for determining appropriate platform-specific dirs,
+    e.g. a `user data dir`.
+  license: null
+extra:
+  recipe-maintainers:
+  - FrancescAlted
