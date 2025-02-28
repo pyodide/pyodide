@@ -156,6 +156,7 @@ jobs:
           no_output_timeout: 60m
           command: |
             source pyodide_env.sh
+            make pyodide_build
 
             # Set mtime for EM_CONFIG to avoid ccache cache misses
             touch -m -d '1 Jan 2021 12:00' emsdk/emsdk/.emscripten
