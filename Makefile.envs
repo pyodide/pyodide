@@ -5,10 +5,12 @@ export PYODIDE_ABI_VERSION ?= 2025_0
 
 export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
 
+export RUST_TOOLCHAIN ?= nightly-2025-02-01
+export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}.tar.bz2
 # I'm not really sure what this explicit -Z link-native-libraries=yes is for,
 # `rustc -Z help` shows that `link-native-libraries=yes` is the default. But it
 # seems to be necessary...
-export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes
+export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes -Z emscripten-wasm-eh
 
 # URL to the prebuilt packages
 export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/20250114
@@ -129,6 +131,8 @@ export CFLAGS_BASE=\
 	$(OPTFLAGS) \
 	$(DBGFLAGS) \
 	-fPIC \
+	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP \
 	$(EXTRA_CFLAGS)
 
 
@@ -138,7 +142,9 @@ export LDFLAGS_BASE=\
 	$(DBG_LDFLAGS) \
 	-L$(CPYTHONROOT)/installs/python-$(PYVERSION)/lib/ \
 	-s WASM_BIGINT \
-	$(EXTRA_LDFLAGS)
+	-fwasm-exceptions \
+	-sSUPPORT_LONGJMP \
+	$(EXTRA_LDFLAGS) \
 
 export CXXFLAGS_BASE=
 
@@ -148,7 +154,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s LZ4=1 \
 	-s EXPORT_NAME="'_createPyodideModule'" \
 	-s EXPORT_EXCEPTION_HANDLING_HELPERS \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules'] \
 	-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES' \
 	-s USE_ZLIB \
 	-s USE_BZIP2 \
@@ -234,6 +239,7 @@ EXPORTS=_main \
    ,__PyTraceback_Add \
    ,_PyUnicode_Data \
    ,_PyUnicode_New \
+   ,_emscripten_stack_get_current \
    ,_Py_Version \
 
 
@@ -241,7 +247,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction' \
+		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction,stackSave,stackRestore' \
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
@@ -273,7 +279,6 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
 	-I$(PYTHONINCLUDE)/.. \
-	-s EXCEPTION_CATCHING_ALLOWED=['we only want to allow exception handling in side modules']
 
 .output_vars:
 	set
