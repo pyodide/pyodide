@@ -7,7 +7,7 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 
 from pyodide.code import eval_code_async
-from pyodide_build.build_env import get_pyodide_root
+from conftest import PYODIDE_ROOT
 
 
 def test_await_jsproxy(selenium):
@@ -471,5 +471,5 @@ def test_uncaught_exception(selenium):
     )
 
     assert expected_message in re.sub("line [0-9]+", "line xxx", selenium.logs).replace(
-        str(get_pyodide_root()), "$PYODIDE_ROOT"
+        str(PYODIDE_ROOT), "$PYODIDE_ROOT"
     )
