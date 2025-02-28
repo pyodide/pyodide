@@ -19,8 +19,8 @@ requirements:
     - numpy
     - msgpack
     - requests
-    #- ndindex  # TODO: this is not present, although pure python
-    #- platformdirs  # TODO: this is not present, although pure python
+    - ndindex
+    - platformdirs
 
 about:
   home: https://github.com/Blosc/python-blosc2
