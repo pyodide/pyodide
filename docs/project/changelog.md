@@ -22,6 +22,9 @@ _March 17, 2025_
 
 - {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
   environment variable as flags to node when starting. {pr}`5478`
+- {{ Fix }} For a Pyodide virtual environment, `.venv-pyodide/bin/python -m pip`
+  now works even if the virtual environment has not been sourced.
+  {pr}`5448`
 
 ### Packages
 
