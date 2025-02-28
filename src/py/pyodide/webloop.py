@@ -173,8 +173,8 @@ class PyodideTask(Task[T], PyodideFuture[T]):
         super().__init__(*args, **kwargs)
         self._num_done_callbacks = 0
 
-    def add_done_callback(self, cb):  # type: ignore[override]
-        res = super().add_done_callback(cb)
+    def add_done_callback(self, cb, *, context=None):
+        res = super().add_done_callback(cb, context=context)
         self._num_done_callbacks += 1
         return res
 
