@@ -1,0 +1,16 @@
+package:
+  name: ndindex
+  version: 1.9.2
+  top-level:
+  - ndindex
+source:
+  url: https://files.pythonhosted.org/packages/source/n/ndindex/ndindex-1.9.2.tar.gz
+  sha256: b8658a06e52d6c47445c2ec11d292e1d52c3af259214c8b52e3a1aab733daa72
+about:
+  home: https://quansight-labs.github.io/ndindex/
+  PyPI: https://pypi.org/project/ndindex
+  summary: A Python library for manipulating indices of ndarrays.
+  license: MIT
+extra:
+  recipe-maintainers:
+  - FrancescAlted
