@@ -5,9 +5,9 @@ from typing import Any, TypedDict
 import pytest
 from pyodide_lock import PyodideLockSpec
 
-from conftest import ROOT_PATH
+from conftest import PYODIDE_ROOT
 
-PKG_DIR = ROOT_PATH / "packages"
+PKG_DIR = PYODIDE_ROOT / "packages"
 
 
 UNSUPPORTED_PACKAGES: dict[str, list[str]] = {
@@ -25,7 +25,7 @@ XFAIL_PACKAGES: dict[str, str] = {
     "matplotlib-inline": "circular dependency with IPython",
 }
 
-LOCKFILE_PATH = ROOT_PATH / "dist" / "pyodide-lock.json"
+LOCKFILE_PATH = PYODIDE_ROOT / "dist" / "pyodide-lock.json"
 
 
 class ImportTestCase(TypedDict):
