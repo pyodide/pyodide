@@ -42,3 +42,4 @@ tools/symlinks
 xbuildenv/
 .pyodide-xbuildenv*
 DS_Store
+.pyodide_build_installed
