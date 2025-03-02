@@ -109,6 +109,34 @@ describe("withContext", () => {
     assert.isTrue(setupCalled);
     assert.isTrue(cleanupCalled);
   });
+
+  it("raise on setup error", () => {
+    assert.throws(
+      () =>
+        withContext(
+          () => {
+            throw new Error("Setup error");
+          },
+          () => {},
+          () => {},
+        ),
+      "Setup error",
+    );
+  });
+
+  it("raise on cleanup error", () => {
+    assert.throws(
+      () =>
+        withContext(
+          () => {},
+          () => {
+            throw new Error("Cleanup error");
+          },
+          () => {},
+        ),
+      "Cleanup error",
+    );
+  });
 });
 
 describe("createContextWrapper", () => {

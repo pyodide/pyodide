@@ -33,7 +33,7 @@ describe("logStdout and logStderr", () => {
     errorSpy.restore();
   });
 
-  it("Should be overwrited when setCallbacks is called", () => {
+  it("Should be overwritten when setCallbacks is called", () => {
     const mockApi = genMockAPI();
     const mockMod = genMockModule();
 

@@ -184,11 +184,12 @@ export class PackageManager {
       checkIntegrity: true,
     },
   ): Promise<Array<PackageData>> {
-    const loadPackageWithCallbacks = this.setCallbacks(
+    const wrappedLoadPackage = this.setCallbacks(
       options.messageCallback,
       options.errorCallback,
-    )(this.loadPackageInner).bind(this);
-    return loadPackageWithCallbacks(names, options);
+    )(this.loadPackageInner);
+
+    return wrappedLoadPackage.call(this, names, options);
   }
 
   public async loadPackageInner(
