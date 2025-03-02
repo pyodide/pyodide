@@ -492,10 +492,6 @@ export interface API {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
-  recursiveDependencies: (
-    names: string[],
-    errorCallback: (err: string) => void,
-  ) => Map<string, PackageLoadMetadata>;
   _Comlink: any;
 
   dsodir: string;
