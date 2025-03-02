@@ -1732,7 +1732,9 @@ def test_static_import(selenium_standalone_noload, tmp_path):
     shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
 
     # make sure the test html references the new directory when importing pyodide.asm.js
-    test_html = (PYODIDE_ROOT / "src/templates/module_static_import_test.html").read_text()
+    test_html = (
+        PYODIDE_ROOT / "src/templates/module_static_import_test.html"
+    ).read_text()
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
     (tmp_path / "module_static_import_test.html").write_text(test_html)
 
