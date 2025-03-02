@@ -28,6 +28,11 @@ export function withContext<T>(
   return result;
 }
 
+// A type for a function that wraps another function and preserves its type
+type FunctionWrapper = <T extends (...args: any[]) => any>(
+  fn: T,
+) => (...args: Parameters<T>) => ReturnType<T>;
+
 /**
  * Creates a function wrapper that sets up a context before calling the function
  * and cleans up afterwards. Works with both synchronous and asynchronous functions.
@@ -39,12 +44,10 @@ export function withContext<T>(
 export function createContextWrapper(
   setup: () => void,
   cleanup: () => void,
-): <T extends (...args: any[]) => any>(
-  fn: T,
-) => (...args: Parameters<T>) => ReturnType<T> {
-  return <T extends (...args: any[]) => any>(fn: T) => {
-    return function (this: any, ...args: Parameters<T>): ReturnType<T> {
+): FunctionWrapper {
+  return function (fn) {
+    return function (this: any, ...args: Parameters<typeof fn>) {
       return withContext(setup, cleanup, () => fn.apply(this, args));
     };
-  };
+  }
 }
