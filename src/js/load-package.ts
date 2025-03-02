@@ -25,7 +25,7 @@ import {
   ensureDirNode,
 } from "./compat";
 import { Installer } from "./installer";
-import { createContextWrapper, withContext } from "./common/contextManager";
+import { createContextWrapper } from "./common/contextManager";
 
 /**
  * Initialize the packages index. This is called as early as possible in

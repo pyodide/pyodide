@@ -10,10 +10,10 @@
 export function withContext<T>(
   setup: () => void,
   cleanup: () => void,
-  callback: () => T | Promise<T>,
-): T | Promise<T> {
+  callback: () => T,
+): T {
   setup();
-  let result;
+  let result: T;
   try {
     result = callback();
   } catch (e) {
@@ -21,7 +21,7 @@ export function withContext<T>(
     throw e;
   }
   if (result instanceof Promise) {
-    return result.finally(() => cleanup());
+    return result.finally(() => cleanup()) as T;
   }
 
   cleanup();
