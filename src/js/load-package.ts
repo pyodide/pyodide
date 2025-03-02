@@ -183,7 +183,7 @@ export class PackageManager {
     } = {
       checkIntegrity: true,
     },
-  ): Promise<Array<PackageData>> {
+  ): Promise<PackageData[]> {
     const wrappedLoadPackage = this.setCallbacks(
       options.messageCallback,
       options.errorCallback,
@@ -193,7 +193,7 @@ export class PackageManager {
   }
 
   public async loadPackageInner(
-    names: string | PyProxy | Array<string>,
+    names: string | PyProxy | string[],
     options: {
       messageCallback?: (message: string) => void;
       errorCallback?: (message: string) => void;
