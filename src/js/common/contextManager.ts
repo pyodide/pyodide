@@ -49,5 +49,5 @@ export function createContextWrapper(
     return function (this: any, ...args: Parameters<typeof fn>) {
       return withContext(setup, cleanup, () => fn.apply(this, args));
     };
-  }
+  };
 }
