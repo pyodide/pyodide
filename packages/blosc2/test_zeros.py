@@ -8,10 +8,9 @@
 
 import math
 
+import blosc2
 import numpy as np
 import pytest
-
-import blosc2
 
 
 @pytest.mark.parametrize(
@@ -32,7 +31,12 @@ import blosc2
             (10, 10),
             (10, 10),
             np.float64,
-            {"codec": blosc2.Codec.BLOSCLZ, "clevel": 8, "use_dict": False, "nthreads": 2},
+            {
+                "codec": blosc2.Codec.BLOSCLZ,
+                "clevel": 8,
+                "use_dict": False,
+                "nthreads": 2,
+            },
             "zeros.b2nd",
             True,
             {"abc": 123456789, "2": [0, 1, 23]},
