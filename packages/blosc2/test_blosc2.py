@@ -1,7 +1,6 @@
+import blosc2
 import pytest
 from pytest_pyodide import run_in_pyodide
-
-import blosc2
 
 
 @run_in_pyodide(packages=["blosc2"])
@@ -46,6 +45,7 @@ def test_compress2(selenium, nbytes, cparams, dparams, gil):
 @pytest.mark.parametrize("shape", [(1,), (3,), (10,), (2 * 10,), (2**8 - 1, 3)])
 def test_large_typesize(selenium, shape, typesize, asarray):
     import numpy as np
+
     dtype = np.dtype([("f_001", "<i1", (typesize,)), ("f_002", "f4", (typesize,))])
     a = np.zeros(shape, dtype=dtype)
     if asarray:
