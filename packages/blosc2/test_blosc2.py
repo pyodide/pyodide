@@ -18,7 +18,7 @@ def test_bytearray(selenium, data):
     ("nbytes", "cparams", "dparams"),
     [
         (7, {"clevel": 6, "typesize": 1}, {}),
-        (641091, {"typesize": 1}, {"nthreads": 4}),
+        (641091, {"typesize": 1}, {"nthreads": 1}),
         (136, {"typesize": 1}, {}),
         (1231, {"typesize": 4}, {}),
     ],
