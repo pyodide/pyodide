@@ -43,8 +43,6 @@ def test_compress2(selenium, nbytes, cparams, dparams, gil):
 @pytest.mark.parametrize("typesize", [255, 256, 257, 261, 256 * 256])
 @pytest.mark.parametrize("shape", [(1,), (3,), (10,), (2 * 10,), (2**8 - 1, 3)])
 def test_large_typesize(selenium, shape, typesize, asarray):
-    import numpy as np
-
     dtype = np.dtype([("f_001", "<i1", (typesize,)), ("f_002", "f4", (typesize,))])
     a = np.zeros(shape, dtype=dtype)
     if asarray:
@@ -52,3 +50,32 @@ def test_large_typesize(selenium, shape, typesize, asarray):
     else:
         b = blosc2.zeros(shape, dtype=dtype)
     assert np.array_equal(b[0], a[0])
+
+
+@run_in_pyodide(packages=["blosc2"])
+@pytest.mark.parametrize(
+    ("sss", "shape", "dtype", "chunks", "blocks"),
+    [
+        ((0, 10, 1), (10,), np.int32, (5,), (2,)),
+        ((1, 11, 1), (2, 5), np.int64, (2, 3), (1, 1)),
+        ((2, 22, 1), (2, 5, 2), np.float32, (2, 5, 1), (1, 5, 1)),
+        ((2, 22, 2), (1, 5, 2), np.float32, (1, 5, 1), (1, 5, 1)),
+        ((3, 33, 3), (1, 5, 2), np.float64, (1, 5, 1), (1, 5, 1)),
+        ((50, None, None), (10, 5, 1), np.float64, (5, 5, 1), (3, 5, 1)),
+    ],
+)
+@pytest.mark.parametrize("c_order", [True, False])
+def test_arange(selenium, sss, shape, dtype, chunks, blocks, c_order):
+    start, stop, step = sss
+    a = blosc2.arange(
+        start, stop, step, dtype=dtype, shape=shape, c_order=c_order, chunks=chunks, blocks=blocks
+    )
+    assert a.shape == shape
+    assert isinstance(a, blosc2.NDArray)
+    b = np.arange(start, stop, step, dtype=dtype).reshape(shape)
+    if a.ndim == 1 or c_order:
+        np.testing.assert_allclose(a[:], b)
+    else:
+        # This is chunk order, so testing is more laborious, and not really necessary
+        pass
+
