@@ -68,7 +68,14 @@ def test_large_typesize(selenium, shape, typesize, asarray):
 def test_arange(selenium, sss, shape, dtype, chunks, blocks, c_order):
     start, stop, step = sss
     a = blosc2.arange(
-        start, stop, step, dtype=dtype, shape=shape, c_order=c_order, chunks=chunks, blocks=blocks
+        start,
+        stop,
+        step,
+        dtype=dtype,
+        shape=shape,
+        c_order=c_order,
+        chunks=chunks,
+        blocks=blocks,
     )
     assert a.shape == shape
     assert isinstance(a, blosc2.NDArray)
@@ -78,4 +85,3 @@ def test_arange(selenium, sss, shape, dtype, chunks, blocks, c_order):
     else:
         # This is chunk order, so testing is more laborious, and not really necessary
         pass
-
