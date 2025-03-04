@@ -15,10 +15,10 @@ def test_bytearray(selenium, data):
 @pytest.mark.parametrize(
     ("nbytes", "cparams", "dparams"),
     [
-        (7, {"codec": blosc2.Codec.LZ4, "clevel": 6, "typesize": 1}, {}),
+        (7, {"clevel": 6, "typesize": 1}, {}),
         (641091, {"typesize": 1}, {"nthreads": 4}),
         (136, {"typesize": 1}, {}),
-        (1231, {"typesize": 4}, blosc2.dparams_dflts),
+        (1231, {"typesize": 4}, {}),
     ],
 )
 def test_compress2(selenium, nbytes, cparams, dparams, gil):
