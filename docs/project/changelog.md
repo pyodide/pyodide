@@ -30,6 +30,8 @@ myst:
   versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
 
+- {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
+
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
