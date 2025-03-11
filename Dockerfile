@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.7-slim-bookworm
+FROM python:3.13.2-slim-bookworm
 
 # Requirements for building packages
 RUN apt-get update \
@@ -8,7 +8,7 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo sqlite3 \
+        gnupg2 libdbus-glib-1-2 sudo sqlite3 cmake \
         ninja-build jq xxd \
   && rm -rf /var/lib/apt/lists/*
 
