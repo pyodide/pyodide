@@ -57,7 +57,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 	echo '()<::>{' >> $@                       # zero argument argspec and start body
 	cat src/js/generated/_pyodide.out.js >> $@ # All of _pyodide.out.js is body
 	echo '}' >> $@                             # Close function body
-	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
+	cat src/core/stack_switching/stack_switching.out.js >> $@
 	cat src/core/pre.js >> $@                  # Execute pre.js too
 	echo "pyodide_js_init();" >> $@            # Then execute the function.
 
