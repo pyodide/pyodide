@@ -63,7 +63,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 
 
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
-	emcc --std=c23 -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+	emcc --std=c23 -c $< -o $@
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
