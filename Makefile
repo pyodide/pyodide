@@ -31,7 +31,7 @@ all-but-packages: \
 	dist/module_test.html \
 
 
-src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
+src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
 # file so that when linked, Emscripten will include it. We use the same pathway
 # that EM_JS uses, but EM_JS is itself unsuitable. Why? Because the C
@@ -42,11 +42,7 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 # of EM_JS.
 #
 # To get around this problem, we use an array initializer instead of a string
-# initializer. We write a string file and then convert it to a .c file with xxd
-# as suggested here:
-# https://unix.stackexchange.com/questions/176111/how-to-dump-a-binary-file-as-a-c-c-string-literal
-# We use `xxd -i -` which converts the input to a comma separated list of
-# hexadecimal pairs which can go into an array initializer.
+# initializer, with #embed.
 #
 # EM_JS works by injecting a string variable into a special section called em_js
 # called __em_js__<function_name>. The contents of this variable are of the form
@@ -58,29 +54,16 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 # extra stuff after the block ends. We make a 0-argument function called
 # pyodide_js_init. Immediately after that we inject pre.js and then a call to
 # the init function.
-	# First the data file
-	rm -f tmp.dat
-	echo '()<::>{' >> tmp.dat                       # zero argument argspec and start body
-	cat src/js/generated/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
-	echo '}' >> tmp.dat                             # Close function body
+	echo '()<::>{' >> $@                       # zero argument argspec and start body
+	cat src/js/generated/_pyodide.out.js >> $@ # All of _pyodide.out.js is body
+	echo '}' >> $@                             # Close function body
 	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
-	cat src/core/pre.js >> tmp.dat                  # Execute pre.js too
-	echo "pyodide_js_init();" >> tmp.dat            # Then execute the function.
+	cat src/core/pre.js >> $@                  # Execute pre.js too
+	echo "pyodide_js_init();" >> $@            # Then execute the function.
 
-	# Now generate the C file. Define a string __em_js__pyodide_js_init with
-	# contents from tmp.dat
-	rm -f src/core/pyodide_pre.gen.c
-	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
-	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
-	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
-	# Add a null byte to terminate the string
-	echo ', 0};' >> src/core/pyodide_pre.gen.c
-	echo "#include <emscripten.h>" >> src/core/pyodide_pre.gen.c
-	echo "void pyodide_js_init(void) EM_IMPORT(pyodide_js_init);" >> src/core/pyodide_pre.gen.c
-	echo "EMSCRIPTEN_KEEPALIVE void pyodide_export(void) { pyodide_js_init(); }" >> src/core/pyodide_pre.gen.c
 
-	rm tmp.dat
-	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
+	emcc --std=c23 -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
