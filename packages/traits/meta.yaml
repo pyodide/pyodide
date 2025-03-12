@@ -5,7 +5,7 @@ package:
     - traits
 source:
   sha256: a563515809cb3911975de5a54209855f0b6fdb7ca6912a5e81de26529f70428c
-  url: https://files.pythonhosted.org/packages/source/t/traits/traits-7.0.2.tar.gz
+  url: https://files.pythonhosted.org/packages/9e/ba/33e199bfae748e802f68a857035fb003089c176897bf43e2cf38ff167740/traits-7.0.2.tar.gz
 about:
   home: http://docs.enthought.com/traits
   PyPI: https://pypi.org/project/traits

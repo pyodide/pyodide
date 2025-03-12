@@ -1,11 +1,11 @@
 package:
   name: async-timeout
-  version: 4.0.3
+  version: 5.0.1
   top-level:
     - async_timeout
 source:
-  url: https://files.pythonhosted.org/packages/a7/fa/e01228c2938de91d47b307831c62ab9e4001e747789d0b05baf779a6488c/async_timeout-4.0.3-py3-none-any.whl
-  sha256: 7405140ff1230c310e51dc27b3145b9092d659ce68ff733fb0cefe3ee42be028
+  url: https://files.pythonhosted.org/packages/fe/ba/e2081de779ca30d473f21f5b30e0e737c438205440784c7dfc81efc2b029/async_timeout-5.0.1-py3-none-any.whl
+  sha256: 39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c
 about:
   home: https://github.com/aio-libs/async-timeout
   PyPI: https://pypi.org/project/async-timeout

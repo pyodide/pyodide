@@ -1,6 +1,8 @@
 package:
   name: pytest-benchmark
   version: 4.0.0
+  # Need to update patches
+  pinned: true
   top-level:
     - pytest_benchmark
 source:

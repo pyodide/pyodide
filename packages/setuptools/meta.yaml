@@ -1,6 +1,8 @@
 package:
   name: setuptools
   version: 69.5.1
+  # pygame-ce needs old setuptools
+  pinned: true
   top-level:
     - _distutils_hack
     - pkg_resources

@@ -1,11 +1,11 @@
 package:
   name: cvxpy-base
-  version: 1.5.1
+  version: 1.6.3
   top-level:
     - cvxpy
 source:
-  url: https://files.pythonhosted.org/packages/f8/9b/27b36409e5bfba14bee4de65af0735ea3ce2db5b81d825f33cbfb51873fc/cvxpy_base-1.5.1.tar.gz
-  sha256: ba4c7cb018c6afac7b779f355b13a61aa5c8dccaad91fa805b98c68ae1b99325
+  url: https://files.pythonhosted.org/packages/34/3b/d63b1b609b5d39a450fd981689b18c8dd032ca7527077c5fd78d37b4f5ef/cvxpy_base-1.6.3.tar.gz
+  sha256: b1487cb269580943df3f10804e501e33bc038af77b39c6f1a88f137d02ec6e58
 requirements:
   run:
     # Dependencies that are needed to run the package

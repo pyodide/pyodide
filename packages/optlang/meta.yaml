@@ -1,11 +1,11 @@
 package:
   name: optlang
-  version: 1.8.1
+  version: 1.8.3
   top-level:
     - optlang
 source:
-  sha256: 18fa6dded1f7650b7a0d14ddf58c66de6847a99a4f27ef7a104a30efcdef1233
-  url: https://files.pythonhosted.org/packages/f5/8a/754a97b1671de71a145034a847993371ec500881e4bface9bc3900737ff7/optlang-1.8.1-py2.py3-none-any.whl
+  sha256: b81f4e873f0c1d0d907410add63aea427762d911245eb04a4a1126da5fedb595
+  url: https://files.pythonhosted.org/packages/52/18/8215ef740dd5b5d982de9c4cd352c99ce92c40c208245a2e8909bea7c0d6/optlang-1.8.3-py2.py3-none-any.whl
 requirements:
   run:
     - sympy

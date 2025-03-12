@@ -1,13 +1,13 @@
 package:
   name: sparseqr
-  version: "1.2"
+  version: 1.4.1
   top-level:
     - sparseqr
 
 source:
   # PyPI release has invalid setup.py (missing cffi modules information) so we use github archive instead.
-  sha256: 5611ec439b44f22ea86995c49a229e0a377768520ddc7804cef488a8615655a3
-  url: https://github.com/yig/PySPQR/archive/1a146649773911a1376ee9f60c6948004e11b57c.zip
+  sha256: 3c1f0ad101f601f780af9ddb0d06e78d4ffe8dd9605f5fd2c73e4cbf4de9b6b9
+  url: https://files.pythonhosted.org/packages/0b/5a/032078d1c456b679f1d1d3f654a6c7392e215c3f6e2479cf1bec14f7469c/sparseqr-1.4.1.tar.gz
 
 requirements:
   run:

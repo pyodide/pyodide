@@ -1,6 +1,8 @@
 package:
   name: coolprop
   version: 6.6.0
+  # Problem with our added pyproject.toml/setup.py
+  pinned: true
   top-level:
     - CoolProp
 

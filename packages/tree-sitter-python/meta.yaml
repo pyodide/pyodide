@@ -1,13 +1,13 @@
 package:
   name: tree-sitter-python
-  version: 0.23.4
+  version: 0.23.6
   top-level:
     - tree_sitter_python
 source:
   # Have to use github url to work around broken sdist:
   # https://github.com/tree-sitter/tree-sitter-python/pull/285
-  url: https://github.com/tree-sitter/tree-sitter-python/archive/refs/tags/v0.23.4.tar.gz
-  sha256: e35497b22cb61803862a36b49d4632649f8f2e1e5edd555beec0ff4189f019f0
+  url: https://files.pythonhosted.org/packages/1c/30/6766433b31be476fda6569a3a374c2220e45ffee0bff75460038a57bf23b/tree_sitter_python-0.23.6.tar.gz
+  sha256: 354bfa0a2f9217431764a631516f85173e9711af2c13dbd796a8815acfe505d9
 requirements:
   run:
     - tree-sitter

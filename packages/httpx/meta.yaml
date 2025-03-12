@@ -6,8 +6,8 @@ package:
 
 source:
   # Until the PR for emscripten support gets merged, build it from the PR source
-  url: https://github.com/joemarshall/httpx/archive/refs/tags/pyodide_release_2.zip
-  sha256: 345b2d01e1bbd7d1f2239163eae37dff441b02c98cce5b80cdd462587259e41b
+  url: https://files.pythonhosted.org/packages/b1/df/48c586a5fe32a0f01324ee087459e112ebb7224f646c0b5023f5e79e9956/httpx-0.28.1.tar.gz
+  sha256: 75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc
 
 test:
   imports:

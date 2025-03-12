@@ -1,11 +1,11 @@
 package:
   name: ipython
-  version: 8.23.0
+  version: 9.0.2
   top-level:
     - IPython
 source:
-  url: https://files.pythonhosted.org/packages/8a/15/ea245239487bbd8d7203fe010ea48c7539e42bf1fde0592313241a3fba3a/ipython-8.23.0-py3-none-any.whl
-  sha256: 07232af52a5ba146dc3372c7bf52a0f890a23edf38d77caef8d53f9cdc2584c1
+  url: https://files.pythonhosted.org/packages/20/3a/917cb9e72f4e1a4ea13c862533205ae1319bd664119189ee5cc9e4e95ebf/ipython-9.0.2-py3-none-any.whl
+  sha256: 143ef3ea6fb1e1bffb4c74b114051de653ffb7737a3f7ab1670e657ca6ae8c44
 requirements:
   run:
     - asttokens
