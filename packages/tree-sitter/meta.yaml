@@ -2,6 +2,8 @@ package:
   name: tree-sitter
   version: 0.23.2
   # tree-sitter-java requires tree-sitter < 0.24
+  # fatal error: 'tree_sitter/parser.h' file not found
+  _disabled: true
   pinned: true
   top-level:
     - tree_sitter
