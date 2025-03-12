@@ -1,6 +1,8 @@
 package:
   name: tree-sitter
   version: 0.23.2
+  # tree-sitter-java requires tree-sitter < 0.24
+  pinned: true
   top-level:
     - tree_sitter
 source:

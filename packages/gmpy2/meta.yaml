@@ -1,6 +1,7 @@
 package:
   name: gmpy2
   version: 2.1.5
+  pinned: true
   top-level:
     - gmpy2
 source:

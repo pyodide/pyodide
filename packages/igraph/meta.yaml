@@ -1,12 +1,12 @@
 package:
   name: igraph
-  version: 0.11.4
+  version: 0.11.8
   top-level:
     - igraph
 
 source:
-  url: https://files.pythonhosted.org/packages/2a/9d/c877ba3037056bc456c9630e781c4c7a682ef7f2449ed1b206f6b0ba9a6f/igraph-0.11.4.tar.gz
-  sha256: 2437ae0157af6824e2e65a23f7a1fa4fbf0f3664333c72aeca4fc01b83e18483
+  url: https://files.pythonhosted.org/packages/b8/8e/8810c9ccdef97c614423ca82fca693608db9546a1a9716671035e3630499/igraph-0.11.8.tar.gz
+  sha256: d7dc1404567ba3b0ea1bf8b5fa6e101617915c8ad11ea5a9f925a40bf4adad7d
 
 requirements:
   run:

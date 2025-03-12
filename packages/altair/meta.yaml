@@ -1,11 +1,11 @@
 package:
   name: altair
-  version: 5.4.1
+  version: 5.5.0
   top-level:
     - altair
 source:
-  url: https://files.pythonhosted.org/packages/9b/52/4a86a4fa1cc2aae79137cc9510b7080c3e5aede2310d14fae5486feec7f7/altair-5.4.1-py3-none-any.whl
-  sha256: 0fb130b8297a569d08991fb6fe763582e7569f8a04643bbd9212436e3be04aef
+  url: https://files.pythonhosted.org/packages/aa/f3/0b6ced594e51cc95d8c1fc1640d3623770d01e4969d29c0bd09945fafefa/altair-5.5.0-py3-none-any.whl
+  sha256: 91a310b926508d560fe0148d02a194f38b824122641ef528113d029fcd129f8c
 about:
   home: https://altair-viz.github.io/
   PyPI: https://pypi.org/project/altair

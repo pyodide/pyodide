@@ -1,6 +1,8 @@
 package:
   name: Pillow
   version: 10.2.0
+  # Need to update patches
+  pinned: true
   top-level:
     - PIL
 source:

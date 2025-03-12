@@ -1,11 +1,11 @@
 package:
   name: patsy
-  version: 0.5.6
+  version: 1.0.1
   top-level:
     - patsy
 source:
-  url: https://files.pythonhosted.org/packages/c6/18/12e76e52d589c4a812a2f1fb2406b486c226b7ac263ac8ef4b5f4bb04058/patsy-0.5.6.tar.gz
-  sha256: 95c6d47a7222535f84bff7f63d7303f2e297747a598db89cf5c67f0c0c7d2cdb
+  url: https://files.pythonhosted.org/packages/d1/81/74f6a65b848ffd16c18f920620ce999fe45fe27f01ab3911260ce4ed85e4/patsy-1.0.1.tar.gz
+  sha256: e786a9391eec818c054e359b737bbce692f051aee4c661f4141cc88fb459c0c4
 requirements:
   run:
     - numpy

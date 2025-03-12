@@ -1,6 +1,8 @@
 package:
   name: pygame-ce
   version: 2.4.1
+  # Need to update patches
+  pinned: true
   top-level:
     - pygame
 source:

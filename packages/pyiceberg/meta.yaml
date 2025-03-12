@@ -1,13 +1,13 @@
 package:
   name: pyiceberg
-  version: 0.6.0
+  version: 0.9.0
   top-level:
     - pyiceberg
 #build:
 #script: python -m pip install . -vv --no-deps --no-build-isolation
 source:
-  url: https://files.pythonhosted.org/packages/01/9e/417eb6ac44c9de920b5c360eb58075553ad6830a7425ea711b2742c3ba25/pyiceberg-0.6.0.tar.gz
-  sha256: 0d965c202a9f49d0daa911c3fe061c55c90fa469bb382ce6440a7799ed35b003
+  url: https://files.pythonhosted.org/packages/55/35/1c67977f26eea825104d18fc3f0e01b14e15de41fe9c0d06e5bb501c4be8/pyiceberg-0.9.0.tar.gz
+  sha256: 70d255903dda31ed1f7753d41fec0c031aae36ef95e8a824cdae7df593439d8b
 about:
   home: https://py.iceberg.apache.org/
   PyPI: https://pypi.org/project/pyiceberg

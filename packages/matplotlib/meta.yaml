@@ -1,6 +1,8 @@
 package:
   name: matplotlib
   version: 3.8.4
+  # Need to update patches
+  pinned: true
   tag:
     - min-scipy-stack
   top-level:
