@@ -11,9 +11,9 @@ build:
   script: |
     export GEOS_CONFIG=${WASM_LIBRARY_DIR}/bin/geos-config
   cxxflags: |
-    -fexceptions
+    -fwasm-exceptions
   ldflags: |
-    -fexceptions
+    -fwasm-exceptions
 requirements:
   run:
     - numpy

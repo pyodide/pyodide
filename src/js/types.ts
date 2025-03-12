@@ -346,7 +346,6 @@ export interface Module {
   __hiwire_immortal_add(a: any): void;
   _jslib_init(): number;
   _init_pyodide_proxy(): number;
-  jsWrapperTag: any; // Should be WebAssembly.Tag
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
   exitCode: number | undefined;
@@ -493,10 +492,6 @@ export interface API {
     installDir: string,
     metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
-  recursiveDependencies: (
-    names: string[],
-    errorCallback: (err: string) => void,
-  ) => Map<string, PackageLoadMetadata>;
   _Comlink: any;
 
   dsodir: string;

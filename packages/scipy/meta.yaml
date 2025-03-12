@@ -54,12 +54,12 @@ build:
     -DUNDERSCORE_G77
     -fvisibility=default
   cxxflags: |
-    -fexceptions
+    -fwasm-exceptions
     -fvisibility=default
   ldflags: |
     -L$(NUMPY_LIB)/core/lib/
     -L$(NUMPY_LIB)/random/lib/
-    -fexceptions
+    -fwasm-exceptions
 
   # Exclude tests via Meson's install tags functionality.
   unvendor-tests: true

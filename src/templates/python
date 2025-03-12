@@ -3,8 +3,11 @@ set -e
 
 if [[ $1 == "-m" ]] && [[ $2 == "pip" ]]; then
     # redirect python -m pip to execute in host environment
-    shift 1
-    exec $@
+    shift 2
+    which $(dirname $0)/pip > /dev/null || { \
+        >&2 echo "Cannot find pyodide pip. Make a pyodide venv first?" && exit 1; \
+    }
+    exec $(dirname $0)/pip $@
 fi
 
 which node > /dev/null  || { \
@@ -43,4 +46,7 @@ fi
 
 RESOLVED_DIR=$(dirname $(realpath "$0"))
 
-exec node "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
+# Compute our own path, not following symlinks and pass it in so that
+# node_entry.mjs can set sys.executable correctly.
+# Intentionally allow word splitting on $NODEFLAGS.
+exec node $NODEFLAGS "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"

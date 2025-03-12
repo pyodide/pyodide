@@ -223,18 +223,16 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
-.PHONY: pyodide_build
-pyodide_build:
-	@echo "Ensuring pyodide-build is installed"
+pyodide_build .pyodide_build_installed:
 	pip install -e ./pyodide-build
 	@which pyodide >/dev/null
+	touch .pyodide_build_installed
 
 
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
-dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
-	make pyodide_build
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
 	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
@@ -316,8 +314,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json:
-	make pyodide_build
+dist/pyodide-lock.json: .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
 	make -C packages
 	@date +"[%F %T] done building packages..."
@@ -334,8 +331,6 @@ rust:
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
-
-FORCE:
 
 
 check:
