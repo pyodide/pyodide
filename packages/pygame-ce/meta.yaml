@@ -2,6 +2,8 @@ package:
   name: pygame-ce
   version: 2.4.1
   # Need to update patches
+  # Broken by new setuptools release, not sure how to pin it
+  _disabled: true
   pinned: true
   top-level:
     - pygame
