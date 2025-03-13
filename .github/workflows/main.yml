@@ -31,7 +31,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
       - name: Install requirements
         shell: bash -l {0}
         run: |
@@ -188,7 +188,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
-          python-version: "3.13"
+          python-version: "3.12"
           channels: conda-forge
 
       - name: install test requirements
