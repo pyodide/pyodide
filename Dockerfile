@@ -21,12 +21,11 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && rm -rf autoconf-2.71
 
-ADD requirements.txt docs/requirements-doc-most.txt /
+ADD requirements.txt /
 
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
-    && pip3 --no-cache-dir install -r requirements-doc-most.txt \
-    && rm requirements.txt requirements-doc-most.txt
+    && rm requirements.txt
 
 RUN cd / \
     && git clone --recursive https://github.com/WebAssembly/wabt \
