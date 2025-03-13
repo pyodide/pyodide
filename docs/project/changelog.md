@@ -42,6 +42,7 @@ myst:
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Added `bilby_cython` 0.5.3 {pr}`5502`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
