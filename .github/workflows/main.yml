@@ -31,7 +31,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
+          python-version: "3.13"
       - name: Install requirements
         shell: bash -l {0}
         run: |
