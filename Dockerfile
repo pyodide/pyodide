@@ -9,7 +9,7 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq xxd \
+        ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
 # install autoconf 2.71, required by upstream libffi
