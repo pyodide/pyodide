@@ -10,6 +10,7 @@ requirements:
   run:
     - multidict
     - idna
+    - propcache
 about:
   home: https://github.com/aio-libs/yarl/
   PyPI: https://pypi.org/project/yarl
