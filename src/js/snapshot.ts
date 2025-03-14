@@ -3,7 +3,7 @@ import { scheduleCallback } from "./scheduler";
 declare var Module: any;
 
 /** @private */
-export function getExpectedKeys() {
+API.getExpectedKeys = function () {
   return [
     null,
     API.config.jsglobals,
@@ -13,7 +13,7 @@ export function getExpectedKeys() {
     API,
     {},
   ];
-}
+};
 
 const getAccessorList = Symbol("getAccessorList");
 /**
@@ -94,11 +94,36 @@ function decodeBuildId(buffer: Uint32Array): string {
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
 const MAP_INDEX = 5;
 
+function checkEntry(index: number, value: any, expected: any): void {
+  if (value === expected) {
+    return;
+  }
+  if (typeof expected === "function" && typeof value !== "function") {
+    console.warn(expected, value);
+    throw new Error(`Expected function at index ${index}`);
+  }
+  let isOkay = false;
+  try {
+    isOkay = JSON.stringify(value) === JSON.stringify(expected);
+  } catch (e) {
+    // first comparison returned false and stringify raised
+    console.warn(e);
+  }
+  if (!isOkay) {
+    console.warn(expected, value);
+    throw new Error(`Unexpected hiwire entry at index ${index}`);
+  }
+}
+
 API.serializeHiwireState = function (
   serializer?: (obj: any) => any,
+  checkEntryFn?: (index: number, value: any, expected: any) => void,
 ): SnapshotConfig {
+  if (!checkEntryFn) {
+    checkEntryFn = checkEntry;
+  }
   const hiwireKeys: SerializedHiwireValue[] = [];
-  const expectedKeys = getExpectedKeys();
+  const expectedKeys = API.getExpectedKeys();
   for (let i = 0; i < expectedKeys.length; i++) {
     let value;
     try {
@@ -106,19 +131,7 @@ API.serializeHiwireState = function (
     } catch (e) {
       throw new Error(`Failed to get value at index ${i}`);
     }
-    let isOkay = false;
-    try {
-      isOkay =
-        value === expectedKeys[i] ||
-        JSON.stringify(value) === JSON.stringify(expectedKeys[i]);
-    } catch (e) {
-      // first comparison returned false and stringify raised
-      console.warn(e);
-    }
-    if (!isOkay) {
-      console.warn(expectedKeys[i], value);
-      throw new Error(`Unexpected hiwire entry at index ${i}`);
-    }
+    checkEntry(i, value, expectedKeys[i]);
   }
 
   for (let i = expectedKeys.length; ; i++) {
@@ -291,7 +304,7 @@ export function syncUpSnapshotLoad2(
   snapshotConfig: SnapshotConfig,
   deserializer?: (serialized: any) => any,
 ) {
-  const expectedKeys = getExpectedKeys();
+  const expectedKeys = API.getExpectedKeys();
   expectedKeys.forEach((v, idx) => tableSet(idx, v));
   snapshotConfig.hiwireKeys.forEach((e, idx) => {
     let x;
