@@ -10,8 +10,14 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 import pyodide
-from pyodide_build.build_env import emscripten_version, get_pyodide_root
+from pyodide_build.build_env import (
+    emscripten_version,
+    get_build_environment_vars,
+    get_pyodide_root,
+)
 from pyodide_build.xbuildenv import CrossBuildEnvManager
+
+PYVERSION = get_build_environment_vars(get_pyodide_root())["PYVERSION"]
 
 only_node = pytest.mark.xfail_browsers(
     chrome="node only", firefox="node only", safari="node only"
@@ -39,7 +45,7 @@ def test_python_version(selenium):
         [script_path, "-V"], capture_output=True, encoding="utf8", check=False
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
@@ -119,22 +125,16 @@ def test_dash_m(selenium):
 
 @only_node
 def test_dash_m_pip(selenium, monkeypatch, tmp_path):
-    import os
-
-    monkeypatch.setenv("PATH", str(tmp_path), prepend=":")
-    pip_path = tmp_path / "pip"
-    pip_path.write_text("echo 'pip got' $@")
-    os.chmod(pip_path, 0o777)
-
     result = subprocess.run(
         [script_path, "-m", "pip", "install", "pytest"],
         capture_output=True,
         encoding="utf8",
         check=False,
     )
-    assert result.returncode == 0
-    assert result.stderr == ""
-    assert result.stdout.strip() == "pip got install pytest"
+    assert result.returncode == 1
+    assert (
+        result.stderr.strip() == "Cannot find pyodide pip. Make a pyodide venv first?"
+    )
 
 
 @only_node
@@ -249,7 +249,7 @@ def test_venv_version(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert result.stdout.strip() == "Python " + sys.version.partition(" ")[0]
+    assert result.stdout.strip() == "Python " + PYVERSION
     assert result.stderr == ""
 
 
@@ -277,6 +277,21 @@ def install_pkg(venv, pkgname):
             "install",
             pkgname,
             "--disable-pip-version-check",
+        ],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+
+
+def uninstall_pkg(venv, pkgname):
+    return subprocess.run(
+        [
+            venv / "bin/pip",
+            "uninstall",
+            pkgname,
+            "--disable-pip-version-check",
+            "-y",
         ],
         capture_output=True,
         encoding="utf8",
@@ -452,6 +467,8 @@ def test_pip_install_from_pyodide(selenium, venv):
         result.stdout
         == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
     )
+    result = uninstall_pkg(venv, "regex")
+    assert result.returncode == 0
 
 
 def test_package_index(tmp_path):
@@ -538,3 +555,76 @@ def test_cpp_exceptions(selenium, venv):
     print(result.stderr)
     assert result.returncode == 1
     assert "ImportError: oops" in result.stderr
+
+
+@only_node
+def test_pip_install_sys_platform_condition_skipped(selenium, venv):
+    """impure Python package built with Pyodide"""
+    result = install_pkg(venv, "regex; sys_platform != 'emscripten'")
+    assert result.returncode == 0
+    ignoring = """Ignoring regex: markers 'sys_platform != "emscripten"' don't match your environment"""
+    assert ignoring in result.stdout
+
+
+@only_node
+def test_pip_install_sys_platform_condition_kept(selenium, venv):
+    """impure Python package built with Pyodide"""
+    result = install_pkg(venv, "regex; sys_platform == 'emscripten'")
+    assert result.returncode == 0
+    assert (
+        clean_pkg_install_stdout(result.stdout)
+        == dedent(
+            """
+            Looking in links: .../dist
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: regex
+            Successfully installed regex-*
+            """
+        ).strip()
+    )
+
+    result = subprocess.run(
+        [
+            venv / "bin/python",
+            "-c",
+            dedent(
+                r"""
+                import regex
+                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
+                print(m.capturesdict())
+                """
+            ),
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert (
+        result.stdout
+        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
+    )
+    result = uninstall_pkg(venv, "regex")
+    assert result.returncode == 0
+
+
+@only_node
+def test_dash_m_pip_venv(selenium, venv):
+    result = subprocess.run(
+        [venv / "bin/python", "-m", "pip", "install", "regex"],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert (
+        clean_pkg_install_stdout(result.stdout)
+        == dedent(
+            """
+            Looking in links: .../dist
+            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: regex
+            Successfully installed regex-*
+            """
+        ).strip()
+    )

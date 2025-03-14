@@ -1,6 +1,8 @@
 package:
   name: orjson
   version: 3.10.1
+  tag:
+    - rust
   top-level:
     - orjson
 source:

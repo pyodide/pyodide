@@ -49,11 +49,17 @@ as a top-level import names.
 
 The list of tags of the package. This is meta information used to group
 packages by functionality. Normally this is not needed.
-The following tags are currently used in Pyodide:
+The following tags are currently used in Pyodide, for better CI grouping
+or for testing purposes:
 
 - always: This package is always built.
 - core: This package is used in the Pyodide core test suite.
-- min-scipy-stack: This package is part of the minimal scipy stack.
+- min-scipy-stack: This package is part of the minimal Scientific Python stack.
+- library: This package is a shared or static library.
+- shared_library: This package is a shared library.
+- static_library: This package is a static library.
+- pyodide-test: This package is used to test the Pyodide build system.
+- rust: This package requires a Rust toolchain to build.
 
 ## `source`
 
