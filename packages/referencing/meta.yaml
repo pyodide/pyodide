@@ -10,6 +10,7 @@ requirements:
   run:
     - attrs
     - rpds-py
+    - typing-extensions
 about:
   home: ""
   PyPI: https://pypi.org/project/referencing

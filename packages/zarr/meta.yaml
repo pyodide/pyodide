@@ -11,6 +11,7 @@ requirements:
     - numpy
     - asciitree
     - numcodecs
+    - typing-extensions
 about:
   home: https://github.com/zarr-developers/zarr-python
   PyPI: https://pypi.org/project/zarr

@@ -17,6 +17,7 @@ requirements:
   run:
     # Dependencies that are needed to run the package
     - click
+    - cachetools
     - fsspec
     - mmh3
     - pydantic

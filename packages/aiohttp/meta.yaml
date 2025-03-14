@@ -9,6 +9,7 @@ source:
 
 requirements:
   run:
+    - aiohappyeyeballs
     - aiosignal
     - async-timeout
     - attrs

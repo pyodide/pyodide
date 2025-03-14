@@ -6,6 +6,7 @@ package:
 requirements:
   run:
     - soupsieve
+    - typing-extensions
 source:
   sha256: 99045d7d3f08f91f0d656bc9b7efbae189426cd913d830294a15eefa0ea4df16
   url: https://files.pythonhosted.org/packages/f9/49/6abb616eb3cbab6a7cca303dc02fdf3836de2e0b834bf966a7f5271a34d8/beautifulsoup4-4.13.3-py3-none-any.whl
