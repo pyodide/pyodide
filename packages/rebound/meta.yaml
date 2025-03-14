@@ -1,6 +1,6 @@
 package:
   name: rebound
-  version: 4.4.3
+  version: 4.4.7
   top-level:
     - rebound
 build:
@@ -12,8 +12,8 @@ build:
     cp librebound.cpython-*.so $WASM_LIBRARY_DIR/lib/
 
 source:
-  url: https://files.pythonhosted.org/packages/9d/f5/93f5abaf2c796e35b775e6fd395c2fd3729c17701fcb90fb4ed052fdd465/rebound-4.4.3.tar.gz
-  sha256: 8dd2fc69f4db4609abeb50048583d0428c716cd3eab11df868358f5384d826cf
+  url: https://files.pythonhosted.org/packages/d5/4d/d8813ca16f8c3791401007b0fdec79c523be9918eb3d2c3d605670dfd5e2/rebound-4.4.7.tar.gz
+  sha256: 35a47f25ff7a913402b326a8e0c43d1d0f74965d7d3f03822063cb7d9b8c7175
   patches:
     - patches/0001-fix-install_name.patch
     - patches/0002-fix-output.patch

@@ -1,6 +1,8 @@
 package:
   name: httpx
   version: 0.28.1
+  # Built from a fork
+  pinned: true
   top-level:
     - httpx
 

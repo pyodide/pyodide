@@ -1,6 +1,7 @@
 package:
   name: pygame-ce
   version: 2.4.1
+  # Broken by setuptools 76 release, requirements.constraint doesn't fix it
   _disabled: true
   top-level:
     - pygame

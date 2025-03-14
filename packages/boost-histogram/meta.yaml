@@ -1,6 +1,8 @@
 package:
   name: boost-histogram
   version: 1.5.0
+  # boost-histogram-1.5.1 does not appear to be a Python project: no pyproject.toml or setup.py
+  pinned: true
   top-level:
     - boost_histogram
 source:

@@ -29,6 +29,11 @@ myst:
 - {{ Fix }} The Pyodide CLI entrypoint now mounts the `/tmp` directory. In old
   versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console.
+
+- {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
 
 ### Packages
 
@@ -56,6 +61,7 @@ _February 26, 2025_
   broken wasm-gc support. Pyodide feature detects whether the runtime supports
   wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
   detection but wasm-gc doesn't work as expected. {pr}`5445`
+- Upgraded `micropip` to 0.9.0 {pr}`5461`
 
 ### Packages
 

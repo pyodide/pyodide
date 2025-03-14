@@ -1,11 +1,11 @@
 package:
   name: cysignals
-  version: 1.12.2
+  version: 1.12.3
   top-level:
     - cysignals
 source:
-  url: https://files.pythonhosted.org/packages/36/b6/84f0f9fa096ca0580f729d0771b8079459eec8a310ca29a56d357f514008/cysignals-1.12.2.tar.gz
-  sha256: 407db178fb18a91118ca742ede62000b2bee62b617eb49d26fcdad7e9ba2771a
+  url: https://files.pythonhosted.org/packages/0f/0a/7905fbf1820afba7a066e33c213816885526e466ac52aedb3c286fc2d53b/cysignals-1.12.3.tar.gz
+  sha256: 89f7626dbf29db5ab3d6eff15a89978f4eb5193c320e9099bcc157dacdefd1eb
   patches:
     - patches/0001-src-cysignals-implementation.c-EMSCRIPTEN-Do-not-use.patch
 about:
