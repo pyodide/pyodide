@@ -8,7 +8,7 @@ source:
   sha256: 2a3175ce74a06109ff9307d90a230f81215cbac9a751f4d1c6194644b8204f9d
 requirements:
   run:
-   - pyyaml
+    - pyyaml
 about:
   home: https://github.com/pytroll/donfig
   PyPI: https://pypi.org/project/donfig
