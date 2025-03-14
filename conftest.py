@@ -11,11 +11,10 @@ from collections.abc import Sequence
 
 import pytest
 
-ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
-PYODIDE_ROOT = ROOT_PATH
-DIST_PATH = ROOT_PATH / "dist"
+PYODIDE_ROOT = pathlib.Path(__file__).parents[0].resolve()
+DIST_PATH = PYODIDE_ROOT / "dist"
 
-sys.path.append(str(ROOT_PATH / "src" / "py"))
+sys.path.append(str(PYODIDE_ROOT / "src" / "py"))
 
 # importing this fixture has a side effect of making the safari webdriver reused during the session
 from pytest_pyodide import get_global_config

@@ -32,6 +32,8 @@ myst:
 - {{ Fix }} Uncaught exceptions that occur in Python tasks with no
   `done_callback` will now log a message to the console.
 
+- {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
+
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
@@ -58,6 +60,7 @@ _February 26, 2025_
   broken wasm-gc support. Pyodide feature detects whether the runtime supports
   wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
   detection but wasm-gc doesn't work as expected. {pr}`5445`
+- Upgraded `micropip` to 0.9.0 {pr}`5461`
 
 ### Packages
 
