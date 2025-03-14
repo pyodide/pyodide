@@ -1,6 +1,8 @@
 package:
   name: pyproj
   version: 3.7.1
+  # Timing out
+  _disabled: true
   top-level:
     - pyproj
 source:
