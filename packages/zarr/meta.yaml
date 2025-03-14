@@ -12,6 +12,9 @@ requirements:
     - asciitree
     - numcodecs
     - typing-extensions
+    - donfig
+    - crc32c
+    - packaging
 about:
   home: https://github.com/zarr-developers/zarr-python
   PyPI: https://pypi.org/project/zarr
