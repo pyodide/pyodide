@@ -21,12 +21,11 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && rm -rf autoconf-2.71
 
-ADD requirements.txt docs/requirements-doc.txt /
+ADD requirements.txt /
 
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
-    && pip3 --no-cache-dir install -r requirements-doc.txt \
-    && rm -rf requirements.txt requirements-doc.txt
+    && rm requirements.txt
 
 RUN cd / \
     && git clone --recursive https://github.com/WebAssembly/wabt \
@@ -79,9 +78,9 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
   then FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
   else FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
   fi \
-  && wget --no-verbose -O /tmp/firefox.tar.bz2 $FIREFOX_DOWNLOAD_URL \
-  && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
-  && rm /tmp/firefox.tar.bz2 \
+  && wget --no-verbose -O /tmp/firefox.tar.xz "$FIREFOX_DOWNLOAD_URL" \
+  && tar -C /opt -xf /tmp/firefox.tar.xz \
+  && rm /tmp/firefox.tar.xz \
   && mv /opt/firefox /opt/firefox-$FIREFOX_VERSION \
   && ln -fs /opt/firefox-$FIREFOX_VERSION/firefox /usr/local/bin/firefox \
   && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz \

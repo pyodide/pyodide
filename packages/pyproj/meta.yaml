@@ -1,8 +1,8 @@
 package:
   name: pyproj
-  version: 3.7.1
-  # Timing out
-  _disabled: true
+  version: 3.6.1
+  # 3.7 has function signature mismatch
+  pinned: true
   top-level:
     - pyproj
 source:

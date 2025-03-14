@@ -692,22 +692,22 @@ workflows:
                   - ./packages/.artifacts
                   - ./dist
 
-      - build-packages:
-          name: build-prebuilt-packages
-          enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
-          packages: "*"
-          requires:
-            - build-core
-          filters:
-            tags:
-              only: /.*/
-          # TODO: enable this when we remove other package build jobs
-          # post-steps:
-          #   - persist_to_workspace:
-          #       root: .
-          #       paths:
-          #         - ./packages/
-          #         - ./dist
+      # - build-packages:
+      #     name: build-prebuilt-packages
+      #     enable_prebuilt_packages: ${USE_PREBUILT_PACKAGES}
+      #     packages: "*"
+      #     requires:
+      #       - build-core
+      #     filters:
+      #       tags:
+      #         only: /.*/
+      #     # TODO: enable this when we remove other package build jobs
+      #     post-steps:
+      #       - persist_to_workspace:
+      #           root: .
+      #           paths:
+      #             - ./packages/
+      #             - ./dist
 
       - test-main:
           name: test-core-chrome-nodylink
