@@ -1,11 +1,11 @@
 package:
   name: xgboost
-  version: 2.1.2
+  version: 2.1.4
   top-level:
     - xgboost
 source:
-  url: https://files.pythonhosted.org/packages/d2/d5/8d93a950a379b34767ac118cf5653977048e291c6695713a60863532ec08/xgboost-2.1.2.tar.gz
-  sha256: 151071c22d0f5637739ccaf057f57d05983caaba557cc3d8191c2cb8ce8ae659
+  url: https://files.pythonhosted.org/packages/e2/5e/860a1ef13ce38db8c257c83e138be64bcffde8f401e84bf1e2e91838afa3/xgboost-2.1.4.tar.gz
+  sha256: ab84c4bbedd7fae1a26f61e9dd7897421d5b08454b51c6eb072abc1d346d08d7
 build:
   # DMLC_LOG_STACK_TRACE=0 is to handle https://github.com/dmlc/xgboost/issues/8595
   cflags: |

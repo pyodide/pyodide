@@ -1,12 +1,12 @@
 package:
   name: joblib
-  version: 1.4.0
+  version: 1.4.2
   top-level:
     - joblib
 
 source:
-  url: https://files.pythonhosted.org/packages/7c/c3/94c9e4886e8f33832690ab48fdac4a121a7bfec3e2c044c9f2762aa9068e/joblib-1.4.0.tar.gz
-  sha256: 1eb0dc091919cd384490de890cb5dfd538410a6d4b3b54eef09fb8c50b409b1c
+  url: https://files.pythonhosted.org/packages/64/33/60135848598c076ce4b231e1b1895170f45fbcaeaa2c9d5e38b04db70c35/joblib-1.4.2.tar.gz
+  sha256: 2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e
 about:
   home: https://joblib.readthedocs.io
   PyPI: https://pypi.org/project/joblib

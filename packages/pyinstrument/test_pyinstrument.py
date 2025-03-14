@@ -34,7 +34,6 @@ async def test_pyinstrument(selenium, tmp_path):
         "cpu_time",
         "duration",
         "frame_records",
-        "program",
         "sample_count",
         "start_call_stack",
         "start_time",

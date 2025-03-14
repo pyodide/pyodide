@@ -1,14 +1,14 @@
 package:
   name: tiktoken
-  version: 0.8.0
+  version: 0.9.0
   tag:
     - rust
   top-level:
     - tiktoken
     - tiktoken_ext
 source:
-  url: https://files.pythonhosted.org/packages/37/02/576ff3a6639e755c4f70997b2d315f56d6d71e0d046f4fb64cb81a3fb099/tiktoken-0.8.0.tar.gz
-  sha256: 9ccbb2740f24542534369c5635cfd9b2b3c2490754a78ac8831d99f89f94eeb2
+  url: https://files.pythonhosted.org/packages/ea/cf/756fedf6981e82897f2d570dd25fa597eb3f4459068ae0572d7e888cfd6f/tiktoken-0.9.0.tar.gz
+  sha256: d02a5ca6a938e0490e1ff957bc48c8b078c88cb83977be1625b1fd8aac792c5d
 requirements:
   executable:
     - rustup

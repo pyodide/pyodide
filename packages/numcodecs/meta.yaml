@@ -1,6 +1,8 @@
 package:
   name: numcodecs
   version: 0.13.1
+  # Need to update patches
+  pinned: true
   top-level:
     - numcodecs
 source:
