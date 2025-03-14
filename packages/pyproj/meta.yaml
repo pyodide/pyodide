@@ -1,13 +1,13 @@
 package:
   name: pyproj
-  version: 3.7.1
-  # Timing out
-  _disabled: true
+  version: 3.6.1
+  # 3.7 has function signature mismatch
+  pinned: true
   top-level:
     - pyproj
 source:
-  url: https://files.pythonhosted.org/packages/67/10/a8480ea27ea4bbe896c168808854d00f2a9b49f95c0319ddcbba693c8a90/pyproj-3.7.1.tar.gz
-  sha256: 60d72facd7b6b79853f19744779abcd3f804c4e0d4fa8815469db20c9f640a47
+  url: https://files.pythonhosted.org/packages/7d/84/2b39bbf888c753ea48b40d47511548c77aa03445465c35cc4c4e9649b643/pyproj-3.6.1.tar.gz
+  sha256: 44aa7c704c2b7d8fb3d483bbf75af6cb2350d30a63b144279a09b75fead501bf
 
 requirements:
   host:
