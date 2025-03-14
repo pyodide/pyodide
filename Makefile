@@ -54,6 +54,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 # extra stuff after the block ends. We make a 0-argument function called
 # pyodide_js_init. Immediately after that we inject pre.js and then a call to
 # the init function.
+	rm -f $@
 	echo '()<::>{' >> $@                       # zero argument argspec and start body
 	cat src/js/generated/_pyodide.out.js >> $@ # All of _pyodide.out.js is body
 	echo '}' >> $@                             # Close function body
