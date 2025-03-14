@@ -499,6 +499,7 @@ export interface API {
   os: PyProxy;
 
   restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
+  serializeHiwireState(serializer?: (obj: any) => any): SnapshotConfig;
   makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
   finalizeBootstrap: (

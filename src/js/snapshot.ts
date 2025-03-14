@@ -94,12 +94,9 @@ function decodeBuildId(buffer: Uint32Array): string {
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
 const MAP_INDEX = 5;
 
-API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
-  if (!API.config._makeSnapshot) {
-    throw new Error(
-      "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
-    );
-  }
+API.serializeHiwireState = function (
+  serializer?: (obj: any) => any,
+): SnapshotConfig {
   const hiwireKeys: SerializedHiwireValue[] = [];
   const expectedKeys = getExpectedKeys();
   for (let i = 0; i < expectedKeys.length; i++) {
@@ -181,10 +178,19 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
     }
     immortalKeys.push(v);
   }
-  const snapshotConfig: SnapshotConfig = {
+  return {
     hiwireKeys,
     immortalKeys,
   };
+};
+
+API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
+  if (!API.config._makeSnapshot) {
+    throw new Error(
+      "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
+    );
+  }
+  const snapshotConfig = API.serializeHiwireState(serializer);
   const snapshotConfigString = JSON.stringify(snapshotConfig);
   let snapshotOffset = HEADER_SIZE_IN_BYTES + 2 * snapshotConfigString.length;
   // align to 16 bytes
