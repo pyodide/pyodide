@@ -31,6 +31,7 @@ myst:
   {pr}`5477`
 
 - {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
 
 ### Packages
 
