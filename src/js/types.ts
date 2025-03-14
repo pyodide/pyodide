@@ -502,6 +502,7 @@ export interface API {
   serializeHiwireState(serializer?: (obj: any) => any): SnapshotConfig;
   makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
+  getExpectedKeys(): any[];
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
