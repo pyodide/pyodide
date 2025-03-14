@@ -18,6 +18,8 @@ myst:
 
 _March 17, 2025_
 
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console. {pr}`5479`
 - {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
 
 ### `python` CLI entrypoint
