@@ -40,6 +40,7 @@ myst:
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `bilby_cython` 0.5.3 {pr}`5502`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
