@@ -1,6 +1,7 @@
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
 #include "error_handling.h"
+#include "python_unexposed.h"
 #include <emscripten.h>
 
 #include "docstring.h"
@@ -811,18 +812,6 @@ finally:
 }
 
 void
-set_new_cframe(_PyCFrame* frame);
-
-_PyCFrame*
-get_cframe();
-
-void
-exit_cframe(_PyCFrame* frame);
-
-void
-restore_cframe(_PyCFrame* frame);
-
-void
 set_suspender(JsVal suspender);
 
 /**
@@ -841,12 +830,8 @@ _pyproxy_apply_promising(JsVal suspender,
                          PyObject** exc)
 {
   set_suspender(suspender);
-  _PyCFrame* cur = get_cframe();
-  _PyCFrame frame;
-  set_new_cframe(&frame);
   JsVal res =
     _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
-  exit_cframe(cur);
   *exc = PyErr_GetRaisedException();
   return res;
 }

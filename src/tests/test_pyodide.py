@@ -1839,13 +1839,13 @@ def test_runpython_filename(selenium, run_python):
         % run_python
     )
     expected = dedent(
-        """
-        File "a.py", line 8, in <module>
-          f1()
+        """\
         File "a.py", line 3, in f1
           f2()
+
         File "a.py", line 6, in f2
           raise Exception("oops")
+          ^^^^^^^^^^^^^^^
         """
     ).strip()
 
@@ -1864,9 +1864,7 @@ def test_runpython_filename(selenium, run_python):
         }
         """
     )
-    assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
-        expected.splitlines()[2:]
-    )
+    assert dedent("\n".join(msg.splitlines()[1:-1])) == expected
 
 
 @pytest.mark.requires_dynamic_linking

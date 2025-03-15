@@ -30,6 +30,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "python_unexposed.h"
 
 #include "docstring.h"
 #include "error_handling.h"
@@ -2012,7 +2013,7 @@ JsArray_pop(PyObject* self, PyObject* const* args, Py_ssize_t nargs)
     FAIL();
   }
   if (nargs > 0) {
-    iobj = _PyNumber_Index(args[0]);
+    iobj = PyNumber_Index(args[0]);
     FAIL_IF_NULL(iobj);
     index = PyLong_AsSsize_t(iobj);
     if (index == -1) {
@@ -2699,7 +2700,6 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   JsVal jsdir = JS_NULL;
   PyObject* pydir = NULL;
   PyObject* keys_str = NULL;
-  PyObject* null_or_pynone = NULL;
 
   PyObject* result = NULL;
 
@@ -2727,8 +2727,7 @@ JsProxy_Dir(PyObject* self, PyObject* _args)
   }
   result = PyList_New(0);
   FAIL_IF_NULL(result);
-  null_or_pynone = _PyList_Extend((PyListObject*)result, result_set);
-  FAIL_IF_NULL(null_or_pynone);
+  FAIL_IF_MINUS_ONE(PyList_Extend(result, result_set));
   FAIL_IF_MINUS_ONE(PyList_Sort(result));
 
   success = true;
@@ -2738,7 +2737,6 @@ finally:
   Py_CLEAR(result_set);
   Py_CLEAR(pydir);
   Py_CLEAR(keys_str);
-  Py_CLEAR(null_or_pynone);
   if (!success) {
     Py_CLEAR(result);
   }

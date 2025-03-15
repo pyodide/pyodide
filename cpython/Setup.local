@@ -15,8 +15,6 @@ _bz2 _bz2module.c -lbz2
 zlib zlibmodule.c
 
 
-_xxsubinterpreters _xxsubinterpretersmodule.c
-
 *disabled*
 pwd
 _sqlite3

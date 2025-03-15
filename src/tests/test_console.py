@@ -129,12 +129,12 @@ def test_interactive_console():
         assert fut.exception() is not None
 
         err = fut.formatted_error or ""
-        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        err = err.strip()
         assert [e.strip() for e in err.split("\n")] == [
             'File "<console>", line 1',
             "1+",
             "^",
-            "SyntaxError: <errormsg>",
+            "_IncompleteInputError: incomplete input",
         ]
 
         fut = shell.push("raise Exception('hi')")
@@ -430,7 +430,7 @@ def test_console_html(selenium):
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
                  ^
-            SyntaxError: incomplete input]
+            _IncompleteInputError: incomplete input]
             """
         ).strip()
     )
@@ -472,7 +472,6 @@ def test_console_html(selenium):
             [[;;;terminal-error]Traceback (most recent call last):
               File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
-                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """

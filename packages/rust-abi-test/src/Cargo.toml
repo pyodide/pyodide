@@ -5,7 +5,7 @@ edition = "2018"
 publish = false
 
 [dependencies]
-pyo3 = { version = "0.22.3" }
+pyo3 = { version = "0.24.0" }
 
 [features]
 extension-module = ["pyo3/extension-module"]

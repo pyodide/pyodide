@@ -8,8 +8,6 @@ export function promisingApply(...args) {
   validSuspender.value = true;
   // Record the current stack position. Used in stack_state.mjs
   Module.stackStop = stackSave();
-  // Subtle cframe shenanigans...
-  Module.origCframe = _get_cframe();
   return promisingApplyHandler(...args);
 }
 
