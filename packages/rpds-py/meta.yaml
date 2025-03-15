@@ -11,8 +11,6 @@ source:
 requirements:
   executable:
     - rustup
-  constraint:
-    - maturin < 1.8
 about:
   home: https://rpds.readthedocs.io
   PyPI: https://pypi.org/project/rpds-py
