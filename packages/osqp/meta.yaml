@@ -1,0 +1,19 @@
+package:
+  name: osqp
+  version: 1.0.0.b4
+  top-level:
+    - osqp
+requirements:
+  run:
+    - numpy
+source:
+  url: https://github.com/osqp/osqp-python/releases/download/v1.0.0b4/osqp-1.0.0b4-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: 5dea1bddde27ea44cbaa6f91e89b37877933ab4983419880fa6fd99598c5dcfe
+about:
+  home: https://github.com/osqp/osqp-python
+  PyPI: https://pypi.org/project/osqp
+  summary: Python wrappers for OSQP
+  license: Apache-2.0
+extra:
+  recipe-maintainers:
+    - vineetbansal
