@@ -1,6 +1,7 @@
 package:
   name: pillow-heif
   version: 0.21.0
+  _disabled: true
   top-level:
     - pillow_heif
 source:

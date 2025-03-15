@@ -1,6 +1,7 @@
 package:
   name: Pillow
   version: 10.2.0
+  _disabled: true
   # Need to update patches
   pinned: true
   top-level:
