@@ -18,7 +18,9 @@ def filter_info(info: dict[str, Any], browser: str) -> dict[str, Any]:
 
 
 def possibly_skip_test(
-    request: pytest.FixtureRequest, info: dict[str, Any]
+    request: pytest.FixtureRequest,
+    info: dict[str, Any],
+    browser: str,
 ) -> dict[str, Any]:
     if "segfault" in info:
         pytest.skip(f"known segfault: {info['segfault']}")
@@ -34,13 +36,26 @@ def possibly_skip_test(
             )
         else:
             pytest.xfail(f"known failure: {reason}")
+
+    if "xfail_browsers" in info and browser in info["xfail_browsers"]:
+        reason = info["xfail_browsers"][browser]
+        if request.config.option.run_xfail:
+            request.applymarker(
+                pytest.mark.xfail(
+                    run=False,
+                    reason=f"known failure: {reason}",
+                )
+            )
+        else:
+            pytest.xfail(f"known failure: {reason}")
+
     return info
 
 
 def test_cpython_core(main_test, selenium, request):
     [name, info] = main_test
     info = filter_info(info, selenium.browser)
-    possibly_skip_test(request, info)
+    possibly_skip_test(request, info, selenium.browser)
 
     ignore_tests = info.get("skip", [])
     timeout = info.get("timeout", 30)
