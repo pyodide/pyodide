@@ -34,6 +34,7 @@ myst:
 
 - {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
 - {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
+- {{ Fix }} Correct use of `console.log` to `this.logStdout` in `load-package.ts` {pr}`5514`
 
 ### Packages
 
