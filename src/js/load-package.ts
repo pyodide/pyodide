@@ -426,13 +426,13 @@ export class PackageManager {
         throw e;
       }
     }
-    console.log(
+    this.logStdout(
       `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
     );
     // If we are IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
-    console.log(
+    this.logStdout(
       `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
     );
     await nodeFsPromisesMod.writeFile(uri, binary);
