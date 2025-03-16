@@ -1,6 +1,7 @@
 package:
   name: mypy
   version: 1.15.0
+  _disabled: true
   top-level:
     - mypyc
     - mypy
