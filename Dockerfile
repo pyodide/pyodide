@@ -8,7 +8,7 @@ RUN apt-get update \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential libtool libltdl-dev \
-        gnupg2 libdbus-glib-1-2 sudo sqlite3 cmake \
+        gnupg2 libdbus-glib-1-2 sudo sqlite3 \
         ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
 
