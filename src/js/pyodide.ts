@@ -46,6 +46,7 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  _sysExecutable?: string;
   args: string[];
   _node_mounts: string[];
   env: { [key: string]: string };
@@ -139,6 +140,11 @@ export async function loadPyodide(
      * Default: ``globalThis``
      */
     jsglobals?: object;
+    /**
+     * Determine the value of ``sys.executable``.
+     * @ignore
+     */
+    _sysExecutable?: string;
     /**
      * Command line arguments to pass to Python on startup. See `Python command
      * line interface options

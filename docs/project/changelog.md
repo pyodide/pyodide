@@ -14,6 +14,28 @@ myst:
 
 # Change Log
 
+## Version 0.27.4
+
+_March 17, 2025_
+
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console. {pr}`5479`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
+- {{ Fix }} Correct use of `console.log` to `this.logStdout` in `load-package.ts` {pr}`5514`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
+  environment variable as flags to node when starting. {pr}`5478`
+- {{ Fix }} For a Pyodide virtual environment, `.venv-pyodide/bin/python -m pip`
+  now works even if the virtual environment has not been sourced.
+  {pr}`5448`
+
+### Packages
+
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
+
 ## Version 0.27.3
 
 _February 26, 2025_
@@ -29,6 +51,7 @@ _February 26, 2025_
   broken wasm-gc support. Pyodide feature detects whether the runtime supports
   wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
   detection but wasm-gc doesn't work as expected. {pr}`5445`
+- Upgraded `micropip` to 0.9.0 {pr}`5461`
 
 ### Packages
 
