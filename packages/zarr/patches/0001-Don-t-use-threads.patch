@@ -1,0 +1,27 @@
+From 4ab762ea0371e99661153cadb8d7449478c506e2 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 17 Mar 2025 17:48:25 +0100
+Subject: [PATCH] Don't use threads
+
+---
+ src/zarr/core/sync.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/src/zarr/core/sync.py b/src/zarr/core/sync.py
+index d9b4839e..1ceb0ed3 100644
+--- a/src/zarr/core/sync.py
++++ b/src/zarr/core/sync.py
+@@ -133,6 +133,10 @@ def sync(
+     --------
+     >>> sync(async_function(), existing_loop)
+     """
++    from pyodide.ffi import run_sync
++
++    return run_sync(coro)
++
+     if loop is None:
+         # NB: if the loop is not running *yet*, it is OK to submit work
+         # and we will wait for it
+-- 
+2.34.1
+
