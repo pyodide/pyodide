@@ -67,7 +67,7 @@ build:
     )
 
 
-    export TEST_MODULE_CFLAGS="${SIDE_MODULE_CFLAGS} -I Include/ -I Include/internal/ -I . -I../../../../../cpython/installs/python-3.13.2/include/"
+    export TEST_MODULE_CFLAGS="${SIDE_MODULE_CFLAGS} -I Include/ -I Include/internal/ -I ."
 
     emcc ${TEST_MODULE_CFLAGS} -c Modules/_testinternalcapi.c -o Modules/_testinternalcapi.o \
           -DPy_BUILD_CORE_MODULE
@@ -91,9 +91,6 @@ build:
     export TEST_INTERNALCAPI_OBJECTS=( "${TEST_INTERNALCAPI_SRCS[@]/#/Modules/}" )
     echo emcc ${SIDE_MODULE_LDFLAGS} ${TEST_INTERNALCAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testinternalcapi.so
     emcc ${SIDE_MODULE_LDFLAGS} ${TEST_INTERNALCAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testinternalcapi.so
-
-    wasm-objdump -x Modules/_testinternalcapi/test_lock.o | grep _PyTestInternalCapi_Init_Lock
-    wasm-objdump -x ${PKG_BUILD_DIR}/_testinternalcapi.so | grep _PyTestInternalCapi_Init_Lock
 
     for testname in ${TEST_EXTENSIONS}; do \
       emcc Modules/${testname/.so/.o} -o ${PKG_BUILD_DIR}/$testname ${SIDE_MODULE_LDFLAGS}
