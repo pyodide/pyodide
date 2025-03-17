@@ -5,7 +5,7 @@ package:
     - osqp
 requirements:
   run:
-    - jinja2
+    - Jinja2
     - numpy
     - scipy
 source:
