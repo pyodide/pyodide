@@ -647,7 +647,7 @@ def make_backport_branch(args) -> None:
 def open_release_prs(args):
     version = get_version()
     INSERT_ACTUAL_DATE = "- [ ] Insert the actual date in the changelog\n"
-    MERGE_DONT_SQUASH = "- [] Merge, don't squash"
+    MERGE_DONT_SQUASH = "- [ ] Merge, don't squash"
     BACKPORTS_BRANCH = f"backports-for-{version}"
     CHANGELOG_BRANCH = f"changelog-for-{version}"
 
