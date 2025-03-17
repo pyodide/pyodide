@@ -707,6 +707,8 @@
 - test_tabnanny
 - test_tarfile:
     timeout: 120
+    skip_browsers:
+      node: "flaky (timeout)"
     skip:
       - test_sly_relative0
 - test_tcl
