@@ -45,7 +45,7 @@ list from there with "The Pyodide development team" like in the example below:
   month        = aug,
   year         = 2021,
   publisher    = {Zenodo},
-  version      = {0.27.3},
+  version      = {0.27.4},
   doi          = {10.5281/zenodo.5156931},
   url          = {https://doi.org/10.5281/zenodo.5156931}
 }
