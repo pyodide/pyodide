@@ -27,8 +27,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
-CHANGELOG = Path(__file__).parents[1] / "docs/project/changelog.md"
-NEEDS_BACKPORTS_CACHE = Path(__file__).parent / "needs_backport_prs_cached.txt"
+PYODIDE_ROOT = Path(__file__).parents[1]
+CHANGELOG = PYODIDE_ROOT / "docs/project/changelog.md"
 
 
 def run(
@@ -462,6 +462,55 @@ class Changelog:
 
 
 #
+# Some helpers
+#
+
+
+def today():
+    return datetime.today().strftime("%B %d, %Y")
+
+
+def get_date(args):
+    if args.today:
+        return today()
+    return "Insert Date Here"
+
+
+def branch_exists(branch_name: str) -> bool:
+    res = run(["git", "branch", "--list", branch_name], capture_output=True)
+    return bool(res.stdout.strip())
+
+
+def force_branch_update(branch_name):
+    branch_name_old = branch_name + "-old"
+    branch_already_exists = branch_exists(branch_name)
+    if branch_already_exists:
+        run(["git", "branch", "-f", branch_name_old, branch_name])
+    run(["git", "switch", "-C", branch_name])
+
+
+def diff_old_new_branch(branch_name):
+    branch_name_old = branch_name + "-old"
+    if not branch_exists(branch_name_old):
+        return
+    if os.isatty(sys.stdout.fileno()):
+        print("\nWill show diff between previous branch and new branch.")
+        input("Press enter to continue.")
+    run(["git", "diff", branch_name_old, branch_name])
+
+
+def get_version() -> str:
+    result = run(["git", "tag"], capture_output=True)
+    (major, minor, patch) = max(
+        tuple(int(p) for p in x.split("."))
+        for x in result.stdout.splitlines()
+        if x.startswith("0") and "a" not in x
+    )
+    patch += 1
+    return f"{major}.{minor}.{patch}"
+
+
+#
 # Main commands
 #
 
@@ -508,43 +557,10 @@ def show_missing_changelogs(args) -> None:
             print(commit.pr_number, commit.shorthash, commit.shortlog)
 
 
-def today():
-    return datetime.today().strftime("%B %d, %Y")
-
-
-def get_date(args):
-    if args.today:
-        return today()
-    return "Insert Date Here"
-
-
-def branch_exists(branch_name: str) -> bool:
-    res = run(["git", "branch", "--list", branch_name], capture_output=True)
-    return bool(res.stdout.strip())
-
-
-def force_branch_update(branch_name):
-    branch_name_old = branch_name + "-old"
-    branch_already_exists = branch_exists(branch_name)
-    if branch_already_exists:
-        run(["git", "branch", "-f", branch_name_old, branch_name])
-    run(["git", "switch", "-C", branch_name])
-
-
-def diff_old_new_branch(branch_name):
-    branch_name_old = branch_name + "-old"
-    if not branch_exists(branch_name_old):
-        return
-    if os.isatty(sys.stdout.fileno()):
-        print("\nWill show diff between previous branch and new branch.")
-        input("Press enter to continue.")
-    run(["git", "diff", branch_name_old, branch_name])
-
-
 def make_changelog_branch(args) -> None:
     commits = get_commits()
     prs = commits_to_prs(commits)
-    version = args.new_version
+    version = get_version()
     date = get_date(args)
     run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "switch", "main"])
@@ -576,7 +592,7 @@ def make_backport_branch(args) -> None:
     For this to work, we need to set `rerere.enabled` and `rerere.autoupdate`.
     """
     commits = get_commits()
-    version = args.new_version
+    version = get_version()
     date = get_date(args)
     run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "fetch", "upstream", "stable:stable", "--update-head-ok", "--force"])
@@ -629,7 +645,7 @@ def make_backport_branch(args) -> None:
 
 
 def open_release_prs(args):
-    version = args.new_version
+    version = get_version()
     INSERT_ACTUAL_DATE = "- [ ] Insert the actual date in the changelog\n"
     MERGE_DONT_SQUASH = "- [] Merge, don't squash"
     BACKPORTS_BRANCH = f"backports-for-{version}"
@@ -701,21 +717,18 @@ def parse_args():
     changelog_branch_parse = subparsers.add_parser(
         "changelog-branch", help="Make changelog-for-version branch"
     )
-    changelog_branch_parse.add_argument("new_version")
     changelog_branch_parse.add_argument("--today", action="store_true")
     changelog_branch_parse.set_defaults(func=make_changelog_branch)
 
     backport_branch_parse = subparsers.add_parser(
         "backport-branch", help="Make backports-for-version branch"
     )
-    backport_branch_parse.add_argument("new_version")
     backport_branch_parse.add_argument("--today", action="store_true")
     backport_branch_parse.set_defaults(func=make_backport_branch)
 
     open_release_prs_parse = subparsers.add_parser(
         "open-release-prs", help="Open PRs for the backports and changelog branches"
     )
-    open_release_prs_parse.add_argument("new_version")
     open_release_prs_parse.set_defaults(func=open_release_prs)
 
     return parser.parse_args()
