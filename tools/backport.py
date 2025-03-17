@@ -664,7 +664,6 @@ def open_release_prs(args):
             "--body",
             INSERT_ACTUAL_DATE + MERGE_DONT_SQUASH,
             "--web",
-            clear_backport_prs,
         ]
     )
 
