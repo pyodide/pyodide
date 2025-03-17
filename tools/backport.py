@@ -29,6 +29,7 @@ from typing import Any, Self
 
 PYODIDE_ROOT = Path(__file__).parents[1]
 CHANGELOG = PYODIDE_ROOT / "docs/project/changelog.md"
+INSERT_DATE_HERE = "Insert Date Here"
 
 
 def run(
@@ -470,22 +471,20 @@ def today():
     return datetime.today().strftime("%B %d, %Y")
 
 
-def get_date(args):
-    if args.today:
-        return today()
-    return "Insert Date Here"
-
-
 def branch_exists(branch_name: str) -> bool:
     res = run(["git", "branch", "--list", branch_name], capture_output=True)
     return bool(res.stdout.strip())
 
 
-def force_branch_update(branch_name):
+def update_old_branch(branch_name):
     branch_name_old = branch_name + "-old"
+    run(["git", "branch", "-f", branch_name_old, branch_name])
+
+
+def force_branch_update(branch_name):
     branch_already_exists = branch_exists(branch_name)
     if branch_already_exists:
-        run(["git", "branch", "-f", branch_name_old, branch_name])
+        update_old_branch(branch_name)
     run(["git", "switch", "-C", branch_name])
 
 
@@ -561,14 +560,13 @@ def make_changelog_branch(args) -> None:
     commits = get_commits()
     prs = commits_to_prs(commits)
     version = get_version()
-    date = get_date(args)
     run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "switch", "main"])
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
     branch_name = f"changelog-for-{version}"
     force_branch_update(branch_name)
-    changelog.set_patch_release_notes(version, prs, date)
+    changelog.set_patch_release_notes(version, prs, INSERT_DATE_HERE)
     changelog.remove_release_notes_from_unreleased_section(prs)
     changelog.write_text()
     run(["git", "add", CHANGELOG])
@@ -593,7 +591,6 @@ def make_backport_branch(args) -> None:
     """
     commits = get_commits()
     version = get_version()
-    date = get_date(args)
     run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "fetch", "upstream", "stable:stable", "--update-head-ok", "--force"])
     run(["git", "config", "rerere.enabled", "true"])
@@ -622,7 +619,7 @@ def make_backport_branch(args) -> None:
                 capture_output=True,
             )
         changelog.set_patch_release_notes(
-            version, commits_to_prs(commits[: n + 1]), date
+            version, commits_to_prs(commits[: n + 1]), INSERT_DATE_HERE
         )
         changelog.write_text(include_unreleased=False)
         run(["git", "add", "docs/project/changelog.md"])
@@ -684,6 +681,35 @@ def open_release_prs(args):
     )
 
 
+def set_date(args):
+    version = get_version()
+    BACKPORTS_BRANCH = f"backports-for-{version}"
+    CHANGELOG_BRANCH = f"changelog-for-{version}"
+    update_old_branch(BACKPORTS_BRANCH)
+    run(["git", "switch", BACKPORTS_BRANCH])
+    run(
+        [
+            "git",
+            "rebase",
+            "stable",
+            "--exec",
+            " && ".join(
+                [
+                    f"sed -i 's/_{INSERT_DATE_HERE}_/_{today()}_/' docs/project/changelog.md",
+                    "git add docs/project/changelog.md",
+                    "git commit --amend --no-edit",
+                ]
+            ),
+        ]
+    )
+
+    update_old_branch(CHANGELOG_BRANCH)
+    run(["git", "switch", CHANGELOG_BRANCH])
+    CHANGELOG.write_text(CHANGELOG.read_text().replace(INSERT_DATE_HERE, today()))
+    run(["git", "add", "docs/project/changelog.md"])
+    run(["git", "commit", "--amend", "--no-edit"])
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Apply backports")
     parser.set_defaults(func=lambda args: parser.print_help())
@@ -716,19 +742,22 @@ def parse_args():
     changelog_branch_parse = subparsers.add_parser(
         "changelog-branch", help="Make changelog-for-version branch"
     )
-    changelog_branch_parse.add_argument("--today", action="store_true")
     changelog_branch_parse.set_defaults(func=make_changelog_branch)
 
     backport_branch_parse = subparsers.add_parser(
         "backport-branch", help="Make backports-for-version branch"
     )
-    backport_branch_parse.add_argument("--today", action="store_true")
     backport_branch_parse.set_defaults(func=make_backport_branch)
 
     open_release_prs_parse = subparsers.add_parser(
         "open-release-prs", help="Open PRs for the backports and changelog branches"
     )
     open_release_prs_parse.set_defaults(func=open_release_prs)
+
+    set_date_parse = subparsers.add_parser(
+        "set-date", help="Set the date in the changelog"
+    )
+    set_date_parse.set_defaults(func=set_date)
 
     return parser.parse_args()
 
