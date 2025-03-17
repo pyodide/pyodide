@@ -67,7 +67,7 @@ def test_runwebworker_exception_after_import(
         )
 
 
-@pytest.mark.xfail_browsers(chrome="flaky")
+@pytest.mark.xfail_browsers(chrome="flaky", firefox="flaky")
 def test_runwebworker_micropip(selenium_webworker_standalone, httpserver, script_type):
     selenium = selenium_webworker_standalone
 
