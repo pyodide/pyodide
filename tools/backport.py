@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 """
 The main purpose of this script is to automate the changelog transformations
@@ -26,6 +27,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
+
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
 
 PYODIDE_ROOT = Path(__file__).parents[1]
 CHANGELOG = PYODIDE_ROOT / "docs/project/changelog.md"
@@ -759,6 +765,8 @@ def parse_args():
     )
     set_date_parse.set_defaults(func=set_date)
 
+    if argcomplete:
+        argcomplete.autocomplete(parser)
     return parser.parse_args()
 
 
