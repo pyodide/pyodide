@@ -719,8 +719,11 @@ def set_date(args):
 
 def bump_version(args):
     version = get_version()
+    extra_args = []
+    if args.tag:
+        extra_args += "--tag"
 
-    run([TOOLS / "bump_version.py", version])
+    run([TOOLS / "bump_version.py", version] + extra_args)
 
 
 def parse_args():
@@ -774,6 +777,11 @@ def parse_args():
 
     bump_version_parser = subparsers.add_parser(
         "bump-version", help="Set the date in the changelog"
+    )
+    bump_version_parser.add_argument(
+        "--tag",
+        action="store_true",
+        help="Commit and tag the result",
     )
     bump_version_parser.set_defaults(func=bump_version)
 
