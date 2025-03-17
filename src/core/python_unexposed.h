@@ -4,6 +4,8 @@
 // but don't have immediately obvious replacements. For now, I copied them from
 // the private headers to this file.
 
+// Id methods
+
 static inline PyObject*
 _PyObject_VectorcallMethodId(_Py_Identifier* name,
                              PyObject* const* args,
@@ -35,43 +37,47 @@ _PyObject_CallMethodIdOneArg(PyObject* self,
   return _PyObject_VectorcallMethodId(name, args, nargsf, _Py_NULL);
 }
 
-PyObject*
-_PyErr_FormatFromCause(PyObject* exception, const char* format, ...);
-
-Py_hash_t
-_Py_HashBytes(const void*, Py_ssize_t);
-
 extern PyObject*
 _PyObject_CallMethodIdObjArgs(PyObject* obj, _Py_Identifier* name, ...);
-
-int
-_PyGen_SetStopIterationValue(PyObject*);
-
-PyAPI_FUNC(int) _PyArg_ParseStack(PyObject* const* args,
-                                  Py_ssize_t nargs,
-                                  const char* format,
-                                  ...);
-
-PyAPI_FUNC(int)
-  _PyArg_CheckPositional(const char*, Py_ssize_t, Py_ssize_t, Py_ssize_t);
-
-extern PyObject*
-_PyObject_CallMethodIdObjArgs(PyObject* obj, _Py_Identifier* name, ...);
-
-PyAPI_FUNC(int) _PyArg_ParseStackAndKeywords(PyObject* const* args,
-                                             Py_ssize_t nargs,
-                                             PyObject* kwnames,
-                                             struct _PyArg_Parser*,
-                                             ...);
-
-PyAPI_FUNC(int) _PySet_Update(PyObject* set, PyObject* iterable);
 
 extern int
 _PyObject_SetAttrId(PyObject*, _Py_Identifier*, PyObject*);
 
+// Other API stuff
+
+int
+_PyArg_CheckPositional(const char*, Py_ssize_t, Py_ssize_t, Py_ssize_t);
+
+int
+_PyArg_ParseStack(PyObject* const* args,
+                  Py_ssize_t nargs,
+                  const char* format,
+                  ...);
+
+int
+_PyArg_ParseStackAndKeywords(PyObject* const* args,
+                             Py_ssize_t nargs,
+                             PyObject* kwnames,
+                             struct _PyArg_Parser*,
+                             ...);
+
+PyObject*
+_PyErr_FormatFromCause(PyObject* exception, const char* format, ...);
+
+int
+_PyGen_SetStopIterationValue(PyObject*);
+
+int
+_PyGen_FetchStopIterationValue(PyObject**);
+
+Py_hash_t
+_Py_HashBytes(const void*, Py_ssize_t);
+
+PyObject*
+_PyObject_NextNotImplemented(PyObject*);
+
+int
+_PySet_Update(PyObject* set, PyObject* iterable);
+
 extern int
 _PyUnicode_EQ(PyObject*, PyObject*);
-
-extern PyObject*
-_PyObject_NextNotImplemented(PyObject*);
-PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject**);
