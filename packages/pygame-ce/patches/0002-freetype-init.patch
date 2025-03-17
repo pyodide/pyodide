@@ -1,8 +1,18 @@
-https://github.com/pmp-p/pygame-ce-wasm/pull/3
+From 6f0527f0c51cbd07e729f74afe0c9eaeb87a947b Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 17 Mar 2025 17:09:36 +0100
+Subject: [PATCH 2/2] freetype init
 
+https://github.com/pmp-p/pygame-ce-wasm/pull/3
 ---
+ src_c/_freetype.c        | 64 +++++++++++++++++++++++++---------------
+ src_c/freetype/ft_wrap.h |  5 ++--
+ src_py/freetype.py       |  2 +-
+ src_py/sysfont.py        | 31 +++++++++++++++++--
+ 4 files changed, 73 insertions(+), 29 deletions(-)
+
 diff --git a/src_c/_freetype.c b/src_c/_freetype.c
-index 3ee6241e05..7953dbd6e4 100644
+index f4da7757f..78dbdcd86 100644
 --- a/src_c/_freetype.c
 +++ b/src_c/_freetype.c
 @@ -30,9 +30,17 @@
@@ -23,7 +33,7 @@ index 3ee6241e05..7953dbd6e4 100644
  static const Scale_t FACE_SIZE_NONE = {0, 0};
  
  static int
-@@ -210,10 +218,6 @@ free_string(PGFT_String *);
+@@ -212,10 +220,6 @@ free_string(PGFT_String *);
          _var = PyObject_IsTrue(_pyobj);                        \
      }
  
@@ -34,7 +44,7 @@ index 3ee6241e05..7953dbd6e4 100644
  static unsigned int current_freetype_generation = 0;
  
  #define FreetypeFont_GenerationCheck(x) \
-@@ -705,7 +709,11 @@ _ftfont_init(pgFontObject *self, PyObject *args, PyObject *kwds)
+@@ -702,7 +706,11 @@ _ftfont_init(pgFontObject *self, PyObject *args, PyObject *kwds)
      SDL_RWops *source;
  
      FreeTypeInstance *ft;
@@ -46,7 +56,7 @@ index 3ee6241e05..7953dbd6e4 100644
  
      if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|O&lIi", kwlist, &file,
                                       obj_to_scale, (void *)&face_size,
-@@ -739,7 +747,7 @@ _ftfont_init(pgFontObject *self, PyObject *args, PyObject *kwds)
+@@ -736,7 +744,7 @@ _ftfont_init(pgFontObject *self, PyObject *args, PyObject *kwds)
          self->resolution = FREETYPE_STATE->resolution;
      }
      if (file == Py_None) {
@@ -55,7 +65,7 @@ index 3ee6241e05..7953dbd6e4 100644
  
          if (!file) {
              PyErr_SetString(PyExc_RuntimeError, "Failed to find default font");
-@@ -2219,6 +2227,14 @@ _ft_get_error(PyObject *self, PyObject *_null)
+@@ -2150,6 +2158,14 @@ _ft_get_error(PyObject *self, PyObject *_null)
      Py_RETURN_NONE;
  }
  
@@ -70,7 +80,7 @@ index 3ee6241e05..7953dbd6e4 100644
  static PyObject *
  _ft_get_version(PyObject *self, PyObject *args, PyObject *kwargs)
  {
-@@ -2265,6 +2281,7 @@ _ft_get_version(PyObject *self, PyObject *args, PyObject *kwargs)
+@@ -2196,6 +2212,7 @@ _ft_get_version(PyObject *self, PyObject *args, PyObject *kwargs)
                               FREETYPE_PATCH);
      }
  }
@@ -78,7 +88,7 @@ index 3ee6241e05..7953dbd6e4 100644
  
  static PyObject *
  _ft_get_cache_size(PyObject *self, PyObject *_null)
-@@ -2304,7 +2321,7 @@ _ft_get_init(PyObject *self, PyObject *_null)
+@@ -2248,7 +2265,7 @@ _ft_was_init(PyObject *self, PyObject *_null)
  static PyObject *
  _ft_get_default_font(PyObject *self, PyObject *_null)
  {
@@ -87,7 +97,7 @@ index 3ee6241e05..7953dbd6e4 100644
  }
  
  static int
-@@ -2327,13 +2344,13 @@ _ft_clear(PyObject *mod)
+@@ -2271,13 +2288,13 @@ _ft_clear(PyObject *mod)
   * FREETYPE MODULE DECLARATION
   ****************************************************/
  #ifndef PYPY_VERSION
@@ -103,7 +113,7 @@ index 3ee6241e05..7953dbd6e4 100644
      PyModuleDef_HEAD_INIT,
      MODULE_NAME,
      DOC_FREETYPE,
-@@ -2347,7 +2364,7 @@ struct PyModuleDef _freetypemodule = {
+@@ -2291,7 +2308,7 @@ struct PyModuleDef _freetypemodule = {
  
  MODINIT_DEFINE(_freetype)
  {
@@ -112,7 +122,7 @@ index 3ee6241e05..7953dbd6e4 100644
      static void *c_api[PYGAMEAPI_FREETYPE_NUMSLOTS];
  
      import_pygame_base();
-@@ -2380,27 +2397,28 @@ MODINIT_DEFINE(_freetype)
+@@ -2324,27 +2341,28 @@ MODINIT_DEFINE(_freetype)
          return NULL;
      }
  
@@ -152,7 +162,7 @@ index 3ee6241e05..7953dbd6e4 100644
      }
  
      DEC_CONST(STYLE_NORMAL);
-@@ -2423,11 +2441,11 @@ MODINIT_DEFINE(_freetype)
+@@ -2367,11 +2385,11 @@ MODINIT_DEFINE(_freetype)
      c_api[1] = &pgFont_New;
  
      apiobj = encapsulate_api(c_api, "freetype");
@@ -168,7 +178,7 @@ index 3ee6241e05..7953dbd6e4 100644
 +    return _freetypemodule;
  }
 diff --git a/src_c/freetype/ft_wrap.h b/src_c/freetype/ft_wrap.h
-index 5fc059e556..034cccff01 100644
+index 0bba50fc9..1b1d79545 100644
 --- a/src_c/freetype/ft_wrap.h
 +++ b/src_c/freetype/ft_wrap.h
 @@ -232,9 +232,10 @@ typedef struct {
@@ -185,10 +195,10 @@ index 5fc059e556..034cccff01 100644
  extern _FreeTypeState _modstate;
  #define FREETYPE_MOD_STATE(mod) (&_modstate)
 diff --git a/src_py/freetype.py b/src_py/freetype.py
-index 6c8dc0e4e2..d981a9ae06 100644
+index 6c8dc0e4e..d981a9ae0 100644
 --- a/src_py/freetype.py
 +++ b/src_py/freetype.py
-@@ -45,7 +45,7 @@
+@@ -45,7 +45,7 @@ __all__ = [
  
  
  def SysFont(name, size, bold=False, italic=False, constructor=None):
@@ -198,10 +208,10 @@ index 6c8dc0e4e2..d981a9ae06 100644
  
      This will search the system fonts for the given font
 diff --git a/src_py/sysfont.py b/src_py/sysfont.py
-index cc05f983d8..59f0155b88 100644
+index 8879f3e12..ce941af59 100644
 --- a/src_py/sysfont.py
 +++ b/src_py/sysfont.py
-@@ -203,14 +203,40 @@ def initsysfonts_darwin():
+@@ -200,14 +200,39 @@ def initsysfonts_darwin():
      return fonts
  
  
@@ -241,7 +251,9 @@ index cc05f983d8..59f0155b88 100644
          return fonts
  
 +    # fallback to os support
-+
+     import subprocess
+ 
      try:
-         proc = subprocess.run(
-             [path, ":", "file", "family", "style"],
+-- 
+2.34.1
+
