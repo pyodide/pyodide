@@ -33,7 +33,8 @@ try:
 except ImportError:
     argcomplete = None
 
-PYODIDE_ROOT = Path(__file__).parents[1]
+TOOLS = Path(__file__).parent
+PYODIDE_ROOT = TOOLS.parent
 CHANGELOG = PYODIDE_ROOT / "docs/project/changelog.md"
 INSERT_DATE_HERE = "Insert Date Here"
 
@@ -716,6 +717,12 @@ def set_date(args):
     run(["git", "commit", "--amend", "--no-edit"])
 
 
+def bump_version(args):
+    version = get_version()
+
+    run([TOOLS / "bump_version.py", version])
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Apply backports")
     parser.set_defaults(func=lambda args: parser.print_help())
@@ -764,6 +771,11 @@ def parse_args():
         "set-date", help="Set the date in the changelog"
     )
     set_date_parse.set_defaults(func=set_date)
+
+    bump_version_parser = subparsers.add_parser(
+        "bump-version", help="Set the date in the changelog"
+    )
+    bump_version_parser.set_defaults(func=bump_version)
 
     if argcomplete:
         argcomplete.autocomplete(parser)
