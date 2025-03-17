@@ -546,7 +546,7 @@ def make_changelog_branch(args) -> None:
     prs = commits_to_prs(commits)
     version = args.new_version
     date = get_date(args)
-    run(["git", "fetch", "upstream", "main:main"])
+    run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "switch", "main"])
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
@@ -578,8 +578,8 @@ def make_backport_branch(args) -> None:
     commits = get_commits()
     version = args.new_version
     date = get_date(args)
-    run(["git", "fetch", "upstream", "main:main"])
-    run(["git", "fetch", "upstream", "stable:stable"])
+    run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
+    run(["git", "fetch", "upstream", "stable:stable", "--update-head-ok", "--force"])
     run(["git", "config", "rerere.enabled", "true"])
     run(["git", "config", "rerere.autoupdate", "true"])
     run(["git", "switch", "main"])
