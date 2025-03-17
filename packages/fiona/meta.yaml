@@ -39,10 +39,6 @@ build:
     rm tests/test_vfs.py # No module named "boto3"
     rm tests/test_env.py # No module named "boto3"
 
-    mkdir fiona-tests
-    mv tests fiona-tests
-    tar -cf ${DISTDIR}/fiona-tests.tar fiona-tests
-
 about:
   home: http://github.com/Toblerity/Fiona
   PyPI: https://pypi.org/project/fiona
