@@ -716,13 +716,13 @@ def parse_args():
     subparsers = parser.add_subparsers()
 
     add_backport_parser = subparsers.add_parser(
-        "add-backport-pr", help="Add the needs-backport label to a PR"
+        "add-pr", help="Add the needs-backport label to a PR"
     )
     add_backport_parser.add_argument("pr_numbers", nargs="+", action="extend")
     add_backport_parser.set_defaults(func=add_backport_pr)
 
     clear_backport_prs_parser = subparsers.add_parser(
-        "clear-backport-prs",
+        "clear-prs",
         help="Remove the needs-backport label from all PRs with the label",
     )
     clear_backport_prs_parser.add_argument(
