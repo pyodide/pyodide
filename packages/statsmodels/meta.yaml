@@ -6,6 +6,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/1f/3b/963a015dd8ea17e10c7b0e2f14d7c4daec903baf60a017e756b57953a4bf/statsmodels-0.14.4.tar.gz
   sha256: 5d69e0f39060dc72c067f9bb6e8033b6dccdb0bae101d76a7ef0bcc94e898b67
+  patches:
+    - packages/statsmodels/patches/0001-Patch-get_rdataset-network-access.patch
 
 build:
   ldflags: |
@@ -23,6 +25,7 @@ requirements:
     - pandas
     - patsy
     - packaging
+    - pyodide-http
 
 test:
   imports:

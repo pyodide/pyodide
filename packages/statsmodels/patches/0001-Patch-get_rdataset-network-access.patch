@@ -1,0 +1,59 @@
+From 4cf745c5daf0b926e3228a4bfa3798668539f9c9 Mon Sep 17 00:00:00 2001
+From: Agriya Khetarpal <74401230+agriyakhetarpal@users.noreply.github.com>
+Date: Mon, 17 Mar 2025 19:41:50 +0530
+Subject: [PATCH] Patch get_rdataset network access
+
+---
+ pyproject.toml                |  3 ++-
+ statsmodels/datasets/utils.py | 15 +++++++++++++++
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index a00dd1c34..f7873296f 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -6,7 +6,8 @@ requires = [
+     "cython>=3.0.10,<4",  # Sync with CYTHON_MIN_VER in setup
+     "numpy>=2.0.0,<3",
+     "scipy>=1.13,<2",
+-    "setuptools_scm[toml]>=8,<9"
++    "setuptools_scm[toml]>=8,<9",
++    "pyodide-http"
+ ]
+ build-backend = "setuptools.build_meta"
+ 
+diff --git a/statsmodels/datasets/utils.py b/statsmodels/datasets/utils.py
+index 09972f7ea..2f7291ad4 100644
+--- a/statsmodels/datasets/utils.py
++++ b/statsmodels/datasets/utils.py
+@@ -130,12 +130,27 @@ def _open_cache(cache_path):
+         return zlib.decompress(zf.read())
+ 
+ 
++def _is_jupyterlite() -> bool:
++    try:
++        import pyodide_kernel
++    except (ImportError, ModuleNotFoundError):
++        return False
++    return True
++
++
+ def _urlopen_cached(url, cache):
+     """
+     Tries to load data from cache location otherwise downloads it. If it
+     downloads the data and cache is not None then it will put the downloaded
+     data in the cache path.
+     """
++
++    # if we are in a jupyterlite environment, we will want
++    # to patch urllib, requests, etc. for usage in Pyodide
++    if _is_jupyterlite():
++        import pyodide_http
++        pyodide_http.patch_all()
++
+     from_cache = False
+     if cache is not None:
+         file_name = url.split("://")[-1].replace('/', ',')
+-- 
+2.39.5 (Apple Git-154)
+
