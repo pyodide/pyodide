@@ -17,8 +17,6 @@ requirements:
   executable:
     - rustup
     - cargo
-  constraint:
-    - maturin < 1.8
 test:
   imports:
     - cramjam
