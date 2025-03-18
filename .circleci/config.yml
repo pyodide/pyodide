@@ -449,7 +449,7 @@ jobs:
       - run:
           name: check-release-version
           command: |
-            ./tools/bump_version.py --check --new-version ${CIRCLE_TAG}
+            ./tools/bump_version.py --check ${CIRCLE_TAG}
 
   deploy-release:
     # To reduce chance of deployment issues, try to keep the steps here as
