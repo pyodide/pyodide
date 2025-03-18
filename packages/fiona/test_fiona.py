@@ -13,6 +13,7 @@ def test_supported_drivers(selenium):
 @run_in_pyodide(packages=["fiona"])
 def test_geometry_collection_round_trip(selenium):
     from fiona._geometry import geometryRT
+
     geom = {
         "type": "GeometryCollection",
         "geometries": [
