@@ -721,7 +721,7 @@ def bump_version(args):
     version = get_version()
     extra_args = []
     if args.tag:
-        extra_args += "--tag"
+        extra_args.append("--tag")
 
     run([TOOLS / "bump_version.py", version] + extra_args)
 
