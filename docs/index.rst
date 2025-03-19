@@ -31,8 +31,8 @@ Try Pyodide in a
 `REPL <./console.html>`_ directly in
 your browser (no installation needed).
 
-Where should I go?
-------------------
+What should I look at first?
+----------------------------
 
 - If you wish to use a hosted distribution of Pyodide: see the :ref:`quickstart`
   documentation.
