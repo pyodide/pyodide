@@ -2,6 +2,7 @@ package:
   name: zarr
   version: 2.18.3
   # zarr 3.x uses threading
+  _disabled: true
   pinned: true
   top-level:
     - zarr
