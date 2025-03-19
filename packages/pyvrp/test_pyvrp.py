@@ -1,8 +1,10 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["pyvrp"])
 def test_pyvrp_model_test(selenium):
     import pyvrp
+
     model = pyvrp.Model()
 
     depot = model.add_depot(0, 0)
