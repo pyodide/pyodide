@@ -36,7 +36,7 @@ myst:
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `jiter` 0.8.2 {pr}`5388`
-
+- Added `pyvrp` 0.10.1 {pr} `5530`
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
@@ -279,7 +279,6 @@ _January 1, 2025_
 - Upgraded `pure-eval` to 0.2.3 {pr}`5086`, {pr}`5244`
 - Upgraded `cffi` to 1.17.1 {pr}`5261`
 - Upgraded `pillow-heif` to 0.20.0 and `pyheif` 0.8.0 {pr}`5178`
-- Added `pyvrp` 0.10.1 {pr} ``
 
 ## Version 0.26.4
 
