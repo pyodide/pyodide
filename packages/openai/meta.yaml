@@ -1,0 +1,24 @@
+package:
+  name: openai
+  version: 1.12.0
+  top-level:
+    - openai
+source:
+  url: https://files.pythonhosted.org/packages/26/a1/75474477af2a1dae3a25f80b72bbaf20e8296191ece7fff2f67984206f33/openai-1.12.0-py3-none-any.whl
+  sha256: a54002c814e05222e413664f651b5916714e4700d041d5cf5724d3ae1a3e3481
+requirements:
+  run:
+    - httpx
+    - pydantic
+    - typing-extensions
+    - distro
+    - anyio
+    - sniffio
+about:
+  home: ""
+  PyPI: https://pypi.org/project/openai
+  summary: The official Python library for the openai API
+  license: ""
+extra:
+  recipe-maintainers:
+    - hoodmane
