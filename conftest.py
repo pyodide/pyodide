@@ -12,6 +12,7 @@ from collections.abc import Sequence
 import pytest
 
 ROOT_PATH = pathlib.Path(__file__).parents[0].resolve()
+PYODIDE_ROOT = ROOT_PATH
 DIST_PATH = ROOT_PATH / "dist"
 
 sys.path.append(str(ROOT_PATH / "src" / "py"))
