@@ -519,6 +519,29 @@ def test_package_index(tmp_path):
     )
 
 
+def test_xbuildenv_runner_works(tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            pyodide_root / "tools" / "create_xbuildenv.py",
+            tmp_path,
+            "--skip-missing-files",
+        ],
+        check=False,
+    )
+    assert result.returncode == 0
+
+    xbuildenv_python = tmp_path / "xbuildenv/pyodide-root/dist/python"
+    result = subprocess.run(
+        [xbuildenv_python, "-c", "print('hello!')"],
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello!\n"
+
+
 def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
