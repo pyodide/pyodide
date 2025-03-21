@@ -1,8 +1,6 @@
 package:
   name: pygame-ce
   version: 2.4.1
-  # Broken by setuptools 76 release, requirements.constraint doesn't fix it
-  _disabled: true
   top-level:
     - pygame
 source:
@@ -73,13 +71,13 @@ build:
       ${SIDE_MODULE_LDFLAGS} \
       -fPIC \
       -lSDL2 \
-      -lSDL2_image-bmp-gif-jpg-png-wasm-sjlj \
+      -lSDL2_image_bmp-gif-jpg-png \
       -lSDL2_ttf \
       -lSDL2_mixer_mid-mod-mpg-ogg \
       -lSDL2_gfx \
-      -lfreetype-wasm-sjlj \
+      -lfreetype \
       -lharfbuzz \
-      -lpng-wasm-sjlj \
+      -lpng \
       -ljpeg \
       -lgif \
       -lvorbis \
@@ -89,7 +87,6 @@ build:
       -lhtml5 \
       ${STATIC_OBJS} \
       ${SHARED_LIBS} \
-      -sSUPPORT_LONGJMP=wasm \
       -o pygame_static.so
 
     # Remove duplicated static.so module
