@@ -55,7 +55,7 @@ To contribute code, see the following steps,
 
    This will run a set of linters for each commit.
 
-7. Follow {ref}`building_from_sources` instructions.
+7. Follow {ref}`building_from_source` instructions.
 
 8. See {ref}`testing` documentation.
 
