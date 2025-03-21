@@ -1,6 +1,7 @@
 package:
   name: orjson
   version: 3.10.15
+  _disabled: true
   tag:
     - rust
   top-level:

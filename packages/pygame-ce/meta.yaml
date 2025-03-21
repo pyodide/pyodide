@@ -1,6 +1,8 @@
 package:
   name: pygame-ce
   version: 2.4.1
+  # Need newer version for 3.13 compat see https://github.com/pyodide/pyodide/pull/5522
+  _disabled: true
   top-level:
     - pygame
 source:

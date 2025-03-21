@@ -1,6 +1,7 @@
 package:
   name: tree-sitter
   version: 0.23.2
+  _disabled: true
   top-level:
     - tree_sitter
 source:

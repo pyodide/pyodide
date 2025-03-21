@@ -16,7 +16,6 @@ build:
     cd Python-${PYVERSION}
 
     export TEST_EXTENSIONS="\
-      _testinternalcapi.so \
       _testbuffer.so \
       _testimportmultiple.so \
       _testmultiphase.so \
@@ -24,40 +23,47 @@ build:
     "
 
     export TEST_CAPI_SRCS=( \
-      _testcapimodule.c \
-      _testcapi/vectorcall.c \
-      _testcapi/vectorcall_limited.c \
-      _testcapi/heaptype.c \
-      _testcapi/abstract.c \
-      _testcapi/bytearray.c \
-      _testcapi/bytes.c \
-      _testcapi/unicode.c \
-      _testcapi/dict.c \
-      _testcapi/set.c \
-      _testcapi/list.c \
-      _testcapi/tuple.c \
-      _testcapi/getargs.c \
-      _testcapi/pytime.c \
-      _testcapi/datetime.c \
-      _testcapi/docstring.c \
-      _testcapi/mem.c \
-      _testcapi/watchers.c \
-      _testcapi/long.c \
-      _testcapi/float.c \
-      _testcapi/complex.c \
-      _testcapi/numbers.c \
-      _testcapi/structmember.c \
-      _testcapi/exceptions.c \
-      _testcapi/code.c \
-      _testcapi/buffer.c \
-      _testcapi/pyos.c \
-      _testcapi/run.c \
-      _testcapi/file.c \
-      _testcapi/codec.c \
-      _testcapi/immortal.c \
-      _testcapi/heaptype_relative.c \
-      _testcapi/gc.c \
-      _testcapi/sys.c \
+        _testcapimodule.c \
+        _testcapi/vectorcall.c \
+        _testcapi/heaptype.c \
+        _testcapi/abstract.c \
+        _testcapi/unicode.c \
+        _testcapi/dict.c \
+        _testcapi/set.c \
+        _testcapi/list.c \
+        _testcapi/tuple.c \
+        _testcapi/getargs.c \
+        _testcapi/datetime.c \
+        _testcapi/docstring.c \
+        _testcapi/mem.c \
+        _testcapi/watchers.c \
+        _testcapi/long.c \
+        _testcapi/float.c \
+        _testcapi/complex.c \
+        _testcapi/numbers.c \
+        _testcapi/structmember.c \
+        _testcapi/exceptions.c \
+        _testcapi/code.c \
+        _testcapi/buffer.c \
+        _testcapi/pyatomic.c \
+        _testcapi/run.c \
+        _testcapi/file.c \
+        _testcapi/codec.c \
+        _testcapi/immortal.c \
+        _testcapi/gc.c \
+        _testcapi/hash.c \
+        _testcapi/time.c \
+        _testcapi/bytes.c \
+        _testcapi/object.c \
+        _testcapi/monitoring.c \
+    )
+
+    export TEST_INTERNALCAPI_SRCS=( \
+      _testinternalcapi.c \
+      _testinternalcapi/test_lock.c \
+      _testinternalcapi/pytime.c \
+      _testinternalcapi/set.c \
+      _testinternalcapi/test_critical_sections.c \
     )
 
 
@@ -74,9 +80,17 @@ build:
     for capi_src in ${TEST_CAPI_SRCS[@]}; do \
       emcc ${TEST_MODULE_CFLAGS} -c Modules/${capi_src} -o Modules/${capi_src/.c/.o}
     done
+    for capi_src in ${TEST_INTERNALCAPI_SRCS[@]}; do \
+      emcc ${TEST_MODULE_CFLAGS} -c Modules/${capi_src} -o Modules/${capi_src/.c/.o}
+    done
 
     export TEST_CAPI_OBJECTS=( "${TEST_CAPI_SRCS[@]/#/Modules/}" )
     emcc  ${SIDE_MODULE_LDFLAGS} ${TEST_CAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testcapi.so
+
+
+    export TEST_INTERNALCAPI_OBJECTS=( "${TEST_INTERNALCAPI_SRCS[@]/#/Modules/}" )
+    echo emcc ${SIDE_MODULE_LDFLAGS} ${TEST_INTERNALCAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testinternalcapi.so
+    emcc ${SIDE_MODULE_LDFLAGS} ${TEST_INTERNALCAPI_OBJECTS[@]//.c/.o} -o ${PKG_BUILD_DIR}/_testinternalcapi.so
 
     for testname in ${TEST_EXTENSIONS}; do \
       emcc Modules/${testname/.so/.o} -o ${PKG_BUILD_DIR}/$testname ${SIDE_MODULE_LDFLAGS}
