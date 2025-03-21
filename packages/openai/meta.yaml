@@ -13,7 +13,6 @@ requirements:
     - typing-extensions
     - distro
     - anyio
-    - sniffio
 about:
   home: ""
   PyPI: https://pypi.org/project/openai

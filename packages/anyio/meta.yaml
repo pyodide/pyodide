@@ -9,6 +9,7 @@ source:
 requirements:
   run:
     - ssl
+    - sniffio
 about:
   home: null
   PyPI: https://pypi.org/project/anyio
