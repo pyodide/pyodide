@@ -1,6 +1,7 @@
 package:
   name: gdal
   version: 3.8.3
+  _disabled: true
   tag:
     - library
     - shared_library
