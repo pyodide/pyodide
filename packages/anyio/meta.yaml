@@ -10,6 +10,7 @@ requirements:
   run:
     - ssl
     - sniffio
+    - typing-extensions
 about:
   home: null
   PyPI: https://pypi.org/project/anyio
