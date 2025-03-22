@@ -1,0 +1,20 @@
+package:
+  name: httpcore
+  version: 1.0.7
+  top-level:
+    - httpcore
+source:
+  url: https://files.pythonhosted.org/packages/py3/h/httpcore/httpcore-1.0.7-py3-none-any.whl
+  sha256: a3fff8f43dc260d5bd363d9f9cf1830fa3a458b332856f34282de498ed420edd
+requirements:
+  run:
+    - certifi
+    - h11
+about:
+  home: null
+  PyPI: https://pypi.org/project/httpcore
+  summary: A minimal low-level HTTP client.
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - hoodmane

@@ -1,0 +1,21 @@
+package:
+  name: pytest_httpx
+  version: 0.30.0
+  top-level:
+    - pytest_httpx
+source:
+  url: https://files.pythonhosted.org/packages/14/60/ba9895a260e16c1115e40f8ae6f615c7e8ccdfa5d55418078391dd30b476/pytest_httpx-0.30.0-py3-none-any.whl
+  sha256: 6d47849691faf11d2532565d0c8e0e02b9f4ee730da31687feae315581d7520c
+requirements:
+  run:
+    - httpx
+    - pytest
+    - httpcore
+about:
+  home: ""
+  PyPI: https://pypi.org/project/pytest_httpx
+  summary: Send responses to httpx.
+  license: MIT
+extra:
+  recipe-maintainers:
+    - hoodmane
