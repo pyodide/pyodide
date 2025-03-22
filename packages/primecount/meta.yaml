@@ -19,7 +19,7 @@ about:
 build:
   type: static_library
   script: |
-    emcmake cmake -DCMAKE_VERBOSE_MAKEFILE=ON \
+    emcmake cmake -DCMAKE_VERBOSE_MAKEFILE=OFF \
           -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
           -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
           -DBUILD_STATIC_LIBS=ON \
