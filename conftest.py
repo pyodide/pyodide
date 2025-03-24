@@ -339,12 +339,10 @@ def _run(self, selenium, args):
     unbuilt = sorted(pkg for pkg in self._pkgs if not package_is_built(pkg))
     if unbuilt:
         msg = "Requires unbuilt packages: " + ", ".join(unbuilt)
-        if "PYTEST_CURRENT_TEST" not in os.environ:
-            raise RuntimeError(msg)
-        if "CI" in os.environ:
-            pytest.fail(msg)
-        else:
+        if "PYTEST_CURRENT_TEST" in os.environ:
             pytest.skip(msg)
+        else:
+            raise RuntimeError(msg)
     if self._pkgs:
         selenium.load_package(self._pkgs)
     return _orig_run(self, selenium, args)
