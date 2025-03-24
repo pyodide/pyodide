@@ -29,7 +29,7 @@ declare global {
 declare global {
   export const stringToNewUTF8: (str: string) => number;
   export const UTF8ToString: (ptr: number) => string;
-  export const FS: FS;
+  export const FS: FSType;
   export const stackAlloc: (sz: number) => number;
   export const stackSave: () => number;
   export const stackRestore: (ptr: number) => void;
@@ -212,11 +212,9 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
- * TODO: Consider renaming the type to FSType to avoid collisions between FS and
- * FSType.
  * @hidden
  */
-export interface FS {
+export interface FSType {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
   chdir: (path: string) => void;
@@ -300,7 +298,7 @@ export interface Module {
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
-  FS: FS;
+  FS: FSType;
   LDSO: LDSO;
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
@@ -536,5 +534,5 @@ export type PackageManagerModule = Pick<
   Module,
   "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
 > & {
-  FS: Pick<FS, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
+  FS: Pick<FSType, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
 };
