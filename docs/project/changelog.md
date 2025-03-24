@@ -14,6 +14,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+### Packages
+
+- Added `osqp` 1.0.0 {pr}`5510`
+
 ## Version 0.27.4
 
 _March 17, 2025_
