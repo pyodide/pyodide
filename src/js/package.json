@@ -41,9 +41,9 @@
   "main": "pyodide.js",
   "exports": {
     ".": {
+      "types": "./pyodide.d.ts",
       "require": "./pyodide.js",
-      "import": "./pyodide.mjs",
-      "types": "./pyodide.d.ts"
+      "import": "./pyodide.mjs"
     },
     "./ffi": {
       "types": "./ffi.d.ts"
