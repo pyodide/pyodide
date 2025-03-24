@@ -527,6 +527,7 @@ def test_xbuildenv_runner_works(tmp_path):
             tmp_path,
             "--skip-missing-files",
         ],
+        text=True,
         check=False,
     )
     assert result.returncode == 0
