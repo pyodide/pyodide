@@ -513,7 +513,8 @@ def test_package_index(tmp_path):
     )
 
 
-def test_xbuildenv_runner_works(tmp_path):
+@only_node
+def test_xbuildenv_runner_works(selenium, tmp_path):
     result = subprocess.run(
         [
             sys.executable,
@@ -521,6 +522,7 @@ def test_xbuildenv_runner_works(tmp_path):
             tmp_path,
             "--skip-missing-files",
         ],
+        text=True,
         check=False,
     )
     assert result.returncode == 0
@@ -536,6 +538,7 @@ def test_xbuildenv_runner_works(tmp_path):
     assert result.stdout == "hello!\n"
 
 
+@only_node
 def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
@@ -557,6 +560,7 @@ def test_sys_exit(selenium, venv):
     assert result.stderr == ""
 
 
+@only_node
 def test_cpp_exceptions(selenium, venv):
     result = install_pkg(venv, "cpp-exceptions-test2")
     print(result.stdout)
