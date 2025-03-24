@@ -336,7 +336,7 @@ _orig_run = run_in_pyodide._run
 
 def _run(self, selenium, args):
     __tracebackhide__ = True
-    unbuilt = sorted(pkg for pkg in self._pk if not package_is_built(pkg))
+    unbuilt = sorted(pkg for pkg in self._pkgs if not package_is_built(pkg))
     if unbuilt:
         msg = "Requires unbuilt packages: " + ", ".join(unbuilt)
         if "PYTEST_CURRENT_TEST" not in os.environ:
