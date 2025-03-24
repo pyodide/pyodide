@@ -1,4 +1,4 @@
-from conftest import run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 
 def test_openai(selenium):

@@ -3,7 +3,6 @@ Various common utilities for testing.
 """
 
 import contextlib
-import functools
 import os
 import pathlib
 import re
@@ -11,7 +10,7 @@ import sys
 from collections.abc import Sequence
 
 import pytest
-from pytest_pyodide import run_in_pyodide as _run_in_pyodide
+from pytest_pyodide import run_in_pyodide
 
 PYODIDE_ROOT = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = PYODIDE_ROOT / "dist"
@@ -330,16 +329,25 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
     return res
 
 
-# TODO: Replace with upstream run_in_pyodide when a release is made with:
+# TODO: Remove when a release is made with:
 # https://github.com/pyodide/pytest-pyodide/pull/152/
-@functools.wraps(_run_in_pyodide)
-def run_in_pyodide(packages, *args, **kwargs):
-    unbuilt = sorted(pkg for pkg in packages if not package_is_built(pkg))
+_orig_run = run_in_pyodide._run
+
+
+def _run(self, selenium, args):
+    __tracebackhide__ = True
+    unbuilt = sorted(pkg for pkg in self._pk if not package_is_built(pkg))
     if unbuilt:
         msg = "Requires unbuilt packages: " + ", ".join(unbuilt)
         if "PYTEST_CURRENT_TEST" not in os.environ:
             raise RuntimeError(msg)
-        if skip_if_not_all_built:
+        if "CI" in os.environ:
+            pytest.fail(msg)
+        else:
             pytest.skip(msg)
-        pytest.fail(msg)
-    return _run_in_pyodide(packages, *args, **kwargs)
+    if self._pkgs:
+        selenium.load_package(self._pkgs)
+    return _orig_run(self, selenium, args)
+
+
+run_in_pyodide._run = _run
