@@ -7,6 +7,8 @@ source:
 build:
   backend-flags: |
     skbuild.cmake.define.USE_OPENMP=OFF
+    # for debugging
+    # skbuild.build.verbose=true
   exports: requested
   script: |
     export CMAKE_GENERATOR="Unix Makefiles"
