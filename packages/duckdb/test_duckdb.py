@@ -11,9 +11,7 @@ def test_duckdb(selenium):
         (platform,) = con.execute("PRAGMA platform").fetchone()
         con.execute("CREATE TEMP TABLE t (id INT, content STRING)")
         con.execute("INSERT INTO t VALUES (42, 'hello'), (43, 'world')")
-        query_result = con.execute(
-            "SELECT rowid, * FROM t ORDER BY rowid"
-        ).fetchall()
+        query_result = con.execute("SELECT rowid, * FROM t ORDER BY rowid").fetchall()
 
     assert "pyodide" in platform
     assert "wasm" in platform

@@ -9,9 +9,9 @@ import pathlib
 import re
 import sys
 from collections.abc import Sequence
-from pytest_pyodide import run_in_pyodide as _run_in_pyodide
 
 import pytest
+from pytest_pyodide import run_in_pyodide as _run_in_pyodide
 
 PYODIDE_ROOT = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = PYODIDE_ROOT / "dist"
