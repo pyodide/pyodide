@@ -3,11 +3,13 @@ Various common utilities for testing.
 """
 
 import contextlib
+import functools
 import os
 import pathlib
 import re
 import sys
 from collections.abc import Sequence
+from pytest_pyodide import run_in_pyodide as _run_in_pyodide
 
 import pytest
 
@@ -326,3 +328,18 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
+
+
+# TODO: Replace with upstream run_in_pyodide when a release is made with:
+# https://github.com/pyodide/pytest-pyodide/pull/152/
+@functools.wraps(_run_in_pyodide)
+def run_in_pyodide(packages, *args, **kwargs):
+    unbuilt = sorted(pkg for pkg in packages if not package_is_built(pkg))
+    if unbuilt:
+        msg = "Requires unbuilt packages: " + ", ".join(unbuilt)
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            raise RuntimeError(msg)
+        if skip_if_not_all_built:
+            pytest.skip(msg)
+        pytest.fail(msg)
+    return _run_in_pyodide(packages, *args, **kwargs)
