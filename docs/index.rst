@@ -30,6 +30,22 @@ Try Pyodide in a
 `REPL <./console.html>`_ directly in
 your browser (no installation needed).
 
+What should I look at first?
+----------------------------
+
+- If you wish to use a hosted distribution of Pyodide: see the :ref:`quickstart`
+  documentation.
+- If you wish to host Pyodide yourself, you can download Pyodide from the `releases
+  page <https://github.com/pyodide/pyodide/releases/>`_ and serve it with a web server.
+- If you wish to use Pyodide with a bundler, see the documentation on
+  :ref:`working-with-bundlers`.
+- If you are a Python package maintainer, see the documentation
+  :ref:`building-and-testing-packages-out-of-tree`.
+- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`new-packages`.
+- If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
+  :ref:`building_from_source`.
+
+
 
 Table of contents
 -----------------
