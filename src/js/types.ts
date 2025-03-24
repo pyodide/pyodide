@@ -534,5 +534,8 @@ export type PackageManagerModule = Pick<
   Module,
   "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
 > & {
-  FS: Pick<FSType, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
+  FS: Pick<
+    FSType,
+    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
+  >;
 };
