@@ -24,6 +24,14 @@ const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
 
+function fsInit(FS) {
+  const mounts = dirsToMount();
+  for (const mount of mounts) {
+    FS.mkdirTree(mount);
+    FS.mount(FS.filesystems.NODEFS, { root: mount }, mount);
+  }
+}
+
 async function main() {
   let py;
   try {
@@ -38,7 +46,7 @@ async function main() {
         { HOME: process.cwd() },
       ),
       fullStdLib: false,
-      _node_mounts: dirsToMount(),
+      fsInit,
       // Strip out messages written to stderr while loading
       // After Pyodide is loaded we will replace stdstreams with setupStreams.
       stderr(e) {
