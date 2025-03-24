@@ -1,12 +1,12 @@
 (new-packages)=
 
-# Creating a Pyodide package
+# Adding a package to the Pyodide Distribution
 
 It is recommended to look into how other similar packages are built in Pyodide.
 If you encounter difficulties in building your package after trying the steps
 listed here, open a [new Pyodide issue](https://github.com/pyodide/pyodide/issues).
 
-## Determining if creating a Pyodide package is necessary
+## Determining if adding a package is necessary
 
 If you wish to use a package in Pyodide that is not already included in the
 [`packages` folder](https://github.com/pyodide/pyodide/tree/main/packages), first you

@@ -13,7 +13,7 @@ import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData } from "./types";
+import type { TypedArray, Module, PackageData, FSType } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
