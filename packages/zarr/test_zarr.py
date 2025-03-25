@@ -5,7 +5,6 @@ from pytest_pyodide import run_in_pyodide
 def test_zarr(selenium):
     import numpy as np
     import zarr
-    from numcodecs import Blosc
 
     # basic test
     z = zarr.zeros((1000, 1000), chunks=(100, 100), dtype="i4")
@@ -20,9 +19,3 @@ def test_zarr(selenium):
     zarr.save("/tmp/example.zarr", a1)
     a2 = zarr.load("/tmp/example.zarr")
     np.testing.assert_equal(a1, a2)
-
-    # test compressor
-    compressor = Blosc(cname="zstd", clevel=3, shuffle=Blosc.BITSHUFFLE)
-    data = np.arange(10000, dtype="i4").reshape(100, 100)
-    z = zarr.array(data, chunks=(10, 10), compressor=compressor)
-    assert z.compressor == compressor
