@@ -1960,7 +1960,7 @@ def test_bind_pre_convert(selenium):
 
     abound = ajs.bind_sig(a)
     assert abound({"x": "y"}) == ["[object Headers]", '[["x","y"]]']
-    _caches[Annotated._class_getitem_inner.__wrapped__].cache_clear()  # type:ignore[attr-defined]
+    _caches[Annotated._getitem.__wrapped__].cache_clear()  # type:ignore[attr-defined]
 
 
 @run_in_pyodide

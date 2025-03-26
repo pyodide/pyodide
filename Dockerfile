@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.7-slim-bookworm
+FROM python:3.13.2-slim-bookworm
 
 # Requirements for building packages
 RUN apt-get update \

@@ -6,6 +6,7 @@
 #include "jslib.h"
 #include "pyproxy.h"
 #include "python2js.h"
+#include "python_unexposed.h"
 #include "stddef.h"
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,

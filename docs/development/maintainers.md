@@ -392,6 +392,7 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 
 | version | pr         |
 | ------- | ---------- |
+| 3.13    | {pr}`5498` |
 | 3.12    | {pr}`4435` |
 | 3.11    | {pr}`3252` |
 | 3.10    | {pr}`2225` |
