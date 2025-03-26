@@ -46,6 +46,7 @@ build:
   # Build configs can be found at: https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
 
   script: |
+    # for debugging
     # export VERBOSE=1
 
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/_core/include/"

@@ -25,6 +25,7 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
+- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
 
 ### `python` CLI entrypoint
 
@@ -37,6 +38,7 @@ myst:
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `jiter` 0.8.2 {pr}`5388`
 - Added `openai` 1.68.2 {pr}`5536`
+- Added `osqp` 1.0.0 {pr}`5510`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
