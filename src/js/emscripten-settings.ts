@@ -147,8 +147,8 @@ function installStdlib(stdlibURL: string): PreRunFunc {
     Module.API.pyVersionTuple = computeVersionTuple(Module);
     const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
-
+    Module.FS.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
+    Module.FS.mkdirTree(Module.FS.sitePackages);
     Module.addRunDependency("install-stdlib");
 
     try {
@@ -175,12 +175,13 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
 
+  // Note: Hooks are called in **reverse** order of appearance.
   return [
+    ...callFsInitHook(config.fsInit),
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
-    ...callFsInitHook(config.fsInit),
   ];
 }
 

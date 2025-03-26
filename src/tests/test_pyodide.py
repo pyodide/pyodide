@@ -1971,3 +1971,25 @@ def test_lockfile_api(selenium):
     assert lockfile_info.python is not None
 
     assert lockfile_packages.micropip is not None
+
+
+def test_fs_init(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    res = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            async fsInit(FS) {
+                await sleep(20);
+                console.log("!!!!!!!");
+                FS.writeFile(FS.sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
+                FS.mkdir(FS.sitePackages + "/foo");
+                FS.mkdir(FS.sitePackages + "/bar");
+                console.log(FS.readdir(FS.sitePackages));
+            }
+        });
+        return pyodide.runPython(`import sys; sys.path`)
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert res[-2].endswith("site-packages/foo")
+    assert res[-1].endswith("site-packages/bar")

@@ -261,6 +261,7 @@ export interface FSType {
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
   findObject(a: string, dontResolveLastLink?: boolean): any;
   readFile(a: string): Uint8Array;
+  sitePackages: string;
 }
 
 /** @hidden */
