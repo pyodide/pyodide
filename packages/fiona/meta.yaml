@@ -2,6 +2,7 @@ package:
   name: fiona
   version: 1.9.5
   # Fails with CppException std::invalid_argument: stoi: no conversion
+  _disabled: true
   pinned: true
 source:
   url: https://files.pythonhosted.org/packages/83/a0/6b870864ceebcd046d2e952b0d18932812ff7a48d3b05670af3f702d9c01/fiona-1.9.5.tar.gz
@@ -33,19 +34,9 @@ build:
     echo ${GDAL_CONFIG}
     echo ${GDAL_DATA}
     echo ${PROJ_LIB}
-    rm tests/test_fio* # CLI tests
-    rm tests/test_data_paths.py # CLI tests
-    rm tests/test_datetime.py # CLI tests
-    rm tests/test_vfs.py # No module named "boto3"
-    rm tests/test_env.py # No module named "boto3"
-
-    mkdir fiona-tests
-    mv tests fiona-tests
-    tar -cf ${DISTDIR}/fiona-tests.tar fiona-tests
 
 about:
   home: http://github.com/Toblerity/Fiona
   PyPI: https://pypi.org/project/fiona
   summary: Fiona reads and writes spatial data files
   license: BSD-3-Clause
-# Note: this package needs to be manually upgraded to the next version

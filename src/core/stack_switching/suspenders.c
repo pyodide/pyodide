@@ -62,13 +62,10 @@ EM_JS(JsVal, saveState, (void), {
   }
   const stackState = new StackState();
   const threadState = _captureThreadState();
-  const origCframe = Module.origCframe;
-  _restore_cframe(origCframe);
   return {
     threadState,
     stackState,
     suspender : suspenderGlobal.value,
-    origCframe,
   };
 });
 
@@ -79,7 +76,6 @@ EM_JS(JsVal, saveState, (void), {
  */
 EM_JS(void, restoreState, (JsVal state), {
   state.stackState.restore();
-  Module.origCframe = state.origCframe;
   _restoreThreadState(state.threadState);
   suspenderGlobal.value = state.suspender;
   validSuspender.value = true;

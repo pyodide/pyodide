@@ -1,6 +1,8 @@
 package:
   name: Pillow
   version: 10.2.0
+  # Requires update for Python 3.13 compatibility. And also possibly for
+  # Emscripten compatibility.
   _disabled: true
   # Need to update patches
   pinned: true

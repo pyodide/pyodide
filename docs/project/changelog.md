@@ -25,26 +25,46 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
+- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
 
-- {{ Fix }} The Pyodide CLI entrypoint now mounts the `/tmp` directory. In old
-  versions of Emscripten this would crash but was fixed over a year ago.
+### `python` CLI entrypoint
+
+- {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
+  old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
-- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
-  `done_callback` will now log a message to the console.
-
-- {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
-- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
 
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
-- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `osqp` 1.0.0 {pr}`5510`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374`
+
+## Version 0.27.4
+
+_March 17, 2025_
+
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console. {pr}`5479`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
+- {{ Fix }} Correct use of `console.log` to `this.logStdout` in `load-package.ts` {pr}`5514`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
+  environment variable as flags to node when starting. {pr}`5478`
+- {{ Fix }} For a Pyodide virtual environment, `.venv-pyodide/bin/python -m pip`
+  now works even if the virtual environment has not been sourced.
+  {pr}`5448`
+
+### Packages
+
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
 
 ## Version 0.27.3
 

@@ -92,7 +92,7 @@ Assume for concreteness that we are releasing version 0.27.2.
    You can do this manually in the web interface on the github PR or you can use
 
    ```sh
-   ./tools/backports.py add-backport-pr <pr-number>
+   ./tools/backports.py add-pr <pr-number>
    ```
 
 2. List out the `needs backport` PRs that are missing changelog entries with
@@ -110,19 +110,19 @@ Assume for concreteness that we are releasing version 0.27.2.
 4. Make the backport branch (on top of stable):
 
    ```
-   ./tools/backports.py backport-branch 0.27.2
+   ./tools/backports.py backport-branch
    ```
 
 5. Make the update-changelog branch (on top of main) with:
 
    ```
-   ./tools/backports.py changelog-branch 0.27.2
+   ./tools/backports.py changelog-branch
    ```
 
 6. Open PRs for these two branches with:
 
    ```
-   ./tools/backports.py open-release-prs 0.27.2
+   ./tools/backports.py open-release-prs
    ```
 
 7. Use the backport branch PR as the release tracker.
@@ -130,15 +130,16 @@ Assume for concreteness that we are releasing version 0.27.2.
 8. Make sure that the CI passes on the backports branch and it is approved. When
    it does pass, set the date for the release in the changelog with:
    ```
-   ./tools/backports.py changelog-branch 0.27.2 --today
+   ./tools/backports.py set-date
+   git switch backports-for-0.27.2
    git push -f
-   ./tools/backports.py backport-branch 0.27.2 --today
+   git switch changelog-for-0.27.2
    git push -f
    ```
    Then merge the two PRs.
 9. Run
    ```
-   ./tools/backport.py clear-backport-prs
+   ./tools/backport.py clear-prs
    ```
    to clear all the "needs backport" labels.
 
@@ -147,7 +148,7 @@ Assume for concreteness that we are releasing version 0.27.2.
 1. Switch to the stable branch and `git pull`.
 2. From the root of the repository run:
    ```
-   ./tools/bump_version.py 0.27.2 --tag
+   ./tools/backport.py bump-version --tag
    ```
    This makes a release commit and tags it.
 3. Push the release commit and tag to `upstream/stable`. This triggers the release
@@ -241,14 +242,14 @@ note to update them independently.
 
 ## Updating pyodide-build
 
-to change the version of pyodide-build, change the commit of the pyodide-build submodule.
+To change the version of pyodide-build, change the commit of the pyodide-build submodule.
 
 ```bash
 cd pyodide-build
 git checkout "<COMMIT HASH>"
 ```
 
-to test with the fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
+To test with a fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
 
 ```ini
 # .gitmodules
@@ -260,7 +261,7 @@ to test with the fork of pyodide-build, change the `.gitmodules` file to point t
 ```bash
 git submodule sync
 cd pyodide-build
-git checkout "<COMMIT HASH"
+git checkout "<COMMIT HASH>"
 ```
 
 ## Updating the Emscripten version
@@ -391,6 +392,7 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 
 | version | pr         |
 | ------- | ---------- |
+| 3.13    | {pr}`5498` |
 | 3.12    | {pr}`4435` |
 | 3.11    | {pr}`3252` |
 | 3.10    | {pr}`2225` |

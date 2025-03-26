@@ -1,7 +1,7 @@
 package:
   name: pygame-ce
   version: 2.4.1
-  # Broken by setuptools 76 release, requirements.constraint doesn't fix it
+  # Need newer version for 3.13 compat see https://github.com/pyodide/pyodide/pull/5522
   _disabled: true
   top-level:
     - pygame
@@ -12,6 +12,9 @@ source:
     - patches/0001-Replace-OpenAudioDevice-with-OpenAudio.patch
     - patches/0001-freetype-init.patch
     - patches/0001-wasm_unify_pygame_web_pyodide_static_Freetype_init.patch
+requirements:
+  constraint:
+    - setuptools < 75
 build:
   script: |
     embuilder build sdl2 sdl2_ttf sdl2_image sdl2_mixer sdl2_gfx libjpeg libpng giflib harfbuzz vorbis mpg123 libmodplug freetype libhtml5 --pic

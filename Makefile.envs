@@ -1,9 +1,9 @@
-export PYVERSION ?= 3.12.7
+export PYVERSION ?= 3.13.2
 export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.1
 export PYODIDE_VERSION ?= 0.28.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
 
-export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
+export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
 
 export RUST_TOOLCHAIN ?= nightly-2025-02-01
 export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}.tar.bz2
@@ -278,7 +278,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=unused-result \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
-	-I$(PYTHONINCLUDE)/.. \
+	-I$(PYTHONINCLUDE)/..
 
 .output_vars:
 	set
