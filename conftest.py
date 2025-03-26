@@ -10,7 +10,6 @@ import sys
 from collections.abc import Sequence
 
 import pytest
-from pytest_pyodide import run_in_pyodide
 
 PYODIDE_ROOT = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = PYODIDE_ROOT / "dist"
@@ -327,25 +326,3 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
             continue
         res.append(msg)
     return res
-
-
-# TODO: Remove when a release is made with:
-# https://github.com/pyodide/pytest-pyodide/pull/152/
-_orig_run = run_in_pyodide._run
-
-
-def _run(self, selenium, args):
-    __tracebackhide__ = True
-    unbuilt = sorted(pkg for pkg in self._pkgs if not package_is_built(pkg))
-    if unbuilt:
-        msg = "Requires unbuilt packages: " + ", ".join(unbuilt)
-        if "PYTEST_CURRENT_TEST" in os.environ:
-            pytest.skip(msg)
-        else:
-            raise RuntimeError(msg)
-    if self._pkgs:
-        selenium.load_package(self._pkgs)
-    return _orig_run(self, selenium, args)
-
-
-run_in_pyodide._run = _run
