@@ -1980,11 +1980,9 @@ def test_fs_init(selenium_standalone_noload):
         let pyodide = await loadPyodide({
             async fsInit(FS) {
                 await sleep(20);
-                console.log("!!!!!!!");
                 FS.writeFile(FS.sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
                 FS.mkdir(FS.sitePackages + "/foo");
                 FS.mkdir(FS.sitePackages + "/bar");
-                console.log(FS.readdir(FS.sitePackages));
             }
         });
         return pyodide.runPython(`import sys; sys.path`)
