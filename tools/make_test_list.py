@@ -69,7 +69,7 @@ def update_tests(doc_group, tests):
 if __name__ == "__main__":
     doc = get_old_yaml()
     version = get_makefile_envs()["PYVERSION"]
-    LIB_DIR = PYODIDE_ROOT / "cpython/build/Python-{version}/Lib/"
+    LIB_DIR = PYODIDE_ROOT / f"cpython/build/Python-{version}/Lib/"
     update_tests(doc, collect_tests(LIB_DIR / "test"))
 
     yaml.dump(doc, PYTHON_TESTS_YAML)

@@ -25,6 +25,7 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
+- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
 
 ### `python` CLI entrypoint
 
