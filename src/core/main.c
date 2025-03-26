@@ -2,7 +2,7 @@
 #include "Python.h"
 #include <emscripten.h>
 #include <emscripten/eventloop.h>
-
+#include <jslib.h>
 #include <stdbool.h>
 
 #define FAIL_IF_STATUS_EXCEPTION(status)                                       \
@@ -86,4 +86,20 @@ run_main()
   pymain_run_python(&exitcode);
   emscripten_runtime_keepalive_push();
   return exitcode;
+}
+
+void
+set_suspender(JsVal suspender);
+
+/**
+ * call _pyproxy_apply but save the error flag into the argument so it can't be
+ * observed by unrelated Python callframes. callPyObjectKwargsSuspending will
+ * restore the error flag before calling pythonexc2js(). See
+ * test_stack_switching.test_throw_from_switcher for a detailed explanation.
+ */
+EMSCRIPTEN_KEEPALIVE int
+run_main_promising(JsVal suspender)
+{
+  set_suspender(suspender);
+  return run_main();
 }
