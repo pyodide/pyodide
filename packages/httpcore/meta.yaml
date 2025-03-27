@@ -10,6 +10,7 @@ requirements:
   run:
     - certifi
     - h11
+    - ssl
 about:
   home: null
   PyPI: https://pypi.org/project/httpcore

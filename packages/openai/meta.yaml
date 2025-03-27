@@ -13,6 +13,7 @@ requirements:
     - typing-extensions
     - distro
     - anyio
+    - jiter
 about:
   home: ""
   PyPI: https://pypi.org/project/openai
