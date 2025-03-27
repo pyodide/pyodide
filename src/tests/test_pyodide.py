@@ -1985,7 +1985,7 @@ def test_fs_init(selenium_standalone_noload):
                 FS.mkdir(FS.sitePackages + "/bar");
             }
         });
-        return pyodide.runPython(`import sys; sys.path`)
+        return pyodide.runPython(`import sys; sys.path`).toJs();
         """
     )
     # This may need to be updated when the Python version changes.
