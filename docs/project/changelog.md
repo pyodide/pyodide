@@ -37,6 +37,7 @@ myst:
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
 - Added `osqp` 1.0.0 {pr}`5510`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.

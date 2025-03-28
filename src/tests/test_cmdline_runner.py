@@ -530,7 +530,7 @@ def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 0
@@ -539,7 +539,7 @@ def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(12)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 12
