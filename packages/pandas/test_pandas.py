@@ -43,6 +43,7 @@ def test_extra_import(selenium, request):
 @pytest.mark.xfail_browsers(
     chrome="test_load_largish_file triggers a fatal runtime error in Chrome 89 see #1495",
     node="open_url doesn't work in node",
+    firefox="matplotlib now disabled",
 )
 @pytest.mark.driver_timeout(40)
 @pytest.mark.skip_refcount_check

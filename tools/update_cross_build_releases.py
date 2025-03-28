@@ -49,7 +49,7 @@ def parse_env_var(content: str, var_name: str) -> str:
 
 
 @contextmanager
-def extract_archive(archive: bytes) -> Generator[Path, None, None]:
+def extract_archive(archive: bytes) -> Generator[Path]:
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_dir_path = Path(tmp_dir)
         archive_path = tmp_dir_path / "xbuildenv.tar.bz2"
