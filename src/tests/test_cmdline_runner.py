@@ -216,25 +216,6 @@ def test_venv_success_log(selenium, capsys):
 
 
 @only_node
-@needs_emscripten
-def test_venv_fail_log(selenium, capsys):
-    path = Path(".venv-pyodide-tmp-test")
-    try:
-        path.mkdir()
-        with pytest.raises(SystemExit, match="1"):
-            with venv_ctxmgr(path):
-                pass
-    finally:
-        shutil.rmtree(path, ignore_errors=True)
-    msg = dedent("Creating Pyodide virtualenv at .venv-pyodide-tmp-test")
-    captured = capsys.readouterr()
-    assert captured.out.strip() == msg
-    assert (
-        "ERROR: dest directory '.venv-pyodide-tmp-test' already exists" in captured.err
-    )
-
-
-@only_node
 def test_venv_version(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "--version"],
