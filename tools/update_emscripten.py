@@ -97,7 +97,7 @@ def commit(newtag) -> None:
 
 def parse_args():
     parser = argparse.ArgumentParser("Update the Emscripten version")
-    parser.add_argument("newtag", nargs='?')
+    parser.add_argument("newtag", nargs="?")
     return parser.parse_args()
 
 
