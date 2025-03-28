@@ -201,7 +201,7 @@ def main():
         print_entry("selenium init", result)
 
         # package loading time
-        for package_name in ["numpy", "pandas", "matplotlib"]:
+        for package_name in ["numpy", "pandas"]:
             result = {"native": float("NaN")}
             for browser_name, cls in browser_cls:
                 selenium = cls(port)
@@ -223,10 +223,8 @@ def main():
                 for browser_name, cls in browser_cls:
                     selenium_backends[browser_name] = cls(port)
                     selenium_backends[browser_name].set_script_timeout(timeout)
-                    # pre-load numpy, matplotlib and pandas for the selenium instance used in benchmarks
-                    selenium_backends[browser_name].load_package(
-                        ["numpy", "matplotlib", "pandas"]
-                    )
+                    # pre-load numpy and pandas for the selenium instance used in benchmarks
+                    selenium_backends[browser_name].load_package(["numpy", "pandas"])
 
                 results[benchmark_name] = run_all(selenium_backends, content)
                 print_entry(benchmark_name, results[benchmark_name])
