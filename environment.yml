@@ -8,7 +8,7 @@ dependencies:
   - f2c
   - swig
   - make
-  - cmake
+  - cmake<4
   # pkg-config in conda-forge has a bug that it overwrites PKG_CONFIG_LIBDIR set by user.
   # there was a fix (https://github.com/conda-forge/pkg-config-feedstock/pull/31), but it is not released.
   # - pkg-config
