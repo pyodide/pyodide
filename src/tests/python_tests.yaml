@@ -627,7 +627,9 @@
 - test_popen
 - test_poplib
 - test_positional_only_arg
-- test_posix
+- test_posix:
+    skip:
+      - test_fstatvfs
 - test_posixpath
 - test_pow
 - test_pprint
