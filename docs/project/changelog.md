@@ -21,6 +21,7 @@ _Insert Date Here_
 ### Packages
 
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
 - Added `osqp` 1.0.0 {pr}`5510`
 
 ## Version 0.27.4
