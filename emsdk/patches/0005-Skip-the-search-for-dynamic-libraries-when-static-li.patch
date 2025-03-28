@@ -1,7 +1,7 @@
-From 668dfb0ad8dc23a7e95e0edac0a648587ab0bab4 Mon Sep 17 00:00:00 2001
+From 7457a9a3f0aff45869b57a2a84521fde7960ffdc Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Wed, 5 Feb 2025 11:55:11 -0800
-Subject: [PATCH 7/7] Skip the search for dynamic libraries when static library
+Subject: [PATCH 5/5] Skip the search for dynamic libraries when static library
  exists (#23593)
 
 This is a fix for a regression caused by #23336.
@@ -18,10 +18,10 @@ Fixes: #23591
  2 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/test/test_other.py b/test/test_other.py
-index 754b0f35a..014edc9a8 100644
+index 8ceb8cf98..8aa249fce 100644
 --- a/test/test_other.py
 +++ b/test/test_other.py
-@@ -6681,7 +6681,7 @@ This locale is not the C locale.
+@@ -6724,7 +6724,7 @@ This locale is not the C locale.
        if be_clean:
          assert len(clutter) == 0, 'should not leave clutter ' + str(clutter)
        else:
@@ -30,7 +30,7 @@ index 754b0f35a..014edc9a8 100644
      test(['-o', 'c.so', '-r'], True)
      test(['-o', 'c.js'], True)
      test(['-o', 'c.html'], True)
-@@ -9189,6 +9189,20 @@ int main() {
+@@ -9232,6 +9232,20 @@ int main() {
      self.run_process([EMCC, test_file('hello_world.c'), '-sSIDE_MODULE', '-o', 'subdir/libside2.so', '-L', 'subdir', '-lside1'])
      self.run_process([EMCC, test_file('hello_world.c'), '-sMAIN_MODULE', '-o', 'main.js', '-L', 'subdir', '-lside2'])
  
@@ -52,10 +52,10 @@ index 754b0f35a..014edc9a8 100644
    @parameterized({
      '': ([],),
 diff --git a/tools/link.py b/tools/link.py
-index e5508f8c8..cdf0cdbae 100644
+index 7639ad628..dc839eb29 100644
 --- a/tools/link.py
 +++ b/tools/link.py
-@@ -2830,7 +2830,8 @@ def process_libraries(state):
+@@ -2809,7 +2809,8 @@ def process_libraries(state):
        settings.JS_LIBRARIES.append(os.path.abspath(path))
        continue
  
