@@ -224,9 +224,7 @@ def main():
                     selenium_backends[browser_name] = cls(port)
                     selenium_backends[browser_name].set_script_timeout(timeout)
                     # pre-load numpy and pandas for the selenium instance used in benchmarks
-                    selenium_backends[browser_name].load_package(
-                        ["numpy", "pandas"]
-                    )
+                    selenium_backends[browser_name].load_package(["numpy", "pandas"])
 
                 results[benchmark_name] = run_all(selenium_backends, content)
                 print_entry(benchmark_name, results[benchmark_name])
