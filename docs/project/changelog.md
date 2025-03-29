@@ -27,6 +27,10 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
 
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
