@@ -66,7 +66,7 @@ lint.select = [
 lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031"]
 lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments = true
 # line-length = 219  # E501: Recommended goal is 88 to match black
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint.per-file-ignores]
 "src/py/_pyodide/_base.py" = [
