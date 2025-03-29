@@ -1,7 +1,7 @@
-From d3f3e281ebeeb2f0c3ea4e74d5eeb0b7c76f555a Mon Sep 17 00:00:00 2001
+From b2e39025b36bfdf7494483e05c47762f9b8dc9c4 Mon Sep 17 00:00:00 2001
 From: Sam Clegg <sbc@chromium.org>
 Date: Tue, 4 Feb 2025 08:57:13 -0800
-Subject: [PATCH 6/7] Fix regression with instantiateWasm + MODULARIZE (#23579)
+Subject: [PATCH 4/5] Fix regression with instantiateWasm + MODULARIZE (#23579)
 
 We didn't have test coverage of this case and it was broken in #23157.
 
@@ -11,10 +11,10 @@ Fixes: #23577
  1 file changed, 15 insertions(+), 11 deletions(-)
 
 diff --git a/src/preamble.js b/src/preamble.js
-index 0fd120445..87d53f15d 100644
+index db1f9db29..7fde5cd8f 100644
 --- a/src/preamble.js
 +++ b/src/preamble.js
-@@ -1026,17 +1026,21 @@ function getWasmImports() {
+@@ -1027,17 +1027,21 @@ function getWasmImports() {
    // Also pthreads and wasm workers initialize the wasm instance through this
    // path.
    if (Module['instantiateWasm']) {
