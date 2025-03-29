@@ -2030,7 +2030,6 @@ def test_to_js_no_leak(selenium):
 @run_in_pyodide
 def test_js_callable_not_function(selenium):
     from pyodide.code import run_js
-    import js
 
     o = run_js(
         """
