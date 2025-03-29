@@ -48,7 +48,7 @@ export type ConfigType = {
   jsglobals?: object;
   _sysExecutable?: string;
   args: string[];
-  fsInit?: (FS: FSType, info: {sitePackages: string}) => Promise<void>;
+  fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
@@ -192,7 +192,7 @@ export async function loadPyodide(
      * called, it is guaranteed that there is an empty site-packages directory.
      * @experimental
      */
-    fsInit?: (FS: FSType, info: {sitePackages: string}) => Promise<void>;
+    fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */

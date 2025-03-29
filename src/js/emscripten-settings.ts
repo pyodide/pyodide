@@ -104,7 +104,7 @@ function setEnvironment(env: { [key: string]: string }): PreRunFunc {
  * @param mounts The list of paths to mount.
  */
 function callFsInitHook(
-  fsInit: undefined | ((fs: typeof FS, info: {sitePackages: string}) => void),
+  fsInit: undefined | ((fs: typeof FS, info: { sitePackages: string }) => void),
 ): PreRunFunc[] {
   if (!fsInit) {
     return [];
@@ -113,7 +113,7 @@ function callFsInitHook(
     async (Module) => {
       Module.addRunDependency("fsInitHook");
       try {
-        await fsInit(Module.FS, {sitePackages: Module.API.sitePackages});
+        await fsInit(Module.FS, { sitePackages: Module.API.sitePackages });
       } finally {
         Module.removeRunDependency("fsInitHook");
       }
