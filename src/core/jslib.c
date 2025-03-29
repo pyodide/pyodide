@@ -339,11 +339,11 @@ EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
 });
 
 EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
-  return nullToUndefined(func.apply(this_, args));
+  return nullToUndefined(Function.prototype.apply.apply(func, [this_, args]));
 });
 
 EM_JS_VAL(JsVal, JsvFunction_Call_OneArg, (JsVal func, JsVal arg), {
-  return nullToUndefined(func.apply(null, [arg]));
+  return nullToUndefined(func(arg));
 });
 
 // clang-format off
