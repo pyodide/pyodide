@@ -21,9 +21,9 @@ if(major_version < 18) {
     process.exit(1);
 }
 
-// If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
-// number of arguments. `ARGS=--` is not empty but does nothing.
-process.stdout.write("--");
+if (major_version >= 22) {
+    process.stdout.write("--experimental-wasm-stack-switching");
+}
 EOF
 )")
 
