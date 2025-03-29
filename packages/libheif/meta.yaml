@@ -4,6 +4,7 @@ package:
   tag:
     - library
     - shared_library
+    - cmake
 source:
   url: https://github.com/strukturag/libheif/releases/download/v1.17.3/libheif-1.17.3.tar.gz
   sha256: 8d5b6292e7931324f81f871f250ecbb9f874aa3c66b4f6f35ceb0bf3163b53ea
