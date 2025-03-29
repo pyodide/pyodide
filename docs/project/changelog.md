@@ -18,6 +18,9 @@ myst:
 
 _Insert Date Here_
 
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
+
 ### Packages
 
 - Added `jiter` 0.8.2 {pr}`5388`

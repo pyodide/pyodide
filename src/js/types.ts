@@ -511,6 +511,7 @@ export interface API {
   version: string;
 
   LiteralMap: any;
+  sitePackages: string;
 }
 
 // Subset of the API and Module that the package manager needs
