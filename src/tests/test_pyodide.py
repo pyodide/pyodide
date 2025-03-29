@@ -1978,11 +1978,11 @@ def test_fs_init(selenium_standalone_noload):
     res = selenium.run_js(
         """
         let pyodide = await loadPyodide({
-            async fsInit(FS) {
+            async fsInit(FS, {sitePackages}) {
                 await sleep(20);
-                FS.writeFile(FS.sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
-                FS.mkdir(FS.sitePackages + "/foo");
-                FS.mkdir(FS.sitePackages + "/bar");
+                FS.writeFile(sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
+                FS.mkdir(sitePackages + "/foo");
+                FS.mkdir(sitePackages + "/bar");
             }
         });
         return pyodide.runPython(`import sys; sys.path`).toJs();

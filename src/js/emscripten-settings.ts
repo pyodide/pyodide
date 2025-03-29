@@ -104,7 +104,7 @@ function setEnvironment(env: { [key: string]: string }): PreRunFunc {
  * @param mounts The list of paths to mount.
  */
 function callFsInitHook(
-  fsInit: undefined | ((fs: typeof FS) => void),
+  fsInit: undefined | ((fs: typeof FS, info: {sitePackages: string}) => void),
 ): PreRunFunc[] {
   if (!fsInit) {
     return [];
@@ -113,7 +113,7 @@ function callFsInitHook(
     async (Module) => {
       Module.addRunDependency("fsInitHook");
       try {
-        await fsInit(Module.FS);
+        await fsInit(Module.FS, {sitePackages: Module.API.sitePackages});
       } finally {
         Module.removeRunDependency("fsInitHook");
       }
@@ -147,8 +147,8 @@ function installStdlib(stdlibURL: string): PreRunFunc {
     Module.API.pyVersionTuple = computeVersionTuple(Module);
     const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
-    Module.FS.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
-    Module.FS.mkdirTree(Module.FS.sitePackages);
+    Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
+    Module.FS.mkdirTree(Module.API.sitePackages);
     Module.addRunDependency("install-stdlib");
 
     try {

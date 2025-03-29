@@ -261,7 +261,6 @@ export interface FSType {
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
   findObject(a: string, dontResolveLastLink?: boolean): any;
   readFile(a: string): Uint8Array;
-  sitePackages: string;
 }
 
 /** @hidden */
@@ -511,6 +510,7 @@ export interface API {
   version: string;
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
+  sitePackages: string;
 }
 
 // Subset of the API and Module that the package manager needs
