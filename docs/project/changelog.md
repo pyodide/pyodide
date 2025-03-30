@@ -29,6 +29,10 @@ myst:
 - {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
   hook to run to setup the file system. {pr}`5539`
 
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
