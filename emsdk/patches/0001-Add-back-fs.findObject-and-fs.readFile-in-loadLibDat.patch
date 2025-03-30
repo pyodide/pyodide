@@ -1,4 +1,4 @@
-From de6b6852a0f31c54c337b1b31762509b98758655 Mon Sep 17 00:00:00 2001
+From 74035cd1501ef28a47a779055cc2ed5ff1979a31 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 2 Jun 2023 11:59:32 -0700
 Subject: [PATCH 1/2] Add back fs.findObject and fs.readFile in loadLibData
@@ -10,10 +10,10 @@ https://github.com/emscripten-core/emscripten/pull/19513
  1 file changed, 11 insertions(+), 2 deletions(-)
 
 diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
-index 07b40c2f5..61e23a0bf 100644
+index 6eb5e4fe6..070ebddca 100644
 --- a/src/lib/libdylink.js
 +++ b/src/lib/libdylink.js
-@@ -1021,14 +1021,23 @@ var LibraryDylink = {
+@@ -1015,14 +1015,23 @@ var LibraryDylink = {
  #endif
  
        // for wasm, we can use fetch for async, but for fs mode we can only imitate it
