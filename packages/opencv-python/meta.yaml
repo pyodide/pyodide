@@ -37,7 +37,7 @@ build:
   ldflags: |
     -ljpeg
     -lz
-    -lpng-wasm-sjlj
+    -lpng-legacysjlj
   # Note on CMAKE_ARGS:
   #   CMake args are adopted from OpenCV.js (https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py)
   #   But we support more modules than OpenCV.js.
