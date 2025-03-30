@@ -2025,3 +2025,21 @@ def test_to_js_no_leak(selenium):
 
     d = {"key": Object()}
     to_js(d)
+
+
+@run_in_pyodide
+def test_js_callable_not_function(selenium):
+    from pyodide.code import run_js
+
+    o = run_js(
+        """
+        function nonFuncCallable (...params) {
+            console.log(this);
+            return [this, ...params]
+        }
+        Object.setPrototypeOf(nonFuncCallable, {})
+        const o = {nonFuncCallable};
+        o
+        """
+    )
+    assert list(o.nonFuncCallable(1, 2, 3)) == [o, 1, 2, 3]

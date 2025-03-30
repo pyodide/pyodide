@@ -1,0 +1,24 @@
+package:
+  name: openai
+  version: 1.68.2
+  top-level:
+    - openai
+source:
+  url: https://files.pythonhosted.org/packages/py3/o/openai/openai-1.68.2-py3-none-any.whl
+  sha256: 24484cb5c9a33b58576fdc5acf0e5f92603024a4e39d0b99793dfa1eb14c2b36
+requirements:
+  run:
+    - httpx
+    - pydantic
+    - typing-extensions
+    - distro
+    - anyio
+    - jiter
+about:
+  home: ""
+  PyPI: https://pypi.org/project/openai
+  summary: The official Python library for the openai API
+  license: ""
+extra:
+  recipe-maintainers:
+    - hoodmane

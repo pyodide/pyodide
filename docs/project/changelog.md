@@ -26,6 +26,12 @@ myst:
   compile time and link time.
   {pr}`5320`
 - {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
+
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
 
 ### `python` CLI entrypoint
 
@@ -37,6 +43,7 @@ myst:
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
 - Added `osqp` 1.0.0 {pr}`5510`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
