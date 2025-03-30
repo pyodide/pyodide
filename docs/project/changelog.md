@@ -26,6 +26,8 @@ myst:
   compile time and link time.
   {pr}`5320`
 - {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
 
 ### `python` CLI entrypoint
 
