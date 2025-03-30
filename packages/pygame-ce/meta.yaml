@@ -77,9 +77,9 @@ build:
       -lSDL2_ttf \
       -lSDL2_mixer_mid-mod-mpg-ogg \
       -lSDL2_gfx \
-      -lfreetype-wasm-sjlj \
+      -lfreetype-legacysjlj \
       -lharfbuzz \
-      -lpng-wasm-sjlj \
+      -lpng-legacysjlj \
       -ljpeg \
       -lgif \
       -lvorbis \

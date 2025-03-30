@@ -1,18 +1,18 @@
-From cafdcfd25f04191eae5fc899a24235b9bd764a79 Mon Sep 17 00:00:00 2001
+From cde98a66c6925ae0fa5355df6f58cc5917833bea Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 2 Jun 2023 11:59:32 -0700
-Subject: [PATCH 1/7] Add back fs.findObject and fs.readFile in loadLibData
+Subject: [PATCH 1/5] Add back fs.findObject and fs.readFile in loadLibData
 
 See upstream PR:
 https://github.com/emscripten-core/emscripten/pull/19513
 ---
- src/library_dylink.js | 13 +++++++++++--
+ src/lib/libdylink.js | 13 +++++++++++--
  1 file changed, 11 insertions(+), 2 deletions(-)
 
-diff --git a/src/library_dylink.js b/src/library_dylink.js
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
 index d5acbf3f2..7eb066f37 100644
---- a/src/library_dylink.js
-+++ b/src/library_dylink.js
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
 @@ -1013,14 +1013,23 @@ var LibraryDylink = {
  #endif
  
