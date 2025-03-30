@@ -41,13 +41,13 @@ LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
 	cd $(PYBUILD) && sed -i -e 's/libinstall:.*/libinstall:/' Makefile;
-	# Inject extra objects into libpython3.12.a so we don't have to link them
+	# Inject extra objects into libpython3.13.a so we don't have to link them
 	# separately
 	cd $(PYBUILD) && sed -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
-	# touch libpython3.12.a so we don't remake it due to modified Makefile(??)
+	# touch libpython3.13.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
 	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
