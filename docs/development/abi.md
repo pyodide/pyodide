@@ -41,17 +41,17 @@ On Rust libc versions older than 0.2.162, it may be necessary to pass
 
 Pyodide is statically linked with the following libraries:
 
-- `libwebsocket.js`
+- `libegl.js`
 - `libeventloop.js`
 - `libGL`
-- `libegl.js`
-- `libwebgl.js`
-- `libhtml5.js`
 - `libhtml5_webgl.js`
-- `libsdl.js`
+- `libhtml5.js`
 - `liblz4`
-- `zlib`
+- `libsdl.js`
+- `libwebgl.js`
+- `libwebsocket.js`
 - `bzip2`
+- `zlib`
 
 All of these come from Emscripten ports and the versions of these libraries are
 determined by the version of Emscripten we build with. Any symbols from these
