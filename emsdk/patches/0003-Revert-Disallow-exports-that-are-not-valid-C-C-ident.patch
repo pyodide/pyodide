@@ -1,4 +1,4 @@
-From 9cb1be74eca361043363fa562a5d84b6aff57433 Mon Sep 17 00:00:00 2001
+From ed6a86aaa20506952badd93fc1eec879aa40e240 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 31 Mar 2025 13:33:46 +0200
 Subject: [PATCH 3/3] Revert "Disallow exports that are not valid C/C++
@@ -12,10 +12,10 @@ This reverts commit 08d2cc3c559c64f377bc932bcc418fd661998232.
  3 files changed, 1 insertion(+), 9 deletions(-)
 
 diff --git a/test/test_other.py b/test/test_other.py
-index 5e36ca8dc..d16936709 100644
+index 34f0fbc2d..57ab711d4 100644
 --- a/test/test_other.py
 +++ b/test/test_other.py
-@@ -15587,11 +15587,6 @@ addToLibrary({
+@@ -15821,11 +15821,6 @@ addToLibrary({
      ''')
      self.do_runf('main.cpp', 'Hello Module!', emcc_args=['-std=c++20', '-fmodules'])
  
@@ -28,10 +28,10 @@ index 5e36ca8dc..d16936709 100644
    def test_instantiate_wasm(self):
      create_file('pre.js', '''
 diff --git a/tools/emscripten.py b/tools/emscripten.py
-index 152b6a98c..22d4c29f1 100644
+index 22ee688c5..4566b958a 100644
 --- a/tools/emscripten.py
 +++ b/tools/emscripten.py
-@@ -583,9 +583,6 @@ def finalize_wasm(infile, outfile, js_syms):
+@@ -573,9 +573,6 @@ def finalize_wasm(infile, outfile, js_syms):
    # These are any exports that were not requested on the command line and are
    # not known auto-generated system functions.
    unexpected_exports = [e for e in metadata.all_exports if treat_as_user_export(e)]
@@ -42,7 +42,7 @@ index 152b6a98c..22d4c29f1 100644
    unexpected_exports = [e for e in unexpected_exports if e not in expected_exports]
  
 diff --git a/tools/shared.py b/tools/shared.py
-index a11a3c2f3..94a65b131 100644
+index ba5bcb9e9..277ce3f59 100644
 --- a/tools/shared.py
 +++ b/tools/shared.py
 @@ -651,7 +651,7 @@ def is_c_symbol(name):

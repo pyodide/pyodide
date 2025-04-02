@@ -236,6 +236,7 @@ def test_get_buffer(selenium):
     )
 
 
+@pytest.mark.xfail(reason="Emscripten 4.0.6 regression...")
 @pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize(
     "arg",
