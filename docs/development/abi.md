@@ -17,33 +17,32 @@ underscode. For the smallest result, it is recommended to link with:
 -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=["_PyInit_MyCModule1", "_PyInit_MyCModule2]
 ```
 
-If you want to force all symbols to be exported, link with `-sSIDE_MODULE=1`.
+To force all symbols to be exported, link with `-sSIDE_MODULE=1`.
 
 If `-pthread` is used at compile or link time, the resulting libraries will not
 load.
 
-To compile Rust packages, you must pass
+To compile Rust packages, the following flags must be passed to `rustc`:
 
 ```
 -C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT
 ```
 
-to `rustc`. If you are not not invoking `rustc` directly, set these into the
-`RUSTFLAGS` environment variable.
+When not invoking `rustc` directly, for instance when using cargo, set these
+into the `RUSTFLAGS` environment variable.
 
 Compiling with `-sSIDE_MODULE=1` will not work with Rust because Rust libraries
 contain a `lib.rmeta` file which is not an object file. Rust produces the
 correct list of exported symbols automatically so this should not be a problem
 in practice.
 
-If you get linker errors, you can try passing `-Z link-native-libraries=no` as a
-`RUSTFLAG`. This is only necessary on Rust libc versions older than 0.2.162.
+On Rust libc versions older than 0.2.162, it may be necessary to pass
+`-Z link-native-libraries=no` as a `RUSTFLAG`.
 
 ### pyodide_2024_0
 
-The Emscripten version is 3.1.58. The Python version is 3.12. You must use
-Python 3.12 at build time. All shared libraries must be linked with
-`-sWASM_BIGINT`.
+The Emscripten version is 3.1.58. The Python version is 3.12. Python 3.12 must
+be used at build time. All shared libraries must be linked with `-sWASM_BIGINT`.
 
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
@@ -61,8 +60,8 @@ dynamic library dependencies should be placed in the wheel in a folder called
 This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
 subject to change without notice.
 
-The Emscripten version is 4.0.6. The Python version is 3.13. You must use Python
-3.13 at build time.
+The Emscripten version is 4.0.6. The Python version is 3.13. Python 3.13 must be
+used at build time.
 
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
@@ -72,14 +71,15 @@ There is full support for `RPATH`. The dynamic loader will only load
 dependencies that are properly specified on the `RPATH`, just being in
 `/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
 
-For building Rust, it is necessary to use a Rust nightly after January 15th, 2025. You must pass the flag `-Z emscripten-wasm-eh`. You will also need a
+For building Rust, it is necessary to use a Rust nightly after January 15th, 2025.
+The flag `-Z emscripten-wasm-eh` must be passed. It is also necessary to use a
 compatible emscripten sysroot that has been built with wasm exception handling.
 Such sysroots are produced and distributed by
 [pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
-This is only distributed for Rust nightly-2025-02-01. If you need a different
-version, you can clone the `pyodide/rust-emscripten-wasm-eh-sysroot` repository
-and follow the instructions to build it in the README. To install the emscripten
-sysroot:
+This is only distributed for Rust nightly-2025-02-01. To use a different Rust
+nighly, it is possible to clone the `pyodide/rust-emscripten-wasm-eh-sysroot`
+repository and follow the instructions in the README to build a compatible
+sysroot. To install the emscripten sysroot use:
 
 ```sh
 rustup toolchain install nightly-2025-02-01
@@ -89,10 +89,10 @@ wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/downloa
 tar -xf emcc-4.0.6_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
 ```
 
-Note that this is all necessary _even if_ the crate you are building is build
-with `-Cpanic=abort` because the Rust standard library is not built with
-`-Cpanic=abort` and so you will encounter linker errors due to pulling in
-symbols from the standard library that use the wrong unwinding ABI.
+Note that this is all necessary _even if_ the crate uses `-Cpanic=abort` because
+the Rust standard library is not built with `-Cpanic=abort` and so there will be
+linker errors due to pulling in symbols from the standard library that use the
+wrong unwinding ABI.
 
 ## ABI sensitive flags
 
