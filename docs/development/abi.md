@@ -8,7 +8,12 @@ packages for use with Pyodide directly, but it may not always be up to date with
 
 ## ABI sensitive flags
 
-### -sWASM_BIGINT
+### `-pthread`
+
+Pyodide has no support for pthreads and if `-pthread` is passed at compile or
+link time the resulting dynamic library will not load.
+
+### `-sWASM_BIGINT`
 
 When WebAssembly was first introduced, the JS/WebAssembly interface had to
 support for functions with 64 bit integer arguments or return values. Such
@@ -32,7 +37,7 @@ libraries will fail to load.
 
 The `-sWASM_BIGINT` linker setting is applied by default since Emscripten 4.0.0.
 
-### -fexceptions vs -fwasm-exceptions
+### `-fexceptions` vs `-fwasm-exceptions`
 
 When WebAssembly was first introduced, it had no intrinsics for unwinding the
 stack, as is required for C++ exceptions, Rust panics, and `setjmp`/`longjmp`.
@@ -128,8 +133,7 @@ underscode. For the smallest result, it is recommended to link with:
 If you want to force all symbols to be exported, link with `-sSIDE_MODULE=1`.
 
 If `-pthread` is used at compile or link time, the resulting libraries will not
-load. `pyodide build` automatically drops `-pthread`. If `-fwasm-exceptions` is
-passed at compile or link time, the resulting libraries will not load.
+load. `pyodide build` automatically drops `-pthread`.
 
 To compile Rust packages, you must pass
 
