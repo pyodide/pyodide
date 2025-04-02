@@ -20,7 +20,7 @@ underscode. For the smallest result, it is recommended to link with:
 If you want to force all symbols to be exported, link with `-sSIDE_MODULE=1`.
 
 If `-pthread` is used at compile or link time, the resulting libraries will not
-load. `pyodide build` automatically drops `-pthread`.
+load.
 
 To compile Rust packages, you must pass
 
@@ -48,8 +48,6 @@ Python 3.12 at build time. All shared libraries must be linked with
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
 `setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
-If building using `pyodide build`, this can be arranged with
-`CFLAGS=-fexceptions LDFLAGS=-fexceptions pyodide build ...`.
 
 Specifying an RPATH is not supported and will cause link errors. The dynamic
 loader has been patched so that all dynamic libraries in a wheel named
@@ -69,8 +67,6 @@ The Emscripten version is 4.0.6. The Python version is 3.13. You must use Python
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
 `setjmp`/`longjmp`, `-fwasm-exceptions` must be passed at compile time and link time.
-If building using `pyodide build`, this can be arranged with
-`CFLAGS=-fwasm-exceptions LDFLAGS=-fwasm-exceptions pyodide build ...`.
 
 There is full support for `RPATH`. The dynamic loader will only load
 dependencies that are properly specified on the `RPATH`, just being in
