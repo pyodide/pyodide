@@ -1,3 +1,10 @@
+# Failing with:
+#   File "/lib/python3.13/site-packages/numpy/testing/__init__.py", line 11, in <module>
+#     from ._private.utils import *
+#   File "/lib/python3.13/site-packages/numpy/testing/_private/utils.py", line 31, in <module>
+#     from numpy._core.tests._natype import pd_NA
+# ModuleNotFoundError: No module named 'numpy._core.tests'
+@pytest.xfail(reason="No module named 'numpy._core.tests")
 def test_joblib_numpy_pickle(selenium, request):
     selenium.load_package(["numpy", "joblib"])
     selenium.run(
