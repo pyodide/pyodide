@@ -1,3 +1,6 @@
+import pytest
+
+
 # Failing with:
 #   File "/lib/python3.13/site-packages/numpy/testing/__init__.py", line 11, in <module>
 #     from ._private.utils import *
