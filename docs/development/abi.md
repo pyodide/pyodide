@@ -1,11 +1,5 @@
 # Pyodide Platform ABI
 
-## Building
-
-We suggest using `pyodide build` to build all packages. `maturin` can build Rust
-packages for use with Pyodide directly, but it may not always be up to date with
-`pyodide build`.
-
 ## ABIs
 
 ### General
