@@ -39,6 +39,24 @@ in practice.
 On Rust libc versions older than 0.2.162, it may be necessary to pass
 `-Z link-native-libraries=no` as a `RUSTFLAG`.
 
+Pyodide is statically linked with the following libraries:
+
+- `libwebsocket.js`
+- `libeventloop.js`
+- `libGL`
+- `libegl.js`
+- `libwebgl.js`
+- `libhtml5.js`
+- `libhtml5_webgl.js`
+- `libsdl.js`
+- `liblz4`
+- `zlib`
+- `bzip2`
+
+All of these come from Emscripten ports and the versions of these libraries are
+determined by the version of Emscripten we build with. Any symbols from these
+static libraries may be used by shared libraries.
+
 ### pyodide_2024_0
 
 The Emscripten version is 3.1.58. The Python version is 3.12. Python 3.12 must
