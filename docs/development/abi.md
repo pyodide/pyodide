@@ -6,12 +6,109 @@ We suggest using `pyodide build` to build all packages. `maturin` can build Rust
 packages for use with Pyodide directly, but it may not always be up to date with
 `pyodide build`.
 
+## ABIs
+
+### General
+
+Shared libraries must be linked with `-sSIDE_MODULE=1` or
+
+```
+-sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=<export list>
+```
+
+Note that the name of each symbol in the list needs to be prefixed with an
+underscode. For the smallest result, it is recommended to link with:
+
+```
+-sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=["_PyInit_MyCModule1", "_PyInit_MyCModule2]
+```
+
+If you want to force all symbols to be exported, link with `-sSIDE_MODULE=1`.
+
+If `-pthread` is used at compile or link time, the resulting libraries will not
+load. `pyodide build` automatically drops `-pthread`.
+
+To compile Rust packages, you must pass
+
+```
+-C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT
+```
+
+to `rustc`. If you are not not invoking `rustc` directly, set these into the
+`RUSTFLAGS` environment variable.
+
+Compiling with `-sSIDE_MODULE=1` will not work with Rust because Rust libraries
+contain a `lib.rmeta` file which is not an object file. Rust produces the
+correct list of exported symbols automatically so this should not be a problem
+in practice.
+
+If you get linker errors, you can try passing `-Z link-native-libraries=no` as a
+`RUSTFLAG`. This is only necessary on Rust libc versions older than 0.2.162.
+
+### pyodide_2024_0
+
+The Emscripten version is 3.1.58. The Python version is 3.12. You must use
+Python 3.12 at build time. All shared libraries must be linked with
+`-sWASM_BIGINT`.
+
+By default, C++ libraries are built with exceptions disabled, and `throw` is an
+abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
+`setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
+If building using `pyodide build`, this can be arranged with
+`CFLAGS=-fexceptions LDFLAGS=-fexceptions pyodide build ...`.
+
+Specifying an RPATH is not supported and will cause link errors. The dynamic
+loader has been patched so that all dynamic libraries in a wheel named
+`wheel_name-<tag>.whl` will be loaded as if
+`/lib/python3.12/site-packages/wheel_name.libs` is on the `RPATH`, so any
+dynamic library dependencies should be placed in the wheel in a folder called
+`wheel_name.libs`.
+
+### pyodide_2025_0 (under development)
+
+This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
+subject to change without notice.
+
+The Emscripten version is 4.0.6. The Python version is 3.13. You must use Python
+3.13 at build time.
+
+By default, C++ libraries are built with exceptions disabled, and `throw` is an
+abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
+`setjmp`/`longjmp`, `-fwasm-exceptions` must be passed at compile time and link time.
+If building using `pyodide build`, this can be arranged with
+`CFLAGS=-fwasm-exceptions LDFLAGS=-fwasm-exceptions pyodide build ...`.
+
+There is full support for `RPATH`. The dynamic loader will only load
+dependencies that are properly specified on the `RPATH`, just being in
+`/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
+
+For building Rust, it is necessary to use a Rust nightly after January 15th, 2025. You must pass the flag `-Z emscripten-wasm-eh`. You will also need a
+compatible emscripten sysroot that has been built with wasm exception handling.
+Such sysroots are produced and distributed by
+[pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
+This is only distributed for Rust nightly-2025-02-01. If you need a different
+version, you can clone the `pyodide/rust-emscripten-wasm-eh-sysroot` repository
+and follow the instructions to build it in the README. To install the emscripten
+sysroot:
+
+```sh
+rustup toolchain install nightly-2025-02-01
+TOOLCHAIN_ROOT=$(rustup which --toolchain nightly-2025-02-01 rustc)
+RUSTLIB=$TOOLCHAIN_ROOT/lib/rustlib
+wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-4.0.6_nightly-2025-02-01/emcc-4.0.6_nightly-2025-02-01.tar.bz2
+tar -xf emcc-4.0.6_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
+```
+
+Note that this is all necessary _even if_ the crate you are building is build
+with `-Cpanic=abort` because the Rust standard library is not built with
+`-Cpanic=abort` and so you will encounter linker errors due to pulling in
+symbols from the standard library that use the wrong unwinding ABI.
+
 ## ABI sensitive flags
 
 ### `-pthread`
 
-Pyodide has no support for pthreads and if `-pthread` is passed at compile or
-link time the resulting dynamic library will not load.
+Pyodide has no support for pthreads.
 
 ### `-sWASM_BIGINT`
 
@@ -112,101 +209,3 @@ to implement the JavaScript exception handling ABI using WebAssembly exceptions.
 Thankfully, nowadays
 [Rust does support WebAssembly exception handling](https://github.com/rust-lang/compiler-team/issues/801)
 and the `pyodide_2025` abi will rely on it.
-
-## ABIs
-
-### General
-
-Shared libraries must be linked with `-sSIDE_MODULE=1` or
-
-```
--sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=<export list>
-```
-
-Note that the name of each symbol in the list needs to be prefixed with an
-underscode. For the smallest result, it is recommended to link with:
-
-```
--sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=["_PyInit_MyCModule1", "_PyInit_MyCModule2]
-```
-
-If you want to force all symbols to be exported, link with `-sSIDE_MODULE=1`.
-
-If `-pthread` is used at compile or link time, the resulting libraries will not
-load. `pyodide build` automatically drops `-pthread`.
-
-To compile Rust packages, you must pass
-
-```
--C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT
-```
-
-to `rustc`. If you are not not invoking `rustc` directly, set these into the
-`RUSTFLAGS` environment variable.
-
-Compiling with `-sSIDE_MODULE=1` will not work with Rust because Rust libraries
-contain a `lib.rmeta` file which is not an object file. Rust produces the
-correct list of exported symbols automatically so this should not be a problem
-in practice.
-
-If you get linker errors, you can try passing `-Z link-native-libraries=no` as a
-`RUSTFLAG`. This is only necessary on Rust libc versions older than 0.2.162.
-
-### pyodide_2024_0
-
-The Emscripten version is 3.1.58. The Python version is 3.12. You must use
-Python 3.12 at build time. All shared libraries must be linked with
-`-sWASM_BIGINT`.
-
-By default, C++ libraries are built with exceptions disabled, and `throw` is an
-abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
-`setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
-If building using `pyodide build`, this can be arranged with
-`CFLAGS=-fexceptions LDFLAGS=-fexceptions pyodide build ...`.
-
-Specifying an RPATH is not supported and will cause link errors. The dynamic
-loader has been patched so that all dynamic libraries in a wheel named
-`wheel_name-<tag>.whl` will be loaded as if
-`/lib/python3.12/site-packages/wheel_name.libs` is on the `RPATH`, so any
-dynamic library dependencies should be placed in the wheel in a folder called
-`wheel_name.libs`.
-
-### pyodide_2025_0 (under development)
-
-This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
-subject to change without notice.
-
-The Emscripten version is 4.0.6. The Python version is 3.13. You must use Python
-3.13 at build time.
-
-By default, C++ libraries are built with exceptions disabled, and `throw` is an
-abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
-`setjmp`/`longjmp`, `-fwasm-exceptions` must be passed at compile time and link time.
-If building using `pyodide build`, this can be arranged with
-`CFLAGS=-fwasm-exceptions LDFLAGS=-fwasm-exceptions pyodide build ...`.
-
-There is full support for `RPATH`. The dynamic loader will only load
-dependencies that are properly specified on the `RPATH`, just being in
-`/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
-
-For building Rust, it is necessary to use a Rust nightly after January 15th, 2025. You must pass the flag `-Z emscripten-wasm-eh`. You will also need a
-compatible emscripten sysroot that has been built with wasm exception handling.
-Such sysroots are produced and distributed by
-[pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
-This is only distributed for Rust nightly-2025-02-01. If you need a different
-version, you can clone the `pyodide/rust-emscripten-wasm-eh-sysroot` repository
-and follow the instructions to build it in the README. To install the emscripten
-sysroot:
-
-```sh
-rustup toolchain install nightly-2025-02-01
-TOOLCHAIN_ROOT=$(rustup which --toolchain nightly-2025-02-01 rustc)
-RUSTLIB=$TOOLCHAIN_ROOT/lib/rustlib
-wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-4.0.6_nightly-2025-02-01/emcc-4.0.6_nightly-2025-02-01.tar.bz2
-tar -xf emcc-4.0.6_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
-```
-
-Note that this is all necessary _even if_ the crate you are building is build
-with `-Cpanic=abort` because the Rust standard library is not built with
-`-Cpanic=abort` and so you will encounter linker errors due to pulling in
-symbols from the standard library that use the wrong unwinding ABI.
