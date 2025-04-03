@@ -177,35 +177,35 @@ async def test_trigger_event_listener(selenium):
 
     x = run_js(
         """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
+        class MockObject {
+            constructor() {
+                this.listeners = {};
+            }
+            addEventListener(event, handler) {
+                if (event in this.listeners) {
+                    this.listeners[event].push(handler);
+                }
+                else {
+                    this.listeners[event] = [handler];
+                }
+            }
+            removeEventListener(event, handler) {
+                if (event in this.listeners) {
+                    this.listeners[event] = this.listeners[event].filter(
+                        (existingHandler) => existingHandler !== handler
+                    )
+                }
+            }
+            triggerEvent(event) {
+                if (this.listeners[event]) {
+                    for (const handler of this.listeners[event]) {
+                        handler({});
+                    }
+                }
             }
         }
-    }
-}
-let x = new MockObject();
-x;
+        let x = new MockObject();
+        x;
     """
     )
     triggered = False
@@ -222,6 +222,60 @@ x;
     assert triggered
 
     remove_event_listener(x, "click", foo)
+
+
+@run_in_pyodide
+async def test_additional_event_listener_arguments(selenium):
+    from pyodide.code import run_js
+
+    x = run_js(
+        """
+        class MockObject {
+            constructor() {
+                this.listeners = {};
+            }
+            addEventListener(event, handler, kwargs) {
+                if (event in this.listeners) {
+                    this.listeners[event].push(
+                        {
+                            handler: handler,
+                            kwargs: kwargs
+                        });
+                }
+                else {
+                    this.listeners[event] = [
+                        {
+                            handler: handler,
+                            kwargs: kwargs
+                        }
+                        ];
+                }
+            }
+            removeEventListener(event, handler, kwargs) {
+                if (event in this.listeners) {
+                    this.listeners[event] = this.listeners[event].filter(
+                        (existingHandler) => existingHandler.handler !== handler
+                    )
+                }
+            }
+        }
+        let x = new MockObject();
+        x;
+        """
+    )
+
+    from pyodide.ffi.wrappers import add_event_listener, remove_event_listener
+
+    def foo(obj):
+        pass
+
+    add_event_listener(x, "click", foo, once=True, something_else="foo")
+
+    assert x.listeners.click[0].kwargs["once"] is True
+    assert x.listeners.click[0].kwargs["something_else"] == "foo"
+
+    remove_event_listener(x, "click", foo)
+    assert len(x.listeners.click) == 0
 
 
 @run_in_pyodide
