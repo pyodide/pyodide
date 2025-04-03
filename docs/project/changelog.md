@@ -25,6 +25,11 @@ _Insert Date Here_
   from `Function` from the JS FFI.
   {pr}`5555`
 
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
+
 ### Packages
 
 - Added `jiter` 0.8.2 {pr}`5388`
