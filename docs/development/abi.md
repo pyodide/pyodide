@@ -59,8 +59,9 @@ static libraries may be used by shared libraries.
 
 ### pyodide_2024_0
 
-The Emscripten version is 3.1.58. The Python version is 3.12. Python 3.12 must
-be used at build time. All shared libraries must be linked with `-sWASM_BIGINT`.
+This ABI is intended for use with Python 3.12. The Emscripten version is 3.1.58.
+
+All shared libraries must be linked with `-sWASM_BIGINT`.
 
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
@@ -78,8 +79,7 @@ dynamic library dependencies should be placed in the wheel in a folder called
 This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
 subject to change without notice.
 
-The Emscripten version is 4.0.6. The Python version is 3.13. Python 3.13 must be
-used at build time.
+This ABI is intended for use with Python 3.13. The Emscripten version is 4.0.6.
 
 By default, emcc will compile and link C++ libraries with exceptions disabled,
 so that `throw` is an abort. The same is true for `setjmp`/`longjmp`. To enable
