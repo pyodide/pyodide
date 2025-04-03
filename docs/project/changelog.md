@@ -18,7 +18,7 @@ myst:
 
 ### Packages
 
-- Added `osqp` 1.0.0 {pr}`5510`
+- Added `osqp` 1.0.3 {pr}`5570`
 
 ## Version 0.27.4
 
