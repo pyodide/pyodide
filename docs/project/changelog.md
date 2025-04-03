@@ -35,6 +35,8 @@ myst:
   from `Function` from the JS FFI.
   {pr}`5555`
 
+- Importing matplotlib should now be significantly faster.
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
