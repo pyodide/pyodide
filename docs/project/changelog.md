@@ -41,6 +41,9 @@ myst:
   old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
 
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
+
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
