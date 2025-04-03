@@ -81,9 +81,10 @@ subject to change without notice.
 The Emscripten version is 4.0.6. The Python version is 3.13. Python 3.13 must be
 used at build time.
 
-By default, C++ libraries are built with exceptions disabled, and `throw` is an
-abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
-`setjmp`/`longjmp`, `-fwasm-exceptions` must be passed at compile time and link time.
+By default, emcc will compile and link C++ libraries with exceptions disabled,
+so that `throw` is an abort. The same is true for `setjmp`/`longjmp`. To enable
+exceptions and `setjmp`/`longjmp`, `-fwasm-exceptions` must be passed to `emcc`
+at compile time and link time.
 
 There is full support for `RPATH`. The dynamic loader will only load
 dependencies that are properly specified on the `RPATH`, just being in
@@ -141,6 +142,7 @@ must match between the main executable and dynamic libraries or the dynamic
 libraries will fail to load.
 
 The `-sWASM_BIGINT` linker setting is applied by default since Emscripten 4.0.0.
+As a result, it is applied by default on `pyodide_2025_0` and above.
 
 ### `-fexceptions` vs `-fwasm-exceptions`
 
