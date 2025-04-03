@@ -91,13 +91,13 @@ dependencies that are properly specified on the `RPATH`, just being in
 
 For building Rust, it is necessary to use a Rust nightly after January 15th, 2025.
 The flag `-Z emscripten-wasm-eh` must be passed. It is also necessary to use a
-compatible emscripten sysroot that has been built with wasm exception handling.
+compatible Emscripten sysroot that has been built with WebAssembly exception handling.
 Such sysroots are produced and distributed by
 [pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
 This is only distributed for Rust nightly-2025-02-01. To use a different Rust
 nighly, it is possible to clone the `pyodide/rust-emscripten-wasm-eh-sysroot`
 repository and follow the instructions in the README to build a compatible
-sysroot. To install the emscripten sysroot use:
+sysroot. To install the Emscripten sysroot use:
 
 ```sh
 rustup toolchain install nightly-2025-02-01
@@ -216,4 +216,4 @@ to implement the JavaScript exception handling ABI using WebAssembly exceptions.
 
 Thankfully, nowadays
 [Rust does support WebAssembly exception handling](https://github.com/rust-lang/compiler-team/issues/801)
-and the `pyodide_2025` abi will rely on it.
+and the `pyodide_2025_0` ABI and later will rely on it.
