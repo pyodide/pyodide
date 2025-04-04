@@ -86,8 +86,8 @@ class CommitHistory:
     commits: dict[int, CommitInfo]
 
     @classmethod
-    def from_git(self):
-        result = run(["git", "log", "--oneline", "main"], capture_output=True)
+    def from_git(self, branch):
+        result = run(["git", "log", "--oneline", branch], capture_output=True)
         lines = result.stdout.splitlines()
         return CommitHistory(lines)
 
@@ -106,12 +106,15 @@ class CommitHistory:
     def lookup_pr(self, pr_number: int) -> CommitInfo:
         return self.commits[pr_number]
 
+    def has_pr(self, pr_number: int) -> bool:
+        return pr_number in self.commits
+
 
 @functools.cache
 def get_commits() -> list[CommitInfo]:
     """Return the CommitInfo of the PRs we want to backport"""
     pr_numbers = get_needs_backport_pr_numbers()
-    commit_history = CommitHistory.from_git()
+    commit_history = CommitHistory.from_git("main")
     commits = [commit_history.lookup_pr(x) for x in pr_numbers]
     return sorted(commits, key=lambda c: -c.history_idx)
 
@@ -536,15 +539,21 @@ def add_backport_pr(args):
 
 
 def clear_backport_prs(args) -> None:
-    needs_backport_prs = get_needs_backport_prs_strings()
+    needs_backport_prs = get_needs_backport_pr_numbers()
+    stable_history = CommitHistory.from_git("stable")
+    to_clear = [
+        pr_number
+        for pr_number in needs_backport_prs
+        if stable_history.has_pr(pr_number)
+    ]
     print("Removing the needs-backport label from the following PRs:")
-    print("  ", ", ".join(needs_backport_prs), "\n")
+    print("  ", ", ".join(str(x) for x in to_clear), "\n")
     if not args.yes:
         input("Press enter to continue")
-    for pr_number in needs_backport_prs:
+    for pr_number in to_clear:
         run(["gh", "pr", "edit", str(pr_number), "--remove-label", "needs backport"])
     print("To reverse this, run")
-    print(f"  ./tools/backport.py add-backport-pr {' '.join(needs_backport_prs)}")
+    print(f"  ./tools/backport.py add-backport-pr {' '.join(str(x) for x in to_clear)}")
 
 
 def show_missing_changelogs(args) -> None:
