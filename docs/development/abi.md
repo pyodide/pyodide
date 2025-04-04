@@ -59,7 +59,10 @@ static libraries may be used by shared libraries.
 
 ### pyodide_2024_0
 
-This ABI is intended for use with Python 3.12. The Emscripten version is 3.1.58.
+By default, all builds of the Pyodide runtime with Python 3.12 will use the
+`pyodide_2024_0` abi.
+
+The Emscripten version is 3.1.58.
 
 All shared libraries must be linked with `-sWASM_BIGINT`.
 
@@ -75,6 +78,9 @@ dynamic library dependencies should be placed in the wheel in a folder called
 `wheel_name.libs`.
 
 ### pyodide_2025_0 (under development)
+
+By default, all builds of the Pyodide runtime with Python 3.13 will use the
+`pyodide_2025_0` abi.
 
 This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
 subject to change without notice.
