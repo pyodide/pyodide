@@ -126,12 +126,7 @@ By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
 `setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
 
-The flag `-Z emscripten-wasm-eh` must be passed to Rust. If the crate uses
-`panic=abort` it may be possible to build with
-
-```
-cargo build -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
-```
+The flag `-Z emscripten-wasm-eh` must be passed to Rust.
 
 ##### The Rust sysroot
 
@@ -144,6 +139,12 @@ Some crates can be built with
 
 ```
 RUSTFLAGS=-Zemscripten-wasm-eh cargo build -Zbuild-std
+```
+
+If the crate uses `panic=abort` it may be possible to build with
+
+```
+cargo build -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 ```
 
 but it won't work with any crates that use `cargo vendor` and there seem to be
