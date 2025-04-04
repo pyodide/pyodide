@@ -16,8 +16,10 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
-  {pr}`5334` {pr}`5363`
+- ABI break: Upgraded Emscripten to 4.0.6 {pr}`5343` {pr}`5350` {pr}`5357`
+  {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
+  {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
+  {pr}`5560`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
@@ -26,6 +28,14 @@ myst:
   compile time and link time.
   {pr}`5320`
 - {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
+
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
+
+- Importing matplotlib should now be significantly faster.
 
 ### `python` CLI entrypoint
 
@@ -35,10 +45,14 @@ myst:
 - {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
   CLI. {pr}`5544`
 
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
+
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
 - Added `osqp` 1.0.0 {pr}`5510`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.

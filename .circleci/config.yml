@@ -110,7 +110,7 @@ jobs:
           name: Zip build directory
           command: |
             tar cjf pyodide.tar.gz dist
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip
+            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
             tar cjf pyodide-static-libs.tar.gz -C cpython/installs  .
 
       - store_artifacts:
@@ -395,30 +395,7 @@ jobs:
       - run:
           name: test
           command: |
-            set -x
-            export PYODIDE_ROOT=$(pwd)
-            echo $PYODIDE_ROOT
-            source pyodide_env.sh
-            make pyodide_build
-            cd ~
-            mkdir test
-            cd test
-            git clone https://github.com/python-attrs/attrs --depth 1 --branch 22.1.0
-            git clone https://github.com/zopefoundation/zope.interface.git --depth 1 --branch 5.4.0
-
-            python -m venv .venv-host
-            source .venv-host/bin/activate
-
-            pyodide venv .venv-pyodide
-            source .venv-pyodide/bin/activate
-
-            cd zope.interface
-            pyodide build
-            pip install dist/*.whl
-            cd ../attrs
-            pip install .[tests]
-            python -m pytest -k 'not mypy'
-
+            ./tools/cmdline-runner-test.sh
   benchmark:
     <<: *defaults
     resource_class: medium+

@@ -27,7 +27,7 @@ build:
 
     embuilder build zlib --pic
     embuilder build libjpeg --pic
-    embuilder build libpng-wasm-sjlj --pic
+    embuilder build libpng-legacysjlj --pic
     embuilder build sqlite3 --pic
 
     mkdir -p build
@@ -63,7 +63,7 @@ build:
       \
       -DGDAL_USE_PNG=ON \
       -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
-      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng-wasm-sjlj.a \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng-legacysjlj.a \
       \
       -DGDAL_USE_JPEG=ON \
       -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \

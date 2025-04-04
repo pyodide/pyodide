@@ -1,7 +1,7 @@
-From ce15b96bb30c6b5325108fe8f1eb17138f693a3e Mon Sep 17 00:00:00 2001
+From 8cfe3bf9490d5023b82a0b7b08d668861e9aa907 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
-Subject: [PATCH 2/7] Add useful error when symbol resolution fails
+Subject: [PATCH 2/3] Add useful error when symbol resolution fails
 
 Currently if symbol resolution fails, we get:
 ```js
@@ -15,14 +15,14 @@ went missing.
 This adds a descriptive error message with the name of the missing
 symbol.
 ---
- src/library_dylink.js | 3 +++
+ src/lib/libdylink.js | 3 +++
  1 file changed, 3 insertions(+)
 
-diff --git a/src/library_dylink.js b/src/library_dylink.js
-index 7eb066f37..1d5b7f658 100644
---- a/src/library_dylink.js
-+++ b/src/library_dylink.js
-@@ -723,6 +723,9 @@ var LibraryDylink = {
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index 070ebddca..f22d3bfc1 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -725,6 +725,9 @@ var LibraryDylink = {
              var resolved;
              stubs[prop] = (...args) => {
                resolved ||= resolveSymbol(prop);

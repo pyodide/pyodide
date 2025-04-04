@@ -97,14 +97,19 @@ def commit(newtag) -> None:
 
 def parse_args():
     parser = argparse.ArgumentParser("Update the Emscripten version")
-    parser.add_argument("newtag")
+    parser.add_argument("newtag", nargs="?")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    newtag = args.newtag
     oldtag = get_makefile_envs()["PYODIDE_EMSCRIPTEN_VERSION"]
+    newtag = args.newtag
+    if not newtag:
+        major, minor, patch = (int(x) for x in oldtag.split("."))
+        patch += 1
+        newtag = f"{major}.{minor}.{patch}"
+        print("Using new version", newtag)
     setup_emscripten(oldtag)
     rebase(oldtag, newtag)
     update_patches(newtag)
