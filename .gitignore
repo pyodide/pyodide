@@ -25,6 +25,7 @@ cpython/downloads
 cpython/installs
 cpython/build.log
 dist*/
+!packages/distro/
 docs/_build/
 emsdk/emsdk
 geckodriver.log

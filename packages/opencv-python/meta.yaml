@@ -9,48 +9,8 @@ about:
   summary: Wrapper package for OpenCV python bindings.
   license: MIT
 source:
-  url: https://files.pythonhosted.org/packages/4a/e7/b70a2d9ab205110d715906fc8ec83fbb00404aeb3a37a0654fdb68eb0c8c/opencv-python-4.10.0.84.tar.gz
-  sha256: 72d234e4582e9658ffea8e9cae5b63d488ad06994ef12d81dc303b17472f3526
-  extras:
-    - [extras/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
-    - [
-        extras/detect_ffmpeg.cmake,
-        opencv/modules/videoio/cmake/detect_ffmpeg.cmake,
-      ]
-  patches:
-    - patches/0001-Unpin-setuptools.patch
-
+  url: https://cdn.jsdelivr.net/pyodide/v0.27.4/full/opencv_python-4.10.0.84-cp312-cp312-pyodide_2024_0_wasm32.whl
+  sha256: da512bf82434bc21936032faa7d33267d66a2a9fc2d19e58d843714d7e546121
 requirements:
   run:
     - numpy
-  host:
-    - ffmpeg
-    - libwebp
-    - libtiff
-    - setuptools
-build:
-  # RELOCATABLE flag is required because if affects how emscripten build ports.
-  cxxflags: |
-    -s RELOCATABLE=1
-    -s USE_ZLIB=1
-    -s USE_LIBJPEG=1
-    -s USE_LIBPNG=1
-    -DOPENCV_HAVE_FILESYSTEM_SUPPORT=1
-  ldflags: |
-    -ljpeg
-    -lz
-    -lpng
-  # Note on CMAKE_ARGS:
-  #   CMake args are adopted from OpenCV.js (https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py)
-  #   But we support more modules than OpenCV.js.
-  #
-  # List of OpenCV modules can be found at: https://docs.opencv.org/4.x/
-  # Build configs can be found at: https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
-
-  script: |
-    # export VERBOSE=1
-
-    export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/_core/include/"
-    export FFMPEG_ROOT="$WASM_LIBRARY_DIR"
-
-    source $PKGDIR/extras/build_args.sh

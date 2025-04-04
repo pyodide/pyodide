@@ -1956,3 +1956,23 @@ async def test_bug_4861(selenium):
         return eval("x()", ChainMap({}, {"x": x}))
 
     await g(run_js("async () => {}"))
+
+
+def test_fs_init(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    res = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            async fsInit(FS, {sitePackages}) {
+                await sleep(20);
+                FS.writeFile(sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
+                FS.mkdir(sitePackages + "/foo");
+                FS.mkdir(sitePackages + "/bar");
+            }
+        });
+        return pyodide.runPython(`import sys; sys.path`).toJs();
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert res[-2].endswith("site-packages/foo")
+    assert res[-1].endswith("site-packages/bar")
