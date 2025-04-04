@@ -19,8 +19,8 @@ underscode. For the smallest result, it is recommended to link with:
 
 To force all symbols to be exported, link with `-sSIDE_MODULE=1`.
 
-If `-pthread` is used at compile or link time, the resulting libraries will not
-load.
+`-pthread` must not be used at compile or link time. If `-pthread` is used, the
+resulting libraries will not load.
 
 To compile Rust packages, the following flags must be passed to `rustc`:
 
