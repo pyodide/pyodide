@@ -105,7 +105,7 @@ class CommitHistory:
 
     def lookup_pr(self, pr_number: int) -> CommitInfo:
         return self.commits[pr_number]
-    
+
     def has_pr(self, pr_number: int) -> bool:
         return pr_number in self.commits
 
@@ -541,7 +541,11 @@ def add_backport_pr(args):
 def clear_backport_prs(args) -> None:
     needs_backport_prs = get_needs_backport_pr_numbers()
     stable_history = CommitHistory.from_git("stable")
-    to_clear = [pr_number for pr_number in needs_backport_prs if stable_history.has_pr(pr_number)]
+    to_clear = [
+        pr_number
+        for pr_number in needs_backport_prs
+        if stable_history.has_pr(pr_number)
+    ]
     print("Removing the needs-backport label from the following PRs:")
     print("  ", ", ".join(str(x) for x in to_clear), "\n")
     if not args.yes:
