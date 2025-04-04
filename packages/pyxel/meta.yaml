@@ -1,6 +1,9 @@
 package:
   name: pyxel
   version: 1.9.10
+  # Broken by Emscripten 4.0.6 update.
+  # Build succeeds, but get function sig mismatch or null in several tests.
+  _disabled: true
   tag:
     - rust
 source:

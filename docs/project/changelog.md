@@ -16,9 +16,10 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 4.0.3 {pr}`5343` {pr}`5350` {pr}`5357`
+- ABI break: Upgraded Emscripten to 4.0.6 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
+  {pr}`5560`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
@@ -34,11 +35,16 @@ myst:
   from `Function` from the JS FFI.
   {pr}`5555`
 
+- Importing matplotlib should now be significantly faster.
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
   old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
+
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
 
 ### Packages
 
