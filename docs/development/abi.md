@@ -4,40 +4,56 @@
 
 ### General
 
-Shared libraries must be linked with `-sSIDE_MODULE=1` or
+#### Building for the Emscripten target
 
-```
--sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=<export list>
-```
+To build C/C++ projects, use emscripten compiler toolchain `emcc`.
 
-Note that the name of each symbol in the list needs to be prefixed with an
-underscode. For the smallest result, it is recommended to link with:
+To build Rust projects, use `rustc --target wasm32-unknown-emscripten` or
+`cargo build --target wasm32-unknown-emscripten`. When building, `emcc` must be
+on the path or linking will fail.
+
+#### Making a shared library
+
+Emscripten shared libraries use the [the WebAssembly binary
+format](https://webassembly.github.io/spec/core/binary/index.html) and have a
+[dynamic linking section](https://github.com/WebAssembly/tool-conventions/blob/main/DynamicLinking.md).
+
+`emcc` will ignore the `-shared` flag. To make a shared library with `emcc`, you
+must pass `-sSIDE_MODULE=1` or `-sSIDE_MODULE=2`.
+
+To make a shared library with `rustc`, pass `-C link-arg=-sSIDE_MODULE=2`. To
+build a shared library with `cargo`, put `-C link-arg=-sSIDE_MODULE=2` in the
+`RUSTFLAGS` environment variable.
+
+#### No pthreads support
+
+`-pthread` must not be used at compile or link time. If `-pthread` is used, the
+resulting libraries will not load.
+
+#### Controlling the Set of Exported Symbols
+
+All symbols that form part of a binary module's interface must be exported. It
+is desirable to produce the minimal list of exported symbols to keep download
+size and runtime to a minimum. Not exporting symbols also reduces chances of
+symbol collisions.
+
+Linking a shared libraries with `-sSIDE_MODULE=1` will pass `-whole-archive` to
+`wasm-ld` and so force inclusion of all object files and all symbols. Linking
+with `-sSIDE_MODULE=2` will only include symbols that are explicitly listed with
+`-sEXPORTED_FUNCTIONS=<export list>`. The name of each symbol in the list must
+be prefixed with an underscode. For the smallest result, it is recommended to
+link with:
 
 ```
 -sSIDE_MODULE=2 -sEXPORTED_FUNCTIONS=["_PyInit_MyCModule1", "_PyInit_MyCModule2]
 ```
 
-To force all symbols to be exported, link with `-sSIDE_MODULE=1`.
-
-`-pthread` must not be used at compile or link time. If `-pthread` is used, the
-resulting libraries will not load.
-
-To compile Rust packages, the following flags must be passed to `rustc`:
-
-```
--C link-arg=-sSIDE_MODULE=2 -C link-arg=-sWASM_BIGINT
-```
-
-When not invoking `rustc` directly, for instance when using cargo, set these
-into the `RUSTFLAGS` environment variable.
-
+To compile Rust packages, `-C link-arg=-sSIDE_MODULE=2` must be passed to rustc.
 Compiling with `-sSIDE_MODULE=1` will not work with Rust because Rust libraries
 contain a `lib.rmeta` file which is not an object file. Rust produces the
-correct list of exported symbols automatically so this should not be a problem
-in practice.
+correct list of exported symbols automatically so this should not be a problem.
 
-On Rust libc versions older than 0.2.162, it may be necessary to pass
-`-Z link-native-libraries=no` as a `RUSTFLAG`.
+#### Libraries Linked to the Interpreter
 
 Pyodide is statically linked with the following libraries:
 
@@ -64,11 +80,24 @@ By default, all builds of the Pyodide runtime with Python 3.12 will use the
 
 The Emscripten version is 3.1.58.
 
+#### WASM_BIGINT
+
 All shared libraries must be linked with `-sWASM_BIGINT`.
+
+Since Rust 1.84.0 or nightly 2024-11-05, Rust will automatically pass
+`-Clink-arg=-sWASM_BIGINT`. In earlier versions of Rust it was required to pass
+`-Clink-arg=-sWASM_BIGINT` explicitly. Passing it explicitly will work in all
+cases.
+
+#### Unwinding ABIs
 
 By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
 `setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
+
+Rust will automatically enable unwinding.
+
+#### Runtime Library Loading Path
 
 Specifying an RPATH is not supported and will cause link errors. The dynamic
 loader has been patched so that all dynamic libraries in a wheel named
@@ -85,21 +114,44 @@ By default, all builds of the Pyodide runtime with Python 3.13 will use the
 This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
 subject to change without notice.
 
-This ABI is intended for use with Python 3.13. The Emscripten version is 4.0.6.
+The Emscripten version is 4.0.6.
 
-By default, emcc will compile and link C++ libraries with exceptions disabled,
-so that `throw` is an abort. The same is true for `setjmp`/`longjmp`. To enable
-exceptions and `setjmp`/`longjmp`, `-fwasm-exceptions` must be passed to `emcc`
-at compile time and link time.
+#### WASM_BIGINT
 
-There is full support for `RPATH`. The dynamic loader will only load
-dependencies that are properly specified on the `RPATH`, just being in
-`/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
+Since Emscripten 4.0.0, `-sWASM_BIGINT` is the default.
 
-For building Rust, it is necessary to use a Rust nightly after January 15th, 2025.
-The flag `-Z emscripten-wasm-eh` must be passed. It is also necessary to use a
-compatible Emscripten sysroot that has been built with WebAssembly exception handling.
-Such sysroots are produced and distributed by
+#### Unwinding ABIs
+
+By default, C++ libraries are built with exceptions disabled, and `throw` is an
+abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
+`setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
+
+The flag `-Z emscripten-wasm-eh` must be passed to Rust. If the crate uses
+`panic=abort` it may be possible to build with
+
+```
+cargo build -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
+```
+
+##### The Rust sysroot
+
+For building Rust, it is necessary to use a Rust nightly after January 15th,
+2025, when the `-Z emscripten-wasm-eh` flag was added. Rust ships with an
+Emscripten sysroot build without the `-Z emscripten-wasm-eh` so using the
+standard sysroot will lead to linker errors.
+
+Some crates can be built with
+
+```
+RUSTFLAGS=-Zemscripten-wasm-eh cargo build -Zbuild-std
+```
+
+but it won't work with any crates that use `cargo vendor` and there seem to be
+various bugs. Also, when building a large number of packages `-Zbuild-std`
+inefficiently rebuilds the standard library for each crate.
+
+If not building with `-Zbuild-std`, it is possible to get a compatible sysroot
+from
 [pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
 This is only distributed for Rust nightly-2025-02-01. To use a different Rust
 nighly, it is possible to clone the `pyodide/rust-emscripten-wasm-eh-sysroot`
@@ -119,11 +171,24 @@ the Rust standard library is not built with `-Cpanic=abort` and so there will be
 linker errors due to pulling in symbols from the standard library that use the
 wrong unwinding ABI.
 
+#### Runtime Library Loading Path
+
+There is full support for `RPATH`. The dynamic loader will only load
+dependencies that are properly specified on the `RPATH`, just being in
+`/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
+
 ## ABI sensitive flags
+
+This informative section gives some background on why the ABIs described above
+were chosen.
 
 ### `-pthread`
 
-Pyodide has no support for pthreads.
+Pyodide has no support for pthreads. The interaction between pthreads and
+dynamic linking is slow and buggy, more work upstream would be required to
+support them together. It's possible to build the Python interpreter with
+dynamic linking disabled and pthreads enabled, but of course there would be
+no need to specify the ABI of such an interpreter.
 
 ### `-sWASM_BIGINT`
 
