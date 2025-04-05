@@ -6,6 +6,7 @@ import time
 import traceback
 from asyncio import Future, Task
 from collections.abc import Awaitable, Callable, Coroutine
+from functools import wraps
 from typing import Any, TypeVar, overload
 
 from .ffi import IN_BROWSER, create_once_callable, run_sync
@@ -640,6 +641,23 @@ def _initialize_event_loop():
     policy = WebLoopPolicy()
     asyncio.set_event_loop_policy(policy)
     policy.get_event_loop()
+
+
+_orig_run = asyncio.run
+
+
+@wraps(_orig_run)
+def _run(main, *, debug=None, loop_factory=None):
+    from pyodide_js._api import config
+
+    if loop_factory is None and config.enableRunUntilComplete:
+        loop = asyncio.events._get_running_loop()
+        if isinstance(loop, WebLoop):
+            return loop.run_until_complete(main)
+    return _orig_run(main, debug=debug, loop_factory=loop_factory)
+
+
+asyncio.run = _run
 
 
 __all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]

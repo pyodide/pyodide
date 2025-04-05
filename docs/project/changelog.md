@@ -36,6 +36,8 @@ myst:
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
   old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
 
 ### Packages
 
