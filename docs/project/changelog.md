@@ -16,7 +16,7 @@ myst:
 
 ## Version 0.27.5
 
-_Insert Date Here_
+_April 04, 2025_
 
 - {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
   hook to run to setup the file system. {pr}`5539`
