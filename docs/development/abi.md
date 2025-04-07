@@ -126,14 +126,19 @@ By default, C++ libraries are built with exceptions disabled, and `throw` is an
 abort. The same is true for `setjmp`/`longjmp`. To enable exceptions and
 `setjmp`/`longjmp`, `-fexceptions` must be passed at compile time and link time.
 
-The flag `-Z emscripten-wasm-eh` must be passed to Rust.
+The flag `-Z emscripten-wasm-eh` must be passed to Rust. It is necessary to use
+a Rust nightly after January 15th, 2025, when the `-Z emscripten-wasm-eh` flag
+was added. All `-Z` flags are gated nightly-only. The `-Z emscripten-wasm-eh`
+flag will never be stabilized but eventually it will switch to being on by
+default and then be removed. See
+[the Rust Major Change Propoisal](https://github.com/rust-lang/compiler-team/issues/801)
+for more information.
 
 ##### The Rust sysroot
 
-For building Rust, it is necessary to use a Rust nightly after January 15th,
-2025, when the `-Z emscripten-wasm-eh` flag was added. Rust ships with an
-Emscripten sysroot build without the `-Z emscripten-wasm-eh` so using the
-standard sysroot will lead to linker errors.
+Rust ships with an Emscripten sysroot built without the `-Z emscripten-wasm-eh`
+flag so using the standard sysroot will lead to linker errors due to mismatched
+unwinding ABIs.
 
 Some crates can be built with
 
