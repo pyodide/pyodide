@@ -21,7 +21,7 @@ if(major_version < 18) {
     process.exit(1);
 }
 
-if (major_version >= 22) {
+if (major_version >= 20) {
     process.stdout.write("--experimental-wasm-stack-switching");
 }
 EOF
