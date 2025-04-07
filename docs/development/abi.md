@@ -99,8 +99,8 @@ Rust will automatically enable unwinding.
 
 #### Runtime Library Loading Path
 
-Specifying an RPATH is not supported and will cause link errors. The dynamic
-loader has been patched so that all dynamic libraries in a wheel named
+Specifying an RPATH is not supported, `emcc` will warn and ignore it. The
+dynamic loader has been patched so that all dynamic libraries in a wheel named
 `wheel_name-<tag>.whl` will be loaded as if
 `/lib/python3.12/site-packages/wheel_name.libs` is on the `RPATH`, so any
 dynamic library dependencies should be placed in the wheel in a folder called
@@ -178,9 +178,9 @@ There is full support for `RPATH`. The dynamic loader will only load
 dependencies that are properly specified on the `RPATH`, just being in
 `/lib/python3.13/site-packages/wheel_name.libs` is not sufficient.
 
-## ABI sensitive flags
+## ABI-sensitive flags
 
-This informative section gives some background on why the ABIs described above
+This non-normative section gives some background on why the ABIs described above
 were chosen.
 
 ### `-pthread`
