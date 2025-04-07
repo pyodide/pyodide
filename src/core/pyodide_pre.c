@@ -3,8 +3,7 @@
 __attribute__((used))
 __attribute__((section("em_js"),
                aligned(1))) char __em_js__pyodide_js_init[] = {
-#embed "pyodide_pre.gen.dat" \
-	suffix(, 0)
+#embed "pyodide_pre.gen.dat" suffix(, 0)
 };
 
 void
