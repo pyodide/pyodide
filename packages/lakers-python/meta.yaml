@@ -1,11 +1,13 @@
 package:
   name: lakers-python
-  version: 0.4.1
+  version: 0.5.0
+  tag:
+    - rust
   top-level:
     - lakers
 source:
-  url: https://files.pythonhosted.org/packages/0e/82/41fcc21dfaeda9646067c403b7e8112fd012766e463ce7d7b7839245d063/lakers_python-0.4.1.tar.gz
-  sha256: eb0d6e32b75ade0a6d6478c2f1d21af6da130a3aefee667433c5dde2ac2e21f8
+  url: https://files.pythonhosted.org/packages/7e/06/49defc46cb7cffd46daf06538bbd4f6dcf4da511036fbb73ea856a02def4/lakers_python-0.5.0.tar.gz
+  sha256: 19059fde5572409f061c3dfcaa12f1634572ff3622b45f81853d05bb67a37bc5
 requirements:
   executable:
     - rustup

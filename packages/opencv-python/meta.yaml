@@ -1,6 +1,6 @@
 package:
   name: opencv-python
-  version: 4.10.0.84
+  version: 4.11.0.86
   top-level:
     - cv2
 about:
@@ -9,16 +9,14 @@ about:
   summary: Wrapper package for OpenCV python bindings.
   license: MIT
 source:
-  url: https://files.pythonhosted.org/packages/4a/e7/b70a2d9ab205110d715906fc8ec83fbb00404aeb3a37a0654fdb68eb0c8c/opencv-python-4.10.0.84.tar.gz
-  sha256: 72d234e4582e9658ffea8e9cae5b63d488ad06994ef12d81dc303b17472f3526
+  url: https://files.pythonhosted.org/packages/17/06/68c27a523103dad5837dc5b87e71285280c4f098c60e4fe8a8db6486ab09/opencv-python-4.11.0.86.tar.gz
+  sha256: 03d60ccae62304860d232272e4a4fda93c39d595780cb40b161b310244b736a4
   extras:
     - [extras/OpenCVFindLibsGrfmt.cmake, opencv/cmake/OpenCVFindLibsGrfmt.cmake]
     - [
         extras/detect_ffmpeg.cmake,
         opencv/modules/videoio/cmake/detect_ffmpeg.cmake,
       ]
-  patches:
-    - patches/0001-Unpin-setuptools.patch
 
 requirements:
   run:
@@ -39,7 +37,7 @@ build:
   ldflags: |
     -ljpeg
     -lz
-    -lpng
+    -lpng-legacysjlj
   # Note on CMAKE_ARGS:
   #   CMake args are adopted from OpenCV.js (https://github.com/opencv/opencv/blob/4.x/platforms/js/build_js.py)
   #   But we support more modules than OpenCV.js.
@@ -48,6 +46,7 @@ build:
   # Build configs can be found at: https://docs.opencv.org/4.x/db/d05/tutorial_config_reference.html
 
   script: |
+    # for debugging
     # export VERBOSE=1
 
     export NUMPY_INCLUDE_DIR="$HOSTINSTALLDIR/lib/python$PYMAJOR.$PYMINOR/site-packages/numpy/_core/include/"

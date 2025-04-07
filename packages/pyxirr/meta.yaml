@@ -1,6 +1,8 @@
 package:
   name: pyxirr
   version: 0.10.6
+  tag:
+    - rust
   top-level:
     - pyxirr
 source:
@@ -15,6 +17,7 @@ requirements:
   executable:
     - rustup
     - cargo
+  # Undo this when https://github.com/Anexen/pyxirr/commit/f012d1499f449024ad92b42a26f571d58ba330b2 makes it to a release
   constraint:
     - maturin < 1.8
 extra:

@@ -1,11 +1,11 @@
 package:
   name: bitstring
-  version: 4.1.4
+  version: 4.3.0
   top-level:
     - bitstring
 source:
-  url: https://files.pythonhosted.org/packages/33/c3/4ceb28a082f94f83425bfebbf7aa667a0d0e357015ffd7ff201ae4976308/bitstring-4.1.4-py3-none-any.whl
-  sha256: da46c4d6f8f3fb75a85566fdd33d5083ba8b8f268ed76f34eefe5a00da426192
+  url: https://files.pythonhosted.org/packages/c3/e2/ffb466d2325eba94fcae18df609605b99d454b3855491d7bf1023c473911/bitstring-4.3.0-py3-none-any.whl
+  sha256: 3282a896814813f8fe5fa09dbafac842c57aace1d3bfd94546c6f1ed9aafcbe1
 requirements:
   run:
     - bitarray

@@ -13,7 +13,7 @@ import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData } from "./types";
+import type { TypedArray, Module, PackageData, FSType } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
@@ -46,8 +46,9 @@ export type ConfigType = {
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
   jsglobals?: object;
+  _sysExecutable?: string;
   args: string[];
-  _node_mounts: string[];
+  fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
@@ -140,6 +141,11 @@ export async function loadPyodide(
      */
     jsglobals?: object;
     /**
+     * Determine the value of ``sys.executable``.
+     * @ignore
+     */
+    _sysExecutable?: string;
+    /**
      * Command line arguments to pass to Python on startup. See `Python command
      * line interface options
      * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
@@ -181,14 +187,12 @@ export async function loadPyodide(
      */
     checkAPIVersion?: boolean;
     /**
-     * Used by the cli runner. If we want to detect a virtual environment from
-     * the host file system, it needs to be visible from when `main()` is
-     * called. The directories in this list will be mounted at the same address
-     * into the Emscripten file system so that virtual environments work in the
-     * cli runner.
-     * @ignore
+     * This is a hook that allows modification of the file system before the
+     * main() function is called and the intereter is started. When this is
+     * called, it is guaranteed that there is an empty site-packages directory.
+     * @experimental
      */
-    _node_mounts?: string[];
+    fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -214,7 +218,6 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
-    _node_mounts: [],
     env: {},
     packageCacheDir: indexURL,
     packages: [],

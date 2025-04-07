@@ -1,0 +1,21 @@
+package:
+  name: anyio
+  version: 4.9.0
+  top-level:
+    - anyio
+source:
+  url: https://files.pythonhosted.org/packages/py3/a/anyio/anyio-4.9.0-py3-none-any.whl
+  sha256: 9f76d541cad6e36af7beb62e978876f3b41e3e04f2c1fbf0884604c0a9c4d93c
+requirements:
+  run:
+    - ssl
+    - sniffio
+    - typing-extensions
+about:
+  home: null
+  PyPI: https://pypi.org/project/anyio
+  summary: High level compatibility layer for multiple asynchronous event loop implementations
+  license: MIT
+extra:
+  recipe-maintainers:
+    - hoodmane

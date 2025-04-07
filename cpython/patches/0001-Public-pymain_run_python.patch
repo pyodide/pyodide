@@ -1,4 +1,4 @@
-From c37e3894a271ee8b406ffc41a0ce6f5c248914ee Mon Sep 17 00:00:00 2001
+From cefd199c4434444faad9dab7846369bc5e4462e6 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
 Subject: [PATCH 1/8] Public pymain_run_python
@@ -10,10 +10,10 @@ https://discuss.python.org/t/unstable-api-for-pymain-run-python-run-python-cli-b
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Modules/main.c b/Modules/main.c
-index b602272b78b..d06d3c926b9 100644
+index 3bf2241f283..54f2141fb8c 100644
 --- a/Modules/main.c
 +++ b/Modules/main.c
-@@ -550,7 +550,7 @@ pymain_repl(PyConfig *config, int *exitcode)
+@@ -612,7 +612,7 @@ pymain_repl(PyConfig *config, int *exitcode)
  }
  
  

@@ -1,6 +1,8 @@
 package:
   name: coolprop
   version: 6.6.0
+  # Problem with our added pyproject.toml/setup.py
+  pinned: true
   top-level:
     - CoolProp
 
@@ -16,9 +18,9 @@ source:
       - ./pyproject.toml
 
 build:
-  cflags: -fexceptions
-  cxxflags: -fexceptions
-  ldflags: -fexceptions
+  cflags: -fwasm-exceptions
+  cxxflags: -fwasm-exceptions
+  ldflags: -fwasm-exceptions
 
 requirements:
   run:

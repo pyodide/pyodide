@@ -1,6 +1,7 @@
 package:
   name: pi-heif
   version: 0.21.0
+  _disabled: true
   top-level:
     - pi_heif
 source:

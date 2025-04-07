@@ -25,6 +25,7 @@ import {
   ensureDirNode,
 } from "./compat";
 import { Installer } from "./installer";
+import { createContextWrapper } from "./common/contextManager";
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -52,6 +53,7 @@ export async function initializePackageIndex(
     );
   }
 
+  API.lockfile = lockfile;
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
@@ -181,12 +183,29 @@ export class PackageManager {
     } = {
       checkIntegrity: true,
     },
+  ): Promise<PackageData[]> {
+    const wrappedLoadPackage = this.setCallbacks(
+      options.messageCallback,
+      options.errorCallback,
+    )(this.loadPackageInner);
+
+    return wrappedLoadPackage.call(this, names, options);
+  }
+
+  public async loadPackageInner(
+    names: string | PyProxy | string[],
+    options: {
+      messageCallback?: (message: string) => void;
+      errorCallback?: (message: string) => void;
+      checkIntegrity?: boolean;
+    } = {
+      checkIntegrity: true,
+    },
   ): Promise<Array<PackageData>> {
     const loadedPackageData = new Set<InternalPackageData>();
-    const { messageCallback, errorCallback } = options;
     const pkgNames = toStringArray(names);
 
-    const toLoad = this.recursiveDependencies(pkgNames, errorCallback);
+    const toLoad = this.recursiveDependencies(pkgNames);
 
     for (const [_, { name, normalizedName, channel }] of toLoad) {
       const loadedChannel = this.getLoadedPackageChannel(name);
@@ -196,22 +215,18 @@ export class PackageManager {
       // If uri is from the default channel, we assume it was added as a
       // dependency, which was previously overridden.
       if (loadedChannel === channel || channel === this.defaultChannel) {
-        this.logStdout(
-          `${name} already loaded from ${loadedChannel}`,
-          messageCallback,
-        );
+        this.logStdout(`${name} already loaded from ${loadedChannel}`);
       } else {
         this.logStderr(
           `URI mismatch, attempting to load package ${name} from ${channel} ` +
             `while it is already loaded from ${loadedChannel}. To override a dependency, ` +
             `load the custom package first.`,
-          errorCallback,
         );
       }
     }
 
     if (toLoad.size === 0) {
-      this.logStdout("No new packages to load", messageCallback);
+      this.logStdout("No new packages to load");
       return [];
     }
 
@@ -221,7 +236,7 @@ export class PackageManager {
     const failed = new Map<string, Error>();
     const releaseLock = await this._lock();
     try {
-      this.logStdout(`Loading ${packageNames}`, messageCallback);
+      this.logStdout(`Loading ${packageNames}`);
       for (const [_, pkg] of toLoad) {
         if (this.getLoadedPackageChannel(pkg.name)) {
           // Handle the race condition where the package was loaded between when
@@ -252,18 +267,15 @@ export class PackageManager {
         const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
           .sort()
           .join(", ");
-        this.logStdout(`Loaded ${successNames}`, messageCallback);
+        this.logStdout(`Loaded ${successNames}`);
       }
 
       if (failed.size > 0) {
         const failedNames = Array.from(failed.keys()).sort().join(", ");
-        this.logStdout(`Failed to load ${failedNames}`, messageCallback);
+        this.logStdout(`Failed to load ${failedNames}`);
         for (const [name, err] of failed) {
-          this.logStderr(
-            `The following error occurred while loading ${name}:`,
-            errorCallback,
-          );
-          this.logStderr(err.message, errorCallback);
+          this.logStderr(`The following error occurred while loading ${name}:`);
+          this.logStderr(err.message);
         }
       }
 
@@ -324,9 +336,8 @@ export class PackageManager {
    * @returns The map of package names to PackageLoadMetadata
    * @private
    */
-  public recursiveDependencies(
+  private recursiveDependencies(
     names: string[],
-    errorCallback?: (err: string) => void,
   ): Map<string, PackageLoadMetadata> {
     const toLoad: Map<string, PackageLoadMetadata> = new Map();
     for (let name of names) {
@@ -344,7 +355,6 @@ export class PackageManager {
           `Loading same package ${pkgname} from ${channel} and ${
             toLoad.get(pkgname)!.channel
           }`,
-          errorCallback,
         );
         continue;
       }
@@ -416,13 +426,13 @@ export class PackageManager {
         throw e;
       }
     }
-    console.log(
+    this.logStdout(
       `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
     );
     // If we are IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
-    console.log(
+    this.logStdout(
       `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
     );
     await nodeFsPromisesMod.writeFile(uri, binary);
@@ -533,12 +543,31 @@ export class PackageManager {
     return channel;
   }
 
-  public logStdout(message: string, logger?: (message: string) => void) {
-    logger ? logger(message) : this.stdout(message);
+  public setCallbacks(
+    stdout?: (message: string) => void,
+    stderr?: (message: string) => void,
+  ) {
+    const originalStdout = this.stdout;
+    const originalStderr = this.stderr;
+
+    return createContextWrapper(
+      () => {
+        this.stdout = stdout || originalStdout;
+        this.stderr = stderr || originalStderr;
+      },
+      () => {
+        this.stdout = originalStdout;
+        this.stderr = originalStderr;
+      },
+    );
   }
 
-  public logStderr(message: string, logger?: (message: string) => void) {
-    logger ? logger(message) : this.stderr(message);
+  public logStdout(message: string) {
+    this.stdout(message);
+  }
+
+  public logStderr(message: string) {
+    this.stderr(message);
   }
 }
 
@@ -598,8 +627,6 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   loadedPackages = singletonPackageManager.loadedPackages;
 
   // TODO: Find a better way to register these functions
-  API.recursiveDependencies =
-    singletonPackageManager.recursiveDependencies.bind(singletonPackageManager);
   API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
     singletonPackageManager,
   );

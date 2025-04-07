@@ -1,11 +1,13 @@
 package:
   name: cramjam
-  version: 2.8.3
+  version: 2.10.0rc1
+  tag:
+    - rust
   top-level:
     - cramjam
 source:
-  url: https://files.pythonhosted.org/packages/0d/f2/a7c127e61dcb7878f3ec5bf07fbf472805ea8108fd63335a51ab0bd1a432/cramjam-2.8.3.tar.gz
-  sha256: 6b1fa0a6ea8183831d04572597c182bd6cece62d583a36cde1e6a86e72ce2389
+  url: https://files.pythonhosted.org/packages/source/c/cramjam/cramjam-2.10.0rc1.tar.gz
+  sha256: 85679d2d2d8c43d4c4917eec6a39f145c417c0cc95faada7b5d964ff5c365da6
 about:
   home: ""
   PyPI: https://pypi.org/project/cramjam
@@ -15,8 +17,6 @@ requirements:
   executable:
     - rustup
     - cargo
-  constraint:
-    - maturin < 1.8
 test:
   imports:
     - cramjam

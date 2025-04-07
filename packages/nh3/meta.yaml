@@ -1,18 +1,20 @@
 package:
   name: nh3
-  version: 0.2.17
+  version: 0.2.21
+  tag:
+    - rust
   top-level:
     - nh3
 source:
-  url: https://files.pythonhosted.org/packages/4b/d2/b14d619582459d2790e0c3338ec6d1611be87fdd5d1dcaca85e6c20eaed3/nh3-0.2.17.tar.gz
-  sha256: 40d0741a19c3d645e54efba71cb0d8c475b59135c1e3c580f879ad5514cbf028
+  url: https://files.pythonhosted.org/packages/37/30/2f81466f250eb7f591d4d193930df661c8c23e9056bdc78e365b646054d8/nh3-0.2.21.tar.gz
+  sha256: 4990e7ee6a55490dbf00d61a6f476c9a3258e31e711e13713b2ea7d6616f670e
 requirements:
   executable:
     - rustup
   constraint:
     - maturin < 1.8
 about:
-  home: ""
+  home: https://nh3.readthedocs.io
   PyPI: https://pypi.org/project/nh3
   summary: Python bindings to the ammonia HTML sanitization library.
   license: MIT

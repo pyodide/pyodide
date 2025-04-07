@@ -25,6 +25,7 @@ cpython/downloads
 cpython/installs
 cpython/build.log
 dist*/
+!packages/distro/
 docs/_build/
 emsdk/emsdk
 emsdk/emscripten
@@ -42,3 +43,4 @@ tools/symlinks
 xbuildenv/
 .pyodide-xbuildenv*
 DS_Store
+.pyodide_build_installed

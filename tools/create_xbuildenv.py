@@ -60,6 +60,7 @@ def _copy_wasm_libs(
         Path("Makefile.envs"),
         Path("dist/pyodide-lock.json"),
         Path("dist/python"),
+        Path("dist/python_cli_entry.mjs"),
         Path("dist/python_stdlib.zip"),
         Path("tools/constraints.txt"),
     ]
@@ -84,6 +85,10 @@ def _copy_wasm_libs(
             shutil.copy(pyodide_root / path, xbuildenv_root / path)
 
 
+def _copy_emcc_patches(pyodide_root: Path, xbuildenv_root: Path):
+    shutil.copytree(pyodide_root / "emsdk/patches", xbuildenv_root / "emsdk/patches")
+
+
 def create(
     path: str | Path,
     pyodide_root: Path,
@@ -99,6 +104,7 @@ def create(
 
     _copy_xbuild_files(pyodide_root, xbuildenv_path, skip_missing_files)
     _copy_wasm_libs(pyodide_root, xbuildenv_root, skip_missing_files)
+    _copy_emcc_patches(pyodide_root, xbuildenv_root)
 
     (xbuildenv_root / "package.json").write_text("{}")
     res = subprocess.run(

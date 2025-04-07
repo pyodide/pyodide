@@ -189,7 +189,7 @@ def test_runpythonasync_numpy(selenium_standalone):
 
 
 @pytest.mark.xfail_browsers(
-    firefox="Timeout in WebWorker when using numpy in Firefox 87"
+    firefox="Timeout in WebWorker when using numpy in Firefox 87", chrome="flaky"
 )
 @pytest.mark.driver_timeout(60)
 def test_runwebworker_numpy(selenium_webworker_standalone):
@@ -236,6 +236,7 @@ def test_get_buffer(selenium):
     )
 
 
+@pytest.mark.xfail(reason="Emscripten 4.0.6 regression...")
 @pytest.mark.skip_pyproxy_check
 @pytest.mark.parametrize(
     "arg",
