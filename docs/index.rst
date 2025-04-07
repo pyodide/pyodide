@@ -30,6 +30,22 @@ Try Pyodide in a
 `REPL <./console.html>`_ directly in
 your browser (no installation needed).
 
+What should I look at first?
+----------------------------
+
+- If you wish to use a hosted distribution of Pyodide: see the :ref:`quickstart`
+  documentation.
+- If you wish to host Pyodide yourself, you can download Pyodide from the `releases
+  page <https://github.com/pyodide/pyodide/releases/>`_ and serve it with a web server.
+- If you wish to use Pyodide with a bundler, see the documentation on
+  :ref:`working-with-bundlers`.
+- If you are a Python package maintainer, see the documentation
+  :ref:`building-and-testing-packages-out-of-tree`.
+- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`new-packages`.
+- If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
+  :ref:`building_from_source`.
+
+
 
 Table of contents
 -----------------
@@ -43,8 +59,9 @@ Using Pyodide
    usage/quickstart.md
    usage/downloading-and-deploying.md
    usage/index.md
-   usage/loading-packages.md
    usage/accessing-files.md
+   usage/loading-packages.md
+   usage/building-and-testing-packages.md
    usage/wasm-constraints.md
    usage/type-conversions.md
    usage/keyboard-interrupts.md
@@ -63,12 +80,13 @@ development process including making packages to support third party libraries.
    :maxdepth: 1
    :caption: Development
 
-   development/building-from-sources.md
    development/new-packages.md
-   development/building-and-testing-packages.md
-   development/contributing.md
+   development/building-from-sources.md
    development/testing.md
    development/debugging.md
+   development/contributing.md
+   development/abi.md
+
 
 
 Project

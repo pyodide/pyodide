@@ -1,6 +1,6 @@
-(building_from_sources)=
+(building_from_source)=
 
-# Building from sources
+# Building from source
 
 ```{warning}
 If you are building the latest development version of Pyodide from the `main`

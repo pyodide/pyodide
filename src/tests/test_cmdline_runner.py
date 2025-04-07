@@ -216,25 +216,6 @@ def test_venv_success_log(selenium, capsys):
 
 
 @only_node
-@needs_emscripten
-def test_venv_fail_log(selenium, capsys):
-    path = Path(".venv-pyodide-tmp-test")
-    try:
-        path.mkdir()
-        with pytest.raises(SystemExit, match="1"):
-            with venv_ctxmgr(path):
-                pass
-    finally:
-        shutil.rmtree(path, ignore_errors=True)
-    msg = dedent("Creating Pyodide virtualenv at .venv-pyodide-tmp-test")
-    captured = capsys.readouterr()
-    assert captured.out.strip() == msg
-    assert (
-        "ERROR: dest directory '.venv-pyodide-tmp-test' already exists" in captured.err
-    )
-
-
-@only_node
 def test_venv_version(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "--version"],
@@ -513,11 +494,37 @@ def test_package_index(tmp_path):
     )
 
 
+@only_node
+def test_xbuildenv_runner_works(selenium, tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            pyodide_root / "tools" / "create_xbuildenv.py",
+            tmp_path,
+            "--skip-missing-files",
+        ],
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+
+    xbuildenv_python = tmp_path / "xbuildenv/pyodide-root/dist/python"
+    result = subprocess.run(
+        [xbuildenv_python, "-c", "print('hello!')"],
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello!\n"
+
+
+@only_node
 def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 0
@@ -526,7 +533,7 @@ def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(12)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 12
@@ -534,6 +541,7 @@ def test_sys_exit(selenium, venv):
     assert result.stderr == ""
 
 
+@only_node
 def test_cpp_exceptions(selenium, venv):
     result = install_pkg(venv, "cpp-exceptions-test2")
     print(result.stdout)
