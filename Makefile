@@ -63,8 +63,10 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 	echo "pyodide_js_init();" >> $@            # Then execute the function.
 
 
+# Don't use ccache here because it does not support #embed properly.
+# https://github.com/ccache/ccache/discussions/1366
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
-	emcc --std=c23 -c $< -o $@
+	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
