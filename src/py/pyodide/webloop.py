@@ -628,21 +628,6 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = loop
 
 
-def _initialize_event_loop():
-    from .ffi import IN_BROWSER
-
-    if not IN_BROWSER:
-        return
-
-    import asyncio
-
-    from .webloop import WebLoopPolicy
-
-    policy = WebLoopPolicy()
-    asyncio.set_event_loop_policy(policy)
-    policy.get_event_loop()
-
-
 _orig_run = asyncio.run
 
 
@@ -657,7 +642,20 @@ def _run(main, *, debug=None, loop_factory=None):
     return _orig_run(main, debug=debug, loop_factory=loop_factory)
 
 
-asyncio.run = _run
+def _initialize_event_loop():
+    from .ffi import IN_BROWSER
+
+    if not IN_BROWSER:
+        return
+
+    import asyncio
+
+    from .webloop import WebLoopPolicy
+
+    asyncio.run = _run
+    policy = WebLoopPolicy()
+    asyncio.set_event_loop_policy(policy)
+    policy.get_event_loop()
 
 
 __all__ = ["WebLoop", "WebLoopPolicy", "PyodideFuture", "PyodideTask"]
