@@ -41,7 +41,7 @@ Linking a shared libraries with `-sSIDE_MODULE=1` will pass `-whole-archive` to
 `wasm-ld` and so force inclusion of all object files and all symbols. Linking
 with `-sSIDE_MODULE=2` will only include symbols that are explicitly listed with
 `-sEXPORTED_FUNCTIONS=<export list>`. The name of each symbol in the list must
-be prefixed with an underscode. For the smallest result, it is recommended to
+be prefixed with an underscore. For the smallest result, it is recommended to
 link with:
 
 ```
@@ -155,7 +155,7 @@ If not building with `-Zbuild-std`, it is possible to get a compatible sysroot
 from
 [pyodide/rust-emscripten-wasm-eh-sysroot](https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot).
 This is only distributed for Rust nightly-2025-02-01. To use a different Rust
-nighly, it is possible to clone the `pyodide/rust-emscripten-wasm-eh-sysroot`
+nightly, it is possible to clone the `pyodide/rust-emscripten-wasm-eh-sysroot`
 repository and follow the instructions in the README to build a compatible
 sysroot. To install the Emscripten sysroot use:
 
