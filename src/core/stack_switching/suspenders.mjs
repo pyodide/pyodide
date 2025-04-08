@@ -11,6 +11,16 @@ export function promisingApply(...args) {
   return promisingApplyHandler(...args);
 }
 
+let promisingRunMainHandler;
+export function promisingRunMain(...args) {
+  // validSuspender is a flag so that we can ask for permission before trying to
+  // suspend.
+  validSuspender.value = true;
+  // Record the current stack position. Used in stack_state.mjs
+  Module.stackStop = stackSave();
+  return promisingRunMainHandler(...args);
+}
+
 /**
  * This creates a wrapper around wasm_func that receives an extra suspender
  * argument and returns a promise. The suspender is stored into suspenderGlobal
@@ -49,4 +59,7 @@ export function createPromising(wasm_func) {
  */
 export function initSuspenders() {
   promisingApplyHandler = createPromising(wasmExports._pyproxy_apply_promising);
+  if (wasmExports.run_main_promising) {
+    promisingRunMainHandler = createPromising(wasmExports.run_main_promising);
+  }
 }

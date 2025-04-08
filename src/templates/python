@@ -21,9 +21,9 @@ if(major_version < 18) {
     process.exit(1);
 }
 
-// If $ARGS is empty, `let args = process.argv.slice(2)` removes the wrong
-// number of arguments. `ARGS=--` is not empty but does nothing.
-process.stdout.write("--");
+if (major_version >= 20) {
+    process.stdout.write("--experimental-wasm-stack-switching");
+}
 EOF
 )")
 
@@ -49,4 +49,4 @@ RESOLVED_DIR=$(dirname $(realpath "$0"))
 # Compute our own path, not following symlinks and pass it in so that
 # node_entry.mjs can set sys.executable correctly.
 # Intentionally allow word splitting on $NODEFLAGS.
-exec node $NODEFLAGS "$ARGS" $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
+exec node $NODEFLAGS $ARGS $RESOLVED_DIR/python_cli_entry.mjs --this-program="$($REALPATH "$0")" "$@"
