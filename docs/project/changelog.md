@@ -14,6 +14,15 @@ myst:
 
 # Change Log
 
+## Version 0.27.6
+
+_May 15, 2025_
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
+
 ## Version 0.27.5
 
 _April 04, 2025_
