@@ -1,5 +1,5 @@
 package:
-  name: bilby.cython
+  name: bilby_cython
   version: 0.5.3
   top-level:
     - bilby_cython
