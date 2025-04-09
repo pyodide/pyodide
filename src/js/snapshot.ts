@@ -16,7 +16,7 @@ API.getExpectedKeys = function () {
 };
 
 const getAccessorList = Symbol("getAccessorList");
-const getObject = Symbol('getObject');
+const getObject = Symbol("getObject");
 /**
  * @private
  */
@@ -50,7 +50,11 @@ export function makeGlobalsProxy(
       return makeGlobalsProxy(orig, [...accessorList, prop]);
     },
     apply(target, thisArg, argumentList) {
-      return Reflect.apply(target, thisArg?.[getObject] ?? thisArg, argumentList);
+      return Reflect.apply(
+        target,
+        thisArg?.[getObject] ?? thisArg,
+        argumentList,
+      );
     },
     getPrototypeOf() {
       // @ts-ignore
