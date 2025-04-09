@@ -27,8 +27,8 @@ requirements:
     - libtiff
     - setuptools
   constraint:
-    # ImportError: The 'wheel.bdist_wheel' module has been removed.                   
-    # Please update your setuptools to v70.1 or later.    
+    # ImportError: The 'wheel.bdist_wheel' module has been removed.
+    # Please update your setuptools to v70.1 or later.
     - wheel < 0.46.1
 build:
   # RELOCATABLE flag is required because if affects how emscripten build ports.
