@@ -41,6 +41,7 @@ myst:
 
 ### Packages
 
+- Upgraded `sisl` to 0.16.0 {pr}`5591`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
