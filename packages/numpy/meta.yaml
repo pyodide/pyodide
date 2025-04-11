@@ -10,6 +10,8 @@ source:
   sha256: 9ba03692a45d3eef66559efe1d1096c4b9b75c0986b5dff5530c378fb8331d4f
 
 build:
+  _retain-test-patterns:
+    - "*_natype.py"
   # numpy uses vendored meson, so we need to pass the cross file manually
   backend-flags: |
     setup-args=-Dallow-noblas=true
