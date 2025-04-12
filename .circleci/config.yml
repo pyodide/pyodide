@@ -716,6 +716,24 @@ workflows:
             tags:
               only: /.*/
 
+      - test-main:
+          name: test-full-packages-firefox
+          test-params: --runtime=firefox-no-host packages/_tests
+          requires:
+            - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-main:
+          name: test-full-packages-node
+          test-params: --runtime=node-no-host packages/_tests
+          requires:
+            - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
       - test-js:
           requires:
             - build-core
