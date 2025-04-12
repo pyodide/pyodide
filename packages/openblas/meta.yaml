@@ -10,6 +10,7 @@ source:
   patches:
     - patches/0001-Add-Wno-return-type-flag.patch
     - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+    - patches/0003-Skip-linktest.patch
 
 build:
   type: shared_library

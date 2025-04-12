@@ -5,7 +5,8 @@ import sys
 import time
 import traceback
 from asyncio import Future, Task
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
+from functools import wraps
 from typing import Any, TypeVar, overload
 
 from .ffi import IN_BROWSER, create_once_callable, run_sync
@@ -169,7 +170,14 @@ class PyodideTask(Task[T], PyodideFuture[T]):
     Instantiation is discouraged unless you are writing your own event loop.
     """
 
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._num_done_callbacks = 0
+
+    def add_done_callback(self, cb, *, context=None):
+        res = super().add_done_callback(cb, context=context)
+        self._num_done_callbacks += 1
+        return res
 
 
 class WebLoop(asyncio.AbstractEventLoop):
@@ -347,7 +355,14 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         return h
 
-    def _decrement_in_progress(self, *args):
+    def _decrement_in_progress(self, fut=None):
+        if (
+            fut
+            and getattr(fut, "_num_done_callbacks", None) == 1
+            and (exc := fut.exception())
+        ):
+            # Only callback is this one, let's say it's an unhandled exception
+            self.call_exception_handler({"exception": exc})
         self._in_progress -= 1
         if self._no_in_progress_handler and self._in_progress == 0:
             self._no_in_progress_handler()
@@ -386,10 +401,10 @@ class WebLoop(asyncio.AbstractEventLoop):
         return fut
 
     def create_future(self) -> asyncio.Future[Any]:
+        """Create a Future object attached to the loop."""
         self._in_progress += 1
         fut: PyodideFuture[Any] = PyodideFuture(loop=self)
         fut.add_done_callback(self._decrement_in_progress)
-        """Create a Future object attached to the loop."""
         return fut
 
     #
@@ -407,7 +422,13 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         return time.monotonic()
 
-    def create_task(self, coro, *, name=None):  # type: ignore[override]
+    def create_task(
+        self,
+        coro: Coroutine[T, Any, Any],
+        *,
+        name: str | None = None,
+        context: contextvars.Context | None = None,
+    ) -> Task[T]:
         """Schedule a coroutine object.
 
         Return a task object.
@@ -416,7 +437,9 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         self._check_closed()
         if self._task_factory is None:
-            task = PyodideTask(coro, loop=self, name=name)
+            task: PyodideTask[T] = PyodideTask(
+                coro, loop=self, name=name, context=context
+            )
             if task._source_traceback:  # type: ignore[attr-defined]
                 # Added comment:
                 # this only happens if get_debug() returns True.
@@ -428,7 +451,12 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         self._in_progress += 1
         task.add_done_callback(self._decrement_in_progress)
-        return task
+        try:
+            return task
+        finally:
+            # gh-128552: prevent a refcycle of
+            # task.exception().__traceback__->BaseEventLoop.create_task->task
+            del task
 
     def set_task_factory(self, factory):
         """Set a task factory that will be used by loop.create_task().
@@ -513,6 +541,8 @@ class WebLoop(asyncio.AbstractEventLoop):
                 value = repr(value)
             log_lines.append(f"{key}: {value}")
 
+        if exception := context.get("exception"):
+            log_lines += traceback.format_exception(exception)
         print("\n".join(log_lines), file=sys.stderr)
 
     def call_exception_handler(self, context):
@@ -598,6 +628,20 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = loop
 
 
+_orig_run = asyncio.run
+
+
+@wraps(_orig_run)
+def _run(main, *, debug=None, loop_factory=None):
+    from pyodide_js._api import config
+
+    if loop_factory is None and config.enableRunUntilComplete:
+        loop = asyncio.events._get_running_loop()
+        if isinstance(loop, WebLoop):
+            return loop.run_until_complete(main)
+    return _orig_run(main, debug=debug, loop_factory=loop_factory)
+
+
 def _initialize_event_loop():
     from .ffi import IN_BROWSER
 
@@ -608,6 +652,7 @@ def _initialize_event_loop():
 
     from .webloop import WebLoopPolicy
 
+    asyncio.run = _run
     policy = WebLoopPolicy()
     asyncio.set_event_loop_policy(policy)
     policy.get_event_loop()

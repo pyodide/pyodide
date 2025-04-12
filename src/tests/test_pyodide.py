@@ -11,9 +11,8 @@ import pytest
 from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.server import spawn_web_server
 
-from conftest import DIST_PATH, ROOT_PATH, strip_assertions_stderr
+from conftest import DIST_PATH, PYODIDE_ROOT, strip_assertions_stderr
 from pyodide.code import CodeRunner, eval_code, find_imports, should_quiet  # noqa: E402
-from pyodide_build.build_env import get_pyodide_root
 
 
 def test_find_imports():
@@ -1589,7 +1588,7 @@ def test_relative_index_url(selenium, tmp_path):
     tmp_dir = Path(tmp_path)
     subprocess.run(["node", "-v"], encoding="utf8", check=True)
 
-    shutil.copy(ROOT_PATH / "dist/pyodide.js", tmp_dir / "pyodide.js")
+    shutil.copy(PYODIDE_ROOT / "dist/pyodide.js", tmp_dir / "pyodide.js")
 
     result = subprocess.run(
         [
@@ -1605,7 +1604,7 @@ def test_relative_index_url(selenium, tmp_path):
             main();
             """,
         ],
-        cwd=ROOT_PATH,
+        cwd=PYODIDE_ROOT,
         capture_output=True,
         encoding="utf8",
         check=False,
@@ -1625,7 +1624,7 @@ def test_relative_index_url(selenium, tmp_path):
         result.check_returncode()
 
     try:
-        assert result.stdout.strip().split("\n")[-1] == str(ROOT_PATH / "dist") + "/"
+        assert result.stdout.strip().split("\n")[-1] == str(DIST_PATH) + "/"
     finally:
         print_result(result)
 
@@ -1709,7 +1708,7 @@ def test_csp(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     target_path = DIST_PATH / "test_csp.html"
     try:
-        shutil.copy(get_pyodide_root() / "src/templates/test_csp.html", target_path)
+        shutil.copy(PYODIDE_ROOT / "src/templates/test_csp.html", target_path)
         selenium.goto(f"{selenium.base_url}/test_csp.html")
         selenium.javascript_setup()
         selenium.load_pyodide()
@@ -1722,7 +1721,7 @@ def test_static_import(selenium_standalone_noload, tmp_path):
     selenium = selenium_standalone_noload
 
     # copy dist to tmp_path to perform file changes safely
-    shutil.copytree(ROOT_PATH / "dist", tmp_path, dirs_exist_ok=True)
+    shutil.copytree(DIST_PATH, tmp_path, dirs_exist_ok=True)
 
     # define the directory to hide the statically imported pyodide.asm.js in
     hiding_dir = "hide_pyodide_asm_for_test"
@@ -1733,7 +1732,9 @@ def test_static_import(selenium_standalone_noload, tmp_path):
     shutil.move(tmp_path / "pyodide.asm.js", tmp_path / hiding_dir / "pyodide.asm.js")
 
     # make sure the test html references the new directory when importing pyodide.asm.js
-    test_html = (ROOT_PATH / "src/templates/module_static_import_test.html").read_text()
+    test_html = (
+        PYODIDE_ROOT / "src/templates/module_static_import_test.html"
+    ).read_text()
     test_html = test_html.replace("./pyodide.asm.js", f"./{hiding_dir}/pyodide.asm.js")
     (tmp_path / "module_static_import_test.html").write_text(test_html)
 
@@ -1770,9 +1771,10 @@ def test_python_version(selenium):
     selenium.run_js(
         """
         sys = pyodide.pyimport("sys");
-        assert(() => sys.version_info.major === pyodide._module._py_version_major());
-        assert(() => sys.version_info.minor === pyodide._module._py_version_minor());
-        assert(() => sys.version_info.micro === pyodide._module._py_version_micro());
+        const [major, minor, micro] = pyodide._api.pyVersionTuple;
+        assert(() => sys.version_info.major === major);
+        assert(() => sys.version_info.minor === minor);
+        assert(() => sys.version_info.micro === micro);
         sys.destroy();
         """
     )
@@ -1782,8 +1784,8 @@ def test_python_version(selenium):
 @pytest.mark.skip_pyproxy_check
 def test_custom_python_stdlib_URL(selenium_standalone_noload, runtime):
     selenium = selenium_standalone_noload
-    stdlib_target_path = ROOT_PATH / "dist/python_stdlib2.zip"
-    shutil.copy(ROOT_PATH / "dist/python_stdlib.zip", stdlib_target_path)
+    stdlib_target_path = DIST_PATH / "python_stdlib2.zip"
+    shutil.copy(DIST_PATH / "python_stdlib.zip", stdlib_target_path)
 
     try:
         selenium.run_js(
@@ -1837,13 +1839,13 @@ def test_runpython_filename(selenium, run_python):
         % run_python
     )
     expected = dedent(
-        """
-        File "a.py", line 8, in <module>
-          f1()
+        """\
         File "a.py", line 3, in f1
           f2()
+
         File "a.py", line 6, in f2
           raise Exception("oops")
+          ^^^^^^^^^^^^^^^
         """
     ).strip()
 
@@ -1862,9 +1864,7 @@ def test_runpython_filename(selenium, run_python):
         }
         """
     )
-    assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
-        expected.splitlines()[2:]
-    )
+    assert dedent("\n".join(msg.splitlines()[1:-1])) == expected
 
 
 @pytest.mark.requires_dynamic_linking
@@ -1956,3 +1956,38 @@ async def test_bug_4861(selenium):
         return eval("x()", ChainMap({}, {"x": x}))
 
     await g(run_js("async () => {}"))
+
+
+@run_in_pyodide
+def test_lockfile_api(selenium):
+    from pyodide_js import lockfile
+
+    lockfile_info = lockfile.info
+    lockfile_packages = lockfile.packages
+
+    assert lockfile_info is not None
+    assert lockfile_info.abi_version is not None
+    assert lockfile_info.version is not None
+    assert lockfile_info.python is not None
+
+    assert lockfile_packages.micropip is not None
+
+
+def test_fs_init(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    res = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            async fsInit(FS, {sitePackages}) {
+                await sleep(20);
+                FS.writeFile(sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
+                FS.mkdir(sitePackages + "/foo");
+                FS.mkdir(sitePackages + "/bar");
+            }
+        });
+        return pyodide.runPython(`import sys; sys.path`).toJs();
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert res[-2].endswith("site-packages/foo")
+    assert res[-1].endswith("site-packages/bar")

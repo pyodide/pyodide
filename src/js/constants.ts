@@ -8,3 +8,8 @@ declare global {
   /** @private */
   export const SOURCEMAP: boolean;
 }
+
+/** @hidden */
+export const unpackArchiveMetadata = new Map([
+  ["INSTALLER", "pyodide.unpackArchive"],
+]);

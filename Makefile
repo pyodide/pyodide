@@ -11,7 +11,6 @@ CXX=em++
 all: \
 	all-but-packages \
 	dist/pyodide-lock.json \
-	dist/console.html \
 	dist/pyodide.d.ts \
 	dist/snapshot.bin \
 
@@ -25,12 +24,14 @@ all-but-packages: \
 	 \
 	dist/package.json \
 	dist/python \
+	dist/python_cli_entry.mjs \
 	dist/python_stdlib.zip \
 	dist/test.html \
+	dist/console.html \
 	dist/module_test.html \
 
 
-src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
+src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js src/core/stack_switching/stack_switching.out.js
 # Our goal here is to inject src/js/generated/_pyodide.out.js into an archive
 # file so that when linked, Emscripten will include it. We use the same pathway
 # that EM_JS uses, but EM_JS is itself unsuitable. Why? Because the C
@@ -41,11 +42,7 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 # of EM_JS.
 #
 # To get around this problem, we use an array initializer instead of a string
-# initializer. We write a string file and then convert it to a .c file with xxd
-# as suggested here:
-# https://unix.stackexchange.com/questions/176111/how-to-dump-a-binary-file-as-a-c-c-string-literal
-# We use `xxd -i -` which converts the input to a comma separated list of
-# hexadecimal pairs which can go into an array initializer.
+# initializer, with #embed.
 #
 # EM_JS works by injecting a string variable into a special section called em_js
 # called __em_js__<function_name>. The contents of this variable are of the form
@@ -57,29 +54,19 @@ src/core/pyodide_pre.o: src/js/generated/_pyodide.out.js src/core/pre.js src/cor
 # extra stuff after the block ends. We make a 0-argument function called
 # pyodide_js_init. Immediately after that we inject pre.js and then a call to
 # the init function.
-	# First the data file
-	rm -f tmp.dat
-	echo '()<::>{' >> tmp.dat                       # zero argument argspec and start body
-	cat src/js/generated/_pyodide.out.js >> tmp.dat # All of _pyodide.out.js is body
-	echo '}' >> tmp.dat                             # Close function body
-	cat src/core/stack_switching/stack_switching.out.js >> tmp.dat
-	cat src/core/pre.js >> tmp.dat                  # Execute pre.js too
-	echo "pyodide_js_init();" >> tmp.dat            # Then execute the function.
+	rm -f $@
+	echo '()<::>{' >> $@                       # zero argument argspec and start body
+	cat src/js/generated/_pyodide.out.js >> $@ # All of _pyodide.out.js is body
+	echo '}' >> $@                             # Close function body
+	cat src/core/stack_switching/stack_switching.out.js >> $@
+	cat src/core/pre.js >> $@                  # Execute pre.js too
+	echo "pyodide_js_init();" >> $@            # Then execute the function.
 
-	# Now generate the C file. Define a string __em_js__pyodide_js_init with
-	# contents from tmp.dat
-	rm -f src/core/pyodide_pre.gen.c
-	echo '__attribute__((used)) __attribute__((section("em_js"), aligned(1)))' >> src/core/pyodide_pre.gen.c
-	echo 'char __em_js__pyodide_js_init[] = {'  >> src/core/pyodide_pre.gen.c
-	cat tmp.dat  | xxd -i - >> src/core/pyodide_pre.gen.c
-	# Add a null byte to terminate the string
-	echo ', 0};' >> src/core/pyodide_pre.gen.c
-	echo "#include <emscripten.h>" >> src/core/pyodide_pre.gen.c
-	echo "void pyodide_js_init(void) EM_IMPORT(pyodide_js_init);" >> src/core/pyodide_pre.gen.c
-	echo "EMSCRIPTEN_KEEPALIVE void pyodide_export(void) { pyodide_js_init(); }" >> src/core/pyodide_pre.gen.c
 
-	rm tmp.dat
-	emcc -c src/core/pyodide_pre.gen.c -o src/core/pyodide_pre.o
+# Don't use ccache here because it does not support #embed properly.
+# https://github.com/ccache/ccache/discussions/1366
+src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
+	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
 src/core/libpyodide.a: \
 	src/core/docstring.o \
@@ -97,7 +84,6 @@ src/core/libpyodide.a: \
 	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
-	src/core/pyversion.o \
 	src/core/stack_switching/pystate.o \
 	src/core/stack_switching/suspenders.o
 	emar rcs src/core/libpyodide.a $(filter %.o,$^)
@@ -138,11 +124,11 @@ dist/pyodide.asm.js: \
    # cat dist/pyodide.asm.js | grep -ohE 'var _{0,5}.' | sort | uniq -c | sort -nr | head -n 20
 	sed -i -E 's/var __Z[^;]*;//g' dist/pyodide.asm.js
 	sed -i '1i "use strict";' dist/pyodide.asm.js
-	# Remove last 4 lines of pyodide.asm.js, see issue #2282
+	# Remove last 7 lines of pyodide.asm.js, see issue #2282
 	# Hopefully we will remove this after emscripten fixes it, upstream issue
 	# emscripten-core/emscripten#16518
 	# Sed nonsense from https://stackoverflow.com/a/13383331
-	sed -i -n -e :a -e '1,4!{P;N;D;};N;ba' dist/pyodide.asm.js
+	sed -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 	@date +"[%F %T] done building pyodide.asm.js."
 
@@ -223,18 +209,16 @@ $(eval $(call preprocess-js,pyproxy.ts))
 $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
-.PHONY: pyodide_build
-pyodide_build:
-	@echo "Ensuring pyodide-build is installed"
+pyodide_build .pyodide_build_installed:
 	pip install -e ./pyodide-build
 	@which pyodide >/dev/null
+	touch .pyodide_build_installed
 
 
 # Recursive wildcard
 rwildcard=$(wildcard $1) $(foreach d,$1,$(call rwildcard,$(addsuffix /$(notdir $d),$(wildcard $(dir $d)*))))
 
-dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB)
-	make pyodide_build
+dist/python_stdlib.zip: $(call rwildcard,src/py/*) $(CPYTHONLIB) .pyodide_build_installed
 	pyodide create-zipfile $(CPYTHONLIB) src/py --exclude "$(PYZIP_EXCLUDE_FILES)" --stub "$(PYZIP_JS_STUBS)" --compression-level "$(PYODIDE_ZIP_COMPRESSION_LEVEL)" --output $@
 
 dist/test.html: src/templates/test.html
@@ -251,6 +235,9 @@ dist/module_test.html: src/templates/module_test.html
 	cp $< $@
 
 dist/python: src/templates/python
+	cp $< $@
+
+dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs
 	cp $< $@
 
 .PHONY: dist/console.html
@@ -313,8 +300,7 @@ $(CPYTHONLIB): emsdk/emsdk/.complete
 	@date +"[%F %T] done building cpython..."
 
 
-dist/pyodide-lock.json: FORCE
-	make pyodide_build
+dist/pyodide-lock.json: .pyodide_build_installed
 	@date +"[%F %T] Building packages..."
 	make -C packages
 	@date +"[%F %T] done building packages..."
@@ -330,8 +316,6 @@ rust:
 	wget -q -O - https://sh.rustup.rs | sh -s -- -y
 	source $(HOME)/.cargo/env && rustup toolchain install $(RUST_TOOLCHAIN) && rustup default $(RUST_TOOLCHAIN)
 	source $(HOME)/.cargo/env && rustup target add wasm32-unknown-emscripten --toolchain $(RUST_TOOLCHAIN)
-
-FORCE:
 
 
 check:

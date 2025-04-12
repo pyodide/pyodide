@@ -3,7 +3,7 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { API, PreRunFunc } from "./types";
+import { API, PreRunFunc, type Module } from "./types";
 
 /**
  * @private
@@ -14,9 +14,10 @@ export interface EmscriptenSettings {
   readonly noAudioDecoding?: boolean;
   readonly noWasmDecoding?: boolean;
   readonly preRun: readonly PreRunFunc[];
-  readonly quit: (status: number, toThrow: Error) => void;
   readonly print?: (a: string) => void;
   readonly printErr?: (a: string) => void;
+  readonly onExit?: (code: number) => void;
+  readonly thisProgram?: string;
   readonly arguments: readonly string[];
   readonly instantiateWasm?: (
     imports: { [key: string]: any },
@@ -28,9 +29,9 @@ export interface EmscriptenSettings {
   readonly API: API;
   readonly locateFile: (file: string) => string;
 
-  exited?: { readonly status: number; readonly toThrow: Error };
   noInitialRun?: boolean;
   INITIAL_MEMORY?: number;
+  exitCode?: number;
 }
 
 /**
@@ -44,14 +45,12 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     noAudioDecoding: true,
     noWasmDecoding: false,
     preRun: getFileSystemInitializationFuncs(config),
-    quit(status: number, toThrow: Error) {
-      // It's a little bit hacky that we set this on the settings object but
-      // it's not that easy to get access to the Module object from here.
-      settings.exited = { status, toThrow };
-      throw toThrow;
-    },
     print: config.stdout,
     printErr: config.stderr,
+    onExit(code) {
+      settings.exitCode = code;
+    },
+    thisProgram: config._sysExecutable,
     arguments: config.args,
     API: { config } as API,
     // Emscripten calls locateFile exactly one time with argument
@@ -104,15 +103,31 @@ function setEnvironment(env: { [key: string]: string }): PreRunFunc {
  * Mount local directories to the virtual file system. Only for Node.js.
  * @param mounts The list of paths to mount.
  */
-function mountLocalDirectories(mounts: string[]): PreRunFunc {
-  return (Module) => {
-    for (const mount of mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
-    }
-  };
+function callFsInitHook(
+  fsInit: undefined | ((fs: typeof FS, info: { sitePackages: string }) => void),
+): PreRunFunc[] {
+  if (!fsInit) {
+    return [];
+  }
+  return [
+    async (Module) => {
+      Module.addRunDependency("fsInitHook");
+      try {
+        await fsInit(Module.FS, { sitePackages: Module.API.sitePackages });
+      } finally {
+        Module.removeRunDependency("fsInitHook");
+      }
+    },
+  ];
 }
 
+function computeVersionTuple(Module: Module): [number, number, number] {
+  const versionInt = Module.HEAPU32[Module._Py_Version >>> 2];
+  const major = (versionInt >>> 24) & 0xff;
+  const minor = (versionInt >>> 16) & 0xff;
+  const micro = (versionInt >>> 8) & 0xff;
+  return [major, minor, micro];
+}
 /**
  * Install the Python standard library to the virtual file system.
  *
@@ -128,28 +143,23 @@ function mountLocalDirectories(mounts: string[]): PreRunFunc {
  */
 function installStdlib(stdlibURL: string): PreRunFunc {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
-  return (Module) => {
-    /* @ts-ignore */
-    const pymajor = Module._py_version_major();
-    /* @ts-ignore */
-    const pyminor = Module._py_version_minor();
-
+  return async (Module: Module) => {
+    Module.API.pyVersionTuple = computeVersionTuple(Module);
+    const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
-
+    Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
+    Module.FS.mkdirTree(Module.API.sitePackages);
     Module.addRunDependency("install-stdlib");
 
-    stdlibPromise
-      .then((stdlib: Uint8Array) => {
-        Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
-      })
-      .catch((e) => {
-        console.error("Error occurred while installing the standard library:");
-        console.error(e);
-      })
-      .finally(() => {
-        Module.removeRunDependency("install-stdlib");
-      });
+    try {
+      const stdlib = await stdlibPromise;
+      Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
+    } catch (e) {
+      console.error("Error occurred while installing the standard library:");
+      console.error(e);
+    } finally {
+      Module.removeRunDependency("install-stdlib");
+    }
   };
 }
 
@@ -165,11 +175,12 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
 
+  // Note: Hooks are called in **reverse** order of appearance.
   return [
+    ...callFsInitHook(config.fsInit),
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
-    mountLocalDirectories(config._node_mounts),
     initializeNativeFS,
   ];
 }

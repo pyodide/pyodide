@@ -18,7 +18,7 @@ and third-party applications that use Pyodide.
 > See: [pytest-pyodide](https://github.com/pyodide/pytest-pyodide) for more information.
 
 2. Install [geckodriver](https://github.com/mozilla/geckodriver/releases) or
-   [chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads)
+   [chromedriver](https://developer.chrome.com/docs/chromedriver/downloads)
    and check that they are in your `PATH`.
 
 3. To run the test suite, run `pytest` from the root directory of Pyodide:

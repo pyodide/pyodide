@@ -3,6 +3,35 @@ import { Module } from "./types";
 /**
  * @private
  */
+async function syncfs(m: Module, direction: boolean): Promise<void> {
+  return new Promise((resolve, reject) => {
+    m.FS.syncfs(direction, (err: any) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+}
+
+/**
+ * @private
+ */
+export async function syncLocalToRemote(m: Module): Promise<void> {
+  return await syncfs(m, false);
+}
+
+/**
+ * @private
+ */
+export async function syncRemoteToLocal(m: Module): Promise<void> {
+  return await syncfs(m, true);
+}
+
+/**
+ * @private
+ */
 export function initializeNativeFS(module: Module) {
   const FS = module.FS;
   const MEMFS = module.FS.filesystems.MEMFS;
@@ -79,7 +108,7 @@ export function initializeNativeFS(module: Module) {
         entries[PATH.join2(mount.mountpoint, path)] = {
           timestamp:
             handle.kind === "file"
-              ? (await handle.getFile()).lastModifiedDate
+              ? new Date((await handle.getFile()).lastModified)
               : new Date(),
           mode:
             handle.kind === "file"
@@ -135,7 +164,7 @@ export function initializeNativeFS(module: Module) {
         return {
           contents: new Uint8Array(await file.arrayBuffer()),
           mode: nativeFSAsync.FILE_MODE,
-          timestamp: file.lastModifiedDate,
+          timestamp: new Date(file.lastModified),
         };
       } else if (handle.kind === "directory") {
         return {
