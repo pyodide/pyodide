@@ -1,0 +1,25 @@
+package:
+  name: tiktoken
+  version: 0.9.0
+  tag:
+    - rust
+  top-level:
+    - tiktoken
+    - tiktoken_ext
+source:
+  url: https://files.pythonhosted.org/packages/ea/cf/756fedf6981e82897f2d570dd25fa597eb3f4459068ae0572d7e888cfd6f/tiktoken-0.9.0.tar.gz
+  sha256: d02a5ca6a938e0490e1ff957bc48c8b078c88cb83977be1625b1fd8aac792c5d
+requirements:
+  executable:
+    - rustup
+  run:
+    - regex
+    - requests
+about:
+  home: https://pypi.org/project/tiktoken
+  PyPI: https://pypi.org/project/tiktoken
+  summary: tiktoken is a fast BPE tokeniser for use with OpenAI's models
+  license: MIT
+extra:
+  recipe-maintainers:
+    - riyavsinha

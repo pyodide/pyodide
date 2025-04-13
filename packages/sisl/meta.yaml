@@ -1,0 +1,32 @@
+package:
+  name: sisl
+  version: 0.15.2
+  top-level:
+    - sisl_toolbox
+    - sisl
+source:
+  url: https://files.pythonhosted.org/packages/e2/4f/6548cba27a74db1986cb74a02dca69191d47dcddcf2bfda6eeb91fed3a7a/sisl-0.15.2.tar.gz
+  sha256: 3fa96caab2bffe5144b2dd8713094295b1db7de3272257fea39acebda04326e0
+
+about:
+  home: ""
+  PyPI: https://pypi.org/project/sisl
+  summary: ""
+  license: MPL-2.0
+
+requirements:
+  host:
+    - numpy
+    - pyparsing
+  run:
+    - pyparsing
+    - numpy
+    - scipy
+    - tqdm
+    - xarray
+    - pandas
+    - matplotlib
+
+build:
+  script: |
+    export CMAKE_ARGS="-DWITH_FORTRAN=OFF"

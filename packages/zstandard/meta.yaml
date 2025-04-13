@@ -1,0 +1,22 @@
+package:
+  name: zstandard
+  version: 0.23.0
+  top-level:
+    - zstandard
+source:
+  url: https://files.pythonhosted.org/packages/ed/f6/2ac0287b442160a89d726b17a9184a4c615bb5237db763791a7fd16d9df1/zstandard-0.23.0.tar.gz
+  sha256: b2d8c62d08e7255f68f7a740bae85b3c9b8e5466baa9cbf7f57f1cde0ac6bc09
+requirements:
+  host:
+    - cffi
+    - setuptools
+  run:
+    - cffi
+about:
+  home: https://github.com/indygreg/python-zstandard
+  PyPI: https://pypi.org/project/zstandard
+  summary: Zstandard bindings for Python
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal

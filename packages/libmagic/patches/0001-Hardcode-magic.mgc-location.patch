@@ -1,0 +1,24 @@
+From fa75e976ebae6fe637dbeb8294e8380aeb0ed02a Mon Sep 17 00:00:00 2001
+From: Qijia Liu <liumeo@pku.edu.cn>
+Date: Thu, 4 Aug 2022 20:13:04 -0400
+Subject: [PATCH] Hardcode magic.mgc location
+
+---
+ src/magic.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/src/magic.c b/src/magic.c
+index 7768497a..3a004fd4 100644
+--- a/src/magic.c
++++ b/src/magic.c
+@@ -174,6 +174,7 @@ DllMain(HINSTANCE hinstDLL, DWORD fdwReason,
+ private const char *
+ get_default_magic(void)
+ {
++	return "/usr/lib/magic.mgc";
+ 	static const char hmagic[] = "/.magic/magic.mgc";
+ 	static char *default_magic;
+ 	char *home, *hmagicpath;
+-- 
+2.34.1
+

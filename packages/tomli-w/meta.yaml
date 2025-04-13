@@ -1,0 +1,13 @@
+package:
+  name: tomli-w
+  version: 1.2.0
+  top-level:
+    - tomli_w
+source:
+  url: https://files.pythonhosted.org/packages/c7/18/c86eb8e0202e32dd3df50d43d7ff9854f8e0603945ff398974c1d91ac1ef/tomli_w-1.2.0-py3-none-any.whl
+  sha256: 188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90
+about:
+  home: https://github.com/hukkin/tomli-w
+  PyPI: https://pypi.org/project/tomli-w
+  summary: A lil' TOML writer
+  license: MIT

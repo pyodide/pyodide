@@ -1,0 +1,16 @@
+package:
+  name: xxhash
+  version: 3.5.0
+  top-level:
+    - xxhash
+source:
+  url: https://files.pythonhosted.org/packages/00/5e/d6e5258d69df8b4ed8c83b6664f2b47d30d2dec551a29ad72a6c69eafd31/xxhash-3.5.0.tar.gz
+  sha256: 84f2caddf951c9cbf8dc2e22a89d4ccf5d86391ac6418fe81e3c67d0cf60b45f
+about:
+  home: https://github.com/ifduyue/python-xxhash
+  PyPI: https://pypi.org/project/xxhash
+  summary: Python binding for xxHash
+  license: BSD-2-Clause
+extra:
+  recipe-maintainers:
+    - ifduyue

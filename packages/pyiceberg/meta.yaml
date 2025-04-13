@@ -1,0 +1,32 @@
+package:
+  name: pyiceberg
+  version: 0.9.0
+  top-level:
+    - pyiceberg
+#build:
+#script: python -m pip install . -vv --no-deps --no-build-isolation
+source:
+  url: https://files.pythonhosted.org/packages/55/35/1c67977f26eea825104d18fc3f0e01b14e15de41fe9c0d06e5bb501c4be8/pyiceberg-0.9.0.tar.gz
+  sha256: 70d255903dda31ed1f7753d41fec0c031aae36ef95e8a824cdae7df593439d8b
+about:
+  home: https://py.iceberg.apache.org/
+  PyPI: https://pypi.org/project/pyiceberg
+  summary: Apache Iceberg is an open table format for huge analytic datasets
+  license: Apache-2.0
+requirements:
+  run:
+    # Dependencies that are needed to run the package
+    - click
+    - cachetools
+    - fsspec
+    - mmh3
+    - pydantic
+    - pyparsing
+    - requests
+    - rich
+    - sortedcontainers
+    - sqlalchemy
+    - strictyaml
+extra:
+  recipe-maintainers:
+    - bitsondatadev

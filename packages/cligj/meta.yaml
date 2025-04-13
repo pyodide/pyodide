@@ -1,0 +1,17 @@
+package:
+  name: cligj
+  version: 0.7.2
+source:
+  url: https://files.pythonhosted.org/packages/73/86/43fa9f15c5b9fb6e82620428827cd3c284aa933431405d1bcf5231ae3d3e/cligj-0.7.2-py3-none-any.whl
+  sha256: c1ca117dbce1fe20a5809dc96f01e1c2840f6dcc939b3ddbb1111bf330ba82df
+test:
+  imports:
+    - cligj
+requirements:
+  run:
+    - click
+about:
+  home: https://github.com/mapbox/cligj
+  PyPI: https://pypi.org/project/cligj
+  summary: Click params for command line interfaces to GeoJSON
+  license: BSD-3-Clause

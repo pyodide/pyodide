@@ -1,0 +1,16 @@
+package:
+  name: distlib
+  version: 0.3.9
+  top-level:
+    - distlib
+source:
+  sha256: 47f8c22fd27c27e25a65601af709b38e4f0a45ea4fc2e710f65755fa8caaaf87
+  url: https://files.pythonhosted.org/packages/91/a1/cf2472db20f7ce4a6be1253a81cfdf85ad9c7885ffbed7047fb72c24cf87/distlib-0.3.9-py2.py3-none-any.whl
+build:
+  post: |
+    find $WHEELDIR -name '*.exe' -delete
+about:
+  home: https://github.com/pypa/distlib
+  PyPI: https://pypi.org/project/distlib
+  summary: Distribution utilities
+  license: Python license

@@ -1,0 +1,37 @@
+package:
+  name: Cartopy
+  version: 0.24.1
+  top-level:
+    - cartopy
+source:
+  url: https://files.pythonhosted.org/packages/e0/75/94aff4fef338887641aa780d13795609861e6e9f9593bd66d4917ab7954b/cartopy-0.24.1.tar.gz
+  sha256: 01c910d5634c69a7efdec46e0a17d473d2328767f001d4dc0b5c4b48e585c8bd
+test:
+  imports:
+    - cartopy
+    - cartopy.trace
+    - cartopy.mpl.geoaxes
+    - cartopy.crs
+requirements:
+  host:
+    - geos
+    - numpy
+  run:
+    - shapely
+    - pyshp
+    - pyproj
+    - geos
+    - matplotlib
+    - scipy
+
+build:
+  vendor-sharedlib: true
+  script: |
+    # Put geos-config on the path
+    export PATH=$PATH:${WASM_LIBRARY_DIR}/bin/
+
+about:
+  home: http://scitools.org.uk/cartopy
+  PyPI: https://pypi.org/project/Cartopy/
+  summary: A library providing cartographic tools for python
+  license: LGPL-3.0+

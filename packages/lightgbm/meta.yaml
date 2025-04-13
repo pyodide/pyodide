@@ -1,0 +1,30 @@
+package:
+  name: lightgbm
+  version: 4.6.0
+source:
+  url: https://files.pythonhosted.org/packages/source/l/lightgbm/lightgbm-4.6.0.tar.gz
+  sha256: cb1c59720eb569389c0ba74d14f52351b573af489f230032a1c9f314f8bab7fe
+build:
+  backend-flags: |
+    skbuild.cmake.define.USE_OPENMP=OFF
+    # for debugging
+    # skbuild.build.verbose=true
+  exports: requested
+  script: |
+    export CMAKE_GENERATOR="Unix Makefiles"
+requirements:
+  run:
+    - numpy
+    - scipy
+    - scikit-learn
+test:
+  imports:
+    - lightgbm
+about:
+  home: https://github.com/microsoft/LightGBM
+  PyPI: https://pypi.org/project/lightgbm
+  summary: LightGBM Python Package
+  license: MIT
+extra:
+  recipe-maintainers:
+    - jameslamb

@@ -1,0 +1,30 @@
+package:
+  name: clarabel
+  version: 0.10.0
+  tag:
+    - rust
+  # Clarabel is broken against the rust main branch since 2024-12-15. Re-enable
+  # when they fix it. See oxfordcontrol/Clarabel.rs#154
+  _disabled: true
+  top-level:
+    - clarabel
+source:
+  url: https://files.pythonhosted.org/packages/7e/83/f3e550b56188b9aa363351e87f6608c67cc2c7551feece1006d5ff9eb0c3/clarabel-0.10.0.tar.gz
+  sha256: a8a2105058fd7db54718be53c48715a50910500b10ff0b8f5380434e69c10a10
+about:
+  home: https://github.com/oxfordcontrol/Clarabel.rs
+  PyPI: https://pypi.org/project/clarabel
+  summary: Clarabel Conic Interior Point Solver for Rust / Python
+  license: Apache-2.0
+requirements:
+  run:
+    # Dependencies that are needed to run the package
+    - numpy
+    - scipy
+  executable:
+    - rustup
+  constraint:
+    - maturin < 1.8
+extra:
+  recipe-maintainers:
+    - phschiele

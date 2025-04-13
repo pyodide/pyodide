@@ -1,0 +1,38 @@
+package:
+  name: netcdf4
+  version: 1.7.2
+  # symbol type mismatch
+  _disabled: true
+  top-level:
+    - netCDF4
+source:
+  url: https://files.pythonhosted.org/packages/71/ed/4d27fcfa40ebfdad3d2088a3de7ee48dbff7f35163e815ec1870d2a7398c/netcdf4-1.7.2.tar.gz
+  sha256: a4c6375540b19989896136943abb6d44850ff6f1fa7d3f063253b1ad3f8b7fce
+requirements:
+  host:
+    - libhdf5
+    - libnetcdf
+  run:
+    - numpy
+    - packaging
+    - h5py
+    - cftime
+    - certifi
+test:
+  imports:
+    - netCDF4
+build:
+  vendor-sharedlib: true
+  script: |
+    export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
+    export HDF5_DIR=${WASM_LIBRARY_DIR}
+    echo ${HDF5_DIR}
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+    -lhdf5
+    -lhdf5_hl
+about:
+  home: https://github.com/Unidata/netcdf4-python
+  PyPI: https://pypi.org/project/netcdf4
+  summary: Provides an object-oriented python interface to the netCDF version 4 library
+  license: MIT

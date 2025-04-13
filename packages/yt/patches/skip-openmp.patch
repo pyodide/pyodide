@@ -1,0 +1,13 @@
+diff --git a/setupext.py b/setupext.py
+index 985d699fc..0b40c81be 100644
+--- a/setupext.py
++++ b/setupext.py
+@@ -55,6 +55,8 @@ def check_for_openmp():
+     Robitaille and Curtis McCully.
+     """
+
++    return [], []
++
+     # Create a temporary directory
+     ccompiler = new_compiler()
+     customize_compiler(ccompiler)

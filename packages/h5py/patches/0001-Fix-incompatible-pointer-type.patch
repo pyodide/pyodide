@@ -1,0 +1,38 @@
+From 30ba08deaa551b0920530f6b2edac59f2dd9e28e Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Fri, 2 Sep 2022 07:54:44 +0000
+Subject: [PATCH] Fix incompatible pointer type
+
+
+Removed hunks upstreamed in 3.10.0
+
+---
+ h5py/_errors.pxd | 2 +-
+ h5py/_errors.pyx | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/h5py/_errors.pyx b/h5py/_errors.pyx
+index 612052fb..dabbc632 100644
+--- a/h5py/_errors.pyx
++++ b/h5py/_errors.pyx
+@@ -120,7 +120,7 @@ cdef int set_exception() except -1:
+ 
+     err.n = -1
+ 
+-    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_UPWARD, walk_cb, &err) < 0:
++    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_UPWARD, &walk_cb, &err) < 0:
+         raise RuntimeError("Failed to walk error stack")
+ 
+     if err.n < 0:   # No HDF5 exception information found
+@@ -137,7 +137,7 @@ cdef int set_exception() except -1:
+ 
+     err.n = -1
+ 
+-    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_DOWNWARD, walk_cb, &err) < 0:
++    if H5Ewalk(<hid_t>H5E_DEFAULT, H5E_WALK_DOWNWARD, &walk_cb, &err) < 0:
+         raise RuntimeError("Failed to walk error stack")
+ 
+     desc_bottom = err.err.desc
+-- 
+2.37.2
+

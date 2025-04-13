@@ -1,0 +1,29 @@
+package:
+  name: libde265
+  version: 1.0.8
+  tag:
+    - library
+    - static_library
+source:
+  url: https://github.com/strukturag/libde265/releases/download/v1.0.8/libde265-1.0.8.tar.gz
+  sha256: 24c791dd334fa521762320ff54f0febfd3c09fc978880a8c5fbc40a88f21d905
+
+build:
+  type: static_library
+  script: |
+    # Build options are adapted from https://github.com/strukturag/libheif/blob/v1.12.0/build-emscripten.sh
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        CXXFLAGS="-fPIC" \
+        --prefix=${WASM_LIBRARY_DIR} \
+        --disable-sse \
+        --disable-dec265 \
+        --disable-sherlock265 \
+        --disable-shared \
+        --bindir=$(pwd)/bin  # we don't want binaries so let's hide them installing locally
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://github.com/strukturag/libde265
+  license: LGPL-3.0

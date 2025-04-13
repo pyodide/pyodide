@@ -1,0 +1,20 @@
+package:
+  name: pynacl
+  version: 1.5.0
+  top-level:
+    - nacl
+source:
+  url: https://files.pythonhosted.org/packages/a7/22/27582568be639dfe22ddb3902225f91f2f17ceff88ce80e4db396c8986da/PyNaCl-1.5.0.tar.gz
+  sha256: 8ac7448f09ab85811607bdd21ec2464495ac8b7c66d146bf545b0f08fb9220ba
+  patches:
+    - patches/0001-Don-t-check-libsodium.patch
+requirements:
+  run:
+    - cffi
+  host:
+    - cffi
+about:
+  home: https://github.com/pyca/pynacl/
+  PyPI: https://pypi.org/project/pynacl
+  summary: Python binding to the Networking and Cryptography (NaCl) library
+  license: Apache-2.0

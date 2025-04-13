@@ -1,0 +1,14 @@
+package:
+  name: pyrsistent
+  version: 0.20.0
+  top-level:
+    - _pyrsistent_version
+    - pyrsistent
+source:
+  url: https://files.pythonhosted.org/packages/ce/3a/5031723c09068e9c8c2f0bc25c3a9245f2b1d1aea8396c787a408f2b95ca/pyrsistent-0.20.0.tar.gz
+  sha256: 4c48f78f62ab596c679086084d0dd13254ae4f3d6c72a83ffdf5ebdef8f265a4
+about:
+  home: http://github.com/tobgu/pyrsistent/
+  PyPI: https://pypi.org/project/pyrsistent
+  summary: Persistent/Functional/Immutable data structures
+  license: MIT

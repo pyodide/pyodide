@@ -1,0 +1,46 @@
+package:
+  name: pyproj
+  version: 3.6.1
+  # 3.7 has function signature mismatch
+  _disabled: true
+  pinned: true
+  top-level:
+    - pyproj
+source:
+  url: https://files.pythonhosted.org/packages/7d/84/2b39bbf888c753ea48b40d47511548c77aa03445465c35cc4c4e9649b643/pyproj-3.6.1.tar.gz
+  sha256: 44aa7c704c2b7d8fb3d483bbf75af6cb2350d30a63b144279a09b75fead501bf
+
+requirements:
+  host:
+    - libproj
+  run:
+    - certifi
+    - sqlite3
+
+build:
+  script: |
+    embuilder build sqlite3 --pic
+
+    export PROJ_VERSION=9.3.1
+    export PROJ_DIR=${WASM_LIBRARY_DIR}
+    export PROJ_INCDIR=${WASM_LIBRARY_DIR}/include
+    export PROJ_LIBDIR=${WASM_LIBRARY_DIR}/lib
+    export PROJ_WHEEL=1
+    mkdir -p pyproj/proj_dir/share
+    cp -r ${WASM_LIBRARY_DIR}/share/proj pyproj/proj_dir/share
+  cflags: |
+    -sUSE_SQLITE3
+  ldflags: |
+    -sUSE_SQLITE3
+    -lsqlite3
+test:
+  imports:
+    - pyproj
+
+about:
+  home: https://github.com/pyproj4/pyproj
+  PyPI: https://pypi.org/project/pyproj/
+  summary:
+    Python interface to PROJ (cartographic projections and coordinate transformations
+    library)
+  license: MIT

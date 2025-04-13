@@ -1,0 +1,28 @@
+package:
+  name: primecountpy
+  version: 0.1.0
+  top-level:
+    - primecountpy
+source:
+  url: https://files.pythonhosted.org/packages/56/94/d5d3440bb212c05ebb7aa68337a28a3a101b7c0c3458e1f6ca6ee7d62589/primecountpy-0.1.0.tar.gz
+  sha256: 78fe7cc32115f0669a45d7c90faaf39f7ce3939e39e2e7e5f14c17fe4bff0676
+about:
+  home: https://github.com/dimpase/primecountpy
+  PyPI: https://pypi.org/project/primecountpy
+  summary: Cython interface for C++ primecount library
+  license: GPL-3.0
+requirements:
+  host:
+    - primecount
+    - primesieve
+  run:
+    - cysignals
+build:
+  cxxflags: |
+    -std=c++17
+    -I$(WASM_LIBRARY_DIR)/include
+  ldflags: |
+    -L$(WASM_LIBRARY_DIR)/lib
+extra:
+  recipe-maintainers:
+    - mkoeppe

@@ -1,0 +1,58 @@
+package:
+  name: libhdf5
+  version: 1.12.1
+  tag:
+    - library
+    - shared_library
+    - cmake
+source:
+  sha256: e6dde173c2d243551922d23a0387a79961205b018502e6a742acb30b61bc2d5f
+  url: https://github.com/HDFGroup/hdf5/archive/refs/tags/hdf5-1_12_1.tar.gz
+  patches:
+    - patches/0001-Hardcode-float-precision.patch
+
+requirements:
+  host:
+    - zlib
+
+build:
+  type: shared_library
+  script: |
+    mkdir -p build;
+
+    cd build \
+        && emcmake cmake \
+        -DCMAKE_INSTALL_PREFIX=${WASM_LIBRARY_DIR} \
+        -DH5_HAVE_GETPWUID=0 \
+        -DH5_HAVE_SIGNAL=0 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=1 \
+        -DBUILD_STATIC_LIBS=0 \
+        -DONLY_SHARED_LIBS=1 \
+        -DBUILD_TESTING=0 \
+        -DCMAKE_C_FLAGS="-fPIC -Wno-incompatible-pointer-types-discards-qualifiers" \
+        -DCMAKE_CXX_FLAGS="-fPIC -Wno-incompatible-pointer-types-discards-qualifiers" \
+        -DCMAKE_SHARED_LINKER_FLAGS="${SIDE_MODULE_LDFLAGS} -s NODERAWFS=1 -sFORCE_FILESYSTEM=1" \
+        -DHDF5_BUILD_EXAMPLES=0 \
+        -DHDF5_BUILD_TOOLS=0 \
+        -DHDF5_BUILD_UTILS=0 \
+        -DHDF5_ENABLE_Z_LIB_SUPPORT=1 \
+        -DHDF5_ENABLE_ROS3_VFD=0 \
+        -DZLIB_INCLUDE_DIR=${WASM_LIBRARY_DIR}/include \
+        -DZLIB_LIBRARY=${WASM_LIBRARY_DIR}/lib/libz.a \
+        ../
+
+    # TODO(ryanking13): These files need to be generated dynamically during the build process
+    # by running a executable.
+    # However, since we build a side module, the emitted executable is a wasm object
+    # so it is not runnable even with the emulator (node).
+    # I think there should be a proper way to emit a js file which is runnable with node,
+    # But I was to exhausted to find it. So I created these files locally.
+    cp ${PKGDIR}/settings/* src/
+
+    emmake make -j ${PYODIDE_JOBS:-3} install
+
+    cp -P ${WASM_LIBRARY_DIR}/lib/libhdf* ${DISTDIR}
+about:
+  home: https://github.com/HDFGroup/hdf5
+  license: BSD-3-Clause

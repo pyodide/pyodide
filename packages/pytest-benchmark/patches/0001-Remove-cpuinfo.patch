@@ -1,0 +1,39 @@
+From 6229df95271adc4c60c479d744263a204f7875b2 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 27 Jun 2022 18:54:02 -0700
+Subject: [PATCH] Remove cpuinfo
+
+---
+ setup.py                       | 1 -
+ src/pytest_benchmark/plugin.py | 3 +--
+ 2 files changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index b6e16ed..9cf8444 100755
+--- a/setup.py
++++ b/setup.py
+@@ -73,7 +73,6 @@ setup(
+     python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*',
+     install_requires=[
+         'pytest>=3.8',
+-        'py-cpuinfo',
+     ],
+     extras_require={
+         'aspect': ['aspectlib'],
+diff --git a/src/pytest_benchmark/plugin.py b/src/pytest_benchmark/plugin.py
+index f485835..61cfaca 100644
+--- a/src/pytest_benchmark/plugin.py
++++ b/src/pytest_benchmark/plugin.py
+@@ -328,8 +328,7 @@ def pytest_terminal_summary(terminalreporter):
+ 
+ 
+ def get_cpu_info():
+-    import cpuinfo
+-    return cpuinfo.get_cpu_info() or {}
++    return {}
+ 
+ 
+ def pytest_benchmark_scale_unit(config, unit, benchmarks, best, worst, sort):
+-- 
+2.25.1
+

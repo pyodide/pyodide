@@ -1,0 +1,19 @@
+package:
+  name: cmyt
+  version: 2.0.2
+  top-level:
+    - cmyt
+source:
+  url: https://files.pythonhosted.org/packages/d6/13/7f45b93baa90aa1fc447103255164b2c369ea1a56caa617821f110101f35/cmyt-2.0.2-py3-none-any.whl
+  sha256: c814a9d0d6d71b5354a0e0fcff1d8d08f9cefd3985c767f9ea06ff4d28cb4c40
+requirements:
+  run:
+    - colorspacious
+    - matplotlib
+    - more-itertools
+    - numpy
+about:
+  home: https://github.com/yt-project/yt
+  PyPI: https://pypi.org/project/cmyt
+  summary: A collection of Matplotlib colormaps from the yt project
+  license: BSD-3-Clause

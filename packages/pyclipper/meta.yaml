@@ -1,0 +1,15 @@
+package:
+  name: pyclipper
+  version: 1.3.0.post6
+  top-level:
+    - pyclipper
+source:
+  url: https://files.pythonhosted.org/packages/4a/b2/550fe500e49c464d73fabcb8cb04d47e4885d6ca4cfc1f5b0a125a95b19a/pyclipper-1.3.0.post6.tar.gz
+  sha256: 42bff0102fa7a7f2abdd795a2594654d62b786d0c6cd67b72d469114fdeb608c
+about:
+  home: https://github.com/greginvm/pyclipper
+  PyPI: https://pypi.org/project/pyclipper
+  summary:
+    Cython wrapper for the C++ translation of the Angus Johnson's Clipper library
+    (ver. 6.4.2)
+  license: MIT

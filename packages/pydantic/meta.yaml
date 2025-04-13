@@ -1,0 +1,65 @@
+package:
+  name: pydantic
+  version: 2.10.6
+  tag:
+    - rust
+  # Warning: pydantic has a pin on pydantic_core, they need to be updated
+  # together
+  top-level:
+    - pydantic
+source:
+  url: https://files.pythonhosted.org/packages/b7/ae/d5220c5c52b158b1de7ca89fc5edb72f304a70a4c540c84c8844bf4008de/pydantic-2.10.6.tar.gz
+  sha256: ca5daa827cce33de7a42be142548b0096bf05a7e7b365aebfa5f8eeec7128236
+requirements:
+  run:
+    - typing-extensions
+    - pydantic_core
+    - annotated-types
+test:
+  imports:
+    - pydantic
+    - pydantic.aliases
+    - pydantic.alias_generators
+    - pydantic.annotated_handlers
+    - pydantic.class_validators
+    - pydantic.color
+    - pydantic.config
+    - pydantic.dataclasses
+    - pydantic.datetime_parse
+    - pydantic.decorator
+    - pydantic.deprecated
+    - pydantic.env_settings
+    - pydantic.errors
+    - pydantic.error_wrappers
+    - pydantic.experimental
+    - pydantic.fields
+    - pydantic.functional_serializers
+    - pydantic.functional_validators
+    - pydantic.generics
+    - pydantic.json
+    - pydantic.json_schema
+    - pydantic.main
+      # - pydantic.mypy # Requires extra mypy dependency
+    - pydantic.networks
+    - pydantic.parse
+    - pydantic.plugin
+    - pydantic.root_model
+    - pydantic.schema
+    - pydantic.tools
+    - pydantic.type_adapter
+    - pydantic.types
+    - pydantic.typing
+    - pydantic.utils
+    - pydantic.v1
+    - pydantic.validate_call_decorator
+    - pydantic.validators
+    - pydantic.version
+    - pydantic.warnings
+about:
+  home: https://github.com/samuelcolvin/pydantic
+  PyPI: https://pypi.org/project/pydantic
+  summary: Data validation and settings management using python type hints
+  license: MIT
+extra:
+  recipe-maintainers:
+    - samuelcolvin

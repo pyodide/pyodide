@@ -1,0 +1,25 @@
+package:
+  name: fastparquet
+  version: 2024.11.0
+  top-level:
+    - fastparquet
+requirements:
+  host:
+    - numpy
+  run:
+    - numpy
+    - cramjam
+    - pandas
+    - fsspec
+    - packaging
+source:
+  url: https://files.pythonhosted.org/packages/b4/66/862da14f5fde4eff2cedc0f51a8dc34ba145088e5041b45b2d57ac54f922/fastparquet-2024.11.0.tar.gz
+  sha256: e3b1fc73fd3e1b70b0de254bae7feb890436cb67e99458b88cb9bd3cc44db419
+about:
+  home: https://github.com/dask/fastparquet/
+  PyPI: https://pypi.org/project/fastparquet
+  summary: Python support for Parquet file format
+  license: Apache-2.0
+extra:
+  recipe-maintainers:
+    - joemarshall

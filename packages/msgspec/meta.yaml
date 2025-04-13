@@ -1,0 +1,18 @@
+package:
+  name: msgspec
+  version: 0.19.0
+  top-level:
+    - msgspec
+source:
+  sha256: 604037e7cd475345848116e89c553aa9a233259733ab51986ac924ab1b976f8e
+  url: https://files.pythonhosted.org/packages/cf/9b/95d8ce458462b8b71b8a70fa94563b2498b89933689f3a7b8911edfae3d7/msgspec-0.19.0.tar.gz
+about:
+  home: https://jcristharif.com/msgspec
+  PyPI: https://pypi.org/project/msgspec
+  summary:
+    A fast serialization and validation library, with builtin support for JSON,
+    MessagePack, YAML, and TOML.
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - bollwyvl

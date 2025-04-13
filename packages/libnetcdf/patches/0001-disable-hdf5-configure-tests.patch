@@ -1,0 +1,186 @@
+diff --git a/configure b/configure
+index d44122aa..130e5cb3 100755
+--- a/configure
++++ b/configure
+@@ -25216,25 +25216,26 @@ return H5Fflush ();
+   return 0;
+ }
+ _ACEOF
+-for ac_lib in '' hdf5 hdf5.dll
+-do
+-  if test -z "$ac_lib"; then
+-    ac_res="none required"
+-  else
+-    ac_res=-l$ac_lib
+-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+-  fi
+-  if ac_fn_c_try_link "$LINENO"
+-then :
+-  ac_cv_search_H5Fflush=$ac_res
+-fi
+-rm -f core conftest.err conftest.$ac_objext conftest.beam \
+-    conftest$ac_exeext
+-  if test ${ac_cv_search_H5Fflush+y}
+-then :
+-  break
+-fi
+-done
++# for ac_lib in '' hdf5 hdf5.dll
++# do
++#   if test -z "$ac_lib"; then
++#     ac_res="none required"
++#   else
++#     ac_res=-l$ac_lib
++#     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
++#   fi
++#   if ac_fn_c_try_link "$LINENO"
++# then :
++#   ac_cv_search_H5Fflush=$ac_res
++# fi
++# rm -f core conftest.err conftest.$ac_objext conftest.beam \
++#     conftest$ac_exeext
++#   if test ${ac_cv_search_H5Fflush+y}
++# then :
++#   break
++# fi
++# done
++ac_cv_search_H5Fflush=hdf5
+ if test ${ac_cv_search_H5Fflush+y}
+ then :
+ 
+@@ -25277,25 +25278,26 @@ return H5DSis_scale ();
+   return 0;
+ }
+ _ACEOF
+-for ac_lib in '' hdf5_hl hdf5_hl.dll
+-do
+-  if test -z "$ac_lib"; then
+-    ac_res="none required"
+-  else
+-    ac_res=-l$ac_lib
+-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+-  fi
+-  if ac_fn_c_try_link "$LINENO"
+-then :
+-  ac_cv_search_H5DSis_scale=$ac_res
+-fi
+-rm -f core conftest.err conftest.$ac_objext conftest.beam \
+-    conftest$ac_exeext
+-  if test ${ac_cv_search_H5DSis_scale+y}
+-then :
+-  break
+-fi
+-done
++# for ac_lib in '' hdf5_hl hdf5_hl.dll
++# do
++#   if test -z "$ac_lib"; then
++#     ac_res="none required"
++#   else
++#     ac_res=-l$ac_lib
++#     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
++#   fi
++#   if ac_fn_c_try_link "$LINENO"
++# then :
++#   ac_cv_search_H5DSis_scale=$ac_res
++# fi
++# rm -f core conftest.err conftest.$ac_objext conftest.beam \
++#     conftest$ac_exeext
++#   if test ${ac_cv_search_H5DSis_scale+y}
++# then :
++#   break
++# fi
++# done
++ac_cv_search_H5DSis_scale=hdf5_hl
+ if test ${ac_cv_search_H5DSis_scale+y}
+ then :
+ 
+@@ -25427,25 +25429,25 @@ return H5Dread_chunk ();
+   return 0;
+ }
+ _ACEOF
+-for ac_lib in '' hdf5_hldll hdf5_hl
+-do
+-  if test -z "$ac_lib"; then
+-    ac_res="none required"
+-  else
+-    ac_res=-l$ac_lib
+-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+-  fi
+-  if ac_fn_c_try_link "$LINENO"
+-then :
+-  ac_cv_search_H5Dread_chunk=$ac_res
+-fi
+-rm -f core conftest.err conftest.$ac_objext conftest.beam \
+-    conftest$ac_exeext
+-  if test ${ac_cv_search_H5Dread_chunk+y}
+-then :
+-  break
+-fi
+-done
++# for ac_lib in '' hdf5_hldll hdf5_hl
++# do
++#   if test -z "$ac_lib"; then
++#     ac_res="none required"
++#   else
++#     ac_res=-l$ac_lib
++#     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
++#   fi
++#   if ac_fn_c_try_link "$LINENO"
++# then :
++#   ac_cv_search_H5Dread_chunk=$ac_res
++# fi
++# rm -f core conftest.err conftest.$ac_objext conftest.beam \
++#     conftest$ac_exeext
++#   if test ${ac_cv_search_H5Dread_chunk+y}
++# then :
++#   break
++# fi
++# done
+ if test ${ac_cv_search_H5Dread_chunk+y}
+ then :
+ 
+@@ -25490,25 +25492,25 @@ return H5Pset_fapl_ros3 ();
+   return 0;
+ }
+ _ACEOF
+-for ac_lib in '' hdf5_hldll hdf5_hl
+-do
+-  if test -z "$ac_lib"; then
+-    ac_res="none required"
+-  else
+-    ac_res=-l$ac_lib
+-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+-  fi
+-  if ac_fn_c_try_link "$LINENO"
+-then :
+-  ac_cv_search_H5Pset_fapl_ros3=$ac_res
+-fi
+-rm -f core conftest.err conftest.$ac_objext conftest.beam \
+-    conftest$ac_exeext
+-  if test ${ac_cv_search_H5Pset_fapl_ros3+y}
+-then :
+-  break
+-fi
+-done
++# for ac_lib in '' hdf5_hldll hdf5_hl
++# do
++#   if test -z "$ac_lib"; then
++#     ac_res="none required"
++#   else
++#     ac_res=-l$ac_lib
++#     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
++#   fi
++#   if ac_fn_c_try_link "$LINENO"
++# then :
++#   ac_cv_search_H5Pset_fapl_ros3=$ac_res
++# fi
++# rm -f core conftest.err conftest.$ac_objext conftest.beam \
++#     conftest$ac_exeext
++#   if test ${ac_cv_search_H5Pset_fapl_ros3+y}
++# then :
++#   break
++# fi
++# done
+ if test ${ac_cv_search_H5Pset_fapl_ros3+y}
+ then :
+ 

@@ -1,0 +1,29 @@
+package:
+  name: casadi
+  version: 3.6.7
+  # undefined exported symbol: "_AddIdentity"
+  _disabled: true
+  top-level:
+    - casadi
+source:
+  url: https://files.pythonhosted.org/packages/cf/e0/8d2c6a350101b6f73548a1ceba4b93b60e436060ed647e5fb5d5e0b17fed/casadi-3.6.7.tar.gz
+  sha256: 21cde87288afebb32a2a035bf6b6a91a025e24ee14aba7a0ae5515707b9887c1
+requirements:
+  run:
+    - numpy
+build:
+  exports: requested
+  cflags: |
+    -fwasm-exceptions -frtti
+  cxxflags: |
+    -fwasm-exceptions -frtti
+  ldflags: |
+    -fwasm-exceptions
+about:
+  home: http://casadi.org
+  PyPI: https://pypi.org/project/casadi
+  summary: CasADi -- framework for algorithmic differentiation and numeric optimization
+  license: LGPL-3.0+
+extra:
+  recipe-maintainers:
+    - agriyakhetarpal

@@ -1,0 +1,16 @@
+package:
+  name: asttokens
+  version: 3.0.0
+  top-level:
+    - asttokens
+source:
+  url: https://files.pythonhosted.org/packages/25/8a/c46dcc25341b5bce5472c718902eb3d38600a903b14fa6aeecef3f21a46f/asttokens-3.0.0-py3-none-any.whl
+  sha256: e3078351a059199dd5138cb1c706e6430c05eff2ff136af5eb4790f9d28932e2
+requirements:
+  run:
+    - six
+about:
+  home: https://github.com/gristlabs/asttokens
+  PyPI: https://pypi.org/project/asttokens
+  summary: Annotate AST trees with source code positions
+  license: Apache-2.0

@@ -1,0 +1,13 @@
+package:
+  name: annotated-types
+  version: 0.7.0
+  top-level:
+    - annotated_types
+source:
+  url: https://files.pythonhosted.org/packages/78/b6/6307fbef88d9b5ee7421e68d78a9f162e0da4900bc5f5793f6d3d0e34fb8/annotated_types-0.7.0-py3-none-any.whl
+  sha256: 1f02e8b43a8fbbc3f3e0d4f0f4bfc8131bcb4eebe8849b8e5c773f3a1c582a53
+about:
+  home: https://github.com/annotated-types/annotated-types
+  PyPI: https://pypi.org/project/annotated-types
+  summary: Reusable constraint types to use with typing.Annotated
+  license: MIT

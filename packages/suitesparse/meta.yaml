@@ -1,0 +1,43 @@
+package:
+  name: suitesparse
+  version: 5.11.0
+  tag:
+    - library
+    - shared_library
+source:
+  sha256: fdd957ed06019465f7de73ce931afaf5d40e96e14ae57d91f60868b8c123c4c8
+  url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
+  patches:
+    - patches/0001-Remove-non-essential-build-targets.patch
+
+requirements:
+  run:
+    - openblas
+  host:
+    - openblas
+
+build:
+  type: shared_library
+  script: |
+    # Fix return type to avoid linker error
+    grep -rl "void LAPACK" . | xargs sed -i 's/void LAPACK/int LAPACK/g'
+    grep -rl "void BLAS" . | xargs sed -i 's/void BLAS/int BLAS/g'
+
+    emmake make -j ${PYODIDE_JOBS:-3} install \
+      LDFLAGS="${SIDE_MODULE_LDFLAGS} -L${WASM_LIBRARY_DIR}/lib " \
+      BLAS="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      LAPACK="${WASM_LIBRARY_DIR}/lib/libopenblas.so" \
+      INSTALL=${WASM_LIBRARY_DIR}
+
+    cp ${WASM_LIBRARY_DIR}/lib/libsuitesparseconfig.so \
+       ${WASM_LIBRARY_DIR}/lib/libamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libccolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libcolamd.so \
+       ${WASM_LIBRARY_DIR}/lib/libmetis.so \
+       ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
+       ${WASM_LIBRARY_DIR}/lib/libspqr.so \
+       ${DISTDIR}
+about:
+  home: https://github.com/DrTimothyAldenDavis/SuiteSparse
+  license: Mixed, see https://github.com/DrTimothyAldenDavis/SuiteSparse/blob/dev/LICENSE.txt

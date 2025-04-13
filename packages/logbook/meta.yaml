@@ -1,0 +1,19 @@
+package:
+  name: logbook
+  version: 1.8.0
+  top-level:
+    - logbook
+source:
+  url: https://files.pythonhosted.org/packages/c3/a2/fafcc4ce7bad34093150e14f9ed179aa53e3e60a5c46e840547bdae26674/logbook-1.8.0.tar.gz
+  sha256: 487fa41539787bfa21a51fabd7f3ae8ae7f9e6679bb3e241d0f5f18a2fc37e9c
+
+requirements:
+  host:
+    - setuptools
+  run:
+    - ssl
+about:
+  home: http://logbook.pocoo.org/
+  PyPI: https://pypi.org/project/logbook
+  summary: A logging replacement for Python
+  license: BSD-3-Clause

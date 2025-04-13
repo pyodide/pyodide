@@ -1,0 +1,24 @@
+package:
+  name: swiglpk
+  version: 5.0.12
+  top-level:
+    - swiglpk
+
+source:
+  sha256: 86d1be00f24ad59b9e179d3d5132f270535d57be7f209f70f8a6a8b001a65c98
+  url: https://files.pythonhosted.org/packages/30/6c/9150c5b248eed3a491e5c58642182635956c33b6e03974fcf122f2b0c562/swiglpk-5.0.12.tar.gz
+
+build:
+  script: |
+    export GLPK_HEADER_PATH="${WASM_LIBRARY_DIR}/include/"
+  ldflags: -L$(WASM_LIBRARY_DIR)/lib
+
+requirements:
+  host:
+    - glpk
+  executable:
+    - swig
+about:
+  home: https://github.com/opencobra/swiglpk
+  PyPI: https://pypi.org/project/swiglpk/
+  license: GPL-3.0

@@ -1,0 +1,18 @@
+package:
+  name: pywavelets
+  version: 1.8.0
+  top-level:
+    - pywt
+source:
+  sha256: f3800245754840adc143cbc29534a1b8fc4b8cff6e9d403326bd52b7bb5c35aa
+  url: https://files.pythonhosted.org/packages/48/45/bfaaab38545a33a9f06c61211fc3bea2e23e8a8e00fedeb8e57feda722ff/pywavelets-1.8.0.tar.gz
+requirements:
+  host:
+    - numpy
+  run:
+    - numpy
+about:
+  home: https://github.com/PyWavelets/pywt
+  PyPI: https://pypi.org/project/pywavelets
+  summary: PyWavelets, wavelet transform module
+  license: MIT

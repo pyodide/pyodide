@@ -1,0 +1,19 @@
+package:
+  name: donfig
+  version: 0.8.1.post1
+  top-level:
+    - donfig
+source:
+  url: https://files.pythonhosted.org/packages/py3/d/donfig/donfig-0.8.1.post1-py3-none-any.whl
+  sha256: 2a3175ce74a06109ff9307d90a230f81215cbac9a751f4d1c6194644b8204f9d
+requirements:
+  run:
+    - pyyaml
+about:
+  home: https://github.com/pytroll/donfig
+  PyPI: https://pypi.org/project/donfig
+  summary: Python package for configuring a python package
+  license: MIT
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

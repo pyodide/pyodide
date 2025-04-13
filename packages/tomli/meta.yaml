@@ -1,0 +1,13 @@
+package:
+  name: tomli
+  version: 2.2.1
+  top-level:
+    - tomli
+source:
+  url: https://files.pythonhosted.org/packages/6e/c2/61d3e0f47e2b74ef40a68b9e6ad5984f6241a942f7cd3bbfbdbd03861ea9/tomli-2.2.1-py3-none-any.whl
+  sha256: cb55c73c5f4408779d0cf3eef9f762b9c9f147a77de7b258bef0a5628adc85cc
+about:
+  PyPI: https://pypi.org/project/tomli
+  summary: A lil' TOML parser
+  license: MIT
+  home: https://github.com/hukkin/tomli

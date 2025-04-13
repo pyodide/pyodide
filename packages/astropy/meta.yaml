@@ -1,0 +1,55 @@
+package:
+  name: astropy
+  version: 7.0.1
+  top-level:
+    - astropy
+source:
+  url: https://files.pythonhosted.org/packages/45/12/a1c582b3f9df5e2680eae0ed82c8057ae06d6130a1f7a5c0770fa899737e/astropy-7.0.1.tar.gz
+  sha256: 392feeb443b2437cd4c2e0641a65e0f15ba791e148e9b1e5ed7de7dfcb38e460
+build:
+  # The test module is imported from the top level `__init__.py`
+  # so it cannot be unvendored
+  unvendor-tests: false
+  exports: requested # Astropy uses dlsym so we need to export more than just PyInit_astropy
+  cflags: |
+    -I $(HOSTSITEPACKAGES)/numpy/core/include
+requirements:
+  host:
+    - packaging
+    - numpy
+  run:
+    - packaging
+    - numpy
+    - pyerfa
+    - pyyaml
+    - astropy_iers_data
+test:
+  imports:
+    - astropy
+    - astropy.config
+    - astropy.constants
+    - astropy.convolution
+    - astropy.coordinates
+    - astropy.cosmology
+    - astropy.extern
+    - astropy.io
+    - astropy.modeling
+    - astropy.nddata
+    - astropy.samp
+    - astropy.stats
+    - astropy.table
+    - astropy.time
+    - astropy.timeseries
+    - astropy.uncertainty
+    - astropy.units
+    - astropy.utils
+    - astropy.visualization
+    - astropy.wcs
+about:
+  home: http://astropy.org
+  PyPI: https://pypi.org/project/astropy
+  summary: Astronomy and astrophysics core library
+  license: BSD-3-Clause
+extra:
+  recipe-maintainers:
+    - jobovy

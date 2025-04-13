@@ -1,0 +1,42 @@
+This patch disables multiprocessing and pthread for blosc
+diff --git a/numcodecs/blosc.pyx b/numcodecs/blosc.pyx
+index 3bfdc00..c6521b7 100644
+--- a/numcodecs/blosc.pyx
++++ b/numcodecs/blosc.pyx
+@@ -77,6 +77,8 @@ AUTOBLOCKS = 0
+ # synchronization
+ try:
+     mutex = multiprocessing.Lock()
++except ModuleNotFoundError:
++    mutex = None
+ except OSError:
+     mutex = None
+ 
+diff --git a/c-blosc/blosc/blosc.h b/c-blosc/blosc/blosc.h
+index 40857d0..8a1e969 100644
+--- a/c-blosc/blosc/blosc.h
++++ b/c-blosc/blosc/blosc.h
+@@ -50,7 +50,7 @@ extern "C" {
+   ((INT_MAX - BLOSC_MAX_TYPESIZE * sizeof(int32_t)) / 3)
+ 
+ /* The maximum number of threads (for some static arrays) */
+-#define BLOSC_MAX_THREADS 256
++#define BLOSC_MAX_THREADS 1
+ 
+ /* Codes for shuffling (see blosc_compress) */
+ #define BLOSC_NOSHUFFLE   0  /* no shuffle */
+
+ diff --git a/c-blosc/blosc/blosc.c b/c-blosc/blosc/blosc.c
+index a5a5bd5..2a7797c 100644
+--- a/c-blosc/blosc/blosc.c
++++ b/c-blosc/blosc/blosc.c
+@@ -2236,6 +2236,7 @@ void blosc_atfork_child(void) {
+ 
+ void blosc_init(void)
+ {
++  g_initlib = 1;
+   /* Return if we are already initialized */
+   if (g_initlib) return;
+ 
+
+

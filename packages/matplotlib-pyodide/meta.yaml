@@ -1,0 +1,13 @@
+package:
+  name: matplotlib-pyodide
+  version: 0.2.3
+  top-level:
+    - matplotlib_pyodide
+source:
+  url: https://files.pythonhosted.org/packages/5b/9a/f2d911a8ae68f71366288c54d72271332419c1ed1ced64543d8213d9ff5b/matplotlib_pyodide-0.2.3-py3-none-any.whl
+  sha256: e0f8c342a038316c89fe8e7a2bcbf4ef11b08344d72cd18ded38a1cddd41c8a6
+about:
+  home: https://github.com/pyodide/matplotlib-pyodide
+  PyPI: https://pypi.org/project/matplotlib-pyodide
+  summary: WASM and HTML5 backends for Matplotlib compatible with Pyodide
+  license: MPL-2.0

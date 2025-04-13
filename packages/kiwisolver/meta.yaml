@@ -1,0 +1,11 @@
+package:
+  name: kiwisolver
+  version: 1.4.8
+  top-level:
+    - kiwisolver
+source:
+  sha256: 23d5f023bdc8c7e54eb65f03ca5d5bb25b601eac4d7f1a042888a1f45237987e
+  url: https://files.pythonhosted.org/packages/82/59/7c91426a8ac292e1cdd53a63b6d9439abd573c875c3f92c146767dd33faf/kiwisolver-1.4.8.tar.gz
+about:
+  home: https://github.com/nucleic/kiwi
+  license: BSD-3-Clause
