@@ -2,7 +2,9 @@ package:
   name: rust-abi-test
   version: "1.0"
   tag:
+    - core
     - rust
+    - pyodide.test
 source:
   path: src
 requirements:
