@@ -80,7 +80,7 @@ jobs:
             source pyodide_env.sh
 
             ccache -z
-            PYODIDE_PACKAGES="tag:core" make
+            PYODIDE_PACKAGES="tag:pytest,tag:pyodide.test" make
             ccache -s
 
       - run:
