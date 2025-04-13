@@ -576,7 +576,7 @@ workflows:
 
       - build-packages:
           name: build-core-packages
-          packages: "*"
+          packages: "tag:core"
           requires:
             - build-core
           filters:
