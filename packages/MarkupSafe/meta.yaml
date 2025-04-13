@@ -1,6 +1,9 @@
 package:
   name: MarkupSafe
   version: 3.0.2
+  tag:
+    # Remove core tag after removing MarkupSafe from the test suite
+    - core
   top-level:
     - markupsafe
 source:

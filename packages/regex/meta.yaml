@@ -2,6 +2,7 @@ package:
   name: regex
   version: 2024.11.6
   tag:
+    # Remove core tag after removing regex from the test suite
     - core
     - min-scipy-stack
   top-level:

@@ -2,6 +2,7 @@ package:
   name: pytz
   version: "2025.1"
   tag:
+    # Remove core tag after removing pytz from the test suite
     - core
     - min-scipy-stack
   top-level:

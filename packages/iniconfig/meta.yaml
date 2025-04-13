@@ -1,6 +1,8 @@
 package:
   name: iniconfig
   version: 2.0.0
+  tag:
+    - core
   top-level:
     - iniconfig
 source:

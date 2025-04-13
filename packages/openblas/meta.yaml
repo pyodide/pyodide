@@ -2,6 +2,7 @@ package:
   name: openblas
   version: 0.3.26
   tag:
+    - core
     - library
     - shared_library
 source:
