@@ -2,8 +2,9 @@ package:
   name: regex
   version: 2024.11.6
   tag:
-    # Remove pyodide.test tag after removing regex from the test suite
+    # Remove tag after removing regex from the test suite
     - pyodide.test
+    - core
     - min-scipy-stack
   top-level:
     - regex

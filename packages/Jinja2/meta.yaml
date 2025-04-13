@@ -2,8 +2,9 @@ package:
   name: Jinja2
   version: 3.1.6
   tag:
-    # Remove pyodide.test tag after removing Jinja2 from the test suite
+    # Remove tag after removing Jinja2 from the test suite
     - pyodide.test
+    - core
     - min-scipy-stack
   top-level:
     - jinja2
