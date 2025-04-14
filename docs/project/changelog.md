@@ -871,6 +871,13 @@ _July 6, 2023_
   objects.
   {pr}`3740`, {pr}`3750`
 
+- {{ Enhancement }} `add_event_listener` and `remove_event_listener` now pass
+  any additional arguments to the corresponding JavaScript functions.
+  {pr}`3929`
+- {{ Fix }} `getattr(jsproxy, 'python_reserved_word')` works as expected again
+  (as well as `hasattr` and `setattr`). This fixes a regression introduced in
+  {pr}`3617`.
+  {pr}`3926`
 - {{ Fix }} A `PyProxy` of a callable is now an `instanceof Function`. (If you
   are trying to feature detect whether something is callable or not in
   JavaScript, the correct way is to use `typeof o === "function"`. But you may
