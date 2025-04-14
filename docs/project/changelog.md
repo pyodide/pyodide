@@ -28,6 +28,7 @@ myst:
   compile time and link time.
   {pr}`5320`
 - {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- Added `pymupdf` 1.25.4 {pr}`5526`
 
 - Importing matplotlib should now be significantly faster.
 
