@@ -81,7 +81,7 @@ development process including making packages to support third party libraries.
    :maxdepth: 1
    :caption: Development
 
-   development/new-packages.md
+   development/building-packages.md
    development/building-from-sources.md
    development/testing.md
    development/debugging.md
