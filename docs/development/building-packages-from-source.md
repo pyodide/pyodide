@@ -48,7 +48,7 @@ python -m build
 
 ## Debugging build issues
 
-If you run into problems with `pyodide build`, first make sure 
+If you run into problems with `pyodide build`, first make sure
 that building a native wheel with `pypa/build` works.
 If it does, compare the output of `pyodide build` with the output of `python -m build`.
 

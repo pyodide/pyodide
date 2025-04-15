@@ -30,7 +30,6 @@ the Pyodide maintainers will regularly apply the updated recipes to the next Pyo
 Alternatively, you can download the prebuilt packages from the `pyodide-recipes` repository,
 host them on your own server, and use them in your Pyodide distribution.
 
-
 ```{eval-rst}
 .. toctree::
    :hidden:

@@ -285,4 +285,3 @@ by default certain wasm-related `RUSTFLAGS` are set during `build.script`
 and can be removed with `export RUSTFLAGS=""`.
 
 If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
-
