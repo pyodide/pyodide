@@ -1,0 +1,27 @@
+package:
+  name: PyMuPDF
+  version: 1.25.4
+  top-level:
+    - pymupdf
+    - fitz
+source:
+  url: https://files.pythonhosted.org/packages/25/56/d7de0325125621a3d095eb43ce35f2e036cd4c0489ff5e8cae816f1cd8b9/pymupdf-1.25.4.tar.gz
+  sha256: 5f189466b68901055a9ddc77dc1c91cba081a60964f0caa6ff5b9b87001a0194
+about:
+  home: https://pymupdf.readthedocs.io
+  PyPI: https://pypi.org/project/pymupdf
+  summary:
+    A high performance Python library for data extraction, analysis, conversion
+    & manipulation of PDF (and other) documents.
+  license: Dual Licensed - GNU AFFERO GPL 3.0 or Artifex Commercial License
+extra:
+  recipe-maintainers:
+    - sanzoghenzo
+build:
+  exports: whole_archive
+  script: |
+    export PYMUPDF_SETUP_FLAVOUR=pb
+    export PYMUPDF_SETUP_MUPDF_TESSERACT=0
+    export PYMUPDF_SETUP_MUPDF_BUILD="git:--recursive --depth 1 --shallow-submodules --branch master https://github.com/ArtifexSoftware/mupdf.git"
+    export HAVE_LIBCRYPTO=no
+    export OS=pyodide
