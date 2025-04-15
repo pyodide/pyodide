@@ -56,6 +56,7 @@ not strictly compatible.
 
 Once the `meta.yaml` file is ready, build the package with the following
 command and see if there are any errors.
+
 ```sh
 pyodide build-recipes <package-name> --install
 ```
@@ -114,7 +115,7 @@ for Emscripten or Pyodide environment.
 
 Place the patch files in the `patches` directory of the package, and specify
 them in the `source.patches` section of the `meta.yaml` file. The patches will be
-applied in the order they are listed. 
+applied in the order they are listed.
 
 ```yaml
 source:
