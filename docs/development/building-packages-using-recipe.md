@@ -8,9 +8,7 @@ we provide a `conda`-style recipe system to build multiple packages at once.
 Using a recipe is also required to include the package in the Pyodide distribution.
 See {ref}`adding-packages-into-pyodide-distribution` for more information.
 
-## Building Packages from Recipe
-
-### Creating the `meta.yaml` file
+## Creating the `meta.yaml` file
 
 To build a Python package in tree, you need to create a `meta.yaml` file that
 defines a recipe which includes build commands and patches (source code
@@ -54,7 +52,7 @@ The Pyodide `meta.yaml` file format was inspired by the one in conda, however it
 not strictly compatible.
 ```
 
-### Building the package
+## Building Recipes
 
 Once the `meta.yaml` file is ready, build the package with the following
 command and see if there are any errors.
@@ -65,7 +63,7 @@ pyodide build-recipes <package-name> --install
 This command will build the package and all its dependencies. The `--install`
 The `--install` flag will install the built package into the `/dist` directory.
 
-### Testing the package
+## Testing
 
 If the build succeeds you can try to load the package in the Pyodide environment.
 
@@ -77,7 +75,7 @@ If the build succeeds you can try to load the package in the Pyodide environment
 4. Open `localhost:8000/console.html` and try to import the package.
 5. You can test the package in the repl.
 
-### Modifying Build Process
+## Modifying Build Process
 
 If you need to modify the build process (e.g. to fix build issues) you can do
 this by modifying the `meta.yaml` file. The `build` section of the `meta.yaml`
@@ -108,7 +106,7 @@ build:
     rm unnecessary-file-in-the-wheel.txt
 ```
 
-### Patching the package source
+## Patching the package source
 
 If the package has a bug that needs to be fixed, you can apply `.patch` files
 to the package source. This is commonly done when the package requires special handling
@@ -128,7 +126,7 @@ source:
 
 (generating-patches)=
 
-#### Generating patches
+### Generating patches
 
 If the package has a git repository, the easiest way to make a patch is usually:
 
@@ -146,14 +144,14 @@ If the package has a git repository, the easiest way to make a patch is usually:
    to generate a patch file for your changes and store it directly into the
    patches folder.
 
-#### Upstream your patches!
+### Upstream your patches!
 
 Please create PRs or issues to discuss with the package maintainers to try to
 find ways to include your patches into the package. Many package maintainers are
 very receptive to including Pyodide-related patches and they reduce future
 maintenance work for us.
 
-### Upgrading a package
+## Upgrading a package
 
 To upgrade a package's version to the latest one available on PyPI, do
 
@@ -168,7 +166,7 @@ for updated dependencies.
 Upgrading a package's version may lead to new build issues that need to be resolved
 (see above) and any patches need to be checked and potentially migrated (see below).
 
-#### Migrating Patches
+### Migrating Patches
 
 When you want to upgrade the version of a package, you will need to migrate the
 patches. To do this:
@@ -187,58 +185,12 @@ patches. To do this:
 7. Use `git format-patch <version-tag> -o packages/<package-name>/patches/`
    to generate new patch files.
 
-### The package build pipeline
-
-Pyodide includes a toolchain to add new third-party Python libraries to the
-build. We automate the following steps:
-
-- If source is a url (not in-tree):
-  - Download a source archive or a pure python wheel (usually from PyPI)
-  - Confirm integrity of the package by comparing it to a checksum
-  - If building from source (not from a wheel):
-    - Apply patches, if any, to the source distribution
-    - Add extra files, if any, to the source distribution
-- If the source is not a wheel (building from a source archive or an in-tree
-  source):
-  - Run `build/script` if present
-  - Modify the `PATH` to point to wrappers for `gfortran`, `gcc`, `g++`, `ar`,
-    and `ld` that preempt compiler calls, rewrite the arguments, and pass them
-    to the appropriate emscripten compiler tools.
-  - Using `pypa/build`:
-    - Create an isolated build environment. Install symbolic links from this
-      isolated environment to "host" copies of certain unisolated packages.
-    - Install the build dependencies requested in the package `build-requires`.
-      (We ignore all version constraints on the unisolated packages, but version
-      constraints on other packages are respected.
-    - Run the {pep}`517` build backend associated to the project to generate a wheel.
-- Unpack the wheel with `python -m wheel unpack`.
-- Run the `build/post` script in the unpacked wheel directory if it's present.
-- Unvendor unit tests included in the installation folder to a separate zip file
-  `<package name>-tests.zip`
-- Repack the wheel with `python -m wheel pack`
-
-Lastly, a `pyodide-lock.json` file is created containing the dependency tree of all
-packages, so {js:func}`pyodide.loadPackage` can load a package's dependencies
-automatically.
-
-### Partial Rebuilds
-
-By default, each time you run `pyodide build-recipes`, it will delete the entire
-source directory and replace it with a fresh copy from the download url. This is
-to ensure build repeatability. For debugging purposes, this is likely to be
-undesirable. If you want to try out a modified source tree, you can pass the
-flag `--continue` and `build-recipes` will try to build from the existing source
-tree. This can cause various issues, but if it works it is much more convenient.
-
-Using the `--continue` flag, you can modify the sources in tree to fix the
-build, then when it works, copy the modified sources into your checked out copy
-of the package source repository and use `git format-patch` to generate the
-patch.
+## Appendix
 
 ### C library dependencies
 
 Some Python packages depend on certain C libraries, e.g. `lxml` depends on
-`libxml`.
+`libxml`. Pyodide recipes can also be used to build C libraries.
 
 To package a C library, create a directory for it and add `meta.yaml` file
 similar to the one for Python packages. However, unlike the Python package, you
@@ -296,4 +248,19 @@ As mentioned [here](https://github.com/pyodide/pyodide/issues/2706#issuecomment-
 by default certain wasm-related `RUSTFLAGS` are set during `build.script`
 and can be removed with `export RUSTFLAGS=""`.
 
-If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
+If your project builds using maturin, you need to use maturin 0.14.14 or later.
+It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
+
+### Partial Rebuilds
+
+By default, each time you run `pyodide build-recipes`, it will delete the entire
+source directory and replace it with a fresh copy from the download url. This is
+to ensure build repeatability. For debugging purposes, this is likely to be
+undesirable. If you want to try out a modified source tree, you can pass the
+flag `--continue` and `build-recipes` will try to build from the existing source
+tree. This can cause various issues, but if it works it is much more convenient.
+
+Using the `--continue` flag, you can modify the sources in tree to fix the
+build, then when it works, copy the modified sources into your checked out copy
+of the package source repository and use `git format-patch` to generate the
+patch.
