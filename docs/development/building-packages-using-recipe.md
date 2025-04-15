@@ -57,21 +57,19 @@ not strictly compatible.
 ### Building the package
 
 Once the `meta.yaml` file is ready, build the package with the following
-command
-
+command and see if there are any errors.
 ```sh
 pyodide build-recipes <package-name> --install
 ```
 
-and see if there are any errors.
-
+This command will build the package and all its dependencies. The `--install`
 The `--install` flag will install the built package into the `/dist` directory.
 
 ### Testing the package
 
 If the build succeeds you can try to load the package in the Pyodide environment.
 
-1. Build Pyodide or download the latest release from the GitHub repository.
+1. Visit Build Pyodide or download the latest release from the GitHub repository.
 2. Copy everything built in the `/dist` directory to the downloaded Pyodide
    directory. This should include the `pyodide-lock.json` file and the
    wheel files that were built.
@@ -79,27 +77,58 @@ If the build succeeds you can try to load the package in the Pyodide environment
 4. Open `localhost:8000/console.html` and try to import the package.
 5. You can test the package in the repl.
 
-### Fixing build issues
+### Modifying Build Process
 
-If there are errors you might need to add a build script to set You can add
-extra build commands to the `meta.yaml` like this:
+If you need to modify the build process (e.g. to fix build issues) you can do
+this by modifying the `meta.yaml` file. The `build` section of the `meta.yaml`
+is where you can run scripts, set environment variables, and add extra compile
+and link flags.
 
 ```yaml
 build:
+  # You can add any shell scripts you want to run before invoking the build.
+  # For instance, setting environment variables or downloading files, or modifying the source can be done here.
   script: |
     wget https://example.com/file.tar.gz
     export MY_ENV_VARIABLE=FOO
+  # You can pass extra compile and link flags to the compiler by adding them here.
+  cflags: |
+    -O3
+  cxxflags: |
+    -O3
+  ldflags: |
+    -lm
+  # This is the command that is passed to the build backend. For example, if you
+  # need to pass extra flags to setuptools, you can pass them here.
+  backend-flags: |
+    setup-args=-Dallow-noblas=true
+  # post is a script that is run after the build. This is useful for
+  # post-processing the wheel file.
+  post: |
+    rm unnecessary-file-in-the-wheel.txt
 ```
 
-You can also inject extra compile and link flags with the `cflags` and `ldflags`
-keys. You can modify the wheel after it is built with the `post:` key.
+### Patching the package source
 
-If you need to patch the package's source to fix build issues, see the section
-on {ref}`generating-patches` below.
+If the package has a bug that needs to be fixed, you can apply `.patch` files
+to the package source. This is commonly done when the package requires special handling
+for Emscripten or Pyodide environment.
+
+Place the patch files in the `patches` directory of the package, and specify
+them in the `source.patches` section of the `meta.yaml` file. The patches will be
+applied in the order they are listed. 
+
+```yaml
+source:
+  patches:
+    - patches/0001-Add-Wno-return-type-flag.patch
+    - patches/0002-Align-xerbla_array-signature-with-scipy-expectation.patch
+    - patches/0003-Skip-linktest.patch
+```
 
 (generating-patches)=
 
-### Generating patches
+#### Generating patches
 
 If the package has a git repository, the easiest way to make a patch is usually:
 
@@ -116,23 +145,13 @@ If the package has a git repository, the easiest way to make a patch is usually:
 4. Use `git format-patch <version> -o packages/<package-name>/patches/`
    to generate a patch file for your changes and store it directly into the
    patches folder.
-5. You also need to add the patches to the `meta.yaml` file:
 
-```yaml
-source:
-  url: https://files.pythonhosted.org/packages/somehash/some-pkg-1.2.3.tar.gz
-  sha256: somehash
-  patches:
-    - 0001-patch-some-thing.patch
-    - 0002-patch-some-other-thing.patch
-```
+#### Upstream your patches!
 
-The following command will write out the properly formatted file list to use in
-the `patches` key:
-
-```sh
-find patches/ -type f | sed 's/^/    - /g'
-```
+Please create PRs or issues to discuss with the package maintainers to try to
+find ways to include your patches into the package. Many package maintainers are
+very receptive to including Pyodide-related patches and they reduce future
+maintenance work for us.
 
 ### Upgrading a package
 
@@ -149,7 +168,7 @@ for updated dependencies.
 Upgrading a package's version may lead to new build issues that need to be resolved
 (see above) and any patches need to be checked and potentially migrated (see below).
 
-### Migrating Patches
+#### Migrating Patches
 
 When you want to upgrade the version of a package, you will need to migrate the
 patches. To do this:
@@ -167,13 +186,6 @@ patches. To do this:
 6. Remove old patches with `rm packages/<package-name>/patches/*`.
 7. Use `git format-patch <version-tag> -o packages/<package-name>/patches/`
    to generate new patch files.
-
-### Upstream your patches!
-
-Please create PRs or issues to discuss with the package maintainers to try to
-find ways to include your patches into the package. Many package maintainers are
-very receptive to including Pyodide-related patches and they reduce future
-maintenance work for us.
 
 ### The package build pipeline
 
