@@ -2,7 +2,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @run_in_pyodide(packages=["pymupdf"])
-def test_textbox1(selenium, sample_text):
+def test_textbox1(selenium):
     """Use TextWriter for text insertion."""
     import pymupdf
 
@@ -34,7 +34,7 @@ Mauris eu facilisis ligula. Mauris sit amet feugiat ligula. Nulla bibendum fring
 
 
 @run_in_pyodide(packages=["pymupdf"])
-def test_textbox2(selenium, sample_text):
+def test_textbox2(selenium):
     """Use basic text insertion."""
     import pymupdf
 
