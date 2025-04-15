@@ -1,7 +1,7 @@
 #include "Python.h"
 #include "emscripten.h"
 #include "error_handling.h"
-#include "internal/pycore_frame.h"
+#include "python_unexposed.h"
 
 // This file manages the Python stack / thread state when stack switching.
 //
@@ -11,13 +11,13 @@
 // The logic here is inspired by:
 // https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/greenlet_greenlet.hpp
 //
-// The CFrame stuff is particularly subtle.
-//
 // When updating the major Python version it will be necessary to look at that
 // file.
 //
 // See also https://github.com/python/cpython/pull/32303 which would move more
 // of this logic into upstream CPython
+
+int pystate_keepalive;
 
 typedef struct
 {
@@ -116,9 +116,6 @@ typedef struct
   PyThreadState* ts;
 } ThreadState;
 
-PyThreadState*
-_PyThreadState_SwapNoGIL(PyThreadState* newts);
-
 #define THREADSTATE_MAX_FREELIST 10
 
 PyThreadState* threadstate_freelist[THREADSTATE_MAX_FREELIST] = {};
@@ -136,7 +133,7 @@ captureThreadState()
   } else {
     tstate = PyThreadState_New(PyInterpreterState_Get());
   }
-  res->ts = _PyThreadState_SwapNoGIL(tstate);
+  res->ts = PyThreadState_Swap(tstate);
 
   PyObject* _asyncio_module = NULL;
   PyObject* t = NULL;
@@ -154,66 +151,11 @@ EMSCRIPTEN_KEEPALIVE void
 restoreThreadState(ThreadState* state)
 {
   restoreAsyncioState(state->as);
-  PyThreadState* res = _PyThreadState_SwapNoGIL(state->ts);
+  PyThreadState* res = PyThreadState_Swap(state->ts);
   if (threadstate_freelist_len == THREADSTATE_MAX_FREELIST) {
     PyThreadState_Delete(res);
   } else {
     threadstate_freelist[threadstate_freelist_len] = res;
     threadstate_freelist_len++;
-  }
-}
-
-EMSCRIPTEN_KEEPALIVE int size_of_cframe = sizeof(_PyCFrame);
-
-EMSCRIPTEN_KEEPALIVE _PyCFrame*
-get_cframe()
-{
-  PyThreadState* tstate = PyThreadState_Get();
-  return tstate->cframe;
-}
-
-EMSCRIPTEN_KEEPALIVE void
-restore_cframe(_PyCFrame* frame)
-{
-  PyThreadState* tstate = PyThreadState_Get();
-  tstate->cframe = frame;
-}
-
-EMSCRIPTEN_KEEPALIVE void
-set_new_cframe(_PyCFrame* frame)
-{
-  PyThreadState* tstate = PyThreadState_Get();
-  *frame = *tstate->cframe;
-  tstate->cframe = frame;
-  tstate->cframe->previous = &PyThreadState_GET()->root_cframe;
-  tstate->cframe->current_frame = NULL;
-  tstate->trash.delete_nesting = 0;
-  tstate->py_recursion_remaining = tstate->py_recursion_limit;
-  tstate->c_recursion_remaining = C_RECURSION_LIMIT;
-}
-
-EMSCRIPTEN_KEEPALIVE void
-exit_cframe(_PyCFrame* frame)
-{
-  PyThreadState* tstate = PyThreadState_Get();
-  _PyStackChunk* chunk = tstate->datastack_chunk;
-
-  PyObjectArenaAllocator alloc;
-  PyObject_GetArenaAllocator(&alloc);
-
-  tstate->cframe = frame;
-  tstate->datastack_chunk = NULL;
-  tstate->datastack_top = NULL;
-  tstate->datastack_limit = NULL;
-
-  if (!alloc.free) {
-    return;
-  }
-
-  while (chunk) {
-    _PyStackChunk* prev = chunk->previous;
-    chunk->previous = NULL;
-    alloc.free(alloc.ctx, chunk, chunk->size);
-    chunk = prev;
   }
 }

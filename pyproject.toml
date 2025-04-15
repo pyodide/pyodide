@@ -1,5 +1,5 @@
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 mypy_path = ["src/py", "pyodide-build"]
 show_error_codes = true
 warn_unreachable = true
@@ -66,7 +66,7 @@ lint.select = [
 lint.ignore = ["E402", "E501", "E731", "E741", "PLW2901", "UP031"]
 lint.flake8-comprehensions.allow-dict-calls-with-keyword-arguments = true
 # line-length = 219  # E501: Recommended goal is 88 to match black
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint.per-file-ignores]
 "src/py/_pyodide/_base.py" = [
@@ -126,12 +126,16 @@ norecursedirs = [
     "build",
     "cpython",
     "emsdk",
+    "packages/.libs",
 ]
 addopts = '''
 --doctest-modules
 --ignore-glob="**/dist/"
 --ignore-glob="src/py/_pyodide/jsbind.py"
 --ignore-glob="packages/**/extras/"
+--ignore-glob="packages/aiohttp/aiohttp_patch.py"
+--ignore-glob="packages/openai/helper_test_openai.py"
+--ignore-glob="packages/scipy/cmdline_test_file.py"
 --tb=short
 --dist-dir=dist'''
 testpaths = [
@@ -147,7 +151,7 @@ markers = [
 [tool._pyodide]
 
 [tool.pyodide.build]
-rust_toolchain = "nightly-2024-12-01"
+rust_toolchain = "nightly-2025-02-01"
 
 [tool.codespell]
 ignore-words = 'tools/codespell_ignore_words.txt'

@@ -1,6 +1,6 @@
 #define PY_SSIZE_T_CLEAN
+#include "python2js.h"
 #include "Python.h"
-
 #include "docstring.h"
 #include "error_handling.h"
 #include "js2python.h"
@@ -8,7 +8,7 @@
 #include "jsmemops.h"
 #include "jsproxy.h"
 #include "pyproxy.h"
-#include "python2js.h"
+#include "python_unexposed.h"
 #include <emscripten.h>
 
 #include "python2js_buffer.h"
@@ -105,7 +105,8 @@ _python2js_long(PyObject* x)
                                             (unsigned char*)digits,
                                             4 * ndigits,
                                             true /* little endian */,
-                                            true /* signed */));
+                                            true /* signed */,
+                                            true /* with_exceptions */));
       return JsvNum_fromDigits(digits, ndigits);
     }
   }

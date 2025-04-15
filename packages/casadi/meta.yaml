@@ -1,6 +1,8 @@
 package:
   name: casadi
   version: 3.6.7
+  # undefined exported symbol: "_AddIdentity"
+  _disabled: true
   top-level:
     - casadi
 source:
@@ -12,11 +14,11 @@ requirements:
 build:
   exports: requested
   cflags: |
-    -fexceptions -frtti
+    -fwasm-exceptions -frtti
   cxxflags: |
-    -fexceptions -frtti
+    -fwasm-exceptions -frtti
   ldflags: |
-    -fexceptions
+    -fwasm-exceptions
 about:
   home: http://casadi.org
   PyPI: https://pypi.org/project/casadi

@@ -5,4 +5,4 @@
 # their builds succeed, or those for packages that rely
 # on them at build time.
 
-maturin<1.8
+cmake < 4

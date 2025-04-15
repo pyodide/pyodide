@@ -31,7 +31,7 @@ __all__ = ["Console", "PyodideConsole", "BANNER", "repr_shorten", "ConsoleFuture
 
 
 BANNER = f"""
-Python {python_version()} ({', '.join(python_build())}) on WebAssembly/Emscripten
+Python {python_version()} ({", ".join(python_build())}) on WebAssembly/Emscripten
 Type "help", "copyright", "credits" or "license" for more information.
 """.strip()
 
@@ -365,7 +365,7 @@ class Console:
         self.buffer = []
         self._lock = asyncio.Lock()
         self._streams_redirected = False
-        self._stream_generator: Generator[None, None, None] | None = (
+        self._stream_generator: Generator[None] | None = (
             None  # track persistent stream redirection
         )
         if persistent_stream_redirection:
@@ -397,13 +397,13 @@ class Console:
         self._stream_generator = None
 
     @contextmanager
-    def redirect_streams(self) -> Generator[None, None, None]:
+    def redirect_streams(self) -> Generator[None]:
         """A context manager to redirect standard streams.
 
         This supports nesting."""
         yield from self._stdstreams_redirections_inner()
 
-    def _stdstreams_redirections_inner(self) -> Generator[None, None, None]:
+    def _stdstreams_redirections_inner(self) -> Generator[None]:
         """This is the generator which implements redirect_streams and the stdstreams_redirections"""
         # already redirected?
         if self._streams_redirected:

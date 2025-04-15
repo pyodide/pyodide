@@ -1,13 +1,20 @@
 package:
   name: libcst
-  version: 1.4.0
+  version: 1.6.0
+  tag:
+    - rust
   top-level:
     - libcst
 source:
-  url: https://files.pythonhosted.org/packages/e4/bd/ff41d7a8efc4f60a61d903c3f9823565006f44f2b8b11c99701f552b0851/libcst-1.4.0.tar.gz
-  sha256: 449e0b16604f054fa7f27c3ffe86ea7ef6c409836fe68fe4e752a1894175db00
+  url: https://files.pythonhosted.org/packages/f4/ec/d24c0ad33838dfbfe20a760b301d529c63cef32f8b91dae380c97f8bf127/libcst-1.6.0.tar.gz
+  sha256: e80ecdbe3fa43b3793cae8fa0b07a985bd9a693edbe6e9d076f5422ecadbf0db
+requirements:
+  run:
+    - pyyaml
+  executable:
+    - rustup
 about:
-  home: ""
+  home: https://libcst.readthedocs.io
   PyPI: https://pypi.org/project/libcst
   summary:
     A concrete syntax tree with AST-like properties for Python 3.0 through
@@ -16,8 +23,3 @@ about:
 extra:
   recipe-maintainers:
     - zsol
-requirements:
-  run:
-    - pyyaml
-  executable:
-    - rustup

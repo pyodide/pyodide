@@ -29,7 +29,7 @@ declare global {
 declare global {
   export const stringToNewUTF8: (str: string) => number;
   export const UTF8ToString: (ptr: number) => string;
-  export const FS: FS;
+  export const FS: FSType;
   export const stackAlloc: (sz: number) => number;
   export const stackSave: () => number;
   export const stackRestore: (ptr: number) => void;
@@ -212,11 +212,9 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
- * TODO: Consider renaming the type to FSType to avoid collisions between FS and
- * FSType.
  * @hidden
  */
-export interface FS {
+export interface FSType {
   unlink: (path: string) => void;
   mkdirTree: (path: string, mode?: number) => void;
   chdir: (path: string) => void;
@@ -300,7 +298,7 @@ export interface Module {
   ENV: { [key: string]: string };
   PATH: any;
   TTY: any;
-  FS: FS;
+  FS: FSType;
   LDSO: LDSO;
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
@@ -340,14 +338,17 @@ export interface Module {
   _Py_EMSCRIPTEN_SIGNAL_HANDLING: number;
   Py_EmscriptenSignalBuffer: TypedArray;
   HEAP8: Uint8Array;
+  HEAPU32: Uint32Array;
   __hiwire_get(a: number): any;
   __hiwire_set(a: number, b: any): void;
   __hiwire_immortal_add(a: any): void;
   _jslib_init(): number;
   _init_pyodide_proxy(): number;
-  jsWrapperTag: any; // Should be WebAssembly.Tag
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
+  _Py_Version: number;
 }
 
 type LockfileInfo = {
@@ -461,6 +462,7 @@ export interface API {
   lockFilePromise: Promise<Lockfile>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
+  lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;
@@ -486,13 +488,8 @@ export interface API {
     buffer: Uint8Array,
     filename: string,
     installDir: string,
-    installer: string,
-    source: string,
+    metadata?: ReadonlyMap<string, string>,
   ) => Promise<void>;
-  recursiveDependencies: (
-    names: string[],
-    errorCallback: (err: string) => void,
-  ) => Map<string, PackageLoadMetadata>;
   _Comlink: any;
 
   dsodir: string;
@@ -500,8 +497,10 @@ export interface API {
   os: PyProxy;
 
   restoreSnapshot(snapshot: Uint8Array): SnapshotConfig;
+  serializeHiwireState(serializer?: (obj: any) => any): SnapshotConfig;
   makeSnapshot(serializer?: (obj: any) => any): Uint8Array;
   saveSnapshot(): Uint8Array;
+  getExpectedKeys(): any[];
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
@@ -509,8 +508,9 @@ export interface API {
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
-
+  pyVersionTuple: [number, number, number];
   LiteralMap: any;
+  sitePackages: string;
 }
 
 // Subset of the API and Module that the package manager needs
@@ -535,5 +535,8 @@ export type PackageManagerModule = Pick<
   Module,
   "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
 > & {
-  FS: Pick<FS, "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile">;
+  FS: Pick<
+    FSType,
+    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
+  >;
 };

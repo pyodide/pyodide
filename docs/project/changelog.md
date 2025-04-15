@@ -16,12 +16,134 @@ myst:
 
 ## Unreleased
 
+- ABI break: Upgraded Emscripten to 4.0.6 {pr}`5343` {pr}`5350` {pr}`5357`
+  {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
+  {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
+  {pr}`5560`
+- ABI break: Switched to using WebAssembly exception handling for C++ errors,
+  Rust panics, and setjmp/longjmp. Projects and build system helpers that have
+  previously set the `-fexceptions` compilation flag **must** switch to using
+  `-fwasm-exceptions`. Furthermore, if a project uses `setjmp`/`longjmp`, they
+  must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
+  compile time and link time.
+  {pr}`5320`
+- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+
+- Importing matplotlib should now be significantly faster.
+
+### `python` CLI entrypoint
+
+- {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
+  old versions of Emscripten this would crash but was fixed over a year ago.
+  {pr}`5477`
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
+
 ### Packages
 
-- Upgraded `protobuf` to 5.29.2 {pr}`5298`
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
+
+- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374`
+
+## Version 0.27.5
+
+_April 04, 2025_
+
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
+
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
+
+### Packages
+
+- Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
+- Added `osqp` 1.0.0 {pr}`5510`
+
+## Version 0.27.4
+
+_March 17, 2025_
+
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console. {pr}`5479`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
+- {{ Fix }} Correct use of `console.log` to `this.logStdout` in `load-package.ts` {pr}`5514`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
+  environment variable as flags to node when starting. {pr}`5478`
+- {{ Fix }} For a Pyodide virtual environment, `.venv-pyodide/bin/python -m pip`
+  now works even if the virtual environment has not been sourced.
+  {pr}`5448`
+
+### Packages
+
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
+
+## Version 0.27.3
+
+_February 26, 2025_
+
+- Added the `context` parameter to `WebLoop.create_task()` {pr}`5431`
+
+- {{ Fix }} `mountNativeFS` API now correctly propagates the error. {pr}`5434`
+- {{ Fix }} `registerJsModule()` now works with non-extensible JS objects, such
+  as ES6 modules. {pr}`5452`
+- {{ Fix }} The Pyodide CLI runner now works correctly on macs when stdout is
+  not a tty. {pr}`5430`
+- {{ Fix }} Since 0.27.1, Pyodide has been broken in iOS because iOS ships
+  broken wasm-gc support. Pyodide feature detects whether the runtime supports
+  wasm-gc and uses it if it is present. Unfortunately, iOS passes the feature
+  detection but wasm-gc doesn't work as expected. {pr}`5445`
+- Upgraded `micropip` to 0.9.0 {pr}`5461`
+
+### Packages
+
+- Added `h3` 4.2.1 {pr}`5436`
+- Added `pcodec` 0.3.3 {pr}`5432`
+- Upgraded `narwhals` to 1.24.1 {pr}`5386`
+- Upgraded `awkward-cpp` to 44 {pr}`5376`
+
+## Version 0.27.2
+
+_January 23, 2025_
+
+### Packages
+
+- Added `httpx` 0.28.1 {pr}`5302`
 - Added `apsw` 3.47.2.0 {pr}`5251`
+- Upgraded `scikit-learn` to 1.6.1 {pr}`5342`
+- Upgraded `pydantic` to 2.10.5 and fixed a version mismatch with
+  `pydantic_core` {pr}`5368`
+- Upgraded `packaging` to 24.2 {pr}`5370`
+
+## Version 0.27.1
+
+_January 15, 2025_
+
+- {{ Enhancement }} Improve stack switching performance by using a wasm-gc based
+  function signature adaptor when it is available. {pr}`5310`
+
+### Packages
+
+- {{ Fix }} PyArrow was accidentally missing from 0.27.0. Now it's really
+  available. {pr}`5300`
+- Upgraded `protobuf` to 5.29.2 {pr}`5298`
 - Added `css_inline` 0.14.6 {pr}`5304`
-- Upgraded `nlopt` 2.9.1 {pr}`5305`
+- Upgraded `nlopt` to 2.9.1 {pr}`5305`
+- Upgraded `zengl` to 2.7.1 {pr}`5258`
 
 ## Version 0.27.0
 

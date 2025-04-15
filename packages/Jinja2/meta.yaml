@@ -1,6 +1,6 @@
 package:
   name: Jinja2
-  version: 3.1.3
+  version: 3.1.6
   tag:
     - core
     - min-scipy-stack
@@ -10,8 +10,8 @@ requirements:
   run:
     - MarkupSafe
 source:
-  sha256: 7d6d50dd97d52cbc355597bd845fabfbac3f551e1f99619e39a35ce8c370b5fa
-  url: https://files.pythonhosted.org/packages/30/6d/6de6be2d02603ab56e72997708809e8a5b0fbfee080735109b40a3564843/Jinja2-3.1.3-py3-none-any.whl
+  sha256: 85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
+  url: https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl
 about:
   home: https://palletsprojects.com/p/jinja/
   PyPI: https://pypi.org/project/Jinja2

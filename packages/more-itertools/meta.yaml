@@ -1,11 +1,11 @@
 package:
   name: more-itertools
-  version: 10.2.0
+  version: 10.6.0
   top-level:
     - more_itertools
 source:
-  sha256: 686b06abe565edfab151cb8fd385a05651e1fdf8f0a14191e4439283421f8684
-  url: https://files.pythonhosted.org/packages/50/e2/8e10e465ee3987bb7c9ab69efb91d867d93959095f4807db102d07995d94/more_itertools-10.2.0-py3-none-any.whl
+  sha256: 6eb054cb4b6db1473f6e15fcc676a08e4732548acd47c708f0e179c2c7c01e89
+  url: https://files.pythonhosted.org/packages/23/62/0fe302c6d1be1c777cab0616e6302478251dfbf9055ad426f5d0def75c89/more_itertools-10.6.0-py3-none-any.whl
 about:
   home: https://github.com/more-itertools/more-itertools
   PyPI: https://pypi.org/project/more-itertools

@@ -1,5 +1,53 @@
 {
   "releases": {
+    "0.28.0a1": {
+      "version": "0.28.0a1",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.28.0a1/xbuildenv-0.28.0a1.tar.bz2",
+      "sha256": "f78b65397f4f1e921e7715604e35648320c6f6ed8bb73792db15823ccccc5b3e",
+      "python_version": "3.13.2",
+      "emscripten_version": "4.0.6",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.5": {
+      "version": "0.27.5",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.5/xbuildenv-0.27.5.tar.bz2",
+      "sha256": "0953d4859ee5116e83aaf5d0c673efe49670c750fe8dfb29b8cca5f15318b5af",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.4": {
+      "version": "0.27.4",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.4/xbuildenv-0.27.4.tar.bz2",
+      "sha256": "5ab1ef39f4666c2fb5e94776f76bd33464a931962073b7ed7d1351242a8ea25a",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.3": {
+      "version": "0.27.3",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.3/xbuildenv-0.27.3.tar.bz2",
+      "sha256": "0f681383b902c6d5fd252239cf456975b4cef6dcfab2679287a59a82ae09c5aa",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.2": {
+      "version": "0.27.2",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.2/xbuildenv-0.27.2.tar.bz2",
+      "sha256": "59e2ebeba4f4590e1279c304d4f4cdba22b76b6f359689c2988bcecd2522c423",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
+    "0.27.1": {
+      "version": "0.27.1",
+      "url": "https://github.com/pyodide/pyodide/releases/download/0.27.1/xbuildenv-0.27.1.tar.bz2",
+      "sha256": "d07acbe50be7e07a172e8ae01fcfc3b43ecfba1dc15e05226a8555fe6bca8f32",
+      "python_version": "3.12.7",
+      "emscripten_version": "3.1.58",
+      "min_pyodide_build_version": "0.26.0"
+    },
     "0.27.0": {
       "version": "0.27.0",
       "url": "https://github.com/pyodide/pyodide/releases/download/0.27.0/xbuildenv-0.27.0.tar.bz2",

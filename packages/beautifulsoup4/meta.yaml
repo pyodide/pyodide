@@ -1,14 +1,15 @@
 package:
   name: beautifulsoup4
-  version: 4.12.3
+  version: 4.13.3
   top-level:
     - bs4
 requirements:
   run:
     - soupsieve
+    - typing-extensions
 source:
-  sha256: b80878c9f40111313e55da8ba20bdba06d8fa3969fc68304167741bbf9e082ed
-  url: https://files.pythonhosted.org/packages/b1/fe/e8c672695b37eecc5cbf43e1d0638d88d66ba3a44c4d321c796f4e59167f/beautifulsoup4-4.12.3-py3-none-any.whl
+  sha256: 99045d7d3f08f91f0d656bc9b7efbae189426cd913d830294a15eefa0ea4df16
+  url: https://files.pythonhosted.org/packages/f9/49/6abb616eb3cbab6a7cca303dc02fdf3836de2e0b834bf966a7f5271a34d8/beautifulsoup4-4.13.3-py3-none-any.whl
 about:
   home: https://www.crummy.com/software/BeautifulSoup/bs4/
   PyPI: https://pypi.org/project/beautifulsoup4

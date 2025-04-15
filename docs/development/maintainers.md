@@ -8,101 +8,57 @@ For branch organization we use a variation of the [GitHub
 Flow](https://guides.github.com/introduction/flow/) with
 the latest release branch named `stable` (due to ReadTheDocs constraints).
 
-### Preparation for making a major release
+### Making a major release
 
-Generally we make a tracking issue with a title like "0.25.0 release planning".
+Assume for concreteness that we are releasing version 0.20.0.
 
-Follow the steps in {ref}`updating-packages`.
+#### Preparation
 
-Read the changelog and tidy it up by adding subsections and proof reading it.
+1. Make a tracking issue with a title like "0.20.0 release planning". Add the
+   checklist:
 
-Generate the list of contributors for the release at the end of the
-changelog entry with
+   - [ ] Update packages
+   - [ ] Look for open PRs to add to the release milestone
+   - [ ] Make sure all PRs in the release milestone are merged
+   - [ ] Write release notes
+   - [ ] Tidy changelog
 
-```sh
-git shortlog -s LAST_TAG.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
-```
+2. Make a release notes blog post at pyodide-blog:
+   https://github.com/pyodide/pyodide-blog
 
-where `LAST_TAG` is the tag for the last release.
-
-Make a pull request with these changes titled "Rearrange changelog for 0.25.0
-release" and merge it.
-
-### Preparation for making a minor release
-
-Make a branch called `backports-for-v.vv.v`:
-
-```sh
-git checkout stable
-git pull upstream
-git checkout -b backports-for-0.23.1
-```
-
-Locate the commits you want to backport in the main branch and cherry pick them:
-
-```sh
-git cherry-pick <commit-hash>
-```
-
-Make a pull request from `backports-for-0.23.1` targeting the stable branch. If
-you're using the github cli this can be done with:
-
-```sh
-gh pr create -w -B stable
-```
-
-In the pull request description add a task:
-
-```md
-- [ ] Merge don't squash
-```
-
-This pull request is a good place to @mention various people to ask if they have
-opinions about what should be backported.
-
-Add an extra commit organizing the changelog into sections and editing changelog
-messages. Generate the list of contributors for the release at the end of the
-changelog entry with
-
-```sh
-git shortlog -s LAST_TAG.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
-```
-
-where `LAST_TAG` is the tag for the last release. Make a branch from main called
-`changelog-for-v.vv.v` and apply the same changelog rearrangements there.
-
-Merge `changelog-for-v.vv.v` and `backports-for-v.vv.v` and then follow the
-relevant steps from {ref}`release-instructions`.
-
-### Preparation for making an alpha release
-
-Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
-final number. No prepration is necessary. Don't update anything in the
-changelog. Follow the relevant steps from {ref}`release-instructions`.
-
-(release-instructions)=
-
-### Release Instructions
-
-1. From the root directory of the repository run
+3. Generate the list of contributors for the release at the end of the release
+   notes blog post with:
 
    ```sh
-   ./tools/bump_version.py --new-version <new_version>
-   # ./tools/bump_version.py --new_version <new_version> --dry-run
+   git shortlog -s 0.19.0.. | cut -f2- | grep -v '\[bot\]' | sort --ignore-case | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s
    ```
 
-   and check that the diff is correct with `git diff`. Try using `ripgrep` to
-   make sure there are no extra old versions lying around e.g., `rg -F "0.18"`,
-   `rg -F dev0`, `rg -F dev.0`.
+   where `0.19.0` is the tag for the last major release.
 
-2. (Skip for alpha release.) Add a heading to the changelog indicating version
-   and release date
+4. Read the changelog and tidy it up by adding subsections, organizing, and proof
+   reading it. Make a pull request with these changes titled "Rearrange changelog
+   for 0.20.0 release" and merge it.
 
-3. Make a PR with the updates from steps 1 and 2. Merge the PR.
+5. Make sure all the PRs that we want to release are merged and that the release notes are ready.
 
-4. (Major release only.) Rename the `stable` branch to a release branch for the
-   previous major version. For instance if last release was, `0.20.0`, the
-   corresponding release branch would be `0.20.X`:
+#### Releasing
+
+1. Switch to the main branch
+2. Replace the `## Unreleased` heading in the changelog with `## Version 0.20.0`
+   and add the date underneath it. Commit this.
+3. From the root of the repository run:
+   ```
+   ./tools/bump_version.py 0.20.0 --tag
+   ```
+   This makes a release commit and tags it.
+4. Push the release commit and tag to upstream. This triggers the release CI.
+   ```
+   git push upstream main 0.20.0
+   ```
+5. Wait for CI to pass and release to be created.
+6. Rename the `stable` branch to a release branch for the previous major
+   version. For instance if last release was, `0.20.0`, the corresponding
+   release branch would be `0.20.X`:
 
    ```sh
    git fetch upstream stable:stable
@@ -110,37 +66,130 @@ changelog. Follow the relevant steps from {ref}`release-instructions`.
    git push -u upstream 0.20.X
    ```
 
-5. Create a tag `X.Y.Z` (without leading `v`) and push
-   it to upstream,
+7. Create a new `stable` branch:
 
    ```sh
-   git checkout main
-   git pull upstream
-   git tag X.Y.Z
-   git push upstream X.Y.Z
-   ```
-
-   Wait for the CI to pass and create the release on GitHub.
-
-6. (Major release only). Create a new `stable` branch from this tag,
-
-   ```sh
-   git checkout main
-   git checkout -B stable
+   git switch main
+   git switch -C stable
    git push upstream stable --force
    ```
 
-7. (Major or alpha but not minor release.) Set the version number back to the
-   development version. If you just released `0.22.0`, set the version to
-   `0.23.0.dev0`. If you just released `0.22.0a1` then you'll set the version to
-   `0.22.0.dev0`. Make a new commit from this and push it to upstream.
+8. Set the version back to next development version with:
    ```sh
-   git checkout main
-   ./tools/bump_version.py --new-version 0.23.0.dev0
-   git add -u
-   git commit -m "0.23.0.dev0"
+   git switch main
+   ./tools/bump_version.py 0.21.0 --dev
    git push upstream main
    ```
+
+### Making a minor release
+
+Assume for concreteness that we are releasing version 0.27.2.
+
+#### Preparation
+
+1. Go through the commits on the main branch since the last release, find ones
+   you want to backport and add the "needs backport" label to the pull requests.
+   You can do this manually in the web interface on the github PR or you can use
+
+   ```sh
+   ./tools/backports.py add-pr <pr-number>
+   ```
+
+2. List out the `needs backport` PRs that are missing changelog entries with
+
+   ```sh
+   ./tools/backports.py missing-changelogs
+   ```
+
+   and double check that every PR that should have a changelog does have one.
+
+3. Read the changelog and tidy it up by adding subsections, organizing, and
+   proof reading it. Make a pull request with these changes titled e.g.,
+   "Rearrange changelog for 0.27.2 release" and merge it.
+
+4. Make the backport branch (on top of stable):
+
+   ```
+   ./tools/backports.py backport-branch
+   ```
+
+5. Make the update-changelog branch (on top of main) with:
+
+   ```
+   ./tools/backports.py changelog-branch
+   ```
+
+6. Open PRs for these two branches with:
+
+   ```
+   ./tools/backports.py open-release-prs
+   ```
+
+7. Use the backport branch PR as the release tracker.
+
+8. Make sure that the CI passes on the backports branch and it is approved. When
+   it does pass, set the date for the release in the changelog with:
+   ```
+   ./tools/backports.py set-date
+   git switch backports-for-0.27.2
+   git push -f
+   git switch changelog-for-0.27.2
+   git push -f
+   ```
+   Then merge the two PRs.
+9. Run
+   ```
+   ./tools/backport.py clear-prs
+   ```
+   to clear all the "needs backport" labels.
+
+#### Releasing
+
+1. Switch to the stable branch and `git pull`.
+2. From the root of the repository run:
+   ```
+   ./tools/backport.py bump-version --tag
+   ```
+   This makes a release commit and tags it.
+3. Push the release commit and tag to `upstream/stable`. This triggers the release
+   CI.
+   ```
+   git push upstream stable 0.27.2
+   ```
+4. Wait for CI to pass and the release to be created.
+
+### Making an alpha release
+
+Assume for concreteness that we are releasing 0.28.0a1.
+
+#### Preparation
+
+Any single maintainer can decide on their own to make an alpha release, it is
+not required to discuss it with other maintainers.
+
+Name the first alpha release `x.x.xa1` and in subsequent alphas increment the
+final number. No preparation is necessary. Do not make any changes to the
+changelog.
+
+#### Release instructions
+
+1. Switch to the main branch and `git pull`.
+2. From the root of the repository run:
+   ```
+   ./tools/bump_version.py 0.28.0a1 --tag
+   ```
+   This makes a release commit and tags it.
+3. Push the release commit and tag to `upstream/main`. This triggers the release
+   CI.
+   ```
+   git push upstream main 0.28.0a1
+   ```
+4. Put the version back with:
+   ```
+   git revert 0.28.0a1 -n && git commit -m "Back to development version"
+   git push upstream main
+   ```
+5. Wait for CI to pass and the release to be created.
 
 ## Fixing documentation for a released version
 
@@ -193,14 +242,14 @@ note to update them independently.
 
 ## Updating pyodide-build
 
-to change the version of pyodide-build, change the commit of the pyodide-build submodule.
+To change the version of pyodide-build, change the commit of the pyodide-build submodule.
 
 ```bash
 cd pyodide-build
 git checkout "<COMMIT HASH>"
 ```
 
-to test with the fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
+To test with a fork of pyodide-build, change the `.gitmodules` file to point to your fork and update the commit hash
 
 ```ini
 # .gitmodules
@@ -212,8 +261,30 @@ to test with the fork of pyodide-build, change the `.gitmodules` file to point t
 ```bash
 git submodule sync
 cd pyodide-build
-git checkout "<COMMIT HASH"
+git checkout "<COMMIT HASH>"
 ```
+
+## Updating the Emscripten version
+
+To update Emscripten requires the following three steps:
+
+1. Rebase the patches in `emsdk/patches` onto the new Emscripten version.
+2. Update the Emscripten version in `Makefile.envs`
+3. Update the `struct_info` json file in `src/js/` to match the version of the
+   file in Emscripten.
+
+All three of these steps are automated by `tools/update_emscripten.py`. To
+update, you can say: `./tools/update_emscripten.py new_version`. If there are
+rebase conflicts, you will have to manually finish the rebase. Once the rebase
+is completed, you can rerun `update_emscripten.py`. It will start over the
+rebase from scratch but reuse your conflict resolutions using the git rerere
+feature.
+
+Updating Emscripten is an ABI break so all platformed wheels that are downloaded
+from an external URL need to be disabled until they are rebuilt.
+
+After this is done, commit all the changes and open a PR. There are frequently
+complicated CI failures.
 
 ## Upgrading pyodide to a new version of CPython
 
@@ -294,10 +365,10 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    figure out how to fix it:
    https://github.com/python-greenlet/greenlet/blob/master/src/greenlet/TPythonState.cpp
 
-8. In the virtual environment with the new Python version, run
+8. Run
 
    ```sh
-   python src/tests/make_test_list.py
+   python tools/make_test_list.py
    ```
 
    Then run the core tests `pytest src/tests/test_core_python.py` and either fix
@@ -321,6 +392,7 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 
 | version | pr         |
 | ------- | ---------- |
+| 3.13    | {pr}`5498` |
 | 3.12    | {pr}`4435` |
 | 3.11    | {pr}`3252` |
 | 3.10    | {pr}`2225` |

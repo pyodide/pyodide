@@ -142,7 +142,9 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | `proxy1 == proxy2`                 | `x === y`                         |
 | `proxy.typeof`                     | `typeof x`                        |
 | `iter(proxy)`                      | `x[Symbol.iterator]()`            |
+| `aiter(proxy)`                     | `x[Symbol.asyncIterator]()`       |
 | `next(proxy)`                      | `x.next()`                        |
+| `anext(proxy)`                     | `x.next()`                        |
 | `await proxy`                      | `await x`                         |
 
 Note that each of these operations is only supported if the proxied JavaScript
@@ -234,25 +236,26 @@ Fewer operations can be overloaded in JavaScript than in Python, so some
 operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 {py:class}`~pyodide.ffi.JsProxy`. The following operations are supported:
 
-| JavaScript                          | Python              |
-| ----------------------------------- | ------------------- |
-| `proxy.toString()`                  | `str(x)`            |
-| `foo in proxy`                      | `hasattr(x, 'foo')` |
-| `proxy.foo`                         | `x.foo`             |
-| `proxy.foo = bar`                   | `x.foo = bar`       |
-| `delete proxy.foo`                  | `del x.foo`         |
-| `Object.getOwnPropertyNames(proxy)` | `dir(x)`            |
-| `proxy(...)`                        | `x(...)`            |
-| `proxy.foo(...)`                    | `x.foo(...)`        |
-| `proxy.length`                      | `len(x)`            |
-| `proxy.has(foo)`                    | `foo in x`          |
-| `proxy.get(foo)`                    | `x[foo]`            |
-| `proxy.set(foo, bar)`               | `x[foo] = bar`      |
-| `proxy.delete(foo)`                 | `del x[foo]`        |
-| `proxy.type`                        | `type(x)`           |
-| `proxy[Symbol.iterator]()`          | `iter(x)`           |
-| `proxy.next()`                      | `next(x)`           |
-| `await proxy`                       | `await x`           |
+| JavaScript                          | Python                  |
+| ----------------------------------- | ----------------------- |
+| `proxy.toString()`                  | `str(x)`                |
+| `foo in proxy`                      | `hasattr(x, 'foo')`     |
+| `proxy.foo`                         | `x.foo`                 |
+| `proxy.foo = bar`                   | `x.foo = bar`           |
+| `delete proxy.foo`                  | `del x.foo`             |
+| `Object.getOwnPropertyNames(proxy)` | `dir(x)`                |
+| `proxy(...)`                        | `x(...)`                |
+| `proxy.foo(...)`                    | `x.foo(...)`            |
+| `proxy.length`                      | `len(x)`                |
+| `proxy.has(foo)`                    | `foo in x`              |
+| `proxy.get(foo)`                    | `x[foo]`                |
+| `proxy.set(foo, bar)`               | `x[foo] = bar`          |
+| `proxy.delete(foo)`                 | `del x[foo]`            |
+| `proxy.type`                        | `type(x)`               |
+| `proxy[Symbol.iterator]()`          | `iter(x)`               |
+| `proxy[Symbol.asyncIterator]()`     | `aiter(x)`              |
+| `proxy.next()`                      | `next(x)` or `anext(x)` |
+| `await proxy`                       | `await x`               |
 
 ````{admonition} Memory Leaks and PyProxy
 :class: warning
@@ -328,7 +331,7 @@ proxy.destroy();
 ```
 As an alternative, if you wish to assert that the object should be fully
 converted and no proxies should be created, you can use
-`proxy.toJs({create_proxies : false})`. If a proxy would be created, a
+`proxy.toJs({create_pyproxies : false})`. If a proxy would be created, a
 {py:exc}`~pyodide.ffi.ConversionError` is raised instead.
 ````
 

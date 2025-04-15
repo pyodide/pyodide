@@ -1,14 +1,14 @@
 package:
   name: pytest-asyncio
-  version: 0.23.7
+  version: 0.25.3
   tag:
     - core
     - min-scipy-stack
   top-level:
     - pytest_asyncio
 source:
-  url: https://files.pythonhosted.org/packages/e5/98/947690b1a79af83e584143cb904497caff05bb6016614b38326a81076357/pytest_asyncio-0.23.7-py3-none-any.whl
-  sha256: 009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b
+  url: https://files.pythonhosted.org/packages/67/17/3493c5624e48fd97156ebaec380dcaafee9506d7e2c46218ceebbb57d7de/pytest_asyncio-0.25.3-py3-none-any.whl
+  sha256: 9e89518e0f9bd08928f97a3482fdc4e244df17529460bc038291ccaf8f85c7c3
 requirements:
   run:
     - pytest

@@ -125,7 +125,7 @@ async def _request(
             url, auth_from_url = strip_auth_from_url(url)
             if auth and auth_from_url:
                 raise ValueError(
-                    "Cannot combine AUTH argument with " "credentials encoded in URL"
+                    "Cannot combine AUTH argument with credentials encoded in URL"
                 )
 
             if auth is None:

@@ -1,6 +1,7 @@
 package:
   name: gdal
   version: 3.8.3
+  _disabled: true
   tag:
     - library
     - shared_library
@@ -26,14 +27,8 @@ build:
 
     embuilder build zlib --pic
     embuilder build libjpeg --pic
-    embuilder build libpng --pic
+    embuilder build libpng-legacysjlj --pic
     embuilder build sqlite3 --pic
-
-    # LLVM bundled with Emscripten >= 3.1.47 has a parser bug regarding
-    # the comment. Until the bug is fixed, this is a temporary workaround to avoid the bug (removing comments).
-    # See: https://github.com/llvm/llvm-project/issues/67979
-    sed -i -e 's|//.*||' -e 's|/\*.*\*/||' alg/gdalgeoloc.cpp
-    sed -i -e 's|//.*||' -e 's|/\*.*\*/||' frmts/pds/pds4vector.cpp
 
     mkdir -p build
     cd build && emcmake cmake .. \
@@ -68,7 +63,7 @@ build:
       \
       -DGDAL_USE_PNG=ON \
       -DPNG_PNG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
-      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng.a \
+      -DPNG_LIBRARY_RELEASE=$EMSCRIPTEN_LIB/libpng-legacysjlj.a \
       \
       -DGDAL_USE_JPEG=ON \
       -DJPEG_INCLUDE_DIR=$EMSCRIPTEN_INCLUDE \
@@ -85,7 +80,8 @@ build:
       -DGDAL_USE_JSONC_INTERNAL=ON \
       -DGDAL_USE_PCRE2=OFF \
       -DBUILD_TESTING=OFF \
-      -DBUILD_PYTHON_BINDINGS=OFF
+      -DBUILD_PYTHON_BINDINGS=OFF \
+      -DCMAKE_VERBOSE_MAKEFILE=OFF
 
 
     # Note:

@@ -1,6 +1,8 @@
 package:
   name: polars
   version: 1.18.0
+  # TODO: re-enable once we have a build for abi 2025_0
+  _disabled: true
   top-level:
     - polars
 # TODO: Upgrade to Rust Nightly 2024-12-19 when adding the sdist instead of the wheel

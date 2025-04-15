@@ -1,0 +1,77 @@
+From 062c19de9bcf764def1c5b0721184c0397624572 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Mon, 31 Mar 2025 12:09:50 +0200
+Subject: [PATCH 8/8] Fix Emscripten call trampoline compatibility with
+ Emscripten 4.0.3 and 4.0.4
+
+See upstream issue:
+https://github.com/emscripten-core/emscripten/issues/23875
+
+We could either upstream this patch or drop it once we get to Emscripten 4.0.5.
+---
+ Python/emscripten_trampoline.c | 32 ++++++++++++++++++--------------
+ 1 file changed, 18 insertions(+), 14 deletions(-)
+
+diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
+index a7bb685bf3d..1b5380a4031 100644
+--- a/Python/emscripten_trampoline.c
++++ b/Python/emscripten_trampoline.c
+@@ -22,7 +22,21 @@ EMSCRIPTEN_KEEPALIVE const int _PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET = offsetof(_Py
+ 
+ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+     return Module._PyEM_CountArgsPtr; // initialized below
++});
++
++EM_JS(void, _PyEM_InitTrampoline_js, (), {
++    const ptr = getPyEMCountArgsPtr();
++    Module._PyEM_CountArgsPtr = ptr;
++    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET / 4];
++    HEAP32[(__PyRuntime + offset) / 4] = ptr;
+ }
++
++function getPyEMCountArgsPtr() {
++    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
++    if (isIOS) {
++        return 0;
++    }
++
+ // Binary module for the checks. It has to be done in web assembly because
+ // clang/llvm have no support yet for the reference types yet. In fact, the wasm
+ // binary toolkit doesn't yet support the ref.test instruction either. To
+@@ -77,13 +91,6 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+ //         i32.const -1
+ //     )
+ // )
+-
+-function getPyEMCountArgsPtr() {
+-    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+-    if (isIOS) {
+-        return 0;
+-    }
+-
+     // Try to initialize countArgsFunc
+     const code = new Uint8Array([
+         0x00, 0x61, 0x73, 0x6d, // \0asm magic number
+@@ -164,15 +171,12 @@ function getPyEMCountArgsPtr() {
+         // back to the JS trampoline.
+         return 0;
+     }
++});
++
++__attribute__((constructor)) void _PyEM_InitTrampoline() {
++  _PyEM_InitTrampoline_js();
+ }
+ 
+-addOnPreRun(() => {
+-    const ptr = getPyEMCountArgsPtr();
+-    Module._PyEM_CountArgsPtr = ptr;
+-    const offset = HEAP32[__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET / 4];
+-    HEAP32[(__PyRuntime + offset) / 4] = ptr;
+-});
+-);
+ 
+ void
+ _Py_EmscriptenTrampoline_Init(_PyRuntimeState *runtime)
+-- 
+2.34.1
+

@@ -9,7 +9,7 @@ from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH, ROOT_PATH
+from conftest import DIST_PATH, PYODIDE_ROOT
 
 
 def get_pyparsing_wheel_name() -> str:
@@ -69,7 +69,7 @@ def test_load_relative_url(
     request, runtime, web_server_main, playwright_browsers, tmp_path
 ):
     url, port, _ = web_server_main
-    test_html = (ROOT_PATH / "src/templates/test.html").read_text()
+    test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
     test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
     (tmp_path / "test_temp.html").write_text(test_html)
     pytz_wheel = get_pytz_wheel_name()
@@ -568,10 +568,13 @@ class DummyDistribution:
             if value is not None:
                 (dist_info_dir / key).write_text(value)
         with (dist_info_dir / "METADATA").open("w") as f:
+            # fmt: off
             f.write(
-                f"Metadata-Version: 2.1\nName: {self.name}\n"
+                "Metadata-Version: 2.1\n"
+                f"Name: {self.name}\n"
                 f"Version: {self.version}\n"
             )
+            # fmt: on
 
     def __repr__(self):
         return self.name
@@ -773,8 +776,7 @@ def test_install_api(selenium_standalone, httpserver):
           wheelDataArr,
           "{test_file_name}",
           "{install_dir}",
-          "pytest",
-          "pytest",
+          new Map([["INSTALLER", "pytest"]])
         );
         """
     )
@@ -785,9 +787,12 @@ def test_install_api(selenium_standalone, httpserver):
 
         d = pathlib.Path(pkg_dir)
         assert d.is_dir(), f"Directory {d} not found"
-        assert (
-            d / "dummy_pkg-0.1.0.dist-info"
-        ).is_dir(), "dist-info directory not found"
+        assert (d / "dummy_pkg-0.1.0.dist-info").is_dir(), (
+            "dist-info directory not found"
+        )
+        assert (d / "dummy_pkg-0.1.0.dist-info" / "INSTALLER").is_file(), (
+            "INSTALLER file not found"
+        )
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
     _run(selenium, install_dir)

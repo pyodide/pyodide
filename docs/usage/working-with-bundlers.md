@@ -11,10 +11,10 @@ project.
 
 ```{note}
 The following instructions have been tested with Pyodide 0.26.2, Vite 5.4.9, and
-vite-plugin-pyodide 2.0.0.
+vite-plugin-static-copy 2.0.0.
 ```
 
-First, install the Pyodide and vite-plugin-pyodide npm packages:
+First, install the Pyodide and vite-plugin-static-copy npm packages:
 
 ```
 $ npm install pyodide vite-plugin-static-copy

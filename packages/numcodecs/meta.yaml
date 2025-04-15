@@ -1,6 +1,8 @@
 package:
   name: numcodecs
   version: 0.13.1
+  # Need to update patches
+  pinned: true
   top-level:
     - numcodecs
 source:
@@ -14,6 +16,8 @@ build:
     export DISABLE_NUMCODECS_SSE2=1
     export DISABLE_NUMCODECS_AVX2=1
 requirements:
+  host:
+    - numpy
   run:
     - numpy
     - msgpack

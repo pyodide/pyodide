@@ -1,4 +1,4 @@
-From a68778f7d8d2fa121ff4cab402f2a862e5cb1afe Mon Sep 17 00:00:00 2001
+From 0aef39a0c0965499f2af0865c73aeb5cf7fd6030 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 2 Dec 2022 11:36:44 +0000
 Subject: [PATCH 2/8] Add emscripten platform support to
@@ -9,7 +9,7 @@ Subject: [PATCH 2/8] Add emscripten platform support to
  1 file changed, 24 insertions(+)
 
 diff --git a/Lib/ctypes/util.py b/Lib/ctypes/util.py
-index 0c2510e1619..c8875ec0099 100644
+index 117bf06cb01..bb2291348fa 100644
 --- a/Lib/ctypes/util.py
 +++ b/Lib/ctypes/util.py
 @@ -80,6 +80,30 @@ def find_library(name):

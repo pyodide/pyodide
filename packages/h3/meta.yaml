@@ -1,0 +1,17 @@
+package:
+  name: h3
+  version: 4.2.2
+  top-level:
+    - h3
+source:
+  url: https://files.pythonhosted.org/packages/25/2a/dac23698122456ce12345e0a1408c23bc389eaffab5eb7689b8e080d9dfb/h3-4.2.2.tar.gz
+  sha256: 5cc78d546b5c732f480a842e3e436c393fe37fe59b063fe9cb5589206b7c4c7e
+about:
+  home: https://uber.github.io/h3-py/
+  PyPI: https://pypi.org/project/h3
+  summary: Uber's hierarchical hexagonal geospatial indexing system
+  license: Apache-2.0
+extra:
+  recipe-maintainers:
+    - isaacbrodsky
+    - ajfriend

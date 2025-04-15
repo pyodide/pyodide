@@ -1,15 +1,23 @@
 (building-packages-using-recipe)=
 
+<<<<<<< HEAD:docs/development/building-packages-using-recipe.md
 # Building Packages Using Recipe
+=======
+# Adding a package to the Pyodide Distribution
+>>>>>>> upstream/main:docs/development/new-packages.md
 
 While you can build Python packages from source (see {ref}`building-packages-from-source`),
 you can also build multiple Python packages at once using conda-style recipes.
 
+<<<<<<< HEAD:docs/development/building-packages-using-recipe.md
 Using a recipe is also required to include the package in the Pyodide distribution.
 We are maintaining a repository of recipes for Pyodide packages at
 [`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) and you can
 contribute your own recipes there. The recipes in this repository will be included
 in the Pyodide distribution.
+=======
+## Determining if adding a package is necessary
+>>>>>>> upstream/main:docs/development/new-packages.md
 
 ## Building Packages from Recipe
 

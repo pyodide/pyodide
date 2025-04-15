@@ -2,13 +2,6 @@
 
 # Building Python Packages from Source
 
-This is some information about how to build and test Python packages against
-Pyodide, for instance in your package's CI or for use with private
-packages.
-
-Pyodide currently only supports building packages in Linux environments officially,
-though there is a good chance it will work in MacOS too.
-If you are using Windows, try Windows Subsystem for Linux.
 
 ## Building binary packages for Pyodide
 
@@ -16,8 +9,7 @@ If your package is a pure Python package (i.e., if the wheel ends in
 `py3-none-any.whl`) then follow the official PyPA documentation on building
 [wheels](https://packaging.python.org/en/latest/tutorials/packaging-projects/#generating-distribution-archives)
 For binary packages, the manual steps are detailed below. In addition,
-[cibuildwheel](https://cibuildwheel.pypa.io/en/stable/) 2.19 or later provides
-support for building binary wheels with Pyodide as a target.
+
 
 ### Build the WASM/Emscripten wheel
 
@@ -129,7 +121,7 @@ runs-on: ubuntu-22.04 # or ubuntu-latest
   - uses: actions/checkout@v4
   - uses: actions/setup-python@v5
     with:
-       python-version: 3.12
+       python-version: 3.13
   - run: |
       pip install pyodide-build>=0.29.2
       echo EMSCRIPTEN_VERSION=$(pyodide config get emscripten_version) >> $GITHUB_ENV

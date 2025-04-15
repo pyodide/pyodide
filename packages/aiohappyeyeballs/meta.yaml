@@ -1,0 +1,16 @@
+package:
+  name: aiohappyeyeballs
+  version: 2.6.1
+  top-level:
+    - aiohappyeyeballs
+source:
+  url: https://files.pythonhosted.org/packages/py3/a/aiohappyeyeballs/aiohappyeyeballs-2.6.1-py3-none-any.whl
+  sha256: f349ba8f4b75cb25c99c5c2d84e997e485204d2902a9597802b0371f09331fb8
+about:
+  home: null
+  PyPI: https://pypi.org/project/aiohappyeyeballs
+  summary: Happy Eyeballs for asyncio
+  license: PSF-2.0
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

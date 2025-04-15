@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.7-slim-bookworm
+FROM python:3.13.2-slim-bookworm
 
 # Requirements for building packages
 RUN apt-get update \
@@ -9,14 +9,8 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq xxd \
+        ninja-build jq \
   && rm -rf /var/lib/apt/lists/*
-
-# Normally, it is a bad idea to install rustup and cargo in
-# system directories (it should not be shared between users),
-# but this docker image is only for building packages, so I hope it is ok.
-RUN wget -q -O - https://sh.rustup.rs | \
-    RUSTUP_HOME=/usr CARGO_HOME=/usr sh -s -- -y --profile minimal --no-modify-path
 
 # install autoconf 2.71, required by upstream libffi
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
@@ -27,12 +21,11 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && rm -rf autoconf-2.71
 
-ADD requirements.txt docs/requirements-doc.txt /
+ADD requirements.txt /
 
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
-    && pip3 --no-cache-dir install -r requirements-doc.txt \
-    && rm -rf requirements.txt requirements-doc.txt
+    && rm requirements.txt
 
 RUN cd / \
     && git clone --recursive https://github.com/WebAssembly/wabt \
@@ -52,6 +45,16 @@ RUN npm install -g \
   prettier \
   rollup \
   rollup-plugin-terser
+
+# Normally, it is a bad idea to install rustup and cargo in
+# system directories (it should not be shared between users),
+# but this docker image is only for building packages, so I hope it is ok.
+# Setting RUSTUP_UPDATE_ROOT gives us a beta rustup.
+# TODO: Remove when Rustup 1.28.0 is released.
+RUN wget -q -O  -  https://sh.rustup.rs | \
+  RUSTUP_UPDATE_ROOT=https://dev-static.rust-lang.org/rustup \
+  RUSTUP_HOME=/usr CARGO_HOME=/usr \
+  sh -s -- -y --profile minimal --no-modify-path
 
 # Get Chrome and Firefox (borrowed from https://github.com/SeleniumHQ/docker-selenium)
 
@@ -75,9 +78,9 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
   then FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
   else FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
   fi \
-  && wget --no-verbose -O /tmp/firefox.tar.bz2 $FIREFOX_DOWNLOAD_URL \
-  && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
-  && rm /tmp/firefox.tar.bz2 \
+  && wget --no-verbose -O /tmp/firefox.tar.xz "$FIREFOX_DOWNLOAD_URL" \
+  && tar -C /opt -xf /tmp/firefox.tar.xz \
+  && rm /tmp/firefox.tar.xz \
   && mv /opt/firefox /opt/firefox-$FIREFOX_VERSION \
   && ln -fs /opt/firefox-$FIREFOX_VERSION/firefox /usr/local/bin/firefox \
   && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz \
@@ -104,7 +107,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; \
   then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
   else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
   fi \
-  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb." \
+  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
   && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
   && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
   && apt-get update \

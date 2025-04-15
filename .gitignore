@@ -25,8 +25,10 @@ cpython/downloads
 cpython/installs
 cpython/build.log
 dist*/
+!packages/distro/
 docs/_build/
 emsdk/emsdk
+emsdk/emscripten
 geckodriver.log
 node_modules
 packages/.artifacts
@@ -35,10 +37,10 @@ packages/.libs
 packages/*/build.log*
 packages/build-logs
 dist/
-pyodide-build/**/build.log
 xbuildenv/
 pytest-pyodide
 tools/symlinks
 xbuildenv/
 .pyodide-xbuildenv*
 DS_Store
+.pyodide_build_installed

@@ -1,11 +1,11 @@
 package:
   name: exceptiongroup
-  version: 1.2.1
+  version: 1.2.2
   top-level:
     - exceptiongroup
 source:
-  url: https://files.pythonhosted.org/packages/01/90/79fe92dd413a9cab314ef5c591b5aa9b9ba787ae4cadab75055b0ae00b33/exceptiongroup-1.2.1-py3-none-any.whl
-  sha256: 5258b9ed329c5bbdd31a309f53cbfb0b155341807f6ff7606a1e801a891b29ad
+  url: https://files.pythonhosted.org/packages/02/cc/b7e31358aac6ed1ef2bb790a9746ac2c69bcb3c8588b41616914eb106eaf/exceptiongroup-1.2.2-py3-none-any.whl
+  sha256: 3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b
 about:
   home: https://github.com/agronholm/exceptiongroup
   PyPI: https://pypi.org/project/exceptiongroup

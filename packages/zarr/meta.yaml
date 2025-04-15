@@ -1,16 +1,20 @@
 package:
   name: zarr
   version: 2.18.3
+  # zarr 3.x uses threading
+  _disabled: true
+  pinned: true
   top-level:
     - zarr
 source:
-  sha256: 2580d8cb6dd84621771a10d31c4d777dca8a27706a1a89b29f42d2d37e2df5ce
-  url: https://files.pythonhosted.org/packages/23/c4/187a21ce7cf7c8f00c060dd0e04c2a81139bb7b1ab178bba83f2e1134ce2/zarr-2.18.3.tar.gz
+  sha256: 4ac0a09d66875d398ab53c95fd4bddca2f3d757a04454831fc2d54bfbafcb7e5
+  url: https://files.pythonhosted.org/packages/0f/27/9969116e77d0ce3996c58630678fa20ff094a1599018ef24006c1df480c0/zarr-3.0.5.tar.gz
 requirements:
   run:
     - numpy
     - asciitree
     - numcodecs
+    - typing-extensions
 about:
   home: https://github.com/zarr-developers/zarr-python
   PyPI: https://pypi.org/project/zarr

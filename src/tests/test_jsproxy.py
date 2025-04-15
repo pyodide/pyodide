@@ -246,7 +246,8 @@ def test_jsproxy_iter(selenium):
         }
         self.ITER = makeIterator([1, 2, 3]);"""
     )
-    assert selenium.run("from js import ITER\n" "list(ITER)") == [1, 2, 3]
+    selenium.run("from js import ITER")
+    assert selenium.run("list(ITER)") == [1, 2, 3]
 
 
 def test_jsproxy_implicit_iter(selenium):
@@ -255,15 +256,10 @@ def test_jsproxy_implicit_iter(selenium):
         self.ITER = [1, 2, 3];
         """
     )
-    assert selenium.run("from js import ITER, Object\n" "list(ITER)") == [1, 2, 3]
-    assert selenium.run("from js import ITER, Object\n" "list(ITER.values())") == [
-        1,
-        2,
-        3,
-    ]
-    assert selenium.run(
-        "from js import ITER, Object\n" "list(Object.values(ITER))"
-    ) == [1, 2, 3]
+    selenium.run("from js import ITER, Object")
+    assert selenium.run("list(ITER)") == [1, 2, 3]
+    assert selenium.run("list(ITER.values())") == [1, 2, 3]
+    assert selenium.run("list(Object.values(ITER))") == [1, 2, 3]
 
 
 def test_jsproxy_call1(selenium):
@@ -805,6 +801,24 @@ def test_register_jsmodule_docs_example(selenium_standalone):
         del sys.modules["my_js_module.submodule"]
         """
     )
+
+
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+def test_register_non_extendable_jsmodule(selenium_standalone):
+    selenium_standalone.run_js(
+        """
+        pyodide.registerJsModule("x", Object.preventExtensions({aaa: 2, bbb: 7}))
+        """
+    )
+
+    @run_in_pyodide
+    def check_import_star(selenium):
+        a = {}  # type:ignore[var-annotated]
+        exec("from x import *", a)
+        assert set(a).issuperset({"aaa", "bbb"})
+
+    check_import_star(selenium_standalone)
 
 
 @run_in_pyodide

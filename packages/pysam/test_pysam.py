@@ -39,9 +39,9 @@ def test_pysam(selenium):
             # Test read attributes
             for read in reads:
                 assert read.query_name is not None, "Read does not have a query name"
-                assert (
-                    read.query_sequence is not None
-                ), "Read does not have a query sequence"
+                assert read.query_sequence is not None, (
+                    "Read does not have a query sequence"
+                )
                 assert read.flag is not None, "Read does not have a flag"
 
             # Count reads and assert correct number
@@ -50,8 +50,8 @@ def test_pysam(selenium):
 
             # Verify alignment statistics
             stats = samfile.get_index_statistics()
-            assert all(
-                stat.mapped > 0 for stat in stats
-            ), "Some contigs have no mapped reads"
+            assert all(stat.mapped > 0 for stat in stats), (
+                "Some contigs have no mapped reads"
+            )
 
     _test_pysam_inner(selenium, EX1_BAM, EX1_BAI)

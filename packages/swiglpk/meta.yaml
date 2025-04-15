@@ -1,12 +1,12 @@
 package:
   name: swiglpk
-  version: 5.0.10
+  version: 5.0.12
   top-level:
     - swiglpk
 
 source:
-  sha256: 57ac34ad334da95dd168114bfdb50ae10a2a6a3ddef21e4941f46fe430c5a7e1
-  url: https://files.pythonhosted.org/packages/b7/c3/b635185e6af163af1b6ad786cc5afc6b5926405581c6ddd02c6f93f8a8d3/swiglpk-5.0.10.tar.gz
+  sha256: 86d1be00f24ad59b9e179d3d5132f270535d57be7f209f70f8a6a8b001a65c98
+  url: https://files.pythonhosted.org/packages/30/6c/9150c5b248eed3a491e5c58642182635956c33b6e03974fcf122f2b0c562/swiglpk-5.0.12.tar.gz
 
 build:
   script: |
@@ -16,6 +16,8 @@ build:
 requirements:
   host:
     - glpk
+  executable:
+    - swig
 about:
   home: https://github.com/opencobra/swiglpk
   PyPI: https://pypi.org/project/swiglpk/
