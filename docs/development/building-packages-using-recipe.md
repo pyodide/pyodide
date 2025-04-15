@@ -1,34 +1,19 @@
 (building-packages-using-recipe)=
 
-<<<<<<< HEAD:docs/development/building-packages-using-recipe.md
 # Building Packages Using Recipe
-=======
-# Adding a package to the Pyodide Distribution
->>>>>>> upstream/main:docs/development/new-packages.md
 
-While you can build Python packages from source (see {ref}`building-packages-from-source`),
-you can also build multiple Python packages at once using conda-style recipes.
+While you can build Python packages from source,
+we provide a `conda`-style recipe system to build multiple packages at once.
 
-<<<<<<< HEAD:docs/development/building-packages-using-recipe.md
 Using a recipe is also required to include the package in the Pyodide distribution.
-We are maintaining a repository of recipes for Pyodide packages at
-[`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) and you can
-contribute your own recipes there. The recipes in this repository will be included
-in the Pyodide distribution.
-=======
-## Determining if adding a package is necessary
->>>>>>> upstream/main:docs/development/new-packages.md
+See {ref}`adding-packages-into-pyodide-distribution` for more information.
 
 ## Building Packages from Recipe
-
-As a starting point, you may want to look at the `meta.yaml` files for some
-other Pyodide packages in the
-[`packages/` folder](https://github.com/pyodide/pyodide-recipes/tree/main/packages).
 
 ### Creating the `meta.yaml` file
 
 To build a Python package in tree, you need to create a `meta.yaml` file that
-defines a recipe which may include build commands and patches (source code
+defines a recipe which includes build commands and patches (source code
 edits), amongst other things.
 
 If your package is on PyPI, the easiest place to start is with the
@@ -285,19 +270,6 @@ the Python package. See e.g. `matplotlib` for an example. [The full list of
 libraries with Emscripten ports is
 here.](https://github.com/orgs/emscripten-ports/repositories?type=all)
 
-### Structure of a Pyodide package
-
-Pyodide is obtained by compiling CPython into WebAssembly. As such, it loads
-packages the same way as CPython --- it looks for relevant files `.py` and `.so`
-files in the directories in `sys.path`. When installing a package, our job is to
-install our `.py` and `.so` files in the right location in emscripten's virtual
-filesystem.
-
-Wheels are just zip archives, and to install them we unzip them into the
-`site-packages` directory. If there are any `.so` files, we also need to load
-them at install time: WebAssembly must be loaded asynchronously, but Python
-imports are synchronous so it is impossible to load `.so` files lazily.
-
 ### Rust/PyO3 Packages
 
 We currently build `cryptography` which is a Rust extension built with PyO3 and
@@ -314,9 +286,3 @@ and can be removed with `export RUSTFLAGS=""`.
 
 If your project builds using maturin, you need to use maturin 0.14.14 or later. It is pretty easy to patch an existing project (see `projects/fastparquet/meta.yaml` for an example)
 
-```{eval-rst}
-.. toctree::
-   :hidden:
-
-   meta-yaml.md
-```
