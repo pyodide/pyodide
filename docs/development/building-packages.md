@@ -96,7 +96,6 @@ support for building binary wheels with Pyodide as a target. Follow the
 [cibuildwheel documentation](https://cibuildwheel.pypa.io/en/stable/setup/#pyodide-webassembly-builds-experimental)
 to set up your project to build wheels for Pyodide.
 
-
 ```{eval-rst}
 .. toctree::
    :hidden:
