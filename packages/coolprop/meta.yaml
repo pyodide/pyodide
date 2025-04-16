@@ -7,8 +7,8 @@ package:
     - CoolProp
 
 source:
-  url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.6.0/source/CoolProp_sources.zip
-  sha256: ba3077ad24b36617fd7ab24310ce646a65bcbc8fde47f8de128cde2c72124b84
+  url: https://sourceforge.net/projects/coolprop/files/CoolProp/6.7.0/source/CoolProp_sources.zip
+  sha256: 11A02FE660C5C19F691398F7A71AAF6360CF4648F4AD57FD41BDE74F51EFD4AB
   extract_dir: source
 
   extras:
