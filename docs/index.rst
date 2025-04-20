@@ -62,7 +62,7 @@ Using Pyodide
    usage/index.md
    usage/accessing-files.md
    usage/loading-packages.md
-   usage/building-and-testing-packages.md
+   usage/building-packages.md
    usage/wasm-constraints.md
    usage/type-conversions.md
    usage/keyboard-interrupts.md
