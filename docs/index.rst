@@ -42,7 +42,7 @@ What should I look at first?
   :ref:`working-with-bundlers`.
 - If you are a Python package maintainer, see the documentation
   :ref:`building-packages`.
-- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`adding-packages-into-pyodide-distribution.md`.
+- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`adding-packages-into-pyodide-distribution`.
 - If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
   :ref:`building_from_source`.
 
