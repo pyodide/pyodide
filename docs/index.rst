@@ -41,8 +41,8 @@ What should I look at first?
 - If you wish to use Pyodide with a bundler, see the documentation on
   :ref:`working-with-bundlers`.
 - If you are a Python package maintainer, see the documentation
-  :ref:`building-and-testing-packages-out-of-tree`.
-- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`new-packages`.
+  :ref:`building-packages`.
+- If you want to add a package to the Pyodide distribution, see the documentation on :ref:`adding-packages-into-pyodide-distribution.md`.
 - If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
   :ref:`building_from_source`.
 
