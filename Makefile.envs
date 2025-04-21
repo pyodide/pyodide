@@ -244,10 +244,28 @@ EXPORTS=_main \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
+	EXPORTED_RUNTIME_METHODS=wasmTable \
+		,ERRNO_CODES \
+		,FS \
+		,ENV \
+		,stringToNewUTF8 \
+		,addFunction \
+		,stackSave \
+		,stackRestore \
+		,HEAP8 \
+		,HEAPU8 \
+		,HEAP16 \
+		,HEAPU16 \
+		,HEAP32 \
+		,HEAPU32 \
+		,HEAP64 \
+		,HEAPU64 \
+		,HEAPF32 \
+		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction,stackSave,stackRestore,HEAP8,HEAPU32' \
+		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
