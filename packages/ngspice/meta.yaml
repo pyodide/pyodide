@@ -1,0 +1,40 @@
+package:
+  name: ngspice
+  version: "44.2"
+
+source:
+  url: https://github.com/danchitnis/ngspice-sf-mirror/archive/refs/tags/ngspice-44.2.zip
+  sha256: 3ae94703938247a22148f60a1307d52719d42a9134b5aef6252594000f513902
+  patches:
+    - patches/0001-keep-alive-API-functions.patch
+    - patches/0001-no-hicum2.patch
+
+build:
+  type: shared_library
+  script: |
+    bash ./autogen.sh
+
+    configure_args=(
+      --prefix=${WASM_LIBRARY_DIR}
+      --disable-xspice
+      --disable-debug
+      --disable-dependency-tracking
+      --enable-cider
+      --with-readline=no
+      --disable-openmp
+      --with-ngshared
+      --host=wasm32-unknown-emscripten
+    )
+
+    mkdir release-lib && cd release-lib
+    emconfigure ../configure "${configure_args[@]}"
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+    cp ${WASM_LIBRARY_DIR}/lib/libngspice.so ${DISTDIR}
+
+about:
+  home: http://ngspice.sourceforge.net
+
+  license: BSD-3-Clause
+
+  summary: The open source spice simulator for electric and electronic circuits
