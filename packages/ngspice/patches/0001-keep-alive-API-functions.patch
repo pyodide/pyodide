@@ -1,0 +1,26 @@
+From 3c02c562b98c95f120425828fef28d17657160e8 Mon Sep 17 00:00:00 2001
+From: Pepijn de Vos <pepijndevos@gmail.com>
+Date: Tue, 6 May 2025 12:53:35 +0200
+Subject: [PATCH] keep alive API functions
+
+---
+ src/include/ngspice/sharedspice.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/include/ngspice/sharedspice.h b/src/include/ngspice/sharedspice.h
+index d38558d78..c67dd8250 100644
+--- a/src/include/ngspice/sharedspice.h
++++ b/src/include/ngspice/sharedspice.h
+@@ -144,6 +144,9 @@ extern "C" {
+   #else
+     #define IMPEXP __declspec(dllimport)
+   #endif
++#elif defined(__EMSCRIPTEN__)
++  #include <emscripten.h>
++  #define IMPEXP EMSCRIPTEN_KEEPALIVE
+ #else
+   /* use with gcc flag -fvisibility=hidden */
+   #if __GNUC__ >= 4
+-- 
+2.49.0
+
