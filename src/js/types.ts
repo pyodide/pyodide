@@ -29,6 +29,7 @@ declare global {
 declare global {
   export const stringToNewUTF8: (str: string) => number;
   export const UTF8ToString: (ptr: number) => string;
+  export const UTF8ArrayToString: (buf: Uint8Array) => string;
   export const FS: FSType;
   export const stackAlloc: (sz: number) => number;
   export const stackSave: () => number;
