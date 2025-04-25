@@ -29,7 +29,7 @@ def test_heif(selenium):
 
 
 def test_pillow(selenium):
-    @run_in_pyodide(packages=["Pillow", "pillow-heif"])
+    @run_in_pyodide(packages=["Pillow", "pi-heif"])
     def _test_pillow_inner(selenium, image_base64):
         import base64
 
