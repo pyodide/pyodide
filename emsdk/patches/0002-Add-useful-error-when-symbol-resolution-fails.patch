@@ -1,4 +1,4 @@
-From 8cfe3bf9490d5023b82a0b7b08d668861e9aa907 Mon Sep 17 00:00:00 2001
+From ab79ec86df471f9d5bc8a0e1b925ff75103f303e Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 19 May 2023 12:19:00 -0700
 Subject: [PATCH 2/3] Add useful error when symbol resolution fails
@@ -19,7 +19,7 @@ symbol.
  1 file changed, 3 insertions(+)
 
 diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
-index 070ebddca..f22d3bfc1 100644
+index 55bdcdc67..02ae0102e 100644
 --- a/src/lib/libdylink.js
 +++ b/src/lib/libdylink.js
 @@ -725,6 +725,9 @@ var LibraryDylink = {
