@@ -20,10 +20,10 @@ Changes introduced:
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/setup.py b/setup.py
-index 22f3cb3..39da16d 100644
+index 64093c2..81bd0f7 100644
 --- a/setup.py
 +++ b/setup.py
-@@ -75,11 +75,11 @@ def run_configure(option):
+@@ -74,11 +74,11 @@ def run_configure(option):
  
  def run_make(targets):
      sys.stdout.flush()
@@ -32,11 +32,11 @@ index 22f3cb3..39da16d 100644
  
  
  def run_make_print_config():
--    stdout = subprocess.check_output(["make", "-s", "print-config"])
-+    stdout = subprocess.check_output(["emmake", "make", "-s", "print-config"])
-     if IS_PYTHON3:
-         stdout = stdout.decode("ascii")
+-    stdout = subprocess.check_output(["make", "-s", "print-config"], encoding="ascii")
++    stdout = subprocess.check_output(["emmake", "make", "-s", "print-config"], encoding="ascii")
  
+     make_print_config = {}
+     for line in stdout.splitlines():
 -- 
 2.39.3 (Apple Git-145)
 
