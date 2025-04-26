@@ -273,11 +273,6 @@ export interface LDSO {
   };
 }
 
-/** @hidden */
-// callback functions passed to emscripten_dlopen
-export type dlopenCallback = (userData: number, handle: number) => void;
-export type argCallbackFunc = (error: number) => void;
-
 /**
  * TODO: consider renaming the type to ModuleType to avoid name collisions
  * between Module and ModuleType?
@@ -329,7 +324,9 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
-  _emscripten_dlopen(filename: number, flags: number, userData: number, onsuccess: dlopenCallback, onerror: argCallbackFunc): void;
+  addFunction: (func: Function, sig: string) => number;
+  removeFunction: (index: number) => void;
+  _emscripten_dlopen(filename: number, flags: number, userData: number, onsuccess: number, onerror: number): void;
 }
 
 type LockfileInfo = {
@@ -514,7 +511,7 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "LDSO" | "_emscripten_dlopen" | "stringToNewUTF8"
+  "reportUndefinedSymbols" | "PATH" | "LDSO" | "_emscripten_dlopen" | "stringToNewUTF8" | "addFunction" | "removeFunction"
 > & {
   FS: Pick<
     FSType,

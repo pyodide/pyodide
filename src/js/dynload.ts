@@ -1,6 +1,6 @@
 /* Handle dynamic library loading. */
 
-import { argCallbackFunc, dlopenCallback, PackageManagerAPI, PackageManagerModule } from "./types";
+import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
 import { createResolvable } from "./common/resolveable";
@@ -65,28 +65,32 @@ export class DynlibLoader {
       //   localScope,
       // );
       // https://github.com/ryanking13/emscripten/blob/2e41541ba5478b454eb2d912d474810fa4ca2896/system/lib/libc/dynlink.c#L604
+      const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
-      const resolveable = createResolvable();
-
-      const onsuccess: dlopenCallback = () => {
+      const onsuccess = Module.addFunction((userData: number, handle: number) => {
         DEBUG && console.debug(`Loaded dynamic library ${lib}`);
         resolveable.resolve();
-      }
-      const onerror: argCallbackFunc = () => {
+      }, "vii");
+      const onerror = Module.addFunction((error: number) => {
         console.error(`Failed to load dynamic library ${lib}`);
         resolveable.reject()
+      }, "vi");
+      
+      try {
+        this.#module._emscripten_dlopen(
+          libUTF8,
+          flags,
+          0, // user_data is not used,
+          onsuccess,
+          onerror,
+        )
+        await resolveable;
+      } finally {
+        Module.removeFunction(onsuccess);
+        Module.removeFunction(onerror);
       }
-      
-      this.#module._emscripten_dlopen(
-        libUTF8,
-        flags,
-        0, // user_data is not used,
-        onsuccess,
-        onerror,
-      )
-      await resolveable;
-      
+
       // Emscripten saves the list of loaded libraries in LDSO.loadedLibsByName.
       // However, since emscripten dylink metadata only contains the name of the
       // library not the full path, we need to update it manually in order to
