@@ -259,23 +259,10 @@ export interface FSType {
   ErrnoError: { new (errno: number): Error };
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
-  findObject(a: string, dontResolveLastLink?: boolean): any;
-  readFile(a: string): Uint8Array;
 }
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
-
-/** @hidden */
-export type ReadFileType = (path: string) => Uint8Array;
-
-// File System-like type which can be passed to
-// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-/** @hidden */
-export type LoadDynlibFS = {
-  readFile: ReadFileType;
-  findObject: (path: string, dontResolveLastLink: boolean) => any;
-};
 
 type DSO = any;
 
@@ -285,6 +272,11 @@ export interface LDSO {
     [key: string]: DSO;
   };
 }
+
+/** @hidden */
+// callback functions passed to emscripten_dlopen
+export type dlopenCallback = (userData: number, handle: number) => void;
+export type argCallbackFunc = (error: number) => void;
 
 /**
  * TODO: consider renaming the type to ModuleType to avoid name collisions
@@ -304,18 +296,6 @@ export interface Module {
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
   reportUndefinedSymbols(): void;
-  loadDynamicLibrary(
-    lib: string,
-    options?: {
-      loadAsync?: boolean;
-      nodelete?: boolean;
-      allowUndefined?: boolean;
-      global?: boolean;
-      fs: LoadDynlibFS;
-    },
-    localScope?: object | null,
-    handle?: number,
-  ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
@@ -349,6 +329,7 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
+  _emscripten_dlopen(filename: number, flags: number, userData: number, onsuccess: dlopenCallback, onerror: argCallbackFunc): void;
 }
 
 type LockfileInfo = {
@@ -533,10 +514,10 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
+  "reportUndefinedSymbols" | "PATH" | "LDSO" | "_emscripten_dlopen" | "stringToNewUTF8"
 > & {
   FS: Pick<
     FSType,
-    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
+    "readdir" | "lookupPath" | "isDir"
   >;
 };
