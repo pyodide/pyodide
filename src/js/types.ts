@@ -326,7 +326,13 @@ export interface Module {
   _Py_Version: number;
   addFunction: (func: Function, sig: string) => number;
   removeFunction: (index: number) => void;
-  _emscripten_dlopen(filename: number, flags: number, userData: number, onsuccess: number, onerror: number): void;
+  _emscripten_dlopen(
+    filename: number,
+    flags: number,
+    userData: number,
+    onsuccess: number,
+    onerror: number,
+  ): void;
 }
 
 type LockfileInfo = {
@@ -511,10 +517,13 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "LDSO" | "_emscripten_dlopen" | "stringToNewUTF8" | "addFunction" | "removeFunction"
+  | "reportUndefinedSymbols"
+  | "PATH"
+  | "LDSO"
+  | "_emscripten_dlopen"
+  | "stringToNewUTF8"
+  | "addFunction"
+  | "removeFunction"
 > & {
-  FS: Pick<
-    FSType,
-    "readdir" | "lookupPath" | "isDir"
-  >;
+  FS: Pick<FSType, "readdir" | "lookupPath" | "isDir">;
 };

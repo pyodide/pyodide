@@ -6,12 +6,12 @@ import { createLock } from "./common/lock";
 import { createResolvable } from "./common/resolveable";
 
 /** Dynamic linking flags */
-const RTLD_LAZY = 1;     // Lazy symbol resolution
-const RTLD_NOW = 2;      // Immediate symbol resolution
-const RTLD_NOLOAD = 4;   // Don't load library
+const RTLD_LAZY = 1; // Lazy symbol resolution
+const RTLD_NOW = 2; // Immediate symbol resolution
+const RTLD_NOLOAD = 4; // Don't load library
 const RTLD_NODELETE = 4096; // Symbols persist for the lifetime of the process
 const RTLD_GLOBAL = 256; // Symbols made available to subsequently loaded libraries
-const RTLD_LOCAL = 0;    // Symbols not made available to other libraries
+const RTLD_LOCAL = 0; // Symbols not made available to other libraries
 
 /** @hidden */
 export class DynlibLoader {
@@ -68,15 +68,18 @@ export class DynlibLoader {
       const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
-      const onsuccess = Module.addFunction((userData: number, handle: number) => {
-        DEBUG && console.debug(`Loaded dynamic library ${lib}`);
-        resolveable.resolve();
-      }, "vii");
+      const onsuccess = Module.addFunction(
+        (userData: number, handle: number) => {
+          DEBUG && console.debug(`Loaded dynamic library ${lib}`);
+          resolveable.resolve();
+        },
+        "vii",
+      );
       const onerror = Module.addFunction((error: number) => {
         console.error(`Failed to load dynamic library ${lib}`);
-        resolveable.reject()
+        resolveable.reject();
       }, "vi");
-      
+
       try {
         this.#module._emscripten_dlopen(
           libUTF8,
@@ -84,7 +87,7 @@ export class DynlibLoader {
           0, // user_data is not used,
           onsuccess,
           onerror,
-        )
+        );
         await resolveable;
       } finally {
         Module.removeFunction(onsuccess);
