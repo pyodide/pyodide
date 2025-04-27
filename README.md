@@ -79,7 +79,7 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 - Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
-## Funding
+## Sponsors
 
 ### Institutional Support
 - **Mozilla** — Core development support
