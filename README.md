@@ -88,20 +88,21 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 
 ### Sponsors
 
-[Become a Sponsor](https://opencollective.com/pyodide#sponsor)
+You can support Pyodide development by sponsoring us on:
+1. [Sponsor us on GitHub](https://github.com/sponsors/pyodide)
+2. [Sponsor us on OpenCollective](https://opencollective.com/pyodide#sponsor)
 
-<a href="https://github.com/sponsors" target="_blank"><img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" alt="GitHub Sponsors" width="72" height="72"></a>
-<a href="https://suborbital.dev" target="_blank"><img src="https://mintlify.s3-us-west-1.amazonaws.com/suborbital-docs/_generated/favicon/apple-touch-icon.png?v=3" alt="Suborbital Software Systems" width="72" height="72"></a>
-<a href="https://huggingface.co" target="_blank"><img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Hugging Face" width="72" height="72"></a>
-<a href="https://posit.co" target="_blank"><img src="https://posit.co/wp-content/uploads/2022/10/thumbnail-63.jpg" alt="Posit" width="72" height="72"></a>
-<a href="https://py.cafe" target="_blank"><img src="https://py.cafe/logos/pycafe_logo.png" alt="PyCafe" width="72" height="72" style="background:white;"></a>
-<a href="https://opencollective.com/eduwalks" target="_blank"><img src="https://dummyimage.com/72x72/ffffff/000000.png&text=E" alt="Eduwalks" width="72" height="72"></a>
-<a href="https://mausbrand.com" target="_blank">
-<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGdG7THVG6pxpN7xCZs03b0lNfapsr6I-WNg&s" alt="Mausbrand" width="72" height="72"></a>
+| [GitHub Sponsors](https://github.com/sponsors) | [Suborbital](https://suborbital.dev) | [Hugging Face](https://huggingface.co) | [Posit](https://posit.co) |
+|:---:|:---:|:---:|:---:|
+| <img src="https://github.githubassets.com/assets/GitHub-Mark-ea2971cee799.png" alt="GitHub Sponsors" width="72" height="72"> | <img src="https://avatars.githubusercontent.com/u/54323182?s=200&v=4" alt="Suborbital Software Systems" width="72" height="72"> | <img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="Hugging Face" width="72" height="72"> | <img src="https://posit.co/wp-content/uploads/2022/10/thumbnail-63.jpg" alt="Posit" width="72" height="72"> |
+
+| [PyCafe](https://py.cafe) | [Eduwalks](https://opencollective.com/eduwalks) | [Mausbrand](https://mausbrand.com) |
+|:---:|:---:|:---:|
+| <img src="https://py.cafe/logos/pycafe_logo.png" alt="PyCafe" width="72" height="72" style="background:white;"> | <img src="https://dummyimage.com/72x72/ffffff/000000.png&text=E" alt="Eduwalks" width="72" height="72"> | <img src="https://www.mausbrand.com/static/images/banner.jpg" alt="Mausbrand" width="72" height="72"> |
 
 ### Backers
 
-[Become a Backer](https://opencollective.com/pyodide#backer)
+We're grateful to all our backers who support our project! If you'd like to become a backer:
 
 <a href="https://opencollective.com/pyodide#backers" target="_blank">
   <img src="https://opencollective.com/pyodide/backers.svg?width=890" alt="Backers">
