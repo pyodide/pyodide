@@ -1336,6 +1336,16 @@ def create_proxy(
 # from python2js
 
 
+class ToJsConverter(Protocol):
+    def __call__(
+        self,
+        /,
+        value: Any,
+        converter: Callable[[Any], JsProxy],
+        cache: Callable[[Any, JsProxy], None],
+    ) -> JsProxy: ...
+
+
 @overload
 def to_js(
     obj: list[Any] | tuple[Any],
@@ -1345,12 +1355,8 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> JsArray[Any]: ...
 
 
@@ -1363,12 +1369,8 @@ def to_js(
     pyproxies: JsProxy | None,
     create_pyproxies: bool,
     dict_converter: None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> JsMap[Any, Any]: ...
 
 
@@ -1381,12 +1383,8 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> Any: ...
 
 
@@ -1398,12 +1396,8 @@ def to_js(
     pyproxies: JsProxy | None = None,
     create_pyproxies: bool = True,
     dict_converter: Callable[[Iterable[JsArray[Any]]], JsProxy] | None = None,
-    default_converter: (
-        Callable[
-            [Any, Callable[[Any], JsProxy], Callable[[Any, JsProxy], None]], JsProxy
-        ]
-        | None
-    ) = None,
+    default_converter: ToJsConverter | None = None,
+    eager_converter: ToJsConverter | None = None,
 ) -> Any:
     """Convert the object to JavaScript.
 
