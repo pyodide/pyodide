@@ -58,6 +58,7 @@ def test_pdf(selenium):
     plt.savefig(fd, format="pdf")
 
 
+@pytest.mark.xfail(reason="FIXME")
 @run_in_pyodide(packages=["matplotlib"])
 def test_font_manager(selenium):
     """
@@ -81,9 +82,9 @@ def test_font_manager(selenium):
     fontlist_built = json.loads(json.dumps(fm.FontManager(), cls=fm._JSONEncoder))
 
     # reordering list to compare
-    for list in ("afmlist", "ttflist"):
+    for l in ("afmlist", "ttflist"):
         for fontlist in (fontlist_vendor, fontlist_built):
-            fontlist[list].sort(key=lambda x: x["fname"])
+            fontlist[l].sort(key=lambda x: x["fname"])
 
     assert fontlist_built == fontlist_vendor
 

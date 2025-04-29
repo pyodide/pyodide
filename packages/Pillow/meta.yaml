@@ -1,18 +1,11 @@
 package:
   name: Pillow
-  version: 10.2.0
-  # Requires update for Python 3.13 compatibility. And also possibly for
-  # Emscripten compatibility.
-  _disabled: true
-  # Need to update patches
-  pinned: true
+  version: 11.2.1
   top-level:
     - PIL
 source:
-  sha256: e87f0b2c78157e12d7686b27d63c070fd65d994e8ddae6f328e0dcf4a0cd007e
-  url: https://files.pythonhosted.org/packages/f8/3e/32cbd0129a28686621434cbf17bb64bf1458bfb838f1f668262fefce145c/pillow-10.2.0.tar.gz
-  patches:
-    - patches/0001-Enable-image-formats.patch
+  sha256: a64dd61998416367b7ef979b73d3a85853ba9bec4c2925f74e588879a58716b6
+  url: https://files.pythonhosted.org/packages/source/p/pillow/pillow-11.2.1.tar.gz
 build:
   # RELOCATABLE flag is required because if affects how emscripten build ports.
   cflags: |
@@ -35,6 +28,15 @@ build:
     webpmux=False
     jpeg2000=False
     imagequant=False
+  script: |
+    embuilder build --pic libjpeg zlib freetype libpng
+    # Pillow parses compiler flags to set the include, library dirs
+    # https://github.com/python-pillow/Pillow/blob/339bc5db93bd95decf65a59fab273f300db6594d/setup.py#L486
+    export EMSCRIPTEN_LIBRARY_PATH=$(em-config CACHE)/sysroot/lib/wasm32-emscripten/pic/
+    export EMSCRIPTEN_INCLUDE_PATH=$(em-config CACHE)/sysroot/include/
+    export PYODIDE_BUILD_INCLUDE_PATH=${WASM_LIBRARY_DIR}/include/
+    export PYODIDE_BUILD_LIBRARY_PATH=${WASM_LIBRARY_DIR}/lib/
+    export CFLAGS="${CFLAGS} -I${EMSCRIPTEN_INCLUDE_PATH} -I${PYODIDE_BUILD_INCLUDE_PATH} -L${EMSCRIPTEN_LIBRARY_PATH} -L${PYODIDE_BUILD_LIBRARY_PATH}"
 
 requirements:
   # Pillow will use `pkg-config` to find and link these libraries.
