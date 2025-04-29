@@ -65,21 +65,21 @@ Pyodide is a community-driven project that has benefited from the support of var
 
 ### Current Support
 
-| Institution | Contributor(s) | Contribution Type | Period |
-|-------------|----------------|-------------------|--------|
-| Quansight Labs | Agriya Khetarpal | Employer-sponsored time | 2022–Present |
-| Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal | Research grant | 2022–Present |
-| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087) | Robert Hood Chatham | Research grant | 2021–Present |
-| Anaconda, Inc. | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
-| Cloudflare, Inc. | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
+| Institution                                                                                                          | Contributor(s)      | Contribution Type       | Period       |
+| -------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- | ------------ |
+| Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time | 2022–Present |
+| Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research grant          | 2022–Present |
+| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087)                                    | Robert Hood Chatham | Research grant          | 2021–Present |
+| Anaconda, Inc.                                                                                                       | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
+| Cloudflare, Inc.                                                                                                     | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
 
 ### Historical Support
 
-| Institution | Contributor(s) | Contribution Type | Period |
-|-------------|----------------|-------------------|--------|
-| Mozilla Corporation | Michael Droettboom | Core development support | 2018–2020 |
-| Nexedi ([nexedi.com](https://www.nexedi.com/)) | Roman Yurchak | R&D grant for early development | 2018 |
-| Symerio ([symerio.com](https://www.symerio.com/)) | Roman Yurchak | French state-funded contributions | 2020–2023 |
+| Institution                                       | Contributor(s)     | Contribution Type                 | Period    |
+| ------------------------------------------------- | ------------------ | --------------------------------- | --------- |
+| Mozilla Corporation                               | Michael Droettboom | Core development support          | 2018–2020 |
+| Nexedi ([nexedi.com](https://www.nexedi.com/))    | Roman Yurchak      | R&D grant for early development   | 2018      |
+| Symerio ([symerio.com](https://www.symerio.com/)) | Roman Yurchak      | French state-funded contributions | 2020–2023 |
 
 ### Supporting Pyodide
 
