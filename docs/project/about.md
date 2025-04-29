@@ -69,8 +69,8 @@ Pyodide is a community-driven project that has benefited from the support of var
 | -------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- | ------------ |
 | Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time | 2022–Present |
 | Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research grant          | 2022–Present |
-| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087)                                    | Robert Hood Chatham | Research grant          | 2021–Present |
-| Anaconda, Inc.                                                                                                       | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
+| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087)                                    | Robert Hood Chatham | Research grant          | 2020–2022    |
+| Anaconda, Inc.                                                                                                       | Robert Hood Chatham | Employer-sponsored time | 2023         |
 | Cloudflare, Inc.                                                                                                     | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
 
 ### Historical Support
