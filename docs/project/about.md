@@ -59,15 +59,39 @@ list from there with "The Pyodide development team" like in the example below:
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 - Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
-## Donations
+## Institutional and Financial Support
 
-We accept donations to the Pyodide project at
-[opencollective.com/pyodide](https://opencollective.com/pyodide). All donations
-are processed by the [Open Source Collective](https://www.oscollective.org/) -- a
-nonprofit organization that acts as our fiscal host.
+Pyodide is a community-driven project that has benefited from the support of various institutions, grants, and employers who have allocated resources and time to its development.
 
-Funds will be mostly spent to organize in-person code sprints and to cover
-infrastructure costs for distributing packages built with Pyodide.
+### Current Support
+
+| Institution | Contributor(s) | Contribution Type | Period |
+|-------------|----------------|-------------------|--------|
+| Quansight Labs | Agriya Khetarpal | Employer-sponsored time | 2022–Present |
+| Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal | Research grant | 2022–Present |
+| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087) | Robert Hood Chatham | Research grant | 2021–Present |
+| Anaconda, Inc. | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
+| Cloudflare, Inc. | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
+
+### Historical Support
+
+| Institution | Contributor(s) | Contribution Type | Period |
+|-------------|----------------|-------------------|--------|
+| Mozilla Corporation | Michael Droettboom | Core development support | 2018–2020 |
+| Nexedi ([nexedi.com](https://www.nexedi.com/)) | Roman Yurchak | R&D grant for early development | 2018 |
+| Symerio ([symerio.com](https://www.symerio.com/)) | Roman Yurchak | French state-funded contributions | 2020–2023 |
+
+### Supporting Pyodide
+
+Pyodide is a community-driven project, and there are many ways to contribute:
+
+- **Code and Documentation**: Contribute improvements, bug fixes, or new features via [GitHub](https://github.com/pyodide/pyodide).
+- **Financial Support**: Help sustain the project via [OpenCollective](https://opencollective.com/pyodide) or [GitHub Sponsors](https://github.com/sponsors/pyodide).
+- **Community Engagement**: Report issues, share feedback, or help others on GitHub Discussions.
+
+Financial contributions help fund infrastructure, organize development sprints, and enable maintainers to dedicate more time to the project.
+
+For partnership opportunities or major institutional support, please reach out via [GitHub Discussions](https://github.com/pyodide/pyodide/discussions).
 
 ## License
 

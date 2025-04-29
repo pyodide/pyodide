@@ -79,12 +79,15 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 - Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
-## Sponsors
+## Sponsers
 
 ### Institutional Support
 
-- **Mozilla** — Core development support
-- **NSF Grant** — Research and Development support
+Pyodide has received support from various institutions, grants, and employers over the years.
+
+For a full list of current and historical sponsors, please see the [Funding](https://pyodide.org/en/stable/project/about.html#funding) section of our About page.
+
+If you’re interested in supporting Pyodide, check out our [OpenCollective](https://opencollective.com/pyodide) and [GitHub Sponsors](https://github.com/sponsors/pyodide) pages.
 
 ### Sponsors
 
