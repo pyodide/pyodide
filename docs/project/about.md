@@ -63,30 +63,25 @@ list from there with "The Pyodide development team" like in the example below:
 
 Pyodide is a community-driven project that has benefited from the support of various institutions, grants, and employers who have allocated resources and time to its development.
 
-### Current Support
-
-| Institution                                                                                                          | Contributor(s)      | Contribution Type       | Period       |
+|  Institution                                                                                                          | Contributor(s)      | Contribution Type       | Period       |
 | -------------------------------------------------------------------------------------------------------------------- | ------------------- | ----------------------- | ------------ |
-| Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time | 2022–Present |
-| Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research grant          | 2022–Present |
-| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087)                                    | Robert Hood Chatham | Research grant          | 2020–2022    |
-| Anaconda, Inc.                                                                                                       | Robert Hood Chatham | Employer-sponsored time | 2023         |
+| Quansight Labs                                                                                                       | Agriya Khetarpal    | Employer-sponsored time | 2024–Present |
+| Chan Zuckerberg Initiative (CZI) [2022-316713](https://blog.scientific-python.org/scientific-python/2022-czi-grant/) | Agriya Khetarpal    | Research software grant | 2024–2025    |
 | Cloudflare, Inc.                                                                                                     | Robert Hood Chatham | Employer-sponsored time | 2023–Present |
-
-### Historical Support
-
-| Institution                                       | Contributor(s)     | Contribution Type                 | Period    |
-| ------------------------------------------------- | ------------------ | --------------------------------- | --------- |
-| Mozilla Corporation                               | Michael Droettboom | Core development support          | 2018–2020 |
-| Nexedi ([nexedi.com](https://www.nexedi.com/))    | Roman Yurchak      | R&D grant for early development   | 2018      |
-| Symerio ([symerio.com](https://www.symerio.com/)) | Roman Yurchak      | French state-funded contributions | 2020–2023 |
+| Anaconda, Inc.                                                                                                       | Robert Hood Chatham | Employer-sponsored time | 2023         |
+| NSF Grant [DMS–2002087](https://www.nsf.gov/awardsearch/showAward?AWD_ID=2002087)                                    | Robert Hood Chatham | Research grant          | 2020–2022    |
+| Symerio ([symerio.com](https://www.symerio.com/))                                                                    | Roman Yurchak      | French state-funded contributions | 2020–2023 |
+| Mozilla Corporation                                                                                                  | Michael Droettboom | Core development support          | 2018–2020 |
+| Nexedi ([nexedi.com](https://www.nexedi.com/))                                                                       | Roman Yurchak      | R&D grant for early development   | 2018      |
 
 ### Supporting Pyodide
 
 Pyodide is a community-driven project, and there are many ways to contribute:
 
 - **Code and Documentation**: Contribute improvements, bug fixes, or new features via [GitHub](https://github.com/pyodide/pyodide).
-- **Financial Support**: Help sustain the project via [OpenCollective](https://opencollective.com/pyodide) or [GitHub Sponsors](https://github.com/sponsors/pyodide).
+- **Financial Support**: Help sustain the project via:
+  1. [GitHub Sponsors](https://github.com/sponsors/pyodide)
+  2. [OpenCollective](https://opencollective.com/pyodide)
 - **Community Engagement**: Report issues, share feedback, or help others on GitHub Discussions.
 
 Financial contributions help fund infrastructure, organize development sprints, and enable maintainers to dedicate more time to the project.
