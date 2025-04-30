@@ -42,6 +42,7 @@ myst:
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
