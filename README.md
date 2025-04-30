@@ -79,6 +79,12 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 - Discord: [Pyodide Discord](https://dsc.gg/pyodide)
 
+## Sponsors
+
+For a full list of current and historical sponsors, please see the [Funding](https://pyodide.org/en/stable/project/about.html#funding) section of our About page.
+
+Pyodide also has a large number of small donors. If you’re interested in supporting Pyodide, check out our [OpenCollective](https://opencollective.com/pyodide) and [GitHub Sponsors](https://github.com/sponsors/pyodide) pages.
+
 ## License
 
 Pyodide uses the [Mozilla Public License Version
