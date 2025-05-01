@@ -1,7 +1,7 @@
 From 9be7fb4d3677205a5ef627816952ff0294e8505e Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Wed, 16 Apr 2025 20:48:20 +0900
-Subject: [PATCH 03/03] Respect runtime paths when loading shared libraries
+Subject: [PATCH 3/5] Respect runtime paths when loading shared libraries
  (#23872)
 
 This updates `loadDynamicLibrary` to locate shared libraries from the file system

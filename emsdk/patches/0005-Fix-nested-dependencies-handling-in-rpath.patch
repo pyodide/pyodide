@@ -1,0 +1,98 @@
+From 742a3e60bdc06d650e7a641fa31aae14216bcc29 Mon Sep 17 00:00:00 2001
+From: Gyeongjae Choi <def6488@gmail.com>
+Date: Thu, 1 May 2025 10:37:32 +0000
+Subject: [PATCH 5/5] Fix nested dependencies handling in rpath
+
+https://github.com/emscripten-core/emscripten/pull/24234
+
+---
+ src/lib/libdylink.js |  5 ++++-
+ test/test_other.py   | 19 ++++++++++++++++---
+ 2 files changed, 20 insertions(+), 4 deletions(-)
+
+diff --git a/src/lib/libdylink.js b/src/lib/libdylink.js
+index b1e701782..f5931218f 100644
+--- a/src/lib/libdylink.js
++++ b/src/lib/libdylink.js
+@@ -904,7 +904,8 @@ var LibraryDylink = {
+     // We need to set rpath in flags based on the current library's rpath.
+     // We can't mutate flags or else if a depends on b and c and b depends on d,
+     // then c will be loaded with b's rpath instead of a's.
+-    flags = {...flags, rpath: { parentLibPath: libName, paths: metadata.runtimePaths }}
++    var dso = LDSO.loadedLibsByName[libName];
++    flags = {...flags, rpath: { parentLibPath: dso.path, paths: metadata.runtimePaths }}
+     // now load needed libraries and the module itself.
+     if (flags.loadAsync) {
+       return metadata.neededDynlibs
+@@ -937,6 +938,7 @@ var LibraryDylink = {
+     var dso = {
+       refcount: Infinity,
+       name,
++      path: name, // full path to the library, updated when the library is resolved in the filesystem.
+       exports: syms,
+       global: true,
+     };
+@@ -1105,6 +1107,7 @@ var LibraryDylink = {
+ #endif
+       if (f) {
+         var libData = FS.readFile(f, {encoding: 'binary'});
++        dso.path = f;
+         return flags.loadAsync ? Promise.resolve(libData) : libData;
+       }
+ #endif
+diff --git a/test/test_other.py b/test/test_other.py
+index 2e0b3ad79..7a1d73575 100644
+--- a/test/test_other.py
++++ b/test/test_other.py
+@@ -7701,11 +7701,22 @@ int main() {
+ 
+   @also_with_wasmfs
+   def test_dlopen_rpath(self):
++    create_file('hello_nested_dep.c', r'''
++    #include <stdio.h>
++
++    void hello_nested_dep() {
++      printf("Hello_nested_dep\n");
++      return;
++    }
++    ''')
+     create_file('hello_dep.c', r'''
+     #include <stdio.h>
+ 
++    void hello_nested_dep();
++
+     void hello_dep() {
+       printf("Hello_dep\n");
++      hello_nested_dep();
+       return;
+     }
+     ''')
+@@ -7747,20 +7758,22 @@ int main() {
+     os.mkdir('subdir')
+ 
+     def _build(rpath_flag, expected, **kwds):
+-      self.run_process([EMCC, '-o', 'subdir/libhello_dep.so', 'hello_dep.c', '-sSIDE_MODULE'])
++      self.run_process([EMCC, '-o', 'subdir/libhello_nested_dep.so', 'hello_nested_dep.c', '-sSIDE_MODULE'])
++      self.run_process([EMCC, '-o', 'subdir/libhello_dep.so', 'hello_dep.c', '-sSIDE_MODULE', 'subdir/libhello_nested_dep.so'] + rpath_flag)
+       self.run_process([EMCC, '-o', 'hello.wasm', 'hello.c', '-sSIDE_MODULE', 'subdir/libhello_dep.so'] + rpath_flag)
+       args = ['--profiling-funcs', '-sMAIN_MODULE=2', '-sINITIAL_MEMORY=32Mb',
+                         '--embed-file', 'hello.wasm@/usr/lib/libhello.wasm',
+                         '--embed-file', 'subdir/libhello_dep.so@/usr/lib/subdir/libhello_dep.so',
++                        '--embed-file', 'subdir/libhello_nested_dep.so@/usr/lib/subdir/libhello_nested_dep.so',
+                         'hello.wasm', '-sNO_AUTOLOAD_DYLIBS',
+-                        '-L./subdir', '-lhello_dep']
++                        '-L./subdir', '-lhello_dep', '-lhello_nested_dep']
+       self.do_runf('main.c', expected, emcc_args=args, **kwds)
+ 
+     # case 1) without rpath: fail to locate the library
+     _build([], r"no such file or directory, open '.*libhello_dep\.so'", regex=True, assert_returncode=NON_ZERO)
+ 
+     # case 2) with rpath: success
+-    _build(['-Wl,-rpath,$ORIGIN/subdir'], "Hello\nHello_dep\nOk\n")
++    _build(['-Wl,-rpath,$ORIGIN/subdir,-rpath,$ORIGIN'], "Hello\nHello_dep\nHello_nested_dep\nOk\n")
+ 
+   def test_dlopen_bad_flags(self):
+     create_file('main.c', r'''
+-- 
+2.48.1
+

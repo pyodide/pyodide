@@ -76,8 +76,7 @@ export class DynlibLoader {
         "vii",
       );
       const onerror = Module.addFunction((error: number) => {
-        console.error(`Failed to load dynamic library ${lib}`);
-        resolveable.reject();
+        resolveable.reject(new Error(`Failed to load dynamic library ${lib}, error: ${error}`));
       }, "vi");
 
       try {
@@ -94,6 +93,7 @@ export class DynlibLoader {
         Module.removeFunction(onerror);
       }
 
+      // TODO(@ryanking13): check if this is still needed
       // Emscripten saves the list of loaded libraries in LDSO.loadedLibsByName.
       // However, since emscripten dylink metadata only contains the name of the
       // library not the full path, we need to update it manually in order to
@@ -121,6 +121,8 @@ export class DynlibLoader {
     } finally {
       releaseDynlibLock();
     }
+
+    DEBUG && console.debug(`Loaded dynamic library ${lib} (global: ${global})`);
   }
 
   /**
