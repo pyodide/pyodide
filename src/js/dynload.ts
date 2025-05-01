@@ -76,7 +76,9 @@ export class DynlibLoader {
         "vii",
       );
       const onerror = Module.addFunction((error: number) => {
-        resolveable.reject(new Error(`Failed to load dynamic library ${lib}, error: ${error}`));
+        resolveable.reject(
+          new Error(`Failed to load dynamic library ${lib}, error: ${error}`),
+        );
       }, "vi");
 
       try {
