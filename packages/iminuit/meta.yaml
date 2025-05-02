@@ -1,6 +1,8 @@
 package:
   name: iminuit
   version: 2.30.1
+  # Doesn't build on Emscripten 4.0.7
+  _disabled: true
 source:
   url: https://files.pythonhosted.org/packages/9c/2f/885810178ce831150059e658394afb8d5256ee13713308221dd48c003682/iminuit-2.30.1.tar.gz
   sha256: 2815bfdeb8e7f78185f316b75e2d4b19d0f6993bdc5ff03352ed37b70a796360
