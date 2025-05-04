@@ -210,6 +210,7 @@ $(eval $(call preprocess-js,python2js_buffer.js))
 $(eval $(call preprocess-js,js2python.js))
 
 pyodide_build .pyodide_build_installed:
+	. venv313/bin/activate
 	pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 	touch .pyodide_build_installed

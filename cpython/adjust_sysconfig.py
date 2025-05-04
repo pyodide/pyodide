@@ -77,3 +77,20 @@ if __name__ == "__main__":
     adjust_sysconfig(config_vars)
     fmted_config_vars = format_sysconfig(config_vars)
     write_sysconfig(file, fmted_config_vars)
+
+    import json, pathlib, re
+    pyfile = pathlib.Path(file)
+    json_name = re.sub(r"_sysconfigdata__", "_sysconfig_vars__", pyfile.stem) + ".json"
+    json_path = pyfile.with_name(json_name)
+    json_path.write_text(json.dumps(config_vars, indent=1, sort_keys=True))
+    print(f"[adjust_sysconfig] wrote {json_path.relative_to(pathlib.Path.cwd())}")
+
+    import json, pathlib, sys
+
+    details_path = pathlib.Path(file).with_name("build-details.json")
+    details = {
+            "py_version": f"{os.environ['PYMAJOR']}.{os.environ['PYMINOR']}",
+            "platform_triplet": "wasm32-emscripten",
+            "abi_flags": os.environ.get("CPYTHON_ABI_FLAGS", ""),
+        }
+    details_path.write_text(json.dumps(details, indent=2), encoding="utf8")

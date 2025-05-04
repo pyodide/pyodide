@@ -10,6 +10,8 @@ PYINSTALL=$(CPYTHONINSTALL)
 PYTARBALL=$(ROOT)/downloads/Python-$(PYVERSION).tgz
 PYLIB=libpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS).a
 
+GITREPO=$(ROOT)/downloads/Python-$(PYVERSION)
+
 FFIBUILD=$(ROOT)/build/libffi
 LIBFFIREPO=https://github.com/libffi/libffi
 LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
@@ -36,7 +38,9 @@ sysconfigdata:
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(PYINSTALL)/lib/python$(PYMAJOR).$(PYMINOR)/
 	cp $(PYBUILDDIR)/$(SYSCONFIG_NAME).py $(SYSCONFIGDATA_DIR)
 
-LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS)
+LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) \
+  $$(LIBHACL_MD5_OBJS)  $$(LIBHACL_SHA1_OBJS)  $$(LIBHACL_SHA2_OBJS) \
+  $$(LIBHACL_SHA3_OBJS) $$(LIBHACL_BLAKE2_OBJS)
 
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
@@ -44,6 +48,14 @@ $(PYBUILD)/.patched_makefile:
 	# Inject extra objects into libpython3.13.a so we don't have to link them
 	# separately
 	cd $(PYBUILD) && sed -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
+	cd $(PYBUILD) && sed -i '/from _py_warnings import.*_use_context/d' Lib/warnings.py
+	cd $(PYBUILD) && \
+		for alg in MD5 SHA1 SHA2 SHA3 BLAKE2 HMAC; do \
+	  	sed -i "s/\$$(LIBHACL_$${alg}_LIB_SHARED)/\$$(LIBHACL_$${alg}_LIB_STATIC)/" Makefile; \
+		done
+	cd $(PYBUILD) && sed -i '/^LIBHACL_BLAKE2_SIMD128_OBJS=/d' Makefile
+	cd $(PYBUILD) && \
+      sed -i '/^LINKFORSHARED=/ s|$$| -Wl,--whole-archive $(LIBHACL_MD5_LIB_STATIC) $(LIBHACL_SHA1_LIB_STATIC) $(LIBHACL_SHA3_LIB_STATIC) $(LIBHACL_BLAKE2_LIB_STATIC) -Wl,--no-whole-archive|' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
@@ -89,9 +101,14 @@ $(PYTARBALL):
 
 prepare-source: $(PYBUILD)/.patched
 
-$(PYBUILD)/.patched: $(PYTARBALL)
-	[ -d $(PYBUILD) ] || (mkdir -p $(dir $(PYBUILD)); tar -C $(dir $(PYBUILD)) -xf $(PYTARBALL))
-	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1)
+$(GITREPO):
+	[ -d $(ROOT)/downloads ] || mkdir $(ROOT)/downloads
+	(cd $(ROOT)/downloads && git clone -b main --depth 1  https://github.com/python/cpython.git Python-$(PYVERSION))
+
+$(PYBUILD)/.patched: $(GITREPO)
+	[ -d $(PYBUILD) ] || mkdir -p $(dir $(PYBUILD))
+	cp -frp $(GITREPO)/. $(PYBUILD)
+	cat patches/*.patch | (cd $(PYBUILD) ; patch -p1 || echo error)
 	touch $@
 
 $(PYINSTALL)/lib/libffi.a :

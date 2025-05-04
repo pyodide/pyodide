@@ -1,0 +1,40 @@
+From f649e9a291e8ba2a1a1ec6ccc800846325fbcc8f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?B=C3=A9n=C3=A9dikt=20Tran?=
+ <10796600+picnixz@users.noreply.github.com>
+Date: Mon, 28 Apr 2025 01:02:00 +0200
+Subject: [PATCH] disable HACL* HMAC on Emscripten
+
+---
+ configure    | 2 +-
+ configure.ac | 5 ++++-
+ 2 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/configure b/configure
+index 8b91d1d871a971..1459289ecf0f85 100755
+--- a/configure
++++ b/configure
+@@ -32394,7 +32394,7 @@ printf %s "checking for stdlib extension module _hmac... " >&6; }
+         if test "$py_cv_module__hmac" != "n/a"
+ then :
+ 
+-    if true
++    if test "$ac_sys_system" != "Emscripten"
+ then :
+   if true
+ then :
+diff --git a/configure.ac b/configure.ac
+index 1aedd54bd0c70d..31d9d9fc7e6891 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -7990,7 +7990,10 @@ PY_HACL_CREATE_MODULE([BLAKE2], [_blake2], [test "$with_builtin_blake2" = yes])
+ dnl HMAC builtin library does not need OpenSSL for now. In the future
+ dnl we might want to rely on OpenSSL EVP/NID interface or implement
+ dnl our own for algorithm resolution.
+-PY_HACL_CREATE_MODULE([HMAC], [_hmac], [])
++dnl
++dnl For Emscripten, we disable HACL* HMAC as it is tricky to make it work.
++dnl See https://github.com/python/cpython/issues/133042.
++PY_HACL_CREATE_MODULE([HMAC], [_hmac], [test "$ac_sys_system" != "Emscripten"])
+ ### end(cryptographic primitives)
+ 
+ PY_STDLIB_MOD([_ctypes],

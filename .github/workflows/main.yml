@@ -3,7 +3,11 @@ name: main
 on:
   push:
   pull_request:
-
+  schedule:
+    # Build and push Docker images every 3 hours
+    - cron:  '0 */3 * * *'
+  # allow manual trigger
+  workflow_dispatch:
 concurrency:
   group: main-${{ github.head_ref }}
   cancel-in-progress: true
@@ -12,66 +16,49 @@ env:
   FORCE_COLOR: 3
 
 jobs:
-  get_python_version:
+  get_latest_commit_hash:
     runs-on: ubuntu-latest
     outputs:
-      PYVERSION: ${{ steps.get_python_version.outputs.PYVERSION }}
+      commit_hash: ${{ steps.get_commit_hash.outputs.commit_hash }}
+      short_commit_hash: ${{ steps.get_commit_hash.outputs.short_commit_hash }}
+      check_release: ${{ steps.check_release.outputs.exists }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Read the Python version from Makefile.envs
-        id: get_python_version
+      - name: Get the latest commit hash
+        id: get_commit_hash
         run: |
-          echo "PYVERSION=$(git grep 'export PYVERSION ?=' Makefile.envs | cut -d' ' -f4)"  >> "$GITHUB_OUTPUT"
-  test-python:
-    runs-on: ubuntu-latest
-    needs: get_python_version
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ needs.get_python_version.outputs.PYVERSION }}
-      - name: Install requirements
-        shell: bash -l {0}
+          COMMIT_HASH=$(git ls-remote https://github.com/python/cpython.git refs/heads/main | awk '{print $1}')
+          SHORT_COMMIT_HASH=$(echo $COMMIT_HASH | cut -c 1-7)
+          echo "::set-output name=commit_hash::$COMMIT_HASH"
+          echo "::set-output name=short_commit_hash::$SHORT_COMMIT_HASH"
+      - name: Check if Release Exists
+        id: check_release
         run: |
-          mkdir test-results
-          make pyodide_build
-          python3 -m pip install -r requirements.txt -r requirements-deploy.txt
-      - name: Check test collection
-        shell: bash -l {0}
-        run: |
-          PYODIDE_ROOT=. pytest --collect-only
-      - name: Run tests
-        shell: bash -l {0}
-        run: |
-          PYODIDE_ROOT=. pytest \
-              --junitxml=test-results/junit.xml \
-              --verbose \
-              --runtime=host \
-              --cov=pyodide \
-              src tools/
-      - uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: false
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://github.com/koxudaxi/pyodide/releases/tag/${{ steps.get_commit_hash.outputs.commit_hash }}")
+          if [ "$RESPONSE" -eq 200 ]; then
+            echo "Release exists on GitHub."
+            echo "::set-output name=exists::true"
+          else
+            echo "Release does not exist on GitHub."
+            echo "::set-output name=exists::false"
+          fi
 
   build-core:
+    needs: get_latest_commit_hash
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false' || github.event_name != 'schedule'
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: ubuntu-latest
-            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
-          - os: macos-14
-            pyodide_packages: "tag:core,numpy"
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger]
     env:
       EMSDK_NUM_CORES: 3
       EMCC_CORES: 3
       PYODIDE_JOBS: 3
       CCACHE_DIR: /tmp/ccache
-
+    permissions:
+      actions: write
+      checks: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -82,13 +69,40 @@ jobs:
           path: |
             /tmp/ccache
           key: ${{ hashFiles('Makefile.envs') }}-${{ runner.os }}-v20211025-
-
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - uses: conda-incubator/setup-miniconda@v3
         with:
           activate-environment: pyodide-env
           environment-file: environment.yml
           channels: conda-forge
+      - name: Cache builder Python
+        id: cache-builder
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Publish_build
+            .build
+          key: ${{ needs.get_latest_commit_hash.outputs.commit_hash }}-${{ runner.os }}-v20240719-
 
+      - name: Build builder python
+        if: steps.cache-builder.outputs.cache-hit != 'true'
+        shell: bash -l {0}
+        run: |
+          BUILD_DIR=/tmp/builder/${{ needs.get_latest_commit_hash.outputs.commit_hash }}
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          git init
+          git remote add origin https://github.com/python/cpython.git
+          git fetch --depth 1 origin ${{ needs.get_latest_commit_hash.outputs.commit_hash }}
+          git checkout FETCH_HEAD
+          ./configure --prefix=/tmp/builder/python && make -j3 && make install
+      - name: Add builder python to PATH
+        shell: bash
+        run: |
+          echo "/tmp/builder/python/bin" >> $GITHUB_PATH
       - name: Check Versions
         shell: bash -l {0}
         run: |
@@ -101,7 +115,7 @@ jobs:
 
       - name: Install dependencies (ubuntu)
         shell: bash -l {0}
-        if: ${{ contains(runner.os, 'ubuntu') }}
+        #if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
           sudo apt install -y build-essential git xxd
 
@@ -114,6 +128,10 @@ jobs:
       - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
+          pip install -r requirements.txt
+
+          python3.13 -m venv venv313
+          source venv313/bin/activate
           pip install -r requirements.txt
 
       - name: Build emsdk
@@ -137,13 +155,14 @@ jobs:
           make -C cpython
           ccache -s
 
-      - name: build Pyodide with packages ${{ matrix.pyodide_packages }}
+
+      - name: build Pyodide core
         shell: bash -l {0}
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
           ccache -z
-          PYODIDE_PACKAGES=${{ matrix.pyodide_packages }} make
+          PYODIDE_PACKAGES="tag:core" make
           ccache -s
 
       - name: check-size
@@ -156,203 +175,57 @@ jobs:
 
       - name: Store artifacts build
         uses: actions/upload-artifact@v4
+        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
         with:
           name: core-build-${{ runner.os }}
           path: ./dist/
           retention-days: 60
-
-  test-core:
-    runs-on: ${{ matrix.os }}
-    env:
-      DISPLAY: :99
-
-    needs: [build-core]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-14]
-        runner: [selenium]
-        browser: [safari]
-
-    steps:
-      - uses: actions/checkout@v4
+      - name: Make dist tarball
+        shell: bash -l {0}
+        run: |
+          tar -czf dist.tar.gz dist/
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        if: needs.get_latest_commit_hash.outputs.check_release == 'false'
         with:
-          submodules: recursive
+          files: dist.tar.gz
+          tag_name: ${{ needs.get_latest_commit_hash.outputs.short_commit_hash }}
+          make_latest: true
+      - name: Add commit hash file
+        run: |
+          echo "${{ needs.get_latest_commit_hash.outputs.commit_hash }}" > dist/commit_hash.txt
+          echo "${{ needs.get_latest_commit_hash.outputs.short_commit_hash }}" > dist/short_commit_hash.txt
 
-      - name: Download build artifact
+      - name: Prepare directory structure
+        run: |
+          mkdir -p "dist_new/tstrings"
+          cp -r dist/* "dist_new/tstrings/"
+
+      - name: Upload pages artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-files
+          path: ./dist_new
+          retention-days: 1
+
+  deploy:
+    needs: [ build-core, get_latest_commit_hash ]
+    if: needs.get_latest_commit_hash.outputs.check_release == 'false'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
-          path: ./dist/
+          name: dist-files
+          path: ./dist_temp
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          activate-environment: pyodide-env
-          python-version: "3.13"
-          channels: conda-forge
-
-      - name: install test requirements
-        shell: bash -l {0}
-        run: |
-          pip install -r requirements.txt -r requirements-deploy.txt
-          make pyodide_build
-
-      - uses: pyodide/pyodide-actions/install-browser@v2
-        with:
-          runner: ${{ matrix.runner }}
-          browser: ${{ matrix.browser }}
-
-      - name: run core tests
-        env:
-          BROWSER: ${{ matrix.browser }}
-          RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
-        run: |
-          ls -lh
-          ls -lh dist/
-          tools/pytest_wrapper.py src packages/micropip/ tools/ \
-            -v \
-            -k "not webworker" \
-            --runtime="${BROWSER}-no-host" \
-            --runner "${RUNNER}" \
-            --durations 50 \
-            --junitxml=test-results/core_test.xml
-
-      - name: run package tests
-        env:
-          BROWSER: ${{ matrix.browser }}
-          RUNNER: ${{ matrix.runner }}
-        shell: bash -l {0}
-        run: |
-          ls -lh
-          ls -lh dist/
-          tools/pytest_wrapper.py packages/*/test* \
-            -v \
-            -k "numpy and not joblib" \
-            --runtime="${BROWSER}-no-host" \
-            --runner "${RUNNER}" \
-            --durations 50 \
-            --junitxml=test-results/packages_test.xml
-
-      - name: Test Summary
-        uses: test-summary/action@v2
-        with:
-          paths: "test-results/*.xml"
-        if: always()
-
-  test-scipy-trigger:
-    name: test-scipy-trigger
-    runs-on: ubuntu-latest
-    outputs:
-      test-scipy: ${{ steps.check-build-trigger.outputs.trigger }}
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Check build trigger
-        id: check-build-trigger
-        shell: bash
-        run: |
-          set -e -x
-
-          COMMIT_MSG=$(git log --no-merges -1 --oneline)
-
-          # The scipy tests will be triggered on push or on pull_request when the commit
-          # message contains "[scipy]"
-          if [[ "$GITHUB_EVENT_NAME" == push ||
-                "$COMMIT_MSG" =~ \[scipy\] ]]; then
-              echo "trigger=true" >> "$GITHUB_OUTPUT"
-          fi
-
-  test-scipy:
-    runs-on: ${{ matrix.os }}
-    needs: [test-scipy-trigger, build-core]
-    if: needs.test-scipy-trigger.outputs.test-scipy
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: core-build-${{ runner.os }}
-          path: ./dist/
-
-      - name: run scipy tests inside node
-        shell: bash -l {0}
-        run: |
-          npm install pyodide
-          cp -f dist/* node_modules/pyodide
-
-          # This uses conftest.py on the current working directory to
-          # skip/xfail tests in scipy
-          cd packages/scipy
-          # XXX for some unknown reason adding a conftest.py in the repo throws off the
-          # other tests trying to import from conftest they find the scipy one ...
-          mv scipy-conftest.py conftest.py
-
-          node scipy-pytest.js --pyargs scipy -m 'not slow' -ra -v
-
-  test-bun:
-    runs-on: ${{ matrix.os }}
-
-    needs: [build-core]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: core-build-${{ runner.os }}
-          path: ./dist/
-
-      - uses: oven-sh/setup-bun@v2
-
-      - name: install test requirements
-        working-directory: src/test-bun
-        run: |
-          bun --version
-          bun install
-
-      - name: run bun tests
-        working-directory: src/test-bun
-        run: bun smoke-test.js
-
-  test-deno:
-    runs-on: ${{ matrix.os }}
-
-    needs: [build-core]
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: core-build-${{ runner.os }}
-          path: ./dist/
-
-      - name: install test requirements
-        shell: bash -l {0}
-        run: |
-          curl -fsSL https://deno.land/install.sh | sudo DENO_INSTALL=/usr/local sh -s v1.33.1
-          deno --version
-
-      - name: run deno tests
-        shell: bash -l {0}
-        run: cd src/test-deno && deno task test
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist_temp
+          keep_files: true
+          enable_jekyll: false
+          commit_message: 'deploy: ${{ needs.get_latest_commit_hash.outputs.commit_hash }}'

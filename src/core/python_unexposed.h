@@ -40,9 +40,16 @@ _PyObject_CallMethodIdOneArg(PyObject* self,
 extern PyObject*
 _PyObject_CallMethodIdObjArgs(PyObject* obj, _Py_Identifier* name, ...);
 
-extern int
-_PyObject_SetAttrId(PyObject*, _Py_Identifier*, PyObject*);
-
+static inline int
+_PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
+{
+  int result;
+  PyObject *oname = _PyUnicode_FromId(name); /* borrowed */
+  if (!oname)
+    return -1;
+  result = PyObject_SetAttr(v, oname, w);
+  return result;
+}
 // Other API stuff
 
 int
@@ -81,3 +88,5 @@ _PySet_Update(PyObject* set, PyObject* iterable);
 
 extern int
 _PyUnicode_EQ(PyObject*, PyObject*);
+
+PyAPI_FUNC(int) _PyUnicode_Equal(PyObject *, PyObject *);

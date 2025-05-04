@@ -1,4 +1,4 @@
-export PYVERSION ?= 3.13.2
+export PYVERSION ?= 3.14.0a7
 export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.8
 export PYODIDE_VERSION ?= 0.28.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
@@ -146,9 +146,15 @@ export LDFLAGS_BASE=\
 	-sSUPPORT_LONGJMP \
 	$(EXTRA_LDFLAGS) \
 
+export CFLAGS_CORE = $(CFLAGS_BASE) -DPy_BUILD_CORE_MODULE
+
+HACL_LIBS = $(CPYTHONBUILD)/Modules/_hacl/libHacl_*.a
 export CXXFLAGS_BASE=
 
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+    -Wl,--start-group \
+    -lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
+    -Wl,--end-group \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
 	-s LZ4=1 \
@@ -171,7 +177,6 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	-s EXIT_RUNTIME \
 	\
-	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
 	-lstdc++ \
 	-lidbfs.js \
@@ -263,6 +268,9 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,HEAPF32 \
 		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	    -Wl,--start-group \
+        -lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
+        -Wl,--end-group \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
 		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
@@ -278,7 +286,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
 		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
-		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
 		-lidbfs.js \

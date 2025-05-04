@@ -226,7 +226,8 @@ class _CommandCompiler(CommandCompiler):
     def __call__(  # type: ignore[override]
         self, source: str, filename: str = "<console>", symbol: str = "single"
     ) -> CodeRunner | None:
-        return super().__call__(source, filename, symbol)  # type: ignore[return-value]
+        return self.compiler(source, filename, symbol)  # type: ignore[return-value]
+
 
 
 ConsoleFutureStatus = Literal["incomplete", "syntax-error", "complete"]

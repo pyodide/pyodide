@@ -7,7 +7,7 @@
 *static*
 
 CTYPES_FLAGS=-DHAVE_FFI_PREP_CIF_VAR=1 -DHAVE_FFI_PREP_CLOSURE_LOC=1 -DHAVE_FFI_CLOSURE_ALLOC=1 -I ../libffi/include
-_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/cfield.c _ctypes/stgdict.c $(CTYPES_FLAGS)
+_ctypes _ctypes/_ctypes.c _ctypes/callbacks.c _ctypes/callproc.c _ctypes/cfield.c _ctypes/stgdict.c $(CTYPES_FLAGS) -lffi
 
 _posixsubprocess _posixsubprocess.c
 

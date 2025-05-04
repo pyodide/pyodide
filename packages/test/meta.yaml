@@ -11,8 +11,8 @@ build:
   type: cpython_module
   unvendor-tests: false # Obviously :)
   script: |
-    wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
-    tar -xf Python-${PYVERSION}.tgz
+    git clone -b main --depth 1  https://github.com/python/cpython.git Python-${PYVERSION}
+
     cd Python-${PYVERSION}
 
     export TEST_EXTENSIONS="\
