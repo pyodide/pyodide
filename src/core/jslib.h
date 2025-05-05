@@ -10,8 +10,6 @@
 typedef HwRef JsRef;
 typedef __externref_t JsVal;
 
-JsRef hiwire_new_deduplicate(JsVal);
-
 typedef struct Js_Identifier
 {
   const char* string;
