@@ -130,10 +130,6 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-          python3.13 -m venv venv313
-          source venv313/bin/activate
-          pip install -r requirements.txt
-
       - name: Build emsdk
         shell: bash -l {0}
         run: |

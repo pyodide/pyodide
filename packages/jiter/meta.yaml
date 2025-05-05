@@ -4,8 +4,9 @@ package:
   top-level:
     - jiter
 source:
-  url: https://files.pythonhosted.org/packages/1e/c2/e4562507f52f0af7036da125bb699602ead37a2332af0788f8e0a3417f36/jiter-0.9.0.tar.gz
-  sha256: aadba0964deb424daa24492abc3d229c60c4a31bfee205aedbf1acc7639d7893
+  git_url: https://github.com/koxudaxi/jiter.git
+  git_rev: 031eff074b7194e41485e957a5a399b884136d3c
+  subdir: crates/jiter-python
 about:
   home: https://github.com/pydantic/jiter/tree/main/crates/jiter-python
   PyPI: https://pypi.org/project/jiter
