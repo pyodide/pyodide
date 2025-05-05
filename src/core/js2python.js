@@ -54,14 +54,14 @@ function js2python_bigint(value) {
     let ptr = stackAlloc(length * 4);
     value = value_orig;
     for (let i = 0; i < length; i++) {
-        ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
-        value >>= BigInt(32);
+      ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
+      value >>= BigInt(32);
     }
     return __PyLong_FromByteArray(
-        ptr,
-        length * 4 /* length in bytes */,
-        true /* little endian */,
-        true /* signed? */,
+      ptr,
+      length * 4 /* length in bytes */,
+      true /* little endian */,
+      true /* signed? */,
     );
   });
 }
