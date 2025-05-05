@@ -3,9 +3,9 @@ name: main
 on:
   push:
   pull_request:
-  schedule:
+  # schedule:
     # Build and push Docker images every 3 hours
-    - cron:  '0 */3 * * *'
+    # - cron:  '0 */3 * * *'
   # allow manual trigger
   workflow_dispatch:
 concurrency:
