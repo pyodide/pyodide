@@ -78,6 +78,28 @@ jobs:
           activate-environment: pyodide-env
           environment-file: environment.yml
           channels: conda-forge
+
+      - name: Check Versions
+        shell: bash -l {0}
+        run: |
+          python --version
+          node --version
+          npm --version
+          which python
+          which node
+          which npm
+
+      - name: Install dependencies (ubuntu)
+        shell: bash -l {0}
+        #if: ${{ contains(runner.os, 'ubuntu') }}
+        run: |
+          sudo apt install -y build-essential git xxd libbz2-dev liblzma-dev
+
+      - name: Install dependencies (macos)
+        shell: bash -l {0}
+        if: ${{ contains(runner.os, 'macos') }}
+        run: |
+          brew install coreutils
       - name: Cache builder Python
         id: cache-builder
         uses: actions/cache@v4
@@ -103,28 +125,6 @@ jobs:
         shell: bash
         run: |
           echo "/tmp/builder/python/bin" >> $GITHUB_PATH
-      - name: Check Versions
-        shell: bash -l {0}
-        run: |
-          python --version
-          node --version
-          npm --version
-          which python
-          which node
-          which npm
-
-      - name: Install dependencies (ubuntu)
-        shell: bash -l {0}
-        #if: ${{ contains(runner.os, 'ubuntu') }}
-        run: |
-          sudo apt install -y build-essential git xxd libbz2-dev liblzma-dev
-
-      - name: Install dependencies (macos)
-        shell: bash -l {0}
-        if: ${{ contains(runner.os, 'macos') }}
-        run: |
-          brew install coreutils
-
       - name: Install dependencies (Python)
         shell: bash -l {0}
         run: |
