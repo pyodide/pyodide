@@ -218,8 +218,9 @@ patch-pyodide-build:
 		printf '\n[tool.hatch.metadata]\nallow-direct-references = true\n' >> pyodide-build/pyproject.toml
 	sed -i 's|PYTHON_VERSION = Version(python_version())|PYTHON_VERSION = Version(python_version().split("+", 1)[0])|' pyodide-build/pyodide_build/out_of_tree/pypi.py
 
+
 pyodide_build .pyodide_build_installed: patch-pyodide-build
-	pip install -e ./pyodide-build
+	@unset RUSTFLAGS && pip install -e ./pyodide-build
 	@which pyodide >/dev/null
 	touch .pyodide_build_installed
 
