@@ -1,4 +1,6 @@
 argcomplete
+greenlet @ \
+  git+https://github.com/koxudaxi/greenlet.git@30df2b5149ce8c56f342a1aa2fe747e6bd8838f2
 # lint
 pre-commit
 # testing
