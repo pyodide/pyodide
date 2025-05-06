@@ -215,7 +215,7 @@ patch-pyodide-build:
 	sed -i 's|pyodide-lock==0.1.0a7|pyodide-lock==0.1.0a8|' pyodide-build/pyproject.toml
 	sed -i 's|pydantic>=2,<3|pydantic@ git+https://github.com/koxudaxi/pydantic.git@7afd0bef488298e3e556460cf40fc562fd6f84af|' pyodide-build/pyproject.toml
 	grep -q '\[tool.hatch.metadata\]' pyodide-build/pyproject.toml || \
-		echo '\n[tool.hatch.metadata]\nallow-direct-references = true' >> pyodide-build/pyproject.toml
+		printf '\n[tool.hatch.metadata]\nallow-direct-references = true\n' >> pyodide-build/pyproject.toml
 	sed -i 's|PYTHON_VERSION = Version(python_version())|PYTHON_VERSION = Version(python_version().split("+", 1)[0])|' pyodide-build/pyodide_build/out_of_tree/pypi.py
 
 pyodide_build .pyodide_build_installed: patch-pyodide-build
