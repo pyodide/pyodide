@@ -98,7 +98,7 @@ jobs:
           git remote add origin https://github.com/python/cpython.git
           git fetch --depth 1 origin ${{ needs.get_latest_commit_hash.outputs.commit_hash }}
           git checkout FETCH_HEAD
-          ./configure --prefix=/tmp/builder/python && make -j3 && make install
+          ./configure --prefix=/tmp/builder/python --enable-optimizations && make -j3 && make install
       - name: Add builder python to PATH
         shell: bash
         run: |
