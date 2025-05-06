@@ -117,7 +117,7 @@ jobs:
         shell: bash -l {0}
         #if: ${{ contains(runner.os, 'ubuntu') }}
         run: |
-          sudo apt install -y build-essential git xxd libbz2-dev
+          sudo apt install -y build-essential git xxd libbz2-dev liblzma-dev
 
       - name: Install dependencies (macos)
         shell: bash -l {0}

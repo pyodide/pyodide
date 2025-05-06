@@ -1,0 +1,13 @@
+package:
+  name: tornado
+  version: 6.4.2
+  top-level:
+    - tornado
+source:
+  url: https://files.pythonhosted.org/packages/59/45/a0daf161f7d6f36c3ea5fc0c2de619746cc3dd4c76402e9db545bd920f63/tornado-6.4.2.tar.gz
+  sha256: 92bad5b4746e9879fd7bf1eb21dce4e3fc5128d71601f80005afa39237ad620b
+about:
+  home: https://github.com/tornadoweb/tornado
+  PyPI: https://pypi.org/project/tornado
+  summary: Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed.
+  license: Apache Software License (Apache-2.0)

@@ -1,0 +1,33 @@
+package:
+  name: pyzmq
+  version: 26.4.0
+  top-level:
+    - pyzmq
+requirements:
+  run:
+    - numpy
+  host:
+    - numpy
+build:
+  cflags: |
+    -s RELOCATABLE=1
+    -s USE_FREETYPE=1
+    -s USE_LIBPNG=1
+    -s USE_ZLIB=1
+    -fwasm-exceptions
+    -fno-lto
+  cxxflags: |
+    -std=c++17
+    -fwasm-exceptions
+    -Wno-error=c++11-narrowing
+  ldflags: |
+    -fwasm-exceptions
+
+source:
+  url: https://files.pythonhosted.org/packages/b1/11/b9213d25230ac18a71b39b3723494e57adebe36e066397b961657b3b41c1/pyzmq-26.4.0.tar.gz
+  sha256: 4bd13f85f80962f91a651a7356fe0472791a5f7a92f227822b5acf44795c626d
+about:
+  home: https://pyzmq.readthedocs.io/en/latest/
+  PyPI: https://pypi.org/project/pyzmq/
+  summary: Python bindings for 0MQ
+  license: BSD License (BSD 3-Clause License)
