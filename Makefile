@@ -212,8 +212,7 @@ $(eval $(call preprocess-js,js2python.js))
 .PHONY: patch-pyodide-build
 patch-pyodide-build:
 	@echo "==> Applying sed-based patch for pyodide-build"
-	sed -i 's|pyodide-lock==0.1.0a7|pyodide-lock==0.1.0a8|' pyodide-build/pyproject.toml
-	sed -i 's|pydantic>=2,<3|pydantic@ git+https://github.com/koxudaxi/pydantic.git@5b8c6f743cba8cbae50fc5f0d5a234d6b7684f70|' pyodide-build/pyproject.toml
+	sed -i 's|pydantic[^"]*|pydantic@ git+https://github.com/koxudaxi/pydantic.git@94aff8da1cf20b8ab6aa9cee083085cfa6d0b4dc|' pyodide-build/pyproject.toml
 	grep -q '\[tool.hatch.metadata\]' pyodide-build/pyproject.toml || \
 		printf '\n[tool.hatch.metadata]\nallow-direct-references = true\n' >> pyodide-build/pyproject.toml
 	sed -i 's|PYTHON_VERSION = Version(python_version())|PYTHON_VERSION = Version(python_version().split("+", 1)[0])|' pyodide-build/pyodide_build/out_of_tree/pypi.py
