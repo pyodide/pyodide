@@ -22,7 +22,11 @@ ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/libhiwire.a
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire
+
+libffi: $(PYINSTALL)/lib/libffi.a
+
+libhiwire: $(PYINSTALL)/lib/libhiwire.a
 
 .PHONY=sysconfigdata
 sysconfigdata:
@@ -122,7 +126,8 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
-	cp -r $(HIWIREBUILD)/dist/include $(PYINSTALL)/include/hiwire
+	rm -rf $(PYINSTALL)/include/hiwire
+	cp -r $(HIWIREBUILD)/dist/include/ $(PYINSTALL)/include/hiwire
 
 python-makefile: $(PYBUILD)/Makefile
 
