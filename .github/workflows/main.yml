@@ -161,7 +161,7 @@ jobs:
           source venv314/bin/activate
           pip install -r requirements.txt
           ccache -z
-          PYODIDE_PACKAGES="tag:core,pydantic" make
+          PYODIDE_PACKAGES="tag:core,pydantic,ipython" make
           ccache -s
 
       - name: check-size

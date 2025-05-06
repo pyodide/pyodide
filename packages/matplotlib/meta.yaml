@@ -1,6 +1,6 @@
 package:
   name: matplotlib
-  version: 3.8.4
+  version: 3.10.1
   # Need to update patches
   pinned: true
   tag:
@@ -10,10 +10,10 @@ package:
     - mpl_toolkits
     - matplotlib
 source:
-  url: https://files.pythonhosted.org/packages/38/4f/8487737a74d8be4ab5fbe6019b0fae305c1604cf7209500969b879b5f462/matplotlib-3.8.4.tar.gz
-  sha256: 8aac397d5e9ec158960e31c381c5ffc52ddd52bd9a47717e2a694038167dffea
+  url: https://files.pythonhosted.org/packages/2f/08/b89867ecea2e305f408fbb417139a8dd941ecf7b23a2e02157c36da546f0/matplotlib-3.10.1.tar.gz
+  sha256: e8d2d0e3881b129268585bf4765ad3ee73a4591d77b9a18c214ac7e3a79fb2ba
   patches:
-    - patches/0001-Disable-macOS-X-backend.patch
+#    - patches/0001-Disable-macOS-X-backend.patch
     - patches/0002-Disable-timer.patch
     - patches/0003-Hardcode-font-cache-path.patch
   extras:
@@ -30,11 +30,14 @@ build:
     -fwasm-exceptions
     -fno-lto
   cxxflags: |
-    -std=c++14
+    -std=c++17
     -fwasm-exceptions
+    -Wno-error=c++11-narrowing
   ldflags: |
     -fwasm-exceptions
-  script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
+  script: |
+    export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
+    bash ../../add_cpp17_headers.sh
   post: |
     rm -rf matplotlib/backends/qt_editor
     rm -rf matplotlib/backends/web_backend
