@@ -8,8 +8,8 @@ package:
   top-level:
     - pydantic
 source:
-  url: https://files.pythonhosted.org/packages/b7/ae/d5220c5c52b158b1de7ca89fc5edb72f304a70a4c540c84c8844bf4008de/pydantic-2.10.6.tar.gz
-  sha256: ca5daa827cce33de7a42be142548b0096bf05a7e7b365aebfa5f8eeec7128236
+  url: https://github.com/koxudaxi/pydantic/archive/5b8c6f743cba8cbae50fc5f0d5a234d6b7684f70.tar.gz
+  sha256: 9c44f127874739c4d147f6e8d824b4c5342d0dbdc8846b127a553c85131bd9e1
 requirements:
   run:
     - typing-extensions
