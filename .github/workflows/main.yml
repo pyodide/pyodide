@@ -157,6 +157,9 @@ jobs:
         run: |
           # This is necessary to use the ccache from emsdk
           source pyodide_env.sh
+          python3.14 -m venv venv314
+          source venv314/bin/activate
+          pip install -r requirements.txt
           ccache -z
           PYODIDE_PACKAGES="tag:core" make
           ccache -s
