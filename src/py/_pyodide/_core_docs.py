@@ -1338,7 +1338,7 @@ def create_proxy(
 
 class ToJsConverter(Protocol):
     """Protocol for the ``default_converter`` and ``eager_converter`` arguments
-    of `to_js`.
+    of :py:func:`to_js`.
 
     Parameters
     ----------
@@ -1482,10 +1482,10 @@ def to_js(
 
     eager_converter:
         If present will be invoked whenever the object is not an ``int``,
-        ``float``, ``bool``, or ``None``. It is called before the default
-        conversions are applied to lists, tuples, dictionaries, and sets, so it
-        can be used to override these. By contrast, ``default_converter`` is
-        used as a fallback.
+        ``float``, ``bool``, ``None``, or a ``JsProxy``. It is called before the
+        default conversions are applied to lists, tuples, dictionaries, and
+        sets, so it can be used to override these. By contrast,
+        ``default_converter`` is used as a fallback.
 
         If ``eager_converter`` raises an error, the error will be allowed to
         propagate. Otherwise, the object returned will be used as the
@@ -1539,8 +1539,9 @@ def to_js(
 
     .. code-block:: python
 
-        from datetime import datetime from js import Date def
-        default_converter(value, _ignored1, _ignored2):
+        from datetime import datetime
+        from js import Date
+        def default_converter(value, _ignored1, _ignored2):
             if isinstance(value, datetime):
                 return Date.new(value.timestamp() * 1000)
             return value
@@ -1562,7 +1563,8 @@ def to_js(
 
         class Pair:
             def __init__(self, first, second):
-                self.first = first self.second = second
+                self.first = first
+                self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
     :js:class:`Array`:
@@ -1574,8 +1576,10 @@ def to_js(
         def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
-            result = Array.new() cache(value, result)
-            result.push(convert(value.first)) result.push(convert(value.second))
+            result = Array.new()
+            cache(value, result)
+            result.push(convert(value.first))
+            result.push(convert(value.second))
             return result
 
     Note that we have to cache the conversion of ``value`` before converting
@@ -1601,7 +1605,8 @@ def to_js(
             return convert(value)
 
 
-    The following `eager_converter` will fail the conversion if a tuple is passed:
+    The following `eager_converter` will fail the conversion if a tuple is
+    passed:
 
     .. code-block:: python
 

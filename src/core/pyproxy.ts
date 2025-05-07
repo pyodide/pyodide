@@ -780,9 +780,9 @@ export class PyProxy {
       cacheConversion: (obj: PyProxy, result: any) => void,
     ) => any;
     /**
-     * Optional callback to convert objects which gets called after `string`,
-     * `number`, `boolean`, `undefined`/`null`, and `PyProxy` are converted but
-     * _before_ any default conversions are applied to standard data structures.
+     * Optional callback to convert objects which gets called after ``str``,
+     * ``int``, ``float``, ``bool``, ``None``, and ``JsProxy`` are converted but
+     * *before* any default conversions are applied to standard data structures.
      *
      * Its arguments are the same as `dict_converter`.
      * See the documentation of :meth:`~pyodide.ffi.to_js`.
