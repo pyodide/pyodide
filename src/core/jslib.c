@@ -465,7 +465,9 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
   // clang-format on
 });
 
-EM_JS(void __attribute__((__noreturn__)), JsvError_Throw, (JsVal e), { throw e; })
+EM_JS(void __attribute__((__noreturn__)), JsvError_Throw, (JsVal e), {
+  throw e;
+})
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_BOOL(bool, Jsv_##name, (JsVal a, JsVal b), { return !!(a op b); })

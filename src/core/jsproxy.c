@@ -4252,8 +4252,8 @@ skip_container_slots:
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   flags_obj = PyLong_FromLong(flags);
   FAIL_IF_NULL(flags_obj);
-  FAIL_IF_MINUS_ONE(
-    PyObject_SetAttr(result, _PyUnicode_FromId(&PyId__js_type_flags), flags_obj));
+  FAIL_IF_MINUS_ONE(PyObject_SetAttr(
+    result, _PyUnicode_FromId(&PyId__js_type_flags), flags_obj));
 
   success = true;
 finally:
