@@ -18,6 +18,9 @@ myst:
 
 _May 15, 2025_
 
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
+
 ### `python` CLI entrypoint
 
 - {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`

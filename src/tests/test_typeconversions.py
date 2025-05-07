@@ -1549,6 +1549,52 @@ def test_to_js_default_converter2(selenium):
     assert run_js("(x) => x[1] === 2")(p2js)
 
 
+@run_in_pyodide
+def test_to_js_eager_converter(selenium):
+    import pytest
+
+    from js import Array
+    from pyodide.ffi import ConversionError, destroy_proxies, to_js
+
+    recursive_list: Any = []
+    recursive_list.append(recursive_list)
+
+    recursive_dict: Any = {}
+    recursive_dict[0] = recursive_dict
+
+    a_thing = [{1: 2}, (2, 4, 6)]
+
+    def normal(value, convert, cacheConversion):
+        return convert(value)
+
+    def reject_tuples(value, convert, cacheConversion):
+        if isinstance(value, tuple):
+            raise ConversionError("We don't convert tuples!")
+        return convert(value)
+
+    def proxy_tuples(value, convert, cacheConversion):
+        if isinstance(value, tuple):
+            return value
+        return convert(value)
+
+    to_js(recursive_list, eager_converter=normal)
+    to_js(recursive_dict, eager_converter=normal)
+    to_js(a_thing, eager_converter=normal)
+
+    to_js(recursive_list, eager_converter=reject_tuples)
+    to_js(recursive_dict, eager_converter=reject_tuples)
+    with pytest.raises(ConversionError, match="We don't convert tuples"):
+        to_js(a_thing, eager_converter=reject_tuples)
+
+    to_js(recursive_list, eager_converter=proxy_tuples)
+    to_js(recursive_dict, eager_converter=proxy_tuples)
+    proxylist = Array.new()
+    res = to_js(a_thing, eager_converter=proxy_tuples, pyproxies=proxylist)
+    assert res[-1] == (2, 4, 6)
+    assert len(proxylist) == 1
+    destroy_proxies(proxylist)
+
+
 def test_buffer_format_string(selenium):
     errors = [
         ["aaa", "Expected format string to have length <= 2, got 'aaa'"],
