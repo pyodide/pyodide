@@ -1,11 +1,11 @@
 package:
   name: ipython
-  version: 9.0.2
+  version: 9.2.0
   top-level:
     - IPython
 source:
-  url: https://files.pythonhosted.org/packages/20/3a/917cb9e72f4e1a4ea13c862533205ae1319bd664119189ee5cc9e4e95ebf/ipython-9.0.2-py3-none-any.whl
-  sha256: 143ef3ea6fb1e1bffb4c74b114051de653ffb7737a3f7ab1670e657ca6ae8c44
+  url: https://files.pythonhosted.org/packages/9d/02/63a84444a7409b3c0acd1de9ffe524660e0e5d82ee473e78b45e5bfb64a4/ipython-9.2.0.tar.gz
+  sha256: 62a9373dbc12f28f9feaf4700d052195bf89806279fc8ca11f3f54017d04751b
 requirements:
   run:
     - asttokens
