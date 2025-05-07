@@ -1337,6 +1337,39 @@ def create_proxy(
 
 
 class ToJsConverter(Protocol):
+    """Protocol for the ``default_converter`` and ``eager_converter`` arguments
+    of `to_js`.
+
+    Parameters
+    ----------
+    value :
+
+        The object to convert to JavaScript
+
+    converter :
+
+        The default conversion behavior. You can use ``return converter(value)``
+        to get the default behavior in ``eager_converter``, but in
+        ``default_converter`` this will cause an infinite recurse and
+        ``converter`` should only be used on subobjects.
+
+    cache :
+
+        Cache the conversion for an object. Used to avoid an infinite recurse.
+        For example:
+
+        .. code-block:: python
+
+            from js import Array
+
+            def default_converter(value, convert, cache):
+                if not isinstance(value, Pair):
+                    return value
+                result = Array.new() cache(value, result)
+                result.push(convert(value.first))
+                result.push(convert(value.second))
+                return result
+    """
     def __call__(
         self,
         /,
@@ -1401,10 +1434,11 @@ def to_js(
 ) -> Any:
     """Convert the object to JavaScript.
 
-    This is similar to :js:meth:`~pyodide.ffi.PyProxy.toJs`, but for use from Python. If the
-    object can be implicitly translated to JavaScript, it will be returned
-    unchanged. If the object cannot be converted into JavaScript, this method
-    will return a :py:class:`JsProxy` of a :js:class:`~pyodide.ffi.PyProxy`, as if you had used
+    This is similar to :js:meth:`~pyodide.ffi.PyProxy.toJs`, but for use from
+    Python. If the object can be implicitly translated to JavaScript, it will be
+    returned unchanged. If the object cannot be converted into JavaScript, this
+    method will return a :py:class:`JsProxy` of a
+    :js:class:`~pyodide.ffi.PyProxy`, as if you had used
     :func:`~pyodide.ffi.create_proxy`.
 
     See :ref:`type-translations-pyproxy-to-js` for more information.
@@ -1420,13 +1454,14 @@ def to_js(
 
     pyproxies:
         Should be a JavaScript :js:class:`Array`. If provided, any ``PyProxies``
-        generated will be stored here. You can later use :py:meth:`destroy_proxies`
-        if you want to destroy the proxies from Python (or from JavaScript you
-        can just iterate over the :js:class:`Array` and destroy the proxies).
+        generated will be stored here. You can later use
+        :py:meth:`destroy_proxies` if you want to destroy the proxies from
+        Python (or from JavaScript you can just iterate over the
+        :js:class:`Array` and destroy the proxies).
 
     create_pyproxies:
-        If you set this to :py:data:`False`, :py:func:`to_js` will raise an error rather
-        than creating any pyproxies.
+        If you set this to :py:data:`False`, :py:func:`to_js` will raise an
+        error rather than creating any pyproxies.
 
     dict_converter:
         This converter if provided receives a (JavaScript) iterable of
@@ -1443,6 +1478,18 @@ def to_js(
         error will be allowed to propagate. Otherwise, the object returned will
         be used as the conversion. ``default_converter`` takes three arguments.
         The first argument is the value to be converted.
+
+    eager_converter:
+        If present will be invoked whenever the object is not an ``int``,
+        ``float``, ``bool``, or ``None``. It is called before the default
+        conversions are applied to lists, tuples, dictionaries, and sets, so it
+        can be used to override these. By contrast, ``default_converter`` is
+        used as a fallback.
+
+        If ``eager_converter`` raises an error, the error will be allowed to
+        propagate. Otherwise, the object returned will be used as the
+        conversion. ``default_converter`` takes three arguments. The first
+        argument is the value to be converted.
 
     Examples
     --------
@@ -1491,9 +1538,8 @@ def to_js(
 
     .. code-block:: python
 
-        from datetime import datetime
-        from js import Date
-        def default_converter(value, _ignored1, _ignored2):
+        from datetime import datetime from js import Date def
+        default_converter(value, _ignored1, _ignored2):
             if isinstance(value, datetime):
                 return Date.new(value.timestamp() * 1000)
             return value
@@ -1515,8 +1561,7 @@ def to_js(
 
         class Pair:
             def __init__(self, first, second):
-                self.first = first
-                self.second = second
+                self.first = first self.second = second
 
     We can use the following ``default_converter`` to convert ``Pair`` to
     :js:class:`Array`:
@@ -1528,10 +1573,8 @@ def to_js(
         def default_converter(value, convert, cache):
             if not isinstance(value, Pair):
                 return value
-            result = Array.new()
-            cache(value, result)
-            result.push(convert(value.first))
-            result.push(convert(value.second))
+            result = Array.new() cache(value, result)
+            result.push(convert(value.first)) result.push(convert(value.second))
             return result
 
     Note that we have to cache the conversion of ``value`` before converting
@@ -1545,6 +1588,38 @@ def to_js(
     Without ``cache(value, result);``, converting ``p`` would lead to an
     infinite recurse. With it, we can successfully convert ``p`` to an Array
     such that ``l[0] === l``.
+
+    Here are some examples demonstrating the usage of the ``eager_converter``
+    argument. Calling `convert(value)` does the normal conversion, so setting
+    `eager_converter` to the following function is the same as leaving it unset
+    (except for being slower):
+
+    .. code-block:: python
+
+        def apply_normal_conversion(value, convert, cacheConversion):
+            return convert(value)
+
+
+    The following `eager_converter` will fail the conversion if a tuple is passed:
+
+    .. code-block:: python
+
+        from pyodide.ffi import ConversionError
+
+        def reject_tuples(value, convert, cacheConversion):
+            if isinstance(value, tuple):
+                raise ConversionError("We don't convert tuples!")
+            return convert(value)
+
+    The following `eager_converter` makes tuples into a `PyProxy`:
+
+    .. code-block:: python
+
+        def proxy_tuples(value, convert, cacheConversion):
+            if isinstance(value, tuple):
+                return value
+            return convert(value)
+
     """
     return obj
 
@@ -1612,6 +1687,7 @@ __all__ = [
     "JsCallable",
     "JsOnceCallable",
     "JsTypedArray",
+    "ToJsConverter",
     "run_sync",
     "can_run_sync",
     "create_once_callable",
