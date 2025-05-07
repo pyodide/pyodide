@@ -219,7 +219,7 @@ JsvGenerator_Check(JsVal obj);
 bool
 JsvAsyncGenerator_Check(JsVal obj);
 
-void _Py_NO_RETURN
+void __attribute__((__noreturn__))
 JsvError_Throw(JsVal e);
 
 /**
