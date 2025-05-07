@@ -1,7 +1,9 @@
 package:
   name: ngspice
   version: "44.2"
-
+  tag:
+    - library
+    - shared_library
 source:
   url: https://github.com/danchitnis/ngspice-sf-mirror/archive/refs/tags/ngspice-44.2.zip
   sha256: 3ae94703938247a22148f60a1307d52719d42a9134b5aef6252594000f513902
@@ -34,7 +36,8 @@ build:
 
 about:
   home: http://ngspice.sourceforge.net
-
   license: BSD-3-Clause
-
   summary: The open source spice simulator for electric and electronic circuits
+extra:
+  recipe-maintainers:
+    - pepijndevos
