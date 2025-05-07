@@ -1370,6 +1370,7 @@ class ToJsConverter(Protocol):
                 result.push(convert(value.second))
                 return result
     """
+
     def __call__(
         self,
         /,
