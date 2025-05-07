@@ -271,8 +271,6 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
  * @private
  */
 export function syncUpSnapshotLoad1() {
-  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
-  Module.__hiwire_immortal_add(null);
   // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
   Module._jslib_init();
   // We expect everything after this in the immortal table to be interned strings.
