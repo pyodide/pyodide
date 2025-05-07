@@ -52,5 +52,11 @@ export const genMockModule = (): PackageManagerModule => {
         };
       },
     },
+    stringToNewUTF8: (str: string) => {
+      return 0;
+    },
+    _free: (ptr: number) => {},
+    _print_stdout(ptr: number) {},
+    _print_stderr(ptr: number) {},
   };
 };

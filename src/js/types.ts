@@ -350,6 +350,9 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
+  _free: (ptr: number) => void;
 }
 
 type LockfileInfo = {
@@ -534,7 +537,14 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
+  | "reportUndefinedSymbols"
+  | "PATH"
+  | "loadDynamicLibrary"
+  | "LDSO"
+  | "stringToNewUTF8"
+  | "_free"
+  | "_print_stderr"
+  | "_print_stdout"
 > & {
   FS: Pick<
     FSType,
