@@ -7,9 +7,9 @@ RUN apt-get update \
         bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
-        build-essential libtool libltdl-dev \
+        build-essential libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq \
+        ninja-build jq cmake bison \
   && rm -rf /var/lib/apt/lists/*
 
 # install autoconf 2.71, required by upstream libffi
@@ -20,6 +20,14 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && make install \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && rm -rf autoconf-2.71
+
+# install libtool 2.5.4, required for emscripten support
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
+    && tar -xf libtool-2.5.4.tar.xz \
+    && cd libtool-2.5.4 \
+    && ./configure \
+    && make install \
+    && rm -rf libtool-2.5.4
 
 ADD requirements.txt /
 
