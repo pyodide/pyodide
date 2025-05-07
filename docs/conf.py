@@ -234,7 +234,7 @@ def write_console_html(app):
             # insert the analytics script after the end of the inline CSS block
             console_html_lines.insert(
                 idx,
-                '<script defer data-domain="pyodide.org" src="https://plausible.io/js/plausible.js"></script>\n',
+                "<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{\"token\": \"4405a86c36a84efca5dbde1b25edd153\"}'></script>\n",
             )
             break
     else:
