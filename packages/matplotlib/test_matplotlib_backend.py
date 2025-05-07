@@ -68,7 +68,9 @@ def compare_canvas_data(selenium, expected_data):
         img_URL = canvas.toDataURL("image/png")[21:]
         canvas_base64 = base64.b64decode(img_URL)
         canvas_data = np.asarray(Image.open(io.BytesIO(canvas_base64)))
-        ref_data = np.asarray(Image.open(io.BytesIO(expected_data)))   # no module named PIL
+        ref_data = np.asarray(
+            Image.open(io.BytesIO(expected_data))
+        )  # no module named PIL
 
         deviation = np.mean(np.abs(canvas_data - ref_data))
         assert float(deviation) == 0.0
@@ -227,9 +229,9 @@ def test_draw_text_rotated(selenium_standalone):
 
     @run_in_pyodide(packages=["matplotlib"])
     def run(selenium):
-        import matplotlib
         import datetime
 
+        import matplotlib
         import matplotlib.pyplot as plt
         import numpy as np
         from matplotlib.dates import (
