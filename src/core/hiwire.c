@@ -43,6 +43,8 @@ EM_JS_MACROS(void, hiwire_invalid_ref_js, (int type, JsRef ref), {
 // clang-format on
 
 // Called by libhiwire if an invalid ID is dereferenced.
-void hiwire_invalid_ref(int type, JsRef ref) {
+void
+hiwire_invalid_ref(int type, JsRef ref)
+{
   hiwire_invalid_ref_js(type, ref);
 }
