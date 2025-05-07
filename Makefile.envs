@@ -252,6 +252,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,addFunction \
 		,stackSave \
 		,stackRestore \
+		,withStackSave \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \
