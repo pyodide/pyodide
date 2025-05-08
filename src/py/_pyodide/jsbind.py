@@ -9,6 +9,7 @@ from inspect import (
 from types import GenericAlias
 from typing import (  # type:ignore[attr-defined]
     Any,
+    Protocol,
     _AnnotatedAlias,
     _GenericAlias,
     _UnionGenericAlias,
@@ -120,7 +121,7 @@ class TypeConverter:
         if res:
             return res
 
-        if issubclass(annotation, BindClass):
+        if issubclass(annotation, (BindClass, Protocol)):  # type:ignore[arg-type]
             return js2py_bind(annotation)
         return None
 
@@ -147,7 +148,7 @@ def get_attr_sig_prop(attr_sig):
     """
     # If the attribute is marked with BindClass, then we should attach bind it
     # to the resulting proxy.
-    if isinstance(attr_sig, BindClass):
+    if isinstance(attr_sig, (BindClass, Protocol)):  # type:ignore[arg-type]
         return (False, attr_sig)
     # Otherwise, make it into a converter.
     if converter := type_converter.js2py_annotation(attr_sig):
