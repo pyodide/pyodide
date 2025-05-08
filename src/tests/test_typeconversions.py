@@ -1663,19 +1663,21 @@ def test_bind_attrs(selenium):
 
     from _pyodide.jsbind import BindClass, Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
     class A(BindClass):
         x: int
         y: Annotated[list[int], Deep]
 
-    a: A = run_js(
+    a_px: JsProxy = run_js(
         """
         ({
             x: 7,
             y: [1,2,3],
         })
         """
-    ).bind_sig(A)
+    )
+    a = a_px.bind_sig(A)
     assert a.x == 7
     assert a.y == [1, 2, 3]
 
@@ -2012,10 +2014,38 @@ def test_bind_py_json(selenium):
     class A_sig:
         x: int
 
-    Abound = A.bind_sig(A_sig)
+    Abound = A.bind_class(A_sig)
 
     res = Abound()
     assert res.x == 7
+
+
+@run_in_pyodide
+def test_bind_class(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    A_px: JsProxy = run_js("(class {x = [1,2,3]; f() { return [1]; }})")
+    a_px: JsProxy = run_js("(A) => new A()")(A_px)
+
+    class A_sig(BindClass):
+        x: Annotated[list[int], Deep]
+
+        def __init__(self, /): ...
+
+        def f(self, /) -> Annotated[list[int], Deep]:
+            return []
+
+    A = A_px.bind_class(A_sig)
+    res = A()
+    assert isinstance(res.x, list)
+    assert isinstance(res.f(), list)
+    a = a_px.bind_sig(A_sig)
+    assert isinstance(a.x, list)
+    assert isinstance(a.f(), list)
 
 
 @run_in_pyodide
