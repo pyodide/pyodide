@@ -189,7 +189,9 @@ export type FSNode = {
 
 /** @hidden */
 export type FSStream = {
-  tty?: boolean;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
