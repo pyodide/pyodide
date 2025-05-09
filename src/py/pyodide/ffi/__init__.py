@@ -52,6 +52,7 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "ToJsConverter",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
