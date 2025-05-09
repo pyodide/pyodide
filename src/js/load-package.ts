@@ -139,15 +139,23 @@ export class PackageManager {
     this.#installer = new Installer(api, pyodideModule);
 
     this.stdout = (msg: string) => {
-      const msgPtr = this.#module.stringToNewUTF8(msg);
-      this.#module._print_stdout(msgPtr);
-      this.#module._free(msgPtr);
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stdout(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
     };
 
     this.stderr = (msg: string) => {
-      const msgPtr = this.#module.stringToNewUTF8(msg);
-      this.#module._print_stderr(msgPtr);
-      this.#module._free(msgPtr);
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stderr(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
     };
   }
 

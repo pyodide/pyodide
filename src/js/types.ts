@@ -330,6 +330,7 @@ export interface Module {
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
+  stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
   js2python_convert: (
     obj: any,
@@ -360,6 +361,8 @@ export interface Module {
   _print_stdout: (ptr: number) => void;
   _print_stderr: (ptr: number) => void;
   _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
 }
 
 type LockfileInfo = {
@@ -548,8 +551,9 @@ export type PackageManagerModule = Pick<
   | "PATH"
   | "loadDynamicLibrary"
   | "LDSO"
-  | "stringToNewUTF8"
-  | "_free"
+  | "stackSave"
+  | "stackRestore"
+  | "stringToUTF8OnStack"
   | "_print_stderr"
   | "_print_stdout"
 > & {
