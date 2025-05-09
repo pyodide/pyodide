@@ -1,37 +1,38 @@
-From 0cbe89f1528710baf4b1f69b2e6b095d98776cb9 Mon Sep 17 00:00:00 2001
+From 230afd0079b49ad873183f0e6c792aa85a9c7cb7 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
-Date: Fri, 9 May 2025 22:06:18 +0900
-Subject: [PATCH 1/1] Handle pd_NA import error
+Date: Fri, 9 May 2025 22:25:50 +0900
+Subject: [PATCH 1/1] TST: Prevent import error when tests are not included in
+ the wheel
 
 ---
  numpy/testing/_private/utils.py | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/numpy/testing/_private/utils.py b/numpy/testing/_private/utils.py
-index 5cbb5130dc..a50f15d38f 100644
+index 42e43e21f3..b5dbab13d9 100644
 --- a/numpy/testing/_private/utils.py
 +++ b/numpy/testing/_private/utils.py
-@@ -27,7 +27,6 @@
-      intp, float32, empty, arange, array_repr, ndarray, isnat, array)
+@@ -28,7 +28,6 @@
  from numpy import isfinite, isnan, isinf
  import numpy.linalg._umath_linalg
+ from numpy._utils import _rename_parameter
 -from numpy._core.tests._natype import pd_NA
  
  from io import StringIO
  
 @@ -2754,6 +2753,12 @@ def run_threaded(func, max_workers=8, pass_count=False,
  
- 
  def get_stringdtype_dtype(na_object, coerce=True):
+     # explicit is check for pd_NA because != with pd_NA returns pd_NA
 +    try:
 +        from numpy._core.tests._natype import pd_NA
 +    except ImportError:
 +        warnings.warn("failed to import numpy._core.tests, probably tests are not included in the build")
 +        pd_NA = None
 +
-     # explicit is check for pd_NA because != with pd_NA returns pd_NA
      if na_object is pd_NA or na_object != "unset":
          return np.dtypes.StringDType(na_object=na_object, coerce=coerce)
+     else:
 -- 
 2.29.2.windows.2
 
