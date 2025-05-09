@@ -1,0 +1,16 @@
+package:
+  name: diskcache
+  version: 5.6.3
+  top-level:
+    - diskcache
+source:
+  url: https://files.pythonhosted.org/packages/py3/d/diskcache/diskcache-5.6.3-py3-none-any.whl
+  sha256: 5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19
+about:
+  home: http://www.grantjenks.com/docs/diskcache/
+  PyPI: https://pypi.org/project/diskcache
+  summary: Disk Cache -- Disk and file backed persistent cache.
+  license: Apache 2.0
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

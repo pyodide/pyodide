@@ -1,0 +1,16 @@
+package:
+  name: ply
+  version: "3.11"
+  top-level:
+    - ply
+source:
+  url: https://files.pythonhosted.org/packages/a3/58/35da89ee790598a0700ea49b2a66594140f44dec458c07e8e3d4979137fc/ply-3.11-py2.py3-none-any.whl
+  sha256: 096f9b8350b65ebd2fd1346b12452efe5b9607f7482813ffca50c22722a807ce
+about:
+  home: http://www.dabeaz.com/ply/
+  PyPI: https://pypi.org/project/ply
+  summary: Python Lex & Yacc
+  license: BSD
+extra:
+  recipe-maintainers:
+    - PUT_YOUR_GITHUB_USERNAME_HERE

@@ -1,0 +1,26 @@
+From c96e33fdda0992d37c9f7adf31411d3322b6b786 Mon Sep 17 00:00:00 2001
+From: Pepijn de Vos <pepijndevos@gmail.com>
+Date: Fri, 9 May 2025 09:52:11 +0200
+Subject: [PATCH 2/2] strip extension off library name
+
+---
+ InSpice/Spice/NgSpice/Shared.py | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/InSpice/Spice/NgSpice/Shared.py b/InSpice/Spice/NgSpice/Shared.py
+index 42e2236..5cade62 100644
+--- a/InSpice/Spice/NgSpice/Shared.py
++++ b/InSpice/Spice/NgSpice/Shared.py
+@@ -449,6 +449,9 @@ class NgSpiceShared:
+         # name must not be prefixed by lib !
+         if name.startswith('lib'):
+             name = name[3:]
++        # name must not be suffixed by .so, .dll or .dylib
++        if "." in name:
++            name = name.split('.')[0]
+         cls._logger.debug(f'Search library "{name}"')
+         return ctypes.util.find_library(name)
+ 
+-- 
+2.49.0
+
