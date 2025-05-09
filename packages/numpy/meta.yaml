@@ -8,6 +8,8 @@ package:
 source:
   url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.2.4.tar.gz
   sha256: 9ba03692a45d3eef66559efe1d1096c4b9b75c0986b5dff5530c378fb8331d4f
+  patches:
+    - patches/0001-Handle-pd_NA-import-error.patch
 
 build:
   unvendor-tests: false # we do this on our own using Meson's install tags
