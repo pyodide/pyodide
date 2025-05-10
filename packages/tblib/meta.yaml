@@ -4,8 +4,8 @@ package:
   top-level:
     - tblib
   tag:
-    - always
     - core
+    - pytest
     - min-scipy-stack
 source:
   url: https://files.pythonhosted.org/packages/9b/87/ce70db7cae60e67851eb94e1a2127d4abb573d3866d2efd302ceb0d4d2a5/tblib-3.0.0-py3-none-any.whl

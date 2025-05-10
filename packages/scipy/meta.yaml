@@ -4,6 +4,8 @@ package:
   pinned: true
   tag:
     - min-scipy-stack
+    - core
+    - cross-build
   top-level:
     - scipy
 
