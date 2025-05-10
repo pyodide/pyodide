@@ -20,6 +20,7 @@ def get_pytz_wheel_name() -> str:
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
@@ -65,6 +66,7 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium.run("import pytz")
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_relative_url(
     request, runtime, web_server_main, playwright_browsers, tmp_path
 ):
@@ -103,6 +105,7 @@ def test_load_relative_url(
         )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 
@@ -116,6 +119,7 @@ def test_list_loaded_urls(selenium_standalone):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package("pyparsing")
     selenium_standalone.load_package("http://some_url/pyparsing-3.0.6-py3-none-any.whl")
@@ -137,6 +141,7 @@ def test_invalid_package_name(selenium):
         selenium.load_package("tcp://some_url")
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_package_return(selenium_standalone):
     selenium = selenium_standalone
     package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
@@ -145,6 +150,7 @@ def test_load_package_return(selenium_standalone):
     assert package[0]["packageType"] == "package"
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_package_return_from_url(
@@ -169,6 +175,7 @@ def test_load_package_return_from_url(
     assert package[0]["fileName"] == pyparsing_wheel_name
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
@@ -186,6 +193,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
@@ -209,6 +217,7 @@ def test_load_packages_sequential(selenium_standalone, packages):
     ]
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
@@ -222,6 +231,7 @@ def test_load_handle_failure(selenium_standalone):
     assert "Loaded pyparsing" in selenium.logs
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
@@ -235,12 +245,14 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice(selenium_standalone):
     selenium_standalone.load_package("pytz")
     selenium_standalone.load_package("pytz")
     assert "No new packages to load" in selenium_standalone.logs
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice_different_source(selenium_standalone):
     selenium_standalone.load_package(
         [
@@ -254,6 +266,7 @@ def test_load_twice_different_source(selenium_standalone):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice_same_source(selenium_standalone):
     selenium_standalone.load_package(
         [
@@ -264,6 +277,7 @@ def test_load_twice_same_source(selenium_standalone):
     assert "Loading same package pytz" not in selenium_standalone.logs
 
 
+@pytest.mark.requires_dynamic_linking
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
     to_load = ["pyparsing"]
@@ -280,6 +294,7 @@ def test_js_load_package_from_python(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
 def test_load_package_mixed_case(selenium_standalone, jinja2):
     selenium = selenium_standalone
@@ -796,3 +811,37 @@ def test_install_api(selenium_standalone, httpserver):
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
     _run(selenium, install_dir)
+
+
+@pytest.mark.requires_dynamic_linking
+def test_load_package_stream(selenium_standalone, httpserver):
+    selenium = selenium_standalone
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+    test_file_data = test_file_path.read_bytes()
+
+    httpserver.expect_oneshot_request("/" + test_file_name).respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    url = httpserver.url_for("/" + test_file_name)
+
+    selenium.run_js(
+        """
+        const logs = [];
+        const stdout = (msg) => { logs.push(msg); };
+
+        pyodide.setStdout({ batched: stdout });
+
+        await pyodide.loadPackage("%s");
+
+        assert(() => logs.length > 0);
+        assert(() => logs[0].startsWith("Loading dummy_pkg"));
+        assert(() => logs[1].startsWith("Loaded dummy_pkg"));
+    """
+        % url
+    )
