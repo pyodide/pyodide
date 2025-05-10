@@ -18,19 +18,19 @@ PyUnicode_Data(PyObject* obj)
 }
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_none()
+_js2python_none(void)
 {
   Py_RETURN_NONE;
 }
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_true()
+_js2python_true(void)
 {
   Py_RETURN_TRUE;
 }
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_false()
+_js2python_false(void)
 {
   Py_RETURN_FALSE;
 }

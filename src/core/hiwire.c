@@ -2,18 +2,8 @@
 #include "error_handling.h"
 #include <emscripten.h>
 
-HwRef
-hiwire_new_deduplicate(__externref_t v)
-{
-  HwRef id = hiwire_new(v);
-  HwRef result = hiwire_incref_deduplicate(id);
-  hiwire_decref(id);
-  return result;
-}
-
-// Called by libhiwire if an invalid ID is dereferenced.
 // clang-format off
-EM_JS_MACROS(void, hiwire_invalid_ref, (int type, JsRef ref), {
+EM_JS_MACROS(void, hiwire_invalid_ref_js, (int type, JsRef ref), {
   API.fail_test = true;
   if (type === HIWIRE_FAIL_GET && !ref) {
     // hiwire_get on NULL.
@@ -51,3 +41,10 @@ EM_JS_MACROS(void, hiwire_invalid_ref, (int type, JsRef ref), {
   throw new Error(msg);
 });
 // clang-format on
+
+// Called by libhiwire if an invalid ID is dereferenced.
+void
+hiwire_invalid_ref(int type, JsRef ref)
+{
+  hiwire_invalid_ref_js(type, ref);
+}

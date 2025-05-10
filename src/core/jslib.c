@@ -147,7 +147,7 @@ JsvString_FromId(Js_Identifier* id)
 
 // ==================== JsvArray API  ====================
 
-EM_JS(JsVal, JsvArray_New, (), {
+EM_JS(JsVal, JsvArray_New, (void), {
   return [];
 });
 
@@ -257,7 +257,7 @@ JsvArray_slice_assign,
 // ==================== JsvObject API  ====================
 
 
-EM_JS(JsVal, JsvObject_New, (), {
+EM_JS(JsVal, JsvObject_New, (void), {
   return {};
 });
 
@@ -465,7 +465,9 @@ EM_JS_BOOL(bool, JsvAsyncGenerator_Check, (JsVal obj), {
   // clang-format on
 });
 
-EM_JS(void _Py_NO_RETURN, JsvError_Throw, (JsVal e), { throw e; })
+EM_JS(void __attribute__((__noreturn__)), JsvError_Throw, (JsVal e), {
+  throw e;
+})
 
 #define MAKE_OPERATOR(name, op)                                                \
   EM_JS_BOOL(bool, Jsv_##name, (JsVal a, JsVal b), { return !!(a op b); })
