@@ -13,7 +13,7 @@ print_stdout(const char* msg)
   if (fp == NULL) {
     return -1;
   }
-  fprintf(fp, "%s", msg);
+  fprintf(fp, "%s\n", msg);
   fclose(fp);
 
   return 0; // Success
@@ -26,7 +26,7 @@ print_stderr(const char* msg)
   if (fp == NULL) {
     return -1;
   }
-  fprintf(fp, "%s", msg);
+  fprintf(fp, "%s\n", msg);
   fclose(fp);
 
   return 0; // Success
