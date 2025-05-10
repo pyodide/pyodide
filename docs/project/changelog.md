@@ -41,6 +41,7 @@ myst:
 
 ### Packages
 
+- Upgraded `sisl` to 0.16.0 {pr}`5591`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `fsspec` to 2025.3.2 {pr}`5604`
 - Upgraded `narwhals` to 1.38.2 {pr}`5623`
