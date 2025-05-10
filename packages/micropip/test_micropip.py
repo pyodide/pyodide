@@ -30,10 +30,12 @@ def wheel_base(monkeypatch):
 
 
 @pytest.fixture
+@pytest.mark.requires_dynamic_linking
 def selenium_standalone_micropip(selenium_standalone):
     """Import micropip before entering test so that global initialization of
     micropip doesn't count towards hiwire refcount.
     """
+    
     selenium_standalone.run_js(
         """
         await pyodide.loadPackage("micropip");

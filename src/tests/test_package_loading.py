@@ -20,6 +20,7 @@ def get_pytz_wheel_name() -> str:
     return list(DIST_PATH.glob("pytz*.whl"))[0].name
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
@@ -65,6 +66,7 @@ def test_load_from_url(selenium_standalone, web_server_secondary, active_server)
     selenium.run("import pytz")
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_relative_url(
     request, runtime, web_server_main, playwright_browsers, tmp_path
 ):
@@ -103,6 +105,7 @@ def test_load_relative_url(
         )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 
@@ -116,6 +119,7 @@ def test_list_loaded_urls(selenium_standalone):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_uri_mismatch(selenium_standalone):
     selenium_standalone.load_package("pyparsing")
     selenium_standalone.load_package("http://some_url/pyparsing-3.0.6-py3-none-any.whl")
@@ -137,6 +141,7 @@ def test_invalid_package_name(selenium):
         selenium.load_package("tcp://some_url")
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_package_return(selenium_standalone):
     selenium = selenium_standalone
     package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
@@ -145,6 +150,7 @@ def test_load_package_return(selenium_standalone):
     assert package[0]["packageType"] == "package"
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 @pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_package_return_from_url(
@@ -169,6 +175,7 @@ def test_load_package_return_from_url(
     assert package[0]["fileName"] == pyparsing_wheel_name
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )
@@ -186,6 +193,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize(
     "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
 )

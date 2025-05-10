@@ -1425,6 +1425,7 @@ def test_array_pop(selenium):
     assert a.pop(0) == 1
 
 
+@pytest.mark.requires_dynamic_linking
 @std_hypothesis_settings
 @given(l=st.lists(st.integers()), slice=st.slices(50))
 @example(l=[0, 1], slice=slice(None, None, -1))
@@ -1446,6 +1447,7 @@ def test_array_slices(selenium, l, slice):
     assert result.to_py() == expected
 
 
+@pytest.mark.requires_dynamic_linking
 @std_hypothesis_settings
 @given(l=st.lists(st.integers()), slice=st.slices(50))
 @example(l=[0, 1], slice=slice(None, None, -1))
@@ -1487,6 +1489,7 @@ def list_slice_and_value(draw):
     return (l, s, vals)
 
 
+@pytest.mark.requires_dynamic_linking
 @std_hypothesis_settings
 @given(lsv=list_slice_and_value())
 @example(lsv=(list(range(5)), slice(5, 2), []))
@@ -1537,6 +1540,7 @@ def test_array_slice_assign_2(selenium):
     assert exc_info_3a.value.args == exc_info_3b.value.args
 
 
+@pytest.mark.requires_dynamic_linking
 @std_hypothesis_settings
 @given(l1=st.lists(st.integers()), l2=st.lists(st.integers()))
 @example(l1=[], l2=[])
