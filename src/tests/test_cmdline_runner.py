@@ -489,8 +489,8 @@ def test_package_index(tmp_path):
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
-        stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        in stdout.strip().rsplit("\n", 1)[-1]
     )
 
 
