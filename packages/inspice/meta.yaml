@@ -1,0 +1,29 @@
+package:
+  name: inspice
+  version: 1.6.3.1
+  top-level:
+    - InSpice
+source:
+  url: https://files.pythonhosted.org/packages/82/ac/3245e1fc30744094b85bea0a894fff8f472297be96129c57b1f045f2382d/inspice-1.6.3.1.tar.gz
+  sha256: a9f638812bd72d3042dd46364556c699a357c474b48d3c4163d83da6f541993d
+  patches:
+    - patches/0001-add-support-for-emscripten.patch
+    - patches/0002-strip-extension-off-library-name.patch
+requirements:
+  run:
+    - numpy
+    - matplotlib
+    - pyyaml
+    - cffi
+    - diskcache
+    - h5py
+    - ply
+    - ngspice
+about:
+  home: https://github.com/Innovoltive/InSpice
+  PyPI: https://pypi.org/project/inspice
+  summary: Python interface to Ngspice and Xyce circuit simulators (forked from PySpice)
+  license: GPL-3.0-or-later
+extra:
+  recipe-maintainers:
+    - pepijndevos
