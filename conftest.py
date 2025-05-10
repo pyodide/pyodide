@@ -203,6 +203,9 @@ def pytest_collection_modifyitems(config, items):
     # to load test-related packages. So we inject the requires_dynamic_linking marker
     # everywhere when run_in_pyodide is used.
     def is_decorated_with(func, fun_name):
+        if not func:
+            return False
+
         source = inspect.getsource(func)
         return f"@{fun_name}" in source
 
