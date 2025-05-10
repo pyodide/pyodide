@@ -1,4 +1,10 @@
-from inspect import Parameter, isclass, iscoroutinefunction, signature
+from inspect import (
+    Parameter,
+    getattr_static,
+    iscoroutinefunction,
+    ismethod,
+    signature,
+)
 from types import GenericAlias
 from typing import (  # type:ignore[attr-defined]
     Any,
@@ -134,33 +140,98 @@ class TypeConverter:
 type_converter = TypeConverter()
 
 
-def func_to_sig(f):
-    res = getattr(f, "_js_sig", None)
-    if res:
-        return res
-    res = func_to_sig_inner(f)
-    f._js_sig = res
-    return res
+def get_attr_sig_prop(attr_sig):
+    """Helper for get_attr_sig in case that the attribute we're looking up is a
+    property with annotation.
+    """
+    # If the attribute is marked with BindClass, then we should attach bind it
+    # to the resulting proxy.
+    if isinstance(attr_sig, BindClass):
+        return (False, attr_sig)
+    # Otherwise, make it into a converter.
+    if converter := type_converter.js2py_annotation(attr_sig):
+        return (True, converter)
+    return (False, None)
+
+
+def get_attr_sig_method(sig, attr):
+    """Check if sig has a method named attr. If so, get the appropriate
+    signature.
+
+    Returns: None or a valid get_attr_sig return value.
+    """
+    # First check cache
+    if not hasattr(sig, "_method_cache"):
+        sig._method_cache = {}
+    if res_attr := sig._method_cache.get(attr, None):
+        return (False, res_attr)
+
+    res_attr = getattr_static(sig, attr, None)
+    if not res_attr:
+        sig._method_cache[attr] = None
+        return None
+    # If it isn't a static method, it has one too many arguments. Easiest way to
+    # communicate this to func_to_sig is to use __get__ to bind an argument. We
+    # have to do this manually because `sig` is a class not an instance.
+    if callable(res_attr):
+        # The argument to __get__ doesn't matter.
+        res_attr = res_attr.__get__(sig)
+    sig._method_cache[attr] = res_attr
+    return (False, res_attr)
 
 
 def get_attr_sig(sig, attr):
+    """Called from JsProxy_GetAttr when the proxy has a signature.
+
+    Must return a pair:
+
+        (False, sig) -- if the result is a JsProxy bind sig to it
+        (True, converter) -- apply converter to the result
+    """
+    # Look up type hints and cache them if we haven't yet. We could use
+    # `functools.cache` for this, but it seems to keep `sig` alive for longer
+    # than necessary.
+    # TODO: Make a cache decorator that uses a weakmap.
     if not hasattr(sig, "_type_hints"):
         sig._type_hints = get_type_hints(sig, include_extras=True)
-    attr_sig = sig._type_hints.get(attr, None)
-    if not attr_sig:
-        return (False, getattr(sig, attr, None))
-    if isinstance(attr_sig, BindClass):
-        return (False, attr_sig)
-    converter = type_converter.js2py_annotation(attr_sig)
-    if converter:
-        return (True, converter)
+    # See if there is an attribute type hint
+    if prop_sig := sig._type_hints.get(attr, None):
+        return get_attr_sig_prop(prop_sig)
+    if res := get_attr_sig_method(sig, attr):
+        return res
     return (False, None)
 
 
 no_default = Parameter.empty
 
 
-def func_to_sig_inner(f):
+def func_to_sig(f):
+    """Called from jsproxy_call.c when we're about to call a callable.
+
+    Has to return an appropriate JsFuncSignature.
+    """
+    cache_name = "_js_sig"
+    if getattr(f, "__qualname__", None) == "type":
+        cls = f.__args__[0]
+        cache = cls
+    else:
+        cache = f
+        if ismethod(cache):
+            # We can't add extra attributes to a methodwrapper.
+            cache = cache.__func__
+            cache_name = "_js_meth_sig"
+        cls = None
+    if res := getattr(cache, cache_name, None):
+        return res
+    if cls:
+        f = cls.__init__.__get__(cls)
+
+    res = func_to_sig_inner(f, cls)
+    setattr(cache, cache_name, res)
+    return res
+
+
+def func_to_sig_inner(f, cls):
     sig = signature(f)
     posparams = []
     posparams_defaults = []
@@ -171,6 +242,7 @@ def func_to_sig_inner(f):
     kwparam_defaults = []
     varkwd = None
     types = get_type_hints(f, include_extras=True)
+    should_construct = bool(cls)
 
     for p in sig.parameters.values():
         converter = (
@@ -199,7 +271,7 @@ def func_to_sig_inner(f):
         # We use a bitflag to check which kwparams have been passed to fill in
         # defaults / raise type error.
         raise RuntimeError("Cannot handle function with more than 64 kwonly args")
-    result = type_converter.js2py_annotation(types.get("return", None))
+    result = type_converter.js2py_annotation(types.get("return", cls))
     if iscoroutinefunction(f):
         if result is None:
             result = js2py_default
@@ -207,7 +279,6 @@ def func_to_sig_inner(f):
     elif result is None:
         result = js2py_default_call_result
 
-    should_construct = isclass(f)
     return JsFuncSignature(
         f,
         should_construct,
@@ -227,4 +298,16 @@ def _default_sig_stencil(*args, **kwargs):
     pass
 
 
-default_signature = func_to_sig_inner(_default_sig_stencil)
+default_signature = func_to_sig_inner(_default_sig_stencil, None)
+
+
+def bind_class_sig(sig):
+    """Called from JsProxy_bind_class.
+
+    Just replace sig with type[sig]. This is consistent with what we'd get from
+    a function return value: if a function returns a class then it should be typed:
+
+    def f() -> type[A]:
+        ...
+    """
+    return type[sig]

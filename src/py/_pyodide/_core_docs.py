@@ -117,7 +117,33 @@ class JsProxy(metaclass=_JsProxyMetaClass):
             return super().__new__(cls)
         raise TypeError(f"{cls.__name__} cannot be instantiated.")
 
-    def bind_sig(self, signature: T) -> T:
+    def bind_class(self, signature: T) -> T:
+        """Creates a copy of the JsProxy with a signature bound to it.
+
+        ``proxy.bind_class(A)`` treats ``proxy`` as a class shaped like ``A``.
+        ``proxy.bind_sig(A)`` treats ``proxy`` as an instance of ``A``.
+
+        At runtime, ``proxy.bind_class(A)`` is equivalent to
+        ``proxy.bind_class(type[A])``, it only needs to be a separate method to
+        help mypy.
+
+        .. admonition:: Experimental
+           :class: warning
+
+           This feature is not yet stable, nor really documented.
+        """
+        raise NotImplementedError
+
+    # First overload is for if we bind a class, second overload is for if we
+    # bind a function.
+
+    @overload
+    def bind_sig(self, signature: type[T]) -> T: ...
+
+    @overload
+    def bind_sig(self, signature: T) -> T: ...
+
+    def bind_sig(self, signature: Any) -> Any:
         """Creates a copy of the JsProxy with a signature bound to it.
 
         .. admonition:: Experimental
@@ -125,7 +151,7 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
            This feature is not yet stable, nor really documented.
         """
-        return signature
+        raise NotImplementedError
 
     @property
     def js_id(self) -> int:
