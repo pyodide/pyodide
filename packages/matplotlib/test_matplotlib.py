@@ -30,6 +30,17 @@ def test_plot(selenium):
 
 @matplotlib_test_decorator
 @run_in_pyodide(packages=["matplotlib"])
+def test_plot_with_pause(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.pause(0.001)
+    plt.show()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
 def test_svg(selenium):
     import io
 
@@ -113,3 +124,40 @@ def test_triangulation(selenium):
 
     # Create the Triangulation; no triangles so Delaunay triangulation created.
     tri.Triangulation(x, y)
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_destroy(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_call_close_multi_times(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+    plt.close()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_call_show_and_close_multi_times(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
