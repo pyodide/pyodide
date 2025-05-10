@@ -217,6 +217,7 @@ def test_load_packages_sequential(selenium_standalone, packages):
     ]
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("pytz")
@@ -230,6 +231,7 @@ def test_load_handle_failure(selenium_standalone):
     assert "Loaded pyparsing" in selenium.logs
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
@@ -243,12 +245,14 @@ def test_load_failure_retry(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice(selenium_standalone):
     selenium_standalone.load_package("pytz")
     selenium_standalone.load_package("pytz")
     assert "No new packages to load" in selenium_standalone.logs
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice_different_source(selenium_standalone):
     selenium_standalone.load_package(
         [
@@ -262,6 +266,7 @@ def test_load_twice_different_source(selenium_standalone):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_load_twice_same_source(selenium_standalone):
     selenium_standalone.load_package(
         [
@@ -272,6 +277,7 @@ def test_load_twice_same_source(selenium_standalone):
     assert "Loading same package pytz" not in selenium_standalone.logs
 
 
+@pytest.mark.requires_dynamic_linking
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
     to_load = ["pyparsing"]
@@ -288,6 +294,7 @@ def test_js_load_package_from_python(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
 def test_load_package_mixed_case(selenium_standalone, jinja2):
     selenium = selenium_standalone

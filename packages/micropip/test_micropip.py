@@ -48,6 +48,7 @@ def selenium_standalone_micropip(selenium_standalone):
 SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
 
 
+@pytest.mark.requires_dynamic_linking
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     assert selenium.run_js(
@@ -67,6 +68,7 @@ def test_install_simple(selenium_standalone_micropip):
     ) == ["go", "go", "goe", "gone"]
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
 def test_install_custom_url(selenium_standalone_micropip, base_url):
     selenium = selenium_standalone_micropip
@@ -87,6 +89,7 @@ def test_install_custom_url(selenium_standalone_micropip, base_url):
         )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
 def test_install_file_protocol_node(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
@@ -104,6 +107,7 @@ def test_install_file_protocol_node(selenium_standalone_micropip):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_install_different_version(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
@@ -126,6 +130,7 @@ def test_install_different_version(selenium_standalone_micropip):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_install_different_version2(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
@@ -148,6 +153,7 @@ def test_install_different_version2(selenium_standalone_micropip):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 @pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
 def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
     selenium = selenium_standalone_micropip
@@ -163,6 +169,7 @@ def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_list_load_package_from_url(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
@@ -181,6 +188,7 @@ def test_list_load_package_from_url(selenium_standalone_micropip):
         )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_list_pyodide_package(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
@@ -205,6 +213,7 @@ def test_list_pyodide_package(selenium_standalone_micropip):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_list_loaded_from_js(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     selenium.run_js(
@@ -220,6 +229,7 @@ def test_list_loaded_from_js(selenium_standalone_micropip):
     )
 
 
+@pytest.mark.requires_dynamic_linking
 def test_emfs(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
@@ -246,6 +256,7 @@ def test_emfs(selenium_standalone_micropip):
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
 
 
+@pytest.mark.requires_dynamic_linking
 def test_install_non_normalized_package(selenium_standalone_micropip):
     if not package_is_built("ruamel-yaml"):
         pytest.skip("ruamel.yaml not built")
