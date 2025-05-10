@@ -9,25 +9,13 @@
 EMSCRIPTEN_KEEPALIVE int
 print_stdout(const char* msg)
 {
-  FILE* fp = fopen("/dev/stdout", "w");
-  if (fp == NULL) {
-    return -1;
-  }
-  fprintf(fp, "%s\n", msg);
-  fclose(fp);
-
-  return 0; // Success
+  fprintf(stdout, "%s\n", msg);
+  return 0;
 }
 
 EMSCRIPTEN_KEEPALIVE int
 print_stderr(const char* msg)
 {
-  FILE* fp = fopen("/dev/stderr", "w");
-  if (fp == NULL) {
-    return -1;
-  }
-  fprintf(fp, "%s\n", msg);
-  fclose(fp);
-
-  return 0; // Success
+  fprintf(stderr, "%s\n", msg);
+  return 0;
 }
