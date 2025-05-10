@@ -2,7 +2,6 @@
 Various common utilities for testing.
 """
 
-import ast
 import contextlib
 import inspect
 import os
@@ -214,11 +213,9 @@ def pytest_collection_modifyitems(config, items):
     for item in items:
         if is_decorated_with(item.obj, "run_in_pyodide"):
             item.add_marker(pytest.mark.requires_dynamic_linking)
-        
+
         if isinstance(item, DoctestItem):
             item.add_marker(pytest.mark.requires_dynamic_linking)
-
-        
 
 
 # Save test results to a cache
