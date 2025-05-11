@@ -13,7 +13,7 @@ dependencies:
   # there was a fix (https://github.com/conda-forge/pkg-config-feedstock/pull/31), but it is not released.
   # - pkg-config
   - texinfo
-  # Not sure but the autoconf version should match with the one used in the configure.ac file in cpython.
+  # Not sure but it looks like the autoconf version should not be greater than the one used in the configure.ac file in cpython.
   - autoconf<2.72
   - automake
   - libtool
