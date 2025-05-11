@@ -742,6 +742,7 @@ export class PyProxy {
     create_pyproxies = true,
     dict_converter = undefined,
     default_converter = undefined,
+    eager_converter = undefined,
   }: {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
@@ -778,6 +779,19 @@ export class PyProxy {
       convert: (obj: PyProxy) => any,
       cacheConversion: (obj: PyProxy, result: any) => void,
     ) => any;
+    /**
+     * Optional callback to convert objects which gets called after ``str``,
+     * ``int``, ``float``, ``bool``, ``None``, and ``JsProxy`` are converted but
+     * *before* any default conversions are applied to standard data structures.
+     *
+     * Its arguments are the same as `dict_converter`.
+     * See the documentation of :meth:`~pyodide.ffi.to_js`.
+     */
+    eager_converter?: (
+      obj: PyProxy,
+      convert: (obj: PyProxy) => any,
+      cacheConversion: (obj: PyProxy, result: any) => void,
+    ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
     let result;
@@ -795,8 +809,9 @@ export class PyProxy {
         ptrobj,
         depth,
         proxies,
-        dict_converter || null,
-        default_converter || null,
+        dict_converter ?? null,
+        default_converter ?? null,
+        eager_converter ?? null,
       );
       Py_EXIT();
     } catch (e) {

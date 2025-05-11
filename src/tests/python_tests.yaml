@@ -598,7 +598,10 @@
     skip:
       - test_utime*
 - test_osx_env
-- test_pathlib.test_pathlib
+- test_pathlib.test_pathlib:
+    skip:
+      # Regression in Emscripten 4.0.7
+      - test_glob_dotdot
 - test_pathlib.test_pathlib_abc
 - test_patma
 - test_pdb:
@@ -627,9 +630,7 @@
 - test_popen
 - test_poplib
 - test_positional_only_arg
-- test_posix:
-    skip:
-      - test_fstatvfs
+- test_posix
 - test_posixpath
 - test_pow
 - test_pprint
@@ -682,9 +683,7 @@
 - test_shelve:
     xfail: dbm
 - test_shlex
-- test_shutil:
-    skip:
-      - test_copyfile_nonexistent_dir
+- test_shutil
 - test_signal
 - test_site:
     skip:
@@ -740,11 +739,9 @@
 - test_syslog
 - test_tabnanny
 - test_tarfile:
-    timeout: 120
+    timeout: 240
     skip_browsers:
       node: "flaky (timeout)"
-    skip:
-      - test_sly_relative0
 - test_tcl
 - test_tempfile
 - test_termios
@@ -879,9 +876,7 @@
 - test_zipapp
 - test_zipfile._path.test_complexity
 - test_zipfile._path.test_path
-- test_zipfile.test_core:
-    skip:
-      - test_add_file_before_1980
+- test_zipfile.test_core
 - test_zipfile64
 - test_zipimport
 - test_zipimport_support

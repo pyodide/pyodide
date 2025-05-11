@@ -175,13 +175,12 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
     stdLibURL = config.indexURL + "python_stdlib.zip";
   }
 
-  // Note: Hooks are called in **reverse** order of appearance.
   return [
-    ...callFsInitHook(config.fsInit),
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
     initializeNativeFS,
+    ...callFsInitHook(config.fsInit),
   ];
 }
 

@@ -16,6 +16,10 @@ requirements:
     - cffi
   run:
     - cffi
+build:
+  script: |
+    # These libs are built when building Pyodide main module, but might not be available when building out-of-tree
+    embuilder build libdlmalloc libcompiler_rt-legacysjlj libc++-legacyexcept libc++abi-legacyexcept libunwind-legacyexcept --pic
 extra:
   recipe-maintainers:
     - peter-gy

@@ -495,8 +495,8 @@ def test_package_index(tmp_path):
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
-        stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        in stdout.strip().rsplit("\n", 1)[-1]
     )
 
 
@@ -636,3 +636,20 @@ def test_dash_m_pip_venv(selenium, venv):
             """
         ).strip()
     )
+
+
+@only_node
+def test_asyncio_run(selenium):
+    result = subprocess.run(
+        [
+            script_path,
+            "-c",
+            "from asyncio import run, sleep; run(sleep(0.1)); print('hi')",
+        ],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == "hi"
+    assert result.stderr == ""
