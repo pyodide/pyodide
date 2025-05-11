@@ -1,13 +1,13 @@
 package:
   name: numpy
-  version: 2.2.4
+  version: 2.2.5
   tag:
     - min-scipy-stack
   top-level:
     - numpy
 source:
-  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.2.4.tar.gz
-  sha256: 9ba03692a45d3eef66559efe1d1096c4b9b75c0986b5dff5530c378fb8331d4f
+  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.2.5.tar.gz
+  sha256: a9c0d994680cd991b1cb772e8b297340085466a6fe964bc9d4e80f5e2f43c291
   patches:
     - patches/0001-TST-Prevent-import-error-when-tests-are-not-included.patch
 
