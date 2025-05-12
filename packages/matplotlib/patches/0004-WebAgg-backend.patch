@@ -1,7 +1,25 @@
-From 90a1bb0368189e7a7ce024032d5ff404367fd1fa Mon Sep 17 00:00:00 2001
+From a4c3739d2429e6cc833ebe72f54a68bb07c74f35 Mon Sep 17 00:00:00 2001
 From: Ian Thomas <ianthomas23@gmail.com>
 Date: Fri, 31 Jan 2025 11:05:26 +0000
 Subject: [PATCH] Patch WebAgg backend
+
+Matplotlib in pyodide (outside of JupyterLite) uses the "webagg" backend by default.
+This is a patched version of the webagg backend that ships in the Matplotlib source
+code. In standard Matplotlib the webagg backend includes JavaScript code that runs in
+the browser and communicates with Python code via Tornado and WebSockets. In pyodide
+the JavaScript and Python code run side-by-side so this patch removes all use of
+Tornado and uses mock websockets so that the JavaScript and Python simply call each
+other's functions. Eventually it is expected that the Matplotlib webagg code will be
+refactored so that this patch file can be shorter and simpler.
+
+When upgrading the version of Matplotlib in the pyodide recipe, if the build or testing
+fail and this patch file requires modifying, do the following:
+1. Check out the version of Matplotlib that previously worked in pyodide.
+2. Apply this patch to it.
+3. Rebase on the Matplotlib branch that the recipe is for, resolving any conflicts.
+4. Create a new patch file to replace this file, and try to build and test the recipe.
+5. If step 4 fails, make the necessary changes to the Matplotlib source code until step
+   4 succeeds.
 
 ---
  lib/matplotlib/backends/backend_webagg.py     | 289 +++---------------
@@ -16,7 +34,7 @@ index 14c0b525fb..43c034a046 100644
 @@ -20,31 +20,14 @@ import sys
  import signal
  import threading
- 
+
 -try:
 -    import tornado
 -except ImportError as err:
@@ -28,7 +46,7 @@ index 14c0b525fb..43c034a046 100644
 +from js import document
 +from pyodide.code import run_js
 +from pyodide.ffi import create_proxy
- 
+
  import matplotlib as mpl
  from matplotlib.backend_bases import _Backend
  from matplotlib._pylab_helpers import Gcf
@@ -45,13 +63,13 @@ index 14c0b525fb..43c034a046 100644
 -
 -webagg_server_thread = threading.Thread(
 -    target=lambda: tornado.ioloop.IOLoop.instance().start())
- 
- 
+
+
  class FigureManagerWebAgg(core.FigureManagerWebAgg):
 @@ -54,107 +37,62 @@ class FigureManagerWebAgg(core.FigureManagerWebAgg):
      def pyplot_show(cls, *, block=None):
          WebAggApplication.initialize()
- 
+
 -        url = "http://{address}:{port}{prefix}".format(
 -            address=WebAggApplication.address,
 -            port=WebAggApplication.port,
@@ -62,7 +80,7 @@ index 14c0b525fb..43c034a046 100644
 +
 +    def show(self):
 +        fignum = str(self.num)
- 
+
 -        if mpl.rcParams['webagg.open_in_browser']:
 -            import webbrowser
 -            if not webbrowser.open(url):
@@ -76,17 +94,17 @@ index 14c0b525fb..43c034a046 100644
 +            fig;
 +            """
 +        js_code = f"var fig_id = '{fignum}';" + js_code
- 
+
 -        WebAggApplication.start()
 +        self.js_fig = run_js(js_code)
 +        web_socket = WebAggApplication.MockPythonWebSocket(self, self.js_fig.ws)
 +        web_socket.open(fignum)
- 
- 
+
+
  class FigureCanvasWebAgg(core.FigureCanvasWebAggCore):
      manager_class = FigureManagerWebAgg
- 
- 
+
+
 -class WebAggApplication(tornado.web.Application):
 +class WebAggApplication():
      initialized = False
@@ -115,7 +133,7 @@ index 14c0b525fb..43c034a046 100644
 -                fig_id=fignum,
 -                toolitems=core.NavigationToolbar2WebAgg.toolitems,
 -                canvas=manager.canvas)
- 
+
 -    class AllFiguresPage(tornado.web.RequestHandler):
 -        def __init__(self, application, request, *, url_prefix='', **kwargs):
 -            self.url_prefix = url_prefix
@@ -151,7 +169,7 @@ index 14c0b525fb..43c034a046 100644
 -    class WebSocket(tornado.websocket.WebSocketHandler):
 +    class MockPythonWebSocket:
          supports_binary = True
- 
+
 +        def __init__(self, manager, js_web_socket):
 +            self.manager = manager
 +            self.js_web_socket = js_web_socket
@@ -165,12 +183,12 @@ index 14c0b525fb..43c034a046 100644
              self.manager.add_web_socket(self)
 -            if hasattr(self, 'set_nodelay'):
 -                self.set_nodelay(True)
- 
+
          def on_close(self):
              self.manager.remove_web_socket(self)
 +            self.on_message_proxy.destroy()
 +            self.on_message_proxy = None
- 
+
          def on_message(self, message):
 -            message = json.loads(message)
 +            message = message.as_py_json()
@@ -188,11 +206,11 @@ index 14c0b525fb..43c034a046 100644
                  # from the browser.
 @@ -162,170 +100,37 @@ class WebAggApplication(tornado.web.Application):
                      manager.handle_json(message)
- 
+
          def send_json(self, content):
 -            self.write_message(json.dumps(content))
 +            self.js_web_socket.receive_json(json.dumps(content))
- 
+
          def send_binary(self, blob):
              if self.supports_binary:
 -                self.write_message(blob, binary=True)
@@ -242,19 +260,19 @@ index 14c0b525fb..43c034a046 100644
 -            ],
 -            template_path=core.FigureManagerWebAgg.get_static_file_path())
 +                self.js_web_socket.receive_binary(data_uri)
- 
+
      @classmethod
      def initialize(cls, url_prefix='', port=None, address=None):
          if cls.initialized:
              return
- 
+
 -        # Create the class instance
 -        app = cls(url_prefix=url_prefix)
 +        css = (Path(__file__).parent / "web_backend/css/mpl.css").read_text(encoding="utf-8")
 +        style = document.createElement('style')
 +        style.textContent = css
 +        document.head.append(style)
- 
+
 -        cls.url_prefix = url_prefix
 -
 -        # This port selection algorithm is borrowed, more or less
@@ -293,9 +311,9 @@ index 14c0b525fb..43c034a046 100644
 +        js_content = core.FigureManagerWebAgg.get_javascript()
 +        set_toolbar_image_callback = run_js(js_content)
 +        set_toolbar_image_callback(create_proxy(WebAggApplication.get_toolbar_image))
- 
+
          cls.initialized = True
- 
+
      @classmethod
 -    def start(cls):
 -        import asyncio
@@ -368,17 +386,17 @@ index 14c0b525fb..43c034a046 100644
 +        filename = Path(__file__).parent.parent / f"mpl-data/images/{image}.png"
 +        png_bytes = filename.read_bytes()
 +        return png_bytes
- 
- 
+
+
  @_Backend.export
 diff --git a/lib/matplotlib/backends/backend_webagg_core.py b/lib/matplotlib/backends/backend_webagg_core.py
-index 4ceac16995..ad9f3c28ef 100644
+index 4ceac16995..69bcc1a5bc 100644
 --- a/lib/matplotlib/backends/backend_webagg_core.py
 +++ b/lib/matplotlib/backends/backend_webagg_core.py
 @@ -8,17 +8,21 @@
  # - `backend_webagg.py` contains a concrete implementation of a basic
  #   application, implemented with asyncio.
- 
+
 -import asyncio
 -import datetime
 +import base64
@@ -388,11 +406,11 @@ index 4ceac16995..ad9f3c28ef 100644
 +import mimetypes
  import os
  from pathlib import Path
- 
-+from js import document
+
++from js import alert, document
  import numpy as np
  from PIL import Image
- 
+
 +from pyodide.ffi.wrappers import (
 +    clear_interval, clear_timeout, set_interval, set_timeout)
 +
@@ -401,15 +419,15 @@ index 4ceac16995..ad9f3c28ef 100644
  from matplotlib.backend_bases import (
 @@ -78,37 +82,27 @@ def _handle_key(key):
      return key
- 
- 
+
+
 -class TimerTornado(backend_bases.TimerBase):
 +class TimerJs(backend_bases.TimerBase):
      def __init__(self, *args, **kwargs):
 -        self._timer = None
 +        self._timer: int | None = None
          super().__init__(*args, **kwargs)
- 
+
      def _timer_start(self):
 -        import tornado
 -
@@ -426,7 +444,7 @@ index 4ceac16995..ad9f3c28ef 100644
 -                max(self.interval, 1e-6))
 -            self._timer.start()
 +            self._timer = set_interval(self._on_timer, self.interval)
- 
+
      def _timer_stop(self):
 -        import tornado
 -
@@ -442,13 +460,13 @@ index 4ceac16995..ad9f3c28ef 100644
 -        self._timer = None
 +            clear_interval(self._timer)
 +            self._timer = None
- 
+
      def _timer_set_interval(self):
          # Only stop and restart it if the timer has already been started
 @@ -117,44 +111,9 @@ class TimerTornado(backend_bases.TimerBase):
              self._timer_start()
- 
- 
+
+
 -class TimerAsyncio(backend_bases.TimerBase):
 -    def __init__(self, *args, **kwargs):
 -        self._task = None
@@ -492,18 +510,18 @@ index 4ceac16995..ad9f3c28ef 100644
      # having bugs in practice.  Do not advertise that it works until
      # we can debug this.
 @@ -249,7 +208,7 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
- 
+
              # Store the current buffer so we can compute the next diff.
              self._last_buff = buff.copy()
 -            self._force_full = False
 +            #self._force_full = False
              self._png_is_old = False
- 
+
              data = output.view(dtype=np.uint8).reshape((*output.shape, 4))
 @@ -266,15 +225,6 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
      def handle_unknown_event(self, event):
          _log.warning('Unhandled message type %s. %s', event["type"], event)
- 
+
 -    def handle_ack(self, event):
 -        # Network latency tends to decrease if traffic is flowing
 -        # in both directions.  Therefore, the browser sends back
@@ -515,18 +533,18 @@ index 4ceac16995..ad9f3c28ef 100644
 -
      def handle_draw(self, event):
          self.draw()
- 
+
 @@ -360,6 +310,31 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
              self._force_full = True
              self.draw_idle()
- 
+
 +    def handle_save(self, event):
 +        figure_id = event['figure_id']
 +        format = event['format']
 +
 +        mimetype = mimetypes.types_map.get(f".{format}")
 +        if mimetype is None:
-+            window.alert(f"Cannot download plot, unable to determine mimetype for '{format}'")
++            alert(f"Cannot download plot, unable to determine mimetype for '{format}'")
 +            return
 +
 +        element = document.createElement('a')
@@ -551,14 +569,14 @@ index 4ceac16995..ad9f3c28ef 100644
 @@ -498,6 +473,10 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
          output.write("mpl.default_extension = {};".format(
              json.dumps(FigureCanvasWebAggCore.get_default_filetype())))
- 
+
 +        output.write("mpl.toolbar_image_callback = null;\n")
 +        output.write("mpl.set_toolbar_image_callback = function(c) {mpl.toolbar_image_callback=c;}\n")
 +        output.write("mpl.set_toolbar_image_callback;\n")
 +
          if stream is None:
              return output.getvalue()
- 
+
 diff --git a/lib/matplotlib/backends/web_backend/js/mpl.js b/lib/matplotlib/backends/web_backend/js/mpl.js
 index 140f590385..1776b1ff4e 100644
 --- a/lib/matplotlib/backends/web_backend/js/mpl.js
@@ -566,7 +584,7 @@ index 140f590385..1776b1ff4e 100644
 @@ -2,19 +2,58 @@
  /* global mpl */
  window.mpl = {};
- 
+
 -mpl.get_websocket_type = function () {
 -    if (typeof WebSocket !== 'undefined') {
 -        return WebSocket;
@@ -632,29 +650,29 @@ index 140f590385..1776b1ff4e 100644
 +mpl.get_websocket_type = function () {
 +    return MockJsWebSocket;
  };
- 
+
  mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
 @@ -51,6 +90,7 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
- 
+
      parent_element.appendChild(this.root);
- 
+
 +    this._toolbar_images = [];
      this._init_header(this);
      this._init_canvas(this);
      this._init_toolbar(this);
 @@ -85,8 +125,6 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
      };
- 
+
      this.ws.onmessage = this._make_on_message_function(this);
 -
 -    this.ondownload = ondownload;
  };
- 
+
  mpl.figure.prototype._init_header = function () {
 @@ -381,9 +419,11 @@ mpl.figure.prototype._init_toolbar = function () {
          button.addEventListener('click', on_click_closure(method_name));
          button.addEventListener('mouseover', on_mouseover_closure(tooltip));
- 
+
 -        var icon_img = document.createElement('img');
 -        icon_img.src = '_images/' + image + '.png';
 -        icon_img.srcset = '_images/' + image + '_large.png 2x';
@@ -665,7 +683,7 @@ index 140f590385..1776b1ff4e 100644
 +        icon_img.src = (window.URL || window.webkitURL).createObjectURL(blob);
          icon_img.alt = tooltip;
          button.appendChild(icon_img);
- 
+
 @@ -422,20 +462,20 @@ mpl.figure.prototype.request_resize = function (x_pixels, y_pixels) {
  mpl.figure.prototype.send_message = function (type, properties) {
      properties['type'] = type;
@@ -673,7 +691,7 @@ index 140f590385..1776b1ff4e 100644
 -    this.ws.send(JSON.stringify(properties));
 +    this.ws.send(properties);
  };
- 
+
  mpl.figure.prototype.send_draw_message = function () {
      if (!this.waiting) {
          this.waiting = true;
@@ -681,23 +699,23 @@ index 140f590385..1776b1ff4e 100644
 +        this.ws.send({ type: 'draw', figure_id: this.id });
      }
  };
- 
+
  mpl.figure.prototype.handle_save = function (fig, _msg) {
      var format_dropdown = fig.format_dropdown;
      var format = format_dropdown.options[format_dropdown.selectedIndex].value;
 -    fig.ondownload(fig, format);
 +    this.ws.send({ type: 'save', figure_id: this.id, format: format });
  };
- 
+
  mpl.figure.prototype.handle_resize = function (fig, msg) {
 @@ -517,7 +557,6 @@ mpl.figure.prototype.handle_navigate_mode = function (fig, msg) {
- 
+
  mpl.figure.prototype.updated_canvas_event = function () {
      // Called whenever the canvas gets updated.
 -    this.send_message('ack', {});
  };
- 
+
  // A function to construct a web socket function for onmessage handling.
--- 
+--
 2.43.0
 
