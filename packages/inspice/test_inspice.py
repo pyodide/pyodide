@@ -1,10 +1,12 @@
 from pytest_pyodide import run_in_pyodide
 
+
 @run_in_pyodide(packages=["inspice"])
 def test_mytestname(selenium):
     from InSpice.Spice.NgSpice.Shared import NgSpiceShared
+
     ngspice = NgSpiceShared()
-    circuit = '''
+    circuit = """
     .title Voltage Multiplier
 
     .SUBCKT 1N4148 1 2
@@ -44,7 +46,7 @@ def test_mytestname(selenium):
     .ic
     .tran 0.0001s 0.4s 0s
     .end
-    '''
+    """
     ngspice.load_circuit(circuit)
     ngspice.run()
     plot = ngspice.plot(simulation=None, plot_name=ngspice.last_plot)
