@@ -27,9 +27,11 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
-- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
-- Importing matplotlib should now be significantly faster.
+- {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
 
 ### `python` CLI entrypoint
 
