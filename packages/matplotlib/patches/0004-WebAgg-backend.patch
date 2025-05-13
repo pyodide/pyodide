@@ -1,4 +1,4 @@
-From c26510491fefa4d1c35e88a57096db9c07ceb817 Mon Sep 17 00:00:00 2001
+From 617450ad519e3ca511a6111c8d236a39a836de7f Mon Sep 17 00:00:00 2001
 From: Ian Thomas <ianthomas23@gmail.com>
 Date: Fri, 31 Jan 2025 11:05:26 +0000
 Subject: [PATCH] Patch WebAgg backend
@@ -22,13 +22,13 @@ fail and this patch file requires modifying, do the following:
    4 succeeds.
 
 ---
- lib/matplotlib/backends/backend_webagg.py     | 289 +++---------------
- .../backends/backend_webagg_core.py           |  85 +++---
+ lib/matplotlib/backends/backend_webagg.py     | 290 +++---------------
+ .../backends/backend_webagg_core.py           |  86 +++---
  lib/matplotlib/backends/web_backend/js/mpl.js |  77 +++--
- 3 files changed, 138 insertions(+), 313 deletions(-)
+ 3 files changed, 140 insertions(+), 313 deletions(-)
 
 diff --git a/lib/matplotlib/backends/backend_webagg.py b/lib/matplotlib/backends/backend_webagg.py
-index 14c0b525fb..43c034a046 100644
+index 14c0b525fb..7db6497714 100644
 --- a/lib/matplotlib/backends/backend_webagg.py
 +++ b/lib/matplotlib/backends/backend_webagg.py
 @@ -20,31 +20,14 @@ import sys
@@ -66,7 +66,7 @@ index 14c0b525fb..43c034a046 100644
 
 
  class FigureManagerWebAgg(core.FigureManagerWebAgg):
-@@ -54,107 +37,62 @@ class FigureManagerWebAgg(core.FigureManagerWebAgg):
+@@ -54,107 +37,63 @@ class FigureManagerWebAgg(core.FigureManagerWebAgg):
      def pyplot_show(cls, *, block=None):
          WebAggApplication.initialize()
 
@@ -89,6 +89,7 @@ index 14c0b525fb..43c034a046 100644
 -            print(f"To view figure, visit {url}")
 +        js_code = \
 +            """
++            "use strict";
 +            var websocket_type = mpl.get_websocket_type();
 +            var fig = new mpl.figure(fig_id, new websocket_type(fig_id), null, document.body);
 +            fig;
@@ -204,7 +205,7 @@ index 14c0b525fb..43c034a046 100644
                  # It is possible for a figure to be closed,
                  # but a stale figure UI is still sending messages
                  # from the browser.
-@@ -162,170 +100,37 @@ class WebAggApplication(tornado.web.Application):
+@@ -162,170 +101,37 @@ class WebAggApplication(tornado.web.Application):
                      manager.handle_json(message)
 
          def send_json(self, content):
@@ -390,7 +391,7 @@ index 14c0b525fb..43c034a046 100644
 
  @_Backend.export
 diff --git a/lib/matplotlib/backends/backend_webagg_core.py b/lib/matplotlib/backends/backend_webagg_core.py
-index 4ceac16995..200ee96bfb 100644
+index 4ceac16995..4024137750 100644
 --- a/lib/matplotlib/backends/backend_webagg_core.py
 +++ b/lib/matplotlib/backends/backend_webagg_core.py
 @@ -9,16 +9,21 @@
@@ -519,7 +520,15 @@ index 4ceac16995..200ee96bfb 100644
      def send_event(self, event_type, **kwargs):
          if self.manager:
              self.manager._send_event(event_type, **kwargs)
-@@ -498,6 +480,9 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
+@@ -477,6 +459,7 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
+         else:
+             output = stream
+
++        output.write('"use strict";\n')
+         output.write((Path(__file__).parent / "web_backend/js/mpl.js")
+                      .read_text(encoding="utf-8"))
+
+@@ -498,6 +481,9 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
          output.write("mpl.default_extension = {};".format(
              json.dumps(FigureCanvasWebAggCore.get_default_filetype())))
 
