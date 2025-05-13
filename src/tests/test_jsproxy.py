@@ -2759,7 +2759,7 @@ def test_bind_jsfunc_sig(selenium):
         raise NotImplementedError
 
     assert (
-        repr(func_to_sig_inner(f))
+        repr(func_to_sig_inner(f, None))
         == "<JsSignature (a: dict[str, int], /) -> list[int]>"
     )
 

@@ -27,9 +27,11 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
-- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
-- Importing matplotlib should now be significantly faster.
+- {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
 
 ### `python` CLI entrypoint
 
@@ -43,6 +45,7 @@ myst:
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `fsspec` to 2025.3.2 {pr}`5604`
+- Upgraded `narwhals` to 1.38.2 {pr}`5623`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
