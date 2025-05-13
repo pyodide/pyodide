@@ -1,4 +1,4 @@
-From b3bc3b225b12c0bff48dd24ae3f67f60ea2c2636 Mon Sep 17 00:00:00 2001
+From c26510491fefa4d1c35e88a57096db9c07ceb817 Mon Sep 17 00:00:00 2001
 From: Ian Thomas <ianthomas23@gmail.com>
 Date: Fri, 31 Jan 2025 11:05:26 +0000
 Subject: [PATCH] Patch WebAgg backend
@@ -530,7 +530,7 @@ index 4ceac16995..200ee96bfb 100644
              return output.getvalue()
 
 diff --git a/lib/matplotlib/backends/web_backend/js/mpl.js b/lib/matplotlib/backends/web_backend/js/mpl.js
-index 140f590385..b996f716eb 100644
+index 140f590385..a6ce3ad021 100644
 --- a/lib/matplotlib/backends/web_backend/js/mpl.js
 +++ b/lib/matplotlib/backends/web_backend/js/mpl.js
 @@ -2,19 +2,54 @@
@@ -626,8 +626,8 @@ index 140f590385..b996f716eb 100644
 -        icon_img.srcset = '_images/' + image + '_large.png 2x';
 +        var icon_img = new Image();
 +        this._toolbar_images.push(icon_img);
-+        image_bytes = mpl.toolbar_image_callback(image).toJs({create_pyproxies : false});
-+        blob = new Blob([image_bytes], { type: 'image/png' });
++        const image_bytes = mpl.toolbar_image_callback(image).toJs({create_pyproxies : false});
++        const blob = new Blob([image_bytes], { type: 'image/png' });
 +        icon_img.src = (window.URL || window.webkitURL).createObjectURL(blob);
          icon_img.alt = tooltip;
          button.appendChild(icon_img);
