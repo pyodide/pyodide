@@ -1,4 +1,4 @@
-From a4c3739d2429e6cc833ebe72f54a68bb07c74f35 Mon Sep 17 00:00:00 2001
+From b3bc3b225b12c0bff48dd24ae3f67f60ea2c2636 Mon Sep 17 00:00:00 2001
 From: Ian Thomas <ianthomas23@gmail.com>
 Date: Fri, 31 Jan 2025 11:05:26 +0000
 Subject: [PATCH] Patch WebAgg backend
@@ -23,9 +23,9 @@ fail and this patch file requires modifying, do the following:
 
 ---
  lib/matplotlib/backends/backend_webagg.py     | 289 +++---------------
- .../backends/backend_webagg_core.py           | 111 +++----
- lib/matplotlib/backends/web_backend/js/mpl.js |  81 +++--
- 3 files changed, 152 insertions(+), 329 deletions(-)
+ .../backends/backend_webagg_core.py           |  85 +++---
+ lib/matplotlib/backends/web_backend/js/mpl.js |  77 +++--
+ 3 files changed, 138 insertions(+), 313 deletions(-)
 
 diff --git a/lib/matplotlib/backends/backend_webagg.py b/lib/matplotlib/backends/backend_webagg.py
 index 14c0b525fb..43c034a046 100644
@@ -390,14 +390,13 @@ index 14c0b525fb..43c034a046 100644
 
  @_Backend.export
 diff --git a/lib/matplotlib/backends/backend_webagg_core.py b/lib/matplotlib/backends/backend_webagg_core.py
-index 4ceac16995..69bcc1a5bc 100644
+index 4ceac16995..200ee96bfb 100644
 --- a/lib/matplotlib/backends/backend_webagg_core.py
 +++ b/lib/matplotlib/backends/backend_webagg_core.py
-@@ -8,17 +8,21 @@
- # - `backend_webagg.py` contains a concrete implementation of a basic
+@@ -9,16 +9,21 @@
  #   application, implemented with asyncio.
 
--import asyncio
+ import asyncio
 -import datetime
 +import base64
  from io import BytesIO, StringIO
@@ -417,99 +416,53 @@ index 4ceac16995..69bcc1a5bc 100644
  from matplotlib import _api, backend_bases, backend_tools
  from matplotlib.backends import backend_agg
  from matplotlib.backend_bases import (
-@@ -78,37 +82,27 @@ def _handle_key(key):
+@@ -78,45 +83,6 @@ def _handle_key(key):
      return key
 
 
 -class TimerTornado(backend_bases.TimerBase):
-+class TimerJs(backend_bases.TimerBase):
-     def __init__(self, *args, **kwargs):
+-    def __init__(self, *args, **kwargs):
 -        self._timer = None
-+        self._timer: int | None = None
-         super().__init__(*args, **kwargs)
-
-     def _timer_start(self):
+-        super().__init__(*args, **kwargs)
+-
+-    def _timer_start(self):
 -        import tornado
 -
-         self._timer_stop()
-         if self._single:
+-        self._timer_stop()
+-        if self._single:
 -            ioloop = tornado.ioloop.IOLoop.instance()
 -            self._timer = ioloop.add_timeout(
 -                datetime.timedelta(milliseconds=self.interval),
 -                self._on_timer)
-+            self._timer = set_timeout(self._on_timer, self.interval)
-         else:
+-        else:
 -            self._timer = tornado.ioloop.PeriodicCallback(
 -                self._on_timer,
 -                max(self.interval, 1e-6))
 -            self._timer.start()
-+            self._timer = set_interval(self._on_timer, self.interval)
-
-     def _timer_stop(self):
--        import tornado
--
-         if self._timer is None:
-             return
-         elif self._single:
--            ioloop = tornado.ioloop.IOLoop.instance()
--            ioloop.remove_timeout(self._timer)
-+            clear_timeout(self._timer)
-+            self._timer = None
-         else:
--            self._timer.stop()
--        self._timer = None
-+            clear_interval(self._timer)
-+            self._timer = None
-
-     def _timer_set_interval(self):
-         # Only stop and restart it if the timer has already been started
-@@ -117,44 +111,9 @@ class TimerTornado(backend_bases.TimerBase):
-             self._timer_start()
-
-
--class TimerAsyncio(backend_bases.TimerBase):
--    def __init__(self, *args, **kwargs):
--        self._task = None
--        super().__init__(*args, **kwargs)
--
--    async def _timer_task(self, interval):
--        while True:
--            try:
--                await asyncio.sleep(interval)
--                self._on_timer()
--
--                if self._single:
--                    break
--            except asyncio.CancelledError:
--                break
--
--    def _timer_start(self):
--        self._timer_stop()
--
--        self._task = asyncio.ensure_future(
--            self._timer_task(max(self.interval / 1_000., 1e-6))
--        )
 -
 -    def _timer_stop(self):
--        if self._task is not None:
--            self._task.cancel()
--        self._task = None
+-        import tornado
+-
+-        if self._timer is None:
+-            return
+-        elif self._single:
+-            ioloop = tornado.ioloop.IOLoop.instance()
+-            ioloop.remove_timeout(self._timer)
+-        else:
+-            self._timer.stop()
+-        self._timer = None
 -
 -    def _timer_set_interval(self):
 -        # Only stop and restart it if the timer has already been started
--        if self._task is not None:
+-        if self._timer is not None:
 -            self._timer_stop()
 -            self._timer_start()
 -
 -
- class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
-     manager_class = _api.classproperty(lambda cls: FigureManagerWebAgg)
--    _timer_cls = TimerAsyncio
-+    _timer_cls = TimerJs
-     # Webagg and friends having the right methods, but still
-     # having bugs in practice.  Do not advertise that it works until
-     # we can debug this.
-@@ -249,7 +208,7 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
+ class TimerAsyncio(backend_bases.TimerBase):
+     def __init__(self, *args, **kwargs):
+         self._task = None
+@@ -249,7 +215,7 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
 
              # Store the current buffer so we can compute the next diff.
              self._last_buff = buff.copy()
@@ -518,7 +471,7 @@ index 4ceac16995..69bcc1a5bc 100644
              self._png_is_old = False
 
              data = output.view(dtype=np.uint8).reshape((*output.shape, 4))
-@@ -266,15 +225,6 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
+@@ -266,15 +232,6 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
      def handle_unknown_event(self, event):
          _log.warning('Unhandled message type %s. %s', event["type"], event)
 
@@ -534,7 +487,7 @@ index 4ceac16995..69bcc1a5bc 100644
      def handle_draw(self, event):
          self.draw()
 
-@@ -360,6 +310,31 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
+@@ -360,6 +317,31 @@ class FigureCanvasWebAggCore(backend_agg.FigureCanvasAgg):
              self._force_full = True
              self.draw_idle()
 
@@ -566,22 +519,21 @@ index 4ceac16995..69bcc1a5bc 100644
      def send_event(self, event_type, **kwargs):
          if self.manager:
              self.manager._send_event(event_type, **kwargs)
-@@ -498,6 +473,10 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
+@@ -498,6 +480,9 @@ class FigureManagerWebAgg(backend_bases.FigureManagerBase):
          output.write("mpl.default_extension = {};".format(
              json.dumps(FigureCanvasWebAggCore.get_default_filetype())))
 
 +        output.write("mpl.toolbar_image_callback = null;\n")
 +        output.write("mpl.set_toolbar_image_callback = function(c) {mpl.toolbar_image_callback=c;}\n")
-+        output.write("mpl.set_toolbar_image_callback;\n")
 +
          if stream is None:
              return output.getvalue()
 
 diff --git a/lib/matplotlib/backends/web_backend/js/mpl.js b/lib/matplotlib/backends/web_backend/js/mpl.js
-index 140f590385..1776b1ff4e 100644
+index 140f590385..b996f716eb 100644
 --- a/lib/matplotlib/backends/web_backend/js/mpl.js
 +++ b/lib/matplotlib/backends/web_backend/js/mpl.js
-@@ -2,19 +2,58 @@
+@@ -2,19 +2,54 @@
  /* global mpl */
  window.mpl = {};
 
@@ -618,30 +570,26 @@ index 140f590385..1776b1ff4e 100644
 +
 +    open(python_onmessage_callback) {
 +        this.python_onmessage_callback = python_onmessage_callback;
-+        if (this.onopen != null) {
-+            this.onopen();
-+        }
++        this?.onopen();
 +    }
 +
 +    receive_binary(content, binary=true) {
 +        var buffer = content.getBuffer();
 +        content.destroy();
 +        try {
-+            blob = new Blob([buffer.data]);
-+            this.onmessage({ data: blob });
++            const data = new Blob([buffer.data]);
++            this.onmessage({ data });
 +        } finally {
 +            buffer.release(); // Release the memory when we're done
 +        }
 +    }
 +
-+    receive_json(content) {
-+        this.onmessage({ data: content });
++    receive_json(data) {
++        this.onmessage({ data });
 +    }
 +
 +    send(content) {
-+        if (this.python_onmessage_callback != null) {
-+            this.python_onmessage_callback(content);
-+        }
++        this?.python_onmessage_callback(content);
 +    }
 +
 +    _onopen = null;
@@ -652,7 +600,7 @@ index 140f590385..1776b1ff4e 100644
  };
 
  mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
-@@ -51,6 +90,7 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
+@@ -51,6 +86,7 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
 
      parent_element.appendChild(this.root);
 
@@ -660,7 +608,7 @@ index 140f590385..1776b1ff4e 100644
      this._init_header(this);
      this._init_canvas(this);
      this._init_toolbar(this);
-@@ -85,8 +125,6 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
+@@ -85,8 +121,6 @@ mpl.figure = function (figure_id, websocket, ondownload, parent_element) {
      };
 
      this.ws.onmessage = this._make_on_message_function(this);
@@ -669,7 +617,7 @@ index 140f590385..1776b1ff4e 100644
  };
 
  mpl.figure.prototype._init_header = function () {
-@@ -381,9 +419,11 @@ mpl.figure.prototype._init_toolbar = function () {
+@@ -381,9 +415,11 @@ mpl.figure.prototype._init_toolbar = function () {
          button.addEventListener('click', on_click_closure(method_name));
          button.addEventListener('mouseover', on_mouseover_closure(tooltip));
 
@@ -684,7 +632,7 @@ index 140f590385..1776b1ff4e 100644
          icon_img.alt = tooltip;
          button.appendChild(icon_img);
 
-@@ -422,20 +462,20 @@ mpl.figure.prototype.request_resize = function (x_pixels, y_pixels) {
+@@ -422,20 +458,20 @@ mpl.figure.prototype.request_resize = function (x_pixels, y_pixels) {
  mpl.figure.prototype.send_message = function (type, properties) {
      properties['type'] = type;
      properties['figure_id'] = this.id;
@@ -708,7 +656,7 @@ index 140f590385..1776b1ff4e 100644
  };
 
  mpl.figure.prototype.handle_resize = function (fig, msg) {
-@@ -517,7 +557,6 @@ mpl.figure.prototype.handle_navigate_mode = function (fig, msg) {
+@@ -517,7 +553,6 @@ mpl.figure.prototype.handle_navigate_mode = function (fig, msg) {
 
  mpl.figure.prototype.updated_canvas_event = function () {
      // Called whenever the canvas gets updated.
