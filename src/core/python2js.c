@@ -38,6 +38,7 @@ typedef struct ConversionContext_s
   JsVal (*dict_postprocess)(struct ConversionContext_s* context, JsVal dict);
   JsRef jspostprocess_list;
   bool default_converter;
+  bool eager_converter;
 } ConversionContext;
 
 JsVal
@@ -391,6 +392,9 @@ _python2js_proxy(PyObject* x)
 }
 
 JsVal
+python2js__eager_converter(JsVal jscontext, PyObject* object);
+
+JsVal
 python2js__default_converter(JsVal jscontext, PyObject* object);
 
 /**
@@ -402,6 +406,10 @@ _python2js_deep(ConversionContext* context, PyObject* x)
 {
   RETURN_IF_HAS_VALUE(_python2js_immutable(x));
   RETURN_IF_HAS_VALUE(_python2js_proxy(x));
+  if (context->eager_converter) {
+    RETURN_IF_HAS_VALUE(
+      python2js__eager_converter(hiwire_get(context->jscontext), x));
+  }
   if (PyList_Check(x) || PyTuple_Check(x)) {
     return _python2js_sequence(context, x);
   }
@@ -418,9 +426,7 @@ _python2js_deep(ConversionContext* context, PyObject* x)
     return python2js__default_converter(hiwire_get(context->jscontext), x);
   }
   if (context->proxies) {
-    JsVal proxy = pyproxy_new(x);
-    JsvArray_Push(hiwire_get(context->proxies), proxy);
-    return proxy;
+    return pyproxy_new(x);
   }
   PyErr_SetString(conversion_error, "No conversion known for x.");
 finally:
@@ -486,6 +492,9 @@ _python2js(ConversionContext *context, PyObject* x)
   } else {
     context->depth--;
     JsVal result = _python2js_deep(context, x);
+    if (context->proxies && pyproxy_Check(result)) {
+      JsvArray_Push(hiwire_get(context->proxies), result);
+    }
     context->depth++;
     return result;
   }
@@ -570,7 +579,7 @@ _JsMap_Set(ConversionContext *context, JsVal map, JsVal key, JsVal value)
 EMSCRIPTEN_KEEPALIVE JsVal
 python2js_with_depth(PyObject* x, int depth, JsVal proxies)
 {
-  return python2js_custom(x, depth, proxies, JS_NULL, JS_NULL);
+  return python2js_custom(x, depth, proxies, JS_NULL, JS_NULL, JS_NULL);
 }
 
 static JsVal
@@ -608,13 +617,15 @@ python2js__default_converter_js,
 (JsVal jscontext, PyObject* object),
 {
   let proxy = Module.pyproxy_new(object);
-  let result = jscontext.default_converter(
-    proxy,
-    jscontext.converter,
-    jscontext.cacheConversion
-  );
-  proxy.destroy();
-  return result;
+  try {
+    return jscontext.default_converter(
+      proxy,
+      jscontext.converter,
+      jscontext.cacheConversion
+    );
+  } finally {
+    proxy.destroy();
+  }
 })
 // clang-format on
 
@@ -622,6 +633,45 @@ JsVal
 python2js__default_converter(JsVal jscontext, PyObject* object)
 {
   return python2js__default_converter_js(jscontext, object);
+}
+
+// clang-format off
+EM_JS_VAL(
+JsVal,
+python2js__eager_converter_js,
+(JsVal jscontext, PyObject* object),
+{
+  // If the user calls `convert()`, we need to be careful to avoid recursion
+  // error. They may be using it as a fallback, or to convert fields of an
+  // object. If they are using it as a fallback, it shouldn't call the eager
+  // converter again since that'd lead to infinite regress. If they are using it
+  // to convert fields of an object, it should call back into the
+  // eager_converter. To handle this, mark objects that we've seen once by
+  // adding them to the visited set.
+  //
+  // This will cause weird behaviors on a self-referencing object when the cache
+  // is not correctly used.
+  if (jscontext.eager_visited.has(object)) {
+    return Module.novalue;
+  }
+  jscontext.eager_visited.add(object);
+  const proxy = Module.pyproxy_new(object);
+  try {
+    return jscontext.eager_converter(
+      proxy,
+      jscontext.converter,
+      jscontext.cacheConversion
+    );
+  } finally {
+    proxy.destroy();
+  }
+})
+// clang-format on
+
+JsVal
+python2js__eager_converter(JsVal jscontext, PyObject* object)
+{
+  return python2js__eager_converter_js(jscontext, object);
 }
 
 static JsVal
@@ -637,9 +687,10 @@ python2js_custom__create_jscontext,
 (ConversionContext *context,
   JsVal cache,
   JsVal dict_converter,
-  JsVal default_converter),
+  JsVal default_converter,
+  JsVal eager_converter),
 {
-  let jscontext = {};
+  const jscontext = {};
   if (dict_converter) {
     jscontext.dict_converter = dict_converter;
   }
@@ -651,15 +702,31 @@ python2js_custom__create_jscontext,
       if (!API.isPyProxy(input)) {
         throw new TypeError("The first argument to cacheConversion must be a PyProxy.");
       }
-      let input_ptr = Module.PyProxy_getPtr(input);
+      const input_ptr = Module.PyProxy_getPtr(input);
       cache.set(input_ptr, output);
     };
+  }
+  if (eager_converter) {
+    jscontext.eager_converter = eager_converter;
+    // See explanation in python2js__eager_converter_js
+    jscontext.eager_visited = new Set();
+  }
+  if (default_converter || eager_converter) {
     jscontext.converter = function (x) {
       if (!API.isPyProxy(x)) {
         return x;
       }
-      let ptr = Module.PyProxy_getPtr(x);
-      return __python2js(context, ptr);
+      const ptr = Module.PyProxy_getPtr(x);
+      let res;
+      try {
+        res = __python2js(context, ptr);
+      } catch(e) {
+        API.fatal_error(e);
+      }
+      if (res === null) {
+        _pythonexc2js();
+      }
+      return res;
     };
   }
   return jscontext;
@@ -676,7 +743,8 @@ python2js_custom(PyObject* x,
                  int depth,
                  JsVal proxies,
                  JsVal dict_converter,
-                 JsVal default_converter)
+                 JsVal default_converter,
+                 JsVal eager_converter)
 {
   JsVal cache = JsvMap_New();
   ConversionContext context = { .cache = hiwire_new(cache),
@@ -684,6 +752,7 @@ python2js_custom(PyObject* x,
                                 .proxies = JsRef_new(proxies),
                                 .jscontext = NULL,
                                 .default_converter = false,
+                                .eager_converter = false,
                                 .jspostprocess_list =
                                   hiwire_new(JsvArray_New()) };
   if (JsvNull_Check(dict_converter)) {
@@ -699,9 +768,13 @@ python2js_custom(PyObject* x,
   if (!JsvNull_Check(default_converter)) {
     context.default_converter = true;
   }
-  if (!JsvNull_Check(dict_converter) || !JsvNull_Check(default_converter)) {
+  if (!JsvNull_Check(eager_converter)) {
+    context.eager_converter = true;
+  }
+  if (!JsvNull_Check(dict_converter) || context.default_converter ||
+      context.eager_converter) {
     context.jscontext = hiwire_new(python2js_custom__create_jscontext(
-      &context, cache, dict_converter, default_converter));
+      &context, cache, dict_converter, default_converter, eager_converter));
   }
   JsVal result = _python2js(&context, x);
   _python2js_handle_postprocess_list(hiwire_get(context.jspostprocess_list),
@@ -738,12 +811,14 @@ to_js(PyObject* self,
   bool create_proxies = true;
   PyObject* py_dict_converter = NULL;
   PyObject* py_default_converter = NULL;
+  PyObject* py_eager_converter = NULL;
   static const char* const _keywords[] = { "",
                                            "depth",
                                            "create_pyproxies",
                                            "pyproxies",
                                            "dict_converter",
                                            "default_converter",
+                                           "eager_converter",
                                            0 };
   // See argparse docs on format strings:
   // https://docs.python.org/3/c-api/arg.html?highlight=pyarg_parse#parsing-arguments
@@ -756,7 +831,7 @@ to_js(PyObject* self,
   //      OOO       - PyObject* arguments for pyproxies, dict_converter, and
   //      default_converter.
   //         :to_js - name of this function for error messages
-  static struct _PyArg_Parser _parser = { .format = "O|$ipOOO:to_js",
+  static struct _PyArg_Parser _parser = { .format = "O|$ipOOOO:to_js",
                                           .keywords = _keywords };
   if (!_PyArg_ParseStackAndKeywords(args,
                                     nargs,
@@ -767,7 +842,8 @@ to_js(PyObject* self,
                                     &create_proxies,
                                     &pyproxies,
                                     &py_dict_converter,
-                                    &py_default_converter)) {
+                                    &py_default_converter,
+                                    &py_eager_converter)) {
     return NULL;
   }
 
@@ -806,8 +882,16 @@ to_js(PyObject* self,
   if (py_default_converter) {
     js_default_converter = python2js(py_default_converter);
   }
-  JsVal js_result = python2js_custom(
-    obj, depth, proxies, js_dict_converter, js_default_converter);
+  JsVal js_eager_converter = JS_NULL;
+  if (py_eager_converter) {
+    js_eager_converter = python2js(py_eager_converter);
+  }
+  JsVal js_result = python2js_custom(obj,
+                                     depth,
+                                     proxies,
+                                     js_dict_converter,
+                                     js_default_converter,
+                                     js_eager_converter);
   FAIL_IF_JS_NULL(js_result);
   if (pyproxy_Check(js_result)) {
     // Oops, just created a PyProxy. Wrap it I guess?
@@ -821,6 +905,9 @@ finally:
   }
   if (pyproxy_Check(js_default_converter)) {
     destroy_proxy(js_default_converter, NULL);
+  }
+  if (pyproxy_Check(js_eager_converter)) {
+    destroy_proxy(js_eager_converter, NULL);
   }
   return py_result;
 }

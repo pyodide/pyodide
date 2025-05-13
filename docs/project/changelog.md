@@ -16,10 +16,10 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 4.0.6 {pr}`5343` {pr}`5350` {pr}`5357`
+- ABI break: Upgraded Emscripten to 4.0.8 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
-  {pr}`5560`
+  {pr}`5560` {pr}`5595` {pr}`5616`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
@@ -27,9 +27,11 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
-- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
-- Importing matplotlib should now be significantly faster.
+- {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
 
 ### `python` CLI entrypoint
 
@@ -42,6 +44,8 @@ myst:
 ### Packages
 
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
+- Upgraded `narwhals` to 1.38.2 {pr}`5623`
 - Added `bilby_cython` 0.5.3 {pr}`5502`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
