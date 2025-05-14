@@ -17,6 +17,8 @@ requirements:
     - primesieve
   run:
     - cysignals
+  constraint:
+    - cython < 3.1.0
 build:
   cxxflags: |
     -std=c++17
