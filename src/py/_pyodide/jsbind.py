@@ -1,6 +1,7 @@
 from inspect import (
     Parameter,
     getattr_static,
+    isclass,
     iscoroutinefunction,
     ismethod,
     signature,
@@ -215,7 +216,11 @@ def func_to_sig(f):
         cls = f.__args__[0]
         cache = cls
     else:
-        cache = f
+        if isclass(f):
+            cache = f.__call__
+            f = f.__call__.__get__(f)
+        else:
+            cache = f
         if ismethod(cache):
             # We can't add extra attributes to a methodwrapper.
             cache = cache.__func__
