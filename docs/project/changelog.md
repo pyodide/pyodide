@@ -40,6 +40,7 @@ myst:
 ### Packages
 
 - Upgraded `narwhals` to 1.38.2 {pr}`5623`
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
@@ -60,7 +61,6 @@ _May 15, 2025_
 
 ### Packages
 
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `fsspec` to 2025.3.2 {pr}`5604`
 
 ## Version 0.27.5
