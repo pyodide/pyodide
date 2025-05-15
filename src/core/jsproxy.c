@@ -332,6 +332,30 @@ static PyMethodDef JsProxy_bind_sig_MethodDef = {
   METH_O,
 };
 
+PyObject*
+JsProxy_bind_class(PyObject* self, PyObject* sig)
+{
+  PyObject* result = NULL;
+
+  // Call `sig = jsbind.bind_class_sig(sig)` and then delegate to
+  // JsProxy_bind_sig.
+  // bind_class_sig takes sig and returns type[sig].
+  _Py_IDENTIFIER(bind_class_sig);
+  PyObject* class_sig =
+    _PyObject_CallMethodIdOneArg(jsbind, &PyId_bind_class_sig, sig);
+  FAIL_IF_NULL(class_sig);
+  result = JsProxy_bind_sig(self, class_sig);
+finally:
+  Py_CLEAR(class_sig);
+  return result;
+}
+
+static PyMethodDef JsProxy_bind_class_MethodDef = {
+  "bind_class",
+  (PyCFunction)JsProxy_bind_class,
+  METH_O,
+};
+
 /**
  * repr overload, does `obj.toString()` which produces a low-quality repr.
  */
@@ -3867,6 +3891,7 @@ JsProxy_create_subtype(int flags)
   int cur_getset = 0;
 
   methods[cur_method++] = JsProxy_bind_sig_MethodDef;
+  methods[cur_method++] = JsProxy_bind_class_MethodDef;
   methods[cur_method++] = JsProxy_Dir_MethodDef;
   methods[cur_method++] = JsProxy_toPy_MethodDef;
   methods[cur_method++] = JsProxy_object_entries_MethodDef;
