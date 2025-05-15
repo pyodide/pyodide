@@ -95,6 +95,13 @@ declare global {
           convert: (obj: PyProxy) => any,
           cacheConversion: (obj: PyProxy, result: any) => void,
         ) => any),
+    eager_converter:
+      | null
+      | ((
+          obj: PyProxy,
+          convert: (obj: PyProxy) => any,
+          cacheConversion: (obj: PyProxy, result: any) => void,
+        ) => any),
   ) => any;
 
   export const _pyproxy_getflags: (

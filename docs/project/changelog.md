@@ -14,6 +14,22 @@ myst:
 
 # Change Log
 
+## Version 0.27.6
+
+_May 15, 2025_
+
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
+
+### Packages
+
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
+
 ## Version 0.27.5
 
 _April 04, 2025_
