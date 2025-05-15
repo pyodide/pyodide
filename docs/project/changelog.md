@@ -32,6 +32,8 @@ myst:
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
 - {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
   overriding the default conversion behavior. {pr}`5613`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
 
 ### `python` CLI entrypoint
 
