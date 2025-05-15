@@ -1549,6 +1549,52 @@ def test_to_js_default_converter2(selenium):
     assert run_js("(x) => x[1] === 2")(p2js)
 
 
+@run_in_pyodide
+def test_to_js_eager_converter(selenium):
+    import pytest
+
+    from js import Array
+    from pyodide.ffi import ConversionError, destroy_proxies, to_js
+
+    recursive_list: Any = []
+    recursive_list.append(recursive_list)
+
+    recursive_dict: Any = {}
+    recursive_dict[0] = recursive_dict
+
+    a_thing = [{1: 2}, (2, 4, 6)]
+
+    def normal(value, convert, cacheConversion):
+        return convert(value)
+
+    def reject_tuples(value, convert, cacheConversion):
+        if isinstance(value, tuple):
+            raise ConversionError("We don't convert tuples!")
+        return convert(value)
+
+    def proxy_tuples(value, convert, cacheConversion):
+        if isinstance(value, tuple):
+            return value
+        return convert(value)
+
+    to_js(recursive_list, eager_converter=normal)
+    to_js(recursive_dict, eager_converter=normal)
+    to_js(a_thing, eager_converter=normal)
+
+    to_js(recursive_list, eager_converter=reject_tuples)
+    to_js(recursive_dict, eager_converter=reject_tuples)
+    with pytest.raises(ConversionError, match="We don't convert tuples"):
+        to_js(a_thing, eager_converter=reject_tuples)
+
+    to_js(recursive_list, eager_converter=proxy_tuples)
+    to_js(recursive_dict, eager_converter=proxy_tuples)
+    proxylist = Array.new()
+    res = to_js(a_thing, eager_converter=proxy_tuples, pyproxies=proxylist)
+    assert res[-1] == (2, 4, 6)
+    assert len(proxylist) == 1
+    destroy_proxies(proxylist)
+
+
 def test_buffer_format_string(selenium):
     errors = [
         ["aaa", "Expected format string to have length <= 2, got 'aaa'"],
@@ -1663,19 +1709,21 @@ def test_bind_attrs(selenium):
 
     from _pyodide.jsbind import BindClass, Deep
     from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
 
     class A(BindClass):
         x: int
         y: Annotated[list[int], Deep]
 
-    a: A = run_js(
+    a_px: JsProxy = run_js(
         """
         ({
             x: 7,
             y: [1,2,3],
         })
         """
-    ).bind_sig(A)
+    )
+    a = a_px.bind_sig(A)
     assert a.x == 7
     assert a.y == [1, 2, 3]
 
@@ -2012,10 +2060,68 @@ def test_bind_py_json(selenium):
     class A_sig:
         x: int
 
-    Abound = A.bind_sig(A_sig)
+    Abound = A.bind_class(A_sig)
 
     res = Abound()
     assert res.x == 7
+
+
+@run_in_pyodide
+def test_bind_class(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    A_px: JsProxy = run_js("(class {x = [1,2,3]; f() { return [1]; }})")
+    a_px: JsProxy = run_js("(A) => new A()")(A_px)
+
+    class A_sig(BindClass):
+        x: Annotated[list[int], Deep]
+
+        def __init__(self, /): ...
+
+        def f(self, /) -> Annotated[list[int], Deep]:
+            return []
+
+    A = A_px.bind_class(A_sig)
+    res = A()
+    assert isinstance(res.x, list)
+    assert isinstance(res.f(), list)
+    a = a_px.bind_sig(A_sig)
+    assert isinstance(a.x, list)
+    assert isinstance(a.f(), list)
+
+
+@run_in_pyodide
+def test_bind__call__(selenium):
+    from typing import Annotated
+
+    from _pyodide.jsbind import BindClass, Deep, Json
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class FuncType(BindClass):
+        def __call__(
+            self,
+            a: dict[str, int],
+            b: Annotated[dict[str, int], Json],
+            c: Annotated[dict[str, int], Deep],
+            /,
+        ) -> Annotated[list[int], Deep]:
+            return []
+
+    f_px: JsProxy = run_js(
+        """
+        (function f(x, y, z) {
+            return [x.get("a"), y.b, z.c]
+        })
+        """
+    )
+    f = f_px.bind_sig(FuncType)
+
+    assert f({"a": 7}, {"b": 9}, {"c": 11}) == [7, 9, 11]
 
 
 @run_in_pyodide
