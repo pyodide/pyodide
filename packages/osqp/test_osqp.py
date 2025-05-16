@@ -25,4 +25,4 @@ def test_simple_table(selenium):
     # Solve problem
     res = prob.solve()
 
-    assert res.info.status == "solved"
+    assert res.info.status_val == osqp.SolverStatus.OSQP_SOLVED
