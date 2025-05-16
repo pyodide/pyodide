@@ -44,6 +44,8 @@ the program in the debugger because there is no support for executing C
 expressions. The extension provides no way to see the raw assembly without
 disabling the extension and refreshing the page.
 
+(function-signature-mismatch)=
+
 ## Linker error: function signature mismatch
 
 You may get linker errors as follows:

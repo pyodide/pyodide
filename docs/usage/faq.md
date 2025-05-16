@@ -300,7 +300,7 @@ This can happen for two reasons,
    case it needs to be packaged in Pyodide. Please open [an
    issue](https://github.com/pyodide/pyodide/issues) after checking that an
    issue for this package doesn't exist already. Then follow
-   {ref}`new-packages`.
+   {ref}`building-packages`.
 
 ## How can I change the behavior of {js:func}`~pyodide.runPython` and {js:func}`~pyodide.runPythonAsync`?
 
