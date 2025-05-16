@@ -1,6 +1,9 @@
 package:
   name: setuptools
   version: 76.0.0
+  tag:
+    - core
+    - pytest
   top-level:
     - _distutils_hack
     - pkg_resources
