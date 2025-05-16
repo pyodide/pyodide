@@ -1,0 +1,58 @@
+From 90f8b79426ed5487e8ea6b4d23b6716e3d54db69 Mon Sep 17 00:00:00 2001
+From: Pepijn de Vos <pepijndevos@gmail.com>
+Date: Tue, 6 May 2025 19:51:44 +0200
+Subject: [PATCH] no hicum2
+
+---
+ src/Makefile.am                  | 1 -
+ src/spicelib/devices/Makefile.am | 2 --
+ src/spicelib/devices/dev.c       | 1 -
+ 3 files changed, 4 deletions(-)
+
+diff --git a/src/Makefile.am b/src/Makefile.am
+index aa2a49183..2199cd562 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -73,7 +73,6 @@ DYNAMIC_DEVICELIBS =					\
+ 	spicelib/devices/isrc/libisrc.la		\
+ 	spicelib/devices/hfet1/libhfet.la		\
+ 	spicelib/devices/hfet2/libhfet2.la		\
+-	spicelib/devices/hicum2/libhicum2.la		\
+ 	spicelib/devices/hisim2/libhisim2.la		\
+ 	spicelib/devices/hisimhv1/libhisimhv1.la	\
+ 	spicelib/devices/hisimhv2/libhisimhv2.la	\
+diff --git a/src/spicelib/devices/Makefile.am b/src/spicelib/devices/Makefile.am
+index a97f7c26c..7bc8a23e8 100644
+--- a/src/spicelib/devices/Makefile.am
++++ b/src/spicelib/devices/Makefile.am
+@@ -27,7 +27,6 @@ SUBDIRS = \
+ 	isrc	\
+ 	hfet1	\
+ 	hfet2	\
+-	hicum2	\
+ 	hisim2	\
+ 	hisimhv1	\
+ 	hisimhv2	\
+@@ -88,7 +87,6 @@ DIST_SUBDIRS = \
+ 	isrc	\
+ 	hfet1	\
+ 	hfet2	\
+-	hicum2	\
+ 	hisim2	\
+ 	hisimhv1	\
+ 	hisimhv2	\
+diff --git a/src/spicelib/devices/dev.c b/src/spicelib/devices/dev.c
+index 2a32c3889..5a18eb68b 100644
+--- a/src/spicelib/devices/dev.c
++++ b/src/spicelib/devices/dev.c
+@@ -175,7 +175,6 @@ static SPICEdev *(*static_devices[])(void) = {
+     get_dio_info,
+     get_hfeta_info,
+     get_hfet2_info,
+-    get_hicum_info,
+     get_hsm2_info,
+     get_hsmhv_info,
+     get_hsmhv2_info,
+-- 
+2.49.0
+
