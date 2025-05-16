@@ -41,6 +41,8 @@ myst:
 
 - Upgraded `narwhals` to 1.38.2 {pr}`5623`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Added `ngspice` 42.2 {pr}`5601`
+- Added `inspice` 1.6.3.3 {pr}`5601`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
