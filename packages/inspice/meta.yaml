@@ -1,14 +1,11 @@
 package:
   name: inspice
-  version: 1.6.3.1
+  version: 1.6.3.3
   top-level:
     - InSpice
 source:
-  url: https://files.pythonhosted.org/packages/82/ac/3245e1fc30744094b85bea0a894fff8f472297be96129c57b1f045f2382d/inspice-1.6.3.1.tar.gz
-  sha256: a9f638812bd72d3042dd46364556c699a357c474b48d3c4163d83da6f541993d
-  patches:
-    - patches/0001-add-support-for-emscripten.patch
-    - patches/0002-strip-extension-off-library-name.patch
+  url: https://files.pythonhosted.org/packages/65/dc/10a19fea20319d33898aed32d944afef59f6f94c03b2eb6c645ec64ae171/inspice-1.6.3.3-py3-none-any.whl
+  sha256: ae550f6ec792e57bda083f116bd39e2535c6b742de33ca73268ad2792043a45a
 requirements:
   run:
     - numpy
