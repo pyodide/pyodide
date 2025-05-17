@@ -80,10 +80,10 @@ function scheduleCallbackImmediate(callback: () => void) {
   ) {
     const channel = new MessageChannel();
     channel.port1.onmessage = () => {
-      callback();
       channel.port1.onmessage = null;
       channel.port1.close();
       channel.port2.close();
+      callback();
     };
     channel.port2.postMessage("");
   } else {
