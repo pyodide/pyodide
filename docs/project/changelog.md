@@ -30,8 +30,6 @@ myst:
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
-- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
-  overriding the default conversion behavior. {pr}`5613`
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 
@@ -40,19 +38,32 @@ myst:
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
   old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
-- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
-  CLI. {pr}`5544`
 
 ### Packages
 
+- Upgraded `narwhals` to 1.39.1 {pr}`5640`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
-- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
-- Upgraded `narwhals` to 1.38.2 {pr}`5623`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374`
+
+## Version 0.27.6
+
+_May 15, 2025_
+
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
+
+### Packages
+
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
 
 ## Version 0.27.5
 

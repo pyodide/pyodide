@@ -190,13 +190,15 @@ CHECK_EXC_FIELD(context);
 CHECK_EXC_FIELD(cause);
 CHECK_EXC_FIELD(suppress_context);
 
+#undef CHEC_EXC_FIELD
+
 #define FIELD_SIZE(type, field) sizeof(((type*)0)->field)
 
-#undef CHEC_EXC_FIELD
 _Static_assert(sizeof(PyBaseExceptionObject) ==
                  sizeof(PyObject) + FIELD_SIZE(JsProxy, dict) +
                    sizeof(struct ExceptionFields),
                "size conflict between JsProxy and PyExc_BaseException");
+#undef FIELD_SIZE
 
 #define JsProxy_REF(x) ((JsProxy*)x)->js
 #define JsProxy_VAL(x) hiwire_get(JsProxy_REF(x))
@@ -728,8 +730,8 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 
   int result;
-  JsVal jsa = python2js(a);
-  JsVal jsb = python2js(b);
+  JsVal jsa = JsProxy_VAL(a);
+  JsVal jsb = JsProxy_VAL(b);
   switch (op) {
     case Py_LT:
       result = Jsv_less_than(jsa, jsb);
@@ -4275,8 +4277,8 @@ skip_container_slots:
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   flags_obj = PyLong_FromLong(flags);
   FAIL_IF_NULL(flags_obj);
-  FAIL_IF_MINUS_ONE(
-    _PyObject_SetAttrId(result, &PyId__js_type_flags, flags_obj));
+  FAIL_IF_MINUS_ONE(PyObject_SetAttr(
+    result, _PyUnicode_FromId(&PyId__js_type_flags), flags_obj));
 
   success = true;
 finally:
