@@ -1,7 +1,7 @@
-From 224b7929186e1483105c2107bde1b2b49d84bf86 Mon Sep 17 00:00:00 2001
+From 55d5e80472fe69a4688047280ce371cce2bd9583 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Fri, 2 May 2025 11:49:19 -0400
-Subject: [PATCH 3/3] Revert "Disallow exports that are not valid C/C++
+Subject: [PATCH 2/2] Revert "Disallow exports that are not valid C/C++
  identifiers (#23563)"
 
 This reverts commit 08d2cc3c559c64f377bc932bcc418fd661998232.

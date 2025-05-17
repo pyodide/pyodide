@@ -88,7 +88,8 @@ def set_configs():
         let pyodide = await loadPyodide({
             fullStdLib: false,
             jsglobals: self,
-            _loadSnapshot: snap,
+            // ENABLE ME!
+            // _loadSnapshot: snap,
             enableRunUntilComplete: true,
         });
         """,
