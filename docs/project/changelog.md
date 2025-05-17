@@ -18,6 +18,8 @@ myst:
 
 _June 04, 2025_
 
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 
