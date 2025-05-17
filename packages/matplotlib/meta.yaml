@@ -16,6 +16,7 @@ source:
     - patches/0001-Disable-macOS-X-backend.patch
     - patches/0002-Disable-timer.patch
     - patches/0003-Hardcode-font-cache-path.patch
+    - patches/0004-WebAgg-backend.patch
   extras:
     - - extras/setup.cfg
       - ./mplsetup.cfg
@@ -37,7 +38,8 @@ build:
   script: export SETUPTOOLS_SCM_PRETEND_VERSION=$PKG_VERSION
   post: |
     rm -rf matplotlib/backends/qt_editor
-    rm -rf matplotlib/backends/web_backend
+    # mpl.css and mpl.js are used by the patched webagg backend, so do not delete them.
+    find matplotlib/backends/web_backend -type f ! -name mpl.css ! -name mpl.js -delete
     rm -rf sphinxext
     cp $PKGDIR/extras/fontlist.json matplotlib
     cp $PKGDIR/extras/Humor-Sans-1.0.ttf matplotlib/mpl-data/fonts/ttf/Humor-Sans.ttf
