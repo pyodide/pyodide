@@ -1374,16 +1374,11 @@ def test_default_sys_path(selenium):
         assert path in sys.path
 
 
+@run_in_pyodide
 def test_sys_path0(selenium):
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import sys
-            import os
-            assert os.getcwd() == sys.path[0]
-        `)
-        """
-    )
+    import sys
+
+    assert sys.path[0] == ""
 
 
 @pytest.mark.requires_dynamic_linking

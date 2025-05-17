@@ -18,6 +18,9 @@ myst:
 
 _June 04, 2025_
 
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+
 ## Version 0.27.6
 
 _May 15, 2025_
