@@ -9,11 +9,11 @@
      - any noteworthy choices to be aware of
 	Please refer to any related issues by #<issue_id> -->
 
-### Checklists
+### Checklist
 
 <!-- Note:
      If you think some of these steps are not necessary for your PR,
-     remove those checkboxes, or mark them as checked. If you keep unchecked checkboxes,
+     remove those checkboxes or check them. If you keep unchecked checkboxes,
      we will assume that your PR is not ready to be merged  -->
 
 - [ ] Add a [CHANGELOG](https://github.com/pyodide/pyodide/blob/main/docs/project/changelog.md) entry

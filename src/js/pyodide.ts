@@ -292,7 +292,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     snapshotConfig,
     options._snapshotDeserializer,
   );
-  API.sys.path.insert(0, API.config.env.HOME);
+  API.sys.path.insert(0, "");
 
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are

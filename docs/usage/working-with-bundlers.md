@@ -2,12 +2,37 @@
 
 # Working with Bundlers
 
-## Webpack
+When using Pyodide with bundlers, there are two main approaches:
 
-There is a [Pyodide Webpack Plugin][] to load Pyodide from a CDN in a Webpack
-project.
+1. **Loading from a CDN** - This is the simplest approach and sufficient for most use cases
+2. **Bundling Pyodide files** - For applications that need to work offline or have specific hosting requirements
 
-## Vite
+## Using Pyodide from a CDN
+
+For most applications, the simplest approach is to use Pyodide from a CDN by setting the `indexURL` parameter:
+
+```js
+import { loadPyodide, version as pyodideVersion } from "pyodide";
+
+async function initPyodide() {
+  const pyodide = await loadPyodide({
+    indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`,
+  });
+  return pyodide;
+}
+```
+
+This approach works with most bundlers without additional configuration and is recommended for most users.
+
+## Bundling Pyodide Files
+
+If you need to bundle all Pyodide files with your application (for offline use or self-hosting), follow the instructions below for your specific bundler.
+
+### Webpack
+
+There is a [Pyodide Webpack Plugin][] to load Pyodide from a local bundle in a Webpack project.
+
+### Vite
 
 ```{note}
 The following instructions have been tested with Pyodide 0.26.2, Vite 5.4.9, and
@@ -80,6 +105,14 @@ async function hello_python() {
 
 hello_python().then((result) => {
   console.log("Python says that 1+1 =", result);
+});
+```
+
+If you need to specify a specific path for the bundled files, you can set the `indexURL` parameter:
+
+```js
+let pyodide = await loadPyodide({
+  indexURL: "/assets", // Path to the directory containing pyodide.js and other files
 });
 ```
 
