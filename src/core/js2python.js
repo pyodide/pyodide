@@ -21,17 +21,17 @@ function js2python_string(value) {
   let ptr = _PyUnicode_Data(result);
   if (max_code_point > 0xffff) {
     for (let c of value) {
-      HEAPU32[ptr / 4] = c.codePointAt(0);
+      ASSIGN_U32(ptr, 0, c.codePointAt(0));
       ptr += 4;
     }
   } else if (max_code_point > 0xff) {
     for (let c of value) {
-      HEAPU16[ptr / 2] = c.codePointAt(0);
+      ASSIGN_U16(ptr, 0, c.codePointAt(0));
       ptr += 2;
     }
   } else {
     for (let c of value) {
-      HEAPU8[ptr] = c.codePointAt(0);
+      ASSIGN_U8(ptr, 0, c.codePointAt(0));
       ptr += 1;
     }
   }
@@ -50,21 +50,21 @@ function js2python_bigint(value) {
     length++;
     value >>= BigInt(32);
   }
-  let stackTop = stackSave();
-  let ptr = stackAlloc(length * 4);
+  const orig = stackSave();
+  const ptr = stackAlloc(length * 4);
   value = value_orig;
   for (let i = 0; i < length; i++) {
     ASSIGN_U32(ptr, i, Number(value & BigInt(0xffffffff)));
     value >>= BigInt(32);
   }
-  let result = __PyLong_FromByteArray(
+  const res = __PyLong_FromByteArray(
     ptr,
     length * 4 /* length in bytes */,
     true /* little endian */,
     true /* signed? */,
   );
-  stackRestore(stackTop);
-  return result;
+  stackRestore(orig);
+  return res;
 }
 
 /**
