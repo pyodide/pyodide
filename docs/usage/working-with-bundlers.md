@@ -16,7 +16,7 @@ import { loadPyodide, version as pyodideVersion } from "pyodide";
 
 async function initPyodide() {
   const pyodide = await loadPyodide({
-    indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`
+    indexURL: `https://cdn.jsdelivr.net/pyodide/v${pyodideVersion}/full/`,
   });
   return pyodide;
 }
@@ -112,7 +112,7 @@ If you need to specify a specific path for the bundled files, you can set the `i
 
 ```js
 let pyodide = await loadPyodide({
-  indexURL: "/assets"  // Path to the directory containing pyodide.js and other files
+  indexURL: "/assets", // Path to the directory containing pyodide.js and other files
 });
 ```
 
