@@ -52,5 +52,12 @@ export const genMockModule = (): PackageManagerModule => {
         };
       },
     },
+    stringToUTF8OnStack: (str: string) => {
+      return 0;
+    },
+    stackSave: () => 0,
+    stackRestore: (ptr: number) => {},
+    _print_stdout(ptr: number) {},
+    _print_stderr(ptr: number) {},
   };
 };

@@ -150,6 +150,7 @@ def test_syncify_null(selenium):
     assert run_sync(asyncNull()) is None
 
 
+@pytest.mark.requires_dynamic_linking
 @requires_jspi
 def test_syncify_no_suspender(selenium):
     selenium.run_js(
