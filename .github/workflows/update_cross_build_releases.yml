@@ -44,12 +44,26 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Update cross-build metadata file for version ${{ env.version }} [skip ci]
-          title: Update cross-build metadata file for version ${{ env.version }}
+          title: Update cross-build metadata file for version ${{ env.version }} (main)
           body: |
             This PR updates the cross-build metadata file for the new version ${{ env.version }}.
             Requesting a review from the @pyodide/core team.
           branch: update-cross-build-metadata-${{ env.version }}
           base: main
+          branch-suffix: timestamp
+          draft: true
+
+      - name: Create Pull Request for GitHub Pages
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update cross-build metadata file for version ${{ env.version }} [skip ci]
+          title: Update cross-build metadata file for version ${{ env.version }} (gh-pages)
+          body: |
+            This PR updates the cross-build metadata file for the new version ${{ env.version }}.
+            Requesting a review from the @pyodide/core team.
+          branch: update-cross-build-metadata-${{ env.version }}
+          base: gh-pages
           branch-suffix: timestamp
           draft: true
 
