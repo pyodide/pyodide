@@ -12,6 +12,7 @@ sphinx-issues
 # https://github.com/click-contrib/sphinx-click/pull/137
 # https://github.com/click-contrib/sphinx-click/pull/138
 sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5dd4390f26381a353224e
+click < 8.2
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic

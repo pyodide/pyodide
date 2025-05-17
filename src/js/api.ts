@@ -69,7 +69,7 @@ API.scheduleCallback = scheduleCallback;
 API.detectEnvironment = detectEnvironment;
 
 // @ts-ignore
-if (AbortSignal.any) {
+if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
   /** @private */
   // @ts-ignore
   API.abortSignalAny = AbortSignal.any;

@@ -191,7 +191,7 @@ API.restore_stderr = function () {
   FS.unlink("/dev/capture_stderr");
   // open takes the lowest available file descriptor. Since 0 and 1 are occupied by stdin and stdout it takes 2.
   FS.open("/dev/stderr", 1 /* O_WRONLY */);
-  return new TextDecoder().decode(new Uint8Array(stderr_chars));
+  return UTF8ArrayToString(new Uint8Array(stderr_chars));
 };
 
 API.fatal_loading_error = function (...args: string[]) {
