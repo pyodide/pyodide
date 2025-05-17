@@ -79,7 +79,12 @@ function scheduleCallbackImmediate(callback: () => void) {
     typeof MessageChannel === "function"
   ) {
     const channel = new MessageChannel();
-    channel.port1.onmessage = () => callback();
+    channel.port1.onmessage = () => {
+      channel.port1.onmessage = null;
+      channel.port1.close();
+      channel.port2.close();
+      callback();
+    };
     channel.port2.postMessage("");
   } else {
     // fallback to setTimeout if nothing else is available

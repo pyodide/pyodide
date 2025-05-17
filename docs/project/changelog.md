@@ -30,6 +30,8 @@ myst:
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5597`
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 
