@@ -21,7 +21,7 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && rm -rf autoconf-2.71
 
-# install libtool 2.5.4, required for emscripten support
+# install libtool 2.5.4, required by ngspice for emscripten support
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
     && tar -xf libtool-2.5.4.tar.xz \
     && cd libtool-2.5.4 \
