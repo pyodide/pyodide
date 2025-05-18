@@ -81,7 +81,7 @@ def commits_to_prs(commits: list[CommitInfo]) -> list[int]:
 
 
 class CommitHistory:
-    """Store the history of the github PRs with a map from pr_number to CommitInfo"""
+    """Store the history of the GitHub PRs with a map from pr_number to CommitInfo"""
 
     commits: dict[int, CommitInfo]
 

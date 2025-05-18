@@ -89,7 +89,7 @@ Assume for concreteness that we are releasing version 0.27.2.
 
 1. Go through the commits on the main branch since the last release, find ones
    you want to backport and add the "needs backport" label to the pull requests.
-   You can do this manually in the web interface on the github PR or you can use
+   You can do this manually in the web interface on the GitHub PR or you can use
 
    ```sh
    ./tools/backports.py add-backport-pr <pr-number>
