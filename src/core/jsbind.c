@@ -302,7 +302,8 @@ Py2Js_func_deep(PyObject* self, PyObject* pyval, JsVal proxies)
                           /* depth=*/-1,
                           proxies,
                           my_dict_converter(),
-                          /*default_converter=*/JS_NULL);
+                          /*default_converter=*/JS_NULL,
+                          /*eager_converter=*/JS_NULL);
 }
 
 JsVal

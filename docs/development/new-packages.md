@@ -185,7 +185,7 @@ You can also inject extra compile and link flags with the `cflags` and `ldflags`
 keys. You can modify the wheel after it is built with the `post:` key.
 
 If you need to patch the package's source to fix build issues, see the section
-on Generating patches below.
+on [Generating patches](#generating-patches) below.
 
 ### Writing tests for your package
 
@@ -218,6 +218,8 @@ def test_mytestname(selenium):
 you can put whatever command line arguments you would pass to `pytest` as
 separate entries in the list. For more info on `run_in_pyodide` see
 [pytest-pyodide](https://github.com/pyodide/pytest-pyodide).
+
+(generating-patches)=
 
 ### Generating patches
 

@@ -1,7 +1,7 @@
 From 72f8ccf52972916f0cf7ea166d6e7b9fb8ac3798 Mon Sep 17 00:00:00 2001
 From: Gyeongjae Choi <def6488@gmail.com>
 Date: Thu, 1 May 2025 17:36:52 +0900
-Subject: [PATCH 4/5] Fix typo in libdylink.js
+Subject: [PATCH 3/4] Fix typo in libdylink.js
 
 https://github.com/emscripten-core/emscripten/pull/24233
 
