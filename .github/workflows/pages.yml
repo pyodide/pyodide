@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
   schedule:
     # Run every day at 03:00 UTC
-    - cron: '0 3 * * *'
+    - cron: "0 3 * * *"
 
 permissions: {}
 
