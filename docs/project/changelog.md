@@ -43,7 +43,7 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.39.1 {pr}`5640`
+- Upgraded `narwhals` to 1.40.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
