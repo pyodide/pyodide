@@ -3,7 +3,6 @@ Various common utilities for testing.
 """
 
 import contextlib
-import inspect
 import os
 import pathlib
 import re
@@ -11,7 +10,6 @@ import sys
 from collections.abc import Sequence
 
 import pytest
-from _pytest.doctest import DoctestItem
 
 PYODIDE_ROOT = pathlib.Path(__file__).parents[0].resolve()
 DIST_PATH = PYODIDE_ROOT / "dist"

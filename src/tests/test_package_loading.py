@@ -797,6 +797,7 @@ def test_install_api(selenium_standalone, httpserver):
 
     _run(selenium, install_dir)
 
+
 def test_load_package_stream(selenium_standalone, httpserver):
     selenium = selenium_standalone
 
