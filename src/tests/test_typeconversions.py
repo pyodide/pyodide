@@ -32,7 +32,6 @@ def no_hypothesis(x):
         return False
 
 
-@pytest.mark.requires_dynamic_linking
 @given(s=text())
 @settings(deadline=10000)
 @example("\ufeff")
@@ -61,7 +60,6 @@ def test_string_conversion(selenium_module_scope, s):
         main(selenium, sbytes)
 
 
-@pytest.mark.requires_dynamic_linking
 @given(s=text())
 @std_hypothesis_settings
 @example("\ufeff")
@@ -144,7 +142,6 @@ def test_large_string_conversion(selenium):
     )("ab" * 20_000)
 
 
-@pytest.mark.requires_dynamic_linking
 @given(
     n=st.one_of(
         st.integers(),
@@ -173,7 +170,6 @@ def test_number_conversions(selenium_module_scope, n):
         assert x_js == n
 
 
-@pytest.mark.requires_dynamic_linking
 @given(n=st.floats())
 @std_hypothesis_settings
 @run_in_pyodide
@@ -194,7 +190,6 @@ def test_number_conversions_2(selenium_module_scope, n):
         assert isinstance(n_js, float)
 
 
-@pytest.mark.requires_dynamic_linking
 @given(n=st.integers())
 @std_hypothesis_settings
 @example(2**53)
@@ -239,7 +234,6 @@ def test_nan_conversions(selenium):
     )
 
 
-@pytest.mark.requires_dynamic_linking
 @given(n=st.integers())
 @std_hypothesis_settings
 def test_bigint_conversions(selenium_module_scope, n):
@@ -276,7 +270,6 @@ def test_bigint_conversions(selenium_module_scope, n):
         )
 
 
-@pytest.mark.requires_dynamic_linking
 @given(
     n=st.one_of(
         st.integers(min_value=2**53 + 1),
@@ -311,7 +304,6 @@ def test_big_int_conversions2(selenium_module_scope, n):
         main(selenium, s)
 
 
-@pytest.mark.requires_dynamic_linking
 @given(
     n=st.integers(),
     exp=st.integers(min_value=1, max_value=10),
@@ -355,7 +347,6 @@ def test_big_int_conversions3(selenium_module_scope, n, exp):
         main(selenium, s)
 
 
-@pytest.mark.requires_dynamic_linking
 @given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
@@ -382,7 +373,6 @@ def test_hyp_py2js2py(selenium, obj):
         del __main__.obj
 
 
-@pytest.mark.requires_dynamic_linking
 @given(obj=any_equal_to_self_strategy.filter(no_hypothesis))
 @std_hypothesis_settings
 @run_in_pyodide
@@ -412,7 +402,6 @@ def test_big_integer_py2js2py(selenium, a):
 
 
 # Generate an object of any type
-@pytest.mark.requires_dynamic_linking
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @given(obj=any_strategy.filter(no_hypothesis))
@@ -436,7 +425,6 @@ def test_hyp_tojs_no_crash(selenium, obj):
         del __main__.x
 
 
-@pytest.mark.requires_dynamic_linking
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
 @given(obj=any_strategy.filter(no_hypothesis))

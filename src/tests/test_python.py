@@ -51,7 +51,6 @@ def test_globals_get_multiple(selenium):
     )
 
 
-@pytest.mark.requires_dynamic_linking
 def test_load_package_after_convert_string(selenium):
     """
     See #93.
@@ -73,7 +72,6 @@ def test_version_info(selenium):
     assert version_py_str == version_js_str
 
 
-@pytest.mark.requires_dynamic_linking
 def test_runpythonasync(selenium_standalone):
     output = selenium_standalone.run_async(
         """
@@ -113,7 +111,6 @@ def test_runpythonasync_exception(selenium_standalone):
         )
 
 
-@pytest.mark.requires_dynamic_linking
 def test_runpythonasync_exception_after_import(selenium_standalone):
     msg = "ZeroDivisionError"
     with pytest.raises(selenium_standalone.JavascriptException, match=msg):

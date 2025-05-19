@@ -199,24 +199,6 @@ def pytest_collection_modifyitems(config, items):
 
         maybe_skip_test(item, delayed=True)
 
-    # After https://github.com/pyodide/pyodide/pull/5621, all tests using loadPackage
-    # requires dynamic linking, and run_in_pyodide decorator always calls loadPackage
-    # to load test-related packages. So we inject the requires_dynamic_linking marker
-    # everywhere when run_in_pyodide is used.
-    def is_decorated_with(func, fun_name):
-        if not func:
-            return False
-
-        source = inspect.getsource(func)
-        return f"@{fun_name}" in source
-
-    for item in items:
-        if is_decorated_with(item.obj, "run_in_pyodide"):
-            item.add_marker(pytest.mark.requires_dynamic_linking)
-
-        if isinstance(item, DoctestItem):
-            item.add_marker(pytest.mark.requires_dynamic_linking)
-
 
 # Save test results to a cache
 # Code adapted from: https://github.com/pytest-dev/pytest/blob/main/src/_pytest/pastebin.py
