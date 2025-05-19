@@ -146,10 +146,11 @@ export class PackageManager {
       // use lockFileURL as the base URL for the packages
       // if lockFileURL is relative, set it to undefined, and it will be treated as
       // relative to the current page URL.
-      this.installBaseUrl = this.#api.config.lockFileURL.substring(
-        0,
-        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
-      ) || location.toString();
+      this.installBaseUrl =
+        this.#api.config.lockFileURL.substring(
+          0,
+          this.#api.config.lockFileURL.lastIndexOf("/") + 1,
+        ) || location.toString();
     }
   }
 
