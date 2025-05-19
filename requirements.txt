@@ -4,6 +4,7 @@ pre-commit
 # testing
 build~=1.2.0
 sphinx-click
+click < 8.2
 hypothesis
 mypy==1.11.0
 # (FIXME: 2024/01/28) The latest pytest-asyncio 0.23.3 is not compatible with pytest 8.0.0
