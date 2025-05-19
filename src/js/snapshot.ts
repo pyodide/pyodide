@@ -89,11 +89,6 @@ function decodeBuildId(buffer: Uint32Array): string {
   return Array.from(buffer, (n) => n.toString(16).padStart(8, "0")).join("");
 }
 
-// The expected index of the deduplication map in the immortal externref table.
-// We double check that this is still right in makeSnapshot (when creating the
-// snapshot) and in syncUpSnapshotLoad1 (when using it).
-const MAP_INDEX = 5;
-
 function checkEntry(index: number, value: any, expected: any): void {
   if (value === expected) {
     return;
@@ -114,6 +109,11 @@ function checkEntry(index: number, value: any, expected: any): void {
     throw new Error(`Unexpected hiwire entry at index ${index}`);
   }
 }
+
+// The expected number of static js variables.
+// We double check that this is still right in makeSnapshot (when creating the
+// snapshot) and in syncUpSnapshotLoad1 (when using it).
+const NUM_STATIC_JS_REFS = 5;
 
 API.serializeHiwireState = function (
   serializer?: (obj: any) => any,
@@ -175,11 +175,13 @@ API.serializeHiwireState = function (
     throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
-  const shouldBeAMap = Module.__hiwire_immortal_get(MAP_INDEX);
-  if (Object.prototype.toString.call(shouldBeAMap) !== "[object Map]") {
-    throw new Error(`Internal error: expected a map at index ${MAP_INDEX}`);
+  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeJsNoValue?.noValueMarker !== 1) {
+    throw new Error(
+      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
+    );
   }
-  for (let i = MAP_INDEX + 1; ; i++) {
+  for (let i = NUM_STATIC_JS_REFS + 1; ; i++) {
     let v;
     try {
       v = Module.__hiwire_immortal_get(i);
@@ -269,19 +271,14 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
  * @private
  */
 export function syncUpSnapshotLoad1() {
-  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
-  Module.__hiwire_set(0, null);
-  Module.__hiwire_immortal_add(null);
   // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
   Module._jslib_init();
-  // Puts deduplication map into the immortal table.
-  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function?
-  let mapIndex = Module.__hiwire_immortal_add(new Map());
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
-  if (mapIndex !== MAP_INDEX) {
+  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeJsNoValue?.noValueMarker !== 1) {
     throw new Error(
-      `Internal error: Expected mapIndex to be ${MAP_INDEX}, got ${mapIndex}`,
+      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
     );
   }
   // Set API._pyodide to a proxy of the _pyodide module.
