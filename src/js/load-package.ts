@@ -125,6 +125,8 @@ export class PackageManager {
 
   private _lock = createLock();
 
+  private installBaseUrl: string;
+
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
@@ -137,6 +139,18 @@ export class PackageManager {
     this.#api = api;
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
+
+    if (IN_NODE) {
+      this.installBaseUrl = this.#api.config.packageCacheDir;
+    } else {
+      // use lockFileURL as the base URL for the packages
+      // if lockFileURL is relative, set it to undefined, and it will be treated as
+      // relative to the current page URL.
+      this.installBaseUrl = this.#api.config.lockFileURL.substring(
+        0,
+        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
+      ) || location.toString();
+    }
   }
 
   /**
@@ -396,10 +410,7 @@ export class PackageManager {
     pkg: PackageLoadMetadata,
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
-    const installBaseUrl = IN_NODE
-      ? this.#api.config.packageCacheDir
-      : this.#api.config.indexURL;
-    await ensureDirNode(installBaseUrl);
+    await ensureDirNode(this.installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === this.defaultChannel) {
@@ -409,7 +420,7 @@ export class PackageManager {
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
 
-      uri = resolvePath(fileName, installBaseUrl);
+      uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
     } else {
       uri = pkg.channel;

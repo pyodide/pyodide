@@ -534,7 +534,7 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
 > & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
 };
 /**
  * @hidden
