@@ -1,0 +1,55 @@
+package:
+  name: gnucap
+  version: "20250301-dev"
+  tag:
+    - library
+    - shared_library
+source:
+  url: http://git.savannah.gnu.org/cgit/gnucap.git/snapshot/gnucap-develop.tar.gz
+  sha256: aec9eb3024308f98f1f0670b16a9a3248d2c3ad3c733f58e056a36bade19be12
+
+build:
+  type: shared_library
+  script: |
+    sed -i 's|.*LIBREADLINE.*|#\0|' ${PKG_BUILD_DIR}/include/MakeConf.default
+
+    mkdir build-native && cd build-native
+
+    ../configure
+    make -C lib -j ${PYODIDE_JOBS:-3}
+    make -C modelgen -j ${PYODIDE_JOBS:-3}
+
+    cd ..
+
+    echo "CXX = em++" >> ${PKG_BUILD_DIR}/include/MakeConf.default
+    sed -i 's|^LIBPATH.*|#\0|' ${PKG_BUILD_DIR}/apps/MakeList
+    sed -i 's|^MODELGEN.*|#\0|' ${PKG_BUILD_DIR}/apps/MakeList
+
+    mkdir build-wasm && cd build-wasm
+    emconfigure ../configure --prefix=${WASM_LIBRARY_DIR}
+
+    emmake make -C lib -j ${PYODIDE_JOBS:-3} \
+        LDFLAGS="${SIDE_MODULE_LDFLAGS}" \
+        CXXFLAGS="${SIDE_MODULE_CFLAGS}"
+
+    emmake make -C apps -j ${PYODIDE_JOBS:-3} \
+        LDFLAGS="-L../lib ${SIDE_MODULE_LDFLAGS}" \
+        CXXFLAGS="${SIDE_MODULE_CFLAGS}" \
+        LIBPATH="${PKG_BUILD_DIR}/build-native/lib" \
+        ENV="LD_LIBRARY_PATH=${PKG_BUILD_DIR}/build-native/lib" \
+        MODELGEN="${PKG_BUILD_DIR}/build-native/modelgen/gnucap-modelgen" \
+        VERBOSE=1
+
+    emmake make -C lib install
+    emmake make -C apps install
+
+    cp ${WASM_LIBRARY_DIR}/lib/libgnucap.so ${DISTDIR}
+    cp ${WASM_LIBRARY_DIR}/lib/gnucap/gnucap-default-plugins.so ${DISTDIR}
+
+about:
+  home: http://gnucap.org
+  license: GPL-3.0-or-later
+  summary:  Gnucap is the GNU Circuit Analysis Package
+extra:
+  recipe-maintainers:
+    - pepijndevos
