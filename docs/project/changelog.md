@@ -46,13 +46,15 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.39.1 {pr}`5640`
+- Upgraded `narwhals` to 1.40.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
-- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+- {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
+  `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
+  that ships with Matplotlib and is more complete that `matplotlib-pyodide`.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
-  {pr}`5374`
+  {pr}`5374` {pr}`5398`
 
 ## Version 0.27.6
 
