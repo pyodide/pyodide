@@ -35,6 +35,8 @@ myst:
   base URL for the packages is now calculated from the lockfile URL, not from
   the `indexURL`.
   {pr}`5652`
+- {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
+
 
 ### `python` CLI entrypoint
 
