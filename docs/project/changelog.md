@@ -45,6 +45,8 @@ myst:
   base URL for the packages is now calculated from the lockfile URL, not from
   the `indexURL`.
   {pr}`5652`
+- {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
+
 
 - {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
   back to `__getitem__()` if there is no attribute of the given name.
