@@ -1,22 +1,13 @@
 package:
   name: pyxel
-  version: 2.3.18
+  version: 1.9.10
   tag:
     - rust
 source:
-  url: https://github.com/kitao/pyxel/archive/refs/tags/v2.3.18.tar.gz
-  sha256: acea88bb99078053d012d02a5caf104e78940eeaad853592bb3e8f7a1ddb2dec
+  url: https://github.com/kitao/pyxel/archive/refs/tags/v1.9.10.tar.gz
+  sha256: a784221be6f32fd57bdc6a1a8f30e8f68c78f83d8c84790beaf6ec2be062982f
 build:
   script: |
-    # copy pyproject.toml and python source code to the build directory
-    cp -r python/* .
-
-    # fix relative paths in pyproject.toml
-    sed -i 's|"../|"./|g' pyproject.toml
-
-    # LICENSE file is duplicated, which causes an error
-    rm -f LICENSE
-
     embuilder build sdl2 --pic
     export RUSTFLAGS="\
       $RUSTFLAGS \
