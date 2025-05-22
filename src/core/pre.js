@@ -62,7 +62,7 @@ const errNoRet = () => {
 };
 
 // For no-dylink build, this is a no-op.
-Module.reportUndefinedSymbols ||= () => {};
+Module.reportUndefinedSymbols ??= () => {};
 
 const nullToUndefined = (x) => (x === null ? undefined : x);
 
