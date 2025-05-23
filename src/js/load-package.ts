@@ -125,7 +125,7 @@ export class PackageManager {
 
   private _lock = createLock();
 
-  private installBaseUrl: string;
+  public installBaseUrl: string;
 
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
@@ -397,11 +397,11 @@ export class PackageManager {
 
   /**
    * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
-   * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
+   * relative to packageCacheDir (when IN_NODE), or to lcokfileURL, otherwise use the URL specified by
    * `channel`.
    * @param pkg The package to download
    * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
-   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
+   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or lockfileURL.
    * @param checkIntegrity Whether to check the integrity of the downloaded
    * package.
    * @returns The binary data for the package
@@ -642,6 +642,8 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
     singletonPackageManager,
   );
+
+  API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
 
   if (API.lockFilePromise) {
     API.packageIndexReady = initializePackageIndex(API.lockFilePromise);

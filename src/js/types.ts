@@ -475,6 +475,7 @@ export interface API {
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;
   repodata_info: LockfileInfo;
+  lockfileBaseUrl: string;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
