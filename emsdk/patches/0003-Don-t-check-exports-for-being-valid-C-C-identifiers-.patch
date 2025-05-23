@@ -1,4 +1,4 @@
-From 1fc4f9a07f9275fe804b8b36bd8f11120bc51b58 Mon Sep 17 00:00:00 2001
+From e16f400d460cfd921192b5d32a52329bfe037f96 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 17 May 2025 15:15:02 -0400
 Subject: [PATCH 3/3] Don't check exports for being valid C/C++ identifiers in
@@ -15,13 +15,13 @@ https://github.com/emscripten-core/emscripten/pull/24359
  1 file changed, 7 insertions(+), 3 deletions(-)
 
 diff --git a/tools/emscripten.py b/tools/emscripten.py
-index 275db0669..45d27d7e0 100644
+index 43a199740..9b60796de 100644
 --- a/tools/emscripten.py
 +++ b/tools/emscripten.py
-@@ -572,9 +572,13 @@ def finalize_wasm(infile, outfile, js_syms):
+@@ -562,9 +562,13 @@ def finalize_wasm(infile, outfile, js_syms):
    # These are any exports that were not requested on the command line and are
    # not known auto-generated system functions.
-   unexpected_exports = [e for e in metadata.all_exports if treat_as_user_export(e)]
+   unexpected_exports = [e for e in metadata.all_exports if shared.is_user_export(e)]
 -  for n in unexpected_exports:
 -    if not n.isidentifier():
 -      exit_with_error(f'invalid export name: {n}')

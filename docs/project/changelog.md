@@ -16,10 +16,10 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 4.0.8 {pr}`5343` {pr}`5350` {pr}`5357`
+- ABI break: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
-  {pr}`5560` {pr}`5595` {pr}`5616`
+  {pr}`5560` {pr}`5595` {pr}`5616` {pr}`5653`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
@@ -43,7 +43,7 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.39.1 {pr}`5640`
+- Upgraded `narwhals` to 1.40.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
