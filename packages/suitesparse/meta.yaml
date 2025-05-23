@@ -9,6 +9,7 @@ source:
   url: https://github.com/DrTimothyAldenDavis/SuiteSparse/archive/refs/tags/v5.11.0.tar.gz
   patches:
     - patches/0001-Remove-non-essential-build-targets.patch
+    - patches/0002-Add-KLU.patch
 
 requirements:
   run:
@@ -37,6 +38,7 @@ build:
        ${WASM_LIBRARY_DIR}/lib/libmetis.so \
        ${WASM_LIBRARY_DIR}/lib/libcholmod.so \
        ${WASM_LIBRARY_DIR}/lib/libspqr.so \
+       ${WASM_LIBRARY_DIR}/lib/libklu.so \
        ${DISTDIR}
 about:
   home: https://github.com/DrTimothyAldenDavis/SuiteSparse
