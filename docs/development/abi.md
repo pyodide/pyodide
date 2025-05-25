@@ -114,7 +114,7 @@ By default, all builds of the Pyodide runtime with Python 3.13 will use the
 This section reflects the aspirational ABI for `pyodide_2025_0`. This is all
 subject to change without notice.
 
-The Emscripten version is 4.0.6.
+The Emscripten version is 4.0.9.
 
 #### WASM_BIGINT
 
@@ -168,8 +168,8 @@ sysroot. To install the Emscripten sysroot use:
 rustup toolchain install nightly-2025-02-01
 TOOLCHAIN_ROOT=$(rustup which --toolchain nightly-2025-02-01 rustc)
 RUSTLIB=$TOOLCHAIN_ROOT/lib/rustlib
-wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-4.0.6_nightly-2025-02-01/emcc-4.0.6_nightly-2025-02-01.tar.bz2
-tar -xf emcc-4.0.6_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
+wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-4.0.9_nightly-2025-02-01/emcc-4.0.9_nightly-2025-02-01.tar.bz2
+tar -xf emcc-4.0.9_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
 ```
 
 Note that this is all necessary _even if_ the crate uses `-Cpanic=abort` because
