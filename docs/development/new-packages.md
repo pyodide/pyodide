@@ -415,7 +415,7 @@ imports are synchronous so it is impossible to load `.so` files lazily.
 We currently build `cryptography` which is a Rust extension built with PyO3 and
 `setuptools-rust`. It should be reasonably easy to build other Rust extensions.
 If you want to build a package with Rust extension, you will need Rust >= 1.41,
-and you need to set the rustup toolchain to `nightly`, and the target to
+and you can set the rustup toolchain to `stable`, and the target to
 `wasm32-unknown-emscripten` in the build script
 [as shown here](https://github.com/pyodide/pyodide/blob/main/packages/cryptography/meta.yaml),
 but other than that there may be no other issues if you are lucky.
