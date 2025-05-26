@@ -1,7 +1,8 @@
-FROM node:20.11-bookworm-slim AS node-image
+FROM node:22.14-bookworm-slim AS node-image
 FROM python:3.13.2-slim-bookworm
 
 # Requirements for building packages
+# cmake needed to build wabt.
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
         bzip2 ccache f2c g++ gfortran git make \
@@ -9,7 +10,7 @@ RUN apt-get update \
         autoconf autotools-dev automake texinfo dejagnu \
         build-essential libtool libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq \
+        ninja-build jq cmake \
   && rm -rf /var/lib/apt/lists/*
 
 # install autoconf 2.71, required by upstream libffi
