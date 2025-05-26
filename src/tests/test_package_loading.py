@@ -708,7 +708,11 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
 
     with spawn_web_server(tmp_path) as web_server:
         url, port, _ = web_server
-        lockfile_url = f"http://{url}:{port}/{custom_lockfile_name}"
+
+        if selenium.browser == "node":
+            lockfile_url = f"{custom_lockfile_path.resolve()}"
+        else:
+            lockfile_url = f"http://{url}:{port}/{custom_lockfile_name}"
         selenium.run_js(
             f"""
             let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});

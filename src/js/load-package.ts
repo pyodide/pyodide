@@ -140,17 +140,18 @@ export class PackageManager {
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
 
+    // use lockFileURL as the base URL for the packages
+    // if lockFileURL is relative, use location as the base URL
+    const lockfileBase =
+      this.#api.config.lockFileURL.substring(
+        0,
+        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
+      ) || location.toString();
+
     if (IN_NODE) {
-      this.installBaseUrl = this.#api.config.packageCacheDir;
+      this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
     } else {
-      // use lockFileURL as the base URL for the packages
-      // if lockFileURL is relative, set it to undefined, and it will be treated as
-      // relative to the current page URL.
-      this.installBaseUrl =
-        this.#api.config.lockFileURL.substring(
-          0,
-          this.#api.config.lockFileURL.lastIndexOf("/") + 1,
-        ) || location.toString();
+      this.installBaseUrl = lockfileBase;
     }
   }
 

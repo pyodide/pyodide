@@ -35,7 +35,7 @@ myst:
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 
-- {{ Breadking }} When `lockfileURL` is given to `loadPyodide`, the
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
   base URL for the packages is now calculated from the lockfile URL, not from
   the `indexURL`.
   {pr}`5652`
