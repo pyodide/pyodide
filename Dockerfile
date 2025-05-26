@@ -13,13 +13,14 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 # install autoconf 2.71, required by upstream libffi
-RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
-    && tar -xf autoconf-2.71.tar.xz \
-    && cd autoconf-2.71 \
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.72.tar.xz \
+    && tar -xf autoconf-2.72.tar.xz \
+    && cd autoconf-2.72 \
     && ./configure \
     && make install \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
-    && rm -rf autoconf-2.71
+    && cd .. \
+    && rm -rf autoconf-2.72*
 
 # install libtool 2.5.4, required by ngspice for emscripten support
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
@@ -27,7 +28,8 @@ RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
     && cd libtool-2.5.4 \
     && ./configure \
     && make install \
-    && rm -rf libtool-2.5.4
+    && cd .. \
+    && rm -rf libtool-2.5.4*
 
 ADD requirements.txt /
 
