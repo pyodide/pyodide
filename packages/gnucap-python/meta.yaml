@@ -1,0 +1,27 @@
+package:
+  name: gnucap-python
+  version: 20240702-dev
+source:
+  url: https://codeberg.org/gnucap/gnucap-python/archive/develop.tar.gz
+  extract_dir: gnucap-python
+  sha256: cfd4f65bf47e7ae16a7e761bceae3f1a4e80681ade04b88ede5dd82ecc649203
+requirements:
+  host:
+    - gnucap
+  run:
+    - numpy
+    - gnucap
+build:
+  type: shared_library
+  script: |
+    ./bootstrap
+    pyodide venv venv
+    emconfigure ./configure --prefix=${WASM_LIBRARY_DIR} --host=wasm32-unknown-emscripten PATH="${WASM_LIBRARY_DIR}/bin:$PATH" PYTHON=venv/bin/python
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://codeberg.org/gnucap/gnucap-python
+  summary: python plugin for the circuit simulator Gnucap
+extra:
+  recipe-maintainers:
+    - pepijndevos

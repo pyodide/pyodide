@@ -15,9 +15,12 @@ build:
 
     mkdir build-native && cd build-native
 
-    ../configure
+    ../configure --prefix=${WASM_LIBRARY_DIR}
     make -C lib -j ${PYODIDE_JOBS:-3}
     make -C modelgen -j ${PYODIDE_JOBS:-3}
+    make -C conf -j ${PYODIDE_JOBS:-3}
+
+    make -C conf install
 
     cd ..
 
