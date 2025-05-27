@@ -297,6 +297,13 @@ function pyproxy_new(
   }
   const attrs = { shared, props };
   target[pyproxyAttrsSymbol] = attrs;
+  // avoid the need for `create_proxy`
+  if (!gcRegister && (flags & IS_CALLABLE)) {
+    const copy = target.copy();
+    queueMicrotask(() => {
+      target[pyproxyAttrsSymbol] = copy[pyproxyAttrsSymbol];
+    });
+  }
   return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
@@ -2193,6 +2200,10 @@ const PyProxyHandlers = {
     if (typeof jskey === "symbol") {
       return false;
     }
+    // allow `key in dict` to work
+    if (jsobj instanceof PyDict && jsobj.has(jskey)) {
+      return true;
+    }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
@@ -2205,6 +2216,10 @@ const PyProxyHandlers = {
     // python_getattr will crash if given a Symbol.
     if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
+    }
+    // allow `dict[key]` to work
+    if (jsobj instanceof PyDict && jsobj.has(jskey)) {
+      return jsobj.get(jskey);
     }
     // If keys start with $ remove the $. User can use initial $ to
     // unambiguously ask for a key on the Python object.
