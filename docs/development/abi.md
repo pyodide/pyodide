@@ -166,7 +166,7 @@ sysroot. To install the Emscripten sysroot use:
 
 ```sh
 rustup toolchain install nightly-2025-02-01
-TOOLCHAIN_ROOT=$(rustup which --toolchain nightly-2025-02-01 rustc)
+TOOLCHAIN_ROOT=$(rustup run nightly-2025-02-01 rustc --print sysroot)
 RUSTLIB=$TOOLCHAIN_ROOT/lib/rustlib
 wget https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-4.0.9_nightly-2025-02-01/emcc-4.0.9_nightly-2025-02-01.tar.bz2
 tar -xf emcc-4.0.9_nightly-2025-02-01.tar.bz2 --directory=$RUSTLIB
