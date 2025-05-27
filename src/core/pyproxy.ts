@@ -298,7 +298,9 @@ function pyproxy_new(
   const attrs = { shared, props };
   target[pyproxyAttrsSymbol] = attrs;
   // implicit `create_proxy` non registered functions
-  return !gcRegister && (flags & IS_CALLABLE) ? API.pyodide_ffi.create_proxy(target) : proxy;
+  return !gcRegister && flags & IS_CALLABLE
+    ? API.pyodide_ffi.create_proxy(target)
+    : proxy;
 }
 Module.pyproxy_new = pyproxy_new;
 
