@@ -297,14 +297,8 @@ function pyproxy_new(
   }
   const attrs = { shared, props };
   target[pyproxyAttrsSymbol] = attrs;
-  // avoid the need for `create_proxy`
-  if (!gcRegister && flags & IS_CALLABLE) {
-    const copy = target.copy();
-    queueMicrotask(() => {
-      target[pyproxyAttrsSymbol] = copy[pyproxyAttrsSymbol];
-    });
-  }
-  return proxy;
+  // implicit `create_proxy` non registered functions
+  return !gcRegister && (flags & IS_CALLABLE) ? API.pyodide_ffi.create_proxy(target) : proxy;
 }
 Module.pyproxy_new = pyproxy_new;
 
