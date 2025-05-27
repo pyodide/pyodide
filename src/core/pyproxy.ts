@@ -298,7 +298,7 @@ function pyproxy_new(
   const attrs = { shared, props };
   target[pyproxyAttrsSymbol] = attrs;
   // avoid the need for `create_proxy`
-  if (!gcRegister && (flags & IS_CALLABLE)) {
+  if (!gcRegister && flags & IS_CALLABLE) {
     const copy = target.copy();
     queueMicrotask(() => {
       target[pyproxyAttrsSymbol] = copy[pyproxyAttrsSymbol];
