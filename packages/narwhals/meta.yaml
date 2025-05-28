@@ -1,11 +1,11 @@
 package:
   name: narwhals
-  version: 1.40.0
+  version: 1.41.0
   top-level:
     - narwhals
 source:
-  url: https://files.pythonhosted.org/packages/py3/n/narwhals/narwhals-1.40.0-py3-none-any.whl
-  sha256: 1e6c731811d01c61147c52433b4d4edfb6511aaf2c859aa01c2e8ca6ff4d27e5
+  url: https://files.pythonhosted.org/packages/py3/n/narwhals/narwhals-1.41.0-py3-none-any.whl
+  sha256: d958336b40952e4c4b7aeef259a7074851da0800cf902186a58f2faeff97be02
 about:
   home: https://github.com/narwhals-dev/narwhals
   PyPI: https://pypi.org/project/narwhals
