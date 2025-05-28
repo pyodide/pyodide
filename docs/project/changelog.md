@@ -43,7 +43,7 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.40.0 {pr}`5651`
+- Upgraded `narwhals` to 1.41.0 {pr}`5664`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
