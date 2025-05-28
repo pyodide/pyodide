@@ -12,15 +12,15 @@ RUN apt-get update \
         ninja-build jq cmake bison \
   && rm -rf /var/lib/apt/lists/*
 
-# install autoconf 2.72, required by upstream libffi
-RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.72.tar.xz \
-    && tar -xf autoconf-2.72.tar.xz \
+# install autoconf 2.71, required by upstream libffi
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
+    && tar -xf autoconf-2.71.tar.xz \
     && cd autoconf-2.72 \
     && ./configure \
     && make install \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
     && cd .. \
-    && rm -rf autoconf-2.72*
+    && rm -rf autoconf-2.71*
 
 # install libtool 2.5.4, required by ngspice for emscripten support
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
