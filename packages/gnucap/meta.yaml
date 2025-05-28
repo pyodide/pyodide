@@ -52,7 +52,7 @@ build:
 about:
   home: http://gnucap.org
   license: GPL-3.0-or-later
-  summary:  Gnucap is the GNU Circuit Analysis Package
+  summary: Gnucap is the GNU Circuit Analysis Package
 extra:
   recipe-maintainers:
     - pepijndevos
