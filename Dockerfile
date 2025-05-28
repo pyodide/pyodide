@@ -15,7 +15,7 @@ RUN apt-get update \
 # install autoconf 2.71, required by upstream libffi
 RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
     && tar -xf autoconf-2.71.tar.xz \
-    && cd autoconf-2.72 \
+    && cd autoconf-2.71 \
     && ./configure \
     && make install \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
