@@ -1,7 +1,7 @@
 From f5eaba7cdf2f1f5ca51239f44890a0759bd21589 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Mon, 19 May 2025 15:16:42 +0900
-Subject: [PATCH 4/4] [dylink] Fix rpath calculation in nested dependencies
+Subject: [PATCH 3/3] [dylink] Fix rpath calculation in nested dependencies
 
 https://github.com/emscripten-core/emscripten/pull/24234
 

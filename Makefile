@@ -81,7 +81,6 @@ src/core/libpyodide.a: \
 	src/core/python2js_buffer.o \
 	src/core/jslib.o \
 	src/core/jsbind.o \
-	src/core/jslib_asm.o \
 	src/core/python2js.o \
 	src/core/pyodide_pre.o \
 	src/core/stack_switching/pystate.o \
@@ -285,10 +284,6 @@ clean-python: clean
 clean-all: clean
 	make -C emsdk clean
 	make -C cpython clean-all
-
-src/core/jslib_asm.o: src/core/jslib_asm.s
-	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS)
-
 
 %.o: %.c $(CPYTHONLIB) $(wildcard src/core/*.h src/core/*.js)
 	$(CC) -o $@ -c $< $(MAIN_MODULE_CFLAGS) -Isrc/core/
