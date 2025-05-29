@@ -53,18 +53,6 @@ export class DynlibLoader {
     }
 
     try {
-      // await this.#module.loadDynamicLibrary(
-      //   lib,
-      //   {
-      //     loadAsync: true,
-      //     nodelete: true,
-      //     allowUndefined: true,
-      //     global,
-      //     fs,
-      //   },
-      //   localScope,
-      // );
-      // https://github.com/ryanking13/emscripten/blob/2e41541ba5478b454eb2d912d474810fa4ca2896/system/lib/libc/dynlink.c#L604
       const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
