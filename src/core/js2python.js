@@ -6,13 +6,14 @@ function js2python_string(value) {
   // to determine if is needs to be a 1-, 2- or 4-byte string, since
   // Python handles all 3.
   let max_code_point = 0;
-  let num_code_points = 0;
+  const code_points = [];
   for (let c of value) {
-    num_code_points++;
     let code_point = c.codePointAt(0);
+    code_points.push(code_point);
     max_code_point = code_point > max_code_point ? code_point : max_code_point;
   }
 
+  let num_code_points = code_points.length;
   let result = _PyUnicode_New(num_code_points, max_code_point);
   if (result === 0) {
     throw new PropagateError();
@@ -20,18 +21,18 @@ function js2python_string(value) {
 
   let ptr = _PyUnicode_Data(result);
   if (max_code_point > 0xffff) {
-    for (let c of value) {
-      ASSIGN_U32(ptr, 0, c.codePointAt(0));
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U32(ptr, 0, code_points[i]);
       ptr += 4;
     }
   } else if (max_code_point > 0xff) {
-    for (let c of value) {
-      ASSIGN_U16(ptr, 0, c.codePointAt(0));
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U16(ptr, 0, code_points[i]);
       ptr += 2;
     }
   } else {
-    for (let c of value) {
-      ASSIGN_U8(ptr, 0, c.codePointAt(0));
+    for (let i = 0; i < num_code_points; i++) {
+      ASSIGN_U8(ptr, 0, code_points[i]);
       ptr += 1;
     }
   }

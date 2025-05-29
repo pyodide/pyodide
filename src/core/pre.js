@@ -14,6 +14,10 @@ function getTypeTag(x) {
 }
 API.getTypeTag = getTypeTag;
 
+const hasOwn =
+  Object.hasOwn ||
+  ((obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop));
+
 /**
  * Safe property check
  *
@@ -26,7 +30,7 @@ API.getTypeTag = getTypeTag;
 function hasProperty(obj, prop) {
   try {
     while (obj) {
-      if (Object.getOwnPropertyDescriptor(obj, prop)) {
+      if (hasOwn(obj, prop)) {
         return true;
       }
       obj = Object.getPrototypeOf(obj);
@@ -70,7 +74,7 @@ const nullToUndefined = (x) => (x === null ? undefined : x);
 function isPromise(obj) {
   try {
     // clang-format off
-    return !!obj && typeof obj.then === "function";
+    return typeof obj?.then === "function";
     // clang-format on
   } catch (e) {
     return false;
@@ -95,7 +99,7 @@ API.typedArrayAsUint8Array = bufferAsUint8Array;
 
 Module.iterObject = function* (object) {
   for (let k in object) {
-    if (Object.prototype.hasOwnProperty.call(object, k)) {
+    if (hasOwn(object, k)) {
       yield k;
     }
   }
