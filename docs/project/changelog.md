@@ -48,6 +48,7 @@ myst:
 
 - Upgraded `narwhals` to 1.41.0 {pr}`5664`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `protobuf` to 6.31.1 {pr}`5672`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
