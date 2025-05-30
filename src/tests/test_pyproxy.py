@@ -2601,3 +2601,93 @@ def test_as_json_adaptor_stringify(selenium, o):
 
     f = run_js("(o) => JSON.stringify(o.asJsJson())")
     assert loads(f(o)) == o
+
+
+@run_in_pyodide
+def test_as_json_adaptor_ownkeys(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    d = {
+        1: "int",
+        "1": "string",
+        2: "int",
+        "3": "string",
+        "items": "some value",
+        "$dollar": 8,
+        "$$dollar": 9,
+        (1, 2, 3): 12,
+    }
+
+    f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
+    assert set(f(d)) == {'$$dollar', '$dollar', '1', '2', '3', 'items'}
+
+
+@run_in_pyodide
+def test_as_json_adaptor_ownkeys(selenium):
+    from json import loads
+
+    from pyodide.code import run_js
+
+    d = {
+        1: "int",
+        "1": "string",
+        2: "int",
+        "3": "string",
+        "items": "some value",
+        "$dollar": 8,
+        "$$dollar": 9,
+        (1, 2, 3): 12,
+    }
+
+    f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
+    assert set(f(d)) == {'$$dollar', '$dollar', '1', '2', '3', 'items'}
+
+@run_in_pyodide
+def test_pyproxy_dict(selenium):
+    from pyodide.code import run_js
+
+    get = run_js("(d, key) => d[key]")
+    d = {
+        1: "int",
+        "1": "string",
+        2: "int",
+        "3": "string",
+        "items": "some value",
+        "$dollar": 8,
+        "$$dollar": 9,
+        (1, 2, 3): 12,
+    }
+    assert get(d, 1) == "string"
+    assert get(d, 2) == "int"
+    assert len(list(get(d, "items")())) == 8
+    assert get(d, "$dollar") == 8
+    assert get(d, "$$dollar") == 9
+    run_js("(d) => console.log(Reflect.ownKeys(d))")(d)
+    keys = set(
+        run_js("(d) => Reflect.ownKeys(d).filter(x => typeof x !== 'symbol')")(d)
+    )
+    assert keys >= {"1", "2", "keys", "values", "items", "$dollar", "$$dollar"}
+    set_ = run_js("(d, key, value) => d[key] = value")
+    assert set_(d, 1, 7)
+    assert d["1"] == 7
+    assert d[1] == "int"
+    assert set_(d, 2, 99)
+    assert d[2] == 99
+    assert "2" not in d
+    assert set_(d, 3, 27)
+    assert d["3"] == 27
+    assert 3 not in d
+    delete = run_js("(d, key, value) => delete d[key]")
+    assert delete(d, 1)
+    assert 1 in d
+    assert "1" not in d
+    assert delete(d, 1)
+    assert 1 not in d
+    assert "1" not in d
+    delete(d, 1)
+    delete(d, 2)
+    assert 2 not in d
+    delete(d, 3)
+    assert "3" not in d

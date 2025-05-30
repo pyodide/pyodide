@@ -113,6 +113,7 @@ static PyObject* asyncio;
 #define IS_MUTABLE_SEQUENCE (1 << 14)
 #define IS_JSON_ADAPTOR_DICT (1 << 15)
 #define IS_JSON_ADAPTOR_SEQUENCE (1 << 16)
+#define IS_DICT (1 << 17)
 // clang-format on
 
 // _PyGen_GetCode is static, and PyGen_GetCode is a public wrapper around it
@@ -254,7 +255,7 @@ type_getflags(PyTypeObject* obj_type)
     SET_FLAG_IF(IS_SEQUENCE, is_sequence);
     SET_FLAG_IF(IS_MUTABLE_SEQUENCE, is_mutable_sequence);
   }
-
+  SET_FLAG_IF(IS_DICT, Py_Is(obj_type, &PyDict_Type));
 #undef SET_FLAG_IF
 
   success = true;
