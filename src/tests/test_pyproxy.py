@@ -2535,6 +2535,18 @@ def test_as_json_adaptor_ownkeys(selenium):
     f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
     assert set(f(o)) == set(o.keys())
 
+    d = {
+        1: "int",
+        "1": "string",
+        2: "int",
+        "3": "string",
+        "items": "some value",
+        "$dollar": 8,
+        "$$dollar": 9,
+        (1, 2, 3): 12,
+    }
+    assert set(f(d)) == {"$$dollar", "$dollar", "1", "2", "3", "items"}
+
 
 @run_in_pyodide
 def test_as_json_adaptor_get(selenium):
@@ -2601,44 +2613,6 @@ def test_as_json_adaptor_stringify(selenium, o):
 
     f = run_js("(o) => JSON.stringify(o.asJsJson())")
     assert loads(f(o)) == o
-
-
-@run_in_pyodide
-def test_as_json_adaptor_ownkeys(selenium):
-    from pyodide.code import run_js
-
-    d = {
-        1: "int",
-        "1": "string",
-        2: "int",
-        "3": "string",
-        "items": "some value",
-        "$dollar": 8,
-        "$$dollar": 9,
-        (1, 2, 3): 12,
-    }
-
-    f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
-    assert set(f(d)) == {"$$dollar", "$dollar", "1", "2", "3", "items"}
-
-
-@run_in_pyodide
-def test_as_json_adaptor_ownkeys(selenium):
-    from pyodide.code import run_js
-
-    d = {
-        1: "int",
-        "1": "string",
-        2: "int",
-        "3": "string",
-        "items": "some value",
-        "$dollar": 8,
-        "$$dollar": 9,
-        (1, 2, 3): 12,
-    }
-
-    f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
-    assert set(f(d)) == {"$$dollar", "$dollar", "1", "2", "3", "items"}
 
 
 @run_in_pyodide
