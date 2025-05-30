@@ -433,10 +433,11 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     else:
         signal = controller.signal
     kwargs["signal"] = signal
+    fetcher = kwargs["custom_fetcher"] if "custom_fetcher" in kwargs else _jsfetch
     try:
         return FetchResponse(
             url,
-            await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
+            await fetcher(url, to_js(kwargs, dict_converter=Object.fromEntries)),
             controller,
             signal,
         )
