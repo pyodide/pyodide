@@ -6,6 +6,7 @@
     "module": "ES2022",
     "moduleResolution": "node",
     "paths": {
+      "generated/*": ["./core/*"],
       "*": ["*", "js/*"]
     }
   }
