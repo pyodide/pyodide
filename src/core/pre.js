@@ -19,6 +19,8 @@ API.getTypeTag = getTypeTag;
  *
  * Observe whether a property exists or not without invoking getters.
  * Should never throw as long as arguments have the correct types.
+ * This check is better than `prop in obj` because it works also with
+ * primitives where `"length" in "str"`, as example, would throw.
  *
  * obj: an object
  * prop: a string or symbol
@@ -26,7 +28,7 @@ API.getTypeTag = getTypeTag;
 function hasProperty(obj, prop) {
   try {
     while (obj) {
-      if (Object.getOwnPropertyDescriptor(obj, prop)) {
+      if (Object.hasOwn(obj, prop)) {
         return true;
       }
       obj = Object.getPrototypeOf(obj);
@@ -70,7 +72,7 @@ const nullToUndefined = (x) => (x === null ? undefined : x);
 function isPromise(obj) {
   try {
     // clang-format off
-    return !!obj && typeof obj.then === "function";
+    return typeof obj?.then === "function";
     // clang-format on
   } catch (e) {
     return false;
@@ -95,7 +97,7 @@ API.typedArrayAsUint8Array = bufferAsUint8Array;
 
 Module.iterObject = function* (object) {
   for (let k in object) {
-    if (Object.prototype.hasOwnProperty.call(object, k)) {
+    if (Object.hasOwn(object, k)) {
       yield k;
     }
   }
