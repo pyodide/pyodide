@@ -2146,6 +2146,13 @@ function python_pop(jsobj: any, pop_start: boolean): any {
   return res;
 }
 
+const filteredHasKeySet: Set<string | symbol> = new Set([
+  "name",
+  "length",
+  "caller",
+  "arguments",
+]);
+
 function filteredHasKey(
   jsobj: PyProxy,
   jskey: string | symbol,
@@ -2159,17 +2166,12 @@ function filteredHasKey(
     return (
       jskey in jsobj &&
       !(
-        [
-          "name",
-          "length",
-          "caller",
-          "arguments",
-          // we are required by JS law to return `true` for `"prototype" in pycallable`
-          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
-          // So we filter prototype out of the "get" trap but not out of the "has" trap
-          filterProto ? "prototype" : undefined,
-        ] as (string | symbol)[]
-      ).includes(jskey)
+        filteredHasKeySet.has(jskey) ||
+        // we are required by JS law to return `true` for `"prototype" in pycallable`
+        // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+        // So we filter prototype out of the "get" trap but not out of the "has" trap
+        (filterProto && jskey === "prototype")
+      )
     );
   } else {
     return jskey in jsobj;
@@ -2341,6 +2343,14 @@ const PyProxySequenceHandlers = {
   },
 };
 
+const PyProxyJsonAdaptorDictHandlersSet = new Set([
+  "copy",
+  "constructor",
+  "$$flags",
+  "toString",
+  "destroy",
+]);
+
 const PyProxyJsonAdaptorDictHandlers = {
   isExtensible(): boolean {
     return true;
@@ -2360,9 +2370,7 @@ const PyProxyJsonAdaptorDictHandlers = {
   get(jsobj: PyProxy, jskey: any): any {
     let result;
     if (
-      ["copy", "constructor", "$$flags", "toString", "destroy"].includes(
-        jskey,
-      ) ||
+      PyProxyJsonAdaptorDictHandlersSet.has(jskey) ||
       typeof jskey === "symbol"
     ) {
       // @ts-ignore
