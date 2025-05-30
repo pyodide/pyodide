@@ -13,7 +13,7 @@ export const genMockAPI = (): PackageManagerAPI => {
       },
     },
     config: {
-      indexURL: "",
+      lockFileURL: "",
       packageCacheDir: "",
     },
     lockfile_packages: {},
