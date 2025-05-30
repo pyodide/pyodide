@@ -2165,6 +2165,43 @@ def test_bind_getattr(selenium):
 
 
 @run_in_pyodide
+def test_bind_protocol(selenium):
+    from typing import Annotated, Protocol
+
+    from _pyodide.jsbind import Deep, Json
+    from pyodide.code import run_js
+    from pyodide.ffi import JsProxy
+
+    class FuncType(Protocol):
+        def __call__(
+            self,
+            a: dict[str, int],
+            b: Annotated[dict[str, int], Json],
+            c: Annotated[dict[str, int], Deep],
+            /,
+        ) -> Annotated[list[int], Deep]: ...
+
+    class T:
+        f: FuncType
+
+    t_px: JsProxy = run_js(
+        """
+        ({
+            f(x, y, z) {
+                return [x.get("a"), y.b, z.c]
+            },
+            g() {
+                return [1, 2, 3];
+            }
+        })
+        """
+    )
+    t = t_px.bind_sig(T)
+
+    assert t.f({"a": 7}, {"b": 9}, {"c": 11}) == [7, 9, 11]
+
+
+@run_in_pyodide
 def test_to_js_no_leak(selenium):
     from js import Object
     from pyodide.ffi import to_js
