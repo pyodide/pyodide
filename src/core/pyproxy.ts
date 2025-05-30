@@ -2197,7 +2197,10 @@ const PyProxyHandlers = {
       jskey = jskey.slice(1);
     }
     // allow `key in dict` to return true as fallback
-    return python_hasattr(jsobj, jskey) || (jsobj instanceof PyDict && jsobj.has(jskey));
+    return (
+      python_hasattr(jsobj, jskey) ||
+      (jsobj instanceof PyDict && jsobj.has(jskey))
+    );
   },
   get(jsobj: PyProxy, jskey: string | symbol): any {
     // Preference order:
@@ -2216,11 +2219,9 @@ const PyProxyHandlers = {
     let result = python_getattr(jsobj, jskey);
 
     // allow `dict[key]` to work as falback
-    return (
-      result === undefined &&
-      jsobj instanceof PyDict &&
-      jsobj.has(jskey)
-    ) ? jsobj.get(jskey) : result;
+    return result === undefined && jsobj instanceof PyDict && jsobj.has(jskey)
+      ? jsobj.get(jskey)
+      : result;
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
