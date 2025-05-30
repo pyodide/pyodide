@@ -297,10 +297,7 @@ function pyproxy_new(
   }
   const attrs = { shared, props };
   target[pyproxyAttrsSymbol] = attrs;
-  // implicit `create_proxy` non registered functions
-  return !gcRegister && flags & IS_CALLABLE
-    ? API.pyodide_ffi.create_proxy(target)
-    : proxy;
+  return proxy;
 }
 Module.pyproxy_new = pyproxy_new;
 
@@ -2196,14 +2193,11 @@ const PyProxyHandlers = {
     if (typeof jskey === "symbol") {
       return false;
     }
-    // allow `key in dict` to work
-    if (jsobj instanceof PyDict && jsobj.has(jskey)) {
-      return true;
-    }
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
-    return python_hasattr(jsobj, jskey);
+    // allow `key in dict` to return true as fallback
+    return python_hasattr(jsobj, jskey) || (jsobj instanceof PyDict && jsobj.has(jskey));
   },
   get(jsobj: PyProxy, jskey: string | symbol): any {
     // Preference order:
@@ -2213,17 +2207,20 @@ const PyProxyHandlers = {
     if (typeof jskey === "symbol" || filteredHasKey(jsobj, jskey, true)) {
       return Reflect.get(jsobj, jskey);
     }
-    // allow `dict[key]` to work
-    if (jsobj instanceof PyDict && jsobj.has(jskey)) {
-      return jsobj.get(jskey);
-    }
     // If keys start with $ remove the $. User can use initial $ to
     // unambiguously ask for a key on the Python object.
     if (jskey.startsWith("$")) {
       jskey = jskey.slice(1);
     }
     // 2. The result of getattr
-    return python_getattr(jsobj, jskey);
+    let result = python_getattr(jsobj, jskey);
+
+    // allow `dict[key]` to work as falback
+    return (
+      result === undefined &&
+      jsobj instanceof PyDict &&
+      jsobj.has(jskey)
+    ) ? jsobj.get(jskey) : result;
   },
   set(jsobj: PyProxy, jskey: string | symbol, jsval: any): boolean {
     let descr = Object.getOwnPropertyDescriptor(jsobj, jskey);
