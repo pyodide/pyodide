@@ -334,12 +334,10 @@ export interface Module {
   _Py_Version: number;
   addFunction: (func: Function, sig: string) => number;
   removeFunction: (index: number) => void;
-  _emscripten_dlopen(
-    filename: number,
+  pyodidePromiseLibraryLoading?: ResolvablePromise;
+  _emscripten_dlopen_wrapper(
+    filename: number, // pointer to UTF8 string
     flags: number,
-    userData: number,
-    onsuccess: number,
-    onerror: number,
   ): void;
 }
 
@@ -528,10 +526,9 @@ export type PackageManagerModule = Pick<
   | "reportUndefinedSymbols"
   | "PATH"
   | "LDSO"
-  | "_emscripten_dlopen"
+  | "_emscripten_dlopen_wrapper"
+  | "pyodidePromiseLibraryLoading"
   | "stringToNewUTF8"
-  | "addFunction"
-  | "removeFunction"
 > & {
   FS: Pick<FSType, "readdir" | "lookupPath" | "isDir">;
 };

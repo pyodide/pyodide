@@ -3,7 +3,7 @@
 import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
-import { createResolvable } from "./common/resolveable";
+import { createResolvable, ResolvablePromise } from "./common/resolveable";
 
 /** Dynamic linking flags */
 const RTLD_LAZY = 1; // Lazy symbol resolution
@@ -36,10 +36,9 @@ export class DynlibLoader {
    *
    * @param lib The file system path to the library.
    * @param global Whether to make the symbols available globally.
-   * @param searchDirs Directories to search for the library.
    * @private
    */
-  public async loadDynlib(lib: string, global: boolean, searchDirs?: string[]) {
+  public async loadDynlib(lib: string, global: boolean) {
     const releaseDynlibLock = await this._lock();
 
     DEBUG &&
@@ -56,31 +55,16 @@ export class DynlibLoader {
       const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
-      const onsuccess = Module.addFunction(
-        (userData: number, handle: number) => {
-          DEBUG && console.debug(`Loaded dynamic library ${lib}`);
-          resolveable.resolve();
-        },
-        "vii",
-      );
-      const onerror = Module.addFunction((error: number) => {
-        resolveable.reject(
-          new Error(`Failed to load dynamic library ${lib}, error: ${error}`),
-        );
-      }, "vi");
-
       try {
-        this.#module._emscripten_dlopen(
-          libUTF8,
-          flags,
-          0, // user_data is not used,
-          onsuccess,
-          onerror,
-        );
+        // @ts-ignore
+        Module.pyodidePromiseLibraryLoading = resolveable;
+        // @ts-ignore
+        this.#module._emscripten_dlopen_wrapper(libUTF8, flags);
         await resolveable;
       } finally {
-        Module.removeFunction(onsuccess);
-        Module.removeFunction(onerror);
+        console.log(`Cleaning up dynamic library ${lib} callbacks`);
+        // @ts-ignore
+        Module.pyodidePromiseLibraryLoading = undefined;
       }
     } catch (e: any) {
       if (
@@ -120,14 +104,8 @@ export class DynlibLoader {
     pkg: { file_name: string },
     dynlibPaths: string[],
   ) {
-    // assume that shared libraries of a package are located in <package-name>.libs directory,
-    // following the convention of auditwheel.
-    const auditWheelLibDir = `${this.#api.sitepackages}/${
-      pkg.file_name.split("-")[0]
-    }.libs`;
-
     for (const path of dynlibPaths) {
-      await this.loadDynlib(path, false, [auditWheelLibDir]);
+      await this.loadDynlib(path, false);
     }
   }
 }
