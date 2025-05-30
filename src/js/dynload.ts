@@ -82,20 +82,6 @@ export class DynlibLoader {
         Module.removeFunction(onsuccess);
         Module.removeFunction(onerror);
       }
-
-      // TODO(@ryanking13): check if this is still needed
-      // Emscripten saves the list of loaded libraries in LDSO.loadedLibsByName.
-      // However, since emscripten dylink metadata only contains the name of the
-      // library not the full path, we need to update it manually in order to
-      // prevent loading same library twice.
-      if (this.#module.PATH.isAbs(lib)) {
-        const libName: string = this.#module.PATH.basename(lib);
-        const dso: any = this.#module.LDSO.loadedLibsByName[libName];
-        if (!dso) {
-          this.#module.LDSO.loadedLibsByName[libName] =
-            this.#module.LDSO.loadedLibsByName[lib];
-        }
-      }
     } catch (e: any) {
       if (
         e &&
