@@ -2218,7 +2218,7 @@ const PyProxyHandlers = {
     // 2. The result of getattr
     let result = python_getattr(jsobj, jskey);
 
-    // allow `dict[key]` to work as falback
+    // allow `dict[key]` to work as fallback
     return result === undefined && jsobj instanceof PyDict && jsobj.has(jskey)
       ? jsobj.get(jskey)
       : result;
