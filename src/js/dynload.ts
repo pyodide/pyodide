@@ -52,18 +52,13 @@ export class DynlibLoader {
     }
 
     try {
-      const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
       try {
-        // @ts-ignore
-        Module.pyodidePromiseLibraryLoading = resolveable;
-        // @ts-ignore
+        Module.pyodidePromiseLibraryLoading = createResolvable();
         this.#module._emscripten_dlopen_wrapper(libUTF8, flags);
-        await resolveable;
+        await Module.pyodidePromiseLibraryLoading;
       } finally {
-        console.log(`Cleaning up dynamic library ${lib} callbacks`);
-        // @ts-ignore
         Module.pyodidePromiseLibraryLoading = undefined;
       }
     } catch (e: any) {

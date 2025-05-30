@@ -1,6 +1,11 @@
 #include <emscripten/emscripten.h>
 #include <emscripten/promise.h>
 
+// Note: Another approach for passing the callback function to the dlopen in JS side
+//       is using Module.addFunction to register the JS function, then passing it to the C function.
+//       However, there is an issue with Module.addFunction with Pyodide snapshot, so we ended
+//       up using a predefined C callback functions and passing the promise indirectly through the Module object.
+
 em_promise_result_t
 on_fullfilled(void** result, void* data, void* handle)
 {
