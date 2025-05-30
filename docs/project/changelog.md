@@ -35,6 +35,9 @@ myst:
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout` and `stderr`
+  streams that are passed to `loadPyodide()` or by `pyodide.setStdout()` and `pyodide.setStderr()`.
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
