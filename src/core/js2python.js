@@ -22,18 +22,15 @@ function js2python_string(value) {
   let ptr = _PyUnicode_Data(result);
   if (max_code_point > 0xffff) {
     for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U32(ptr, 0, code_points[i]);
-      ptr += 4;
+      ASSIGN_U32(ptr, i, code_points[i]);
     }
   } else if (max_code_point > 0xff) {
     for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U16(ptr, 0, code_points[i]);
-      ptr += 2;
+      ASSIGN_U16(ptr, i, code_points[i]);
     }
   } else {
     for (let i = 0; i < num_code_points; i++) {
-      ASSIGN_U8(ptr, 0, code_points[i]);
-      ptr += 1;
+      ASSIGN_U8(ptr, i, code_points[i]);
     }
   }
 
