@@ -2605,8 +2605,6 @@ def test_as_json_adaptor_stringify(selenium, o):
 
 @run_in_pyodide
 def test_as_json_adaptor_ownkeys(selenium):
-    from json import loads
-
     from pyodide.code import run_js
 
     d = {
@@ -2621,13 +2619,11 @@ def test_as_json_adaptor_ownkeys(selenium):
     }
 
     f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
-    assert set(f(d)) == {'$$dollar', '$dollar', '1', '2', '3', 'items'}
+    assert set(f(d)) == {"$$dollar", "$dollar", "1", "2", "3", "items"}
 
 
 @run_in_pyodide
 def test_as_json_adaptor_ownkeys(selenium):
-    from json import loads
-
     from pyodide.code import run_js
 
     d = {
@@ -2642,7 +2638,8 @@ def test_as_json_adaptor_ownkeys(selenium):
     }
 
     f = run_js("(o) => Reflect.ownKeys(o.asJsJson())")
-    assert set(f(d)) == {'$$dollar', '$dollar', '1', '2', '3', 'items'}
+    assert set(f(d)) == {"$$dollar", "$dollar", "1", "2", "3", "items"}
+
 
 @run_in_pyodide
 def test_pyproxy_dict(selenium):

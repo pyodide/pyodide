@@ -2394,35 +2394,43 @@ const PyProxyJsonAdaptorDictHandlers = {
     if (typeof jskey === "symbol") {
       return false;
     }
-    if (!PyContainsMethods.prototype.has.call(jsobj, jskey) && typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
+    if (
+      !PyContainsMethods.prototype.has.call(jsobj, jskey) &&
+      typeof jskey === "string" &&
+      /^[0-9]+$/.test(jskey)
+    ) {
       jskey = Number(jskey);
     }
     try {
       PySetItemMethods.prototype.set.call(jsobj, jskey, jsval);
       return true;
     } catch (e) {
-        if (isPythonError(e) && e.type === "KeyError") {
-          return false;
-        }
-        throw e;
+      if (isPythonError(e) && e.type === "KeyError") {
+        return false;
       }
+      throw e;
+    }
   },
   deleteProperty(jsobj: PyProxy, jskey: string | symbol | number): boolean {
     if (typeof jskey === "symbol") {
       return false;
     }
-    if (!PyContainsMethods.prototype.has.call(jsobj, jskey) && typeof jskey === "string" && /^[0-9]+$/.test(jskey)) {
+    if (
+      !PyContainsMethods.prototype.has.call(jsobj, jskey) &&
+      typeof jskey === "string" &&
+      /^[0-9]+$/.test(jskey)
+    ) {
       jskey = Number(jskey);
     }
     try {
       PySetItemMethods.prototype.delete.call(jsobj, jskey);
       return true;
     } catch (e) {
-        if (isPythonError(e) && e.type === "KeyError") {
-          return false;
-        }
-        throw e;
+      if (isPythonError(e) && e.type === "KeyError") {
+        return false;
       }
+      throw e;
+    }
   },
   getOwnPropertyDescriptor(jsobj: PyProxy, prop: any) {
     if (!PyProxyJsonAdaptorDictHandlers.has(jsobj, prop)) {
@@ -2488,7 +2496,10 @@ const PyProxyDictHandlers = {
     return PyProxyJsonAdaptorDictHandlers.deleteProperty(jsobj, jskey);
   },
   getOwnPropertyDescriptor(jsobj: PyProxy, prop: any) {
-    return Reflect.getOwnPropertyDescriptor(jsobj, prop) ?? PyProxyJsonAdaptorDictHandlers.getOwnPropertyDescriptor(jsobj, prop);
+    return (
+      Reflect.getOwnPropertyDescriptor(jsobj, prop) ??
+      PyProxyJsonAdaptorDictHandlers.getOwnPropertyDescriptor(jsobj, prop)
+    );
   },
   ownKeys(jsobj: PyProxy): (string | symbol)[] {
     const result = new Set(PyProxyHandlers.ownKeys(jsobj));
