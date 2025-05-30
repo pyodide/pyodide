@@ -58,6 +58,8 @@ export class DynlibLoader {
         Module.pyodidePromiseLibraryLoading = createResolvable();
         this.#module._emscripten_dlopen_wrapper(libUTF8, flags);
         await Module.pyodidePromiseLibraryLoading;
+      } catch (e: any) {
+        console.error(`Failed to load dynamic library ${lib}:`, e);
       } finally {
         Module.pyodidePromiseLibraryLoading = undefined;
       }
