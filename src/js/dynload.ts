@@ -54,18 +54,9 @@ export class DynlibLoader {
     try {
       const libUTF8 = this.#module.stringToNewUTF8(lib);
       try {
-        console.log("Start loading dynamic library", lib);
         const pid = this.#module._emscripten_dlopen_promise(libUTF8, flags);
-        console.log("Started loading dynamic library", lib, "with pid", pid);
         const promise = this.#module.getPromise(pid);
-        console.log("Waiting for dynamic library", lib, "to load");
         await promise;
-        console.log(
-          "Destroying promise for dynamic library",
-          lib,
-          "with pid",
-          pid,
-        );
         this.#module._emscripten_promise_destroy(pid);
       } catch (e: any) {
         console.error(`Failed to load dynamic library ${lib}:`, e);
