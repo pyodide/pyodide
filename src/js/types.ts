@@ -269,23 +269,10 @@ export interface FSType {
   ErrnoError: { new (errno: number): Error };
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
-  findObject(a: string, dontResolveLastLink?: boolean): any;
-  readFile(a: string): Uint8Array;
 }
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
-
-/** @hidden */
-export type ReadFileType = (path: string) => Uint8Array;
-
-// File System-like type which can be passed to
-// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-/** @hidden */
-export type LoadDynlibFS = {
-  readFile: ReadFileType;
-  findObject: (path: string, dontResolveLastLink: boolean) => any;
-};
 
 type DSO = any;
 
@@ -314,18 +301,6 @@ export interface Module {
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
   reportUndefinedSymbols(): void;
-  loadDynamicLibrary(
-    lib: string,
-    options?: {
-      loadAsync?: boolean;
-      nodelete?: boolean;
-      allowUndefined?: boolean;
-      global?: boolean;
-      fs: LoadDynlibFS;
-    },
-    localScope?: object | null,
-    handle?: number,
-  ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
@@ -365,6 +340,15 @@ export interface Module {
   _free: (ptr: number) => void;
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
+  addFunction: (func: Function, sig: string) => number;
+  removeFunction: (index: number) => void;
+  _emscripten_dlopen(
+    filename: number,
+    flags: number,
+    userData: number,
+    onsuccess: number,
+    onerror: number,
+  ): void;
 }
 
 type LockfileInfo = {
@@ -551,16 +535,15 @@ export type PackageManagerModule = Pick<
   Module,
   | "reportUndefinedSymbols"
   | "PATH"
-  | "loadDynamicLibrary"
   | "LDSO"
-  | "stackSave"
-  | "stackRestore"
+  | "stringToNewUTF8"
   | "stringToUTF8OnStack"
+  | "reportUndefinedSymbols"
   | "_print_stderr"
   | "_print_stdout"
-> & {
-  FS: Pick<
-    FSType,
-    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
-  >;
-};
+  | "stackSave"
+  | "stackRestore"
+  | "addFunction"
+  | "removeFunction"
+  | "_emscripten_dlopen"
+>;

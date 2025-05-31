@@ -7,7 +7,7 @@ def test_uncaught_cpp_exceptions(selenium):
         """
         await pyodide.loadPackage("cpp-exceptions-test");
         const Tests = pyodide._api.tests;
-        const throwlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-throw.so"].exports;
+        const throwlib = pyodide._module.LDSO.loadedLibsByName["cpp-exceptions-test-throw.so"].exports;
         function t(x){
             try {
                 throwlib.throw_exc(x);
@@ -37,7 +37,7 @@ def test_cpp_exception_catching(selenium):
         """
         await pyodide.loadPackage("cpp-exceptions-test");
         const Module = pyodide._module;
-        const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+        const catchlib = pyodide._module.LDSO.loadedLibsByName["cpp-exceptions-test-catch.so"].exports;
         function t(x){
             const ptr = catchlib.catch_exc(x);
             const res = Module.UTF8ToString(ptr);
@@ -61,7 +61,7 @@ def test_sjlj(selenium):
             """
             await pyodide.loadPackage("cpp-exceptions-test");
             const Module = pyodide._module;
-            const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+            const catchlib = pyodide._module.LDSO.loadedLibsByName["cpp-exceptions-test-catch.so"].exports;
             return catchlib.set_jmp_func();
             """
         )
@@ -76,7 +76,7 @@ def test_cpp_exception_catching_invoke(selenium):
         """
         await pyodide.loadPackage("cpp-exceptions-test");
         const Module = pyodide._module;
-        const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
+        const catchlib = pyodide._module.LDSO.loadedLibsByName["cpp-exceptions-test-catch.so"].exports;
         function t(x){
             const ptr = catchlib.catch_invoke_func(x);
             const res = Module.UTF8ToString(ptr);

@@ -368,18 +368,16 @@ def test_install_archive(selenium):
 
 @pytest.mark.requires_dynamic_linking
 def test_load_bad_so_file(selenium):
-    # If we load a bad so file, we should catch the error, ignore it (and log a
-    # warning)
-    selenium.run_js(
-        """
-        pyodide.FS.writeFile("/a.so", new Uint8Array(4))
-        await pyodide._api.loadDynlib("/a.so");
-        """
-    )
-    assert (
-        "Failed to load dynlib /a.so. We probably just tried to load a linux .so file or something."
-        in selenium.logs
-    )
+    # If we load a bad so file, it will raise with a message
+    try:
+        selenium.run_js(
+            """
+            pyodide.FS.writeFile("/a.so", new Uint8Array(4))
+            await pyodide._api.loadDynlib("/a.so");
+            """
+        )
+    except selenium.JavascriptException as e:
+        assert "Failed to load dynamic library /a.so" in str(e)
 
 
 def test_should_load_dynlib():

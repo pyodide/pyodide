@@ -440,6 +440,7 @@ export class PackageManager {
       fileSubResourceHash = undefined;
     }
     try {
+      DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
       if (!IN_NODE || pkg.channel !== this.defaultChannel) {
@@ -480,6 +481,11 @@ export class PackageManager {
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
+
+    DEBUG &&
+      console.debug(
+        `Installing package ${metadata.name} from ${metadata.channel} to ${installDir}`,
+      );
 
     await this.#installer.install(
       buffer,

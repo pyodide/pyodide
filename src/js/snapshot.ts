@@ -284,6 +284,11 @@ export function syncUpSnapshotLoad1() {
   // Set API._pyodide to a proxy of the _pyodide module.
   // Normally called by import _pyodide.
   Module._init_pyodide_proxy();
+  // FIXME: The Pyodide snapshot messes with the Emscripten counter that determines whether the runtime
+  // should be kept alive or not. Without this, the Emscripten runtime will exit the Pyodide module
+  // when we calls an Emscripten API that changes the counter, such as dlopen.
+  // To prevent this, we manually push a counter to adjust the counter to 1.
+  Module.runtimeKeepalivePush();
 }
 
 function tableSet(idx: number, val: any): void {
