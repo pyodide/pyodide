@@ -1,6 +1,9 @@
 package:
   name: more-itertools
   version: 10.6.0
+  tag:
+    - core
+    - pytest
   top-level:
     - more_itertools
 source:

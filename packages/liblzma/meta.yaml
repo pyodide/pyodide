@@ -2,6 +2,7 @@ package:
   name: liblzma
   version: 5.2.2
   tag:
+    - always
     - library
     - static_library
 source:

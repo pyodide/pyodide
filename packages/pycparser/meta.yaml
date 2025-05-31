@@ -1,6 +1,8 @@
 package:
   name: pycparser
   version: "2.22"
+  tag:
+    - core
   top-level:
     - pycparser
 source:

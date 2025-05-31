@@ -1,6 +1,9 @@
 package:
   name: attrs
   version: 25.2.0
+  tag:
+    - core
+    - pytest
   top-level:
     - attr
     - attrs

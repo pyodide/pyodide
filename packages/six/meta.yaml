@@ -1,6 +1,9 @@
 package:
   name: six
   version: 1.17.0
+  tag:
+    - core
+    - pytest
   top-level:
     - six
 source:
