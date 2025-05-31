@@ -53,15 +53,13 @@ export class DynlibLoader {
 
     try {
       const libUTF8 = this.#module.stringToNewUTF8(lib);
-
       try {
-        Module.pyodidePromiseLibraryLoading = createResolvable();
-        this.#module._emscripten_dlopen_wrapper(libUTF8, flags);
-        await Module.pyodidePromiseLibraryLoading;
+        const pid = this.#module._emscripten_dlopen_promise(libUTF8, flags);
+        const promise = this.#module.getPromise(pid);
+        this.#module.promiseMap.free(pid);
+        await promise;
       } catch (e: any) {
         console.error(`Failed to load dynamic library ${lib}:`, e);
-      } finally {
-        Module.pyodidePromiseLibraryLoading = undefined;
       }
     } catch (e: any) {
       if (

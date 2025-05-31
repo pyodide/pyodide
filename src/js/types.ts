@@ -189,7 +189,9 @@ export type FSNode = {
 
 /** @hidden */
 export type FSStream = {
-  tty?: boolean;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
@@ -305,6 +307,7 @@ export interface Module {
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
+  stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
   js2python_convert: (
     obj: any,
@@ -332,13 +335,16 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
-  addFunction: (func: Function, sig: string) => number;
-  removeFunction: (index: number) => void;
-  pyodidePromiseLibraryLoading?: ResolvablePromise;
-  _emscripten_dlopen_wrapper(
-    filename: number, // pointer to UTF8 string
-    flags: number,
-  ): void;
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  getPromise(p: number): Promise<any>;
 }
 
 type LockfileInfo = {
@@ -526,9 +532,16 @@ export type PackageManagerModule = Pick<
   | "reportUndefinedSymbols"
   | "PATH"
   | "LDSO"
-  | "_emscripten_dlopen_wrapper"
-  | "pyodidePromiseLibraryLoading"
   | "stringToNewUTF8"
+  | "stringToUTF8OnStack"
+  | "reportUndefinedSymbols"
+  | "_print_stderr"
+  | "_print_stdout"
+  | "stackSave"
+  | "stackRestore"
+  | "_emscripten_dlopen_promise"
+  | "getPromise"
+  | "promiseMap"
 > & {
   FS: Pick<FSType, "readdir" | "lookupPath" | "isDir">;
 };
