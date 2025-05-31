@@ -341,9 +341,15 @@ export interface Module {
   _free: (ptr: number) => void;
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
-  _emscripten_promise_destroy: (pid: number) => void;
-  _emscripten_dlopen_promise(lib: number, flags: number): number;
-  getPromise(p: number): Promise<any>;
+  addFunction: (func: Function, sig: string) => number;
+  removeFunction: (index: number) => void;
+  _emscripten_dlopen(
+    filename: number,
+    flags: number,
+    userData: number,
+    onsuccess: number,
+    onerror: number,
+  ): void;
 }
 
 type LockfileInfo = {
@@ -538,9 +544,7 @@ export type PackageManagerModule = Pick<
   | "_print_stdout"
   | "stackSave"
   | "stackRestore"
-  | "_emscripten_dlopen_promise"
-  | "_emscripten_promise_destroy"
-  | "getPromise"
-> & {
-  FS: Pick<FSType, "readdir" | "lookupPath" | "isDir">;
-};
+  | "addFunction"
+  | "removeFunction"
+  | "_emscripten_dlopen"
+>;

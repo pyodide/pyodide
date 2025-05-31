@@ -52,14 +52,36 @@ export class DynlibLoader {
     }
 
     try {
+      const resolveable = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
+
+      const onsuccess = this.#module.addFunction(
+        (userData: number, handle: number) => {
+          DEBUG && console.debug(`Loaded dynamic library ${lib}`);
+          resolveable.resolve();
+        },
+        "vii",
+      );
+      const onerror = this.#module.addFunction((error: number) => {
+        resolveable.reject(
+          new Error(`Failed to load dynamic library ${lib}, error: ${error}`),
+        );
+      }, "vi");
+
       try {
-        const pid = this.#module._emscripten_dlopen_promise(libUTF8, flags);
-        const promise = this.#module.getPromise(pid);
-        await promise;
-        this.#module._emscripten_promise_destroy(pid);
+        this.#module._emscripten_dlopen(
+          libUTF8,
+          flags,
+          0, // user_data is not used,
+          onsuccess,
+          onerror,
+        );
+        await resolveable;
       } catch (e: any) {
-        console.error(`Failed to load dynamic library ${lib}:`, e);
+        throw new Error(`Failed to load dynamic library ${lib}: ${e}`);
+      } finally {
+        this.#module.removeFunction(onsuccess);
+        this.#module.removeFunction(onerror);
       }
     } catch (e: any) {
       if (
