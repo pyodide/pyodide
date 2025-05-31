@@ -287,7 +287,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   if (snapshot) {
     snapshotConfig = API.restoreSnapshot(snapshot);
   }
-
   // runPython works starting after the call to finalizeBootstrap.
   const pyodide = API.finalizeBootstrap(
     snapshotConfig,
