@@ -398,7 +398,7 @@ export class PackageManager {
 
   /**
    * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
-   * relative to packageCacheDir (when IN_NODE), or to lcokfileURL, otherwise use the URL specified by
+   * relative to packageCacheDir (when IN_NODE), or to lockfileURL, otherwise use the URL specified by
    * `channel`.
    * @param pkg The package to download
    * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
