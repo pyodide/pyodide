@@ -48,6 +48,8 @@ myst:
 
 - Upgraded `narwhals` to 1.41.0 {pr}`5664`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Added `ngspice` 42.2 {pr}`5601`
+- Added `inspice` 1.6.3.3 {pr}`5601`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
