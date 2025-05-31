@@ -291,6 +291,7 @@ export interface LDSO {
 export interface Module {
   API: API;
   locateFile: (file: string) => string;
+  noExitRuntime: boolean;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;
@@ -340,9 +341,7 @@ export interface Module {
   _free: (ptr: number) => void;
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
-  promiseMap: {
-    free(id: number): void;
-  };
+  _emscripten_promise_destroy: (pid: number) => void;
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
 }
@@ -540,8 +539,8 @@ export type PackageManagerModule = Pick<
   | "stackSave"
   | "stackRestore"
   | "_emscripten_dlopen_promise"
+  | "_emscripten_promise_destroy"
   | "getPromise"
-  | "promiseMap"
 > & {
   FS: Pick<FSType, "readdir" | "lookupPath" | "isDir">;
 };
