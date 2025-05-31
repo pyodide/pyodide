@@ -291,7 +291,6 @@ export interface LDSO {
 export interface Module {
   API: API;
   locateFile: (file: string) => string;
-  noExitRuntime: boolean;
   exited?: { toThrow: any };
   ENV: { [key: string]: string };
   PATH: any;

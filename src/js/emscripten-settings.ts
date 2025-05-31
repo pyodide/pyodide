@@ -30,7 +30,6 @@ export interface EmscriptenSettings {
   readonly locateFile: (file: string) => string;
 
   noInitialRun?: boolean;
-  noExitRuntime?: boolean;
   INITIAL_MEMORY?: number;
   exitCode?: number;
 }
@@ -67,7 +66,6 @@ export function createSettings(config: ConfigType): EmscriptenSettings {
     // error anyways.
     locateFile: (path: string) => config.indexURL + path,
     instantiateWasm: getInstantiateWasmFunc(config.indexURL),
-    noExitRuntime: true,
   };
   return settings;
 }
