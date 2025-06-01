@@ -30,7 +30,9 @@ export const genMockModule = (): PackageManagerModule => {
       loadedLibsByName: {},
     },
     PATH: {},
-    stringToNewUTF8: (str: string) => { return 0 },
+    stringToNewUTF8: (str: string) => {
+      return 0;
+    },
     stringToUTF8OnStack: (str: string) => {
       return 0;
     },
