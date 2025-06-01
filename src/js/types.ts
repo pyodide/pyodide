@@ -340,14 +340,11 @@ export interface Module {
   _free: (ptr: number) => void;
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
-  addFunction: (func: Function, sig: string) => number;
-  _emscripten_dlopen(
-    filename: number,
-    flags: number,
-    userData: number,
-    onsuccess: number,
-    onerror: number,
-  ): void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  getPromise(p: number): Promise<any>;
 }
 
 type LockfileInfo = {
@@ -542,6 +539,7 @@ export type PackageManagerModule = Pick<
   | "_print_stdout"
   | "stackSave"
   | "stackRestore"
-  | "addFunction"
-  | "_emscripten_dlopen"
+  | "_emscripten_dlopen_promise"
+  | "getPromise"
+  | "promiseMap"
 >;

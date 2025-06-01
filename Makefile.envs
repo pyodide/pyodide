@@ -257,7 +257,6 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stringToNewUTF8 \
 		,stringToUTF8OnStack \
 		,addFunction \
-		,getFunctionAddress \
 		,stackSave \
 		,stackRestore \
 		,runtimeKeepalivePush \

@@ -3,7 +3,6 @@
 import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
-import { createResolvable, ResolvablePromise } from "./common/resolveable";
 
 /** Dynamic linking flags */
 const RTLD_LAZY = 1; // Lazy symbol resolution
@@ -22,25 +21,10 @@ export class DynlibLoader {
   // don't know why we need it, but quite possibly bad stuff will happen without
   // it.
   private _lock = createLock();
-  private _packageLoadingPromise?: ResolvablePromise = undefined; // Used to resolve the promise when the library is loaded
-  private _successCallback: number; // Pointer to the success callback function
-  private _errorCallback: number; // Pointer to the error callback function
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
-
-    this._successCallback = this.#module.addFunction(
-      (userData: number, handle: number) => {
-        this._packageLoadingPromise?.resolve();
-      },
-      "vii",
-    );
-    this._errorCallback = this.#module.addFunction((error: number) => {
-      this._packageLoadingPromise?.reject(
-        new Error(`Failed to load dynamic library: error: ${error}`),
-      );
-    }, "vi");
   }
 
   /**
@@ -67,22 +51,15 @@ export class DynlibLoader {
     }
 
     try {
-      this._packageLoadingPromise = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
       try {
-        this.#module._emscripten_dlopen(
-          libUTF8,
-          flags,
-          0, // user_data is not used,
-          this._successCallback,
-          this._errorCallback,
-        );
-        await this._packageLoadingPromise;
+        const pid = this.#module._emscripten_dlopen_promise(libUTF8, flags);
+        const promise = this.#module.getPromise(pid);
+        this.#module.promiseMap.free(pid);
+        await promise;
       } catch (e: any) {
         throw new Error(`Failed to load dynamic library ${lib}: ${e}`);
-      } finally {
-        this._packageLoadingPromise = undefined;
       }
     } catch (e: any) {
       if (
