@@ -58,13 +58,15 @@ export const genMockModule = (): PackageManagerModule => {
     stackRestore: (ptr: number) => {},
     _print_stdout(ptr: number) {},
     _print_stderr(ptr: number) {},
-    addFunction(f: Function, sig: string) { return 0 },
+    addFunction(f: Function, sig: string) {
+      return 0;
+    },
     _emscripten_dlopen(
       filename: number,
       flags: number,
       userData: number,
       onsuccess: number,
       onerror: number,
-    ) {}
+    ) {},
   };
 };
