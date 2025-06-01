@@ -19,6 +19,7 @@ requirements:
   run:
     - numpy
     - pkgconfig
+    - libhdf5
   host:
     - numpy
     - libhdf5
