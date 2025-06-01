@@ -341,7 +341,6 @@ export interface Module {
   stackSave: () => number;
   stackRestore: (ptr: number) => void;
   addFunction: (func: Function, sig: string) => number;
-  removeFunction: (index: number) => void;
   _emscripten_dlopen(
     filename: number,
     flags: number,
@@ -544,6 +543,5 @@ export type PackageManagerModule = Pick<
   | "stackSave"
   | "stackRestore"
   | "addFunction"
-  | "removeFunction"
   | "_emscripten_dlopen"
 >;

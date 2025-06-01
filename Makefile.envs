@@ -257,6 +257,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,stringToNewUTF8 \
 		,stringToUTF8OnStack \
 		,addFunction \
+		,getFunctionAddress \
 		,stackSave \
 		,stackRestore \
 		,runtimeKeepalivePush \
@@ -272,6 +273,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
+		-s RELOCATABLE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
 		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \
