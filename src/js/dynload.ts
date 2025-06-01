@@ -22,10 +22,25 @@ export class DynlibLoader {
   // don't know why we need it, but quite possibly bad stuff will happen without
   // it.
   private _lock = createLock();
+  private _packageLoadingPromise?: ResolvablePromise = undefined; // Used to resolve the promise when the library is loaded
+  private _successCallback: number; // Pointer to the success callback function
+  private _errorCallback: number; // Pointer to the error callback function
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
     this.#api = api;
     this.#module = pyodideModule;
+
+    this._successCallback = this.#module.addFunction(
+      (userData: number, handle: number) => {
+        this._packageLoadingPromise?.resolve();
+      },
+      "vii",
+    );
+    this._errorCallback = this.#module.addFunction((error: number) => {
+      this._packageLoadingPromise?.reject(
+        new Error(`Failed to load dynamic library: error: ${error}`),
+      );
+    }, "vi");
   }
 
   /**
@@ -52,36 +67,22 @@ export class DynlibLoader {
     }
 
     try {
-      const resolveable = createResolvable();
+      this._packageLoadingPromise = createResolvable();
       const libUTF8 = this.#module.stringToNewUTF8(lib);
-
-      const onsuccess = this.#module.addFunction(
-        (userData: number, handle: number) => {
-          DEBUG && console.debug(`Loaded dynamic library ${lib}`);
-          resolveable.resolve();
-        },
-        "vii",
-      );
-      const onerror = this.#module.addFunction((error: number) => {
-        resolveable.reject(
-          new Error(`Failed to load dynamic library ${lib}, error: ${error}`),
-        );
-      }, "vi");
 
       try {
         this.#module._emscripten_dlopen(
           libUTF8,
           flags,
           0, // user_data is not used,
-          onsuccess,
-          onerror,
+          this._successCallback,
+          this._errorCallback,
         );
-        await resolveable;
+        await this._packageLoadingPromise;
       } catch (e: any) {
         throw new Error(`Failed to load dynamic library ${lib}: ${e}`);
       } finally {
-        this.#module.removeFunction(onsuccess);
-        this.#module.removeFunction(onerror);
+        this._packageLoadingPromise = undefined;
       }
     } catch (e: any) {
       if (
