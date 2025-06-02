@@ -718,3 +718,55 @@ def test_can_run_sync(selenium):
     for idx, [i, res, expected] in enumerate(results):
         assert idx == i
         assert res == expected
+
+
+@requires_jspi
+def test_async_promising_sync_error(selenium):
+    import pytest
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
+        selenium.run_js(
+            """
+            const test = pyodide.runPython(`
+                def test():
+                    1/0
+
+                test
+            `)
+
+            try {
+                await test.callPromising();
+            } finally {
+                test.destroy();
+            }
+            """
+        )
+    # In bad cases, the previous exception was a fatal error but we didn't
+    # notice. Check that no fatal error occurred by running Python.
+    selenium.run("")
+
+
+@requires_jspi
+def test_async_promising_async_error(selenium):
+    import pytest
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
+        selenium.run_js(
+            """
+            const test = pyodide.runPython(`
+                async def test():
+                    1/0
+
+                test
+            `)
+
+            try {
+                await test.callPromising();
+            } finally {
+                test.destroy();
+            }
+            """
+        )
+    # In bad cases, the previous exception was a fatal error but we didn't
+    # notice. Check that no fatal error occurred by running Python.
+    selenium.run("")
