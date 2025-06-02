@@ -52,7 +52,7 @@ build:
     -DCMAKE_DISABLE_PRECOMPILE_HEADERS=ON \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
      .
-    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make -j 2
     emcc ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions out/lib/libRobotRaconteurCore.a \
       out/Python3/RobotRaconteur/_RobotRaconteurPython.a \
       $WASM_LIBRARY_DIR/lib/libboost_chrono.a \
