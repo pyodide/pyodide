@@ -720,10 +720,12 @@ def test_can_run_sync(selenium):
         assert idx == i
         assert res == expected
 
+
 @requires_jspi
 def test_async_promising_sync_error(selenium):
     import pytest
-    with pytest.raises(selenium.JavascriptException, match='division by zero'):
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
         selenium.run_js(
             """
             const test = pyodide.runPython(`
@@ -748,7 +750,8 @@ def test_async_promising_sync_error(selenium):
 @requires_jspi
 def test_async_promising_async_error(selenium):
     import pytest
-    with pytest.raises(selenium.JavascriptException, match='division by zero'):
+
+    with pytest.raises(selenium.JavascriptException, match="division by zero"):
         selenium.run_js(
             """
             const test = pyodide.runPython(`
