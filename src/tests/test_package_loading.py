@@ -840,3 +840,33 @@ def test_install_api(selenium_standalone, httpserver):
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
     _run(selenium, install_dir)
+
+
+def test_load_package_stream(selenium_standalone, httpserver):
+    selenium = selenium_standalone
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+    test_file_data = test_file_path.read_bytes()
+
+    httpserver.expect_oneshot_request("/" + test_file_name).respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    url = httpserver.url_for("/" + test_file_name)
+
+    selenium.run_js(
+        """
+        const logs = [];
+        const stdout = (msg) => { logs.push(msg); };
+        pyodide.setStdout({ batched: stdout });
+        await pyodide.loadPackage("%s");
+        assert(() => logs.length > 0);
+        assert(() => logs[0].startsWith("Loading dummy_pkg"));
+        assert(() => logs[1].startsWith("Loaded dummy_pkg"));
+    """
+        % url
+    )

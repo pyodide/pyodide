@@ -210,6 +210,9 @@ EXPORTS=_main \
    ,_jslib_init \
    ,_init_pyodide_proxy \
    \
+   ,_print_stdout \
+   ,_print_stderr \
+   \
    ,_PyBuffer_Release \
    ,_Py_DecRef \
    ,_PyDict_New \
@@ -252,6 +255,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,FS \
 		,ENV \
 		,stringToNewUTF8 \
+		,stringToUTF8OnStack \
 		,addFunction \
 		,stackSave \
 		,stackRestore \

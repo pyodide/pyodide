@@ -40,6 +40,9 @@ myst:
   the `indexURL`.
   {pr}`5652`
 
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout` and `stderr`
+  streams that are passed to `loadPyodide()` or by `pyodide.setStdout()` and `pyodide.setStderr()`.
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
@@ -48,7 +51,7 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.40.0 {pr}`5651`
+- Upgraded `narwhals` to 1.41.0 {pr}`5664`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
