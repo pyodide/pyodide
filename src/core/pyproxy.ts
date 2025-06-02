@@ -582,7 +582,12 @@ async function callPyObjectKwargsPromising(
     // promisingApply clears the error flag and saves any error into excStatus.
     // This ensures that tasks that are run between when promisingApply resolves
     // and when this task resumes here won't incorrectly observe the error flag.
-    // See test_stack_switching.test_throw_from_switcher for a detailed explanation.
+    // See test_stack_switching.test_throw_from_switcher for a detailed
+    // explanation.
+    //
+    // The result of promisingApply() is wrapped in a one element list
+    // (regardless of whether there was an error or not) to ensure that we only
+    // await the stack switches and not a thenable result.
     result = await Module.promisingApply(
       ptrobj,
       jsargs,
@@ -595,6 +600,8 @@ async function callPyObjectKwargsPromising(
   } catch (e) {
     API.fatal_error(e);
   }
+  // Unwrap result
+  result = result[0];
   if (result === null) {
     _PyErr_SetRaisedException(HEAPU32[exc / 4]);
     try {
