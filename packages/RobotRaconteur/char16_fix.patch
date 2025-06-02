@@ -5,11 +5,11 @@ index ca81358d..1f03f273 100644
 @@ -35,6 +35,8 @@
  #include <boost/range/numeric.hpp>
  #include <boost/tuple/tuple_comparison.hpp>
- 
+
 +#include <uchar.h>
 +
  using namespace boost::algorithm;
- 
+
  namespace RobotRaconteur
 @@ -2872,7 +2874,7 @@ static std::string ConstantDefinition_UnescapeString_Formatter(const boost::smat
      if (boost::starts_with(i, "\\u"))
@@ -23,9 +23,9 @@ index ca81358d..1f03f273 100644
 @@ -2930,7 +2932,7 @@ static std::string ConstantDefinition_EscapeString_Formatter(const boost::smatch
      if (i == "\t")
          return "\\t";
- 
+
 -    std::basic_string<uint16_t> v = boost::locale::conv::utf_to_utf<uint16_t>(i);
 +    std::basic_string<char16_t> v = boost::locale::conv::utf_to_utf<char16_t>(i);
- 
+
      std::stringstream v2;
      v2 << std::hex << std::setfill('0');
