@@ -146,14 +146,14 @@ export class PackageManager {
       this.#api.config.lockFileURL.substring(
         0,
         this.#api.config.lockFileURL.lastIndexOf("/") + 1,
-      ) || location.toString();
+      ) || globalThis.location?.toString();
 
     if (IN_NODE) {
       this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
     } else {
       this.installBaseUrl = lockfileBase;
     }
-    
+
     this.stdout = (msg: string) => {
       const sp = this.#module.stackSave();
       try {
