@@ -4,14 +4,6 @@ import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 import { createLock } from "./common/lock";
 
-/** Dynamic linking flags */
-const RTLD_LAZY = 1; // Lazy symbol resolution
-const RTLD_NOW = 2; // Immediate symbol resolution
-const RTLD_NOLOAD = 4; // Don't load library
-const RTLD_NODELETE = 4096; // Symbols persist for the lifetime of the process
-const RTLD_GLOBAL = 256; // Symbols made available to subsequently loaded libraries
-const RTLD_LOCAL = 0; // Symbols not made available to other libraries
-
 /** @hidden */
 export class DynlibLoader {
   #api: PackageManagerAPI;
@@ -34,27 +26,21 @@ export class DynlibLoader {
    * import hook.
    *
    * @param lib The file system path to the library.
-   * @param global Whether to make the symbols available globally.
    * @private
    */
-  public async loadDynlib(lib: string, global: boolean) {
+  public async loadDynlib(lib: string) {
     const releaseDynlibLock = await this._lock();
 
-    DEBUG &&
-      console.debug(`Loading a dynamic library ${lib} (global: ${global})`);
-
-    let flags = RTLD_NOW;
-    if (global) {
-      flags |= RTLD_GLOBAL;
-    } else {
-      flags |= RTLD_LOCAL;
-    }
+    DEBUG && console.debug(`Loading a dynamic library ${lib}`);
 
     try {
       const libUTF8 = this.#module.stringToNewUTF8(lib);
 
       try {
-        const pid = this.#module._emscripten_dlopen_promise(libUTF8, flags);
+        const pid = this.#module._emscripten_dlopen_promise(
+          libUTF8,
+          2, // RTLD_NOW (2) | RTLD_LOCAL (0)
+        );
         const promise = this.#module.getPromise(pid);
         this.#module.promiseMap.free(pid);
         await promise;
@@ -77,7 +63,7 @@ export class DynlibLoader {
       releaseDynlibLock();
     }
 
-    DEBUG && console.debug(`Loaded dynamic library ${lib} (global: ${global})`);
+    DEBUG && console.debug(`Loaded dynamic library ${lib}`);
   }
 
   /**
@@ -100,7 +86,7 @@ export class DynlibLoader {
     dynlibPaths: string[],
   ) {
     for (const path of dynlibPaths) {
-      await this.loadDynlib(path, false);
+      await this.loadDynlib(path);
     }
   }
 }
