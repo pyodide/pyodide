@@ -2452,7 +2452,7 @@ const PyProxyJsonAdaptorDictHandlers = {
 };
 
 function dictOwnKeysHelper(jsobj: PyProxy, result: Set<string | symbol>): void {
-  const dictKeysView : Iterable<any> & PyProxy = PyProxyHandlers.get(
+  const dictKeysView: Iterable<any> & PyProxy = PyProxyHandlers.get(
     jsobj,
     "keys",
   )();
