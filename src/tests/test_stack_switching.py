@@ -168,7 +168,7 @@ def test_syncify_no_suspender(selenium):
                 })
                 '''
             )
-            with pytest.raises(RuntimeError, match="No suspender"):
+            with pytest.raises(RuntimeError, match="Cannot stack switch"):
                 run_sync(test())
             del test
         `);
