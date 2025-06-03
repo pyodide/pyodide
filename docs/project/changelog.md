@@ -31,6 +31,12 @@ _June 04, 2025_
   `pyodide.setStdout()` and `pyodide.setStderr()`.
   {pr}`5621`
 
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
+
 ## Version 0.27.6
 
 _May 15, 2025_
