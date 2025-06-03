@@ -31,16 +31,18 @@ export class DynlibLoader {
   public async loadDynlib(lib: string) {
     const releaseDynlibLock = await this._lock();
 
-    DEBUG && console.debug(`Loading a dynamic library ${lib}`);
+    DEBUG && console.debug(`Loading dynamic library ${lib}`);
 
     try {
-      const libUTF8 = this.#module.stringToNewUTF8(lib);
+      const stack = this.#module.stackSave();
+      const libUTF8 = this.#module.stringToUTF8OnStack(lib);
 
       try {
         const pid = this.#module._emscripten_dlopen_promise(
           libUTF8,
           2, // RTLD_NOW (2) | RTLD_LOCAL (0)
         );
+        this.#module.stackRestore(stack);
         const promise = this.#module.getPromise(pid);
         this.#module.promiseMap.free(pid);
         await promise;
@@ -53,10 +55,9 @@ export class DynlibLoader {
         e.message &&
         e.message.includes("need to see wasm magic number")
       ) {
-        console.warn(
-          `Failed to load dynlib ${lib}. We probably just tried to load a linux .so file or something.`,
+        throw new Error(
+          `Failed to load dynamic library ${lib} $. We probably just tried to load a linux .so file or something.`,
         );
-        return;
       }
       throw e;
     } finally {
