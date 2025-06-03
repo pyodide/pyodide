@@ -483,6 +483,7 @@ export interface API {
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;
   repodata_info: LockfileInfo;
+  lockfileBaseUrl: string;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
@@ -542,7 +543,7 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
 > & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
 };
 /**
  * @hidden

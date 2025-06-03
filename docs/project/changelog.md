@@ -38,6 +38,11 @@ myst:
   that raises an asynchronous error.
   {pr}`5678`
 
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
+  base URL for the packages is now calculated from the lockfile URL, not from
+  the `indexURL`.
+  {pr}`5652`
+
 - {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout` and `stderr`
   streams that are passed to `loadPyodide()` or by `pyodide.setStdout()` and `pyodide.setStderr()`.
 

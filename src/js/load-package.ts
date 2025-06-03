@@ -125,6 +125,8 @@ export class PackageManager {
 
   private _lock = createLock();
 
+  public installBaseUrl: string;
+
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
@@ -137,6 +139,20 @@ export class PackageManager {
     this.#api = api;
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
+
+    // use lockFileURL as the base URL for the packages
+    // if lockFileURL is relative, use location as the base URL
+    const lockfileBase =
+      this.#api.config.lockFileURL.substring(
+        0,
+        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
+      ) || globalThis.location?.toString();
+
+    if (IN_NODE) {
+      this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
+    } else {
+      this.installBaseUrl = lockfileBase;
+    }
 
     this.stdout = (msg: string) => {
       const sp = this.#module.stackSave();
@@ -402,11 +418,11 @@ export class PackageManager {
 
   /**
    * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
-   * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
+   * relative to packageCacheDir (when IN_NODE), or to lockfileURL, otherwise use the URL specified by
    * `channel`.
    * @param pkg The package to download
    * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
-   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
+   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or lockfileURL.
    * @param checkIntegrity Whether to check the integrity of the downloaded
    * package.
    * @returns The binary data for the package
@@ -416,10 +432,7 @@ export class PackageManager {
     pkg: PackageLoadMetadata,
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
-    const installBaseUrl = IN_NODE
-      ? this.#api.config.packageCacheDir
-      : this.#api.config.indexURL;
-    await ensureDirNode(installBaseUrl);
+    await ensureDirNode(this.installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === this.defaultChannel) {
@@ -429,7 +442,7 @@ export class PackageManager {
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
 
-      uri = resolvePath(fileName, installBaseUrl);
+      uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
     } else {
       uri = pkg.channel;
@@ -650,6 +663,8 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
     singletonPackageManager,
   );
+
+  API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
 
   if (API.lockFilePromise) {
     API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
