@@ -1,11 +1,10 @@
 From c371fb11a1c5b557557b2681a9b6be4cdaa78644 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
 Date: Fri, 30 May 2025 15:54:17 +0900
-Subject: [PATCH 1/1] [dylink] Fix rpath calculation in nested dependencies
+Subject: [PATCH 1/4] [dylink] Fix rpath calculation in nested dependencies
 
 Upstream PR:
 * https://github.com/emscripten-core/emscripten/pull/24234
-* https://github.com/emscripten-core/emscripten/pull/24461
 
 ---
  src/lib/libdylink.js      | 17 ++++++++++++-----
@@ -50,27 +49,7 @@ index fdfe2e608..638353de1 100644
      var dso = LDSO.loadedLibsByName[libName];
      if (dso) {
        // the library is being loaded or has been loaded already.
-diff --git a/system/lib/libc/dynlink.c b/system/lib/libc/dynlink.c
-index 71d9e14b9..e2ec39527 100644
---- a/system/lib/libc/dynlink.c
-+++ b/system/lib/libc/dynlink.c
-@@ -656,12 +656,15 @@ em_promise_t emscripten_dlopen_promise(const char* filename, int flags) {
-   // Create a promise that is resolved (and destroyed) once the operation
-   // succeeds.
-   em_promise_t p = emscripten_promise_create();
--  emscripten_dlopen(filename, flags, p, promise_onsuccess, promise_onerror);
- 
-   // Create a second promise bound the first one to return the caller.  It's
-   // then up to the caller to destroy this promise.
-+  // Do this before calling emscripten_dlopen, to prevent the promise is already
-+  // distroyed after the dlopen success or error.
-   em_promise_t ret = emscripten_promise_create();
-   emscripten_promise_resolve(ret, EM_PROMISE_MATCH, p);
-+
-+  emscripten_dlopen(filename, flags, p, promise_onsuccess, promise_onerror);
-   return ret;
- }
- 
+
 -- 
 2.29.2.windows.2
 
