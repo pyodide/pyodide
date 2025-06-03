@@ -678,6 +678,50 @@ def test_custom_lockfile(selenium_standalone_noload):
         custom_lockfile.unlink()
 
 
+def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    custom_lockfile_name = "custom-lockfile.json"
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+
+    custom_lockfile_path = tmp_path / "custom-lockfile.json"
+    custom_lockfile_path.write_text(json.dumps(lockfile_content))
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            lockfile_url = f"{custom_lockfile_path.resolve()}"
+        else:
+            lockfile_url = f"http://{url}:{port}/{custom_lockfile_name}"
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg;")
+            """
+        )
+
+
 @pytest.mark.parametrize(
     "load_name, normalized_name, real_name",
     [

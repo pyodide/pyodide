@@ -220,7 +220,6 @@ export async function loadPyodide(
     lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     env: {},
-    packageCacheDir: indexURL,
     packages: [],
     enableRunUntilComplete: true,
     checkAPIVersion: true,

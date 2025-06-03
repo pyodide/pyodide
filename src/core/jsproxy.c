@@ -4652,7 +4652,10 @@ run_sync(PyObject* self, PyObject* pyarg)
   JsVal jsresult = JsvPromise_Syncify(jsarg);
   if (JsvNull_Check(jsresult)) {
     if (!PyErr_Occurred()) {
-      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+      PyErr_SetString(
+        PyExc_RuntimeError,
+        "Cannot stack switch because the Python entrypoint was a synchronous "
+        "function. Use pyFunc.callPromising() to fix.");
     }
     FAIL();
   }
