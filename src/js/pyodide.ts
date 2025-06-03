@@ -178,7 +178,8 @@ export async function loadPyodide(
      */
     pyproxyToStringRepr?: boolean;
     /**
-     * Make loop.run_until_complete() function correctly using stack switching
+     * Make loop.run_until_complete() function correctly using stack switching.
+     * Default: ``true``.
      */
     enableRunUntilComplete?: boolean;
     /**
@@ -220,7 +221,7 @@ export async function loadPyodide(
     args: [],
     env: {},
     packages: [],
-    enableRunUntilComplete: false,
+    enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
