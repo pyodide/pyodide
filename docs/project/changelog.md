@@ -34,6 +34,9 @@ myst:
   {pr}`5597`
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
 
 - {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout` and `stderr`
   streams that are passed to `loadPyodide()` or by `pyodide.setStdout()` and `pyodide.setStderr()`.
@@ -53,6 +56,7 @@ myst:
 
 - Upgraded `narwhals` to 1.41.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `protobuf` to 6.31.1 {pr}`5672`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
