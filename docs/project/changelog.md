@@ -31,7 +31,7 @@ myst:
 
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
 - {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
-  {pr}`5597`
+  {pr}`5599`
 - {{ Fix }} Add the current working directory to the path instead of `$HOME`.
   {pr}`5630`
 - {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
@@ -43,8 +43,9 @@ myst:
   the `indexURL`.
   {pr}`5652`
 
-- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout` and `stderr`
-  streams that are passed to `loadPyodide()` or by `pyodide.setStdout()` and `pyodide.setStderr()`.
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+- and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
   {pr}`5621`
 
 - {{ Enhancement }} The `enableRunUntilComplete` option to `loadPyodide()` is
