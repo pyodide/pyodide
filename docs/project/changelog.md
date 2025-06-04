@@ -52,7 +52,7 @@ myst:
   now on by default. This makes `run_until_complete` block using stack
   switching, or crash if stack switching is disabled. If you need the old no-op
   behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
-  {pr}`4817`
+  {pr}`5681`
 
 ### `python` CLI entrypoint
 
