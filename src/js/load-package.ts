@@ -126,8 +126,8 @@ export class PackageManager {
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
-  private stdout: (message: string) => void = console.log;
-  private stderr: (message: string) => void = console.error;
+  private stdout: (message: string) => void;
+  private stderr: (message: string) => void;
 
   private defaultChannel: string = DEFAULT_CHANNEL;
 
@@ -135,6 +135,26 @@ export class PackageManager {
     this.#api = api;
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
+
+    this.stdout = (msg: string) => {
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stdout(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
+    };
+
+    this.stderr = (msg: string) => {
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stderr(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
+    };
   }
 
   /**

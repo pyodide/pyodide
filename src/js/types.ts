@@ -188,7 +188,9 @@ export type FSNode = {
 
 /** @hidden */
 export type FSStream = {
-  tty?: boolean;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
@@ -329,6 +331,7 @@ export interface Module {
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
+  stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
   js2python_convert: (
     obj: any,
@@ -353,6 +356,14 @@ export interface Module {
   jsWrapperTag: any; // Should be WebAssembly.Tag
   getExceptionMessage(e: number): [string, string];
   handle_js_error(e: any): void;
+  exitCode: number | undefined;
+  ExitStatus: { new (exitCode: number): Error };
+  _Py_Version: number;
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
 }
 
 type LockfileInfo = {
@@ -541,7 +552,15 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
+  | "reportUndefinedSymbols"
+  | "PATH"
+  | "loadDynamicLibrary"
+  | "LDSO"
+  | "stackSave"
+  | "stackRestore"
+  | "stringToUTF8OnStack"
+  | "_print_stderr"
+  | "_print_stdout"
 > & {
   FS: Pick<
     FSType,

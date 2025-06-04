@@ -14,6 +14,29 @@ myst:
 
 # Change Log
 
+## Version 0.27.7
+
+_June 04, 2025_
+
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
+
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+  and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
+  {pr}`5621`
+
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
+
 ## Version 0.27.6
 
 _May 15, 2025_

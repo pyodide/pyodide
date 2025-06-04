@@ -1,6 +1,7 @@
 from inspect import (
     Parameter,
     getattr_static,
+    isclass,
     iscoroutinefunction,
     ismethod,
     signature,
@@ -154,30 +155,44 @@ def get_attr_sig_prop(attr_sig):
     return (False, None)
 
 
-def get_attr_sig_method(sig, attr):
+def get_attr_sig_method_helper(sig, attr):
     """Check if sig has a method named attr. If so, get the appropriate
     signature.
 
     Returns: None or a valid get_attr_sig return value.
     """
-    # First check cache
-    if not hasattr(sig, "_method_cache"):
-        sig._method_cache = {}
-    if res_attr := sig._method_cache.get(attr, None):
-        return (False, res_attr)
-
     res_attr = getattr_static(sig, attr, None)
-    if not res_attr:
-        sig._method_cache[attr] = None
-        return None
     # If it isn't a static method, it has one too many arguments. Easiest way to
     # communicate this to func_to_sig is to use __get__ to bind an argument. We
     # have to do this manually because `sig` is a class not an instance.
-    if callable(res_attr):
+    if res_attr and callable(res_attr):
         # The argument to __get__ doesn't matter.
         res_attr = res_attr.__get__(sig)
-    sig._method_cache[attr] = res_attr
-    return (False, res_attr)
+    if res_attr:
+        return res_attr
+
+    sig_getattr = getattr(sig, "__getattr__", None)
+    if not sig_getattr:
+        return None
+    if not hasattr(sig_getattr, "_type_hints"):
+        sig_getattr._type_hints = get_type_hints(sig_getattr)
+    if not sig_getattr._type_hints:
+        return None
+    attr_sig = sig_getattr._type_hints.get("return")
+    if not attr_sig:
+        return None
+
+    return attr_sig
+
+
+def get_attr_sig_method(sig, attr):
+    if not hasattr(sig, "_method_cache"):
+        sig._method_cache = {}
+    if res_attr := sig._method_cache.get(attr, None):
+        return res_attr
+    res = get_attr_sig_method_helper(sig, attr)
+    sig._method_cache[attr] = res
+    return res
 
 
 def get_attr_sig(sig, attr):
@@ -198,7 +213,7 @@ def get_attr_sig(sig, attr):
     if prop_sig := sig._type_hints.get(attr, None):
         return get_attr_sig_prop(prop_sig)
     if res := get_attr_sig_method(sig, attr):
-        return res
+        return (False, res)
     return (False, None)
 
 
@@ -215,7 +230,11 @@ def func_to_sig(f):
         cls = f.__args__[0]
         cache = cls
     else:
-        cache = f
+        if isclass(f):
+            cache = f.__call__
+            f = f.__call__.__get__(f)
+        else:
+            cache = f
         if ismethod(cache):
             # We can't add extra attributes to a methodwrapper.
             cache = cache.__func__
