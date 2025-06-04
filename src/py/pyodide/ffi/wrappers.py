@@ -1,7 +1,16 @@
 from collections.abc import Callable
 from typing import Any, Protocol, cast
 
-from . import IN_BROWSER, JsDomElement, JsProxy, create_once_callable, create_proxy
+from _pyodide._core_docs import JsWeakRef
+
+from . import (
+    IN_BROWSER,
+    JsCallableDoubleProxy,
+    JsDomElement,
+    JsProxy,
+    create_once_callable,
+    create_proxy,
+)
 
 if IN_BROWSER:
     from js import clearInterval, clearTimeout, setInterval, setTimeout
@@ -27,7 +36,10 @@ class DUMMY_DESTROYABLE:
         pass
 
 
-EVENT_LISTENERS: dict[tuple[int, str, Callable[[Any], None]], Destroyable] = {}
+EVENT_LISTENERS: dict[
+    tuple[int, str, Callable[[Any], None]],
+    JsWeakRef[JsCallableDoubleProxy[[Any], None]],
+] = {}
 
 
 def add_event_listener(
@@ -38,7 +50,8 @@ def add_event_listener(
     JsProxy corresponding to the ``listener`` parameter.
     """
     proxy = create_proxy(listener)
-    EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy
+    # Use weakref so the proxy can be freed if DOM element is removed.
+    EVENT_LISTENERS[(elt.js_id, event, listener)] = proxy.to_weakref()
     elt.addEventListener(event, cast(Callable[[Any], None], proxy))
 
 
@@ -49,7 +62,9 @@ def remove_event_listener(
     :js:meth:`~EventTarget.removeEventListener` which automatically manages the
     lifetime of a JsProxy corresponding to the ``listener`` parameter.
     """
-    proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener))
+    proxy = EVENT_LISTENERS.pop((elt.js_id, event, listener)).deref()
+    if proxy is None:
+        return
     elt.removeEventListener(event, cast(Callable[[Any], None], proxy))
     proxy.destroy()
 

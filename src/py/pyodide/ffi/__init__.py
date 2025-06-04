@@ -38,6 +38,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",
