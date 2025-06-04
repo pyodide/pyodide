@@ -44,7 +44,7 @@ myst:
   {pr}`5652`
 
 - {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
-- and `stderr` streams that are passed to `loadPyodide()` or by
+  and `stderr` streams that are passed to `loadPyodide()` or by
   `pyodide.setStdout()` and `pyodide.setStderr()`.
   {pr}`5621`
 
