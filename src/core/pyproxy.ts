@@ -2456,14 +2456,14 @@ function dictOwnKeysHelper(jsobj: PyProxy, result: Set<string | symbol>): void {
     jsobj,
     "keys",
   )();
-  for (const key of dict_keys_view) {
+  for (const key of dictKeysView) {
     if (typeof key === "string") {
       result.add(key);
     } else if (typeof key === "number") {
       result.add(key.toString());
     }
   }
-  dict_keys_view.destroy();
+  dictKeysView.destroy();
 }
 
 const PyProxyDictHandlers = {
