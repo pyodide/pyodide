@@ -100,7 +100,7 @@ export PYCOMPILE_EXCLUDE_FILES=\
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
 export DBGFLAGS_SOURCEMAPDEBUG=-g3
-export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=2
+export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=1 -sRUNTIME_DEBUG=2
 export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
@@ -259,6 +259,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,addFunction \
 		,stackSave \
 		,stackRestore \
+		,runtimeKeepalivePush \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \

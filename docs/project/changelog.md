@@ -61,7 +61,12 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.41.0 {pr}`5664`
+- {{ Enhancement }} Pyodide now respects the runtime paths of the libraries it loads.
+  Previously, packages that put the libraries in a different directory would not work,
+  but now they will work as long as the `-rpath` parameter is set correctly during linking.
+  {pr}`5610`
+
+- Upgraded `narwhals` to 1.41.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `protobuf` to 6.31.1 {pr}`5672`
 
