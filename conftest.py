@@ -74,7 +74,6 @@ def set_configs():
         let pyodide = await loadPyodide({
             fullStdLib: false,
             jsglobals : self,
-            enableRunUntilComplete: true,
         });
         """,
     )
@@ -89,7 +88,6 @@ def set_configs():
             fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
-            enableRunUntilComplete: true,
         });
         """,
     )

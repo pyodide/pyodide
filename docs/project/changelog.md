@@ -16,10 +16,10 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 4.0.6 {pr}`5343` {pr}`5350` {pr}`5357`
+- ABI break: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
-  {pr}`5560`
+  {pr}`5560` {pr}`5595` {pr}`5616` {pr}`5653`
 - ABI break: Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
@@ -27,26 +27,77 @@ myst:
   must now pass `-fwasm-exceptions` or `-sSUPPORT_LONGJMP=wasm` or both at
   compile time and link time.
   {pr}`5320`
-- {{ Enhancement }} Upgrade to Python 3.13.1. {pr}`5498`
+- {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
-- Importing matplotlib should now be significantly faster.
+- {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
+  base URL for the packages is now calculated from the lockfile URL, not from
+  the `indexURL`.
+  {pr}`5652`
 
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
   old versions of Emscripten this would crash but was fixed over a year ago.
   {pr}`5477`
+
+### Packages
+
+- {{ Enhancement }} Pyodide now respects the runtime paths of the libraries it loads.
+  Previously, packages that put the libraries in a different directory would not work,
+  but now they will work as long as the `-rpath` parameter is set correctly during linking.
+  {pr}`5610`
+
+- Upgraded `narwhals` to 1.41.0 {pr}`5651`
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `protobuf` to 6.31.1 {pr}`5672`
+
+- {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
+  `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
+  that ships with Matplotlib and is more complete that `matplotlib-pyodide`.
+  Users who want to use `matplotlib-pyodide` need to explicitly call
+  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
+  {pr}`5374` {pr}`5398`
+
+## Version 0.27.7
+
+_June 04, 2025_
+
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
+
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+  and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
+  {pr}`5621`
+
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
+
+## Version 0.27.6
+
+_May 15, 2025_
+
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
+
+### `python` CLI entrypoint
+
 - {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
   CLI. {pr}`5544`
 
 ### Packages
 
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
-
-- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
-  Users who want to use `matplotlib-pyodide` need to explicitly call
-  `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
-  {pr}`5374`
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
 
 ## Version 0.27.5
 

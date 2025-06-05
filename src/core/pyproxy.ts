@@ -582,7 +582,12 @@ async function callPyObjectKwargsPromising(
     // promisingApply clears the error flag and saves any error into excStatus.
     // This ensures that tasks that are run between when promisingApply resolves
     // and when this task resumes here won't incorrectly observe the error flag.
-    // See test_stack_switching.test_throw_from_switcher for a detailed explanation.
+    // See test_stack_switching.test_throw_from_switcher for a detailed
+    // explanation.
+    //
+    // The result of promisingApply() is wrapped in a one element list
+    // (regardless of whether there was an error or not) to ensure that we only
+    // await the stack switches and not a thenable result.
     result = await Module.promisingApply(
       ptrobj,
       jsargs,
@@ -595,6 +600,8 @@ async function callPyObjectKwargsPromising(
   } catch (e) {
     API.fatal_error(e);
   }
+  // Unwrap result
+  result = result[0];
   if (result === null) {
     _PyErr_SetRaisedException(HEAPU32[exc / 4]);
     try {
@@ -742,6 +749,7 @@ export class PyProxy {
     create_pyproxies = true,
     dict_converter = undefined,
     default_converter = undefined,
+    eager_converter = undefined,
   }: {
     /** How many layers deep to perform the conversion. Defaults to infinite */
     depth?: number;
@@ -778,6 +786,19 @@ export class PyProxy {
       convert: (obj: PyProxy) => any,
       cacheConversion: (obj: PyProxy, result: any) => void,
     ) => any;
+    /**
+     * Optional callback to convert objects which gets called after ``str``,
+     * ``int``, ``float``, ``bool``, ``None``, and ``JsProxy`` are converted but
+     * *before* any default conversions are applied to standard data structures.
+     *
+     * Its arguments are the same as `dict_converter`.
+     * See the documentation of :meth:`~pyodide.ffi.to_js`.
+     */
+    eager_converter?: (
+      obj: PyProxy,
+      convert: (obj: PyProxy) => any,
+      cacheConversion: (obj: PyProxy, result: any) => void,
+    ) => any;
   } = {}): any {
     let ptrobj = _getPtr(this);
     let result;
@@ -795,8 +816,9 @@ export class PyProxy {
         ptrobj,
         depth,
         proxies,
-        dict_converter || null,
-        default_converter || null,
+        dict_converter ?? null,
+        default_converter ?? null,
+        eager_converter ?? null,
       );
       Py_EXIT();
     } catch (e) {
@@ -2131,6 +2153,13 @@ function python_pop(jsobj: any, pop_start: boolean): any {
   return res;
 }
 
+const filteredHasKeySet: Set<string | symbol> = new Set([
+  "name",
+  "length",
+  "caller",
+  "arguments",
+]);
+
 function filteredHasKey(
   jsobj: PyProxy,
   jskey: string | symbol,
@@ -2144,17 +2173,12 @@ function filteredHasKey(
     return (
       jskey in jsobj &&
       !(
-        [
-          "name",
-          "length",
-          "caller",
-          "arguments",
-          // we are required by JS law to return `true` for `"prototype" in pycallable`
-          // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
-          // So we filter prototype out of the "get" trap but not out of the "has" trap
-          filterProto ? "prototype" : undefined,
-        ] as (string | symbol)[]
-      ).includes(jskey)
+        filteredHasKeySet.has(jskey) ||
+        // we are required by JS law to return `true` for `"prototype" in pycallable`
+        // but we are allowed to return the value of `getattr(pycallable, "prototype")`.
+        // So we filter prototype out of the "get" trap but not out of the "has" trap
+        (filterProto && jskey === "prototype")
+      )
     );
   } else {
     return jskey in jsobj;
@@ -2326,6 +2350,14 @@ const PyProxySequenceHandlers = {
   },
 };
 
+const PyProxyJsonAdaptorDictHandlersSet = new Set([
+  "copy",
+  "constructor",
+  "$$flags",
+  "toString",
+  "destroy",
+]);
+
 const PyProxyJsonAdaptorDictHandlers = {
   isExtensible(): boolean {
     return true;
@@ -2345,9 +2377,7 @@ const PyProxyJsonAdaptorDictHandlers = {
   get(jsobj: PyProxy, jskey: any): any {
     let result;
     if (
-      ["copy", "constructor", "$$flags", "toString", "destroy"].includes(
-        jskey,
-      ) ||
+      PyProxyJsonAdaptorDictHandlersSet.has(jskey) ||
       typeof jskey === "symbol"
     ) {
       // @ts-ignore

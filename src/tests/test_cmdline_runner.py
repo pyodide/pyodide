@@ -397,10 +397,9 @@ def test_pip_install_executable(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "pytest")
     assert result.returncode == 0
-    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
     pytest_script = (venv / "bin/pytest").read_text()
     shebang = pytest_script.splitlines()[0]
-    assert shebang == "#!" + str((venv / "bin" / python).absolute())
+    assert shebang == "#!" + str((venv / "bin/python").absolute())
 
 
 @only_node
@@ -495,8 +494,8 @@ def test_package_index(tmp_path):
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
-        stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        in stdout.strip().rsplit("\n", 1)[-1]
     )
 
 

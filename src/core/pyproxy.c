@@ -833,7 +833,14 @@ _pyproxy_apply_promising(JsVal suspender,
   JsVal res =
     _pyproxy_apply(callable, jsargs, numposargs, jskwnames, numkwargs);
   *exc = PyErr_GetRaisedException();
-  return res;
+  // In case the result is a thenable, in callPromisingKwargs we only want to
+  // await the stack switch not the thenable that Python returned. So we wrap
+  // the result in a one-entry list. We'll unwrap it in callPromisingKwargs
+  // after awaiting the callable. If there was a synchronous error, we'll wrap
+  // the "null" in a list anyways. This simplifies the code a bit.
+  JsVal wrap = JsvArray_New();
+  JsvArray_Push(wrap, res);
+  return wrap;
 }
 
 EMSCRIPTEN_KEEPALIVE bool

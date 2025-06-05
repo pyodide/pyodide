@@ -1,5 +1,5 @@
 export PYVERSION ?= 3.13.2
-export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.6
+export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.9
 export PYODIDE_VERSION ?= 0.28.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
 
@@ -100,6 +100,7 @@ export PYCOMPILE_EXCLUDE_FILES=\
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
 export DBGFLAGS_SOURCEMAPDEBUG=-g3
+export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=1 -sRUNTIME_DEBUG=2
 export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
@@ -113,11 +114,12 @@ endif
 ifdef PYODIDE_SOURCEMAP
 	# Debug with source maps (less useful than WASMDEBUG but easier if it helps)
 	export DBGFLAGS=$(DBGFLAGS_SOURCEMAPDEBUG)
-	export DBG_LDFLAGS=$(DBG_LDFLAGS_SOURCEMAPDEBUG)
+	export DBG_LDFLAGS=$(DBG_LDFLAGS_SOURCEMAPDEBUG) $(DBG_LDFLAGS_DYLINK)
 else
 	ifdef PYODIDE_SYMBOLS
 		# Include debug symbols but no source maps (most useful)
 		export DBGFLAGS=$(DBGFLAGS_WASMDEBUG)
+		export DBG_LDFLAGS=$(DBG_LDFLAGS_DYLINK)
 	endif
 endif
 
@@ -149,6 +151,7 @@ export LDFLAGS_BASE=\
 export CXXFLAGS_BASE=
 
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
 	-s LZ4=1 \
@@ -207,6 +210,9 @@ EXPORTS=_main \
    ,_jslib_init \
    ,_init_pyodide_proxy \
    \
+   ,_print_stdout \
+   ,_print_stderr \
+   \
    ,_PyBuffer_Release \
    ,_Py_DecRef \
    ,_PyDict_New \
@@ -244,10 +250,30 @@ EXPORTS=_main \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
+	EXPORTED_RUNTIME_METHODS=wasmTable \
+		,ERRNO_CODES \
+		,FS \
+		,ENV \
+		,stringToNewUTF8 \
+		,stringToUTF8OnStack \
+		,addFunction \
+		,stackSave \
+		,stackRestore \
+		,runtimeKeepalivePush \
+		,HEAP8 \
+		,HEAPU8 \
+		,HEAP16 \
+		,HEAPU16 \
+		,HEAP32 \
+		,HEAPU32 \
+		,HEAP64 \
+		,HEAPU64 \
+		,HEAPF32 \
+		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction,stackSave,stackRestore' \
+		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \

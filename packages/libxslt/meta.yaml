@@ -1,7 +1,6 @@
 package:
   name: libxslt
   version: 1.1.33
-  _disabled: true
   tag:
     - library
     - static_library

@@ -396,6 +396,18 @@ jobs:
           name: test
           command: |
             ./tools/cmdline-runner-test.sh
+
+  test-d8:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: test
+          command: |
+            ./tools/d8-test.sh
+
   benchmark:
     <<: *defaults
     resource_class: medium+
@@ -765,6 +777,13 @@ workflows:
       - test-cmdline-runner:
           requires:
             - build-full-packages
+          filters:
+            tags:
+              only: /.*/
+
+      - test-d8:
+          requires:
+            - build-core
           filters:
             tags:
               only: /.*/

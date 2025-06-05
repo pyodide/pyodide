@@ -368,18 +368,16 @@ def test_install_archive(selenium):
 
 @pytest.mark.requires_dynamic_linking
 def test_load_bad_so_file(selenium):
-    # If we load a bad so file, we should catch the error, ignore it (and log a
-    # warning)
-    selenium.run_js(
-        """
-        pyodide.FS.writeFile("/a.so", new Uint8Array(4))
-        await pyodide._api.loadDynlib("/a.so");
-        """
-    )
-    assert (
-        "Failed to load dynlib /a.so. We probably just tried to load a linux .so file or something."
-        in selenium.logs
-    )
+    # If we load a bad so file, it will raise with a message
+    with pytest.raises(
+        selenium.JavascriptException, match="Failed to load dynamic library /a.so"
+    ):
+        selenium.run_js(
+            """
+            pyodide.FS.writeFile("/a.so", new Uint8Array(4))
+            await pyodide._api.loadDynlib("/a.so");
+            """
+        )
 
 
 def test_should_load_dynlib():
@@ -678,6 +676,50 @@ def test_custom_lockfile(selenium_standalone_noload):
         custom_lockfile.unlink()
 
 
+def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    custom_lockfile_name = "custom-lockfile.json"
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+
+    custom_lockfile_path = tmp_path / "custom-lockfile.json"
+    custom_lockfile_path.write_text(json.dumps(lockfile_content))
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            lockfile_url = f"{custom_lockfile_path.resolve()}"
+        else:
+            lockfile_url = f"http://{url}:{port}/{custom_lockfile_name}"
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg;")
+            """
+        )
+
+
 @pytest.mark.parametrize(
     "load_name, normalized_name, real_name",
     [
@@ -796,3 +838,33 @@ def test_install_api(selenium_standalone, httpserver):
         assert (d / "dummy_pkg").is_dir(), "package directory not found"
 
     _run(selenium, install_dir)
+
+
+def test_load_package_stream(selenium_standalone, httpserver):
+    selenium = selenium_standalone
+
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+    test_file_data = test_file_path.read_bytes()
+
+    httpserver.expect_oneshot_request("/" + test_file_name).respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    url = httpserver.url_for("/" + test_file_name)
+
+    selenium.run_js(
+        """
+        const logs = [];
+        const stdout = (msg) => { logs.push(msg); };
+        pyodide.setStdout({ batched: stdout });
+        await pyodide.loadPackage("%s");
+        assert(() => logs.length > 0);
+        assert(() => logs[0].startsWith("Loading dummy_pkg"));
+        assert(() => logs[1].startsWith("Loaded dummy_pkg"));
+    """
+        % url
+    )

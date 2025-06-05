@@ -25,6 +25,9 @@ build:
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
     popd
+    # remove shared version of zlib to prevent other libraries using shared version of zlib
+    # TODO: remove this after updating zlib version and use ZLIB_BUILD_STATIC flag instead
+    rm -rf ${WASM_LIBRARY_DIR}/lib/libz.so
 about:
   home: https://zlib.net/
   license: >
