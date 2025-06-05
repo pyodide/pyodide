@@ -280,7 +280,10 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
-    throw new Error("Didn't expect to load any more file_packager files!");
+    if (path.endsWith(".so")) {
+      throw new Error(`Failed to find dynamic library "${path}"`);
+    }
+    throw new Error(`Unexpected call to locateFile("${path}")`);
   };
 
   let snapshotConfig: SnapshotConfig | undefined = undefined;
