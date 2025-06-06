@@ -37,7 +37,6 @@ myst:
   {pr}`5652`
 - {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
 
-
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
