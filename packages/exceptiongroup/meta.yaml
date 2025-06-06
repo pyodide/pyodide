@@ -1,6 +1,9 @@
 package:
   name: exceptiongroup
   version: 1.2.2
+  tag:
+    - core
+    - pytest
   top-level:
     - exceptiongroup
 source:
