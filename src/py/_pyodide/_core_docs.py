@@ -17,7 +17,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import IO, Any, Generic, ParamSpec, Protocol, Self, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -418,6 +418,27 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         infinite recurse. With it, we can successfully convert ``p`` to a list
         such that ``l[0] is l``.
         """
+        raise NotImplementedError
+
+    def to_weakref(self) -> "JsWeakRef[Self]":
+        """Wrap the proxy in a JavaScript WeakRef.
+
+        The WeakRef has deref() method which either returns the original object
+        or None if it has been freed.
+
+        This is just a helper method for:
+
+        .. code-block:: python
+
+            from js import WeakRef
+
+            weakref = WeakRef.new(jsproxy)
+        """
+        raise NotImplementedError
+
+
+class JsWeakRef(JsProxy, Generic[T]):
+    def deref(self) -> T | None:
         raise NotImplementedError
 
 
@@ -1705,6 +1726,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",

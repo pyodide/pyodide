@@ -3852,14 +3852,14 @@ finally:
   return success ? 0 : -1;
 }
 
-EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsVal id), {
+EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_js, (JsVal id), {
   return Module.PyProxy_getPtr(id);
 });
 
 static PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
-  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_VAL(obj));
+  PyObject* result = JsDoubleProxy_unwrap_js(JsProxy_VAL(obj));
   Py_XINCREF(result);
   return result;
 }
@@ -3867,6 +3867,26 @@ JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 static PyMethodDef JsDoubleProxy_unwrap_MethodDef = {
   "unwrap",
   (PyCFunction)JsDoubleProxy_unwrap,
+  METH_NOARGS,
+};
+
+EM_JS_VAL(JsVal, JsProxy_to_weakref_js, (JsVal pyproxy), {
+  return new WeakRef(pyproxy);
+});
+
+static PyObject*
+JsProxy_to_weakref(PyObject* self, PyObject* _ignored)
+{
+  JsVal jsresult = JsProxy_to_weakref_js(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return js2python(jsresult);
+finally:
+  return NULL;
+}
+
+static PyMethodDef JsProxy_to_weakref_MethodDef = {
+  "to_weakref",
+  (PyCFunction)JsProxy_to_weakref,
   METH_NOARGS,
 };
 
@@ -3899,6 +3919,7 @@ JsProxy_create_subtype(int flags)
   methods[cur_method++] = JsProxy_object_entries_MethodDef;
   methods[cur_method++] = JsProxy_object_keys_MethodDef;
   methods[cur_method++] = JsProxy_object_values_MethodDef;
+  methods[cur_method++] = JsProxy_to_weakref_MethodDef;
   members[cur_member++] = (PyMemberDef){
     .name = "_sig",
     .type = T_OBJECT,
