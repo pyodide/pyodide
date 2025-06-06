@@ -5,6 +5,14 @@ import {
   IN_SAFARI,
 } from "./environments";
 
+let _setTimeout: typeof setTimeout;
+
+if (typeof API !== "undefined") {
+  _setTimeout = API.config.jsglobals!.setTimeout;
+} else {
+  _setTimeout = setTimeout;
+}
+
 const scheduleCallbackImmediateMessagePrefix =
   "sched$" + Math.random().toString(36).slice(2) + "$";
 const tasks: Record<number, () => void> = {};
@@ -88,7 +96,7 @@ function scheduleCallbackImmediate(callback: () => void) {
     channel.port2.postMessage("");
   } else {
     // fallback to setTimeout if nothing else is available
-    setTimeout(callback, 0);
+    _setTimeout(callback, 0);
   }
 }
 
@@ -102,6 +110,6 @@ export function scheduleCallback(callback: () => void, timeout: number = 0) {
     // for a very short delay (0, 1), use immediate callback
     scheduleCallbackImmediate(callback);
   } else {
-    setTimeout(callback, timeout);
+    _setTimeout(callback, timeout);
   }
 }

@@ -45,7 +45,7 @@ export type ConfigType = {
   stdin?: () => string;
   stdout?: (msg: string) => void;
   stderr?: (msg: string) => void;
-  jsglobals?: object;
+  jsglobals?: typeof globalThis;
   _sysExecutable?: string;
   args: string[];
   fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
