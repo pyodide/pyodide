@@ -588,7 +588,7 @@ workflows:
 
       - build-packages:
           name: build-core-packages
-          packages: "tag:core"
+          packages: "tag:core,tag:cross-build"
           requires:
             - build-core
           filters:
@@ -814,6 +814,7 @@ workflows:
             - check-release-version
             - build-full-packages
             - test-core-firefox
+            - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages
@@ -828,6 +829,7 @@ workflows:
           requires:
             - build-full-packages
             - test-core-firefox
+            - test-full-packages-firefox
             - build-pyodide-debug
             - create-xbuild-env
             - build-test-pyc-packages

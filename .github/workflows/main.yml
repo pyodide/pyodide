@@ -61,9 +61,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            pyodide_packages: "tag:core${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && '' || ',!scipy' }}"
+            pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
           - os: macos-14
-            pyodide_packages: "tag:core,!scipy"
+            pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger]
     env:
