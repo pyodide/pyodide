@@ -2,7 +2,6 @@ package:
   name: numpy
   version: 2.2.5
   tag:
-    - core
     - cross-build
     - min-scipy-stack
   top-level:
