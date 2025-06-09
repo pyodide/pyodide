@@ -3,6 +3,7 @@ package:
   version: 0.25.3
   tag:
     - core
+    - pytest
     - min-scipy-stack
   top-level:
     - pytest_asyncio

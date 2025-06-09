@@ -3,6 +3,8 @@ package:
   version: "1.0"
   tag:
     - rust
+    - core
+    - pyodide.test
 source:
   path: src
 requirements:
