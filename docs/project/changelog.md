@@ -29,6 +29,11 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
+- {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
+  allows other events on the event loop to be processed during the
+  sleep.
+  {pr}`5686`
+
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
 
 - {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
