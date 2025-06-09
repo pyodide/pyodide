@@ -257,6 +257,11 @@ operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 | `proxy.next()`                      | `next(x)` or `anext(x)` |
 | `await proxy`                       | `await x`               |
 
+As a special case, if a PyProxy is created of a dictionary, then `proxy[key]`
+will fall back to checking for an item in the dictionary if there is no
+attribute called key. Both PyProxy properties and dictionary attributes take
+precedence over dictionary keys.
+
 ````{admonition} Memory Leaks and PyProxy
 :class: warning
 
@@ -747,7 +752,7 @@ If the JavaScript object's name is a reserved Python keyword, the {py:func}`geta
 
 ```pyodide
 lambda = (x) => {return x + 1};
-//'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
+// 'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     import js
     js_lambda = getattr(js, 'lambda')
@@ -759,7 +764,7 @@ If a JavaScript object has a property that is a reserved Python keyword, the {py
 
 ```pyodide
 people = {global: "lots and lots"};
-//Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
+// Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     from js import people
     setattr(people, 'global', 'even more')

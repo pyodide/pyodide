@@ -41,6 +41,10 @@ myst:
   the `indexURL`.
   {pr}`5652`
 
+- {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
+  back to `__getitem__()` if there is no attribute of the given name.
+  {pr}`5674`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
