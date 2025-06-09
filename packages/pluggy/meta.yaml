@@ -1,6 +1,9 @@
 package:
   name: pluggy
   version: 1.5.0
+  tag:
+    - core
+    - pytest
   top-level:
     - pluggy
 source:

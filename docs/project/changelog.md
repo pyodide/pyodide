@@ -29,30 +29,17 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
+- {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
+  allows other events on the event loop to be processed during the
+  sleep.
+  {pr}`5686`
+
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
-- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
-  {pr}`5599`
-- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
-  {pr}`5630`
-- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
-  that raises an asynchronous error.
-  {pr}`5678`
 
 - {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
   base URL for the packages is now calculated from the lockfile URL, not from
   the `indexURL`.
   {pr}`5652`
-
-- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
-  and `stderr` streams that are passed to `loadPyodide()` or by
-  `pyodide.setStdout()` and `pyodide.setStderr()`.
-  {pr}`5621`
-
-- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
-  now on by default. This makes `run_until_complete` block using stack
-  switching, or crash if stack switching is disabled. If you need the old no-op
-  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
-  {pr}`5681`
 
 ### `python` CLI entrypoint
 
@@ -77,6 +64,29 @@ myst:
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374` {pr}`5398`
+
+## Version 0.27.7
+
+_June 04, 2025_
+
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
+
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+  and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
+  {pr}`5621`
+
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
 
 ## Version 0.27.6
 
