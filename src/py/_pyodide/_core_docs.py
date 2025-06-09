@@ -438,6 +438,8 @@ class JsProxy(metaclass=_JsProxyMetaClass):
 
 
 class JsWeakRef(JsProxy, Generic[T]):
+    """A PyProxy of a JavaSCript WeakRef."""
+
     def deref(self) -> T | None:
         raise NotImplementedError
 
@@ -1741,6 +1743,7 @@ __all__ = [
     "JsCallable",
     "JsOnceCallable",
     "JsTypedArray",
+    "JsWeakRef",
     "ToJsConverter",
     "run_sync",
     "can_run_sync",

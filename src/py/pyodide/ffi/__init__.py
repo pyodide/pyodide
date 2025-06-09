@@ -53,6 +53,7 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "JsWeakRef",
     "ToJsConverter",
     "create_once_callable",
     "create_proxy",

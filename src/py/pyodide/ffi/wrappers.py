@@ -1,13 +1,12 @@
 from collections.abc import Callable
 from typing import Any, Protocol, cast
 
-from _pyodide._core_docs import JsWeakRef
-
 from . import (
     IN_BROWSER,
     JsCallableDoubleProxy,
     JsDomElement,
     JsProxy,
+    JsWeakRef,
     create_once_callable,
     create_proxy,
 )
