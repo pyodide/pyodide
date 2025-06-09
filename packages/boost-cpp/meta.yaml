@@ -2,6 +2,7 @@ package:
   name: boost-cpp
   version: 1.84.0
   tag:
+    - core
     - library
     - static_library
 source:

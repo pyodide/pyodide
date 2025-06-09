@@ -38,7 +38,6 @@ async function main() {
     py = await loadPyodide({
       args,
       _sysExecutable,
-      enableRunUntilComplete: true,
       env: Object.assign(
         {
           PYTHONINSPECT: "",

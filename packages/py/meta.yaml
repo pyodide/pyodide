@@ -1,6 +1,9 @@
 package:
   name: py
   version: 1.11.0
+  tag:
+    - core
+    - pytest
   top-level:
     - py
 source:

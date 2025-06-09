@@ -189,7 +189,9 @@ export type FSNode = {
 
 /** @hidden */
 export type FSStream = {
-  tty?: boolean;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
@@ -267,23 +269,10 @@ export interface FSType {
   ErrnoError: { new (errno: number): Error };
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
-  findObject(a: string, dontResolveLastLink?: boolean): any;
-  readFile(a: string): Uint8Array;
 }
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
-
-/** @hidden */
-export type ReadFileType = (path: string) => Uint8Array;
-
-// File System-like type which can be passed to
-// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-/** @hidden */
-export type LoadDynlibFS = {
-  readFile: ReadFileType;
-  findObject: (path: string, dontResolveLastLink: boolean) => any;
-};
 
 type DSO = any;
 
@@ -312,24 +301,13 @@ export interface Module {
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
   reportUndefinedSymbols(): void;
-  loadDynamicLibrary(
-    lib: string,
-    options?: {
-      loadAsync?: boolean;
-      nodelete?: boolean;
-      allowUndefined?: boolean;
-      global?: boolean;
-      fs: LoadDynlibFS;
-    },
-    localScope?: object | null,
-    handle?: number,
-  ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
+  stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
   js2python_convert: (
     obj: any,
@@ -357,6 +335,16 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  getPromise(p: number): Promise<any>;
 }
 
 type LockfileInfo = {
@@ -475,6 +463,7 @@ export interface API {
   lockfile_packages: Record<string, InternalPackageData>;
   repodata_packages: Record<string, InternalPackageData>;
   repodata_info: LockfileInfo;
+  lockfileBaseUrl: string;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
@@ -534,17 +523,24 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
 > & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
 };
 /**
  * @hidden
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
-> & {
-  FS: Pick<
-    FSType,
-    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
-  >;
-};
+  | "reportUndefinedSymbols"
+  | "PATH"
+  | "LDSO"
+  | "stringToNewUTF8"
+  | "stringToUTF8OnStack"
+  | "reportUndefinedSymbols"
+  | "_print_stderr"
+  | "_print_stdout"
+  | "stackSave"
+  | "stackRestore"
+  | "_emscripten_dlopen_promise"
+  | "getPromise"
+  | "promiseMap"
+>;

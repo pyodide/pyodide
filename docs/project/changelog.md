@@ -29,11 +29,17 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
+- {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
+  allows other events on the event loop to be processed during the
+  sleep.
+  {pr}`5686`
+
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
-- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
-  {pr}`5597`
-- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
-  {pr}`5630`
+
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
+  base URL for the packages is now calculated from the lockfile URL, not from
+  the `indexURL`.
+  {pr}`5652`
 
 - {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
   back to `__getitem__()` if there is no attribute of the given name.
@@ -47,8 +53,14 @@ myst:
 
 ### Packages
 
-- Upgraded `narwhals` to 1.41.0 {pr}`5664`
+- {{ Enhancement }} Pyodide now respects the runtime paths of the libraries it loads.
+  Previously, packages that put the libraries in a different directory would not work,
+  but now they will work as long as the `-rpath` parameter is set correctly during linking.
+  {pr}`5610`
+
+- Upgraded `narwhals` to 1.41.0 {pr}`5651`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `protobuf` to 6.31.1 {pr}`5672`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
@@ -56,6 +68,29 @@ myst:
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374` {pr}`5398`
+
+## Version 0.27.7
+
+_June 04, 2025_
+
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
+
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+  and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
+  {pr}`5621`
+
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
 
 ## Version 0.27.6
 

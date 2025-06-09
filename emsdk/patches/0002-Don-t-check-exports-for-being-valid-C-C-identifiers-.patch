@@ -1,7 +1,7 @@
 From e16f400d460cfd921192b5d32a52329bfe037f96 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sat, 17 May 2025 15:15:02 -0400
-Subject: [PATCH 3/3] Don't check exports for being valid C/C++ identifiers in
+Subject: [PATCH 2/4] Don't check exports for being valid C/C++ identifiers in
  side modules
 
 This unbreaks Rust side modules, which have been broken since

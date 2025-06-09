@@ -100,7 +100,7 @@ export PYCOMPILE_EXCLUDE_FILES=\
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
 export DBGFLAGS_SOURCEMAPDEBUG=-g3
-export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=2
+export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=1 -sRUNTIME_DEBUG=2
 export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
@@ -210,6 +210,9 @@ EXPORTS=_main \
    ,_jslib_init \
    ,_init_pyodide_proxy \
    \
+   ,_print_stdout \
+   ,_print_stderr \
+   \
    ,_PyBuffer_Release \
    ,_Py_DecRef \
    ,_PyDict_New \
@@ -252,9 +255,11 @@ ifeq ($(DISABLE_DYLINK), 1)
 		,FS \
 		,ENV \
 		,stringToNewUTF8 \
+		,stringToUTF8OnStack \
 		,addFunction \
 		,stackSave \
 		,stackRestore \
+		,runtimeKeepalivePush \
 		,HEAP8 \
 		,HEAPU8 \
 		,HEAP16 \

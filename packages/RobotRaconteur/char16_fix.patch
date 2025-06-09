@@ -1,0 +1,31 @@
+diff --git a/RobotRaconteurCore/src/ServiceDefinition.cpp b/RobotRaconteurCore/src/ServiceDefinition.cpp
+index ca81358d..1f03f273 100644
+--- a/RobotRaconteurCore/src/ServiceDefinition.cpp
++++ b/RobotRaconteurCore/src/ServiceDefinition.cpp
+@@ -35,6 +35,8 @@
+ #include <boost/range/numeric.hpp>
+ #include <boost/tuple/tuple_comparison.hpp>
+
++#include <uchar.h>
++
+ using namespace boost::algorithm;
+
+ namespace RobotRaconteur
+@@ -2872,7 +2874,7 @@ static std::string ConstantDefinition_UnescapeString_Formatter(const boost::smat
+     if (boost::starts_with(i, "\\u"))
+     {
+         std::stringstream ss;
+-        std::basic_string<uint16_t> v3;
++        std::basic_string<char16_t> v3;
+         v3.resize(i.size() / 6);
+         for (size_t j = 0; j < v3.size(); j++)
+         {
+@@ -2930,7 +2932,7 @@ static std::string ConstantDefinition_EscapeString_Formatter(const boost::smatch
+     if (i == "\t")
+         return "\\t";
+
+-    std::basic_string<uint16_t> v = boost::locale::conv::utf_to_utf<uint16_t>(i);
++    std::basic_string<char16_t> v = boost::locale::conv::utf_to_utf<char16_t>(i);
+
+     std::stringstream v2;
+     v2 << std::hex << std::setfill('0');
