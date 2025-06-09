@@ -1,3 +1,4 @@
+import pytest
 from pytest_pyodide import run_in_pyodide
 
 
@@ -171,43 +172,40 @@ async def test_start_multiple_intervals_and_clear_one(selenium):
     clear_interval(interval_id3)
 
 
+@pytest.fixture
+def create_dom_mock_code():
+    return """
+        class MockObject {
+          constructor() {
+            this.listeners = {};
+          }
+          addEventListener(event, handler) {
+            const listeners = (this.listeners[event] ??= []);
+            listeners.push(handler);
+          }
+          removeEventListener(event, handler) {
+            const listeners = (this.listeners[event] ??= []);
+            const idx = listeners.indexOf(handler);
+            if (idx >= 0) {
+              listeners.splice(idx, 1);
+            }
+          }
+          triggerEvent(event) {
+            const listeners = (this.listeners[event] ??= []);
+            for (const handler of listeners) {
+              handler({});
+            }
+          }
+        }
+        new MockObject();
+        """
+
+
 @run_in_pyodide
-async def test_trigger_event_listener(selenium):
+async def test_trigger_event_listener(selenium, create_dom_mock_code):
     from pyodide.code import run_js
 
-    x = run_js(
-        """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
-            }
-        }
-    }
-}
-let x = new MockObject();
-x;
-    """
-    )
+    x = run_js(create_dom_mock_code)
     triggered = False
 
     def foo(obj):
@@ -225,42 +223,10 @@ x;
 
 
 @run_in_pyodide
-async def test_remove_event_listener(selenium):
+async def test_remove_event_listener(selenium, create_dom_mock_code):
     from pyodide.code import run_js
 
-    x = run_js(
-        """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
-            }
-        }
-    }
-}
-let x = new MockObject();
-x;
-    """
-    )
+    x = run_js(create_dom_mock_code)
     triggered = False
 
     def foo(obj):
@@ -276,42 +242,10 @@ x;
 
 
 @run_in_pyodide
-async def test_trigger_some_of_multiple_event_listeners(selenium):
+async def test_trigger_some_of_multiple_event_listeners(selenium, create_dom_mock_code):
     from pyodide.code import run_js
 
-    x = run_js(
-        """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
-            }
-        }
-    }
-}
-let x = new MockObject();
-x;
-    """
-    )
+    x = run_js(create_dom_mock_code)
     triggered1 = False
     triggered2 = False
     triggered3 = False
@@ -346,44 +280,13 @@ x;
 
 
 @run_in_pyodide
-async def test_remove_event_listener_twice(selenium):
+async def test_remove_event_listener_twice(selenium, create_dom_mock_code):
+    from pytest import raises
+
     from pyodide.code import run_js
 
-    x = run_js(
-        """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
-            }
-        }
-    }
-}
-let x = new MockObject();
-x;
-    """
-    )
+    x = run_js(create_dom_mock_code)
     triggered = False
-    error_raised = False
 
     def foo(obj):
         nonlocal triggered
@@ -394,53 +297,18 @@ x;
     add_event_listener(x, "click", foo)
     remove_event_listener(x, "click", foo)
 
-    try:
+    with raises(KeyError):
         remove_event_listener(x, "click", foo)
-    except KeyError:
-        error_raised = True
-
-    assert error_raised
 
 
 @run_in_pyodide
-async def test_nonexistant_remove_event_listener(selenium):
+async def test_nonexistant_remove_event_listener(selenium, create_dom_mock_code):
+    from pytest import raises
+
     from pyodide.code import run_js
 
-    x = run_js(
-        """
-class MockObject {
-    constructor() {
-        this.listeners = {};
-    }
-    addEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event].push(handler);
-        }
-        else {
-            this.listeners[event] = [handler];
-        }
-    }
-    removeEventListener(event, handler) {
-        if (event in this.listeners) {
-            this.listeners[event] = this.listeners[event].filter(
-                (existingHandler) => existingHandler !== handler
-            )
-        }
-    }
-    triggerEvent(event) {
-        if (this.listeners[event]) {
-            for (const handler of this.listeners[event]) {
-                handler({});
-            }
-        }
-    }
-}
-let x = new MockObject();
-x;
-    """
-    )
+    x = run_js(create_dom_mock_code)
     triggered = False
-    error_raised = False
 
     def foo(obj):
         nonlocal triggered
@@ -448,9 +316,5 @@ x;
 
     from pyodide.ffi.wrappers import remove_event_listener
 
-    try:
+    with raises(KeyError):
         remove_event_listener(x, "click", foo)
-    except KeyError:
-        error_raised = True
-
-    assert error_raised
