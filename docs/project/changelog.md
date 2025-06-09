@@ -33,6 +33,11 @@ myst:
   allows other events on the event loop to be processed during the
   sleep.
   {pr}`5686`
+- {{ Enhancement }} Added `JsProxy.to_weakref()` as a helper method equivalent
+  to `WeakRef.new(proxy)`. Used it to remove a memory leak that occurs when
+  `add_event_listener()` is used and then the DOM element is removed from
+  JavaScript.
+  {pr}`5687`
 
 - {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
 
