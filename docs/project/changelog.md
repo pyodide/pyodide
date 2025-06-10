@@ -45,6 +45,10 @@ myst:
   back to `__getitem__()` if there is no attribute of the given name.
   {pr}`5674`
 
+- {{ Fix }} Fixes a bug that `pyodide.loadPackage` not respecting `messageCallback` and `errorCallback` options
+  in some cases.
+  {pr}`5692`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
