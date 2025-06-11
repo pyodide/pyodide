@@ -6,25 +6,26 @@ Subject: [PATCH 9/9] Fix iPad detection in wasm-gc
 Fixes iPad detection logic in wasm-gc, which was malfunctioning in recent iPadOS + safari.
 
 ---
- Python/emscripten_trampoline.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
+ Python/emscripten_trampoline.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
-index cc5047d6bd..4a3926caeb 100644
+index cc5047d6bd..64315ad5e9 100644
 --- a/Python/emscripten_trampoline.c
 +++ b/Python/emscripten_trampoline.c
-@@ -71,7 +71,13 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
+@@ -71,7 +71,14 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
  // )
  
  function getPyEMCountArgsPtr() {
 -    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
++    // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
++    // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
++    // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
 +    let isIOS = globalThis.navigator && (
 +        /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-+        // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
-+        // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
-+        // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
 +        (navigator.platform === 'MacIntel' && typeof navigator.maxTouchPoints !== 'undefined' && navigator.maxTouchPoints > 1)
-+    )
++    );
++
      if (isIOS) {
          return 0;
      }
