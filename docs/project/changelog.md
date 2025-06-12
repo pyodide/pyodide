@@ -45,6 +45,8 @@ myst:
   back to `__getitem__()` if there is no attribute of the given name.
   {pr}`5674`
 
+- {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
