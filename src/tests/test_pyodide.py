@@ -36,9 +36,6 @@ def test_find_imports():
         """
     )
     assert res == []
-    l: list[str] = []
-
-    l.update(["a"])
 
 
 def test_ffi_import_star():
