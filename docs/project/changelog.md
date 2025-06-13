@@ -66,13 +66,14 @@ myst:
   {pr}`5610`
 
 - Upgraded `narwhals` to 1.41.0 {pr}`5651`
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
+- Upgraded `primesieve` to 12.6 {pr}`5698`
 - Upgraded `protobuf` to 6.31.1 {pr}`5672`
+- Upgraded `rateslib` to 1.7.0 {pr}`5400`
 - Upgraded `scikit-learn` to 1.7.0 {pr}`5694`
 
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
-  that ships with Matplotlib and is more complete that `matplotlib-pyodide`.
+  that ships with Matplotlib and is more complete than `matplotlib-pyodide`.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374` {pr}`5398`
