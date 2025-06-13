@@ -868,3 +868,34 @@ def test_load_package_stream(selenium_standalone, httpserver):
     """
         % url
     )
+
+
+def test_load_package_stream_and_callback(selenium_standalone, httpserver):
+    # messageCallback and errorCallback should still take precedence over stdout stream
+    selenium = selenium_standalone
+
+    micropip_path = list(DIST_PATH.glob("micropip*.whl"))[0].name
+
+    httpserver.expect_oneshot_request("/" + micropip_path).respond_with_data(
+        (DIST_PATH / micropip_path).read_bytes(),
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+
+    url = httpserver.url_for("/" + micropip_path)
+
+    selenium.run_js(
+        """
+        const logs = [];
+        const stdout = (msg) => { logs.push(msg); };
+        pyodide.setStdout({ batched: stdout });
+        await pyodide.loadPackage(["micropip", "%s"], { messageCallback: (msg) => logs.push(msg), errorCallback: (err) => logs.push(err) });
+        console.log(logs);
+        assert(() => logs.length > 0);
+        assert(() => logs[0].startsWith("Loading same package micropip from"));
+        assert(() => logs[1].startsWith("Loading micropip"));
+        assert(() => logs[2].startsWith("Loaded micropip"));
+    """
+        % url
+    )

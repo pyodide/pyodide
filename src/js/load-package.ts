@@ -223,9 +223,9 @@ export class PackageManager {
     const wrappedLoadPackage = this.setCallbacks(
       options.messageCallback,
       options.errorCallback,
-    )(this.loadPackageInner);
+    )(this.loadPackageInner.bind(this));
 
-    return wrappedLoadPackage.call(this, names, options);
+    return wrappedLoadPackage(names, options);
   }
 
   public async loadPackageInner(
