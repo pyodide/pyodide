@@ -396,7 +396,9 @@ class FetchResponse:
         self.abort_controller.abort(_construct_abort_reason(reason))
 
 
-async def pyfetch(url: str, /, *, signal: Any = None, fetcher: Any = None, **kwargs: Any) -> FetchResponse:
+async def pyfetch(
+    url: str, /, *, signal: Any = None, fetcher: Any = None, **kwargs: Any
+) -> FetchResponse:
     r"""Fetch the url and return the response.
 
     This functions provides a similar API to :js:func:`fetch` however it is
@@ -408,7 +410,7 @@ async def pyfetch(url: str, /, *, signal: Any = None, fetcher: Any = None, **kwa
     ----------
     url :
         URL to fetch.
-    
+
     signal :
         Abort signal to use for the fetch request.
 
