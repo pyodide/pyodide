@@ -4,9 +4,6 @@ package:
 source:
   url: https://github.com/gap-system/gap/releases/download/v4.14.0/gap-4.14.0.tar.gz
   sha256: 845f5272c26feb1b8eb9ef294bf0545f264c1fe5a19b0601bbc65d79d9506487
-  patches:
-    - patches/0001-Allow-cross-building-packages.patch
-    - patches/0001-Do-not-run-prerequisites.sh.patch
 requirements:
   host:
     - libgmp
