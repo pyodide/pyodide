@@ -3,7 +3,7 @@ package:
   version: 1.17.1
   tag:
     - core
-    - cross_build
+    - cross-build
   top-level:
     - cffi
 requirements:

@@ -170,7 +170,8 @@ def main():
         # TODO: matplotlib benchmark occasionally fails after https://github.com/pyodide/pyodide/pull/3130
         #       but it is not clear why.
         # "matplotlib": get_matplotlib_benchmarks,
-        "pandas": get_pandas_benchmarks,
+        # TODO: pandas is not included in the core packages suite
+        # "pandas": get_pandas_benchmarks,
     }
 
     args = parse_args(list(BENCHMARKS.keys()))
@@ -223,8 +224,8 @@ def main():
                 for browser_name, cls in browser_cls:
                     selenium_backends[browser_name] = cls(port)
                     selenium_backends[browser_name].set_script_timeout(timeout)
-                    # pre-load numpy and pandas for the selenium instance used in benchmarks
-                    selenium_backends[browser_name].load_package(["numpy", "pandas"])
+                    # pre-load packages to exclude loading time from the benchmark
+                    selenium_backends[browser_name].load_package(["numpy"])
 
                 results[benchmark_name] = run_all(selenium_backends, content)
                 print_entry(benchmark_name, results[benchmark_name])
