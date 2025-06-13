@@ -66,6 +66,8 @@ myst:
   {pr}`5610`
 
 - Upgraded `narwhals` to 1.41.0 {pr}`5651`
+- Upgraded `primecount` to 7.18 {pr}`5698`
+- Upgraded `primecountpy` to 0.1.1 {pr}`5698`
 - Upgraded `primesieve` to 12.6 {pr}`5698`
 - Upgraded `protobuf` to 6.31.1 {pr}`5672`
 - Upgraded `rateslib` to 1.7.0 {pr}`5400`
