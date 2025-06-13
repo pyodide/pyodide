@@ -1,0 +1,38 @@
+package:
+  name: pari
+  version: 2.17.2
+source:
+  url: http://pari.math.u-bordeaux.fr/pub/pari/unix/pari-2.17.2.tar.gz
+  sha256: 7d30578f5cf97b137a281f4548d131aafc0cde86bcfd10cc1e1bd72a81e65061
+  patches:
+    - patches/get_dlcflags.patch
+about:
+  home: http://pari.math.u-bordeaux.fr
+  summary:
+    PARI/GP is a widely used computer algebra system designed for fast computations
+    in number theory
+  license: GPL-2.0-or-later
+requirements:
+  host:
+    - libgmp
+build:
+  type: static_library
+  script: |
+    export CFLAGS="-fPIC -I${WASM_LIBRARY_DIR}/include"
+    export PREFIX="${WASM_LIBRARY_DIR}"
+    emconfigure ./Configure \
+        --host=wasm-emscripten \
+        --prefix=${WASM_LIBRARY_DIR} \
+        --with-gmp=${WASM_LIBRARY_DIR} \
+        --with-gmp-include=${WASM_LIBRARY_DIR}/include \
+        --with-gmp-lib=${WASM_LIBRARY_DIR}/lib \
+        --without-readline \
+        --static \
+        --mt=pthread \
+        --kernel=gmp --graphic=none
+    cd Oemscripten-wasm
+    emmake make -j ${PYODIDE_JOBS:-3} gp
+    emmake make install install-lib-sta
+extra:
+  recipe-maintainers:
+    - mkoeppe
