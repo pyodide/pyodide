@@ -1,0 +1,32 @@
+package:
+  name: liblzma
+  version: 5.2.2
+  tag:
+    - always
+    - library
+    - static_library
+source:
+  url: https://github.com/xz-mirror/xz/releases/download/v5.2.2/xz-5.2.2.tar.gz
+  sha256: 73df4d5d34f0468bd57d09f2d8af363e95ed6cc3a4a86129d2f2c366259902a2
+
+build:
+  type: static_library
+  script: |
+    emconfigure ./configure \
+        CFLAGS="-fPIC" \
+        --disable-xz \
+        --disable-xzdec \
+        --disable-lzmadec \
+        --disable-lzmainfo \
+        --disable-lzma-links \
+        --disable-scripts \
+        --disable-doc \
+        --enable-shared=no \
+        --disable-dependency-tracking \
+        --prefix=${WASM_LIBRARY_DIR}
+
+    emmake make -j ${PYODIDE_JOBS:-3}
+    emmake make install
+about:
+  home: https://github.com/tukaani-project/xz
+  license: BSD-0-Clause
