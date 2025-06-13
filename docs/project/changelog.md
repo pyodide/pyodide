@@ -70,6 +70,8 @@ myst:
 - Upgraded `protobuf` to 6.31.1 {pr}`5672`
 - Upgraded `scikit-learn` to 1.7.0 {pr}`5694`
 
+- Added `pari` 2.17.2 {pr}`4430`
+
 - {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
   `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
   that ships with Matplotlib and is more complete that `matplotlib-pyodide`.
