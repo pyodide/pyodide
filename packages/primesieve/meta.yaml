@@ -1,13 +1,13 @@
 package:
   name: primesieve
-  version: "11.2"
+  version: "12.6"
   tag:
     - library
     - static_library
     - cmake
 source:
-  url: https://github.com/kimwalisch/primesieve/archive/refs/tags/v11.2.tar.gz
-  sha256: 86c31bae9c378340b19669eafef8c5e45849adf7b9c92af1d212a2a2bfa0a5db
+  url: https://github.com/kimwalisch/primesieve/archive/refs/tags/v12.6.tar.gz
+  sha256: 677c1c5046e666a25e6248f3242c0b27a09953f2775fc4507e4a017a47059345
 requirements:
   host: []
   run: []
