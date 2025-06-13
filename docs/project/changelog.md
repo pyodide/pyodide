@@ -29,6 +29,11 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
+- {{ Enhandement }} The packages included in the Pyodide distribution is now built
+  in a separate repository, `pyodide-recipes`. This decouples the Packages sets
+  from the Pyodide version and allows people to use the different sets of packages
+  easily with different Pyodide versions.
+
 - {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
   allows other events on the event loop to be processed during the
   sleep.
