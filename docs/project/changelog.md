@@ -53,9 +53,8 @@ myst:
 - {{ Fix }} Fixes a bug that `pyodide.loadPackage` not respecting `messageCallback` and `errorCallback` options
   in some cases.
   {pr}`5692`
-  
-- {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
 
+- {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
 
 ### `python` CLI entrypoint
 
