@@ -405,7 +405,7 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 When you upgrade the Pyodide ABI, packages that were using the old ABI will no longer be available.
 Therefore, when updating the ABI, following procedure is required to temporarily disable and re-enable packages.
 
-### 0. Stabilize and freeze the ABI 
+### 0. Stabilize and freeze the ABI
 
 There is a WIP discussion in [#5580](https://github.com/pyodide/pyodide/issues/5580) about how to stabilize the ABI before making a release.
 Please discuss the ABI release with other maintainers before you decide to upgrade the ABI, and make sure that the ABI is stable and frozen.
@@ -417,7 +417,7 @@ To upgrade the ABI, you need to disable them, otherwise the CI will fail.
 
 - Find `USE_PREBUILT_PACKAGES` env variable in [.circleci/config.yml](https://github.com/ryanking13/pyodide/blob/unvendor-recipes/.circleci/config.yml)
   and set it to `false`.
-- Open a PR to upgrade the ABI. The target branch should *not* be `main`, but
+- Open a PR to upgrade the ABI. The target branch should _not_ be `main`, but
   a branch dedicated to the ABI upgrade. For instance, if you are upgrading the ABI
   to `2025_0`, the branch name can be `abi-2025_0`.
 
