@@ -29,7 +29,7 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
-- {{ Enhandement }} The packages included in the Pyodide distribution is now built
+- {{ Enhancement }} The packages included in the Pyodide distribution is now built
   in a separate repository, `pyodide-recipes`. This decouples the Packages sets
   from the Pyodide version and allows people to use the different sets of packages
   easily with different Pyodide versions.
