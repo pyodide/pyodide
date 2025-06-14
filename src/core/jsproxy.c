@@ -190,13 +190,15 @@ CHECK_EXC_FIELD(context);
 CHECK_EXC_FIELD(cause);
 CHECK_EXC_FIELD(suppress_context);
 
+#undef CHEC_EXC_FIELD
+
 #define FIELD_SIZE(type, field) sizeof(((type*)0)->field)
 
-#undef CHEC_EXC_FIELD
 _Static_assert(sizeof(PyBaseExceptionObject) ==
                  sizeof(PyObject) + FIELD_SIZE(JsProxy, dict) +
                    sizeof(struct ExceptionFields),
                "size conflict between JsProxy and PyExc_BaseException");
+#undef FIELD_SIZE
 
 #define JsProxy_REF(x) ((JsProxy*)x)->js
 #define JsProxy_VAL(x) hiwire_get(JsProxy_REF(x))
@@ -329,6 +331,30 @@ JsProxy_bind_sig(PyObject* self, PyObject* sig)
 static PyMethodDef JsProxy_bind_sig_MethodDef = {
   "bind_sig",
   (PyCFunction)JsProxy_bind_sig,
+  METH_O,
+};
+
+PyObject*
+JsProxy_bind_class(PyObject* self, PyObject* sig)
+{
+  PyObject* result = NULL;
+
+  // Call `sig = jsbind.bind_class_sig(sig)` and then delegate to
+  // JsProxy_bind_sig.
+  // bind_class_sig takes sig and returns type[sig].
+  _Py_IDENTIFIER(bind_class_sig);
+  PyObject* class_sig =
+    _PyObject_CallMethodIdOneArg(jsbind, &PyId_bind_class_sig, sig);
+  FAIL_IF_NULL(class_sig);
+  result = JsProxy_bind_sig(self, class_sig);
+finally:
+  Py_CLEAR(class_sig);
+  return result;
+}
+
+static PyMethodDef JsProxy_bind_class_MethodDef = {
+  "bind_class",
+  (PyCFunction)JsProxy_bind_class,
   METH_O,
 };
 
@@ -704,8 +730,8 @@ JsProxy_RichCompare(PyObject* a, PyObject* b, int op)
   }
 
   int result;
-  JsVal jsa = python2js(a);
-  JsVal jsb = python2js(b);
+  JsVal jsa = JsProxy_VAL(a);
+  JsVal jsb = JsProxy_VAL(b);
   switch (op) {
     case Py_LT:
       result = Jsv_less_than(jsa, jsb);
@@ -3826,14 +3852,14 @@ finally:
   return success ? 0 : -1;
 }
 
-EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_helper, (JsVal id), {
+EM_JS_REF(PyObject*, JsDoubleProxy_unwrap_js, (JsVal id), {
   return Module.PyProxy_getPtr(id);
 });
 
 static PyObject*
 JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 {
-  PyObject* result = JsDoubleProxy_unwrap_helper(JsProxy_VAL(obj));
+  PyObject* result = JsDoubleProxy_unwrap_js(JsProxy_VAL(obj));
   Py_XINCREF(result);
   return result;
 }
@@ -3841,6 +3867,26 @@ JsDoubleProxy_unwrap(PyObject* obj, PyObject* _ignored)
 static PyMethodDef JsDoubleProxy_unwrap_MethodDef = {
   "unwrap",
   (PyCFunction)JsDoubleProxy_unwrap,
+  METH_NOARGS,
+};
+
+EM_JS_VAL(JsVal, JsProxy_to_weakref_js, (JsVal pyproxy), {
+  return new WeakRef(pyproxy);
+});
+
+static PyObject*
+JsProxy_to_weakref(PyObject* self, PyObject* _ignored)
+{
+  JsVal jsresult = JsProxy_to_weakref_js(JsProxy_VAL(self));
+  FAIL_IF_JS_NULL(jsresult);
+  return js2python(jsresult);
+finally:
+  return NULL;
+}
+
+static PyMethodDef JsProxy_to_weakref_MethodDef = {
+  "to_weakref",
+  (PyCFunction)JsProxy_to_weakref,
   METH_NOARGS,
 };
 
@@ -3867,11 +3913,13 @@ JsProxy_create_subtype(int flags)
   int cur_getset = 0;
 
   methods[cur_method++] = JsProxy_bind_sig_MethodDef;
+  methods[cur_method++] = JsProxy_bind_class_MethodDef;
   methods[cur_method++] = JsProxy_Dir_MethodDef;
   methods[cur_method++] = JsProxy_toPy_MethodDef;
   methods[cur_method++] = JsProxy_object_entries_MethodDef;
   methods[cur_method++] = JsProxy_object_keys_MethodDef;
   methods[cur_method++] = JsProxy_object_values_MethodDef;
+  methods[cur_method++] = JsProxy_to_weakref_MethodDef;
   members[cur_member++] = (PyMemberDef){
     .name = "_sig",
     .type = T_OBJECT,
@@ -4250,8 +4298,8 @@ skip_container_slots:
   Py_SET_TYPE(result, (PyTypeObject*)JsProxy_metaclass);
   flags_obj = PyLong_FromLong(flags);
   FAIL_IF_NULL(flags_obj);
-  FAIL_IF_MINUS_ONE(
-    _PyObject_SetAttrId(result, &PyId__js_type_flags, flags_obj));
+  FAIL_IF_MINUS_ONE(PyObject_SetAttr(
+    result, _PyUnicode_FromId(&PyId__js_type_flags), flags_obj));
 
   success = true;
 finally:
@@ -4625,7 +4673,10 @@ run_sync(PyObject* self, PyObject* pyarg)
   JsVal jsresult = JsvPromise_Syncify(jsarg);
   if (JsvNull_Check(jsresult)) {
     if (!PyErr_Occurred()) {
-      PyErr_SetString(PyExc_RuntimeError, "No suspender");
+      PyErr_SetString(
+        PyExc_RuntimeError,
+        "Cannot stack switch because the Python entrypoint was a synchronous "
+        "function. Use pyFunc.callPromising() to fix.");
     }
     FAIL();
   }

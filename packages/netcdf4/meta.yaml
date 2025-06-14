@@ -1,8 +1,6 @@
 package:
   name: netcdf4
   version: 1.7.2
-  # symbol type mismatch
-  _disabled: true
   top-level:
     - netCDF4
 source:
@@ -18,11 +16,16 @@ requirements:
     - h5py
     - cftime
     - certifi
+    - libhdf5
 test:
   imports:
     - netCDF4
 build:
-  vendor-sharedlib: true
+  # FIXME(@ryanking13): In Pyodide 0.28, we have namespace collision issue when loading same shared library from multiple places.
+  # netCDF4 and h5py both depend on libhdf5, and if we vendor libhdf5 in both packages, the symbols will collide,
+  # and infinite recursion happens when loading the library.
+  # It is not clear how to fix this issue right now, so we disable vendoring for now.
+  # vendor-sharedlib: true
   script: |
     export PATH=${WASM_LIBRARY_DIR}/bin:${PATH}
     export HDF5_DIR=${WASM_LIBRARY_DIR}

@@ -8,6 +8,7 @@ package:
   name: libf2c
   version: CLAPACK-3.2.1
   tag:
+    - core
     - library
     - static_library
 source:

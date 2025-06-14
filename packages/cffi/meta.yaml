@@ -1,6 +1,9 @@
 package:
   name: cffi
   version: 1.17.1
+  tag:
+    - core
+    - cross-build
   top-level:
     - cffi
 requirements:

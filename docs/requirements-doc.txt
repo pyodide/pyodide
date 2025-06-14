@@ -12,6 +12,7 @@ sphinx-issues
 # https://github.com/click-contrib/sphinx-click/pull/137
 # https://github.com/click-contrib/sphinx-click/pull/138
 sphinx-click @ git+https://github.com/hoodmane/sphinx-click@271ebdb3e5855f2901f5dd4390f26381a353224e
+click < 8.2
 sphinx-autodoc-typehints>=1.21.7
 sphinx-design>=0.3.0
 pydantic
@@ -22,3 +23,5 @@ micropip==0.7.1
 jinja2>=3.0
 ruamel.yaml
 sphinx-js @ git+https://github.com/pyodide/sphinx-js-fork@781dc61870a802222051bcc8f6b2a592cd5eec7b
+# In 25.1.0, we get the error "cattrs.errors.StructureHandlerNotFoundError: Unsupported type: 'Attribute'. Register a structure hook for it."
+cattrs < 25.1.0

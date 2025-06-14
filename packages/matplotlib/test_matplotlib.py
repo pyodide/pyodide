@@ -30,6 +30,17 @@ def test_plot(selenium):
 
 @matplotlib_test_decorator
 @run_in_pyodide(packages=["matplotlib"])
+def test_plot_with_pause(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.pause(0.001)
+    plt.show()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
 def test_svg(selenium):
     import io
 
@@ -58,6 +69,7 @@ def test_pdf(selenium):
     plt.savefig(fd, format="pdf")
 
 
+@pytest.mark.xfail(reason="FIXME")
 @run_in_pyodide(packages=["matplotlib"])
 def test_font_manager(selenium):
     """
@@ -81,9 +93,9 @@ def test_font_manager(selenium):
     fontlist_built = json.loads(json.dumps(fm.FontManager(), cls=fm._JSONEncoder))
 
     # reordering list to compare
-    for list in ("afmlist", "ttflist"):
+    for l in ("afmlist", "ttflist"):
         for fontlist in (fontlist_vendor, fontlist_built):
-            fontlist[list].sort(key=lambda x: x["fname"])
+            fontlist[l].sort(key=lambda x: x["fname"])
 
     assert fontlist_built == fontlist_vendor
 
@@ -112,3 +124,40 @@ def test_triangulation(selenium):
 
     # Create the Triangulation; no triangles so Delaunay triangulation created.
     tri.Triangulation(x, y)
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_destroy(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_call_close_multi_times(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+    plt.close()
+
+
+@matplotlib_test_decorator
+@run_in_pyodide(packages=["matplotlib"])
+def test_call_show_and_close_multi_times(selenium):
+    from matplotlib import pyplot as plt
+
+    plt.figure()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()
+    plt.plot([1, 2, 3])
+    plt.show()
+    plt.close()

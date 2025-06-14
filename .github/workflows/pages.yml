@@ -1,0 +1,51 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    # The update_cross_build_releases.yml workflow updates the cross-build environments metadata
+    # file and pushes it to the main branch. This workflow gets triggered by that push.
+    branches:
+      - main
+    paths:
+      # This workflow only runs if this specific file changes
+      - pyodide-cross-build-environments.json
+  workflow_dispatch:
+  schedule:
+    # Run every day at 03:00 UTC
+    - cron: "0 3 * * *"
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Deploy pyodide-cross-build-environments.json to GitHub Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}/api/pyodide-cross-build-environments.json
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p ./_site/api
+          cp pyodide-cross-build-environments.json ./_site/api/pyodide-cross-build-environments.json
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

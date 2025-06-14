@@ -2,6 +2,7 @@ package:
   name: sharedlib-test
   version: "1.0"
   tag:
+    - core
     - pyodide.test
     - library
     - shared_library

@@ -10,8 +10,6 @@
 typedef HwRef JsRef;
 typedef __externref_t JsVal;
 
-JsRef hiwire_new_deduplicate(JsVal);
-
 typedef struct Js_Identifier
 {
   const char* string;
@@ -30,8 +28,6 @@ typedef struct Js_Identifier
   } while (0)
 
 // Special JsRefs for singleton constants.
-// (These must be even because the least significance bit is set to 0 for
-// singleton constants.)
 extern const JsRef Jsr_undefined;
 extern const JsRef Jsr_true;
 extern const JsRef Jsr_false;
@@ -40,7 +36,7 @@ extern const JsRef Jsr_novalue;
 // ==================== JS_NULL ====================
 
 #define JS_NULL __builtin_wasm_ref_null_extern()
-int JsvNull_Check(JsVal);
+#define JsvNull_Check(val) __builtin_wasm_ref_is_null_extern(val)
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)
 #define Jsv_true hiwire_get(Jsr_true)
@@ -223,7 +219,7 @@ JsvGenerator_Check(JsVal obj);
 bool
 JsvAsyncGenerator_Check(JsVal obj);
 
-void _Py_NO_RETURN
+void __attribute__((__noreturn__))
 JsvError_Throw(JsVal e);
 
 /**

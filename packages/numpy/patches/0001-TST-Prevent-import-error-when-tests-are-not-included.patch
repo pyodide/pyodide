@@ -1,0 +1,71 @@
+From 8b298aa6f666449fff1844253cd6e0be5fbf3612 Mon Sep 17 00:00:00 2001
+From: ryanking13 <def6488@gmail.com>
+Date: Sun, 11 May 2025 11:05:05 +0900
+Subject: [PATCH 1/1] TST: Prevent import error when tests are not included in
+
+https://github.com/numpy/numpy/pull/28936
+
+---
+ numpy/_core/tests/_natype.py    | 7 +++++++
+ numpy/conftest.py               | 4 ++--
+ numpy/testing/_private/utils.py | 9 ---------
+ 3 files changed, 9 insertions(+), 11 deletions(-)
+
+diff --git a/numpy/_core/tests/_natype.py b/numpy/_core/tests/_natype.py
+index e529e548cf..86eb68801d 100644
+--- a/numpy/_core/tests/_natype.py
++++ b/numpy/_core/tests/_natype.py
+@@ -196,3 +196,10 @@ def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+ 
+ 
+ pd_NA = NAType()
++
++def get_stringdtype_dtype(na_object, coerce=True):
++    # explicit is check for pd_NA because != with pd_NA returns pd_NA
++    if na_object is pd_NA or na_object != "unset":
++        return np.dtypes.StringDType(na_object=na_object, coerce=coerce)
++    else:
++        return np.dtypes.StringDType(coerce=coerce)
+\ No newline at end of file
+diff --git a/numpy/conftest.py b/numpy/conftest.py
+index 0eb42d1103..5105b43b03 100644
+--- a/numpy/conftest.py
++++ b/numpy/conftest.py
+@@ -14,8 +14,8 @@
+ import numpy as np
+ 
+ from numpy._core._multiarray_tests import get_fpu_mode
+-from numpy._core.tests._natype import pd_NA
+-from numpy.testing._private.utils import NOGIL_BUILD, get_stringdtype_dtype
++from numpy._core.tests._natype import pd_NA, get_stringdtype_dtype
++from numpy.testing._private.utils import NOGIL_BUILD
+ 
+ try:
+     from scipy_doctest.conftest import dt_config
+diff --git a/numpy/testing/_private/utils.py b/numpy/testing/_private/utils.py
+index 42e43e21f3..a1a6f4f1ff 100644
+--- a/numpy/testing/_private/utils.py
++++ b/numpy/testing/_private/utils.py
+@@ -28,7 +28,6 @@
+ from numpy import isfinite, isnan, isinf
+ import numpy.linalg._umath_linalg
+ from numpy._utils import _rename_parameter
+-from numpy._core.tests._natype import pd_NA
+ 
+ from io import StringIO
+ 
+@@ -2750,11 +2749,3 @@ def run_threaded(func, max_workers=8, pass_count=False,
+                     barrier.abort()
+             for f in futures:
+                 f.result()
+-
+-
+-def get_stringdtype_dtype(na_object, coerce=True):
+-    # explicit is check for pd_NA because != with pd_NA returns pd_NA
+-    if na_object is pd_NA or na_object != "unset":
+-        return np.dtypes.StringDType(na_object=na_object, coerce=coerce)
+-    else:
+-        return np.dtypes.StringDType(coerce=coerce)
+-- 
+2.29.2.windows.2
+

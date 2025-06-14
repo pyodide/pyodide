@@ -5,6 +5,7 @@ import {
   IN_BROWSER_MAIN_THREAD,
   IN_BROWSER_WEB_WORKER,
   IN_NODE_COMMONJS,
+  IN_SHELL,
 } from "./environments";
 import { Lockfile } from "./types";
 
@@ -15,6 +16,10 @@ let nodeVmMod: typeof import("node:vm");
 export let nodeFSMod: typeof import("node:fs");
 /** @private */
 export let nodeFsPromisesMod: typeof import("node:fs/promises");
+
+declare function load(a: string): Promise<void>;
+declare function read(a: string): string;
+declare function readbuffer(a: string): ArrayBuffer;
 
 declare var globalThis: {
   importScripts: (url: string) => void;
@@ -84,6 +89,8 @@ function browser_resolvePath(path: string, base?: string): string {
 export let resolvePath: (rest: string, base?: string) => string;
 if (IN_NODE) {
   resolvePath = node_resolvePath;
+} else if (IN_SHELL) {
+  resolvePath = (x) => x;
 } else {
   resolvePath = browser_resolvePath;
 }
@@ -134,6 +141,27 @@ function node_getBinaryResponse(
   }
 }
 
+function shell_getBinaryResponse(
+  path: string,
+  _file_sub_resource_hash?: string | undefined, // Ignoring sub resource hash. See issue-2431.
+):
+  | { response: Promise<Response>; binary?: undefined }
+  | { binary: Promise<Uint8Array> } {
+  if (path.startsWith("file://")) {
+    // handle file:// with filesystem operations rather than with fetch.
+    path = path.slice("file://".length);
+  }
+  if (path.includes("://")) {
+    // If it has a protocol, make a fetch request
+    throw new Error("Shell cannot fetch urls");
+  } else {
+    // Otherwise get it from the file system
+    return {
+      binary: Promise.resolve(new Uint8Array(readbuffer(path))),
+    };
+  }
+}
+
 /**
  * Load a binary file, only for use in browser. Resolves relative paths against
  * indexURL.
@@ -161,6 +189,8 @@ export let getBinaryResponse: (
   | { response?: undefined; binary: Promise<Uint8Array> };
 if (IN_NODE) {
   getBinaryResponse = node_getBinaryResponse;
+} else if (IN_SHELL) {
+  getBinaryResponse = shell_getBinaryResponse;
 } else {
   getBinaryResponse = browser_getBinaryResponse;
 }
@@ -207,6 +237,8 @@ if (IN_BROWSER_MAIN_THREAD) {
   };
 } else if (IN_NODE) {
   loadScript = nodeLoadScript;
+} else if (IN_SHELL) {
+  loadScript = load;
 } else {
   throw new Error("Cannot determine runtime environment");
 }
@@ -237,6 +269,9 @@ export async function loadLockFile(lockFileURL: string): Promise<Lockfile> {
     const package_string = await nodeFsPromisesMod.readFile(lockFileURL, {
       encoding: "utf8",
     });
+    return JSON.parse(package_string);
+  } else if (IN_SHELL) {
+    const package_string = read(lockFileURL);
     return JSON.parse(package_string);
   } else {
     let response = await fetch(lockFileURL);

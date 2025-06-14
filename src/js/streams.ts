@@ -1,4 +1,4 @@
-import { IN_NODE } from "./environments.js";
+import { IN_NODE, IN_SHELL } from "./environments.js";
 import "./constants";
 
 import type { FSStream, FSStreamOpsGen } from "./types";
@@ -181,7 +181,11 @@ const stream_ops: StreamOps = {
       throw new FS.ErrnoError(cDefs.ENODEV);
     }
     stream.devops = devops;
-    stream.tty = stream.devops.isatty;
+    stream.tty = stream.devops.isatty
+      ? {
+          ops: {},
+        }
+      : undefined;
     stream.seekable = false;
   },
   close: function (stream) {
@@ -506,8 +510,8 @@ export function setStderr(
   _setStdwrite(options, _setStderrOps, _getStderrDefaults);
 }
 
-const textencoder = new TextEncoder();
-const textdecoder = new TextDecoder();
+const _TextEncoder = globalThis.TextEncoder ?? function () {};
+const textencoder = new _TextEncoder();
 
 // Reader implementations
 
@@ -678,7 +682,7 @@ class StringWriter {
   write(buffer: Uint8Array) {
     for (let val of buffer) {
       if (val === 10 /* charCode('\n') */) {
-        this.out(textdecoder.decode(new Uint8Array(this.output)));
+        this.out(UTF8ArrayToString(new Uint8Array(this.output)));
         this.output = [];
       } else if (val !== 0) {
         // val == 0 would cut text output off in the middle.
@@ -690,7 +694,7 @@ class StringWriter {
 
   fsync() {
     if (this.output && this.output.length > 0) {
-      this.out(textdecoder.decode(new Uint8Array(this.output)));
+      this.out(UTF8ArrayToString(new Uint8Array(this.output)));
       this.output = [];
     }
   }
