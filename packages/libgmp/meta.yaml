@@ -12,13 +12,16 @@ build:
   type: static_library
   script: |
     emconfigure ./configure \
-        CFLAGS="-fPIC" \
-        --disable-dependency-tracking \
-        --host none \
-        --disable-shared \
-        --enable-static \
-        --enable-cxx \
-        --prefix=${WASM_LIBRARY_DIR}
+      CFLAGS="-fPIC" \
+      HOST_CC=$(which clang) \
+      --host=wasm32-unknown-emscripten \
+      --build=$(./config.guess) \
+      --disable-assembly \
+      --disable-shared \
+      --enable-static \
+      --enable-cxx \
+      --prefix=${WASM_LIBRARY_DIR} \
+      ac_cv_prog_cc_cross=yes
     emmake make -j ${PYODIDE_JOBS:-3}
     emmake make install
 about:
