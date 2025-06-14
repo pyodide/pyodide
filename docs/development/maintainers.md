@@ -433,8 +433,9 @@ and set the tag to `nightly-<ABI>-<DATE>`, for instance `nightly-2025_0-2023-10-
 
 ### 3. Update packages and release new packages set
 
-Go to [pyodide/pyodide-recipes](https://github.com/pyodide/pyodide-recipes) and open a PR to update the `default_cross_build_env_url` in the
-[pyproject.toml](https://github.com/pyodide/pyodide-recipes/blob/main/pyproject.toml) file to point to the new release you created in the previous step.
+Go to [pyodide/pyodide-recipes](https://github.com/pyodide/pyodide-recipes) and follow the guidelines in the
+[MAINTAINERS.md](https://github.com/pyodide/pyodide-recipes/blob/main/docs/MAINTAINERS.md).
+You'll need to make a tag for the existing packages sets, and update the `default_cross_build_env_url` in the main branch.
 
 If you updated the Python version, you also need to update the `python` version used in the CI.
 When opening the PR, include `[full build]` in the title to trigger a full build of all packages, otherwise, only the small set of packages will be built.
@@ -442,14 +443,7 @@ When opening the PR, include `[full build]` in the title to trigger a full build
 Most likely, some of the packages will fail to build. You can disable them by adding `_disabled: true` to the recipes of the packages that are failing to build.
 You don't need to handle all the build failures in the same PR, you can open multiple PRs to fix the build failures, or let the package maintainers handle them.
 
-After fixing the build failures, release the new packages set by creating a new tag in the `pyodide/pyodide-recipes` repository.
-
-### 3.1. Notify recipe maintainers know about the ABI upgrade
-
-Some of the package maintainers build their packages in their own CI,
-so they need to know about the ABI upgrade to be able to build their packages with the new ABI.
-
-There is no automated way to do this, so you may ping the package maintainers in the PR.
+Create a new tag for the new packages set when the build is successful. It will create a new release with the new packages set.
 
 ### 4. Re-enable `USE_PREBUILT_PACKAGES` and upgrade the ABI in the main branch
 
