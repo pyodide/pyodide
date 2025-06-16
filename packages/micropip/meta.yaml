@@ -10,9 +10,6 @@ source:
   sha256: babcf68c1849e229aa887564bc5f2de50273c3212e73c9aff8e3e6e80f2b6a23
   url: https://files.pythonhosted.org/packages/27/6d/195810e3e73e5f351dc6082cada41bb4d5b0746a6804155ba6bae4304612/micropip-0.9.0-py3-none-any.whl
 
-requirements:
-  run:
-    - packaging
 about:
   home: https://github.com/pyodide/micropip
   PyPI: https://pypi.org/project/micropip

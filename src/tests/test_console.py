@@ -346,7 +346,7 @@ async def test_console_imports(selenium):
 @pytest.mark.xfail_browsers(node="Not available in node")
 def test_console_html(selenium):
     selenium.goto(
-        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
+        f"{selenium.base_url}/console.html"
     )
     selenium.javascript_setup()
     selenium.run_js(
