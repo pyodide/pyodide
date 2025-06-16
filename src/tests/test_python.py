@@ -57,8 +57,8 @@ def test_load_package_after_convert_string(selenium):
     """
     selenium.run("import sys; x = sys.version")
     selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
-    selenium.load_package("pytz")
-    selenium.run("import pytz")
+    selenium.load_package("pytest")
+    selenium.run("import pytest")
 
 
 def test_version_info(selenium):
