@@ -87,7 +87,6 @@ Pyodide also has a large number of small donors. If you’re interested in suppo
 
 ### Special thanks
 
-- [jsDelivr](https://www.jsdelivr.com/): Pyodide distribution is hosted on jsDelivr
 - [BrowserStack](https://www.browserstack.com/): This project is tested with BrowserStack
 
 ## License
