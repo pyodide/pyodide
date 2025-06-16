@@ -75,8 +75,8 @@ def test_version_info(selenium):
 def test_runpythonasync(selenium_standalone):
     output = selenium_standalone.run_async(
         """
-        import pyparsing
-        pyparsing.__version__
+        import micropip
+        micropip.__version__
         """
     )
     assert isinstance(output, str)
@@ -116,7 +116,7 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
     with pytest.raises(selenium_standalone.JavascriptException, match=msg):
         selenium_standalone.run_async(
             """
-            import pyparsing
+            import micropip
             42 / 0
             """
         )

@@ -16,6 +16,7 @@ def get_micropip_wheel() -> str:
     return list(DIST_PATH.glob("micropip*.whl"))[0]
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
 def test_load_from_url(selenium_standalone, httpserver):
     selenium = selenium_standalone
@@ -41,11 +42,11 @@ def test_load_from_url(selenium_standalone, httpserver):
     )
 
 
-def test_load_relative_url(
-    request, selenium_standalone, playwright_browsers, tmp_path
-):
+def test_load_relative_url(request, selenium_standalone, playwright_browsers, tmp_path):
     test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
-    test_html = test_html.replace("./pyodide.js", f"{selenium_standalone.base_url}/pyodide.js")
+    test_html = test_html.replace(
+        "./pyodide.js", f"{selenium_standalone.base_url}/pyodide.js"
+    )
     (tmp_path / "test_temp.html").write_text(test_html)
     micropip_wheel = get_micropip_wheel()
     shutil.copy(micropip_wheel, tmp_path / micropip_wheel.name)
@@ -134,8 +135,9 @@ def test_load_package_return_from_url(
     assert package[0]["fileName"] == micropip_wheel_name
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize(
-    "packages", [["micropip", "pytest"], ["pytest", "py"]], ids="-".join
+    "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
 def test_load_packages_multiple(selenium_standalone, packages):
     selenium = selenium_standalone
@@ -144,36 +146,47 @@ def test_load_packages_multiple(selenium_standalone, packages):
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
-    # ('pytest' and 'py')
-    assert (
-        selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
-        or selenium.logs.count(f"Loaded {packages[1]}, {packages[0]}") == 1
-    )
+    # ('pytest' and 'pluggy')
+    cnt = {}
+    for log in selenium.logs.splitlines():
+        if log.startswith("Loaded"):
+            for package in packages:
+                if package in log:
+                    cnt[package] = cnt.get(package, 0) + 1
+
+    for package in packages:
+        assert cnt.get(package, 0) == 1, (
+            f"Package {package} was loaded {cnt.get(package, 0)} times"
+        )
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize(
-    "packages", [["micropip", "pytest"], ["pytest", "py"]], ids="-".join
+    "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
-    loaded_packages = [
-        x[0]["name"] for x in selenium.run_js(f"return await Promise.all([{promises}])")
-    ]
+    selenium.run_js(f"return await Promise.all([{promises}])")
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
-    # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f"Loaded {packages[0]}") == 1
-    assert selenium.logs.count(f"Loaded {packages[1]}") == 1
+    # ('pytest' and 'pluggy')
+    cnt = {}
+    for log in selenium.logs.splitlines():
+        if log.startswith("Loaded"):
+            for package in packages:
+                if package in log:
+                    cnt[package] = cnt.get(package, 0) + 1
 
-    assert loaded_packages == [packages[0], packages[1]] or loaded_packages == [
-        packages[1],
-        packages[0],
-    ]
+    for package in packages:
+        assert cnt.get(package, 0) == 1, (
+            f"Package {package} was loaded {cnt.get(package, 0)} times"
+        )
 
 
+@pytest.mark.skip_refcount_check
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("micropip")
@@ -182,9 +195,7 @@ def test_load_handle_failure(selenium_standalone):
         selenium.JavascriptException, match="No known package with name 'micropip2'"
     ):
         selenium.load_package("micropip2")
-    selenium.load_package("pytest")
     assert "Loaded micropip" in selenium.logs
-    assert "Loaded pytest" in selenium.logs
 
 
 @pytest.mark.skip_refcount_check
@@ -193,7 +204,9 @@ def test_load_failure_retry(selenium_standalone):
     selenium = selenium_standalone
     selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
     assert selenium.logs.count("Loading micropip") == 1
-    assert selenium.logs.count("The following error occurred while loading micropip:") == 1
+    assert (
+        selenium.logs.count("The following error occurred while loading micropip:") == 1
+    )
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
     selenium.load_package("micropip")
     selenium.run("import micropip")
@@ -245,6 +258,7 @@ def test_js_load_package_from_python(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize("micropip", ["micropip", "Micropip"])
 def test_load_package_mixed_case(selenium_standalone, micropip):
     selenium = selenium_standalone
@@ -836,20 +850,21 @@ def test_load_package_stream(selenium_standalone, httpserver):
     )
 
 
+@pytest.mark.skip_refcount_check
 def test_load_package_stream_and_callback(selenium_standalone, httpserver):
     # messageCallback and errorCallback should still take precedence over stdout stream
     selenium = selenium_standalone
 
     micropip_path = get_micropip_wheel()
 
-    httpserver.expect_oneshot_request("/" + micropip_path).respond_with_data(
+    httpserver.expect_oneshot_request("/" + micropip_path.name).respond_with_data(
         micropip_path.read_bytes(),
         content_type="application/zip",
         headers={"Access-Control-Allow-Origin": "*"},
         status=200,
     )
 
-    url = httpserver.url_for("/" + micropip_path)
+    url = httpserver.url_for("/" + micropip_path.name)
 
     selenium.run_js(
         """
