@@ -4,12 +4,12 @@ import inspect
 import sys
 import time
 import traceback
-from asyncio import Future, Task
+from asyncio import Future, Task, sleep
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import Any, TypeVar, overload
 
-from .ffi import IN_BROWSER, create_once_callable, run_sync
+from .ffi import IN_BROWSER, can_run_sync, create_once_callable, run_sync
 
 if IN_BROWSER:
     from pyodide_js._api import scheduleCallback
@@ -642,6 +642,17 @@ def _run(main, *, debug=None, loop_factory=None):
     return _orig_run(main, debug=debug, loop_factory=loop_factory)
 
 
+_orig_sleep = time.sleep
+
+
+@wraps(_orig_sleep)
+def _sleep(t):
+    if can_run_sync():
+        run_sync(sleep(t))
+    else:
+        _orig_sleep(t)
+
+
 def _initialize_event_loop():
     from .ffi import IN_BROWSER
 
@@ -653,6 +664,7 @@ def _initialize_event_loop():
     from .webloop import WebLoopPolicy
 
     asyncio.run = _run
+    time.sleep = _sleep
     policy = WebLoopPolicy()
     asyncio.set_event_loop_policy(policy)
     policy.get_event_loop()

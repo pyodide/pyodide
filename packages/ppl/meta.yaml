@@ -1,6 +1,8 @@
 package:
   name: ppl
   version: "1.2"
+  # Build regression with Emscripten 4.0.7
+  _disabled: true
   tag:
     - library
     - static_library

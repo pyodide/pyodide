@@ -69,7 +69,7 @@ API.scheduleCallback = scheduleCallback;
 API.detectEnvironment = detectEnvironment;
 
 // @ts-ignore
-if (AbortSignal.any) {
+if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
   /** @private */
   // @ts-ignore
   API.abortSignalAny = AbortSignal.any;
@@ -691,6 +691,14 @@ export class PyodideAPI {
    */
   static get lockfile() {
     return API.lockfile;
+  }
+
+  /**
+   * Returns the base URL of the lockfile, which is used to locate the packages
+   * distributed with the lockfile.
+   */
+  static get lockfileBaseUrl() {
+    return API.lockfileBaseUrl;
   }
 }
 

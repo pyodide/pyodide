@@ -3,6 +3,7 @@ package:
   version: 8.3.5
   tag:
     - core
+    - pytest
     - min-scipy-stack
   top-level:
     - _pytest

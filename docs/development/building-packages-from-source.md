@@ -27,7 +27,7 @@ command.
 
 If you need to add custom compiler / linker flags to the compiler invocations,
 you can set the `CFLAGS`, `CXXFLAGS` and `LDFLAGS` environment variables. For instance, to
-make a debug build, you can use: `CFLAGS=-g2 LDFLAGS=g2 pyodide build`.
+make a debug build, you can use: `CFLAGS=-g2 LDFLAGS=-g2 pyodide build`.
 
 `pyodide build` invokes a slightly modified version of the `pypa/build` build
 frontend so the behavior should be similar to what happens if you do:
@@ -169,6 +169,6 @@ runs-on: ubuntu-22.04 # or ubuntu-latest
        CIBW_PLATFORM: pyodide
 ```
 
-For an example "in the wild" of a github action to build and test a wheel
+For an example "in the wild" of a GitHub Action to build and test a wheel
 against Pyodide, see
 [the numpy CI](https://github.com/numpy/numpy/blob/main/.github/workflows/emscripten.yml)

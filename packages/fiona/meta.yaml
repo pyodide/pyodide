@@ -1,8 +1,6 @@
 package:
   name: fiona
   version: 1.9.5
-  # Fails with CppException std::invalid_argument: stoi: no conversion
-  _disabled: true
   pinned: true
 source:
   url: https://files.pythonhosted.org/packages/83/a0/6b870864ceebcd046d2e952b0d18932812ff7a48d3b05670af3f702d9c01/fiona-1.9.5.tar.gz
