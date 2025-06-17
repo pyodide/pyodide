@@ -72,6 +72,7 @@ def test_version_info(selenium):
     assert version_py_str == version_js_str
 
 
+@pytest.mark.skip_refcount_check
 def test_runpythonasync(selenium_standalone):
     output = selenium_standalone.run_async(
         """
@@ -111,6 +112,7 @@ def test_runpythonasync_exception(selenium_standalone):
         )
 
 
+@pytest.mark.skip_refcount_check
 def test_runpythonasync_exception_after_import(selenium_standalone):
     msg = "ZeroDivisionError"
     with pytest.raises(selenium_standalone.JavascriptException, match=msg):

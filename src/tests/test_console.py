@@ -340,7 +340,7 @@ async def test_console_imports(selenium):
         return await res
 
     assert await get_result("import pytest") is None
-    assert await get_result("pytz.__name__") == "pytest"
+    assert await get_result("pytest.__name__") == "pytest"
 
 
 @pytest.mark.xfail_browsers(node="Not available in node")
