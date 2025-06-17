@@ -81,6 +81,8 @@ myst:
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374` {pr}`5398`
 
+- Renamed `zlib` to `libzlib`
+
 ## Version 0.27.7
 
 _June 04, 2025_

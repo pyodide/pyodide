@@ -1,5 +1,5 @@
 package:
-  name: zlib
+  name: libzlib
   version: 1.3.1
   tag:
     - library
