@@ -12,7 +12,7 @@ from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_time
 from conftest import DIST_PATH, PYODIDE_ROOT
 
 
-def get_micropip_wheel() -> str:
+def get_micropip_wheel() -> Path:
     return list(DIST_PATH.glob("micropip*.whl"))[0]
 
 
