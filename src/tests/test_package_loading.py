@@ -147,7 +147,7 @@ def test_load_packages_multiple(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pytest' and 'pluggy')
-    cnt = {}
+    cnt: dict[str, int] = {}
     for log in selenium.logs.splitlines():
         if log.startswith("Loaded"):
             for package in packages:
@@ -173,7 +173,7 @@ def test_load_packages_sequential(selenium_standalone, packages):
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
     # ('pytest' and 'pluggy')
-    cnt = {}
+    cnt: dict[str, int] = {}
     for log in selenium.logs.splitlines():
         if log.startswith("Loaded"):
             for package in packages:
