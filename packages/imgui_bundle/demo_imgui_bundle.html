@@ -1,19 +1,28 @@
 <!-- Example page using imgui_bundle -->
 <!doctype html>
 <html>
-<head>
+  <head>
     <style>
-        html, body { width: 100%; height: 100%; margin: 0; }
-        #canvas { display: block; width: 100%; height: 100%;}
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+      }
+      #canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
     </style>
     <script src="dist/pyodide.js"></script>
-</head>
-<body>
-<canvas id="canvas"></canvas>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
 
-<script type="text/javascript">
-    // ====================== Start of Python code ============================
-    pythonCode = `
+    <script type="text/javascript">
+      // ====================== Start of Python code ============================
+      pythonCode = `
 
 """# Lorenz Attractor & Butterfly Effect
 This is a simple example of the Lorenz Attractor. It shows two trajectories that diverge
@@ -121,13 +130,14 @@ immapp.run(lambda: lorenz_comparer.gui(),
            fps_idle=0)
 
 
-    `
-    // ====================== End of Python code ==============================
+    `;
+      // ====================== End of Python code ==============================
 
-
-    async function main(){
+      async function main() {
         // This enables to use right click in the canvas
-        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.addEventListener("contextmenu", (event) =>
+          event.preventDefault(),
+        );
 
         // Load Pyodide
         let pyodide = await loadPyodide();
@@ -149,8 +159,8 @@ immapp.run(lambda: lorenz_comparer.gui(),
 
         // Run the Python code
         pyodide.runPython(pythonCode);
-    }
-    main();
-</script>
-</body>
+      }
+      main();
+    </script>
+  </body>
 </html>

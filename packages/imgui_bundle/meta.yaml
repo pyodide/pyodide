@@ -4,13 +4,11 @@ package:
   top-level:
     - imgui_bundle
 
-
 source:
-   url: https://github.com/pthom/imgui_bundle/releases/download/v1.6.3/v1.6.3-pyodide.tgz
-   sha256: f0759e63f95e5ea9552334ccacb95d1b254b51d574ad4f044704a98ce0f6e6e3
+  url: https://github.com/pthom/imgui_bundle/releases/download/v1.6.3/v1.6.3-pyodide.tgz
+  sha256: f0759e63f95e5ea9552334ccacb95d1b254b51d574ad4f044704a98ce0f6e6e3
 
-
-# Note: 
+# Note:
 #   In order to run correctly, MAIN_MODULE_LDFLAGS must contain the flag -sMAX_WEBGL_VERSION=2
 #   You may need to set it in your pyodide/Makefile.envs file: in the section "export MAIN_MODULE_LDFLAGS=", add a line:
 #      -sMAX_WEBGL_VERSION=2 \
@@ -29,4 +27,4 @@ requirements:
   run:
     - pydantic
     - munch
-    - numpy  
+    - numpy
