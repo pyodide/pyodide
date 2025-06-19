@@ -1,7 +1,5 @@
 # Pyodide packages
 
-This folder contains the list of packages built in pyodide.
+This folder contains the minimum set of packages necessary to run the core test suite.
 
-Packages are built with the Python build system
-using the `pyodide build-recipes` command.
-See the [documentation](https://pyodide.org/en/stable/development/new-packages.html) for more details.
+The full list of packages built in Pyodide can be found in the [pyodide-recipes](https://github.com/pyodide/pyodide-recipes) repository.

@@ -1581,7 +1581,7 @@ _January 3, 2023_
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
-  documentation](building-and-testing-packages-out-of-tree).
+  documentation](building-packages-from-source).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3096`, {pr}`3098`,
   {pr}`3108`, {pr}`3109`, {pr}`3241`
 
@@ -2933,8 +2933,7 @@ _May 19, 2020_
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
-  the `PYODIDE_PACKAGES` environment variable. See
-  {ref}`partial builds documentation <partial-builds>` for more details.
+  the `PYODIDE_PACKAGES` environment variable.
 - New packages: future, autograd
 
 ## Version 0.14.3
