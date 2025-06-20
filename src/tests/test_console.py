@@ -339,15 +339,13 @@ async def test_console_imports(selenium):
         assert res.syntax_check == "complete"
         return await res
 
-    assert await get_result("import pytz") is None
-    assert await get_result("pytz.utc.zone") == "UTC"
+    assert await get_result("import pytest") is None
+    assert await get_result("pytest.__name__") == "pytest"
 
 
 @pytest.mark.xfail_browsers(node="Not available in node")
 def test_console_html(selenium):
-    selenium.goto(
-        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-    )
+    selenium.goto(f"{selenium.base_url}/console.html")
     selenium.javascript_setup()
     selenium.run_js(
         """
