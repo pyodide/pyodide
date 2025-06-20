@@ -62,6 +62,10 @@ myst:
 
 - {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
 
+- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
+  WebGL 1 is still available but must be required explicitly
+  (for example, by using OpenGL ES 2.0)
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In

@@ -191,6 +191,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhtml5.js \
 	-lhtml5_webgl.js \
 	-lsdl.js \
+	-sMAX_WEBGL_VERSION=2  \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 EXPORTS=_main \
