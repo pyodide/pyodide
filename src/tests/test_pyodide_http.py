@@ -283,3 +283,26 @@ async def test_pyfetch_custom_abort_signal(selenium):
     f = pyfetch("/", signal=controller.signal)
     with pytest.raises(AbortError):
         await f
+
+
+@run_in_pyodide
+async def test_pyfetch_custom_fetcher(selenium):
+    from js import Promise, Response
+    from pyodide.http import pyfetch
+
+    call_args = []
+
+    def custom_fetcher(url, options):
+        call_args.append((url, options.to_py()))
+        return Promise.resolve(Response.new("test"))
+
+    response = await pyfetch(
+        "test_url", fetcher=custom_fetcher, headers={"X-Test": "true"}
+    )
+
+    assert len(call_args) == 1
+    assert call_args[0][0] == "test_url"
+    assert "headers" in call_args[0][1]
+    assert call_args[0][1]["headers"]["X-Test"] == "true"
+
+    assert await response.text() == "test"
