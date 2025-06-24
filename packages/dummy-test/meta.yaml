@@ -1,0 +1,9 @@
+package:
+  name: dummy-test
+  version: 1.0.0
+  tag:
+    - pyodide.test
+  top-level:
+    - dummy
+source:
+  path: src
