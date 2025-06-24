@@ -1,14 +1,13 @@
 package:
-  name: rust-abi-test
+  name: test-cpp-exceptions2
   version: "1.0"
   tag:
     - core
-    - rust
     - pyodide.test
 source:
   path: src
-requirements:
-  executable:
-    - rustup
+build:
+  cxxflags: -fwasm-exceptions
+  ldflags: -fwasm-exceptions
 about:
   license: MPL-2.0

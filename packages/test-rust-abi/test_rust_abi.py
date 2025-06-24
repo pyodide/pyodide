@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.xfail(reason="TODO: Fix me")
-@run_in_pyodide(packages=["rust-abi-test"])
+@run_in_pyodide(packages=["test-rust-abi"])
 def test_rust_abi(selenium):
     from pathlib import Path
 

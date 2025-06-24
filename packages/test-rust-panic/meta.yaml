@@ -1,13 +1,14 @@
 package:
-  name: cpp-exceptions-test2
+  name: test-rust-panic
   version: "1.0"
   tag:
+    - rust
     - core
     - pyodide.test
 source:
   path: src
-build:
-  cxxflags: -fwasm-exceptions
-  ldflags: -fwasm-exceptions
+requirements:
+  executable:
+    - rustup
 about:
   license: MPL-2.0

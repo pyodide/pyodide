@@ -1,5 +1,5 @@
 [package]
-name = "rust-abi-test"
+name = "test-rust-abi"
 version = "0.1.0"
 edition = "2018"
 publish = false

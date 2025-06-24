@@ -1,12 +1,10 @@
 package:
-  name: fpcast-test
+  name: test-buffer
   version: "0.1.1"
   tag:
     - core
     - pyodide.test
   top-level:
-    - fpcast_test
+    - buffer_test
 source:
-  path: fpcast-test
-about:
-  license: MPL-2.0
+  path: buffer-test

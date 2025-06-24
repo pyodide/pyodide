@@ -1,5 +1,5 @@
 package:
-  name: cpp-exceptions-test
+  name: test-cpp-exceptions
   version: "0.1"
   tag:
     - core

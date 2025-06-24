@@ -1,5 +1,5 @@
 package:
-  name: sharedlib-test
+  name: test-sharedlib
   version: "1.0"
   tag:
     - core

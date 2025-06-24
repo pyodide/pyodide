@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.requires_dynamic_linking
-@run_in_pyodide(packages=["buffer-test"])
+@run_in_pyodide(packages=["test-buffer"])
 def test_zerod_buffers(selenium):
     from buffer_test import ZeroDBuffer
 

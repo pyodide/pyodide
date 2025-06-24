@@ -1,5 +1,5 @@
 [package]
-name = "rust-panic-test"
+name = "test-rust-panic"
 version = "0.1.0"
 edition = "2018"
 publish = false

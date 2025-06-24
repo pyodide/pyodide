@@ -1,9 +1,9 @@
 package:
-  name: rust-panic-test
+  name: test-rust-abi
   version: "1.0"
   tag:
-    - rust
     - core
+    - rust
     - pyodide.test
 source:
   path: src

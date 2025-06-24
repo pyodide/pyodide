@@ -1,7 +1,7 @@
 from setuptools import Extension, setup
 
 setup(
-    name="cpp-exceptions-test2",
+    name="test-cpp-exceptions2",
     version="1.0",
     ext_modules=[
         Extension(

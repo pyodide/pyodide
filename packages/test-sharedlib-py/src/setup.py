@@ -3,7 +3,7 @@
 from setuptools import Extension, setup
 
 setup(
-    name="sharedlib-test-py",
+    name="test-sharedlib-py",
     version="1.0",
     description="A package to test Pyodide shared libraries",
     author="Pyodide team",

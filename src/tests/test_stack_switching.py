@@ -260,7 +260,7 @@ def test_cpp_exceptions_and_syncify(selenium):
                 id(f)
             `);
 
-            await pyodide.loadPackage("cpp-exceptions-test")
+            await pyodide.loadPackage("test-cpp-exceptions")
             const Module = pyodide._module;
             const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
             async function t(x){
