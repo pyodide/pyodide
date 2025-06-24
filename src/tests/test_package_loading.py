@@ -280,7 +280,10 @@ def test_js_load_package_from_python(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
-@pytest.mark.parametrize("pkg", ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"])
+@pytest.mark.parametrize(
+    "pkg",
+    ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"],
+)
 def test_load_package_mixed_case(selenium_standalone, pkg):
     selenium_standalone.run_js(
         f"""
@@ -293,7 +296,10 @@ def test_load_package_mixed_case(selenium_standalone, pkg):
 
 
 @pytest.mark.skip_refcount_check
-@pytest.mark.parametrize("pkg", ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"])
+@pytest.mark.parametrize(
+    "pkg",
+    ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"],
+)
 def test_install_mixed_case_micropip(selenium_standalone, pkg):
     selenium_standalone.run_js(
         f"""
@@ -739,8 +745,16 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
     [
         ("fpcast-test", "fpcast-test", "fpcast-test"),
         ("fpcast_test", "fpcast-test", "fpcast-test"),
-        ("test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy-unNormalized"),
-        ("test-dummy_unnormalized", "test-dummy-unnormalized", "test-dummy-unNormalized"),
+        (
+            "test-dummy-unNormalized",
+            "test-dummy-unnormalized",
+            "test-dummy-unNormalized",
+        ),
+        (
+            "test-dummy_unnormalized",
+            "test-dummy-unnormalized",
+            "test-dummy-unNormalized",
+        ),
     ],
 )
 @pytest.mark.requires_dynamic_linking  # only required for fpcast-test

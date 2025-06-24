@@ -442,9 +442,7 @@ def test_pip_install_from_pyodide(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout == "dummy\n"
-    )
+    assert result.stdout == "dummy\n"
     result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
@@ -604,9 +602,7 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout == "dummy\n"
-    )
+    assert result.stdout == "dummy\n"
     result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
