@@ -1,7 +1,7 @@
 from setuptools import Extension, setup
 
 setup(
-    name="buffer-test",
+    name="test-buffer",
     version="0.1.1",
     author="Hood Chatham",
     author_email="roberthoodchatham@gmail.com",

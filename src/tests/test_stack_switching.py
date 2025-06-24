@@ -178,7 +178,7 @@ def test_syncify_no_suspender(selenium):
 
 @pytest.mark.requires_dynamic_linking
 @requires_jspi
-@run_in_pyodide(packages=["fpcast-test"])
+@run_in_pyodide(packages=["test-fpcast"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync

@@ -724,8 +724,6 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
     "load_name, normalized_name, real_name",
     [
         # TODO: find a better way to test this without relying on the core packages set
-        ("fpcast-test", "fpcast-test", "fpcast-test"),
-        ("fpcast_test", "fpcast-test", "fpcast-test"),
         ("Jinja2", "jinja2", "Jinja2"),
         ("jinja2", "jinja2", "Jinja2"),
         ("pydoc_data", "pydoc-data", "pydoc_data"),

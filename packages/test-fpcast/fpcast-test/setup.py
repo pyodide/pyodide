@@ -15,7 +15,7 @@ will fail).
     )
 
 setup(
-    name="fpcast-test",
+    name="test-fpcast",
     version="0.1.1",
     author="Hood Chatham",
     author_email="roberthoodchatham@gmail.com",
