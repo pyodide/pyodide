@@ -280,29 +280,43 @@ def test_js_load_package_from_python(selenium_standalone):
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == to_load
 
 
-@pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
-def test_load_package_mixed_case(selenium_standalone, jinja2):
-    selenium = selenium_standalone
-    selenium.run_js(
+@pytest.mark.parametrize("pkg", ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"])
+def test_load_package_mixed_case(selenium_standalone, pkg):
+    selenium_standalone.run_js(
         f"""
-        await pyodide.loadPackage("{jinja2}");
+        await pyodide.loadPackage("{pkg}");
         pyodide.runPython(`
-            import jinja2
+            import dummy_unnormalized
         `)
         """
     )
 
 
+@pytest.mark.skip_refcount_check
+@pytest.mark.parametrize("pkg", ["test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy_unNormalized"])
+def test_install_mixed_case_micropip(selenium_standalone, pkg):
+    selenium_standalone.run_js(
+        f"""
+        await pyodide.loadPackage("micropip");
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install("{pkg}")
+            import dummy_unnormalized
+        `);
+        """
+    )
+
+
 @pytest.mark.requires_dynamic_linking
-def test_test_unvendoring(selenium_standalone):
+def test_unvendoring(selenium_standalone):
     selenium = selenium_standalone
     selenium.run_js(
         """
-        await pyodide.loadPackage("regex");
+        await pyodide.loadPackage("test-dummy-unvendoring");
         pyodide.runPython(`
-            import regex
+            import dummy_unvendoring
             from pathlib import Path
-            test_path =  Path(regex.__file__).parent / "test_regex.py"
+            test_path = Path(dummy_unvendoring.__file__).parent / "test_dummy_unvendoring.py"
             assert not test_path.exists()
         `);
         """
@@ -310,7 +324,7 @@ def test_test_unvendoring(selenium_standalone):
 
     selenium.run_js(
         """
-        await pyodide.loadPackage("regex-tests");
+        await pyodide.loadPackage("test-dummy-unvendoring-tests");
         pyodide.runPython(`
             assert test_path.exists()
         `);
@@ -319,7 +333,7 @@ def test_test_unvendoring(selenium_standalone):
 
     assert selenium.run_js(
         """
-        return pyodide._api.lockfile_packages['regex'].unvendored_tests;
+        return pyodide._api.lockfile_packages['test-dummy-unvendoring'].unvendored_tests;
         """
     )
 
@@ -723,13 +737,10 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
 @pytest.mark.parametrize(
     "load_name, normalized_name, real_name",
     [
-        # TODO: find a better way to test this without relying on the core packages set
         ("fpcast-test", "fpcast-test", "fpcast-test"),
         ("fpcast_test", "fpcast-test", "fpcast-test"),
-        ("Jinja2", "jinja2", "Jinja2"),
-        ("jinja2", "jinja2", "Jinja2"),
-        ("pydoc_data", "pydoc-data", "pydoc_data"),
-        ("pydoc-data", "pydoc-data", "pydoc_data"),
+        ("test-dummy-unNormalized", "test-dummy-unnormalized", "test-dummy-unNormalized"),
+        ("test-dummy_unnormalized", "test-dummy-unnormalized", "test-dummy-unNormalized"),
     ],
 )
 @pytest.mark.requires_dynamic_linking  # only required for fpcast-test

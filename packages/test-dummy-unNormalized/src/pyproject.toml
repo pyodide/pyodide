@@ -1,5 +1,5 @@
 [project]
-name = "dummy-test"
+name = "test-dummy-unNormalized"
 authors = [
   { name="Pyodide"},
 ]
@@ -16,5 +16,5 @@ ignore-vcs = true
 [tool.hatch.build.targets.wheel]
 ignore-vcs = true
 include = [
-  "dummy/",
+  "dummy_unnormalized/",
 ]

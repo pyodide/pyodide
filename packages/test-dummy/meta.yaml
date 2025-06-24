@@ -1,5 +1,5 @@
 package:
-  name: dummy-test
+  name: test-dummy
   version: 1.0.0
   tag:
     - pyodide.test
