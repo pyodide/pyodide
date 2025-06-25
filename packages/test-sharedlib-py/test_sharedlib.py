@@ -3,7 +3,7 @@ from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.requires_dynamic_linking
-@run_in_pyodide(packages=["sharedlib-test-py"])
+@run_in_pyodide(packages=["test-sharedlib-py"])
 def test_sharedlib(selenium):
     from sharedlib_test import do_the_thing
 

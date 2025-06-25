@@ -1,7 +1,7 @@
 from pytest_pyodide import run_in_pyodide
 
 
-@run_in_pyodide(packages=["rust-panic-test"])
+@run_in_pyodide(packages=["test-rust-panic"])
 def test_rust_panic(selenium):
     from pytest import raises
     from rust_panic_test import PanicException, panic_test

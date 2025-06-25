@@ -5,7 +5,7 @@ import pytest
 def test_uncaught_cpp_exceptions(selenium):
     assert selenium.run_js(
         """
-        await pyodide.loadPackage("cpp-exceptions-test");
+        await pyodide.loadPackage("test-cpp-exceptions");
         const Tests = pyodide._api.tests;
         const throwlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-throw.so"].exports;
         function t(x){
@@ -35,7 +35,7 @@ def test_uncaught_cpp_exceptions(selenium):
 def test_cpp_exception_catching(selenium):
     assert selenium.run_js(
         """
-        await pyodide.loadPackage("cpp-exceptions-test");
+        await pyodide.loadPackage("test-cpp-exceptions");
         const Module = pyodide._module;
         const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
         function t(x){
@@ -59,7 +59,7 @@ def test_sjlj(selenium):
     assert (
         selenium.run_js(
             """
-            await pyodide.loadPackage("cpp-exceptions-test");
+            await pyodide.loadPackage("test-cpp-exceptions");
             const Module = pyodide._module;
             const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
             return catchlib.set_jmp_func();
@@ -74,7 +74,7 @@ def test_cpp_exception_catching_invoke(selenium):
 
     assert selenium.run_js(
         """
-        await pyodide.loadPackage("cpp-exceptions-test");
+        await pyodide.loadPackage("test-cpp-exceptions");
         const Module = pyodide._module;
         const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
         function t(x){
