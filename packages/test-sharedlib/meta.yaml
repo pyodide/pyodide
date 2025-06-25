@@ -1,0 +1,23 @@
+package:
+  name: test-sharedlib
+  version: "1.0"
+  tag:
+    - core
+    - pyodide.test
+    - library
+    - shared_library
+source:
+  path: src
+
+build:
+  type: shared_library
+  script: |
+    emcc -c main.c -o main.o ${SIDE_MODULE_CFLAGS}
+    emcc -c dep.c -o dep.o ${SIDE_MODULE_CFLAGS}
+    emcc -c dep2.c -o dep2.o ${SIDE_MODULE_CFLAGS}
+
+    emcc dep2.o ${SIDE_MODULE_LDFLAGS} -o ${DISTDIR}/sharedlib-test-dep2.so
+    emcc dep.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep2.so -o ${DISTDIR}/sharedlib-test-dep.so
+    emcc main.o ${SIDE_MODULE_LDFLAGS} ${DISTDIR}/sharedlib-test-dep.so -o ${DISTDIR}/sharedlib-test.so
+about:
+  license: MPL-2.0
