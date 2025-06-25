@@ -924,3 +924,59 @@ def test_load_package_stream_and_callback(selenium_standalone, httpserver):
     """
         % url
     )
+
+
+@pytest.mark.skip_refcount_check
+def test_micropip_list_pyodide_package(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("micropip")
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install(
+                "test-dummy"
+            );
+        `);
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide.runPythonAsync(`
+            import micropip
+            pkgs = micropip.list()
+            assert "test-dummy" in pkgs
+            assert pkgs["test-dummy"].source.lower() == "pyodide"
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+def test_micropip_list_loaded_from_js(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("micropip")
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("test-dummy");
+        await pyodide.runPythonAsync(`
+            import micropip
+            pkgs = micropip.list()
+            assert "test-dummy" in pkgs
+            assert pkgs["test-dummy"].source.lower() == "pyodide"
+        `);
+        """
+    )
+
+
+@pytest.mark.skip_refcount_check
+def test_micropip_install_non_normalized_package(selenium_standalone):
+    selenium = selenium_standalone
+    selenium.load_package("micropip")
+    selenium.run_async(
+        """
+        import micropip
+        await micropip.install("test-dummy-unNormalized")
+        import dummy_unnormalized
+        """
+    )

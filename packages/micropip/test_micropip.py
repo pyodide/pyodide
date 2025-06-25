@@ -164,45 +164,6 @@ def test_list_load_package_from_url(selenium_standalone_micropip):
         )
 
 
-def test_list_pyodide_package(selenium_standalone_micropip):
-    selenium = selenium_standalone_micropip
-    selenium.run_js(
-        """
-        await pyodide.runPythonAsync(`
-            import micropip
-            await micropip.install(
-                "test-dummy"
-            );
-        `);
-        """
-    )
-    selenium.run_js(
-        """
-        await pyodide.runPythonAsync(`
-            import micropip
-            pkgs = micropip.list()
-            assert "test-dummy" in pkgs
-            assert pkgs["test-dummy"].source.lower() == "pyodide"
-        `);
-        """
-    )
-
-
-def test_list_loaded_from_js(selenium_standalone_micropip):
-    selenium = selenium_standalone_micropip
-    selenium.run_js(
-        """
-        await pyodide.loadPackage("test-dummy");
-        await pyodide.runPythonAsync(`
-            import micropip
-            pkgs = micropip.list()
-            assert "test-dummy" in pkgs
-            assert pkgs["test-dummy"].source.lower() == "pyodide"
-        `);
-        """
-    )
-
-
 def test_emfs(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
@@ -227,18 +188,3 @@ def test_emfs(selenium_standalone_micropip):
             ]
 
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
-
-
-def test_install_non_normalized_package(selenium_standalone_micropip):
-    if not package_is_built("ruamel-yaml"):
-        pytest.skip("ruamel.yaml not built")
-
-    selenium = selenium_standalone_micropip
-
-    selenium.run_async(
-        """
-        import micropip
-        await micropip.install("ruamel.yaml")
-        import ruamel.yaml
-        """
-    )
