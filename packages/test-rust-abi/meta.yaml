@@ -5,6 +5,8 @@ package:
     - core
     - rust
     - pyodide.test
+  top-level:
+    - rust_abi_test
 source:
   path: src
 requirements:

@@ -5,6 +5,8 @@ package:
     - rust
     - core
     - pyodide.test
+  top-level:
+    - rust_panic_test
 source:
   path: src
 requirements:
