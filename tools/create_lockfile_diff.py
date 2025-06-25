@@ -1,11 +1,14 @@
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
-from pyodide_lock import PyodideLockSpec, PackageSpec
+
+from pyodide_lock import PackageSpec, PyodideLockSpec
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Compare two Pyodide lockfiles and output the differences. This tool is for creating a diff for changelog.")
+    parser = argparse.ArgumentParser(
+        description="Compare two Pyodide lockfiles and output the differences. This tool is for creating a diff for changelog."
+    )
     parser.add_argument("old_lockfile", type=str, help="Path to the old lockfile.")
     parser.add_argument("new_lockfile", type=str, help="Path to the new lockfile.")
     return parser.parse_args()
@@ -22,7 +25,9 @@ def is_normal_python_package(pkg: PackageSpec) -> bool:
     return pkg.package_type == "package" and pkg.file_name.endswith(".whl")
 
 
-def calculate_diff(old_lockfile_path: Path, new_lockfile_path: Path) -> tuple[list[PackageDiff], list[PackageDiff], list[PackageDiff]]:
+def calculate_diff(
+    old_lockfile_path: Path, new_lockfile_path: Path
+) -> tuple[list[PackageDiff], list[PackageDiff], list[PackageDiff]]:
     """
     Calculate the differences between two Pyodide lockfiles.
 
@@ -34,19 +39,39 @@ def calculate_diff(old_lockfile_path: Path, new_lockfile_path: Path) -> tuple[li
     old_lockfile = PyodideLockSpec.from_json(Path(old_lockfile_path))
     new_lockfile = PyodideLockSpec.from_json(Path(new_lockfile_path))
 
-    old_packages = {pkg.name: pkg for pkg in old_lockfile.packages.values() if is_normal_python_package(pkg)}
-    new_packages = {pkg.name: pkg for pkg in new_lockfile.packages.values() if is_normal_python_package(pkg)}
+    old_packages = {
+        pkg.name: pkg
+        for pkg in old_lockfile.packages.values()
+        if is_normal_python_package(pkg)
+    }
+    new_packages = {
+        pkg.name: pkg
+        for pkg in new_lockfile.packages.values()
+        if is_normal_python_package(pkg)
+    }
 
-    added = [PackageDiff(name=pkg.name, old_version=None, new_version=pkg.version) 
-             for name, pkg in new_packages.items() if name not in old_packages]
-    
-    removed = [PackageDiff(name=pkg.name, old_version=pkg.version, new_version=None) 
-               for name, pkg in old_packages.items() if name not in new_packages]
-    
-    changed = [PackageDiff(name=name, old_version=old_packages[name].version, new_version=new_packages[name].version)
-               for name in set(old_packages) & set(new_packages)
-               if old_packages[name].version != new_packages[name].version]
-    
+    added = [
+        PackageDiff(name=pkg.name, old_version=None, new_version=pkg.version)
+        for name, pkg in new_packages.items()
+        if name not in old_packages
+    ]
+
+    removed = [
+        PackageDiff(name=pkg.name, old_version=pkg.version, new_version=None)
+        for name, pkg in old_packages.items()
+        if name not in new_packages
+    ]
+
+    changed = [
+        PackageDiff(
+            name=name,
+            old_version=old_packages[name].version,
+            new_version=new_packages[name].version,
+        )
+        for name in set(old_packages) & set(new_packages)
+        if old_packages[name].version != new_packages[name].version
+    ]
+
     return added, removed, changed
 
 
