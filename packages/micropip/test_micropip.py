@@ -5,8 +5,6 @@ from tempfile import TemporaryDirectory
 import pytest
 from pytest_pyodide import run_in_pyodide, spawn_web_server
 
-from conftest import package_is_built
-
 cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 

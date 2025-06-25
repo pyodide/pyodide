@@ -1465,7 +1465,7 @@ def test_module_not_found_note(selenium_standalone):
     lockfile_packages = [
         "micropip",
         "packaging",
-        "dummy", # top-level import name for test-dummy
+        "dummy",  # top-level import name for test-dummy
     ]
 
     # When error is wrapped, add_note_to_module_not_found_error is called
