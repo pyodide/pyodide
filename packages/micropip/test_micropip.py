@@ -94,7 +94,7 @@ def test_install_file_protocol_node(selenium_standalone_micropip):
         await pyodide.runPythonAsync(`
             import micropip
             await micropip.install('file:{SNOWBALL_WHEEL.as_posix()}')
-            import pyparsing
+            import snowballstemmer
         `);
         """
     )
