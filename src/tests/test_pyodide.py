@@ -1462,7 +1462,11 @@ def test_module_not_found_note(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    lockfile_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = [
+        "micropip",
+        "packaging",
+        "dummy",  # top-level import name for test-dummy
+    ]
 
     # When error is wrapped, add_note_to_module_not_found_error is called
     with pytest.raises(ModuleNotFoundError) as e:

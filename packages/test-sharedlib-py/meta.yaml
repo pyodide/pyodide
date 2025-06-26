@@ -1,0 +1,22 @@
+package:
+  name: test-sharedlib-py
+  version: "1.0"
+  tag:
+    - core
+    - pyodide.test
+  top-level:
+    - sharedlib_test
+requirements:
+  run:
+    - test-sharedlib
+  host:
+    - test-sharedlib
+source:
+  path: src
+build:
+  cflags: |
+    -I$(PKGDIR)/../test-sharedlib/src/include
+  ldflags: |
+    $(PKGDIR)/../test-sharedlib/build/test-sharedlib-1.0/dist/sharedlib-test.so
+about:
+  license: MPL-2.0

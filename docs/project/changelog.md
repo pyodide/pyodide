@@ -29,6 +29,12 @@ myst:
   {pr}`5320`
 - {{ Enhancement }} Upgraded to Python 3.13.1. {pr}`5498`
 
+- {{ Enhancement }} The packages included in the Pyodide distribution is now built
+  in a separate repository, `pyodide-recipes`. This decouples the Packages sets
+  from the Pyodide version and allows people to use the different sets of packages
+  easily with different Pyodide versions.
+  {pr}`5699`
+
 - {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
   allows other events on the event loop to be processed during the
   sleep.
@@ -55,6 +61,10 @@ myst:
   {pr}`5692`
 
 - {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
+
+- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
+  WebGL 1 is still available but must be required explicitly
+  (for example, by using OpenGL ES 2.0)
 
 ### `python` CLI entrypoint
 
@@ -1575,7 +1585,7 @@ _January 3, 2023_
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
-  documentation](building-and-testing-packages-out-of-tree).
+  documentation](building-packages-from-source).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3096`, {pr}`3098`,
   {pr}`3108`, {pr}`3109`, {pr}`3241`
 
@@ -2927,8 +2937,7 @@ _May 19, 2020_
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
-  the `PYODIDE_PACKAGES` environment variable. See
-  {ref}`partial builds documentation <partial-builds>` for more details.
+  the `PYODIDE_PACKAGES` environment variable.
 - New packages: future, autograd
 
 ## Version 0.14.3
