@@ -743,8 +743,6 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
 @pytest.mark.parametrize(
     "load_name, normalized_name, real_name",
     [
-        ("fpcast-test", "fpcast-test", "fpcast-test"),
-        ("fpcast_test", "fpcast-test", "fpcast-test"),
         (
             "test-dummy-unNormalized",
             "test-dummy-unnormalized",

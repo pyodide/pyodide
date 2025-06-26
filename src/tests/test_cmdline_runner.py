@@ -544,7 +544,7 @@ def test_sys_exit(selenium, venv):
 
 @only_node
 def test_cpp_exceptions(selenium, venv):
-    result = install_pkg(venv, "cpp-exceptions-test2")
+    result = install_pkg(venv, "test-cpp-exceptions2")
     print(result.stdout)
     print(result.stderr)
     assert result.returncode == 0
