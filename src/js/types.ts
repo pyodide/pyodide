@@ -530,12 +530,10 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  | "reportUndefinedSymbols"
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"
   | "stringToUTF8OnStack"
-  | "reportUndefinedSymbols"
   | "_print_stderr"
   | "_print_stdout"
   | "stackSave"
