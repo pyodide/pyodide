@@ -790,14 +790,14 @@ workflows:
 
       - build-pyodide-debug:
           requires:
-            - build-core-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - build-test-pyc-packages:
           requires:
-            - build-core-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
