@@ -1,0 +1,9 @@
+package:
+  name: test-dummy-unNormalized
+  version: 1.0.0
+  tag:
+    - pyodide.test
+  top-level:
+    - dummy_unnormalized
+source:
+  path: src

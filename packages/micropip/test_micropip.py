@@ -5,8 +5,6 @@ from tempfile import TemporaryDirectory
 import pytest
 from pytest_pyodide import run_in_pyodide, spawn_web_server
 
-from conftest import package_is_built
-
 cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 
@@ -146,21 +144,6 @@ def test_install_different_version2(selenium_standalone_micropip):
     )
 
 
-@pytest.mark.parametrize("jinja2", ["jinja2", "Jinja2"])
-def test_install_mixed_case2(selenium_standalone_micropip, jinja2):
-    selenium = selenium_standalone_micropip
-    selenium.run_js(
-        f"""
-        await pyodide.loadPackage("micropip");
-        await pyodide.runPythonAsync(`
-            import micropip
-            await micropip.install("{jinja2}")
-            import jinja2
-        `);
-        """
-    )
-
-
 def test_list_load_package_from_url(selenium_standalone_micropip):
     with spawn_web_server(Path(__file__).parent / "test") as server:
         server_hostname, server_port, _ = server
@@ -177,45 +160,6 @@ def test_list_load_package_from_url(selenium_standalone_micropip):
             `);
             """
         )
-
-
-def test_list_pyodide_package(selenium_standalone_micropip):
-    selenium = selenium_standalone_micropip
-    selenium.run_js(
-        """
-        await pyodide.runPythonAsync(`
-            import micropip
-            await micropip.install(
-                "regex"
-            );
-        `);
-        """
-    )
-    selenium.run_js(
-        """
-        await pyodide.runPythonAsync(`
-            import micropip
-            pkgs = micropip.list()
-            assert "regex" in pkgs
-            assert pkgs["regex"].source.lower() == "pyodide"
-        `);
-        """
-    )
-
-
-def test_list_loaded_from_js(selenium_standalone_micropip):
-    selenium = selenium_standalone_micropip
-    selenium.run_js(
-        """
-        await pyodide.loadPackage("regex");
-        await pyodide.runPythonAsync(`
-            import micropip
-            pkgs = micropip.list()
-            assert "regex" in pkgs
-            assert pkgs["regex"].source.lower() == "pyodide"
-        `);
-        """
-    )
 
 
 def test_emfs(selenium_standalone_micropip):
@@ -242,18 +186,3 @@ def test_emfs(selenium_standalone_micropip):
             ]
 
         run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
-
-
-def test_install_non_normalized_package(selenium_standalone_micropip):
-    if not package_is_built("ruamel-yaml"):
-        pytest.skip("ruamel.yaml not built")
-
-    selenium = selenium_standalone_micropip
-
-    selenium.run_async(
-        """
-        import micropip
-        await micropip.install("ruamel.yaml")
-        import ruamel.yaml
-        """
-    )
