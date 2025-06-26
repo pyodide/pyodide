@@ -300,7 +300,6 @@ export interface Module {
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
-  reportUndefinedSymbols(): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
