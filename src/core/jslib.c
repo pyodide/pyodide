@@ -192,7 +192,7 @@ EM_JS_VAL(JsVal, JsvArray_Get, (JsVal arr, int idx), {
     // clang-format on
     return Module.error;
   }
-  return nullToUndefined(result);
+  return result;
 });
 
 EM_JS_NUM(errcode, JsvArray_Set, (JsVal arr, int idx, JsVal val), {
@@ -301,19 +301,19 @@ JsvObject_toString, (JsVal obj), {
 
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
-  return nullToUndefined(obj[meth](... args));
+  return obj[meth](... args);
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_NoArgs, (JsVal obj, JsVal meth), {
-  return nullToUndefined(obj[meth]());
+  return obj[meth]();
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_OneArg, (JsVal obj, JsVal meth, JsVal arg), {
-  return nullToUndefined(obj[meth](arg));
+  return obj[meth](arg);
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_TwoArgs, (JsVal obj, JsVal meth, JsVal arg1, JsVal arg2), {
-  return nullToUndefined(obj[meth](arg1, arg2));
+  return obj[meth](arg1, arg2);
 })
 
 JsVal
@@ -353,11 +353,11 @@ EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
 });
 
 EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
-  return nullToUndefined(Function.prototype.apply.apply(func, [ this_, args ]));
+  return Function.prototype.apply.apply(func, [ this_, args ]);
 });
 
 EM_JS_VAL(JsVal, JsvFunction_Call_OneArg, (JsVal func, JsVal arg), {
-  return nullToUndefined(func(arg));
+  return func(arg);
 });
 
 // clang-format off
@@ -365,7 +365,7 @@ EM_JS_VAL(JsVal,
 JsvFunction_Construct,
 (JsVal func, JsVal args),
 {
-  return nullToUndefined(Reflect.construct(func, args));
+  return Reflect.construct(func, args);
 });
 // clang-format on
 

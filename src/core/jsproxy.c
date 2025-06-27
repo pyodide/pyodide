@@ -437,7 +437,7 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
     // clang-format on
     return Module.error;
   }
-  return nullToUndefined(result);
+  return result;
 });
 
 // JsMethodCallSingleton is a special structure which we return from
@@ -2345,7 +2345,7 @@ EM_JS_VAL(JsVal, JsProxy_subscript_js, (JsVal obj, JsVal key), {
     }
   }
   // clang-format on
-  return nullToUndefined(result);
+  return result;
 });
 
 /**

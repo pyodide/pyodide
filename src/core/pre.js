@@ -66,8 +66,6 @@ const errNoRet = () => {
 // For no-dylink build, this is a no-op.
 Module.reportUndefinedSymbols ??= () => {};
 
-const nullToUndefined = (x) => (x === null ? undefined : x);
-
 // This is factored out for testing purposes.
 function isPromise(obj) {
   try {
