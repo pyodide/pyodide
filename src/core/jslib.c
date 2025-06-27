@@ -14,7 +14,7 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
-  JS_CONST(error, Module.Jsv_GetNull())                                        \
+  JS_CONST(error, _Jsv_GetNull())                                              \
   JS_CONST(novalue, { noValueMarker : 1 })
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
@@ -27,19 +27,18 @@ JS_INIT_CONSTS();
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
-// clang-format off
-// Fallback error value for Safari
-// Otherwise we use wasm-gc, see sentinel.wat and emscripten-settings.ts
-EM_JS(JsVal, Jsv_GetNull, (void), {
-  return { errorMarker : 1 };
-}
-Module.Jsv_GetNull = Jsv_GetNull;
-);
+__attribute__((import_module("sentinel"), import_name("create_sentinel")))
+__attribute__((export_name("Jsv_GetNull"))) JsVal
+Jsv_GetNull_import(void);
 
-EM_JS(int, JsvNull_Check, (JsVal val), {
-  return val === Module.error;
-})
-// clang-format on
+EMSCRIPTEN_KEEPALIVE JsVal
+Jsv_GetNull(void)
+{
+  return Jsv_GetNull_import();
+}
+
+__attribute__((import_module("sentinel"),
+               import_name("is_sentinel"))) int JsvNull_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();

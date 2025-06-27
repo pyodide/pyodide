@@ -37,7 +37,8 @@ extern const JsRef Jsr_error;
 // ==================== JS_NULL ====================
 
 #define JS_NULL hiwire_get(Jsr_error)
-int
+
+__attribute__((import_module("sentinel"), import_name("is_sentinel"))) int
 JsvNull_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)

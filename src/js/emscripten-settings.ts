@@ -168,28 +168,6 @@ function installStdlib(stdlibURL: string): PreRunFunc {
   };
 }
 
-const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
-  (async function () {
-    const isIOS =
-      globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
-    if (isIOS) {
-      return undefined;
-    }
-    const module = await WebAssembly.compile(sentinelWasm);
-    return await WebAssembly.instantiate(module);
-  })();
-
-async function setJsvGetNull(Module: Module) {
-  Module.addRunDependency("setJsvGetNull");
-  const sentinelInstance = await sentinelInstancePromise;
-  Module.removeRunDependency("setJsvGetNull");
-  if (!sentinelInstance) {
-    return;
-  }
-  // @ts-ignore
-  Module.Jsv_GetNull = sentinelInstance.exports.create_sentinel;
-}
-
 /**
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
@@ -203,7 +181,6 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
   }
 
   return [
-    setJsvGetNull,
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
@@ -234,11 +211,11 @@ function getInstantiateWasmFunc(
       module: WebAssembly.Module,
     ) => void,
   ) {
+    const error = Symbol("js error on safari");
+    imports.env.is_safari = 0;
+    imports.env.safari_error = error;
+    imports.env.safari_is_error = (x: any) => x === error;
     (async function () {
-      const sentinelInstance = await sentinelInstancePromise;
-      if (sentinelInstance) {
-        imports.env.JsvNull_Check = sentinelInstance.exports.is_sentinel;
-      }
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
