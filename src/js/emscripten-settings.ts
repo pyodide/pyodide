@@ -204,6 +204,24 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
+  (async function () {
+    const isIOS =
+      globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    if (isIOS) {
+      return undefined;
+    }
+    try {
+      const module = await WebAssembly.compile(sentinelWasm);
+      return await WebAssembly.instantiate(module);
+    } catch(e) {
+      if (e instanceof WebAssembly.CompileError) {
+        return undefined;
+      }
+      throw e;
+    }
+  })();
+
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -211,11 +229,11 @@ function getInstantiateWasmFunc(
       module: WebAssembly.Module,
     ) => void,
   ) {
-    const error = Symbol("js error on safari");
-    imports.env.is_safari = 0;
-    imports.env.safari_error = error;
-    imports.env.safari_is_error = (x: any) => x === error;
     (async function () {
+      const sentinelInstance = await sentinelInstancePromise;
+      if (sentinelInstance) {
+        imports.sentinel = sentinelInstance.exports;
+      }
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

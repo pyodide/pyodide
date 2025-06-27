@@ -68,7 +68,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/core/sentinel.wasm: src/core/sentinel.wat
+src/js/generated/sentinel.wasm: src/core/sentinel.wat
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -107,7 +107,6 @@ $(CPYTHONINSTALL)/.installed-pyodide: $(CPYTHONINSTALL)/include/pyodide/.install
 
 dist/pyodide.asm.js: \
 	src/core/main.o  \
-	src/core/sentinel.wasm \
 	$(wildcard src/py/lib/*.py) \
 	$(CPYTHONLIB) \
 	$(CPYTHONINSTALL)/.installed-pyodide
@@ -135,8 +134,6 @@ dist/pyodide.asm.js: \
 	sed -i -n -e :a -e '1,7!{P;N;D;};N;ba' dist/pyodide.asm.js
 	echo "globalThis._createPyodideModule = _createPyodideModule;" >> dist/pyodide.asm.js
 
-	./emsdk/emsdk/upstream/bin/wasm-merge dist/pyodide.asm.wasm blah src/core/sentinel.wasm sentinel -o dist/pyodide.asm.wasm -all
-
 	@date +"[%F %T] done building pyodide.asm.js."
 
 
@@ -156,6 +153,7 @@ src/js/generated/_pyodide.out.js:            \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
+		src/js/generated/sentinel.wasm		 \
 		node_modules/.installed
 	cd src/js && npm run build-inner && cd -
 
