@@ -1730,6 +1730,11 @@ class JsNull:
     def __repr__(self):
         return "jsnull"
 
+    def __bool__(self):
+        return False
+
+    typeof = "object"
+
 
 jsnull = object.__new__(JsNull)
 

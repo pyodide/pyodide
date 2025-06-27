@@ -799,14 +799,15 @@ def test_pythonexc2js(selenium):
 @run_in_pyodide
 def test_js2python_null(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import jsnull
 
-    assert run_js("null") is None
-    assert run_js("[null]")[0] is None
-    assert run_js("() => null")() is None
-    assert run_js("({a: null})").a is None
-    assert run_js("new Map([['a', null]])")["a"] is None
-    assert run_js("[null, null, null]").to_py() == [None, None, None]
-    assert run_js("new Map([['a', null]])").to_py() == {"a": None}
+    assert run_js("null") is jsnull
+    assert run_js("[null]")[0] is jsnull
+    assert run_js("() => null")() is jsnull
+    assert run_js("({a: null})").a is jsnull
+    assert run_js("new Map([['a', null]])")["a"] is jsnull
+    assert run_js("[null, null, null]").to_py() == [jsnull, jsnull, jsnull]
+    assert run_js("new Map([['a', null]])").to_py() == {"a": jsnull}
 
 
 @run_in_pyodide
