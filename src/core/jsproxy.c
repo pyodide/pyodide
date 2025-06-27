@@ -435,7 +435,7 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   // clang-format off
   if (result === undefined && !(jskey in jsobj)) {
     // clang-format on
-    return null;
+    return Module.error;
   }
   return nullToUndefined(result);
 });
@@ -2341,7 +2341,7 @@ EM_JS_VAL(JsVal, JsProxy_subscript_js, (JsVal obj, JsVal key), {
     // key is missing. Otherwise, assume key present and value was undefined.
     // TODO: in absence of a "has" method, should we return None or KeyError?
     if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
-      return null;
+      return Module.error;
     }
   }
   // clang-format on
@@ -3132,7 +3132,7 @@ JsObjMap_length(PyObject* self)
 // A helper method for JsObjMap_subscript.
 EM_JS_VAL(JsVal, JsObjMap_subscript_js, (JsVal obj, JsVal key), {
   if (!Object.prototype.hasOwnProperty.call(obj, key)) {
-    return null;
+    return Module.error;
   }
   return obj[key];
 });
@@ -3171,7 +3171,7 @@ EM_JS_NUM(int,
 JsObjMap_ass_subscript_js,
 (JsVal obj, JsVal key, JsVal value),
 {
-  if(value === null) {
+  if(value === Module.error) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) {
       return -1;
     }
@@ -3665,7 +3665,7 @@ JsBuffer_DecodeString_js,
   } catch (e) {
     if (e instanceof TypeError) {
       // Decoding error
-      return null;
+      return Module.error;
     }
     throw e;
   }

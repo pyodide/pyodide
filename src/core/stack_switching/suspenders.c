@@ -11,7 +11,7 @@ EM_JS(JsVal, get_suspender, (), {
 })
 
 EM_JS(JsVal, syncifyHandler, (JsVal x, JsVal y), {
-  return null;
+  return Module.error;
 }
 
 async function inner(x, y) {
@@ -24,7 +24,7 @@ async function inner(x, y) {
       throw e;
     }
     Module.syncify_error = e;
-    return null;
+    return Module.error;
   }
 }
 if (newJspiSupported) {
@@ -58,7 +58,7 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
-    return null;
+    return Module.error;
   }
   const stackState = new StackState();
   const threadState = _captureThreadState();

@@ -534,7 +534,7 @@ function callPyObjectKwargs(ptrobj: number, jsargs: any[], kwargs: any) {
     API.maybe_fatal_error(e);
     return;
   }
-  if (result === null) {
+  if (result === Module.error) {
     _pythonexc2js();
   }
   // Automatically schedule coroutines
@@ -607,7 +607,7 @@ async function callPyObjectKwargsPromising(
   }
   // Unwrap result
   result = result[0];
-  if (result === null) {
+  if (result === Module.error) {
     _PyErr_SetRaisedException(HEAPU32[exc / 4]);
     try {
       _pythonexc2js();
@@ -704,7 +704,7 @@ export class PyProxy {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -809,7 +809,7 @@ export class PyProxy {
     let result;
     let proxies;
     if (!create_pyproxies) {
-      proxies = null;
+      proxies = Module.error;
     } else if (pyproxies) {
       proxies = pyproxies;
     } else {
@@ -821,15 +821,15 @@ export class PyProxy {
         ptrobj,
         depth,
         proxies,
-        dict_converter ?? null,
-        default_converter ?? null,
-        eager_converter ?? null,
+        dict_converter ?? Module.error,
+        default_converter ?? Module.error,
+        eager_converter ?? Module.error,
       );
       Py_EXIT();
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -940,7 +940,7 @@ export class PyGetItemMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       if (_PyErr_Occurred()) {
         _pythonexc2js();
       } else {
@@ -1092,7 +1092,7 @@ function* iter_helper(
       Py_ENTER();
       const item = __pyproxy_iter_next(iterptr, proxyCache, is_json_adaptor);
       Py_EXIT();
-      if (item === null) {
+      if (item === Module.error) {
         break;
       }
       yield item;
@@ -1199,7 +1199,7 @@ async function* aiter_helper(iterptr: number, token: {}): AsyncGenerator<any> {
         Py_ENTER();
         p = __pyproxy_aiter_next(iterptr);
         Py_EXIT();
-        if (p === null) {
+        if (p === Module.error) {
           break;
         }
       } catch (e) {
@@ -1319,7 +1319,7 @@ export class PyIteratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1362,7 +1362,7 @@ export class PyGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1395,7 +1395,7 @@ export class PyGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     return result;
@@ -1443,7 +1443,7 @@ export class PyAsyncIteratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -1502,7 +1502,7 @@ export class PyAsyncGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -1547,7 +1547,7 @@ export class PyAsyncGeneratorMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (p === null) {
+    if (p === Module.error) {
       _pythonexc2js();
     }
     let value;
@@ -2082,7 +2082,7 @@ function python_getattr(jsobj: PyProxy, key: any) {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (result === null) {
+  if (result === Module.error) {
     if (_PyErr_Occurred()) {
       _pythonexc2js();
     }
@@ -2136,7 +2136,7 @@ function python_slice_assign(
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === null) {
+  if (res === Module.error) {
     _pythonexc2js();
   }
   return res;
@@ -2152,7 +2152,7 @@ function python_pop(jsobj: any, pop_start: boolean): any {
   } catch (e) {
     API.fatal_error(e);
   }
-  if (res === null) {
+  if (res === Module.error) {
     _pythonexc2js();
   }
   return res;
@@ -2272,7 +2272,7 @@ const PyProxyHandlers = {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
     result.push(...Reflect.ownKeys(jsobj));
@@ -2984,7 +2984,7 @@ export class PyBufferMethods {
     } catch (e) {
       API.fatal_error(e);
     }
-    if (result === null) {
+    if (result === Module.error) {
       _pythonexc2js();
     }
 
@@ -3274,6 +3274,6 @@ export class PyBufferView {
     }
     this._released = true;
     // @ts-ignore
-    this.data = null;
+    this.data = Module.error;
   }
 }

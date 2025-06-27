@@ -5,6 +5,11 @@ import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type Module } from "./types";
 
+// @ts-ignore
+import sentinelWasm from "./generated/sentinel.wasm";
+
+declare const sentinelWasm: Uint8Array;
+
 /**
  * @private
  * @hidden
@@ -163,6 +168,28 @@ function installStdlib(stdlibURL: string): PreRunFunc {
   };
 }
 
+const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
+  (async function () {
+    const isIOS =
+      globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
+    if (isIOS) {
+      return undefined;
+    }
+    const module = await WebAssembly.compile(sentinelWasm);
+    return await WebAssembly.instantiate(module);
+  })();
+
+async function setJsvGetNull(Module: Module) {
+  Module.addRunDependency("setJsvGetNull");
+  const sentinelInstance = await sentinelInstancePromise;
+  Module.removeRunDependency("setJsvGetNull");
+  if (!sentinelInstance) {
+    return;
+  }
+  // @ts-ignore
+  Module.Jsv_GetNull = sentinelInstance.exports.create_sentinel;
+}
+
 /**
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
@@ -176,6 +203,7 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
   }
 
   return [
+    setJsvGetNull,
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
@@ -200,13 +228,17 @@ function getInstantiateWasmFunc(
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
   return function (
-    imports: { [key: string]: any },
+    imports: { [key: string]: { [key: string]: any } },
     successCallback: (
       instance: WebAssembly.Instance,
       module: WebAssembly.Module,
     ) => void,
   ) {
     (async function () {
+      const sentinelInstance = await sentinelInstancePromise;
+      if (sentinelInstance) {
+        imports.env.JsvNull_Check = sentinelInstance.exports.is_sentinel;
+      }
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

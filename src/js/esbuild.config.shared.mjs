@@ -38,6 +38,7 @@ export const config = ({
   format,
   name: globalName,
   extraDefines,
+  loader,
 }) => ({
   entryPoints: [join(__dirname, input + ".ts")],
   outfile: dest(output),
@@ -59,4 +60,5 @@ export const config = ({
   bundle: true,
   format,
   globalName,
+  loader,
 });

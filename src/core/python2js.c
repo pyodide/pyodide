@@ -463,7 +463,7 @@ int, _python2js_add_to_cache,
 // clang-format oh
 
 EM_JS(JsVal, _python2js_cache_lookup, (JsVal cache, PyObject* pyparent), {
-  return cache.get(pyparent) || null;
+  return cache.get(pyparent) || Module.error;
 });
 
 /**
@@ -723,7 +723,7 @@ python2js_custom__create_jscontext,
       } catch(e) {
         API.fatal_error(e);
       }
-      if (res === null) {
+      if (res === Module.error) {
         _pythonexc2js();
       }
       return res;

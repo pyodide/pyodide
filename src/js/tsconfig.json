@@ -16,11 +16,12 @@
     "lib": ["ES2022", "DOM"],
     "resolveJsonModule": true,
     "baseUrl": "..",
+    "allowArbitraryExtensions": true,
     "paths": {
       "generated/*": ["js/generated/*", "core/*"],
       "*": ["*", "js/*"]
     }
   },
-  "include": ["../**/*.ts", "*.json"],
+  "include": ["../**/*.ts", "*.json", "**/*.wasm"],
   "exclude": ["../**/*test*/**/*"]
 }

@@ -32,11 +32,13 @@ extern const JsRef Jsr_undefined;
 extern const JsRef Jsr_true;
 extern const JsRef Jsr_false;
 extern const JsRef Jsr_novalue;
+extern const JsRef Jsr_error;
 
 // ==================== JS_NULL ====================
 
-#define JS_NULL __builtin_wasm_ref_null_extern()
-#define JsvNull_Check(val) __builtin_wasm_ref_is_null_extern(val)
+#define JS_NULL hiwire_get(Jsr_error)
+int
+JsvNull_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)
 #define Jsv_true hiwire_get(Jsr_true)

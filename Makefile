@@ -68,6 +68,13 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
+src/core/.installed_wasm_tools:
+	RUSTFLAGS= cargo install --locked wasm-tools
+	touch $@
+
+src/js/generated/sentinel.wasm: src/core/sentinel.wat src/core/.installed_wasm_tools
+	wasm-tools parse $< -o $@
+
 src/core/libpyodide.a: \
 	src/core/docstring.o \
 	src/core/error_handling.o \
@@ -149,6 +156,7 @@ src/js/generated/_pyodide.out.js:            \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
+		src/js/generated/sentinel.wasm       \
 		node_modules/.installed
 	cd src/js && npm run build-inner && cd -
 

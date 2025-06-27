@@ -113,7 +113,7 @@ function checkEntry(index: number, value: any, expected: any): void {
 // The expected number of static js variables.
 // We double check that this is still right in makeSnapshot (when creating the
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
-const NUM_STATIC_JS_REFS = 5;
+const NUM_STATIC_JS_REFS = 6;
 
 API.serializeHiwireState = function (
   serializer?: (obj: any) => any,

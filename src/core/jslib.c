@@ -14,6 +14,7 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
+  JS_CONST(error, Module.Jsv_GetNull())                                        \
   JS_CONST(novalue, { noValueMarker : 1 })
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
@@ -26,9 +27,24 @@ JS_INIT_CONSTS();
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
+// clang-format off
+// Fallback error value for Safari
+// Otherwise we use wasm-gc, see sentinel.wat and emscripten-settings.ts
+EM_JS(JsVal, Jsv_GetNull, (void), {
+  return { errorMarker : 1 };
+}
+Module.Jsv_GetNull = Jsv_GetNull;
+);
+
+EM_JS(int, JsvNull_Check, (JsVal val), {
+  return val === Module.error;
+})
+// clang-format on
+
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
   Module.novalue = _hiwire_get(HEAP32[_Jsr_novalue / 4]);
+  Module.error = _hiwire_get(HEAP32[_Jsr_error / 4]);
   Hiwire.num_keys = _hiwire_num_refs;
   return 0;
 });
@@ -176,7 +192,7 @@ EM_JS_VAL(JsVal, JsvArray_Get, (JsVal arr, int idx), {
   // clang-format off
   if (result === undefined && !(idx in arr)) {
     // clang-format on
-    return null;
+    return Module.error;
   }
   return nullToUndefined(result);
 });
@@ -189,7 +205,7 @@ EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal arr, int idx), {
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
   if (idx < 0 || idx >= arr.length) {
-    return null;
+    return Module.error;
   }
   return arr.splice(idx, 1)[0];
 });
@@ -234,7 +250,7 @@ JsvArray_slice_assign,
   let jsvalues = [];
   for(let i = 0; i < values_length; i++){
     const ref = _python2js(DEREF_U32(values, i));
-    if(ref === null){
+    if (ref === Module.error){
       return -1;
     }
     jsvalues.push(ref);
