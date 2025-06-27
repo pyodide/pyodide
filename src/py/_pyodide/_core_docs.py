@@ -1720,6 +1720,20 @@ def can_run_sync() -> bool:
 __name__ = _save_name
 del _save_name
 
+
+class JsNull:
+    """A Python representation of the JavaScript null object"""
+
+    def __new__(cls):
+        return jsnull
+
+    def __repr__(self):
+        return "jsnull"
+
+
+jsnull = object.__new__(JsNull)
+
+
 __all__ = [
     "ConversionError",
     "InternalError",
@@ -1751,4 +1765,6 @@ __all__ = [
     "create_proxy",
     "destroy_proxies",
     "to_js",
+    "JsNull",
+    "jsnull",
 ]

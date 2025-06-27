@@ -16,6 +16,8 @@ typedef struct Js_Identifier
   JsRef object;
 } Js_Identifier;
 
+#define Jsv_null __builtin_wasm_ref_null_extern()
+
 #define Js_static_string_init(value) { .string = value, .object = NULL }
 #define Js_static_string(varname, value)                                       \
   static Js_Identifier varname = Js_static_string_init(value)
