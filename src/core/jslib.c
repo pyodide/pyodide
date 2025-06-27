@@ -27,8 +27,7 @@ JS_INIT_CONSTS();
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
-__attribute__((import_module("sentinel"), import_name("create_sentinel")))
-JsVal
+__attribute__((import_module("sentinel"), import_name("create_sentinel"))) JsVal
 Jsv_GetNull_import(void);
 
 EMSCRIPTEN_KEEPALIVE JsVal
