@@ -32,9 +32,9 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
   })();
 
 type SentinelInstance<T> = {
-  create_sentinel: () => T,
-  is_sentinel: (val:any) => val is T,
-}
+  create_sentinel: () => T;
+  is_sentinel: (val: any) => val is T;
+};
 
 export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
   const sentinelInstance = await sentinelInstancePromise;
