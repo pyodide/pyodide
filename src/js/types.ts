@@ -300,7 +300,6 @@ export interface Module {
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
-  reportUndefinedSymbols(): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
@@ -530,12 +529,10 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  | "reportUndefinedSymbols"
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"
   | "stringToUTF8OnStack"
-  | "reportUndefinedSymbols"
   | "_print_stderr"
   | "_print_stdout"
   | "stackSave"

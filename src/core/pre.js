@@ -63,9 +63,6 @@ const errNoRet = () => {
   );
 };
 
-// For no-dylink build, this is a no-op.
-Module.reportUndefinedSymbols ??= () => {};
-
 // This is factored out for testing purposes.
 function isPromise(obj) {
   try {
