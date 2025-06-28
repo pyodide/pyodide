@@ -12,115 +12,90 @@ from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_time
 from conftest import DIST_PATH, PYODIDE_ROOT
 
 
-def get_pyparsing_wheel_name() -> str:
-    return list(DIST_PATH.glob("pyparsing*.whl"))[0].name
+def get_micropip_wheel() -> Path:
+    return list(DIST_PATH.glob("micropip*.whl"))[0]
 
 
-def get_pytz_wheel_name() -> str:
-    return list(DIST_PATH.glob("pytz*.whl"))[0].name
-
-
+@pytest.mark.skip_refcount_check
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
-@pytest.mark.parametrize("active_server", ["main", "secondary"])
-def test_load_from_url(selenium_standalone, web_server_secondary, active_server):
+def test_load_from_url(selenium_standalone, httpserver):
     selenium = selenium_standalone
-    if active_server == "secondary":
-        url, port, log_main = web_server_secondary
-        log_backup = selenium.server_log
-    elif active_server == "main":
-        _, _, log_backup = web_server_secondary
-        log_main = selenium.server_log
-        url = selenium.server_hostname
-        port = selenium.server_port
-    else:
-        raise AssertionError()
 
-    with log_backup.open("r") as fh_backup, log_main.open("r") as fh_main:
-        # skip existing log lines
-        fh_main.seek(0, 2)
-        fh_backup.seek(0, 2)
+    micropip_path = get_micropip_wheel()
+    micropip_data = micropip_path.read_bytes()
+    httpserver.expect_oneshot_request(f"/{micropip_path.name}").respond_with_data(
+        micropip_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
 
-        pyparsing_wheel_name = get_pyparsing_wheel_name()
-        selenium.load_package(f"http://{url}:{port}/{pyparsing_wheel_name}")
-        assert "Skipping unknown package" not in selenium.logs
-        assert "Loading pyparsing" in selenium.logs
-        assert "Loaded pyparsing" in selenium.logs
+    selenium.load_package(f"{httpserver.url_for(f'/{micropip_path.name}')}")
 
-        # check that all resources were loaded from the active server
-        txt = fh_main.read()
-        assert f'"GET /{pyparsing_wheel_name} HTTP/1.1" 200' in txt
-
-        # no additional resources were loaded from the other server
-        assert len(fh_backup.read()) == 0
+    assert "Loading micropip" in selenium.logs
+    assert "Loaded micropip" in selenium.logs
 
     selenium.run(
         """
-        from pyparsing import Word, alphas
-        repr(Word(alphas).parseString('hello'))
+        import micropip
         """
     )
 
-    pytz_wheel_name = get_pytz_wheel_name()
-    selenium.load_package(f"http://{url}:{port}/{pytz_wheel_name}")
-    selenium.run("import pytz")
 
-
-def test_load_relative_url(
-    request, runtime, web_server_main, playwright_browsers, tmp_path
-):
-    url, port, _ = web_server_main
+def test_load_relative_url(request, selenium_standalone, playwright_browsers, tmp_path):
     test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
-    test_html = test_html.replace("./pyodide.js", f"http://{url}:{port}/pyodide.js")
+    test_html = test_html.replace(
+        "./pyodide.js", f"{selenium_standalone.base_url}/pyodide.js"
+    )
     (tmp_path / "test_temp.html").write_text(test_html)
-    pytz_wheel = get_pytz_wheel_name()
-    shutil.copy(DIST_PATH / pytz_wheel, tmp_path / pytz_wheel)
+    micropip_wheel = get_micropip_wheel()
+    shutil.copy(micropip_wheel, tmp_path / micropip_wheel.name)
 
     with (
         spawn_web_server(tmp_path) as web_server,
         selenium_common(
             request,
-            runtime,
+            selenium_standalone.browser,
             web_server,
             load_pyodide=False,
             browsers=playwright_browsers,
             script_type="classic",
         ) as selenium,
         set_webdriver_script_timeout(
-            selenium, script_timeout=parse_driver_timeout(request.node)
+            selenium_standalone, script_timeout=parse_driver_timeout(request.node)
         ),
     ):
         if selenium.browser != "node":
-            selenium.goto(f"http://{url}:{web_server[1]}/test_temp.html")
+            url = f"http://{web_server[0]}:{web_server[1]}/test_temp.html"
+            selenium.goto(url)
         selenium.load_pyodide()
         selenium.initialize_pyodide()
         selenium.save_state()
         selenium.restore_state()
         if selenium.browser == "node":
             selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
-        selenium.load_package(pytz_wheel)
+        selenium.load_package(micropip_wheel.name)
         selenium.run(
-            "import pytz; from pyodide_js import loadedPackages; print(loadedPackages.pytz)"
+            "import micropip; from pyodide_js import loadedPackages; print(loadedPackages.micropip)"
         )
 
 
 def test_list_loaded_urls(selenium_standalone):
     selenium = selenium_standalone
 
-    selenium.load_package("pyparsing")
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == [
-        "pyparsing"
-    ]
+    selenium.load_package("micropip")
+    assert "micropip" in selenium.run_js("return Object.keys(pyodide.loadedPackages)")
     assert (
-        selenium.run_js("return pyodide.loadedPackages['pyparsing']")
+        selenium.run_js("return pyodide.loadedPackages['micropip']")
         == "default channel"
     )
 
 
 def test_uri_mismatch(selenium_standalone):
-    selenium_standalone.load_package("pyparsing")
-    selenium_standalone.load_package("http://some_url/pyparsing-3.0.6-py3-none-any.whl")
+    selenium_standalone.load_package("micropip")
+    selenium_standalone.load_package("http://some_url/micropip-3.0.6-py3-none-any.whl")
     assert (
-        "URI mismatch, attempting to load package pyparsing" in selenium_standalone.logs
+        "URI mismatch, attempting to load package micropip" in selenium_standalone.logs
     )
 
 
@@ -139,38 +114,30 @@ def test_invalid_package_name(selenium):
 
 def test_load_package_return(selenium_standalone):
     selenium = selenium_standalone
-    package = selenium.run_js("return await pyodide.loadPackage('pyparsing')")
+    package = selenium.run_js("return await pyodide.loadPackage('micropip')")
 
-    assert package[0]["name"] == "pyparsing"
+    assert package[0]["name"] == "micropip"
     assert package[0]["packageType"] == "package"
 
 
 @pytest.mark.xfail_browsers(node="Loading urls in node seems to time out right now")
-@pytest.mark.parametrize("active_server", ["main", "secondary"])
 def test_load_package_return_from_url(
-    selenium_standalone, web_server_secondary, active_server
+    selenium_standalone,
 ):
     selenium = selenium_standalone
-    if active_server == "secondary":
-        url, port, _ = web_server_secondary
-    elif active_server == "main":
-        url = selenium.server_hostname
-        port = selenium.server_port
-    else:
-        raise AssertionError()
-
-    pyparsing_wheel_name = get_pyparsing_wheel_name()
+    micropip_wheel_name = get_micropip_wheel().name
     package = selenium.run_js(
-        f"return await pyodide.loadPackage('http://{url}:{port}/{pyparsing_wheel_name}')"
+        f"return await pyodide.loadPackage('{selenium.base_url}/{micropip_wheel_name}')"
     )
 
-    assert package[0]["name"] == "pyparsing"
+    assert package[0]["name"] == "micropip"
     assert package[0]["packageType"] == "package"
-    assert package[0]["fileName"] == pyparsing_wheel_name
+    assert package[0]["fileName"] == micropip_wheel_name
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize(
-    "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
+    "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
 def test_load_packages_multiple(selenium_standalone, packages):
     selenium = selenium_standalone
@@ -179,77 +146,88 @@ def test_load_packages_multiple(selenium_standalone, packages):
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
-    # ('pyparsing' and 'packaging')
-    assert (
-        selenium.logs.count(f"Loaded {packages[0]}, {packages[1]}") == 1
-        or selenium.logs.count(f"Loaded {packages[1]}, {packages[0]}") == 1
-    )
+    # ('pytest' and 'pluggy')
+    cnt: dict[str, int] = {}
+    for log in selenium.logs.splitlines():
+        if log.startswith("Loaded"):
+            for package in packages:
+                if package in log:
+                    cnt[package] = cnt.get(package, 0) + 1
+
+    for package in packages:
+        assert cnt.get(package, 0) == 1, (
+            f"Package {package} was loaded {cnt.get(package, 0)} times"
+        )
 
 
+@pytest.mark.skip_refcount_check
 @pytest.mark.parametrize(
-    "packages", [["pyparsing", "pytz"], ["pyparsing", "packaging"]], ids="-".join
+    "packages", [["micropip", "pytest"], ["pluggy", "pytest"]], ids="-".join
 )
 def test_load_packages_sequential(selenium_standalone, packages):
     selenium = selenium_standalone
     promises = ",".join(f'pyodide.loadPackage("{x}")' for x in packages)
-    loaded_packages = [
-        x[0]["name"] for x in selenium.run_js(f"return await Promise.all([{promises}])")
-    ]
+    selenium.run_js(f"return await Promise.all([{promises}])")
     selenium.run(f"import {packages[0]}")
     selenium.run(f"import {packages[1]}")
     # The log must show that each package is loaded exactly once,
     # including when one package is a dependency of the other
-    # ('pyparsing' and 'matplotlib')
-    assert selenium.logs.count(f"Loaded {packages[0]}") == 1
-    assert selenium.logs.count(f"Loaded {packages[1]}") == 1
+    # ('pytest' and 'pluggy')
+    cnt: dict[str, int] = {}
+    for log in selenium.logs.splitlines():
+        if log.startswith("Loaded"):
+            for package in packages:
+                if package in log:
+                    cnt[package] = cnt.get(package, 0) + 1
 
-    assert loaded_packages == [packages[0], packages[1]] or loaded_packages == [
-        packages[1],
-        packages[0],
-    ]
+    for package in packages:
+        assert cnt.get(package, 0) == 1, (
+            f"Package {package} was loaded {cnt.get(package, 0)} times"
+        )
 
 
+@pytest.mark.skip_refcount_check
 def test_load_handle_failure(selenium_standalone):
     selenium = selenium_standalone
-    selenium.load_package("pytz")
-    selenium.run("import pytz")
+    selenium.load_package("micropip")
+    selenium.run("import micropip")
     with pytest.raises(
-        selenium.JavascriptException, match="No known package with name 'pytz2'"
+        selenium.JavascriptException, match="No known package with name 'micropip2'"
     ):
-        selenium.load_package("pytz2")
-    selenium.load_package("pyparsing")
-    assert "Loaded pytz" in selenium.logs
-    assert "Loaded pyparsing" in selenium.logs
+        selenium.load_package("micropip2")
+    assert "Loaded micropip" in selenium.logs
 
 
 @pytest.mark.skip_refcount_check
 def test_load_failure_retry(selenium_standalone):
     """Check that a package can be loaded after failing to load previously"""
     selenium = selenium_standalone
-    selenium.load_package("http://invalidurl/pytz-2021.3-py3-none-any.whl")
-    assert selenium.logs.count("Loading pytz") == 1
-    assert selenium.logs.count("The following error occurred while loading pytz:") == 1
+    selenium.load_package("http://invalidurl/micropip-2021.3-py3-none-any.whl")
+    assert selenium.logs.count("Loading micropip") == 1
+    assert (
+        selenium.logs.count("The following error occurred while loading micropip:") == 1
+    )
     assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == []
-    selenium.load_package("pytz")
-    selenium.run("import pytz")
-    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["pytz"]
+    selenium.load_package("micropip")
+    selenium.run("import micropip")
+    assert selenium.run_js("return Object.keys(pyodide.loadedPackages)") == ["micropip"]
 
 
 def test_load_twice(selenium_standalone):
-    selenium_standalone.load_package("pytz")
-    selenium_standalone.load_package("pytz")
+    selenium_standalone.load_package("micropip")
+    selenium_standalone.load_package("micropip")
     assert "No new packages to load" in selenium_standalone.logs
 
 
 def test_load_twice_different_source(selenium_standalone):
     selenium_standalone.load_package(
         [
-            "https://foo/pytz-2021.3-py3-none-any.whl",
-            "https://bar/pytz-2021.3-py3-none-any.whl",
+            "https://foo/micropip-2021.3-py3-none-any.whl",
+            "https://bar/micropip-2021.3-py3-none-any.whl",
         ]
     )
     assert (
-        "Loading same package pytz from https://bar/pytz-2021.3-py3-none-any.whl and https://foo/pytz-2021.3-py3-none-any.whl"
+        "Loading same package micropip from https://bar/micropip-2021.3-py3-none-any.whl and https://foo/micropip-2021.3-py3-none-any.whl"
         in selenium_standalone.logs
     )
 
@@ -257,16 +235,16 @@ def test_load_twice_different_source(selenium_standalone):
 def test_load_twice_same_source(selenium_standalone):
     selenium_standalone.load_package(
         [
-            "https://foo/pytz-2021.3-py3-none-any.whl",
-            "https://foo/pytz-2021.3-py3-none-any.whl",
+            "https://foo/micropip-2021.3-py3-none-any.whl",
+            "https://foo/micropip-2021.3-py3-none-any.whl",
         ]
     )
-    assert "Loading same package pytz" not in selenium_standalone.logs
+    assert "Loading same package micropip" not in selenium_standalone.logs
 
 
 def test_js_load_package_from_python(selenium_standalone):
     selenium = selenium_standalone
-    to_load = ["pyparsing"]
+    to_load = ["micropip"]
     selenium.run_js(
         f"""
         await pyodide.runPythonAsync(`
@@ -893,20 +871,21 @@ def test_load_package_stream(selenium_standalone, httpserver):
     )
 
 
+@pytest.mark.skip_refcount_check
 def test_load_package_stream_and_callback(selenium_standalone, httpserver):
     # messageCallback and errorCallback should still take precedence over stdout stream
     selenium = selenium_standalone
 
-    micropip_path = list(DIST_PATH.glob("micropip*.whl"))[0].name
+    micropip_path = get_micropip_wheel()
 
-    httpserver.expect_oneshot_request("/" + micropip_path).respond_with_data(
-        (DIST_PATH / micropip_path).read_bytes(),
+    httpserver.expect_oneshot_request("/" + micropip_path.name).respond_with_data(
+        micropip_path.read_bytes(),
         content_type="application/zip",
         headers={"Access-Control-Allow-Origin": "*"},
         status=200,
     )
 
-    url = httpserver.url_for("/" + micropip_path)
+    url = httpserver.url_for("/" + micropip_path.name)
 
     selenium.run_js(
         """

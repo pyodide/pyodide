@@ -3,12 +3,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import pytest
-from pytest_pyodide import run_in_pyodide, spawn_web_server
+from pytest_pyodide import run_in_pyodide
 
 cpver = f"cp{sys.version_info.major}{sys.version_info.minor}"
 
 
 WHEEL_BASE = None
+SNOWBALL_WHEEL = (
+    Path(__file__).parent / "test" / "snowballstemmer-2.0.0-py2.py3-none-any.whl"
+)
 
 
 @pytest.fixture
@@ -41,9 +44,6 @@ def selenium_standalone_micropip(selenium_standalone):
     yield selenium_standalone
 
 
-SNOWBALL_WHEEL = "snowballstemmer-2.0.0-py2.py3-none-any.whl"
-
-
 def test_install_simple(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
     assert selenium.run_js(
@@ -63,38 +63,38 @@ def test_install_simple(selenium_standalone_micropip):
     ) == ["go", "go", "goe", "gone"]
 
 
-@pytest.mark.parametrize("base_url", ["'{base_url}'", "'.'"])
-def test_install_custom_url(selenium_standalone_micropip, base_url):
+def test_install_custom_url(selenium_standalone_micropip, httpserver):
     selenium = selenium_standalone_micropip
 
-    with spawn_web_server(Path(__file__).parent / "test") as server:
-        server_hostname, server_port, _ = server
-        base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + SNOWBALL_WHEEL
+    httpserver.expect_oneshot_request(f"/{SNOWBALL_WHEEL.name}").respond_with_data(
+        SNOWBALL_WHEEL.read_bytes(),
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    url = httpserver.url_for(SNOWBALL_WHEEL.name)
 
-        selenium.run_js(
-            f"""
-            await pyodide.runPythonAsync(`
-                import micropip
-                await micropip.install('{url}')
-                import snowballstemmer
-            `);
-            """
-        )
+    selenium.run_js(
+        f"""
+        await pyodide.runPythonAsync(`
+            import micropip
+            await micropip.install('{url}')
+            import snowballstemmer
+        `);
+        """
+    )
 
 
 @pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
 def test_install_file_protocol_node(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
-    from conftest import DIST_PATH
 
-    pyparsing_wheel_name = list(DIST_PATH.glob("pyparsing*.whl"))[0].name
     selenium.run_js(
         f"""
         await pyodide.runPythonAsync(`
             import micropip
-            await micropip.install('file:{pyparsing_wheel_name}')
-            import pyparsing
+            await micropip.install('file:{SNOWBALL_WHEEL.as_posix()}')
+            import snowballstemmer
         `);
         """
     )
@@ -144,45 +144,52 @@ def test_install_different_version2(selenium_standalone_micropip):
     )
 
 
-def test_list_load_package_from_url(selenium_standalone_micropip):
-    with spawn_web_server(Path(__file__).parent / "test") as server:
-        server_hostname, server_port, _ = server
-        base_url = f"http://{server_hostname}:{server_port}/"
-        url = base_url + SNOWBALL_WHEEL
+def test_list_load_package_from_url(selenium_standalone_micropip, httpserver):
+    httpserver.expect_oneshot_request(f"/{SNOWBALL_WHEEL.name}").respond_with_data(
+        SNOWBALL_WHEEL.read_bytes(),
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    url = httpserver.url_for(SNOWBALL_WHEEL.name)
 
-        selenium = selenium_standalone_micropip
-        selenium.run_js(
-            f"""
-            await pyodide.loadPackage({url!r});
-            await pyodide.runPythonAsync(`
-                import micropip
-                assert "snowballstemmer" in micropip.list()
-            `);
-            """
-        )
-
-
-def test_emfs(selenium_standalone_micropip):
-    with spawn_web_server(Path(__file__).parent / "test") as server:
-        server_hostname, server_port, _ = server
-        url = f"http://{server_hostname}:{server_port}/"
-
-        @run_in_pyodide(packages=["micropip"])
-        async def run_test(selenium, url, wheel_name):
+    selenium = selenium_standalone_micropip
+    selenium.run_js(
+        f"""
+        await pyodide.loadPackage({url!r});
+        await pyodide.runPythonAsync(`
             import micropip
-            from pyodide.http import pyfetch
+            assert "snowballstemmer" in micropip.list()
+        `);
+        """
+    )
 
-            resp = await pyfetch(url + wheel_name)
-            await resp._into_file(open(wheel_name, "wb"))
-            await micropip.install("emfs:" + wheel_name)
-            import snowballstemmer
 
-            stemmer = snowballstemmer.stemmer("english")
-            assert stemmer.stemWords("go going goes gone".split()) == [
-                "go",
-                "go",
-                "goe",
-                "gone",
-            ]
+def test_emfs(selenium_standalone_micropip, httpserver):
+    httpserver.expect_oneshot_request(f"/{SNOWBALL_WHEEL.name}").respond_with_data(
+        SNOWBALL_WHEEL.read_bytes(),
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    url = httpserver.url_for(f"/{SNOWBALL_WHEEL.name}")
 
-        run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL)
+    @run_in_pyodide(packages=["micropip"])
+    async def run_test(selenium, url, wheel_name):
+        import micropip
+        from pyodide.http import pyfetch
+
+        resp = await pyfetch(url)
+        await resp._into_file(open(wheel_name, "wb"))
+        await micropip.install("emfs:" + wheel_name)
+        import snowballstemmer
+
+        stemmer = snowballstemmer.stemmer("english")
+        assert stemmer.stemWords("go going goes gone".split()) == [
+            "go",
+            "go",
+            "goe",
+            "gone",
+        ]
+
+    run_test(selenium_standalone_micropip, url, SNOWBALL_WHEEL.name)
