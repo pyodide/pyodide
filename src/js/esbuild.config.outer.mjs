@@ -29,6 +29,7 @@ const outputs = [
     output: "dist/pyodide.mjs",
     format: "esm",
     extraDefines,
+    loader: { ".wasm": "binary" },
   },
   {
     input: "pyodide.umd",
@@ -36,6 +37,7 @@ const outputs = [
     format: "iife",
     name: "loadPyodide",
     extraDefines,
+    loader: { ".wasm": "binary" },
   },
 ];
 

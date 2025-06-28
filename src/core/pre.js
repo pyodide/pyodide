@@ -63,8 +63,6 @@ const errNoRet = () => {
   );
 };
 
-const nullToUndefined = (x) => (x === null ? undefined : x);
-
 // This is factored out for testing purposes.
 function isPromise(obj) {
   try {

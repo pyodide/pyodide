@@ -104,8 +104,10 @@ function js2python_convertImmutableInner(value) {
     }
   } else if (type === "bigint") {
     return js2python_bigint(value);
-  } else if (value === undefined || value === null) {
+  } else if (value === undefined) {
     return __js2python_none();
+  } else if (value === null) {
+    return __js2python_null();
   } else if (value === true) {
     return __js2python_true();
   } else if (value === false) {

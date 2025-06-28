@@ -4,6 +4,7 @@
 *.gen.*
 src/js/generated
 *.out.*
+*.wasm
 
 *.egg-info/
 

@@ -366,6 +366,8 @@ _python2js_immutable(PyObject* x)
     return Jsv_true;
   } else if (Py_IsFalse(x)) {
     return Jsv_false;
+  } else if (x == py_jsnull) {
+    return Jsv_null;
   } else if (PyLong_Check(x)) {
     return _python2js_long(x);
   } else if (PyFloat_Check(x)) {
@@ -463,7 +465,7 @@ int, _python2js_add_to_cache,
 // clang-format oh
 
 EM_JS(JsVal, _python2js_cache_lookup, (JsVal cache, PyObject* pyparent), {
-  return cache.get(pyparent) || null;
+  return cache.get(pyparent) || Module.error;
 });
 
 /**
@@ -723,7 +725,7 @@ python2js_custom__create_jscontext,
       } catch(e) {
         API.fatal_error(e);
       }
-      if (res === null) {
+      if (res === Module.error) {
         _pythonexc2js();
       }
       return res;
@@ -966,6 +968,8 @@ static PyMethodDef methods[] = {
   { NULL } /* Sentinel */
 };
 
+PyObject* py_jsnull = NULL;
+
 int
 python2js_init(PyObject* core)
 {
@@ -974,6 +978,9 @@ python2js_init(PyObject* core)
   FAIL_IF_NULL(docstring_source);
   FAIL_IF_MINUS_ONE(
     add_methods_and_set_docstrings(core, methods, docstring_source));
+  py_jsnull = PyObject_GetAttrString(docstring_source, "jsnull");
+  FAIL_IF_NULL(py_jsnull);
+
   success = true;
 finally:
   Py_CLEAR(docstring_source);

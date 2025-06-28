@@ -4,6 +4,7 @@ import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type Module } from "./types";
+import { getSentinelImport } from "generated/sentinel";
 
 /**
  * @private
@@ -199,14 +200,16 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  const sentinelImportPromise = getSentinelImport();
   return function (
-    imports: { [key: string]: any },
+    imports: { [key: string]: { [key: string]: any } },
     successCallback: (
       instance: WebAssembly.Instance,
       module: WebAssembly.Module,
     ) => void,
   ) {
     (async function () {
+      imports.sentinel = await sentinelImportPromise;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
