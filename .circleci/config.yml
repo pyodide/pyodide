@@ -212,7 +212,6 @@ jobs:
       - run:
           name: build pyodide debug
           command: |
-            cp -r dist dist-release
             rm dist/pyodide.asm.js
             source pyodide_env.sh
             ccache -z
@@ -223,12 +222,11 @@ jobs:
             npx prettier -w pyodide.js
             cd ..
             mv dist dist-debug
-            mv dist-release dist
 
       - persist_to_workspace:
           root: .
           paths:
-            - .
+            - ./dist-debug
 
   create-xbuild-env:
     <<: *defaults
@@ -790,14 +788,14 @@ workflows:
 
       - build-pyodide-debug:
           requires:
-            - build-core-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
 
       - build-test-pyc-packages:
           requires:
-            - build-core-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
