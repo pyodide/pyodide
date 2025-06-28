@@ -1,3 +1,10 @@
+;; This module is needed for two reasons:
+;; 1. Clang/llvm is unable to generate the wasm GC instructions and types we need.
+;; 2. wasm-gc has only been supported in Safari since December 2024 and since
+;; NodeJS 22 in April 2024.
+;;
+;; In another year or so, reason 2 will go away. To address reason 1 my pipe dream
+;; is to implement the needed primitives into llvm. But that will be a lot of work.
 (module
   (type $empty_struct (struct))
 
