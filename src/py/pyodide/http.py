@@ -396,7 +396,9 @@ class FetchResponse:
         self.abort_controller.abort(_construct_abort_reason(reason))
 
 
-async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
+async def pyfetch(
+    url: str, /, *, signal: Any = None, fetcher: Any = None, **kwargs: Any
+) -> FetchResponse:
     r"""Fetch the url and return the response.
 
     This functions provides a similar API to :js:func:`fetch` however it is
@@ -408,6 +410,12 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     ----------
     url :
         URL to fetch.
+
+    signal :
+        Abort signal to use for the fetch request.
+
+    fetcher :
+        Fetcher to use for the fetch request.
 
     \*\*kwargs :
         keyword arguments are passed along as `optional parameters to the fetch API
@@ -428,15 +436,16 @@ async def pyfetch(url: str, **kwargs: Any) -> FetchResponse:
     """
 
     controller = AbortController.new()
-    if "signal" in kwargs:
-        signal = abortSignalAny(to_js([kwargs["signal"], controller.signal]))
+    if signal:
+        signal = abortSignalAny(to_js([signal, controller.signal]))
     else:
         signal = controller.signal
     kwargs["signal"] = signal
+    fetcher = fetcher or _jsfetch
     try:
         return FetchResponse(
             url,
-            await _jsfetch(url, to_js(kwargs, dict_converter=Object.fromEntries)),
+            await fetcher(url, to_js(kwargs, dict_converter=Object.fromEntries)),
             controller,
             signal,
         )
