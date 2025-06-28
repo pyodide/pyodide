@@ -4,11 +4,7 @@ import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type Module } from "./types";
-
-// @ts-ignore
-import sentinelWasm from "./generated/sentinel.wasm";
-
-declare const sentinelWasm: Uint8Array;
+import { getSentinelImport } from "generated/sentinel";
 
 /**
  * @private
@@ -204,24 +200,7 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
-  const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
-  (async function () {
-    const isIOS =
-      globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
-    if (isIOS) {
-      return undefined;
-    }
-    try {
-      const module = await WebAssembly.compile(sentinelWasm);
-      return await WebAssembly.instantiate(module);
-    } catch(e) {
-      if (e instanceof WebAssembly.CompileError) {
-        return undefined;
-      }
-      throw e;
-    }
-  })();
-
+  const sentinelImportPromise = getSentinelImport();
   return function (
     imports: { [key: string]: { [key: string]: any } },
     successCallback: (
@@ -230,10 +209,7 @@ function getInstantiateWasmFunc(
     ) => void,
   ) {
     (async function () {
-      const sentinelInstance = await sentinelInstancePromise;
-      if (sentinelInstance) {
-        imports.sentinel = sentinelInstance.exports;
-      }
+      imports.sentinel = await sentinelImportPromise;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {
