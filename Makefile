@@ -68,7 +68,7 @@ src/core/pyodide_pre.gen.dat: src/js/generated/_pyodide.out.js src/core/pre.js s
 src/core/pyodide_pre.o: src/core/pyodide_pre.c src/core/pyodide_pre.gen.dat
 	unset _EMCC_CCACHE && emcc --std=c23 -c $< -o $@
 
-src/js/generated/sentinel.wasm: src/core/sentinel.wat
+src/core/sentinel.wasm: src/core/sentinel.wat
 	./emsdk/emsdk/upstream/bin/wasm-as $< -o $@ -all
 
 src/core/libpyodide.a: \
@@ -153,7 +153,6 @@ src/js/generated/_pyodide.out.js:            \
 		src/js/generated/pyproxy.ts          \
 		src/js/generated/python2js_buffer.js \
 		src/js/generated/js2python.js        \
-		src/js/generated/sentinel.wasm		 \
 		node_modules/.installed
 	cd src/js && npm run build-inner && cd -
 
@@ -161,7 +160,8 @@ dist/pyodide.js:                             \
 		src/js/pyodide.ts                    \
 		src/js/compat.ts                     \
 		src/js/emscripten-settings.ts        \
-		src/js/version.ts
+		src/js/version.ts                    \
+		src/core/sentinel.wasm
 	cd src/js && npm run build
 
 src/core/stack_switching/stack_switching.out.js : src/core/stack_switching/*.mjs
@@ -278,6 +278,7 @@ clean:
 	rm -fr dist/*
 	rm -fr node_modules
 	find src -name '*.o' -delete
+	find src -name '*.wasm' -delete
 	find src -name '*.gen.*' -delete
 	find src -name '*.out.*' -delete
 	rm -fr src/js/generated
