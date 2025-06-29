@@ -1,14 +1,13 @@
-# NOTE: keep the name, version, and other fields in sync with source/path in numpy-tests/meta.yaml.
 package:
-  name: numpy
+  name: numpy-tests
   version: 2.3.1
   tag:
     - min-scipy-stack
   top-level:
     - numpy
+# NOTE: keep in sync with numpy/meta.yaml
 source:
-  url: https://files.pythonhosted.org/packages/source/n/numpy/numpy-2.3.1.tar.gz
-  sha256: 1ec9ae20a4226da374362cca3c62cd753faf2f951440b0e3b98e93c235441d2b
+  path: ../numpy/build/numpy-2.3.1
 
 build:
   unvendor-tests: false # we do this on our own using Meson's install tags
@@ -16,20 +15,23 @@ build:
   backend-flags: |
     setup-args=-Dallow-noblas=true
     setup-args=--cross-file=${MESON_CROSS_FILE}
-    install-args=--tags=runtime,python-runtime,devel
+    install-args=--tags=tests
     build-dir=build
+  # Replace 'name = "numpy"' with 'name = "numpy-tests"' in pyproject.toml
+  script: |
+    sed -i 's/name = "numpy"/name = "numpy-tests"/' pyproject.toml
   # numpy creates numpy/distutils/__pycache__ directory during the build.
   # It breaks our test because there is a .pyc in the directory.
   post: |
     rm -rf numpy/distutils/__pycache__
   cflags: |
     -Wno-return-type
-  cross-build-env: true
-  cross-build-files:
-    - numpy/_core/include/numpy/numpyconfig.h
-    - numpy/_core/include/numpy/_numpyconfig.h
-    - numpy/_core/lib/libnpymath.a
-    - numpy/random/lib/libnpyrandom.a
+
+# NumPy is not really a dependency for numpy-tests, we only do it to ensure that
+# the numpy package is built before numpy-tests.
+requirements:
+  host:
+    - numpy
 about:
   home: https://www.numpy.org
   PyPI: https://pypi.org/project/numpy
