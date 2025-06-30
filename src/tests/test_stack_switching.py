@@ -137,7 +137,7 @@ def test_syncify_error(selenium):
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import run_sync
+    from pyodide.ffi import run_sync, jsnull
 
     asyncNull = run_js(
         """
@@ -147,7 +147,7 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert run_sync(asyncNull()) is None
+    assert run_sync(asyncNull()) is jsnull
 
 
 @requires_jspi
