@@ -813,6 +813,7 @@ def test_js2python_null(selenium):
 @run_in_pyodide
 def test_js2python_basic(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import jsnull
 
     t = run_js(
         """
@@ -841,7 +842,7 @@ def test_js2python_basic(selenium):
     assert t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)
     assert t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)
     assert t.jsundefined is None
-    assert t.jsnull is None
+    assert t.jsnull is jsnull
     assert t.jstrue is True
     assert t.jsfalse is False
     assert t.jspython is open
