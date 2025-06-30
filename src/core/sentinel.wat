@@ -5,6 +5,9 @@
 ;;
 ;; In another year or so, reason 2 will go away. To address reason 1 my pipe dream
 ;; is to implement the needed primitives into llvm. But that will be a lot of work.
+;;
+;; Once it works in Safari, we can use wasm-merge to merge this module with the
+;; main module which will allow better optimization.
 (module
   (type $empty_struct (struct))
 
