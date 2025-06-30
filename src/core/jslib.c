@@ -20,7 +20,7 @@ bool tracerefs;
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
 // C definition:
-#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE const JsRef Jsr_##name;
+#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE JsRef Jsr_##name;
 JS_INIT_CONSTS();
 
 #undef JS_CONST

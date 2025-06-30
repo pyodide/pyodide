@@ -30,11 +30,11 @@ typedef struct Js_Identifier
   } while (0)
 
 // Special JsRefs for singleton constants.
-extern const JsRef Jsr_undefined;
-extern const JsRef Jsr_true;
-extern const JsRef Jsr_false;
-extern const JsRef Jsr_novalue;
-extern const JsRef Jsr_error;
+extern JsRef Jsr_undefined;
+extern JsRef Jsr_true;
+extern JsRef Jsr_false;
+extern JsRef Jsr_novalue;
+extern JsRef Jsr_error;
 
 // ==================== JS_NULL ====================
 
