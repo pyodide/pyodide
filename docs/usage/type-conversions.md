@@ -55,8 +55,7 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. {js:data}`null` is converted to {js:data}`undefined` after a round trip, and
-3. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
+2. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
    trip unless its absolute value is greater than
    {js:data}`Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
@@ -76,13 +75,14 @@ and {py:class}`bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python            | JavaScript                               |
-| ----------------- | ---------------------------------------- |
-| {py:class}`int`   | {js:data}`Number` or {js:data}`BigInt`\* |
-| {py:class}`float` | {js:data}`Number`                        |
-| {py:class}`str`   | {js:data}`String`                        |
-| {py:class}`bool`  | {js:data}`Boolean`                       |
-| {py:data}`None`   | {js:data}`undefined`                     |
+| Python                          | JavaScript                               |
+| ------------------------------- | ---------------------------------------- |
+| {py:class}`int`                 | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float`               | {js:data}`Number`                        |
+| {py:class}`str`                 | {js:data}`String`                        |
+| {py:class}`bool`                | {js:data}`Boolean`                       |
+| {py:data}`None`                 | {js:data}`undefined`                     |
+| {py:data}`pyodide.ffi.jsnull`   | {js:data}`null`                          |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
@@ -104,7 +104,7 @@ Python:
 | {js:data}`String`    | {py:class}`str`                                       |
 | {js:data}`Boolean`   | {py:class}`bool`                                      |
 | {js:data}`undefined` | {py:data}`None`                                       |
-| {js:data}`null`      | {py:data}`None`                                       |
+| {js:data}`null`      | {py:data}`pyodide.ffi.jsnull`                         |
 
 \* A {js:data}`Number` is converted to an {py:class}`int` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` and its fractional

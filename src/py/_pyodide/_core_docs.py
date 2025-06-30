@@ -1722,7 +1722,7 @@ del _save_name
 
 
 class JsNull:
-    """A Python representation of the JavaScript null object"""
+    """The type of the Python representation of the JavaScript null object"""
 
     def __new__(cls):
         return jsnull
@@ -1736,7 +1736,8 @@ class JsNull:
     typeof = "object"
 
 
-jsnull = object.__new__(JsNull)
+#: The Python representation of the JavaScript null object.
+jsnull: JsNull = object.__new__(JsNull)
 
 
 __all__ = [
