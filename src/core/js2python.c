@@ -24,9 +24,14 @@ _js2python_none(void)
   Py_RETURN_NONE;
 }
 
+EMSCRIPTEN_KEEPALIVE int compat_null_to_none = 0;
+
 EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_null(void)
 {
+  if (compat_null_to_none) {
+    Py_RETURN_NONE;
+  }
   Py_INCREF(py_jsnull);
   return py_jsnull;
 }

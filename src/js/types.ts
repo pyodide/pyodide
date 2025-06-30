@@ -308,6 +308,7 @@ export interface Module {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
+  _compat_null_to_none: number;
   js2python_convert: (
     obj: any,
     options: {

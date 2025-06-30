@@ -50,6 +50,10 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
+API.setCompatNullToNone = function (compat: boolean): void {
+  Module.HEAP8[Module._compat_null_to_none] = +compat;
+}
+
 /** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
