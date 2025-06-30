@@ -52,7 +52,7 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
 
 API.setCompatNullToNone = function (compat: boolean): void {
   Module.HEAP8[Module._compat_null_to_none] = +compat;
-}
+};
 
 /** @hidden */
 export type NativeFS = {
