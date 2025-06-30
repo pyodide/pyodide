@@ -277,6 +277,9 @@ export async function loadPyodide(
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
   }
+  if (options.convertNullToNone) {
+    API.setCompatNullToNone(true);
+  }
 
   if (API.version !== version && config.checkAPIVersion) {
     throw new Error(`\

@@ -437,6 +437,7 @@ export interface API {
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
   setPyProxyToStringMethod: (useRepr: boolean) => void;
+  setCompatNullToNone: (compat: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
