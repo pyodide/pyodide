@@ -14,8 +14,8 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
-  JS_CONST(error, _Jsv_GetNull())                                              \
-  JS_CONST(novalue, { noValueMarker : 1 })
+  JS_CONST(error, _Jsv_GetError())                                             \
+  JS_CONST(novalue, _Jsv_GetNoValue())
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
@@ -28,19 +28,38 @@ JS_INIT_CONSTS();
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
 __attribute__((import_module("sentinel"), import_name("create_sentinel"))) JsVal
-Jsv_GetNull_import(void);
+create_sentinel(int);
+
+#define ERROR_SENTINEL 1
+#define NO_VALUE_SENTINEL 2
 
 EMSCRIPTEN_KEEPALIVE JsVal
-Jsv_GetNull(void)
+Jsv_GetError(void)
 {
-  return Jsv_GetNull_import();
+  return create_sentinel(ERROR_SENTINEL);
+}
+
+EMSCRIPTEN_KEEPALIVE JsVal
+Jsv_GetNoValue(void)
+{
+  return create_sentinel(NO_VALUE_SENTINEL);
 }
 
 __attribute__((import_module("sentinel"),
-               import_name("is_sentinel"))) int JsvError_Check(JsVal);
+               import_name("sentinel_get_value"))) int sentinel_get_value(JsVal);
+
+int JsvError_Check(JsVal x) {
+  return sentinel_get_value(x) == ERROR_SENTINEL;
+}
+
+int JsvNoValue_Check(JsVal x) {
+  return sentinel_get_value(x) == NO_VALUE_SENTINEL;
+}
+
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
+  _hiwire_intern("end of constants");
   Module.novalue = _hiwire_get(HEAP32[_Jsr_novalue / 4]);
   Module.error = _hiwire_get(HEAP32[_Jsr_error / 4]);
   Hiwire.num_keys = _hiwire_num_refs;
@@ -60,11 +79,6 @@ finally:
   return -1;
 }
 
-// clang-format off
-EM_JS(int, JsvNoValue_Check, (JsVal v), {
-  return v === Module.novalue;
-});
-// clang-format on
 
 // ==================== Conversions between JsRef and JsVal ====================
 

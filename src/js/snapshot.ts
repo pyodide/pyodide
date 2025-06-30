@@ -113,7 +113,7 @@ function checkEntry(index: number, value: any, expected: any): void {
 // The expected number of static js variables.
 // We double check that this is still right in makeSnapshot (when creating the
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
-const NUM_STATIC_JS_REFS = 6;
+const NUM_STATIC_JS_REFS = 7;
 
 API.serializeHiwireState = function (
   serializer?: (obj: any) => any,
@@ -175,10 +175,10 @@ API.serializeHiwireState = function (
     throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
-  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
-  if (shouldBeJsNoValue?.noValueMarker !== 1) {
+  const shouldBeEndOfConstants = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeEndOfConstants !== "end of constants") {
     throw new Error(
-      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
+      `Internal error: expected end of constants object at index ${NUM_STATIC_JS_REFS}`,
     );
   }
   for (let i = NUM_STATIC_JS_REFS + 1; ; i++) {
@@ -275,8 +275,8 @@ export function syncUpSnapshotLoad1() {
   Module._jslib_init();
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
-  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
-  if (shouldBeJsNoValue?.noValueMarker !== 1) {
+  const shouldBeEndOfConstants = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeEndOfConstants !== "end of constants") {
     throw new Error(
       `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
     );
