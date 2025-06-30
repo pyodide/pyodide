@@ -75,14 +75,14 @@ and {py:class}`bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python                          | JavaScript                               |
-| ------------------------------- | ---------------------------------------- |
-| {py:class}`int`                 | {js:data}`Number` or {js:data}`BigInt`\* |
-| {py:class}`float`               | {js:data}`Number`                        |
-| {py:class}`str`                 | {js:data}`String`                        |
-| {py:class}`bool`                | {js:data}`Boolean`                       |
-| {py:data}`None`                 | {js:data}`undefined`                     |
-| {py:data}`pyodide.ffi.jsnull`   | {js:data}`null`                          |
+| Python                        | JavaScript                               |
+| ----------------------------- | ---------------------------------------- |
+| {py:class}`int`               | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float`             | {js:data}`Number`                        |
+| {py:class}`str`               | {js:data}`String`                        |
+| {py:class}`bool`              | {js:data}`Boolean`                       |
+| {py:data}`None`               | {js:data}`undefined`                     |
+| {py:data}`pyodide.ffi.jsnull` | {js:data}`null`                          |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
