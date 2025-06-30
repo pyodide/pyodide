@@ -1991,6 +1991,7 @@ def test_fs_init(selenium_standalone_noload):
     assert res[-2].endswith("site-packages/foo")
     assert res[-1].endswith("site-packages/bar")
 
+
 def test_compat_null_to_none(selenium_standalone_noload):
     selenium = selenium_standalone_noload
     doc = selenium.run_js(
