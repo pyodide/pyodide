@@ -288,6 +288,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
 		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
+		-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
