@@ -27,6 +27,7 @@ _js2python_none(void)
 EMSCRIPTEN_KEEPALIVE PyObject*
 _js2python_null(void)
 {
+  Py_INCREF(py_jsnull);
   return py_jsnull;
 }
 
