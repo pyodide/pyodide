@@ -137,7 +137,7 @@ def test_syncify_error(selenium):
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import run_sync, jsnull
+    from pyodide.ffi import jsnull, run_sync
 
     asyncNull = run_js(
         """
