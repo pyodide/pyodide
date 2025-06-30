@@ -18,7 +18,7 @@ async function inner(x, y) {
   // In the old JSPI API, we get the promise as first argument.
   // In the new JSPI API we get it as the second argument.
   try {
-    return nullToUndefined(await (x ?? y));
+    return await (x ?? y);
   } catch (e) {
     if (e && e.pyodide_fatal_error) {
       throw e;
