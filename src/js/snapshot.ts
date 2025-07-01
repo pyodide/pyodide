@@ -175,7 +175,8 @@ API.serializeHiwireState = function (
     throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
-  const shouldBeEndOfConstants = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  const shouldBeEndOfConstants =
+    Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
   if (shouldBeEndOfConstants !== "end of constants") {
     throw new Error(
       `Internal error: expected end of constants object at index ${NUM_STATIC_JS_REFS}`,
@@ -275,7 +276,8 @@ export function syncUpSnapshotLoad1() {
   Module._jslib_init();
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
-  const shouldBeEndOfConstants = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  const shouldBeEndOfConstants =
+    Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
   if (shouldBeEndOfConstants !== "end of constants") {
     throw new Error(
       `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,

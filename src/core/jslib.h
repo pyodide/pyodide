@@ -37,7 +37,6 @@ extern JsRef Jsr_false;
 extern JsRef Jsr_novalue;
 extern JsRef Jsr_error;
 
-
 // ==================== JS_ERROR ====================
 
 #define JS_ERROR hiwire_get(Jsr_error)

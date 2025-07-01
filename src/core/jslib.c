@@ -45,17 +45,21 @@ Jsv_GetNoValue(void)
   return create_sentinel(NO_VALUE_SENTINEL);
 }
 
-__attribute__((import_module("sentinel"),
-               import_name("sentinel_get_value"))) int sentinel_get_value(JsVal);
+__attribute__((
+  import_module("sentinel"),
+  import_name("sentinel_get_value"))) int sentinel_get_value(JsVal);
 
-int JsvError_Check(JsVal x) {
+int
+JsvError_Check(JsVal x)
+{
   return sentinel_get_value(x) == ERROR_SENTINEL;
 }
 
-int JsvNoValue_Check(JsVal x) {
+int
+JsvNoValue_Check(JsVal x)
+{
   return sentinel_get_value(x) == NO_VALUE_SENTINEL;
 }
-
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
@@ -78,7 +82,6 @@ jslib_init(void)
 finally:
   return -1;
 }
-
 
 // ==================== Conversions between JsRef and JsVal ====================
 

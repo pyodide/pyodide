@@ -43,7 +43,7 @@ export async function getSentinelImport(): Promise<SentinelInstance> {
   }
   const error_marker = Symbol("error marker");
   return {
-    create_sentinel: (a: number) => ({[error_marker]: a}),
+    create_sentinel: (a: number) => ({ [error_marker]: a }),
     sentinel_get_value: (val: any): number => val?.[error_marker] ?? 0,
   };
 }
