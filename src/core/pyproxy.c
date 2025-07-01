@@ -1566,7 +1566,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
   if (js2py_converter) {
     _Py_IncRef(js2py_converter);
   }
-  if(!done_callback){
+  if (!done_callback) {
     done_callback = (x) => {};
   }
   let used = false;

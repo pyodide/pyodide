@@ -2921,7 +2921,7 @@ JsProxy_Await(PyObject* self)
   PyObject* fut = NULL;
   PyObject* result = NULL;
 
-  fut = wrap_promise(JsProxy_VAL(self), JS_NULL, NULL);
+  fut = wrap_promise(JsProxy_VAL(self), Jsv_undefined, NULL);
   FAIL_IF_NULL(fut);
   result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
