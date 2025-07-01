@@ -617,7 +617,7 @@ JsProxy_GetAttr_helper(PyObject* self, PyObject* attr, bool is_method)
       FAIL();
     }
     if (got_converter) {
-      pyresult = Js2PyConverter_convert(sig, jsresult, JS_ERROR);
+      pyresult = Js2PyConverter_convert(sig, jsresult, Jsv_null);
       goto success;
     }
     if (!Py_IsNone(sig)) {
