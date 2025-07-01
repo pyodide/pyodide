@@ -2921,7 +2921,7 @@ JsProxy_Await(PyObject* self)
   PyObject* fut = NULL;
   PyObject* result = NULL;
 
-  fut = wrap_promise(JsProxy_VAL(self), Jsv_undefined, NULL);
+  fut = wrap_promise(JsProxy_VAL(self), Jsv_null, NULL);
   FAIL_IF_NULL(fut);
   result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
@@ -2960,7 +2960,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(promise);
   JsVal promise_handles =
-    create_promise_handles(onfulfilled, onrejected, JS_NULL, NULL);
+    create_promise_handles(onfulfilled, onrejected, Jsv_null, NULL);
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
@@ -2995,7 +2995,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
   JsVal promise_handles =
-    create_promise_handles(NULL, onrejected, JS_NULL, NULL);
+    create_promise_handles(NULL, onrejected, Jsv_null, NULL);
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
