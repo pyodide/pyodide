@@ -342,10 +342,10 @@ Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
 static void
 maybe_destroy_proxies(JsVal jsval, JsVal proxies)
 {
-  if (JsvError_Check(proxies)) {
+  if (JsvNull_Check(proxies)) {
     return;
   }
-  if (!JsvError_Check(jsval) && pyproxy_Check(jsval)) {
+  if (!JsvNull_Check(jsval) && pyproxy_Check(jsval)) {
     // TODO: don't destroy proxies with roundtrip = true?
     JsvArray_Push(proxies, jsval);
   }
