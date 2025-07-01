@@ -195,9 +195,9 @@ console_error_obj(JsVal obj);
     }                                                                          \
   } while (0)
 
-#define FAIL_IF_JS_NULL(ref)                                                   \
+#define FAIL_IF_JS_ERROR(ref)                                                  \
   do {                                                                         \
-    if (unlikely(JsvNull_Check(ref))) {                                        \
+    if (unlikely(JsvError_Check(ref))) {                                       \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

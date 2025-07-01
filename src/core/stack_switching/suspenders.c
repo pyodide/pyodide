@@ -85,13 +85,13 @@ JsVal
 JsvPromise_Syncify(JsVal promise)
 {
   JsVal state = saveState();
-  if (JsvNull_Check(state)) {
-    return JS_NULL;
+  if (JsvError_Check(state)) {
+    return JS_ERROR;
   }
   JsVal suspender = get_suspender();
   JsVal result = syncifyHandler(suspender, promise);
   restoreState(state);
-  if (JsvNull_Check(result)) {
+  if (JsvError_Check(result)) {
     JsvPromise_Syncify_handleError();
   }
   return result;
