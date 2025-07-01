@@ -1507,7 +1507,7 @@ create_promise_handles_result_helper(PyObject* handle_result, PyObject* converte
   if (converter == NULL || Py_IsNone(converter)) {
     pyval = js2python(jsval);
   } else {
-    pyval = Js2PyConverter_convert(converter, jsval, JS_ERROR);
+    pyval = Js2PyConverter_convert(converter, jsval, Jsv_null);
   }
   FAIL_IF_NULL(pyval);
   result = PyObject_CallOneArg(handle_result, pyval);
