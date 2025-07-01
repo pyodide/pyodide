@@ -72,7 +72,7 @@ init_pyodide_proxy()
   PyObject* _pyodide = PyImport_ImportModule("_pyodide");
   FAIL_IF_NULL(_pyodide);
   JsVal _pyodide_proxy = python2js(_pyodide);
-  FAIL_IF_JS_NULL(_pyodide_proxy);
+  FAIL_IF_JS_ERROR(_pyodide_proxy);
   set_pyodide_module(_pyodide_proxy);
 
   success = true;

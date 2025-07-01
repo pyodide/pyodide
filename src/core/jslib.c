@@ -37,7 +37,7 @@ Jsv_GetNull(void)
 }
 
 __attribute__((import_module("sentinel"),
-               import_name("is_sentinel"))) int JsvNull_Check(JsVal);
+               import_name("is_sentinel"))) int JsvError_Check(JsVal);
 
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
@@ -72,7 +72,7 @@ JsVal
 JsRef_pop(JsRef ref)
 {
   if (ref == NULL) {
-    return JS_NULL;
+    return JS_ERROR;
   }
   return hiwire_pop(ref);
 }
@@ -81,7 +81,7 @@ JsVal
 JsRef_toVal(JsRef ref)
 {
   if (ref == NULL) {
-    return JS_NULL;
+    return JS_ERROR;
   }
   return hiwire_get(ref);
 }
@@ -89,7 +89,7 @@ JsRef_toVal(JsRef ref)
 JsRef
 JsRef_new(JsVal v)
 {
-  if (JsvNull_Check(v)) {
+  if (JsvError_Check(v)) {
     return NULL;
   }
   return hiwire_new(v);

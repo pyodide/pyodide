@@ -57,7 +57,7 @@ _python2js_buffer(PyObject* x)
 {
   Py_buffer view;
   if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) == -1) {
-    return JS_NULL;
+    return JS_ERROR;
   }
   // clang-format off
   JsVal result = _python2js_buffer_inner(
