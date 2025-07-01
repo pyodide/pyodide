@@ -14,21 +14,35 @@ bool tracerefs;
   JS_BUILTIN(undefined)                                                        \
   JS_BUILTIN(true)                                                             \
   JS_BUILTIN(false)                                                            \
+  JS_CONST(error, _Jsv_GetNull())                                              \
   JS_CONST(novalue, { noValueMarker : 1 })
 
 // we use HIWIRE_INIT_CONSTS once in C and once inside JS with different
 // definitions of HIWIRE_INIT_CONST to ensure everything lines up properly
 // C definition:
-#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE const JsRef Jsr_##name;
+#define JS_CONST(name, value) EMSCRIPTEN_KEEPALIVE JsRef Jsr_##name;
 JS_INIT_CONSTS();
 
 #undef JS_CONST
 
 #define JS_CONST(name, value) HEAP32[_Jsr_##name / 4] = _hiwire_intern(value);
 
+__attribute__((import_module("sentinel"), import_name("create_sentinel"))) JsVal
+Jsv_GetNull_import(void);
+
+EMSCRIPTEN_KEEPALIVE JsVal
+Jsv_GetNull(void)
+{
+  return Jsv_GetNull_import();
+}
+
+__attribute__((import_module("sentinel"),
+               import_name("is_sentinel"))) int JsvNull_Check(JsVal);
+
 EM_JS_NUM(int, jslib_init_js, (void), {
   JS_INIT_CONSTS();
   Module.novalue = _hiwire_get(HEAP32[_Jsr_novalue / 4]);
+  Module.error = _hiwire_get(HEAP32[_Jsr_error / 4]);
   Hiwire.num_keys = _hiwire_num_refs;
   return 0;
 });
@@ -176,9 +190,9 @@ EM_JS_VAL(JsVal, JsvArray_Get, (JsVal arr, int idx), {
   // clang-format off
   if (result === undefined && !(idx in arr)) {
     // clang-format on
-    return null;
+    return Module.error;
   }
-  return nullToUndefined(result);
+  return result;
 });
 
 EM_JS_NUM(errcode, JsvArray_Set, (JsVal arr, int idx, JsVal val), {
@@ -189,7 +203,7 @@ EM_JS_VAL(JsVal, JsvArray_Delete, (JsVal arr, int idx), {
   // Weird edge case: allow deleting an empty entry, but we raise a key error if
   // access is attempted.
   if (idx < 0 || idx >= arr.length) {
-    return null;
+    return Module.error;
   }
   return arr.splice(idx, 1)[0];
 });
@@ -234,7 +248,7 @@ JsvArray_slice_assign,
   let jsvalues = [];
   for(let i = 0; i < values_length; i++){
     const ref = _python2js(DEREF_U32(values, i));
-    if(ref === null){
+    if (ref === Module.error){
       return -1;
     }
     jsvalues.push(ref);
@@ -287,19 +301,19 @@ JsvObject_toString, (JsVal obj), {
 
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod, (JsVal obj, JsVal meth, JsVal args), {
-  return nullToUndefined(obj[meth](... args));
+  return obj[meth](... args);
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_NoArgs, (JsVal obj, JsVal meth), {
-  return nullToUndefined(obj[meth]());
+  return obj[meth]();
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_OneArg, (JsVal obj, JsVal meth, JsVal arg), {
-  return nullToUndefined(obj[meth](arg));
+  return obj[meth](arg);
 })
 
 EM_JS_VAL(JsVal, JsvObject_CallMethod_TwoArgs, (JsVal obj, JsVal meth, JsVal arg1, JsVal arg2), {
-  return nullToUndefined(obj[meth](arg1, arg2));
+  return obj[meth](arg1, arg2);
 })
 
 JsVal
@@ -339,11 +353,11 @@ EM_JS_BOOL(bool, JsvFunction_Check, (JsVal obj), {
 });
 
 EM_JS_VAL(JsVal, JsvFunction_CallBound, (JsVal func, JsVal this_, JsVal args), {
-  return nullToUndefined(Function.prototype.apply.apply(func, [ this_, args ]));
+  return Function.prototype.apply.apply(func, [ this_, args ]);
 });
 
 EM_JS_VAL(JsVal, JsvFunction_Call_OneArg, (JsVal func, JsVal arg), {
-  return nullToUndefined(func(arg));
+  return func(arg);
 });
 
 // clang-format off
@@ -351,7 +365,7 @@ EM_JS_VAL(JsVal,
 JsvFunction_Construct,
 (JsVal func, JsVal args),
 {
-  return nullToUndefined(Reflect.construct(func, args));
+  return Reflect.construct(func, args);
 });
 // clang-format on
 

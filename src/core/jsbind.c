@@ -410,7 +410,7 @@ Js2Py_func_promise(PyObject* self, JsVal jsresult, JsVal proxies)
     return NULL;
   }
 
-  JsVal done_callback = JS_NULL;
+  JsVal done_callback = Jsv_null;
   if (!JsvNull_Check(proxies)) {
     gc_register_proxies(proxies);
     done_callback = get_async_js_call_done_callback(proxies);

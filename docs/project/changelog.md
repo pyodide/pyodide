@@ -65,6 +65,17 @@ myst:
 - {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
   WebGL 1 is still available but must be required explicitly
   (for example, by using OpenGL ES 2.0)
+  {pr}`5708`
+
+- {{ Breaking }} JavaScript `null` is now converted to `pyodide.ffi.jsnull` and
+  not to `None`. If you want to opt into the old behavior you can pass
+  `convertNullToNone: true` to `loadPyodide()`. This compatibility option will
+  be removed in a later release of Pyodide.
+  {pr}`5719`
+
+- {{ Enhancement }} It is now possible to pass `null` to JavaScript functions
+  and assign it to JavaScript properties via `pyodide.ffi.jsnull`.
+  {pr}`5719`
 
 ### `python` CLI entrypoint
 

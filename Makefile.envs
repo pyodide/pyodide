@@ -150,6 +150,8 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
+# We need -sERROR_ON_UNDEFINED_SYMBOLS=0 b/c otherwise Emscripten gets mad that
+# the symbols from sentinel.ts are missing.
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
@@ -173,6 +175,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s NODEJS_CATCH_REJECTION=0 \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	-s EXIT_RUNTIME \
+	-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -287,6 +290,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
 		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
+		-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \

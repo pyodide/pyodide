@@ -11,20 +11,20 @@ EM_JS(JsVal, get_suspender, (), {
 })
 
 EM_JS(JsVal, syncifyHandler, (JsVal x, JsVal y), {
-  return null;
+  return Module.error;
 }
 
 async function inner(x, y) {
   // In the old JSPI API, we get the promise as first argument.
   // In the new JSPI API we get it as the second argument.
   try {
-    return nullToUndefined(await (x ?? y));
+    return await (x ?? y);
   } catch (e) {
     if (e && e.pyodide_fatal_error) {
       throw e;
     }
     Module.syncify_error = e;
-    return null;
+    return Module.error;
   }
 }
 if (newJspiSupported) {
@@ -58,7 +58,7 @@ EM_JS(void, JsvPromise_Syncify_handleError, (void), {
  */
 EM_JS(JsVal, saveState, (void), {
   if (!validSuspender.value) {
-    return null;
+    return Module.error;
   }
   const stackState = new StackState();
   const threadState = _captureThreadState();

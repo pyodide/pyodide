@@ -117,7 +117,7 @@ console_error_obj(JsVal obj);
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(func_name, e);                                         \
         Module.handle_js_error(e);                                             \
-        return null;                                                           \
+        return Module.error;                                                           \
     }                                                                          \
     errNoRet();                                                                \
   })

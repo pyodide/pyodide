@@ -420,7 +420,7 @@ _PyObject_GetMethod(PyObject* obj, PyObject* name, PyObject** method);
 EM_JS(JsVal, proxy_cache_get, (JsVal proxyCache, PyObject* descr), {
   const proxy = proxyCache.get(descr);
   if (!proxy) {
-    return null;
+    return Module.error;
   }
   // Okay found a proxy. Is it alive?
   if (pyproxyIsAlive(proxy)) {
@@ -428,7 +428,7 @@ EM_JS(JsVal, proxy_cache_get, (JsVal proxyCache, PyObject* descr), {
   } else {
     // It's dead, tidy up
     proxyCache.delete(descr);
-    return null;
+    return Module.error;
   }
 })
 
@@ -1566,7 +1566,7 @@ EM_JS_VAL(JsVal, create_promise_handles, (
   if (js2py_converter) {
     _Py_IncRef(js2py_converter);
   }
-  if(!done_callback){
+  if (!done_callback) {
     done_callback = (x) => {};
   }
   let used = false;

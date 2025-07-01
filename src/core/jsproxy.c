@@ -435,9 +435,9 @@ EM_JS_VAL(JsVal, JsProxy_GetAttr_js, (JsVal jsobj, const char* ptrkey), {
   // clang-format off
   if (result === undefined && !(jskey in jsobj)) {
     // clang-format on
-    return null;
+    return Module.error;
   }
-  return nullToUndefined(result);
+  return result;
 });
 
 // JsMethodCallSingleton is a special structure which we return from
@@ -2341,11 +2341,11 @@ EM_JS_VAL(JsVal, JsProxy_subscript_js, (JsVal obj, JsVal key), {
     // key is missing. Otherwise, assume key present and value was undefined.
     // TODO: in absence of a "has" method, should we return None or KeyError?
     if (obj.has && typeof obj.has === "function" && !obj.has(key)) {
-      return null;
+      return Module.error;
     }
   }
   // clang-format on
-  return nullToUndefined(result);
+  return result;
 });
 
 /**
@@ -2921,7 +2921,7 @@ JsProxy_Await(PyObject* self)
   PyObject* fut = NULL;
   PyObject* result = NULL;
 
-  fut = wrap_promise(JsProxy_VAL(self), JS_NULL, NULL);
+  fut = wrap_promise(JsProxy_VAL(self), Jsv_null, NULL);
   FAIL_IF_NULL(fut);
   result = _PyObject_CallMethodIdNoArgs(fut, &PyId___await__);
 
@@ -2960,7 +2960,7 @@ JsProxy_then(JsProxy* self, PyObject* args, PyObject* kwds)
   JsVal promise = JsvPromise_Resolve(JsProxy_VAL(self));
   FAIL_IF_JS_NULL(promise);
   JsVal promise_handles =
-    create_promise_handles(onfulfilled, onrejected, JS_NULL, NULL);
+    create_promise_handles(onfulfilled, onrejected, Jsv_null, NULL);
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
@@ -2995,7 +2995,7 @@ JsProxy_catch(JsProxy* self, PyObject* onrejected)
   // We have to use create_promise_handles so that the handler gets released
   // even if the promise resolves successfully.
   JsVal promise_handles =
-    create_promise_handles(NULL, onrejected, JS_NULL, NULL);
+    create_promise_handles(NULL, onrejected, Jsv_null, NULL);
   FAIL_IF_JS_NULL(promise_handles);
   JsVal result_promise =
     JsvObject_CallMethodId(promise, &JsId_then, promise_handles);
@@ -3132,7 +3132,7 @@ JsObjMap_length(PyObject* self)
 // A helper method for JsObjMap_subscript.
 EM_JS_VAL(JsVal, JsObjMap_subscript_js, (JsVal obj, JsVal key), {
   if (!Object.prototype.hasOwnProperty.call(obj, key)) {
-    return null;
+    return Module.error;
   }
   return obj[key];
 });
@@ -3171,7 +3171,7 @@ EM_JS_NUM(int,
 JsObjMap_ass_subscript_js,
 (JsVal obj, JsVal key, JsVal value),
 {
-  if(value === null) {
+  if(value === Module.error) {
     if (!Object.prototype.hasOwnProperty.call(obj, key)) {
       return -1;
     }
@@ -3665,7 +3665,7 @@ JsBuffer_DecodeString_js,
   } catch (e) {
     if (e instanceof TypeError) {
       // Decoding error
-      return null;
+      return Module.error;
     }
     throw e;
   }
