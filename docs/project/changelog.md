@@ -2,11 +2,12 @@
 myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
-    Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Enhancement: "<span class='badge badge-success'>Enhancement</span>"
     Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
-    Fix: "<span class='badge badge-danger'>Fix</span>"
+    Fix: "<span class='badge badge-success'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
+    ABI: "<span class='badge badge-danger'>ABI Break</span>"
     Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
@@ -22,12 +23,12 @@ _Date here, 2025_
 
 - {{ Enhancement }} Upgraded to Python 3.13.2. {pr}`5498`
 
-- ABI break: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
+- {{ ABI }}: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
   {pr}`5560` {pr}`5595` {pr}`5616` {pr}`5653`
 
-- ABI break: Switched to using WebAssembly exception handling for C++ errors,
+- {{ ABI }} Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
   `-fwasm-exceptions`. Furthermore, if a project uses `setjmp`/`longjmp`, they
@@ -561,7 +562,7 @@ _May 27, 2024_
 - {{ Update }} The wheel tag for Pyodide wheels has changed to pyodide_2024_0_wasm32.
   {pr}`4777`, {pr}`4780`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+- {{ ABI }} Updated Emscripten to version 3.1.58
   {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
@@ -686,7 +687,7 @@ _January 18, 2024_
 
 ### General
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
+- {{ ABI }} Updated Emscripten to version 3.1.46
   {pr}`4359`
 
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
@@ -832,7 +833,7 @@ _September 13, 2023_
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+- {{ ABI }} Updated Emscripten to version 3.1.45 {pr}`3665`,
   {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
   {pr}`4056`, {pr}`4073`, {pr}`4094`
 
