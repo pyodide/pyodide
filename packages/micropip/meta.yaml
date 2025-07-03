@@ -1,14 +1,14 @@
 package:
   name: micropip
-  version: 0.9.0
+  version: 0.10.0
   tag:
     - always
   top-level:
     - micropip
 
 source:
-  sha256: babcf68c1849e229aa887564bc5f2de50273c3212e73c9aff8e3e6e80f2b6a23
-  url: https://files.pythonhosted.org/packages/27/6d/195810e3e73e5f351dc6082cada41bb4d5b0746a6804155ba6bae4304612/micropip-0.9.0-py3-none-any.whl
+  sha256: 2b03473388a21e558735a01a66817faac1b01f5248f7b9b97e0a2bd0cef8eede
+  url: https://files.pythonhosted.org/packages/py3/m/micropip/micropip-0.10.0-py3-none-any.whl
 
 about:
   home: https://github.com/pyodide/micropip
