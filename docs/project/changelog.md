@@ -21,7 +21,7 @@ _Date here, 2025_
 
 ### General
 
-- {{ Enhancement }} Upgraded to Python 3.13.2. {pr}`5498`
+- {{ Update }} Upgraded to Python 3.13.2. {pr}`5498`
 
 - {{ ABI }}: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
