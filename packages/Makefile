@@ -6,7 +6,7 @@ include ../Makefile.envs
 all:
 ifeq ($(ENABLE_PREBUILT_PACKAGES),1)
 	@date +"[%F %T] using prebuilt packages..."
-	# wget -q -O - $(PYODIDE_PREBUILT_PACKAGES_URL) | tar -xz -C $(PYODIDE_ROOT)/dist
+	wget -q -O - $(PYODIDE_PREBUILT_PACKAGES_URL) | tar -xz -C $(PYODIDE_ROOT)/dist
 	# override the pyodide runtime version stored in the prebuilt lockfile to match the current runtime version
 	jq -c ".info.version = \"$(PYODIDE_VERSION)\"" $(PYODIDE_ROOT)/dist/pyodide-lock.json > $(PYODIDE_ROOT)/dist/pyodide-lock.json.tmp && \
 	mv $(PYODIDE_ROOT)/dist/pyodide-lock.json.tmp $(PYODIDE_ROOT)/dist/pyodide-lock.json
