@@ -17,7 +17,7 @@ myst:
 
 ## Version 0.28.0
 
-_Date here, 2025_
+_July 4, 2025_
 
 ### General
 
