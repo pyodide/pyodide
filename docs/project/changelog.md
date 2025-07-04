@@ -15,7 +15,7 @@ myst:
 
 # Change Log
 
-## Version 0.28
+## Version 0.28.0
 
 _Date here, 2025_
 
@@ -23,7 +23,7 @@ _Date here, 2025_
 
 - {{ Update }} Upgraded to Python 3.13.2. {pr}`5498`
 
-- {{ ABI }}: Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
+- {{ ABI }} Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
   {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
   {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
   {pr}`5560` {pr}`5595` {pr}`5616` {pr}`5653`
@@ -36,7 +36,7 @@ _Date here, 2025_
   compile time and link time.
   {pr}`5320`
 
-- {{ Fix }} Fixed iPad + Safari issue started to happen since 0.27.1. {pr}`5695`
+- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad + Safari. {pr}`5695`
 
 - {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
   WebGL 1 is still available but must be required explicitly
@@ -89,8 +89,8 @@ _Date here, 2025_
 
 ### Packages
 
-- {{ Enhancement }} The packages included in the Pyodide distribution is now built
-  in a separate repository, `pyodide-recipes`. This decouples the Packages sets
+- {{ Enhancement }} The packages included in the Pyodide distribution are now built
+  in a separate repository, [`pyodide/pyodide-recipes`](http://github.com/pyodide/pyodide-recipes/). This decouples the set of packages
   from the Pyodide version and allows people to use the different sets of packages
   easily with different Pyodide versions.
   {pr}`5699`
