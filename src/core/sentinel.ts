@@ -32,19 +32,19 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
     }
   })();
 
-type SentinelInstance<T> = {
-  create_sentinel: () => T;
-  is_sentinel: (val: any) => val is T;
+type SentinelInstance = {
+  create_sentinel: (a: number) => any;
+  sentinel_get_value: (val: any) => number;
 };
 
-export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
+export async function getSentinelImport(): Promise<SentinelInstance> {
   const sentinelInstance = await sentinelInstancePromise;
   if (sentinelInstance) {
-    return sentinelInstance.exports as SentinelInstance<Symbol>;
+    return sentinelInstance.exports as SentinelInstance;
   }
   const error_marker = Symbol("error marker");
   return {
-    create_sentinel: () => error_marker,
-    is_sentinel: (val: any): val is typeof error_marker => val === error_marker,
+    create_sentinel: (a: number) => ({ [error_marker]: a }),
+    sentinel_get_value: (val: any): number => val?.[error_marker] ?? 0,
   };
 }

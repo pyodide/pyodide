@@ -9,16 +9,23 @@
 ;; Once it works in Safari, we can use wasm-merge to merge this module with the
 ;; main module which will allow better optimization.
 (module
-  (type $empty_struct (struct))
+  (type $struct (struct i32))
 
-  (func (export "create_sentinel") (result externref)
-    struct.new $empty_struct
+  (func (export "create_sentinel") (param $tag i32) (result externref)
+    local.get $tag
+    struct.new $struct
     extern.convert_any
   )
 
-  (func (export "is_sentinel") (param $input externref) (result i32)
-    local.get $input
-    any.convert_extern
-    ref.test (ref $empty_struct)
+  (func (export "sentinel_get_value") (param $input externref) (result i32)
+    (block $b (result (ref null any))
+      local.get $input
+      any.convert_extern
+      br_on_cast_fail $b (ref null any) (ref $struct)
+      struct.get_u $struct 0
+      return
+    )
+    drop
+    i32.const -1
   )
 )
