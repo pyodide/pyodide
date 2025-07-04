@@ -20,6 +20,7 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
     if (isIOS) {
       return undefined;
     }
+    return undefined;
     try {
       const module = await WebAssembly.compile(sentinelWasm);
       return await WebAssembly.instantiate(module);
