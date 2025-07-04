@@ -3,6 +3,9 @@ const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
 API.version = "0.28.0";
+// This version should be equal to the one in the Makefile.envs
+// TODO: Pass this value dynamically from outside.
+API.abiVersion = "2025_0";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {

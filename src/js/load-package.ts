@@ -45,11 +45,11 @@ export async function initializePackageIndex(
     );
   }
 
-  if (lockfile.info.version !== API.version) {
+  if (lockfile.info.abi_version !== API.abiVersion) {
     throw new Error(
-      "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${lockfile.info.version}\n` +
-        `   pyodide  version: ${API.version}`,
+      "Lock file ABI version doesn't match Pyodide ABI version.\n" +
+        `   lockfile version: ${lockfile.info.abi_version}\n` +
+        `   pyodide  version: ${API.abiVersion}`,
     );
   }
 
