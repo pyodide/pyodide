@@ -1353,6 +1353,32 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+def test_abiVersion_variable(selenium):
+    core_abi_version = selenium.run_js(
+        """
+        return pyodide._api.abiVersion
+        """
+    )
+
+    lockfile_abi_version = selenium.run_js(
+        """
+        return pyodide._api.lockfile_info.abi_version
+        """
+    )
+
+    py_abi_version = selenium.run(
+        """
+        from sysconfig import get_config_var
+
+        get_config_var("PYODIDE_ABI_VERSION")
+        """
+    )
+
+    
+
+    assert lockfile_abi_version == py_abi_version == core_abi_version
+
+
 @run_in_pyodide
 def test_default_sys_path(selenium):
     import sys
