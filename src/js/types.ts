@@ -349,6 +349,7 @@ export interface Module {
 
 type LockfileInfo = {
   arch: "wasm32" | "wasm64";
+  abi_version: string;
   platform: string;
   version: string;
   python: string;
@@ -506,6 +507,7 @@ export interface API {
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
+  abiVersion: string;
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
