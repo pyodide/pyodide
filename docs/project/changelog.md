@@ -111,6 +111,7 @@ _Date here, 2025_
   {pr}`5374` {pr}`5398`
 
 - {{ Enhancement }} New packages added:
+
   - aiohappyeyeballs (2.6.1)
   - blosc2 (3.2.0)
   - diskcache (5.6.3)
@@ -131,7 +132,7 @@ _Date here, 2025_
 - {{ Breaking }} The following packages are removed from the Pyodide distribution because of the build issues. We will try to fix them in the future:
   - arro3-compute
   - arro3-core
-  - arro3-io 
+  - arro3-io
   - Cartopy
   - duckdb
   - gensim
