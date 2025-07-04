@@ -110,10 +110,39 @@ _Date here, 2025_
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
   {pr}`5374` {pr}`5398`
 
-- Upgraded `narwhals` to 1.41.0 {pr}`5651`
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
-- Upgraded `protobuf` to 6.31.1 {pr}`5672`
-- Upgraded `scikit-learn` to 1.7.0 {pr}`5694`
+- {{ Enhancement }} New packages added:
+  - aiohappyeyeballs (2.6.1)
+  - blosc2 (3.2.0)
+  - diskcache (5.6.3)
+  - donfig (0.8.1.post1)
+  - imgui-bundle (1.92.0)
+  - inspice (1.6.3.3)
+  - lz4 (4.4.4)
+  - ndindex (1.9.2)
+  - platformdirs (4.3.6)
+  - ply (3.11)
+  - propcache (0.3.0)
+  - pytaglib (3.0.1)
+  - rustworkx (0.17.0a3)
+  - soundfile (0.12.1)
+  - texture2ddecoder (1.0.5)
+  - ujson (5.10.0)
+
+- {{ Breaking }} The following packages are removed from the Pyodide distribution because of the build issues. We will try to fix them in the future:
+  - arro3-compute
+  - arro3-core
+  - arro3-io 
+  - Cartopy
+  - duckdb
+  - gensim
+  - geopandas
+  - mne
+  - osqp
+  - polars
+  - pyarrow
+  - pygame-ce
+  - pyproj
+  - zarr
 
 ## Version 0.27.7
 
