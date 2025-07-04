@@ -1374,8 +1374,6 @@ def test_abiVersion_variable(selenium):
         """
     )
 
-    
-
     assert lockfile_abi_version == py_abi_version == core_abi_version
 
 
