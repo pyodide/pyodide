@@ -15,6 +15,12 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Fixed a bug which preloading packages through `packages: [...]` parameter of `loadPyodide()` did not work
+  when the `lockfileURL` was set to a custom URL.
+  {pr}`5737`
+
 ## Version 0.28.0
 
 _July 4, 2025_
