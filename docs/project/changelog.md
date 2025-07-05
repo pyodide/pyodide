@@ -18,7 +18,7 @@ myst:
 ## Unreleased
 
 - {{ Fix }} Pyodide now prints the package load messages / errors when `packages: [...]` is passed to `loadPyodide()`.
-  {pr}`5654`
+  {pr}`5737`
 
 ## Version 0.28.0
 
