@@ -466,6 +466,7 @@ export interface API {
   repodata_packages: Record<string, InternalPackageData>;
   repodata_info: LockfileInfo;
   lockfileBaseUrl: string;
+  flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
