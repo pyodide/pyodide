@@ -674,6 +674,45 @@ def test_custom_lockfile(selenium_standalone_noload):
         custom_lockfile.unlink()
 
 
+@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@pytest.mark.requires_dynamic_linking
+def test_custom_lockfile_from_indexedDB(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    lock = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
+        await pyodide.loadPackage("micropip")
+        return pyodide.runPython(`
+            import micropip
+            micropip.freeze()
+        `);
+        """
+    )
+
+    selenium.run_js(
+        f"""
+        localStorage.setItem("pyodide-lock.json", {json.dumps(lock)});
+        """
+    )
+
+    selenium.run_js(
+        """
+        lockfile = localStorage.getItem("pyodide-lock.json");
+        lockfileURL = URL.createObjectURL(new Blob([lockfile], {type: "application/json"}));
+
+        let pyodide2 = await loadPyodide({
+            fullStdLib: false,
+            lockFileURL: lockfileURL,
+            packages: ["micropip"],
+        });
+
+        await pyodide2.runPython(`import micropip`)
+        """
+    )
+
+
 def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
     selenium = selenium_standalone_noload
 
