@@ -87,6 +87,8 @@ export async function initializePackageIndex(
   await loadPackage(toLoad, { messageCallback() {} });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
   await API.bootstrapFinalizedPromise;
+  API.flushPackageManagerBuffers();
+
   // Set up module_not_found_hook
   const importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
@@ -133,6 +135,15 @@ export class PackageManager {
   private stdout: (message: string) => void;
   private stderr: (message: string) => void;
 
+  /**
+   * Buffers for store stdout and stderr messages temporarily.
+   * These are used to store the messages that are printed before the
+   * stdout and stderr functions are set.
+   */
+  private streamReady: boolean = false;
+  private stdoutBuffer: string[] = [];
+  private stderrBuffer: string[] = [];
+
   private defaultChannel: string = DEFAULT_CHANNEL;
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
@@ -155,6 +166,11 @@ export class PackageManager {
     }
 
     this.stdout = (msg: string) => {
+      if (!this.streamReady) {
+        this.stdoutBuffer.push(msg);
+        return;
+      }
+
       const sp = this.#module.stackSave();
       try {
         const msgPtr = this.#module.stringToUTF8OnStack(msg);
@@ -165,6 +181,11 @@ export class PackageManager {
     };
 
     this.stderr = (msg: string) => {
+      if (!this.streamReady) {
+        this.stderrBuffer.push(msg);
+        return;
+      }
+
       const sp = this.#module.stackSave();
       try {
         const msgPtr = this.#module.stringToUTF8OnStack(msg);
@@ -312,6 +333,10 @@ export class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
+
+      // Can't use invalidate_caches until bootstrap is finalized.
+      await this.#api.bootstrapFinalizedPromise;
+
       this.#api.importlib.invalidate_caches();
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
@@ -564,6 +589,24 @@ export class PackageManager {
   }
 
   /**
+   * Flushes the stdout and stderr buffers, that were collected before the
+   * stdout and stderr functions were set.
+   */
+  public flushBuffers() {
+    this.streamReady = true;
+
+    for (const msg of this.stdoutBuffer) {
+      this.stdout(msg);
+    }
+    for (const msg of this.stderrBuffer) {
+      this.stderr(msg);
+    }
+
+    this.stdoutBuffer = [];
+    this.stderrBuffer = [];
+  }
+
+  /**
    * getLoadedPackageChannel returns the channel from which a package was loaded.
    * if the package is not loaded, it returns null.
    * @param pkg package name
@@ -666,6 +709,10 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   );
 
   API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
+
+  API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(
+    singletonPackageManager,
+  );
 
   if (API.lockFilePromise) {
     API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
