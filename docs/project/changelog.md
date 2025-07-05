@@ -15,6 +15,11 @@ myst:
 
 # Change Log
 
+## Unreleased
+
+- {{ Fix }} Pyodide now prints the package load messages / errors when `packages: [...]` is passed to `loadPyodide()`.
+  {pr}`5654`
+
 ## Version 0.28.0
 
 _July 4, 2025_

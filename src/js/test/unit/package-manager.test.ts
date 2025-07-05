@@ -95,4 +95,28 @@ describe("getLoadedPackageChannel", () => {
     const notLoadedPackage = pm.getLoadedPackageChannel("notLoadedPackage");
     chai.assert.equal(notLoadedPackage, null);
   });
+
+  describe("streamReady and flushing buffers", () => {
+    it("Should flush stdout and stderr buffers when stream is ready", () => {
+      const mockApi = genMockAPI();
+      const mockMod = genMockModule();
+
+      const logStdoutSpy = sinon.spy(mockMod, "_print_stdout");
+      const logStderrSpy = sinon.spy(mockMod, "_print_stderr");
+
+      const pm = new PackageManager(mockApi, mockMod);
+      pm.logStdout("stdout message");
+      pm.logStderr("stderr message");
+
+      // not called yet, buffers should not be flushed
+      chai.assert.isFalse(logStdoutSpy.called);
+      chai.assert.isFalse(logStderrSpy.called);
+
+      pm.flushBuffers();
+
+      // now buffers should be flushed
+      chai.assert.isTrue(logStdoutSpy.calledOnce);
+      chai.assert.isTrue(logStderrSpy.calledOnce);
+    });
+  });
 });
