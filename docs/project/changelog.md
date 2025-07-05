@@ -17,7 +17,8 @@ myst:
 
 ## Unreleased
 
-- {{ Fix }} Pyodide now prints the package load messages / errors when `packages: [...]` is passed to `loadPyodide()`.
+- {{ Fix }} Fixed a bug which preloading packages through `packages: [...]` parameter of `loadPyodide()` did not work
+  when the `lockfileURL` was set to a custom URL.
   {pr}`5737`
 
 ## Version 0.28.0

@@ -84,7 +84,7 @@ export async function initializePackageIndex(
   if (API.config.fullStdLib) {
     toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
   }
-  await loadPackage(toLoad);
+  await loadPackage(toLoad, { messageCallback() {} });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
   await API.bootstrapFinalizedPromise;
   API.flushPackageManagerBuffers();
