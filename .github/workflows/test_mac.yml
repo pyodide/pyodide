@@ -1,4 +1,4 @@
-name: test_only
+name: test_mac
 
 on:
   workflow_dispatch:
