@@ -623,6 +623,57 @@ def test_memory_leak(selenium, script):
     assert length_change == 0
 
 
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+def test_many_call_promisings(selenium, script):
+    succeeded = selenium.run_js("""
+            await pyodide.runPythonAsync(`
+                def test(n):
+                    pass
+                `);
+
+            const startLength = pyodide._module.HEAP32.length;
+
+            const t = pyodide.globals.get("test");
+
+            for (let i = 0; i < 10000000; i++) {
+                if (i%100000 == 0 ){
+                    console.log(`iteration ${i}`)
+                }
+                await t.callPromising(1);
+            }
+            t.destroy();
+            return 0;
+        """
+    )
+    assert succeeded == 0
+
+
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+def test_many_call_promisings_new_t(selenium, script):
+    succeeded = selenium.run_js("""
+            await pyodide.runPythonAsync(`
+                def test(n):
+                    pass
+                `);
+
+            const startLength = pyodide._module.HEAP32.length;
+
+
+            for (let i = 0; i < 10000000; i++) {
+                const t = pyodide.globals.get("test");
+
+                if (i%100000 == 0 ){
+                    console.log(`iteration ${i}`)
+                }
+                await t.callPromising(1);
+                t.destroy();
+
+            }
+            return 0;
+        """
+    )
+    assert succeeded == 0
+
 @requires_jspi
 @run_in_pyodide
 def test_run_until_complete(selenium):
