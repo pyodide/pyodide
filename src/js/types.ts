@@ -300,7 +300,6 @@ export interface Module {
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
-  reportUndefinedSymbols(): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
@@ -309,6 +308,7 @@ export interface Module {
   stringToNewUTF8(x: string): number;
   stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
+  _compat_null_to_none: number;
   js2python_convert: (
     obj: any,
     options: {
@@ -349,6 +349,7 @@ export interface Module {
 
 type LockfileInfo = {
   arch: "wasm32" | "wasm64";
+  abi_version: string;
   platform: string;
   version: string;
   python: string;
@@ -437,6 +438,7 @@ export interface API {
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
   setPyProxyToStringMethod: (useRepr: boolean) => void;
+  setCompatNullToNone: (compat: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
@@ -462,6 +464,7 @@ export interface API {
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, InternalPackageData>;
   lockfileBaseUrl: string;
+  flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
@@ -498,6 +501,7 @@ export interface API {
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
+  abiVersion: string;
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
@@ -523,12 +527,10 @@ export type PackageManagerAPI = Pick<
  */
 export type PackageManagerModule = Pick<
   Module,
-  | "reportUndefinedSymbols"
   | "PATH"
   | "LDSO"
   | "stringToNewUTF8"
   | "stringToUTF8OnStack"
-  | "reportUndefinedSymbols"
   | "_print_stderr"
   | "_print_stdout"
   | "stackSave"

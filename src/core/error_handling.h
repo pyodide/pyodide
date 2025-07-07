@@ -117,7 +117,7 @@ console_error_obj(JsVal obj);
     catch (e) {                                                                \
         LOG_EM_JS_ERROR(func_name, e);                                         \
         Module.handle_js_error(e);                                             \
-        return null;                                                           \
+        return Module.error;                                                           \
     }                                                                          \
     errNoRet();                                                                \
   })
@@ -195,9 +195,9 @@ console_error_obj(JsVal obj);
     }                                                                          \
   } while (0)
 
-#define FAIL_IF_JS_NULL(ref)                                                   \
+#define FAIL_IF_JS_ERROR(ref)                                                  \
   do {                                                                         \
-    if (unlikely(JsvNull_Check(ref))) {                                        \
+    if (unlikely(JsvError_Check(ref))) {                                       \
       FAIL();                                                                  \
     }                                                                          \
   } while (0)

@@ -1,0 +1,16 @@
+package:
+  name: test-rust-abi
+  version: "1.0"
+  tag:
+    - core
+    - rust
+    - pyodide.test
+  top-level:
+    - rust_abi_test
+source:
+  path: src
+requirements:
+  executable:
+    - rustup
+about:
+  license: MPL-2.0

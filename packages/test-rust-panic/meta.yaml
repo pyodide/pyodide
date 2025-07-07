@@ -1,0 +1,16 @@
+package:
+  name: test-rust-panic
+  version: "1.0"
+  tag:
+    - rust
+    - core
+    - pyodide.test
+  top-level:
+    - rust_panic_test
+source:
+  path: src
+requirements:
+  executable:
+    - rustup
+about:
+  license: MPL-2.0

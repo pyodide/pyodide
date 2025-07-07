@@ -27,4 +27,6 @@ js2python_convert(JsVal x, int depth, JsVal defaultConverter);
 int
 js2python_init();
 
+extern int compat_null_to_none;
+
 #endif /* JS2PYTHON_H */

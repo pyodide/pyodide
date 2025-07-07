@@ -2,7 +2,10 @@ const API = Module.API;
 const Hiwire = {};
 const Tests = {};
 API.tests = Tests;
-API.version = "0.28.0.dev0";
+API.version = "0.29.0.dev0";
+// This version should be equal to the one in the Makefile.envs
+// TODO: Pass this value dynamically from outside.
+API.abiVersion = "2025_0";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
@@ -62,11 +65,6 @@ const errNoRet = () => {
     "Assertion error: control reached end of function without return",
   );
 };
-
-// For no-dylink build, this is a no-op.
-Module.reportUndefinedSymbols ??= () => {};
-
-const nullToUndefined = (x) => (x === null ? undefined : x);
 
 // This is factored out for testing purposes.
 function isPromise(obj) {

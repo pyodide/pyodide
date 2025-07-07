@@ -1,0 +1,19 @@
+package:
+  name: test-cpp-exceptions
+  version: "0.1"
+  tag:
+    - core
+    - pyodide.test
+    - library
+    - shared_library
+source:
+  path: src
+build:
+  type: shared_library
+  script: |
+    em++ ${SIDE_MODULE_CFLAGS} -fwasm-exceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c throw.cpp -o throw.o
+    em++ ${SIDE_MODULE_CFLAGS} -fwasm-exceptions -I${PYTHONINCLUDE} -flto -fno-lto -std=c++20 -c catch.cpp -o catch.o -mreference-types
+    em++ ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions -sSIDE_MODULE=1 -o ${DISTDIR}/cpp-exceptions-test-throw.so throw.o
+    em++ ${SIDE_MODULE_LDFLAGS} -fwasm-exceptions  -sSIDE_MODULE=1 ${DISTDIR}/cpp-exceptions-test-throw.so -o ${DISTDIR}/cpp-exceptions-test-catch.so catch.o
+about:
+  license: MPL-2.0

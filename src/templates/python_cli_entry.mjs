@@ -94,12 +94,6 @@ async function main() {
       console.error(e);
     }
   }
-  // Warning: this sounds like it might not do anything important, but it
-  // fills in the GOT. There can be segfaults if we leave it out.
-  // See https://github.com/emscripten-core/emscripten/issues/22052
-  // TODO: Fix Emscripten so this isn't needed
-  py._module.reportUndefinedSymbols();
-
   py.runPython(
     `
     import asyncio

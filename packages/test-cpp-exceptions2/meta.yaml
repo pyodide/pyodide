@@ -1,0 +1,13 @@
+package:
+  name: test-cpp-exceptions2
+  version: "1.0"
+  tag:
+    - core
+    - pyodide.test
+source:
+  path: src
+build:
+  cxxflags: -fwasm-exceptions
+  ldflags: -fwasm-exceptions
+about:
+  license: MPL-2.0

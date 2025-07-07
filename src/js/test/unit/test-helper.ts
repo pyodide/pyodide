@@ -25,7 +25,6 @@ export const genMockAPI = (): PackageManagerAPI => {
 
 export const genMockModule = (): PackageManagerModule => {
   return {
-    reportUndefinedSymbols: () => {},
     LDSO: {
       loadedLibsByName: {},
     },

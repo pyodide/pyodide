@@ -63,4 +63,6 @@ __all__ = [
     "IN_BROWSER",
     "register_js_module",
     "unregister_js_module",
+    "JsNull",
+    "jsnull",
 ]

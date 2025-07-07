@@ -173,7 +173,7 @@ export async function loadPyodide(
     packages?: string[];
     /**
      * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
-     * calls :py:func:`repr` and not :py:class:`str() <str>`.
+     * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
      * @deprecated
      */
     pyproxyToStringRepr?: boolean;
@@ -194,6 +194,12 @@ export async function loadPyodide(
      * @experimental
      */
     fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
+    /**
+     * Opt into the old behavior where JavaScript `null` is converted to `None`
+     * instead of `jsnull`. Deprecated.
+     * @deprecated
+     */
+    convertNullToNone?: boolean;
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -270,6 +276,9 @@ export async function loadPyodide(
   }
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
+  }
+  if (options.convertNullToNone) {
+    API.setCompatNullToNone(true);
   }
 
   if (API.version !== version && config.checkAPIVersion) {

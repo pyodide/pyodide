@@ -137,7 +137,7 @@ def test_syncify_error(selenium):
 @run_in_pyodide
 def test_syncify_null(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import run_sync
+    from pyodide.ffi import jsnull, run_sync
 
     asyncNull = run_js(
         """
@@ -147,7 +147,7 @@ def test_syncify_null(selenium):
         })
         """
     )
-    assert run_sync(asyncNull()) is None
+    assert run_sync(asyncNull()) is jsnull
 
 
 @requires_jspi
@@ -178,7 +178,7 @@ def test_syncify_no_suspender(selenium):
 
 @pytest.mark.requires_dynamic_linking
 @requires_jspi
-@run_in_pyodide(packages=["fpcast-test"])
+@run_in_pyodide(packages=["test-fpcast"])
 def test_syncify_getset(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import run_sync
@@ -260,7 +260,7 @@ def test_cpp_exceptions_and_syncify(selenium):
                 id(f)
             `);
 
-            await pyodide.loadPackage("cpp-exceptions-test")
+            await pyodide.loadPackage("test-cpp-exceptions")
             const Module = pyodide._module;
             const catchlib = pyodide._module.LDSO.loadedLibsByName["/usr/lib/cpp-exceptions-test-catch.so"].exports;
             async function t(x){

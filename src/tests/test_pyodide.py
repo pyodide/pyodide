@@ -1353,6 +1353,30 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+def test_abiVersion_variable(selenium):
+    core_abi_version = selenium.run_js(
+        """
+        return pyodide._api.abiVersion
+        """
+    )
+
+    lockfile_abi_version = selenium.run_js(
+        """
+        return pyodide._api.lockfile_info.abi_version
+        """
+    )
+
+    py_abi_version = selenium.run(
+        """
+        from sysconfig import get_config_var
+
+        get_config_var("PYODIDE_ABI_VERSION")
+        """
+    )
+
+    assert lockfile_abi_version == py_abi_version == core_abi_version
+
+
 @run_in_pyodide
 def test_default_sys_path(selenium):
     import sys
@@ -1462,7 +1486,9 @@ def test_module_not_found_note(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    lockfile_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = [
+        "micropip",
+    ]
 
     # When error is wrapped, add_note_to_module_not_found_error is called
     with pytest.raises(ModuleNotFoundError) as e:
@@ -1986,3 +2012,21 @@ def test_fs_init(selenium_standalone_noload):
     # This may need to be updated when the Python version changes.
     assert res[-2].endswith("site-packages/foo")
     assert res[-1].endswith("site-packages/bar")
+
+
+def test_compat_null_to_none(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            convertNullToNone: true
+        });
+        pyodide.runPython(`
+            from pyodide.code import run_js
+
+            assert run_js("null") == None
+        `);
+        """
+    )
+
+    assert not doc

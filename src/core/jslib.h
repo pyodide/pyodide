@@ -16,6 +16,9 @@ typedef struct Js_Identifier
   JsRef object;
 } Js_Identifier;
 
+#define Jsv_null __builtin_wasm_ref_null_extern()
+#define JsvNull_Check(x) __builtin_wasm_ref_is_null_extern(x)
+
 #define Js_static_string_init(value) { .string = value, .object = NULL }
 #define Js_static_string(varname, value)                                       \
   static Js_Identifier varname = Js_static_string_init(value)
@@ -28,15 +31,18 @@ typedef struct Js_Identifier
   } while (0)
 
 // Special JsRefs for singleton constants.
-extern const JsRef Jsr_undefined;
-extern const JsRef Jsr_true;
-extern const JsRef Jsr_false;
-extern const JsRef Jsr_novalue;
+extern JsRef Jsr_undefined;
+extern JsRef Jsr_true;
+extern JsRef Jsr_false;
+extern JsRef Jsr_novalue;
+extern JsRef Jsr_error;
 
-// ==================== JS_NULL ====================
+// ==================== JS_ERROR ====================
 
-#define JS_NULL __builtin_wasm_ref_null_extern()
-#define JsvNull_Check(val) __builtin_wasm_ref_is_null_extern(val)
+#define JS_ERROR hiwire_get(Jsr_error)
+
+__attribute__((import_module("sentinel"), import_name("is_sentinel"))) int
+JsvError_Check(JsVal val);
 
 #define Jsv_undefined hiwire_get(Jsr_undefined)
 #define Jsv_true hiwire_get(Jsr_true)
