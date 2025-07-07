@@ -1,19 +1,7 @@
 name: pyodide-env-docker
 on:
   workflow_dispatch:
-    inputs:
-      chrome_version:
-        description: "Version of the chrome browser (e.g. 109, 108, latest)."
-        required: false
-        default: "109"
-      firefox_version:
-        description: "Version of the firefox browser (e.g. 109, 108, latest)."
-        required: false
-        default: "109"
-      tag:
-        description: "Tag of the docker image to build (If not set, <release-date>-chrome[version]-firefox[version] will be used)"
-        required: false
-        default: ""
+
 env:
   GHCR_REGISTRY: ghcr.io
   IMAGE_NAME: pyodide/pyodide-env

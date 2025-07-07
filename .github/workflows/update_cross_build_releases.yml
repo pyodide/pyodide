@@ -1,13 +1,8 @@
 name: Update cross-build metadata file
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
-    inputs:
-      version:
-        description: "Version number to update to. This should not contain the 'v' prefix, since our releases on GitHub do not have it."
-        required: true
+
 
 env:
   version: ${{ github.event_name == 'release' && github.event.release.tag_name || github.event.inputs.version }}

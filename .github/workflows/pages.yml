@@ -1,18 +1,18 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    # The update_cross_build_releases.yml workflow updates the cross-build environments metadata
-    # file and pushes it to the main branch. This workflow gets triggered by that push.
-    branches:
-      - main
-    paths:
-      # This workflow only runs if this specific file changes
-      - pyodide-cross-build-environments.json
+  # push:
+  #   # The update_cross_build_releases.yml workflow updates the cross-build environments metadata
+  #   # file and pushes it to the main branch. This workflow gets triggered by that push.
+  #   branches:
+  #     - main
+  #   paths:
+  #     # This workflow only runs if this specific file changes
+  #     - pyodide-cross-build-environments.json
   workflow_dispatch:
-  schedule:
-    # Run every day at 03:00 UTC
-    - cron: "0 3 * * *"
+  # schedule:
+  #   # Run every day at 03:00 UTC
+  #   - cron: "0 3 * * *"
 
 permissions: {}
 
