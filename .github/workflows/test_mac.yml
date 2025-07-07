@@ -33,7 +33,7 @@ jobs:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: core-build-${{ runner.os }}
+          #name: core-build-${{ runner.os }}
           artifact-ids: 3481030272
 
       - uses: conda-incubator/setup-miniconda@v3
