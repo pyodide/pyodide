@@ -1,0 +1,92 @@
+name: test_only
+
+on:
+  workflow_dispatch:
+
+
+concurrency:
+  group: main-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: 3
+
+jobs:
+
+  test-core:
+    runs-on: ${{ matrix.os }}
+    env:
+      DISPLAY: :99
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14]
+        runner: [selenium]
+        browser: [chrome]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: core-build-${{ runner.os }}
+          path: ./dist/
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: pyodide-env
+          python-version: "3.13"
+          channels: conda-forge
+
+      - name: install test requirements
+        shell: bash -l {0}
+        run: |
+          pip install -r requirements.txt -r requirements-deploy.txt
+          make pyodide_build
+
+      - uses: pyodide/pyodide-actions/install-browser@v2
+        with:
+          runner: ${{ matrix.runner }}
+          browser: ${{ matrix.browser }}
+
+      - name: run core tests
+        env:
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh dist/
+          tools/pytest_wrapper.py src packages/micropip/ tools/ \
+            -v \
+            -k "not webworker" \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/core_test.xml
+
+      - name: run package tests
+        env:
+          BROWSER: ${{ matrix.browser }}
+          RUNNER: ${{ matrix.runner }}
+        shell: bash -l {0}
+        run: |
+          ls -lh
+          ls -lh dist/
+          tools/pytest_wrapper.py packages/*/test* \
+            -v \
+            -k "numpy and not joblib" \
+            --runtime="${BROWSER}-no-host" \
+            --runner "${RUNNER}" \
+            --durations 50 \
+            --junitxml=test-results/packages_test.xml
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: "test-results/*.xml"
+        if: always()
