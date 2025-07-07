@@ -590,7 +590,7 @@ def test(n):
 
 
 @pytest.mark.xfail_browsers(
-    firefox="requires jspi", safari="requires jspi", chrome="mysterious crash"
+    firefox="requires jspi", safari="requires jspi"
 )
 @pytest.mark.parametrize(
     "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
