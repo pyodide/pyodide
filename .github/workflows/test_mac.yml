@@ -34,7 +34,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: core-build-${{ runner.os }}
-          path: ./dist/
+          run_id: 16128312851
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
