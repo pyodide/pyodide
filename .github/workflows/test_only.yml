@@ -1,4 +1,4 @@
-name: main
+name: test_only
 
 on:
   workflow_dispatch:
