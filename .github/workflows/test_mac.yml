@@ -11,6 +11,9 @@ concurrency:
 env:
   FORCE_COLOR: 3
 
+permissions:
+  actions: read
+
 jobs:
 
   test-core:
