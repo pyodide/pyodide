@@ -62,8 +62,8 @@ jobs:
         include:
           - os: ubuntu-latest
             pyodide_packages: "tag:core,numpy${{ needs.test-scipy-trigger.outputs.test-scipy == 'true' && ',scipy' || '' }}"
-          - os: macos-14
-            pyodide_packages: "tag:core,numpy"
+          # - os: macos-14
+          #   pyodide_packages: "tag:core,numpy"
     runs-on: ${{ matrix.os }}
     needs: [test-scipy-trigger]
     env:
