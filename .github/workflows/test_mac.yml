@@ -39,6 +39,7 @@ jobs:
           #name: core-build-${{ runner.os }}
           run-id: 16128312851
           artifact-ids: 3481030272
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: conda-incubator/setup-miniconda@v3
         with:
