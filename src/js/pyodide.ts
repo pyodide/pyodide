@@ -184,7 +184,10 @@ export type ConfigType = {
   _makeSnapshot: boolean;
 
   /** @ignore */
-  _loadSnapshot: Uint8Array | ArrayBuffer | PromiseLike<Uint8Array | ArrayBuffer>;
+  _loadSnapshot:
+    | Uint8Array
+    | ArrayBuffer
+    | PromiseLike<Uint8Array | ArrayBuffer>;
 
   /** @ignore */
   _snapshotDeserializer: (obj: any) => any;
@@ -196,10 +199,10 @@ export type ConfigType = {
  * @private
  */
 async function initializeConfiguration(
-  options: Partial<ConfigType> = {}
+  options: Partial<ConfigType> = {},
 ): Promise<ConfigType> {
   await initNodeModules();
-  
+
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {
@@ -221,7 +224,7 @@ async function initializeConfiguration(
   };
   const config = Object.assign(defaultConfig, options) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
-  
+
   /**
    * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
    * This shuts down the Python interpreter, which is a change in behavior from
@@ -244,7 +247,6 @@ function createEmscriptenSettings(config: ConfigType): EmscriptenSettings {
   API.lockFilePromise = loadLockFile(config.lockFileURL);
 
   return emscriptenSettings;
-
 }
 
 /**
@@ -271,7 +273,7 @@ async function prepareSnapshot(
   emscriptenSettings: EmscriptenSettings,
 ): Promise<{ snapshot: Uint8Array | undefined }> {
   let snapshot: Uint8Array | undefined = undefined;
-  
+
   if (config._loadSnapshot) {
     const snp = await config._loadSnapshot;
     if (ArrayBuffer.isView(snp)) {
@@ -296,24 +298,21 @@ async function createPyodideModule(
   // _createPyodideModule is specified in the Makefile by the linker flag:
   // `-s EXPORT_NAME="'_createPyodideModule'"`
   const module = await _createPyodideModule(emscriptenSettings);
-  
+
   // Handle early exit
   if (emscriptenSettings.exitCode !== undefined) {
     throw new module.ExitStatus(emscriptenSettings.exitCode);
   }
-  
+
   return module;
 }
 
 /**
  * @private
  */
-function configureAPI(
-  pyodideModule: Module,
-  config: ConfigType,
-): void {
+function configureAPI(pyodideModule: Module, config: ConfigType): void {
   const API = pyodideModule.API;
-  
+
   if (config.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
   }
@@ -327,7 +326,7 @@ Pyodide version does not match: '${version}' <==> '${API.version}'. \
 If you updated the Pyodide version, make sure you also updated the 'indexURL' parameter passed to loadPyodide.\
 `);
   }
-  
+
   // Disable further loading of Emscripten file_packager stuff.
   pyodideModule.locateFile = (path: string) => {
     if (path.endsWith(".so")) {
@@ -346,18 +345,18 @@ function bootstrapPyodide(
   config: ConfigType,
 ): PyodideInterface {
   const API = pyodideModule.API;
-  
+
   let snapshotConfig: SnapshotConfig | undefined = undefined;
   if (snapshot) {
     snapshotConfig = API.restoreSnapshot(snapshot);
   }
-  
+
   // runPython works starting after the call to finalizeBootstrap.
   const pyodide = API.finalizeBootstrap(
     snapshotConfig,
     config._snapshotDeserializer,
   );
-  
+
   return pyodide;
 }
 
@@ -366,10 +365,10 @@ function bootstrapPyodide(
  */
 async function finalizeSetup(
   pyodide: PyodideInterface,
-  config: ConfigType
+  config: ConfigType,
 ): Promise<PyodideInterface> {
   const API = (pyodide as any)._api;
-  
+
   API.sys.path.insert(0, "");
 
   if (!pyodide.version.includes("dev")) {
@@ -377,14 +376,14 @@ async function finalizeSetup(
     // loaded. But in other cases it's harmless.
     API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
   }
-  
+
   API._pyodide.set_excepthook();
   await API.packageIndexReady;
-  
+
   // I think we want this initializeStreams call to happen after
   // packageIndexReady? I don't remember why.
   API.initializeStreams(config.stdin, config.stdout, config.stderr);
-  
+
   return pyodide;
 }
 
@@ -407,26 +406,25 @@ export async function loadPyodide(
 ): Promise<PyodideInterface> {
   // Stage 1: Initialize configuration
   const config = await initializeConfiguration(options);
-  
+
   // Stage 2: Create Emscripten settings
   const emscriptenSettings = createEmscriptenSettings(config);
-  
+
   // Stage 3: Load WASM script
   await loadWasmScript(config, emscriptenSettings);
-  
+
   // Stage 4: Prepare snapshot
   const { snapshot } = await prepareSnapshot(config, emscriptenSettings);
-  
+
   // Stage 5: Create and initialize the Emscripten module
   const pyodideModule = await createPyodideModule(emscriptenSettings);
-  
+
   // Stage 6: Configure API and validate versions
   configureAPI(pyodideModule, config);
-  
+
   // Stage 7: Bootstrap Python interpreter
   const pyodide = bootstrapPyodide(pyodideModule, snapshot, config);
-  
+
   // Stage 8: Finalize setup and initialize streams
   return await finalizeSetup(pyodide, config);
 }
-
