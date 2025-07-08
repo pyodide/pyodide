@@ -97,6 +97,4 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
 
   // TODO: Find a better way to register these functions
   API.loadDynlib = singletonDynlibLoader.loadDynlib.bind(singletonDynlibLoader);
-  API.loadDynlibsFromPackage =
-    singletonDynlibLoader.loadDynlibsFromPackage.bind(singletonDynlibLoader);
 }
