@@ -657,7 +657,6 @@ def test_memory_leak_bigger(selenium, script):
     assert length_change == 0
 
 
-
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_noop_destroy(selenium):
     succeeded = selenium.run_js("""
@@ -676,9 +675,9 @@ def test_noop_destroy(selenium):
                 };
             }
             return 1;
-        """
-    )
+        """)
     assert succeeded == 1
+
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_call_promisings(selenium):
@@ -700,8 +699,7 @@ def test_many_call_promisings(selenium):
             }
             t.destroy();
             return 1;
-        """
-    )
+        """)
     assert succeeded == 1
 
 
@@ -727,9 +725,9 @@ def test_many_call_promisings_new_t(selenium):
 
             }
             return 1;
-        """
-    )
+        """)
     assert succeeded == 1
+
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_promise_alls(selenium):
@@ -751,8 +749,7 @@ def test_many_promise_alls(selenium):
             }
         }
         return 1;
-        """
-    )
+        """)
     assert succeeded == 1
 
 
@@ -773,9 +770,9 @@ def test_many_promise_alls_sleep0(selenium):
             }
         }
         return 1;
-        """
-    )
+        """)
     assert succeeded == 1
+
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_promise_alls_destroy(selenium):
@@ -794,9 +791,9 @@ def test_many_promise_alls_destroy(selenium):
             }
         }
         return 1;
-        """
-    )
+        """)
     assert succeeded == 1
+
 
 @requires_jspi
 @run_in_pyodide
