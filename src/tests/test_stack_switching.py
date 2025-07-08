@@ -624,7 +624,7 @@ def test_memory_leak(selenium, script):
 
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
-def test_many_call_promisings(selenium, script):
+def test_many_call_promisings(selenium):
     succeeded = selenium.run_js("""
             await pyodide.runPythonAsync(`
                 def test(n):
@@ -649,7 +649,7 @@ def test_many_call_promisings(selenium, script):
 
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
-def test_many_call_promisings_new_t(selenium, script):
+def test_many_call_promisings_new_t(selenium):
     succeeded = selenium.run_js("""
             await pyodide.runPythonAsync(`
                 def test(n):
