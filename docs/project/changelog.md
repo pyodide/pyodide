@@ -19,6 +19,10 @@ myst:
 
 _August 04, 2025_
 
+### General
+
+- {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
