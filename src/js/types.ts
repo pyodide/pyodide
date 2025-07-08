@@ -463,8 +463,6 @@ export interface API {
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, InternalPackageData>;
-  repodata_packages: Record<string, InternalPackageData>;
-  repodata_info: LockfileInfo;
   lockfileBaseUrl: string;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
@@ -478,11 +476,6 @@ export interface API {
     global: boolean,
     searchDirs?: string[] | undefined,
     readFileFunc?: (path: string) => Uint8Array,
-  ) => Promise<void>;
-  // TODO: Remove this from the API after migrating micropip to use the `install` API instead.
-  loadDynlibsFromPackage: (
-    pkg: { file_name: string },
-    dynlibPaths: string[],
   ) => Promise<void>;
   install: (
     buffer: Uint8Array,
