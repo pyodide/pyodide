@@ -58,10 +58,6 @@ export async function initializePackageIndex(
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
 
-  // micropip compatibility
-  API.repodata_info = lockfile.info;
-  API.repodata_packages = lockfile.packages;
-
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map<string, string>();
   for (let name of Object.keys(API.lockfile_packages)) {
