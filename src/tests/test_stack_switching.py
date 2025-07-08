@@ -624,6 +624,63 @@ def test_memory_leak(selenium, script):
 
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+@pytest.mark.parametrize(
+    "script", [LEAK_SCRIPT1, LEAK_SCRIPT2, LEAK_SCRIPT3, LEAK_SCRIPT4]
+)
+def test_memory_leak_bigger(selenium, script):
+    length_change = selenium.run_js(
+        f"""
+        pyodide.runPython(`{script}`);
+        """
+        """
+        const t = pyodide.globals.get("test");
+        for (let i = 0; i < 1; i++) {
+            let p = [];
+            // warm up first to avoid edge problems
+            for (let i = 0; i < 200; i++) {
+                p.push(t.callPromising(1));
+            }
+            await Promise.all(p);
+        }
+        const startLength = pyodide._module.HEAP32.length;
+            for (let i = 0; i < 10000; i++) {
+                p = [];
+                for (let i = 0; i < 200; i++) {
+                    p.push(t.callPromising(1));
+                }
+                await Promise.all(p);
+            }
+        t.destroy();
+        return pyodide._module.HEAP32.length - startLength;
+        """
+    )
+    assert length_change == 0
+
+
+
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+def test_noop_destroy(selenium):
+    succeeded = selenium.run_js("""
+            await pyodide.runPythonAsync(`async def noop(): pass`);
+            const noop = pyodide.globals.get("noop");
+            for (let i = 0; i < 100; i++) {
+                let p2 = [];
+                for (let j = 0; j < 200; j++) {
+                p2.push(noop());
+                }
+                await Promise.all(p2);
+                p2.map(x => x.destroy());
+
+                if (i%1000==0){
+                    console.log(`Iteration ${i}`);
+                };
+            }
+            return 1;
+        """
+    )
+    assert succeeded == 1
+
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_call_promisings(selenium):
     succeeded = selenium.run_js("""
             await pyodide.runPythonAsync(`
@@ -643,7 +700,8 @@ def test_many_call_promisings(selenium):
             }
             t.destroy();
             return 1;
-        """)
+        """
+    )
     assert succeeded == 1
 
 
@@ -669,9 +727,9 @@ def test_many_call_promisings_new_t(selenium):
 
             }
             return 1;
-        """)
+        """
+    )
     assert succeeded == 1
-
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_promise_alls(selenium):
@@ -687,11 +745,37 @@ def test_many_promise_alls(selenium):
                     p2.push(noop());
                 }
                 await Promise.all(p2);
+            }
+            if (iteration%1000 == 0 ){
+                console.log(`iteration ${iteration}`)
+            }
         }
         return 1;
-        """)
+        """
+    )
     assert succeeded == 1
 
+
+@pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
+def test_many_promise_alls_sleep0(selenium):
+    succeeded = selenium.run_js("""
+        await pyodide.runPythonAsync(`import asyncio\nasync def zerosleep(): await asyncio.sleep(0)`);
+
+        for (let iteration = 0; iteration < 1000; iteration++) {
+            const zerosleep = pyodide.globals.get("zerosleep");
+
+            for (let i = 0; i < 100; i++) {
+                let p2 = [];
+                for (let j = 0; j < 20; j++) {
+                    p2.push(zerosleep());
+                }
+                await Promise.all(p2);
+            }
+        }
+        return 1;
+        """
+    )
+    assert succeeded == 1
 
 @pytest.mark.xfail_browsers(firefox="requires jspi", safari="requires jspi")
 def test_many_promise_alls_destroy(selenium):
@@ -710,9 +794,9 @@ def test_many_promise_alls_destroy(selenium):
             }
         }
         return 1;
-        """)
+        """
+    )
     assert succeeded == 1
-
 
 @requires_jspi
 @run_in_pyodide
