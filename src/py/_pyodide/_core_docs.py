@@ -1449,9 +1449,9 @@ def to_js(
     /,
     *,
     depth: int = -1,
-    pyproxies: JsProxy | None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool,
-    dict_converter: None,
+    dict_converter: None = None,
     default_converter: ToJsConverter | None = None,
     eager_converter: ToJsConverter | None = None,
 ) -> JsMap[Any, Any]: ...
