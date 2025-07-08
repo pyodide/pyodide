@@ -33,151 +33,39 @@ declare function _createPyodideModule(
 declare const BUILD_ID: string;
 
 /**
- * See documentation for loadPyodide.
+ * See documentation for loadPyodide. We cannot use Partial<ConfigType> as sphinx-js cannot handle it.
  * @hidden
  */
 export type ConfigType = {
-  /**
-   * The URL from which Pyodide will load the main Pyodide runtime and
-   * packages. It is recommended that you leave this unchanged, providing an
-   * incorrect value can cause broken behavior.
-   *
-   * Default: The url that Pyodide is loaded from with the file name
-   * (``pyodide.js`` or ``pyodide.mjs``) removed.
-   */
   indexURL: string;
-
-  /**
-   * The file path where packages will be cached in node. If a package
-   * exists in ``packageCacheDir`` it is loaded from there, otherwise it is
-   * downloaded from the JsDelivr CDN and then cached into ``packageCacheDir``.
-   * Only applies when running in node; ignored in browsers.
-   *
-   * Default: same as indexURL
-   */
   packageCacheDir: string;
-
-  /**
-   * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
-   * file. You can produce custom lock files with :py:func:`micropip.freeze`.
-   * Default: ```${indexURL}/pyodide-lock.json```
-   */
   lockFileURL: string;
-
-  /**
-   * Load the full Python standard library. Setting this to false excludes
-   * unvendored modules from the standard library.
-   * Default: ``false``
-   */
   fullStdLib?: boolean;
-
-  /**
-   * The URL from which to load the standard library ``python_stdlib.zip``
-   * file. This URL includes the most of the Python standard library. Some
-   * stdlib modules were unvendored, and can be loaded separately
-   * with ``fullStdLib: true`` option or by their package name.
-   * Default: ```${indexURL}/python_stdlib.zip```
-   */
   stdLibURL?: string;
-
-  /**
-   * Override the standard input callback. Should ask the user for one line of
-   * input. The :js:func:`pyodide.setStdin` function is more flexible and
-   * should be preferred.
-   */
   stdin?: () => string;
-
-  /**
-   * Override the standard output callback. The :js:func:`pyodide.setStdout`
-   * function is more flexible and should be preferred in most cases, but
-   * depending on the ``args`` passed to ``loadPyodide``, Pyodide may write to
-   * stdout on startup, which can only be controlled by passing a custom
-   * ``stdout`` function.
-   */
   stdout?: (msg: string) => void;
-
-  /**
-   * Override the standard error output callback. The
-   * :js:func:`pyodide.setStderr` function is more flexible and should be
-   * preferred in most cases, but depending on the ``args`` passed to
-   * ``loadPyodide``, Pyodide may write to stdout on startup, which can only
-   * be controlled by passing a custom ``stdout`` function.
-   */
   stderr?: (msg: string) => void;
-
-  /**
-   * The object that Pyodide will use for the ``js`` module.
-   * Default: ``globalThis``
-   */
   jsglobals?: object;
-
-  /**
-   * Determine the value of ``sys.executable``.
-   * @ignore
-   */
   _sysExecutable?: string;
-
-  /**
-   * Command line arguments to pass to Python on startup. See `Python command
-   * line interface options
-   * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
-   * more details. Default: ``[]``
-   */
   args: string[];
-
-  /**
-   * Environment variables to pass to Python. This can be accessed inside of
-   * Python at runtime via :py:data:`os.environ`. Certain environment variables change
-   * the way that Python loads:
-   * https://docs.python.org/3.10/using/cmdline.html#environment-variables
-   * Default: ``{}``.
-   * If ``env.HOME`` is undefined, it will be set to a default value of
-   * ``"/home/pyodide"``
-   */
   env: { [key: string]: string };
-
-  /**
-   * A list of packages to load as Pyodide is initializing.
-   *
-   * This is the same as loading the packages with
-   * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
-   * ``packages`` option is more efficient because the packages are downloaded
-   * while Pyodide bootstraps itself.
-   */
   packages: string[];
 
   /**
-   * This is a hook that allows modification of the file system before the
-   * main() function is called and the intereter is started. When this is
-   * called, it is guaranteed that there is an empty site-packages directory.
    * @experimental
    */
   fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
 
   /**
-   * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
-   * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
    * @deprecated
    */
   pyproxyToStringRepr: boolean;
 
   /**
-   * Opt into the old behavior where JavaScript `null` is converted to `None`
-   * instead of `jsnull`. Deprecated.
    * @deprecated
    */
   convertNullToNone: boolean;
-
-  /**
-   * Make loop.run_until_complete() function correctly using stack switching.
-   * Default: ``true``.
-   */
   enableRunUntilComplete: boolean;
-
-  /**
-   * If true (default), throw an error if the version of Pyodide core does not
-   * match the version of the Pyodide js package.
-   */
   checkAPIVersion: boolean;
 
   /** @ignore */
@@ -402,7 +290,162 @@ async function finalizeSetup(
  * main();
  */
 export async function loadPyodide(
-  options: Partial<ConfigType> = {},
+  options: {
+      /**
+       * The URL from which Pyodide will load the main Pyodide runtime and
+       * packages. It is recommended that you leave this unchanged, providing an
+       * incorrect value can cause broken behavior.
+       *
+       * Default: The url that Pyodide is loaded from with the file name
+       * (``pyodide.js`` or ``pyodide.mjs``) removed.
+       */
+      indexURL?: string,
+
+      /**
+       * The file path where packages will be cached in node. If a package
+       * exists in ``packageCacheDir`` it is loaded from there, otherwise it is
+       * downloaded from the JsDelivr CDN and then cached into ``packageCacheDir``.
+       * Only applies when running in node; ignored in browsers.
+       *
+       * Default: same as indexURL
+       */
+      packageCacheDir?: string,
+
+      /**
+       * The URL from which Pyodide will load the Pyodide ``pyodide-lock.json`` lock
+       * file. You can produce custom lock files with :py:func:`micropip.freeze`.
+       * Default: ```${indexURL}/pyodide-lock.json```
+       */
+      lockFileURL?: string,
+
+      /**
+       * Load the full Python standard library. Setting this to false excludes
+       * unvendored modules from the standard library.
+       * Default: ``false``
+       */
+      fullStdLib?: boolean,
+
+      /**
+       * The URL from which to load the standard library ``python_stdlib.zip``
+       * file. This URL includes the most of the Python standard library. Some
+       * stdlib modules were unvendored, and can be loaded separately
+       * with ``fullStdLib: true`` option or by their package name.
+       * Default: ```${indexURL}/python_stdlib.zip```
+       */
+      stdLibURL?: string,
+
+      /**
+       * Override the standard input callback. Should ask the user for one line of
+       * input. The :js:func:`pyodide.setStdin` function is more flexible and
+       * should be preferred.
+       */
+      stdin?: () => string,
+
+      /**
+       * Override the standard output callback. The :js:func:`pyodide.setStdout`
+       * function is more flexible and should be preferred in most cases, but
+       * depending on the ``args`` passed to ``loadPyodide``, Pyodide may write to
+       * stdout on startup, which can only be controlled by passing a custom
+       * ``stdout`` function.
+       */
+      stdout?: (msg: string) => void,
+
+      /**
+       * Override the standard error output callback. The
+       * :js:func:`pyodide.setStderr` function is more flexible and should be
+       * preferred in most cases, but depending on the ``args`` passed to
+       * ``loadPyodide``, Pyodide may write to stdout on startup, which can only
+       * be controlled by passing a custom ``stdout`` function.
+       */
+      stderr?: (msg: string) => void,
+
+      /**
+       * The object that Pyodide will use for the ``js`` module.
+       * Default: ``globalThis``
+       */
+      jsglobals?: object,
+
+      /**
+       * Determine the value of ``sys.executable``.
+       * @ignore
+       */
+      _sysExecutable?: string,
+
+      /**
+       * Command line arguments to pass to Python on startup. See `Python command
+       * line interface options
+       * <https://docs.python.org/3.10/using/cmdline.html#interface-options>`_ for
+       * more details. Default: ``[]``
+       */
+      args?: string[],
+
+      /**
+       * Environment variables to pass to Python. This can be accessed inside of
+       * Python at runtime via :py:data:`os.environ`. Certain environment variables change
+       * the way that Python loads:
+       * https://docs.python.org/3.10/using/cmdline.html#environment-variables
+       * Default: ``{}``.
+       * If ``env.HOME`` is undefined, it will be set to a default value of
+       * ``"/home/pyodide"``
+       */
+      env?: { [key: string]: string },
+
+      /**
+       * A list of packages to load as Pyodide is initializing.
+       *
+       * This is the same as loading the packages with
+       * :js:func:`pyodide.loadPackage` after Pyodide is loaded except using the
+       * ``packages`` option is more efficient because the packages are downloaded
+       * while Pyodide bootstraps itself.
+       */
+      packages?: string[],
+
+      /**
+       * This is a hook that allows modification of the file system before the
+       * main() function is called and the intereter is started. When this is
+       * called, it is guaranteed that there is an empty site-packages directory.
+       * @experimental
+       */
+      fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>,
+
+      /**
+       * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
+       * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
+       * @deprecated
+       */
+      pyproxyToStringRepr?: boolean,
+
+      /**
+       * Opt into the old behavior where JavaScript `null` is converted to `None`
+       * instead of `jsnull`. Deprecated.
+       * @deprecated
+       */
+      convertNullToNone?: boolean,
+
+      /**
+       * Make loop.run_until_complete() function correctly using stack switching.
+       * Default: ``true``.
+       */
+      enableRunUntilComplete?: boolean,
+
+      /**
+       * If true (default), throw an error if the version of Pyodide core does not
+       * match the version of the Pyodide js package.
+       */
+      checkAPIVersion?: boolean,
+
+      /** @ignore */
+      _makeSnapshot?: boolean,
+
+      /** @ignore */
+      _loadSnapshot?:
+        | Uint8Array
+        | ArrayBuffer
+        | PromiseLike<Uint8Array | ArrayBuffer>,
+
+      /** @ignore */
+      _snapshotDeserializer?: (obj: any) => any,
+  } = {},
 ): Promise<PyodideInterface> {
   // Stage 1: Initialize configuration
   const config = await initializeConfiguration(options);
