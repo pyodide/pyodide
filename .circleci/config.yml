@@ -767,7 +767,7 @@ workflows:
 
       - create-xbuild-env:
           requires:
-            - build-core-packages
+            - build-full-packages
           filters:
             tags:
               only: /.*/
