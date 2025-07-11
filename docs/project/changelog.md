@@ -23,6 +23,9 @@ _August 04, 2025_
 
 - {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
 
+- {{ Fix }} The python CLI is now included in the `pyodide-core` release
+  artifact. {pr}`5747`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
