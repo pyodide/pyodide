@@ -147,14 +147,7 @@ export class PackageManager {
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
 
-    // use lockFileURL as the base URL for the packages
-    // if lockFileURL is relative, use location as the base URL
-    const lockfileBase =
-      this.#api.config.lockFileURL.substring(
-        0,
-        this.#api.config.lockFileURL.lastIndexOf("/") + 1,
-      ) || globalThis.location?.toString();
-
+    const lockfileBase = calculateInstallBaseUrl(this.#api.config.lockFileURL);
     if (IN_NODE) {
       this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
     } else {
@@ -457,7 +450,6 @@ export class PackageManager {
       }
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
-
       uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
     } else {
@@ -672,6 +664,24 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
   }
 
   return str;
+}
+
+/**
+ * Calculates the install base url for the package manager.
+ * exported for testing
+ * @param lockFileURL
+ * @returns the install base url
+ */
+export function calculateInstallBaseUrl(lockFileURL: string) {
+  // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
+  // 2. Otherwise, fallback to the current location
+  //    2.1. In the browser, use `location` to get the current location
+  //    2.2. In Node.js just use the pwd
+  return (
+    lockFileURL.substring(0, lockFileURL.lastIndexOf("/") + 1) ||
+    globalThis.location?.toString() ||
+    "."
+  );
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;

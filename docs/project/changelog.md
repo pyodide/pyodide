@@ -32,6 +32,10 @@ _August 04, 2025_
   of `loadPyodide()` did not work when `lockfileURL` was set to a custom URL.
   {pr}`5737`
 
+- {{ Fix }} Fixed a bug in Node.js which providing a relative path to
+  `lockFileURL` parameter of `loadPyodide()` did not work.
+  {pr}`5750`
+
 ## Version 0.28.0
 
 _July 4, 2025_
