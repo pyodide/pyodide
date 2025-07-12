@@ -140,10 +140,7 @@ function createEmscriptenSettings(config: ConfigType): EmscriptenSettings {
 /**
  * @private
  */
-async function loadWasmScript(
-  config: ConfigType,
-  emscriptenSettings: EmscriptenSettings,
-): Promise<void> {
+async function loadWasmScript(config: ConfigType): Promise<void> {
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
   // dynamic importing is not allowed or not desirable, like module-type service workers
@@ -159,22 +156,20 @@ async function loadWasmScript(
 async function prepareSnapshot(
   config: ConfigType,
   emscriptenSettings: EmscriptenSettings,
-): Promise<{ snapshot: Uint8Array | undefined }> {
-  let snapshot: Uint8Array | undefined = undefined;
-
-  if (config._loadSnapshot) {
-    const snp = await config._loadSnapshot;
-    if (ArrayBuffer.isView(snp)) {
-      snapshot = snp;
-    } else {
-      snapshot = new Uint8Array(snp);
-    }
-    emscriptenSettings.noInitialRun = true;
-    // @ts-ignore
-    emscriptenSettings.INITIAL_MEMORY = snapshot.length;
+): Promise<Uint8Array | undefined> {
+  if (!config._loadSnapshot) {
+    return undefined;
   }
 
-  return { snapshot };
+  const snp = await config._loadSnapshot;
+  const snapshot = ArrayBuffer.isView(snp)
+    ? (snp as Uint8Array)
+    : new Uint8Array(snp);
+  emscriptenSettings.noInitialRun = true;
+  // @ts-ignore
+  emscriptenSettings.INITIAL_MEMORY = snapshot.length;
+
+  return snapshot;
 }
 
 /**
@@ -454,10 +449,10 @@ export async function loadPyodide(
   const emscriptenSettings = createEmscriptenSettings(config);
 
   // Stage 3: Load WASM script
-  await loadWasmScript(config, emscriptenSettings);
+  await loadWasmScript(config);
 
   // Stage 4: Prepare snapshot
-  const { snapshot } = await prepareSnapshot(config, emscriptenSettings);
+  const snapshot = await prepareSnapshot(config, emscriptenSettings);
 
   // Stage 5: Create and initialize the Emscripten module
   const pyodideModule = await createPyodideModule(emscriptenSettings);
