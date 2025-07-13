@@ -212,12 +212,22 @@ export async function loadPyodide(
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
+
+  // Relative paths causes havoc.
   let indexURL = options.indexURL || (await calculateDirname());
-  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
+  indexURL = resolvePath(indexURL);
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
   options.indexURL = indexURL;
+
+  if (options.packageCacheDir) {
+    let packageCacheDir = resolvePath(options.packageCacheDir);
+    if (!packageCacheDir.endsWith("/")) {
+      packageCacheDir += "/";
+    }
+    options.packageCacheDir = packageCacheDir;
+  }
 
   const default_config = {
     fullStdLib: false,
