@@ -7,16 +7,24 @@ import {
   initNodeModules,
   resolvePath,
   loadLockFile,
+  calculateInstallBaseUrl,
 } from "./compat";
 
 import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData, FSType } from "./types";
+import type {
+  TypedArray,
+  Module,
+  PackageData,
+  FSType,
+  Lockfile,
+} from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
+export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
 export { version, type PackageData };
 
@@ -39,7 +47,7 @@ declare const BUILD_ID: string;
 export type ConfigType = {
   indexURL: string;
   packageCacheDir: string;
-  lockFileURL: string;
+  lockFileContents: Promise<Lockfile | string>;
   fullStdLib?: boolean;
   stdLibURL?: string;
   stdin?: () => string;
@@ -55,6 +63,8 @@ export type ConfigType = {
   enableRunUntilComplete: boolean;
   checkAPIVersion: boolean;
   BUILD_ID: string;
+  packageBaseUrl?: string;
+  cdnUrl: string;
 };
 
 /**
@@ -99,6 +109,14 @@ export async function loadPyodide(
      * Default: ```${indexURL}/pyodide-lock.json```
      */
     lockFileURL?: string;
+    /**
+     * TODO(now) fill this in
+     */
+    lockFileContents?: Promise<Lockfile | string>;
+    /**
+     * TODO(now) fill this in
+     */
+    packageBaseUrl?: string;
     /**
      * Load the full Python standard library. Setting this to false excludes
      * unvendored modules from the standard library.
@@ -211,27 +229,42 @@ export async function loadPyodide(
     _snapshotDeserializer?: (obj: any) => any;
   } = {},
 ): Promise<PyodideInterface> {
+  if (options.lockFileContents && options.lockFileURL) {
+    throw new Error("Can't pass both lockFileContents and lockFileURL");
+  }
   await initNodeModules();
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
-  options.indexURL = indexURL;
+  const options_ = options as ConfigType;
+  if (!options.lockFileContents) {
+    const lockFileURL = options.lockFileURL ?? indexURL + "pyodide-lock.json";
+    options_.lockFileContents = loadLockFile(lockFileURL);
+    // packageBaseUrl isn't present, try using base location of lockFileUrl. If
+    // lockFileURL is relative, use location as the base URL.
+    options_.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
+  }
+  options_.indexURL = indexURL;
+  // cdnUrl only for node.
+  options_.cdnUrl =
+    options_.packageBaseUrl ??
+    `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
 
   const default_config = {
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     env: {},
     packages: [],
+    packageCacheDir: options_.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
-  const config = Object.assign(default_config, options) as ConfigType;
+  const config = Object.assign(default_config, options_) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
   /**
    * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
@@ -244,7 +277,7 @@ export async function loadPyodide(
   config.env.PYTHONINSPECT ??= "1";
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
-  API.lockFilePromise = loadLockFile(config.lockFileURL);
+  API.lockFilePromise = options_.lockFileContents;
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
@@ -306,11 +339,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   );
   API.sys.path.insert(0, "");
 
-  if (!pyodide.version.includes("dev")) {
-    // Currently only used in Node to download packages the first time they are
-    // loaded. But in other cases it's harmless.
-    API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
-  }
   API._pyodide.set_excepthook();
   await API.packageIndexReady;
   // I think we want this initializeStreams call to happen after

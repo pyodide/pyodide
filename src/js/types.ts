@@ -347,19 +347,54 @@ export interface Module {
   getPromise(p: number): Promise<any>;
 }
 
-type LockfileInfo = {
+/**
+ * The info that
+ * TODO(now) fill this in
+ * @docgroup globalThis
+ */
+export interface LockfileInfo {
   arch: "wasm32" | "wasm64";
   abi_version: string;
   platform: string;
   version: string;
   python: string;
-};
+}
 
-/** @hidden */
-export type Lockfile = {
+/**
+ * A package entry in the lock file.
+ * TODO(now) fill this in
+ * @docgroup globalThis
+ */
+export interface LockfilePackage {
+  /**
+   * The name of the package. This should be `normalized
+   * <https://packaging.python.org/en/latest/specifications/name-normalization/#name-normalization>`__.
+   */
+  name: string;
+  /**
+   * The package version
+   */
+  version: string;
+  /**
+   * The file name of the package wheel. If it's relative, it is
+   */
+  file_name: string;
+  package_type: PackageType;
+  install_dir: string;
+  sha256: string;
+  imports: string[];
+  depends: string[];
+}
+
+/**
+ * Blah blah blah
+ * TODO(now) fill this in
+ * @docgroup globalThis
+ */
+export interface Lockfile {
   info: LockfileInfo;
-  packages: Record<string, InternalPackageData>;
-};
+  packages: Record<string, LockfilePackage>;
+}
 
 /** @hidden */
 export type PackageType =
@@ -384,20 +419,6 @@ export type LoadedPackages = Record<string, string>;
 /**
  * @hidden
  */
-export type InternalPackageData = {
-  name: string;
-  version: string;
-  file_name: string;
-  package_type: PackageType;
-  install_dir: string;
-  sha256: string;
-  imports: string[];
-  depends: string[];
-};
-
-/**
- * @hidden
- */
 export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
@@ -405,7 +426,7 @@ export type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData: InternalPackageData;
+  packageData: LockfilePackage;
 };
 
 /** @hidden */
@@ -418,7 +439,6 @@ export interface API {
   config: ConfigType;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
-  setCdnUrl: (url: string) => void;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
   initializeStreams: (
     stdin?: InFuncType | undefined,
@@ -457,13 +477,12 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<Lockfile>;
+  lockFilePromise: Promise<Lockfile | string>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
-  lockfile_packages: Record<string, InternalPackageData>;
-  lockfileBaseUrl: string;
+  lockfile_packages: Record<string, LockfilePackage>;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
@@ -520,7 +539,7 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
 > & {
-  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden

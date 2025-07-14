@@ -2,7 +2,7 @@ import "./constants";
 import {
   Lockfile,
   PackageData,
-  InternalPackageData,
+  LockfilePackage,
   PackageLoadMetadata,
   PackageManagerAPI,
   PackageManagerModule,
@@ -23,6 +23,7 @@ import {
   resolvePath,
   initNodeModules,
   ensureDirNode,
+  isAbsolute,
 } from "./compat";
 import { Installer } from "./installer";
 import { createContextWrapper } from "./common/contextManager";
@@ -35,10 +36,12 @@ import { createContextWrapper } from "./common/contextManager";
  * @private
  */
 export async function initializePackageIndex(
-  lockFilePromise: Promise<Lockfile>,
+  lockFilePromise: Promise<Lockfile | string>,
 ) {
   await initNodeModules();
-  const lockfile = await lockFilePromise;
+  const lockfile_ = await lockFilePromise;
+  const lockfile: Lockfile =
+    typeof lockfile_ === "string" ? JSON.parse(lockfile_) : lockfile_;
   if (!lockfile.packages) {
     throw new Error(
       "Loaded pyodide lock file does not contain the expected key 'packages'.",
@@ -123,7 +126,7 @@ export class PackageManager {
 
   private _lock = createLock();
 
-  public installBaseUrl: string;
+  public installBaseUrl?: string;
 
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
@@ -147,11 +150,14 @@ export class PackageManager {
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
 
-    const lockfileBase = calculateInstallBaseUrl(this.#api.config.lockFileURL);
     if (IN_NODE) {
-      this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
+      // In node, we'll try first to load from the packageCacheDir and then fall
+      // back to cdnURL
+      this.installBaseUrl = this.#api.config.packageCacheDir;
+      this.cdnURL = this.#api.config.cdnUrl;
     } else {
-      this.installBaseUrl = lockfileBase;
+      // use packageBaseUrl as the base URL for the packages
+      this.installBaseUrl = this.#api.config.packageBaseUrl;
     }
 
     this.stdout = (msg: string) => {
@@ -248,7 +254,7 @@ export class PackageManager {
       checkIntegrity: true,
     },
   ): Promise<Array<PackageData>> {
-    const loadedPackageData = new Set<InternalPackageData>();
+    const loadedPackageData = new Set<LockfilePackage>();
     const pkgNames = toStringArray(names);
 
     const toLoad = this.recursiveDependencies(pkgNames);
@@ -450,6 +456,13 @@ export class PackageManager {
       }
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
+      // TODO: Node caching logic assumes relative here...
+      if (!isAbsolute(fileName) && !this.installBaseUrl) {
+        throw new Error(
+          `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided`,
+        );
+      }
+
       uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
     } else {
@@ -473,6 +486,7 @@ export class PackageManager {
     );
     // If we are IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
+    // TODO(now) what if fileName isn't relative? Handle that here.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
     this.logStdout(
       `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
@@ -538,7 +552,7 @@ export class PackageManager {
   private async downloadAndInstall(
     pkg: PackageLoadMetadata,
     toLoad: Map<string, PackageLoadMetadata>,
-    loaded: Set<InternalPackageData>,
+    loaded: Set<LockfilePackage>,
     failed: Map<string, Error>,
     checkIntegrity: boolean = true,
   ) {
@@ -570,10 +584,6 @@ export class PackageManager {
     } finally {
       pkg.done.resolve();
     }
-  }
-
-  public setCdnUrl(url: string) {
-    this.cdnURL = url;
   }
 
   /**
@@ -641,7 +651,7 @@ function filterPackageData({
   version,
   file_name,
   package_type,
-}: InternalPackageData): PackageData {
+}: LockfilePackage): PackageData {
   return { name, version, fileName: file_name, packageType: package_type };
 }
 
@@ -664,24 +674,6 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
   }
 
   return str;
-}
-
-/**
- * Calculates the install base url for the package manager.
- * exported for testing
- * @param lockFileURL
- * @returns the install base url
- */
-export function calculateInstallBaseUrl(lockFileURL: string) {
-  // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
-  // 2. Otherwise, fallback to the current location
-  //    2.1. In the browser, use `location` to get the current location
-  //    2.2. In Node.js just use the pwd
-  return (
-    lockFileURL.substring(0, lockFileURL.lastIndexOf("/") + 1) ||
-    globalThis.location?.toString() ||
-    "."
-  );
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
@@ -708,13 +700,6 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
    * install location for a particular ``package_name``.
    */
   loadedPackages = singletonPackageManager.loadedPackages;
-
-  // TODO: Find a better way to register these functions
-  API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
-    singletonPackageManager,
-  );
-
-  API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
 
   API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(
     singletonPackageManager,

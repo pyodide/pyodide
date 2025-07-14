@@ -694,14 +694,6 @@ export class PyodideAPI {
   static get lockfile() {
     return API.lockfile;
   }
-
-  /**
-   * Returns the base URL of the lockfile, which is used to locate the packages
-   * distributed with the lockfile.
-   */
-  static get lockfileBaseUrl() {
-    return API.lockfileBaseUrl;
-  }
 }
 
 /** @hidden */
