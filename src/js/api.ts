@@ -7,7 +7,7 @@ import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray, PackageData, FSType } from "./types";
+import { TypedArray, PackageData, FSType, Lockfile } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
@@ -691,8 +691,16 @@ export class PyodideAPI {
    * The format of the lockfile is defined in the `pyodide/pyodide-lock
    * <https://github.com/pyodide/pyodide-lock>`_ repository.
    */
-  static get lockfile() {
+  static get lockfile(): Lockfile {
     return API.lockfile;
+  }
+
+  /**
+   * Returns the URL or path with respect to which relative paths in the lock
+   * file are resolved, or undefined.
+   */
+  static get lockfileBaseUrl(): string | undefined {
+    return API.config.packageBaseUrl;
   }
 }
 
