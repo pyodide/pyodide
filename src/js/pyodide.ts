@@ -213,7 +213,7 @@ export async function loadPyodide(
 ): Promise<PyodideInterface> {
   await initNodeModules();
 
-  // Relative paths causes havoc.
+  // Relative paths cause havoc.
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = resolvePath(indexURL);
   if (!indexURL.endsWith("/")) {
