@@ -120,7 +120,6 @@ _July 4, 2025_
   {pr}`5374` {pr}`5398`
 
 - {{ Enhancement }} New packages added:
-
   - aiohappyeyeballs (2.6.1)
   - blosc2 (3.2.0)
   - diskcache (5.6.3)
@@ -2528,7 +2527,6 @@ _August 3rd, 2021_
 ### Standard library
 
 - {{ API }} The following standard library modules are now available as standalone packages
-
   - distlib
 
   They are loaded by default in `loadPyodide`, however this behavior
@@ -3055,7 +3053,6 @@ _Apr 12, 2019_
 **User improvements:**
 
 - Support for built-in modules:
-
   - `sqlite`, `crypt`
 
 - New packages: `mne`
