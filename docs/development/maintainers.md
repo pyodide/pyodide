@@ -16,7 +16,6 @@ Assume for concreteness that we are releasing version 0.20.0.
 
 1. Make a tracking issue with a title like "0.20.0 release planning". Add the
    checklist:
-
    - [ ] Update packages
    - [ ] Look for open PRs to add to the release milestone
    - [ ] Make sure all PRs in the release milestone are merged
@@ -310,7 +309,6 @@ If doing a major version update, save time by {ref}`updating-packages` first.
 3. Update the Python version in Makefile.envs
 
 4. Update the Python version in the following locations:
-
    - `.github/workflows/main.yml`
    - `docs/conf.py`
    - `docs/development/contributing.md`
@@ -322,7 +320,6 @@ If doing a major version update, save time by {ref}`updating-packages` first.
    (TODO: make this list shorter.)
 
 5. Rebase the patches:
-
    - Clone cpython and cd into it. Checkout the Python version you are upgrading
      from. For instance, if the old version is 3.11.3, use `git checkout v3.11.3`
      (Python tags have a leading v.) Run

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-from sphinx.ext.intersphinx import fetch_inventory
-from pathlib import Path
 import argparse
 import difflib
 import sys
+from pathlib import Path
+
+from sphinx.ext.intersphinx import fetch_inventory
 
 PYODIDE_ROOT = Path(__file__).parents[1]
 DOCS_DIR = PYODIDE_ROOT / "docs"
 EXPECTED_DOCS_FILE = DOCS_DIR / "expected_js_docs.txt"
 
+
 class App:
     srcdir = DOCS_DIR / "_build/html/"
     config = None
+
 
 def check_list():
     inv = fetch_inventory(App, "https://example.com", "objects.inv")
@@ -27,6 +30,7 @@ def check_list():
     res.append("")
     return res
 
+
 def update_expected_js_docs():
     EXPECTED_DOCS_FILE.write_text("\n".join(check_list()))
 
@@ -35,14 +39,24 @@ def check_expected_js_docs():
     expected_lines = EXPECTED_DOCS_FILE.read_text().splitlines()
     new_lines = check_list()
     new_lines.pop()
-    diffs = list(difflib.unified_diff(expected_lines, new_lines, fromfile="old expected_js_docs.txt", tofile="new expected_js_docs.txt"))
+    diffs = list(
+        difflib.unified_diff(
+            expected_lines,
+            new_lines,
+            fromfile="old expected_js_docs.txt",
+            tofile="new expected_js_docs.txt",
+        )
+    )
     if not diffs:
         print("No changes")
         return 0
-    print("Set of documented APIs changed. If this is intended, run ./tools/check_documented_functions.py --update")
+    print(
+        "Set of documented APIs changed. If this is intended, run ./tools/check_documented_functions.py --update"
+    )
     for l in diffs:
         print(l)
     return 1
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -59,6 +73,7 @@ def parse_args():
         help="Update the expected set of documented JS APIs",
     )
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
