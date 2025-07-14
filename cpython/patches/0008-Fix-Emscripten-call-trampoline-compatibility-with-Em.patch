@@ -1,7 +1,7 @@
-From 062c19de9bcf764def1c5b0721184c0397624572 Mon Sep 17 00:00:00 2001
+From 62c9c54822dd8e313d1a2ea4ffaba13c6623ed92 Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Mon, 31 Mar 2025 12:09:50 +0200
-Subject: [PATCH 8/8] Fix Emscripten call trampoline compatibility with
+Subject: [PATCH 08/10] Fix Emscripten call trampoline compatibility with
  Emscripten 4.0.3 and 4.0.4
 
 See upstream issue:
