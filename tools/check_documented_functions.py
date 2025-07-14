@@ -25,8 +25,7 @@ def check_list():
         if not category.startswith("js"):
             continue
         res.append(category)
-        for key in entries.keys():
-            res.append(f"  {key}")
+        res.extend(f"  {key}" for key in entries.keys())
     res.append("")
     return res
 
