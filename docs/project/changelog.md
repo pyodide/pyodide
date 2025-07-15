@@ -24,6 +24,8 @@ myst:
 - {{ Fix }} Fixed a bug in Node.js which providing a relative path to `lockFileURL` parameter of `loadPyodide()` did not work.
   {pr}`5750`
 
+- {{ Enhancement }} Reuse Selenium session and refresh the page between tests to reduce test overhead in Selenium-based tests. ([#5772](https://github.com/pyodide/pyodide/issues/5772))
+
 ## Version 0.28.0
 
 _July 4, 2025_
@@ -2130,7 +2132,7 @@ _April 9th, 2022_
   throws something else.
   {pr}`2294`
 
-### pyodide_build
+### pyodide-build
 
 - {{Enhancement}} Pyodide now uses Python wheel files to distribute packages
   rather than the emscripten `file_packager.py` format.
