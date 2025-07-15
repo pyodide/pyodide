@@ -28,7 +28,7 @@ myst:
   - Adding `pytest-xdist` for parallel test execution.
   - Reusing Selenium session and refreshing the page between tests to reduce overhead.
   - Updating documentation for parallel test running.
-  ([#5772](https://github.com/pyodide/pyodide/issues/5772))
+    ([#5772](https://github.com/pyodide/pyodide/issues/5772))
 
 ## Version 0.28.0
 

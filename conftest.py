@@ -331,9 +331,11 @@ def strip_assertions_stderr(messages: Sequence[str]) -> list[str]:
 def selenium_standalone(request):
     """Reuse the Selenium session and refresh the page between tests."""
     from pytest_pyodide.fixtures import selenium_standalone as orig_fixture
+
     selenium = orig_fixture(request)
     yield selenium
     # Do not quit the session here; let the session fixture handle cleanup.
+
 
 @pytest.fixture(autouse=True)
 def refresh_selenium_standalone(selenium_standalone):
