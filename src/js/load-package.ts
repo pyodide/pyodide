@@ -671,6 +671,7 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
  * exported for testing
  * @param lockFileURL
  * @returns the install base url
+ * @private
  */
 export function calculateInstallBaseUrl(lockFileURL: string) {
   // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
