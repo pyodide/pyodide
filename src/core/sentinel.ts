@@ -37,6 +37,9 @@ type SentinelInstance<T> = {
   is_sentinel: (val: any) => val is T;
 };
 
+/**
+ * @private
+ */
 export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
   const sentinelInstance = await sentinelInstancePromise;
   if (sentinelInstance) {

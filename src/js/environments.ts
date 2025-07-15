@@ -47,6 +47,7 @@ export const IN_SAFARI =
   navigator.userAgent.indexOf("Chrome") == -1 &&
   navigator.userAgent.indexOf("Safari") > -1;
 
+/** @private */
 export const IN_SHELL = typeof read == "function" && typeof load === "function";
 
 /**

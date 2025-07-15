@@ -671,9 +671,7 @@ export class PyodideAPI {
   }
 
   /**
-   *
-   * @param param0
-   * @returns
+   * @private
    */
   static makeMemorySnapshot({
     serializer,
