@@ -831,7 +831,7 @@ def test_lockfilecontents_package_base_url(selenium_standalone_noload, tmp_path)
         url, port, _ = web_server
 
         if selenium.browser == "node":
-            base_url = tmp_path
+            base_url = str(tmp_path)
         else:
             base_url = f"http://{url}:{port}/"
         selenium.run_js(
@@ -855,7 +855,7 @@ def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_pat
         "unvendor_tests": False,
         "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
         "depends": [],
-        "file_name": test_file_name,
+        "file_name": str(test_file_name),
         "install_dir": "site",
         "package_type": "package",
         "imports": [],
