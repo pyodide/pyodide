@@ -5,7 +5,6 @@ js:module
   pyodide.ffi
 js:function
   globalThis.loadPyodide
-  pyodide.calculateInstallBaseUrl
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
   pyodide.canvas.setCanvas2D
