@@ -6,6 +6,7 @@
 #include "jslib.h"
 #include "pyproxy.h"
 #include "python2js.h"
+#include "python_unexposed.h"
 #include "stddef.h"
 
 Js_static_string(PYPROXY_DESTROYED_AT_END_OF_FUNCTION_CALL,
@@ -237,7 +238,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
   for (Py_ssize_t i = 0; i < pos_args; ++i) {
     PyObject* converter = PyTuple_GET_ITEM(sig->posparams, i); /* borrowed! */
     JsVal arg = Py2JsConverter_convert(converter, pyargs[i], proxies);
-    FAIL_IF_JS_NULL(arg);
+    FAIL_IF_JS_ERROR(arg);
     JsvArray_Push(jsargs, arg);
   }
   // default positional arguments
@@ -246,7 +247,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
     PyObject* pyarg = PyTuple_GET_ITEM(
       sig->posparams_defaults, i - sig->posparams_nmandatory); /* borrowed! */
     JsVal arg = Py2JsConverter_convert(converter, pyarg, proxies);
-    FAIL_IF_JS_NULL(arg);
+    FAIL_IF_JS_ERROR(arg);
     JsvArray_Push(jsargs, arg);
   }
   // positional varargs
@@ -258,7 +259,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
     PyObject* converter = sig->varpos; /* borrowed! */
     for (Py_ssize_t i = pos_args; i < nargs; ++i) {
       JsVal arg = Py2JsConverter_convert(converter, pyargs[i], proxies);
-      FAIL_IF_JS_NULL(arg);
+      FAIL_IF_JS_ERROR(arg);
       JsvArray_Push(jsargs, arg);
     }
   }
@@ -272,7 +273,7 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
   }
   // store kwargs into an object which we'll use as the last argument.
   kwargs = JsvObject_New();
-  FAIL_IF_JS_NULL(kwargs);
+  FAIL_IF_JS_ERROR(kwargs);
   uint64_t found_indices = 0;
   for (uint64_t i = 0, k = nargs; i < nkwargs; ++i, ++k) {
     PyObject* pyname = PyTuple_GET_ITEM(kwnames, i); /* borrowed! */
@@ -291,9 +292,9 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
       goto set_args_error;
     }
     JsVal jsname = python2js(pyname);
-    FAIL_IF_JS_NULL(jsname);
+    FAIL_IF_JS_ERROR(jsname);
     JsVal arg = Py2JsConverter_convert(converter, pyargs[k], proxies);
-    FAIL_IF_JS_NULL(arg);
+    FAIL_IF_JS_ERROR(arg);
     FAIL_IF_MINUS_ONE(JsvObject_SetAttr(kwargs, jsname, arg));
   }
   // Fill in defaults for keyword parameters and check for missing param w/ no
@@ -318,9 +319,9 @@ JsMethod_ConvertArgs(JsFuncSignature* sig,
     PyObject* converter =
       PyTuple_GET_ITEM(sig->kwparam_converters, i); /* borrowed */
     JsVal jsname = python2js(pyname);
-    FAIL_IF_JS_NULL(jsname);
+    FAIL_IF_JS_ERROR(jsname);
     JsVal arg = Py2JsConverter_convert(converter, default_, proxies);
-    FAIL_IF_JS_NULL(arg);
+    FAIL_IF_JS_ERROR(arg);
     FAIL_IF_MINUS_ONE(JsvObject_SetAttr(kwargs, jsname, arg));
   }
   JsvArray_Push(jsargs, kwargs);
@@ -348,7 +349,7 @@ success:
   success = true;
 finally:
   if (!success) {
-    jsargs = JS_NULL;
+    jsargs = JS_ERROR;
     if (!PyErr_Occurred()) {
       PyErr_SetString(PyExc_SystemError, "Oops");
     }
@@ -368,7 +369,7 @@ JsMethod_Vectorcall_impl(JsVal func,
                          PyObject* kwnames)
 {
   bool success = false;
-  JsVal jsresult = JS_NULL;
+  JsVal jsresult = JS_ERROR;
   JsFuncSignature* call_sig = NULL;
   PyObject* pyresult = NULL;
   JsVal proxies = JsvArray_New();
@@ -389,13 +390,13 @@ JsMethod_Vectorcall_impl(JsVal func,
   }
   JsVal jsargs =
     JsMethod_ConvertArgs(call_sig, pyargs, nargsf, kwnames, proxies);
-  FAIL_IF_JS_NULL(jsargs);
+  FAIL_IF_JS_ERROR(jsargs);
   if (call_sig->should_construct) {
     jsresult = JsvFunction_Construct(func, jsargs);
   } else {
     jsresult = JsvFunction_CallBound(func, receiver, jsargs);
   }
-  FAIL_IF_JS_NULL(jsresult);
+  FAIL_IF_JS_ERROR(jsresult);
   PyObject* result_converter = ((JsFuncSignature*)call_sig)->result;
   pyresult = Js2PyConverter_convert(result_converter, jsresult, proxies);
   FAIL_IF_NULL(pyresult);
@@ -405,7 +406,7 @@ finally:
   Py_LeaveRecursiveCall(/* " in JsMethod_Vectorcall" */);
   if (!success) {
 
-    if (!JsvNull_Check(jsresult) && pyproxy_Check(jsresult)) {
+    if (!JsvError_Check(jsresult) && pyproxy_Check(jsresult)) {
       // TODO: don't destroy proxies with roundtrip = true?
       JsvArray_Push(proxies, jsresult);
     }
@@ -432,9 +433,9 @@ JsMethod_Construct_impl(JsVal func,
 
   JsVal jsargs = JsMethod_ConvertArgs(
     (JsFuncSignature*)default_signature, pyargs, nargs, kwnames, proxies);
-  FAIL_IF_JS_NULL(jsargs);
+  FAIL_IF_JS_ERROR(jsargs);
   JsVal jsresult = JsvFunction_Construct(func, jsargs);
-  FAIL_IF_JS_NULL(jsresult);
+  FAIL_IF_JS_ERROR(jsresult);
   pyresult = js2python(jsresult);
   FAIL_IF_NULL(pyresult);
 

@@ -3,6 +3,7 @@
 #include "error_handling.h"
 #include "jslib.h"
 #include "python2js.h"
+#include "python_unexposed.h"
 #include <emscripten.h>
 #include <stdbool.h>
 
@@ -46,12 +47,11 @@ static struct PyModuleDef core_module_def = {
 
 void
 pyodide_export(void);
-void
-set_new_cframe(void* frame);
+extern int pystate_keepalive;
 // Force _pyodide_pre.gen.o, and pystate.o to be included by
 // using a symbol from each of them.
 void* pyodide_export_ = pyodide_export;
-void* set_new_cframe_ = set_new_cframe;
+int* pystate_keepalive_ = &pystate_keepalive;
 
 // clang-format off
 EM_JS(void, set_pyodide_module, (JsVal mod), {
@@ -72,7 +72,7 @@ init_pyodide_proxy()
   PyObject* _pyodide = PyImport_ImportModule("_pyodide");
   FAIL_IF_NULL(_pyodide);
   JsVal _pyodide_proxy = python2js(_pyodide);
-  FAIL_IF_JS_NULL(_pyodide_proxy);
+  FAIL_IF_JS_ERROR(_pyodide_proxy);
   set_pyodide_module(_pyodide_proxy);
 
   success = true;

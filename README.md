@@ -37,20 +37,18 @@ your browser. For further information, see the
 
 ## Getting Started
 
-Pyodide offers three different ways to get started depending on your needs and
-technical resources. These include:
-
-- Use a hosted distribution of Pyodide: see the [Getting
+- If you wish to use a hosted distribution of Pyodide: see the [Getting
   Started](https://pyodide.org/en/stable/usage/quickstart.html) documentation.
-- Download a version of Pyodide from the [releases
-  page](https://github.com/pyodide/pyodide/releases/) and serve it
-  with a web server.
-- [Build Pyodide from source](https://pyodide.org/en/stable/development/building-from-sources.html)
-  - Build natively with `make`: primarily for Linux users who want to
-    experiment or contribute back to the project.
-  - [Use a Docker image](https://pyodide.org/en/stable/development/building-from-sources.html#using-docker):
-    recommended for Windows and macOS users and for Linux users who prefer a
-    Debian-based Docker image with the dependencies already installed.
+- If you wish to host Pyodide yourself, you can download Pyodide from the [releases
+  page](https://github.com/pyodide/pyodide/releases/) and serve it with a web server.
+- If you wish to use Pyodide with a bundler, see [the documentation on Working with
+  Bundlers](https://pyodide.org/en/stable/usage/working-with-bundlers.html)
+- If you are a Python package maintainer, see [the documentation on building and testing Python
+  packages](https://pyodide.org/en/stable/development/building-and-testing-packages.html).
+- If you want to add a package to the Pyodide distribution, [see the documentation on adding
+  a package to the Pyodide distribution](https://pyodide.org/en/stable/development/new-packages.html)
+- If you wish to experiment or contribute back to the Pyodide runtime, see the documentation on
+  [building Pyodide from source](https://pyodide.org/en/stable/development/building-from-sources.html)
 
 ## History
 
@@ -80,6 +78,16 @@ governance](https://pyodide.org/en/stable/project/governance.html).
 - Twitter: [twitter.com/pyodide](https://twitter.com/pyodide)
 - Stack Overflow: [stackoverflow.com/questions/tagged/pyodide](https://stackoverflow.com/questions/tagged/pyodide)
 - Discord: [Pyodide Discord](https://dsc.gg/pyodide)
+
+## Sponsors
+
+For a full list of current and historical sponsors, please see the [Funding](https://pyodide.org/en/stable/project/about.html#funding) section of our About page.
+
+Pyodide also has a large number of small donors. If you’re interested in supporting Pyodide, check out our [OpenCollective](https://opencollective.com/pyodide) and [GitHub Sponsors](https://github.com/sponsors/pyodide) pages.
+
+### Special thanks
+
+- [BrowserStack](https://www.browserstack.com/): This project is tested with BrowserStack
 
 ## License
 

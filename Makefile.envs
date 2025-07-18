@@ -1,9 +1,9 @@
-export PYVERSION ?= 3.12.7
-export PYODIDE_EMSCRIPTEN_VERSION ?= 3.1.74
-export PYODIDE_VERSION ?= 0.28.0.dev0
+export PYVERSION ?= 3.13.2
+export PYODIDE_EMSCRIPTEN_VERSION ?= 4.0.9
+export PYODIDE_VERSION ?= 0.29.0.dev0
 export PYODIDE_ABI_VERSION ?= 2025_0
 
-export PYTHON_ARCHIVE_SHA256=73ac8fe780227bf371add8373c3079f42a0dc62deff8d612cd15a618082ab623
+export PYTHON_ARCHIVE_SHA256=b8d79530e3b7c96a5cb2d40d431ddb512af4a563e863728d8713039aa50203f9
 
 export RUST_TOOLCHAIN ?= nightly-2025-02-01
 export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-wasm-eh-sysroot/releases/download/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}/emcc-${PYODIDE_EMSCRIPTEN_VERSION}_${RUST_TOOLCHAIN}.tar.bz2
@@ -13,7 +13,7 @@ export RUST_EMSCRIPTEN_TARGET_URL ?= https://github.com/pyodide/rust-emscripten-
 export RUSTFLAGS = -C link-arg=-sSIDE_MODULE=2 -Z link-native-libraries=yes -Z emscripten-wasm-eh
 
 # URL to the prebuilt packages
-export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/20250114
+export PYODIDE_PREBUILT_PACKAGES_BASE=https://github.com/pyodide/pyodide-recipes/releases/download/0.28-20250705
 export PYODIDE_PREBUILT_PACKAGES_URL=$(PYODIDE_PREBUILT_PACKAGES_BASE)/packages.tar.gz
 export PYODIDE_PREBUILT_PACKAGES_LOCKFILE=$(PYODIDE_PREBUILT_PACKAGES_BASE)/pyodide-lock.json
 export ENABLE_PREBUILT_PACKAGES ?= 0
@@ -100,6 +100,7 @@ export PYCOMPILE_EXCLUDE_FILES=\
 export DBGFLAGS_NODEBUG=-g0
 export DBGFLAGS_WASMDEBUG=-g2
 export DBGFLAGS_SOURCEMAPDEBUG=-g3
+export DBG_LDFLAGS_DYLINK=-sDYLINK_DEBUG=1 -sRUNTIME_DEBUG=2
 export DBG_LDFLAGS_SOURCEMAPDEBUG=-gseparate-dwarf
 
 export DBGFLAGS=$(DBGFLAGS_NODEBUG)
@@ -113,11 +114,12 @@ endif
 ifdef PYODIDE_SOURCEMAP
 	# Debug with source maps (less useful than WASMDEBUG but easier if it helps)
 	export DBGFLAGS=$(DBGFLAGS_SOURCEMAPDEBUG)
-	export DBG_LDFLAGS=$(DBG_LDFLAGS_SOURCEMAPDEBUG)
+	export DBG_LDFLAGS=$(DBG_LDFLAGS_SOURCEMAPDEBUG) $(DBG_LDFLAGS_DYLINK)
 else
 	ifdef PYODIDE_SYMBOLS
 		# Include debug symbols but no source maps (most useful)
 		export DBGFLAGS=$(DBGFLAGS_WASMDEBUG)
+		export DBG_LDFLAGS=$(DBG_LDFLAGS_DYLINK)
 	endif
 endif
 
@@ -148,7 +150,10 @@ export LDFLAGS_BASE=\
 
 export CXXFLAGS_BASE=
 
+# We need -sERROR_ON_UNDEFINED_SYMBOLS=0 b/c otherwise Emscripten gets mad that
+# the symbols from sentinel.ts are missing.
 export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
+	-s ENVIRONMENT=web,webview,worker,node,shell \
 	-s MAIN_MODULE=1 \
 	-s MODULARIZE=1 \
 	-s LZ4=1 \
@@ -170,6 +175,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-s NODEJS_CATCH_REJECTION=0 \
 	-s EXPORTED_FUNCTIONS='$(EXPORTS)'\
 	-s EXIT_RUNTIME \
+	-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 	\
 	-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 	-lffi \
@@ -188,6 +194,7 @@ export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 	-lhtml5.js \
 	-lhtml5_webgl.js \
 	-lsdl.js \
+	-sMAX_WEBGL_VERSION=2  \
 	-sGL_WORKAROUND_SAFARI_GETCONTEXT_BUG=0
 
 EXPORTS=_main \
@@ -206,6 +213,9 @@ EXPORTS=_main \
    ,__hiwire_immortal_add \
    ,_jslib_init \
    ,_init_pyodide_proxy \
+   \
+   ,_print_stdout \
+   ,_print_stderr \
    \
    ,_PyBuffer_Release \
    ,_Py_DecRef \
@@ -244,10 +254,30 @@ EXPORTS=_main \
 
 
 ifeq ($(DISABLE_DYLINK), 1)
+	EXPORTED_RUNTIME_METHODS=wasmTable \
+		,ERRNO_CODES \
+		,FS \
+		,ENV \
+		,stringToNewUTF8 \
+		,stringToUTF8OnStack \
+		,addFunction \
+		,stackSave \
+		,stackRestore \
+		,runtimeKeepalivePush \
+		,HEAP8 \
+		,HEAPU8 \
+		,HEAP16 \
+		,HEAPU16 \
+		,HEAP32 \
+		,HEAPU32 \
+		,HEAP64 \
+		,HEAPU64 \
+		,HEAPF32 \
+		,HEAPF64
 	export MAIN_MODULE_LDFLAGS= $(LDFLAGS_BASE) \
 		-s MODULARIZE=1 \
 		-s EXPORT_NAME="'_createPyodideModule'" \
-		-sEXPORTED_RUNTIME_METHODS='wasmTable,ERRNO_CODES,FS,ENV,stringToNewUTF8,addFunction,stackSave,stackRestore' \
+		-sEXPORTED_RUNTIME_METHODS='$(EXPORTED_RUNTIME_METHODS)' \
 		-s LZ4=1 \
 		-s USE_ZLIB \
 		-s USE_BZIP2 \
@@ -260,6 +290,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-s FS_DEBUG=1 \
 		-sWASM_BIGINT \
 		-sEXPORTED_FUNCTIONS='$(EXPORTS)'\
+		-sERROR_ON_UNDEFINED_SYMBOLS=0 \
 		-lpython$(PYMAJOR).$(PYMINOR)$(CPYTHON_ABI_FLAGS) \
 		-lffi \
 		-lhiwire \
@@ -278,7 +309,7 @@ export MAIN_MODULE_CFLAGS= $(CFLAGS_BASE) \
 	-Werror=unused-result \
 	-mreference-types \
 	-I$(PYTHONINCLUDE) \
-	-I$(PYTHONINCLUDE)/.. \
+	-I$(PYTHONINCLUDE)/..
 
 .output_vars:
 	set

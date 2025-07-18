@@ -1,6 +1,7 @@
 // clang-format off
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "python_unexposed.h"
 // clang-format on
 #include "error_handling.h"
 #include "jslib.h"
@@ -116,6 +117,19 @@ EM_JS(JsVal, restore_stderr, (void), {
 });
 // clang-format on
 
+#ifdef DEBUG_F
+EM_JS(void, log_python_error, (JsVal jserror), {
+  // If a js error occurs in here, it's a weird edge case. This will probably
+  // never happen, but for maximum paranoia let's double check.
+  try {
+    let msg = jserror.message;
+    console.warn("Python exception:\n" + msg + "\n");
+  } catch (e) {
+    API.fatal_error(e);
+  }
+});
+#endif
+
 /**
  * Wrap the exception in a JavaScript PythonError object.
  *
@@ -172,7 +186,11 @@ wrap_exception()
   FAIL_IF_NULL(typestr_utf8);
 
   JsVal jserror = new_error(typestr_utf8, formatted_exception, exc);
-  FAIL_IF_JS_NULL(jserror);
+  FAIL_IF_JS_ERROR(jserror);
+
+#ifdef DEBUG_F
+  log_python_error(jserror);
+#endif
 
   success = true;
 finally:
@@ -193,19 +211,6 @@ finally:
   return jserror;
 }
 
-#ifdef DEBUG_F
-EM_JS(void, log_python_error, (JsVal jserror), {
-  // If a js error occurs in here, it's a weird edge case. This will probably
-  // never happen, but for maximum paranoia let's double check.
-  try {
-    let msg = jserror.message;
-    console.warn("Python exception:\n" + msg + "\n");
-  } catch (e) {
-    API.fatal_error(e);
-  }
-});
-#endif
-
 /**
  * Convert the current Python error to a javascript error and throw it.
  */
@@ -213,9 +218,6 @@ EMSCRIPTEN_KEEPALIVE void _Py_NO_RETURN
 pythonexc2js()
 {
   JsVal jserror = wrap_exception();
-#ifdef DEBUG_F
-  log_python_error(jserror);
-#endif
   JsvError_Throw(jserror);
 }
 

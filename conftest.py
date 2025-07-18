@@ -74,7 +74,6 @@ def set_configs():
         let pyodide = await loadPyodide({
             fullStdLib: false,
             jsglobals : self,
-            enableRunUntilComplete: true,
         });
         """,
     )
@@ -89,10 +88,10 @@ def set_configs():
             fullStdLib: false,
             jsglobals: self,
             _loadSnapshot: snap,
-            enableRunUntilComplete: true,
         });
         """,
     )
+    pytest_pyodide_config.add_node_extra_globals(["URL", "Headers", "Response"])
 
 
 set_configs()

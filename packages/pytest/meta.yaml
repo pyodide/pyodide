@@ -1,15 +1,16 @@
 package:
   name: pytest
-  version: 8.1.1
+  version: 8.3.5
   tag:
     - core
+    - pytest
     - min-scipy-stack
   top-level:
     - _pytest
     - pytest
 source:
-  url: https://files.pythonhosted.org/packages/4d/7e/c79cecfdb6aa85c6c2e3cf63afc56d0f165f24f5c66c03c695c4d9b84756/pytest-8.1.1-py3-none-any.whl
-  sha256: 2a8386cfc11fa9d2c50ee7b2a57e7d898ef90470a7a34c4b949ff59662bb78b7
+  url: https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl
+  sha256: c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820
 requirements:
   run:
     - atomicwrites

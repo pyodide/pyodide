@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
 """
 The main purpose of this script is to automate the changelog transformations
@@ -27,8 +28,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Self
 
-CHANGELOG = Path(__file__).parents[1] / "docs/project/changelog.md"
-NEEDS_BACKPORTS_CACHE = Path(__file__).parent / "needs_backport_prs_cached.txt"
+try:
+    import argcomplete
+except ImportError:
+    argcomplete = None
+
+TOOLS = Path(__file__).parent
+PYODIDE_ROOT = TOOLS.parent
+CHANGELOG = PYODIDE_ROOT / "docs/project/changelog.md"
+INSERT_DATE_HERE = "Insert Date Here"
 
 
 def run(
@@ -73,13 +81,13 @@ def commits_to_prs(commits: list[CommitInfo]) -> list[int]:
 
 
 class CommitHistory:
-    """Store the history of the github PRs with a map from pr_number to CommitInfo"""
+    """Store the history of the GitHub PRs with a map from pr_number to CommitInfo"""
 
     commits: dict[int, CommitInfo]
 
     @classmethod
-    def from_git(self):
-        result = run(["git", "log", "--oneline", "main"], capture_output=True)
+    def from_git(self, branch):
+        result = run(["git", "log", "--oneline", branch], capture_output=True)
         lines = result.stdout.splitlines()
         return CommitHistory(lines)
 
@@ -98,12 +106,15 @@ class CommitHistory:
     def lookup_pr(self, pr_number: int) -> CommitInfo:
         return self.commits[pr_number]
 
+    def has_pr(self, pr_number: int) -> bool:
+        return pr_number in self.commits
+
 
 @functools.cache
 def get_commits() -> list[CommitInfo]:
     """Return the CommitInfo of the PRs we want to backport"""
     pr_numbers = get_needs_backport_pr_numbers()
-    commit_history = CommitHistory.from_git()
+    commit_history = CommitHistory.from_git("main")
     commits = [commit_history.lookup_pr(x) for x in pr_numbers]
     return sorted(commits, key=lambda c: -c.history_idx)
 
@@ -462,6 +473,53 @@ class Changelog:
 
 
 #
+# Some helpers
+#
+
+
+def today():
+    return datetime.today().strftime("%B %d, %Y")
+
+
+def branch_exists(branch_name: str) -> bool:
+    res = run(["git", "branch", "--list", branch_name], capture_output=True)
+    return bool(res.stdout.strip())
+
+
+def update_old_branch(branch_name):
+    branch_name_old = branch_name + "-old"
+    run(["git", "branch", "-f", branch_name_old, branch_name])
+
+
+def force_branch_update(branch_name):
+    branch_already_exists = branch_exists(branch_name)
+    if branch_already_exists:
+        update_old_branch(branch_name)
+    run(["git", "switch", "-C", branch_name])
+
+
+def diff_old_new_branch(branch_name):
+    branch_name_old = branch_name + "-old"
+    if not branch_exists(branch_name_old):
+        return
+    if os.isatty(sys.stdout.fileno()):
+        print("\nWill show diff between previous branch and new branch.")
+        input("Press enter to continue.")
+    run(["git", "diff", branch_name_old, branch_name])
+
+
+def get_version() -> str:
+    result = run(["git", "tag"], capture_output=True)
+    (major, minor, patch) = max(
+        tuple(int(p) for p in x.split("."))
+        for x in result.stdout.splitlines()
+        if x.startswith("0") and "a" not in x
+    )
+    patch += 1
+    return f"{major}.{minor}.{patch}"
+
+
+#
 # Main commands
 #
 
@@ -481,15 +539,21 @@ def add_backport_pr(args):
 
 
 def clear_backport_prs(args) -> None:
-    needs_backport_prs = get_needs_backport_prs_strings()
+    needs_backport_prs = get_needs_backport_pr_numbers()
+    stable_history = CommitHistory.from_git("stable")
+    to_clear = [
+        pr_number
+        for pr_number in needs_backport_prs
+        if stable_history.has_pr(pr_number)
+    ]
     print("Removing the needs-backport label from the following PRs:")
-    print("  ", ", ".join(needs_backport_prs), "\n")
+    print("  ", ", ".join(str(x) for x in to_clear), "\n")
     if not args.yes:
         input("Press enter to continue")
-    for pr_number in needs_backport_prs:
+    for pr_number in to_clear:
         run(["gh", "pr", "edit", str(pr_number), "--remove-label", "needs backport"])
     print("To reverse this, run")
-    print(f"  ./tools/backport.py add-backport-pr {' '.join(needs_backport_prs)}")
+    print(f"  ./tools/backport.py add-backport-pr {' '.join(str(x) for x in to_clear)}")
 
 
 def show_missing_changelogs(args) -> None:
@@ -508,51 +572,17 @@ def show_missing_changelogs(args) -> None:
             print(commit.pr_number, commit.shorthash, commit.shortlog)
 
 
-def today():
-    return datetime.today().strftime("%B %d, %Y")
-
-
-def get_date(args):
-    if args.today:
-        return today()
-    return "Insert Date Here"
-
-
-def branch_exists(branch_name: str) -> bool:
-    res = run(["git", "branch", "--list", branch_name], capture_output=True)
-    return bool(res.stdout.strip())
-
-
-def force_branch_update(branch_name):
-    branch_name_old = branch_name + "-old"
-    branch_already_exists = branch_exists(branch_name)
-    if branch_already_exists:
-        run(["git", "branch", "-f", branch_name_old, branch_name])
-    run(["git", "switch", "-C", branch_name])
-
-
-def diff_old_new_branch(branch_name):
-    branch_name_old = branch_name + "-old"
-    if not branch_exists(branch_name_old):
-        return
-    if os.isatty(sys.stdout.fileno()):
-        print("\nWill show diff between previous branch and new branch.")
-        input("Press enter to continue.")
-    run(["git", "diff", branch_name_old, branch_name])
-
-
 def make_changelog_branch(args) -> None:
     commits = get_commits()
     prs = commits_to_prs(commits)
-    version = args.new_version
-    date = get_date(args)
-    run(["git", "fetch", "upstream", "main:main"])
+    version = get_version()
+    run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
     run(["git", "switch", "main"])
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
     branch_name = f"changelog-for-{version}"
     force_branch_update(branch_name)
-    changelog.set_patch_release_notes(version, prs, date)
+    changelog.set_patch_release_notes(version, prs, INSERT_DATE_HERE)
     changelog.remove_release_notes_from_unreleased_section(prs)
     changelog.write_text()
     run(["git", "add", CHANGELOG])
@@ -576,10 +606,9 @@ def make_backport_branch(args) -> None:
     For this to work, we need to set `rerere.enabled` and `rerere.autoupdate`.
     """
     commits = get_commits()
-    version = args.new_version
-    date = get_date(args)
-    run(["git", "fetch", "upstream", "main:main"])
-    run(["git", "fetch", "upstream", "stable:stable"])
+    version = get_version()
+    run(["git", "fetch", "upstream", "main:main", "--update-head-ok", "--force"])
+    run(["git", "fetch", "upstream", "stable:stable", "--update-head-ok", "--force"])
     run(["git", "config", "rerere.enabled", "true"])
     run(["git", "config", "rerere.autoupdate", "true"])
     run(["git", "switch", "main"])
@@ -606,7 +635,7 @@ def make_backport_branch(args) -> None:
                 capture_output=True,
             )
         changelog.set_patch_release_notes(
-            version, commits_to_prs(commits[: n + 1]), date
+            version, commits_to_prs(commits[: n + 1]), INSERT_DATE_HERE
         )
         changelog.write_text(include_unreleased=False)
         run(["git", "add", "docs/project/changelog.md"])
@@ -629,9 +658,9 @@ def make_backport_branch(args) -> None:
 
 
 def open_release_prs(args):
-    version = args.new_version
+    version = get_version()
     INSERT_ACTUAL_DATE = "- [ ] Insert the actual date in the changelog\n"
-    MERGE_DONT_SQUASH = "- [] Merge, don't squash"
+    MERGE_DONT_SQUASH = "- [ ] Merge, don't squash"
     BACKPORTS_BRANCH = f"backports-for-{version}"
     CHANGELOG_BRANCH = f"changelog-for-{version}"
 
@@ -648,7 +677,6 @@ def open_release_prs(args):
             "--body",
             INSERT_ACTUAL_DATE + MERGE_DONT_SQUASH,
             "--web",
-            clear_backport_prs,
         ]
     )
 
@@ -669,19 +697,57 @@ def open_release_prs(args):
     )
 
 
+def set_date(args):
+    version = get_version()
+    BACKPORTS_BRANCH = f"backports-for-{version}"
+    CHANGELOG_BRANCH = f"changelog-for-{version}"
+    update_old_branch(BACKPORTS_BRANCH)
+    run(["git", "switch", BACKPORTS_BRANCH])
+    run(
+        [
+            "git",
+            "rebase",
+            "stable",
+            "--exec",
+            " && ".join(
+                [
+                    f"sed -i 's/_{INSERT_DATE_HERE}_/_{today()}_/' docs/project/changelog.md",
+                    "git add docs/project/changelog.md",
+                    "git commit --amend --no-edit",
+                ]
+            ),
+        ]
+    )
+
+    update_old_branch(CHANGELOG_BRANCH)
+    run(["git", "switch", CHANGELOG_BRANCH])
+    CHANGELOG.write_text(CHANGELOG.read_text().replace(INSERT_DATE_HERE, today()))
+    run(["git", "add", "docs/project/changelog.md"])
+    run(["git", "commit", "--amend", "--no-edit"])
+
+
+def bump_version(args):
+    version = get_version()
+    extra_args = []
+    if args.tag:
+        extra_args.append("--tag")
+
+    run([TOOLS / "bump_version.py", version] + extra_args)
+
+
 def parse_args():
     parser = argparse.ArgumentParser("Apply backports")
     parser.set_defaults(func=lambda args: parser.print_help())
     subparsers = parser.add_subparsers()
 
     add_backport_parser = subparsers.add_parser(
-        "add-backport-pr", help="Add the needs-backport label to a PR"
+        "add-pr", help="Add the needs-backport label to a PR"
     )
     add_backport_parser.add_argument("pr_numbers", nargs="+", action="extend")
     add_backport_parser.set_defaults(func=add_backport_pr)
 
     clear_backport_prs_parser = subparsers.add_parser(
-        "clear-backport-prs",
+        "clear-prs",
         help="Remove the needs-backport label from all PRs with the label",
     )
     clear_backport_prs_parser.add_argument(
@@ -701,23 +767,35 @@ def parse_args():
     changelog_branch_parse = subparsers.add_parser(
         "changelog-branch", help="Make changelog-for-version branch"
     )
-    changelog_branch_parse.add_argument("new_version")
-    changelog_branch_parse.add_argument("--today", action="store_true")
     changelog_branch_parse.set_defaults(func=make_changelog_branch)
 
     backport_branch_parse = subparsers.add_parser(
         "backport-branch", help="Make backports-for-version branch"
     )
-    backport_branch_parse.add_argument("new_version")
-    backport_branch_parse.add_argument("--today", action="store_true")
     backport_branch_parse.set_defaults(func=make_backport_branch)
 
     open_release_prs_parse = subparsers.add_parser(
         "open-release-prs", help="Open PRs for the backports and changelog branches"
     )
-    open_release_prs_parse.add_argument("new_version")
     open_release_prs_parse.set_defaults(func=open_release_prs)
 
+    set_date_parse = subparsers.add_parser(
+        "set-date", help="Set the date in the changelog"
+    )
+    set_date_parse.set_defaults(func=set_date)
+
+    bump_version_parser = subparsers.add_parser(
+        "bump-version", help="Set the date in the changelog"
+    )
+    bump_version_parser.add_argument(
+        "--tag",
+        action="store_true",
+        help="Commit and tag the result",
+    )
+    bump_version_parser.set_defaults(func=bump_version)
+
+    if argcomplete:
+        argcomplete.autocomplete(parser)
     return parser.parse_args()
 
 

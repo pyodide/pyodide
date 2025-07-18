@@ -2,18 +2,19 @@ name: pyodide-env
 channels:
   - conda-forge
 dependencies:
-  - python=3.12
+  - python=3.13
   - nodejs>=18,<22.5 # Node.js 22.5 has some issues with installing packages https://github.com/nodejs/node/issues/53902
   - ccache
   - f2c
   - swig
   - make
-  - cmake
+  - cmake<4.0
   # pkg-config in conda-forge has a bug that it overwrites PKG_CONFIG_LIBDIR set by user.
   # there was a fix (https://github.com/conda-forge/pkg-config-feedstock/pull/31), but it is not released.
   # - pkg-config
   - texinfo
-  - autoconf
+  # Not sure but it looks like the autoconf version should not be greater than the one used in the configure.ac file in cpython.
+  - autoconf<2.72
   - automake
   - libtool
   - wget

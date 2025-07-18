@@ -55,8 +55,7 @@ of the round trip conversion is the original object (in the sense that they live
 at the same memory address). There are a few exceptions:
 
 1. `NaN` is converted to `NaN` after a round trip but `NaN !== NaN`,
-2. {js:data}`null` is converted to {js:data}`undefined` after a round trip, and
-3. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
+2. a {js:data}`BigInt` will be converted to a {js:data}`Number` after a round
    trip unless its absolute value is greater than
    {js:data}`Number.MAX_SAFE_INTEGER` (i.e., 2^53).
 
@@ -76,13 +75,14 @@ and {py:class}`bytes` objects.
 The following immutable types are implicitly converted from Python to
 JavaScript:
 
-| Python            | JavaScript                               |
-| ----------------- | ---------------------------------------- |
-| {py:class}`int`   | {js:data}`Number` or {js:data}`BigInt`\* |
-| {py:class}`float` | {js:data}`Number`                        |
-| {py:class}`str`   | {js:data}`String`                        |
-| {py:class}`bool`  | {js:data}`Boolean`                       |
-| {py:data}`None`   | {js:data}`undefined`                     |
+| Python                        | JavaScript                               |
+| ----------------------------- | ---------------------------------------- |
+| {py:class}`int`               | {js:data}`Number` or {js:data}`BigInt`\* |
+| {py:class}`float`             | {js:data}`Number`                        |
+| {py:class}`str`               | {js:data}`String`                        |
+| {py:class}`bool`              | {js:data}`Boolean`                       |
+| {py:data}`None`               | {js:data}`undefined`                     |
+| {py:data}`pyodide.ffi.jsnull` | {js:data}`null`                          |
 
 \* An {py:class}`int` is converted to a {js:data}`Number` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` otherwise it is
@@ -104,7 +104,7 @@ Python:
 | {js:data}`String`    | {py:class}`str`                                       |
 | {js:data}`Boolean`   | {py:class}`bool`                                      |
 | {js:data}`undefined` | {py:data}`None`                                       |
-| {js:data}`null`      | {py:data}`None`                                       |
+| {js:data}`null`      | {py:data}`pyodide.ffi.jsnull`                         |
 
 \* A {js:data}`Number` is converted to an {py:class}`int` if the absolute value
 is less than or equal to {js:data}`Number.MAX_SAFE_INTEGER` and its fractional
@@ -142,7 +142,9 @@ returned. The following operations are currently supported on a {py:class}`~pyod
 | `proxy1 == proxy2`                 | `x === y`                         |
 | `proxy.typeof`                     | `typeof x`                        |
 | `iter(proxy)`                      | `x[Symbol.iterator]()`            |
+| `aiter(proxy)`                     | `x[Symbol.asyncIterator]()`       |
 | `next(proxy)`                      | `x.next()`                        |
+| `anext(proxy)`                     | `x.next()`                        |
 | `await proxy`                      | `await x`                         |
 
 Note that each of these operations is only supported if the proxied JavaScript
@@ -234,25 +236,31 @@ Fewer operations can be overloaded in JavaScript than in Python, so some
 operations are more cumbersome on a {js:class}`~pyodide.ffi.PyProxy` than on a
 {py:class}`~pyodide.ffi.JsProxy`. The following operations are supported:
 
-| JavaScript                          | Python              |
-| ----------------------------------- | ------------------- |
-| `proxy.toString()`                  | `str(x)`            |
-| `foo in proxy`                      | `hasattr(x, 'foo')` |
-| `proxy.foo`                         | `x.foo`             |
-| `proxy.foo = bar`                   | `x.foo = bar`       |
-| `delete proxy.foo`                  | `del x.foo`         |
-| `Object.getOwnPropertyNames(proxy)` | `dir(x)`            |
-| `proxy(...)`                        | `x(...)`            |
-| `proxy.foo(...)`                    | `x.foo(...)`        |
-| `proxy.length`                      | `len(x)`            |
-| `proxy.has(foo)`                    | `foo in x`          |
-| `proxy.get(foo)`                    | `x[foo]`            |
-| `proxy.set(foo, bar)`               | `x[foo] = bar`      |
-| `proxy.delete(foo)`                 | `del x[foo]`        |
-| `proxy.type`                        | `type(x)`           |
-| `proxy[Symbol.iterator]()`          | `iter(x)`           |
-| `proxy.next()`                      | `next(x)`           |
-| `await proxy`                       | `await x`           |
+| JavaScript                          | Python                  |
+| ----------------------------------- | ----------------------- |
+| `proxy.toString()`                  | `str(x)`                |
+| `foo in proxy`                      | `hasattr(x, 'foo')`     |
+| `proxy.foo`                         | `x.foo`                 |
+| `proxy.foo = bar`                   | `x.foo = bar`           |
+| `delete proxy.foo`                  | `del x.foo`             |
+| `Object.getOwnPropertyNames(proxy)` | `dir(x)`                |
+| `proxy(...)`                        | `x(...)`                |
+| `proxy.foo(...)`                    | `x.foo(...)`            |
+| `proxy.length`                      | `len(x)`                |
+| `proxy.has(foo)`                    | `foo in x`              |
+| `proxy.get(foo)`                    | `x[foo]`                |
+| `proxy.set(foo, bar)`               | `x[foo] = bar`          |
+| `proxy.delete(foo)`                 | `del x[foo]`            |
+| `proxy.type`                        | `type(x)`               |
+| `proxy[Symbol.iterator]()`          | `iter(x)`               |
+| `proxy[Symbol.asyncIterator]()`     | `aiter(x)`              |
+| `proxy.next()`                      | `next(x)` or `anext(x)` |
+| `await proxy`                       | `await x`               |
+
+As a special case, if a PyProxy is created of a dictionary, then `proxy[key]`
+will fall back to checking for an item in the dictionary if there is no
+attribute called key. Both PyProxy properties and dictionary attributes take
+precedence over dictionary keys.
 
 ````{admonition} Memory Leaks and PyProxy
 :class: warning
@@ -744,7 +752,7 @@ If the JavaScript object's name is a reserved Python keyword, the {py:func}`geta
 
 ```pyodide
 lambda = (x) => {return x + 1};
-//'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
+// 'from js import lambda' will cause a Syntax Error, since 'lambda' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     import js
     js_lambda = getattr(js, 'lambda')
@@ -756,7 +764,7 @@ If a JavaScript object has a property that is a reserved Python keyword, the {py
 
 ```pyodide
 people = {global: "lots and lots"};
-//Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
+// Trying to access 'people.global' will raise a Syntax Error, since 'global' is a Python reserved keyword. Instead:
 pyodide.runPython(`
     from js import people
     setattr(people, 'global', 'even more')

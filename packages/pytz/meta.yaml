@@ -1,14 +1,16 @@
 package:
   name: pytz
-  version: "2024.1"
+  version: "2025.1"
   tag:
+    # Remove tag after removing pytz from the test suite
+    - pyodide.test
     - core
     - min-scipy-stack
   top-level:
     - pytz
 source:
-  sha256: 328171f4e3623139da4983451950b28e95ac706e13f3f2630a879749e7a8b319
-  url: https://files.pythonhosted.org/packages/9c/3d/a121f284241f08268b21359bd425f7d4825cffc5ac5cd0e1b3d82ffd2b10/pytz-2024.1-py2.py3-none-any.whl
+  sha256: 89dd22dca55b46eac6eda23b2d72721bf1bdfef212645d81513ef5d03038de57
+  url: https://files.pythonhosted.org/packages/eb/38/ac33370d784287baa1c3d538978b5e2ea064d4c1b93ffbd12826c190dd10/pytz-2025.1-py2.py3-none-any.whl
 about:
   home: http://pythonhosted.org/pytz
   PyPI: https://pypi.org/project/pytz

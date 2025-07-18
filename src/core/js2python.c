@@ -3,6 +3,7 @@
 
 #include "error_handling.h"
 #include "js2python.h"
+#include "python2js.h"
 
 #include <emscripten.h>
 
@@ -18,19 +19,31 @@ PyUnicode_Data(PyObject* obj)
 }
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_none()
+_js2python_none(void)
 {
   Py_RETURN_NONE;
 }
 
+EMSCRIPTEN_KEEPALIVE int compat_null_to_none = 0;
+
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_true()
+_js2python_null(void)
+{
+  if (compat_null_to_none) {
+    Py_RETURN_NONE;
+  }
+  Py_INCREF(py_jsnull);
+  return py_jsnull;
+}
+
+EMSCRIPTEN_KEEPALIVE PyObject*
+_js2python_true(void)
 {
   Py_RETURN_TRUE;
 }
 
 EMSCRIPTEN_KEEPALIVE PyObject*
-_js2python_false()
+_js2python_false(void)
 {
   Py_RETURN_FALSE;
 }

@@ -4,6 +4,7 @@ import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type Module } from "./types";
+import { getSentinelImport } from "generated/sentinel";
 
 /**
  * @private
@@ -103,13 +104,22 @@ function setEnvironment(env: { [key: string]: string }): PreRunFunc {
  * Mount local directories to the virtual file system. Only for Node.js.
  * @param mounts The list of paths to mount.
  */
-function mountLocalDirectories(mounts: string[]): PreRunFunc {
-  return (Module) => {
-    for (const mount of mounts) {
-      Module.FS.mkdirTree(mount);
-      Module.FS.mount(Module.FS.filesystems.NODEFS, { root: mount }, mount);
-    }
-  };
+function callFsInitHook(
+  fsInit: undefined | ((fs: typeof FS, info: { sitePackages: string }) => void),
+): PreRunFunc[] {
+  if (!fsInit) {
+    return [];
+  }
+  return [
+    async (Module) => {
+      Module.addRunDependency("fsInitHook");
+      try {
+        await fsInit(Module.FS, { sitePackages: Module.API.sitePackages });
+      } finally {
+        Module.removeRunDependency("fsInitHook");
+      }
+    },
+  ];
 }
 
 function computeVersionTuple(Module: Module): [number, number, number] {
@@ -134,25 +144,23 @@ function computeVersionTuple(Module: Module): [number, number, number] {
  */
 function installStdlib(stdlibURL: string): PreRunFunc {
   const stdlibPromise: Promise<Uint8Array> = loadBinaryFile(stdlibURL);
-  return (Module: Module) => {
+  return async (Module: Module) => {
     Module.API.pyVersionTuple = computeVersionTuple(Module);
     const [pymajor, pyminor] = Module.API.pyVersionTuple;
     Module.FS.mkdirTree("/lib");
-    Module.FS.mkdirTree(`/lib/python${pymajor}.${pyminor}/site-packages`);
-
+    Module.API.sitePackages = `/lib/python${pymajor}.${pyminor}/site-packages`;
+    Module.FS.mkdirTree(Module.API.sitePackages);
     Module.addRunDependency("install-stdlib");
 
-    stdlibPromise
-      .then((stdlib: Uint8Array) => {
-        Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
-      })
-      .catch((e) => {
-        console.error("Error occurred while installing the standard library:");
-        console.error(e);
-      })
-      .finally(() => {
-        Module.removeRunDependency("install-stdlib");
-      });
+    try {
+      const stdlib = await stdlibPromise;
+      Module.FS.writeFile(`/lib/python${pymajor}${pyminor}.zip`, stdlib);
+    } catch (e) {
+      console.error("Error occurred while installing the standard library:");
+      console.error(e);
+    } finally {
+      Module.removeRunDependency("install-stdlib");
+    }
   };
 }
 
@@ -172,8 +180,8 @@ function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
     installStdlib(stdLibURL),
     createHomeDirectory(config.env.HOME),
     setEnvironment(config.env),
-    mountLocalDirectories(config._node_mounts),
     initializeNativeFS,
+    ...callFsInitHook(config.fsInit),
   ];
 }
 
@@ -192,14 +200,16 @@ function getInstantiateWasmFunc(
     return;
   }
   const { binary, response } = getBinaryResponse(indexURL + "pyodide.asm.wasm");
+  const sentinelImportPromise = getSentinelImport();
   return function (
-    imports: { [key: string]: any },
+    imports: { [key: string]: { [key: string]: any } },
     successCallback: (
       instance: WebAssembly.Instance,
       module: WebAssembly.Module,
     ) => void,
   ) {
     (async function () {
+      imports.sentinel = await sentinelImportPromise;
       try {
         let res: WebAssembly.WebAssemblyInstantiatedSource;
         if (response) {

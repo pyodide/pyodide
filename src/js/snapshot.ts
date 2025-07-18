@@ -3,7 +3,7 @@ import { scheduleCallback } from "./scheduler";
 declare var Module: any;
 
 /** @private */
-export function getExpectedKeys() {
+API.getExpectedKeys = function () {
   return [
     null,
     API.config.jsglobals,
@@ -13,7 +13,7 @@ export function getExpectedKeys() {
     API,
     {},
   ];
-}
+};
 
 const getAccessorList = Symbol("getAccessorList");
 /**
@@ -89,19 +89,41 @@ function decodeBuildId(buffer: Uint32Array): string {
   return Array.from(buffer, (n) => n.toString(16).padStart(8, "0")).join("");
 }
 
-// The expected index of the deduplication map in the immortal externref table.
+function checkEntry(index: number, value: any, expected: any): void {
+  if (value === expected) {
+    return;
+  }
+  if (typeof expected === "function" && typeof value !== "function") {
+    console.warn(expected, value);
+    throw new Error(`Expected function at index ${index}`);
+  }
+  let isOkay = false;
+  try {
+    isOkay = JSON.stringify(value) === JSON.stringify(expected);
+  } catch (e) {
+    // first comparison returned false and stringify raised
+    console.warn(e);
+  }
+  if (!isOkay) {
+    console.warn(expected, value);
+    throw new Error(`Unexpected hiwire entry at index ${index}`);
+  }
+}
+
+// The expected number of static js variables.
 // We double check that this is still right in makeSnapshot (when creating the
 // snapshot) and in syncUpSnapshotLoad1 (when using it).
-const MAP_INDEX = 5;
+const NUM_STATIC_JS_REFS = 6;
 
-API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
-  if (!API.config._makeSnapshot) {
-    throw new Error(
-      "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
-    );
+API.serializeHiwireState = function (
+  serializer?: (obj: any) => any,
+  checkEntryFn?: (index: number, value: any, expected: any) => void,
+): SnapshotConfig {
+  if (!checkEntryFn) {
+    checkEntryFn = checkEntry;
   }
   const hiwireKeys: SerializedHiwireValue[] = [];
-  const expectedKeys = getExpectedKeys();
+  const expectedKeys = API.getExpectedKeys();
   for (let i = 0; i < expectedKeys.length; i++) {
     let value;
     try {
@@ -109,19 +131,7 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
     } catch (e) {
       throw new Error(`Failed to get value at index ${i}`);
     }
-    let isOkay = false;
-    try {
-      isOkay =
-        value === expectedKeys[i] ||
-        JSON.stringify(value) === JSON.stringify(expectedKeys[i]);
-    } catch (e) {
-      // first comparison returned false and stringify raised
-      console.warn(e);
-    }
-    if (!isOkay) {
-      console.warn(expectedKeys[i], value);
-      throw new Error(`Unexpected hiwire entry at index ${i}`);
-    }
+    checkEntry(i, value, expectedKeys[i]);
   }
 
   for (let i = expectedKeys.length; ; i++) {
@@ -165,11 +175,13 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
     throw new Error(`Can't serialize object at index ${i}`);
   }
   const immortalKeys = [];
-  const shouldBeAMap = Module.__hiwire_immortal_get(MAP_INDEX);
-  if (Object.prototype.toString.call(shouldBeAMap) !== "[object Map]") {
-    throw new Error(`Internal error: expected a map at index ${MAP_INDEX}`);
+  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeJsNoValue?.noValueMarker !== 1) {
+    throw new Error(
+      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
+    );
   }
-  for (let i = MAP_INDEX + 1; ; i++) {
+  for (let i = NUM_STATIC_JS_REFS + 1; ; i++) {
     let v;
     try {
       v = Module.__hiwire_immortal_get(i);
@@ -181,10 +193,19 @@ API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
     }
     immortalKeys.push(v);
   }
-  const snapshotConfig: SnapshotConfig = {
+  return {
     hiwireKeys,
     immortalKeys,
   };
+};
+
+API.makeSnapshot = function (serializer?: (obj: any) => any): Uint8Array {
+  if (!API.config._makeSnapshot) {
+    throw new Error(
+      "makeSnapshot only works if you passed the makeSnapshot option to loadPyodide",
+    );
+  }
+  const snapshotConfig = API.serializeHiwireState(serializer);
   const snapshotConfigString = JSON.stringify(snapshotConfig);
   let snapshotOffset = HEADER_SIZE_IN_BYTES + 2 * snapshotConfigString.length;
   // align to 16 bytes
@@ -250,24 +271,24 @@ API.restoreSnapshot = function (snapshot: Uint8Array): SnapshotConfig {
  * @private
  */
 export function syncUpSnapshotLoad1() {
-  // hiwire init puts a null at the beginning of both the mortal and immortal tables.
-  Module.__hiwire_set(0, null);
-  Module.__hiwire_immortal_add(null);
   // Usually importing _pyodide_core would trigger jslib_init but we need to manually call it.
   Module._jslib_init();
-  // Puts deduplication map into the immortal table.
-  // TODO: Add support for snapshots to hiwire and move this to a hiwire_snapshot_init function?
-  let mapIndex = Module.__hiwire_immortal_add(new Map());
   // We expect everything after this in the immortal table to be interned strings.
   // We need to know where to start looking for the strings so that we serialized correctly.
-  if (mapIndex !== MAP_INDEX) {
+  const shouldBeJsNoValue = Module.__hiwire_immortal_get(NUM_STATIC_JS_REFS);
+  if (shouldBeJsNoValue?.noValueMarker !== 1) {
     throw new Error(
-      `Internal error: Expected mapIndex to be ${MAP_INDEX}, got ${mapIndex}`,
+      `Internal error: expected js_no_value object at index ${NUM_STATIC_JS_REFS}`,
     );
   }
   // Set API._pyodide to a proxy of the _pyodide module.
   // Normally called by import _pyodide.
   Module._init_pyodide_proxy();
+  // FIXME: The Pyodide snapshot messes with the Emscripten counter that determines whether the runtime
+  // should be kept alive or not. Without this, the Emscripten runtime will exit the Pyodide module
+  // when we calls an Emscripten API that changes the counter, such as dlopen.
+  // To prevent this, we manually push a counter to adjust the counter to 1.
+  Module.runtimeKeepalivePush();
 }
 
 function tableSet(idx: number, val: any): void {
@@ -285,7 +306,7 @@ export function syncUpSnapshotLoad2(
   snapshotConfig: SnapshotConfig,
   deserializer?: (serialized: any) => any,
 ) {
-  const expectedKeys = getExpectedKeys();
+  const expectedKeys = API.getExpectedKeys();
   expectedKeys.forEach((v, idx) => tableSet(idx, v));
   snapshotConfig.hiwireKeys.forEach((e, idx) => {
     let x;

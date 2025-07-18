@@ -16,13 +16,17 @@ LIBFFI_COMMIT=f08493d249d2067c8b3207ba46693dd858f95db3
 
 HIWIREBUILD=$(ROOT)/build/hiwire
 HIWIREREPO=https://github.com/hoodmane/hiwire
-HIWIRE_COMMIT=49f3450e34f3f50d4b8296e782dc321bb2e3264e
+HIWIRE_COMMIT=6a1e67280a15d929ebeceee54a6358c9c8d5f697
 
 ifdef CPYTHON_DEBUG
 	MAYBE_WITH_PYDEBUG=--with-pydebug
 endif
 
-all: $(PYINSTALL)/lib/$(PYLIB) $(PYINSTALL)/lib/libffi.a $(PYINSTALL)/lib/libhiwire.a
+all: $(PYINSTALL)/lib/$(PYLIB) libffi libhiwire
+
+libffi: $(PYINSTALL)/lib/libffi.a
+
+libhiwire: $(PYINSTALL)/lib/libhiwire.a
 
 .PHONY=sysconfigdata
 sysconfigdata:
@@ -41,21 +45,21 @@ LIBPYTHON_EXTRA_OBJECTS=$$(LIBMPDEC_OBJS) $$(LIBEXPAT_OBJS) $$(LIBHACL_SHA2_OBJS
 $(PYBUILD)/.patched_makefile:
 	# Clear out libinstall deps (we build what we want explicitly first)
 	cd $(PYBUILD) && sed -i -e 's/libinstall:.*/libinstall:/' Makefile;
-	# Inject extra objects into libpython3.12.a so we don't have to link them
+	# Inject extra objects into libpython3.13.a so we don't have to link them
 	# separately
 	cd $(PYBUILD) && sed -i '/MODOBJS=/s/$$/ $(LIBPYTHON_EXTRA_OBJECTS)/' Makefile
 	touch $(PYBUILD)/.patched_makefile
 
 $(PYINSTALL)/lib/$(PYLIB): $(PYBUILD)/$(PYLIB) sysconfigdata $(PYBUILD)/.patched_makefile
-	# touch libpython3.12.a so we don't remake it due to modified Makefile(??)
+	# touch libpython3.13.a so we don't remake it due to modified Makefile(??)
 	touch $(PYBUILD)/$(PYLIB)
-	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
+	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
 .PHONY=rebuild
 rebuild: sysconfigdata
-	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) PYTHON_FOR_BUILD=$(HOSTPYTHON) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
+	CFLAGS="$(CFLAGS_BASE)" emmake make -C $(PYBUILD) CROSS_COMPILE=yes inclinstall libinstall $(PYLIB) -j $${PYODIDE_JOBS:-3}
 	cp $(PYBUILD)/$(PYLIB) $(PYINSTALL)/lib/
 
 
@@ -122,7 +126,8 @@ $(PYINSTALL)/lib/libhiwire.a :
 		&& CC=emcc EMSCRIPTEN_DEDUPLICATE=1 EXTERN_FAIL=1 make \
 	)
 	cp -r $(HIWIREBUILD)/dist/lib $(PYINSTALL)/
-	cp -r $(HIWIREBUILD)/dist/include $(PYINSTALL)/include/hiwire
+	rm -rf $(PYINSTALL)/include/hiwire
+	cp -r $(HIWIREBUILD)/dist/include/ $(PYINSTALL)/include/hiwire
 
 python-makefile: $(PYBUILD)/Makefile
 

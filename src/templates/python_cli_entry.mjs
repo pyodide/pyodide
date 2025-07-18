@@ -24,6 +24,14 @@ const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
 
+function fsInit(FS) {
+  const mounts = dirsToMount();
+  for (const mount of mounts) {
+    FS.mkdirTree(mount);
+    FS.mount(FS.filesystems.NODEFS, { root: mount }, mount);
+  }
+}
+
 async function main() {
   let py;
   try {
@@ -38,20 +46,7 @@ async function main() {
         { HOME: process.cwd() },
       ),
       fullStdLib: false,
-      _node_mounts: dirsToMount(),
-      // Strip out messages written to stderr while loading
-      // After Pyodide is loaded we will replace stdstreams with setupStreams.
-      stderr(e) {
-        if (
-          [
-            "warning: no blob constructor, cannot create blobs with mimetypes",
-            "warning: no BlobBuilder",
-          ].includes(e.trim())
-        ) {
-          return;
-        }
-        console.warn(e);
-      },
+      fsInit,
     });
   } catch (e) {
     if (e.constructor.name !== "ExitStatus") {
@@ -80,14 +75,14 @@ async function main() {
 
   py.runPython(
     `
-        from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
-        from pyodide.ffi import to_js
-        import re
-        dynlibs_to_load = to_js([
-            str(path) for path in SITE_PACKAGES.glob("**/*.so*")
-            if should_load_dynlib(path)
-        ])
-        `,
+    from pyodide._package_loader import SITE_PACKAGES, should_load_dynlib
+    from pyodide.ffi import to_js
+    import re
+    dynlibs_to_load = to_js([
+        str(path) for path in SITE_PACKAGES.glob("**/*.so*")
+        if should_load_dynlib(path)
+    ])
+    `,
     { globals: sideGlobals },
   );
   const dynlibs = sideGlobals.get("dynlibs_to_load");
@@ -99,44 +94,42 @@ async function main() {
       console.error(e);
     }
   }
-  // Warning: this sounds like it might not do anything important, but it
-  // fills in the GOT. There can be segfaults if we leave it out.
-  // See https://github.com/emscripten-core/emscripten/issues/22052
-  // TODO: Fix Emscripten so this isn't needed
-  py._module.reportUndefinedSymbols();
-
   py.runPython(
     `
-        import asyncio
-        # Keep the event loop alive until all tasks are finished, or SystemExit or
-        # KeyboardInterupt is raised.
-        loop = asyncio.get_event_loop()
-        # Make sure we don't run _no_in_progress_handler before we finish _run_main.
-        loop._in_progress += 1
-        loop._no_in_progress_handler = handleExit
-        loop._system_exit_handler = handleExit
-        loop._keyboard_interrupt_handler = lambda: handleExit(130)
+    import asyncio
+    # Keep the event loop alive until all tasks are finished, or SystemExit or
+    # KeyboardInterupt is raised.
+    loop = asyncio.get_event_loop()
+    # Make sure we don't run _no_in_progress_handler before we finish _run_main.
+    loop._in_progress += 1
+    loop._no_in_progress_handler = handleExit
+    loop._system_exit_handler = handleExit
+    loop._keyboard_interrupt_handler = lambda: handleExit(130)
 
-        # Make shutil.get_terminal_size tell the terminal size accurately.
-        import shutil
-        from js.process import stdout
-        import os
-        def get_terminal_size(fallback=(80, 24)):
-            columns = getattr(stdout, "columns", None)
-            rows = getattr(stdout, "rows", None)
-            if columns is None:
-                columns = fallback[0]
-            if rows is None:
-                rows = fallback[1]
-            return os.terminal_size((columns, rows))
-        shutil.get_terminal_size = get_terminal_size
-        `,
+    # Make shutil.get_terminal_size tell the terminal size accurately.
+    import shutil
+    from js.process import stdout
+    import os
+    def get_terminal_size(fallback=(80, 24)):
+        columns = getattr(stdout, "columns", None)
+        rows = getattr(stdout, "rows", None)
+        if columns is None:
+            columns = fallback[0]
+        if rows is None:
+            rows = fallback[1]
+        return os.terminal_size((columns, rows))
+    shutil.get_terminal_size = get_terminal_size
+    `,
     { globals: sideGlobals },
   );
 
   let errcode;
   try {
-    errcode = py._module._run_main();
+    if (py._module.jspiSupported) {
+      errcode = await py._module.promisingRunMain();
+    } else {
+      errcode = py._module._run_main();
+    }
   } catch (e) {
     if (e.constructor.name === "ExitStatus") {
       process.exit(e.status);

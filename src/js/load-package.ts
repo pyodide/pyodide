@@ -45,11 +45,11 @@ export async function initializePackageIndex(
     );
   }
 
-  if (lockfile.info.version !== API.version) {
+  if (lockfile.info.abi_version !== API.abiVersion) {
     throw new Error(
-      "Lock file version doesn't match Pyodide version.\n" +
-        `   lockfile version: ${lockfile.info.version}\n` +
-        `   pyodide  version: ${API.version}`,
+      "Lock file ABI version doesn't match Pyodide ABI version.\n" +
+        `   lockfile version: ${lockfile.info.abi_version}\n` +
+        `   pyodide  version: ${API.abiVersion}`,
     );
   }
 
@@ -57,10 +57,6 @@ export async function initializePackageIndex(
   API.lockfile_info = lockfile.info;
   API.lockfile_packages = lockfile.packages;
   API.lockfile_unvendored_stdlibs_and_test = [];
-
-  // micropip compatibility
-  API.repodata_info = lockfile.info;
-  API.repodata_packages = lockfile.packages;
 
   // compute the inverted index for imports to package names
   API._import_name_to_package_name = new Map<string, string>();
@@ -87,6 +83,8 @@ export async function initializePackageIndex(
   await loadPackage(toLoad, { messageCallback() {} });
   // Have to wait for bootstrapFinalizedPromise before calling Python APIs
   await API.bootstrapFinalizedPromise;
+  API.flushPackageManagerBuffers();
+
   // Set up module_not_found_hook
   const importhook = API._pyodide._importhook;
   importhook.register_module_not_found_hook(
@@ -125,11 +123,22 @@ export class PackageManager {
 
   private _lock = createLock();
 
+  public installBaseUrl: string;
+
   /**
    * The function to use for stdout and stderr, defaults to console.log and console.error
    */
-  private stdout: (message: string) => void = console.log;
-  private stderr: (message: string) => void = console.error;
+  private stdout: (message: string) => void;
+  private stderr: (message: string) => void;
+
+  /**
+   * Buffers for store stdout and stderr messages temporarily.
+   * These are used to store the messages that are printed before the
+   * stdout and stderr functions are set.
+   */
+  private streamReady: boolean = false;
+  private stdoutBuffer: string[] = [];
+  private stderrBuffer: string[] = [];
 
   private defaultChannel: string = DEFAULT_CHANNEL;
 
@@ -137,6 +146,43 @@ export class PackageManager {
     this.#api = api;
     this.#module = pyodideModule;
     this.#installer = new Installer(api, pyodideModule);
+
+    const lockfileBase = calculateInstallBaseUrl(this.#api.config.lockFileURL);
+    if (IN_NODE) {
+      this.installBaseUrl = this.#api.config.packageCacheDir ?? lockfileBase;
+    } else {
+      this.installBaseUrl = lockfileBase;
+    }
+
+    this.stdout = (msg: string) => {
+      if (!this.streamReady) {
+        this.stdoutBuffer.push(msg);
+        return;
+      }
+
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stdout(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
+    };
+
+    this.stderr = (msg: string) => {
+      if (!this.streamReady) {
+        this.stderrBuffer.push(msg);
+        return;
+      }
+
+      const sp = this.#module.stackSave();
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg);
+        this.#module._print_stderr(msgPtr);
+      } finally {
+        this.#module.stackRestore(sp);
+      }
+    };
   }
 
   /**
@@ -187,9 +233,9 @@ export class PackageManager {
     const wrappedLoadPackage = this.setCallbacks(
       options.messageCallback,
       options.errorCallback,
-    )(this.loadPackageInner);
+    )(this.loadPackageInner.bind(this));
 
-    return wrappedLoadPackage.call(this, names, options);
+    return wrappedLoadPackage(names, options);
   }
 
   public async loadPackageInner(
@@ -258,11 +304,6 @@ export class PackageManager {
         Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
       );
 
-      // Warning: this sounds like it might not do anything important, but it
-      // fills in the GOT. There can be segfaults if we leave it out.
-      // See https://github.com/emscripten-core/emscripten/issues/22052
-      // TODO: Fix Emscripten so this isn't needed
-      this.#module.reportUndefinedSymbols();
       if (loadedPackageData.size > 0) {
         const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
           .sort()
@@ -281,6 +322,10 @@ export class PackageManager {
 
       // We have to invalidate Python's import caches, or it won't
       // see the new files.
+
+      // Can't use invalidate_caches until bootstrap is finalized.
+      await this.#api.bootstrapFinalizedPromise;
+
       this.#api.importlib.invalidate_caches();
       return Array.from(loadedPackageData, filterPackageData);
     } finally {
@@ -382,11 +427,11 @@ export class PackageManager {
 
   /**
    * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
-   * relative to packageCacheDir (when IN_NODE), or indexURL from `pyodide-lock.json`, otherwise use the URL specified by
+   * relative to packageCacheDir (when IN_NODE), or to lockfileURL, otherwise use the URL specified by
    * `channel`.
    * @param pkg The package to download
    * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
-   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or indexURL.
+   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or lockfileURL.
    * @param checkIntegrity Whether to check the integrity of the downloaded
    * package.
    * @returns The binary data for the package
@@ -396,10 +441,7 @@ export class PackageManager {
     pkg: PackageLoadMetadata,
     checkIntegrity: boolean = true,
   ): Promise<Uint8Array> {
-    const installBaseUrl = IN_NODE
-      ? this.#api.config.packageCacheDir
-      : this.#api.config.indexURL;
-    await ensureDirNode(installBaseUrl);
+    await ensureDirNode(this.installBaseUrl);
 
     let fileName, uri, fileSubResourceHash;
     if (pkg.channel === this.defaultChannel) {
@@ -408,8 +450,7 @@ export class PackageManager {
       }
       const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
       fileName = lockfilePackage.file_name;
-
-      uri = resolvePath(fileName, installBaseUrl);
+      uri = resolvePath(fileName, this.installBaseUrl);
       fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
     } else {
       uri = pkg.channel;
@@ -420,19 +461,20 @@ export class PackageManager {
       fileSubResourceHash = undefined;
     }
     try {
+      DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
       if (!IN_NODE || pkg.channel !== this.defaultChannel) {
         throw e;
       }
     }
-    console.log(
+    this.logStdout(
       `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
     );
     // If we are IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
-    console.log(
+    this.logStdout(
       `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
     );
     await nodeFsPromisesMod.writeFile(uri, binary);
@@ -460,6 +502,11 @@ export class PackageManager {
     const installDir: string = this.#api.package_loader.get_install_dir(
       pkg.install_dir,
     );
+
+    DEBUG &&
+      console.debug(
+        `Installing package ${metadata.name} from ${metadata.channel} to ${installDir}`,
+      );
 
     await this.#installer.install(
       buffer,
@@ -527,6 +574,24 @@ export class PackageManager {
 
   public setCdnUrl(url: string) {
     this.cdnURL = url;
+  }
+
+  /**
+   * Flushes the stdout and stderr buffers, that were collected before the
+   * stdout and stderr functions were set.
+   */
+  public flushBuffers() {
+    this.streamReady = true;
+
+    for (const msg of this.stdoutBuffer) {
+      this.stdout(msg);
+    }
+    for (const msg of this.stderrBuffer) {
+      this.stderr(msg);
+    }
+
+    this.stdoutBuffer = [];
+    this.stderrBuffer = [];
   }
 
   /**
@@ -601,6 +666,25 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
   return str;
 }
 
+/**
+ * Calculates the install base url for the package manager.
+ * exported for testing
+ * @param lockFileURL
+ * @returns the install base url
+ * @private
+ */
+export function calculateInstallBaseUrl(lockFileURL: string) {
+  // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
+  // 2. Otherwise, fallback to the current location
+  //    2.1. In the browser, use `location` to get the current location
+  //    2.2. In Node.js just use the pwd
+  return (
+    lockFileURL.substring(0, lockFileURL.lastIndexOf("/") + 1) ||
+    globalThis.location?.toString() ||
+    "."
+  );
+}
+
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
 /**
  * An object whose keys are the names of the loaded packages and whose values
@@ -628,6 +712,12 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
 
   // TODO: Find a better way to register these functions
   API.setCdnUrl = singletonPackageManager.setCdnUrl.bind(
+    singletonPackageManager,
+  );
+
+  API.lockfileBaseUrl = singletonPackageManager.installBaseUrl;
+
+  API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(
     singletonPackageManager,
   );
 

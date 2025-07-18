@@ -222,25 +222,6 @@ def test_venv_success_log(selenium, capsys):
 
 
 @only_node
-@needs_emscripten
-def test_venv_fail_log(selenium, capsys):
-    path = Path(".venv-pyodide-tmp-test")
-    try:
-        path.mkdir()
-        with pytest.raises(SystemExit, match="1"):
-            with venv_ctxmgr(path):
-                pass
-    finally:
-        shutil.rmtree(path, ignore_errors=True)
-    msg = dedent("Creating Pyodide virtualenv at .venv-pyodide-tmp-test")
-    captured = capsys.readouterr()
-    assert captured.out.strip() == msg
-    assert (
-        "ERROR: dest directory '.venv-pyodide-tmp-test' already exists" in captured.err
-    )
-
-
-@only_node
 def test_venv_version(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "--version"],
@@ -416,10 +397,9 @@ def test_pip_install_executable(selenium, venv):
     """impure python package from pypi"""
     result = install_pkg(venv, "pytest")
     assert result.returncode == 0
-    python = f"python{sys.version_info.major}.{sys.version_info.minor}"
     pytest_script = (venv / "bin/pytest").read_text()
     shebang = pytest_script.splitlines()[0]
-    assert shebang == "#!" + str((venv / "bin" / python).absolute())
+    assert shebang == "#!" + str((venv / "bin/python").absolute())
 
 
 @only_node
@@ -432,16 +412,16 @@ def test_pip_install_deps_impure(selenium, venv):
 @only_node
 def test_pip_install_from_pyodide(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex")
+    result = install_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
     assert (
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )
@@ -452,9 +432,8 @@ def test_pip_install_from_pyodide(selenium, venv):
             "-c",
             dedent(
                 r"""
-                import regex
-                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
-                print(m.capturesdict())
+                import dummy_nonpure
+                print(dummy_nonpure.dummy())
                 """
             ),
         ],
@@ -463,11 +442,8 @@ def test_pip_install_from_pyodide(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout
-        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
-    )
-    result = uninstall_pkg(venv, "regex")
+    assert result.stdout == "dummy\n"
+    result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
 
@@ -514,16 +490,42 @@ def test_package_index(tmp_path):
     assert result.returncode == 0
     stdout = re.sub(r"(?<=[<>=-])([\d+]\.?)+", "*", result.stdout)
     assert (
-        stdout.strip().rsplit("\n", 1)[-1]
-        == "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        "Successfully installed attrs-* micropip-* numpy-* packaging-* sharedlib-test-py-*"
+        in stdout.strip().rsplit("\n", 1)[-1]
     )
 
 
+@only_node
+def test_xbuildenv_runner_works(selenium, tmp_path):
+    result = subprocess.run(
+        [
+            sys.executable,
+            pyodide_root / "tools" / "create_xbuildenv.py",
+            tmp_path,
+            "--skip-missing-files",
+        ],
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+
+    xbuildenv_python = tmp_path / "xbuildenv/pyodide-root/dist/python"
+    result = subprocess.run(
+        [xbuildenv_python, "-c", "print('hello!')"],
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert result.returncode == 0
+    assert result.stdout == "hello!\n"
+
+
+@only_node
 def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(0)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 0
@@ -532,7 +534,7 @@ def test_sys_exit(selenium, venv):
     result = subprocess.run(
         [venv / "bin/python", "-c", "import sys; sys.exit(12)"],
         capture_output=True,
-        encoding="utf-8",
+        text=True,
         check=False,
     )
     assert result.returncode == 12
@@ -540,8 +542,9 @@ def test_sys_exit(selenium, venv):
     assert result.stderr == ""
 
 
+@only_node
 def test_cpp_exceptions(selenium, venv):
-    result = install_pkg(venv, "cpp-exceptions-test2")
+    result = install_pkg(venv, "test-cpp-exceptions2")
     print(result.stdout)
     print(result.stderr)
     assert result.returncode == 0
@@ -560,25 +563,25 @@ def test_cpp_exceptions(selenium, venv):
 @only_node
 def test_pip_install_sys_platform_condition_skipped(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex; sys_platform != 'emscripten'")
+    result = install_pkg(venv, "test-dummy-nonpure; sys_platform != 'emscripten'")
     assert result.returncode == 0
-    ignoring = """Ignoring regex: markers 'sys_platform != "emscripten"' don't match your environment"""
+    ignoring = """Ignoring test-dummy-nonpure: markers 'sys_platform != "emscripten"' don't match your environment"""
     assert ignoring in result.stdout
 
 
 @only_node
 def test_pip_install_sys_platform_condition_kept(selenium, venv):
     """impure Python package built with Pyodide"""
-    result = install_pkg(venv, "regex; sys_platform == 'emscripten'")
+    result = install_pkg(venv, "test-dummy-nonpure; sys_platform == 'emscripten'")
     assert result.returncode == 0
     assert (
         clean_pkg_install_stdout(result.stdout)
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )
@@ -589,9 +592,8 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
             "-c",
             dedent(
                 r"""
-                import regex
-                m = regex.match(r"(?:(?P<word>\w+) (?P<digits>\d+)\n)+", "one 1\ntwo 2\nthree 3\n")
-                print(m.capturesdict())
+                import dummy_nonpure
+                print(dummy_nonpure.dummy())
                 """
             ),
         ],
@@ -600,18 +602,15 @@ def test_pip_install_sys_platform_condition_kept(selenium, venv):
         check=False,
     )
     assert result.returncode == 0
-    assert (
-        result.stdout
-        == "{'word': ['one', 'two', 'three'], 'digits': ['1', '2', '3']}" + "\n"
-    )
-    result = uninstall_pkg(venv, "regex")
+    assert result.stdout == "dummy\n"
+    result = uninstall_pkg(venv, "test-dummy-nonpure")
     assert result.returncode == 0
 
 
 @only_node
 def test_dash_m_pip_venv(selenium, venv):
     result = subprocess.run(
-        [venv / "bin/python", "-m", "pip", "install", "regex"],
+        [venv / "bin/python", "-m", "pip", "install", "test-dummy-nonpure"],
         capture_output=True,
         encoding="utf8",
         check=False,
@@ -622,9 +621,26 @@ def test_dash_m_pip_venv(selenium, venv):
         == dedent(
             """
             Looking in links: .../dist
-            Processing ./dist/regex-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
-            Installing collected packages: regex
-            Successfully installed regex-*
+            Processing ./dist/test_dummy_nonpure-*-cpxxx-cpxxx-pyodide_*_wasm32.whl
+            Installing collected packages: test-dummy-nonpure
+            Successfully installed test-dummy-nonpure-*
             """
         ).strip()
     )
+
+
+@only_node
+def test_asyncio_run(selenium):
+    result = subprocess.run(
+        [
+            script_path,
+            "-c",
+            "from asyncio import run, sleep; run(sleep(0.1)); print('hi')",
+        ],
+        capture_output=True,
+        encoding="utf8",
+        check=False,
+    )
+    assert result.returncode == 0
+    assert result.stdout.strip() == "hi"
+    assert result.stderr == ""

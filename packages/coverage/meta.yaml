@@ -1,11 +1,14 @@
 package:
   name: coverage
-  version: 7.4.4
+  version: 7.6.12
+  tag:
+    - core
+    - pytest
   top-level:
     - coverage
 source:
-  url: https://files.pythonhosted.org/packages/bf/d5/f809d8b630cf4c11fe490e20037a343d12a74ec2783c6cdb5aee725e7137/coverage-7.4.4.tar.gz
-  sha256: c901df83d097649e257e803be22592aedfd5182f07b3cc87d640bbb9afd50f49
+  url: https://files.pythonhosted.org/packages/0c/d6/2b53ab3ee99f2262e6f0b8369a43f6d66658eab45510331c0b3d5c8c4272/coverage-7.6.12.tar.gz
+  sha256: 48cfc4641d95d34766ad41d9573cc0f22a48aa88d22657a1fe01dca0dbae4de2
 requirements:
   run:
     - sqlite3

@@ -7,7 +7,7 @@ import { loadBinaryFile, nodeFSMod } from "./compat";
 import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
-import { TypedArray, PackageData, type FS } from "./types";
+import { TypedArray, PackageData, FSType } from "./types";
 import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
@@ -50,6 +50,10 @@ API.setPyProxyToStringMethod = function (useRepr: boolean): void {
   Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
 };
 
+API.setCompatNullToNone = function (compat: boolean): void {
+  Module.HEAP8[Module._compat_null_to_none] = +compat;
+};
+
 /** @hidden */
 export type NativeFS = {
   syncfs: () => Promise<void>;
@@ -69,7 +73,7 @@ API.scheduleCallback = scheduleCallback;
 API.detectEnvironment = detectEnvironment;
 
 // @ts-ignore
-if (AbortSignal.any) {
+if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
   /** @private */
   // @ts-ignore
   API.abortSignalAny = AbortSignal.any;
@@ -151,7 +155,7 @@ export class PyodideAPI {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as FS;
+  static FS = {} as FSType;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -667,9 +671,7 @@ export class PyodideAPI {
   }
 
   /**
-   *
-   * @param param0
-   * @returns
+   * @private
    */
   static makeMemorySnapshot({
     serializer,
@@ -691,6 +693,14 @@ export class PyodideAPI {
    */
   static get lockfile() {
     return API.lockfile;
+  }
+
+  /**
+   * Returns the base URL of the lockfile, which is used to locate the packages
+   * distributed with the lockfile.
+   */
+  static get lockfileBaseUrl() {
+    return API.lockfileBaseUrl;
   }
 }
 

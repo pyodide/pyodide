@@ -1,5 +1,5 @@
 FROM node:20.11-bookworm-slim AS node-image
-FROM python:3.12.7-slim-bookworm
+FROM python:3.13.2-slim-bookworm
 
 ARG TARGETPLATFORM
 
@@ -9,26 +9,35 @@ RUN apt-get update \
         bzip2 ccache f2c g++ gfortran git make \
         patch pkg-config swig unzip wget xz-utils \
         autoconf autotools-dev automake texinfo dejagnu \
-        build-essential libtool libltdl-dev \
+        build-essential libltdl-dev \
         gnupg2 libdbus-glib-1-2 sudo sqlite3 \
-        ninja-build jq xxd \
+        ninja-build jq cmake bison \
   && rm -rf /var/lib/apt/lists/*
 
-# install autoconf 2.71, required by upstream libffi
-RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.71.tar.xz \
-    && tar -xf autoconf-2.71.tar.xz \
-    && cd autoconf-2.71 \
+# install autoconf 2.72, required by upstream libffi
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.72.tar.xz \
+    && tar -xf autoconf-2.72.tar.xz \
+    && cd autoconf-2.72 \
     && ./configure \
     && make install \
     && cp /usr/local/bin/autoconf /usr/bin/autoconf \
-    && rm -rf autoconf-2.71
+    && cd .. \
+    && rm -rf autoconf-2.72*
 
-ADD requirements.txt docs/requirements-doc.txt /
+# install libtool 2.5.4, required by ngspice for emscripten support
+RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
+    && tar -xf libtool-2.5.4.tar.xz \
+    && cd libtool-2.5.4 \
+    && ./configure \
+    && make install \
+    && cd .. \
+    && rm -rf libtool-2.5.4*
+
+ADD requirements.txt /
 
 WORKDIR /
 RUN pip3 --no-cache-dir install -r requirements.txt \
-    && pip3 --no-cache-dir install -r requirements-doc.txt \
-    && rm -rf requirements.txt requirements-doc.txt
+    && rm requirements.txt
 
 RUN cd / \
     && git clone --recursive https://github.com/WebAssembly/wabt \

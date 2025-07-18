@@ -47,6 +47,9 @@ export const IN_SAFARI =
   navigator.userAgent.indexOf("Chrome") == -1 &&
   navigator.userAgent.indexOf("Safari") > -1;
 
+/** @private */
+export const IN_SHELL = typeof read == "function" && typeof load === "function";
+
 /**
  * Detects the current environment and returns a record with the results.
  * This function is useful for debugging and testing purposes.
@@ -54,14 +57,15 @@ export const IN_SAFARI =
  */
 export function detectEnvironment(): Record<string, boolean> {
   return {
-    IN_NODE: IN_NODE,
-    IN_NODE_COMMONJS: IN_NODE_COMMONJS,
-    IN_NODE_ESM: IN_NODE_ESM,
-    IN_BUN: IN_BUN,
-    IN_DENO: IN_DENO,
-    IN_BROWSER: IN_BROWSER,
-    IN_BROWSER_MAIN_THREAD: IN_BROWSER_MAIN_THREAD,
-    IN_BROWSER_WEB_WORKER: IN_BROWSER_WEB_WORKER,
-    IN_SAFARI: IN_SAFARI,
+    IN_NODE,
+    IN_NODE_COMMONJS,
+    IN_NODE_ESM,
+    IN_BUN,
+    IN_DENO,
+    IN_BROWSER,
+    IN_BROWSER_MAIN_THREAD,
+    IN_BROWSER_WEB_WORKER,
+    IN_SAFARI,
+    IN_SHELL,
   };
 }

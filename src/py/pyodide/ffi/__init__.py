@@ -38,6 +38,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",
@@ -52,6 +53,8 @@ __all__ = [
     "JsDomElement",
     "JsCallable",
     "JsTypedArray",
+    "JsWeakRef",
+    "ToJsConverter",
     "create_once_callable",
     "create_proxy",
     "destroy_proxies",
@@ -60,4 +63,6 @@ __all__ = [
     "IN_BROWSER",
     "register_js_module",
     "unregister_js_module",
+    "JsNull",
+    "jsnull",
 ]

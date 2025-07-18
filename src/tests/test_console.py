@@ -129,12 +129,12 @@ def test_interactive_console():
         assert fut.exception() is not None
 
         err = fut.formatted_error or ""
-        err = re.sub(r"SyntaxError: .+", "SyntaxError: <errormsg>", err).strip()
+        err = err.strip()
         assert [e.strip() for e in err.split("\n")] == [
             'File "<console>", line 1',
             "1+",
             "^",
-            "SyntaxError: <errormsg>",
+            "_IncompleteInputError: incomplete input",
         ]
 
         fut = shell.push("raise Exception('hi')")
@@ -339,15 +339,13 @@ async def test_console_imports(selenium):
         assert res.syntax_check == "complete"
         return await res
 
-    assert await get_result("import pytz") is None
-    assert await get_result("pytz.utc.zone") == "UTC"
+    assert await get_result("import pytest") is None
+    assert await get_result("pytest.__name__") == "pytest"
 
 
 @pytest.mark.xfail_browsers(node="Not available in node")
 def test_console_html(selenium):
-    selenium.goto(
-        f"http://{selenium.server_hostname}:{selenium.server_port}/console.html"
-    )
+    selenium.goto(f"{selenium.base_url}/console.html")
     selenium.javascript_setup()
     selenium.run_js(
         """
@@ -430,7 +428,7 @@ def test_console_html(selenium):
             [[;;;terminal-error]  File \"<console>\", line 1
                 1+
                  ^
-            SyntaxError: incomplete input]
+            _IncompleteInputError: incomplete input]
             """
         ).strip()
     )
@@ -472,7 +470,6 @@ def test_console_html(selenium):
             [[;;;terminal-error]Traceback (most recent call last):
               File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
                 text = repr(value)
-                       ^^^^^^^^^^^
               File \"<console>\", line 3, in __repr__
             TypeError: hi]
             """

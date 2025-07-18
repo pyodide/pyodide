@@ -13,7 +13,7 @@ export const genMockAPI = (): PackageManagerAPI => {
       },
     },
     config: {
-      indexURL: "",
+      lockFileURL: "",
       packageCacheDir: "",
     },
     lockfile_packages: {},
@@ -25,32 +25,28 @@ export const genMockAPI = (): PackageManagerAPI => {
 
 export const genMockModule = (): PackageManagerModule => {
   return {
-    reportUndefinedSymbols: () => {},
-    loadDynamicLibrary: () => {},
     LDSO: {
       loadedLibsByName: {},
     },
     PATH: {},
-    FS: {
-      readdir: (path: string) => [],
-      isDir: (mode: number) => true,
-      findObject: (path: string, dontResolveLastLink?: boolean) => {},
-      readFile: (path: string) => new Uint8Array(),
-      lookupPath: (
-        path: string,
-        options?: {
-          follow_mount?: boolean;
-        },
-      ) => {
-        return {
-          node: {
-            timestamp: 1,
-            rdev: 2,
-            contents: new Uint8Array(),
-            mode: 3,
-          },
-        };
-      },
+    stringToNewUTF8: (str: string) => {
+      return 0;
+    },
+    stringToUTF8OnStack: (str: string) => {
+      return 0;
+    },
+    stackSave: () => 0,
+    stackRestore: (ptr: number) => {},
+    _print_stdout(ptr: number) {},
+    _print_stderr(ptr: number) {},
+    _emscripten_dlopen_promise: (libptr: number, flags: number) => {
+      return 0;
+    },
+    getPromise: (pid: number) => {
+      return Promise.resolve();
+    },
+    promiseMap: {
+      free: (pid: number) => {},
     },
   };
 };

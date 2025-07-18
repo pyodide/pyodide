@@ -2,11 +2,12 @@
 myst:
   substitutions:
     API: "<span class='badge badge-warning'>API Change</span>"
-    Enhancement: "<span class='badge badge-info'>Enhancement</span>"
+    Enhancement: "<span class='badge badge-success'>Enhancement</span>"
     Performance: "<span class='badge badge-info'>Performance</span>"
     Feature: "<span class='badge badge-success'>Feature</span>"
-    Fix: "<span class='badge badge-danger'>Fix</span>"
+    Fix: "<span class='badge badge-success'>Fix</span>"
     Update: "<span class='badge badge-success'>Update</span>"
+    ABI: "<span class='badge badge-danger'>ABI Break</span>"
     Breaking: "<span class='badge badge-danger'>BREAKING CHANGE</span>"
 ---
 
@@ -16,9 +17,27 @@ myst:
 
 ## Unreleased
 
-- ABI break: Upgraded Emscripten to 3.1.63 {pr}`5343` {pr}`5350` {pr}`5357`
-  {pr}`5334` {pr}`5363`
-- ABI break: Switched to using WebAssembly exception handling for C++ errors,
+- {{ Fix }} Fixed a bug which preloading packages through `packages: [...]` parameter of `loadPyodide()` did not work
+  when the `lockfileURL` was set to a custom URL.
+  {pr}`5737`
+
+- {{ Fix }} Fixed a bug in Node.js which providing a relative path to `lockFileURL` parameter of `loadPyodide()` did not work.
+  {pr}`5750`
+
+## Version 0.28.0
+
+_July 4, 2025_
+
+### General
+
+- {{ Update }} Upgraded to Python 3.13.2. {pr}`5498`
+
+- {{ ABI }} Upgraded Emscripten to 4.0.9 {pr}`5343` {pr}`5350` {pr}`5357`
+  {pr}`5334` {pr}`5363` {pr}`5360` {pr}`5379` {pr}`5382` {pr}`5333` {pr}`5391`
+  {pr}`5397` {pr}`5337` {pr}`5399` {pr}`5401` {pr}`5403` {pr}`5332` {pr}`5557`
+  {pr}`5560` {pr}`5595` {pr}`5616` {pr}`5653`
+
+- {{ ABI }} Switched to using WebAssembly exception handling for C++ errors,
   Rust panics, and setjmp/longjmp. Projects and build system helpers that have
   previously set the `-fexceptions` compilation flag **must** switch to using
   `-fwasm-exceptions`. Furthermore, if a project uses `setjmp`/`longjmp`, they
@@ -26,22 +45,196 @@ myst:
   compile time and link time.
   {pr}`5320`
 
-- {{ Fix }} The Pyodide CLI entrypoint now mounts the `/tmp` directory. In old
-  versions of Emscripten this would crash but was fixed over a year ago.
-  {pr}`5477`
+- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad + Safari. {pr}`5695`
 
-- {{ Enhancement }} Added simple Python emoji (🐍) favicon to `Console` {pr}`5492`
+- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
+  WebGL 1 is still available but must be required explicitly
+  (for example, by using OpenGL ES 2.0)
+  {pr}`5708`
+
+### Python API
+
+- {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
+  allows other events on the event loop to be processed during the
+  sleep.
+  {pr}`5686`
+
+- {{ Enhancement }} Added `JsProxy.to_weakref()` as a helper method equivalent
+  to `WeakRef.new(proxy)`. Used it to remove a memory leak that occurs when
+  `add_event_listener()` is used and then the DOM element is removed from
+  JavaScript.
+  {pr}`5687`
+
+### JavaScript API
+
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
+  base URL for the packages is now calculated from the lockfile URL, not from
+  the `indexURL`.
+  {pr}`5652`
+- {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
+
+- {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
+  back to `__getitem__()` if there is no attribute of the given name.
+  {pr}`5674`
+
+- {{ Fix }} Fixes a bug that `pyodide.loadPackage` not respecting `messageCallback` and `errorCallback` options
+  in some cases.
+  {pr}`5692`
+
+- {{ Breaking }} JavaScript `null` is now converted to `pyodide.ffi.jsnull` and
+  not to `None`. If you want to opt into the old behavior you can pass
+  `convertNullToNone: true` to `loadPyodide()`. This compatibility option will
+  be removed in a later release of Pyodide.
+  {pr}`5719`
+
+- {{ Enhancement }} It is now possible to pass `null` to JavaScript functions
+  and assign it to JavaScript properties via `pyodide.ffi.jsnull`.
+  {pr}`5719`
+
+### `python` CLI entrypoint
+
+- {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In
+  old versions of Emscripten this would crash but was fixed over a year ago.
+  {pr}`5477`
 
 ### Packages
 
-- Upgraded `rateslib` to 1.7.0 {pr}`5400`
-- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
-- Added `jiter` 0.8.2 {pr}`5388`
+- {{ Enhancement }} The packages included in the Pyodide distribution are now built
+  in a separate repository, [`pyodide/pyodide-recipes`](http://github.com/pyodide/pyodide-recipes/). This decouples the set of packages
+  from the Pyodide version and allows people to use the different sets of packages
+  easily with different Pyodide versions.
+  {pr}`5699`
 
-- {{ Breaking }} `matplotlib-pyodide` is not a default backend for matplotlib anymore.
+- {{ Enhancement }} Pyodide now respects the runtime paths of the libraries it loads.
+  Previously, packages that put the libraries in a different directory would not work,
+  but now they will work as long as the `-rpath` parameter is set correctly during linking.
+  {pr}`5610`
+
+- {{ Fix }} Importing matplotlib should now be significantly faster. {pr}`5569`
+
+- {{ Breaking }} The default backend for Matplotlib is now `webagg` instead of
+  `matplotlib-pyodide`. `webagg` is a modified version of the WebAgg backend
+  that ships with Matplotlib and is more complete that `matplotlib-pyodide`.
   Users who want to use `matplotlib-pyodide` need to explicitly call
   `matplotlib.use("module://matplotlib_pyodide.wasm_backend")`.
-  {pr}`5374`
+  {pr}`5374` {pr}`5398`
+
+- {{ Enhancement }} New packages added:
+  - aiohappyeyeballs (2.6.1)
+  - blosc2 (3.2.0)
+  - diskcache (5.6.3)
+  - donfig (0.8.1.post1)
+  - imgui-bundle (1.92.0)
+  - inspice (1.6.3.3)
+  - lz4 (4.4.4)
+  - ndindex (1.9.2)
+  - platformdirs (4.3.6)
+  - ply (3.11)
+  - propcache (0.3.0)
+  - pytaglib (3.0.1)
+  - rustworkx (0.17.0a3)
+  - soundfile (0.12.1)
+  - texture2ddecoder (1.0.5)
+  - ujson (5.10.0)
+
+- {{ Breaking }} The following packages are removed from the Pyodide distribution because of the build issues. We will try to fix them in the future:
+  - arro3-compute
+  - arro3-core
+  - arro3-io
+  - Cartopy
+  - duckdb
+  - gensim
+  - geopandas
+  - mne
+  - osqp
+  - polars
+  - pyarrow
+  - pygame-ce
+  - pyproj
+  - zarr
+
+## Version 0.27.7
+
+_June 04, 2025_
+
+- {{ Fix }} Fix memory leak caused by `asyncio.sleep(0)` in a WebWorker.
+  {pr}`5599`
+- {{ Fix }} Add the current working directory to the path instead of `$HOME`.
+  {pr}`5630`
+- {{ Fix }} Fixed a fatal error when stack switching is enabled on a function
+  that raises an asynchronous error.
+  {pr}`5678`
+
+- {{ Enhancement }} `pyodide.loadPackage` now prints the output to the `stdout`
+  and `stderr` streams that are passed to `loadPyodide()` or by
+  `pyodide.setStdout()` and `pyodide.setStderr()`.
+  {pr}`5621`
+
+- {{ Breaking }} The `enableRunUntilComplete` option to `loadPyodide()` is
+  now on by default. This makes `run_until_complete` block using stack
+  switching, or crash if stack switching is disabled. If you need the old no-op
+  behavior, pass `enableRunUntilComplete: false` to `loadPyodide()`.
+  {pr}`5681`
+
+## Version 0.27.6
+
+_May 15, 2025_
+
+- {{ Enhancement }} Added an `eager_converter` argument to `to_js` which allows
+  overriding the default conversion behavior. {pr}`5613`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} Stack switching and `asyncio.run()` now work in the `python`
+  CLI. {pr}`5544`
+
+### Packages
+
+- Upgraded `fsspec` to 2025.3.2 {pr}`5604`
+
+## Version 0.27.5
+
+_April 04, 2025_
+
+- {{ Enhancement }} Added `fsInit` argument to `loadPyodide()` to schedule a
+  hook to run to setup the file system. {pr}`5539`
+
+- {{ Fix }} It's now possible to call JavaScript callables that do not inherit
+  from `Function` from the JS FFI.
+  {pr}`5555`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI is now included in `pyodide-core-{version}.tar.gz`.
+  {pr}`5566`
+
+### Packages
+
+- Added `jiter` 0.8.2 {pr}`5388`
+- Added `openai` 1.68.2 {pr}`5536`
+- Added `osqp` 1.0.0 {pr}`5510`
+
+## Version 0.27.4
+
+_March 17, 2025_
+
+- {{ Fix }} Uncaught exceptions that occur in Python tasks with no
+  `done_callback` will now log a message to the console. {pr}`5479`
+- {{ Fix }} Replaced uses of the deprecated `File.lastModifiedDate` property. {pr}`5426`
+- {{ Fix }} Correct use of `console.log` to `this.logStdout` in `load-package.ts` {pr}`5514`
+
+### `python` CLI entrypoint
+
+- {{ Enhancement }} The `python` CLI will pass the contents of the `NODEFLAGS`
+  environment variable as flags to node when starting. {pr}`5478`
+- {{ Fix }} For a Pyodide virtual environment, `.venv-pyodide/bin/python -m pip`
+  now works even if the virtual environment has not been sourced.
+  {pr}`5448`
+
+### Packages
+
+- Upgraded `PyWavelets` to 1.8.0 {pr}`5387`. Optional runtime requirements SciPy and Matplotlib have been removed, please install them separately.
+- {{ Fix }} Removed debug prints from `httpx` {pr}`5385`
 
 ## Version 0.27.3
 
@@ -408,7 +601,7 @@ _May 27, 2024_
 - {{ Update }} The wheel tag for Pyodide wheels has changed to pyodide_2024_0_wasm32.
   {pr}`4777`, {pr}`4780`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.58
+- {{ ABI }} Updated Emscripten to version 3.1.58
   {pr}`4399` {pr}`4715`
 
 - {{ Breaking }} Pyodide will not fallback to `node-fetch` anymore when `fetch`
@@ -533,7 +726,7 @@ _January 18, 2024_
 
 ### General
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.46
+- {{ ABI }} Updated Emscripten to version 3.1.46
   {pr}`4359`
 
 - {{ Breaking }} Node.js < 18 is no longer officially supported. Older versions
@@ -679,7 +872,7 @@ _September 13, 2023_
 - {{ Update }} Pyodide now runs Python 3.11.3.
   {pr}`3741`
 
-- {{ Enhancement }} ABI Break: Updated Emscripten to version 3.1.45 {pr}`3665`,
+- {{ ABI }} Updated Emscripten to version 3.1.45 {pr}`3665`,
   {pr}`3659`, {pr}`3822`, {pr}`3889`, {pr}`3890`, {pr}`3888`, {pr}`4055`,
   {pr}`4056`, {pr}`4073`, {pr}`4094`
 
@@ -1454,7 +1647,7 @@ _January 3, 2023_
 
 - {{ Enhancement }} Added a system for making Pyodide virtual environments. This
   is for testing out of tree builds. For more information, see [the
-  documentation](building-and-testing-packages-out-of-tree).
+  documentation](building-packages-from-source).
   {pr}`2976`, {pr}`3039`, {pr}`3040`, {pr}`3044`, {pr}`3096`, {pr}`3098`,
   {pr}`3108`, {pr}`3109`, {pr}`3241`
 
@@ -2334,7 +2527,6 @@ _August 3rd, 2021_
 ### Standard library
 
 - {{ API }} The following standard library modules are now available as standalone packages
-
   - distlib
 
   They are loaded by default in `loadPyodide`, however this behavior
@@ -2806,8 +2998,7 @@ _May 19, 2020_
 - Reduces the initial memory footprint (`TOTAL_MEMORY`) from 1 GiB to 5 MiB.
   More memory will be allocated as needed.
 - When building from source, only a subset of packages can be built by setting
-  the `PYODIDE_PACKAGES` environment variable. See
-  {ref}`partial builds documentation <partial-builds>` for more details.
+  the `PYODIDE_PACKAGES` environment variable.
 - New packages: future, autograd
 
 ## Version 0.14.3
@@ -2862,7 +3053,6 @@ _Apr 12, 2019_
 **User improvements:**
 
 - Support for built-in modules:
-
   - `sqlite`, `crypt`
 
 - New packages: `mne`

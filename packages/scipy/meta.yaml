@@ -1,8 +1,10 @@
 package:
   name: scipy
   version: 1.14.1
+  pinned: true
   tag:
     - min-scipy-stack
+    - cross-build
   top-level:
     - scipy
 

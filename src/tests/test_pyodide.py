@@ -1353,6 +1353,30 @@ def test_version_variable(selenium):
     assert js_version == py_version == core_version
 
 
+def test_abiVersion_variable(selenium):
+    core_abi_version = selenium.run_js(
+        """
+        return pyodide._api.abiVersion
+        """
+    )
+
+    lockfile_abi_version = selenium.run_js(
+        """
+        return pyodide._api.lockfile_info.abi_version
+        """
+    )
+
+    py_abi_version = selenium.run(
+        """
+        from sysconfig import get_config_var
+
+        get_config_var("PYODIDE_ABI_VERSION")
+        """
+    )
+
+    assert lockfile_abi_version == py_abi_version == core_abi_version
+
+
 @run_in_pyodide
 def test_default_sys_path(selenium):
     import sys
@@ -1373,16 +1397,11 @@ def test_default_sys_path(selenium):
         assert path in sys.path
 
 
+@run_in_pyodide
 def test_sys_path0(selenium):
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            import sys
-            import os
-            assert os.getcwd() == sys.path[0]
-        `)
-        """
-    )
+    import sys
+
+    assert sys.path[0] == ""
 
 
 @pytest.mark.requires_dynamic_linking
@@ -1467,7 +1486,9 @@ def test_module_not_found_note(selenium_standalone):
 
     unvendored_stdlibs = ["test", "ssl", "lzma", "sqlite3", "_hashlib"]
     removed_stdlibs = ["pwd", "turtle", "tkinter"]
-    lockfile_packages = ["micropip", "packaging", "regex"]
+    lockfile_packages = [
+        "micropip",
+    ]
 
     # When error is wrapped, add_note_to_module_not_found_error is called
     with pytest.raises(ModuleNotFoundError) as e:
@@ -1839,13 +1860,13 @@ def test_runpython_filename(selenium, run_python):
         % run_python
     )
     expected = dedent(
-        """
-        File "a.py", line 8, in <module>
-          f1()
+        """\
         File "a.py", line 3, in f1
           f2()
+
         File "a.py", line 6, in f2
           raise Exception("oops")
+          ^^^^^^^^^^^^^^^
         """
     ).strip()
 
@@ -1864,9 +1885,7 @@ def test_runpython_filename(selenium, run_python):
         }
         """
     )
-    assert dedent("\n".join(msg.splitlines()[1:-1])) == "\n".join(
-        expected.splitlines()[2:]
-    )
+    assert dedent("\n".join(msg.splitlines()[1:-1])) == expected
 
 
 @pytest.mark.requires_dynamic_linking
@@ -1973,3 +1992,41 @@ def test_lockfile_api(selenium):
     assert lockfile_info.python is not None
 
     assert lockfile_packages.micropip is not None
+
+
+def test_fs_init(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    res = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            async fsInit(FS, {sitePackages}) {
+                await sleep(20);
+                FS.writeFile(sitePackages + "/blah.pth", "foo\\nbar\\nbletch");
+                FS.mkdir(sitePackages + "/foo");
+                FS.mkdir(sitePackages + "/bar");
+            }
+        });
+        return pyodide.runPython(`import sys; sys.path`).toJs();
+        """
+    )
+    # This may need to be updated when the Python version changes.
+    assert res[-2].endswith("site-packages/foo")
+    assert res[-1].endswith("site-packages/bar")
+
+
+def test_compat_null_to_none(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    doc = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({
+            convertNullToNone: true
+        });
+        pyodide.runPython(`
+            from pyodide.code import run_js
+
+            assert run_js("null") == None
+        `);
+        """
+    )
+
+    assert not doc

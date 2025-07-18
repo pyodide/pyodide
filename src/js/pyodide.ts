@@ -13,7 +13,7 @@ import { createSettings } from "./emscripten-settings";
 import { version } from "./version";
 
 import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData } from "./types";
+import type { TypedArray, Module, PackageData, FSType } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
 export type { PyodideInterface, TypedArray };
@@ -48,7 +48,7 @@ export type ConfigType = {
   jsglobals?: object;
   _sysExecutable?: string;
   args: string[];
-  _node_mounts: string[];
+  fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
   env: { [key: string]: string };
   packages: string[];
   _makeSnapshot: boolean;
@@ -173,12 +173,13 @@ export async function loadPyodide(
     packages?: string[];
     /**
      * Opt into the old behavior where :js:func:`PyProxy.toString() <pyodide.ffi.PyProxy.toString>`
-     * calls :py:func:`repr` and not :py:class:`str() <str>`.
+     * calls :py:func:`repr` and not :py:class:`str() <str>`. Deprecated.
      * @deprecated
      */
     pyproxyToStringRepr?: boolean;
     /**
-     * Make loop.run_until_complete() function correctly using stack switching
+     * Make loop.run_until_complete() function correctly using stack switching.
+     * Default: ``true``.
      */
     enableRunUntilComplete?: boolean;
     /**
@@ -187,14 +188,18 @@ export async function loadPyodide(
      */
     checkAPIVersion?: boolean;
     /**
-     * Used by the cli runner. If we want to detect a virtual environment from
-     * the host file system, it needs to be visible from when `main()` is
-     * called. The directories in this list will be mounted at the same address
-     * into the Emscripten file system so that virtual environments work in the
-     * cli runner.
-     * @ignore
+     * This is a hook that allows modification of the file system before the
+     * main() function is called and the intereter is started. When this is
+     * called, it is guaranteed that there is an empty site-packages directory.
+     * @experimental
      */
-    _node_mounts?: string[];
+    fsInit?: (FS: FSType, info: { sitePackages: string }) => Promise<void>;
+    /**
+     * Opt into the old behavior where JavaScript `null` is converted to `None`
+     * instead of `jsnull`. Deprecated.
+     * @deprecated
+     */
+    convertNullToNone?: boolean;
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -207,12 +212,22 @@ export async function loadPyodide(
   } = {},
 ): Promise<PyodideInterface> {
   await initNodeModules();
+
+  // Relative paths cause havoc.
   let indexURL = options.indexURL || (await calculateDirname());
-  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
+  indexURL = resolvePath(indexURL);
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
   options.indexURL = indexURL;
+
+  if (options.packageCacheDir) {
+    let packageCacheDir = resolvePath(options.packageCacheDir);
+    if (!packageCacheDir.endsWith("/")) {
+      packageCacheDir += "/";
+    }
+    options.packageCacheDir = packageCacheDir;
+  }
 
   const default_config = {
     fullStdLib: false,
@@ -220,11 +235,9 @@ export async function loadPyodide(
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
     lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
-    _node_mounts: [],
     env: {},
-    packageCacheDir: indexURL,
     packages: [],
-    enableRunUntilComplete: false,
+    enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
@@ -274,6 +287,9 @@ export async function loadPyodide(
   if (options.pyproxyToStringRepr) {
     API.setPyProxyToStringMethod(true);
   }
+  if (options.convertNullToNone) {
+    API.setCompatNullToNone(true);
+  }
 
   if (API.version !== version && config.checkAPIVersion) {
     throw new Error(`\
@@ -283,7 +299,10 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   }
   // Disable further loading of Emscripten file_packager stuff.
   Module.locateFile = (path: string) => {
-    throw new Error("Didn't expect to load any more file_packager files!");
+    if (path.endsWith(".so")) {
+      throw new Error(`Failed to find dynamic library "${path}"`);
+    }
+    throw new Error(`Unexpected call to locateFile("${path}")`);
   };
 
   let snapshotConfig: SnapshotConfig | undefined = undefined;
@@ -295,7 +314,7 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
     snapshotConfig,
     options._snapshotDeserializer,
   );
-  API.sys.path.insert(0, API.config.env.HOME);
+  API.sys.path.insert(0, "");
 
   if (!pyodide.version.includes("dev")) {
     // Currently only used in Node to download packages the first time they are
