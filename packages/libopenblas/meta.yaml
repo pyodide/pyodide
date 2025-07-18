@@ -1,5 +1,5 @@
 package:
-  name: openblas
+  name: libopenblas
   version: 0.3.26
   tag:
     - core
@@ -35,11 +35,11 @@ build:
     emmake make libs shared CC=emcc HOSTCC=gcc TARGET=RISCV64_GENERIC NOFORTRAN=1 NO_LAPACKE=1 \
         USE_THREAD=0 LDFLAGS="${SIDE_MODULE_LDFLAGS}"
     mkdir -p dist
-    # Add libf2c symbols to libopenblas.so
-    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a libopenblas.a ${SIDE_MODULE_LDFLAGS} \
-        -o libopenblas.so
+    # Add libf2c symbols to liblibopenblas.so
+    emcc ${WASM_LIBRARY_DIR}/lib/libf2c.a liblibopenblas.a ${SIDE_MODULE_LDFLAGS} \
+        -o liblibopenblas.so
 
-    cp libopenblas.so dist
+    cp liblibopenblas.so dist
     emmake make install PREFIX=${WASM_LIBRARY_DIR}
 
 requirements:

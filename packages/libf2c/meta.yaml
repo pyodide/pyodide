@@ -3,7 +3,7 @@
 # define things like pow_dd, i_len, etc...
 #
 # Note f2clib package only creates f2clib.a, and f2clib.a symbols are added to
-# libopenblas.so in the OpenBLAS meta.yaml.
+# liblibopenblas.so in the OpenBLAS meta.yaml.
 package:
   name: libf2c
   version: CLAPACK-3.2.1
