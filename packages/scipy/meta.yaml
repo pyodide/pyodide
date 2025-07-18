@@ -138,7 +138,7 @@ requirements:
   host:
     - numpy
     - openblas
-    - boost-cpp
+    - libboost
   run:
     - numpy
     - openblas
