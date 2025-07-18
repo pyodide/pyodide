@@ -32,7 +32,7 @@ source:
     - patches/0007-MAINT-linalg-Remove-id_dist-Fortran-files.patch
     - patches/0008-Mark-mvndst-functions-recursive.patch
     - patches/0009-Make-sreorth-recursive.patch
-    - patches/0010-Link-libopenblas-with-modules-that-require-f2c.patch
+    - patches/0010-Link-openblas-with-modules-that-require-f2c.patch
     - patches/0011-Remove-fpchec-inline-if-then-endif-constructs.patch # remove with SciPy v1.15.0
     - patches/0012-Remove-chla_transtype.patch
     - patches/0013-Set-wrapper-return-type-to-int.patch
