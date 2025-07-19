@@ -1,5 +1,5 @@
 package:
-  name: boost-cpp
+  name: libboost
   version: 1.84.0
   tag:
     - core
