@@ -93,3 +93,13 @@ Pyodide also has a large number of small donors. If you’re interested in suppo
 
 Pyodide uses the [Mozilla Public License Version
 2.0](https://choosealicense.com/licenses/mpl-2.0/).
+
+## Running tests in parallel
+
+To speed up test execution, you can use pytest-xdist:
+
+```
+pytest -n auto
+```
+
+This will run tests in parallel using all available CPU cores.

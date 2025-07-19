@@ -20,3 +20,4 @@ dependencies:
   - wget
   - patch # only needed on MacOS
   - sed # only needed on MacOS
+  - pytest-xdist
