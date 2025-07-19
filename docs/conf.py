@@ -11,8 +11,6 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
-import micropip
-
 panels_add_bootstrap_css = False
 
 # -- Project information -----------------------------------------------------
@@ -80,10 +78,9 @@ versionwarning_message = (
 autosummary_generate = True
 autodoc_default_flags = ["members", "inherited-members"]
 
-micropip_version = micropip.__version__
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3.13", None),
-    "micropip": (f"https://micropip.pyodide.org/en/v{micropip_version}/", None),
+    "micropip": ("https://micropip.pyodide.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
 }
 
