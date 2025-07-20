@@ -54,6 +54,23 @@ def test_cancel_handle(selenium_standalone):
     )
 
 
+def test_cancel_unhandled(selenium):
+    selenium.run_async(
+        """
+        import asyncio
+        loop = asyncio.get_running_loop()
+
+        async def f():
+            await asyncio.sleep(1)
+
+        t = loop.create_task(f())
+        print("done:", t.done())
+        print("cancel:", t.cancel())
+        await asyncio.sleep(2)
+        """
+    )
+
+
 def test_return_result(selenium):
     # test return result
     run_with_resolve(
