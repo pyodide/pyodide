@@ -258,6 +258,7 @@ export interface FSType {
   utime: (path: string, atime: number, mtime: number) => void;
   rmdir: (path: string) => void;
   mount: (type: any, opts: any, mountpoint: string) => any;
+  unmount: (mountpoint: string) => any;
   write: (
     stream: FSStream,
     buffer: any,
