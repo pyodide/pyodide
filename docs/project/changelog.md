@@ -36,6 +36,9 @@ _August 04, 2025_
   `lockFileURL` parameter of `loadPyodide()` did not work.
   {pr}`5750`
 
+- {{ Enhancement }} Update typescript types to include `FS.unmount()`.
+  {pr}`5788`
+
 ## Version 0.28.0
 
 _July 4, 2025_
