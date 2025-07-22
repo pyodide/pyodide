@@ -359,6 +359,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         if (
             fut
             and getattr(fut, "_num_done_callbacks", None) == 1
+            and not fut.cancelled()
             and (exc := fut.exception())
         ):
             # Only callback is this one, let's say it's an unhandled exception
