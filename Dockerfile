@@ -1,6 +1,8 @@
 FROM node:20.11-bookworm-slim AS node-image
 FROM python:3.13.2-slim-bookworm
 
+ARG TARGETPLATFORM
+
 # Requirements for building packages
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
@@ -75,6 +77,7 @@ ARG GECKODRIVER_VERSION="0.34.0"
 
 #============================================
 # Firefox & geckodriver
+# Available for Linux amd64 and Linux arm64
 #============================================
 # can specify Firefox version by FIREFOX_VERSION;
 #  e.g. latest
@@ -84,16 +87,40 @@ ARG GECKODRIVER_VERSION="0.34.0"
 # can specify Firefox geckodriver version by GECKODRIVER_VERSION;
 #============================================
 
-RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" ] || [ $FIREFOX_VERSION = "devedition-latest" ] || [ $FIREFOX_VERSION = "esr-latest" ]; \
-  then FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
-  else FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
+# https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=linux64-aarch64&lang=en-US
+
+RUN \
+  # Handle GeckoDriver architecture
+  set -e -x && \
+  if [ "$TARGETPLATFORM" = "linux/amd64" ]; then \
+    GECKODRIVER_ARCH="linux64"; \
+  elif [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    GECKODRIVER_ARCH="linux-aarch64"; \
+  else \
+    echo "Unsupported platform: $TARGETPLATFORM"; \
+    exit 1; \
   fi \
-  && wget --no-verbose -O /tmp/firefox.tar.xz "$FIREFOX_DOWNLOAD_URL" \
+  # Handle Firefox version based on FIREFOX_VERSION and Linux amd64
+  && if [ "$FIREFOX_VERSION" = "latest" ] || [ "$FIREFOX_VERSION" = "nightly-latest" ] || [ "$FIREFOX_VERSION" = "devedition-latest" ] || [ "$FIREFOX_VERSION" = "esr-latest" ]; then \
+    FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64&lang=en-US"; \
+  else \
+    FIREFOX_VERSION_FULL="${FIREFOX_VERSION}.0" \
+    && FIREFOX_DOWNLOAD_URL="https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION_FULL/linux-x86_64/en-US/firefox-$FIREFOX_VERSION_FULL.tar.bz2"; \
+  fi && \
+  # Handle Firefox version based on FIREFOX_VERSION and Linux arm64. Here we use
+  # "nightly-latest", because it is the only one available for arm64 (as of 13/08/2024)
+  # TODO: Simplify this when Firefox non-nightlies are available for arm64
+  if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+    echo "Note: Firefox is available as nightly-latest on Linux arm64, using it and ignoring $FIREFOX_VERSION"; \
+    FIREFOX_VERSION="nightly-latest"; \
+    FIREFOX_DOWNLOAD_URL="https://download.mozilla.org/?product=firefox-$FIREFOX_VERSION-ssl&os=linux64-aarch64&lang=en-US"; \
+  fi \
+  && wget --no-verbose -O /tmp/firefox.tar.xz $FIREFOX_DOWNLOAD_URL \
   && tar -C /opt -xf /tmp/firefox.tar.xz \
   && rm /tmp/firefox.tar.xz \
   && mv /opt/firefox /opt/firefox-$FIREFOX_VERSION \
   && ln -fs /opt/firefox-$FIREFOX_VERSION/firefox /usr/local/bin/firefox \
-  && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-linux64.tar.gz \
+  && wget --no-verbose -O /tmp/geckodriver.tar.gz https://github.com/mozilla/geckodriver/releases/download/v$GECKODRIVER_VERSION/geckodriver-v$GECKODRIVER_VERSION-$GECKODRIVER_ARCH.tar.gz \
   && rm -rf /opt/geckodriver \
   && tar -C /opt -zxf /tmp/geckodriver.tar.gz \
   && rm /tmp/geckodriver.tar.gz \
@@ -101,11 +128,13 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
   && chmod 755 /opt/geckodriver-$GECKODRIVER_VERSION \
   && ln -fs /opt/geckodriver-$GECKODRIVER_VERSION /usr/local/bin/geckodriver \
   && echo "Using Firefox version: $(firefox --version)" \
-  && echo "Using GeckoDriver version: "$GECKODRIVER_VERSION
+  && echo "Using GeckoDriver version: $GECKODRIVER_VERSION, built for $GECKODRIVER_ARCH"
 
 
 #============================================
 # Google Chrome & Chrome webdriver
+# This is currently for Linux amd64 only
+#
 #============================================
 # can specify Chrome version by CHROME_VERSION;
 #  e.g. latest
@@ -113,23 +142,29 @@ RUN if [ $FIREFOX_VERSION = "latest" ] || [ $FIREFOX_VERSION = "nightly-latest" 
 #       97
 #============================================
 
-RUN if [ $CHROME_VERSION = "latest" ]; \
-  then CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
-  else CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
-  fi \
-  && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
-  && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
-  && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
-  && apt-get update \
-  && apt install -qqy /tmp/google-chrome.deb \
-  && rm -f /tmp/google-chrome.deb \
-  && rm -rf /var/lib/apt/lists/* \
-  && wget --no-verbose -O /tmp/chromedriver-linux64.zip ${CHROMEDRIVER_DOWNLOAD_URL} \
-  && unzip /tmp/chromedriver-linux64.zip -d /opt/ \
-  && rm /tmp/chromedriver-linux64.zip \
-  && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
-  && echo "Using Chrome version: $(google-chrome --version)" \
-  && echo "Using Chrome Driver version: $(chromedriver --version)"
+RUN set -e -x \
+    && if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+        echo "Chrome and Chrome web driver aren't currently supported on arm64, skipping installation" \
+        && exit 0; \
+    fi \
+    && if [ "$CHROME_VERSION" = "latest" ]; then \
+        CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_STABLE"); \
+    else \
+        CHROME_VERSION_FULL=$(wget --no-verbose -O - "https://googlechromelabs.github.io/chrome-for-testing/LATEST_RELEASE_${CHROME_VERSION}"); \
+    fi \
+    && CHROME_DOWNLOAD_URL="https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" \
+    && CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION_FULL}/linux64/chromedriver-linux64.zip" \
+    && wget --no-verbose -O /tmp/google-chrome.deb ${CHROME_DOWNLOAD_URL} \
+    && apt-get update \
+    && apt install -qqy /tmp/google-chrome.deb \
+    && rm -f /tmp/google-chrome.deb \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget --no-verbose -O /tmp/chromedriver-linux64.zip ${CHROMEDRIVER_DOWNLOAD_URL} \
+    && unzip /tmp/chromedriver-linux64.zip -d /opt/ \
+    && rm /tmp/chromedriver-linux64.zip \
+    && ln -fs /opt/chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+    && echo "Using Chrome version: $(google-chrome --version)" \
+    && echo "Using Chrome Driver version: $(chromedriver --version)"
 
 CMD ["/bin/sh"]
 WORKDIR /src
