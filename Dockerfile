@@ -16,9 +16,6 @@ ARG FIREFOX_VERSION="latest"
 ARG GECKODRIVER_VERSION="0.34.0"
 
 RUN if [ $FIREFOX_VERSION = "latest" ]; then SE_FIREFOX_VERSION="stable"; \
-  elif [ $FIREFOX_VERSION = "nightly-latest" ]; then SE_FIREFOX_VERSION="nightly"; \
-  elif [ $FIREFOX_VERSION = "devedition-latest" ]; then SE_FIREFOX_VERSION="dev"; \
-  elif [ $FIREFOX_VERSION = "esr-latest" ]; then SE_FIREFOX_VERSION="esr"; \
   else SE_FIREFOX_VERSION=${FIREFOX_VERSION}; \
   fi \
   && export SE_FIREFOX_VERSION \
