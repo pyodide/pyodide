@@ -12,14 +12,11 @@ RUN SELENIUM_MANAGER_VERSION_FULL=$(curl -s https://api.github.com/repos/Seleniu
 
 ARG CHROME_VERSION="latest"
 ARG FIREFOX_VERSION="latest"
-# Note: geckodriver version needs to be updated manually
-ARG GECKODRIVER_VERSION="0.34.0"
 
 RUN if [ $FIREFOX_VERSION = "latest" ]; then SE_FIREFOX_VERSION="stable"; \
   else SE_FIREFOX_VERSION=${FIREFOX_VERSION}; \
   fi \
   && export SE_FIREFOX_VERSION \
-  && export SE_GECKODRIVER_VERSION=${GECKODRIVER_VERSION} \
   && SE_FIREFOX_OUTPUT=$(selenium-manager --browser firefox --driver gecko --output json) \
   && SE_FIREFOX_BROWSER_PATH=$(echo ${SE_FIREFOX_OUTPUT} | jq -r '.result.browser_path') \
   && SE_GECKO_DRIVER_PATH=$(echo ${SE_FIREFOX_OUTPUT} | jq -r '.result.driver_path') \
