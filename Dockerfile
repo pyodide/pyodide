@@ -54,27 +54,9 @@ RUN apt-get update \
         libpango-1.0-0 libudev1 libvulkan1 libx11-6 \
         libxcb1 libxcomposite1 libxdamage1 libxext6 \
         libxfixes3 libxkbcommon0 libxrandr2 xdg-utils \
-        libgtk-3-0 libx11-xcb1 libtool \
+        libgtk-3-0 libx11-xcb1 \
+        libtool autoconf \
   && rm -rf /var/lib/apt/lists/*
-
-# install autoconf 2.72, required by upstream libffi
-RUN wget https://mirrors.ocf.berkeley.edu/gnu/autoconf/autoconf-2.72.tar.xz \
-    && tar -xf autoconf-2.72.tar.xz \
-    && cd autoconf-2.72 \
-    && ./configure \
-    && make install \
-    && cp /usr/local/bin/autoconf /usr/bin/autoconf \
-    && cd .. \
-    && rm -rf autoconf-2.72*
-
-# install libtool 2.5.4, required by ngspice for emscripten support
-RUN wget https://mirrors.ocf.berkeley.edu/gnu/libtool/libtool-2.5.4.tar.xz \
-    && tar -xf libtool-2.5.4.tar.xz \
-    && cd libtool-2.5.4 \
-    && ./configure \
-    && make install \
-    && cd .. \
-    && rm -rf libtool-2.5.4*
 
 ADD requirements.txt /
 
