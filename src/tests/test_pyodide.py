@@ -1035,6 +1035,8 @@ def test_fatal_error(selenium_standalone):
     import re
 
     def strip_stack_trace(x):
+        # Remove ANSI color codes
+        x = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', x)
         x = re.sub("\n.*site-packages.*", "", x)
         x = re.sub("/lib/python.*/", "", x)
         x = re.sub("/lib/python.*/", "", x)
