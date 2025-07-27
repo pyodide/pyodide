@@ -422,7 +422,25 @@ def test_console_html(selenium):
 
     assert (
         exec_and_get_result("1+")
-        == '>>> 1+\n[[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]  File "<console>", line 1]\n[[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]    1+]\n[[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]     ^]\n[[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]'
+        == dedent("""
+            >>> 1+
+            [[;;;terminal-error;  File "<console>", line 1
+                1+
+                ^
+            _IncompleteInputError: incomplete input]  File "<console>", line 1]
+            [[;;;terminal-error;  File "<console>", line 1
+                1+
+                ^
+            _IncompleteInputError: incomplete input]    1+]
+            [[;;;terminal-error;  File "<console>", line 1
+                1+
+                ^
+            _IncompleteInputError: incomplete input]     ^]
+            [[;;;terminal-error;  File "<console>", line 1
+                1+
+                ^
+            _IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]
+        """).strip()
     )
 
     assert (
