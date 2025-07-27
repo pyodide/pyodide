@@ -11,8 +11,10 @@ def test_pyproxy_class(selenium):
 
     class Foo:
         bar = 42
+
         def get_value(self, value):
             return value * 64
+
     f = Foo()
 
     run_js(
@@ -149,7 +151,7 @@ def test_pyproxy_copy(selenium):
 @run_in_pyodide
 def test_pyproxy_refcount(selenium):
     from pyodide.code import run_js
-    
+
     run_js(
         """
         function getRefCount(){
@@ -197,6 +199,7 @@ def test_pyproxy_destroy(selenium):
     class Foo:
         def get_value(self, value):
             return value * 64
+
     f = Foo()
     run_js(
         """
@@ -212,6 +215,7 @@ def test_pyproxy_destroy(selenium):
 @run_in_pyodide
 def test_pyproxy_iter(selenium):
     from collections import ChainMap
+
     from pyodide.code import run_js
 
     def test_generator():
@@ -231,7 +235,7 @@ def test_pyproxy_iter(selenium):
     assert ty == "generator"
     assert l.to_py() == list(range(10))
 
-    c = ChainMap({"a" : 2, "b" : 3})
+    c = ChainMap({"a": 2, "b": 3})
     ty, l = run_js(
         """
         (c) => {
@@ -249,6 +253,7 @@ def test_pyproxy_iter(selenium):
         for i in range(10):
             r = yield acc
             acc += i * r
+
     c = test_generator2()
 
     result, result2 = run_js(
@@ -289,7 +294,8 @@ def test_pyproxy_iter_error(selenium):
 
     class T:
         def __iter__(self):
-            raise Exception('hi')
+            raise Exception("hi")
+
     t = T()
     run_js(
         """
@@ -308,8 +314,9 @@ def test_pyproxy_iter_error2(selenium):
     def g():
         yield 1
         yield 2
-        raise Exception('hi')
+        raise Exception("hi")
         yield 3
+
     gen = g()
     run_js(
         """
@@ -371,6 +378,7 @@ def test_get_empty_buffer(selenium):
     field is allowed to contain random garbage, which in particular won't be aligned.
     """
     from array import array
+
     from pyodide.code import run_js
 
     a = array("Q")
