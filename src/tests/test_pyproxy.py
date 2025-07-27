@@ -7,13 +7,15 @@ from pytest_pyodide.decorator import run_in_pyodide
 
 @run_in_pyodide
 def test_pyproxy_class(selenium):
-    from pyodide.code import run_js
     import __main__
+    from pyodide.code import run_js
 
     class Foo:
         bar = 42
+
         def get_value(self, value):
             return value * 64
+
     f = Foo()
 
     __main__.f = f
@@ -77,7 +79,6 @@ def test_pyproxy_class(selenium):
         "baz",
         "get_value",
     }.difference(run_js("f_props")) == set()
-
 
 
 @run_in_pyodide
