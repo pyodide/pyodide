@@ -7,46 +7,47 @@ from pytest_pyodide.decorator import run_in_pyodide
 
 @run_in_pyodide
 def test_pyproxy_class(selenium):
-    import __main__
     from pyodide.code import run_js
 
     class Foo:
         bar = 42
-
         def get_value(self, value):
             return value * 64
-
     f = Foo()
 
-    __main__.f = f
-
     run_js(
         """
-        self.f = pyodide.globals.get('f');
-        assert(() => f.type === "Foo");
-        let f_get_value = f.get_value
-        assert(() => f_get_value(2) === 128);
-        f_get_value.destroy();
-        assert(() => f.bar === 42);
-        assert(() => 'bar' in f);
-        f.baz = 32;
-        assert(() => f.baz === 32);
+        (f) => {
+            assert(() => f.type === "Foo");
+            let f_get_value = f.get_value
+            assert(() => f_get_value(2) === 128);
+            f_get_value.destroy();
+            assert(() => f.bar === 42);
+            assert(() => 'bar' in f);
+            f.baz = 32;
+            assert(() => f.baz === 32);
+        }
         """
-    )
+    )(f)
     assert hasattr(f, "baz")
-    run_js(
+    f_props = run_js(
         """
-        self.f_props = Object.getOwnPropertyNames(f);
-        delete f.baz
+        (f) => {
+            let f_props = Object.getOwnPropertyNames(f);
+            delete f.baz;
+            return f_props;
+        }
         """
-    )
+    )(f)
     assert not hasattr(f, "baz")
     run_js(
         """
-        assert(() => f.toString().startsWith("<Foo"));
-        f.destroy();
+        (f) => {
+            assert(() => f.toString().startsWith("<Foo"));
+            f.destroy();
+        }
         """
-    )
+    )(f)
 
     assert {
         "__class__",
@@ -78,7 +79,7 @@ def test_pyproxy_class(selenium):
         "bar",
         "baz",
         "get_value",
-    }.difference(run_js("f_props")) == set()
+    }.difference(f_props) == set()
 
 
 @run_in_pyodide
@@ -129,20 +130,27 @@ def test_in_globals(selenium):
     ) == [False, True, True, True]
 
 
+@run_in_pyodide
 def test_pyproxy_copy(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
-        let d = pyodide.runPython("list(range(10))")
-        e = d.copy();
-        d.destroy();
-        assert(() => e.length === 10);
-        e.destroy();
+        (d) => {
+            e = d.copy();
+            d.destroy();
+            assert(() => e.length === 10);
+            e.destroy();
+        }
         """
-    )
+    )(list(range(10)))
 
 
+@run_in_pyodide
 def test_pyproxy_refcount(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    
+    run_js(
         """
         function getRefCount(){
             return pyodide.runPython("sys.getrefcount(pyfunc)");
@@ -182,124 +190,137 @@ def test_pyproxy_refcount(selenium):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_destroy(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    class Foo:
+        def get_value(self, value):
+            return value * 64
+    f = Foo()
+    run_js(
         """
-        pyodide.runPython(`
-            class Foo:
-                def get_value(self, value):
-                    return value * 64
-            f = Foo()
-        `);
-        let f = pyodide.globals.get('f');
-        assert(()=> f.get_value(1) === 64);
-        f.destroy();
-        assertThrows(() => f.get_value(1), "Error", "already been destroyed");
+        (f) => {
+            assert(()=> f.get_value(1) === 64);
+            f.destroy();
+            assertThrows(() => f.get_value(1), "Error", "already been destroyed");
+        }
         """
-    )
+    )(f)
 
 
+@run_in_pyodide
 def test_pyproxy_iter(selenium):
-    [ty, l] = selenium.run_js(
+    from collections import ChainMap
+    from pyodide.code import run_js
+
+    def test_generator():
+        for i in range(10):
+            yield i
+
+    c = test_generator()
+    ty, l = run_js(
         """
-        let c = pyodide.runPython(`
-            def test():
-                for i in range(10):
-                    yield i
-            test()
-        `);
-        let result = [c.type, [...c]];
-        c.destroy();
-        return result;
+        (c) => {
+            let result = [c.type, [...c]];
+            c.destroy();
+            return result;
+        }
         """
-    )
+    )(c)
     assert ty == "generator"
-    assert l == list(range(10))
+    assert l.to_py() == list(range(10))
 
-    [ty, l] = selenium.run_js(
+    c = ChainMap({"a" : 2, "b" : 3})
+    ty, l = run_js(
         """
-        let c = pyodide.runPython(`
-            from collections import ChainMap
-            ChainMap({"a" : 2, "b" : 3})
-        `);
-        let result = [c.type, [...c]];
-        c.destroy();
-        return result;
+        (c) => {
+            let result = [c.type, [...c]];
+            c.destroy();
+            return result;
+        }
         """
-    )
+    )(c)
     assert ty == "ChainMap"
-    assert set(l) == {"a", "b"}
+    assert set(l.to_py()) == {"a", "b"}
 
-    [result, result2] = selenium.run_js(
+    def test_generator2():
+        acc = 0
+        for i in range(10):
+            r = yield acc
+            acc += i * r
+    c = test_generator2()
+
+    result, result2 = run_js(
         """
-        let c = pyodide.runPython(`
-            def test():
-                acc = 0
-                for i in range(10):
-                    r = yield acc
-                    acc += i * r
-            test()
-        `)
-        let {done, value} = c.next();
-        let result = [];
-        while(!done){
-            result.push(value);
-            ({done, value} = c.next(value + 1));
-        }
-        c.destroy();
-
-        function* test(){
-            let acc = 0;
-            for(let i=0; i < 10; i++){
-                let r = yield acc;
-                acc += i * r;
+        (c) => {
+            let {done, value} = c.next();
+            let result = [];
+            while(!done){
+                result.push(value);
+                ({done, value} = c.next(value + 1));
             }
+            c.destroy();
+
+            function* test(){
+                let acc = 0;
+                for(let i=0; i < 10; i++){
+                    let r = yield acc;
+                    acc += i * r;
+                }
+            }
+            c = test();
+            ({done, value} = c.next());
+            let result2 = [];
+            while(!done){
+                result2.push(value);
+                ({done, value} = c.next(value + 1));
+            }
+            return [result, result2];
         }
-        c = test();
-        ({done, value} = c.next());
-        let result2 = [];
-        while(!done){
-            result2.push(value);
-            ({done, value} = c.next(value + 1));
-        }
-        return [result, result2];
         """
-    )
-    assert result == result2
+    )(c)
+    assert result.to_py() == result2.to_py()
 
 
+@run_in_pyodide
 def test_pyproxy_iter_error(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    class T:
+        def __iter__(self):
+            raise Exception('hi')
+    t = T()
+    run_js(
         """
-        let t = pyodide.runPython(`
-            class T:
-                def __iter__(self):
-                    raise Exception('hi')
-            T()
-        `);
-        assertThrows(() => t[Symbol.iterator](), "PythonError", "hi");
-        t.destroy();
+        (t) => {
+            assertThrows(() => t[Symbol.iterator](), "PythonError", "hi");
+            t.destroy();
+        }
         """
-    )
+    )(t)
 
 
+@run_in_pyodide
 def test_pyproxy_iter_error2(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    def g():
+        yield 1
+        yield 2
+        raise Exception('hi')
+        yield 3
+    gen = g()
+    run_js(
         """
-        let gen = pyodide.runPython(`
-            def g():
-                yield 1
-                yield 2
-                raise Exception('hi')
-                yield 3
-            g()
-        `);
-        assert(() => gen.next().value === 1);
-        assert(() => gen.next().value === 2);
-        assertThrows(() => gen.next(), "PythonError", "hi");
-        gen.destroy();
+        (gen) => {
+            assert(() => gen.next().value === 1);
+            assert(() => gen.next().value === 2);
+            assertThrows(() => gen.next(), "PythonError", "hi");
+            gen.destroy();
+        }
         """
-    )
+    )(gen)
 
 
 @run_in_pyodide
@@ -342,23 +363,26 @@ def test_pyproxy_get_buffer(selenium):
     )
 
 
+@run_in_pyodide
 def test_get_empty_buffer(selenium):
     """Previously empty buffers would raise alignment errors
 
     This is because when Python makes an empty buffer, apparently the pointer
     field is allowed to contain random garbage, which in particular won't be aligned.
     """
-    selenium.run_js(
+    from array import array
+    from pyodide.code import run_js
+
+    a = array("Q")
+    run_js(
         """
-        let a = pyodide.runPython(`
-            from array import array
-            array("Q")
-        `);
-        let b = a.getBuffer();
-        b.release();
-        a.destroy();
+        (a) => {
+            let b = a.getBuffer();
+            b.release();
+            a.destroy();
+        }
         """
-    )
+    )(a)
 
 
 @pytest.mark.parametrize(
@@ -377,42 +401,44 @@ def test_get_empty_buffer(selenium):
         ["f64", "Float64Array", "d"],
     ],
 )
+@run_in_pyodide
 def test_pyproxy_get_buffer_type_argument(selenium, array_type):
-    selenium.run_js(
-        """
-        self.a = pyodide.runPython("bytes(range(256))");
-        assert(() => a instanceof pyodide.ffi.PyBuffer);
-        """
-    )
+    from pyodide.code import run_js
+
+    a = bytes(range(256))
+    assert run_js("(a) => a instanceof pyodide.ffi.PyBuffer")(a)
     try:
-        mv = memoryview(bytes(range(256)))
+        mv = memoryview(a)
         ty, array_ty, fmt = array_type
-        [check, result] = selenium.run_js(
+        check, result = run_js(
             f"""
-            let buf = a.getBuffer({ty!r});
-            assert(() => buf instanceof pyodide.ffi.PyBufferView);
-            let check = (buf.data.constructor.name === {array_ty!r});
-            let result = Array.from(buf.data);
-            if(typeof result[0] === "bigint"){{
-                result = result.map(x => x.toString(16));
+            (a) => {{
+                let buf = a.getBuffer({ty!r});
+                assert(() => buf instanceof pyodide.ffi.PyBufferView);
+                let check = (buf.data.constructor.name === {array_ty!r});
+                let result = Array.from(buf.data);
+                if(typeof result[0] === "bigint"){{
+                    result = result.map(x => x.toString(16));
+                }}
+                buf.release();
+                return [check, result];
             }}
-            buf.release();
-            return [check, result];
             """
-        )
+        )(a)
         assert check
+        result = result.to_py()
         if fmt.lower() == "q":
             assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
         elif fmt in {"d", "f"}:
             from math import isclose, isnan
 
-            for a, b in zip(result, list(mv.cast(fmt)), strict=False):
-                if a and b and not (isnan(a) or isnan(b)):
-                    assert isclose(a, b)
+            for x, y in zip(result, list(mv.cast(fmt)), strict=False):
+                if x and y and not (isnan(x) or isnan(y)):
+                    assert isclose(x, y)
         else:
             assert result == list(mv.cast(fmt))
     finally:
-        selenium.run_js("a.destroy(); self.a = undefined;")
+        run_js("(a) => a.destroy()")(a)
 
 
 def test_pyproxy_mixins1(selenium):
