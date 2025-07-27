@@ -1010,31 +1010,11 @@ def test_restore_state(selenium):
         """
     )
 
-import re
-import pytest
-from textwrap import dedent
-
-def strip_ansi(text):
-    return re.sub(r"\x1b\[[0-9;]*m", "", text)
-
-def strip_stack_trace(x):
-    x = re.sub("\n.*site-packages.*", "", x)
-    x = re.sub("/lib/python.*/", "", x)
-    x = re.sub("/lib/python.*/", "", x)
-    x = re.sub("warning: no [bB]lob.*\n", "", x)
-    x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
-    x = re.sub(" +at .*\n", "", x)
-    x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
-    x = re.sub(".*@debugger.*\n", "", x)
-    x = re.sub(".*@chrome.*\n", "", x)
-    x = re.sub("line [0-9]*", "line xxx", x)
-    x = x.replace("\n\n", "\n")
-    return x
 
 @pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
-    result = selenium_standalone.run_js(
+    assert selenium_standalone.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1052,50 +1032,48 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
+    import re
 
-    # 확인: 에러 메시지에 의도적으로 발생시킨 에러가 포함되어 있는지
-assert "intentionally triggered fatal error" in strip_ansi(result)
+    def strip_stack_trace(x):
+        x = re.sub("\n.*site-packages.*", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("/lib/python.*/", "", x)
+        x = re.sub("warning: no [bB]lob.*\n", "", x)
+        x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
+        x = re.sub(" +at .*\n", "", x)
+        x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+        x = re.sub(".*@debugger.*\n", "", x)
+        x = re.sub(".*@chrome.*\n", "", x)
+        x = re.sub("line [0-9]*", "line xxx", x)
+        x = x.replace("\n\n", "\n")
+        return x
 
-# 에러 로그 가공
-err_msg = strip_stack_trace(selenium_standalone.logs)
-err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
-
-# 기대되는 메시지
-expected = dedent(
-    strip_ansi(
-        strip_stack_trace(
-            """
-            Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
-            The cause of the fatal error was:
-            Error: intentionally triggered fatal error!
-            Stack (most recent call first):
-              File "<exec>", line 8 in h
-              File "<exec>", line 6 in g
-              File "<exec>", line 4 in f
-              File "<exec>", line 9 in <module>
-              File "/lib/pythonxxx/pyodide/_base.py", line 242 in run
-              File "/lib/pythonxxx/pyodide/_base.py", line 344 in eval_code
-            """
-        )
+    err_msg = strip_stack_trace(selenium_standalone.logs)
+    err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
+    assert (
+        err_msg
+        == dedent(
+            strip_stack_trace(
+                """
+                Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.
+                The cause of the fatal error was:
+                Stack (most recent call first):
+                  File "<exec>", line 8 in h
+                  File "<exec>", line 6 in g
+                  File "<exec>", line 4 in f
+                  File "<exec>", line 9 in <module>
+                  File "/lib/pythonxxx/pyodide/_base.py", line 242 in run
+                  File "/lib/pythonxxx/pyodide/_base.py", line 344 in eval_code
+                """
+            )
+        ).strip()
     )
-).strip().splitlines()
-
-
-# 실제 출력된 메시지
-actual = strip_ansi(err_msg).strip().splitlines()
-
-# 각 줄 비교 (공백 무시)
-for i, (e, a) in enumerate(zip(expected, actual)):
-    assert e.strip() == a.strip(), f"Line {i+1} mismatch:\nExpected: {e!r}\nActual:   {a!r}"
-
-# 테스트 중 파이오다이드가 이미 죽었는지 확인
-selenium_standalone.run_js(
-    """
-    assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed");
-    assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed");
-    """
-)
-
+    selenium_standalone.run_js(
+        """
+        assertThrows(() => pyodide.runPython, "Error", "Pyodide already fatally failed and can no longer be used.")
+        assertThrows(() => pyodide.globals, "Error", "Pyodide already fatally failed and can no longer be used.")
+        """
+    )
 
 
 @pytest.mark.skip_refcount_check
