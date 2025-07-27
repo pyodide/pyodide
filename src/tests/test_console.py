@@ -425,10 +425,10 @@ def test_console_html(selenium):
         == dedent(
             """
             >>> 1+
-            [[;;;terminal-error]  File \"<console>\", line 1
-                1+
-                 ^
-            _IncompleteInputError: incomplete input]
+            [[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]  File "<console>", line 1]
+            [[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]    1+]
+            [[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]     ^]
+            [[;;;terminal-error;  File "<console>", line 1\n    1+\n     ^\n_IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]
             """
         ).strip()
     )
