@@ -1010,11 +1010,31 @@ def test_restore_state(selenium):
         """
     )
 
+import re
+import pytest
+from textwrap import dedent
+
+def strip_ansi(text):
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
+def strip_stack_trace(x):
+    x = re.sub("\n.*site-packages.*", "", x)
+    x = re.sub("/lib/python.*/", "", x)
+    x = re.sub("/lib/python.*/", "", x)
+    x = re.sub("warning: no [bB]lob.*\n", "", x)
+    x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
+    x = re.sub(" +at .*\n", "", x)
+    x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
+    x = re.sub(".*@debugger.*\n", "", x)
+    x = re.sub(".*@chrome.*\n", "", x)
+    x = re.sub("line [0-9]*", "line xxx", x)
+    x = x.replace("\n\n", "\n")
+    return x
 
 @pytest.mark.xfail_browsers(safari="TODO: traceback is not the same on Safari")
 @pytest.mark.skip_refcount_check
 def test_fatal_error(selenium_standalone):
-    assert selenium_standalone.run_js(
+    result = selenium_standalone.run_js(
         """
         try {
             pyodide.runPython(`
@@ -1032,21 +1052,11 @@ def test_fatal_error(selenium_standalone):
         }
         """
     )
-    import re
 
-    def strip_stack_trace(x):
-        x = re.sub("\n.*site-packages.*", "", x)
-        x = re.sub("/lib/python.*/", "", x)
-        x = re.sub("/lib/python.*/", "", x)
-        x = re.sub("warning: no [bB]lob.*\n", "", x)
-        x = re.sub("Error: intentionally triggered fatal error!\n", "", x)
-        x = re.sub(" +at .*\n", "", x)
-        x = re.sub(".*@https?://[0-9.:]*/.*\n", "", x)
-        x = re.sub(".*@debugger.*\n", "", x)
-        x = re.sub(".*@chrome.*\n", "", x)
-        x = re.sub("line [0-9]*", "line xxx", x)
-        x = x.replace("\n\n", "\n")
-        return x
+    assert "Pyodide has suffered a fatal error" in strip_ansi(result)
+
+
+
 
     err_msg = strip_stack_trace(selenium_standalone.logs)
     err_msg = "".join(strip_assertions_stderr(err_msg.splitlines(keepends=True)))
