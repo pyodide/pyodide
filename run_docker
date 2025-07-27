@@ -32,17 +32,19 @@ function usage() {
   cat > /dev/stdout <<EOF
 Usage: run_docker [OPTIONS] [COMMAND] [ARG...]
 
-Runs COMMAND in a new Pyodide docker container. If no COMMAND is provided, starts a bash
+Runs COMMAND in a new Pyodide Docker container. If no COMMAND is provided, starts a bash
 shell in the container.
 
 Options:
   -h, --help                  Show this information and exit.
-  -p, --port <port>           System port to which to forward.
+  -p, --port <port>           System port to forward to.
                               This is ignored if the env var PYODIDE_SYSTEM_PORT is set.
-                              If set to 'none', docker instance will not bind to any port.
-  --non-interactive           Run docker without the --interactive flag.
+                              If set to 'none', the Docker instance will not bind to any port.
+  --non-interactive           Run Docker without the --interactive flag.
                               Useful for running in headless mode on CI server.
   --root                      Run as root user inside the container
+  --build                     Build the Docker image before running, instead of pulling a pre-built image
+  --no-cache                  Build the Docker image from the first layer, ignoring the cache
 
 Prerequisites:
   Docker has to be set up on your system.
@@ -53,6 +55,11 @@ function error() {
   usage
   exit 255
 }
+
+
+BUILD_IMAGE=false
+NO_CACHE=""
+
 
 while [[ $# -gt 0 ]]
 do
@@ -82,6 +89,14 @@ do
         USER_FLAG=()
         shift
       ;;
+      --build)
+        BUILD_IMAGE=true
+        shift
+      ;;
+      --no-cache)
+        NO_CACHE="--no-cache"
+        shift
+      ;;
       -*)
         >&2 echo "Unknown option $1"
         error
@@ -96,6 +111,21 @@ done
 PYODIDE_DOCKER_PORT=${PYODIDE_DOCKER_PORT:-"8000"}
 PYODIDE_SYSTEM_PORT=${PYODIDE_SYSTEM_PORT:-${DEFAULT_PYODIDE_SYSTEM_PORT}}
 PYODIDE_DOCKER_IMAGE=${PYODIDE_DOCKER_IMAGE:-${DEFAULT_PYODIDE_DOCKER_IMAGE}}
+
+HOST_ARCH=$(uname -m)
+if [ "$HOST_ARCH" = "x86_64" ]; then
+  DOCKER_PLATFORM="linux/amd64"
+elif [ "$HOST_ARCH" = "arm64" ]; then
+  DOCKER_PLATFORM="linux/arm64"
+else
+  echo "Unsupported architecture: $HOST_ARCH"
+  exit 1
+fi
+
+if [ "$BUILD_IMAGE" = true ]; then
+  echo "Building image and spinning up Docker container for $DOCKER_PLATFORM..."
+  docker buildx build --platform $DOCKER_PLATFORM $NO_CACHE -t "$PYODIDE_DOCKER_IMAGE" .
+fi
 
 # in case the port is not a number, do not bind the port
 case $PYODIDE_SYSTEM_PORT in
@@ -139,6 +169,7 @@ CONTAINER=$(\
     -v "$PWD":/src \
     --user root \
     --shm-size 2g \
+    --platform $DOCKER_PLATFORM \
     "${PYODIDE_DOCKER_IMAGE}" \
     /bin/bash .docker_home/entrypoint.sh \
 )
