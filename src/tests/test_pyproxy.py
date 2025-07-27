@@ -5,16 +5,21 @@ import pytest
 from pytest_pyodide.decorator import run_in_pyodide
 
 
+@run_in_pyodide
 def test_pyproxy_class(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    import __main__
+
+    class Foo:
+        bar = 42
+        def get_value(self, value):
+            return value * 64
+    f = Foo()
+
+    __main__.f = f
+
+    run_js(
         """
-        pyodide.runPython(`
-            class Foo:
-                bar = 42
-                def get_value(self, value):
-                    return value * 64
-            f = Foo()
-        `);
         self.f = pyodide.globals.get('f');
         assert(() => f.type === "Foo");
         let f_get_value = f.get_value
@@ -24,14 +29,23 @@ def test_pyproxy_class(selenium):
         assert(() => 'bar' in f);
         f.baz = 32;
         assert(() => f.baz === 32);
-        pyodide.runPython(`assert hasattr(f, 'baz')`)
+        """
+    )
+    assert hasattr(f, "baz")
+    run_js(
+        """
         self.f_props = Object.getOwnPropertyNames(f);
         delete f.baz
-        pyodide.runPython(`assert not hasattr(f, 'baz')`)
-        assert(() => f.toString().startsWith("<__main__.Foo"));
+        """
+    )
+    assert not hasattr(f, "baz")
+    run_js(
+        """
+        assert(() => f.toString().startsWith("<Foo"));
         f.destroy();
         """
     )
+
     assert {
         "__class__",
         "__delattr__",
@@ -62,7 +76,8 @@ def test_pyproxy_class(selenium):
         "bar",
         "baz",
         "get_value",
-    }.difference(selenium.run_js("return f_props")) == set()
+    }.difference(run_js("f_props")) == set()
+
 
 
 @run_in_pyodide
