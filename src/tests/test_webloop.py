@@ -58,6 +58,7 @@ def test_cancel_unhandled(selenium):
     @run_in_pyodide
     async def test(selenium):
         import asyncio
+
         loop = asyncio.get_running_loop()
 
         async def f():
