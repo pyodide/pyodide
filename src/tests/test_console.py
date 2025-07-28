@@ -420,28 +420,15 @@ def test_console_html(selenium):
 
     print(exec_and_get_result("1+"))
 
-    assert (
-        exec_and_get_result("1+")
-        == dedent("""
-            >>> 1+
-            [[;;;terminal-error;  File "<console>", line 1
-                1+
-                ^
-            _IncompleteInputError: incomplete input]  File "<console>", line 1]
-            [[;;;terminal-error;  File "<console>", line 1
-                1+
-                ^
-            _IncompleteInputError: incomplete input]    1+]
-            [[;;;terminal-error;  File "<console>", line 1
-                1+
-                ^
-            _IncompleteInputError: incomplete input]     ^]
-            [[;;;terminal-error;  File "<console>", line 1
-                1+
-                ^
-            _IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]
-        """).strip()
+    expected_output = (
+        ">>> 1+\n"
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]  File "<console>", line 1]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]    1+]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]     ^]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]'
     )
+
+    assert exec_and_get_result("1+") == expected_output
 
     assert (
         exec_and_get_result("raise Exception('hi')")
