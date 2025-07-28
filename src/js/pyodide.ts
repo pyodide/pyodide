@@ -47,7 +47,7 @@ declare const BUILD_ID: string;
 export type ConfigType = {
   indexURL: string;
   packageCacheDir: string;
-  lockFileContents: Promise<Lockfile | string>;
+  lockFileContents: Lockfile | string | Promise<Lockfile | string>;
   fullStdLib?: boolean;
   stdLibURL?: string;
   stdin?: () => string;
@@ -112,7 +112,7 @@ export async function loadPyodide(
     /**
      * TODO(now) fill this in
      */
-    lockFileContents?: Promise<Lockfile | string>;
+    lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
     /**
      * TODO(now) fill this in
      */
@@ -277,7 +277,7 @@ export async function loadPyodide(
   config.env.PYTHONINSPECT ??= "1";
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
-  API.lockFilePromise = options_.lockFileContents;
+  API.lockFilePromise = Promise.resolve(options_.lockFileContents);
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
