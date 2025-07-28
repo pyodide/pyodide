@@ -191,7 +191,7 @@ def pytest_collection_modifyitems(config, items):
 
     # Skip long_running tests unless in CI environment
     is_ci = os.environ.get("CI", "").lower() in ("true", "1", "yes")
-    
+
     for item in items:
         if prev_test_result.get(item.nodeid) in ("passed", "warnings", "skip_passed"):
             item.add_marker(pytest.mark.skip(reason="previously passed"))
@@ -202,7 +202,11 @@ def pytest_collection_modifyitems(config, items):
             # Check if user explicitly wants to run long_running tests
             markexpr = config.getoption("-m", default="")
             if "long_running" not in markexpr:
-                item.add_marker(pytest.mark.skip(reason="long_running test skipped (use '-m long_running' to run or set CI=1)"))
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="long_running test skipped (use '-m long_running' to run or set CI=1)"
+                    )
+                )
                 continue
 
         maybe_skip_test(item, delayed=True)
