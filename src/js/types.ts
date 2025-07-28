@@ -367,8 +367,7 @@ export interface LockfileInfo {
  */
 export interface LockfilePackage {
   /**
-   * The name of the package. This should be `normalized
-   * <https://packaging.python.org/en/latest/specifications/name-normalization/#name-normalization>`__.
+   * The unnormalized name of the package.
    */
   name: string;
   /**
