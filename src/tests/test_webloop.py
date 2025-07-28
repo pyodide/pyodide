@@ -70,7 +70,7 @@ def test_cancel_unhandled(selenium):
         await asyncio.sleep(2)
 
     test(selenium)
-    assert "Some traceback string" not in selenium.logs
+    assert "CancelledError" not in selenium.logs
 
 
 def test_return_result(selenium):
