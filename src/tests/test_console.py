@@ -449,21 +449,19 @@ def test_console_html(selenium):
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
     result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
 
-    answer = dedent(
-        """
-            >>> class Test:
-            ...     def __repr__(self):
-            ...         raise TypeError(\"hi\")
-            ... \
-
-            >>> Test()
-            [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
-                text = repr(value)
-              File \"<console>\", line 3, in __repr__
-            TypeError: hi]
-            """
-    ).strip()
+    answer = (
+        ">>> class Test:\n"
+        "...     def __repr__(self):\n"
+        '...         raise TypeError("hi")\n'
+        "... \n"
+        ">>> Test()\n"
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]Traceback (most recent call last):]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line 680, in repr_sho]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]rten]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]    text = repr(value)]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]  File "<console>", line 3, in __repr__]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\n    text = repr(value)\n  File "<console>", line 3, in __repr__\nTypeError: hi]TypeError: hi]'
+    )
 
     assert result == answer
 
