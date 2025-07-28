@@ -59,8 +59,8 @@ repos:
     rev: "v1.14.1"
     hooks:
       - id: mypy
-        files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
-        exclude: (setup.py|.*test.*|^pyodide-build/)
+        files: ^(packages/.*/src|src)
+        exclude: (setup.py|.*test.*|pyodide-build)
         args: []
         additional_dependencies: &mypy-deps
           - packaging
@@ -82,7 +82,7 @@ repos:
         name: mypy-tests
         args: [--ignore-missing-imports]
         files: ^(packages/|docs|/conftest.py|src/tests)
-        exclude: (^packages/.*/setup.py|/src)
+        exclude: (^packages/.*/setup.py|/src|pyodide-build)
         additional_dependencies: *mypy-deps
 
   - repo: https://github.com/pre-commit/mirrors-prettier
