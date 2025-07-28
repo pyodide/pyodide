@@ -432,14 +432,7 @@ def test_console_html(selenium):
 
     assert (
         exec_and_get_result("raise Exception('hi')")
-        == dedent(
-            """
-            >>> raise Exception('hi')
-            [[;;;terminal-error]Traceback (most recent call last):
-              File \"<console>\", line 1, in <module>
-            Exception: hi]
-            """
-        ).strip()
+        == '>>> raise Exception(\'hi\')\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]Traceback (most recent call last):]\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]  File "<console>", line 1, in <module>]\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]Exception: hi]'
     )
 
     result = exec_and_get_result(
