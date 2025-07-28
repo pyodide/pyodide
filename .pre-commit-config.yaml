@@ -60,7 +60,7 @@ repos:
     hooks:
       - id: mypy
         files: ^(packages/.*/src|src|pyodide-build/pyodide_build)
-        exclude: (setup.py|.*test.*)
+        exclude: (setup.py|.*test.*|^pyodide-build/)
         args: []
         additional_dependencies: &mypy-deps
           - packaging
