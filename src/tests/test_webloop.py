@@ -55,8 +55,8 @@ def test_cancel_handle(selenium_standalone):
 
 
 def test_cancel_unhandled(selenium):
-    selenium.run_async(
-        """
+    @run_in_pyodide
+    async def test(selenium):
         import asyncio
         loop = asyncio.get_running_loop()
 
@@ -67,8 +67,9 @@ def test_cancel_unhandled(selenium):
         print("done:", t.done())
         print("cancel:", t.cancel())
         await asyncio.sleep(2)
-        """
-    )
+
+    test(selenium)
+    assert "Some traceback string" not in selenium.logs
 
 
 def test_return_result(selenium):
