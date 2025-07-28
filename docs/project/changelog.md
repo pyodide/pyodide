@@ -26,6 +26,11 @@ _August 04, 2025_
 - {{ Fix }} The python CLI is now included in the `pyodide-core` release
   artifact. {pr}`5747`
 
+### Python API
+
+- {{ Fix }} Fixed cancelled futures causing a traceback to be printed.
+  {pr}`5784`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
