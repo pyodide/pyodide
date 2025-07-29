@@ -456,7 +456,7 @@ def test_console_html(selenium):
         "... \n"
         ">>> Test()\n"
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]Traceback (most recent call last):]\n'
-        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_sho]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]rten]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]    text = repr(value)]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "<console>", line 3, in __repr__]\n'
@@ -466,7 +466,7 @@ def test_console_html(selenium):
     assert result == answer
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
-    assert len(long_output) == 4
+    assert len(long_output) == 18
     assert long_output[2] == "<long output truncated>"
 
     # nbsp characters should be replaced with spaces, and not cause a syntax error
