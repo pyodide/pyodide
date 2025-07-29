@@ -467,7 +467,7 @@ def test_console_html(selenium):
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
     assert len(long_output) == 18
-    assert long_output[2] == "<long output truncated>"
+    assert long_output[9] == "<long output truncated>"
 
     # nbsp characters should be replaced with spaces, and not cause a syntax error
     nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
