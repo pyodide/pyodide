@@ -477,12 +477,7 @@ export class PackageManager {
       DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
-      if (
-        !IN_NODE ||
-        pkg.channel !== this.defaultChannel ||
-        !fileName ||
-        fileName.startsWith("/")
-      ) {
+      if (!IN_NODE || pkg.channel !== this.defaultChannel) {
         throw e;
       }
     }
