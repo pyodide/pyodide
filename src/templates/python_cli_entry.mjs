@@ -19,7 +19,23 @@ const thisProgramFlag = "--this-program=";
 const thisProgramIndex = process.argv.findIndex((x) =>
   x.startsWith(thisProgramFlag),
 );
-const args = process.argv.slice(thisProgramIndex + 1);
+const args = process.argv.slice(thisProgramIndex + 1).map(
+  arg => {
+    if (process.platform !== "win32") {
+      return arg;
+    }
+
+    // We replace Windows-style paths with Unix-style paths as that is how
+    // our Windows filesystem is mapped in emscripten.
+    if (arg.startsWith("\"C:\\")) {
+      return arg.slice(3).replaceAll("\\", "/");
+    } else if (arg.startsWith("C:\\")) {
+      return arg.slice(2).replaceAll("\\", "/");
+    } else {
+      return arg;
+    }
+  }
+);
 const _sysExecutable = process.argv[thisProgramIndex].slice(
   thisProgramFlag.length,
 );
