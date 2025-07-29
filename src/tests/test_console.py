@@ -476,15 +476,13 @@ def test_console_html(selenium):
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
     res = selenium.run_js("return term.get_output().trim();")
-    assert (
-        res
-        == dedent(
-            """
-            >>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
-            [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
-            [[;;;terminal-error]The cause of the fatal error was:]
-            [[;;;terminal-error]Error: intentionally triggered fatal error!]
-            [[;;;terminal-error]Look in the browser console for more details.]
-            """
-        ).strip()
+    expected_fatal_output = (
+        ">>> from _pyodide_core import trigger_fatal_error; trigger_fatal_erro\n"
+        "r()\n"
+        "[[;;;terminal-error;Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]Pyodide has suffered a fatal error. Please report this to the Pyodide]\n"
+        "[[;;;terminal-error;Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.] maintainers.]\n"
+        "[[;;;terminal-error]The cause of the fatal error was:]\n"
+        "[[;;;terminal-error]Error: intentionally triggered fatal error!]\n"
+        "[[;;;terminal-error]Look in the browser console for more details.]"
     )
+    assert res == expected_fatal_output
