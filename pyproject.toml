@@ -1,6 +1,6 @@
 [tool.mypy]
 python_version = "3.13"
-mypy_path = ["src/py", "pyodide-build"]
+mypy_path = ["src/py"]
 show_error_codes = true
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
