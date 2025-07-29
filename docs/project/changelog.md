@@ -91,6 +91,10 @@ _July 4, 2025_
   and assign it to JavaScript properties via `pyodide.ffi.jsnull`.
   {pr}`5719`
 
+- {{ Enhancement }} Update types to include `FS.unmount`. {pr}`5788`
+
+- {{ Fix }} Fixed cancelled futures causing a traceback to be printed. {pr}`5784`
+
 ### `python` CLI entrypoint
 
 - {{ Fix }} The `python` CLI now mounts the `/tmp` directory. In

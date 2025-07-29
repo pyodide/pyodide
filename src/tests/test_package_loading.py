@@ -9,7 +9,7 @@ from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH, PYODIDE_ROOT
+from conftest import DIST_PATH, PYODIDE_ROOT, only_node
 
 
 def get_micropip_wheel() -> Path:
@@ -1122,4 +1122,70 @@ def test_micropip_install_non_normalized_package(selenium_standalone):
         await micropip.install("test-dummy-unNormalized")
         import dummy_unnormalized
         """
+    )
+
+
+@only_node
+def test_package_cache_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+
+    # copy one package in the distribution to the package cache dir
+    dummy_wheel = DIST_PATH / "test_dummy-1.0.0-py2.py3-none-any.whl"
+    shutil.copy(
+        dummy_wheel,
+        package_cache_dir / dummy_wheel.name,
+    )
+
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{package_cache_dir}"}});
+        """
+    )
+
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("test-dummy");
+        return pyodide.runPython("import dummy");
+        """
+    )
+
+    assert "Loaded test-dummy" in selenium.logs
+    # should not fallback to the cdn as the wheel is already in the package cache dir
+    assert "caching the wheel" not in selenium.logs
+
+
+@only_node
+def test_micropip_freeze_with_package_cache_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+
+    micropip_path = get_micropip_wheel()
+    shutil.copy(
+        micropip_path,
+        package_cache_dir / micropip_path.name,
+    )
+
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{package_cache_dir}"}});
+        """
+    )
+
+    freezed_lockfile = selenium.run_js(
+        """
+        await pyodide.loadPackage("micropip");
+        return pyodide.runPython("import micropip; micropip.freeze()");
+        """
+    )
+
+    assert "Loaded micropip" in selenium.logs
+    # should not fallback to the cdn as the wheel is already in the package cache dir
+    assert "caching the wheel" not in selenium.logs
+
+    lockfile_content = json.loads(freezed_lockfile)
+    assert lockfile_content["packages"]["micropip"]["file_name"] == str(
+        package_cache_dir / micropip_path.name
     )

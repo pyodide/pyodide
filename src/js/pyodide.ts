@@ -245,8 +245,10 @@ export async function loadPyodide(
     throw new Error("Can't pass both lockFileContents and lockFileURL");
   }
   await initNodeModules();
+
+  // Relative paths cause havoc.
   let indexURL = options.indexURL || (await calculateDirname());
-  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
+  indexURL = resolvePath(indexURL);
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
@@ -263,6 +265,14 @@ export async function loadPyodide(
   options_.cdnUrl =
     options_.packageBaseUrl ??
     `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
+
+  if (options.packageCacheDir) {
+    let packageCacheDir = resolvePath(options.packageCacheDir);
+    if (!packageCacheDir.endsWith("/")) {
+      packageCacheDir += "/";
+    }
+    options.packageCacheDir = packageCacheDir;
+  }
 
   const default_config = {
     fullStdLib: false,
