@@ -1,20 +1,19 @@
-From 738e25376b23611b6077c71f5ef55eefa66dd217 Mon Sep 17 00:00:00 2001
+From 6f119c924bb218b3cddc9c0683ac2efc56ebf463 Mon Sep 17 00:00:00 2001
 From: ryanking13 <def6488@gmail.com>
-Date: Wed, 11 Jun 2025 08:54:37 +0000
-Subject: [PATCH 9/9] Fix iPad detection in wasm-gc
+Date: Wed, 11 Jun 2025 08:54:37 +0200
+Subject: [PATCH 09/10] Fix iPad detection in wasm-gc
 
 Fixes iPad detection logic in wasm-gc, which was malfunctioning in recent iPadOS + safari.
-
 ---
  Python/emscripten_trampoline.c | 9 ++++++++-
  1 file changed, 8 insertions(+), 1 deletion(-)
 
 diff --git a/Python/emscripten_trampoline.c b/Python/emscripten_trampoline.c
-index cc5047d6bd..64315ad5e9 100644
+index 1b5380a4031..980a2361b69 100644
 --- a/Python/emscripten_trampoline.c
 +++ b/Python/emscripten_trampoline.c
-@@ -71,7 +71,14 @@ EM_JS(CountArgsFunc, _PyEM_GetCountArgsPtr, (), {
- // )
+@@ -32,7 +32,14 @@ EM_JS(void, _PyEM_InitTrampoline_js, (), {
+ }
  
  function getPyEMCountArgsPtr() {
 -    let isIOS = globalThis.navigator && /iPad|iPhone|iPod/.test(navigator.platform);
@@ -30,5 +29,5 @@ index cc5047d6bd..64315ad5e9 100644
          return 0;
      }
 -- 
-2.49.0
+2.34.1
 

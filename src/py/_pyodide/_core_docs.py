@@ -1738,6 +1738,9 @@ class JsNull:
 
 #: The Python representation of the JavaScript null object.
 jsnull: JsNull = object.__new__(JsNull)
+from json import encoder
+
+encoder._JSNULL = jsnull  # type:ignore[attr-defined]
 
 
 __all__ = [
