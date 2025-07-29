@@ -459,7 +459,7 @@ export class PackageManager {
       // TODO: Node caching logic assumes relative here...
       if (!isAbsolute(fileName) && !this.installBaseUrl) {
         throw new Error(
-          `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided`,
+          `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided to loadPyodide.`,
         );
       }
 
