@@ -112,12 +112,12 @@ export async function loadPyodide(
     /**
      * The contents of a lockfile. If a string, it should be valid json and
      * ``JSON.parse()`` should return a ``Lockfile`` instance. See
-     * :js:interface:`Lockfile` for the schema.
+     * :js:interface:`~pyodide.Lockfile` for the schema.
      */
     lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
     /**
      * The base url relative to which a relative value of
-     * :js:attribute:`~pyodide.LockfilePackage.file_name` is interpreted. If
+     * :js:attr:`~pyodide.LockfilePackage.file_name` is interpreted. If
      * ``lockfileContents`` is provided, then ``lockFileContents`` must be
      * provided explicitly in order to install packages with relative paths.
      *
