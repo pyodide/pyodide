@@ -17,7 +17,7 @@ def ts_xref_formatter(_config, xref):
 
     name = xref.name
     if name == "Lockfile":
-        name = "~globalThis.Lockfile"
+        name = "~pyodide.Lockfile"
     if name == "TypedArray":
         name = "~pyodide.TypedArray"
     if name == "PyodideAPI":

@@ -477,7 +477,12 @@ export class PackageManager {
       DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
-      if (!IN_NODE || pkg.channel !== this.defaultChannel) {
+      if (
+        !IN_NODE ||
+        pkg.channel !== this.defaultChannel ||
+        !fileName ||
+        fileName.startsWith("/")
+      ) {
         throw e;
       }
     }
@@ -486,7 +491,6 @@ export class PackageManager {
     );
     // If we are IN_NODE, download the package from the cdn, then stash it into
     // the node_modules directory for future use.
-    // TODO(now) what if fileName isn't relative? Handle that here.
     let binary = await loadBinaryFile(this.cdnURL + fileName);
     this.logStdout(
       `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,

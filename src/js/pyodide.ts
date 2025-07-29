@@ -110,11 +110,23 @@ export async function loadPyodide(
      */
     lockFileURL?: string;
     /**
-     * TODO(now) fill this in
+     * The contents of a lockfile. If a string, it should be valid json and
+     * ``JSON.parse()`` should return a ``Lockfile`` instance. See
+     * :js:interface:`Lockfile` for the schema.
      */
     lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
     /**
-     * TODO(now) fill this in
+     * The base url relative to which a relative value of
+     * :js:attribute:`~pyodide.LockfilePackage.file_name` is interpreted. If
+     * ``lockfileContents`` is provided, then ``lockFileContents`` must be
+     * provided explicitly in order to install packages with relative paths.
+     *
+     * Otherwise, the default is calculated as follows:
+     *
+     * 1. If `lockFileURL` contains a ``/``, the default is everything before the last
+     *    ``/`` in ``lockFileURL``.
+     * 2. If in the browser, the default is ``location.toString()``.
+     * 3. Otherwise, the default is `'.'`.
      */
     packageBaseUrl?: string;
     /**
