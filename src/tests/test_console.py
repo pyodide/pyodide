@@ -456,7 +456,7 @@ def test_console_html(selenium):
         "... \n"
         ">>> Test()\n"
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]Traceback (most recent call last):]\n'
-        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_sho]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]rten]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]    text = repr(value)]\n'
         '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "<console>", line 3, in __repr__]\n'
