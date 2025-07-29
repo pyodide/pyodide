@@ -31,6 +31,8 @@ _August 04, 2025_
 - {{ Fix }} Fixed cancelled futures causing a traceback to be printed.
   {pr}`5784`
 
+- {{ Enhancement }} `json.dumps()` now encodes `jsnull` as `null`. {pr}`5804`
+
 ### JavaScript API
 
 - {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
