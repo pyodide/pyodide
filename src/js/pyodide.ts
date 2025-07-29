@@ -10,15 +10,24 @@ import {
 } from "./compat";
 
 import { createSettings } from "./emscripten-settings";
-import { version } from "./version";
+import { version as version_ } from "./version";
 
-import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData, FSType } from "./types";
+import type { PyodideAPI } from "./api.js";
+import type { Module, PackageData, FSType } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
-export type { PyodideInterface, TypedArray };
+export type { PyodideAPI };
 
-export { version, type PackageData };
+export { type PackageData };
+
+/**
+ * The Pyodide version.
+ *
+ * The version here is a Python version, following :pep:`440`. This is different
+ * from the version in ``package.json`` which follows the node package manager
+ * version convention.
+ */
+export const version: string = version_;
 
 declare function _createPyodideModule(
   settings: EmscriptenSettings,
@@ -210,7 +219,7 @@ export async function loadPyodide(
     /** @ignore */
     _snapshotDeserializer?: (obj: any) => any;
   } = {},
-): Promise<PyodideInterface> {
+): Promise<PyodideAPI> {
   await initNodeModules();
 
   // Relative paths cause havoc.

@@ -67,7 +67,7 @@ def _get_toplevel_objects(
     )
     PYPROXY_METHODS.update(methodPairs)
     for obj in ir_objects:
-        if obj.name == "PyodideAPI":
+        if obj.name == "PyodideAPI_":
             for member in obj.members:
                 member.documentation_root = True
             yield from _get_toplevel_objects(self, obj.members)
@@ -76,6 +76,8 @@ def _get_toplevel_objects(
             continue
         if doclet_is_private(obj):
             continue
+        if has_tag(obj, "hidetype"):
+            obj.type = None
         mod = get_obj_mod(obj)
         set_kind(obj)
         if obj.deppath == "./core/pyproxy" and isinstance(obj, Class):
@@ -118,8 +120,11 @@ def get_obj_mod(doclet: ir.TopLevel) -> str:
     filename = key[0]
     doclet.name = doclet.name.rpartition(".")[2]
 
+    if kind := doclet.block_tags.get("docgroup"):
+        return kind[0][0].text
+
     if filename == "pyodide.":
-        return "globalThis"
+        return "exports"
 
     if filename == "canvas.":
         return "pyodide.canvas"
