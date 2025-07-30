@@ -55,6 +55,7 @@ export type ConfigType = {
   enableRunUntilComplete: boolean;
   checkAPIVersion: boolean;
   BUILD_ID: string;
+  emscriptenSettings?: EmscriptenSettings;
 };
 
 /**
