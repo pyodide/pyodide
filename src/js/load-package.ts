@@ -153,7 +153,7 @@ export class PackageManager {
     if (IN_NODE) {
       // In node, we'll try first to load from the packageCacheDir and then fall
       // back to cdnURL
-      this.installBaseUrl = this.#api.config.packageCacheDir;
+      this.installBaseUrl = this.#api.config.packageCacheDir ?? API.config.packageBaseUrl;
       this.cdnURL = this.#api.config.cdnUrl;
     } else {
       // use packageBaseUrl as the base URL for the packages
@@ -477,7 +477,12 @@ export class PackageManager {
       DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
       return await loadBinaryFile(uri, fileSubResourceHash);
     } catch (e) {
-      if (!IN_NODE || pkg.channel !== this.defaultChannel) {
+      if (
+        !IN_NODE ||
+        pkg.channel !== this.defaultChannel ||
+        !fileName ||
+        fileName.startsWith("/")
+      ) {
         throw e;
       }
     }

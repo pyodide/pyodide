@@ -700,7 +700,7 @@ export class PyodideAPI {
    * file are resolved, or undefined.
    */
   static get lockfileBaseUrl(): string | undefined {
-    return API.config.packageBaseUrl;
+    return API.config.packageCacheDir ?? API.config.packageBaseUrl;
   }
 }
 
