@@ -43,6 +43,13 @@ _August 04, 2025_
   `lockFileURL` parameter of `loadPyodide()` did not work.
   {pr}`5750`
 
+- {{ Enhancement }} Added `lockfileContents` and `packageBaseURL` options to
+  `loadPyodide`. This allows providing a lock file as a `Promise` for the
+  contents rather than a URL. If `lockfileContents` is provided, then
+  `packageBaseURL` must also be provided in order to resolve relative paths in
+  the lockfile.
+  {pr}`5764`
+
 - {{ Enhancement }} Update typescript types to include `FS.unmount()`.
   {pr}`5788`
 
