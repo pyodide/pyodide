@@ -449,54 +449,68 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
         run_js("(a) => a.destroy()")(a)
 
 
+@run_in_pyodide
 def test_pyproxy_mixins1(selenium):
-    result = selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class NoImpls:
+        pass
+
+    class Await:
+        def __await__(self):
+            return iter([])
+
+    class Iter:
+        def __iter__(self):
+            return iter([])
+
+    class Next:
+        def __next__(self):
+            pass
+
+    class AwaitIter(Await, Iter):
+        pass
+
+    class AwaitNext(Await, Next):
+        pass
+
+    py_proxies = {
+        "noimpls": NoImpls(),
+        "awaitable": Await(),
+        "iterable": Iter(),
+        "iterator": Next(),
+        "awaititerable": AwaitIter(),
+        "awaititerator": AwaitNext(),
+    }
+    js_proxies = to_js(py_proxies)
+    result = run_js(
         """
-        let [noimpls, awaitable, iterable, iterator, awaititerable, awaititerator] = pyodide.runPython(`
-            class NoImpls: pass
-
-            class Await:
-                def __await__(self):
-                    return iter([])
-
-            class Iter:
-                def __iter__(self):
-                    return iter([])
-
-            class Next:
-                def __next__(self):
-                    pass
-
-            class AwaitIter(Await, Iter): pass
-
-            class AwaitNext(Await, Next): pass
-            from pyodide.ffi import to_js
-            to_js([NoImpls(), Await(), Iter(), Next(), AwaitIter(), AwaitNext()])
-        `);
-        let name_proxy = {noimpls, awaitable, iterable, iterator, awaititerable, awaititerator};
-        let result = {};
-        for(let [name, x] of Object.entries(name_proxy)){
-            let impls = {};
-            for (let [name, key] of [
-                ["then", "then"],
-                ["catch", "catch"],
-                ["finally_", "finally"],
-                ["iterable", Symbol.iterator],
-                ["iterator", "next"],
-            ]){
-                impls[name] = key in x;
+        (name_proxy) => {
+            let result = {};
+            for(let [name, x] of Object.entries(name_proxy)){
+                let impls = {};
+                for (let [name, key] of [
+                    ["then", "then"],
+                    ["catch", "catch"],
+                    ["finally_", "finally"],
+                    ["iterable", Symbol.iterator],
+                    ["iterator", "next"],
+                ]){
+                    impls[name] = key in x;
+                }
+                for (let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
+                    impls[name] = x instanceof pyodide.ffi[name];
+                }
+                result[name] = impls;
+                assert(() => !("asJsJson" in x));
+                x.destroy();
             }
-            for (let name of ["PyAwaitable", "PyIterable", "PyIterator"]){
-                impls[name] = x instanceof pyodide.ffi[name];
-            }
-            result[name] = impls;
-            assert(() => !("asJsJson" in x))
-            x.destroy();
+            return result;
         }
-        return result;
         """
-    )
-    assert result == dict(
+    )(js_proxies)
+    assert result.to_py() == dict(
         noimpls=dict(
             then=False,
             catch=False,
@@ -526,7 +540,6 @@ def test_pyproxy_mixins1(selenium):
         )
         | dict(PyAwaitable=True, PyIterable=True, PyIterator=True),
     )
-
 
 def test_pyproxy_mixins2(selenium):
     selenium.run_js(
