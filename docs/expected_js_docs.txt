@@ -93,6 +93,21 @@ js:function
 js:attribute
   pyodide.ERRNO_CODES
   pyodide.FS
+  pyodide.Lockfile.info
+  pyodide.Lockfile.packages
+  pyodide.LockfileInfo.abi_version
+  pyodide.LockfileInfo.arch
+  pyodide.LockfileInfo.platform
+  pyodide.LockfileInfo.python
+  pyodide.LockfileInfo.version
+  pyodide.LockfilePackage.depends
+  pyodide.LockfilePackage.file_name
+  pyodide.LockfilePackage.imports
+  pyodide.LockfilePackage.install_dir
+  pyodide.LockfilePackage.name
+  pyodide.LockfilePackage.package_type
+  pyodide.LockfilePackage.sha256
+  pyodide.LockfilePackage.version
   pyodide.PATH
   pyodide.PackageData.fileName
   pyodide.PackageData.name
@@ -119,6 +134,9 @@ js:attribute
   pyodide.pyodide_py
   pyodide.version
 js:interface
+  pyodide.Lockfile
+  pyodide.LockfileInfo
+  pyodide.LockfilePackage
   pyodide.PackageData
 js:typealias
   pyodide.TypedArray

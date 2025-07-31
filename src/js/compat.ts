@@ -25,6 +25,7 @@ declare var globalThis: {
   importScripts: (url: string) => void;
   document?: typeof document;
   fetch?: typeof fetch;
+  location?: URL;
 };
 
 /**
@@ -72,6 +73,10 @@ export async function initNodeModules() {
   (globalThis as any).require = function (mod: string): any {
     return node_modules[mod];
   };
+}
+
+export function isAbsolute(path: string): boolean {
+  return path.includes("://") || path.startsWith("/");
 }
 
 function node_resolvePath(path: string, base?: string): string {
@@ -322,8 +327,11 @@ export async function calculateDirname(): Promise<string> {
  * Ensure that the directory exists before trying to download files into it (Node.js only).
  * @param dir The directory to ensure exists
  */
-export async function ensureDirNode(dir: string) {
+export async function ensureDirNode(dir?: string) {
   if (!IN_NODE) {
+    return;
+  }
+  if (!dir) {
     return;
   }
 
@@ -336,4 +344,23 @@ export async function ensureDirNode(dir: string) {
       recursive: true,
     });
   }
+}
+
+/**
+ * Calculates the install base url for the package manager.
+ * exported for testing
+ * @param lockFileURL
+ * @returns the install base url
+ * @private
+ */
+export function calculateInstallBaseUrl(lockFileURL: string) {
+  // 1. If the lockfile URL includes a path with slash (file url in Node.js or http url in browser), use the directory of the lockfile URL
+  // 2. Otherwise, fallback to the current location
+  //    2.1. In the browser, use `location` to get the current location
+  //    2.2. In Node.js just use the pwd
+  return (
+    lockFileURL.substring(0, lockFileURL.lastIndexOf("/") + 1) ||
+    globalThis.location?.toString() ||
+    "."
+  );
 }
