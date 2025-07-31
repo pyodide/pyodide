@@ -541,6 +541,7 @@ def test_pyproxy_mixins1(selenium):
         | dict(PyAwaitable=True, PyIterable=True, PyIterator=True),
     )
 
+
 @run_in_pyodide
 def test_pyproxy_mixins2(selenium):
     from pyodide.code import run_js
@@ -570,7 +571,8 @@ def test_pyproxy_mixins2(selenium):
             assert(() => "asJsJson" in d);
             d.destroy();
         }
-        """)(d)
+        """
+    )(d)
 
 
 def test_pyproxy_mixins31(selenium):
