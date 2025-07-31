@@ -7,16 +7,24 @@ import {
   initNodeModules,
   resolvePath,
   loadLockFile,
+  calculateInstallBaseUrl,
 } from "./compat";
 
 import { createSettings } from "./emscripten-settings";
 import { version as version_ } from "./version";
 
 import type { PyodideAPI } from "./api.js";
-import type { Module, PackageData, FSType } from "./types";
+import type {
+  TypedArray,
+  Module,
+  PackageData,
+  FSType,
+  Lockfile,
+} from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
-export type { PyodideAPI };
+export type { PyodideAPI, TypedArray };
+export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
 export { type PackageData };
 
@@ -48,7 +56,7 @@ declare const BUILD_ID: string;
 export type ConfigType = {
   indexURL: string;
   packageCacheDir: string;
-  lockFileURL: string;
+  lockFileContents: Lockfile | string | Promise<Lockfile | string>;
   fullStdLib?: boolean;
   stdLibURL?: string;
   stdin?: () => string;
@@ -64,6 +72,8 @@ export type ConfigType = {
   enableRunUntilComplete: boolean;
   checkAPIVersion: boolean;
   BUILD_ID: string;
+  packageBaseUrl?: string;
+  cdnUrl: string;
 };
 
 /**
@@ -108,6 +118,26 @@ export async function loadPyodide(
      * Default: ```${indexURL}/pyodide-lock.json```
      */
     lockFileURL?: string;
+    /**
+     * The contents of a lockfile. If a string, it should be valid json and
+     * ``JSON.parse()`` should return a ``Lockfile`` instance. See
+     * :js:interface:`~pyodide.Lockfile` for the schema.
+     */
+    lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
+    /**
+     * The base url relative to which a relative value of
+     * :js:attr:`~pyodide.LockfilePackage.file_name` is interpreted. If
+     * ``lockfileContents`` is provided, then ``lockFileContents`` must be
+     * provided explicitly in order to install packages with relative paths.
+     *
+     * Otherwise, the default is calculated as follows:
+     *
+     * 1. If `lockFileURL` contains a ``/``, the default is everything before the last
+     *    ``/`` in ``lockFileURL``.
+     * 2. If in the browser, the default is ``location.toString()``.
+     * 3. Otherwise, the default is `'.'`.
+     */
+    packageBaseUrl?: string;
     /**
      * Load the full Python standard library. Setting this to false excludes
      * unvendored modules from the standard library.
@@ -220,6 +250,9 @@ export async function loadPyodide(
     _snapshotDeserializer?: (obj: any) => any;
   } = {},
 ): Promise<PyodideAPI> {
+  if (options.lockFileContents && options.lockFileURL) {
+    throw new Error("Can't pass both lockFileContents and lockFileURL");
+  }
   await initNodeModules();
 
   // Relative paths cause havoc.
@@ -228,7 +261,19 @@ export async function loadPyodide(
   if (!indexURL.endsWith("/")) {
     indexURL += "/";
   }
-  options.indexURL = indexURL;
+  const options_ = options as ConfigType;
+  if (!options.lockFileContents) {
+    const lockFileURL = options.lockFileURL ?? indexURL + "pyodide-lock.json";
+    options_.lockFileContents = loadLockFile(lockFileURL);
+    // packageBaseUrl isn't present, try using base location of lockFileUrl. If
+    // lockFileURL is relative, use location as the base URL.
+    options_.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
+  }
+  options_.indexURL = indexURL;
+  // cdnUrl only for node.
+  options_.cdnUrl =
+    options_.packageBaseUrl ??
+    `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
 
   if (options.packageCacheDir) {
     let packageCacheDir = resolvePath(options.packageCacheDir);
@@ -242,15 +287,15 @@ export async function loadPyodide(
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     env: {},
     packages: [],
+    packageCacheDir: options_.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
-  const config = Object.assign(default_config, options) as ConfigType;
+  const config = Object.assign(default_config, options_) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
   /**
    * `PyErr_Print()` will call `exit()` if the exception is a `SystemError`.
@@ -263,7 +308,7 @@ export async function loadPyodide(
   config.env.PYTHONINSPECT ??= "1";
   const emscriptenSettings = createSettings(config);
   const API = emscriptenSettings.API;
-  API.lockFilePromise = loadLockFile(config.lockFileURL);
+  API.lockFilePromise = Promise.resolve(options_.lockFileContents);
 
   // If the pyodide.asm.js script has been imported, we can skip the dynamic import
   // Users can then do a static import of the script in environments where
@@ -325,11 +370,6 @@ If you updated the Pyodide version, make sure you also updated the 'indexURL' pa
   );
   API.sys.path.insert(0, "");
 
-  if (!pyodide.version.includes("dev")) {
-    // Currently only used in Node to download packages the first time they are
-    // loaded. But in other cases it's harmless.
-    API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
-  }
   API._pyodide.set_excepthook();
   await API.packageIndexReady;
   // I think we want this initializeStreams call to happen after

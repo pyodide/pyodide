@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 
 from sphinx_js import ir
-from sphinx_js.ir import Class
+from sphinx_js.ir import Class, TypeXRefInternal
 from sphinx_js.typedoc import Analyzer as TsAnalyzer
 
 __all__ = ["ts_xref_formatter", "patch_sphinx_js"]
@@ -16,6 +16,10 @@ def ts_xref_formatter(_config, xref):
     from sphinx_pyodide.mdn_xrefs import JSDATA
 
     name = xref.name
+    if name == "Lockfile":
+        name = "~pyodide.Lockfile"
+    if name == "TypedArray":
+        name = "~pyodide.TypedArray"
     if name == "PyodideAPI":
         return ":ref:`PyodideAPI <js-api-pyodide>`"
     if name in JSDATA:
@@ -24,6 +28,8 @@ def ts_xref_formatter(_config, xref):
         return f":js:class:`~pyodide.ffi.{name}`"
     if name in ["ConcatArray", "IterableIterator", "unknown", "U"]:
         return f"``{name}``"
+    if isinstance(xref, TypeXRefInternal):
+        return f":js:{xref.kind}:`{name}`"
     return f":js:class:`{name}`"
 
 
