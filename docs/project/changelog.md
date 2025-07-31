@@ -24,6 +24,12 @@ myst:
 - {{ Fix }} Fixed a bug in Node.js which providing a relative path to `lockFileURL` parameter of `loadPyodide()` did not work.
   {pr}`5750`
 
+- {{ Enhancement }} Added `lockfileContents` and `packageBaseURL` options to
+  `loadPyodide`. This allows providing a lock file as a `Promise` for the
+  contents rather than a URL. If `lockfileContents` is provided, then
+  `packageBaseURL` must also be provided in order to resolve relative paths in
+  the lockfile.
+
 ## Version 0.28.0
 
 _July 4, 2025_
