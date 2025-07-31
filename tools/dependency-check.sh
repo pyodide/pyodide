@@ -53,7 +53,7 @@ check_cmake() {
 
   if (( "${CMAKE_MAJOR_VERSION}" != "3" )); then
     echo >&2 "Pyodide requires cmake 3."
-    echo >&2 "If you are on macOS brew would install higher version. Activating conda will fix it"
+    echo >&2 "If you are on macOS brew would install higher version. You can install it with 'pip install cmake==3.31'"
     exit 1
   fi
 }
