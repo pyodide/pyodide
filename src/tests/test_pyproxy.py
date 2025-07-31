@@ -541,33 +541,36 @@ def test_pyproxy_mixins1(selenium):
         | dict(PyAwaitable=True, PyIterable=True, PyIterator=True),
     )
 
+@run_in_pyodide
 def test_pyproxy_mixins2(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    d = {}
+    run_js(
         """
-        let d = pyodide.runPython("{}");
+        (d) => {
+            assert(() => !("prototype" in d));
+            assert(() => !("caller" in d));
+            assert(() => !("name" in d));
+            assert(() => "length" in d);
+            assert(() => d instanceof pyodide.ffi.PyDict);
+            assert(() => d instanceof pyodide.ffi.PyProxyWithLength);
+            assert(() => d instanceof pyodide.ffi.PyProxyWithHas);
+            assert(() => d instanceof pyodide.ffi.PyProxyWithGet);
+            assert(() => d instanceof pyodide.ffi.PyProxyWithSet);
 
-        assert(() => !("prototype" in d));
-        assert(() => !("caller" in d));
-        assert(() => !("name" in d));
-        assert(() => "length" in d);
-        assert(() => d instanceof pyodide.ffi.PyDict);
-        assert(() => d instanceof pyodide.ffi.PyProxyWithLength);
-        assert(() => d instanceof pyodide.ffi.PyProxyWithHas);
-        assert(() => d instanceof pyodide.ffi.PyProxyWithGet);
-        assert(() => d instanceof pyodide.ffi.PyProxyWithSet);
+            assert(() => "prototype" in d.__getitem__);
+            assert(() => d.__getitem__.prototype === undefined);
+            assert(() => !("length" in d.__getitem__));
+            assert(() => !("name" in d.__getitem__));
 
-        assert(() => "prototype" in d.__getitem__);
-        assert(() => d.__getitem__.prototype === undefined);
-        assert(() => !("length" in d.__getitem__));
-        assert(() => !("name" in d.__getitem__));
-
-        assert(() => d.$get.type === "builtin_function_or_method");
-        assert(() => d.get.type === undefined);
-        assert(() => d.set.type === undefined);
-        assert(() => "asJsJson" in d);
-        d.destroy();
-        """
-    )
+            assert(() => d.$get.type === "builtin_function_or_method");
+            assert(() => d.get.type === undefined);
+            assert(() => d.set.type === undefined);
+            assert(() => "asJsJson" in d);
+            d.destroy();
+        }
+        """)(d)
 
 
 def test_pyproxy_mixins31(selenium):
