@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+## Version 0.28.1
+
+_Insert Date Here_
+
 ### General
 
 - {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
