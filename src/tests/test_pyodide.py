@@ -280,9 +280,7 @@ def test_relaxed_call():
 
     with pytest.raises(
         TypeError,
-        match=re.escape(
-            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
+        match=r"missing a required positional-only argument: 'a'",
     ):
         relaxed_call(f4, a=2, b=7)
 
