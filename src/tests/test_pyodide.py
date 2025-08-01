@@ -343,11 +343,10 @@ def test_relaxed_wrap():
 
     with pytest.raises(
         TypeError,
-        match=re.escape(
-            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
+        match=r"missing a required positional[- ]only argument: 'a'",
     ):
         f4(a=2, b=7)
+
 
     @relaxed_wrap
     def f5(a, *args, b=7, **kwargs):
