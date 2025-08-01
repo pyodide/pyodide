@@ -2,7 +2,7 @@ import * as chai from "chai";
 import sinon from "sinon";
 import { PackageManager, toStringArray } from "../../load-package.ts";
 import { genMockAPI, genMockModule } from "./test-helper.ts";
-import { calculateInstallBaseUrl } from "../../load-package.ts";
+import { calculateInstallBaseUrl } from "../../compat";
 
 describe("PackageManager", () => {
   it("should initialize with API and Module", () => {
