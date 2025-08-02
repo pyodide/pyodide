@@ -692,7 +692,7 @@ export class PyProxy {
   }
   /**
    * Returns `str(o)` (unless `pyproxyToStringRepr: true` was passed to
-   * :js:func:`~globalThis.loadPyodide` in which case it will return `repr(o)`)
+   * :js:func:`~exports.loadPyodide` in which case it will return `repr(o)`)
    */
   toString(): string {
     let ptrobj = _getPtr(this);

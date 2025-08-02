@@ -217,7 +217,7 @@ resp = await js.fetch('example.com/some_api', to_js({
 ## How can I control the behavior of stdin / stdout / stderr?
 
 If you wish to override `stdin`, `stdout` or `stderr` for the entire Pyodide
-runtime, you can pass options to {js:func}`~globalThis.loadPyodide`: If
+runtime, you can pass options to {js:func}`~exports.loadPyodide`: If
 you say
 
 ```js

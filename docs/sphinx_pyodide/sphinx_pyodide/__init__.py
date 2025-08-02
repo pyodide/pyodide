@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from sphinx.addnodes import desc_signature
 from sphinx_js import renderers
 
 from .jsdoc import (
@@ -48,10 +49,33 @@ def remove_property_prefix():
     PyProperty.get_signature_prefix = get_signature_prefix
 
 
+def remove_js_module_prefix():
+    from sphinx.domains.javascript import JSObject
+
+    orig_handle_signature = JSObject.handle_signature
+
+    def handle_signature(self: JSObject, sig: str, signode: desc_signature) -> None:
+        orig_ref_context = self.env.ref_context
+        new_ref_context = orig_ref_context.copy()
+        objtype = signode.parent.get("objtype")
+        mod = new_ref_context.get("js:module")
+        if mod == "exports" or objtype in {"interface", "typealias"}:
+            # Remove module prefix.
+            new_ref_context["js:module"] = None
+        try:
+            self.env.ref_context = new_ref_context
+            return orig_handle_signature(self, sig, signode)
+        finally:
+            self.env.ref_context = orig_ref_context
+
+    JSObject.handle_signature = handle_signature
+
+
 def setup(app):
     fix_pyodide_ffi_path()
     remove_property_prefix()
     patch_sphinx_js()
+    remove_js_module_prefix()
     app.add_lexer("pyodide", PyodideLexer)
     app.add_lexer("html-pyodide", HtmlPyodideLexer)
     app.setup_extension("sphinx_js")
