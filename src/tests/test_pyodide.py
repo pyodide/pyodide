@@ -278,12 +278,9 @@ def test_relaxed_call():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_call.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    # Since Python 3.13.3, the TypeError message for missing positional-only arguments has changed.
+    # See: https://github.com/python/cpython/pull/130192
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
 
     def f5(a, *args, b=7, **kwargs):
@@ -343,12 +340,7 @@ def test_relaxed_wrap():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=re.escape(
-            "test_relaxed_wrap.<locals>.f4() missing 1 required positional argument: 'a'"
-        ),
-    ):
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         f4(a=2, b=7)
 
     @relaxed_wrap
