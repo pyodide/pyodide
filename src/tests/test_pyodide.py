@@ -278,8 +278,11 @@ def test_relaxed_call():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
+    # Since Python 3.13.3, the TypeError message for missing positional-only arguments has changed.
+    # See: https://github.com/python/cpython/pull/130192
     with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
+
 
     def f5(a, *args, b=7, **kwargs):
         return [a, args, b, kwargs]
