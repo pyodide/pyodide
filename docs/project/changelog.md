@@ -51,6 +51,13 @@ myst:
 - {{ Enhancement }} Update typescript types to include `FS.unmount()`.
   {pr}`5788`
 
+### Packages
+
+- {{ Enhancement }} New packages added:
+  - audioop-lts (0.2.1)
+  - cobs (1.2.1)
+  - PyMuPDF (1.26.3)
+
 ## Version 0.28.0
 
 _July 4, 2025_
