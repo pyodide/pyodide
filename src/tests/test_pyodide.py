@@ -278,10 +278,7 @@ def test_relaxed_call():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=r"missing .* argument: 'a'"
-    ):
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
 
     def f5(a, *args, b=7, **kwargs):
@@ -341,12 +338,8 @@ def test_relaxed_wrap():
     def f4(a, /, *args, b=7):
         return [a, args, b]
 
-    with pytest.raises(
-        TypeError,
-        match=r"missing .* argument: 'a'"
-    ):
+    with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         f4(a=2, b=7)
-
 
     @relaxed_wrap
     def f5(a, *args, b=7, **kwargs):
