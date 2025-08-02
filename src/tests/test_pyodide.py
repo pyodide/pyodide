@@ -283,7 +283,6 @@ def test_relaxed_call():
     with pytest.raises(TypeError, match=r"missing .* argument: 'a'"):
         relaxed_call(f4, a=2, b=7)
 
-
     def f5(a, *args, b=7, **kwargs):
         return [a, args, b, kwargs]
 
