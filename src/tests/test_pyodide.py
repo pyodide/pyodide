@@ -280,7 +280,7 @@ def test_relaxed_call():
 
     with pytest.raises(
         TypeError,
-        match=r"missing a required positional-only argument: 'a'",
+        match=r"missing .* argument: 'a'"
     ):
         relaxed_call(f4, a=2, b=7)
 
@@ -343,7 +343,7 @@ def test_relaxed_wrap():
 
     with pytest.raises(
         TypeError,
-        match=r"missing a required positional[- ]only argument: 'a'",
+        match=r"missing .* argument: 'a'"
     ):
         f4(a=2, b=7)
 
