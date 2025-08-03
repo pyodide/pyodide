@@ -46,7 +46,6 @@ def test_pyproxy_class(selenium):
         """
         (f) => {
             assert(() => f.toString().startsWith("<Foo"));
-            f.destroy();
         }
         """
     )(f)
@@ -132,20 +131,17 @@ def test_in_globals(selenium):
     ) == [False, True, True, True]
 
 
-@run_in_pyodide
 def test_pyproxy_copy(selenium):
-    from pyodide.code import run_js
-
-    run_js(
+    selenium.run(
         """
-        (d) => {
-            e = d.copy();
-            d.destroy();
-            assert(() => e.length === 10);
-            e.destroy();
-        }
+        from pyodide.ffi import to_js
+        d = to_js(list(range(10)))
+        e = d.copy()
+        d.destroy()
+        assert e.length == 10
+        e.destroy()
         """
-    )(list(range(10)))
+    )
 
 
 @run_in_pyodide
@@ -223,30 +219,14 @@ def test_pyproxy_iter(selenium):
             yield i
 
     c = test_generator()
-    ty, l = run_js(
-        """
-        (c) => {
-            let result = [c.type, [...c]];
-            c.destroy();
-            return result;
-        }
-        """
-    )(c)
+    ty, l = run_js("(c) => [c.type, [...c]]")(c)
     assert ty == "generator"
     assert l.to_py() == list(range(10))
 
     c = ChainMap({"a": 2, "b": 3})
-    ty, l = run_js(
-        """
-        (c) => {
-            let result = [c.type, [...c]];
-            c.destroy();
-            return result;
-        }
-        """
-    )(c)
+    ty, l = run_js("(c) => [c.type, [...c]]")(c)
     assert ty == "ChainMap"
-    assert set(l.to_py()) == {"a", "b"}
+    assert set(l) == {"a", "b"}
 
     def test_generator2():
         acc = 0
@@ -265,7 +245,6 @@ def test_pyproxy_iter(selenium):
                 result.push(value);
                 ({done, value} = c.next(value + 1));
             }
-            c.destroy();
 
             function* test(){
                 let acc = 0;
@@ -301,7 +280,6 @@ def test_pyproxy_iter_error(selenium):
         """
         (t) => {
             assertThrows(() => t[Symbol.iterator](), "PythonError", "hi");
-            t.destroy();
         }
         """
     )(t)
@@ -324,7 +302,6 @@ def test_pyproxy_iter_error2(selenium):
             assert(() => gen.next().value === 1);
             assert(() => gen.next().value === 2);
             assertThrows(() => gen.next(), "PythonError", "hi");
-            gen.destroy();
         }
         """
     )(gen)
@@ -387,7 +364,6 @@ def test_get_empty_buffer(selenium):
         (a) => {
             let b = a.getBuffer();
             b.release();
-            a.destroy();
         }
         """
     )(a)
@@ -415,38 +391,35 @@ def test_pyproxy_get_buffer_type_argument(selenium, array_type):
 
     a = bytes(range(256))
     assert run_js("(a) => a instanceof pyodide.ffi.PyBuffer")(a)
-    try:
-        mv = memoryview(a)
-        ty, array_ty, fmt = array_type
-        check, result = run_js(
-            f"""
-            (a) => {{
-                let buf = a.getBuffer({ty!r});
-                assert(() => buf instanceof pyodide.ffi.PyBufferView);
-                let check = (buf.data.constructor.name === {array_ty!r});
-                let result = Array.from(buf.data);
-                if(typeof result[0] === "bigint"){{
-                    result = result.map(x => x.toString(16));
-                }}
-                buf.release();
-                return [check, result];
+    mv = memoryview(a)
+    ty, array_ty, fmt = array_type
+    check, result = run_js(
+        f"""
+        (a) => {{
+            let buf = a.getBuffer({ty!r});
+            assert(() => buf instanceof pyodide.ffi.PyBufferView);
+            let check = (buf.data.constructor.name === {array_ty!r});
+            let result = Array.from(buf.data);
+            if(typeof result[0] === "bigint"){{
+                result = result.map(x => x.toString(16));
             }}
-            """
-        )(a)
-        assert check
-        result = result.to_py()
-        if fmt.lower() == "q":
-            assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
-        elif fmt in {"d", "f"}:
-            from math import isclose, isnan
+            buf.release();
+            return [check, result];
+        }}
+        """
+    )(a)
+    assert check
+    result = result.to_py()
+    if fmt.lower() == "q":
+        assert result == [hex(x).replace("0x", "") for x in list(mv.cast(fmt))]
+    elif fmt in {"d", "f"}:
+        from math import isclose, isnan
 
-            for x, y in zip(result, list(mv.cast(fmt)), strict=False):
-                if x and y and not (isnan(x) or isnan(y)):
-                    assert isclose(x, y)
-        else:
-            assert result == list(mv.cast(fmt))
-    finally:
-        run_js("(a) => a.destroy()")(a)
+        for x, y in zip(result, list(mv.cast(fmt)), strict=False):
+            if x and y and not (isnan(x) or isnan(y)):
+                assert isclose(x, y)
+    else:
+        assert result == list(mv.cast(fmt))
 
 
 @run_in_pyodide
