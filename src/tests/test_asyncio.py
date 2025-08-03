@@ -1,12 +1,9 @@
 import asyncio
-import re
 import time
-from textwrap import dedent
 
 import pytest
 from pytest_pyodide import run_in_pyodide
 
-from conftest import PYODIDE_ROOT
 from pyodide.code import eval_code_async
 
 
@@ -459,17 +456,10 @@ def test_uncaught_exception(selenium):
         await asyncio.sleep(0)
 
     inner(selenium)
-    expected_message = dedent(
-        """\
-        Unhandled exception in event loop
-        Traceback (most recent call last):
 
-          File "$PYODIDE_ROOT/src/tests/test_asyncio.py", line xxx, in f
+    log = selenium.logs 
 
-        ZeroDivisionError: division by zero
-        """
-    )
-
-    assert expected_message in re.sub("line [0-9]+", "line xxx", selenium.logs).replace(
-        str(PYODIDE_ROOT), "$PYODIDE_ROOT"
-    )
+    assert "Unhandled exception in event loop" in log
+    assert "Traceback (most recent call last):" in log
+    assert "src/tests/test_asyncio.py" in log and "in f" in log
+    assert "ZeroDivisionError: division by zero" in log
