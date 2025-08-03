@@ -457,7 +457,7 @@ def test_uncaught_exception(selenium):
 
     inner(selenium)
 
-    log = selenium.logs 
+    log = selenium.logs
 
     assert "Unhandled exception in event loop" in log
     assert "Traceback (most recent call last):" in log
