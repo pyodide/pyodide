@@ -240,14 +240,13 @@ class ConsoleFuture(Future[Any]):
     A future with extra fields used as the return value for :py:class:`Console` APIs.
 
     Example:
-        >>> # doctest: +SKIP
-        >>> from pyodide.console import Console
-        >>> console = Console()
-        >>> future = console.push("print('Hello, World!')")
-        >>> print(future.syntax_check)
+        >>> from pyodide.console import Console  # doctest: +SKIP
+        >>> console = Console()  # doctest: +SKIP
+        >>> future = console.push("print('Hello, World!')")  # doctest: +SKIP
+        >>> print(future.syntax_check)  # doctest: +SKIP
         complete
-        >>> import asyncio
-        >>> result = asyncio.run(future)
+        >>> import asyncio  # doctest: +SKIP
+        >>> result = asyncio.run(future)  # doctest: +SKIP
         Hello, World!
     """
 
@@ -595,12 +594,11 @@ class PyodideConsole(Console):
     before running the code.
 
     Example:
-        >>> # doctest: +SKIP
-        >>> from pyodide.console import PyodideConsole
-        >>> console = PyodideConsole()
+        >>> from pyodide.console import PyodideConsole  # doctest: +SKIP
+        >>> console = PyodideConsole()  # doctest: +SKIP
         >>> # This will automatically load numpy before execution
-        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))")
-        >>> print(future.syntax_check)
+        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))")  # doctest: +SKIP
+        >>> print(future.syntax_check)  # doctest: +SKIP
         complete
     """
 
