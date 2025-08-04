@@ -1,6 +1,9 @@
 package:
   name: atomicwrites
   version: 1.4.1
+  tag:
+    - core
+    - pytest
   top-level:
     - atomicwrites
 source:

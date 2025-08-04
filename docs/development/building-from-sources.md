@@ -155,7 +155,9 @@ To build on MacOS with Homebrew, you need:
 - System command line tools
   `xcode-select --install`
 - [Homebrew](https://brew.sh/) for installing dependencies
-- `brew install coreutils cmake autoconf automake libtool libffi ccache`
+- `brew install coreutils autoconf automake libtool libffi ccache`
+- Pyodide requires CMake3 but Homebrew installs CMake4.
+  Use pip for cmake `pip install cmake==3.31`
 - It is also recommended installing the GNU patch and
   GNU sed (`brew install gpatch gnu-sed`)
   and [re-defining them temporarily as `patch` and
@@ -179,26 +181,44 @@ After installing the build prerequisites, run from the command line:
 make
 ```
 
-(partial-builds)=
+(building-full-distribution)=
 
-## Partial builds
+## Building a full Pyodide distribution
 
-To build a subset of available packages in Pyodide, set the environment variable
-`PYODIDE_PACKAGES` to a comma separated list of packages. For instance,
+By running `make`, you build a minimal Pyodide distribution that includes only
+the core packages. Pyodide contains a large number of packages, and building
+all of them takes a long time. If you want to build a full distribution, or make a custom
+distribution with a subset of packages, there are two options:
 
+1. Use pre-built packages from the `pyodide-recipes` repository.
+
+Packages included in the Pyodide distribution are built separately and stored in
+the [`pyodide-recipes`](https://github.com/pyodide/pyodide-recipes) repository.
+
+Setting `ENABLE_PREBUILT_PACKAGES` environment variable to `1` will download
+and install pre-built packages from the `pyodide-recipes` repository.
+
+```bash
+ENABLE_PREBUILT_PACKAGES=1 make
 ```
-PYODIDE_PACKAGES="toolz,attrs" make
+
+2. Build a subset of packages from the `pyodide-recipes` repository.
+
+If you want to build a subset of packages, you can clone the
+`pyodide-recipes` repository and build the packages you need.
+
+```bash
+git clone https://github.com/pyodide/pyodide-recipes
+
+# Build the packages you need
+pyodide build-recipes "numpy, scipy, toolz, attrs" --recipe-dir pyodide-recipes/packages --install
 ```
 
 Dependencies of the listed packages will be built automatically as well. The
-package names must match the folder names in `packages/` exactly; in particular
+package names must match the folder names in `pyodide-recipes/packages` exactly; in particular
 they are case-sensitive.
 
-If `PYODIDE_PACKAGES` is not set, a minimal set of packages necessary to run
-the core test suite is installed, including "micropip", "pyparsing", "pytz",
-"packaging", "Jinja2", "regex". This is equivalent to setting
-`PYODIDE_PACKAGES='tag:core'`
-meta-package. Other supported meta-packages are,
+There are also some meta-packages that can be used to build a subset of packages:
 
 - "tag:min-scipy-stack": includes the "core" meta-package as well as some
   core packages from the Scientific Python stack and their dependencies:

@@ -1,0 +1,40 @@
+From e16f400d460cfd921192b5d32a52329bfe037f96 Mon Sep 17 00:00:00 2001
+From: Hood Chatham <roberthoodchatham@gmail.com>
+Date: Sat, 17 May 2025 15:15:02 -0400
+Subject: [PATCH 2/4] Don't check exports for being valid C/C++ identifiers in
+ side modules
+
+This unbreaks Rust side modules, which have been broken since
+https://github.com/emscripten-core/emscripten/pull/23563
+was merged.
+
+Upstream Emscripten PR:
+https://github.com/emscripten-core/emscripten/pull/24359
+---
+ tools/emscripten.py | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+diff --git a/tools/emscripten.py b/tools/emscripten.py
+index 43a199740..9b60796de 100644
+--- a/tools/emscripten.py
++++ b/tools/emscripten.py
+@@ -562,9 +562,13 @@ def finalize_wasm(infile, outfile, js_syms):
+   # These are any exports that were not requested on the command line and are
+   # not known auto-generated system functions.
+   unexpected_exports = [e for e in metadata.all_exports if shared.is_user_export(e)]
+-  for n in unexpected_exports:
+-    if not n.isidentifier():
+-      exit_with_error(f'invalid export name: {n}')
++  # Rust side modules may have exported symbols that are not valid
++  # identifiers. They are meant to be called from native code in the main
++  # module not from JavaScript anyways, so don't perform this check on them.
++  if not settings.SIDE_MODULE:
++    for n in unexpected_exports:
++      if not n.isidentifier():
++        exit_with_error(f'invalid export name: {n}')
+   unexpected_exports = [asmjs_mangle(e) for e in unexpected_exports]
+   unexpected_exports = [e for e in unexpected_exports if e not in expected_exports]
+ 
+-- 
+2.34.1
+

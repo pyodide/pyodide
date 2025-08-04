@@ -799,19 +799,34 @@ def test_pythonexc2js(selenium):
 @run_in_pyodide
 def test_js2python_null(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import jsnull
 
-    assert run_js("null") is None
-    assert run_js("[null]")[0] is None
-    assert run_js("() => null")() is None
-    assert run_js("({a: null})").a is None
-    assert run_js("new Map([['a', null]])")["a"] is None
-    assert run_js("[null, null, null]").to_py() == [None, None, None]
-    assert run_js("new Map([['a', null]])").to_py() == {"a": None}
+    assert run_js("null") is jsnull
+    assert run_js("[null]")[0] is jsnull
+    assert run_js("() => null")() is jsnull
+    assert run_js("({a: null})").a is jsnull
+    assert run_js("new Map([['a', null]])")["a"] is jsnull
+    assert run_js("[null, null, null]").to_py() == [jsnull, jsnull, jsnull]
+    assert run_js("new Map([['a', null]])").to_py() == {"a": jsnull}
+
+
+@run_in_pyodide
+def test_json_dumps_null(selenium):
+    import json
+
+    from pyodide.ffi import jsnull
+
+    assert json.dumps(jsnull) == "null"
+    assert (
+        json.dumps([jsnull, jsnull, {jsnull: 1, 1: jsnull}])
+        == '[null, null, {"null": 1, "1": null}]'
+    )
 
 
 @run_in_pyodide
 def test_js2python_basic(selenium):
     from pyodide.code import run_js
+    from pyodide.ffi import jsnull
 
     t = run_js(
         """
@@ -840,7 +855,7 @@ def test_js2python_basic(selenium):
     assert t.jsnumber0 == 42 and isinstance(t.jsnumber0, int)
     assert t.jsnumber1 == 42.5 and isinstance(t.jsnumber1, float)
     assert t.jsundefined is None
-    assert t.jsnull is None
+    assert t.jsnull is jsnull
     assert t.jstrue is True
     assert t.jsfalse is False
     assert t.jspython is open

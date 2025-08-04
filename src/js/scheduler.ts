@@ -1,7 +1,7 @@
 import {
   IN_BROWSER_MAIN_THREAD,
   IN_NODE,
-  IN_BROWSER_WEB_WORKER,
+  IN_DENO,
   IN_SAFARI,
 } from "./environments";
 
@@ -64,6 +64,19 @@ function scheduleCallbackImmediate(callback: () => void) {
     // node has setImmediate, let's use it
     setImmediate(callback);
   } else if (
+    !IN_SAFARI &&
+    !IN_DENO &&
+    typeof globalThis.MessageChannel === "function"
+  ) {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+      channel.port1.onmessage = null;
+      channel.port1.close();
+      channel.port2.close();
+      callback();
+    };
+    channel.port2.postMessage("");
+  } else if (
     IN_BROWSER_MAIN_THREAD &&
     typeof globalThis.postMessage === "function"
   ) {
@@ -73,14 +86,6 @@ function scheduleCallbackImmediate(callback: () => void) {
       "*",
     );
     nextTaskHandle++;
-  } else if (
-    IN_BROWSER_WEB_WORKER &&
-    !IN_SAFARI &&
-    typeof MessageChannel === "function"
-  ) {
-    const channel = new MessageChannel();
-    channel.port1.onmessage = () => callback();
-    channel.port2.postMessage("");
   } else {
     // fallback to setTimeout if nothing else is available
     setTimeout(callback, 0);

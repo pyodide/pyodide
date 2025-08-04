@@ -186,7 +186,7 @@ wrap_exception()
   FAIL_IF_NULL(typestr_utf8);
 
   JsVal jserror = new_error(typestr_utf8, formatted_exception, exc);
-  FAIL_IF_JS_NULL(jserror);
+  FAIL_IF_JS_ERROR(jserror);
 
 #ifdef DEBUG_F
   log_python_error(jserror);
