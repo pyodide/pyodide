@@ -245,8 +245,8 @@ class ConsoleFuture(Future[Any]):
         >>> future = console.push("print('Hello, World!')")
         >>> print(future.syntax_check)
         complete
-        >>> result = await future
-        >>> print(result)
+        >>> import asyncio
+        >>> result = asyncio.run(future)
         Hello, World!
     """
 
@@ -595,11 +595,11 @@ class PyodideConsole(Console):
 
     Example:
         >>> from pyodide.console import PyodideConsole
-        >>> from pyodide import CodeRunner
-        >>> code = CodeRunner("import numpy as np; print(np.array([1, 2, 3]))")
         >>> console = PyodideConsole()
-        >>> future = await console.runcode(code.source, code)
-        [1 2 3]
+        >>> # This will automatically load numpy before execution
+        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))")
+        >>> print(future.syntax_check)
+        complete
     """
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
