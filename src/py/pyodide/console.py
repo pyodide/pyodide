@@ -236,7 +236,20 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
-    """A future with extra fields used as the return value for :py:class:`Console` apis."""
+    """
+    A future with extra fields used as the return value for :py:class:`Console` APIs.
+
+    Example:
+        >>> from pyodide.console import Console
+        >>> console = Console()
+        >>> future = console.push("print('Hello, World!')")
+        >>> print(future.syntax_check)
+        complete
+        >>> result = await future
+        >>> print(result)
+        Hello, World!
+    """
+
 
     syntax_check: ConsoleFutureStatus
     """
@@ -577,7 +590,19 @@ class Console:
 
 
 class PyodideConsole(Console):
-    """A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports` before running the code."""
+    """
+    A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports`
+    before running the code.
+
+    Example:
+        >>> from pyodide.console import PyodideConsole
+        >>> from pyodide import CodeRunner
+        >>> code = CodeRunner("import numpy as np; print(np.array([1, 2, 3]))")
+        >>> console = PyodideConsole()
+        >>> future = await console.runcode(code.source, code)
+        [1 2 3]
+    """
+
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
         """Execute a code object.
