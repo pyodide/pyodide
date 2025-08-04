@@ -19,7 +19,7 @@ def ts_xref_formatter(_config, xref):
     if name == "Lockfile":
         name = "~pyodide.Lockfile"
     if name == "TypedArray":
-        name = "~pyodide.TypedArray"
+        name = "~pyodide.ffi.TypedArray"
     if name == "PyodideAPI":
         return ":ref:`PyodideAPI <js-api-pyodide>`"
     if name in JSDATA:
@@ -73,7 +73,7 @@ def _get_toplevel_objects(
     )
     PYPROXY_METHODS.update(methodPairs)
     for obj in ir_objects:
-        if obj.name == "PyodideAPI":
+        if obj.name == "PyodideAPI_":
             for member in obj.members:
                 member.documentation_root = True
             yield from _get_toplevel_objects(self, obj.members)
@@ -82,6 +82,8 @@ def _get_toplevel_objects(
             continue
         if doclet_is_private(obj):
             continue
+        if has_tag(obj, "hidetype"):
+            obj.type = None
         mod = get_obj_mod(obj)
         set_kind(obj)
         if obj.deppath == "./core/pyproxy" and isinstance(obj, Class):
@@ -128,7 +130,7 @@ def get_obj_mod(doclet: ir.TopLevel) -> str:
         return kind[0][0].text
 
     if filename == "pyodide.":
-        return "globalThis"
+        return "exports"
 
     if filename == "canvas.":
         return "pyodide.canvas"

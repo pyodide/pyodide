@@ -36,7 +36,7 @@ to a site serving current versions of these files. The simplest way to serve the
 required files is to use a CDN, such as `https://cdn.jsdelivr.net/pyodide`.
 
 Update the `sw.js` sample so that it has a valid URL for `pyodide.js`, and sets
-{js:func}`indexURL <globalThis.loadPyodide>` to the location of the supporting
+{js:func}`indexURL <exports.loadPyodide>` to the location of the supporting
 files.
 
 You'll also need to serve `data.json`, a JSON file containing a simple object -

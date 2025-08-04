@@ -1,18 +1,24 @@
 # JavaScript API
 
-Backward compatibility of the API is not guaranteed at this point.
+## Top Level Exports
 
-## Globals
+These can be imported via `import { name } from "pyodide.mjs";`. If you can't
+use the es6 module, `pyodide.js` places {js:func}`~exports.loadPyodide` on
+{js:data}`globalThis`. The other top level exports cannot be accessed from
+`pyodide.js`.
 
 ```{eval-rst}
-.. js:autosummary:: globalThis
+.. js:autosummary:: exports
 
-.. js:automodule:: globalThis
+.. js:automodule:: exports
 ```
 
 (js-api-pyodide)=
 
 ## pyodide
+
+This section documents the `pyodide` API object, which is returned by
+{js:func}`loadPyodide`.
 
 ```{eval-rst}
 .. js:autosummary:: pyodide
@@ -34,7 +40,7 @@ import type { PyProxy } from "pyodide/ffi";
 ```
 
 If you want to do an instance check, you'll need to access the type via the
-Pyodide API returned from {js:func}`~globalThis.loadPyodide`:
+Pyodide API returned from {js:func}`~exports.loadPyodide`:
 
 ```js
 const pyodide = loadPyodide();
