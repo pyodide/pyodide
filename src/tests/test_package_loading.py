@@ -9,7 +9,7 @@ from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
 from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH, PYODIDE_ROOT
+from conftest import DIST_PATH, PYODIDE_ROOT, only_node
 
 
 def get_micropip_wheel() -> Path:
@@ -674,6 +674,45 @@ def test_custom_lockfile(selenium_standalone_noload):
         custom_lockfile.unlink()
 
 
+@pytest.mark.xfail_browsers(node="Some fetch trouble")
+@pytest.mark.skip_refcount_check
+@pytest.mark.skip_pyproxy_check
+@pytest.mark.requires_dynamic_linking
+def test_custom_lockfile_from_indexedDB(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    lock = selenium.run_js(
+        """
+        let pyodide = await loadPyodide({fullStdLib: false, packages: ["micropip"]});
+        await pyodide.loadPackage("micropip")
+        return pyodide.runPython(`
+            import micropip
+            micropip.freeze()
+        `);
+        """
+    )
+
+    selenium.run_js(
+        f"""
+        localStorage.setItem("pyodide-lock.json", {json.dumps(lock)});
+        """
+    )
+
+    selenium.run_js(
+        """
+        lockfile = localStorage.getItem("pyodide-lock.json");
+        lockfileURL = URL.createObjectURL(new Blob([lockfile], {type: "application/json"}));
+
+        let pyodide2 = await loadPyodide({
+            fullStdLib: false,
+            lockFileURL: lockfileURL,
+            packages: ["micropip"],
+        });
+
+        await pyodide2.runPython(`import micropip`)
+        """
+    )
+
+
 def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
     selenium = selenium_standalone_noload
 
@@ -713,7 +752,134 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
             f"""
             let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
             await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
-            return pyodide.runPython("import dummy_pkg;")
+            return pyodide.runPython("import dummy_pkg")
+            """
+        )
+
+
+def test_lock_file_contents_error(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    message = "Error: Can't pass both lockFileContents and lockFileURL"
+    with pytest.raises(selenium.JavascriptException, match=message):
+        selenium.run_js(
+            """
+            await loadPyodide({
+                lockFileContents: "x",
+                lockFileURL: "y"
+            });
+            """
+        )
+
+
+def test_lock_file_contents_relative_file_name(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+    message = 'Lock file file_name for package "dummy_pkg" is relative path "dummy_pkg-0.1.0-py3-none-any.whl" but no packageBaseUrl provided'
+    content = json.dumps(lockfile_content)
+    selenium.run_js(
+        """
+        const py = await loadPyodide({
+            lockFileContents: %s,
+        });
+        await py.loadPackage("dummy_pkg");
+        """
+        % content
+    )
+    assert message in selenium.logs
+
+
+def test_lockfilecontents_package_base_url(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+    lockfile_content_json = json.dumps(lockfile_content)
+
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            base_url = str(tmp_path)
+        else:
+            base_url = f"http://{url}:{port}/"
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg")
+            """
+        )
+
+
+def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    dummy_pkg = {
+        "name": "dummy_pkg",
+        "version": "0.1.0",
+        "unvendor_tests": False,
+        "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+        "depends": [],
+        "install_dir": "site",
+        "package_type": "package",
+        "imports": [],
+    }
+
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            base_url = str(tmp_path / test_file_name)
+        else:
+            base_url = f"http://{url}:{port}/{test_file_name}"
+        dummy_pkg["file_name"] = base_url
+
+        lockfile_content = json.loads(orig_lockfile.read_text())
+        lockfile_content["packages"] = {"dummy-pkg": dummy_pkg}
+        lockfile_content_json = json.dumps(lockfile_content)
+
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg")
             """
         )
 
@@ -956,4 +1122,70 @@ def test_micropip_install_non_normalized_package(selenium_standalone):
         await micropip.install("test-dummy-unNormalized")
         import dummy_unnormalized
         """
+    )
+
+
+@only_node
+def test_package_cache_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+
+    # copy one package in the distribution to the package cache dir
+    dummy_wheel = DIST_PATH / "test_dummy-1.0.0-py2.py3-none-any.whl"
+    shutil.copy(
+        dummy_wheel,
+        package_cache_dir / dummy_wheel.name,
+    )
+
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{package_cache_dir}"}});
+        """
+    )
+
+    selenium.run_js(
+        """
+        await pyodide.loadPackage("test-dummy");
+        return pyodide.runPython("import dummy");
+        """
+    )
+
+    assert "Loaded test-dummy" in selenium.logs
+    # should not fallback to the cdn as the wheel is already in the package cache dir
+    assert "caching the wheel" not in selenium.logs
+
+
+@only_node
+def test_micropip_freeze_with_package_cache_dir(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+
+    micropip_path = get_micropip_wheel()
+    shutil.copy(
+        micropip_path,
+        package_cache_dir / micropip_path.name,
+    )
+
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{package_cache_dir}"}});
+        """
+    )
+
+    freezed_lockfile = selenium.run_js(
+        """
+        await pyodide.loadPackage("micropip");
+        return pyodide.runPython("import micropip; micropip.freeze()");
+        """
+    )
+
+    assert "Loaded micropip" in selenium.logs
+    # should not fallback to the cdn as the wheel is already in the package cache dir
+    assert "caching the wheel" not in selenium.logs
+
+    lockfile_content = json.loads(freezed_lockfile)
+    assert lockfile_content["packages"]["micropip"]["file_name"] == str(
+        package_cache_dir / micropip_path.name
     )

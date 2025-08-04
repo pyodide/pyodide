@@ -15,6 +15,44 @@ myst:
 
 # Change Log
 
+## Version 0.28.1
+
+_August 04, 2025_
+
+### General
+
+- {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
+
+- {{ Fix }} The python CLI is now included in the `pyodide-core` release
+  artifact. {pr}`5747`
+
+### Python API
+
+- {{ Fix }} Fixed cancelled futures causing a traceback to be printed.
+  {pr}`5784`
+
+- {{ Enhancement }} `json.dumps()` now encodes `jsnull` as `null`. {pr}`5804`
+
+### JavaScript API
+
+- {{ Fix }} Fixed a bug where preloading packages using the `packages` parameter
+  of `loadPyodide()` did not work when `lockfileURL` was set to a custom URL.
+  {pr}`5737`
+
+- {{ Fix }} Fixed a bug in Node.js which providing a relative path to
+  `lockFileURL` parameter of `loadPyodide()` did not work.
+  {pr}`5750`
+
+- {{ Enhancement }} Added `lockfileContents` and `packageBaseURL` options to
+  `loadPyodide`. This allows providing a lock file as a `Promise` for the
+  contents rather than a URL. If `lockfileContents` is provided, then
+  `packageBaseURL` must also be provided in order to resolve relative paths in
+  the lockfile.
+  {pr}`5764`
+
+- {{ Enhancement }} Update typescript types to include `FS.unmount()`.
+  {pr}`5788`
+
 ## Version 0.28.0
 
 _July 4, 2025_
@@ -36,18 +74,17 @@ _July 4, 2025_
   compile time and link time.
   {pr}`5320`
 
-- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad + Safari. {pr}`5695`
+- {{ Fix }} Fixed a regression in 0.27.1 which caused Pyodide to crash on iPad +
+  Safari. {pr}`5695`
 
-- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2).
-  WebGL 1 is still available but must be required explicitly
-  (for example, by using OpenGL ES 2.0)
-  {pr}`5708`
+- {{ Enhancement }} Enable WebGL 2 (-sMAX_WEBGL_VERSION=2). WebGL 1 is still
+  available but must be required explicitly (for example, by using OpenGL ES
+  2.0) {pr}`5708`
 
 ### Python API
 
 - {{ Enhancement }} `time.sleep()` will now stack switch if possible. This
-  allows other events on the event loop to be processed during the
-  sleep.
+  allows other events on the event loop to be processed during the sleep.
   {pr}`5686`
 
 - {{ Enhancement }} Added `JsProxy.to_weakref()` as a helper method equivalent
@@ -58,19 +95,18 @@ _July 4, 2025_
 
 ### JavaScript API
 
-- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the
-  base URL for the packages is now calculated from the lockfile URL, not from
-  the `indexURL`.
+- {{ Breaking }} When `lockfileURL` is given to `loadPyodide`, the base URL for
+  the packages is now calculated from the lockfile URL, not from the `indexURL`.
   {pr}`5652`
+
 - {{ Enhancement }} Added support for custom fetchers to `pyfetch`. {pr}`5653`
 
 - {{ Enhancement }} Property access on a `PyProxy` of a dictionary will now fall
   back to `__getitem__()` if there is no attribute of the given name.
   {pr}`5674`
 
-- {{ Fix }} Fixes a bug that `pyodide.loadPackage` not respecting `messageCallback` and `errorCallback` options
-  in some cases.
-  {pr}`5692`
+- {{ Fix }} Fixes a bug where `pyodide.loadPackage()` did not respect
+  `messageCallback` and `errorCallback` options in some cases. {pr}`5692`
 
 - {{ Breaking }} JavaScript `null` is now converted to `pyodide.ffi.jsnull` and
   not to `None`. If you want to opt into the old behavior you can pass
@@ -111,7 +147,6 @@ _July 4, 2025_
   {pr}`5374` {pr}`5398`
 
 - {{ Enhancement }} New packages added:
-
   - aiohappyeyeballs (2.6.1)
   - blosc2 (3.2.0)
   - diskcache (5.6.3)
@@ -2519,7 +2554,6 @@ _August 3rd, 2021_
 ### Standard library
 
 - {{ API }} The following standard library modules are now available as standalone packages
-
   - distlib
 
   They are loaded by default in `loadPyodide`, however this behavior
@@ -3046,7 +3080,6 @@ _Apr 12, 2019_
 **User improvements:**
 
 - Support for built-in modules:
-
   - `sqlite`, `crypt`
 
 - New packages: `mne`

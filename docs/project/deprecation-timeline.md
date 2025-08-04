@@ -56,7 +56,7 @@ deprecation warnings. More details about each item can often be found in the
   behavior, you can
 
   - call `os.chdir("/")` in Python to change working directory or
-  - call {js:func}`~globalThis.loadPyodide` with the `homedir="/"`
+  - call {js:func}`~exports.loadPyodide` with the `homedir="/"`
     argument
 
 - When a JavaScript function is called from Python, PyProxy arguments and return
