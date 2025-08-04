@@ -250,7 +250,6 @@ class ConsoleFuture(Future[Any]):
         Hello, World!
     """
 
-
     syntax_check: ConsoleFutureStatus
     """
     The status of the future. The values mean the following:
@@ -602,7 +601,6 @@ class PyodideConsole(Console):
         >>> future = await console.runcode(code.source, code)
         [1 2 3]
     """
-
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
         """Execute a code object.
