@@ -19,7 +19,7 @@ def ts_xref_formatter(_config, xref):
     if name == "Lockfile":
         name = "~pyodide.Lockfile"
     if name == "TypedArray":
-        name = "~pyodide.TypedArray"
+        name = "~pyodide.ffi.TypedArray"
     if name == "PyodideAPI":
         return ":ref:`PyodideAPI <js-api-pyodide>`"
     if name in JSDATA:
