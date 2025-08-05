@@ -22,7 +22,7 @@ type ParsedPackageData = {
 };
 
 // Regexp for validating package name and URI
-const packageUriRegex = /^.*?([^\/]*)\.whl$/;
+const packageUriRegex = /^.*?([^/]*)\.whl$/;
 
 /**
  * Extract package name from a wheel URI.
