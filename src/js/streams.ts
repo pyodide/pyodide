@@ -181,7 +181,11 @@ const stream_ops: StreamOps = {
       throw new FS.ErrnoError(cDefs.ENODEV);
     }
     stream.devops = devops;
-    stream.tty = stream.devops.isatty;
+    stream.tty = stream.devops.isatty
+      ? {
+          ops: {},
+        }
+      : undefined;
     stream.seekable = false;
   },
   close: function (stream) {

@@ -1,6 +1,9 @@
 package:
   name: coverage
   version: 7.6.12
+  tag:
+    - core
+    - pytest
   top-level:
     - coverage
 source:

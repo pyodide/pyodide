@@ -85,6 +85,10 @@ For a full list of current and historical sponsors, please see the [Funding](htt
 
 Pyodide also has a large number of small donors. If you’re interested in supporting Pyodide, check out our [OpenCollective](https://opencollective.com/pyodide) and [GitHub Sponsors](https://github.com/sponsors/pyodide) pages.
 
+### Special thanks
+
+- [BrowserStack](https://www.browserstack.com/): This project is tested with BrowserStack
+
 ## License
 
 Pyodide uses the [Mozilla Public License Version

@@ -4,6 +4,7 @@ package:
   pinned: true
   tag:
     - min-scipy-stack
+    - cross-build
   top-level:
     - scipy
 
@@ -136,11 +137,11 @@ build:
 requirements:
   host:
     - numpy
-    - openblas
-    - boost-cpp
+    - libopenblas
+    - libboost
   run:
     - numpy
-    - openblas
+    - libopenblas
   executable:
     - gfortran
 

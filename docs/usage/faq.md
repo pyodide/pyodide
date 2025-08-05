@@ -217,7 +217,7 @@ resp = await js.fetch('example.com/some_api', to_js({
 ## How can I control the behavior of stdin / stdout / stderr?
 
 If you wish to override `stdin`, `stdout` or `stderr` for the entire Pyodide
-runtime, you can pass options to {js:func}`~globalThis.loadPyodide`: If
+runtime, you can pass options to {js:func}`~exports.loadPyodide`: If
 you say
 
 ```js
@@ -300,7 +300,7 @@ This can happen for two reasons,
    case it needs to be packaged in Pyodide. Please open [an
    issue](https://github.com/pyodide/pyodide/issues) after checking that an
    issue for this package doesn't exist already. Then follow
-   {ref}`new-packages`.
+   {ref}`building-packages`.
 
 ## How can I change the behavior of {js:func}`~pyodide.runPython` and {js:func}`~pyodide.runPythonAsync`?
 

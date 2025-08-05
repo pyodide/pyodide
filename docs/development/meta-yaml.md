@@ -157,7 +157,7 @@ But if you are building a static or shared library,
 you need to set this to `static_library` or `shared_library` respectively.
 
 Static and shared libraries are not Python packages themselves,
-but are needed for other python packages. For libraries,
+but are needed for other Python packages. For libraries,
 the script specified in the `build/script` section is run to
 compile the library.
 

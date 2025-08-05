@@ -1,11 +1,14 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
-import { type PyodideInterface } from "./api";
+import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 
+/**
+ * @docgroup pyodide.ffi
+ */
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -189,7 +192,9 @@ export type FSNode = {
 
 /** @hidden */
 export type FSStream = {
-  tty?: boolean;
+  tty?: {
+    ops: object;
+  };
   seekable?: boolean;
   stream_ops: FSStreamOps;
   node: FSNode;
@@ -256,6 +261,7 @@ export interface FSType {
   utime: (path: string, atime: number, mtime: number) => void;
   rmdir: (path: string) => void;
   mount: (type: any, opts: any, mountpoint: string) => any;
+  unmount: (mountpoint: string) => any;
   write: (
     stream: FSStream,
     buffer: any,
@@ -267,23 +273,10 @@ export interface FSType {
   ErrnoError: { new (errno: number): Error };
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
   syncfs(dir: boolean, oncomplete: (val: void) => void): void;
-  findObject(a: string, dontResolveLastLink?: boolean): any;
-  readFile(a: string): Uint8Array;
 }
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
-
-/** @hidden */
-export type ReadFileType = (path: string) => Uint8Array;
-
-// File System-like type which can be passed to
-// Module.loadDynamicLibrary or Module.loadWebAssemblyModule
-/** @hidden */
-export type LoadDynlibFS = {
-  readFile: ReadFileType;
-  findObject: (path: string, dontResolveLastLink: boolean) => any;
-};
 
 type DSO = any;
 
@@ -311,26 +304,15 @@ export interface Module {
   canvas?: HTMLCanvasElement;
   addRunDependency(id: string): void;
   removeRunDependency(id: string): void;
-  reportUndefinedSymbols(): void;
-  loadDynamicLibrary(
-    lib: string,
-    options?: {
-      loadAsync?: boolean;
-      nodelete?: boolean;
-      allowUndefined?: boolean;
-      global?: boolean;
-      fs: LoadDynlibFS;
-    },
-    localScope?: object | null,
-    handle?: number,
-  ): void;
   getDylinkMetadata(binary: Uint8Array | WebAssembly.Module): {
     neededDynlibs: string[];
   };
 
   ERRNO_CODES: { [k: string]: number };
   stringToNewUTF8(x: string): number;
+  stringToUTF8OnStack: (str: string) => number;
   _compat_to_string_repr: number;
+  _compat_null_to_none: number;
   js2python_convert: (
     obj: any,
     options: {
@@ -357,20 +339,101 @@ export interface Module {
   exitCode: number | undefined;
   ExitStatus: { new (exitCode: number): Error };
   _Py_Version: number;
+  _print_stdout: (ptr: number) => void;
+  _print_stderr: (ptr: number) => void;
+  _free: (ptr: number) => void;
+  stackSave: () => number;
+  stackRestore: (ptr: number) => void;
+  promiseMap: {
+    free(id: number): void;
+  };
+  _emscripten_dlopen_promise(lib: number, flags: number): number;
+  getPromise(p: number): Promise<any>;
 }
 
-type LockfileInfo = {
-  arch: "wasm32" | "wasm64";
+/**
+ * The lockfile platform info. The ``abi_version`` field is used to check if the
+ * lockfile is compatible with the interpreter. The remaining fields are
+ * informational.
+ */
+export interface LockfileInfo {
+  /**
+   * Machine architecture. At present, only can be wasm32. Pyodide has no wasm64
+   * build.
+   */
+  arch: "wasm32";
+  /**
+   * The ABI version is structured as ``yyyy_patch``. For the lockfile to be
+   * compatible with the current interpreter this field must match exactly with
+   * the ABI version of the interpreter.
+   */
+  abi_version: string;
+  /**
+   * The Emscripten versions for instance, `emscripten_4_0_9`. Different
+   * Emscripten versions have different ABIs so if this changes ``abi_version``
+   * must also change.
+   */
   platform: string;
+  /**
+   * The Pyodide version the lockfile was made with. Informational only, has no
+   * compatibility implications. May be removed in the future.
+   */
   version: string;
+  /**
+   * The Python version this lock file was made with. If the minor version
+   * changes (e.g, 3.12 to 3.13) this changes the ABI and the ``abi_version``
+   * must change too. Patch versions do not imply a change to the
+   * ``abi_version``.
+   */
   python: string;
-};
+}
 
-/** @hidden */
-export type Lockfile = {
+/**
+ * A package entry in the lock file.
+ */
+export interface LockfilePackage {
+  /**
+   * The unnormalized name of the package.
+   */
+  name: string;
+  version: string;
+  /**
+   * The file name or url of the package wheel. If it's relative, it will be
+   * resolved with respect to ``packageBaseUrl``. If there is no
+   * ``packageBaseUrl``, attempting to install a package with a relative
+   * ``file_name``  will fail.
+   */
+  file_name: string;
+  package_type: PackageType;
+  /**
+   * The installation directory. Will be ``site`` except for certain system
+   * dynamic libraries that need to go on the global LD_LIBRARY_PATH.
+   */
+  install_dir: "site" | "dynlib";
+  /**
+   * Integrity. Must be present unless ``checkIntegrity: false`` is passed to
+   * ``loadPyodide``.
+   */
+  sha256: string;
+  /**
+   * The set of imports provided by this package as best we can tell. Used by
+   * :js:func:`pyodide.loadPackagesFromImports` to work out what packages to
+   * install.
+   */
+  imports: string[];
+  /**
+   * The set of dependencies of this package.
+   */
+  depends: string[];
+}
+
+/**
+ * The type of a package lockfile.
+ */
+export interface Lockfile {
   info: LockfileInfo;
-  packages: Record<string, InternalPackageData>;
-};
+  packages: Record<string, LockfilePackage>;
+}
 
 /** @hidden */
 export type PackageType =
@@ -395,20 +458,6 @@ export type LoadedPackages = Record<string, string>;
 /**
  * @hidden
  */
-export type InternalPackageData = {
-  name: string;
-  version: string;
-  file_name: string;
-  package_type: PackageType;
-  install_dir: string;
-  sha256: string;
-  imports: string[];
-  depends: string[];
-};
-
-/**
- * @hidden
- */
 export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
@@ -416,7 +465,7 @@ export type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData: InternalPackageData;
+  packageData: LockfilePackage;
 };
 
 /** @hidden */
@@ -425,11 +474,10 @@ export interface API {
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
-  public_api: PyodideInterface;
+  public_api: PyodideAPI;
   config: ConfigType;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
-  setCdnUrl: (url: string) => void;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
   initializeStreams: (
     stdin?: InFuncType | undefined,
@@ -449,6 +497,7 @@ export interface API {
   errorConstructors: Map<string, ErrorConstructor>;
   deserializeError: (name: string, message: string, stack: string) => Error;
   setPyProxyToStringMethod: (useRepr: boolean) => void;
+  setCompatNullToNone: (compat: boolean) => void;
 
   _pyodide: any;
   pyodide_py: any;
@@ -467,14 +516,13 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<Lockfile>;
+  lockFilePromise: Promise<Lockfile | string>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
-  lockfile_packages: Record<string, InternalPackageData>;
-  repodata_packages: Record<string, InternalPackageData>;
-  repodata_info: LockfileInfo;
+  lockfile_packages: Record<string, LockfilePackage>;
+  flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
   loadBinaryFile: (
@@ -486,11 +534,6 @@ export interface API {
     global: boolean,
     searchDirs?: string[] | undefined,
     readFileFunc?: (path: string) => Uint8Array,
-  ) => Promise<void>;
-  // TODO: Remove this from the API after migrating micropip to use the `install` API instead.
-  loadDynlibsFromPackage: (
-    pkg: { file_name: string },
-    dynlibPaths: string[],
   ) => Promise<void>;
   install: (
     buffer: Uint8Array,
@@ -512,10 +555,11 @@ export interface API {
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
-  ) => PyodideInterface;
+  ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
+  abiVersion: string;
   pyVersionTuple: [number, number, number];
   LiteralMap: any;
   sitePackages: string;
@@ -534,17 +578,22 @@ export type PackageManagerAPI = Pick<
   | "sitepackages"
   | "defaultLdLibraryPath"
 > & {
-  config: Pick<ConfigType, "indexURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden
  */
 export type PackageManagerModule = Pick<
   Module,
-  "reportUndefinedSymbols" | "PATH" | "loadDynamicLibrary" | "LDSO"
-> & {
-  FS: Pick<
-    FSType,
-    "readdir" | "lookupPath" | "isDir" | "findObject" | "readFile"
-  >;
-};
+  | "PATH"
+  | "LDSO"
+  | "stringToNewUTF8"
+  | "stringToUTF8OnStack"
+  | "_print_stderr"
+  | "_print_stdout"
+  | "stackSave"
+  | "stackRestore"
+  | "_emscripten_dlopen_promise"
+  | "getPromise"
+  | "promiseMap"
+>;

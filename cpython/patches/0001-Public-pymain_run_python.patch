@@ -1,7 +1,7 @@
-From cefd199c4434444faad9dab7846369bc5e4462e6 Mon Sep 17 00:00:00 2001
+From 6ebddb6b930268d54359eebc5454fd75b28f236c Mon Sep 17 00:00:00 2001
 From: Hood Chatham <roberthoodchatham@gmail.com>
 Date: Sun, 17 Jul 2022 14:40:39 +0100
-Subject: [PATCH 1/8] Public pymain_run_python
+Subject: [PATCH 01/10] Public pymain_run_python
 
 Discussion here:
 https://discuss.python.org/t/unstable-api-for-pymain-run-python-run-python-cli-but-dont-finalize-interpreter/44675

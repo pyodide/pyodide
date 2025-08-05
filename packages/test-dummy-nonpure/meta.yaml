@@ -1,0 +1,9 @@
+package:
+  name: test-dummy-nonpure
+  version: 1.0.0
+  tag:
+    - pyodide.test
+  top-level:
+    - dummy_nonpure
+source:
+  path: src

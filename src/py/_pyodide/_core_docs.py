@@ -17,7 +17,7 @@ from collections.abc import (
 )
 from functools import reduce
 from types import TracebackType
-from typing import IO, Any, Generic, ParamSpec, Protocol, TypeVar, overload
+from typing import IO, Any, Generic, ParamSpec, Protocol, Self, TypeVar, overload
 
 from .docs_argspec import docs_argspec
 
@@ -418,6 +418,29 @@ class JsProxy(metaclass=_JsProxyMetaClass):
         infinite recurse. With it, we can successfully convert ``p`` to a list
         such that ``l[0] is l``.
         """
+        raise NotImplementedError
+
+    def to_weakref(self) -> "JsWeakRef[Self]":
+        """Wrap the proxy in a JavaScript WeakRef.
+
+        The WeakRef has deref() method which either returns the original object
+        or None if it has been freed.
+
+        This is just a helper method for:
+
+        .. code-block:: python
+
+            from js import WeakRef
+
+            weakref = WeakRef.new(jsproxy)
+        """
+        raise NotImplementedError
+
+
+class JsWeakRef(JsProxy, Generic[T]):
+    """A PyProxy of a JavaSCript WeakRef."""
+
+    def deref(self) -> T | None:
         raise NotImplementedError
 
 
@@ -1426,9 +1449,9 @@ def to_js(
     /,
     *,
     depth: int = -1,
-    pyproxies: JsProxy | None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool,
-    dict_converter: None,
+    dict_converter: None = None,
     default_converter: ToJsConverter | None = None,
     eager_converter: ToJsConverter | None = None,
 ) -> JsMap[Any, Any]: ...
@@ -1697,6 +1720,29 @@ def can_run_sync() -> bool:
 __name__ = _save_name
 del _save_name
 
+
+class JsNull:
+    """The type of the Python representation of the JavaScript null object"""
+
+    def __new__(cls):
+        return jsnull
+
+    def __repr__(self):
+        return "jsnull"
+
+    def __bool__(self):
+        return False
+
+    typeof = "object"
+
+
+#: The Python representation of the JavaScript null object.
+jsnull: JsNull = object.__new__(JsNull)
+from json import encoder
+
+encoder._JSNULL = jsnull  # type:ignore[attr-defined]
+
+
 __all__ = [
     "ConversionError",
     "InternalError",
@@ -1705,6 +1751,7 @@ __all__ = [
     "JsAsyncIterable",
     "JsAsyncIterator",
     "JsBuffer",
+    "JsCallableDoubleProxy",
     "JsDoubleProxy",
     "JsException",
     "JsFetchResponse",
@@ -1719,6 +1766,7 @@ __all__ = [
     "JsCallable",
     "JsOnceCallable",
     "JsTypedArray",
+    "JsWeakRef",
     "ToJsConverter",
     "run_sync",
     "can_run_sync",
@@ -1726,4 +1774,6 @@ __all__ = [
     "create_proxy",
     "destroy_proxies",
     "to_js",
+    "JsNull",
+    "jsnull",
 ]
