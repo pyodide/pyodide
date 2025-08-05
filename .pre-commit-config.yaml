@@ -85,10 +85,12 @@ repos:
         exclude: (^packages/.*/setup.py|/src|pyodide-build)
         additional_dependencies: *mypy-deps
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v4.0.0-alpha.8"
+  - repo: https://github.com/biomejs/pre-commit
+    rev: "v0.6.1"
     hooks:
-      - id: prettier
+      - id: biome-format
+        additional_dependencies: ["@biomejs/biome@2.1.1"]
+        types_or: [javascript, ts]
 
 ci:
   autoupdate_schedule: "quarterly"
