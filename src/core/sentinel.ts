@@ -40,10 +40,10 @@ type SentinelInstance<T> = {
 /**
  * @private
  */
-export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
+export async function getSentinelImport(): Promise<SentinelInstance<symbol>> {
   const sentinelInstance = await sentinelInstancePromise;
   if (sentinelInstance) {
-    return sentinelInstance.exports as SentinelInstance<Symbol>;
+    return sentinelInstance.exports as SentinelInstance<symbol>;
   }
   const error_marker = Symbol("error marker");
   return {

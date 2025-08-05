@@ -1,4 +1,4 @@
-export {};
+
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
 import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";

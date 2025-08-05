@@ -50,7 +50,7 @@ export function initializeNativeFS(module: Module) {
       // reuse all of the core MEMFS functionality
       return MEMFS.mount.apply(null, arguments);
     },
-    syncfs: async (mount: any, populate: Boolean, callback: Function) => {
+    syncfs: async (mount: any, populate: boolean, callback: Function) => {
       try {
         const local = nativeFSAsync.getLocalSet(mount);
         const remote = await nativeFSAsync.getRemoteSet(mount);
