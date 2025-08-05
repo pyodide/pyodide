@@ -1549,7 +1549,7 @@ def to_js(
     >>> js_object
     [object Map]
     >>> js_object.keys(), js_object.values()
-    KeysView([object Map]) ValuesView([object Map])
+    (KeysView([object Map]), ValuesView([object Map]))
     >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
     [('age', 20), ('name', 'john')]
 
@@ -1569,7 +1569,7 @@ def to_js(
     >>> [item for item in js_object]
     [age,20, name,john]
     >>> js_object.toString()
-    age,20,name,john
+    'age,20,name,john'
 
     >>> class Bird: pass # doctest: +RUN_IN_PYODIDE
     >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None
