@@ -89,7 +89,6 @@ repos:
     rev: "v1.9.0"
     hooks:
       - id: oxlint
-        args: [--fix]
         types_or: [javascript, jsx, ts, tsx]
 
 ci:
