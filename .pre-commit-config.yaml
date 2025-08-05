@@ -85,10 +85,12 @@ repos:
         exclude: (^packages/.*/setup.py|/src|pyodide-build)
         additional_dependencies: *mypy-deps
 
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: "v4.0.0-alpha.8"
+  - repo: https://github.com/oxc-project/mirrors-oxlint
+    rev: "v1.9.0"
     hooks:
-      - id: prettier
+      - id: oxlint
+        args: [--fix]
+        types_or: [javascript, jsx, ts, tsx]
 
 ci:
   autoupdate_schedule: "quarterly"
