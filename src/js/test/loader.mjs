@@ -4,12 +4,12 @@
  *  enough for now to keep node from crashing.
  */
 export function load(url, context, nextLoad) {
-	if (url.endsWith(".wat")) {
-		return {
-			format: "json",
-			source: "null",
-			shortCircuit: true,
-		};
-	}
-	return nextLoad(url);
+      if (url.endsWith(".wat")) {
+            return {
+                  format: "json",
+                  source: "null",
+                  shortCircuit: true,
+            };
+      }
+      return nextLoad(url);
 }
