@@ -15,59 +15,59 @@
  */
 
 interface _AbortSignal extends AbortSignal {
-  /** @private */
-  __controller?: AbortController;
+	/** @private */
+	__controller?: AbortController;
 }
 
 const registry = new FinalizationRegistry(
-  (callback: () => any) => void callback(),
+	(callback: () => any) => void callback(),
 );
 
 function abortSignalAny(signals: AbortSignal[]) {
-  const controller = new AbortController();
-  for (const signal of signals) {
-    if (signal.aborted) {
-      controller.abort(signal.reason);
-      return controller.signal;
-    }
-  }
-  const controllerRef = new WeakRef(controller);
-  const eventListenerPairs: [WeakRef<AbortSignal>, () => void][] = [];
-  let followingCount = signals.length;
+	const controller = new AbortController();
+	for (const signal of signals) {
+		if (signal.aborted) {
+			controller.abort(signal.reason);
+			return controller.signal;
+		}
+	}
+	const controllerRef = new WeakRef(controller);
+	const eventListenerPairs: [WeakRef<AbortSignal>, () => void][] = [];
+	let followingCount = signals.length;
 
-  signals.forEach((signal) => {
-    const signalRef = new WeakRef(signal);
-    function abort() {
-      controllerRef.deref()?.abort(signalRef.deref()?.reason);
-    }
-    signal.addEventListener("abort", abort);
-    eventListenerPairs.push([signalRef, abort]);
-    registry.register(signal, () => !--followingCount && clear(), signal);
-  });
+	signals.forEach((signal) => {
+		const signalRef = new WeakRef(signal);
+		function abort() {
+			controllerRef.deref()?.abort(signalRef.deref()?.reason);
+		}
+		signal.addEventListener("abort", abort);
+		eventListenerPairs.push([signalRef, abort]);
+		registry.register(signal, () => !--followingCount && clear(), signal);
+	});
 
-  function clear() {
-    eventListenerPairs.forEach(([signalRef, abort]) => {
-      const signal = signalRef.deref();
-      if (signal) {
-        signal.removeEventListener("abort", abort);
-        registry.unregister(signal);
-      }
-      const controller = controllerRef.deref();
-      if (controller) {
-        registry.unregister(controller.signal);
-        delete (controller.signal as _AbortSignal).__controller;
-      }
-    });
-  }
+	function clear() {
+		eventListenerPairs.forEach(([signalRef, abort]) => {
+			const signal = signalRef.deref();
+			if (signal) {
+				signal.removeEventListener("abort", abort);
+				registry.unregister(signal);
+			}
+			const controller = controllerRef.deref();
+			if (controller) {
+				registry.unregister(controller.signal);
+				delete (controller.signal as _AbortSignal).__controller;
+			}
+		});
+	}
 
-  const { signal }: { signal: _AbortSignal } = controller;
+	const { signal }: { signal: _AbortSignal } = controller;
 
-  registry.register(signal, clear, signal);
-  signal.addEventListener("abort", clear);
+	registry.register(signal, clear, signal);
+	signal.addEventListener("abort", clear);
 
-  signal.__controller = controller; // keep a strong reference
+	signal.__controller = controller; // keep a strong reference
 
-  return signal;
+	return signal;
 }
 
 export default abortSignalAny;

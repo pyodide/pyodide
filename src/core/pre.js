@@ -9,11 +9,11 @@ API.abiVersion = "2025_0";
 Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
-  try {
-    return Object.prototype.toString.call(x);
-  } catch (e) {
-    return "";
-  }
+	try {
+		return Object.prototype.toString.call(x);
+	} catch (e) {
+		return "";
+	}
 }
 API.getTypeTag = getTypeTag;
 
@@ -29,15 +29,15 @@ API.getTypeTag = getTypeTag;
  * prop: a string or symbol
  */
 function hasProperty(obj, prop) {
-  try {
-    while (obj) {
-      if (Object.hasOwn(obj, prop)) {
-        return true;
-      }
-      obj = Object.getPrototypeOf(obj);
-    }
-  } catch (e) {}
-  return false;
+	try {
+		while (obj) {
+			if (Object.hasOwn(obj, prop)) {
+				return true;
+			}
+			obj = Object.getPrototypeOf(obj);
+		}
+	} catch (e) {}
+	return false;
 }
 
 /**
@@ -50,31 +50,31 @@ function hasProperty(obj, prop) {
  * prop: a string or symbol
  */
 function hasMethod(obj, prop) {
-  try {
-    return typeof obj[prop] === "function";
-  } catch (e) {
-    return false;
-  }
+	try {
+		return typeof obj[prop] === "function";
+	} catch (e) {
+		return false;
+	}
 }
 
 const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr;
 API.pyproxyIsAlive = pyproxyIsAlive;
 
 const errNoRet = () => {
-  throw new Error(
-    "Assertion error: control reached end of function without return",
-  );
+	throw new Error(
+		"Assertion error: control reached end of function without return",
+	);
 };
 
 // This is factored out for testing purposes.
 function isPromise(obj) {
-  try {
-    // clang-format off
-    return typeof obj?.then === "function";
-    // clang-format on
-  } catch (e) {
-    return false;
-  }
+	try {
+		// clang-format off
+		return typeof obj?.then === "function";
+		// clang-format on
+	} catch (e) {
+		return false;
+	}
 }
 API.isPromise = isPromise;
 
@@ -85,28 +85,28 @@ API.isPromise = isPromise;
  * the backing ArrayBuffer, we return a Uint8Array that shows the same slice.
  */
 function bufferAsUint8Array(arg) {
-  if (ArrayBuffer.isView(arg)) {
-    return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
-  } else {
-    return new Uint8Array(arg);
-  }
+	if (ArrayBuffer.isView(arg)) {
+		return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
+	} else {
+		return new Uint8Array(arg);
+	}
 }
 API.typedArrayAsUint8Array = bufferAsUint8Array;
 
 Module.iterObject = function* (object) {
-  for (let k in object) {
-    if (Object.hasOwn(object, k)) {
-      yield k;
-    }
-  }
+	for (let k in object) {
+		if (Object.hasOwn(object, k)) {
+			yield k;
+		}
+	}
 };
 
 function wasmFunctionType(wasm_func) {
-  if (!WebAssembly.Function) {
-    throw new Error("No type reflection");
-  }
-  if (WebAssembly.Function.type) {
-    return WebAssembly.Function.type(wasm_func);
-  }
-  return wasm_func.type();
+	if (!WebAssembly.Function) {
+		throw new Error("No type reflection");
+	}
+	if (WebAssembly.Function.type) {
+		return WebAssembly.Function.type(wasm_func);
+	}
+	return wasm_func.type();
 }
