@@ -6,23 +6,23 @@
 import { initSuspenders } from "./suspenders.mjs";
 
 export {
-  promisingApply,
-  promisingRunMain,
-  createPromising,
-  validSuspender,
-  suspenderGlobal,
+	promisingApply,
+	promisingRunMain,
+	createPromising,
+	validSuspender,
+	suspenderGlobal,
 } from "./suspenders.mjs";
 export { StackState } from "./stack_state.mjs";
 
 let canConstructWasm = true;
 try {
-  // Check that WebAssembly.Module constructor works -- if dynamic eval is
-  // disabled it might raise.
-  // This is the smallest valid wasm module -- only the magic number and wasm
-  // version.
-  new WebAssembly.Module(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
+	// Check that WebAssembly.Module constructor works -- if dynamic eval is
+	// disabled it might raise.
+	// This is the smallest valid wasm module -- only the magic number and wasm
+	// version.
+	new WebAssembly.Module(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0]));
 } catch (e) {
-  canConstructWasm = false;
+	canConstructWasm = false;
 }
 
 // wasm-feature-detect uses `"Suspender" in WebAssembly` feature detect JSPI. It
@@ -37,5 +37,5 @@ Module.oldJspiSupported = oldJspiSupported;
 Module.jspiSupported = jspiSupported;
 
 if (jspiSupported) {
-  Module.preRun.push(initSuspenders);
+	Module.preRun.push(initSuspenders);
 }

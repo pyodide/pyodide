@@ -12,19 +12,19 @@ const outfile = join(__dirname, "stack_switching.out.js");
 const globalName = "StackSwitching";
 
 const config = {
-  entryPoints: [join(__dirname, "stack_switching.mjs")],
-  outfile,
-  format: "iife",
-  bundle: true,
-  globalName,
-  metafile: true,
+	entryPoints: [join(__dirname, "stack_switching.mjs")],
+	outfile,
+	format: "iife",
+	bundle: true,
+	globalName,
+	metafile: true,
 };
 
 // First build as "esm" to get the list of exports. The metafile doesn't list
 // exports except when we set `format: "esm"`. Setting bundle: false saves a
 // tiny amount of time on this pass.
 const { metafile } = await build(
-  Object.assign({}, config, { format: "esm", bundle: false }),
+	Object.assign({}, config, { format: "esm", bundle: false }),
 );
 
 // The file name is the metafile.outputs key. It is relative to the current

@@ -8,29 +8,29 @@
  * @returns The result of the callback function (or a Promise if callback is async)
  */
 export function withContext<T>(
-  setup: () => void,
-  cleanup: () => void,
-  callback: () => T,
+	setup: () => void,
+	cleanup: () => void,
+	callback: () => T,
 ): T {
-  setup();
-  let result: T;
-  try {
-    result = callback();
-  } catch (e) {
-    cleanup();
-    throw e;
-  }
-  if (result instanceof Promise) {
-    return result.finally(() => cleanup()) as T;
-  }
+	setup();
+	let result: T;
+	try {
+		result = callback();
+	} catch (e) {
+		cleanup();
+		throw e;
+	}
+	if (result instanceof Promise) {
+		return result.finally(() => cleanup()) as T;
+	}
 
-  cleanup();
-  return result;
+	cleanup();
+	return result;
 }
 
 // A type for a function that wraps another function and preserves its type
 type FunctionWrapper = <T extends (...args: any[]) => any>(
-  fn: T,
+	fn: T,
 ) => (...args: Parameters<T>) => ReturnType<T>;
 
 /**
@@ -42,12 +42,12 @@ type FunctionWrapper = <T extends (...args: any[]) => any>(
  * @returns A function that wraps another function with the context
  */
 export function createContextWrapper(
-  setup: () => void,
-  cleanup: () => void,
+	setup: () => void,
+	cleanup: () => void,
 ): FunctionWrapper {
-  return function (fn) {
-    return function (this: any, ...args: Parameters<typeof fn>) {
-      return withContext(setup, cleanup, () => fn.apply(this, args));
-    };
-  };
+	return function (fn) {
+		return function (this: any, ...args: Parameters<typeof fn>) {
+			return withContext(setup, cleanup, () => fn.apply(this, args));
+		};
+	};
 }
