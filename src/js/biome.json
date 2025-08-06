@@ -1,5 +1,6 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.1.3/schema.json",
+	"extends": "//",
 	"vcs": {
 		"enabled": false,
 		"clientKind": "git",
@@ -25,7 +26,9 @@
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+		"lineWidth": 120,
+        "indentStyle": "space",
+        "indentWidth": 6
 	},
 	"linter": {
 		"enabled": false,
