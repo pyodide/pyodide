@@ -16,5 +16,6 @@
         "!**/packages/libf2c/extras/make.inc",
         "!**/src/js/struct_info_generated.json"
     ]
-  }
+  },
+  "extends": ["../../biome.json"]
 }
