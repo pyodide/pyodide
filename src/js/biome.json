@@ -1,0 +1,49 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.1.3/schema.json",
+	"vcs": {
+		"enabled": false,
+		"clientKind": "git",
+		"useIgnoreFile": false
+	},
+	"files": {
+		"includes": [
+			"**/*",
+			"!**/*.gen.*",
+			"!**/_build/**",
+			"!**/build/**",
+			"!**/.artifacts/**",
+			"!**/.docker_home/**",
+			"!**/.mypy_cache/**",
+			"!**/emsdk/**",
+			"!**/cpython/**",
+			"!**/.vscode/**",
+			"!**/.pytest_cache/**",
+			"!**/.clang-format",
+			"!**/packages/libf2c/extras/make.inc",
+			"!**/src/js/struct_info_generated.json"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": false,
+		"rules": {
+			"recommended": true
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": false,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}
