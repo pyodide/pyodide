@@ -132,14 +132,13 @@ def test_in_globals(selenium):
 
 
 def test_pyproxy_copy(selenium):
-    selenium.run(
+    selenium.run_js(
         """
-        from pyodide.ffi import to_js
-        d = to_js(list(range(10)))
-        e = d.copy()
-        d.destroy()
-        assert e.length == 10
-        e.destroy()
+        let d = pyodide.runPython("list(range(10))")
+        e = d.copy();
+        d.destroy();
+        assert(() => e.length === 10);
+        e.destroy();
         """
     )
 
