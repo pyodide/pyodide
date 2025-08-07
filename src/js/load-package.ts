@@ -1,21 +1,32 @@
-import "./constants";
+import './constants'
 import {
-      Lockfile,
-      PackageData,
-      LockfilePackage,
-      PackageLoadMetadata,
-      PackageManagerAPI,
-      PackageManagerModule,
-      LoadedPackages,
-} from "./types";
-import { IN_NODE } from "./environments";
-import type { PyProxy } from "generated/pyproxy";
-import { createResolvable } from "./common/resolveable";
-import { createLock } from "./common/lock";
-import { canonicalizePackageName, uriToPackageData, base16ToBase64 } from "./packaging-utils";
-import { nodeFsPromisesMod, loadBinaryFile, resolvePath, initNodeModules, ensureDirNode, isAbsolute } from "./compat";
-import { Installer } from "./installer";
-import { createContextWrapper } from "./common/contextManager";
+  Lockfile,
+  PackageData,
+  LockfilePackage,
+  PackageLoadMetadata,
+  PackageManagerAPI,
+  PackageManagerModule,
+  LoadedPackages,
+} from './types'
+import { IN_NODE } from './environments'
+import type { PyProxy } from 'generated/pyproxy'
+import { createResolvable } from './common/resolveable'
+import { createLock } from './common/lock'
+import {
+  canonicalizePackageName,
+  uriToPackageData,
+  base16ToBase64,
+} from './packaging-utils'
+import {
+  nodeFsPromisesMod,
+  loadBinaryFile,
+  resolvePath,
+  initNodeModules,
+  ensureDirNode,
+  isAbsolute,
+} from './compat'
+import { Installer } from './installer'
+import { createContextWrapper } from './common/contextManager'
 
 /**
  * Initialize the packages index. This is called as early as possible in
@@ -24,580 +35,627 @@ import { createContextWrapper } from "./common/contextManager";
  * @param lockFilePromise
  * @private
  */
-export async function initializePackageIndex(lockFilePromise: Promise<Lockfile | string>) {
-      await initNodeModules();
-      const lockfile_ = await lockFilePromise;
-      const lockfile: Lockfile = typeof lockfile_ === "string" ? JSON.parse(lockfile_) : lockfile_;
-      if (!lockfile.packages) {
-            throw new Error("Loaded pyodide lock file does not contain the expected key 'packages'.");
-      }
+export async function initializePackageIndex(
+  lockFilePromise: Promise<Lockfile | string>,
+) {
+  await initNodeModules()
+  const lockfile_ = await lockFilePromise
+  const lockfile: Lockfile =
+    typeof lockfile_ === 'string' ? JSON.parse(lockfile_) : lockfile_
+  if (!lockfile.packages) {
+    throw new Error(
+      "Loaded pyodide lock file does not contain the expected key 'packages'.",
+    )
+  }
 
-      if (lockfile.info.abi_version !== API.abiVersion) {
-            throw new Error(
-                  "Lock file ABI version doesn't match Pyodide ABI version.\n" +
-                        `   lockfile version: ${lockfile.info.abi_version}\n` +
-                        `   pyodide  version: ${API.abiVersion}`,
-            );
-      }
+  if (lockfile.info.abi_version !== API.abiVersion) {
+    throw new Error(
+      "Lock file ABI version doesn't match Pyodide ABI version.\n" +
+        `   lockfile version: ${lockfile.info.abi_version}\n` +
+        `   pyodide  version: ${API.abiVersion}`,
+    )
+  }
 
-      API.lockfile = lockfile;
-      API.lockfile_info = lockfile.info;
-      API.lockfile_packages = lockfile.packages;
-      API.lockfile_unvendored_stdlibs_and_test = [];
+  API.lockfile = lockfile
+  API.lockfile_info = lockfile.info
+  API.lockfile_packages = lockfile.packages
+  API.lockfile_unvendored_stdlibs_and_test = []
 
-      // compute the inverted index for imports to package names
-      API._import_name_to_package_name = new Map<string, string>();
-      for (let name of Object.keys(API.lockfile_packages)) {
-            const pkg = API.lockfile_packages[name];
+  // compute the inverted index for imports to package names
+  API._import_name_to_package_name = new Map<string, string>()
+  for (let name of Object.keys(API.lockfile_packages)) {
+    const pkg = API.lockfile_packages[name]
 
-            for (let import_name of pkg.imports) {
-                  API._import_name_to_package_name.set(import_name, name);
-            }
+    for (let import_name of pkg.imports) {
+      API._import_name_to_package_name.set(import_name, name)
+    }
 
-            if (pkg.package_type === "cpython_module") {
-                  API.lockfile_unvendored_stdlibs_and_test.push(name);
-            }
-      }
+    if (pkg.package_type === 'cpython_module') {
+      API.lockfile_unvendored_stdlibs_and_test.push(name)
+    }
+  }
 
-      API.lockfile_unvendored_stdlibs = API.lockfile_unvendored_stdlibs_and_test.filter(
-            (lib: string) => lib !== "test",
-      );
-      let toLoad = API.config.packages;
-      if (API.config.fullStdLib) {
-            toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs];
-      }
-      await loadPackage(toLoad, { messageCallback() {} });
-      // Have to wait for bootstrapFinalizedPromise before calling Python APIs
-      await API.bootstrapFinalizedPromise;
-      API.flushPackageManagerBuffers();
+  API.lockfile_unvendored_stdlibs =
+    API.lockfile_unvendored_stdlibs_and_test.filter(
+      (lib: string) => lib !== 'test',
+    )
+  let toLoad = API.config.packages
+  if (API.config.fullStdLib) {
+    toLoad = [...toLoad, ...API.lockfile_unvendored_stdlibs]
+  }
+  await loadPackage(toLoad, { messageCallback() {} })
+  // Have to wait for bootstrapFinalizedPromise before calling Python APIs
+  await API.bootstrapFinalizedPromise
+  API.flushPackageManagerBuffers()
 
-      // Set up module_not_found_hook
-      const importhook = API._pyodide._importhook;
-      importhook.register_module_not_found_hook(
-            API._import_name_to_package_name,
-            API.lockfile_unvendored_stdlibs_and_test,
-      );
-      API.package_loader.init_loaded_packages();
+  // Set up module_not_found_hook
+  const importhook = API._pyodide._importhook
+  importhook.register_module_not_found_hook(
+    API._import_name_to_package_name,
+    API.lockfile_unvendored_stdlibs_and_test,
+  )
+  API.package_loader.init_loaded_packages()
 }
 
-const DEFAULT_CHANNEL = "default channel";
-const INSTALLER = "pyodide.loadPackage";
+const DEFAULT_CHANNEL = 'default channel'
+const INSTALLER = 'pyodide.loadPackage'
 
 /**
  * @hidden
  * The package manager is responsible for installing and managing Pyodide packages.
  */
 export class PackageManager {
-      #api: PackageManagerAPI;
-      #module: PackageManagerModule;
-      #installer: Installer;
+  #api: PackageManagerAPI
+  #module: PackageManagerModule
+  #installer: Installer
 
-      /**
-       * Only used in Node. If we can't find a package in node_modules, we'll use this
-       * to fetch the package from the cdn (and we'll store it into node_modules so
-       * subsequent loads don't require a web request).
-       */
-      private cdnURL: string = "";
+  /**
+   * Only used in Node. If we can't find a package in node_modules, we'll use this
+   * to fetch the package from the cdn (and we'll store it into node_modules so
+   * subsequent loads don't require a web request).
+   */
+  private cdnURL: string = ''
 
-      /**
-       * The set of loaded packages.
-       * This is exposed as a global variable and can be modified by micropip
-       *
-       * TODO: Make this private and expose a setter
-       */
-      public loadedPackages: LoadedPackages = {};
+  /**
+   * The set of loaded packages.
+   * This is exposed as a global variable and can be modified by micropip
+   *
+   * TODO: Make this private and expose a setter
+   */
+  public loadedPackages: LoadedPackages = {}
 
-      private _lock = createLock();
+  private _lock = createLock()
 
-      public installBaseUrl?: string;
+  public installBaseUrl?: string
 
-      /**
-       * The function to use for stdout and stderr, defaults to console.log and console.error
-       */
-      private stdout: (message: string) => void;
-      private stderr: (message: string) => void;
+  /**
+   * The function to use for stdout and stderr, defaults to console.log and console.error
+   */
+  private stdout: (message: string) => void
+  private stderr: (message: string) => void
 
-      /**
-       * Buffers for store stdout and stderr messages temporarily.
-       * These are used to store the messages that are printed before the
-       * stdout and stderr functions are set.
-       */
-      private streamReady: boolean = false;
-      private stdoutBuffer: string[] = [];
-      private stderrBuffer: string[] = [];
+  /**
+   * Buffers for store stdout and stderr messages temporarily.
+   * These are used to store the messages that are printed before the
+   * stdout and stderr functions are set.
+   */
+  private streamReady: boolean = false
+  private stdoutBuffer: string[] = []
+  private stderrBuffer: string[] = []
 
-      private defaultChannel: string = DEFAULT_CHANNEL;
+  private defaultChannel: string = DEFAULT_CHANNEL
 
-      constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-            this.#api = api;
-            this.#module = pyodideModule;
-            this.#installer = new Installer(api, pyodideModule);
+  constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
+    this.#api = api
+    this.#module = pyodideModule
+    this.#installer = new Installer(api, pyodideModule)
 
-            if (IN_NODE) {
-                  // In node, we'll try first to load from the packageCacheDir and then fall
-                  // back to cdnURL
-                  this.installBaseUrl = this.#api.config.packageCacheDir ?? API.config.packageBaseUrl;
-                  this.cdnURL = this.#api.config.cdnUrl;
-            } else {
-                  // use packageBaseUrl as the base URL for the packages
-                  this.installBaseUrl = this.#api.config.packageBaseUrl;
-            }
+    if (IN_NODE) {
+      // In node, we'll try first to load from the packageCacheDir and then fall
+      // back to cdnURL
+      this.installBaseUrl =
+        this.#api.config.packageCacheDir ?? API.config.packageBaseUrl
+      this.cdnURL = this.#api.config.cdnUrl
+    } else {
+      // use packageBaseUrl as the base URL for the packages
+      this.installBaseUrl = this.#api.config.packageBaseUrl
+    }
 
-            this.stdout = (msg: string) => {
-                  if (!this.streamReady) {
-                        this.stdoutBuffer.push(msg);
-                        return;
-                  }
-
-                  const sp = this.#module.stackSave();
-                  try {
-                        const msgPtr = this.#module.stringToUTF8OnStack(msg);
-                        this.#module._print_stdout(msgPtr);
-                  } finally {
-                        this.#module.stackRestore(sp);
-                  }
-            };
-
-            this.stderr = (msg: string) => {
-                  if (!this.streamReady) {
-                        this.stderrBuffer.push(msg);
-                        return;
-                  }
-
-                  const sp = this.#module.stackSave();
-                  try {
-                        const msgPtr = this.#module.stringToUTF8OnStack(msg);
-                        this.#module._print_stderr(msgPtr);
-                  } finally {
-                        this.#module.stackRestore(sp);
-                  }
-            };
+    this.stdout = (msg: string) => {
+      if (!this.streamReady) {
+        this.stdoutBuffer.push(msg)
+        return
       }
 
-      /**
-       * Load packages from the Pyodide distribution or Python wheels by URL.
-       *
-       * This installs packages in the virtual filesystem. Packages
-       * needs to be imported from Python before it can be used.
-       *
-       * This function can only install packages included in the Pyodide distribution,
-       * or Python wheels by URL, without dependency resolution. It is significantly
-       * more limited in terms of functionality as compared to :mod:`micropip`,
-       * however it has less overhead and can be faster.
-       *
-       * When installing binary wheels by URLs it is user's responsibility to check
-       * that the installed binary wheel is compatible in terms of Python and
-       * Emscripten versions. Compatibility is not checked during installation time
-       * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
-       * is installed it would fail at import time.
-       *
-       *
-       * @param names Either a single package name or URL or a list of them. URLs can
-       * be absolute or relative. The URLs must correspond to Python wheels:
-       * either pure Python wheels, with a file name ending with ``none-any.whl``
-       * or Emscripten/WASM 32 wheels, with a file name ending with
-       * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
-       * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
-       * which case the list will be converted to JavaScript and the
-       * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
-       * @param options
-       * @param options.messageCallback A callback, called with progress messages
-       *    (optional)
-       * @param options.errorCallback A callback, called with error/warning messages
-       *    (optional)
-       * @param options.checkIntegrity If true, check the integrity of the downloaded
-       *    packages (default: true)
-       * @returns The loaded package data.
-       */
-      public async loadPackage(
-            names: string | PyProxy | Array<string>,
-            options: {
-                  messageCallback?: (message: string) => void;
-                  errorCallback?: (message: string) => void;
-                  checkIntegrity?: boolean;
-            } = {
-                  checkIntegrity: true,
-            },
-      ): Promise<PackageData[]> {
-            const wrappedLoadPackage = this.setCallbacks(
-                  options.messageCallback,
-                  options.errorCallback,
-            )(this.loadPackageInner.bind(this));
+      const sp = this.#module.stackSave()
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg)
+        this.#module._print_stdout(msgPtr)
+      } finally {
+        this.#module.stackRestore(sp)
+      }
+    }
 
-            return wrappedLoadPackage(names, options);
+    this.stderr = (msg: string) => {
+      if (!this.streamReady) {
+        this.stderrBuffer.push(msg)
+        return
       }
 
-      public async loadPackageInner(
-            names: string | PyProxy | string[],
-            options: {
-                  messageCallback?: (message: string) => void;
-                  errorCallback?: (message: string) => void;
-                  checkIntegrity?: boolean;
-            } = {
-                  checkIntegrity: true,
-            },
-      ): Promise<Array<PackageData>> {
-            const loadedPackageData = new Set<LockfilePackage>();
-            const pkgNames = toStringArray(names);
+      const sp = this.#module.stackSave()
+      try {
+        const msgPtr = this.#module.stringToUTF8OnStack(msg)
+        this.#module._print_stderr(msgPtr)
+      } finally {
+        this.#module.stackRestore(sp)
+      }
+    }
+  }
 
-            const toLoad = this.recursiveDependencies(pkgNames);
+  /**
+   * Load packages from the Pyodide distribution or Python wheels by URL.
+   *
+   * This installs packages in the virtual filesystem. Packages
+   * needs to be imported from Python before it can be used.
+   *
+   * This function can only install packages included in the Pyodide distribution,
+   * or Python wheels by URL, without dependency resolution. It is significantly
+   * more limited in terms of functionality as compared to :mod:`micropip`,
+   * however it has less overhead and can be faster.
+   *
+   * When installing binary wheels by URLs it is user's responsibility to check
+   * that the installed binary wheel is compatible in terms of Python and
+   * Emscripten versions. Compatibility is not checked during installation time
+   * (unlike with micropip). If a wheel for the wrong Python/Emscripten version
+   * is installed it would fail at import time.
+   *
+   *
+   * @param names Either a single package name or URL or a list of them. URLs can
+   * be absolute or relative. The URLs must correspond to Python wheels:
+   * either pure Python wheels, with a file name ending with ``none-any.whl``
+   * or Emscripten/WASM 32 wheels, with a file name ending with
+   * ``cp<pyversion>_emscripten_<em_version>_wasm32.whl``.
+   * The argument can be a :js:class:`~pyodide.ffi.PyProxy` of a list, in
+   * which case the list will be converted to JavaScript and the
+   * :js:class:`~pyodide.ffi.PyProxy` will be destroyed.
+   * @param options
+   * @param options.messageCallback A callback, called with progress messages
+   *    (optional)
+   * @param options.errorCallback A callback, called with error/warning messages
+   *    (optional)
+   * @param options.checkIntegrity If true, check the integrity of the downloaded
+   *    packages (default: true)
+   * @returns The loaded package data.
+   */
+  public async loadPackage(
+    names: string | PyProxy | Array<string>,
+    options: {
+      messageCallback?: (message: string) => void
+      errorCallback?: (message: string) => void
+      checkIntegrity?: boolean
+    } = {
+      checkIntegrity: true,
+    },
+  ): Promise<PackageData[]> {
+    const wrappedLoadPackage = this.setCallbacks(
+      options.messageCallback,
+      options.errorCallback,
+    )(this.loadPackageInner.bind(this))
 
-            for (const [_, { name, normalizedName, channel }] of toLoad) {
-                  const loadedChannel = this.getLoadedPackageChannel(name);
-                  if (!loadedChannel) continue;
+    return wrappedLoadPackage(names, options)
+  }
 
-                  toLoad.delete(normalizedName);
-                  // If uri is from the default channel, we assume it was added as a
-                  // dependency, which was previously overridden.
-                  if (loadedChannel === channel || channel === this.defaultChannel) {
-                        this.logStdout(`${name} already loaded from ${loadedChannel}`);
-                  } else {
-                        this.logStderr(
-                              `URI mismatch, attempting to load package ${name} from ${channel} ` +
-                                    `while it is already loaded from ${loadedChannel}. To override a dependency, ` +
-                                    `load the custom package first.`,
-                        );
-                  }
-            }
+  public async loadPackageInner(
+    names: string | PyProxy | string[],
+    options: {
+      messageCallback?: (message: string) => void
+      errorCallback?: (message: string) => void
+      checkIntegrity?: boolean
+    } = {
+      checkIntegrity: true,
+    },
+  ): Promise<Array<PackageData>> {
+    const loadedPackageData = new Set<LockfilePackage>()
+    const pkgNames = toStringArray(names)
 
-            if (toLoad.size === 0) {
-                  this.logStdout("No new packages to load");
-                  return [];
-            }
+    const toLoad = this.recursiveDependencies(pkgNames)
 
-            const packageNames = Array.from(toLoad.values(), ({ name }) => name)
-                  .sort()
-                  .join(", ");
-            const failed = new Map<string, Error>();
-            const releaseLock = await this._lock();
-            try {
-                  this.logStdout(`Loading ${packageNames}`);
-                  for (const [_, pkg] of toLoad) {
-                        if (this.getLoadedPackageChannel(pkg.name)) {
-                              // Handle the race condition where the package was loaded between when
-                              // we did dependency resolution and when we acquired the lock.
-                              toLoad.delete(pkg.normalizedName);
-                              continue;
-                        }
+    for (const [_, { name, normalizedName, channel }] of toLoad) {
+      const loadedChannel = this.getLoadedPackageChannel(name)
+      if (!loadedChannel) continue
 
-                        pkg.installPromise = this.downloadAndInstall(
-                              pkg,
-                              toLoad,
-                              loadedPackageData,
-                              failed,
-                              options.checkIntegrity,
-                        );
-                  }
+      toLoad.delete(normalizedName)
+      // If uri is from the default channel, we assume it was added as a
+      // dependency, which was previously overridden.
+      if (loadedChannel === channel || channel === this.defaultChannel) {
+        this.logStdout(`${name} already loaded from ${loadedChannel}`)
+      } else {
+        this.logStderr(
+          `URI mismatch, attempting to load package ${name} from ${channel} ` +
+            `while it is already loaded from ${loadedChannel}. To override a dependency, ` +
+            `load the custom package first.`,
+        )
+      }
+    }
 
-                  await Promise.all(Array.from(toLoad.values()).map(({ installPromise }) => installPromise));
+    if (toLoad.size === 0) {
+      this.logStdout('No new packages to load')
+      return []
+    }
 
-                  if (loadedPackageData.size > 0) {
-                        const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
-                              .sort()
-                              .join(", ");
-                        this.logStdout(`Loaded ${successNames}`);
-                  }
+    const packageNames = Array.from(toLoad.values(), ({ name }) => name)
+      .sort()
+      .join(', ')
+    const failed = new Map<string, Error>()
+    const releaseLock = await this._lock()
+    try {
+      this.logStdout(`Loading ${packageNames}`)
+      for (const [_, pkg] of toLoad) {
+        if (this.getLoadedPackageChannel(pkg.name)) {
+          // Handle the race condition where the package was loaded between when
+          // we did dependency resolution and when we acquired the lock.
+          toLoad.delete(pkg.normalizedName)
+          continue
+        }
 
-                  if (failed.size > 0) {
-                        const failedNames = Array.from(failed.keys()).sort().join(", ");
-                        this.logStdout(`Failed to load ${failedNames}`);
-                        for (const [name, err] of failed) {
-                              this.logStderr(`The following error occurred while loading ${name}:`);
-                              this.logStderr(err.message);
-                        }
-                  }
-
-                  // We have to invalidate Python's import caches, or it won't
-                  // see the new files.
-
-                  // Can't use invalidate_caches until bootstrap is finalized.
-                  await this.#api.bootstrapFinalizedPromise;
-
-                  this.#api.importlib.invalidate_caches();
-                  return Array.from(loadedPackageData, filterPackageData);
-            } finally {
-                  releaseLock();
-            }
+        pkg.installPromise = this.downloadAndInstall(
+          pkg,
+          toLoad,
+          loadedPackageData,
+          failed,
+          options.checkIntegrity,
+        )
       }
 
-      /**
-       * Recursively add a package and its dependencies to toLoad.
-       * A helper function for recursiveDependencies.
-       * @param name The package to add
-       * @param toLoad The set of names of packages to load
-       * @private
-       */
-      private addPackageToLoad(name: string, toLoad: Map<string, PackageLoadMetadata>) {
-            const normalizedName = canonicalizePackageName(name);
-            if (toLoad.has(normalizedName)) {
-                  return;
-            }
-            const pkgInfo = this.#api.lockfile_packages[normalizedName];
-            if (!pkgInfo) {
-                  throw new Error(`No known package with name '${name}'`);
-            }
+      await Promise.all(
+        Array.from(toLoad.values()).map(({ installPromise }) => installPromise),
+      )
 
-            toLoad.set(normalizedName, {
-                  name: pkgInfo.name,
-                  normalizedName,
-                  channel: this.defaultChannel,
-                  depends: pkgInfo.depends,
-                  installPromise: undefined,
-                  done: createResolvable(),
-                  packageData: pkgInfo,
-            });
-
-            // If the package is already loaded, we don't add dependencies, but warn
-            // the user later. This is especially important if the loaded package is
-            // from a custom url, in which case adding dependencies is wrong.
-            if (this.getLoadedPackageChannel(pkgInfo.name)) {
-                  return;
-            }
-
-            for (let depName of pkgInfo.depends) {
-                  this.addPackageToLoad(depName, toLoad);
-            }
+      if (loadedPackageData.size > 0) {
+        const successNames = Array.from(loadedPackageData, (pkg) => pkg.name)
+          .sort()
+          .join(', ')
+        this.logStdout(`Loaded ${successNames}`)
       }
 
-      /**
-       * Calculate the dependencies of a set of packages
-       * @param names The list of names whose dependencies we need to calculate.
-       * @returns The map of package names to PackageLoadMetadata
-       * @private
-       */
-      private recursiveDependencies(names: string[]): Map<string, PackageLoadMetadata> {
-            const toLoad: Map<string, PackageLoadMetadata> = new Map();
-            for (let name of names) {
-                  const parsedPackageData = uriToPackageData(name);
-                  if (parsedPackageData === undefined) {
-                        this.addPackageToLoad(name, toLoad);
-                        continue;
-                  }
-
-                  const { name: pkgname, version, fileName } = parsedPackageData;
-                  const channel = name;
-
-                  if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
-                        this.logStderr(
-                              `Loading same package ${pkgname} from ${channel} and ${toLoad.get(pkgname)!.channel}`,
-                        );
-                        continue;
-                  }
-                  toLoad.set(pkgname, {
-                        name: pkgname,
-                        normalizedName: pkgname,
-                        channel: channel, // name is url in this case
-                        depends: [],
-                        installPromise: undefined,
-                        done: createResolvable(),
-                        packageData: {
-                              name: pkgname,
-                              version: version,
-                              file_name: fileName,
-                              install_dir: "site",
-                              sha256: "",
-                              package_type: "package",
-                              imports: [],
-                              depends: [],
-                        },
-                  });
-            }
-            return toLoad;
+      if (failed.size > 0) {
+        const failedNames = Array.from(failed.keys()).sort().join(', ')
+        this.logStdout(`Failed to load ${failedNames}`)
+        for (const [name, err] of failed) {
+          this.logStderr(`The following error occurred while loading ${name}:`)
+          this.logStderr(err.message)
+        }
       }
 
-      /**
-       * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
-       * relative to packageCacheDir (when IN_NODE), or to lockfileURL, otherwise use the URL specified by
-       * `channel`.
-       * @param pkg The package to download
-       * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
-       * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or lockfileURL.
-       * @param checkIntegrity Whether to check the integrity of the downloaded
-       * package.
-       * @returns The binary data for the package
-       * @private
-       */
-      private async downloadPackage(pkg: PackageLoadMetadata, checkIntegrity: boolean = true): Promise<Uint8Array> {
-            await ensureDirNode(this.installBaseUrl);
+      // We have to invalidate Python's import caches, or it won't
+      // see the new files.
 
-            let fileName, uri, fileSubResourceHash;
-            if (pkg.channel === this.defaultChannel) {
-                  if (!(pkg.normalizedName in this.#api.lockfile_packages)) {
-                        throw new Error(`Internal error: no entry for package named ${name}`);
-                  }
-                  const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName];
-                  fileName = lockfilePackage.file_name;
-                  // TODO: Node caching logic assumes relative here...
-                  if (!isAbsolute(fileName) && !this.installBaseUrl) {
-                        throw new Error(
-                              `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided to loadPyodide.`,
-                        );
-                  }
+      // Can't use invalidate_caches until bootstrap is finalized.
+      await this.#api.bootstrapFinalizedPromise
 
-                  uri = resolvePath(fileName, this.installBaseUrl);
-                  fileSubResourceHash = "sha256-" + base16ToBase64(lockfilePackage.sha256);
-            } else {
-                  uri = pkg.channel;
-                  fileSubResourceHash = undefined;
-            }
+      this.#api.importlib.invalidate_caches()
+      return Array.from(loadedPackageData, filterPackageData)
+    } finally {
+      releaseLock()
+    }
+  }
 
-            if (!checkIntegrity) {
-                  fileSubResourceHash = undefined;
-            }
-            try {
-                  DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`);
-                  return await loadBinaryFile(uri, fileSubResourceHash);
-            } catch (e) {
-                  if (!IN_NODE || pkg.channel !== this.defaultChannel || !fileName || fileName.startsWith("/")) {
-                        throw e;
-                  }
-            }
-            this.logStdout(`Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`);
-            // If we are IN_NODE, download the package from the cdn, then stash it into
-            // the node_modules directory for future use.
-            let binary = await loadBinaryFile(this.cdnURL + fileName);
-            this.logStdout(
-                  `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
-            );
-            await nodeFsPromisesMod.writeFile(uri, binary);
-            return binary;
+  /**
+   * Recursively add a package and its dependencies to toLoad.
+   * A helper function for recursiveDependencies.
+   * @param name The package to add
+   * @param toLoad The set of names of packages to load
+   * @private
+   */
+  private addPackageToLoad(
+    name: string,
+    toLoad: Map<string, PackageLoadMetadata>,
+  ) {
+    const normalizedName = canonicalizePackageName(name)
+    if (toLoad.has(normalizedName)) {
+      return
+    }
+    const pkgInfo = this.#api.lockfile_packages[normalizedName]
+    if (!pkgInfo) {
+      throw new Error(`No known package with name '${name}'`)
+    }
+
+    toLoad.set(normalizedName, {
+      name: pkgInfo.name,
+      normalizedName,
+      channel: this.defaultChannel,
+      depends: pkgInfo.depends,
+      installPromise: undefined,
+      done: createResolvable(),
+      packageData: pkgInfo,
+    })
+
+    // If the package is already loaded, we don't add dependencies, but warn
+    // the user later. This is especially important if the loaded package is
+    // from a custom url, in which case adding dependencies is wrong.
+    if (this.getLoadedPackageChannel(pkgInfo.name)) {
+      return
+    }
+
+    for (let depName of pkgInfo.depends) {
+      this.addPackageToLoad(depName, toLoad)
+    }
+  }
+
+  /**
+   * Calculate the dependencies of a set of packages
+   * @param names The list of names whose dependencies we need to calculate.
+   * @returns The map of package names to PackageLoadMetadata
+   * @private
+   */
+  private recursiveDependencies(
+    names: string[],
+  ): Map<string, PackageLoadMetadata> {
+    const toLoad: Map<string, PackageLoadMetadata> = new Map()
+    for (let name of names) {
+      const parsedPackageData = uriToPackageData(name)
+      if (parsedPackageData === undefined) {
+        this.addPackageToLoad(name, toLoad)
+        continue
       }
 
-      /**
-       * Install the package into the file system.
-       * @param metadata The package metadata
-       * @param buffer The binary data returned by downloadPackage
-       * @private
-       */
-      private async installPackage(metadata: PackageLoadMetadata, buffer: Uint8Array) {
-            let pkg = this.#api.lockfile_packages[metadata.normalizedName];
-            if (!pkg) {
-                  pkg = metadata.packageData;
-            }
+      const { name: pkgname, version, fileName } = parsedPackageData
+      const channel = name
 
-            const filename = pkg.file_name;
+      if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
+        this.logStderr(
+          `Loading same package ${pkgname} from ${channel} and ${toLoad.get(pkgname)!.channel}`,
+        )
+        continue
+      }
+      toLoad.set(pkgname, {
+        name: pkgname,
+        normalizedName: pkgname,
+        channel: channel, // name is url in this case
+        depends: [],
+        installPromise: undefined,
+        done: createResolvable(),
+        packageData: {
+          name: pkgname,
+          version: version,
+          file_name: fileName,
+          install_dir: 'site',
+          sha256: '',
+          package_type: 'package',
+          imports: [],
+          depends: [],
+        },
+      })
+    }
+    return toLoad
+  }
 
-            // This Python helper function unpacks the buffer and lists out any .so files in it.
-            const installDir: string = this.#api.package_loader.get_install_dir(pkg.install_dir);
+  /**
+   * Download a package. If `channel` is `DEFAULT_CHANNEL`, look up the wheel URL
+   * relative to packageCacheDir (when IN_NODE), or to lockfileURL, otherwise use the URL specified by
+   * `channel`.
+   * @param pkg The package to download
+   * @param channel Either `DEFAULT_CHANNEL` or the absolute URL to the
+   * wheel or the path to the wheel relative to packageCacheDir (when IN_NODE), or lockfileURL.
+   * @param checkIntegrity Whether to check the integrity of the downloaded
+   * package.
+   * @returns The binary data for the package
+   * @private
+   */
+  private async downloadPackage(
+    pkg: PackageLoadMetadata,
+    checkIntegrity: boolean = true,
+  ): Promise<Uint8Array> {
+    await ensureDirNode(this.installBaseUrl)
 
-            DEBUG && console.debug(`Installing package ${metadata.name} from ${metadata.channel} to ${installDir}`);
-
-            await this.#installer.install(
-                  buffer,
-                  filename,
-                  installDir,
-                  new Map([
-                        ["INSTALLER", INSTALLER],
-                        ["PYODIDE_SOURCE", metadata.channel === this.defaultChannel ? "pyodide" : metadata.channel],
-                  ]),
-            );
+    let fileName, uri, fileSubResourceHash
+    if (pkg.channel === this.defaultChannel) {
+      if (!(pkg.normalizedName in this.#api.lockfile_packages)) {
+        throw new Error(`Internal error: no entry for package named ${name}`)
+      }
+      const lockfilePackage = this.#api.lockfile_packages[pkg.normalizedName]
+      fileName = lockfilePackage.file_name
+      // TODO: Node caching logic assumes relative here...
+      if (!isAbsolute(fileName) && !this.installBaseUrl) {
+        throw new Error(
+          `Lock file file_name for package "${pkg.name}" is relative path "${fileName}" but no packageBaseUrl provided to loadPyodide.`,
+        )
       }
 
-      /**
-       * Download and install the package.
-       * Downloads can be done in parallel, but installs must be done for dependencies first.
-       * @param pkg The package to load
-       * @param toLoad The map of package names to PackageLoadMetadata
-       * @param loaded The set of loaded package metadata, this will be updated by this function.
-       * @param failed The map of <failed package name, error message>, this will be updated by this function.
-       * @param checkIntegrity Whether to check the integrity of the downloaded
-       * package.
-       * @private
-       */
-      private async downloadAndInstall(
-            pkg: PackageLoadMetadata,
-            toLoad: Map<string, PackageLoadMetadata>,
-            loaded: Set<LockfilePackage>,
-            failed: Map<string, Error>,
-            checkIntegrity: boolean = true,
+      uri = resolvePath(fileName, this.installBaseUrl)
+      fileSubResourceHash = 'sha256-' + base16ToBase64(lockfilePackage.sha256)
+    } else {
+      uri = pkg.channel
+      fileSubResourceHash = undefined
+    }
+
+    if (!checkIntegrity) {
+      fileSubResourceHash = undefined
+    }
+    try {
+      DEBUG && console.debug(`Downloading package ${pkg.name} from ${uri}`)
+      return await loadBinaryFile(uri, fileSubResourceHash)
+    } catch (e) {
+      if (
+        !IN_NODE ||
+        pkg.channel !== this.defaultChannel ||
+        !fileName ||
+        fileName.startsWith('/')
       ) {
-            if (loadedPackages[pkg.name] !== undefined) {
-                  return;
-            }
-
-            try {
-                  const buffer = await this.downloadPackage(pkg, checkIntegrity);
-                  const installPromiseDependencies = pkg.depends.map((dependency) => {
-                        return toLoad.has(dependency) ? toLoad.get(dependency)!.done : Promise.resolve();
-                  });
-                  // Can't install until bootstrap is finalized.
-                  await this.#api.bootstrapFinalizedPromise;
-
-                  // wait until all dependencies are installed
-                  await Promise.all(installPromiseDependencies);
-
-                  await this.installPackage(pkg, buffer);
-
-                  loaded.add(pkg.packageData);
-                  loadedPackages[pkg.name] = pkg.channel;
-            } catch (err: any) {
-                  failed.set(pkg.name, err);
-                  // We don't throw error when loading a package fails, but just report it.
-                  // pkg.done.reject(err);
-            } finally {
-                  pkg.done.resolve();
-            }
+        throw e
       }
+    }
+    this.logStdout(
+      `Didn't find package ${fileName} locally, attempting to load from ${this.cdnURL}`,
+    )
+    // If we are IN_NODE, download the package from the cdn, then stash it into
+    // the node_modules directory for future use.
+    let binary = await loadBinaryFile(this.cdnURL + fileName)
+    this.logStdout(
+      `Package ${fileName} loaded from ${this.cdnURL}, caching the wheel in node_modules for future use.`,
+    )
+    await nodeFsPromisesMod.writeFile(uri, binary)
+    return binary
+  }
 
-      /**
-       * Flushes the stdout and stderr buffers, that were collected before the
-       * stdout and stderr functions were set.
-       */
-      public flushBuffers() {
-            this.streamReady = true;
+  /**
+   * Install the package into the file system.
+   * @param metadata The package metadata
+   * @param buffer The binary data returned by downloadPackage
+   * @private
+   */
+  private async installPackage(
+    metadata: PackageLoadMetadata,
+    buffer: Uint8Array,
+  ) {
+    let pkg = this.#api.lockfile_packages[metadata.normalizedName]
+    if (!pkg) {
+      pkg = metadata.packageData
+    }
 
-            for (const msg of this.stdoutBuffer) {
-                  this.stdout(msg);
-            }
-            for (const msg of this.stderrBuffer) {
-                  this.stderr(msg);
-            }
+    const filename = pkg.file_name
 
-            this.stdoutBuffer = [];
-            this.stderrBuffer = [];
-      }
+    // This Python helper function unpacks the buffer and lists out any .so files in it.
+    const installDir: string = this.#api.package_loader.get_install_dir(
+      pkg.install_dir,
+    )
 
-      /**
-       * getLoadedPackageChannel returns the channel from which a package was loaded.
-       * if the package is not loaded, it returns null.
-       * @param pkg package name
-       */
-      public getLoadedPackageChannel(pkg: string): string | null {
-            const channel = this.loadedPackages[pkg];
-            if (channel === undefined) {
-                  return null;
-            }
+    DEBUG &&
+      console.debug(
+        `Installing package ${metadata.name} from ${metadata.channel} to ${installDir}`,
+      )
 
-            return channel;
-      }
+    await this.#installer.install(
+      buffer,
+      filename,
+      installDir,
+      new Map([
+        ['INSTALLER', INSTALLER],
+        [
+          'PYODIDE_SOURCE',
+          metadata.channel === this.defaultChannel
+            ? 'pyodide'
+            : metadata.channel,
+        ],
+      ]),
+    )
+  }
 
-      public setCallbacks(stdout?: (message: string) => void, stderr?: (message: string) => void) {
-            const originalStdout = this.stdout;
-            const originalStderr = this.stderr;
+  /**
+   * Download and install the package.
+   * Downloads can be done in parallel, but installs must be done for dependencies first.
+   * @param pkg The package to load
+   * @param toLoad The map of package names to PackageLoadMetadata
+   * @param loaded The set of loaded package metadata, this will be updated by this function.
+   * @param failed The map of <failed package name, error message>, this will be updated by this function.
+   * @param checkIntegrity Whether to check the integrity of the downloaded
+   * package.
+   * @private
+   */
+  private async downloadAndInstall(
+    pkg: PackageLoadMetadata,
+    toLoad: Map<string, PackageLoadMetadata>,
+    loaded: Set<LockfilePackage>,
+    failed: Map<string, Error>,
+    checkIntegrity: boolean = true,
+  ) {
+    if (loadedPackages[pkg.name] !== undefined) {
+      return
+    }
 
-            return createContextWrapper(
-                  () => {
-                        this.stdout = stdout || originalStdout;
-                        this.stderr = stderr || originalStderr;
-                  },
-                  () => {
-                        this.stdout = originalStdout;
-                        this.stderr = originalStderr;
-                  },
-            );
-      }
+    try {
+      const buffer = await this.downloadPackage(pkg, checkIntegrity)
+      const installPromiseDependencies = pkg.depends.map((dependency) => {
+        return toLoad.has(dependency)
+          ? toLoad.get(dependency)!.done
+          : Promise.resolve()
+      })
+      // Can't install until bootstrap is finalized.
+      await this.#api.bootstrapFinalizedPromise
 
-      public logStdout(message: string) {
-            this.stdout(message);
-      }
+      // wait until all dependencies are installed
+      await Promise.all(installPromiseDependencies)
 
-      public logStderr(message: string) {
-            this.stderr(message);
-      }
+      await this.installPackage(pkg, buffer)
+
+      loaded.add(pkg.packageData)
+      loadedPackages[pkg.name] = pkg.channel
+    } catch (err: any) {
+      failed.set(pkg.name, err)
+      // We don't throw error when loading a package fails, but just report it.
+      // pkg.done.reject(err);
+    } finally {
+      pkg.done.resolve()
+    }
+  }
+
+  /**
+   * Flushes the stdout and stderr buffers, that were collected before the
+   * stdout and stderr functions were set.
+   */
+  public flushBuffers() {
+    this.streamReady = true
+
+    for (const msg of this.stdoutBuffer) {
+      this.stdout(msg)
+    }
+    for (const msg of this.stderrBuffer) {
+      this.stderr(msg)
+    }
+
+    this.stdoutBuffer = []
+    this.stderrBuffer = []
+  }
+
+  /**
+   * getLoadedPackageChannel returns the channel from which a package was loaded.
+   * if the package is not loaded, it returns null.
+   * @param pkg package name
+   */
+  public getLoadedPackageChannel(pkg: string): string | null {
+    const channel = this.loadedPackages[pkg]
+    if (channel === undefined) {
+      return null
+    }
+
+    return channel
+  }
+
+  public setCallbacks(
+    stdout?: (message: string) => void,
+    stderr?: (message: string) => void,
+  ) {
+    const originalStdout = this.stdout
+    const originalStderr = this.stderr
+
+    return createContextWrapper(
+      () => {
+        this.stdout = stdout || originalStdout
+        this.stderr = stderr || originalStderr
+      },
+      () => {
+        this.stdout = originalStdout
+        this.stderr = originalStderr
+      },
+    )
+  }
+
+  public logStdout(message: string) {
+    this.stdout(message)
+  }
+
+  public logStderr(message: string) {
+    this.stderr(message)
+  }
 }
 
-function filterPackageData({ name, version, file_name, package_type }: LockfilePackage): PackageData {
-      return { name, version, fileName: file_name, packageType: package_type };
+function filterPackageData({
+  name,
+  version,
+  file_name,
+  package_type,
+}: LockfilePackage): PackageData {
+  return { name, version, fileName: file_name, packageType: package_type }
 }
 
 /**
@@ -605,23 +663,23 @@ function filterPackageData({ name, version, file_name, package_type }: LockfileP
  * @private
  */
 export function toStringArray(str: string | PyProxy | string[]): string[] {
-      // originally, this condition was "names instanceof PyProxy",
-      // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
-      // this change is required to run unit tests against this file, when global API or Module is not available.
-      // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
-      // @ts-ignore
-      if (typeof str.toJs === "function") {
-            // @ts-ignore
-            str = str.toJs();
-      }
-      if (!Array.isArray(str)) {
-            str = [str as string];
-      }
+  // originally, this condition was "names instanceof PyProxy",
+  // but it is changed to check names.toJs so that we can use type-only import for PyProxy and remove side effects.
+  // this change is required to run unit tests against this file, when global API or Module is not available.
+  // TODO: remove side effects from pyproxy.ts so that we can directly import PyProxy
+  // @ts-ignore
+  if (typeof str.toJs === 'function') {
+    // @ts-ignore
+    str = str.toJs()
+  }
+  if (!Array.isArray(str)) {
+    str = [str as string]
+  }
 
-      return str;
+  return str
 }
 
-export let loadPackage: typeof PackageManager.prototype.loadPackage;
+export let loadPackage: typeof PackageManager.prototype.loadPackage
 /**
  * An object whose keys are the names of the loaded packages and whose values
  * are the install sources of the packages. Use
@@ -629,24 +687,28 @@ export let loadPackage: typeof PackageManager.prototype.loadPackage;
  * packages, and `pyodide.loadedPackages[package_name]` to access the install
  * source for a particular `package_name`.
  */
-export let loadedPackages: LoadedPackages;
+export let loadedPackages: LoadedPackages
 
-if (typeof API !== "undefined" && typeof Module !== "undefined") {
-      const singletonPackageManager = new PackageManager(API, Module);
+if (typeof API !== 'undefined' && typeof Module !== 'undefined') {
+  const singletonPackageManager = new PackageManager(API, Module)
 
-      loadPackage = singletonPackageManager.loadPackage.bind(singletonPackageManager);
+  loadPackage = singletonPackageManager.loadPackage.bind(
+    singletonPackageManager,
+  )
 
-      /**
-       * The list of packages that Pyodide has loaded.
-       * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
-       * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
-       * install location for a particular ``package_name``.
-       */
-      loadedPackages = singletonPackageManager.loadedPackages;
+  /**
+   * The list of packages that Pyodide has loaded.
+   * Use ``Object.keys(pyodide.loadedPackages)`` to get the list of names of
+   * loaded packages, and ``pyodide.loadedPackages[package_name]`` to access
+   * install location for a particular ``package_name``.
+   */
+  loadedPackages = singletonPackageManager.loadedPackages
 
-      API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(singletonPackageManager);
+  API.flushPackageManagerBuffers = singletonPackageManager.flushBuffers.bind(
+    singletonPackageManager,
+  )
 
-      if (API.lockFilePromise) {
-            API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
-      }
+  if (API.lockFilePromise) {
+    API.packageIndexReady = initializePackageIndex(API.lockFilePromise)
+  }
 }
