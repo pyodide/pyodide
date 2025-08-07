@@ -290,7 +290,6 @@ export async function loadPyodide(
     args: [],
     env: {},
     packages: [],
-    packageCacheDir: options_.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
