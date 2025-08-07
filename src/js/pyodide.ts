@@ -74,7 +74,6 @@ export type ConfigType = {
   checkAPIVersion: boolean;
   BUILD_ID: string;
   packageBaseUrl?: string;
-  cdnUrl: string;
 };
 
 /**
@@ -268,8 +267,6 @@ export async function loadPyodide(
     options_.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
   }
   options_.indexURL = indexURL;
-  // cdnUrl only for node.
-  options_.cdnUrl = `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
 
   if (options_.packageCacheDir) {
     options_.packageCacheDir = withTrailingSlash(

@@ -579,8 +579,9 @@ export type PackageManagerAPI = Pick<
   | "bootstrapFinalizedPromise"
   | "sitepackages"
   | "defaultLdLibraryPath"
+  | "version"
 > & {
-  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl">;
 };
 /**
  * @hidden
