@@ -214,8 +214,7 @@ def test_pyproxy_iter(selenium):
     from pyodide.code import run_js
 
     def test_generator():
-        for i in range(10):
-            yield i
+        yield from range(10)
 
     c = test_generator()
     ty, l = run_js("(c) => [c.type, [...c]]")(c)
