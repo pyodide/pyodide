@@ -1189,3 +1189,67 @@ def test_micropip_freeze_with_package_cache_dir(selenium_standalone_noload, tmp_
     assert lockfile_content["packages"]["micropip"]["file_name"] == str(
         package_cache_dir / micropip_path.name
     )
+
+
+@only_node
+def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+
+    def with_slash(path: str | Path) -> str:
+        return str(path).rstrip("/") + "/"
+
+    # no option
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide();
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `https://cdn.jsdelivr.net/pyodide/v${{version}}/full/`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(DIST_PATH)}');
+        """
+    )
+
+    # with packageCacheDir
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{tmp_path}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileURL
+    lockfile_url = with_slash(tmp_path) + "pyodide-lock.json"
+    shutil.copy(DIST_PATH / "pyodide-lock.json", lockfile_url)
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileContents
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}'}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === undefined);
+        """
+    )
+
+    # with lockfileContents and packageBaseUrl
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}', "packageBaseUrl": "{tmp_path}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileURL and packageCacheDir
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}", "packageCacheDir": "{package_cache_dir}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(package_cache_dir)}');
+        """
+    )

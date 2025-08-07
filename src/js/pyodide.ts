@@ -23,6 +23,7 @@ import type {
 } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
+import { withTrailingSlash } from "./common/path";
 export type { PyodideAPI, TypedArray };
 export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
@@ -257,10 +258,7 @@ export async function loadPyodide(
 
   // Relative paths cause havoc.
   let indexURL = options.indexURL || (await calculateDirname());
-  indexURL = resolvePath(indexURL);
-  if (!indexURL.endsWith("/")) {
-    indexURL += "/";
-  }
+  indexURL = withTrailingSlash(resolvePath(indexURL));
   const options_ = options as ConfigType;
   if (!options.lockFileContents) {
     const lockFileURL = options.lockFileURL ?? indexURL + "pyodide-lock.json";
@@ -271,17 +269,15 @@ export async function loadPyodide(
   }
   options_.indexURL = indexURL;
   // cdnUrl only for node.
-  options_.cdnUrl =
-    options_.packageBaseUrl ??
-    `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
+  options_.cdnUrl = `https://cdn.jsdelivr.net/pyodide/v${version}/full/`;
 
-  if (options.packageCacheDir) {
-    let packageCacheDir = resolvePath(options.packageCacheDir);
-    if (!packageCacheDir.endsWith("/")) {
-      packageCacheDir += "/";
-    }
-    options.packageCacheDir = packageCacheDir;
+  if (options_.packageCacheDir) {
+    options_.packageCacheDir = withTrailingSlash(
+      resolvePath(options_.packageCacheDir),
+    );
   }
+
+  options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
 
   const default_config = {
     fullStdLib: false,
