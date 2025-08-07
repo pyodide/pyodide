@@ -1,6 +1,6 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.1.3/schema.json",
-	"extends": null,
+	"extends": "//",
 	"vcs": { "enabled": false, "clientKind": "git", "useIgnoreFile": false },
 	"files": {
 		"includes": [
