@@ -17,3 +17,13 @@ export EM_DIR
 export _EMCC_CCACHE=1
 # mtime of this file is checked by ccache, we set it to avoid cache misses.
 export EM_CONFIG="$ROOT/emsdk/emsdk/.emscripten"
+
+# Export SED variable if not already set
+# Use GNU sed (gsed) if available, otherwise fallback to sed
+if [ -z "$SED" ]; then
+    if command -v gsed >/dev/null 2>&1; then
+        export SED="gsed"
+    else
+        export SED="sed"
+    fi
+fi
