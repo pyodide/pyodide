@@ -23,7 +23,8 @@ import type {
 } from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
-export type { PyodideAPI, TypedArray };
+// For backwards compatibility, export PyodideAPI also as PyodideInterface.
+export type { PyodideAPI, TypedArray, PyodideAPI as PyodideInterface };
 export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
 export { type PackageData };
