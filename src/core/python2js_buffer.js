@@ -14,93 +14,93 @@
  *      is true if the format suggests a big endian array.
  * @private
  */
-Module.processBufferFormatString = function (formatStr, errorMessage = '') {
+Module.processBufferFormatString = function (formatStr, errorMessage = "") {
   if (formatStr.length > 2) {
     throw new Error(
-      'Expected format string to have length <= 2, ' +
+      "Expected format string to have length <= 2, " +
         `got '${formatStr}'.` +
         errorMessage,
-    )
+    );
   }
-  let formatChar = formatStr.slice(-1)
-  let alignChar = formatStr.slice(0, -1)
-  let bigEndian
+  let formatChar = formatStr.slice(-1);
+  let alignChar = formatStr.slice(0, -1);
+  let bigEndian;
   switch (alignChar) {
-    case '!':
-    case '>':
-      bigEndian = true
-      break
-    case '<':
-    case '@':
-    case '=':
-    case '':
-      bigEndian = false
-      break
+    case "!":
+    case ">":
+      bigEndian = true;
+      break;
+    case "<":
+    case "@":
+    case "=":
+    case "":
+      bigEndian = false;
+      break;
     default:
       throw new Error(
         `Unrecognized alignment character ${alignChar}.` + errorMessage,
-      )
+      );
   }
-  let arrayType
+  let arrayType;
   switch (formatChar) {
-    case 'b':
-      arrayType = Int8Array
-      break
-    case 's':
-    case 'p':
-    case 'c':
-    case 'B':
-    case '?':
-      arrayType = Uint8Array
-      break
-    case 'h':
-      arrayType = Int16Array
-      break
-    case 'H':
-      arrayType = Uint16Array
-      break
-    case 'i':
-    case 'l':
-    case 'n':
-      arrayType = Int32Array
-      break
-    case 'I':
-    case 'L':
-    case 'N':
-    case 'P':
-      arrayType = Uint32Array
-      break
-    case 'q':
+    case "b":
+      arrayType = Int8Array;
+      break;
+    case "s":
+    case "p":
+    case "c":
+    case "B":
+    case "?":
+      arrayType = Uint8Array;
+      break;
+    case "h":
+      arrayType = Int16Array;
+      break;
+    case "H":
+      arrayType = Uint16Array;
+      break;
+    case "i":
+    case "l":
+    case "n":
+      arrayType = Int32Array;
+      break;
+    case "I":
+    case "L":
+    case "N":
+    case "P":
+      arrayType = Uint32Array;
+      break;
+    case "q":
       if (globalThis.BigInt64Array === undefined) {
         throw new Error(
-          'BigInt64Array is not supported on this browser.' + errorMessage,
-        )
+          "BigInt64Array is not supported on this browser." + errorMessage,
+        );
       }
-      arrayType = BigInt64Array
-      break
-    case 'Q':
+      arrayType = BigInt64Array;
+      break;
+    case "Q":
       if (globalThis.BigUint64Array === undefined) {
         throw new Error(
-          'BigUint64Array is not supported on this browser.' + errorMessage,
-        )
+          "BigUint64Array is not supported on this browser." + errorMessage,
+        );
       }
-      arrayType = BigUint64Array
-      break
-    case 'f':
-      arrayType = Float32Array
-      break
-    case 'd':
-      arrayType = Float64Array
-      break
-    case 'e':
-      throw new Error('Javascript has no Float16 support.')
+      arrayType = BigUint64Array;
+      break;
+    case "f":
+      arrayType = Float32Array;
+      break;
+    case "d":
+      arrayType = Float64Array;
+      break;
+    case "e":
+      throw new Error("Javascript has no Float16 support.");
     default:
       throw new Error(
         `Unrecognized format character '${formatChar}'.` + errorMessage,
-      )
+      );
   }
-  return [arrayType, bigEndian]
-}
+  return [arrayType, bigEndian];
+};
 
 /**
  * Convert a 1-dimensional contiguous buffer to JavaScript.
@@ -114,10 +114,10 @@ Module.processBufferFormatString = function (formatStr, errorMessage = '') {
  * @private
  */
 Module.python2js_buffer_1d_contiguous = function (ptr, stride, n) {
-  let byteLength = stride * n
+  let byteLength = stride * n;
   // Note: slice here is a copy (as opposed to subarray which is not)
-  return HEAP8.slice(ptr, ptr + byteLength).buffer
-}
+  return HEAP8.slice(ptr, ptr + byteLength).buffer;
+};
 
 /**
  * Convert a 1d noncontiguous buffer to JavaScript.
@@ -141,18 +141,18 @@ Module.python2js_buffer_1d_noncontiguous = function (
   n,
   itemsize,
 ) {
-  let byteLength = itemsize * n
+  let byteLength = itemsize * n;
   // Make new memory of the appropriate size
-  let buffer = new Uint8Array(byteLength)
+  let buffer = new Uint8Array(byteLength);
   for (let i = 0; i < n; ++i) {
-    let curptr = ptr + i * stride
+    let curptr = ptr + i * stride;
     if (suboffset >= 0) {
-      curptr = DEREF_U32(curptr, 0) + suboffset
+      curptr = DEREF_U32(curptr, 0) + suboffset;
     }
-    buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize)
+    buffer.set(HEAP8.subarray(curptr, curptr + itemsize), i * itemsize);
   }
-  return buffer.buffer
-}
+  return buffer.buffer;
+};
 
 /**
  * Convert an ndarray to a nested JavaScript array, the main function.
@@ -175,22 +175,22 @@ Module.python2js_buffer_1d_noncontiguous = function (
  * @private
  */
 Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
-  const { shape, strides, ndim, converter, itemsize, suboffsets } = bufferData
+  const { shape, strides, ndim, converter, itemsize, suboffsets } = bufferData;
   // Stride and suboffset are signed, n is unsigned.
-  let n = DEREF_U32(shape, curdim)
-  let stride = DEREF_I32(strides, curdim)
-  let suboffset = -1
+  let n = DEREF_U32(shape, curdim);
+  let stride = DEREF_I32(strides, curdim);
+  let suboffset = -1;
   if (ndim === 0) {
-    return converter(Module.python2js_buffer_1d_contiguous(ptr, itemsize, 1))
+    return converter(Module.python2js_buffer_1d_contiguous(ptr, itemsize, 1));
   }
   if (suboffsets !== 0) {
-    suboffset = DEREF_I32(suboffsets, curdim)
+    suboffset = DEREF_I32(suboffsets, curdim);
   }
   if (curdim === ndim - 1) {
     // Last dimension, use appropriate 1d converter
-    let arraybuffer
+    let arraybuffer;
     if (stride === itemsize && suboffset < 0) {
-      arraybuffer = Module.python2js_buffer_1d_contiguous(ptr, stride, n)
+      arraybuffer = Module.python2js_buffer_1d_contiguous(ptr, stride, n);
     } else {
       arraybuffer = Module.python2js_buffer_1d_noncontiguous(
         ptr,
@@ -198,25 +198,25 @@ Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
         suboffset,
         n,
         itemsize,
-      )
+      );
     }
-    return converter(arraybuffer)
+    return converter(arraybuffer);
   }
 
-  let result = []
+  let result = [];
   for (let i = 0; i < n; ++i) {
     // See:
     // https://docs.python.org/3/c-api/buffer.html#pil-style-shape-strides-and-suboffsets
-    let curPtr = ptr + i * stride
+    let curPtr = ptr + i * stride;
     if (suboffset >= 0) {
-      curptr = DEREF_U32(curptr, 0) + suboffset
+      curptr = DEREF_U32(curptr, 0) + suboffset;
     }
     result.push(
       Module._python2js_buffer_recursive(curPtr, curdim + 1, bufferData),
-    )
+    );
   }
-  return result
-}
+  return result;
+};
 
 /**
  * Get the appropriate converter function.
@@ -236,47 +236,47 @@ Module._python2js_buffer_recursive = function (ptr, curdim, bufferData) {
  * @private
  */
 Module.get_converter = function (format, itemsize) {
-  let formatStr = UTF8ToString(format)
-  let [ArrayType, bigEndian] = Module.processBufferFormatString(formatStr)
-  let formatChar = formatStr.slice(-1)
+  let formatStr = UTF8ToString(format);
+  let [ArrayType, bigEndian] = Module.processBufferFormatString(formatStr);
+  let formatChar = formatStr.slice(-1);
   switch (formatChar) {
-    case 's':
-      let decoder = new TextDecoder('utf8', { ignoreBOM: true })
-      return (buff) => decoder.decode(buff)
-    case '?':
-      return (buff) => Array.from(new Uint8Array(buff), (x) => !!x)
+    case "s":
+      let decoder = new TextDecoder("utf8", { ignoreBOM: true });
+      return (buff) => decoder.decode(buff);
+    case "?":
+      return (buff) => Array.from(new Uint8Array(buff), (x) => !!x);
   }
 
   if (!bigEndian) {
-    return (buff) => new ArrayType(buff)
+    return (buff) => new ArrayType(buff);
   }
-  let getFuncName
-  let setFuncName
+  let getFuncName;
+  let setFuncName;
   switch (itemsize) {
     case 2:
-      getFuncName = 'getUint16'
-      setFuncName = 'setUint16'
-      break
+      getFuncName = "getUint16";
+      setFuncName = "setUint16";
+      break;
     case 4:
-      getFuncName = 'getUint32'
-      setFuncName = 'setUint32'
-      break
+      getFuncName = "getUint32";
+      setFuncName = "setUint32";
+      break;
     case 8:
-      getFuncName = 'getFloat64'
-      setFuncName = 'setFloat64'
-      break
+      getFuncName = "getFloat64";
+      setFuncName = "setFloat64";
+      break;
     default:
-      throw new Error(`Unexpected size ${itemsize}`)
+      throw new Error(`Unexpected size ${itemsize}`);
   }
   function swapFunc(buff) {
-    let dataview = new DataView(buff)
-    let getFunc = dataview[getFuncName].bind(dataview)
-    let setFunc = dataview[setFuncName].bind(dataview)
+    let dataview = new DataView(buff);
+    let getFunc = dataview[getFuncName].bind(dataview);
+    let setFunc = dataview[setFuncName].bind(dataview);
     for (let byte = 0; byte < dataview.byteLength; byte += itemsize) {
       // Get value as little endian, set back as big endian.
-      setFunc(byte, getFunc(byte, true), false)
+      setFunc(byte, getFunc(byte, true), false);
     }
-    return buff
+    return buff;
   }
-  return (buff) => new ArrayType(swapFunc(buff))
-}
+  return (buff) => new ArrayType(swapFunc(buff));
+};

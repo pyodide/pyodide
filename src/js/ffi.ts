@@ -17,13 +17,13 @@ export type {
   PyBufferView,
   PySequence,
   PyMutableSequence,
-} from 'generated/pyproxy'
-export type { PythonError } from 'generated/error_handling'
+} from "generated/pyproxy";
+export type { PythonError } from "generated/error_handling";
 // These need to be imported for their side effects at startup
-import 'generated/js2python'
-import 'generated/python2js_buffer'
+import "generated/js2python";
+import "generated/python2js_buffer";
 
-export type { TypedArray } from './types'
+export type { TypedArray } from "./types";
 
 import {
   PyProxy,
@@ -44,9 +44,9 @@ import {
   PyBufferView,
   PySequence,
   PyMutableSequence,
-} from 'generated/pyproxy'
+} from "generated/pyproxy";
 
-import { PythonError } from '../core/error_handling'
+import { PythonError } from "../core/error_handling";
 
 /**
  * Foreign function interface classes. Can be used for typescript type
@@ -75,4 +75,4 @@ export const ffi = {
   PythonError,
   PySequence,
   PyMutableSequence,
-}
+};

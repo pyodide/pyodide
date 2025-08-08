@@ -1,240 +1,240 @@
-import * as chai from 'chai'
-import chaiAsPromised from 'chai-as-promised'
+import * as chai from "chai";
+import chaiAsPromised from "chai-as-promised";
 
-chai.use(chaiAsPromised)
-const assert = chai.assert
-const expect = chai.expect
+chai.use(chaiAsPromised);
+const assert = chai.assert;
+const expect = chai.expect;
 
 import {
   withContext,
   createContextWrapper,
-} from '../../../common/contextManager'
+} from "../../../common/contextManager";
 
-describe('withContext', () => {
-  it('synchronous execution', () => {
+describe("withContext", () => {
+  it("synchronous execution", () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
-    let callbackCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
+    let callbackCalled = false;
 
     const result = withContext(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
       () => {
-        callbackCalled = true
-        return 'test result'
+        callbackCalled = true;
+        return "test result";
       },
-    )
+    );
 
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-    assert.isTrue(callbackCalled)
-    assert.equal(result, 'test result')
-  })
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+    assert.isTrue(callbackCalled);
+    assert.equal(result, "test result");
+  });
 
-  it('asynchronous execution', async () => {
+  it("asynchronous execution", async () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
-    let callbackCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
+    let callbackCalled = false;
 
     const result = await withContext(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
       async () => {
-        callbackCalled = true
-        await new Promise((resolve) => setTimeout(resolve, 10))
-        return 'async result'
+        callbackCalled = true;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        return "async result";
       },
-    )
+    );
 
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-    assert.isTrue(callbackCalled)
-    assert.equal(result, 'async result')
-  })
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+    assert.isTrue(callbackCalled);
+    assert.equal(result, "async result");
+  });
 
-  it('cleanup is called even when callback throws', () => {
+  it("cleanup is called even when callback throws", () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     assert.throws(
       () =>
         withContext(
           () => {
-            setupCalled = true
+            setupCalled = true;
           },
           () => {
-            cleanupCalled = true
+            cleanupCalled = true;
           },
           () => {
-            throw new Error('Test error')
+            throw new Error("Test error");
           },
         ),
-      'Test error',
-    )
+      "Test error",
+    );
 
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-  })
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+  });
 
-  it('cleanup is called even when async callback rejects', async () => {
+  it("cleanup is called even when async callback rejects", async () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     const promise = withContext(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
       async () => {
-        await new Promise((resolve) => setTimeout(resolve, 10))
-        throw new Error('Async test error')
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        throw new Error("Async test error");
       },
-    )
+    );
 
-    await expect(promise).to.be.rejectedWith('Async test error')
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-  })
+    await expect(promise).to.be.rejectedWith("Async test error");
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+  });
 
-  it('raise on setup error', () => {
+  it("raise on setup error", () => {
     assert.throws(
       () =>
         withContext(
           () => {
-            throw new Error('Setup error')
+            throw new Error("Setup error");
           },
           () => {},
           () => {},
         ),
-      'Setup error',
-    )
-  })
+      "Setup error",
+    );
+  });
 
-  it('raise on cleanup error', () => {
+  it("raise on cleanup error", () => {
     assert.throws(
       () =>
         withContext(
           () => {},
           () => {
-            throw new Error('Cleanup error')
+            throw new Error("Cleanup error");
           },
           () => {},
         ),
-      'Cleanup error',
-    )
-  })
-})
+      "Cleanup error",
+    );
+  });
+});
 
-describe('createContextWrapper', () => {
-  it('wrapper for sync function', () => {
+describe("createContextWrapper", () => {
+  it("wrapper for sync function", () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     function testFn(x: number, y: number) {
-      return x + y
+      return x + y;
     }
 
     const wrappedFn = createContextWrapper(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
-    )(testFn)
+    )(testFn);
 
-    const result = wrappedFn(5, 3)
+    const result = wrappedFn(5, 3);
 
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-    assert.equal(result, 8)
-  })
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+    assert.equal(result, 8);
+  });
 
-  it('wrapper for async function', async () => {
+  it("wrapper for async function", async () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     async function testAsyncFn(x: number, y: number) {
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      return x * y
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return x * y;
     }
 
     const wrappedFn = createContextWrapper(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
-    )(testAsyncFn)
+    )(testAsyncFn);
 
-    const result = await wrappedFn(4, 7)
+    const result = await wrappedFn(4, 7);
 
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-    assert.equal(result, 28)
-  })
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+    assert.equal(result, 28);
+  });
 
-  it('cleanup is called when wrapped function throws', () => {
+  it("cleanup is called when wrapped function throws", () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     function throwingFn() {
-      throw new Error('Function error')
+      throw new Error("Function error");
     }
 
     const wrappedFn = createContextWrapper(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
-    )(throwingFn)
+    )(throwingFn);
 
-    assert.throws(() => wrappedFn(), 'Function error')
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-  })
+    assert.throws(() => wrappedFn(), "Function error");
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+  });
 
-  it('cleanup is called when async wrapped function rejects', async () => {
+  it("cleanup is called when async wrapped function rejects", async () => {
     // Setup tracking variables
-    let setupCalled = false
-    let cleanupCalled = false
+    let setupCalled = false;
+    let cleanupCalled = false;
 
     async function throwingAsyncFn() {
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      throw new Error('Async function error')
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      throw new Error("Async function error");
     }
 
     const wrappedFn = createContextWrapper(
       () => {
-        setupCalled = true
+        setupCalled = true;
       },
       () => {
-        cleanupCalled = true
+        cleanupCalled = true;
       },
-    )(throwingAsyncFn)
+    )(throwingAsyncFn);
 
-    await assert.isRejected(wrappedFn(), 'Async function error')
-    assert.isTrue(setupCalled)
-    assert.isTrue(cleanupCalled)
-  })
-})
+    await assert.isRejected(wrappedFn(), "Async function error");
+    assert.isTrue(setupCalled);
+    assert.isTrue(cleanupCalled);
+  });
+});

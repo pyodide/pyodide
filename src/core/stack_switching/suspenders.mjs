@@ -1,24 +1,24 @@
-export let suspenderGlobal = { value: null }
-export let validSuspender = { value: false }
+export let suspenderGlobal = { value: null };
+export let validSuspender = { value: false };
 
-let promisingApplyHandler
+let promisingApplyHandler;
 export function promisingApply(...args) {
   // validSuspender is a flag so that we can ask for permission before trying to
   // suspend.
-  validSuspender.value = true
+  validSuspender.value = true;
   // Record the current stack position. Used in stack_state.mjs
-  Module.stackStop = stackSave()
-  return promisingApplyHandler(...args)
+  Module.stackStop = stackSave();
+  return promisingApplyHandler(...args);
 }
 
-let promisingRunMainHandler
+let promisingRunMainHandler;
 export function promisingRunMain(...args) {
   // validSuspender is a flag so that we can ask for permission before trying to
   // suspend.
-  validSuspender.value = true
+  validSuspender.value = true;
   // Record the current stack position. Used in stack_state.mjs
-  Module.stackStop = stackSave()
-  return promisingRunMainHandler(...args)
+  Module.stackStop = stackSave();
+  return promisingRunMainHandler(...args);
 }
 
 /**
@@ -28,25 +28,25 @@ export function promisingRunMain(...args) {
  */
 export function createPromising(wasm_func) {
   if (Module.newJspiSupported) {
-    const promisingFunc = WebAssembly.promising(wasm_func)
+    const promisingFunc = WebAssembly.promising(wasm_func);
     async function wrapper(...args) {
-      const orig = validSuspender.value
-      validSuspender.value = true
+      const orig = validSuspender.value;
+      validSuspender.value = true;
       try {
-        return await promisingFunc(null, ...args)
+        return await promisingFunc(null, ...args);
       } finally {
-        validSuspender.value = orig
+        validSuspender.value = orig;
       }
     }
-    return wrapper
+    return wrapper;
   }
-  const { parameters } = wasmFunctionType(wasm_func)
-  parameters.shift()
+  const { parameters } = wasmFunctionType(wasm_func);
+  parameters.shift();
   return new WebAssembly.Function(
-    { parameters, results: ['externref'] },
+    { parameters, results: ["externref"] },
     wasm_func,
-    { promising: 'first' },
-  )
+    { promising: "first" },
+  );
 }
 
 /**
@@ -58,8 +58,8 @@ export function createPromising(wasm_func) {
  *   enabled (used in callPyObjectKwargsSuspending in pyproxy.ts)
  */
 export function initSuspenders() {
-  promisingApplyHandler = createPromising(wasmExports._pyproxy_apply_promising)
+  promisingApplyHandler = createPromising(wasmExports._pyproxy_apply_promising);
   if (wasmExports.run_main_promising) {
-    promisingRunMainHandler = createPromising(wasmExports.run_main_promising)
+    promisingRunMainHandler = createPromising(wasmExports.run_main_promising);
   }
 }

@@ -1,40 +1,40 @@
-import { ffi } from './ffi'
-import { CanvasInterface, canvas } from './canvas'
+import { ffi } from "./ffi";
+import { CanvasInterface, canvas } from "./canvas";
 
-import { loadPackage, loadedPackages } from './load-package'
-import { type PyProxy, type PyDict } from 'generated/pyproxy'
-import { loadBinaryFile, nodeFSMod } from './compat'
-import { version } from './version'
-import { setStdin, setStdout, setStderr } from './streams'
-import { scheduleCallback } from './scheduler'
-import { TypedArray, PackageData, FSType, Lockfile } from './types'
-import { IN_NODE, detectEnvironment } from './environments'
+import { loadPackage, loadedPackages } from "./load-package";
+import { type PyProxy, type PyDict } from "generated/pyproxy";
+import { loadBinaryFile, nodeFSMod } from "./compat";
+import { version } from "./version";
+import { setStdin, setStdout, setStderr } from "./streams";
+import { scheduleCallback } from "./scheduler";
+import { TypedArray, PackageData, FSType, Lockfile } from "./types";
+import { IN_NODE, detectEnvironment } from "./environments";
 // @ts-ignore
-import LiteralMap from './common/literal-map'
-import abortSignalAny from './common/abortSignalAny'
+import LiteralMap from "./common/literal-map";
+import abortSignalAny from "./common/abortSignalAny";
 import {
   makeGlobalsProxy,
   SnapshotConfig,
   syncUpSnapshotLoad1,
   syncUpSnapshotLoad2,
-} from './snapshot'
-import { unpackArchiveMetadata } from './constants'
-import { syncLocalToRemote, syncRemoteToLocal } from './nativefs'
+} from "./snapshot";
+import { unpackArchiveMetadata } from "./constants";
+import { syncLocalToRemote, syncRemoteToLocal } from "./nativefs";
 
 // Exported for micropip
-API.loadBinaryFile = loadBinaryFile
+API.loadBinaryFile = loadBinaryFile;
 
 /**
  * Runs code after python vm has been initialized but prior to any bootstrapping.
  */
 API.rawRun = function rawRun(code: string): [number, string] {
-  const code_ptr = Module.stringToNewUTF8(code)
-  Module.API.capture_stderr()
-  let errcode = _PyRun_SimpleString(code_ptr)
-  _free(code_ptr)
-  const captured_stderr = Module.API.restore_stderr().trim()
-  return [errcode, captured_stderr]
-}
+  const code_ptr = Module.stringToNewUTF8(code);
+  Module.API.capture_stderr();
+  let errcode = _PyRun_SimpleString(code_ptr);
+  _free(code_ptr);
+  const captured_stderr = Module.API.restore_stderr().trim();
+  return [errcode, captured_stderr];
+};
 
 /**
  * Just like `runPython` except uses a different globals dict and gets
@@ -43,61 +43,61 @@ API.rawRun = function rawRun(code: string): [number, string] {
  */
 API.runPythonInternal = function (code: string): any {
   // API.runPythonInternal_dict is initialized in finalizeBootstrap
-  return API._pyodide._base.eval_code(code, API.runPythonInternal_dict)
-}
+  return API._pyodide._base.eval_code(code, API.runPythonInternal_dict);
+};
 
 API.setPyProxyToStringMethod = function (useRepr: boolean): void {
-  Module.HEAP8[Module._compat_to_string_repr] = +useRepr
-}
+  Module.HEAP8[Module._compat_to_string_repr] = +useRepr;
+};
 
 API.setCompatNullToNone = function (compat: boolean): void {
-  Module.HEAP8[Module._compat_null_to_none] = +compat
-}
+  Module.HEAP8[Module._compat_null_to_none] = +compat;
+};
 
 /** @hidden */
 export type NativeFS = {
-  syncfs: () => Promise<void>
-}
+  syncfs: () => Promise<void>;
+};
 
 /** @private */
-API.saveState = () => API.pyodide_py._state.save_state()
+API.saveState = () => API.pyodide_py._state.save_state();
 
 /** @private */
-API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state)
+API.restoreState = (state: any) => API.pyodide_py._state.restore_state(state);
 
 // Used in webloop
 /** @private */
-API.scheduleCallback = scheduleCallback
+API.scheduleCallback = scheduleCallback;
 
 /** @private */
-API.detectEnvironment = detectEnvironment
+API.detectEnvironment = detectEnvironment;
 
 // @ts-ignore
-if (typeof AbortSignal !== 'undefined' && AbortSignal.any) {
+if (typeof AbortSignal !== "undefined" && AbortSignal.any) {
   /** @private */
   // @ts-ignore
-  API.abortSignalAny = AbortSignal.any
+  API.abortSignalAny = AbortSignal.any;
 } else {
   /** @private */
-  API.abortSignalAny = abortSignalAny
+  API.abortSignalAny = abortSignalAny;
 }
 
-API.LiteralMap = LiteralMap
+API.LiteralMap = LiteralMap;
 
 function ensureMountPathExists(path: string): void {
-  Module.FS.mkdirTree(path)
+  Module.FS.mkdirTree(path);
   const { node } = Module.FS.lookupPath(path, {
     follow_mount: false,
-  })
+  });
 
   if (FS.isMountpoint(node)) {
-    throw new Error(`path '${path}' is already a file system mount point`)
+    throw new Error(`path '${path}' is already a file system mount point`);
   }
   if (!FS.isDir(node.mode)) {
-    throw new Error(`path '${path}' points to a file not a directory`)
+    throw new Error(`path '${path}' points to a file not a directory`);
   }
   for (const _ in node.contents) {
-    throw new Error(`directory '${path}' is not empty`)
+    throw new Error(`directory '${path}' is not empty`);
   }
 }
 
@@ -118,19 +118,19 @@ function ensureMountPathExists(path: string): void {
  */
 export class PyodideAPI_ {
   /** @hidden */
-  static version = version
+  static version = version;
   /** @hidden */
-  static loadPackage = loadPackage
+  static loadPackage = loadPackage;
   /** @hidden */
-  static loadedPackages = loadedPackages
+  static loadedPackages = loadedPackages;
   /** @hidden */
-  static ffi = ffi
+  static ffi = ffi;
   /** @hidden */
-  static setStdin = setStdin
+  static setStdin = setStdin;
   /** @hidden */
-  static setStdout = setStdout
+  static setStdout = setStdout;
   /** @hidden */
-  static setStderr = setStderr
+  static setStderr = setStderr;
 
   /**
    *
@@ -139,7 +139,7 @@ export class PyodideAPI_ {
    * For example, to access a variable called ``foo`` in the Python global
    * scope, use ``pyodide.globals.get("foo")``
    */
-  static globals = {} as PyProxy // actually defined in loadPyodide (see pyodide.js)
+  static globals = {} as PyProxy; // actually defined in loadPyodide (see pyodide.js)
   /**
    * An alias to the `Emscripten File System API
    * <https://emscripten.org/docs/api_reference/Filesystem-API.html>`_.
@@ -155,7 +155,7 @@ export class PyodideAPI_ {
    * are available as members of ``FS.filesystems``:
    * ``IDBFS``, ``NODEFS``, ``PROXYFS``, ``WORKERFS``.
    */
-  static FS = {} as FSType
+  static FS = {} as FSType;
   /**
    * An alias to the `Emscripten Path API
    * <https://github.com/emscripten-core/emscripten/blob/main/src/library_path.js>`_.
@@ -163,26 +163,26 @@ export class PyodideAPI_ {
    * This provides a variety of operations for working with file system paths, such as
    * ``dirname``, ``normalize``, and ``splitPath``.
    */
-  static PATH = {} as any
+  static PATH = {} as any;
 
   /**
    * APIs to set a canvas for rendering graphics.
    * @summaryLink :ref:`canvas <js-api-pyodide-canvas>`
    * @omitFromAutoModule
    */
-  static canvas: CanvasInterface = canvas
+  static canvas: CanvasInterface = canvas;
 
   /**
    * A map from posix error names to error codes.
    */
-  static ERRNO_CODES = {} as { [code: string]: number }
+  static ERRNO_CODES = {} as { [code: string]: number };
   /**
    * An alias to the Python :ref:`pyodide <python-api>` package.
    *
    * You can use this to call functions defined in the Pyodide Python package
    * from JavaScript.
    */
-  static pyodide_py = {} as PyProxy // actually defined in loadPyodide (see pyodide.js)
+  static pyodide_py = {} as PyProxy; // actually defined in loadPyodide (see pyodide.js)
 
   /**
    * Inspect a Python code chunk and use :js:func:`pyodide.loadPackage` to install
@@ -211,35 +211,35 @@ export class PyodideAPI_ {
   static async loadPackagesFromImports(
     code: string,
     options: {
-      messageCallback?: (message: string) => void
-      errorCallback?: (message: string) => void
-      checkIntegrity?: boolean
+      messageCallback?: (message: string) => void;
+      errorCallback?: (message: string) => void;
+      checkIntegrity?: boolean;
     } = {
       checkIntegrity: true,
     },
   ): Promise<Array<PackageData>> {
-    let pyimports = API.pyodide_code.find_imports(code)
-    let imports
+    let pyimports = API.pyodide_code.find_imports(code);
+    let imports;
     try {
-      imports = pyimports.toJs()
+      imports = pyimports.toJs();
     } finally {
-      pyimports.destroy()
+      pyimports.destroy();
     }
     if (imports.length === 0) {
-      return []
+      return [];
     }
 
-    let packageNames = API._import_name_to_package_name
-    let packages: Set<string> = new Set()
+    let packageNames = API._import_name_to_package_name;
+    let packages: Set<string> = new Set();
     for (let name of imports) {
       if (packageNames.has(name)) {
-        packages.add(packageNames.get(name)!)
+        packages.add(packageNames.get(name)!);
       }
     }
     if (packages.size) {
-      return await loadPackage(Array.from(packages), options)
+      return await loadPackage(Array.from(packages), options);
     }
-    return []
+    return [];
   }
 
   /**
@@ -281,9 +281,9 @@ export class PyodideAPI_ {
     options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): any {
     if (!options.globals) {
-      options.globals = API.globals
+      options.globals = API.globals;
     }
-    return API.pyodide_code.eval_code.callKwargs(code, options)
+    return API.pyodide_code.eval_code.callKwargs(code, options);
   }
 
   /**
@@ -330,9 +330,9 @@ export class PyodideAPI_ {
     options: { globals?: PyProxy; locals?: PyProxy; filename?: string } = {},
   ): Promise<any> {
     if (!options.globals) {
-      options.globals = API.globals
+      options.globals = API.globals;
     }
-    return await API.pyodide_code.eval_code_async.callKwargs(code, options)
+    return await API.pyodide_code.eval_code_async.callKwargs(code, options);
   }
 
   /**
@@ -369,7 +369,7 @@ export class PyodideAPI_ {
    * @param module JavaScript object backing the module
    */
   static registerJsModule(name: string, module: object) {
-    API.pyodide_ffi.register_js_module(name, module)
+    API.pyodide_ffi.register_js_module(name, module);
   }
   /**
    * Unregisters a JavaScript module with given name that has been previously
@@ -383,7 +383,7 @@ export class PyodideAPI_ {
    * @param name Name of the JavaScript module to remove
    */
   static unregisterJsModule(name: string) {
-    API.pyodide_ffi.unregister_js_module(name)
+    API.pyodide_ffi.unregister_js_module(name);
   }
 
   /**
@@ -409,7 +409,7 @@ export class PyodideAPI_ {
       /**
        *  Optional argument to limit the depth of the conversion.
        */
-      depth: number
+      depth: number;
       /**
        * Optional argument to convert objects with no default conversion. See the
        * documentation of :py:meth:`~pyodide.ffi.JsProxy.to_py`.
@@ -418,49 +418,49 @@ export class PyodideAPI_ {
         value: any,
         converter: (value: any) => any,
         cacheConversion: (input: any, output: any) => void,
-      ) => any
+      ) => any;
     } = { depth: -1 },
   ): any {
     // No point in converting these, it'd be dumb to proxy them so they'd just
     // get converted back by `js2python` at the end
     switch (typeof obj) {
-      case 'string':
-      case 'number':
-      case 'boolean':
-      case 'bigint':
-      case 'undefined':
-        return obj
+      case "string":
+      case "number":
+      case "boolean":
+      case "bigint":
+      case "undefined":
+        return obj;
     }
     if (!obj || API.isPyProxy(obj)) {
-      return obj
+      return obj;
     }
-    let py_result = 0
-    let result = 0
+    let py_result = 0;
+    let result = 0;
     try {
       py_result = Module.js2python_convert(obj, {
         depth,
         defaultConverter,
-      })
+      });
     } catch (e) {
       if (e instanceof Module._PropagatePythonError) {
-        _pythonexc2js()
+        _pythonexc2js();
       }
-      throw e
+      throw e;
     }
     try {
       if (_JsProxy_Check(py_result)) {
         // Oops, just created a JsProxy. Return the original object.
-        return obj
+        return obj;
         // return Module.pyproxy_new(py_result);
       }
-      result = _python2js(py_result)
+      result = _python2js(py_result);
       if (result === null) {
-        _pythonexc2js()
+        _pythonexc2js();
       }
     } finally {
-      _Py_DecRef(py_result)
+      _Py_DecRef(py_result);
     }
-    return result
+    return result;
   }
 
   /**
@@ -485,7 +485,7 @@ export class PyodideAPI_ {
    * pyodide.pyimport("math.comb")(4, 2) // returns 4 choose 2 = 6
    */
   static pyimport(mod_name: string): any {
-    return API.pyodide_base.pyimport_impl(mod_name)
+    return API.pyodide_base.pyimport_impl(mod_name);
   }
 
   /**
@@ -508,26 +508,26 @@ export class PyodideAPI_ {
     buffer: TypedArray | ArrayBuffer,
     format: string,
     options: {
-      extractDir?: string
+      extractDir?: string;
     } = {},
   ) {
     if (
       !ArrayBuffer.isView(buffer) &&
-      API.getTypeTag(buffer) !== '[object ArrayBuffer]'
+      API.getTypeTag(buffer) !== "[object ArrayBuffer]"
     ) {
       throw new TypeError(
         `Expected argument 'buffer' to be an ArrayBuffer or an ArrayBuffer view`,
-      )
+      );
     }
-    API.typedArrayAsUint8Array(buffer)
+    API.typedArrayAsUint8Array(buffer);
 
-    let extract_dir = options.extractDir
+    let extract_dir = options.extractDir;
     API.package_loader.unpack_buffer.callKwargs({
       buffer,
       format,
       extract_dir,
       metadata: unpackArchiveMetadata,
-    })
+    });
   }
 
   /**
@@ -548,26 +548,26 @@ export class PyodideAPI_ {
     // TODO: support sync file system
     // sync: boolean = false
   ): Promise<NativeFS> {
-    if (fileSystemHandle.constructor.name !== 'FileSystemDirectoryHandle') {
+    if (fileSystemHandle.constructor.name !== "FileSystemDirectoryHandle") {
       throw new TypeError(
         `Expected argument 'fileSystemHandle' to be a FileSystemDirectoryHandle`,
-      )
+      );
     }
-    ensureMountPathExists(path)
+    ensureMountPathExists(path);
 
     Module.FS.mount(
       Module.FS.filesystems.NATIVEFS_ASYNC,
       { fileSystemHandle },
       path,
-    )
+    );
 
     // sync native ==> browser
-    await syncRemoteToLocal(Module)
+    await syncRemoteToLocal(Module);
 
     return {
       // sync browser ==> native
       syncfs: async () => await syncLocalToRemote(Module),
-    }
+    };
   }
 
   /**
@@ -580,24 +580,24 @@ export class PyodideAPI_ {
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
     if (!IN_NODE) {
-      throw new Error('mountNodeFS only works in Node')
+      throw new Error("mountNodeFS only works in Node");
     }
-    ensureMountPathExists(emscriptenPath)
-    let stat
+    ensureMountPathExists(emscriptenPath);
+    let stat;
     try {
-      stat = nodeFSMod.lstatSync(hostPath)
+      stat = nodeFSMod.lstatSync(hostPath);
     } catch (e) {
-      throw new Error(`hostPath '${hostPath}' does not exist`)
+      throw new Error(`hostPath '${hostPath}' does not exist`);
     }
     if (!stat.isDirectory()) {
-      throw new Error(`hostPath '${hostPath}' is not a directory`)
+      throw new Error(`hostPath '${hostPath}' is not a directory`);
     }
 
     Module.FS.mount(
       Module.FS.filesystems.NODEFS,
       { root: hostPath },
       emscriptenPath,
-    )
+    );
   }
 
   /**
@@ -605,7 +605,7 @@ export class PyodideAPI_ {
    * Necessary to enable importing Comlink proxies into Python.
    */
   static registerComlink(Comlink: any) {
-    API._Comlink = Comlink
+    API._Comlink = Comlink;
   }
 
   /**
@@ -628,8 +628,8 @@ export class PyodideAPI_ {
    * purpose you like.
    */
   static setInterruptBuffer(interrupt_buffer: TypedArray) {
-    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = +!!interrupt_buffer
-    Module.Py_EmscriptenSignalBuffer = interrupt_buffer
+    Module.HEAP8[Module._Py_EMSCRIPTEN_SIGNAL_HANDLING] = +!!interrupt_buffer;
+    Module.Py_EmscriptenSignalBuffer = interrupt_buffer;
   }
 
   /**
@@ -644,16 +644,16 @@ export class PyodideAPI_ {
     if (_PyGILState_Check()) {
       // GIL held, so it's okay to call __PyErr_CheckSignals.
       if (__PyErr_CheckSignals()) {
-        _pythonexc2js()
+        _pythonexc2js();
       }
-      return
+      return;
     } else {
       // GIL not held. This is very likely because we're in a IO handler. If
       // buffer has a 2, throwing EINTR quits out from the IO handler and tells
       // the calling context to call `PyErr_CheckSignals`.
-      const buf = Module.Py_EmscriptenSignalBuffer
+      const buf = Module.Py_EmscriptenSignalBuffer;
       if (buf && buf[0] === 2) {
-        throw new Module.FS.ErrnoError(cDefs.EINTR)
+        throw new Module.FS.ErrnoError(cDefs.EINTR);
       }
     }
   }
@@ -665,9 +665,9 @@ export class PyodideAPI_ {
    * @returns The old value of the debug flag.
    */
   static setDebug(debug: boolean): boolean {
-    const orig = !!API.debug_ffi
-    API.debug_ffi = debug
-    return orig
+    const orig = !!API.debug_ffi;
+    API.debug_ffi = debug;
+    return orig;
   }
 
   /**
@@ -676,14 +676,14 @@ export class PyodideAPI_ {
   static makeMemorySnapshot({
     serializer,
   }: {
-    serializer?: (obj: any) => any
+    serializer?: (obj: any) => any;
   } = {}): Uint8Array {
     if (!API.config._makeSnapshot) {
       throw new Error(
-        'Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide',
-      )
+        "Can only use pyodide.makeMemorySnapshot if the _makeSnapshot option is passed to loadPyodide",
+      );
     }
-    return API.makeSnapshot(serializer)
+    return API.makeSnapshot(serializer);
   }
 
   /**
@@ -692,7 +692,7 @@ export class PyodideAPI_ {
    * <https://github.com/pyodide/pyodide-lock>`_ repository.
    */
   static get lockfile(): Lockfile {
-    return API.lockfile
+    return API.lockfile;
   }
 
   /**
@@ -700,7 +700,7 @@ export class PyodideAPI_ {
    * file are resolved, or undefined.
    */
   static get lockfileBaseUrl(): string | undefined {
-    return API.config.packageCacheDir ?? API.config.packageBaseUrl
+    return API.config.packageCacheDir ?? API.config.packageBaseUrl;
   }
 }
 
@@ -710,23 +710,23 @@ export class PyodideAPI_ {
  * @hidetype
  * @docgroup exports
  */
-export type PyodideAPI = typeof PyodideAPI_
+export type PyodideAPI = typeof PyodideAPI_;
 
 /** @private */
 function makePublicAPI(): PyodideAPI {
   // Create a copy of PyodideAPI_ that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
-  let d = Object.getOwnPropertyDescriptors(PyodideAPI_)
+  let d = Object.getOwnPropertyDescriptors(PyodideAPI_);
   // @ts-ignore
-  delete d['prototype']
-  const pyodideAPI = Object.create({}, d)
-  API.public_api = pyodideAPI
-  pyodideAPI.FS = Module.FS
-  pyodideAPI.PATH = Module.PATH
-  pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES
-  pyodideAPI._module = Module
-  pyodideAPI._api = API
-  return pyodideAPI
+  delete d["prototype"];
+  const pyodideAPI = Object.create({}, d);
+  API.public_api = pyodideAPI;
+  pyodideAPI.FS = Module.FS;
+  pyodideAPI.PATH = Module.PATH;
+  pyodideAPI.ERRNO_CODES = Module.ERRNO_CODES;
+  pyodideAPI._module = Module;
+  pyodideAPI._api = API;
+  return pyodideAPI;
 }
 
 /**
@@ -739,27 +739,27 @@ function makePublicAPI(): PyodideAPI {
 function wrapPythonGlobals(globals_dict: PyDict, builtins_dict: PyDict) {
   return new Proxy(globals_dict, {
     get(target, symbol) {
-      if (symbol === 'get') {
+      if (symbol === "get") {
         return (key: any) => {
-          let result = target.get(key)
+          let result = target.get(key);
           if (result === undefined) {
-            result = builtins_dict.get(key)
+            result = builtins_dict.get(key);
           }
-          return result
-        }
+          return result;
+        };
       }
-      if (symbol === 'has') {
-        return (key: any) => target.has(key) || builtins_dict.has(key)
+      if (symbol === "has") {
+        return (key: any) => target.has(key) || builtins_dict.has(key);
       }
-      return Reflect.get(target, symbol)
+      return Reflect.get(target, symbol);
     },
-  })
+  });
 }
 
-let bootstrapFinalized: () => void
+let bootstrapFinalized: () => void;
 API.bootstrapFinalizedPromise = new Promise<void>(
   (r) => (bootstrapFinalized = r),
-)
+);
 
 /**
  * This function is called after the emscripten module is finished initializing,
@@ -773,69 +773,72 @@ API.finalizeBootstrap = function (
   snapshotDeserializer?: (obj: any) => any,
 ): PyodideAPI {
   if (snapshotConfig) {
-    syncUpSnapshotLoad1()
+    syncUpSnapshotLoad1();
   }
-  let [err, captured_stderr] = API.rawRun('import _pyodide_core')
+  let [err, captured_stderr] = API.rawRun("import _pyodide_core");
   if (err) {
-    API.fatal_loading_error('Failed to import _pyodide_core\n', captured_stderr)
+    API.fatal_loading_error(
+      "Failed to import _pyodide_core\n",
+      captured_stderr,
+    );
   }
 
   // First make internal dict so that we can use runPythonInternal.
   // runPythonInternal uses a separate namespace, so we don't pollute the main
   // environment with variables from our setup.
-  API.runPythonInternal_dict = API._pyodide._base.eval_code('{}') as PyProxy
-  API.importlib = API.runPythonInternal('import importlib; importlib')
-  let import_module = API.importlib.import_module
+  API.runPythonInternal_dict = API._pyodide._base.eval_code("{}") as PyProxy;
+  API.importlib = API.runPythonInternal("import importlib; importlib");
+  let import_module = API.importlib.import_module;
 
-  API.sys = import_module('sys')
-  API.os = import_module('os')
+  API.sys = import_module("sys");
+  API.os = import_module("os");
 
   // Set up globals
   let globals = API.runPythonInternal(
-    'import __main__; __main__.__dict__',
-  ) as PyDict
+    "import __main__; __main__.__dict__",
+  ) as PyDict;
   let builtins = API.runPythonInternal(
-    'import builtins; builtins.__dict__',
-  ) as PyDict
-  API.globals = wrapPythonGlobals(globals, builtins)
+    "import builtins; builtins.__dict__",
+  ) as PyDict;
+  API.globals = wrapPythonGlobals(globals, builtins);
 
   // Set up key Javascript modules.
-  let importhook = API._pyodide._importhook
-  let pyodide = makePublicAPI()
+  let importhook = API._pyodide._importhook;
+  let pyodide = makePublicAPI();
   if (API.config._makeSnapshot) {
-    API.config.jsglobals = makeGlobalsProxy(API.config.jsglobals)
+    API.config.jsglobals = makeGlobalsProxy(API.config.jsglobals);
   }
-  const jsglobals = API.config.jsglobals
+  const jsglobals = API.config.jsglobals;
   if (snapshotConfig) {
-    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer)
+    syncUpSnapshotLoad2(jsglobals, snapshotConfig, snapshotDeserializer);
   } else {
-    importhook.register_js_finder()
-    importhook.register_js_module('js', jsglobals)
-    importhook.register_js_module('pyodide_js', pyodide)
+    importhook.register_js_finder();
+    importhook.register_js_module("js", jsglobals);
+    importhook.register_js_module("pyodide_js", pyodide);
   }
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
   // aren't set up yet.)
-  API.pyodide_py = import_module('pyodide')
-  API.pyodide_code = import_module('pyodide.code')
-  API.pyodide_ffi = import_module('pyodide.ffi')
-  API.package_loader = import_module('pyodide._package_loader')
-  API.pyodide_base = import_module('_pyodide._base')
+  API.pyodide_py = import_module("pyodide");
+  API.pyodide_code = import_module("pyodide.code");
+  API.pyodide_ffi = import_module("pyodide.ffi");
+  API.package_loader = import_module("pyodide._package_loader");
+  API.pyodide_base = import_module("_pyodide._base");
 
-  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__()
-  API.dsodir = API.package_loader.DSO_DIR.__str__()
-  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages]
+  API.sitepackages = API.package_loader.SITE_PACKAGES.__str__();
+  API.dsodir = API.package_loader.DSO_DIR.__str__();
+  API.defaultLdLibraryPath = [API.dsodir, API.sitepackages];
 
   API.os.environ.__setitem__(
-    'LD_LIBRARY_PATH',
-    API.defaultLdLibraryPath.join(':'),
-  )
+    "LD_LIBRARY_PATH",
+    API.defaultLdLibraryPath.join(":"),
+  );
 
   // copy some last constants onto public API.
-  pyodide.pyodide_py = API.pyodide_py
-  pyodide.globals = API.globals
-  bootstrapFinalized!()
-  return pyodide
-}
+  pyodide.pyodide_py = API.pyodide_py;
+  pyodide.globals = API.globals;
+  bootstrapFinalized!();
+  return pyodide;
+};

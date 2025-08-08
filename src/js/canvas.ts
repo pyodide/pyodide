@@ -6,10 +6,10 @@
  * @hidden
  */
 export interface CanvasInterface {
-  setCanvas2D(canvas: HTMLCanvasElement): void
-  getCanvas2D(): HTMLCanvasElement | undefined
-  setCanvas3D(canvas: HTMLCanvasElement): void
-  getCanvas3D(): HTMLCanvasElement | undefined
+  setCanvas2D(canvas: HTMLCanvasElement): void;
+  getCanvas2D(): HTMLCanvasElement | undefined;
+  setCanvas3D(canvas: HTMLCanvasElement): void;
+  getCanvas3D(): HTMLCanvasElement | undefined;
 }
 
 // We define methods here to make sphinx-js generate documentation for them.
@@ -20,13 +20,13 @@ export interface CanvasInterface {
  * are the same.
  */
 export function setCanvas2D(canvas: HTMLCanvasElement): void {
-  if (canvas.id !== 'canvas') {
+  if (canvas.id !== "canvas") {
     console.warn(
       "If you are using canvas element for SDL library, it should have id 'canvas' to work properly.",
-    )
+    );
   }
 
-  Module.canvas = canvas
+  Module.canvas = canvas;
 }
 
 /**
@@ -35,7 +35,7 @@ export function setCanvas2D(canvas: HTMLCanvasElement): void {
  * are the same.
  */
 export function getCanvas2D(): HTMLCanvasElement | undefined {
-  return Module.canvas
+  return Module.canvas;
 }
 /**
  * Set the HTML5 canvas element to use for 3D rendering. For now,
@@ -43,7 +43,7 @@ export function getCanvas2D(): HTMLCanvasElement | undefined {
  * are the same.
  */
 export function setCanvas3D(canvas: HTMLCanvasElement): void {
-  setCanvas2D(canvas)
+  setCanvas2D(canvas);
 }
 /**
  * Get the HTML5 canvas element used for 3D rendering. For now,
@@ -51,7 +51,7 @@ export function setCanvas3D(canvas: HTMLCanvasElement): void {
  * are the same.
  */
 export function getCanvas3D(): HTMLCanvasElement | undefined {
-  return getCanvas2D()
+  return getCanvas2D();
 }
 
 /**
@@ -62,4 +62,4 @@ export const canvas: CanvasInterface = {
   getCanvas2D,
   setCanvas3D,
   getCanvas3D,
-}
+};

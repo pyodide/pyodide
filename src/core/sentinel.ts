@@ -1,7 +1,7 @@
 // @ts-ignore Can't find sentinel.wasm or it's corresponding type declarations
-import sentinelWasm from './sentinel.wasm'
+import sentinelWasm from "./sentinel.wasm";
 
-declare const sentinelWasm: Uint8Array
+declare const sentinelWasm: Uint8Array;
 
 const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
   (async function () {
@@ -14,40 +14,40 @@ const sentinelInstancePromise: Promise<WebAssembly.Instance | undefined> =
         // Starting with iPadOS 13, iPads might send a platform string that looks like a desktop Mac.
         // To differentiate, we check if the platform is 'MacIntel' (common for Macs and newer iPads)
         // AND if the device has multi-touch capabilities (navigator.maxTouchPoints > 1)
-        (navigator.platform === 'MacIntel' &&
-          typeof navigator.maxTouchPoints !== 'undefined' &&
-          navigator.maxTouchPoints > 1))
+        (navigator.platform === "MacIntel" &&
+          typeof navigator.maxTouchPoints !== "undefined" &&
+          navigator.maxTouchPoints > 1));
     if (isIOS) {
-      return undefined
+      return undefined;
     }
-    return undefined
+    return undefined;
     try {
-      const module = await WebAssembly.compile(sentinelWasm)
-      return await WebAssembly.instantiate(module)
+      const module = await WebAssembly.compile(sentinelWasm);
+      return await WebAssembly.instantiate(module);
     } catch (e) {
       if (e instanceof WebAssembly.CompileError) {
-        return undefined
+        return undefined;
       }
-      throw e
+      throw e;
     }
-  })()
+  })();
 
 type SentinelInstance<T> = {
-  create_sentinel: () => T
-  is_sentinel: (val: any) => val is T
-}
+  create_sentinel: () => T;
+  is_sentinel: (val: any) => val is T;
+};
 
 /**
  * @private
  */
 export async function getSentinelImport(): Promise<SentinelInstance<Symbol>> {
-  const sentinelInstance = await sentinelInstancePromise
+  const sentinelInstance = await sentinelInstancePromise;
   if (sentinelInstance) {
-    return sentinelInstance.exports as SentinelInstance<Symbol>
+    return sentinelInstance.exports as SentinelInstance<Symbol>;
   }
-  const error_marker = Symbol('error marker')
+  const error_marker = Symbol("error marker");
   return {
     create_sentinel: () => error_marker,
     is_sentinel: (val: any): val is typeof error_marker => val === error_marker,
-  }
+  };
 }

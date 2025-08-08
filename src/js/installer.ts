@@ -1,6 +1,6 @@
-import { DynlibLoader } from './dynload'
-import { uriToPackageData } from './packaging-utils'
-import { PackageManagerAPI, PackageManagerModule } from './types'
+import { DynlibLoader } from "./dynload";
+import { uriToPackageData } from "./packaging-utils";
+import { PackageManagerAPI, PackageManagerModule } from "./types";
 
 /**
  * The Installer class is responsible for installing packages into the Pyodide filesystem.
@@ -12,12 +12,12 @@ import { PackageManagerAPI, PackageManagerModule } from './types'
  * @hidden
  */
 export class Installer {
-  #api: PackageManagerAPI
-  #dynlibLoader: DynlibLoader
+  #api: PackageManagerAPI;
+  #dynlibLoader: DynlibLoader;
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-    this.#api = api
-    this.#dynlibLoader = new DynlibLoader(api, pyodideModule)
+    this.#api = api;
+    this.#dynlibLoader = new DynlibLoader(api, pyodideModule);
   }
 
   async install(
@@ -34,28 +34,28 @@ export class Installer {
         metadata,
         calculate_dynlibs: true,
       },
-    )
+    );
 
     DEBUG &&
       console.debug(
         `Found ${dynlibs.length} dynamic libraries inside ${filename}`,
-      )
+      );
 
     await this.#dynlibLoader.loadDynlibsFromPackage(
       { file_name: filename },
       dynlibs,
-    )
+    );
   }
 }
 
 /** @hidden */
-export let install: typeof Installer.prototype.install
+export let install: typeof Installer.prototype.install;
 
-if (typeof API !== 'undefined' && typeof Module !== 'undefined') {
-  const singletonInstaller = new Installer(API, Module)
+if (typeof API !== "undefined" && typeof Module !== "undefined") {
+  const singletonInstaller = new Installer(API, Module);
 
-  install = singletonInstaller.install.bind(singletonInstaller)
+  install = singletonInstaller.install.bind(singletonInstaller);
 
   // TODO: Find a better way to register these functions
-  API.install = install
+  API.install = install;
 }
