@@ -1,21 +1,21 @@
-const API = Module.API
-const Hiwire = {}
-const Tests = {}
-API.tests = Tests
-API.version = '0.29.0.dev0'
+const API = Module.API;
+const Hiwire = {};
+const Tests = {};
+API.tests = Tests;
+API.version = "0.29.0.dev0";
 // This version should be equal to the one in the Makefile.envs
 // TODO: Pass this value dynamically from outside.
-API.abiVersion = '2025_0'
-Module.hiwire = Hiwire
+API.abiVersion = "2025_0";
+Module.hiwire = Hiwire;
 
 function getTypeTag(x) {
   try {
-    return Object.prototype.toString.call(x)
+    return Object.prototype.toString.call(x);
   } catch (e) {
-    return ''
+    return "";
   }
 }
-API.getTypeTag = getTypeTag
+API.getTypeTag = getTypeTag;
 
 /**
  * Safe property check
@@ -32,12 +32,12 @@ function hasProperty(obj, prop) {
   try {
     while (obj) {
       if (Object.hasOwn(obj, prop)) {
-        return true
+        return true;
       }
-      obj = Object.getPrototypeOf(obj)
+      obj = Object.getPrototypeOf(obj);
     }
   } catch (e) {}
-  return false
+  return false;
 }
 
 /**
@@ -51,32 +51,32 @@ function hasProperty(obj, prop) {
  */
 function hasMethod(obj, prop) {
   try {
-    return typeof obj[prop] === 'function'
+    return typeof obj[prop] === "function";
   } catch (e) {
-    return false
+    return false;
   }
 }
 
-const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr
-API.pyproxyIsAlive = pyproxyIsAlive
+const pyproxyIsAlive = (px) => !!Module.PyProxy_getAttrsQuiet(px).shared.ptr;
+API.pyproxyIsAlive = pyproxyIsAlive;
 
 const errNoRet = () => {
   throw new Error(
-    'Assertion error: control reached end of function without return',
-  )
-}
+    "Assertion error: control reached end of function without return",
+  );
+};
 
 // This is factored out for testing purposes.
 function isPromise(obj) {
   try {
     // clang-format off
-    return typeof obj?.then === 'function'
+    return typeof obj?.then === "function";
     // clang-format on
   } catch (e) {
-    return false
+    return false;
   }
 }
-API.isPromise = isPromise
+API.isPromise = isPromise;
 
 /**
  * Turn any ArrayBuffer view or ArrayBuffer into a Uint8Array.
@@ -86,27 +86,27 @@ API.isPromise = isPromise
  */
 function bufferAsUint8Array(arg) {
   if (ArrayBuffer.isView(arg)) {
-    return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength)
+    return new Uint8Array(arg.buffer, arg.byteOffset, arg.byteLength);
   } else {
-    return new Uint8Array(arg)
+    return new Uint8Array(arg);
   }
 }
-API.typedArrayAsUint8Array = bufferAsUint8Array
+API.typedArrayAsUint8Array = bufferAsUint8Array;
 
 Module.iterObject = function* (object) {
   for (let k in object) {
     if (Object.hasOwn(object, k)) {
-      yield k
+      yield k;
     }
   }
-}
+};
 
 function wasmFunctionType(wasm_func) {
   if (!WebAssembly.Function) {
-    throw new Error('No type reflection')
+    throw new Error("No type reflection");
   }
   if (WebAssembly.Function.type) {
-    return WebAssembly.Function.type(wasm_func)
+    return WebAssembly.Function.type(wasm_func);
   }
-  return wasm_func.type()
+  return wasm_func.type();
 }

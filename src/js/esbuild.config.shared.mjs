@@ -1,37 +1,37 @@
-import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 
-const DEBUG = !!process.env.PYODIDE_DEBUG_JS
+const DEBUG = !!process.env.PYODIDE_DEBUG_JS;
 const SOURCEMAP = !!(
   process.env.PYODIDE_SOURCEMAP || process.env.PYODIDE_SYMBOLS
-)
+);
 
-const __dirname = dirname(new URL(import.meta.url).pathname)
+const __dirname = dirname(new URL(import.meta.url).pathname);
 
-function toDefines(o, path = '') {
+function toDefines(o, path = "") {
   return Object.entries(o).flatMap(([x, v]) => {
     // Drop anything that's not a valid identifier
     if (!/^[A-Za-z_$]*$/.test(x)) {
-      return []
+      return [];
     }
     // Flatten objects
-    if (typeof v === 'object') {
-      return toDefines(v, path + x + '.')
+    if (typeof v === "object") {
+      return toDefines(v, path + x + ".");
     }
-    if (typeof v === 'string' && !v.startsWith('"')) {
-      return [[path + x, `"${v}"`]]
+    if (typeof v === "string" && !v.startsWith('"')) {
+      return [[path + x, `"${v}"`]];
     }
     // Else convert to string
-    return [[path + x, v.toString()]]
-  })
+    return [[path + x, v.toString()]];
+  });
 }
 
-const cdefsFile = join(__dirname, 'struct_info_generated.json')
-const origConstants = JSON.parse(readFileSync(cdefsFile))
-const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines }
-const DEFINES = Object.fromEntries(toDefines(constants))
+const cdefsFile = join(__dirname, "struct_info_generated.json");
+const origConstants = JSON.parse(readFileSync(cdefsFile));
+const constants = { DEBUG, SOURCEMAP, cDefs: origConstants.defines };
+const DEFINES = Object.fromEntries(toDefines(constants));
 
-export const dest = (output) => join(__dirname, '..', '..', output)
+export const dest = (output) => join(__dirname, "..", "..", output);
 export const config = ({
   input,
   output,
@@ -40,18 +40,18 @@ export const config = ({
   extraDefines,
   loader,
 }) => ({
-  entryPoints: [join(__dirname, input + '.ts')],
+  entryPoints: [join(__dirname, input + ".ts")],
   outfile: dest(output),
   external: [
-    'node:child_process',
-    'node:crypto',
-    'node:fs',
-    'node:fs/promises',
-    'node:path',
-    'node:tty',
-    'node:url',
-    'node:vm',
-    'ws',
+    "node:child_process",
+    "node:crypto",
+    "node:fs",
+    "node:fs/promises",
+    "node:path",
+    "node:tty",
+    "node:url",
+    "node:vm",
+    "ws",
   ],
   define: { ...DEFINES, ...Object.fromEntries(toDefines(extraDefines ?? {})) },
   minify: !DEBUG,
@@ -61,4 +61,4 @@ export const config = ({
   format,
   globalName,
   loader,
-})
+});

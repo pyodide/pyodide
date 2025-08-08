@@ -1,22 +1,22 @@
 /* Handle dynamic library loading. */
 
-import { PackageManagerAPI, PackageManagerModule } from './types'
+import { PackageManagerAPI, PackageManagerModule } from "./types";
 
-import { createLock } from './common/lock'
+import { createLock } from "./common/lock";
 
 /** @hidden */
 export class DynlibLoader {
-  #api: PackageManagerAPI
-  #module: PackageManagerModule
+  #api: PackageManagerAPI;
+  #module: PackageManagerModule;
 
   // Emscripten has a lock in the corresponding code in library_browser.js. I
   // don't know why we need it, but quite possibly bad stuff will happen without
   // it.
-  private _lock = createLock()
+  private _lock = createLock();
 
   constructor(api: PackageManagerAPI, pyodideModule: PackageManagerModule) {
-    this.#api = api
-    this.#module = pyodideModule
+    this.#api = api;
+    this.#module = pyodideModule;
   }
 
   /**
@@ -29,42 +29,42 @@ export class DynlibLoader {
    * @private
    */
   public async loadDynlib(lib: string) {
-    const releaseDynlibLock = await this._lock()
+    const releaseDynlibLock = await this._lock();
 
-    DEBUG && console.debug(`Loading dynamic library ${lib}`)
+    DEBUG && console.debug(`Loading dynamic library ${lib}`);
 
     try {
-      const stack = this.#module.stackSave()
-      const libUTF8 = this.#module.stringToUTF8OnStack(lib)
+      const stack = this.#module.stackSave();
+      const libUTF8 = this.#module.stringToUTF8OnStack(lib);
 
       try {
         const pid = this.#module._emscripten_dlopen_promise(
           libUTF8,
           2, // RTLD_NOW (2) | RTLD_LOCAL (0)
-        )
-        this.#module.stackRestore(stack)
-        const promise = this.#module.getPromise(pid)
-        this.#module.promiseMap.free(pid)
-        await promise
+        );
+        this.#module.stackRestore(stack);
+        const promise = this.#module.getPromise(pid);
+        this.#module.promiseMap.free(pid);
+        await promise;
       } catch (e: any) {
-        throw new Error(`Failed to load dynamic library ${lib}: ${e}`)
+        throw new Error(`Failed to load dynamic library ${lib}: ${e}`);
       }
     } catch (e: any) {
       if (
         e &&
         e.message &&
-        e.message.includes('need to see wasm magic number')
+        e.message.includes("need to see wasm magic number")
       ) {
         throw new Error(
           `Failed to load dynamic library ${lib} $. We probably just tried to load a linux .so file or something.`,
-        )
+        );
       }
-      throw e
+      throw e;
     } finally {
-      releaseDynlibLock()
+      releaseDynlibLock();
     }
 
-    DEBUG && console.debug(`Loaded dynamic library ${lib}`)
+    DEBUG && console.debug(`Loaded dynamic library ${lib}`);
   }
 
   /**
@@ -87,14 +87,14 @@ export class DynlibLoader {
     dynlibPaths: string[],
   ) {
     for (const path of dynlibPaths) {
-      await this.loadDynlib(path)
+      await this.loadDynlib(path);
     }
   }
 }
 
-if (typeof API !== 'undefined' && typeof Module !== 'undefined') {
-  const singletonDynlibLoader = new DynlibLoader(API, Module)
+if (typeof API !== "undefined" && typeof Module !== "undefined") {
+  const singletonDynlibLoader = new DynlibLoader(API, Module);
 
   // TODO: Find a better way to register these functions
-  API.loadDynlib = singletonDynlibLoader.loadDynlib.bind(singletonDynlibLoader)
+  API.loadDynlib = singletonDynlibLoader.loadDynlib.bind(singletonDynlibLoader);
 }
