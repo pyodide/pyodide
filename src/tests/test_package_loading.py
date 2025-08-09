@@ -1212,6 +1212,8 @@ def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
     selenium.run_js(
         f"""
         pyodide = await loadPyodide({{"packageCacheDir": "{tmp_path}"}});
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `https://cdn.jsdelivr.net/pyodide/v${{version}}/full/`);
         assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
         """
     )
@@ -1222,6 +1224,8 @@ def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
     selenium.run_js(
         f"""
         pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}"}});
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `https://cdn.jsdelivr.net/pyodide/v${{version}}/full/`);
         assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
         """
     )
@@ -1231,15 +1235,20 @@ def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
     selenium.run_js(
         f"""
         pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}'}});
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `https://cdn.jsdelivr.net/pyodide/v${{version}}/full/`);
         assert(() => pyodide._api.packageManager.installBaseUrl === undefined);
         """
     )
 
     # with lockfileContents and packageBaseUrl
+    # cdn url should be replaced to the packageBaseUrl if packageBaseUrl is provided
     lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
     selenium.run_js(
         f"""
         pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}', "packageBaseUrl": "{tmp_path}"}});
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `{with_slash(tmp_path)}`);
         assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
         """
     )
@@ -1250,6 +1259,8 @@ def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
     selenium.run_js(
         f"""
         pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}", "packageCacheDir": "{package_cache_dir}"}});
+        version = pyodide._api.version;
+        assert(() => pyodide._api.packageManager.cdnURL === `https://cdn.jsdelivr.net/pyodide/v${{version}}/full/`);
         assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(package_cache_dir)}');
         """
     )
