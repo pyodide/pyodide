@@ -581,7 +581,7 @@ export type PackageManagerAPI = Pick<
   | "defaultLdLibraryPath"
   | "version"
 > & {
-  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden

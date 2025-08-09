@@ -74,6 +74,7 @@ export type ConfigType = {
   checkAPIVersion: boolean;
   BUILD_ID: string;
   packageBaseUrl?: string;
+  cdnUrl: string;
 };
 
 /**
@@ -259,6 +260,14 @@ export async function loadPyodide(
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = withTrailingSlash(resolvePath(indexURL));
   const options_ = options as ConfigType;
+
+  // cdnUrl only for node.
+  options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
+  options_.cdnUrl = withTrailingSlash(
+    options_.packageBaseUrl ??
+      `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
+  );
+
   if (!options.lockFileContents) {
     const lockFileURL = options.lockFileURL ?? indexURL + "pyodide-lock.json";
     options_.lockFileContents = loadLockFile(lockFileURL);
@@ -273,8 +282,6 @@ export async function loadPyodide(
       resolvePath(options_.packageCacheDir),
     );
   }
-
-  options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
 
   const default_config = {
     fullStdLib: false,

@@ -116,7 +116,7 @@ export class PackageManager {
    *
    * exported for testing purposes.
    */
-  public cdnURL: string;
+  public cdnURL: string = "";
 
   /**
    * The set of loaded packages.
@@ -157,7 +157,7 @@ export class PackageManager {
       // back to cdnURL
       this.installBaseUrl =
         this.#api.config.packageCacheDir ?? this.#api.config.packageBaseUrl;
-      this.cdnURL = `https://cdn.jsdelivr.net/pyodide/v${this.#api.version}/full/`;
+      this.cdnURL = this.#api.config.cdnUrl;
     } else {
       // use packageBaseUrl as the base URL for the packages
       this.installBaseUrl = this.#api.config.packageBaseUrl;
