@@ -7,6 +7,7 @@ import {
   PackageManagerAPI,
   PackageManagerModule,
   LoadedPackages,
+  TypedArray,
 } from "./types";
 import { IN_NODE } from "./environments";
 import type { PyProxy } from "generated/pyproxy";
@@ -338,6 +339,36 @@ export class PackageManager {
     } finally {
       releaseLock();
     }
+  }
+
+  public async loadBinaryPackage(
+    name: string,
+    buffer: TypedArray | ArrayBuffer,
+    format?: string,
+  ) {
+    const metadata: PackageLoadMetadata = {
+      name,
+      normalizedName: "---",
+      channel: this.defaultChannel,
+      depends: [],
+      done: createResolvable(),
+      installPromise: undefined,
+      packageData: {
+        name,
+        version: "1.0.0",
+        file_name: name + "-1.0.0-py3-none-any." + (format || "whl"),
+        install_dir: "site",
+        sha256: "",
+        package_type: "package",
+        imports: [],
+        depends: [],
+      },
+    };
+
+    await this.installPackage(
+      metadata,
+      this.#api.typedArrayAsUint8Array(buffer),
+    );
   }
 
   /**
@@ -680,6 +711,7 @@ export function toStringArray(str: string | PyProxy | string[]): string[] {
 }
 
 export let loadPackage: typeof PackageManager.prototype.loadPackage;
+export let loadBinaryPackage: typeof PackageManager.prototype.loadBinaryPackage;
 /**
  * An object whose keys are the names of the loaded packages and whose values
  * are the install sources of the packages. Use
@@ -693,6 +725,10 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   const singletonPackageManager = new PackageManager(API, Module);
 
   loadPackage = singletonPackageManager.loadPackage.bind(
+    singletonPackageManager,
+  );
+
+  loadBinaryPackage = singletonPackageManager.loadBinaryPackage.bind(
     singletonPackageManager,
   );
 
