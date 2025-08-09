@@ -406,9 +406,7 @@ export class PackageManager {
 
       if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
         this.logStderr(
-          `Loading same package ${pkgname} from ${channel} and ${
-            toLoad.get(pkgname)!.channel
-          }`,
+          `Loading same package ${pkgname} from ${channel} and ${toLoad.get(pkgname)!.channel}`,
         );
         continue;
       }
