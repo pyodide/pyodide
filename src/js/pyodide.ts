@@ -261,7 +261,6 @@ export async function loadPyodide(
   indexURL = withTrailingSlash(resolvePath(indexURL));
   const options_ = options as ConfigType;
 
-
   options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
   // cdnUrl only for node. withTrailingSlash is a no-op, but just in case to prevent future human errors.
   options_.cdnUrl = withTrailingSlash(
