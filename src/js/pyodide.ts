@@ -261,8 +261,9 @@ export async function loadPyodide(
   indexURL = withTrailingSlash(resolvePath(indexURL));
   const options_ = options as ConfigType;
 
-  // cdnUrl only for node.
+
   options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
+  // cdnUrl only for node. withTrailingSlash is a no-op, but just in case to prevent future human errors.
   options_.cdnUrl = withTrailingSlash(
     options_.packageBaseUrl ??
       `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
