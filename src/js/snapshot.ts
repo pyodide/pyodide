@@ -153,7 +153,7 @@ API.serializeHiwireState = function (
     let path;
     try {
       path = value[getAccessorList];
-    } catch(e) {}
+    } catch (e) {}
     if (path) {
       hiwireKeys.push({ path });
       continue;
