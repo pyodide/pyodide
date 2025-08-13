@@ -150,7 +150,10 @@ API.serializeHiwireState = function (
       hiwireKeys.push(value);
       continue;
     }
-    const path = value[getAccessorList];
+    let path;
+    try {
+      path = value[getAccessorList];
+    } catch (e) {}
     if (path) {
       hiwireKeys.push({ path });
       continue;
