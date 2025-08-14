@@ -17,6 +17,13 @@ repos:
       - id: trailing-whitespace
       - id: requirements-txt-fixer
 
+  - repo: https://github.com/biomejs/pre-commit
+    rev: "v0.6.1"
+    hooks:
+      - id: biome-format
+        additional_dependencies: ["@biomejs/biome@2.1.1"]
+        types_or: [javascript, ts]
+
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: "v0.9.1"
     hooks:
@@ -85,13 +92,6 @@ repos:
         files: ^(packages/|docs|/conftest.py|src/tests)
         exclude: (^packages/.*/setup.py|/src|pyodide-build)
         additional_dependencies: *mypy-deps
-
-  - repo: https://github.com/biomejs/pre-commit
-    rev: "v0.6.1"
-    hooks:
-      - id: biome-format
-        additional_dependencies: ["@biomejs/biome@2.1.1"]
-        types_or: [javascript, ts]
 
 ci:
   autoupdate_schedule: "quarterly"
