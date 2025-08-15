@@ -600,7 +600,7 @@ class PyodideConsole(Console):
 
         >>> from pyodide.console import PyodideConsole # doctest: +SKIP
         >>> console = PyodideConsole() # doctest: +SKIP
-        >>> # This will automatically load numpy before execution # doctest: +SKIP
+        >>> # This will automatically load numpy before execution
         >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))") # doctest: +SKIP
         >>> print(future.syntax_check) # doctest: +SKIP
         complete # doctest: +SKIP
