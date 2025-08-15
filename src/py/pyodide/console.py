@@ -240,6 +240,7 @@ class ConsoleFuture(Future[Any]):
     A future with extra fields used as the return value for :py:class:`Console` APIs.
 
     Example:
+        # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
         >>> from pyodide.console import Console # doctest: +RUN_IN_PYODIDE +SKIPIF(browser == "firefox" or browser == "safari")
         >>> console = Console()
         >>> future = console.push("print('Hello, World!')")
@@ -594,6 +595,7 @@ class PyodideConsole(Console):
     before running the code.
 
     Example:
+        # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
         >>> from pyodide.console import PyodideConsole # doctest: +RUN_IN_PYODIDE +SKIPIF(browser == "firefox" or browser == "safari")
         >>> console = PyodideConsole()
         >>> # This will automatically load numpy before execution
