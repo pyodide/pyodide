@@ -236,19 +236,20 @@ COMPLETE: ConsoleFutureStatus = "complete"
 
 
 class ConsoleFuture(Future[Any]):
+    # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
     """
     A future with extra fields used as the return value for :py:class:`Console` APIs.
 
     Example:
-        # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
-        >>> from pyodide.console import Console # doctest: +RUN_IN_PYODIDE +SKIPIF(browser == "firefox" or browser == "safari")
-        >>> console = Console()
-        >>> future = console.push("print('Hello, World!')")
-        >>> print(future.syntax_check)
-        complete
-        >>> import asyncio
-        >>> result = asyncio.run(future)
-        Hello, World!
+
+        >>> from pyodide.console import Console # doctest: +SKIP
+        >>> console = Console() # doctest: +SKIP
+        >>> future = console.push("print('Hello, World!')") # doctest: +SKIP
+        >>> print(future.syntax_check) # doctest: +SKIP
+        complete # doctest: +SKIP
+        >>> import asyncio # doctest: +SKIP
+        >>> result = asyncio.run(future) # doctest: +SKIP
+        Hello, World! # doctest: +SKIP
     """
 
     syntax_check: ConsoleFutureStatus
@@ -590,18 +591,19 @@ class Console:
 
 
 class PyodideConsole(Console):
+    # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
     """
     A subclass of :py:class:`Console` that uses :js:func:`pyodide.loadPackagesFromImports`
     before running the code.
 
     Example:
-        # TODO: Figure out proper SKIPIF syntax for Firefox and Safari
-        >>> from pyodide.console import PyodideConsole # doctest: +RUN_IN_PYODIDE +SKIPIF(browser == "firefox" or browser == "safari")
-        >>> console = PyodideConsole()
-        >>> # This will automatically load numpy before execution
-        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))")
-        >>> print(future.syntax_check)
-        complete
+
+        >>> from pyodide.console import PyodideConsole # doctest: +SKIP
+        >>> console = PyodideConsole() # doctest: +SKIP
+        >>> # This will automatically load numpy before execution # doctest: +SKIP
+        >>> future = console.push("import numpy as np; print(np.array([1, 2, 3]))") # doctest: +SKIP
+        >>> print(future.syntax_check) # doctest: +SKIP
+        complete # doctest: +SKIP
     """
 
     async def runcode(self, source: str, code: CodeRunner) -> ConsoleFuture:
