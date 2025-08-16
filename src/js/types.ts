@@ -350,6 +350,12 @@ export interface Module {
   };
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
 }
 
 /**
@@ -599,4 +605,6 @@ export type PackageManagerModule = Pick<
   | "_emscripten_dlopen_promise"
   | "getPromise"
   | "promiseMap"
+  | "_dlerror"
+  | "UTF8ToString"
 >;

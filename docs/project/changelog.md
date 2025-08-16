@@ -21,6 +21,9 @@ myst:
   which was introduced in 0.28.1.
   {pr}`5824`
 
+- {{ Improvement }} Improve error message when a dynamic library fails to load.
+  {pr}`5840`
+
 ## Version 0.28.1
 
 _August 04, 2025_
