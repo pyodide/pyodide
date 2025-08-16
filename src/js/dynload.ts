@@ -47,7 +47,10 @@ export class DynlibLoader {
         this.#module.promiseMap.free(pid);
         await promise;
       } catch (e: any) {
-        throw new Error(`Failed to load dynamic library ${lib}: ${e}`);
+        const errorMessage = this.getDLOpenError();
+        throw new Error(
+          `Failed to load dynamic library ${lib}: ${errorMessage ?? e}`,
+        );
       }
     } catch (e: any) {
       if (
@@ -65,6 +68,22 @@ export class DynlibLoader {
     }
 
     DEBUG && console.debug(`Loaded dynamic library ${lib}`);
+  }
+
+  /**
+   * @returns The error message from the last dynamic library load operation, or undefined if there was no error.
+   */
+  private getDLOpenError(): string | undefined {
+    const errorPtr = this.#module._dlerror();
+    if (errorPtr === 0) {
+      return undefined;
+    }
+
+    const errorMessage = this.#module.UTF8ToString(
+      errorPtr,
+      512, // Use enough space for the error message
+    );
+    return errorMessage;
   }
 
   /**

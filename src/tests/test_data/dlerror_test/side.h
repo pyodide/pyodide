@@ -1,0 +1,1 @@
+int side_func();

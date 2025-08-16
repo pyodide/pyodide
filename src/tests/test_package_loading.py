@@ -378,6 +378,25 @@ def test_load_bad_so_file(selenium):
         )
 
 
+@pytest.mark.requires_dynamic_linking
+def test_load_dlerror(selenium):
+    so_file_with_link_error = (
+        Path(__file__).parent / "test_data" / "dlerror_test" / "main_func.so"
+    )
+    data = so_file_with_link_error.read_bytes()
+    selenium.run(
+        f"""
+        import pathlib
+        pathlib.Path("/a.so").write_bytes({data!r})
+        """
+    )
+    selenium.run_js(
+        """
+        await pyodide._api.loadDynlib("/a.so");
+        """
+    )
+
+
 def test_should_load_dynlib():
     import sysconfig
 
