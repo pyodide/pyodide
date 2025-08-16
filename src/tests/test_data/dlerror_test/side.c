@@ -1,1 +1,5 @@
-int side_func() { return 42; }
+int
+side_func()
+{
+  return 42;
+}

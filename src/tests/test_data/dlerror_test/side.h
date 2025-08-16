@@ -1,1 +1,2 @@
-int side_func();
+int
+side_func();
