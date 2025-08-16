@@ -21,7 +21,7 @@ This document provides a high-level overview of the Pyodide project, based on th
 - **cpython/:** Contains the CPython source code, patches, and build scripts.
 - **src/:** Contains the JavaScript and Python APIs, as well as the Foreign Function Interface (FFI).
 - **packages/:** Contains the recipes for building Python packages.
-- **pyodide-build/:** Contains the build system for Pyodide.
+- **pyodide-build/:** Contains the build system for Pyodide. pyodide-build is a submodule and we do not directly modify the source code in this repository. All the pyodide-build-related changes should be dealt separately in pyodide-build repository.
 
 ## Key Technologies
 - **WebAssembly:** The compilation target for the CPython interpreter and native extensions.

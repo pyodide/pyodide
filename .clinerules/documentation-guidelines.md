@@ -13,7 +13,7 @@ These guidelines are for maintaining the project's documentation, which is built
 
 ## Content and Style
 - The main entry point for the documentation is `docs/index.rst`.
-- Both reStructuredText (`.rst`) and Markdown (`.md`) are used for documentation files.
+- We only use markdown except for the index.rst file.
 - JavaScript and TypeScript documentation is handled via `sphinx-js`.
 
 ## Building the Documentation
