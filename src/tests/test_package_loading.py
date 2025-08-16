@@ -390,11 +390,12 @@ def test_load_dlerror(selenium):
         pathlib.Path("/a.so").write_bytes({data!r})
         """
     )
-    selenium.run_js(
-        """
-        await pyodide._api.loadDynlib("/a.so");
-        """
-    )
+    with pytest.raises(selenium.JavascriptException, match='Failed to find dynamic library "libside.so"'):
+        selenium.run_js(
+            """
+            await pyodide._api.loadDynlib("/a.so");
+            """
+        )
 
 
 def test_should_load_dynlib():
