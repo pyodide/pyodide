@@ -272,3 +272,17 @@ def test_syncify_in_snapshot_load(selenium_standalone_noload):
         `)
         """
     )
+
+
+def test_snapshot_pyfetch(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    selenium.run_js(
+        """
+        const py1 = await loadPyodide({_makeSnapshot: true});
+        py1.runPython(`
+            from pyodide.http import pyfetch
+        `);
+        const snapshot = py1.makeMemorySnapshot();
+        const py2 = await loadPyodide({_loadSnapshot: snapshot});
+        """
+    )
