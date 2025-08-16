@@ -48,9 +48,7 @@ export class DynlibLoader {
         await promise;
       } catch (e: any) {
         const error = this.getDLError();
-        throw new Error(
-          `Failed to load dynamic library ${lib}: ${error ?? e}`,
-        );
+        throw new Error(`Failed to load dynamic library ${lib}: ${error ?? e}`);
       }
     } catch (e: any) {
       if (
