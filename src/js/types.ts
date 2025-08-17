@@ -1,11 +1,15 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
-import { type PyodideInterface } from "./api";
+import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
+import { PackageManager } from "./load-package";
 
+/**
+ * @docgroup pyodide.ffi
+ */
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -258,6 +262,7 @@ export interface FSType {
   utime: (path: string, atime: number, mtime: number) => void;
   rmdir: (path: string) => void;
   mount: (type: any, opts: any, mountpoint: string) => any;
+  unmount: (mountpoint: string) => any;
   write: (
     stream: FSStream,
     buffer: any,
@@ -347,19 +352,89 @@ export interface Module {
   getPromise(p: number): Promise<any>;
 }
 
-type LockfileInfo = {
-  arch: "wasm32" | "wasm64";
+/**
+ * The lockfile platform info. The ``abi_version`` field is used to check if the
+ * lockfile is compatible with the interpreter. The remaining fields are
+ * informational.
+ */
+export interface LockfileInfo {
+  /**
+   * Machine architecture. At present, only can be wasm32. Pyodide has no wasm64
+   * build.
+   */
+  arch: "wasm32";
+  /**
+   * The ABI version is structured as ``yyyy_patch``. For the lockfile to be
+   * compatible with the current interpreter this field must match exactly with
+   * the ABI version of the interpreter.
+   */
   abi_version: string;
+  /**
+   * The Emscripten versions for instance, `emscripten_4_0_9`. Different
+   * Emscripten versions have different ABIs so if this changes ``abi_version``
+   * must also change.
+   */
   platform: string;
+  /**
+   * The Pyodide version the lockfile was made with. Informational only, has no
+   * compatibility implications. May be removed in the future.
+   */
   version: string;
+  /**
+   * The Python version this lock file was made with. If the minor version
+   * changes (e.g, 3.12 to 3.13) this changes the ABI and the ``abi_version``
+   * must change too. Patch versions do not imply a change to the
+   * ``abi_version``.
+   */
   python: string;
-};
+}
 
-/** @hidden */
-export type Lockfile = {
+/**
+ * A package entry in the lock file.
+ */
+export interface LockfilePackage {
+  /**
+   * The unnormalized name of the package.
+   */
+  name: string;
+  version: string;
+  /**
+   * The file name or url of the package wheel. If it's relative, it will be
+   * resolved with respect to ``packageBaseUrl``. If there is no
+   * ``packageBaseUrl``, attempting to install a package with a relative
+   * ``file_name``  will fail.
+   */
+  file_name: string;
+  package_type: PackageType;
+  /**
+   * The installation directory. Will be ``site`` except for certain system
+   * dynamic libraries that need to go on the global LD_LIBRARY_PATH.
+   */
+  install_dir: "site" | "dynlib";
+  /**
+   * Integrity. Must be present unless ``checkIntegrity: false`` is passed to
+   * ``loadPyodide``.
+   */
+  sha256: string;
+  /**
+   * The set of imports provided by this package as best we can tell. Used by
+   * :js:func:`pyodide.loadPackagesFromImports` to work out what packages to
+   * install.
+   */
+  imports: string[];
+  /**
+   * The set of dependencies of this package.
+   */
+  depends: string[];
+}
+
+/**
+ * The type of a package lockfile.
+ */
+export interface Lockfile {
   info: LockfileInfo;
-  packages: Record<string, InternalPackageData>;
-};
+  packages: Record<string, LockfilePackage>;
+}
 
 /** @hidden */
 export type PackageType =
@@ -384,20 +459,6 @@ export type LoadedPackages = Record<string, string>;
 /**
  * @hidden
  */
-export type InternalPackageData = {
-  name: string;
-  version: string;
-  file_name: string;
-  package_type: PackageType;
-  install_dir: string;
-  sha256: string;
-  imports: string[];
-  depends: string[];
-};
-
-/**
- * @hidden
- */
 export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
@@ -405,7 +466,7 @@ export type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData: InternalPackageData;
+  packageData: LockfilePackage;
 };
 
 /** @hidden */
@@ -414,11 +475,10 @@ export interface API {
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
-  public_api: PyodideInterface;
+  public_api: PyodideAPI;
   config: ConfigType;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
-  setCdnUrl: (url: string) => void;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
   initializeStreams: (
     stdin?: InFuncType | undefined,
@@ -457,13 +517,13 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<Lockfile>;
+  lockFilePromise: Promise<Lockfile | string>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
-  lockfile_packages: Record<string, InternalPackageData>;
-  lockfileBaseUrl: string;
+  lockfile_packages: Record<string, LockfilePackage>;
+  packageManager: PackageManager;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
@@ -497,7 +557,7 @@ export interface API {
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
-  ) => PyodideInterface;
+  ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
@@ -519,8 +579,9 @@ export type PackageManagerAPI = Pick<
   | "bootstrapFinalizedPromise"
   | "sitepackages"
   | "defaultLdLibraryPath"
+  | "version"
 > & {
-  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden

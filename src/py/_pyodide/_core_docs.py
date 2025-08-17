@@ -1449,9 +1449,9 @@ def to_js(
     /,
     *,
     depth: int = -1,
-    pyproxies: JsProxy | None,
+    pyproxies: JsProxy | None = None,
     create_pyproxies: bool,
-    dict_converter: None,
+    dict_converter: None = None,
     default_converter: ToJsConverter | None = None,
     eager_converter: ToJsConverter | None = None,
 ) -> JsMap[Any, Any]: ...
@@ -1543,40 +1543,40 @@ def to_js(
 
     Examples
     --------
-    >>> from js import Object, Map, Array # doctest: +SKIP
-    >>> from pyodide.ffi import to_js # doctest: +SKIP
-    >>> js_object = to_js({'age': 20, 'name': 'john'}) # doctest: +SKIP
-    >>> js_object # doctest: +SKIP
+    >>> from js import Object, Map, Array # doctest: +RUN_IN_PYODIDE
+    >>> from pyodide.ffi import to_js
+    >>> js_object = to_js({'age': 20, 'name': 'john'})
+    >>> js_object
     [object Map]
-    >>> js_object.keys(), js_object.values() # doctest: +SKIP
-    KeysView([object Map]) ValuesView([object Map]) # doctest: +SKIP
-    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())] # doctest: +SKIP
+    >>> js_object.keys(), js_object.values()
+    (KeysView([object Map]), ValuesView([object Map]))
+    >>> [(k, v) for k, v in zip(js_object.keys(), js_object.values())]
     [('age', 20), ('name', 'john')]
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +SKIP
-    >>> js_object.age == 20 # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Object.fromEntries) # doctest: +RUN_IN_PYODIDE
+    >>> js_object.age == 20
     True
-    >>> js_object.name == 'john' # doctest: +SKIP
+    >>> js_object.name == 'john'
     True
-    >>> js_object # doctest: +SKIP
+    >>> js_object
     [object Object]
-    >>> js_object.hasOwnProperty("age") # doctest: +SKIP
+    >>> js_object.hasOwnProperty("age")
     True
-    >>> js_object.hasOwnProperty("height") # doctest: +SKIP
+    >>> js_object.hasOwnProperty("height")
     False
 
-    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +SKIP
-    >>> [item for item in js_object] # doctest: +SKIP
+    >>> js_object = to_js({'age': 20, 'name': 'john'}, dict_converter=Array.from_) # doctest: +RUN_IN_PYODIDE
+    >>> [item for item in js_object]
     [age,20, name,john]
-    >>> js_object.toString() # doctest: +SKIP
-    age,20,name,john
+    >>> js_object.toString()
+    'age,20,name,john'
 
-    >>> class Bird: pass # doctest: +SKIP
-    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None # doctest: +SKIP
-    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter) # doctest: +SKIP
-    >>> [bird for bird in js_nest] # doctest: +SKIP
+    >>> class Bird: pass # doctest: +RUN_IN_PYODIDE
+    >>> converter = lambda value, convert, cache: Object.new(size=1, color='red') if isinstance(value, Bird) else None
+    >>> js_nest = to_js([Bird(), Bird()], default_converter=converter)
+    >>> [bird for bird in js_nest]
     [[object Object], [object Object]]
-    >>> [(bird.size, bird.color) for bird in js_nest] # doctest: +SKIP
+    >>> [(bird.size, bird.color) for bird in js_nest]
     [(1, 'red'), (1, 'red')]
 
     Here are some examples demonstrating the usage of the ``default_converter``
@@ -1738,6 +1738,9 @@ class JsNull:
 
 #: The Python representation of the JavaScript null object.
 jsnull: JsNull = object.__new__(JsNull)
+from json import encoder
+
+encoder._JSNULL = jsnull  # type:ignore[attr-defined]
 
 
 __all__ = [

@@ -11,6 +11,7 @@ source:
 build:
   type: cpython_module
   script: |
+    export PKG_CONFIG_PATH="${WASM_LIBRARY_DIR}/lib/pkgconfig"
     wget ${PYTHON_ARCHIVE_URL} -O Python-${PYVERSION}.tgz
     tar -xf Python-${PYVERSION}.tgz
     cd Python-${PYVERSION}
@@ -25,8 +26,8 @@ build:
 
 requirements:
   host:
-    - openssl
+    - libopenssl
   run:
-    - openssl
+    - libopenssl
 about:
   license: PSF
