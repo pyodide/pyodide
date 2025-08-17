@@ -53,19 +53,19 @@ def test_filesystem_mounting(selenium):
     test_creation_in_python = Template(
         """
         # Test os.exists
-        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is True
-        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is True
-        assert os.path.exists("${MOUNT_DIR}/file_from_nowhere.txt") is False
+        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
+        assert not os.path.exists("${MOUNT_DIR}/file_from_nowhere.txt")
 
         # Test os.path.isfile and os.path.isdir
-        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is True
-        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is True
-        assert os.path.isfile("${MOUNT_DIR}/file_from_nowhere.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}/file_from_nowhere.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}") is True
-        assert os.path.isfile("${MOUNT_DIR}") is False
+        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
+        assert not os.path.isfile("${MOUNT_DIR}/file_from_nowhere.txt")
+        assert not os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert not os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
+        assert not os.path.isdir("${MOUNT_DIR}/file_from_nowhere.txt")
+        assert os.path.isdir("${MOUNT_DIR}")
+        assert not os.path.isfile("${MOUNT_DIR}")
 
         # Test os.listdir
         assert set(os.listdir("${MOUNT_DIR}")) == { "file_from_${FILE_SUFFIX_1}.txt", "file_from_${FILE_SUFFIX_2}.txt" }
@@ -108,19 +108,16 @@ def test_filesystem_mounting(selenium):
 
     test_removal_in_python = Template(
         """
-        assert os.path.exists("${MOUNT_DIR}") is False
-        assert os.path.exists("${MOUNT_DIR}") is False
-        assert os.path.isfile("${MOUNT_DIR}") is False
-        assert os.path.isfile("${MOUNT_DIR}") is False
-        assert os.path.isdir("${MOUNT_DIR}") is False
-        assert os.path.isdir("${MOUNT_DIR}") is False
+        assert not os.path.exists("${MOUNT_DIR}")
+        assert not os.path.isfile("${MOUNT_DIR}")
+        assert not os.path.isdir("${MOUNT_DIR}")
 
-        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is False
-        assert os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is False
-        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is False
-        assert os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt") is False
-        assert os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt") is False
+        assert not os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert not os.path.exists("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
+        assert not os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert not os.path.isfile("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
+        assert not os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_1}.txt")
+        assert not os.path.isdir("${MOUNT_DIR}/file_from_${FILE_SUFFIX_2}.txt")
         """
     )
 
