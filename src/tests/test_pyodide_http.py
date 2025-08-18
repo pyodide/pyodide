@@ -523,7 +523,7 @@ class TestPyxhr:
 
     def test_xhr_all_methods(self, selenium, xhr_test_server):
         """Test all HTTP methods are available."""
-        
+
         result = selenium.run("""
             from pyodide.http import pyxhr
             methods = ['get', 'post', 'put', 'delete', 'head', 'patch', 'options']

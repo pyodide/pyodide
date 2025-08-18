@@ -656,7 +656,9 @@ def _xhr_request(method: str, url: str, **kwargs: Any) -> XHRResponse:
         raise XHRError(f"XMLHttpRequest failed: {e}") from e
 
     if req.status == 0 and req.responseText == "":
-        raise XHRNetworkError(f"Network error or CORS issue for {method} {url}") from None
+        raise XHRNetworkError(
+            f"Network error or CORS issue for {method} {url}"
+        ) from None
     return XHRResponse(req)
 
 
@@ -670,7 +672,7 @@ class pyxhr:
     >>> response.status_code # doctest: +SKIP
     200
     >>> data = response.json() # doctest: +SKIP
-    
+
     >>> response = pyxhr.post("https://httpbin.org/post", # doctest: +SKIP
     ...                      json={"key": "value"}) # doctest: +SKIP
     >>> response.status_code # doctest: +SKIP
