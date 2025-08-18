@@ -575,7 +575,7 @@ async def pyfetch(
 
 
 # pyxhr - XMLHttpRequest-based synchronous HTTP client
-def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
+def _xhr_request(method: str, url: str, **kwargs: Any) -> XHRResponse:
     """Make a synchronous HTTP request using XMLHttpRequest.
 
     This is the core function that wraps XMLHttpRequest to provide
@@ -635,7 +635,7 @@ def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
         headers["Content-Type"] = "application/json"
 
     if auth := kwargs.get("auth"):
-        if isinstance(auth, (tuple, list)) and len(auth) == 2:
+        if isinstance(auth, tuple | list) and len(auth) == 2:
             username, password = auth
             credentials = base64.b64encode(f"{username}:{password}".encode()).decode(
                 "ascii"
@@ -652,12 +652,11 @@ def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
         # Handle JavaScript exceptions from XMLHttpRequest
         if hasattr(e, "name"):
             if "network" in str(e).lower():
-                raise XHRNetworkError(f"Network error for {method} {url}")
-        raise XHRError(f"XMLHttpRequest failed: {e}")
+                raise XHRNetworkError(f"Network error for {method} {url}") from e
+        raise XHRError(f"XMLHttpRequest failed: {e}") from e
 
     if req.status == 0 and req.responseText == "":
-        raise XHRNetworkError(f"Network error or CORS issue for {method} {url}")
-
+        raise XHRNetworkError(f"Network error or CORS issue for {method} {url}") from None
     return XHRResponse(req)
 
 
@@ -666,20 +665,20 @@ class pyxhr:
 
     Examples
     --------
-    >>> from pyodide.http import pyxhr
-    >>> response = pyxhr.get("https://httpbin.org/get")
-    >>> response.status_code
+    >>> from pyodide.http import pyxhr # doctest: +SKIP
+    >>> response = pyxhr.get("https://httpbin.org/get") # doctest: +SKIP
+    >>> response.status_code # doctest: +SKIP
     200
-    >>> data = response.json()
-
-    >>> response = pyxhr.post("https://httpbin.org/post",
-    ...                      json={"key": "value"})
-    >>> response.status_code
+    >>> data = response.json() # doctest: +SKIP
+    
+    >>> response = pyxhr.post("https://httpbin.org/post", # doctest: +SKIP
+    ...                      json={"key": "value"}) # doctest: +SKIP
+    >>> response.status_code # doctest: +SKIP
     200
     """
 
     @staticmethod
-    def get(url: str, **kwargs) -> XHRResponse:
+    def get(url: str, **kwargs: Any) -> XHRResponse:
         """Make a GET request.
 
         Parameters
@@ -697,7 +696,7 @@ class pyxhr:
         return _xhr_request("GET", url, **kwargs)
 
     @staticmethod
-    def post(url: str, **kwargs) -> XHRResponse:
+    def post(url: str, **kwargs: Any) -> XHRResponse:
         """Make a POST request.
 
         Parameters
@@ -715,7 +714,7 @@ class pyxhr:
         return _xhr_request("POST", url, **kwargs)
 
     @staticmethod
-    def put(url: str, **kwargs) -> XHRResponse:
+    def put(url: str, **kwargs: Any) -> XHRResponse:
         """Make a PUT request.
 
         Parameters
@@ -733,7 +732,7 @@ class pyxhr:
         return _xhr_request("PUT", url, **kwargs)
 
     @staticmethod
-    def delete(url: str, **kwargs) -> XHRResponse:
+    def delete(url: str, **kwargs: Any) -> XHRResponse:
         """Make a DELETE request.
 
         Parameters
@@ -751,7 +750,7 @@ class pyxhr:
         return _xhr_request("DELETE", url, **kwargs)
 
     @staticmethod
-    def head(url: str, **kwargs) -> XHRResponse:
+    def head(url: str, **kwargs: Any) -> XHRResponse:
         """Make a HEAD request.
 
         Parameters
@@ -769,7 +768,7 @@ class pyxhr:
         return _xhr_request("HEAD", url, **kwargs)
 
     @staticmethod
-    def patch(url: str, **kwargs) -> XHRResponse:
+    def patch(url: str, **kwargs: Any) -> XHRResponse:
         """Make a PATCH request.
 
         Parameters
@@ -787,7 +786,7 @@ class pyxhr:
         return _xhr_request("PATCH", url, **kwargs)
 
     @staticmethod
-    def options(url: str, **kwargs) -> XHRResponse:
+    def options(url: str, **kwargs: Any) -> XHRResponse:
         """Make an OPTIONS request.
 
         Parameters
