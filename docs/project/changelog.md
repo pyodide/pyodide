@@ -23,6 +23,9 @@ _August 19, 2025_
   which was introduced in 0.28.1.
   {pr}`5824`
 
+- {{ Fix }} In 0.28.1 we accidentally removed the `PyodideInterface` type
+  export. We added it back. {pr}`5827`
+
 ## Version 0.28.1
 
 _August 04, 2025_
