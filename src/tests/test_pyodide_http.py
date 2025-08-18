@@ -406,34 +406,42 @@ class TestPyxhr:
     def test_xhr_basic_get(self, selenium, xhr_test_server):
         """Test basic GET request with pyxhr."""
         request_url = xhr_test_server.url_for("/xhr/get")
-
-        result = selenium.run(f"""
+        
+        result_json = selenium.run(f"""
+            import json
             from pyodide.http import pyxhr
             response = pyxhr.get('{request_url}')
-            {{
+            result = {{
                 'status_code': response.status_code,
                 'data': response.json(),
                 'ok': response.ok
             }}
+            json.dumps(result)
         """)
-
-        assert result["status_code"] == 200
-        assert result["data"]["message"] == "GET success"
-        assert result["ok"] is True
+        
+        import json
+        result = json.loads(result_json)
+        assert result['status_code'] == 200
+        assert result['data']['message'] == "GET success"
+        assert result['ok'] is True
 
     def test_xhr_post_json(self, selenium, xhr_test_server):
         """Test POST request with JSON data."""
         request_url = xhr_test_server.url_for("/xhr/post")
 
-        result = selenium.run(f"""
+        result_json = selenium.run(f"""
+            import json
             from pyodide.http import pyxhr
             response = pyxhr.post('{request_url}', json={{"test": "data"}})
-            {{
+            result = {{
                 'status_code': response.status_code,
                 'data': response.json()
             }}
+            json.dumps(result)
         """)
 
+        import json
+        result = json.loads(result_json)
         assert result["status_code"] == 200
         assert result["data"]["message"] == "POST success"
 
@@ -454,15 +462,19 @@ class TestPyxhr:
         """Test basic authentication with pyxhr."""
         request_url = xhr_test_server.url_for("/xhr/auth")
 
-        result = selenium.run(f"""
+        result_json = selenium.run(f"""
+            import json
             from pyodide.http import pyxhr
             response = pyxhr.get('{request_url}', auth=('test', 'pass'))
-            {{
+            result = {{
                 'status_code': response.status_code,
                 'data': response.json()
             }}
+            json.dumps(result)
         """)
 
+        import json
+        result = json.loads(result_json)
         assert result["status_code"] == 200
         assert result["data"]["authenticated"] is True
 
@@ -483,7 +495,8 @@ class TestPyxhr:
         """Test error status handling."""
         request_url = xhr_test_server.url_for("/xhr/error")
 
-        result = selenium.run(f"""
+        result_json = selenium.run(f"""
+            import json
             from pyodide.http import pyxhr, HttpStatusError
             response = pyxhr.get('{request_url}')
             try:
@@ -491,9 +504,11 @@ class TestPyxhr:
                 result = {{"error_raised": False}}
             except HttpStatusError as e:
                 result = {{"error_raised": True, "status": e.status}}
-            result
+            json.dumps(result)
         """)
 
+        import json
+        result = json.loads(result_json)
         assert result["error_raised"] is True
         assert result["status"] == 404
 
@@ -501,10 +516,11 @@ class TestPyxhr:
         """Test XHRResponse properties."""
         request_url = xhr_test_server.url_for("/xhr/get")
 
-        result = selenium.run(f"""
+        result_json = selenium.run(f"""
+            import json
             from pyodide.http import pyxhr
             response = pyxhr.get('{request_url}')
-            {{
+            result = {{
                 'status_code': response.status_code,
                 'text_type': type(response.text).__name__,
                 'content_type': type(response.content).__name__,
@@ -512,8 +528,11 @@ class TestPyxhr:
                 'ok': response.ok,
                 'has_url': bool(response.url)
             }}
+            json.dumps(result)
         """)
 
+        import json
+        result = json.loads(result_json)
         assert result["status_code"] == 200
         assert result["text_type"] == "str"
         assert result["content_type"] == "bytes"
@@ -524,16 +543,19 @@ class TestPyxhr:
     def test_xhr_all_methods(self, selenium, xhr_test_server):
         """Test all HTTP methods are available."""
 
-        result = selenium.run("""
+        result_json = selenium.run("""
+            import json
             from pyodide.http import pyxhr
             methods = ['get', 'post', 'put', 'delete', 'head', 'patch', 'options']
             available_methods = []
             for method in methods:
                 if hasattr(pyxhr, method) and callable(getattr(pyxhr, method)):
                     available_methods.append(method)
-            available_methods
+            json.dumps(available_methods)
         """)
 
+        import json
+        result = json.loads(result_json)
         expected_methods = ["get", "post", "put", "delete", "head", "patch", "options"]
         assert result == expected_methods
 
