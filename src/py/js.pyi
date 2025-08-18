@@ -47,7 +47,7 @@ class XMLHttpRequest(_JsObject):
     responseURL: str
     status: int
     statusText: str
-    timeout: int
+    # timeout: int  # Not supported in synchronous mode, reserved for future use
     
     @staticmethod
     def new() -> XMLHttpRequest: ...
@@ -55,7 +55,7 @@ class XMLHttpRequest(_JsObject):
     def send(self, body: str | bytes | JsProxy | None = None) -> None: ...
     def setRequestHeader(self, name: str, value: str) -> None: ...
     def getAllResponseHeaders(self) -> str: ...
-    def addEventListener(self, event: str, handler: Callable[[], None]) -> None: ...
+    # addEventListener: Reserved for future async implementation
 
 class Object(_JsObject):
     @staticmethod

@@ -111,7 +111,11 @@ class XHRNetworkError(XHRError):
 
 
 class XHRTimeoutError(XHRError):
-    """Timeout error for XMLHttpRequest."""
+    """Timeout error for XMLHttpRequest.
+    
+    Note: Currently not used as synchronous XMLHttpRequest doesn't support timeout.
+    Reserved for future use when implementing unified interface.
+    """
     def __init__(self, timeout: int) -> None:
         super().__init__(f"Request timed out after {timeout}ms")
 
@@ -588,8 +592,6 @@ def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
         Data to send in the request body
     json : dict, optional
         JSON data to send (automatically sets Content-Type)
-    timeout : int, optional
-        Timeout in seconds (default: 30)
     auth : tuple, optional
         Basic authentication (username, password)
         
@@ -602,8 +604,6 @@ def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
     ------
     XHRNetworkError
         For network-related errors
-    XHRTimeoutError
-        For timeout errors
     """
     if not IN_BROWSER:
         raise RuntimeError("XMLHttpRequest is only available in browser environments")
@@ -646,9 +646,7 @@ def _xhr_request(method: str, url: str, **kwargs) -> XHRResponse:
     except Exception as e:
         # Handle JavaScript exceptions from XMLHttpRequest
         if hasattr(e, 'name'):
-            if 'timeout' in str(e).lower():
-                raise XHRTimeoutError(kwargs.get('timeout', 30) * 1000)
-            elif 'network' in str(e).lower():
+            if 'network' in str(e).lower():
                 raise XHRNetworkError(f"Network error for {method} {url}")
         raise XHRError(f"XMLHttpRequest failed: {e}")
     
