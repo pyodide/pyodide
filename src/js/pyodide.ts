@@ -24,7 +24,7 @@ import type {
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
 import { withTrailingSlash } from "./common/path";
-export type { PyodideAPI, TypedArray };
+export type { PyodideAPI, TypedArray, PyodideAPI as PyodideInterface };
 export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
 export { type PackageData };
