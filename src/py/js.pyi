@@ -48,7 +48,6 @@ class XMLHttpRequest(_JsObject):
     status: int
     statusText: str
     # timeout: int  # Not supported in synchronous mode, reserved for future use
-    
     @staticmethod
     def new() -> XMLHttpRequest: ...
     def open(self, method: str, url: str, sync: bool) -> None: ...
