@@ -94,3 +94,18 @@ await pyodide.runPythonAsync(`
   await response.unpack_archive()
 `)
 ```
+
+For synchronous HTTP requests, you can use {py:func}`~pyodide.http.pyxhr`,
+which provides a requests-like API using XMLHttpRequest:
+
+```pyodide
+pyodide.runPython(`
+  from pyodide.http import pyxhr
+  response = pyxhr.get("https://some_url/data.json")
+  data = response.json()
+  print(data)
+`)
+```
+
+Note that `pyxhr` only works in browser environments and uses synchronous
+XMLHttpRequest, which may block the main thread.
