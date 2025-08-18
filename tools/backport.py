@@ -565,12 +565,13 @@ def clear_backport_prs(args) -> None:
     print(f"  ./tools/backport.py add-backport-pr {' '.join(str(x) for x in to_clear)}")
 
 
-def view_pr(commit):
-    run(["gh", "pr", "view", "-w", str(commit.pr_number)])
+def view_prs(commits):
+    run(["gh", "pr", "view", "-w", [str(commit.pr_number) for commit in commits]])
 
 
-def print_commit(commit):
-    print(commit.pr_number, commit.shorthash, commit.shortlog)
+def print_commits(commits):
+    for commit in commits:
+        print(commit.pr_number, commit.shorthash, commit.shortlog)
 
 
 def show_missing_changelogs(args) -> None:
@@ -582,11 +583,10 @@ def show_missing_changelogs(args) -> None:
         for commit in commits
         if commit.pr_number not in changelog.unreleased.pr_index
     ]
-    for commit in missing_changelogs:
-        if args.web:
-            view_pr(commit)
-        else:
-            print_commit(commit)
+    if args.web:
+        view_prs(missing_changelogs)
+    else:
+        print_commits(missing_changelogs)
 
 
 def show_not_backported(args):
@@ -599,11 +599,10 @@ def show_not_backported(args):
         for commit in commit_history.commits
         if commit.pr_number not in needs_backport
     ]
-    for commit in not_backported:
-        if args.web:
-            view_pr(commit)
-        else:
-            print_commit(commit)
+    if args.web:
+        view_prs(not_backported)
+    else:
+        print_commits(not_backported)
 
 
 def make_changelog_branch(args) -> None:
