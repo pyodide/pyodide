@@ -17,6 +17,10 @@ myst:
 
 ## Unreleased
 
+- {{ Fix }} Fixed a bug where package download and caching did not work in Node.js
+  which was introduced in 0.28.1.
+  {pr}`5824`
+
 ## Version 0.28.1
 
 _August 04, 2025_

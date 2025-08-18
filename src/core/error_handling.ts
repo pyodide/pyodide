@@ -55,12 +55,10 @@ class CppException extends Error {
     super(msg);
     this.ty = ty;
   }
-}
-Object.defineProperty(CppException.prototype, "name", {
-  get() {
+  get name() {
     return `${this.constructor.name} ${this.ty}`;
-  },
-});
+  }
+}
 
 const WasmException = (WebAssembly as any).Exception;
 const isWasmException = (e: any) => e instanceof WasmException;

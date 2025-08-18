@@ -13,15 +13,9 @@ source:
   sha256: c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820
 requirements:
   run:
-    - atomicwrites
-    - attrs
-    - more-itertools
+    - packaging
     - pluggy
-    - py
-    - setuptools
-    - six
     - iniconfig
-    - exceptiongroup
 about:
   home: https://docs.pytest.org/en/latest/
   PyPI: https://pypi.org/project/pytest

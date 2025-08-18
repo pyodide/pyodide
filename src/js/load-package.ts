@@ -113,8 +113,10 @@ export class PackageManager {
    * Only used in Node. If we can't find a package in node_modules, we'll use this
    * to fetch the package from the cdn (and we'll store it into node_modules so
    * subsequent loads don't require a web request).
+   *
+   * exported for testing purposes.
    */
-  private cdnURL: string = "";
+  public cdnURL: string = "";
 
   /**
    * The set of loaded packages.
@@ -154,7 +156,7 @@ export class PackageManager {
       // In node, we'll try first to load from the packageCacheDir and then fall
       // back to cdnURL
       this.installBaseUrl =
-        this.#api.config.packageCacheDir ?? API.config.packageBaseUrl;
+        this.#api.config.packageCacheDir ?? this.#api.config.packageBaseUrl;
       this.cdnURL = this.#api.config.cdnUrl;
     } else {
       // use packageBaseUrl as the base URL for the packages
@@ -404,9 +406,7 @@ export class PackageManager {
 
       if (toLoad.has(pkgname) && toLoad.get(pkgname)!.channel !== channel) {
         this.logStderr(
-          `Loading same package ${pkgname} from ${channel} and ${
-            toLoad.get(pkgname)!.channel
-          }`,
+          `Loading same package ${pkgname} from ${channel} and ${toLoad.get(pkgname)!.channel}`,
         );
         continue;
       }
@@ -713,4 +713,6 @@ if (typeof API !== "undefined" && typeof Module !== "undefined") {
   if (API.lockFilePromise) {
     API.packageIndexReady = initializePackageIndex(API.lockFilePromise);
   }
+
+  API.packageManager = singletonPackageManager;
 }
