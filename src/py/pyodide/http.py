@@ -131,7 +131,7 @@ class XHRResponse:
 
     Parameters
     ----------
-    xhr : XMLHttpRequest
+    xhr : :js:class:`XMLHttpRequest`
         The XMLHttpRequest object to wrap
     """
 
@@ -197,7 +197,8 @@ class XHRResponse:
 
         Returns
         -------
-        Parsed JSON data
+        Any
+            Parsed JSON data
         """
         return json.loads(self.text, **kwargs)
 
