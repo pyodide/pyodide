@@ -594,12 +594,16 @@ def show_not_backported(args):
     res = run(["git", "log", "-1", "--format=%ai", last_tag], capture_output=True)
     commit_history = CommitHistory.from_git(f"--since='{res.stdout}'", "main")
     needs_backport = set(get_needs_backport_pr_numbers())
-    for commit in commit_history.commits.values():
-        if commit.pr_number not in needs_backport:
-            if args.web:
-                view_pr(commit)
-            else:
-                print_commit(commit)
+    not_backported = [
+        commit
+        for commit in commit_history.commits
+        if commit.pr_number not in needs_backport
+    ]
+    for commit in not_backported:
+        if args.web:
+            view_pr(commit)
+        else:
+            print_commit(commit)
 
 
 def make_changelog_branch(args) -> None:
