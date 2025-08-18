@@ -2,6 +2,12 @@ from inspect import getsource
 
 
 def test_filesystem_mounting(selenium_standalone_noload):
+    """
+    |- /pyodide1 <--mount-- /pyodide2
+    |- /pyodide1/file_from_1.txt
+    |- /pyodide1/file_from_2.txt
+    """
+
     selenium = selenium_standalone_noload
     selenium.run_js(
         f"""
