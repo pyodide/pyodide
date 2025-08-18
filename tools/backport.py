@@ -86,8 +86,8 @@ class CommitHistory:
     commits: dict[int, CommitInfo]
 
     @classmethod
-    def from_git(self, branch):
-        result = run(["git", "log", "--oneline", branch], capture_output=True)
+    def from_git(self, *args):
+        result = run(["git", "log", "--oneline", *args], capture_output=True)
         lines = result.stdout.splitlines()
         return CommitHistory(lines)
 
@@ -508,13 +508,22 @@ def diff_old_new_branch(branch_name):
     run(["git", "diff", branch_name_old, branch_name])
 
 
-def get_version() -> str:
+def last_tag_tuple() -> tuple[str, str, str]:
     result = run(["git", "tag"], capture_output=True)
-    (major, minor, patch) = max(
+    return max(
         tuple(int(p) for p in x.split("."))
         for x in result.stdout.splitlines()
         if x.startswith("0") and "a" not in x
     )
+
+
+def get_last_tag() -> str:
+    (major, minor, patch) = last_tag_tuple()
+    return f"{major}.{minor}.{patch}"
+
+
+def get_version() -> str:
+    (major, minor, patch) = last_tag_tuple()
     patch += 1
     return f"{major}.{minor}.{patch}"
 
@@ -556,6 +565,14 @@ def clear_backport_prs(args) -> None:
     print(f"  ./tools/backport.py add-backport-pr {' '.join(str(x) for x in to_clear)}")
 
 
+def view_pr(commit):
+    run(["gh", "pr", "view", "-w", str(commit.pr_number)])
+
+
+def print_commit(commit):
+    print(commit.pr_number, commit.shorthash, commit.shortlog)
+
+
 def show_missing_changelogs(args) -> None:
     changelog = Changelog.from_file(CHANGELOG)
     changelog.unreleased.create_pr_index()
@@ -567,9 +584,22 @@ def show_missing_changelogs(args) -> None:
     ]
     for commit in missing_changelogs:
         if args.web:
-            run(["gh", "pr", "view", "-w", str(commit.pr_number)])
+            view_pr(commit)
         else:
-            print(commit.pr_number, commit.shorthash, commit.shortlog)
+            print_commit(commit)
+
+
+def show_not_backported(args):
+    last_tag = get_last_tag()
+    res = run(["git", "log", "-1", "--format=%ai", last_tag], capture_output=True)
+    commit_history = CommitHistory.from_git(f"--since='{res.stdout}'", "main")
+    needs_backport = set(get_needs_backport_pr_numbers())
+    for commit in commit_history.commits.values():
+        if commit.pr_number not in needs_backport:
+            if args.web:
+                view_pr(commit)
+            else:
+                print_commit(commit)
 
 
 def make_changelog_branch(args) -> None:
@@ -763,6 +793,15 @@ def parse_args():
         "-w", "--web", action="store_true", help="Open missing changelog prs in browser"
     )
     missing_changelogs_parser.set_defaults(func=show_missing_changelogs)
+
+    not_backported_parser = subparsers.add_parser(
+        "not-backported",
+        help="List the PRs committed to the main branch since the last tag was created that are not labeled as 'needs backport'",
+    )
+    not_backported_parser.add_argument(
+        "-w", "--web", action="store_true", help="Open not backported prs in browser"
+    )
+    not_backported_parser.set_defaults(func=show_not_backported)
 
     changelog_branch_parse = subparsers.add_parser(
         "changelog-branch", help="Make changelog-for-version branch"
