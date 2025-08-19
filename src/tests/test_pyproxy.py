@@ -539,63 +539,98 @@ def test_pyproxy_mixins2(selenium):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_mixins31(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        pass
+    
+
+    test_class_and_instance = to_js([Test, Test()])
+
+    run_js(
         """
         "use strict";
-        let [Test, t] = pyodide.runPython(`
-            class Test: pass
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => Test.prototype === undefined);
-        assert(() => !("name" in Test));
-        assert(() => !("length" in Test));
+        ([Test, t]) => {
+            assert(() => Test.prototype === undefined);
+            assert(() => !("name" in Test));
+            assert(() => !("length" in Test));
 
-        assert(() => !("prototype" in t));
-        assert(() => !("caller" in t));
-        assert(() => !("name" in t));
-        assert(() => !("length" in t));
+            assert(() => !("prototype" in t));
+            assert(() => !("caller" in t));
+            assert(() => !("name" in t));
+            assert(() => !("length" in t));
 
-        Test.prototype = 7;
-        Test.name = 7;
-        Test.length = 7;
-        pyodide.runPython("assert Test.prototype == 7");
-        pyodide.runPython("assert Test.name == 7");
-        pyodide.runPython("assert Test.length == 7");
-        // prototype cannot be removed once added because it is nonconfigurable...
-        assertThrows(() => delete Test.prototype, "TypeError", "");
-        delete Test.name;
-        delete Test.length;
-        pyodide.runPython(`assert Test.prototype == 7`);
-        pyodide.runPython(`assert not hasattr(Test, "name")`);
-        pyodide.runPython(`assert not hasattr(Test, "length")`);
-
-        Test.$a = 7;
-        Object.defineProperty(Test, "a", {
-            get(){ return Test.$a + 1; },
-            set(v) {
-                Test.$a = v;
-            }
-        });
-
-        pyodide.runPython("assert Test.a == 7")
-        assert(() => Test.a === 8);
-        Test.a = 9;
-        assert(() => Test.a === 10);
-        pyodide.runPython("assert Test.a == 9")
-        assertThrows(() => delete Test.a, "TypeError", "");
-
-        Object.defineProperty(Test, "b", {
-            get(){ return Test.$a + 2; },
-        });
-        assert(() => Test.b === 11);
-        assertThrows(() => Test.b = 7,"TypeError", "");
-        assertThrows(() => delete Test.b, "TypeError", "");
-        Test.destroy();
-        t.destroy();
+            Test.prototype = 7;
+            Test.name = 7;
+            Test.length = 7;
+        }
         """
-    )
+    )(test_class_and_instance)
+    
+    assert Test.prototype == 7
+    assert Test.name == 7
+    assert Test.length == 7
+    
+    run_js(
+        """
+        ([Test, t]) => {
+            assertThrows(() => delete Test.prototype, "TypeError", "");
+            delete Test.name;
+            delete Test.length;
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.prototype == 7
+    assert not hasattr(Test, "name")
+    assert not hasattr(Test, "length")
+    
+    run_js(
+        """
+        ([Test, t]) => {
+            Test.$a = 7;
+            Object.defineProperty(Test, "a", {
+                get(){ return Test.$a + 1; },
+                set(v) {
+                    Test.$a = v;
+                }
+            });
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.a == 7
+
+    run_js(
+        """
+        ([Test, t]) => {
+            assert(() => Test.a === 8);
+            Test.a = 9;
+            assert(() => Test.a === 10);
+        }
+        """
+    )(test_class_and_instance)
+    
+    assert Test.a == 9
+    
+    run_js(
+        """
+        ([Test, t]) => {
+            assertThrows(() => delete Test.a, "TypeError", "");
+            Object.defineProperty(Test, "b", {
+                get(){ return Test.$a + 2; },
+            });
+            assert(() => Test.b === 11);
+            assertThrows(() => Test.b = 7,"TypeError", "");
+            assertThrows(() => delete Test.b, "TypeError", "");
+            Test.destroy();
+            t.destroy();
+        }
+        """
+    )(test_class_and_instance)
 
 
 @pytest.mark.parametrize("configurable", [False, True])
