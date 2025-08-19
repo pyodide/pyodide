@@ -11,6 +11,27 @@ from collections.abc import Callable
 from typing import Any
 
 
+class BaseBrowser:
+    def __init__(self, name: str = "") -> None:
+        self.name = name
+        self.args = [name]
+
+    def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool:
+        raise NotImplementedError
+
+    def open_new(self, url: str) -> bool:
+        return self.open(url, new=1)
+
+    def open_new_tab(self, url: str) -> bool:
+        return self.open(url, new=2)
+
+
+class GenericBrowser(BaseBrowser):
+    def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool:
+        open(url, new, autoraise)
+        return True
+
+
 class Error(Exception):
     pass
 
@@ -34,8 +55,8 @@ def open_new_tab(url: str) -> None:
 
 def register(
     name: str,
-    constructor: Callable[[], "BaseBrowser"] | None,
-    instance: "BaseBrowser" | None = None,
+    constructor: Callable[[], BaseBrowser] | None,
+    instance: BaseBrowser | None = None,
     *,
     preferred: bool = False,
 ) -> None:
@@ -45,7 +66,7 @@ def register(
         _browsers[name.lower()] = [None, instance]
 
 
-def get(using: str | None = None) -> "BaseBrowser":
+def get(using: str | None = None) -> BaseBrowser:
     if using is None:
         return _browsers["default"][1]
 
@@ -59,27 +80,6 @@ def get(using: str | None = None) -> "BaseBrowser":
         if constructor:
             browser[1] = constructor()
     return browser[1]
-
-
-class BaseBrowser:
-    def __init__(self, name: str = "") -> None:
-        self.name = name
-        self.args = [name]
-
-    def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool:
-        raise NotImplementedError
-
-    def open_new(self, url: str) -> bool:
-        return self.open(url, new=1)
-
-    def open_new_tab(self, url: str) -> bool:
-        return self.open(url, new=2)
-
-
-class GenericBrowser(BaseBrowser):
-    def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool:
-        open(url, new, autoraise)
-        return True
 
 
 register("default", None, GenericBrowser())
