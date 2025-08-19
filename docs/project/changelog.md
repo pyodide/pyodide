@@ -21,7 +21,7 @@ myst:
   that provides a requests-like API for making synchronous HTTP requests in
   browser environments. This includes `XHRResponse` class and support for all
   common HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS).
-  {pr}`TBD`
+  {pr}`5841`
 
 ## Version 0.28.2
 
