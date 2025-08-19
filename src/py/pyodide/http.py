@@ -4,11 +4,20 @@ from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from io import StringIO
-from typing import IO, Any, ParamSpec, TypeVar, TypedDict, Unpack, NotRequired, TYPE_CHECKING
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    NotRequired,
+    ParamSpec,
+    TypedDict,
+    TypeVar,
+    Unpack,
+)
 from urllib.parse import urlencode
 
 from ._package_loader import unpack_buffer
-from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, JsProxy, to_js
+from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 
 if TYPE_CHECKING:
     # For type checking only, import XMLHttpRequest from js module
@@ -22,7 +31,7 @@ if IN_BROWSER:
     except ImportError:
         pass
     try:
-        from js import XMLHttpRequest, DOMException
+        from js import DOMException, XMLHttpRequest
     except ImportError:
         pass
 else:
@@ -105,7 +114,7 @@ class AbortError(OSError):
 # pyxhr exceptions
 class XHRRequestParams(TypedDict):
     """Parameters for XMLHttpRequest operations."""
-    
+
     headers: NotRequired[dict[str, str]]
     params: NotRequired[dict[str, Any]]
     data: NotRequired[str | bytes]
@@ -115,11 +124,13 @@ class XHRRequestParams(TypedDict):
 
 class XHRError(OSError):
     """Base exception for XMLHttpRequest errors."""
+
     pass
 
 
 class XHRNetworkError(XHRError):
     """Network-related XMLHttpRequest error."""
+
 
 class XHRResponse:
     """A wrapper for XMLHttpRequest response that provides a requests-like interface.
@@ -594,7 +605,9 @@ class pyxhr:
     """
 
     @staticmethod
-    def _xhr_request(method: str, url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    def _xhr_request(
+        method: str, url: str, **kwargs: Unpack[XHRRequestParams]
+    ) -> XHRResponse:
         """Make a synchronous HTTP request using XMLHttpRequest.
 
         This is the core function that wraps XMLHttpRequest to provide
@@ -628,7 +641,9 @@ class pyxhr:
             For network-related errors
         """
         if not IN_BROWSER:
-            raise RuntimeError("XMLHttpRequest is only available in browser environments")
+            raise RuntimeError(
+                "XMLHttpRequest is only available in browser environments"
+            )
 
         req = XMLHttpRequest.new()
 
@@ -645,14 +660,14 @@ class pyxhr:
         if auth := kwargs.get("auth"):
             if len(auth) == 2:
                 username, password = auth
-        
+
         req.open(method.upper(), url, False, username, password)
 
         # Note: timeout cannot be set for synchronous requests in browsers
         # The timeout parameter is ignored for sync XHR
 
         headers = kwargs.get("headers", {})
-        
+
         # Add Authorization header as fallback
         if auth and len(auth) == 2:
             credentials = base64.b64encode(f"{auth[0]}:{auth[1]}".encode()).decode()
