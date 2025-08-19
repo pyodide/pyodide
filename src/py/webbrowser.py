@@ -8,7 +8,7 @@ Since we're already running a webbrowser, it's really simple...
 __all__ = ["open", "open_new", "open_new_tab", "get", "register", "Error"]
 
 from collections.abc import Callable
-from typing import Any, Optional
+from typing import Any
 
 
 class Error(Exception):
@@ -34,8 +34,8 @@ def open_new_tab(url: str) -> None:
 
 def register(
     name: str,
-    constructor: Callable[[], "GenericBrowser"] | None,
-    instance: Optional["GenericBrowser"] = None,
+    constructor: Callable[[], "BaseBrowser"] | None,
+    instance: "BaseBrowser" | None = None,
     *,
     preferred: bool = False,
 ) -> None:
@@ -45,7 +45,7 @@ def register(
         _browsers[name.lower()] = [None, instance]
 
 
-def get(using: str | None = None) -> "GenericBrowser":
+def get(using: str | None = None) -> "BaseBrowser":
     if using is None:
         return _browsers["default"][1]
 
@@ -61,7 +61,7 @@ def get(using: str | None = None) -> "GenericBrowser":
     return browser[1]
 
 
-class GenericBrowser:
+class BaseBrowser:
     def __init__(self, name: str = "") -> None:
         self.name = name
         self.args = [name]
@@ -76,10 +76,10 @@ class GenericBrowser:
         return self.open(url, new=2)
 
 
-class BackgroundBrowser(GenericBrowser):
+class GenericBrowser(BaseBrowser):
     def open(self, url: str, new: int = 0, autoraise: bool = True) -> bool:
         open(url, new, autoraise)
         return True
 
 
-register("default", None, BackgroundBrowser())
+register("default", None, GenericBrowser())
