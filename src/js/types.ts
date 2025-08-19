@@ -5,6 +5,7 @@ import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
+import { PackageManager } from "./load-package";
 
 /**
  * @docgroup pyodide.ffi
@@ -349,6 +350,12 @@ export interface Module {
   };
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
 }
 
 /**
@@ -522,6 +529,7 @@ export interface API {
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, LockfilePackage>;
+  packageManager: PackageManager;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
@@ -577,6 +585,7 @@ export type PackageManagerAPI = Pick<
   | "bootstrapFinalizedPromise"
   | "sitepackages"
   | "defaultLdLibraryPath"
+  | "version"
 > & {
   config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
@@ -596,4 +605,6 @@ export type PackageManagerModule = Pick<
   | "_emscripten_dlopen_promise"
   | "getPromise"
   | "promiseMap"
+  | "_dlerror"
+  | "UTF8ToString"
 >;
