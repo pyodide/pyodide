@@ -21,6 +21,9 @@ myst:
   which was introduced in 0.28.1.
   {pr}`5824`
 
+- {{ Enhancement }} Improve error message when a dynamic library fails to load.
+  {pr}`5840`
+
 - {{ Fix }} In 0.28.1 we accidentally removed the `PyodideInterface` type
   export. We added it back. {pr}`5827`
 
