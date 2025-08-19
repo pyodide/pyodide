@@ -546,7 +546,6 @@ def test_pyproxy_mixins31(selenium):
 
     class Test:
         pass
-    
 
     test_class_and_instance = to_js([Test, Test()])
 
@@ -569,11 +568,11 @@ def test_pyproxy_mixins31(selenium):
         }
         """
     )(test_class_and_instance)
-    
+
     assert Test.prototype == 7
     assert Test.name == 7
     assert Test.length == 7
-    
+
     run_js(
         """
         ([Test, t]) => {
@@ -587,7 +586,7 @@ def test_pyproxy_mixins31(selenium):
     assert Test.prototype == 7
     assert not hasattr(Test, "name")
     assert not hasattr(Test, "length")
-    
+
     run_js(
         """
         ([Test, t]) => {
@@ -613,9 +612,9 @@ def test_pyproxy_mixins31(selenium):
         }
         """
     )(test_class_and_instance)
-    
+
     assert Test.a == 9
-    
+
     run_js(
         """
         ([Test, t]) => {
