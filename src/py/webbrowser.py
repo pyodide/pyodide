@@ -8,7 +8,7 @@ Since we're already running a webbrowser, it's really simple...
 __all__ = ["open", "open_new", "open_new_tab", "get", "register", "Error"]
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 
 class BaseBrowser:
@@ -68,7 +68,7 @@ def register(
 
 def get(using: str | None = None) -> BaseBrowser:
     if using is None:
-        return _browsers["default"][1]
+        return cast(BaseBrowser, _browsers["default"][1])
 
     try:
         browser = _browsers[using.lower()]
@@ -79,7 +79,9 @@ def get(using: str | None = None) -> BaseBrowser:
         constructor = browser[0]
         if constructor:
             browser[1] = constructor()
-    return browser[1]
+        else:
+            raise Error(f"no constructor available for browser type '{using}'")
+    return cast(BaseBrowser, browser[1])
 
 
 register("default", None, GenericBrowser())

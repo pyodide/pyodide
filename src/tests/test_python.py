@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
-def test_webbrowser(selenium):
+def test_webbrowser_antigravity(selenium):
     # Selenium
     if hasattr(selenium.driver, "window_handles"):
         selenium.run_async("import antigravity")
@@ -13,6 +13,118 @@ def test_webbrowser(selenium):
         with selenium.driver.context.expect_page() as new_page:
             selenium.run_async("import antigravity")
         assert new_page
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_open(selenium):
+    # Test basic webbrowser.open functionality
+    # Selenium
+    if hasattr(selenium.driver, "window_handles"):
+        initial_windows = len(selenium.driver.window_handles)
+        selenium.run("import webbrowser; webbrowser.open('https://example.com')")
+        assert len(selenium.driver.window_handles) == initial_windows + 1
+
+    # Playwright
+    elif hasattr(selenium.driver, "context"):
+        with selenium.driver.context.expect_page() as new_page:
+            selenium.run("import webbrowser; webbrowser.open('https://example.com')")
+        assert new_page
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_open_new(selenium):
+    # Test webbrowser.open_new functionality
+    # Selenium
+    if hasattr(selenium.driver, "window_handles"):
+        initial_windows = len(selenium.driver.window_handles)
+        selenium.run("import webbrowser; webbrowser.open_new('https://example.com')")
+        assert len(selenium.driver.window_handles) == initial_windows + 1
+
+    # Playwright
+    elif hasattr(selenium.driver, "context"):
+        with selenium.driver.context.expect_page() as new_page:
+            selenium.run(
+                "import webbrowser; webbrowser.open_new('https://example.com')"
+            )
+        assert new_page
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_open_new_tab(selenium):
+    # Test webbrowser.open_new_tab functionality
+    # Selenium
+    if hasattr(selenium.driver, "window_handles"):
+        initial_windows = len(selenium.driver.window_handles)
+        selenium.run(
+            "import webbrowser; webbrowser.open_new_tab('https://example.com')"
+        )
+        assert len(selenium.driver.window_handles) == initial_windows + 1
+
+    # Playwright
+    elif hasattr(selenium.driver, "context"):
+        with selenium.driver.context.expect_page() as new_page:
+            selenium.run(
+                "import webbrowser; webbrowser.open_new_tab('https://example.com')"
+            )
+        assert new_page
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_register_and_get(selenium):
+    # Test webbrowser.register and get functionality
+    result = selenium.run("""
+        import webbrowser
+
+        # Test registering a custom browser
+        class CustomBrowser(webbrowser.BaseBrowser):
+            def open(self, url, new=0, autoraise=True):
+                return True
+
+        custom_browser = CustomBrowser("custom")
+        webbrowser.register("custom", None, custom_browser)
+
+        # Test getting the registered browser
+        browser = webbrowser.get("custom")
+        browser.name == "custom"
+    """)
+    assert result is True
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_error(selenium):
+    # Test webbrowser.Error exception
+    result = selenium.run("""
+        import webbrowser
+
+        try:
+            webbrowser.get("nonexistent_browser")
+            False  # Should not reach here
+        except webbrowser.Error as e:
+            "could not locate runnable browser type" in str(e)
+    """)
+    assert result is True
+
+
+@pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+def test_webbrowser_browser_classes(selenium):
+    # Test BaseBrowser and GenericBrowser classes
+    result = selenium.run("""
+        import webbrowser
+
+        # Test BaseBrowser
+        base_browser = webbrowser.BaseBrowser("test")
+        base_browser.name == "test" and base_browser.args == ["test"]
+    """)
+    assert result is True
+
+    result = selenium.run("""
+        import webbrowser
+
+        # Test GenericBrowser
+        generic_browser = webbrowser.GenericBrowser("generic")
+        generic_browser.name == "generic"
+    """)
+    assert result is True
 
 
 def test_print(selenium):
