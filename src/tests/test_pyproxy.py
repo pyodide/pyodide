@@ -569,12 +569,13 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.prototype == 7
-    assert Test.name == 7
-    assert Test.length == 7
+    assert Test.prototype == 7  # type: ignore[attr-defined]
+    assert Test.name == 7  # type: ignore[attr-defined]
+    assert Test.length == 7  # type: ignore[attr-defined]
 
     run_js(
         """
+        "use strict";
         ([Test, t]) => {
             assertThrows(() => delete Test.prototype, "TypeError", "");
             delete Test.name;
@@ -583,12 +584,13 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.prototype == 7
+    assert Test.prototype == 7  # type: ignore[attr-defined]
     assert not hasattr(Test, "name")
     assert not hasattr(Test, "length")
 
     run_js(
         """
+        "use strict";
         ([Test, t]) => {
             Test.$a = 7;
             Object.defineProperty(Test, "a", {
@@ -601,10 +603,11 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.a == 7
+    assert Test.a == 7  # type: ignore[attr-defined]
 
     run_js(
         """
+        "use strict";
         ([Test, t]) => {
             assert(() => Test.a === 8);
             Test.a = 9;
@@ -613,10 +616,11 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.a == 9
+    assert Test.a == 9  # type: ignore[attr-defined]
 
     run_js(
         """
+        "use strict";
         ([Test, t]) => {
             assertThrows(() => delete Test.a, "TypeError", "");
             Object.defineProperty(Test, "b", {
