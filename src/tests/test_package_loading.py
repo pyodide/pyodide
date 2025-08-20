@@ -752,7 +752,134 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
             f"""
             let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
             await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
-            return pyodide.runPython("import dummy_pkg;")
+            return pyodide.runPython("import dummy_pkg")
+            """
+        )
+
+
+def test_lock_file_contents_error(selenium_standalone_noload):
+    selenium = selenium_standalone_noload
+    message = "Error: Can't pass both lockFileContents and lockFileURL"
+    with pytest.raises(selenium.JavascriptException, match=message):
+        selenium.run_js(
+            """
+            await loadPyodide({
+                lockFileContents: "x",
+                lockFileURL: "y"
+            });
+            """
+        )
+
+
+def test_lock_file_contents_relative_file_name(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+    message = 'Lock file file_name for package "dummy_pkg" is relative path "dummy_pkg-0.1.0-py3-none-any.whl" but no packageBaseUrl provided'
+    content = json.dumps(lockfile_content)
+    selenium.run_js(
+        """
+        const py = await loadPyodide({
+            lockFileContents: %s,
+        });
+        await py.loadPackage("dummy_pkg");
+        """
+        % content
+    )
+    assert message in selenium.logs
+
+
+def test_lockfilecontents_package_base_url(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {
+        "dummy-pkg": {
+            "name": "dummy_pkg",
+            "version": "0.1.0",
+            "unvendor_tests": False,
+            "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+            "depends": [],
+            "file_name": test_file_name,
+            "install_dir": "site",
+            "package_type": "package",
+            "imports": [],
+        }
+    }
+    lockfile_content_json = json.dumps(lockfile_content)
+
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            base_url = str(tmp_path)
+        else:
+            base_url = f"http://{url}:{port}/"
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg")
+            """
+        )
+
+
+def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+    orig_lockfile = DIST_PATH / "pyodide-lock.json"
+    test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
+    test_file_path = Path(__file__).parent / "wheels" / test_file_name
+
+    dummy_pkg = {
+        "name": "dummy_pkg",
+        "version": "0.1.0",
+        "unvendor_tests": False,
+        "sha256": "22fc6330153be71220aea157ab135c53c7d34ff1a6d1d1a4705c95eef1a6f262",
+        "depends": [],
+        "install_dir": "site",
+        "package_type": "package",
+        "imports": [],
+    }
+
+    shutil.copy(test_file_path, tmp_path / test_file_name)
+
+    with spawn_web_server(tmp_path) as web_server:
+        url, port, _ = web_server
+
+        if selenium.browser == "node":
+            base_url = str(tmp_path / test_file_name)
+        else:
+            base_url = f"http://{url}:{port}/{test_file_name}"
+        dummy_pkg["file_name"] = base_url
+
+        lockfile_content = json.loads(orig_lockfile.read_text())
+        lockfile_content["packages"] = {"dummy-pkg": dummy_pkg}
+        lockfile_content_json = json.dumps(lockfile_content)
+
+        selenium.run_js(
+            f"""
+            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r} }});
+            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+            return pyodide.runPython("import dummy_pkg")
             """
         )
 
