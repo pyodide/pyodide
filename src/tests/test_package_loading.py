@@ -378,6 +378,29 @@ def test_load_bad_so_file(selenium):
         )
 
 
+@pytest.mark.requires_dynamic_linking
+def test_load_dlerror(selenium):
+    so_file_with_link_error = (
+        Path(__file__).parent / "test_data" / "dlerror_test" / "main_func.so"
+    )
+    data = so_file_with_link_error.read_bytes()
+    selenium.run(
+        f"""
+        import pathlib
+        pathlib.Path("/a.so").write_bytes({data!r})
+        """
+    )
+    with pytest.raises(
+        selenium.JavascriptException,
+        match='Failed to find dynamic library "libside.so"',
+    ):
+        selenium.run_js(
+            """
+            await pyodide._api.loadDynlib("/a.so");
+            """
+        )
+
+
 def test_should_load_dynlib():
     import sysconfig
 
@@ -1188,4 +1211,136 @@ def test_micropip_freeze_with_package_cache_dir(selenium_standalone_noload, tmp_
     lockfile_content = json.loads(freezed_lockfile)
     assert lockfile_content["packages"]["micropip"]["file_name"] == str(
         package_cache_dir / micropip_path.name
+    )
+
+
+@only_node
+def test_package_manager_urls_node(selenium_standalone_noload, tmp_path):
+    selenium = selenium_standalone_noload
+
+    def with_slash(path: str | Path) -> str:
+        return str(path).rstrip("/") + "/"
+
+    version = selenium.run_js(
+        """
+        pyodide = await loadPyodide();
+        return pyodide._api.version;
+        """
+    )
+    jsdelivr_url = f"https://cdn.jsdelivr.net/pyodide/v{version}/full/"
+
+    # no option
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide();
+        assert(() => pyodide._api.packageManager.cdnURL === `{jsdelivr_url}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(DIST_PATH)}');
+        """
+    )
+
+    # with packageCacheDir
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"packageCacheDir": "{tmp_path}"}});
+        assert(() => pyodide._api.packageManager.cdnURL === `{jsdelivr_url}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileURL
+    lockfile_url = with_slash(tmp_path) + "pyodide-lock.json"
+    shutil.copy(DIST_PATH / "pyodide-lock.json", lockfile_url)
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}"}});
+        assert(() => pyodide._api.packageManager.cdnURL === `{jsdelivr_url}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileContents
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}'}});
+        assert(() => pyodide._api.packageManager.cdnURL === `{jsdelivr_url}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === undefined);
+        """
+    )
+
+    # with lockfileContents and packageBaseUrl
+    # cdn url should be replaced to the packageBaseUrl if packageBaseUrl is provided
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}', "packageBaseUrl": "{tmp_path}"}});
+        assert(() => pyodide._api.packageManager.cdnURL === `{with_slash(tmp_path)}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(tmp_path)}');
+        """
+    )
+
+    # with lockfileURL and packageCacheDir
+    package_cache_dir = tmp_path / "package_cache"
+    package_cache_dir.mkdir()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}", "packageCacheDir": "{package_cache_dir}"}});
+        assert(() => pyodide._api.packageManager.cdnURL === `{jsdelivr_url}`);
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(package_cache_dir)}');
+        """
+    )
+
+
+@pytest.mark.xfail_browsers(node="no node")
+def test_package_manager_urls_browsers(selenium_standalone_noload, httpserver):
+    selenium = selenium_standalone_noload
+    base_url = selenium.base_url
+
+    def with_slash(path: str | Path) -> str:
+        return str(path).rstrip("/") + "/"
+
+    # no option
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide();
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(base_url)}');
+        """
+    )
+
+    # with lockfileURL
+    httpserver.expect_oneshot_request(
+        "/pyodide-lock.json",
+    ).respond_with_data(
+        (DIST_PATH / "pyodide-lock.json").read_text(),
+        content_type="application/json",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    lockfile_url = httpserver.url_for("/pyodide-lock.json")
+    lockfile_base = lockfile_url.rsplit("/", 1)[0]
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileURL": "{lockfile_url}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(lockfile_base)}');
+        """
+    )
+
+    # with lockfileContents
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}'}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === undefined);
+        """
+    )
+
+    # with lockfileContents and packageBaseUrl
+    # cdn url should be replaced to the packageBaseUrl if packageBaseUrl is provided
+    lockfile_contents = (DIST_PATH / "pyodide-lock.json").read_text()
+    base_url = "http://example.com/pyodide"
+    selenium.run_js(
+        f"""
+        pyodide = await loadPyodide({{"lockFileContents": '{lockfile_contents}', "packageBaseUrl": "{base_url}"}});
+        assert(() => pyodide._api.packageManager.installBaseUrl === '{with_slash(base_url)}');
+        """
     )

@@ -116,7 +116,7 @@ function ensureMountPathExists(path: string): void {
  * We convert it back into an object in makePublicAPI.
  * @private
  */
-export class PyodideAPI {
+export class PyodideAPI_ {
   /** @hidden */
   static version = version;
   /** @hidden */
@@ -704,14 +704,19 @@ export class PyodideAPI {
   }
 }
 
-/** @hidden */
-export type PyodideInterface = typeof PyodideAPI;
+/**
+ * The return type of :js:func:`~exports.loadPyodide`. See
+ * :ref:`the pyodide api docs <js-api-pyodide>` for more information.
+ * @hidetype
+ * @docgroup exports
+ */
+export type PyodideAPI = typeof PyodideAPI_;
 
 /** @private */
-function makePublicAPI(): PyodideInterface {
-  // Create a copy of PyodideAPI that is an object instead of a class. This
+function makePublicAPI(): PyodideAPI {
+  // Create a copy of PyodideAPI_ that is an object instead of a class. This
   // displays a bit better in debuggers / consoles.
-  let d = Object.getOwnPropertyDescriptors(PyodideAPI);
+  let d = Object.getOwnPropertyDescriptors(PyodideAPI_);
   // @ts-ignore
   delete d["prototype"];
   const pyodideAPI = Object.create({}, d);
@@ -766,7 +771,7 @@ API.bootstrapFinalizedPromise = new Promise<void>(
 API.finalizeBootstrap = function (
   snapshotConfig?: SnapshotConfig,
   snapshotDeserializer?: (obj: any) => any,
-): PyodideInterface {
+): PyodideAPI {
   if (snapshotConfig) {
     syncUpSnapshotLoad1();
   }

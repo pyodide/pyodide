@@ -1,10 +1,13 @@
 js:module
-  globalThis
+  exports
   pyodide
   pyodide.canvas
   pyodide.ffi
+js:typealias
+  exports.PyodideAPI
+  pyodide.ffi.TypedArray
 js:function
-  globalThis.loadPyodide
+  exports.loadPyodide
   pyodide.canvas.getCanvas2D
   pyodide.canvas.getCanvas3D
   pyodide.canvas.setCanvas2D
@@ -91,6 +94,7 @@ js:function
   pyodide.unpackArchive
   pyodide.unregisterJsModule
 js:attribute
+  exports.version
   pyodide.ERRNO_CODES
   pyodide.FS
   pyodide.Lockfile.info
@@ -138,8 +142,6 @@ js:interface
   pyodide.LockfileInfo
   pyodide.LockfilePackage
   pyodide.PackageData
-js:typealias
-  pyodide.TypedArray
 js:class
   pyodide.ffi.PyAsyncGenerator
   pyodide.ffi.PyAsyncIterable

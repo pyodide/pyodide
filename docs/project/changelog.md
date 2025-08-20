@@ -17,6 +17,24 @@ myst:
 
 ## Unreleased
 
+## Version 0.28.2
+
+_August 19, 2025_
+
+- {{ Fix }} Fixed a bug where package download and caching did not work in Node.js
+  which was introduced in 0.28.1.
+  {pr}`5824`
+
+- {{ Enhancement }} Improve error message when a dynamic library fails to load.
+  {pr}`5840`
+
+- {{ Fix }} In 0.28.1 we accidentally removed the `PyodideInterface` type
+  export. We added it back. {pr}`5827`
+
+## Version 0.28.1
+
+_August 04, 2025_
+
 ### General
 
 - {{ Update }} Upgraded `micropip` to 0.10.1 {pr}`5739`
@@ -50,6 +68,13 @@ myst:
 
 - {{ Enhancement }} Update typescript types to include `FS.unmount()`.
   {pr}`5788`
+
+### Packages
+
+- {{ Enhancement }} New packages added:
+  - audioop-lts (0.2.1)
+  - cobs (1.2.1)
+  - PyMuPDF (1.26.3)
 
 ## Version 0.28.0
 

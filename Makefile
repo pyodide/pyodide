@@ -283,6 +283,7 @@ clean:
 	find src -name '*.out.*' -delete
 	rm -fr src/js/generated
 	make -C packages clean
+	rm -f .pyodide_build_installed
 	echo "The Emsdk, CPython are not cleaned. cd into those directories to do so."
 
 clean-python: clean

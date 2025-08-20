@@ -1,11 +1,15 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
-import { type PyodideInterface } from "./api";
+import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
+import { PackageManager } from "./load-package";
 
+/**
+ * @docgroup pyodide.ffi
+ */
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -346,6 +350,12 @@ export interface Module {
   };
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
 }
 
 /**
@@ -471,7 +481,7 @@ export interface API {
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
-  public_api: PyodideInterface;
+  public_api: PyodideAPI;
   config: ConfigType;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
@@ -519,6 +529,7 @@ export interface API {
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
   lockfile_packages: Record<string, LockfilePackage>;
+  packageManager: PackageManager;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
@@ -552,7 +563,7 @@ export interface API {
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
-  ) => PyodideInterface;
+  ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
@@ -574,6 +585,7 @@ export type PackageManagerAPI = Pick<
   | "bootstrapFinalizedPromise"
   | "sitepackages"
   | "defaultLdLibraryPath"
+  | "version"
 > & {
   config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
@@ -593,4 +605,6 @@ export type PackageManagerModule = Pick<
   | "_emscripten_dlopen_promise"
   | "getPromise"
   | "promiseMap"
+  | "_dlerror"
+  | "UTF8ToString"
 >;
