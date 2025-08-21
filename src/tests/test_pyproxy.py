@@ -754,29 +754,25 @@ def test_pyproxy_mixins5(selenium):
 
     test_objects = to_js([Test, Test()])
 
-    try:
-        r = run_js("""
-            "use strict";
-            ([Test, t]) => {
-                assert(() => !("length" in Test));
-                assert(() => t.length === 9);
-                assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-                assert(() => !("asJsJson" in t));
-                assertThrows(() => {t.length = 10}, "TypeError", "");
-                assert(() => t.length === 9);
+    run_js("""
+        "use strict";
+        ([Test, t]) => {
+            assert(() => !("length" in Test));
+            assert(() => t.length === 9);
+            assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
+            assert(() => !("asJsJson" in t));
+            assertThrows(() => {t.length = 10}, "TypeError", "");
+            assert(() => t.length === 9);
 
-                // For some reason, this is the normal behavior for a JS getter:
-                // delete just does nothing...
-                delete t.length;
-                assert(() => t.length === 9);
+            // For some reason, this is the normal behavior for a JS getter:
+            // delete just does nothing...
+            delete t.length;
+            assert(() => t.length === 9);
 
-                Test.destroy();
-                t.destroy();
-            }
-        """)(test_objects)
-        print(r)
-    finally:
-        print(selenium.logs)
+            Test.destroy();
+            t.destroy();
+        }
+    """)(test_objects)
 
 
 @run_in_pyodide
