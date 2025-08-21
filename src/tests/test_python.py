@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
@@ -70,61 +71,48 @@ def test_webbrowser_open_new_tab(selenium):
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+@run_in_pyodide
 def test_webbrowser_register_and_get(selenium):
     # Test webbrowser.register and get functionality
-    result = selenium.run("""
-        import webbrowser
+    import webbrowser
 
-        # Test registering a custom browser
-        class CustomBrowser(webbrowser.BaseBrowser):
-            def open(self, url, new=0, autoraise=True):
-                return True
+    # Test registering a custom browser
+    class CustomBrowser(webbrowser.BaseBrowser):
+        def open(self, url, new=0, autoraise=True):
+            return True
 
-        custom_browser = CustomBrowser("custom")
-        webbrowser.register("custom", None, custom_browser)
+    custom_browser = CustomBrowser("custom")
+    webbrowser.register("custom", None, custom_browser)
 
-        # Test getting the registered browser
-        browser = webbrowser.get("custom")
-        browser.name == "custom"
-    """)
-    assert result is True
+    # Test getting the registered browser
+    browser = webbrowser.get("custom")
+    assert browser.name == "custom"
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+@run_in_pyodide
 def test_webbrowser_error(selenium):
     # Test webbrowser.Error exception
-    result = selenium.run("""
-        import webbrowser
+    import webbrowser
 
-        try:
-            webbrowser.get("nonexistent_browser")
-            False  # Should not reach here
-        except webbrowser.Error as e:
-            "could not locate runnable browser type" in str(e)
-    """)
-    assert result is True
+    try:
+        webbrowser.get("nonexistent_browser")
+    except webbrowser.Error as e:
+        assert "could not locate runnable browser type" in str(e)
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
 def test_webbrowser_browser_classes(selenium):
     # Test BaseBrowser and GenericBrowser classes
-    result = selenium.run("""
-        import webbrowser
+    import webbrowser
 
-        # Test BaseBrowser
-        base_browser = webbrowser.BaseBrowser("test")
-        base_browser.name == "test" and base_browser.args == ["test"]
-    """)
-    assert result is True
+    # Test BaseBrowser
+    base_browser = webbrowser.BaseBrowser("test")
+    assert base_browser.name == "test" and base_browser.args == ["test"]
 
-    result = selenium.run("""
-        import webbrowser
-
-        # Test GenericBrowser
-        generic_browser = webbrowser.GenericBrowser("generic")
-        generic_browser.name == "generic"
-    """)
-    assert result is True
+    # Test GenericBrowser
+    generic_browser = webbrowser.GenericBrowser("generic")
+    assert generic_browser.name == "generic"
 
 
 def test_print(selenium):
