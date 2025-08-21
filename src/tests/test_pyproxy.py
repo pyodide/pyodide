@@ -778,7 +778,6 @@ def test_pyproxy_mixins5(selenium):
 @run_in_pyodide
 def test_pyproxy_mixins6(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import to_js
 
     l = [5, 6, 7]
 
@@ -798,7 +797,7 @@ def test_pyproxy_mixins6(selenium):
             assert(() => l.length === 2 && l.get(1) === 7);
         }
         """
-    )(to_js(l))
+    )(l)
 
     assert l[0] == 80
     assert len(l) == 2
