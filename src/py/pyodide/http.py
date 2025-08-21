@@ -1,12 +1,27 @@
+import base64
 import json
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from functools import wraps
 from io import StringIO
-from typing import IO, Any, ParamSpec, TypeVar
+from typing import (
+    IO,
+    TYPE_CHECKING,
+    Any,
+    NotRequired,
+    ParamSpec,
+    TypedDict,
+    TypeVar,
+    Unpack,
+)
+from urllib.parse import urlencode
 
 from ._package_loader import unpack_buffer
 from .ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
+
+if TYPE_CHECKING:
+    # For type checking only, import XMLHttpRequest from js module
+    from js import XMLHttpRequest
 
 if IN_BROWSER:
     try:
@@ -16,7 +31,7 @@ if IN_BROWSER:
     except ImportError:
         pass
     try:
-        from js import XMLHttpRequest
+        from js import DOMException, XMLHttpRequest
     except ImportError:
         pass
 else:
@@ -37,6 +52,11 @@ __all__ = [
     "HttpStatusError",
     "BodyUsedError",
     "AbortError",
+    "pyxhr",
+    "XHRResponse",
+    "XHRRequestParams",
+    "XHRError",
+    "XHRNetworkError",
 ]
 
 
@@ -91,13 +111,120 @@ class AbortError(OSError):
         super().__init__(reason.message)
 
 
+# pyxhr exceptions
+class XHRRequestParams(TypedDict):
+    """Parameters for XMLHttpRequest operations."""
+
+    headers: NotRequired[dict[str, str]]
+    params: NotRequired[dict[str, Any]]
+    data: NotRequired[str | bytes]
+    json: NotRequired[dict[str, Any] | list[Any]]
+    auth: NotRequired[tuple[str, str] | list[str]]
+
+
+class XHRError(OSError):
+    """Base exception for XMLHttpRequest errors."""
+
+    pass
+
+
+class XHRNetworkError(XHRError):
+    """Network-related XMLHttpRequest error."""
+
+
+class XHRResponse:
+    """A wrapper for XMLHttpRequest response that provides a requests-like interface.
+
+    This class wraps the XMLHttpRequest object and provides convenient methods
+    to access response data in a manner similar to the requests library.
+
+    Parameters
+    ----------
+    xhr : XMLHttpRequest
+        The XMLHttpRequest object to wrap
+    """
+
+    def __init__(self, xhr: "XMLHttpRequest"):
+        self._xhr = xhr
+        self._headers_dict: dict[str, str] | None = None
+
+    @property
+    def status_code(self) -> int:
+        """HTTP status code of the response."""
+        return self._xhr.status
+
+    @property
+    def text(self) -> str:
+        """Response content as text."""
+        return self._xhr.responseText
+
+    @property
+    def content(self) -> bytes:
+        """Response content as bytes."""
+        if hasattr(self._xhr, "response") and self._xhr.response:
+            try:
+                return self._xhr.response.encode("utf-8")
+            except (TypeError, ValueError):
+                pass
+        return self.text.encode("utf-8")
+
+    @property
+    def headers(self) -> dict[str, str]:
+        """Response headers as dictionary."""
+        if self._headers_dict is None:
+            self._headers_dict = self._parse_headers()
+        return self._headers_dict
+
+    @property
+    def ok(self) -> bool:
+        """True if status_code is less than 400."""
+        return 200 <= self.status_code < 400
+
+    @property
+    def url(self) -> str:
+        """Final URL location of response."""
+        return self._xhr.responseURL if hasattr(self._xhr, "responseURL") else ""
+
+    def _parse_headers(self) -> dict[str, str]:
+        """Parse response headers from XMLHttpRequest."""
+        headers: dict[str, str] = {}
+        headers_str = self._xhr.getAllResponseHeaders()
+        if headers_str:
+            return headers
+        for line in headers_str.strip().split("\r\n"):
+            if ":" in line:
+                key, value = line.split(": ", 1)
+                headers[key.strip().lower()] = value.strip()
+        return headers
+
+    def json(self, **kwargs: Any) -> Any:
+        """Parse response content as JSON.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments passed to json.loads()
+
+        Returns
+        -------
+        dict | list | Any
+            Parsed JSON data
+        """
+        return json.loads(self.text, **kwargs)
+
+    def raise_for_status(self) -> None:
+        """Raise an exception if the request was unsuccessful."""
+        if 400 <= self.status_code < 600:
+            raise HttpStatusError(self.status_code, self._xhr.statusText, self.url)
+
+
 def open_url(url: str) -> StringIO:
     """Fetches a given URL synchronously.
 
     The download of binary files is not supported. To download binary files use
     :func:`pyodide.http.pyfetch` which is asynchronous.
 
-    It will not work in Node unless you include an polyfill for :js:class:`XMLHttpRequest`.
+    It will not work in Node unless you include a polyfill for XMLHttpRequest.
 
     Parameters
     ----------
@@ -456,3 +583,240 @@ async def pyfetch(
         raise
     except JsException as e:
         raise AbortError(e) from None
+
+
+class pyxhr:
+    """Namespace class providing requests-like HTTP methods using XMLHttpRequest.
+
+    Examples
+    --------
+    >>> None # doctest: +RUN_IN_PYODIDE
+    >>> import pytest; pytest.skip("TODO: Figure out how to skip this only in node")
+    >>> from pyodide.http import pyxhr
+    >>> response = pyxhr.get("https://httpbin.org/get")
+    >>> response.status_code
+    200
+    >>> data = response.json()
+
+    >>> response = pyxhr.post("https://httpbin.org/post",
+    ...                      json={"key": "value"})
+    >>> response.status_code
+    200
+    """
+
+    @staticmethod
+    def _xhr_request(
+        method: str, url: str, **kwargs: Unpack[XHRRequestParams]
+    ) -> XHRResponse:
+        """Make a synchronous HTTP request using XMLHttpRequest.
+
+        This is the core function that wraps XMLHttpRequest to provide
+        a requests-like interface for synchronous HTTP operations.
+
+        Parameters
+        ----------
+        method : str
+            HTTP method (GET, POST, PUT, DELETE, etc.)
+        url : str
+            URL to request
+        headers : dict, optional
+            HTTP headers to send
+        params : dict, optional
+            URL parameters to append as query string
+        data : str or bytes, optional
+            Data to send in the request body
+        json : dict, optional
+            JSON data to send (automatically sets Content-Type)
+        auth : tuple, optional
+            Basic authentication (username, password)
+
+        Returns
+        -------
+        XHRResponse
+            Wrapped XMLHttpRequest response
+
+        Raises
+        ------
+        XHRNetworkError
+            For network-related errors
+        """
+        if not IN_BROWSER:
+            raise RuntimeError(
+                "XMLHttpRequest is only available in browser environments"
+            )
+
+        req = XMLHttpRequest.new()
+
+        if params := kwargs.get("params"):
+            if isinstance(params, dict):
+                query_string = urlencode(params)
+                if "?" in url:
+                    url = f"{url}&{query_string}"
+                else:
+                    url = f"{url}?{query_string}"
+
+        username = None
+        password = None
+        if auth := kwargs.get("auth"):
+            if len(auth) == 2:
+                username, password = auth
+
+        req.open(method.upper(), url, False, username, password)
+
+        # Note: timeout cannot be set for synchronous requests in browsers
+        # The timeout parameter is ignored for sync XHR
+
+        headers = kwargs.get("headers", {})
+
+        # Add Authorization header as fallback
+        if auth and len(auth) == 2:
+            credentials = base64.b64encode(f"{auth[0]}:{auth[1]}".encode()).decode()
+            headers = headers.copy()
+            headers["Authorization"] = f"Basic {credentials}"
+
+        json_data = kwargs.get("json")
+        data = kwargs.get("data")
+
+        if json_data is not None:
+            data = json.dumps(json_data)
+            headers = headers.copy() if headers else {}
+            headers["Content-Type"] = "application/json"
+
+        for key, value in headers.items():
+            req.setRequestHeader(key, str(value))
+
+        try:
+            req.send(data)
+        except DOMException as e:
+            # Handle JavaScript exceptions from XMLHttpRequest
+            if e.name == "NetworkError":
+                raise XHRNetworkError(f"Network error for {method} {url}") from e
+            raise XHRError(f"XMLHttpRequest failed: {e}") from e
+
+        return XHRResponse(req)
+
+    @staticmethod
+    def get(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a GET request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("GET", url, **kwargs)
+
+    @staticmethod
+    def post(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a POST request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("POST", url, **kwargs)
+
+    @staticmethod
+    def put(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a PUT request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("PUT", url, **kwargs)
+
+    @staticmethod
+    def delete(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a DELETE request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("DELETE", url, **kwargs)
+
+    @staticmethod
+    def head(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a HEAD request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("HEAD", url, **kwargs)
+
+    @staticmethod
+    def patch(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make a PATCH request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("PATCH", url, **kwargs)
+
+    @staticmethod
+    def options(url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+        """Make an OPTIONS request.
+
+        Parameters
+        ----------
+        url : str
+            URL to request
+        **kwargs
+            Additional arguments (headers, params, data, json, auth)
+
+        Returns
+        -------
+        XHRResponse
+            Response object
+        """
+        return pyxhr._xhr_request("OPTIONS", url, **kwargs)

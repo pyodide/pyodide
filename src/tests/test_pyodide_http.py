@@ -306,3 +306,280 @@ async def test_pyfetch_custom_fetcher(selenium):
     assert call_args[0][1]["headers"]["X-Test"] == "true"
 
     assert await response.text() == "test"
+
+
+# pyxhr tests
+@pytest.fixture
+def xhr_test_server(httpserver):
+    """Set up test endpoints for xhr testing."""
+    import werkzeug
+
+    httpserver.expect_request("/xhr/get").respond_with_data(
+        b'{"message": "GET success"}',
+        content_type="application/json",
+        headers={"Access-Control-Allow-Origin": "*"},
+    )
+
+    def post_handler(request):
+        if request.method == "OPTIONS":
+            return werkzeug.Response(
+                status=200,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "POST, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type",
+                },
+            )
+        return werkzeug.Response(
+            '{"message": "POST success"}',
+            status=200,
+            content_type="application/json",
+            headers={"Access-Control-Allow-Origin": "*"},
+        )
+
+    httpserver.expect_request("/xhr/post").respond_with_handler(post_handler)
+
+    def headers_handler(request):
+        import json
+
+        if request.method == "OPTIONS":
+            return werkzeug.Response(
+                status=200,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Access-Control-Allow-Headers": "X-Test-Header, Content-Type",
+                },
+            )
+        response_data = {"headers": dict(request.headers), "method": request.method}
+        return werkzeug.Response(
+            json.dumps(response_data),
+            status=200,
+            content_type="application/json",
+            headers={"Access-Control-Allow-Origin": "*"},
+        )
+
+    httpserver.expect_request("/xhr/headers").respond_with_handler(headers_handler)
+
+    def auth_handler(request):
+        if request.method == "OPTIONS":
+            return werkzeug.Response(
+                status=200,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+                },
+            )
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header == "Basic dGVzdDpwYXNz":  # base64('test:pass')
+            return werkzeug.Response(
+                '{"authenticated": true}',
+                status=200,
+                content_type="application/json",
+                headers={"Access-Control-Allow-Origin": "*"},
+            )
+        else:
+            return werkzeug.Response(
+                '{"error": "unauthorized"}',
+                status=401,
+                content_type="application/json",
+                headers={"Access-Control-Allow-Origin": "*"},
+            )
+
+    httpserver.expect_request("/xhr/auth").respond_with_handler(auth_handler)
+
+    httpserver.expect_request("/xhr/error").respond_with_data(
+        b'{"error": "Not Found"}',
+        content_type="application/json",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=404,
+    )
+
+    return httpserver
+
+
+@pytest.mark.xfail_browsers(node="XMLHttpRequest is not available in node")
+class TestPyxhr:
+    """Test suite for pyxhr synchronous HTTP client."""
+
+    def test_xhr_basic_get(self, selenium, xhr_test_server):
+        """Test basic GET request with pyxhr."""
+        request_url = xhr_test_server.url_for("/xhr/get")
+
+        result_json = selenium.run(f"""
+            import json
+            from pyodide.http import pyxhr
+            response = pyxhr.get('{request_url}')
+            result = {{
+                'status_code': response.status_code,
+                'data': response.json(),
+                'ok': response.ok
+            }}
+            json.dumps(result)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        assert result["status_code"] == 200
+        assert result["data"]["message"] == "GET success"
+        assert result["ok"] is True
+
+    def test_xhr_post_json(self, selenium, xhr_test_server):
+        """Test POST request with JSON data."""
+        request_url = xhr_test_server.url_for("/xhr/post")
+
+        result_json = selenium.run(f"""
+            import json
+            from pyodide.http import pyxhr
+            response = pyxhr.post('{request_url}', json={{"test": "data"}})
+            result = {{
+                'status_code': response.status_code,
+                'data': response.json()
+            }}
+            json.dumps(result)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        assert result["status_code"] == 200
+        assert result["data"]["message"] == "POST success"
+
+    def test_xhr_custom_headers(self, selenium, xhr_test_server):
+        """Test custom headers in xhr request."""
+        request_url = xhr_test_server.url_for("/xhr/headers")
+
+        result = selenium.run(f"""
+            from pyodide.http import pyxhr
+            response = pyxhr.get('{request_url}', headers={{"X-Test-Header": "test-value"}})
+            data = response.json()
+            data['headers'].get('X-Test-Header', 'not-found')
+        """)
+
+        assert result == "test-value"
+
+    def test_xhr_basic_auth(self, selenium, xhr_test_server):
+        """Test basic authentication with pyxhr."""
+        request_url = xhr_test_server.url_for("/xhr/auth")
+
+        result_json = selenium.run(f"""
+            import json
+            from pyodide.http import pyxhr
+            response = pyxhr.get('{request_url}', auth=('test', 'pass'))
+            result = {{
+                'status_code': response.status_code,
+                'data': response.json()
+            }}
+            json.dumps(result)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        assert result["status_code"] == 200
+        assert result["data"]["authenticated"] is True
+
+    def test_xhr_url_params(self, selenium, xhr_test_server):
+        """Test URL parameters with pyxhr."""
+        request_url = xhr_test_server.url_for("/xhr/get")
+
+        result = selenium.run(f"""
+            from pyodide.http import pyxhr
+            response = pyxhr.get('{request_url}', params={{"key1": "value1", "key2": "value2"}})
+            # Check that the response URL contains the parameters
+            '?' in response.url and 'key1=value1' in response.url and 'key2=value2' in response.url
+        """)
+
+        assert result is True
+
+    def test_xhr_error_status(self, selenium, xhr_test_server):
+        """Test error status handling."""
+        request_url = xhr_test_server.url_for("/xhr/error")
+
+        result_json = selenium.run(f"""
+            import json
+            from pyodide.http import pyxhr, HttpStatusError
+            response = pyxhr.get('{request_url}')
+            try:
+                response.raise_for_status()
+                result = {{"error_raised": False}}
+            except HttpStatusError as e:
+                result = {{"error_raised": True, "status": e.status}}
+            json.dumps(result)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        assert result["error_raised"] is True
+        assert result["status"] == 404
+
+    def test_xhr_response_properties(self, selenium, xhr_test_server):
+        """Test XHRResponse properties."""
+        request_url = xhr_test_server.url_for("/xhr/get")
+
+        result_json = selenium.run(f"""
+            import json
+            from pyodide.http import pyxhr
+            response = pyxhr.get('{request_url}')
+            result = {{
+                'status_code': response.status_code,
+                'text_type': type(response.text).__name__,
+                'content_type': type(response.content).__name__,
+                'headers_type': type(response.headers).__name__,
+                'ok': response.ok,
+                'has_url': bool(response.url)
+            }}
+            json.dumps(result)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        assert result["status_code"] == 200
+        assert result["text_type"] == "str"
+        assert result["content_type"] == "bytes"
+        assert result["headers_type"] == "dict"
+        assert result["ok"] is True
+        assert result["has_url"] is True
+
+    def test_xhr_all_methods(self, selenium, xhr_test_server):
+        """Test all HTTP methods are available."""
+
+        result_json = selenium.run("""
+            import json
+            from pyodide.http import pyxhr
+            methods = ['get', 'post', 'put', 'delete', 'head', 'patch', 'options']
+            available_methods = []
+            for method in methods:
+                if hasattr(pyxhr, method) and callable(getattr(pyxhr, method)):
+                    available_methods.append(method)
+            json.dumps(available_methods)
+        """)
+
+        import json
+
+        result = json.loads(result_json)
+        expected_methods = ["get", "post", "put", "delete", "head", "patch", "options"]
+        assert result == expected_methods
+
+
+def test_xhr_not_in_browser(monkeypatch):
+    """Test that _xhr_request raises RuntimeError when not in a browser environment."""
+    import pytest
+
+    # Mock the IN_BROWSER flag to simulate non-browser environment
+    import pyodide.http
+
+    monkeypatch.setattr(pyodide.http, "IN_BROWSER", False)
+
+    # Test that _xhr_request raises RuntimeError when called outside browser
+    with pytest.raises(
+        RuntimeError, match="XMLHttpRequest is only available in browser environments"
+    ):
+        from pyodide.http import pyxhr
+
+        # This should raise RuntimeError when trying to make a request
+        pyxhr.get("http://test.com")
