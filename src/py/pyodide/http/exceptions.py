@@ -3,6 +3,7 @@ HTTP-related exceptions and utilities for Pyodide.
 """
 
 from typing import Any
+
 from ..ffi import JsException
 
 

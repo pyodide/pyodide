@@ -5,12 +5,12 @@ This module provides utilities for making HTTP requests in the browser environme
 including synchronous XMLHttpRequest support and async fetch API.
 """
 
-from .exceptions import AbortError, BodyUsedError, HttpStatusError
-from .pyfetch import FetchResponse, pyfetch
+from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
 from ..ffi import IN_BROWSER
-from io import StringIO
+from .exceptions import AbortError, BodyUsedError, HttpStatusError
+from .pyfetch import FetchResponse, pyfetch
 
 if IN_BROWSER:
     try:

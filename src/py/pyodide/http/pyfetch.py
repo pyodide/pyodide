@@ -6,12 +6,16 @@ import json
 from asyncio import CancelledError
 from collections.abc import Awaitable, Callable
 from functools import wraps
-from io import StringIO
 from typing import IO, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
-from .exceptions import AbortError, BodyUsedError, HttpStatusError, _construct_abort_reason
+from .exceptions import (
+    AbortError,
+    BodyUsedError,
+    HttpStatusError,
+    _construct_abort_reason,
+)
 
 if IN_BROWSER:
     try:
