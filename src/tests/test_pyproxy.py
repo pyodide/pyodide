@@ -539,63 +539,101 @@ def test_pyproxy_mixins2(selenium):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_mixins31(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        pass
+
+    test_class_and_instance = to_js([Test, Test()])
+
+    run_js(
         """
         "use strict";
-        let [Test, t] = pyodide.runPython(`
-            class Test: pass
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => Test.prototype === undefined);
-        assert(() => !("name" in Test));
-        assert(() => !("length" in Test));
+        ([Test, t]) => {
+            assert(() => Test.prototype === undefined);
+            assert(() => !("name" in Test));
+            assert(() => !("length" in Test));
 
-        assert(() => !("prototype" in t));
-        assert(() => !("caller" in t));
-        assert(() => !("name" in t));
-        assert(() => !("length" in t));
+            assert(() => !("prototype" in t));
+            assert(() => !("caller" in t));
+            assert(() => !("name" in t));
+            assert(() => !("length" in t));
 
-        Test.prototype = 7;
-        Test.name = 7;
-        Test.length = 7;
-        pyodide.runPython("assert Test.prototype == 7");
-        pyodide.runPython("assert Test.name == 7");
-        pyodide.runPython("assert Test.length == 7");
-        // prototype cannot be removed once added because it is nonconfigurable...
-        assertThrows(() => delete Test.prototype, "TypeError", "");
-        delete Test.name;
-        delete Test.length;
-        pyodide.runPython(`assert Test.prototype == 7`);
-        pyodide.runPython(`assert not hasattr(Test, "name")`);
-        pyodide.runPython(`assert not hasattr(Test, "length")`);
-
-        Test.$a = 7;
-        Object.defineProperty(Test, "a", {
-            get(){ return Test.$a + 1; },
-            set(v) {
-                Test.$a = v;
-            }
-        });
-
-        pyodide.runPython("assert Test.a == 7")
-        assert(() => Test.a === 8);
-        Test.a = 9;
-        assert(() => Test.a === 10);
-        pyodide.runPython("assert Test.a == 9")
-        assertThrows(() => delete Test.a, "TypeError", "");
-
-        Object.defineProperty(Test, "b", {
-            get(){ return Test.$a + 2; },
-        });
-        assert(() => Test.b === 11);
-        assertThrows(() => Test.b = 7,"TypeError", "");
-        assertThrows(() => delete Test.b, "TypeError", "");
-        Test.destroy();
-        t.destroy();
+            Test.prototype = 7;
+            Test.name = 7;
+            Test.length = 7;
+        }
         """
-    )
+    )(test_class_and_instance)
+
+    assert Test.prototype == 7  # type: ignore[attr-defined]
+    assert Test.name == 7  # type: ignore[attr-defined]
+    assert Test.length == 7  # type: ignore[attr-defined]
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assertThrows(() => delete Test.prototype, "TypeError", "");
+            delete Test.name;
+            delete Test.length;
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.prototype == 7  # type: ignore[attr-defined]
+    assert not hasattr(Test, "name")
+    assert not hasattr(Test, "length")
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            Test.$a = 7;
+            Object.defineProperty(Test, "a", {
+                get(){ return Test.$a + 1; },
+                set(v) {
+                    Test.$a = v;
+                }
+            });
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.a == 7  # type: ignore[attr-defined]
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assert(() => Test.a === 8);
+            Test.a = 9;
+            assert(() => Test.a === 10);
+        }
+        """
+    )(test_class_and_instance)
+
+    assert Test.a == 9  # type: ignore[attr-defined]
+
+    run_js(
+        """
+        "use strict";
+        ([Test, t]) => {
+            assertThrows(() => delete Test.a, "TypeError", "");
+            Object.defineProperty(Test, "b", {
+                get(){ return Test.$a + 2; },
+            });
+            assert(() => Test.b === 11);
+            assertThrows(() => Test.b = 7,"TypeError", "");
+            assertThrows(() => delete Test.b, "TypeError", "");
+            Test.destroy();
+            t.destroy();
+        }
+        """
+    )(test_class_and_instance)
 
 
 @pytest.mark.parametrize("configurable", [False, True])
@@ -646,115 +684,129 @@ def test_pyproxy_mixins32(selenium, configurable, writable):
     )
 
 
+@run_in_pyodide
 def test_pyproxy_mixins41(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        caller = "fifty"
+        prototype = "prototype"
+        name = "me"
+        length = 7
+
+        def __call__(self, x):
+            return x + 1
+
+    test_objects = to_js([Test, Test()])
+
+    run_js(
         """
-        [Test, t] = pyodide.runPython(`
-            class Test:
-                caller="fifty"
-                prototype="prototype"
-                name="me"
-                length=7
-                def __call__(self, x):
-                    return x + 1
+        ([Test, t]) => {
+            assert(() => Test.$prototype === "prototype");
+            assert(() => Test.prototype === "prototype");
+            assert(() => Test.name==="me");
+            assert(() => Test.length === 7);
 
-            from pyodide.ffi import to_js
-            to_js([Test, Test()])
-        `);
-        assert(() => Test.$prototype === "prototype");
-        assert(() => Test.prototype === "prototype");
-        assert(() => Test.name==="me");
-        assert(() => Test.length === 7);
-
-        assert(() => t.caller === "fifty");
-        assert(() => "prototype" in t);
-        assert(() => t.prototype === "prototype");
-        assert(() => t.name==="me");
-        assert(() => t.length === 7);
-        assert(() => t(7) === 8);
-        Test.destroy();
-        t.destroy();
-        """
-    )
-
-
-def test_pyproxy_mixins42(selenium):
-    selenium.run_js(
-        """
-        let t = pyodide.runPython(`
-            class Test:
-                def __call__(self, x):
-                    return x + 1
-
-            from pyodide.ffi import to_js
-            Test()
-        `);
-        assert(() => "prototype" in t);
-        assert(() => t.prototype === undefined);
-        t.destroy();
-        """
-    )
-
-
-def test_pyproxy_mixins5(selenium):
-    try:
-        r = selenium.run_js(
-            """
-            "use strict";
-            const [Test, t] = pyodide.runPython(`
-                class Test:
-                    def __len__(self):
-                        return 9
-                from pyodide.ffi import to_js
-                to_js([Test, Test()])
-            `);
-            assert(() => !("length" in Test));
-            assert(() => t.length === 9);
-            assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
-            assert(() => !("asJsJson" in t));
-            assertThrows(() => {t.length = 10}, "TypeError", "");
-            assert(() => t.length === 9);
-
-            // For some reason, this is the normal behavior for a JS getter:
-            // delete just does nothing...
-            delete t.length;
-            assert(() => t.length === 9);
-
+            assert(() => t.caller === "fifty");
+            assert(() => "prototype" in t);
+            assert(() => t.prototype === "prototype");
+            assert(() => t.name==="me");
+            assert(() => t.length === 7);
+            assert(() => t(7) === 8);
             Test.destroy();
             t.destroy();
-            """
-        )
+        }
+        """
+    )(test_objects)
+
+
+@run_in_pyodide
+def test_pyproxy_mixins42(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        def __call__(self, x):
+            return x + 1
+
+    t = Test()
+
+    run_js(
+        """
+        (t) => {
+            assert(() => "prototype" in t);
+            assert(() => t.prototype === undefined);
+            t.destroy();
+        }
+        """
+    )(to_js(t))
+
+
+@run_in_pyodide
+def test_pyproxy_mixins5(selenium):
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    class Test:
+        def __len__(self):
+            return 9
+
+    test_objects = to_js([Test, Test()])
+
+    try:
+        r = run_js("""
+            "use strict";
+            ([Test, t]) => {
+                assert(() => !("length" in Test));
+                assert(() => t.length === 9);
+                assert(() => t instanceof pyodide.ffi.PyProxyWithLength);
+                assert(() => !("asJsJson" in t));
+                assertThrows(() => {t.length = 10}, "TypeError", "");
+                assert(() => t.length === 9);
+
+                // For some reason, this is the normal behavior for a JS getter:
+                // delete just does nothing...
+                delete t.length;
+                assert(() => t.length === 9);
+
+                Test.destroy();
+                t.destroy();
+            }
+        """)(test_objects)
         print(r)
     finally:
         print(selenium.logs)
 
 
+@run_in_pyodide
 def test_pyproxy_mixins6(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    l = [5, 6, 7]
+
+    run_js(
         """
-        let l = pyodide.runPython(`
-            l = [5, 6, 7] ; l
-        `);
-        assert(() => l.get.type === undefined);
-        assert(() => l.get(1) === 6);
-        assert(() => l.length === 3);
-        assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
-        assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
-        assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
-        assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
-        assert(() => "asJsJson" in l);
-        l.set(0, 80);
-        pyodide.runPython(`
-            assert l[0] == 80
-        `);
-        l.delete(1);
-        pyodide.runPython(`
-            assert len(l) == 2 and l[1] == 7
-        `);
-        assert(() => l.length === 2 && l.get(1) === 7);
-        l.destroy();
+        (l) => {
+            assert(() => l.get.type === undefined);
+            assert(() => l.get(1) === 6);
+            assert(() => l.length === 3);
+            assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
+            assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
+            assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
+            assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
+            assert(() => "asJsJson" in l);
+            l.set(0, 80);
+            l.delete(1);
+            assert(() => l.length === 2 && l.get(1) === 7);
+        }
         """
-    )
+    )(to_js(l))
+
+    assert l[0] == 80
+    assert len(l) == 2
+    assert l[1] == 7
 
 
 @pytest.mark.skip_pyproxy_check
