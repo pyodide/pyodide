@@ -296,6 +296,7 @@ ifeq ($(DISABLE_DYLINK), 1)
 		-lhiwire \
 		-lidbfs.js \
 		-lnodefs.js \
+    -lproxyfs.js
 
 endif
 

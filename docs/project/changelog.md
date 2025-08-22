@@ -17,9 +17,16 @@ myst:
 
 ## Unreleased
 
+## Version 0.28.2
+
+_August 19, 2025_
+
 - {{ Fix }} Fixed a bug where package download and caching did not work in Node.js
   which was introduced in 0.28.1.
   {pr}`5824`
+
+- {{ Enhancement }} Improve error message when a dynamic library fails to load.
+  {pr}`5840`
 
 - {{ Fix }} In 0.28.1 we accidentally removed the `PyodideInterface` type
   export. We added it back. {pr}`5827`
