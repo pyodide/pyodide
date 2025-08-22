@@ -420,29 +420,19 @@ def test_console_html(selenium):
 
     print(exec_and_get_result("1+"))
 
-    assert (
-        exec_and_get_result("1+")
-        == dedent(
-            """
-            >>> 1+
-            [[;;;terminal-error]  File \"<console>\", line 1
-                1+
-                 ^
-            _IncompleteInputError: incomplete input]
-            """
-        ).strip()
+    expected_output = (
+        ">>> 1+\n"
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]  File "<console>", line 1]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]    1+]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]     ^]\n'
+        '[[;;;terminal-error;  File "<console>", line 1\\n    1+\\n     ^\\n_IncompleteInputError: incomplete input]_IncompleteInputError: incomplete input]'
     )
+
+    assert exec_and_get_result("1+") == expected_output
 
     assert (
         exec_and_get_result("raise Exception('hi')")
-        == dedent(
-            """
-            >>> raise Exception('hi')
-            [[;;;terminal-error]Traceback (most recent call last):
-              File \"<console>\", line 1, in <module>
-            Exception: hi]
-            """
-        ).strip()
+        == '>>> raise Exception(\'hi\')\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]Traceback (most recent call last):]\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]  File "<console>", line 1, in <module>]\n[[;;;terminal-error;Traceback (most recent call last):\\n  File "<console>", line 1, in <module>\\nException: hi]Exception: hi]'
     )
 
     result = exec_and_get_result(
@@ -459,27 +449,25 @@ def test_console_html(selenium):
     result = re.sub(r"line \d+, in repr_shorten", "line xxx, in repr_shorten", result)
     result = re.sub(r"/lib/python.+?/", "/lib/pythonxxx/", result)
 
-    answer = dedent(
-        """
-            >>> class Test:
-            ...     def __repr__(self):
-            ...         raise TypeError(\"hi\")
-            ... \
-
-            >>> Test()
-            [[;;;terminal-error]Traceback (most recent call last):
-              File \"/lib/pythonxxx/pyodide/console.py\", line xxx, in repr_shorten
-                text = repr(value)
-              File \"<console>\", line 3, in __repr__
-            TypeError: hi]
-            """
-    ).strip()
+    answer = (
+        ">>> class Test:\n"
+        "...     def __repr__(self):\n"
+        '...         raise TypeError("hi")\n'
+        "... \n"
+        ">>> Test()\n"
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]Traceback (most recent call last):]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "/lib/pythonxxx/pyodide/console.py", line 680, in repr_sho]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]rten]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]    text = repr(value)]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]  File "<console>", line 3, in __repr__]\n'
+        '[[;;;terminal-error;Traceback (most recent call last):\\n  File "/lib/pythonxxx/pyodide/console.py", line xxx, in repr_shorten\\n    text = repr(value)\\n  File "<console>", line 3, in __repr__\\nTypeError: hi]TypeError: hi]'
+    )
 
     assert result == answer
 
     long_output = exec_and_get_result("list(range(1000))").split("\n")
-    assert len(long_output) == 4
-    assert long_output[2] == "<long output truncated>"
+    assert len(long_output) == 18
+    assert long_output[9] == "<long output truncated>"
 
     # nbsp characters should be replaced with spaces, and not cause a syntax error
     nbsp = "1\xa0\xa0\xa0+\xa0\xa01"
@@ -488,15 +476,13 @@ def test_console_html(selenium):
     term_exec("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.3)
     res = selenium.run_js("return term.get_output().trim();")
-    assert (
-        res
-        == dedent(
-            """
-            >>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()
-            [[;;;terminal-error]Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]
-            [[;;;terminal-error]The cause of the fatal error was:]
-            [[;;;terminal-error]Error: intentionally triggered fatal error!]
-            [[;;;terminal-error]Look in the browser console for more details.]
-            """
-        ).strip()
+    expected_fatal_output = (
+        ">>> from _pyodide_core import trigger_fatal_error; trigger_fatal_erro\n"
+        "r()\n"
+        "[[;;;terminal-error;Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.]Pyodide has suffered a fatal error. Please report this to the Pyodide]\n"
+        "[[;;;terminal-error;Pyodide has suffered a fatal error. Please report this to the Pyodide maintainers.] maintainers.]\n"
+        "[[;;;terminal-error]The cause of the fatal error was:]\n"
+        "[[;;;terminal-error]Error: intentionally triggered fatal error!]\n"
+        "[[;;;terminal-error]Look in the browser console for more details.]"
     )
+    assert res == expected_fatal_output
