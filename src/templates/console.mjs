@@ -4,11 +4,13 @@ import "https://unpkg.com/@xterm/addon-fit@0.9.0/lib/addon-fit.js";
 async function run() {
   const fitAddon = new FitAddon.FitAddon();
   const term = new Terminal({
-    scrollback: 2_000,
+    cursorBlink: true,
+    cursorStyle: "block",
     convertEol: true,
-    fontSize: 16,
+    scrollback: 2_000,
+    fontSize: 18,
     lineHeight: 1.4,
-    // fontFamily: "Monaco, Menlo, 'Courier New', monospace",
+    fontFamily: "monospace",
     theme: {
       background: "#000000",
       foreground: "#ffffff",
@@ -33,7 +35,7 @@ async function run() {
     setTimeout(() => fitAddon.fit(), 100);
   });
 
-  // 2. Initialize Pyodide
+  // Initialize Pyodide
   let indexURL = "{{ PYODIDE_BASE_URL }}";
   const urlParams = new URLSearchParams(window.location.search);
   const buildParam = urlParams.get("build");
@@ -73,10 +75,11 @@ await_fut
   pyconsole.stdout_callback = (s) => term.write(s);
   pyconsole.stderr_callback = (s) => term.write(`\x1b[31m${s}\x1b[0m`);
 
-  // 3. REPL implementation
+  // REPL implementation
   const ps1 = ">>> ";
   const ps2 = "... ";
   let buffer = "";
+  let cursorIndex = 0; // index within buffer for in-line editing
   let prompt = ps1;
   const history = [];
   let historyIndex = null; // null means not navigating history
@@ -96,10 +99,32 @@ await_fut
     term.write(prompt);
     term.write("\x1b[0K");
     term.write(buffer);
+    // Position the terminal cursor to reflect cursorIndex
+    const distanceFromEnd = buffer.length - cursorIndex;
+    if (distanceFromEnd > 0) {
+      term.write(`\x1b[${distanceFromEnd}D`);
+    }
+  }
+
+  function setBuffer(newBuffer, newCursorIndex = null) {
+    buffer = newBuffer;
+    if (newCursorIndex === null) {
+      cursorIndex = buffer.length;
+    } else {
+      cursorIndex = Math.max(0, Math.min(newCursorIndex, buffer.length));
+    }
+    refreshLine();
   }
 
   async function execLine(line) {
+    // clear the terminal
+    if (line === "clear") {
+      term.write("\x1b[2J\x1b[H");
+      return;
+    }
+
     const fut = pyconsole.push(line);
+
     switch (fut.syntax_check) {
       case "syntax-error":
         term.write(`\x1b[31m${fut.formatted_error.trimEnd()}\x1b[0m`);
@@ -111,6 +136,8 @@ await_fut
         break;
       case "incomplete":
         prompt = ps2;
+        addToHistory(line);
+        historyIndex = null;
         return;
       case "complete":
         prompt = ps1;
@@ -147,19 +174,23 @@ await_fut
         term.write("\r\n");
         await execLine(buffer);
         buffer = "";
+        cursorIndex = 0;
         term.write(prompt);
         break;
       case "\u0003": // Ctrl-C
         pyconsole.buffer.clear();
         buffer = "";
+        cursorIndex = 0;
         term.write("^C\r\nKeyboardInterrupt\r\n" + ps1);
         prompt = ps1;
         historyIndex = null;
         break;
       case "\u007F": // Backspace
-        if (buffer.length > 0) {
-          buffer = buffer.slice(0, -1);
-          term.write("\b \b");
+        if (cursorIndex > 0) {
+          const before = buffer.slice(0, cursorIndex - 1);
+          const after = buffer.slice(cursorIndex);
+          cursorIndex -= 1;
+          setBuffer(before + after, cursorIndex);
         }
         break;
       case "\x1B[A": // Up arrow
@@ -167,8 +198,8 @@ await_fut
           if (historyIndex === null) historyIndex = history.length;
           if (historyIndex > 0) {
             historyIndex -= 1;
-            buffer = history[historyIndex] || "";
-            refreshLine();
+            const newBuf = history[historyIndex] || "";
+            setBuffer(newBuf, newBuf.length);
           }
         }
         break;
@@ -176,20 +207,35 @@ await_fut
         if (prompt === ps1 && historyIndex !== null) {
           if (historyIndex < history.length - 1) {
             historyIndex += 1;
-            buffer = history[historyIndex] || "";
+            const newBuf = history[historyIndex] || "";
+            setBuffer(newBuf, newBuf.length);
           } else {
             historyIndex = null;
-            buffer = "";
+            setBuffer("", 0);
           }
+        }
+        break;
+      case "\x1B[C": // Right arrow
+        if (cursorIndex < buffer.length) {
+          cursorIndex += 1;
+          refreshLine();
+          break;
+        }
+      case "\x1B[D": // Left arrow
+        if (cursorIndex > 0) {
+          cursorIndex -= 1;
           refreshLine();
         }
         break;
-      case "\x1B[C": // Right arrow - ignore
-      case "\x1B[D": // Left arrow - ignore
-        break;
       default:
-        buffer += data;
-        term.write(data);
+        if (data) {
+          // Insert arbitrary string at cursor position
+          const before = buffer.slice(0, cursorIndex);
+          const after = buffer.slice(cursorIndex);
+          const newBuf = before + data + after;
+          const newCursor = cursorIndex + data.length;
+          setBuffer(newBuf, newCursor);
+        }
     }
   });
 
