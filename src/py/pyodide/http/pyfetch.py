@@ -11,8 +11,7 @@ from typing import IO, Any, ParamSpec, TypeVar
 
 from .._package_loader import unpack_buffer
 from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
-from ._utils import _construct_abort_reason
-from .exceptions import AbortError, BodyUsedError, HttpStatusError
+from .exceptions import AbortError, BodyUsedError, HttpStatusError, _construct_abort_reason
 
 if IN_BROWSER:
     try:

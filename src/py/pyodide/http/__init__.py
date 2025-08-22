@@ -9,8 +9,7 @@ from .exceptions import AbortError, BodyUsedError, HttpStatusError
 from .pyfetch import FetchResponse, pyfetch
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
-from .._package_loader import unpack_buffer
-from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
+from ..ffi import IN_BROWSER
 from io import StringIO
 
 if IN_BROWSER:
