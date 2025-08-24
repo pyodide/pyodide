@@ -102,6 +102,7 @@ def test_webbrowser_error(selenium):
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
+@run_in_pyodide
 def test_webbrowser_browser_classes(selenium):
     # Test BaseBrowser and GenericBrowser classes
     import webbrowser
