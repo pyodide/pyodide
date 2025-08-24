@@ -224,6 +224,11 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
+ * Methods that the Emscripten filesystem provides. Most of them are already defined 
+ * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not 
+ * defined there as well. Hence this interface.
+ * 
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
 interface PyodideFSType {
@@ -250,7 +255,11 @@ interface PyodideFSType {
   writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
 
-// Omit lookupPath due to it's not compatible Pyodide lookupPath function
+/**
+ * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`
+ * @hidden
+ */
 export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
 
 /** @hidden */
