@@ -3,7 +3,7 @@
 import { ConfigType } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
-import { API, PreRunFunc, type Module } from "./types";
+import { API, PreRunFunc, type Module, type FSType } from "./types";
 import { getSentinelImport } from "generated/sentinel";
 
 /**
@@ -105,7 +105,7 @@ function setEnvironment(env: { [key: string]: string }): PreRunFunc {
  * @param mounts The list of paths to mount.
  */
 function callFsInitHook(
-  fsInit: undefined | ((fs: typeof FS, info: { sitePackages: string }) => void),
+  fsInit: undefined | ((fs: FSType, info: { sitePackages: string }) => void),
 ): PreRunFunc[] {
   if (!fsInit) {
     return [];

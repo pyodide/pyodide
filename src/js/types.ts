@@ -6,7 +6,6 @@ import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
 import { PackageManager } from "./load-package";
-
 /**
  * @docgroup pyodide.ffi
  */
@@ -32,12 +31,11 @@ declare global {
 // not necessary to put them in `-s EXPORTED_RUNTIME_METHODS`.
 declare global {
   export const stringToNewUTF8: (str: string) => number;
-  export const UTF8ToString: (ptr: number) => string;
+  // export const UTF8ToString: (ptr: number) => string; => removed due to duplicate with @types/emscripten
   export const UTF8ArrayToString: (buf: Uint8Array) => string;
-  export const FS: FSType;
-  export const stackAlloc: (sz: number) => number;
-  export const stackSave: () => number;
-  export const stackRestore: (ptr: number) => void;
+  // export const stackAlloc: (sz: number) => number; => removed due to duplicate with @types/emscripten
+  // export const stackSave: () => number; => removed due to duplicate with @types/emscripten
+  // export const stackRestore: (ptr: number) => void; => removed due to duplicate with @types/emscripten
   export const HEAPU32: Uint32Array;
 }
 
@@ -226,13 +224,15 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
+ * Methods that the Emscripten filesystem provides. Most of them are already defined
+ * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
+ * defined there as well. Hence this interface.
+ *
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
-export interface FSType {
-  unlink: (path: string) => void;
+interface PyodideFSType {
   mkdirTree: (path: string, mode?: number) => void;
-  chdir: (path: string) => void;
-  symlink: (target: string, src: string) => FSNode;
   createDevice: ((
     parent: string,
     name: string,
@@ -241,40 +241,26 @@ export interface FSType {
   ) => FSNode) & {
     major: number;
   };
-  closeStream: (fd: number) => void;
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
-  makedev: (major: number, minor: number) => number;
-  mkdev: (path: string, dev: number) => FSNode;
-  filesystems: any;
-  stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (path: string) => string[];
-  isDir: (mode: number) => boolean;
-  isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (
     path: string,
     options?: {
       follow_mount?: boolean;
     },
   ) => { node: FSNode };
-  isFile: (mode: number) => boolean;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
-  chmod: (path: string, mode: number) => void;
-  utime: (path: string, atime: number, mtime: number) => void;
-  rmdir: (path: string) => void;
-  mount: (type: any, opts: any, mountpoint: string) => any;
-  unmount: (mountpoint: string) => any;
-  write: (
-    stream: FSStream,
-    buffer: any,
-    offset: number,
-    length: number,
-    position?: number,
-  ) => number;
-  close: (stream: FSStream) => void;
-  ErrnoError: { new (errno: number): Error };
+  open: (path: string, flags: string | number, mode?: number) => FSStream;
+  filesystems: any;
+  isMountpoint: (node: FSNode) => boolean;
+  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  syncfs(dir: boolean, oncomplete: (val: void) => void): void;
+  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
+
+/**
+ * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`
+ * @hidden
+ */
+export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
