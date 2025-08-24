@@ -11,7 +11,7 @@
     "tsBuildInfoFile": "tsconfig.tsbuildinfo",
     "strict": true,
     "noUnusedLocals": false,
-    "types": ["node"],
+    "types": ["node", "emscripten"],
     "experimentalDecorators": true,
     "lib": ["ES2022", "DOM"],
     "resolveJsonModule": true,
