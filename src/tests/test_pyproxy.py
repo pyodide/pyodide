@@ -930,21 +930,28 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
+@run_in_pyodide
 def test_pyproxy_implicit_copy(selenium):
-    result = selenium.run_js(
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    d = {1: 2}
+    d_js = to_js(d)
+
+    result = run_js(
         """
-        let result = [];
-        let a = pyodide.runPython(`d = { 1 : 2}; d`);
-        let b = pyodide.runPython(`d`);
-        result.push(a.get(1));
-        result.push(b.get(1));
-        a.destroy();
-        b.destroy();
-        return result;
+        (d_js) => {
+            let result = [];
+            let a = d_js;
+            let b = d_js;
+            result.push(a.get(1));
+            result.push(b.get(1));
+            return result;
+        }
         """
-    )
-    assert result[0] == 2
-    assert result[1] == 2
+    )(d_js)
+
+    assert result.to_py() == [2, 2]
 
 
 @pytest.mark.skip_pyproxy_check
