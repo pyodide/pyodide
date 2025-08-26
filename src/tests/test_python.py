@@ -141,18 +141,21 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
         )
 
 
+@run_in_pyodide
 def test_py(selenium_standalone):
-    selenium_standalone.run_js(
-        """
-        pyodide.runPython(`
-            def func():
-                return 42
-        `);
-        let func = pyodide.globals.get('func');
-        assert(() => func() === 42);
-        func.destroy();
-        """
-    )
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    def func():
+        return 42
+
+    # Convert to JavaScript and validate
+    func_js = to_js(func)
+    try:
+        assert run_js("(func) => func() === 42")(func_js)
+    finally:
+        # Explicitly destroy the proxy to prevent leaks
+        func_js.destroy()
 
 
 def test_eval_nothing(selenium):
