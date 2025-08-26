@@ -13,8 +13,8 @@ async function run() {
     fontFamily: "monospace",
     theme: {
       background: "#000000",
-      foreground: "#ffffff",
-      cursor: "#ffffff",
+      foreground: "rgba(255, 255, 255, 0.8)",
+      cursor: "rgba(255, 255, 255, 0.8)",
       selection: "#404040",
       error: "#ff0000",
     },
@@ -94,16 +94,11 @@ await_fut
   }
 
   function refreshLine() {
-    // Move to start of line, rewrite prompt, clear to end, then write buffer
-    term.write("\r");
-    term.write(prompt);
-    term.write("\x1b[0K");
-    term.write(buffer);
-    // Position the terminal cursor to reflect cursorIndex
-    const distanceFromEnd = buffer.length - cursorIndex;
-    if (distanceFromEnd > 0) {
-      term.write(`\x1b[${distanceFromEnd}D`);
-    }
+    // Write left part, save cursor, write right part, clear, restore cursor.
+    const clearCommand = "\x1b[0K";
+    const leftPart = prompt + buffer.slice(0, cursorIndex);
+    const rightPart = buffer.slice(cursorIndex);
+    term.write(`\x1b[0G${leftPart}\x1b[s${rightPart}${clearCommand}\x1b[u`);
   }
 
   function setBuffer(newBuffer, newCursorIndex = null) {
@@ -219,8 +214,8 @@ await_fut
         if (cursorIndex < buffer.length) {
           cursorIndex += 1;
           refreshLine();
-          break;
         }
+        break;
       case "\x1B[D": // Left arrow
         if (cursorIndex > 0) {
           cursorIndex -= 1;
