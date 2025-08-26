@@ -149,13 +149,9 @@ def test_py(selenium_standalone):
     def func():
         return 42
 
-    # Convert to JavaScript and validate
     func_js = to_js(func)
-    try:
-        assert run_js("(func) => func() === 42")(func_js)
-    finally:
-        # Explicitly destroy the proxy to prevent leaks
-        func_js.destroy()
+    assert run_js("(func) => func() === 42")(func_js)
+    func_js.destroy()
 
 
 def test_eval_nothing(selenium):
