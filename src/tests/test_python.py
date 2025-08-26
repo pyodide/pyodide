@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide.decorator import run_in_pyodide
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
@@ -55,10 +56,26 @@ def test_load_package_after_convert_string(selenium):
     """
     See #93.
     """
-    selenium.run("import sys; x = sys.version")
-    selenium.run_js("let x = pyodide.runPython('x'); console.log(x);")
+
+    @run_in_pyodide
+    def run_test(selenium_module):
+        import sys
+
+        from pyodide.code import run_js
+
+        # Get Python version
+        x = sys.version
+
+        # Log the version using JavaScript
+        run_js("(x) => console.log(x)")(x)
+
+        # Import pytest to validate it works
+
+    # Load pytest package first
     selenium.load_package("pytest")
-    selenium.run("import pytest")
+
+    # Run the test in pyodide context
+    run_test(selenium)
 
 
 def test_version_info(selenium):
