@@ -63,18 +63,12 @@ def test_load_package_after_convert_string(selenium):
 
         from pyodide.code import run_js
 
-        # Get Python version
         x = sys.version
 
-        # Log the version using JavaScript
         run_js("(x) => console.log(x)")(x)
 
-        # Import pytest to validate it works
-
-    # Load pytest package first
     selenium.load_package("pytest")
 
-    # Run the test in pyodide context
     run_test(selenium)
 
 

@@ -798,11 +798,10 @@ def test_pythonexc2js(selenium):
 
     msg = "division by zero"
     with pytest.raises(Exception, match=msg):
-        # Create a Python function that raises ZeroDivisionError
+
         def divide_by_zero():
             return 5 / 0
 
-        # Test that the exception propagates through JS execution
         run_js("(func) => func()")(divide_by_zero)
 
 
