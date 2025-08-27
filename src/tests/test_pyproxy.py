@@ -1144,21 +1144,22 @@ def test_fatal_error(selenium_standalone):
     )
 
 
+@run_in_pyodide(packages=["pytest"])
 def test_pyproxy_call(selenium):
-    selenium.run_js(
-        """
-        pyodide.runPython(`
-            from pyodide.ffi import to_js
-            def f(x=2, y=3):
-                return to_js([x, y])
-        `);
-        self.f = pyodide.globals.get("f");
-        """
-    )
+    import pytest
+
+    from pyodide.code import run_js
+    from pyodide.ffi import to_js
+
+    # Extract Python code from pyodide.runPython string
+    def f(x=2, y=3):
+        return to_js([x, y])
+
+    run_js("(f) => { self.f = f; }")(to_js(f))
 
     def assert_call(s, val):
-        res = selenium.run_js(f"return {s};")
-        assert res == val
+        res = run_js(f"() => {s}")()
+        assert res.to_py() == val
 
     assert_call("f()", [2, 3])
     assert_call("f(7)", [7, 3])
@@ -1172,22 +1173,22 @@ def test_pyproxy_call(selenium):
     assert_call("f.callKwargs(8, { y : 4 })", [8, 4])
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs()")
+    with pytest.raises(Exception, match=msg):
+        run_js("() => f.callKwargs()")()
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs()")
+    with pytest.raises(Exception, match=msg):
+        run_js("() => f.callKwargs()")()
 
-    msg = r"TypeError: f\(\) got an unexpected keyword argument 'z'"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs({z : 6})")
+    msg = r"got an unexpected keyword argument 'z'"
+    with pytest.raises(Exception, match=msg):
+        run_js("() => f.callKwargs({z : 6})")()
 
-    msg = r"TypeError: f\(\) got multiple values for argument 'x'"
-    with pytest.raises(selenium.JavascriptException, match=msg):
-        selenium.run_js("f.callKwargs(76, {x : 6})")
+    msg = r"got multiple values for argument 'x'"
+    with pytest.raises(Exception, match=msg):
+        run_js("() => f.callKwargs(76, {x : 6})")()
 
-    selenium.run_js("f.destroy()")
+    run_js("() => f.destroy()")()
 
 
 def test_pyproxy_call_relaxed(selenium):
