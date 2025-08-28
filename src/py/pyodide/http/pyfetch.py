@@ -19,7 +19,7 @@ from .exceptions import (
 
 if IN_BROWSER:
     try:
-        from js import AbortController, AbortSignal, Object
+        from js import AbortController, AbortSignal, Object, Request
         from js import fetch as _jsfetch
         from pyodide_js._api import abortSignalAny
     except ImportError:
@@ -300,7 +300,12 @@ class FetchResponse:
 
 
 async def pyfetch(
-    url: str, /, *, signal: Any = None, fetcher: Any = None, **kwargs: Any
+    request: "str | Request",
+    /,
+    *,
+    signal: Any = None,
+    fetcher: Any = None,
+    **kwargs: Any,
 ) -> FetchResponse:
     r"""Fetch the url and return the response.
 
@@ -311,8 +316,8 @@ async def pyfetch(
 
     Parameters
     ----------
-    url :
-        URL to fetch.
+    request :
+        Either a string URL or a JavaScript Request object to fetch.
 
     signal :
         Abort signal to use for the fetch request.
@@ -345,6 +350,11 @@ async def pyfetch(
         signal = controller.signal
     kwargs["signal"] = signal
     fetcher = fetcher or _jsfetch
+    if isinstance(request, str):
+        url = request
+    else:
+        url = request.url
+        # Should be a string in this case
     try:
         return FetchResponse(
             url,
