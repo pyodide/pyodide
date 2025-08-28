@@ -192,7 +192,7 @@ for ty, key, url in [
         "js:class",
         "FS",
         "https://emscripten.org/docs/api_reference/Filesystem-API.html",
-    )
+    ),
 ]:
     INVDATA[ty][key] = (
         "typescript docs",
