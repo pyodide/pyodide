@@ -224,10 +224,10 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
- * Methods that the Emscripten filesystem provides. Most of them are already defined 
- * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not 
+ * Methods that the Emscripten filesystem provides. Most of them are already defined
+ * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
  * defined there as well. Hence this interface.
- * 
+ *
  * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
