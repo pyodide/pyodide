@@ -1,4 +1,5 @@
 import pytest
+from pytest_pyodide import run_in_pyodide
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
@@ -40,11 +41,14 @@ def test_import_js(selenium):
     assert "window" in result
 
 
+@run_in_pyodide
 def test_globals_get_multiple(selenium):
     """See #1151"""
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    v = 0.123  # noqa: F841
+    run_js(
         """
-        pyodide.runPython("v = 0.123");
         pyodide.globals.get('v')
         pyodide.globals.get('v')
         """
