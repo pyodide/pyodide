@@ -9,21 +9,20 @@ from pytest_pyodide import run_in_pyodide
 from pytest_pyodide.hypothesis import std_hypothesis_settings
 
 
+@run_in_pyodide
 def test_jsproxy_dir(selenium):
-    result = selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
         self.a = { x : 2, y : "9" };
         self.b = function(){};
-        let pyresult = pyodide.runPython(`
-            from js import a
-            from js import b
-            [dir(a), dir(b)]
-        `);
-        let result = pyresult.toJs();
-        pyresult.destroy();
-        return result;
         """
     )
+
+    from js import a, b  # type: ignore[attr-defined]
+
+    result = [dir(a), dir(b)]
     jsproxy_items = {
         "__bool__",
         "__class__",
@@ -45,7 +44,8 @@ def test_jsproxy_dir(selenium):
     assert set1.issuperset(jsproxy_items)
     assert set1.issuperset(callable_items)
     assert set1.isdisjoint(a_items)
-    selenium.run_js(
+
+    run_js(
         """
         self.a = [0,1,2,3,4,5,6,7,8,9];
         a[27] = 0;
@@ -53,35 +53,35 @@ def test_jsproxy_dir(selenium):
         a["/"] = 0;
         a.abcd = 0;
         a.α = 0;
-
-        pyodide.runPython(`
-            from js import a
-            d = dir(a)
-            assert '0' not in d
-            assert '9' not in d
-            assert '27' not in d
-            assert ':' in d
-            assert '/' in d
-            assert 'abcd' in d
-            assert 'α' in d
-        `);
         """
     )
 
+    from js import a  # type: ignore[attr-defined]
 
+    d = dir(a)
+    assert "0" not in d
+    assert "9" not in d
+    assert "27" not in d
+    assert ":" in d
+    assert "/" in d
+    assert "abcd" in d
+    assert "α" in d
+
+
+@run_in_pyodide
 def test_jsproxy_getattr(selenium):
-    assert selenium.run_js(
+    from pyodide.code import run_js
+
+    run_js(
         """
-            self.a = { x : 2, y : "9", typeof : 7 };
-            let pyresult = pyodide.runPython(`
-                from js import a
-                [ a.x, a.y, a.typeof ]
-            `);
-            let result = pyresult.toJs();
-            pyresult.destroy();
-            return result;
-            """
-    ) == [2, "9", "object"]
+        self.a = { x : 2, y : "9", typeof : 7 };
+        """
+    )
+
+    from js import a  # type: ignore[attr-defined]
+
+    result = [a.x, a.y, a.typeof]
+    assert result == [2, "9", "object"]
 
 
 @run_in_pyodide
@@ -745,24 +745,24 @@ def test_jsmod_import_star2(selenium):
 
 @pytest.mark.skip_refcount_check
 @pytest.mark.skip_pyproxy_check
-def test_nested_import(selenium_standalone):
-    selenium = selenium_standalone
-    assert (
-        selenium.run_js(
-            """
-            self.a = { b : { c : { d : 2 } } };
-            return pyodide.runPython("from js.a.b import c; c.d");
-            """
-        )
-        == 2
-    )
-    selenium.run(
+@run_in_pyodide
+def test_nested_import(selenium):
+    from pyodide.code import run_js
+
+    run_js(
         """
-        import sys
-        del sys.modules["js.a"]
-        del sys.modules["js.a.b"]
+        self.a = { b : { c : { d : 2 } } };
         """
     )
+
+    from js.a.b import c
+
+    assert c.d == 2
+
+    import sys
+
+    del sys.modules["js.a"]
+    del sys.modules["js.a.b"]
 
 
 @pytest.mark.skip_refcount_check

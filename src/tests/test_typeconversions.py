@@ -1096,29 +1096,34 @@ def test_javascript_error_back_to_js(selenium):
     )(err)
 
 
+@run_in_pyodide
 def test_memoryview_conversion(selenium):
-    selenium.run(
-        """
-        import array
-        a = array.array("Q", [1,2,3])
-        b = array.array("u", "123")
-        """
-    )
-    selenium.run_js(
-        """
-        pyodide.runPython("a").destroy()
-        // Implicit assertion: this doesn't leave python error indicator set
-        // (automatically checked in conftest.py)
-        """
-    )
+    import array
 
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = array.array("Q", [1, 2, 3])
+    b = array.array("u", "123")
+
+    run_js(
         """
-        pyodide.runPython("b").destroy()
-        // Implicit assertion: this doesn't leave python error indicator set
-        // (automatically checked in conftest.py)
+        (a) => {
+            a.destroy()
+            // Implicit assertion: this doesn't leave python error indicator set
+            // (automatically checked in conftest.py)
+        }
         """
-    )
+    )(a)
+
+    run_js(
+        """
+        (b) => {
+            b.destroy()
+            // Implicit assertion: this doesn't leave python error indicator set
+            // (automatically checked in conftest.py)
+        }
+        """
+    )(b)
 
 
 def test_python2js_with_depth(selenium):
@@ -1178,83 +1183,100 @@ def test_tojs2(selenium):
     assert sorted(json.loads(serialized)) == [["2", 3], ["4", 9], ["a", 1]]
 
 
+@run_in_pyodide
 def test_tojs4(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, [2, [3, [4, [5, [6, [7]]]]]]]
+    run_js(
         """
-        let a = pyodide.runPython("[1,[2,[3,[4,[5,[6,[7]]]]]]]")
-        for(let i=0; i < 7; i++){
-            let x = a.toJs({depth : i});
-            for(let j=0; j < i; j++){
-                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
-                x = x[1];
+        (a) => {
+            for(let i=0; i < 7; i++){
+                let x = a.toJs({depth : i});
+                for(let j=0; j < i; j++){
+                    assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
+                    x = x[1];
+                }
+                assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
+                x.destroy();
             }
-            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
-            x.destroy();
         }
-        a.destroy()
         """
-    )
+    )(a)
 
 
+@run_in_pyodide
 def test_tojs5(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, (2, (3, [4, (5, (6, [7]))]))]
+    run_js(
         """
-        let a = pyodide.runPython("[1, (2, (3, [4, (5, (6, [7]))]))]")
-        for(let i=0; i < 7; i++){
-            let x = a.toJs({depth : i});
-            for(let j=0; j < i; j++){
-                assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
-                x = x[1];
+        (a) => {
+            for(let i=0; i < 7; i++){
+                let x = a.toJs({depth : i});
+                for(let j=0; j < i; j++){
+                    assert(() => Array.isArray(x), `i: ${i}, j: ${j}`);
+                    x = x[1];
+                }
+                assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
+                x.destroy();
             }
-            assert(() => x instanceof pyodide.ffi.PyProxy, `i: ${i}, j: ${i}`);
-            x.destroy();
         }
-        a.destroy()
         """
-    )
+    )(a)
 
 
+@run_in_pyodide
 def test_tojs6(selenium):
-    selenium.run_js(
+    from pyodide.code import run_js
+
+    a = [1, 2, 3, 4, 5]
+    b = [a, a, a, a, a]
+    respy = [b, b, b, b, b]
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [1, 2, 3, 4, 5]
-            b = [a, a, a, a, a]
-            [b, b, b, b, b]
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0] === res[1]);
-        assert(() => res[0][0] === res[1][1]);
-        assert(() => res[4][0] === res[1][4]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0] === res[1]);
+            assert(() => res[0][0] === res[1][1]);
+            assert(() => res[4][0] === res[1][4]);
+        }
         """
-    )
+    )(respy)
 
 
+@run_in_pyodide
 def test_tojs7(selenium):
-    selenium.run_js(
+    from typing import Any
+
+    from pyodide.code import run_js
+
+    # Create complex recursive structure with mixed types
+    a: list[Any] = [["b"]]
+    b: list[Any] = [1, 2, 3, a[0]]
+    a[0].append(b)
+    a.append(b)
+    respy = a
+
+    run_js(
         """
-        let respy = pyodide.runPython(`
-            a = [["b"]]
-            b = [1,2,3, a[0]]
-            a[0].append(b)
-            a.append(b)
-            a
-        `);
-        let total_refs = pyodide._module._hiwire_num_refs();
-        let res = respy.toJs();
-        let new_total_refs = pyodide._module._hiwire_num_refs();
-        respy.destroy();
-        assert(() => total_refs === new_total_refs);
-        assert(() => res[0][0] === "b");
-        assert(() => res[1][2] === 3);
-        assert(() => res[1][3] === res[0]);
-        assert(() => res[0][1] === res[1]);
+        (respy) => {
+            let total_refs = pyodide._module._hiwire_num_refs();
+            let res = respy.toJs();
+            let new_total_refs = pyodide._module._hiwire_num_refs();
+            assert(() => total_refs === new_total_refs);
+            assert(() => res[0][0] === "b");
+            assert(() => res[1][2] === 3);
+            assert(() => res[1][3] === res[0]);
+            assert(() => res[0][1] === res[1]);
+        }
         """
-    )
+    )(respy)
 
 
 @pytest.mark.skip_pyproxy_check
