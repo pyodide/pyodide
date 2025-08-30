@@ -21,7 +21,7 @@ build:
       ${SIDE_MODULE_CFLAGS} \
       --prefix=${WASM_LIBRARY_DIR}
 
-    sed -i 's!^CROSS_COMPILE=.*!!g' Makefile
+    ${SED} -i 's!^CROSS_COMPILE=.*!!g' Makefile
     make build_generated
     make -j ${PYODIDE_JOBS:-3} libcrypto.a
     make -j ${PYODIDE_JOBS:-3} libssl.a
