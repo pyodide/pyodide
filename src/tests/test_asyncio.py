@@ -332,20 +332,18 @@ def test_eval_code_await_error(selenium):
         )
 
 
+@run_in_pyodide
 def test_ensure_future_memleak(selenium):
-    selenium.run_js(
-        """
-        self.o = { "xxx" : 777 };
-        pyodide.runPython(`
-            import asyncio
-            from js import o
-            async def test():
-                return o
-            asyncio.ensure_future(test())
-            None
-        `);
-        """
-    )
+    import asyncio
+
+    from pyodide.code import run_js
+
+    o = run_js("() => ({ xxx: 777 })")()
+
+    async def test():
+        return o
+
+    asyncio.ensure_future(test())
 
 
 def test_await_pyproxy_eval_async(selenium):
