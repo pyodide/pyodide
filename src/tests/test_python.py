@@ -1,5 +1,4 @@
 import pytest
-from pytest_pyodide.decorator import run_in_pyodide
 
 
 @pytest.mark.xfail_browsers(node="Webbrowser doesn't work in node")
@@ -50,26 +49,6 @@ def test_globals_get_multiple(selenium):
         pyodide.globals.get('v')
         """
     )
-
-
-def test_load_package_after_convert_string(selenium):
-    """
-    See #93.
-    """
-
-    @run_in_pyodide
-    def run_test(selenium_module):
-        import sys
-
-        from pyodide.code import run_js
-
-        x = sys.version
-
-        run_js("(x) => console.log(x)")(x)
-
-    selenium.load_package("pytest")
-
-    run_test(selenium)
 
 
 def test_version_info(selenium):
@@ -135,17 +114,18 @@ def test_runpythonasync_exception_after_import(selenium_standalone):
         )
 
 
-@run_in_pyodide
 def test_py(selenium_standalone):
-    from pyodide.code import run_js
-    from pyodide.ffi import to_js
-
-    def func():
-        return 42
-
-    func_js = to_js(func)
-    assert run_js("(func) => func() === 42")(func_js)
-    func_js.destroy()
+    selenium_standalone.run_js(
+        """
+        pyodide.runPython(`
+            def func():
+                return 42
+        `);
+        let func = pyodide.globals.get('func');
+        assert(() => func() === 42);
+        func.destroy();
+        """
+    )
 
 
 def test_eval_nothing(selenium):

@@ -790,19 +790,10 @@ def test_python2js_long_ints2(selenium):
     )(-(2**64))
 
 
-@run_in_pyodide
 def test_pythonexc2js(selenium):
-    import pytest
-
-    from pyodide.code import run_js
-
-    msg = "division by zero"
-    with pytest.raises(Exception, match=msg):
-
-        def divide_by_zero():
-            return 5 / 0
-
-        run_js("(func) => func()")(divide_by_zero)
+    msg = "ZeroDivisionError"
+    with pytest.raises(selenium.JavascriptException, match=msg):
+        selenium.run_js('return pyodide.runPython("5 / 0")')
 
 
 @run_in_pyodide

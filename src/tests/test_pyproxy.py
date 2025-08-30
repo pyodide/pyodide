@@ -724,7 +724,6 @@ def test_pyproxy_mixins41(selenium):
 @run_in_pyodide
 def test_pyproxy_mixins42(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import to_js
 
     class Test:
         def __call__(self, x):
@@ -740,7 +739,7 @@ def test_pyproxy_mixins42(selenium):
             t.destroy();
         }
         """
-    )(to_js(t))
+    )(t)
 
 
 @run_in_pyodide
@@ -792,16 +791,17 @@ def test_pyproxy_mixins6(selenium):
             assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
             assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
             assert(() => "asJsJson" in l);
-            l.set(0, 80);
-            l.delete(1);
-            assert(() => l.length === 2 && l.get(1) === 7);
         }
         """
     )(l)
 
+    run_js("(l) => { l.set(0, 80); }")(l)
     assert l[0] == 80
-    assert len(l) == 2
-    assert l[1] == 7
+
+    run_js("(l) => { l.delete(1); }")(l)
+    assert len(l) == 2 and l[1] == 7
+
+    run_js("(l) => { assert(() => l.length === 2 && l.get(1) === 7); }")(l)
 
 
 @pytest.mark.skip_pyproxy_check
@@ -933,23 +933,21 @@ def test_pyproxy_gc_destroy(selenium):
 @run_in_pyodide
 def test_pyproxy_implicit_copy(selenium):
     from pyodide.code import run_js
-    from pyodide.ffi import to_js
 
     d = {1: 2}
-    d_js = to_js(d)
 
     result = run_js(
         """
-        (d_js) => {
+        (d) => {
             let result = [];
-            let a = d_js;
-            let b = d_js;
+            let a = d;
+            let b = d;
             result.push(a.get(1));
             result.push(b.get(1));
             return result;
         }
         """
-    )(d_js)
+    )(d)
 
     assert result.to_py() == [2, 2]
 
@@ -1151,7 +1149,6 @@ def test_pyproxy_call(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import to_js
 
-    # Extract Python code from pyodide.runPython string
     def f(x=2, y=3):
         return to_js([x, y])
 
