@@ -1,26 +1,22 @@
-const chai = require("chai");
+import assert from "node:assert/strict";
+import { describe, it, before } from "node:test";
 
 describe("Pyodide", () => {
   it("runPython", async () => {
     const factory = async () => {
       return pyodide.runPython("1+1");
     };
-    const result = await chai.assert.isFulfilled(page.evaluate(factory));
-    chai.assert.equal(result, 2);
+    const result = await page.evaluate(factory);
+    assert.equal(result, 2);
   });
   describe("micropip", () => {
     before(async () => {
       const factory = async () => {
         return pyodide.loadPackage(["micropip"]);
       };
-      const installedPackages = await chai.assert.isFulfilled(
-        page.evaluate(factory),
-      );
-      chai.assert.isNotEmpty(installedPackages);
-      chai.assert.include(
-        installedPackages.map((pkg) => pkg.name),
-        "micropip",
-      );
+      const installedPackages = await page.evaluate(factory);
+      assert.ok(installedPackages.length > 0);
+      assert.ok(installedPackages.some((pkg) => pkg.name === "micropip"));
     });
 
     it("install", async () => {
@@ -33,8 +29,8 @@ describe("Pyodide", () => {
           len(snowballstemmer.stemmer('english').stemWords(['A', 'node', 'test']))
         `);
       };
-      const result = await chai.assert.isFulfilled(page.evaluate(factory));
-      chai.assert.equal(result, 3);
+      const result = await page.evaluate(factory);
+      assert.equal(result, 3);
     });
   });
 });
