@@ -1,11 +1,12 @@
-import * as chai from "chai";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { createResolvable } from "../../../common/resolveable";
 
 describe("createResolvable", () => {
   it("should create a resolvable promise", () => {
     const resolvable = createResolvable();
-    chai.assert.isFunction(resolvable.resolve);
-    chai.assert.isFunction(resolvable.reject);
+    assert.ok(resolvable.resolve instanceof Function);
+    assert.ok(resolvable.reject instanceof Function);
   });
 
   it("should resolve the promise", async () => {
@@ -19,9 +20,9 @@ describe("createResolvable", () => {
     resolvable.reject();
     try {
       await resolvable;
-      chai.assert.fail("Promise should have been rejected");
+      assert.fail("Promise should have been rejected");
     } catch (e) {
-      chai.assert.isUndefined(e);
+      assert.equal(e, undefined);
     }
   });
 });
