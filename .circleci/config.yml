@@ -6,7 +6,7 @@ defaults: &defaults
     # Note: when updating the docker image version,
     #       make sure there are no extra old versions lying around.
     #       (e.g. `rg -F --hidden <old_tag>`)
-    - image: pyodide/pyodide-env:20250311-chrome134-firefox136-py313
+    - image: pyodide/pyodide-env:20250728-chrome140-firefox140-py313
   environment:
     EMSDK_NUM_CORES: 3
     EMCC_CORES: 3
@@ -468,7 +468,7 @@ jobs:
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
             tar cjf dist/pyodide-${CIRCLE_TAG}.tar.bz2  pyodide/
-            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
+            tar cjf dist/pyodide-core-${CIRCLE_TAG}.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv-${CIRCLE_TAG}.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries-${CIRCLE_TAG}.tar.bz2  static-libraries/
 
@@ -561,7 +561,7 @@ jobs:
             cp -r xbuildenv /tmp/ghr/xbuildenv
             cp -r cpython/installs /tmp/ghr/static-libraries
             cd /tmp/ghr
-            tar cjf pyodide-core.tar.gz dist/pyodide{.js,.mjs,.asm.js,.asm.wasm} dist/*.d.ts dist/{package,pyodide-lock}.json dist/python_stdlib.zip dist/python dist/python_cli_entry.mjs
+            tar cjf dist/pyodide-core.tar.bz2 pyodide/pyodide{.js,.mjs,.asm.js,.asm.wasm} pyodide/*.d.ts pyodide/{package,pyodide-lock}.json pyodide/python_stdlib.zip pyodide/python pyodide/python_cli_entry.mjs
             tar cjf dist/xbuildenv.tar.bz2  xbuildenv/
             tar cjf dist/static-libraries.tar.bz2  static-libraries/
 

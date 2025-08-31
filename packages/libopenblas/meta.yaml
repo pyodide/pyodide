@@ -1,5 +1,5 @@
 package:
-  name: openblas
+  name: libopenblas
   version: 0.3.26
   tag:
     - core

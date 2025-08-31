@@ -1,11 +1,14 @@
 export {};
 import type { PyProxy, PyAwaitable } from "generated/pyproxy";
-import { type PyodideInterface } from "./api";
+import { type PyodideAPI } from "./api";
 import { type ConfigType } from "./pyodide";
 import { type InFuncType } from "./streams";
 import { SnapshotConfig } from "./snapshot";
 import { ResolvablePromise } from "./common/resolveable";
-
+import { PackageManager } from "./load-package";
+/**
+ * @docgroup pyodide.ffi
+ */
 export type TypedArray =
   | Int8Array
   | Uint8Array
@@ -28,12 +31,11 @@ declare global {
 // not necessary to put them in `-s EXPORTED_RUNTIME_METHODS`.
 declare global {
   export const stringToNewUTF8: (str: string) => number;
-  export const UTF8ToString: (ptr: number) => string;
+  // export const UTF8ToString: (ptr: number) => string; => removed due to duplicate with @types/emscripten
   export const UTF8ArrayToString: (buf: Uint8Array) => string;
-  export const FS: FSType;
-  export const stackAlloc: (sz: number) => number;
-  export const stackSave: () => number;
-  export const stackRestore: (ptr: number) => void;
+  // export const stackAlloc: (sz: number) => number; => removed due to duplicate with @types/emscripten
+  // export const stackSave: () => number; => removed due to duplicate with @types/emscripten
+  // export const stackRestore: (ptr: number) => void; => removed due to duplicate with @types/emscripten
   export const HEAPU32: Uint32Array;
 }
 
@@ -222,13 +224,15 @@ export type FSStreamOpsGen<T> = {
 };
 
 /**
+ * Methods that the Emscripten filesystem provides. Most of them are already defined
+ * in `@types/emscripten`, but Pyodide uses quite a lot of private APIs that are not
+ * defined there as well. Hence this interface.
+ *
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`.
  * @hidden
  */
-export interface FSType {
-  unlink: (path: string) => void;
+interface PyodideFSType {
   mkdirTree: (path: string, mode?: number) => void;
-  chdir: (path: string) => void;
-  symlink: (target: string, src: string) => FSNode;
   createDevice: ((
     parent: string,
     name: string,
@@ -237,39 +241,26 @@ export interface FSType {
   ) => FSNode) & {
     major: number;
   };
-  closeStream: (fd: number) => void;
-  open: (path: string, flags: string | number, mode?: number) => FSStream;
-  makedev: (major: number, minor: number) => number;
-  mkdev: (path: string, dev: number) => FSNode;
-  filesystems: any;
-  stat: (path: string, dontFollow?: boolean) => any;
-  readdir: (path: string) => string[];
-  isDir: (mode: number) => boolean;
-  isMountpoint: (mode: FSNode) => boolean;
   lookupPath: (
     path: string,
     options?: {
       follow_mount?: boolean;
     },
   ) => { node: FSNode };
-  isFile: (mode: number) => boolean;
-  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
-  chmod: (path: string, mode: number) => void;
-  utime: (path: string, atime: number, mtime: number) => void;
-  rmdir: (path: string) => void;
-  mount: (type: any, opts: any, mountpoint: string) => any;
-  write: (
-    stream: FSStream,
-    buffer: any,
-    offset: number,
-    length: number,
-    position?: number,
-  ) => number;
-  close: (stream: FSStream) => void;
-  ErrnoError: { new (errno: number): Error };
+  open: (path: string, flags: string | number, mode?: number) => FSStream;
+  filesystems: any;
+  isMountpoint: (node: FSNode) => boolean;
+  closeStream: (fd: number) => void;
   registerDevice<T>(dev: number, ops: FSStreamOpsGen<T>): void;
-  syncfs(dir: boolean, oncomplete: (val: void) => void): void;
+  writeFile: (path: string, contents: any, o?: { canOwn?: boolean }) => void;
 }
+
+/**
+ * Combined filesystem type that omits the incompatible lookupPath from `@types/emscripten` and adds Pyodide-specific filesystem methods.
+ * TODO: Consider upstreaming these APIs to `@types/emscripten`
+ * @hidden
+ */
+export type FSType = Omit<typeof FS, "lookupPath"> & PyodideFSType;
 
 /** @hidden */
 export type PreRunFunc = (Module: Module) => void;
@@ -345,21 +336,97 @@ export interface Module {
   };
   _emscripten_dlopen_promise(lib: number, flags: number): number;
   getPromise(p: number): Promise<any>;
+  _dlerror(): number;
+  UTF8ToString: (
+    ptr: number,
+    maxBytesToRead: number,
+    ignoreNul?: boolean,
+  ) => string;
 }
 
-type LockfileInfo = {
-  arch: "wasm32" | "wasm64";
+/**
+ * The lockfile platform info. The ``abi_version`` field is used to check if the
+ * lockfile is compatible with the interpreter. The remaining fields are
+ * informational.
+ */
+export interface LockfileInfo {
+  /**
+   * Machine architecture. At present, only can be wasm32. Pyodide has no wasm64
+   * build.
+   */
+  arch: "wasm32";
+  /**
+   * The ABI version is structured as ``yyyy_patch``. For the lockfile to be
+   * compatible with the current interpreter this field must match exactly with
+   * the ABI version of the interpreter.
+   */
   abi_version: string;
+  /**
+   * The Emscripten versions for instance, `emscripten_4_0_9`. Different
+   * Emscripten versions have different ABIs so if this changes ``abi_version``
+   * must also change.
+   */
   platform: string;
+  /**
+   * The Pyodide version the lockfile was made with. Informational only, has no
+   * compatibility implications. May be removed in the future.
+   */
   version: string;
+  /**
+   * The Python version this lock file was made with. If the minor version
+   * changes (e.g, 3.12 to 3.13) this changes the ABI and the ``abi_version``
+   * must change too. Patch versions do not imply a change to the
+   * ``abi_version``.
+   */
   python: string;
-};
+}
 
-/** @hidden */
-export type Lockfile = {
+/**
+ * A package entry in the lock file.
+ */
+export interface LockfilePackage {
+  /**
+   * The unnormalized name of the package.
+   */
+  name: string;
+  version: string;
+  /**
+   * The file name or url of the package wheel. If it's relative, it will be
+   * resolved with respect to ``packageBaseUrl``. If there is no
+   * ``packageBaseUrl``, attempting to install a package with a relative
+   * ``file_name``  will fail.
+   */
+  file_name: string;
+  package_type: PackageType;
+  /**
+   * The installation directory. Will be ``site`` except for certain system
+   * dynamic libraries that need to go on the global LD_LIBRARY_PATH.
+   */
+  install_dir: "site" | "dynlib";
+  /**
+   * Integrity. Must be present unless ``checkIntegrity: false`` is passed to
+   * ``loadPyodide``.
+   */
+  sha256: string;
+  /**
+   * The set of imports provided by this package as best we can tell. Used by
+   * :js:func:`pyodide.loadPackagesFromImports` to work out what packages to
+   * install.
+   */
+  imports: string[];
+  /**
+   * The set of dependencies of this package.
+   */
+  depends: string[];
+}
+
+/**
+ * The type of a package lockfile.
+ */
+export interface Lockfile {
   info: LockfileInfo;
-  packages: Record<string, InternalPackageData>;
-};
+  packages: Record<string, LockfilePackage>;
+}
 
 /** @hidden */
 export type PackageType =
@@ -384,20 +451,6 @@ export type LoadedPackages = Record<string, string>;
 /**
  * @hidden
  */
-export type InternalPackageData = {
-  name: string;
-  version: string;
-  file_name: string;
-  package_type: PackageType;
-  install_dir: string;
-  sha256: string;
-  imports: string[];
-  depends: string[];
-};
-
-/**
- * @hidden
- */
 export type PackageLoadMetadata = {
   name: string;
   normalizedName: string;
@@ -405,7 +458,7 @@ export type PackageLoadMetadata = {
   depends: string[];
   done: ResolvablePromise;
   installPromise?: Promise<void>;
-  packageData: InternalPackageData;
+  packageData: LockfilePackage;
 };
 
 /** @hidden */
@@ -414,11 +467,10 @@ export interface API {
   isPyProxy: (e: any) => e is PyProxy;
   debug_ffi: boolean;
   maybe_fatal_error: (e: any) => void;
-  public_api: PyodideInterface;
+  public_api: PyodideAPI;
   config: ConfigType;
   packageIndexReady: Promise<void>;
   bootstrapFinalizedPromise: Promise<void>;
-  setCdnUrl: (url: string) => void;
   typedArrayAsUint8Array: (buffer: TypedArray | ArrayBuffer) => Uint8Array;
   initializeStreams: (
     stdin?: InFuncType | undefined,
@@ -457,13 +509,13 @@ export interface API {
   package_loader: any;
   importlib: any;
   _import_name_to_package_name: Map<string, string>;
-  lockFilePromise: Promise<Lockfile>;
+  lockFilePromise: Promise<Lockfile | string>;
   lockfile_unvendored_stdlibs: string[];
   lockfile_unvendored_stdlibs_and_test: string[];
   lockfile: Lockfile;
   lockfile_info: LockfileInfo;
-  lockfile_packages: Record<string, InternalPackageData>;
-  lockfileBaseUrl: string;
+  lockfile_packages: Record<string, LockfilePackage>;
+  packageManager: PackageManager;
   flushPackageManagerBuffers: () => void;
   defaultLdLibraryPath: string[];
   sitepackages: string;
@@ -497,7 +549,7 @@ export interface API {
   finalizeBootstrap: (
     fromSnapshot?: SnapshotConfig,
     snapshotDeserializer?: (obj: any) => any,
-  ) => PyodideInterface;
+  ) => PyodideAPI;
   syncUpSnapshotLoad3(conf: SnapshotConfig): void;
   abortSignalAny: (signals: AbortSignal[]) => AbortSignal;
   version: string;
@@ -519,8 +571,9 @@ export type PackageManagerAPI = Pick<
   | "bootstrapFinalizedPromise"
   | "sitepackages"
   | "defaultLdLibraryPath"
+  | "version"
 > & {
-  config: Pick<ConfigType, "lockFileURL" | "packageCacheDir">;
+  config: Pick<ConfigType, "packageCacheDir" | "packageBaseUrl" | "cdnUrl">;
 };
 /**
  * @hidden
@@ -538,4 +591,6 @@ export type PackageManagerModule = Pick<
   | "_emscripten_dlopen_promise"
   | "getPromise"
   | "promiseMap"
+  | "_dlerror"
+  | "UTF8ToString"
 >;

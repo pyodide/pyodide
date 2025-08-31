@@ -7,18 +7,36 @@ import {
   initNodeModules,
   resolvePath,
   loadLockFile,
+  calculateInstallBaseUrl,
 } from "./compat";
 
 import { createSettings } from "./emscripten-settings";
-import { version } from "./version";
+import { version as version_ } from "./version";
 
-import type { PyodideInterface } from "./api.js";
-import type { TypedArray, Module, PackageData, FSType } from "./types";
+import type { PyodideAPI } from "./api.js";
+import type {
+  TypedArray,
+  Module,
+  PackageData,
+  FSType,
+  Lockfile,
+} from "./types";
 import type { EmscriptenSettings } from "./emscripten-settings";
 import type { SnapshotConfig } from "./snapshot";
-export type { PyodideInterface, TypedArray };
+import { withTrailingSlash } from "./common/path";
+export type { PyodideAPI, TypedArray, PyodideAPI as PyodideInterface };
+export type { LockfileInfo, LockfilePackage, Lockfile } from "./types";
 
-export { version, type PackageData };
+export { type PackageData };
+
+/**
+ * The Pyodide version.
+ *
+ * The version here is a Python version, following :pep:`440`. This is different
+ * from the version in ``package.json`` which follows the node package manager
+ * version convention.
+ */
+export const version: string = version_;
 
 declare function _createPyodideModule(
   settings: EmscriptenSettings,
@@ -39,7 +57,7 @@ declare const BUILD_ID: string;
 export type ConfigType = {
   indexURL: string;
   packageCacheDir: string;
-  lockFileURL: string;
+  lockFileContents: Lockfile | string | Promise<Lockfile | string>;
   fullStdLib?: boolean;
   stdLibURL?: string;
   stdin?: () => string;
@@ -81,6 +99,9 @@ export type ConfigType = {
   _snapshotDeserializer: (obj: any) => any;
 
   BUILD_ID: string;
+  packageBaseUrl?: string;
+  cdnUrl: string;
+  lockFileURL?: string;
 };
 
 /**
@@ -91,26 +112,51 @@ async function initializeConfiguration(
 ): Promise<ConfigType> {
   await initNodeModules();
 
-  let indexURL = options.indexURL || (await calculateDirname());
-  indexURL = resolvePath(indexURL); // A relative indexURL causes havoc.
-  if (!indexURL.endsWith("/")) {
-    indexURL += "/";
+  if (options.lockFileContents && options.lockFileURL) {
+    throw new Error("Can't pass both lockFileContents and lockFileURL");
   }
-  options.indexURL = indexURL;
+
+  let indexURL = options.indexURL || (await calculateDirname());
+  indexURL = withTrailingSlash(resolvePath(indexURL)); // A relative indexURL causes havoc.
+  
+  const options_ = options as ConfigType;
+
+  options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
+  // cdnUrl only for node. withTrailingSlash is a no-op, but just in case to prevent future human errors.
+  options_.cdnUrl = withTrailingSlash(
+    options_.packageBaseUrl ??
+      `https://cdn.jsdelivr.net/pyodide/v${version}/full/`,
+  );
+
+  if (!options_.lockFileContents) {
+    const lockFileURL = options_.lockFileURL ?? indexURL + "pyodide-lock.json";
+    options_.lockFileContents = loadLockFile(lockFileURL);
+    // packageBaseUrl isn't present, try using base location of lockFileUrl. If
+    // lockFileURL is relative, use location as the base URL.
+    options_.packageBaseUrl ??= calculateInstallBaseUrl(lockFileURL);
+  }
+
+  options_.indexURL = indexURL;
+
+  if (options_.packageCacheDir) {
+    options_.packageCacheDir = withTrailingSlash(
+      resolvePath(options_.packageCacheDir),
+    );
+  }
 
   const defaultConfig = {
     fullStdLib: false,
     jsglobals: globalThis,
     stdin: globalThis.prompt ? globalThis.prompt : undefined,
-    lockFileURL: indexURL + "pyodide-lock.json",
     args: [],
     env: {},
     packages: [],
+    packageCacheDir: options_.packageBaseUrl,
     enableRunUntilComplete: true,
     checkAPIVersion: true,
     BUILD_ID,
   };
-  const config = Object.assign(defaultConfig, options) as ConfigType;
+  const config = Object.assign(defaultConfig, options_) as ConfigType;
   config.env.HOME ??= "/home/pyodide";
 
   /**
@@ -254,12 +300,6 @@ async function finalizeSetup(
 
   API.sys.path.insert(0, "");
 
-  if (!pyodide.version.includes("dev")) {
-    // Currently only used in Node to download packages the first time they are
-    // loaded. But in other cases it's harmless.
-    API.setCdnUrl(`https://cdn.jsdelivr.net/pyodide/v${pyodide.version}/full/`);
-  }
-
   API._pyodide.set_excepthook();
   await API.packageIndexReady;
 
@@ -313,6 +353,26 @@ export async function loadPyodide(
      */
     lockFileURL?: string;
 
+    /**
+     * The contents of a lockfile. If a string, it should be valid json and
+     * ``JSON.parse()`` should return a ``Lockfile`` instance. See
+     * :js:interface:`~pyodide.Lockfile` for the schema.
+     */
+    lockFileContents?: Lockfile | string | Promise<Lockfile | string>;
+    /**
+     * The base url relative to which a relative value of
+     * :js:attr:`~pyodide.LockfilePackage.file_name` is interpreted. If
+     * ``lockfileContents`` is provided, then ``lockFileContents`` must be
+     * provided explicitly in order to install packages with relative paths.
+     *
+     * Otherwise, the default is calculated as follows:
+     *
+     * 1. If `lockFileURL` contains a ``/``, the default is everything before the last
+     *    ``/`` in ``lockFileURL``.
+     * 2. If in the browser, the default is ``location.toString()``.
+     * 3. Otherwise, the default is `'.'`.
+     */
+    packageBaseUrl?: string;
     /**
      * Load the full Python standard library. Setting this to false excludes
      * unvendored modules from the standard library.
@@ -464,5 +524,5 @@ export async function loadPyodide(
   const pyodide = bootstrapPyodide(pyodideModule, snapshot, config);
 
   // Stage 8: Finalize setup and initialize streams
-  return await finalizeSetup(pyodide, config);
+  return await c(pyodide, config);
 }

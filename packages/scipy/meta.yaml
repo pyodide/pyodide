@@ -137,11 +137,11 @@ build:
 requirements:
   host:
     - numpy
-    - openblas
-    - boost-cpp
+    - libopenblas
+    - libboost
   run:
     - numpy
-    - openblas
+    - libopenblas
   executable:
     - gfortran
 
