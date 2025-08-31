@@ -197,7 +197,7 @@ for ty, key, url in [
         "js:class",
         "Partial",
         "https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype",
-    )
+    ),
 ]:
     INVDATA[ty][key] = (
         "typescript docs",

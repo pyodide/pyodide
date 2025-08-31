@@ -221,7 +221,7 @@ export interface PyodideConfig {
 
   /** @ignore */
   cdnUrl: string;
-};
+}
 
 /**
  * @private
@@ -237,7 +237,7 @@ async function initializeConfiguration(
 
   let indexURL = options.indexURL || (await calculateDirname());
   indexURL = withTrailingSlash(resolvePath(indexURL)); // A relative indexURL causes havoc.
-  
+
   const options_ = options as PyodideConfig;
 
   options_.packageBaseUrl = withTrailingSlash(options_.packageBaseUrl);
