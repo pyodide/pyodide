@@ -1,6 +1,6 @@
 /** @private */
 
-import { ConfigType } from "./pyodide";
+import { PyodideConfig } from "./pyodide";
 import { initializeNativeFS } from "./nativefs";
 import { loadBinaryFile, getBinaryResponse } from "./compat";
 import { API, PreRunFunc, type Module, type FSType } from "./types";
@@ -40,7 +40,7 @@ export interface EmscriptenSettings {
  *
  * @private
  */
-export function createSettings(config: ConfigType): EmscriptenSettings {
+export function createSettings(config: PyodideConfig): EmscriptenSettings {
   const settings: EmscriptenSettings = {
     noImageDecoding: true,
     noAudioDecoding: true,
@@ -168,7 +168,7 @@ function installStdlib(stdlibURL: string): PreRunFunc {
  * Initialize the virtual file system, before loading Python interpreter.
  * @private
  */
-function getFileSystemInitializationFuncs(config: ConfigType): PreRunFunc[] {
+function getFileSystemInitializationFuncs(config: PyodideConfig): PreRunFunc[] {
   let stdLibURL;
   if (config.stdLibURL != undefined) {
     stdLibURL = config.stdLibURL;

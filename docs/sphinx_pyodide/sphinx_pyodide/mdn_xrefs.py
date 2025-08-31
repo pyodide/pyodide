@@ -193,6 +193,11 @@ for ty, key, url in [
         "FS",
         "https://emscripten.org/docs/api_reference/Filesystem-API.html",
     ),
+    (
+        "js:class",
+        "Partial",
+        "https://www.typescriptlang.org/docs/handbook/utility-types.html#partialtype",
+    )
 ]:
     INVDATA[ty][key] = (
         "typescript docs",
