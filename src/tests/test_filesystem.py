@@ -30,16 +30,16 @@ def test_idbfs_persist_code(selenium_standalone):
     )
 
     @run_in_pyodide
-    def create_test_file(selenium_module, mount_path="/mount_test"):
-        import pathlib
+    def create_test_file(selenium_module):
         import sys
         from importlib import invalidate_caches
+        from pathlib import Path
 
-        p = pathlib.Path(f"{mount_path}/test_idbfs/__init__.py")
+        p = Path(f"{mount_dir}/test_idbfs/__init__.py")
         p.parent.mkdir(exist_ok=True, parents=True)
         p.write_text("def test(): return 7")
         invalidate_caches()
-        sys.path.append(mount_path)
+        sys.path.append(mount_dir)
         from test_idbfs import test
 
         assert test() == 7

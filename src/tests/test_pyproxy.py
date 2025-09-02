@@ -545,7 +545,9 @@ def test_pyproxy_mixins31(selenium):
     from pyodide.ffi import to_js
 
     class Test:
-        pass
+        prototype: int
+        name: int
+        length: int
 
     test_class_and_instance = to_js([Test, Test()])
 
@@ -569,9 +571,9 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.prototype == 7  # type: ignore[attr-defined]
-    assert Test.name == 7  # type: ignore[attr-defined]
-    assert Test.length == 7  # type: ignore[attr-defined]
+    assert Test.prototype == 7
+    assert Test.name == 7
+    assert Test.length == 7
 
     run_js(
         """
@@ -584,7 +586,7 @@ def test_pyproxy_mixins31(selenium):
         """
     )(test_class_and_instance)
 
-    assert Test.prototype == 7  # type: ignore[attr-defined]
+    assert Test.prototype == 7
     assert not hasattr(Test, "name")
     assert not hasattr(Test, "length")
 
@@ -774,34 +776,32 @@ def test_pyproxy_mixins5(selenium):
     """)(test_objects)
 
 
-@run_in_pyodide
 def test_pyproxy_mixins6(selenium):
-    from pyodide.code import run_js
-
-    l = [5, 6, 7]
-
-    run_js(
+    selenium.run_js(
         """
-        (l) => {
-            assert(() => l.get.type === undefined);
-            assert(() => l.get(1) === 6);
-            assert(() => l.length === 3);
-            assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
-            assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
-            assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
-            assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
-            assert(() => "asJsJson" in l);
-        }
+        let l = pyodide.runPython(`
+            l = [5, 6, 7] ; l
+        `);
+        assert(() => l.get.type === undefined);
+        assert(() => l.get(1) === 6);
+        assert(() => l.length === 3);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithLength);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithHas);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithGet);
+        assert(() => l instanceof pyodide.ffi.PyProxyWithSet);
+        assert(() => "asJsJson" in l);
+        l.set(0, 80);
+        pyodide.runPython(`
+            assert l[0] == 80
+        `);
+        l.delete(1);
+        pyodide.runPython(`
+            assert len(l) == 2 and l[1] == 7
+        `);
+        assert(() => l.length === 2 && l.get(1) === 7);
+        l.destroy();
         """
-    )(l)
-
-    run_js("(l) => { l.set(0, 80); }")(l)
-    assert l[0] == 80
-
-    run_js("(l) => { l.delete(1); }")(l)
-    assert len(l) == 2 and l[1] == 7
-
-    run_js("(l) => { assert(() => l.length === 2 && l.get(1) === 7); }")(l)
+    )
 
 
 @pytest.mark.skip_pyproxy_check
@@ -930,26 +930,21 @@ def test_pyproxy_gc_destroy(selenium):
     }
 
 
-@run_in_pyodide
 def test_pyproxy_implicit_copy(selenium):
-    from pyodide.code import run_js
-
-    d = {1: 2}
-
-    result = run_js(
+    result = selenium.run_js(
         """
-        (d) => {
-            let result = [];
-            let a = d;
-            let b = d;
-            result.push(a.get(1));
-            result.push(b.get(1));
-            return result;
-        }
+        let result = [];
+        let a = pyodide.runPython(`d = { 1 : 2}; d`);
+        let b = pyodide.runPython(`d`);
+        result.push(a.get(1));
+        result.push(b.get(1));
+        a.destroy();
+        b.destroy();
+        return result;
         """
-    )(d)
-
-    assert result.to_py() == [2, 2]
+    )
+    assert result[0] == 2
+    assert result[1] == 2
 
 
 @pytest.mark.skip_pyproxy_check
@@ -1147,15 +1142,13 @@ def test_pyproxy_call(selenium):
     import pytest
 
     from pyodide.code import run_js
-    from pyodide.ffi import to_js
+    from pyodide.ffi import JsException, to_js
 
     def f(x=2, y=3):
         return to_js([x, y])
 
-    run_js("(f) => { self.f = f; }")(to_js(f))
-
     def assert_call(s, val):
-        res = run_js(f"() => {s}")()
+        res = run_js(f"(f) => {s}")(f)
         assert res.to_py() == val
 
     assert_call("f()", [2, 3])
@@ -1170,22 +1163,22 @@ def test_pyproxy_call(selenium):
     assert_call("f.callKwargs(8, { y : 4 })", [8, 4])
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(Exception, match=msg):
-        run_js("() => f.callKwargs()")()
+    with pytest.raises(JsException, match=msg):
+        run_js("(f) => f.callKwargs()")(f)
 
     msg = "TypeError: callKwargs requires at least one argument"
-    with pytest.raises(Exception, match=msg):
-        run_js("() => f.callKwargs()")()
+    with pytest.raises(JsException, match=msg):
+        run_js("(f) => f.callKwargs()")(f)
 
-    msg = r"got an unexpected keyword argument 'z'"
+    msg = r"test_pyproxy_call\.<locals>\.f\(\) got an unexpected keyword argument 'z'"
     with pytest.raises(Exception, match=msg):
-        run_js("() => f.callKwargs({z : 6})")()
+        run_js("(f) => f.callKwargs({z : 6})")(f)
 
-    msg = r"got multiple values for argument 'x'"
+    msg = r"test_pyproxy_call\.\<locals\>\.f\(\) got multiple values for argument 'x'"
     with pytest.raises(Exception, match=msg):
-        run_js("() => f.callKwargs(76, {x : 6})")()
+        run_js("(f) => f.callKwargs(76, {x : 6})")(f)
 
-    run_js("() => f.destroy()")()
+    run_js("(f) => f.destroy()")(f)
 
 
 def test_pyproxy_call_relaxed(selenium):
