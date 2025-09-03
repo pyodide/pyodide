@@ -1171,11 +1171,11 @@ def test_pyproxy_call(selenium):
         run_js("(f) => f.callKwargs()")(f)
 
     msg = r"test_pyproxy_call\.<locals>\.f\(\) got an unexpected keyword argument 'z'"
-    with pytest.raises(Exception, match=msg):
+    with pytest.raises(TypeError, match=msg):
         run_js("(f) => f.callKwargs({z : 6})")(f)
 
     msg = r"test_pyproxy_call\.\<locals\>\.f\(\) got multiple values for argument 'x'"
-    with pytest.raises(Exception, match=msg):
+    with pytest.raises(TypeError, match=msg):
         run_js("(f) => f.callKwargs(76, {x : 6})")(f)
 
     run_js("(f) => f.destroy()")(f)
