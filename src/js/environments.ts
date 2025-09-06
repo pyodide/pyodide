@@ -25,39 +25,39 @@ interface RuntimeEnv {
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (!globalThis.__PYODIDE_RUNTIME_ENV__) {
     globalThis.__PYODIDE_RUNTIME_ENV__ = {
-  IN_NODE:
-    typeof process === "object" &&
-    typeof process.versions === "object" &&
-    typeof process.versions.node === "string" &&
-    !process.browser, /* This last condition checks if we run the browser shim of process */
+      IN_NODE:
+        typeof process === "object" &&
+        typeof process.versions === "object" &&
+        typeof process.versions.node === "string" &&
+        !process.browser /* This last condition checks if we run the browser shim of process */,
 
-  IN_NODE_COMMONJS:
-    (typeof process === "object" &&
-      typeof process.versions === "object" &&
-      typeof process.versions.node === "string" &&
-      !process.browser) &&
-    typeof module !== "undefined" &&
-    typeof module.exports !== "undefined" &&
-    typeof require !== "undefined" &&
-    typeof __dirname !== "undefined",
+      IN_NODE_COMMONJS:
+        typeof process === "object" &&
+        typeof process.versions === "object" &&
+        typeof process.versions.node === "string" &&
+        !process.browser &&
+        typeof module !== "undefined" &&
+        typeof module.exports !== "undefined" &&
+        typeof require !== "undefined" &&
+        typeof __dirname !== "undefined",
 
-  IN_NODE_ESM: false, // Will be computed based on IN_NODE and IN_NODE_COMMONJS
+      IN_NODE_ESM: false, // Will be computed based on IN_NODE and IN_NODE_COMMONJS
 
-  IN_BUN: typeof globalThis.Bun !== "undefined",
+      IN_BUN: typeof globalThis.Bun !== "undefined",
 
-  IN_DENO: typeof Deno !== "undefined", // just in case...
+      IN_DENO: typeof Deno !== "undefined", // just in case...
 
-  IN_BROWSER: true, // Will be computed based on other flags
+      IN_BROWSER: true, // Will be computed based on other flags
 
-  IN_BROWSER_MAIN_THREAD: false, // Will be computed
+      IN_BROWSER_MAIN_THREAD: false, // Will be computed
 
-  IN_BROWSER_WEB_WORKER: false, // Will be computed
+      IN_BROWSER_WEB_WORKER: false, // Will be computed
 
-  IN_SAFARI:
-    typeof navigator === "object" &&
-    typeof navigator.userAgent === "string" &&
-    navigator.userAgent.indexOf("Chrome") == -1 &&
-    navigator.userAgent.indexOf("Safari") > -1,
+      IN_SAFARI:
+        typeof navigator === "object" &&
+        typeof navigator.userAgent === "string" &&
+        navigator.userAgent.indexOf("Chrome") == -1 &&
+        navigator.userAgent.indexOf("Safari") > -1,
 
       IN_SHELL: typeof read == "function" && typeof load === "function",
     };
@@ -74,8 +74,10 @@ export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 // Compute derived flags
 function updateDerivedFlags() {
-  RUNTIME_ENV.IN_NODE_ESM = RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_NODE_COMMONJS;
-  RUNTIME_ENV.IN_BROWSER = !RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_DENO && !RUNTIME_ENV.IN_BUN;
+  RUNTIME_ENV.IN_NODE_ESM =
+    RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_NODE_COMMONJS;
+  RUNTIME_ENV.IN_BROWSER =
+    !RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_DENO && !RUNTIME_ENV.IN_BUN;
   RUNTIME_ENV.IN_BROWSER_MAIN_THREAD =
     RUNTIME_ENV.IN_BROWSER &&
     typeof window === "object" &&
@@ -84,7 +86,9 @@ function updateDerivedFlags() {
     "sessionStorage" in window &&
     typeof importScripts !== "function";
   RUNTIME_ENV.IN_BROWSER_WEB_WORKER =
-    RUNTIME_ENV.IN_BROWSER && typeof importScripts === "function" && typeof self === "object";
+    RUNTIME_ENV.IN_BROWSER &&
+    typeof importScripts === "function" &&
+    typeof self === "object";
 }
 
 // Initialize derived flags
@@ -96,10 +100,12 @@ updateDerivedFlags();
  * @param runtime - The runtime to force ('browser', 'node', 'deno', 'bun')
  * @private
  */
-export function setRuntimeOverride(runtime: 'browser' | 'node' | 'deno' | 'bun') {
+export function setRuntimeOverride(
+  runtime: "browser" | "node" | "deno" | "bun",
+) {
   // Get the global runtime environment object
   const runtimeEnv = getGlobalRuntimeEnv();
-  
+
   // Reset all flags to false
   runtimeEnv.IN_NODE = false;
   runtimeEnv.IN_NODE_COMMONJS = false;
@@ -112,22 +118,22 @@ export function setRuntimeOverride(runtime: 'browser' | 'node' | 'deno' | 'bun')
 
   // Set the requested runtime
   switch (runtime) {
-    case 'node':
+    case "node":
       runtimeEnv.IN_NODE = true;
       // Default to CommonJS mode, but can be overridden later
       runtimeEnv.IN_NODE_COMMONJS = true;
       runtimeEnv.IN_NODE_ESM = false;
       break;
-    case 'browser':
+    case "browser":
       runtimeEnv.IN_BROWSER = true;
       // Default to main thread, but can be overridden later
       runtimeEnv.IN_BROWSER_MAIN_THREAD = true;
       runtimeEnv.IN_BROWSER_WEB_WORKER = false;
       break;
-    case 'deno':
+    case "deno":
       runtimeEnv.IN_DENO = true;
       break;
-    case 'bun':
+    case "bun":
       runtimeEnv.IN_BUN = true;
       break;
   }

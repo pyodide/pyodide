@@ -248,7 +248,7 @@ export async function loadPyodide(
      * After initialization, these runtime flags are injected into Python's
      * sys module (e.g., sys.in_node, sys.in_browser).
      */
-    runtime?: 'browser' | 'node' | 'deno' | 'bun';
+    runtime?: "browser" | "node" | "deno" | "bun";
     /** @ignore */
     _makeSnapshot?: boolean;
     /** @ignore */
@@ -263,12 +263,12 @@ export async function loadPyodide(
   if (options.lockFileContents && options.lockFileURL) {
     throw new Error("Can't pass both lockFileContents and lockFileURL");
   }
-  
+
   // Override runtime detection if specified
   if (options.runtime) {
     setRuntimeOverride(options.runtime);
   }
-  
+
   await initNodeModules();
 
   // Relative paths cause havoc.

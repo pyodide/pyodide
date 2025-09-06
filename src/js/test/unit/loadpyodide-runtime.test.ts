@@ -22,9 +22,9 @@ describe("loadPyodide runtime override", () => {
   });
 
   it("should override runtime to Node.js", async () => {
-    const pyodide = await loadPyodide({ 
-      runtime: 'node',
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      runtime: "node",
+      indexURL: "./",
     });
 
     // Test JavaScript level detection
@@ -45,9 +45,9 @@ import pyodide.ffi
   });
 
   it("should override runtime to Browser", async () => {
-    const pyodide = await loadPyodide({ 
-      runtime: 'browser',
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      runtime: "browser",
+      indexURL: "./",
     });
 
     const jsResult = pyodide.runPython(`
@@ -67,9 +67,9 @@ import pyodide.ffi
   });
 
   it("should override runtime to Deno", async () => {
-    const pyodide = await loadPyodide({ 
-      runtime: 'deno',
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      runtime: "deno",
+      indexURL: "./",
     });
 
     const jsResult = pyodide.runPython(`
@@ -89,9 +89,9 @@ import pyodide.ffi
   });
 
   it("should override runtime to Bun", async () => {
-    const pyodide = await loadPyodide({ 
-      runtime: 'bun',
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      runtime: "bun",
+      indexURL: "./",
     });
 
     const jsResult = pyodide.runPython(`
@@ -111,9 +111,9 @@ import pyodide.ffi
   });
 
   it("should provide all runtime flags in Python", async () => {
-    const pyodide = await loadPyodide({ 
-      runtime: 'node',
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      runtime: "node",
+      indexURL: "./",
     });
 
     const allFlags = pyodide.runPython(`
@@ -133,8 +133,8 @@ import pyodide.ffi
 `);
 
     // All flags should be boolean values
-    Object.values(allFlags).forEach(value => {
-      expect(value).to.be.a('boolean');
+    Object.values(allFlags).forEach((value) => {
+      expect(value).to.be.a("boolean");
     });
 
     // Node.js specific flags should be true
@@ -145,8 +145,8 @@ import pyodide.ffi
   });
 
   it("should work without runtime override (default behavior)", async () => {
-    const pyodide = await loadPyodide({ 
-      indexURL: './'
+    const pyodide = await loadPyodide({
+      indexURL: "./",
     });
 
     const jsResult = pyodide.runPython(`
@@ -160,9 +160,9 @@ import pyodide.ffi
 `);
 
     // Should detect actual environment (likely Node.js in test environment)
-    expect(jsResult.IN_NODE).to.be.a('boolean');
-    expect(jsResult.IN_BROWSER).to.be.a('boolean');
-    expect(jsResult.IN_DENO).to.be.a('boolean');
-    expect(jsResult.IN_BUN).to.be.a('boolean');
+    expect(jsResult.IN_NODE).to.be.a("boolean");
+    expect(jsResult.IN_BROWSER).to.be.a("boolean");
+    expect(jsResult.IN_DENO).to.be.a("boolean");
+    expect(jsResult.IN_BUN).to.be.a("boolean");
   });
 });
