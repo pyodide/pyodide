@@ -817,6 +817,21 @@ API.finalizeBootstrap = function (
     importhook.register_js_module("pyodide_js", pyodide);
   }
 
+  // Set runtime environment flags in Python
+  const env = API.detectEnvironment();
+  API.runPythonInternal(`
+import pyodide.ffi
+pyodide.ffi.IN_NODE = ${env.IN_NODE}
+pyodide.ffi.IN_NODE_COMMONJS = ${env.IN_NODE_COMMONJS}
+pyodide.ffi.IN_NODE_ESM = ${env.IN_NODE_ESM}
+pyodide.ffi.IN_BUN = ${env.IN_BUN}
+pyodide.ffi.IN_DENO = ${env.IN_DENO}
+pyodide.ffi.IN_BROWSER_MAIN_THREAD = ${env.IN_BROWSER_MAIN_THREAD}
+pyodide.ffi.IN_BROWSER_WEB_WORKER = ${env.IN_BROWSER_WEB_WORKER}
+pyodide.ffi.IN_SAFARI = ${env.IN_SAFARI}
+pyodide.ffi.IN_SHELL = ${env.IN_SHELL}
+`);
+
   // import pyodide_py. We want to ensure that as much stuff as possible is
   // already set up before importing pyodide_py to simplify development of
   // pyodide_py code (Otherwise it's very hard to keep track of which things
