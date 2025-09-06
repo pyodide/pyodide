@@ -821,15 +821,15 @@ API.finalizeBootstrap = function (
   const env = API.detectEnvironment();
   API.runPythonInternal(`
 import pyodide.ffi
-pyodide.ffi.IN_NODE = ${env.IN_NODE ? 'True' : 'False'}
-pyodide.ffi.IN_NODE_COMMONJS = ${env.IN_NODE_COMMONJS ? 'True' : 'False'}
-pyodide.ffi.IN_NODE_ESM = ${env.IN_NODE_ESM ? 'True' : 'False'}
-pyodide.ffi.IN_BUN = ${env.IN_BUN ? 'True' : 'False'}
-pyodide.ffi.IN_DENO = ${env.IN_DENO ? 'True' : 'False'}
-pyodide.ffi.IN_BROWSER_MAIN_THREAD = ${env.IN_BROWSER_MAIN_THREAD ? 'True' : 'False'}
-pyodide.ffi.IN_BROWSER_WEB_WORKER = ${env.IN_BROWSER_WEB_WORKER ? 'True' : 'False'}
-pyodide.ffi.IN_SAFARI = ${env.IN_SAFARI ? 'True' : 'False'}
-pyodide.ffi.IN_SHELL = ${env.IN_SHELL ? 'True' : 'False'}
+pyodide.ffi.IN_NODE = ${env.IN_NODE ? "True" : "False"}
+pyodide.ffi.IN_NODE_COMMONJS = ${env.IN_NODE_COMMONJS ? "True" : "False"}
+pyodide.ffi.IN_NODE_ESM = ${env.IN_NODE_ESM ? "True" : "False"}
+pyodide.ffi.IN_BUN = ${env.IN_BUN ? "True" : "False"}
+pyodide.ffi.IN_DENO = ${env.IN_DENO ? "True" : "False"}
+pyodide.ffi.IN_BROWSER_MAIN_THREAD = ${env.IN_BROWSER_MAIN_THREAD ? "True" : "False"}
+pyodide.ffi.IN_BROWSER_WEB_WORKER = ${env.IN_BROWSER_WEB_WORKER ? "True" : "False"}
+pyodide.ffi.IN_SAFARI = ${env.IN_SAFARI ? "True" : "False"}
+pyodide.ffi.IN_SHELL = ${env.IN_SHELL ? "True" : "False"}
 `);
 
   // import pyodide_py. We want to ensure that as much stuff as possible is
