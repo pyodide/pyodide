@@ -5,8 +5,16 @@
 #error "Requires -msimd128"
 #endif
 
-float simd_wasm_add4_sum(float a0, float a1, float a2, float a3,
-                         float b0, float b1, float b2, float b3) {
+float
+simd_wasm_add4_sum(float a0,
+                   float a1,
+                   float a2,
+                   float a3,
+                   float b0,
+                   float b1,
+                   float b2,
+                   float b3)
+{
   v128_t va = wasm_f32x4_make(a0, a1, a2, a3);
   v128_t vb = wasm_f32x4_make(b0, b1, b2, b3);
   v128_t vc = wasm_f32x4_add(va, vb);
@@ -15,8 +23,16 @@ float simd_wasm_add4_sum(float a0, float a1, float a2, float a3,
   return out[0] + out[1] + out[2] + out[3];
 }
 
-float simd_wasm_dot4(float a0, float a1, float a2, float a3,
-                     float b0, float b1, float b2, float b3) {
+float
+simd_wasm_dot4(float a0,
+               float a1,
+               float a2,
+               float a3,
+               float b0,
+               float b1,
+               float b2,
+               float b3)
+{
   v128_t va = wasm_f32x4_make(a0, a1, a2, a3);
   v128_t vb = wasm_f32x4_make(b0, b1, b2, b3);
   v128_t vm = wasm_f32x4_mul(va, vb);

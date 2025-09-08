@@ -7,7 +7,7 @@ def test_simd_functions(selenium):
     a = [1, 2, 3, 4]
     b = [10, 20, 30, 40]
     sum4 = sum(a) + sum(b)
-    dot4 = sum(x * y for x, y in zip(a, b))
+    dot4 = sum(x * y for x, y in zip(a, b, strict=False))
     sum2 = sum(a[:2]) + sum(b[:2])
     dot2 = a[0] * b[0] + a[1] * b[1]
 
