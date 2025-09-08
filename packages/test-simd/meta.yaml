@@ -13,7 +13,11 @@ build:
   script: |
     emcc -c simd_wasm.c -o simd_wasm.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128
     emcc -c simd_sse.c -o simd_sse.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128 -msse
+    emcc -c simd_sse2.c -o simd_sse2.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128 -msse2
+    emcc -c simd_avx.c -o simd_avx.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128 -mavx
     emcc simd_wasm.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-wasm.so
     emcc simd_sse.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-sse.so
+    emcc simd_sse2.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-sse2.so
+    emcc simd_avx.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-avx.so
 about:
   license: MPL-2.0
