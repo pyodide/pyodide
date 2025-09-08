@@ -1,0 +1,19 @@
+package:
+  name: test-simd
+  version: "0.1"
+  tag:
+    - core
+    - pyodide.test
+    - library
+    - shared_library
+source:
+  path: src
+build:
+  type: shared_library
+  script: |
+    emcc -c simd_wasm.c -o simd_wasm.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128
+    emcc -c simd_sse.c -o simd_sse.o ${SIDE_MODULE_CFLAGS} -O3 -msimd128 -msse
+    emcc simd_wasm.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-wasm.so
+    emcc simd_sse.o ${SIDE_MODULE_LDFLAGS} -O3 -msimd128 -o ${DISTDIR}/simd-sse.so
+about:
+  license: MPL-2.0
