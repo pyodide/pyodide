@@ -80,7 +80,7 @@
     "build-inner": "node esbuild.config.inner.mjs",
     "build": "tsc --noEmit && node esbuild.config.outer.mjs",
     "test": "npm-run-all test:*",
-    "test:unit": "cross-env TEST_NODE=1 TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --import test/loader.mjs --experimental-wasm-stack-switching --test 'test/unit/**/*.test.*'",
+    "test:unit": "cross-env TEST_NODE=1 node --import tsx --experimental-wasm-stack-switching --test 'test/unit/**/*.test.*'",
     "test:node": "cross-env TEST_NODE=1 mocha test/integration/**/*.test.js",
     "test:browser": "mocha test/integration/**/*.test.js",
     "tsc": "tsc --noEmit",
