@@ -47,10 +47,17 @@ class XMLHttpRequest(_JsObject):
     responseURL: str
     status: int
     statusText: str
-    
+
     @staticmethod
     def new() -> XMLHttpRequest: ...
-    def open(self, method: str, url: str, sync: bool, username: str | None = None, password: str | None = None) -> None: ...
+    def open(
+        self,
+        method: str,
+        url: str,
+        sync: bool,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> None: ...
     def send(self, body: str | bytes | JsProxy | None = None) -> None: ...
     def setRequestHeader(self, name: str, value: str) -> None: ...
     def getAllResponseHeaders(self) -> str: ...

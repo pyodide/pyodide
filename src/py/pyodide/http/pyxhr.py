@@ -115,7 +115,9 @@ class XHRResponse:
             raise HttpStatusError(self.status_code, self._xhr.statusText, self.url)
 
 
-def _xhr_request(method: str, url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+def _xhr_request(
+    method: str, url: str, **kwargs: Unpack[XHRRequestParams]
+) -> XHRResponse:
     """Make a synchronous HTTP request using XMLHttpRequest.
 
     This is the core function that wraps XMLHttpRequest to provide
@@ -217,7 +219,9 @@ class pyxhr:
     """
 
     @staticmethod
-    def _xhr_request(method: str, url: str, **kwargs: Unpack[XHRRequestParams]) -> XHRResponse:
+    def _xhr_request(
+        method: str, url: str, **kwargs: Unpack[XHRRequestParams]
+    ) -> XHRResponse:
         """Make a synchronous HTTP request using XMLHttpRequest.
 
         This is the core function that wraps XMLHttpRequest to provide

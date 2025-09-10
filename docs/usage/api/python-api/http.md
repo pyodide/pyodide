@@ -7,7 +7,7 @@ The `pyodide.http` module provides HTTP client functionality specifically design
 Due to browser security constraints and WebAssembly's sandboxed environment, standard Python networking libraries have several limitations:
 
 - **No raw socket access**: Browser security prevents direct socket operations
-- **CORS restrictions**: Cross-origin requests are limited by browser CORS policies  
+- **CORS restrictions**: Cross-origin requests are limited by browser CORS policies
 - **No synchronous networking in main thread**: Traditional blocking HTTP calls can freeze the browser UI
 - **Limited protocol support**: Only HTTP/HTTPS protocols are available, no TCP/UDP sockets
 
@@ -30,7 +30,7 @@ response = await pyfetch("https://api.example.com/data")
 data = await response.json()
 ```
 
-### `pyxhr` - Synchronous HTTP Client  
+### `pyxhr` - Synchronous HTTP Client
 
 Based on XMLHttpRequest, `pyxhr` provides:
 - **Synchronous operations**: Blocking HTTP requests for simpler code patterns
@@ -55,7 +55,7 @@ data = response.json()
 
 **Use `pyxhr` when:**
 - Prefer synchronous, blocking operations
-- Porting existing code that uses requests-like patterns  
+- Porting existing code that uses requests-like patterns
 - Need simple HTTP operations without async complexity
 - Working in environments where sync operations are acceptable
 

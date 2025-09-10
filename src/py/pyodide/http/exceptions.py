@@ -61,11 +61,13 @@ class XHRError(OSError):
 
 class XHRNetworkError(XHRError):
     """Network-related XMLHttpRequest error."""
+
     def __init__(self, message: str = "Network error occurred") -> None:
         super().__init__(message)
 
 
 class XHRTimeoutError(XHRError):
     """Timeout error for XMLHttpRequest."""
+
     def __init__(self, timeout: int) -> None:
         super().__init__(f"Request timed out after {timeout}ms")
