@@ -1,17 +1,6 @@
-"""
-HTTP-related exceptions and utilities for Pyodide.
-"""
-
 from typing import Any
 
 from ..ffi import JsException
-
-
-def _construct_abort_reason(reason: Any) -> JsException | None:
-    """Construct an abort reason from a given value."""
-    if reason is None:
-        return None
-    return JsException("AbortError", reason)
 
 
 class HttpStatusError(OSError):
@@ -63,3 +52,20 @@ class BodyUsedError(OSError):
 class AbortError(OSError):
     def __init__(self, reason: JsException) -> None:
         super().__init__(reason.message)
+
+
+# pyxhr exceptions
+class XHRError(OSError):
+    """Base exception for XMLHttpRequest errors."""
+
+
+class XHRNetworkError(XHRError):
+    """Network-related XMLHttpRequest error."""
+    def __init__(self, message: str = "Network error occurred") -> None:
+        super().__init__(message)
+
+
+class XHRTimeoutError(XHRError):
+    """Timeout error for XMLHttpRequest."""
+    def __init__(self, timeout: int) -> None:
+        super().__init__(f"Request timed out after {timeout}ms")
