@@ -4,6 +4,7 @@ Provides a requests-like synchronous HTTP API using XMLHttpRequest,
 designed specifically for browser environments where traditional HTTP libraries don't work.
 """
 
+import base64
 import json
 from typing import Any, NotRequired, TypedDict, Unpack
 from urllib.parse import urlencode
@@ -13,7 +14,8 @@ from .exceptions import HttpStatusError, XHRError, XHRNetworkError
 
 if IN_BROWSER:
     try:
-        from js import DOMException, XMLHttpRequest
+        from js import XMLHttpRequest
+        from pyodide.ffi import JsException
     except ImportError:
         pass
 
@@ -164,18 +166,19 @@ def _xhr_request(
             separator = "&" if "?" in url else "?"
             url = f"{url}{separator}{query_string}"
 
-    username = None
-    password = None
-    if auth := kwargs.get("auth"):
-        if len(auth) == 2:
-            username, password = auth
-
-    req.open(method.upper(), url, False, username, password)
+    req.open(method.upper(), url, False)
 
     # Note: timeout cannot be set for synchronous requests in browsers
     # The timeout parameter is ignored for sync XHR
 
     headers = kwargs.get("headers", {})
+
+    if auth := kwargs.get("auth"):
+        if len(auth) == 2:
+            username, password = auth
+            credentials = base64.b64encode(f"{username}:{password}".encode()).decode()
+            headers = headers.copy() if headers else {}
+            headers["Authorization"] = f"Basic {credentials}"
 
     json_data = kwargs.get("json")
     data = kwargs.get("data")
@@ -190,9 +193,8 @@ def _xhr_request(
 
     try:
         req.send(data)
-    except DOMException as e:
-        # Handle JavaScript exceptions from XMLHttpRequest
-        if e.name == "NetworkError":
+    except JsException as e:
+        if hasattr(e, 'name') and e.name == "NetworkError":
             raise XHRNetworkError(f"Network error for {method} {url}") from e
         raise XHRError(f"XMLHttpRequest failed: {e}") from e
 
@@ -204,18 +206,25 @@ class pyxhr:
 
     Examples
     --------
-    >>> None # doctest: +RUN_IN_PYODIDE
-    >>> # XMLHttpRequest is only available in browser environments
-    >>> from pyodide.http import pyxhr
-    >>> response = pyxhr.get("https://httpbin.org/get")
+    >>> from pyodide.http import pyxhr  # doctest: +RUN_IN_PYODIDE
+    >>> try:
+    ...     import js
+    ...     js.XMLHttpRequest
+    ... except AttributeError:
+    ...     import pytest; pytest.skip("XMLHttpRequest is not available in node")
+    >>> response = pyxhr.get("data:text/plain,Hello World")
     >>> response.status_code
     200
-    >>> data = response.json()
+    >>> response.text
+    'Hello World'
 
-    >>> response = pyxhr.post("https://httpbin.org/post",
-    ...                      json={"key": "value"})
+    >>> import json
+    >>> json_data = json.dumps({"message": "success"})
+    >>> response = pyxhr.get(f"data:application/json,{json_data}")
     >>> response.status_code
     200
+    >>> response.json()['message']
+    'success'
     """
 
     @staticmethod
