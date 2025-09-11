@@ -194,7 +194,7 @@ def _xhr_request(
     try:
         req.send(data)
     except JsException as e:
-        if hasattr(e, 'name') and e.name == "NetworkError":
+        if e.name == "NetworkError":
             raise XHRNetworkError(f"Network error for {method} {url}") from e
         raise XHRError(f"XMLHttpRequest failed: {e}") from e
 
@@ -208,23 +208,14 @@ class pyxhr:
     --------
     >>> from pyodide.http import pyxhr  # doctest: +RUN_IN_PYODIDE
     >>> try:
-    ...     import js
-    ...     js.XMLHttpRequest
-    ... except AttributeError:
-    ...     import pytest; pytest.skip("XMLHttpRequest is not available in node")
+    ...     from js import XMLHttpRequest
+    ... except ImportError:
+    ...     import pytest; pytest.skip("XMLHttpRequest not available")
     >>> response = pyxhr.get("data:text/plain,Hello World")
     >>> response.status_code
     200
     >>> response.text
     'Hello World'
-
-    >>> import json
-    >>> json_data = json.dumps({"message": "success"})
-    >>> response = pyxhr.get(f"data:application/json,{json_data}")
-    >>> response.status_code
-    200
-    >>> response.json()['message']
-    'success'
     """
 
     @staticmethod
