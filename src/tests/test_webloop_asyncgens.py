@@ -23,7 +23,7 @@ async def test_shutdown_closes_partially_consumed(selenium):
     async def agen():
         try:
             yield 1
-            await asyncio.sleep(0) 
+            await asyncio.sleep(0)
             yield 2
         finally:
             closed.append("closed")
@@ -76,7 +76,7 @@ async def test_warn_on_firstiter_after_shutdown(selenium):
 
         # Check that warning was issued
         assert any("shutdown_asyncgens()" in msg for msg in captured_warnings)
-        
+
     finally:
         warnings.showwarning = old_showwarning
 
@@ -113,7 +113,7 @@ async def test_finalizer_schedules_close(selenium):
 
     # Shutdown should handle any remaining cleanup
     await loop.shutdown_asyncgens()
-    
+
     # Generator should eventually be finalized
     assert len(closed) > 0
     assert "finalized" in closed
@@ -134,7 +134,7 @@ async def test_multiple_generators_closed(selenium):
     async def agen(name):
         try:
             yield f"{name}_value"
-            await asyncio.sleep(0) 
+            await asyncio.sleep(0)
             yield f"{name}_done"
         finally:
             closed.append(f"{name}_closed")
@@ -143,7 +143,7 @@ async def test_multiple_generators_closed(selenium):
     gen1 = agen("gen1")
     gen2 = agen("gen2")
     gen3 = agen("gen3")
-    
+
     # Partially consume each
     assert await gen1.__anext__() == "gen1_value"
     assert await gen2.__anext__() == "gen2_value"
@@ -154,13 +154,13 @@ async def test_multiple_generators_closed(selenium):
 
     # Shutdown should close all pending generators
     await loop.shutdown_asyncgens()
-    
+
     # All should be closed
     assert len(closed) == 3
     assert "gen1_closed" in closed
     assert "gen2_closed" in closed
     assert "gen3_closed" in closed
-    
+
 
 @run_in_pyodide
 async def test_close_with_pending_generators_warning(selenium):
@@ -170,19 +170,19 @@ async def test_close_with_pending_generators_warning(selenium):
 
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
-        
+
         loop = asyncio.get_running_loop()
         # Reset state for clean test
         loop._asyncgens_shutdown_called = False
         loop._asyncgens.clear()
-        
+
         # Create pending generator
         async def pending_agen():
             yield 1
-        
+
         agen = pending_agen()
         await agen.__anext__()
-        
+
         # Simulate close() warning logic (can't actually close running loop)
         if len(loop._asyncgens) > 0 and not loop._asyncgens_shutdown_called:
             warnings.warn(
@@ -191,12 +191,14 @@ async def test_close_with_pending_generators_warning(selenium):
                 ResourceWarning,
                 source=loop,
             )
-        
+
         # Verify warning was issued
-        resource_warnings = [warning for warning in w if warning.category == ResourceWarning]
+        resource_warnings = [
+            warning for warning in w if warning.category == ResourceWarning
+        ]
         assert len(resource_warnings) > 0
         assert "shutdown_asyncgens" in str(resource_warnings[0].message)
-        
+
         # Clean up
         await agen.aclose()
 
@@ -220,6 +222,7 @@ async def test_aclose_exception_handling(selenium):
     loop.set_exception_handler(exception_handler)
 
     try:
+
         async def bad_agen():
             try:
                 yield 1
@@ -233,11 +236,14 @@ async def test_aclose_exception_handling(selenium):
 
         # Shutdown should handle the exception gracefully
         await loop.shutdown_asyncgens()
-        
+
         # Exception should be logged
-        assert any("error" in msg.lower() or "exception" in msg.lower() 
-                  for msg in exception_logs if msg)
-                  
+        assert any(
+            "error" in msg.lower() or "exception" in msg.lower()
+            for msg in exception_logs
+            if msg
+        )
+
     finally:
         loop.set_exception_handler(old_handler)
 
@@ -246,17 +252,17 @@ async def test_aclose_exception_handling(selenium):
 async def test_shutdown_idempotent(selenium):
     """Test that multiple shutdown_asyncgens() calls are safe."""
     import asyncio
-    
+
     loop = asyncio.get_running_loop()
     # Reset state for clean test
     loop._asyncgens_shutdown_called = False
     loop._asyncgens.clear()
-    
+
     # Multiple shutdowns should not raise errors
     await loop.shutdown_asyncgens()
     await loop.shutdown_asyncgens()
     await loop.shutdown_asyncgens()
-    
+
     # Shutdown flag should be set
     assert loop._asyncgens_shutdown_called is True
 
@@ -266,18 +272,18 @@ async def test_webloop_attributes_exist(selenium):
     """Test that WebLoop has all expected async generator management attributes."""
     import asyncio
     import weakref
-    
+
     loop = asyncio.get_running_loop()
-    
+
     # Verify we're using WebLoop
     assert "WebLoop" in type(loop).__name__
-    
+
     # Check required attributes exist
-    assert hasattr(loop, '_asyncgens')
-    assert hasattr(loop, '_asyncgens_shutdown_called')
-    assert hasattr(loop, '_old_agen_hooks')
-    assert hasattr(loop, 'shutdown_asyncgens')
-    
+    assert hasattr(loop, "_asyncgens")
+    assert hasattr(loop, "_asyncgens_shutdown_called")
+    assert hasattr(loop, "_old_agen_hooks")
+    assert hasattr(loop, "shutdown_asyncgens")
+
     # Verify types
     assert isinstance(loop._asyncgens, weakref.WeakSet)
     assert isinstance(loop._asyncgens_shutdown_called, bool)
@@ -289,21 +295,21 @@ async def test_hook_methods_functionality(selenium):
     """Test that async generator hook methods exist and are callable."""
     import asyncio
     import sys
-    
+
     loop = asyncio.get_running_loop()
-    
+
     # Check hook methods exist
-    assert hasattr(loop, '_asyncgen_firstiter_hook')
-    assert hasattr(loop, '_asyncgen_finalizer_hook')
-    assert hasattr(loop, '_install_asyncgen_hooks')
-    assert hasattr(loop, '_restore_asyncgen_hooks')
-    
+    assert hasattr(loop, "_asyncgen_firstiter_hook")
+    assert hasattr(loop, "_asyncgen_finalizer_hook")
+    assert hasattr(loop, "_install_asyncgen_hooks")
+    assert hasattr(loop, "_restore_asyncgen_hooks")
+
     # Verify they're callable
     assert callable(loop._asyncgen_firstiter_hook)
     assert callable(loop._asyncgen_finalizer_hook)
     assert callable(loop._install_asyncgen_hooks)
     assert callable(loop._restore_asyncgen_hooks)
-    
+
     # Check hooks are installed
     hooks = sys.get_asyncgen_hooks()
     assert hooks.firstiter is not None
@@ -314,33 +320,35 @@ async def test_hook_methods_functionality(selenium):
 async def test_debug_mode_integration(selenium):
     """Test that debug mode works correctly with async generator management."""
     import asyncio
-    
+
     loop = asyncio.get_running_loop()
-    
+
     # Test debug mode methods exist
-    assert hasattr(loop, 'get_debug')
-    assert hasattr(loop, 'set_debug')
-    
+    assert hasattr(loop, "get_debug")
+    assert hasattr(loop, "set_debug")
+
     original_debug = loop.get_debug()
-    
+
     try:
         # Test setting debug mode
         loop.set_debug(True)
         assert loop.get_debug() is True
-        
+
         loop.set_debug(False)
         assert loop.get_debug() is False
-        
+
         # Debug mode should not affect shutdown functionality
         await loop.shutdown_asyncgens()
-        
+
     finally:
         # Restore original debug setting
         loop.set_debug(original_debug)
 
+
 @run_in_pyodide
 async def test_shutdown_timeout_logs(selenium):
     import asyncio
+
     loop = asyncio.get_running_loop()
     loop._asyncgens_shutdown_called = False
     loop._asyncgens.clear()
