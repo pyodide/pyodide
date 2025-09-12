@@ -5,8 +5,6 @@ from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.fixture import selenium_common
-from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
 from conftest import DIST_PATH, only_node
 
