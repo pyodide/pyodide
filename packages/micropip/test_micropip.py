@@ -85,7 +85,7 @@ def test_install_custom_url(selenium_standalone_micropip, httpserver):
     )
 
 
-@pytest.mark.xfail_browsers(chrome="node only", firefox="node only")
+@pytest.mark.xfail_browsers(chrome="node only", firefox="node only", safari="node only")
 def test_install_file_protocol_node(selenium_standalone_micropip):
     selenium = selenium_standalone_micropip
 
