@@ -7,8 +7,6 @@ import time
 import traceback
 import warnings
 import weakref
-import warnings
-import weakref
 from asyncio import Future, Task, sleep
 from collections.abc import AsyncGenerator, Awaitable, Callable, Coroutine
 from functools import wraps
@@ -220,9 +218,15 @@ class WebLoop(asyncio.AbstractEventLoop):
 
         # Async generator management for proper resource cleanup
         # Similar to BaseEventLoop but with browser-specific lifecycle
-        self._asyncgens: weakref.WeakSet[AsyncGenerator[Any, Any]] = weakref.WeakSet()  # Track active async generators
-        self._asyncgens_shutdown_called: bool = False  # Prevent new generators after shutdown
-        self._old_agen_hooks: tuple[Any, Any] | None = None  # Store original async generator hooks
+        self._asyncgens: weakref.WeakSet[AsyncGenerator[Any, Any]] = (
+            weakref.WeakSet()
+        )  # Track active async generators
+        self._asyncgens_shutdown_called: bool = (
+            False  # Prevent new generators after shutdown
+        )
+        self._old_agen_hooks: tuple[Any, Any] | None = (
+            None  # Store original async generator hooks
+        )
 
     def get_debug(self):
         """Return ``True`` if the event loop is in debug mode.
@@ -270,18 +274,17 @@ class WebLoop(asyncio.AbstractEventLoop):
             # Fix: Use asyncio.create_task instead of self.create_task for aclose()
             async def close_agen():
                 await agen.aclose()
-            
+
             self.call_soon(lambda: asyncio.create_task(close_agen()))
 
     def _ensure_asyncgen_hooks_installed(self) -> None:
         """Install async generator hooks if not already installed.
-        
+
         This is idempotent - can be called multiple times safely.
         Installs hooks only when first needed to avoid interfering with tests.
         """
         if self._old_agen_hooks is not None:
             return  # Already installed
-
 
         self._old_agen_hooks = sys.get_asyncgen_hooks()
         sys.set_asyncgen_hooks(
@@ -319,7 +322,7 @@ class WebLoop(asyncio.AbstractEventLoop):
         """
         # Ensure hooks are installed before shutdown
         self._ensure_asyncgen_hooks_installed()
-        
+
         self._asyncgens_shutdown_called = True
 
         closing_asyncgens = list(self._asyncgens)
