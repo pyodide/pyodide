@@ -299,15 +299,15 @@ async def test_hook_methods_functionality(selenium):
     loop = asyncio.get_running_loop()
 
     # Check hook methods exist
-    assert hasattr(loop, "_asyncgen_firstiter_hook")
-    assert hasattr(loop, "_asyncgen_finalizer_hook")
-    assert hasattr(loop, "_install_asyncgen_hooks")
-    assert hasattr(loop, "_restore_asyncgen_hooks")
-
+    assert hasattr(loop, '_asyncgen_firstiter_hook')
+    assert hasattr(loop, '_asyncgen_finalizer_hook')
+    assert hasattr(loop, '_ensure_asyncgen_hooks_installed')
+    assert hasattr(loop, '_restore_asyncgen_hooks')
+    
     # Verify they're callable
     assert callable(loop._asyncgen_firstiter_hook)
     assert callable(loop._asyncgen_finalizer_hook)
-    assert callable(loop._install_asyncgen_hooks)
+    assert callable(loop._ensure_asyncgen_hooks_installed)
     assert callable(loop._restore_asyncgen_hooks)
 
     # Check hooks are installed
