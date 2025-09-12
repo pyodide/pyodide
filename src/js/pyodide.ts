@@ -9,7 +9,7 @@ import {
   loadLockFile,
   calculateInstallBaseUrl,
 } from "./compat";
-import { setRuntimeOverride } from "./environments";
+import { overrideRuntime } from "./environments";
 
 import { createSettings } from "./emscripten-settings";
 import { version as version_ } from "./version";
@@ -245,8 +245,8 @@ export async function loadPyodide(
      * Override the runtime detection. This allows forcing specific runtime
      * detection for testing purposes. When provided, the corresponding
      * environment flags (IN_NODE, IN_BROWSER, etc.) are forced accordingly.
-     * After initialization, these runtime flags are injected into Python's
-     * sys module (e.g., sys.in_node, sys.in_browser).
+     * After initialization, these runtime flags are available in JavaScript via RUNTIME_ENV.
+     * They are not injected into Python's sys module.
      */
     runtime?: "browser" | "node" | "deno" | "bun";
     /** @ignore */
@@ -266,7 +266,7 @@ export async function loadPyodide(
 
   // Override runtime detection if specified
   if (options.runtime) {
-    setRuntimeOverride(options.runtime);
+    overrideRuntime(options.runtime);
   }
 
   await initNodeModules();

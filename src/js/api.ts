@@ -8,7 +8,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray, PackageData, FSType, Lockfile } from "./types";
-import { IN_NODE, detectEnvironment } from "./environments";
+import { RUNTIME_ENV, detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -579,7 +579,7 @@ export class PyodideAPI_ {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
-    if (!IN_NODE) {
+    if (!RUNTIME_ENV.IN_NODE) {
       throw new Error("mountNodeFS only works in Node");
     }
     ensureMountPathExists(emscriptenPath);
@@ -820,16 +820,16 @@ API.finalizeBootstrap = function (
   // Set runtime environment flags in Python
   const env = API.detectEnvironment();
   API.runPythonInternal(`
-import pyodide.ffi
-pyodide.ffi.IN_NODE = ${env.IN_NODE ? "True" : "False"}
-pyodide.ffi.IN_NODE_COMMONJS = ${env.IN_NODE_COMMONJS ? "True" : "False"}
-pyodide.ffi.IN_NODE_ESM = ${env.IN_NODE_ESM ? "True" : "False"}
-pyodide.ffi.IN_BUN = ${env.IN_BUN ? "True" : "False"}
-pyodide.ffi.IN_DENO = ${env.IN_DENO ? "True" : "False"}
-pyodide.ffi.IN_BROWSER_MAIN_THREAD = ${env.IN_BROWSER_MAIN_THREAD ? "True" : "False"}
-pyodide.ffi.IN_BROWSER_WEB_WORKER = ${env.IN_BROWSER_WEB_WORKER ? "True" : "False"}
-pyodide.ffi.IN_SAFARI = ${env.IN_SAFARI ? "True" : "False"}
-pyodide.ffi.IN_SHELL = ${env.IN_SHELL ? "True" : "False"}
+import pyodide.runtime as _rt
+_rt.IN_NODE = ${env.IN_NODE ? "True" : "False"}
+_rt.IN_NODE_COMMONJS = ${env.IN_NODE_COMMONJS ? "True" : "False"}
+_rt.IN_NODE_ESM = ${env.IN_NODE_ESM ? "True" : "False"}
+_rt.IN_BUN = ${env.IN_BUN ? "True" : "False"}
+_rt.IN_DENO = ${env.IN_DENO ? "True" : "False"}
+_rt.IN_BROWSER_MAIN_THREAD = ${env.IN_BROWSER_MAIN_THREAD ? "True" : "False"}
+_rt.IN_BROWSER_WEB_WORKER = ${env.IN_BROWSER_WEB_WORKER ? "True" : "False"}
+_rt.IN_SAFARI = ${env.IN_SAFARI ? "True" : "False"}
+_rt.IN_SHELL = ${env.IN_SHELL ? "True" : "False"}
 `);
 
   // import pyodide_py. We want to ensure that as much stuff as possible is

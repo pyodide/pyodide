@@ -1,9 +1,4 @@
-import {
-  IN_BROWSER_MAIN_THREAD,
-  IN_NODE,
-  IN_DENO,
-  IN_SAFARI,
-} from "./environments";
+import { RUNTIME_ENV } from "./environments";
 
 const scheduleCallbackImmediateMessagePrefix =
   "sched$" + Math.random().toString(36).slice(2) + "$";
@@ -14,7 +9,7 @@ let nextTaskHandle = 0;
  * Setup global message event listener to handle immediate callbacks
  */
 function installPostMessageHandler() {
-  if (!IN_BROWSER_MAIN_THREAD) {
+  if (!RUNTIME_ENV.IN_BROWSER_MAIN_THREAD) {
     return;
   }
 
@@ -60,12 +55,12 @@ installPostMessageHandler();
  *   - Ref: https://github.com/YuzuJS/setImmediate/issues/80
  */
 function scheduleCallbackImmediate(callback: () => void) {
-  if (IN_NODE) {
+  if (RUNTIME_ENV.IN_NODE) {
     // node has setImmediate, let's use it
     setImmediate(callback);
   } else if (
-    !IN_SAFARI &&
-    !IN_DENO &&
+    !RUNTIME_ENV.IN_SAFARI &&
+    !RUNTIME_ENV.IN_DENO &&
     typeof globalThis.MessageChannel === "function"
   ) {
     const channel = new MessageChannel();
@@ -77,7 +72,7 @@ function scheduleCallbackImmediate(callback: () => void) {
     };
     channel.port2.postMessage("");
   } else if (
-    IN_BROWSER_MAIN_THREAD &&
+    RUNTIME_ENV.IN_BROWSER_MAIN_THREAD &&
     typeof globalThis.postMessage === "function"
   ) {
     tasks[nextTaskHandle] = callback;

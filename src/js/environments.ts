@@ -24,43 +24,62 @@ interface RuntimeEnv {
  */
 function getGlobalRuntimeEnv(): RuntimeEnv {
   if (!globalThis.__PYODIDE_RUNTIME_ENV__) {
-    globalThis.__PYODIDE_RUNTIME_ENV__ = {
+    const env: RuntimeEnv = {
       IN_NODE:
         typeof process === "object" &&
         typeof process.versions === "object" &&
         typeof process.versions.node === "string" &&
-        !process.browser /* This last condition checks if we run the browser shim of process */,
+        !(process as any).browser,
 
       IN_NODE_COMMONJS:
         typeof process === "object" &&
         typeof process.versions === "object" &&
         typeof process.versions.node === "string" &&
-        !process.browser &&
+        !(process as any).browser &&
         typeof module !== "undefined" &&
-        typeof module.exports !== "undefined" &&
+        typeof (module as any).exports !== "undefined" &&
         typeof require !== "undefined" &&
         typeof __dirname !== "undefined",
 
-      IN_NODE_ESM: false, // Will be computed based on IN_NODE and IN_NODE_COMMONJS
+      IN_NODE_ESM: false,
 
-      IN_BUN: typeof globalThis.Bun !== "undefined",
+      IN_BUN: typeof (globalThis as any).Bun !== "undefined",
 
-      IN_DENO: typeof Deno !== "undefined", // just in case...
+      IN_DENO: typeof (globalThis as any).Deno !== "undefined",
 
-      IN_BROWSER: true, // Will be computed based on other flags
+      IN_BROWSER: true,
 
-      IN_BROWSER_MAIN_THREAD: false, // Will be computed
+      IN_BROWSER_MAIN_THREAD: false,
 
-      IN_BROWSER_WEB_WORKER: false, // Will be computed
+      IN_BROWSER_WEB_WORKER: false,
 
       IN_SAFARI:
         typeof navigator === "object" &&
-        typeof navigator.userAgent === "string" &&
-        navigator.userAgent.indexOf("Chrome") == -1 &&
-        navigator.userAgent.indexOf("Safari") > -1,
+        typeof (navigator as any).userAgent === "string" &&
+        (navigator as any).userAgent.indexOf("Chrome") == -1 &&
+        (navigator as any).userAgent.indexOf("Safari") > -1,
 
-      IN_SHELL: typeof read == "function" && typeof load === "function",
+      IN_SHELL:
+        typeof (globalThis as any).read == "function" &&
+        typeof (globalThis as any).load === "function",
     };
+    // compute derived
+    env.IN_NODE_ESM = env.IN_NODE && !env.IN_NODE_COMMONJS;
+    env.IN_BROWSER = !env.IN_NODE && !env.IN_DENO && !env.IN_BUN;
+    env.IN_BROWSER_MAIN_THREAD =
+      env.IN_BROWSER &&
+      typeof window !== "undefined" &&
+      typeof (window as any).document !== "undefined" &&
+      typeof (document as any).createElement === "function" &&
+      "sessionStorage" in (window as any) &&
+      typeof (globalThis as any).importScripts !== "function";
+    env.IN_BROWSER_WEB_WORKER =
+      env.IN_BROWSER &&
+      typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
+      typeof (globalThis as any).self !== "undefined" &&
+      (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+
+    globalThis.__PYODIDE_RUNTIME_ENV__ = env;
   }
   return globalThis.__PYODIDE_RUNTIME_ENV__;
 }
@@ -72,27 +91,7 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
  */
 export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
-// Compute derived flags
-function updateDerivedFlags() {
-  RUNTIME_ENV.IN_NODE_ESM =
-    RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_NODE_COMMONJS;
-  RUNTIME_ENV.IN_BROWSER =
-    !RUNTIME_ENV.IN_NODE && !RUNTIME_ENV.IN_DENO && !RUNTIME_ENV.IN_BUN;
-  RUNTIME_ENV.IN_BROWSER_MAIN_THREAD =
-    RUNTIME_ENV.IN_BROWSER &&
-    typeof window === "object" &&
-    typeof document === "object" &&
-    typeof document.createElement === "function" &&
-    "sessionStorage" in window &&
-    typeof importScripts !== "function";
-  RUNTIME_ENV.IN_BROWSER_WEB_WORKER =
-    RUNTIME_ENV.IN_BROWSER &&
-    typeof importScripts === "function" &&
-    typeof self === "object";
-}
-
-// Initialize derived flags
-updateDerivedFlags();
+// Derived flags are computed during initialization in getGlobalRuntimeEnv
 
 /**
  * Override runtime environment flags
@@ -100,9 +99,7 @@ updateDerivedFlags();
  * @param runtime - The runtime to force ('browser', 'node', 'deno', 'bun')
  * @private
  */
-export function setRuntimeOverride(
-  runtime: "browser" | "node" | "deno" | "bun",
-) {
+export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
   // Get the global runtime environment object
   const runtimeEnv = getGlobalRuntimeEnv();
 
@@ -126,9 +123,12 @@ export function setRuntimeOverride(
       break;
     case "browser":
       runtimeEnv.IN_BROWSER = true;
-      // Default to main thread, but can be overridden later
-      runtimeEnv.IN_BROWSER_MAIN_THREAD = true;
-      runtimeEnv.IN_BROWSER_WEB_WORKER = false;
+      runtimeEnv.IN_BROWSER_MAIN_THREAD =
+        typeof window !== "undefined" && typeof (window as any).document !== "undefined";
+      runtimeEnv.IN_BROWSER_WEB_WORKER =
+        typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
+        typeof (globalThis as any).self !== "undefined" &&
+        (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
       break;
     case "deno":
       runtimeEnv.IN_DENO = true;
@@ -139,27 +139,7 @@ export function setRuntimeOverride(
   }
 }
 
-// Export individual flags for backward compatibility
-/** @private */
-export const IN_NODE = RUNTIME_ENV.IN_NODE;
-/** @private */
-export const IN_NODE_COMMONJS = RUNTIME_ENV.IN_NODE_COMMONJS;
-/** @private */
-export const IN_NODE_ESM = RUNTIME_ENV.IN_NODE_ESM;
-/** @private */
-export const IN_BUN = RUNTIME_ENV.IN_BUN;
-/** @private */
-export const IN_DENO = RUNTIME_ENV.IN_DENO;
-/** @private */
-export const IN_BROWSER = RUNTIME_ENV.IN_BROWSER;
-/** @private */
-export const IN_BROWSER_MAIN_THREAD = RUNTIME_ENV.IN_BROWSER_MAIN_THREAD;
-/** @private */
-export const IN_BROWSER_WEB_WORKER = RUNTIME_ENV.IN_BROWSER_WEB_WORKER;
-/** @private */
-export const IN_SAFARI = RUNTIME_ENV.IN_SAFARI;
-/** @private */
-export const IN_SHELL = RUNTIME_ENV.IN_SHELL;
+// No individual flag exports; use RUNTIME_ENV directly
 
 /**
  * Detects the current environment and returns a record with the results.

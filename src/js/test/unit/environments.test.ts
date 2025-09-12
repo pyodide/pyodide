@@ -1,14 +1,6 @@
 import { describe, it, beforeEach, afterEach } from "mocha";
 import { expect } from "chai";
-import {
-  setRuntimeOverride,
-  detectEnvironment,
-  RUNTIME_ENV,
-  IN_NODE,
-  IN_BROWSER,
-  IN_DENO,
-  IN_BUN,
-} from "../../environments";
+import { overrideRuntime, detectEnvironment, RUNTIME_ENV } from "../../environments";
 
 describe("Runtime Environment Detection", () => {
   let originalDeno: any;
@@ -31,7 +23,7 @@ describe("Runtime Environment Detection", () => {
 
   describe("setRuntimeOverride", () => {
     it("should override to Node.js environment", () => {
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
       const env = detectEnvironment();
       expect(env.IN_NODE).to.be.true;
@@ -41,7 +33,7 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should override to Browser environment", () => {
-      setRuntimeOverride("browser");
+      overrideRuntime("browser");
 
       const env = detectEnvironment();
       expect(env.IN_NODE).to.be.false;
@@ -51,7 +43,7 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should override to Deno environment", () => {
-      setRuntimeOverride("deno");
+      overrideRuntime("deno");
 
       const env = detectEnvironment();
       expect(env.IN_NODE).to.be.false;
@@ -61,7 +53,7 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should override to Bun environment", () => {
-      setRuntimeOverride("bun");
+      overrideRuntime("bun");
 
       const env = detectEnvironment();
       expect(env.IN_NODE).to.be.false;
@@ -72,14 +64,14 @@ describe("Runtime Environment Detection", () => {
 
     it("should handle Node.js CommonJS vs ESM detection", () => {
       // Mock CommonJS environment
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
       // Simulate CommonJS environment
       (globalThis as any).module = { exports: {} };
       (globalThis as any).require = () => {};
       (globalThis as any).__dirname = "/test";
 
-      setRuntimeOverride("node"); // Re-detect with CommonJS globals
+      overrideRuntime("node"); // Re-detect with CommonJS globals
 
       const env = detectEnvironment();
       expect(env.IN_NODE).to.be.true;
@@ -88,14 +80,14 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should handle Browser Main Thread vs Web Worker detection", () => {
-      setRuntimeOverride("browser");
+      overrideRuntime("browser");
 
       // Simulate main thread environment
       (globalThis as any).window = {};
       (globalThis as any).document = { createElement: () => {} };
       (globalThis as any).sessionStorage = {};
 
-      setRuntimeOverride("browser"); // Re-detect with main thread globals
+      overrideRuntime("browser"); // Re-detect with main thread globals
 
       const env = detectEnvironment();
       expect(env.IN_BROWSER).to.be.true;
@@ -106,7 +98,7 @@ describe("Runtime Environment Detection", () => {
 
   describe("RUNTIME_ENV singleton", () => {
     it("should maintain consistency across multiple calls", () => {
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
       const env1 = detectEnvironment();
       const env2 = detectEnvironment();
@@ -115,12 +107,12 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should update all exported constants", () => {
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
-      expect(IN_NODE).to.be.true;
-      expect(IN_BROWSER).to.be.false;
-      expect(IN_DENO).to.be.false;
-      expect(IN_BUN).to.be.false;
+      expect(RUNTIME_ENV.IN_NODE).to.be.true;
+      expect(RUNTIME_ENV.IN_BROWSER).to.be.false;
+      expect(RUNTIME_ENV.IN_DENO).to.be.false;
+      expect(RUNTIME_ENV.IN_BUN).to.be.false;
     });
   });
 
@@ -130,7 +122,7 @@ describe("Runtime Environment Detection", () => {
       const originalBunValue = globalThis.Bun;
       const originalProcessValue = globalThis.process;
 
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
       // Verify override worked
       expect(globalThis.process).to.have.property("versions");
@@ -144,7 +136,7 @@ describe("Runtime Environment Detection", () => {
 
   describe("detectEnvironment", () => {
     it("should return all environment flags", () => {
-      setRuntimeOverride("browser");
+      overrideRuntime("browser");
 
       const env = detectEnvironment();
 
@@ -161,7 +153,7 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should return boolean values for all flags", () => {
-      setRuntimeOverride("node");
+      overrideRuntime("node");
 
       const env = detectEnvironment();
 

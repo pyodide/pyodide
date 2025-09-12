@@ -7,17 +7,6 @@ from _pyodide._importhook import register_js_module, unregister_js_module
 
 IN_BROWSER = "_pyodide_core" in sys.modules
 
-# Runtime environment flags
-IN_NODE = False
-IN_NODE_COMMONJS = False
-IN_NODE_ESM = False
-IN_BUN = False
-IN_DENO = False
-IN_BROWSER_MAIN_THREAD = False
-IN_BROWSER_WEB_WORKER = False
-IN_SAFARI = False
-IN_SHELL = False
-
 if IN_BROWSER:
     import _pyodide_core
 
@@ -71,15 +60,6 @@ __all__ = [
     "to_js",
     "run_sync",
     "IN_BROWSER",
-    "IN_NODE",
-    "IN_NODE_COMMONJS",
-    "IN_NODE_ESM",
-    "IN_BUN",
-    "IN_DENO",
-    "IN_BROWSER_MAIN_THREAD",
-    "IN_BROWSER_WEB_WORKER",
-    "IN_SAFARI",
-    "IN_SHELL",
     "register_js_module",
     "unregister_js_module",
     "JsNull",
