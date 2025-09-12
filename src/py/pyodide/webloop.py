@@ -267,7 +267,12 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._asyncgens.add(agen)
 
     def _asyncgen_finalizer_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
-        """Called when an async generator is being finalized."""
+        """Called when an async generator is being finalized.
+        
+        Removes the generator from tracking and schedules its cleanup.
+        In browser environment, uses call_soon directly since everything
+        runs on the main thread.
+        """
         self._asyncgens.discard(agen)
 
         if not self.is_closed():
@@ -795,7 +800,7 @@ class WebLoopPolicy(asyncio.DefaultEventLoopPolicy):
         self._default_loop = None
 
     def get_event_loop(self):
-        """Get the current event loop and ensure async generator hooks are installed."""
+        """Get the current event loop."""
         if self._default_loop:
             return self._default_loop
         return self.new_event_loop()
