@@ -25,5 +25,3 @@ __all__ = [
     "IN_SAFARI",
     "IN_SHELL",
 ]
-
-

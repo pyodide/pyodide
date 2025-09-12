@@ -1,6 +1,10 @@
 import { describe, it, beforeEach, afterEach } from "mocha";
 import { expect } from "chai";
-import { overrideRuntime, detectEnvironment, RUNTIME_ENV } from "../../environments";
+import {
+  overrideRuntime,
+  detectEnvironment,
+  RUNTIME_ENV,
+} from "../../environments";
 
 describe("Runtime Environment Detection", () => {
   let originalDeno: any;

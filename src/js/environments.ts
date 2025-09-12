@@ -124,11 +124,13 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
     case "browser":
       runtimeEnv.IN_BROWSER = true;
       runtimeEnv.IN_BROWSER_MAIN_THREAD =
-        typeof window !== "undefined" && typeof (window as any).document !== "undefined";
+        typeof window !== "undefined" &&
+        typeof (window as any).document !== "undefined";
       runtimeEnv.IN_BROWSER_WEB_WORKER =
         typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
         typeof (globalThis as any).self !== "undefined" &&
-        (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+        (globalThis as any).self instanceof
+          (globalThis as any).WorkerGlobalScope;
       break;
     case "deno":
       runtimeEnv.IN_DENO = true;

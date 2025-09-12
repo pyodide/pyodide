@@ -13,5 +13,3 @@ def test_runtime_flags_initialized():
     assert isinstance(rt.IN_BROWSER_WEB_WORKER, bool)
     assert isinstance(rt.IN_SAFARI, bool)
     assert isinstance(rt.IN_SHELL, bool)
-
-
