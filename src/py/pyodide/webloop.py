@@ -268,7 +268,7 @@ class WebLoop(asyncio.AbstractEventLoop):
 
     def _asyncgen_finalizer_hook(self, agen: AsyncGenerator[Any, Any]) -> None:
         """Called when an async generator is being finalized.
-        
+
         Removes the generator from tracking and schedules its cleanup.
         In browser environment, uses call_soon directly since everything
         runs on the main thread.
