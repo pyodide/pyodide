@@ -5,11 +5,9 @@ from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.fixture import selenium_common
 from pytest_pyodide.server import spawn_web_server
-from pytest_pyodide.utils import parse_driver_timeout, set_webdriver_script_timeout
 
-from conftest import DIST_PATH, PYODIDE_ROOT, only_node
+from conftest import DIST_PATH, only_node
 
 
 def get_micropip_wheel() -> Path:
@@ -42,42 +40,52 @@ def test_load_from_url(selenium_standalone, httpserver):
     )
 
 
-def test_load_relative_url(request, selenium_standalone, playwright_browsers, tmp_path):
-    test_html = (PYODIDE_ROOT / "src/templates/test.html").read_text()
-    test_html = test_html.replace(
-        "./pyodide.js", f"{selenium_standalone.base_url}/pyodide.js"
-    )
-    (tmp_path / "test_temp.html").write_text(test_html)
+def test_load_relative_url(selenium_standalone_noload, httpserver, tmp_path):
+    """
+    Calling load_package with a relative URL should load the package relative to the base URL of the page.
+    """
+    selenium = selenium_standalone_noload
     micropip_wheel = get_micropip_wheel()
-    shutil.copy(micropip_wheel, tmp_path / micropip_wheel.name)
 
-    with (
-        spawn_web_server(tmp_path) as web_server,
-        selenium_common(
-            request,
-            selenium_standalone.browser,
-            web_server,
-            load_pyodide=False,
-            browsers=playwright_browsers,
-            script_type="classic",
-        ) as selenium,
-        set_webdriver_script_timeout(
-            selenium_standalone, script_timeout=parse_driver_timeout(request.node)
-        ),
-    ):
-        if selenium.browser != "node":
-            url = f"http://{web_server[0]}:{web_server[1]}/test_temp.html"
-            selenium.goto(url)
-        selenium.load_pyodide()
-        selenium.initialize_pyodide()
-        selenium.save_state()
-        selenium.restore_state()
-        if selenium.browser == "node":
-            selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
-        selenium.load_package(micropip_wheel.name)
-        selenium.run(
-            "import micropip; from pyodide_js import loadedPackages; print(loadedPackages.micropip)"
+    dummy_html = f"""
+<html>
+<body>
+<script src="{selenium.base_url}/pyodide.js"></script>
+</body>
+</html>
+    """
+
+    if selenium.browser != "node":
+        httpserver.expect_oneshot_request("/test_temp.html").respond_with_data(
+            dummy_html,
+            content_type="text/html",
+            headers={"Access-Control-Allow-Origin": "*"},
+            status=200,
         )
+
+        httpserver.expect_oneshot_request(f"/{micropip_wheel.name}").respond_with_data(
+            micropip_wheel.read_bytes(),
+            content_type="application/zip",
+            headers={"Access-Control-Allow-Origin": "*"},
+            status=200,
+        )
+
+        url = httpserver.url_for("/test_temp.html")
+        selenium.goto(url)
+    else:
+        shutil.copy(micropip_wheel, tmp_path / micropip_wheel.name)
+
+    selenium.load_pyodide()
+    selenium.initialize_pyodide()
+    selenium.save_state()
+    selenium.restore_state()
+    if selenium.browser == "node":
+        selenium.run_js(f"process.chdir('{tmp_path.resolve()}')")
+
+    selenium.load_package(micropip_wheel.name)
+    selenium.run(
+        "import micropip; from pyodide_js import loadedPackages; print(loadedPackages.micropip)"
+    )
 
 
 def test_list_loaded_urls(selenium_standalone):
