@@ -94,6 +94,31 @@ export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 // Derived flags are computed during initialization in getGlobalRuntimeEnv
 
 /**
+ * Update derived flags based on current runtime environment
+ * This ensures consistency when runtime is overridden
+ * @private
+ */
+function updateDerivedFlags() {
+  const runtimeEnv = getGlobalRuntimeEnv();
+  
+  // Update derived flags
+  runtimeEnv.IN_NODE_ESM = runtimeEnv.IN_NODE && !runtimeEnv.IN_NODE_COMMONJS;
+  runtimeEnv.IN_BROWSER = !runtimeEnv.IN_NODE && !runtimeEnv.IN_DENO && !runtimeEnv.IN_BUN;
+  runtimeEnv.IN_BROWSER_MAIN_THREAD =
+    runtimeEnv.IN_BROWSER &&
+    typeof window !== "undefined" &&
+    typeof (window as any).document !== "undefined" &&
+    typeof (document as any).createElement === "function" &&
+    "sessionStorage" in (window as any) &&
+    typeof (globalThis as any).importScripts !== "function";
+  runtimeEnv.IN_BROWSER_WEB_WORKER =
+    runtimeEnv.IN_BROWSER &&
+    typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
+    typeof (globalThis as any).self !== "undefined" &&
+    (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+}
+
+/**
  * Override runtime environment flags
  * This allows forcing specific runtime detection for testing purposes
  * @param runtime - The runtime to force ('browser', 'node', 'deno', 'bun')
@@ -139,6 +164,9 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
       runtimeEnv.IN_BUN = true;
       break;
   }
+
+  // ✅ Update derived flags after setting the runtime
+  updateDerivedFlags();
 }
 
 // No individual flag exports; use RUNTIME_ENV directly

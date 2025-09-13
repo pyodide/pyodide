@@ -10,12 +10,20 @@ describe("Runtime Environment Detection", () => {
   let originalDeno: any;
   let originalBun: any;
   let originalProcess: any;
+  let originalWindow: any;
+  let originalDocument: any;
+  let originalSelf: any;
+  let originalNavigator: any;
 
   beforeEach(() => {
     // Store original globalThis values
     originalDeno = globalThis.Deno;
     originalBun = globalThis.Bun;
     originalProcess = globalThis.process;
+    originalWindow = globalThis.window;
+    originalDocument = globalThis.document;
+    originalSelf = globalThis.self;
+    originalNavigator = globalThis.navigator;
   });
 
   afterEach(() => {
@@ -23,6 +31,10 @@ describe("Runtime Environment Detection", () => {
     globalThis.Deno = originalDeno;
     globalThis.Bun = originalBun;
     globalThis.process = originalProcess;
+    globalThis.window = originalWindow;
+    globalThis.document = originalDocument;
+    globalThis.self = originalSelf;
+    globalThis.navigator = originalNavigator;
   });
 
   describe("overrideRuntime", () => {
@@ -37,6 +49,19 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should override to Browser environment", () => {
+      // Mock browser environment
+      (globalThis as any).window = {
+        document: {
+          createElement: () => ({})
+        },
+        sessionStorage: {}
+      };
+      (globalThis as any).document = (globalThis as any).window.document;
+      (globalThis as any).self = (globalThis as any).window;
+      (globalThis as any).navigator = {
+        userAgent: "Mozilla/5.0 (compatible; Test Browser)"
+      };
+
       overrideRuntime("browser");
 
       const env = detectEnvironment();
@@ -44,6 +69,8 @@ describe("Runtime Environment Detection", () => {
       expect(env.IN_BROWSER).to.be.true;
       expect(env.IN_DENO).to.be.false;
       expect(env.IN_BUN).to.be.false;
+      expect(env.IN_BROWSER_MAIN_THREAD).to.be.true;
+      expect(env.IN_BROWSER_WEB_WORKER).to.be.false;
     });
 
     it("should override to Deno environment", () => {
@@ -84,14 +111,17 @@ describe("Runtime Environment Detection", () => {
     });
 
     it("should handle Browser Main Thread vs Web Worker detection", () => {
+      // Mock main thread environment
+      (globalThis as any).window = {
+        document: {
+          createElement: () => ({})
+        },
+        sessionStorage: {}
+      };
+      (globalThis as any).document = (globalThis as any).window.document;
+      (globalThis as any).self = (globalThis as any).window;
+
       overrideRuntime("browser");
-
-      // Simulate main thread environment
-      (globalThis as any).window = {};
-      (globalThis as any).document = { createElement: () => {} };
-      (globalThis as any).sessionStorage = {};
-
-      overrideRuntime("browser"); // Re-detect with main thread globals
 
       const env = detectEnvironment();
       expect(env.IN_BROWSER).to.be.true;
@@ -118,6 +148,27 @@ describe("Runtime Environment Detection", () => {
       expect(RUNTIME_ENV.IN_DENO).to.be.false;
       expect(RUNTIME_ENV.IN_BUN).to.be.false;
     });
+
+    it("should update browser constants correctly", () => {
+      // Mock browser environment
+      (globalThis as any).window = {
+        document: {
+          createElement: () => ({})
+        },
+        sessionStorage: {}
+      };
+      (globalThis as any).document = (globalThis as any).window.document;
+      (globalThis as any).self = (globalThis as any).window;
+
+      overrideRuntime("browser");
+
+      expect(RUNTIME_ENV.IN_NODE).to.be.false;
+      expect(RUNTIME_ENV.IN_BROWSER).to.be.true;
+      expect(RUNTIME_ENV.IN_DENO).to.be.false;
+      expect(RUNTIME_ENV.IN_BUN).to.be.false;
+      expect(RUNTIME_ENV.IN_BROWSER_MAIN_THREAD).to.be.true;
+      expect(RUNTIME_ENV.IN_BROWSER_WEB_WORKER).to.be.false;
+    });
   });
 
   describe("globalThis consistency", () => {
@@ -140,6 +191,19 @@ describe("Runtime Environment Detection", () => {
 
   describe("detectEnvironment", () => {
     it("should return all environment flags", () => {
+      // Mock browser environment
+      (globalThis as any).window = {
+        document: {
+          createElement: () => ({})
+        },
+        sessionStorage: {}
+      };
+      (globalThis as any).document = (globalThis as any).window.document;
+      (globalThis as any).self = (globalThis as any).window;
+      (globalThis as any).navigator = {
+        userAgent: "Mozilla/5.0 (compatible; Test Browser)"
+      };
+
       overrideRuntime("browser");
 
       const env = detectEnvironment();
