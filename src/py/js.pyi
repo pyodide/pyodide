@@ -43,11 +43,24 @@ class _JsObject(metaclass=_JsMeta):
 
 class XMLHttpRequest(_JsObject):
     response: str
+    responseText: str
+    responseURL: str
+    status: int
+    statusText: str
 
     @staticmethod
     def new() -> XMLHttpRequest: ...
-    def open(self, method: str, url: str, sync: bool) -> None: ...
-    def send(self, body: JsProxy | None = None) -> None: ...
+    def open(
+        self,
+        method: str,
+        url: str,
+        sync: bool,
+        username: str | None = None,
+        password: str | None = None,
+    ) -> None: ...
+    def send(self, body: str | bytes | JsProxy | None = None) -> None: ...
+    def setRequestHeader(self, name: str, value: str) -> None: ...
+    def getAllResponseHeaders(self) -> str: ...
 
 class Object(_JsObject):
     @staticmethod
