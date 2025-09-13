@@ -52,14 +52,14 @@ describe("Runtime Environment Detection", () => {
       // Mock browser environment
       (globalThis as any).window = {
         document: {
-          createElement: () => ({})
+          createElement: () => ({}),
         },
-        sessionStorage: {}
+        sessionStorage: {},
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
       (globalThis as any).navigator = {
-        userAgent: "Mozilla/5.0 (compatible; Test Browser)"
+        userAgent: "Mozilla/5.0 (compatible; Test Browser)",
       };
 
       overrideRuntime("browser");
@@ -114,9 +114,9 @@ describe("Runtime Environment Detection", () => {
       // Mock main thread environment
       (globalThis as any).window = {
         document: {
-          createElement: () => ({})
+          createElement: () => ({}),
         },
-        sessionStorage: {}
+        sessionStorage: {},
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
@@ -153,9 +153,9 @@ describe("Runtime Environment Detection", () => {
       // Mock browser environment
       (globalThis as any).window = {
         document: {
-          createElement: () => ({})
+          createElement: () => ({}),
         },
-        sessionStorage: {}
+        sessionStorage: {},
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
@@ -194,14 +194,14 @@ describe("Runtime Environment Detection", () => {
       // Mock browser environment
       (globalThis as any).window = {
         document: {
-          createElement: () => ({})
+          createElement: () => ({}),
         },
-        sessionStorage: {}
+        sessionStorage: {},
       };
       (globalThis as any).document = (globalThis as any).window.document;
       (globalThis as any).self = (globalThis as any).window;
       (globalThis as any).navigator = {
-        userAgent: "Mozilla/5.0 (compatible; Test Browser)"
+        userAgent: "Mozilla/5.0 (compatible; Test Browser)",
       };
 
       overrideRuntime("browser");

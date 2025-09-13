@@ -100,10 +100,11 @@ export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
  */
 function updateDerivedFlags() {
   const runtimeEnv = getGlobalRuntimeEnv();
-  
+
   // Update derived flags
   runtimeEnv.IN_NODE_ESM = runtimeEnv.IN_NODE && !runtimeEnv.IN_NODE_COMMONJS;
-  runtimeEnv.IN_BROWSER = !runtimeEnv.IN_NODE && !runtimeEnv.IN_DENO && !runtimeEnv.IN_BUN;
+  runtimeEnv.IN_BROWSER =
+    !runtimeEnv.IN_NODE && !runtimeEnv.IN_DENO && !runtimeEnv.IN_BUN;
   runtimeEnv.IN_BROWSER_MAIN_THREAD =
     runtimeEnv.IN_BROWSER &&
     typeof window !== "undefined" &&
