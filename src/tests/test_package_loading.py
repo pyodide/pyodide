@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from pytest_pyodide import run_in_pyodide
-from pytest_pyodide.server import spawn_web_server
 
 from conftest import DIST_PATH, only_node
 
@@ -744,7 +743,9 @@ def test_custom_lockfile_from_indexedDB(selenium_standalone_noload):
     )
 
 
-def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
+def test_custom_lockfile_different_dir(
+    selenium_standalone_noload, tmp_path, httpserver
+):
     selenium = selenium_standalone_noload
 
     orig_lockfile = DIST_PATH / "pyodide-lock.json"
@@ -768,24 +769,38 @@ def test_custom_lockfile_different_dir(selenium_standalone_noload, tmp_path):
         }
     }
 
-    custom_lockfile_path = tmp_path / "custom-lockfile.json"
-    custom_lockfile_path.write_text(json.dumps(lockfile_content))
-    shutil.copy(test_file_path, tmp_path / test_file_name)
+    custom_lockfile_content = json.dumps(lockfile_content)
+    test_file_data = test_file_path.read_bytes()
 
-    with spawn_web_server(tmp_path) as web_server:
-        url, port, _ = web_server
+    # Setup httpserver to serve lockfile and wheel file
+    httpserver.expect_oneshot_request(f"/{custom_lockfile_name}").respond_with_data(
+        custom_lockfile_content.encode(),
+        content_type="application/json",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
+    httpserver.expect_oneshot_request(f"/{test_file_name}").respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
 
-        if selenium.browser == "node":
-            lockfile_url = f"{custom_lockfile_path.resolve()}"
-        else:
-            lockfile_url = f"http://{url}:{port}/{custom_lockfile_name}"
-        selenium.run_js(
-            f"""
-            let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
-            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
-            return pyodide.runPython("import dummy_pkg")
-            """
-        )
+    if selenium.browser == "node":
+        lockfile_url = f"{(tmp_path / custom_lockfile_name).resolve()}"
+        # For node, we still need to write the file locally
+        (tmp_path / custom_lockfile_name).write_text(custom_lockfile_content)
+        shutil.copy(test_file_path, tmp_path / test_file_name)
+    else:
+        lockfile_url = httpserver.url_for(f"/{custom_lockfile_name}")
+
+    selenium.run_js(
+        f"""
+        let pyodide = await loadPyodide({{fullStdLib: false, lockFileURL: {lockfile_url!r} }});
+        await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+        return pyodide.runPython("import dummy_pkg")
+        """
+    )
 
 
 def test_lock_file_contents_error(selenium_standalone_noload):
@@ -834,7 +849,9 @@ def test_lock_file_contents_relative_file_name(selenium_standalone_noload, tmp_p
     assert message in selenium.logs
 
 
-def test_lockfilecontents_package_base_url(selenium_standalone_noload, tmp_path):
+def test_lockfilecontents_package_base_url(
+    selenium_standalone_noload, tmp_path, httpserver
+):
     selenium = selenium_standalone_noload
     orig_lockfile = DIST_PATH / "pyodide-lock.json"
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
@@ -855,26 +872,35 @@ def test_lockfilecontents_package_base_url(selenium_standalone_noload, tmp_path)
         }
     }
     lockfile_content_json = json.dumps(lockfile_content)
+    test_file_data = test_file_path.read_bytes()
 
-    shutil.copy(test_file_path, tmp_path / test_file_name)
+    # Setup httpserver to serve the wheel file
+    httpserver.expect_oneshot_request(f"/{test_file_name}").respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
 
-    with spawn_web_server(tmp_path) as web_server:
-        url, port, _ = web_server
+    if selenium.browser == "node":
+        base_url = str(tmp_path)
+        # For node, we still need to copy the file locally
+        shutil.copy(test_file_path, tmp_path / test_file_name)
+    else:
+        base_url = f"http://{httpserver.host}:{httpserver.port}"
 
-        if selenium.browser == "node":
-            base_url = str(tmp_path)
-        else:
-            base_url = f"http://{url}:{port}/"
-        selenium.run_js(
-            f"""
-            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
-            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
-            return pyodide.runPython("import dummy_pkg")
-            """
-        )
+    selenium.run_js(
+        f"""
+        let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r}, packageBaseUrl: {base_url!r} }});
+        await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+        return pyodide.runPython("import dummy_pkg")
+        """
+    )
 
 
-def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_path):
+def test_lockfilecontents_absolute_file_name(
+    selenium_standalone_noload, tmp_path, httpserver
+):
     selenium = selenium_standalone_noload
     orig_lockfile = DIST_PATH / "pyodide-lock.json"
     test_file_name = "dummy_pkg-0.1.0-py3-none-any.whl"
@@ -891,28 +917,36 @@ def test_lockfilecontents_absolute_file_name(selenium_standalone_noload, tmp_pat
         "imports": [],
     }
 
-    shutil.copy(test_file_path, tmp_path / test_file_name)
+    test_file_data = test_file_path.read_bytes()
 
-    with spawn_web_server(tmp_path) as web_server:
-        url, port, _ = web_server
+    # Setup httpserver to serve the wheel file
+    httpserver.expect_oneshot_request(f"/{test_file_name}").respond_with_data(
+        test_file_data,
+        content_type="application/zip",
+        headers={"Access-Control-Allow-Origin": "*"},
+        status=200,
+    )
 
-        if selenium.browser == "node":
-            base_url = str(tmp_path / test_file_name)
-        else:
-            base_url = f"http://{url}:{port}/{test_file_name}"
-        dummy_pkg["file_name"] = base_url
+    if selenium.browser == "node":
+        base_url = str(tmp_path / test_file_name)
+        # For node, we still need to copy the file locally
+        shutil.copy(test_file_path, tmp_path / test_file_name)
+    else:
+        base_url = httpserver.url_for(f"/{test_file_name}")
 
-        lockfile_content = json.loads(orig_lockfile.read_text())
-        lockfile_content["packages"] = {"dummy-pkg": dummy_pkg}
-        lockfile_content_json = json.dumps(lockfile_content)
+    dummy_pkg["file_name"] = base_url
 
-        selenium.run_js(
-            f"""
-            let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r} }});
-            await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
-            return pyodide.runPython("import dummy_pkg")
-            """
-        )
+    lockfile_content = json.loads(orig_lockfile.read_text())
+    lockfile_content["packages"] = {"dummy-pkg": dummy_pkg}
+    lockfile_content_json = json.dumps(lockfile_content)
+
+    selenium.run_js(
+        f"""
+        let pyodide = await loadPyodide({{fullStdLib: false, lockFileContents: {lockfile_content_json!r} }});
+        await pyodide.loadPackage("dummy_pkg", {{ checkIntegrity: false }});
+        return pyodide.runPython("import dummy_pkg")
+        """
+    )
 
 
 @pytest.mark.parametrize(
