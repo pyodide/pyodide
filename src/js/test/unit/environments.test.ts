@@ -25,7 +25,7 @@ describe("Runtime Environment Detection", () => {
     globalThis.process = originalProcess;
   });
 
-  describe("setRuntimeOverride", () => {
+  describe("overrideRuntime", () => {
     it("should override to Node.js environment", () => {
       overrideRuntime("node");
 

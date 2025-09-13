@@ -113,11 +113,11 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
   runtimeEnv.IN_BROWSER_MAIN_THREAD = false;
   runtimeEnv.IN_BROWSER_WEB_WORKER = false;
 
-  // Set the requested runtime
+  // Set the requested runtime with explicit flags (no environment detection)
   switch (runtime) {
     case "node":
       runtimeEnv.IN_NODE = true;
-      // Default to CommonJS mode, but can be overridden later
+      // Default to CommonJS mode for node override
       runtimeEnv.IN_NODE_COMMONJS = true;
       runtimeEnv.IN_NODE_ESM = false;
       break;
