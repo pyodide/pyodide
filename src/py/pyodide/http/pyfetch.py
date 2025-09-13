@@ -8,8 +8,8 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import IO, Any, ParamSpec, TypeVar
 
-from .._package_loader import unpack_buffer
 from .. import runtime
+from .._package_loader import unpack_buffer
 from ..ffi import JsBuffer, JsException, JsFetchResponse, to_js
 from .exceptions import (
     AbortError,

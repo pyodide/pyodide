@@ -14,8 +14,8 @@ try:
 except ImportError:
     loadedPackages = None
 
-from .common import install_files
 from . import runtime
+from .common import install_files
 from .ffi import JsArray, JsBuffer, to_js
 
 SITE_PACKAGES = Path(getsitepackages()[0])
