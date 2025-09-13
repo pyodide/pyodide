@@ -211,13 +211,15 @@ class WebLoop(asyncio.AbstractEventLoop):
         self._keyboard_interrupt_handler = None
         self._system_exit_handler = None
         # Debug mode is currently no-op (actual asyncio debug features not implemented)
-        self._debug = sys.flags.dev_mode or (not sys.flags.ignore_environment and
-                                             bool(os.environ.get('PYTHONASYNCIODEBUG')))
+        self._debug = sys.flags.dev_mode or (
+            not sys.flags.ignore_environment
+            and bool(os.environ.get("PYTHONASYNCIODEBUG"))
+        )
 
     def get_debug(self):
         """Return the debug mode of the event loop."""
         return self._debug
-    
+
     def set_debug(self, enabled: bool) -> None:
         """Set the debug mode of the event loop."""
         self._debug = enabled
