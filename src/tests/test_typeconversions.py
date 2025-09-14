@@ -811,6 +811,19 @@ def test_js2python_null(selenium):
 
 
 @run_in_pyodide
+def test_json_dumps_null(selenium):
+    import json
+
+    from pyodide.ffi import jsnull
+
+    assert json.dumps(jsnull) == "null"
+    assert (
+        json.dumps([jsnull, jsnull, {jsnull: 1, 1: jsnull}])
+        == '[null, null, {"null": 1, "1": null}]'
+    )
+
+
+@run_in_pyodide
 def test_js2python_basic(selenium):
     from pyodide.code import run_js
     from pyodide.ffi import jsnull

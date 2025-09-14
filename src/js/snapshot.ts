@@ -55,7 +55,12 @@ export function makeGlobalsProxy(
   });
 }
 
-type SerializedHiwireValue = { path: string[] } | { serialized: any } | null;
+type SerializedHiwireValue =
+  | { path: string[] }
+  | { serialized: any }
+  | { API: true }
+  | { abortSignalAny: true }
+  | null;
 
 /**
  * @hidden
@@ -150,9 +155,20 @@ API.serializeHiwireState = function (
       hiwireKeys.push(value);
       continue;
     }
-    const path = value[getAccessorList];
+    let path;
+    try {
+      path = value[getAccessorList];
+    } catch (e) {}
     if (path) {
       hiwireKeys.push({ path });
+      continue;
+    }
+    if (value === API) {
+      hiwireKeys.push({ API: true });
+      continue;
+    }
+    if (value === API.abortSignalAny) {
+      hiwireKeys.push({ abortSignalAny: true });
       continue;
     }
     if (serializer) {
@@ -314,6 +330,10 @@ export function syncUpSnapshotLoad2(
       x = e;
     } else if ("path" in e) {
       x = e.path.reduce((x, y) => x[y], jsglobals) || null;
+    } else if ("abortSignalAny" in e) {
+      x = API.abortSignalAny;
+    } else if ("API" in e) {
+      x = API;
     } else {
       if (!deserializer) {
         throw new Error(
