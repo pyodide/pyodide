@@ -7,6 +7,3 @@ package:
     - test_simd
 source:
   path: src
-build:
-  type: cpython_module
-  script: python -m pip install . -v
