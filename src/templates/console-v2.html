@@ -90,6 +90,7 @@
           error: "#ff0000",
         },
       });
+      window.term = term;
 
       term.open(document.getElementById("terminal"));
       term.loadAddon(fitAddon);
@@ -118,6 +119,9 @@
       const pyodide = await loadPyodide();
       globalThis.pyodide = pyodide;
 
+      // Hide loading spinner
+      document.getElementById('loading').style.display = 'none';
+
       const { repr_shorten, BANNER, PyodideConsole } =
         pyodide.pyimport("pyodide.console");
 
@@ -145,6 +149,25 @@ await_fut
 
       pyconsole.stdout_callback = (s) => term.write(s);
       pyconsole.stderr_callback = (s) => term.write(`\x1b[31m${s}\x1b[0m`);
+
+      // Handle fatal errors
+      pyodide._api.on_fatal = async (e) => {
+        if (e.name === "Exit") {
+          term.write(`\x1b[31m${e}\x1b[0m\r\n`);
+          term.write(
+            "\x1b[31mPyodide exited and can no longer be used.\x1b[0m\r\n"
+          );
+        } else {
+          term.write(
+            "\x1b[31mPyodide has suffered a fatal error. Please report this to the Pyodide maintainers.\x1b[0m\r\n"
+          );
+          term.write("\x1b[31mThe cause of the fatal error was:\x1b[0m\r\n");
+          term.write(`\x1b[31m${e.message || e}\x1b[0m\r\n`);
+          term.write(
+            "\x1b[31mLook in the browser console for more details.\x1b[0m\r\n"
+          );
+        }
+      };
 
       // REPL implementation
       const ps1 = ">>> ";
