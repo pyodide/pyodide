@@ -34,7 +34,7 @@ RUN if [ $CHROME_VERSION = "latest" ]; then SE_CHROME_VERSION="stable"; \
   && mv $(dirname ${SE_CHROME_DRIVER_PATH}) /opt/chromedriver
 
 
-FROM node:20.11-bookworm-slim AS node-image
+FROM node:22.19.0-bookworm-slim AS node-image
 FROM python:3.13.2-slim-bookworm
 
 RUN apt-get update \

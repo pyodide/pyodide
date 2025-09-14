@@ -1,13 +1,8 @@
-import * as chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-
-chai.use(chaiAsPromised);
-const assert = chai.assert;
-const expect = chai.expect;
-
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
-  withContext,
   createContextWrapper,
+  withContext,
 } from "../../../common/contextManager";
 
 describe("withContext", () => {
@@ -30,9 +25,9 @@ describe("withContext", () => {
       },
     );
 
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
-    assert.isTrue(callbackCalled);
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
+    assert.ok(callbackCalled);
     assert.equal(result, "test result");
   });
 
@@ -56,9 +51,9 @@ describe("withContext", () => {
       },
     );
 
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
-    assert.isTrue(callbackCalled);
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
+    assert.ok(callbackCalled);
     assert.equal(result, "async result");
   });
 
@@ -80,11 +75,11 @@ describe("withContext", () => {
             throw new Error("Test error");
           },
         ),
-      "Test error",
+      { name: "Error", message: "Test error" },
     );
 
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
   });
 
   it("cleanup is called even when async callback rejects", async () => {
@@ -105,9 +100,12 @@ describe("withContext", () => {
       },
     );
 
-    await expect(promise).to.be.rejectedWith("Async test error");
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    await assert.rejects(promise, {
+      name: "Error",
+      message: "Async test error",
+    });
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
   });
 
   it("raise on setup error", () => {
@@ -120,7 +118,7 @@ describe("withContext", () => {
           () => {},
           () => {},
         ),
-      "Setup error",
+      { name: "Error", message: "Setup error" },
     );
   });
 
@@ -134,7 +132,7 @@ describe("withContext", () => {
           },
           () => {},
         ),
-      "Cleanup error",
+      { name: "Error", message: "Cleanup error" },
     );
   });
 });
@@ -160,8 +158,8 @@ describe("createContextWrapper", () => {
 
     const result = wrappedFn(5, 3);
 
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
     assert.equal(result, 8);
   });
 
@@ -186,8 +184,8 @@ describe("createContextWrapper", () => {
 
     const result = await wrappedFn(4, 7);
 
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
     assert.equal(result, 28);
   });
 
@@ -209,9 +207,12 @@ describe("createContextWrapper", () => {
       },
     )(throwingFn);
 
-    assert.throws(() => wrappedFn(), "Function error");
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    assert.throws(() => wrappedFn(), {
+      name: "Error",
+      message: "Function error",
+    });
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
   });
 
   it("cleanup is called when async wrapped function rejects", async () => {
@@ -233,8 +234,11 @@ describe("createContextWrapper", () => {
       },
     )(throwingAsyncFn);
 
-    await assert.isRejected(wrappedFn(), "Async function error");
-    assert.isTrue(setupCalled);
-    assert.isTrue(cleanupCalled);
+    await assert.rejects(wrappedFn(), {
+      name: "Error",
+      message: "Async function error",
+    });
+    assert.ok(setupCalled);
+    assert.ok(cleanupCalled);
   });
 });

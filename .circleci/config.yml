@@ -370,6 +370,18 @@ jobs:
             cd src/js
             npm run test:unit
 
+      - run:
+          name: test-node
+          command: |
+            cd src/js
+            npm run test:node
+
+      - run:
+          name: test-browser
+          command: |
+            cd src/js
+            npm run test:browser
+
       # - run:
       #     name: check if Pyodide works with Webpack
       #     command: |
