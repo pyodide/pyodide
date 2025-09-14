@@ -28,7 +28,7 @@ all-but-packages: \
 	dist/python_stdlib.zip \
 	dist/test.html \
 	dist/console.html \
-	dist/console.mjs \
+	dist/console-v2.html \
 	dist/module_test.html \
 
 
@@ -250,8 +250,10 @@ dist/python_cli_entry.mjs: src/templates/python_cli_entry.mjs
 .PHONY: dist/console.html
 dist/console.html: src/templates/console.html
 	cp $< $@
+	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 
-dist/console.mjs: src/templates/console.mjs
+.PHONY: dist/console-v2.html
+dist/console-v2.html: src/templates/console-v2.html
 	cp $< $@
 	sed -i -e 's#{{ PYODIDE_BASE_URL }}#$(PYODIDE_BASE_URL)#g' $@
 

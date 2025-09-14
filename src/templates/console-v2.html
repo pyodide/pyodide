@@ -1,3 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Pyodide Console</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@xterm/xterm@5.4.0/css/xterm.css"
+    />
+    <link
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐍</text></svg>"
+      rel="icon"
+    />
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background-color: #000000;
+        font-family: "Monaco", "Menlo", "Courier New", monospace;
+        overflow: hidden;
+      }
+
+      #terminal {
+        position: fixed;
+        inset: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="terminal"></div>
+    <script type="module">
 import "https://unpkg.com/@xterm/xterm@5.4.0/lib/xterm.js";
 import "https://unpkg.com/@xterm/addon-fit@0.9.0/lib/addon-fit.js";
 
@@ -262,3 +299,8 @@ async function mountDirectory(pyodideDirectory, directoryKey) {
   await pyodide.mountNativeFS(pyodideDirectory, directoryHandle);
 }
 globalThis.mountDirectory = mountDirectory;
+
+
+    </script>
+  </body>
+</html>

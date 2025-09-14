@@ -65,7 +65,7 @@
     "ffi.d.ts",
     "pyodide-lock.json",
     "console.html",
-    "console.mjs"
+    "console-v2.html"
   ],
   "browser": {
     "child_process": false,
