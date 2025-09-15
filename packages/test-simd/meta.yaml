@@ -2,6 +2,7 @@ package:
   name: test-simd
   version: "0.1.0"
   tag:
+    - core
     - pyodide.test
   top-level:
     - test_simd
