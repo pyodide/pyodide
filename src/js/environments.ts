@@ -31,27 +31,14 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
         typeof process.versions.node === "string" &&
         !(process as any).browser,
 
-      IN_NODE_COMMONJS:
-        typeof process === "object" &&
-        typeof process.versions === "object" &&
-        typeof process.versions.node === "string" &&
-        !(process as any).browser &&
-        typeof module !== "undefined" &&
-        typeof (module as any).exports !== "undefined" &&
-        typeof require !== "undefined" &&
-        typeof __dirname !== "undefined",
-
-      IN_NODE_ESM: false,
+      IN_NODE_COMMONJS: false,  // Derived from IN_NODE
+      IN_NODE_ESM: false,      // Derived from IN_NODE
 
       IN_BUN: typeof (globalThis as any).Bun !== "undefined",
-
       IN_DENO: typeof (globalThis as any).Deno !== "undefined",
-
-      IN_BROWSER: true,
-
-      IN_BROWSER_MAIN_THREAD: false,
-
-      IN_BROWSER_WEB_WORKER: false,
+      IN_BROWSER: true,        // Default true, will be updated in derived flags
+      IN_BROWSER_MAIN_THREAD: false,  // Derived from IN_BROWSER
+      IN_BROWSER_WEB_WORKER: false,   // Derived from IN_BROWSER,
 
       IN_SAFARI:
         typeof navigator === "object" &&
@@ -139,34 +126,24 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
   runtimeEnv.IN_BROWSER_MAIN_THREAD = false;
   runtimeEnv.IN_BROWSER_WEB_WORKER = false;
 
-  // Set the requested runtime with explicit flags (no environment detection)
   switch (runtime) {
     case "node":
       runtimeEnv.IN_NODE = true;
-      // Default to CommonJS mode for node override
-      runtimeEnv.IN_NODE_COMMONJS = true;
-      runtimeEnv.IN_NODE_ESM = false;
       break;
     case "browser":
       runtimeEnv.IN_BROWSER = true;
-      runtimeEnv.IN_BROWSER_MAIN_THREAD =
-        typeof window !== "undefined" &&
-        typeof (window as any).document !== "undefined";
-      runtimeEnv.IN_BROWSER_WEB_WORKER =
-        typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
-        typeof (globalThis as any).self !== "undefined" &&
-        (globalThis as any).self instanceof
-          (globalThis as any).WorkerGlobalScope;
       break;
     case "deno":
+      runtimeEnv.IN_NODE = true;
       runtimeEnv.IN_DENO = true;
       break;
     case "bun":
+      runtimeEnv.IN_NODE = true;
       runtimeEnv.IN_BUN = true;
       break;
   }
 
-  // ✅ Update derived flags after setting the runtime
+  // Update derived flags (including IN_NODE_*, IN_BROWSER_*)
   updateDerivedFlags();
 }
 
@@ -177,18 +154,6 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
  * This function is useful for debugging and testing purposes.
  * @private
  */
-export function detectEnvironment(): Record<string, boolean> {
-  const runtimeEnv = getGlobalRuntimeEnv();
-  return {
-    IN_NODE: runtimeEnv.IN_NODE,
-    IN_NODE_COMMONJS: runtimeEnv.IN_NODE_COMMONJS,
-    IN_NODE_ESM: runtimeEnv.IN_NODE_ESM,
-    IN_BUN: runtimeEnv.IN_BUN,
-    IN_DENO: runtimeEnv.IN_DENO,
-    IN_BROWSER: runtimeEnv.IN_BROWSER,
-    IN_BROWSER_MAIN_THREAD: runtimeEnv.IN_BROWSER_MAIN_THREAD,
-    IN_BROWSER_WEB_WORKER: runtimeEnv.IN_BROWSER_WEB_WORKER,
-    IN_SAFARI: runtimeEnv.IN_SAFARI,
-    IN_SHELL: runtimeEnv.IN_SHELL,
-  };
+export function detectEnvironment(): RuntimeEnv {
+  return getGlobalRuntimeEnv();
 }
