@@ -209,7 +209,7 @@
         async function execLine(line) {
           // clear the terminal
           if (line === "clear") {
-            term.write("\x1b[2J\x1b[H");
+            term.clear();
             return;
           }
 
