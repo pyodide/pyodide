@@ -242,11 +242,8 @@ export async function loadPyodide(
      */
     convertNullToNone?: boolean;
     /**
-     * Override the runtime detection. This allows forcing specific runtime
-     * detection for testing purposes. When provided, the corresponding
-     * environment flags (IN_NODE, IN_BROWSER, etc.) are forced accordingly.
-     * After initialization, these runtime flags are available in JavaScript via RUNTIME_ENV.
-     * They are not injected into Python's sys module.
+     * Override automatic runtime detection. This allows forcing a specific runtime
+     * environment for testing purposes.
      */
     runtime?: "browser" | "node" | "deno" | "bun";
     /** @ignore */
