@@ -3,38 +3,29 @@ import { expect } from "chai";
 import {
   overrideRuntime,
   detectEnvironment,
-  RUNTIME_ENV,
 } from "../../environments";
 
 describe("Runtime Environment Detection", () => {
-  let originalDeno: any;
-  let originalBun: any;
-  let originalProcess: any;
-  let originalWindow: any;
-  let originalDocument: any;
-  let originalSelf: any;
-  let originalNavigator: any;
+  let originalGlobals: Record<string, any>;
 
   beforeEach(() => {
     // Store original globalThis values
-    originalDeno = globalThis.Deno;
-    originalBun = globalThis.Bun;
-    originalProcess = globalThis.process;
-    originalWindow = globalThis.window;
-    originalDocument = globalThis.document;
-    originalSelf = globalThis.self;
-    originalNavigator = globalThis.navigator;
+    originalGlobals = {
+      Deno: (globalThis as any).Deno,
+      Bun: (globalThis as any).Bun,
+      process: (globalThis as any).process,
+      window: (globalThis as any).window,
+      document: (globalThis as any).document,
+      self: (globalThis as any).self,
+      navigator: (globalThis as any).navigator
+    };
   });
 
   afterEach(() => {
     // Restore original globalThis values
-    globalThis.Deno = originalDeno;
-    globalThis.Bun = originalBun;
-    globalThis.process = originalProcess;
-    globalThis.window = originalWindow;
-    globalThis.document = originalDocument;
-    globalThis.self = originalSelf;
-    globalThis.navigator = originalNavigator;
+    for (const [key, value] of Object.entries(originalGlobals)) {
+      (globalThis as any)[key] = value;
+    }
   });
 
   describe("overrideRuntime", () => {
@@ -130,7 +121,7 @@ describe("Runtime Environment Detection", () => {
     });
   });
 
-  describe("RUNTIME_ENV singleton", () => {
+  describe("Environment detection consistency", () => {
     it("should maintain consistency across multiple calls", () => {
       overrideRuntime("node");
 
@@ -140,16 +131,17 @@ describe("Runtime Environment Detection", () => {
       expect(env1).to.deep.equal(env2);
     });
 
-    it("should update all exported constants", () => {
+    it("should update all environment flags", () => {
       overrideRuntime("node");
+      const env = detectEnvironment();
 
-      expect(RUNTIME_ENV.IN_NODE).to.be.true;
-      expect(RUNTIME_ENV.IN_BROWSER).to.be.false;
-      expect(RUNTIME_ENV.IN_DENO).to.be.false;
-      expect(RUNTIME_ENV.IN_BUN).to.be.false;
+      expect(env.IN_NODE).to.be.true;
+      expect(env.IN_BROWSER).to.be.false;
+      expect(env.IN_DENO).to.be.false;
+      expect(env.IN_BUN).to.be.false;
     });
 
-    it("should update browser constants correctly", () => {
+    it("should update browser flags correctly", () => {
       // Mock browser environment
       (globalThis as any).window = {
         document: {
@@ -161,31 +153,33 @@ describe("Runtime Environment Detection", () => {
       (globalThis as any).self = (globalThis as any).window;
 
       overrideRuntime("browser");
+      const env = detectEnvironment();
 
-      expect(RUNTIME_ENV.IN_NODE).to.be.false;
-      expect(RUNTIME_ENV.IN_BROWSER).to.be.true;
-      expect(RUNTIME_ENV.IN_DENO).to.be.false;
-      expect(RUNTIME_ENV.IN_BUN).to.be.false;
-      expect(RUNTIME_ENV.IN_BROWSER_MAIN_THREAD).to.be.true;
-      expect(RUNTIME_ENV.IN_BROWSER_WEB_WORKER).to.be.false;
+      expect(env.IN_NODE).to.be.false;
+      expect(env.IN_BROWSER).to.be.true;
+      expect(env.IN_DENO).to.be.false;
+      expect(env.IN_BUN).to.be.false;
+      expect(env.IN_BROWSER_MAIN_THREAD).to.be.true;
+      expect(env.IN_BROWSER_WEB_WORKER).to.be.false;
     });
   });
 
   describe("globalThis consistency", () => {
     it("should restore original globalThis values after override", () => {
-      const originalDenoValue = globalThis.Deno;
-      const originalBunValue = globalThis.Bun;
-      const originalProcessValue = globalThis.process;
+      const globals = globalThis as any;
+      const originalDenoValue = globals.Deno;
+      const originalBunValue = globals.Bun;
+      const originalProcessValue = globals.process;
 
       overrideRuntime("node");
 
       // Verify override worked
-      expect(globalThis.process).to.have.property("versions");
+      expect(globals.process).to.have.property("versions");
 
       // After override, original values should be restored
-      expect(globalThis.Deno).to.equal(originalDenoValue);
-      expect(globalThis.Bun).to.equal(originalBunValue);
-      expect(globalThis.process).to.equal(originalProcessValue);
+      expect(globals.Deno).to.equal(originalDenoValue);
+      expect(globals.Bun).to.equal(originalBunValue);
+      expect(globals.process).to.equal(originalProcessValue);
     });
   });
 

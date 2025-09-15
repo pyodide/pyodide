@@ -50,21 +50,9 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
         typeof (globalThis as any).read == "function" &&
         typeof (globalThis as any).load === "function",
     };
-    // compute derived
-    env.IN_NODE_ESM = env.IN_NODE && !env.IN_NODE_COMMONJS;
-    env.IN_BROWSER = !env.IN_NODE && !env.IN_DENO && !env.IN_BUN;
-    env.IN_BROWSER_MAIN_THREAD =
-      env.IN_BROWSER &&
-      typeof window !== "undefined" &&
-      typeof (window as any).document !== "undefined" &&
-      typeof (document as any).createElement === "function" &&
-      "sessionStorage" in (window as any) &&
-      typeof (globalThis as any).importScripts !== "function";
-    env.IN_BROWSER_WEB_WORKER =
-      env.IN_BROWSER &&
-      typeof (globalThis as any).WorkerGlobalScope !== "undefined" &&
-      typeof (globalThis as any).self !== "undefined" &&
-      (globalThis as any).self instanceof (globalThis as any).WorkerGlobalScope;
+    globalThis.__PYODIDE_RUNTIME_ENV__ = env;
+    // Update derived flags using the shared function
+    updateDerivedFlags();
 
     globalThis.__PYODIDE_RUNTIME_ENV__ = env;
   }
@@ -130,16 +118,18 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
   switch (runtime) {
     case "node":
       runtimeEnv.IN_NODE = true;
+      // Check for CommonJS environment
+      if (typeof module !== 'undefined' && module.exports && typeof require === 'function' && typeof __dirname === 'string') {
+        runtimeEnv.IN_NODE_COMMONJS = true;
+      }
       break;
     case "browser":
       runtimeEnv.IN_BROWSER = true;
       break;
     case "deno":
-      runtimeEnv.IN_NODE = true;
       runtimeEnv.IN_DENO = true;
       break;
     case "bun":
-      runtimeEnv.IN_NODE = true;
       runtimeEnv.IN_BUN = true;
       break;
   }
