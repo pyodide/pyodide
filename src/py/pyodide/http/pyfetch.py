@@ -8,9 +8,8 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import IO, Any, ParamSpec, TypeVar
 
-from .. import runtime
 from .._package_loader import unpack_buffer
-from ..ffi import JsBuffer, JsException, JsFetchResponse, to_js
+from ..ffi import IN_BROWSER, JsBuffer, JsException, JsFetchResponse, to_js
 from .exceptions import (
     AbortError,
     BodyUsedError,
@@ -18,7 +17,7 @@ from .exceptions import (
     _construct_abort_reason,
 )
 
-if runtime.IN_BROWSER:
+if IN_BROWSER:
     try:
         from js import AbortController, AbortSignal, Object
         from js import fetch as _jsfetch

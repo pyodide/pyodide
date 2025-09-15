@@ -157,7 +157,7 @@ def make_whlfile(
     return shutil._make_zipfile(*args, **kwargs)  # type: ignore[attr-defined]
 
 
-if runtime.IN_BROWSER:
+if IN_BROWSER:
     shutil.register_archive_format("whl", make_whlfile, description="Wheel file")
     shutil.register_unpack_format(
         "whl",

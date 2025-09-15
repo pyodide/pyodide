@@ -8,11 +8,11 @@ including synchronous XMLHttpRequest support and async fetch API.
 from io import StringIO
 
 # Keep open_url in __init__ for now, will be moved to pyxhr.py later
-from .. import runtime
+from ..ffi import IN_BROWSER
 from .exceptions import AbortError, BodyUsedError, HttpStatusError
 from .pyfetch import FetchResponse, pyfetch
 
-if runtime.IN_BROWSER:
+if IN_BROWSER:
     try:
         from js import XMLHttpRequest
     except ImportError:
