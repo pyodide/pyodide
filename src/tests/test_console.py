@@ -500,3 +500,177 @@ def test_console_html(selenium):
             """
         ).strip()
     )
+
+
+@pytest.mark.xfail_browsers(node="Not available in node")
+def test_console_v2_html(selenium):
+    selenium.goto(f"{selenium.base_url}/console-v2.html")
+    selenium.javascript_setup()
+
+    # Wait for Pyodide and the terminal to be ready
+    selenium.run_js(
+        """
+        await window.console_ready;
+        """
+    )
+
+    def send_input(text):
+        # Simulate typing input character by character into the xterm terminal
+        selenium.run_js(
+            f"""
+            if (!term) throw new Error("Terminal not found");
+
+            // Send each character as data to the terminal
+
+            let text = {text!r};
+
+            for (const line of text.split("\\n")) {{
+                term.paste(line);
+                term.paste("\\r");
+            }}
+
+
+            // Wait a bit for processing
+            await new Promise(resolve => setTimeout(resolve, 200));
+            """
+        )
+
+    def get_terminal_content():
+        return selenium.run_js(
+            """
+            if (!term) throw new Error("Terminal not found");
+
+            // Get the terminal buffer content
+            let content = "";
+            const buffer = term.buffer.active;
+            for (let i = 0; i < buffer.length; i++) {
+                const line = buffer.getLine(i).translateToString(true);
+                if (line) {
+                    content += line + "\\n";
+                }
+            }
+            return content.trim();
+            """
+        )
+
+    def exec_and_get_result(command):
+        # Clear terminal first
+        selenium.run_js(
+            """
+            term.clear();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            """
+        )
+
+        send_input(command)
+        return get_terminal_content()
+
+    # Test welcome message
+    welcome_content = get_terminal_content()
+    welcome_msg = "Welcome to the Pyodide"
+    assert welcome_msg in welcome_content
+
+    # Test basic arithmetic
+    result = exec_and_get_result("1+1")
+    assert ">>> 1+1" in result
+    assert "2" in result
+
+    result = exec_and_get_result("1 +1")
+    assert ">>> 1 +1" in result
+    assert "2" in result
+
+    result = exec_and_get_result("1+ 1")
+    assert ">>> 1+ 1" in result
+    assert "2" in result
+
+    # Test list output
+    result = exec_and_get_result("[1,2,3]")
+    assert ">>> [1,2,3]" in result
+    assert "[1, 2, 3]" in result
+
+    # Test dictionary output
+    result = exec_and_get_result("{'a' : 1, 'b' : 2, 'c' : 3}")
+    assert ">>> {'a' : 1, 'b' : 2, 'c' : 3}" in result
+    assert "{'a': 1, 'b': 2, 'c': 3}" in result
+
+    result = exec_and_get_result("{'a': {'b': 1}}")
+    assert ">>> {'a': {'b': 1}}" in result
+    assert "{'a': {'b': 1}}" in result
+
+    # Test list comprehensions
+    result = exec_and_get_result("[x*x+1 for x in range(5)]")
+    assert ">>> [x*x+1 for x in range(5)]" in result
+    assert "[1, 2, 5, 10, 17]" in result
+
+    # Test dict comprehensions
+    result = exec_and_get_result("{x+1:x*x+1 for x in range(5)}")
+    assert ">>> {x+1:x*x+1 for x in range(5)}" in result
+    assert "{1: 1, 2: 2, 3: 5, 4: 10, 5: 17}" in result
+
+    # Test multiline function definition
+    selenium.run_js(
+        """
+        const term = window.term;
+        term.clear();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        """
+    )
+
+    # Send multiline function definition
+    send_input("async def f():")
+    send_input("    return 7")
+    send_input("")  # Empty line to complete the function
+
+    # Test function call
+    result = exec_and_get_result("f()")
+    assert "<coroutine object f at 0x" in result or "coroutine" in result.lower()
+
+    # Test syntax error
+    result = exec_and_get_result("1+")
+    assert ">>> 1+" in result
+    assert (
+        "_IncompleteInputError: incomplete input" in result or "SyntaxError" in result
+    )
+
+    # Test exception handling
+    result = exec_and_get_result("raise Exception('hi')")
+    assert ">>> raise Exception('hi')" in result
+    assert "Exception: hi" in result
+
+    # Test long output truncation
+    result = exec_and_get_result("list(range(1000))")
+    lines = result.split("\\n")
+    # Should have truncated output
+    assert (
+        any("<long output truncated>" in line for line in lines)
+        or len([l for l in lines if l.strip()]) < 50
+    )
+
+    # Test non-breaking space replacement (nbsp characters should not cause syntax error)
+    nbsp_command = "1\xa0\xa0\xa0+\xa0\xa01"  # nbsp characters
+    result = exec_and_get_result(nbsp_command)
+    assert "SyntaxError" not in result
+    assert "2" in result  # Should evaluate to 2
+
+    # Test fatal error handling
+    selenium.run_js(
+        """
+        const term = window.term;
+        term.clear();
+        await new Promise(resolve => setTimeout(resolve, 100));
+        """
+    )
+
+    send_input("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
+    time.sleep(0.5)  # Wait for fatal error to be processed
+
+    final_content = get_terminal_content()
+
+    final_content = final_content.replace("\n", "")
+
+    assert (
+        ">>> from _pyodide_core import trigger_fatal_error; trigger_fatal_error()"
+        in final_content
+    )
+    assert "Pyodide has suffered a fatal error" in final_content
+    assert "intentionally triggered fatal error" in final_content
