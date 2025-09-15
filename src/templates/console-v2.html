@@ -207,6 +207,8 @@
         }
 
         async function execLine(line) {
+          // Normalize non-breaking spaces to regular spaces
+          line = line.replace(/\u00a0/g, " ");
           // clear the terminal
           if (line === "clear") {
             term.clear();
@@ -321,6 +323,8 @@
               break;
             default:
               if (data) {
+                // Normalize non-breaking spaces to regular spaces
+                data = data.replace(/\u00a0/g, " ");
                 // Insert arbitrary string at cursor position
                 const before = buffer.slice(0, cursorIndex);
                 const after = buffer.slice(cursorIndex);
