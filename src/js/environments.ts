@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 /**
- * Runtime environment interface
+ * Internal runtime environment interface for type safety
  * @private
  */
 interface RuntimeEnv {
@@ -76,7 +76,8 @@ function getGlobalRuntimeEnv(): RuntimeEnv {
  * This serves as the single source of truth for runtime detection
  * @private
  */
-export const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
+/** @private Internal runtime environment state */
+const RUNTIME_ENV: RuntimeEnv = getGlobalRuntimeEnv();
 
 // Derived flags are computed during initialization in getGlobalRuntimeEnv
 
@@ -150,10 +151,22 @@ export function overrideRuntime(runtime: "browser" | "node" | "deno" | "bun") {
 // No individual flag exports; use RUNTIME_ENV directly
 
 /**
- * Detects the current environment and returns a record with the results.
- * This function is useful for debugging and testing purposes.
+ * Detects the current environment and returns a record of boolean flags.
+ * The flags indicate what kind of environment pyodide is running in.
  * @private
  */
-export function detectEnvironment(): RuntimeEnv {
-  return getGlobalRuntimeEnv();
+export function detectEnvironment(): Record<string, boolean> {
+  const env = getGlobalRuntimeEnv();
+  return {
+    IN_NODE: env.IN_NODE,
+    IN_NODE_COMMONJS: env.IN_NODE_COMMONJS,
+    IN_NODE_ESM: env.IN_NODE_ESM,
+    IN_BUN: env.IN_BUN,
+    IN_DENO: env.IN_DENO,
+    IN_BROWSER: env.IN_BROWSER,
+    IN_BROWSER_MAIN_THREAD: env.IN_BROWSER_MAIN_THREAD,
+    IN_BROWSER_WEB_WORKER: env.IN_BROWSER_WEB_WORKER,
+    IN_SAFARI: env.IN_SAFARI,
+    IN_SHELL: env.IN_SHELL,
+  };
 }

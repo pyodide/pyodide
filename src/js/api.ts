@@ -8,7 +8,7 @@ import { version } from "./version";
 import { setStdin, setStdout, setStderr } from "./streams";
 import { scheduleCallback } from "./scheduler";
 import { TypedArray, PackageData, FSType, Lockfile } from "./types";
-import { RUNTIME_ENV, detectEnvironment } from "./environments";
+import { detectEnvironment } from "./environments";
 // @ts-ignore
 import LiteralMap from "./common/literal-map";
 import abortSignalAny from "./common/abortSignalAny";
@@ -579,7 +579,7 @@ export class PyodideAPI_ {
    * @param hostPath The host path to mount. It must be a directory that exists.
    */
   static mountNodeFS(emscriptenPath: string, hostPath: string): void {
-    if (!RUNTIME_ENV.IN_NODE) {
+    if (!detectEnvironment().IN_NODE) {
       throw new Error("mountNodeFS only works in Node");
     }
     ensureMountPathExists(emscriptenPath);
