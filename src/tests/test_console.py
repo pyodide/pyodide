@@ -343,8 +343,21 @@ async def test_console_imports(selenium):
     assert await get_result("pytest.__name__") == "pytest"
 
 
+@pytest.fixture(scope="function")
+def isolated_selenium(selenium):
+    """
+    Isolated selenium instance for tests that might cause fatal errors.
+
+    This is necessary because some tests (test_console_html, test_console_v2_html)
+    might cause fatal errors, and we want to make sure that the next test starts
+    with a new selenium instance.
+    """
+    return selenium
+
+
 @pytest.mark.xfail_browsers(node="Not available in node")
-def test_console_html(selenium):
+def test_console_html(isolated_selenium):
+    selenium = isolated_selenium
     selenium.goto(f"{selenium.base_url}/console.html")
     selenium.javascript_setup()
     selenium.run_js(
@@ -503,7 +516,8 @@ def test_console_html(selenium):
 
 
 @pytest.mark.xfail_browsers(node="Not available in node")
-def test_console_v2_html(selenium):
+def test_console_v2_html(isolated_selenium):
+    selenium = isolated_selenium
     selenium.goto(f"{selenium.base_url}/console-v2.html")
     selenium.javascript_setup()
 
@@ -650,17 +664,9 @@ def test_console_v2_html(selenium):
     nbsp_command = "1\xa0\xa0\xa0+\xa0\xa01"  # nbsp characters
     result = exec_and_get_result(nbsp_command)
     assert "SyntaxError" not in result
-    assert "2" in result  # Should evaluate to 2
+    assert "2" in result
 
     # Test fatal error handling
-    selenium.run_js(
-        """
-        const term = window.term;
-        term.clear();
-        await new Promise(resolve => setTimeout(resolve, 100));
-        """
-    )
-
     send_input("from _pyodide_core import trigger_fatal_error; trigger_fatal_error()")
     time.sleep(0.5)  # Wait for fatal error to be processed
 
