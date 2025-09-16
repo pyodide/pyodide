@@ -7,7 +7,6 @@ import {
 
 describe("Runtime Environment Detection", () => {
   let originalGlobals: Record<string, any>;
-
   beforeEach(() => {
     // Store original globalThis values
     originalGlobals = {
